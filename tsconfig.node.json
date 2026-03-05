@@ -8,7 +8,9 @@
     "./eslint.config.mjs",
     "./eslint-rules/*.mjs",
     "./src/main/prepare-dist-package.mjs",
-    "./src/shared/tsdown.config.ts"
+    "./src/shared/tsdown.config.ts",
+    "./scripts/bundle-games.mjs",
+    "./scripts/extensions-rolldown.mjs"
   ],
   "compilerOptions": {
     "composite": true,

@@ -5,7 +5,7 @@
   "main": "./out/index.js",
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/stylesheets/mod-highlight.scss dist",
-    "_build": "pnpm webpack --config webpack.config.js --progress --profile --color && pnpm run _assets && extractInfo",
+    "_build": "node build.mjs && pnpm run _assets && extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs mod-highlight out",
     "dist": "pnpm run _build && node ../copy-extension.mjs mod-highlight dist"
   },
@@ -18,13 +18,10 @@
     "@types/redux": "catalog:",
     "copyfiles": "catalog:",
     "react-bootstrap": "catalog:",
-    "ts-loader": "catalog:",
-    "vortex-api": "catalog:",
-    "webpack": "catalog:",
-    "webpack-cli": "catalog:",
-    "react-i18next": "catalog:",
     "react-dom": "catalog:",
+    "react-i18next": "catalog:",
+    "redux-act": "catalog:",
     "redux-thunk": "catalog:",
-    "redux-act": "catalog:"
+    "vortex-api": "catalog:"
   }
 }

@@ -5,27 +5,24 @@
   "main": "./dist/index.js",
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/stylesheets/*.scss dist",
-    "_build": "pnpm webpack --config webpack.config.js --progress --profile --color && pnpm run _assets && extractInfo",
+    "_build": "node build.mjs && pnpm run _assets && extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs documentation out",
     "dist": "pnpm run _build && node ../copy-extension.mjs documentation dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "devDependencies": {
+    "@types/lodash": "catalog:",
     "@types/react": "catalog:",
     "@types/react-redux": "catalog:",
     "copyfiles": "catalog:",
-    "ts-loader": "catalog:",
-    "vortex-api": "catalog:",
-    "webpack": "catalog:",
-    "webpack-cli": "catalog:",
-    "redux-act": "catalog:",
     "i18next": "catalog:",
+    "lodash": "catalog:",
     "react-bootstrap": "catalog:",
     "react-dom": "catalog:",
     "react-i18next": "catalog:",
-    "lodash": "catalog:",
-    "@types/lodash": "catalog:",
-    "redux": "catalog:"
+    "redux": "catalog:",
+    "redux-act": "catalog:",
+    "vortex-api": "catalog:"
   }
 }

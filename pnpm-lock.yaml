@@ -9,9 +9,6 @@ catalogs:
     7z-bin:
       specifier: git+https://github.com/Nexus-Mods/7z-bin#3298c42e69e3220dc39694bc2f610c077c3e213a
       version: 24.0.1
-    '@babel/core':
-      specifier: ^7.16.7
-      version: 7.29.0
     '@babel/polyfill':
       specifier: 7.12.1
       version: 7.12.1
@@ -261,9 +258,6 @@ catalogs:
     '@types/uuid':
       specifier: ^3.4.6
       version: 3.4.13
-    '@types/webpack':
-      specifier: ^2.2.11
-      version: 2.2.16
     '@types/webpack-node-externals':
       specifier: ~3.0.4
       version: 3.0.4
@@ -288,18 +282,9 @@ catalogs:
     ba2tk:
       specifier: git+https://github.com/Nexus-Mods/node-ba2tk#762d8de841ca1c770a0925311fd626d71de67971
       version: 2.0.9
-    babel-core:
-      specifier: ^6.26.3
-      version: 6.26.3
     babel-jest:
       specifier: ^29.7.0
       version: 29.7.0
-    babel-loader:
-      specifier: ^7.1.4
-      version: 7.1.5
-    babel-polyfill:
-      specifier: ^6.13.0
-      version: 6.26.0
     bbcode-to-react:
       specifier: git+https://github.com/TanninOne/bbcode-to-react#c67356006470e5066ea447e04a3968dca367339d
       version: 0.2.11
@@ -468,6 +453,9 @@ catalogs:
     immutability-helper:
       specifier: ^3.0.1
       version: 3.1.1
+    ini:
+      specifier: ^6.0.0
+      version: 6.0.0
     interweave:
       specifier: ^12.9.0
       version: 12.9.0
@@ -648,6 +636,9 @@ catalogs:
     rimraf:
       specifier: git+https://github.com/TanninOne/rimraf#7b8b70d4e8783cd233fca3283cf1f930af4e39c2
       version: 2.6.2
+    rolldown:
+      specifier: 1.0.0-rc.6
+      version: 1.0.0-rc.6
     sass:
       specifier: 1.97.3
       version: 1.97.3
@@ -832,6 +823,9 @@ importers:
       rimraf:
         specifier: 'catalog:'
         version: https://codeload.github.com/TanninOne/rimraf/tar.gz/7b8b70d4e8783cd233fca3283cf1f930af4e39c2
+      rolldown:
+        specifier: 'catalog:'
+        version: 1.0.0-rc.6
       sass:
         specifier: 'catalog:'
         version: 1.97.3
@@ -865,9 +859,6 @@ importers:
 
   extensions/changelog-dashlet:
     devDependencies:
-      '@babel/core':
-        specifier: 'catalog:'
-        version: 7.29.0
       '@types/bluebird':
         specifier: 'catalog:'
         version: 3.5.20
@@ -916,12 +907,6 @@ importers:
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
 
   extensions/collections:
     devDependencies:
@@ -1030,9 +1015,6 @@ importers:
       ts-jest:
         specifier: 'catalog:'
         version: 29.4.6(@babel/core@7.29.0)(@jest/transform@30.2.0)(@jest/types@30.2.0)(babel-jest@30.2.0(@babel/core@7.29.0))(jest-util@30.2.0)(jest@29.7.0(@types/node@22.19.11))(typescript@5.9.3)
-      ts-loader:
-        specifier: 'catalog:'
-        version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       ts-v-gen:
         specifier: 'catalog:'
         version: 1.0.3
@@ -1048,12 +1030,6 @@ importers:
       vortexmt:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-vortexmt/tar.gz/5251ea012ce856742aeaf73a583073497aff773a
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
 
   extensions/common-interpreters:
     devDependencies:
@@ -1081,21 +1057,12 @@ importers:
       redux:
         specifier: 'catalog:'
         version: 4.2.1
-      ts-loader:
-        specifier: 'catalog:'
-        version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
       which:
         specifier: 'catalog:'
         version: 1.3.1
@@ -1135,18 +1102,9 @@ importers:
       redux-act:
         specifier: 'catalog:'
         version: 1.8.0
-      ts-loader:
-        specifier: 'catalog:'
-        version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
 
   extensions/extension-dashlet:
     devDependencies:
@@ -1243,18 +1201,9 @@ importers:
       tmp:
         specifier: 'catalog:'
         version: 0.1.0
-      ts-loader:
-        specifier: 'catalog:'
-        version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
       winapi-bindings:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
@@ -1285,12 +1234,6 @@ importers:
       '@types/semver':
         specifier: 'catalog:'
         version: 7.7.1
-      babel-core:
-        specifier: 'catalog:'
-        version: 6.26.3
-      babel-loader:
-        specifier: 'catalog:'
-        version: 7.1.5(babel-core@6.26.3)(webpack@5.105.2)
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
@@ -1333,12 +1276,6 @@ importers:
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
       winapi-bindings:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
@@ -1372,12 +1309,6 @@ importers:
       '@types/semver':
         specifier: 'catalog:'
         version: 7.7.1
-      babel-core:
-        specifier: 'catalog:'
-        version: 6.26.3
-      babel-loader:
-        specifier: 'catalog:'
-        version: 7.1.5(babel-core@6.26.3)(webpack@5.105.2)
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
@@ -1408,12 +1339,6 @@ importers:
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
 
   extensions/gamebryo-archive-check:
     devDependencies:
@@ -1447,18 +1372,9 @@ importers:
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
 
   extensions/gamebryo-archive-invalidation:
     devDependencies:
-      '@babel/core':
-        specifier: 'catalog:'
-        version: 7.29.0
       '@types/bluebird':
         specifier: 'catalog:'
         version: 3.5.20
@@ -1486,12 +1402,6 @@ importers:
       '@types/redux-thunk':
         specifier: 'catalog:'
         version: 2.1.0(redux@4.2.1)
-      babel-loader:
-        specifier: 'catalog:'
-        version: 7.1.5(babel-core@6.26.3)(webpack@5.105.2)
-      babel-polyfill:
-        specifier: 'catalog:'
-        version: 6.26.0
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
@@ -1525,21 +1435,12 @@ importers:
       redux-thunk:
         specifier: 'catalog:'
         version: 2.4.2(redux@4.2.1)
-      ts-loader:
-        specifier: 'catalog:'
-        version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-parse-ini:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
 
   extensions/gamebryo-ba2-support:
     devDependencies:
@@ -1561,18 +1462,9 @@ importers:
       rimraf:
         specifier: 'catalog:'
         version: https://codeload.github.com/TanninOne/rimraf/tar.gz/7b8b70d4e8783cd233fca3283cf1f930af4e39c2
-      ts-loader:
-        specifier: 'catalog:'
-        version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
 
   extensions/gamebryo-bsa-support:
     devDependencies:
@@ -1600,18 +1492,9 @@ importers:
       tmp:
         specifier: 'catalog:'
         version: 0.1.0
-      ts-loader:
-        specifier: 'catalog:'
-        version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
 
   extensions/gamebryo-plugin-indexlock:
     devDependencies:
@@ -1666,18 +1549,9 @@ importers:
       redux-act:
         specifier: 'catalog:'
         version: 1.8.0
-      ts-loader:
-        specifier: 'catalog:'
-        version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
 
   extensions/gamebryo-plugin-management:
     devDependencies:
@@ -1798,18 +1672,9 @@ importers:
       shortid:
         specifier: 'catalog:'
         version: 2.2.17
-      ts-loader:
-        specifier: 'catalog:'
-        version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
     optionalDependencies:
       esptk:
         specifier: 'catalog:'
@@ -1844,9 +1709,6 @@ importers:
       '@types/redux-thunk':
         specifier: 'catalog:'
         version: 2.1.0(redux@4.2.1)
-      babel-loader:
-        specifier: 'catalog:'
-        version: 7.1.5(babel-core@6.26.3)(webpack@5.105.2)
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
@@ -1889,9 +1751,6 @@ importers:
       redux-thunk:
         specifier: 'catalog:'
         version: 2.4.2(redux@4.2.1)
-      ts-loader:
-        specifier: 'catalog:'
-        version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       turbowalk:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
@@ -1901,12 +1760,6 @@ importers:
       vortex-parse-ini:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
     optionalDependencies:
       gamebryo-savegame:
         specifier: 'catalog:'
@@ -1914,15 +1767,6 @@ importers:
 
   extensions/gamebryo-test-settings:
     devDependencies:
-      '@babel/core':
-        specifier: 'catalog:'
-        version: 7.29.0
-      babel-loader:
-        specifier: 'catalog:'
-        version: 7.1.5(babel-core@6.26.3)(webpack@5.105.2)
-      babel-polyfill:
-        specifier: 'catalog:'
-        version: 6.26.0
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
@@ -1956,30 +1800,18 @@ importers:
       redux-act:
         specifier: 'catalog:'
         version: 1.8.0
-      ts-loader:
-        specifier: 'catalog:'
-        version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-parse-ini:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
 
   extensions/gameinfo-steam:
     devDependencies:
       '@types/redux':
         specifier: 'catalog:'
         version: 3.6.0
-      babel-loader:
-        specifier: 'catalog:'
-        version: 7.1.5(babel-core@6.26.3)(webpack@5.105.2)
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
@@ -2001,18 +1833,9 @@ importers:
       react-i18next:
         specifier: 'catalog:'
         version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
-      ts-loader:
-        specifier: 'catalog:'
-        version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
 
   extensions/gamestore-gog:
     devDependencies:
@@ -2034,12 +1857,6 @@ importers:
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
       winapi-bindings:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
@@ -2067,12 +1884,6 @@ importers:
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
       winapi-bindings:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
@@ -2100,12 +1911,6 @@ importers:
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
       winapi-bindings:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
@@ -2136,12 +1941,6 @@ importers:
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
       winapi-bindings:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
@@ -2191,18 +1990,9 @@ importers:
       vortexmt:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-vortexmt/tar.gz/5251ea012ce856742aeaf73a583073497aff773a
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
 
   extensions/issue-tracker:
     devDependencies:
-      '@babel/core':
-        specifier: 'catalog:'
-        version: 7.29.0
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4192c0c9f34306c2167e258dd4fef773af406161
@@ -2227,9 +2017,6 @@ importers:
       '@types/redux-thunk':
         specifier: 'catalog:'
         version: 2.1.0(redux@4.2.1)
-      babel-loader:
-        specifier: 'catalog:'
-        version: 7.1.5(babel-core@6.26.3)(webpack@5.105.2)
       copyfiles:
         specifier: 'catalog:'
         version: 2.4.1
@@ -2251,39 +2038,21 @@ importers:
       tmp:
         specifier: 'catalog:'
         version: 0.1.0
-      ts-loader:
-        specifier: 'catalog:'
-        version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
 
   extensions/local-gamesettings:
     devDependencies:
-      '@babel/core':
-        specifier: 'catalog:'
-        version: 7.29.0
       '@types/bluebird':
         specifier: 'catalog:'
         version: 3.5.20
       '@types/immutability-helper':
         specifier: 'catalog:'
         version: 2.6.3
-      babel-loader:
-        specifier: 'catalog:'
-        version: 7.1.5(babel-core@6.26.3)(webpack@5.105.2)
-      babel-polyfill:
-        specifier: 'catalog:'
-        version: 6.26.0
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
@@ -2317,27 +2086,15 @@ importers:
       redux-act:
         specifier: 'catalog:'
         version: 1.8.0
-      ts-loader:
-        specifier: 'catalog:'
-        version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-parse-ini:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
 
   extensions/meta-editor:
     devDependencies:
-      '@babel/core':
-        specifier: 'catalog:'
-        version: 7.29.0
       '@types/immutability-helper':
         specifier: 'catalog:'
         version: 2.6.3
@@ -2359,12 +2116,6 @@ importers:
       '@types/react-router':
         specifier: 'catalog:'
         version: 2.0.61
-      babel-loader:
-        specifier: 'catalog:'
-        version: 7.1.5(babel-core@6.26.3)(webpack@5.105.2)
-      babel-polyfill:
-        specifier: 'catalog:'
-        version: 6.26.0
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
@@ -2395,18 +2146,9 @@ importers:
       semver:
         specifier: 'catalog:'
         version: 7.7.4
-      ts-loader:
-        specifier: 'catalog:'
-        version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
 
   extensions/mo-import:
     devDependencies:
@@ -2479,12 +2221,6 @@ importers:
       vortex-parse-ini:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
 
   extensions/mod-content:
     devDependencies:
@@ -2530,21 +2266,12 @@ importers:
       redux:
         specifier: 'catalog:'
         version: 4.2.1
-      ts-loader:
-        specifier: 'catalog:'
-        version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       turbowalk:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
 
   extensions/mod-dependency-manager:
     devDependencies:
@@ -2578,18 +2305,6 @@ importers:
       '@types/semver':
         specifier: 'catalog:'
         version: 7.7.1
-      '@types/webpack':
-        specifier: 'catalog:'
-        version: 2.2.16
-      babel-core:
-        specifier: 'catalog:'
-        version: 6.26.3
-      babel-loader:
-        specifier: 'catalog:'
-        version: 7.1.5(babel-core@6.26.3)(webpack@5.105.2)
-      babel-polyfill:
-        specifier: 'catalog:'
-        version: 6.26.0
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
@@ -2674,21 +2389,12 @@ importers:
       shortid:
         specifier: 'catalog:'
         version: 2.2.17
-      ts-loader:
-        specifier: 'catalog:'
-        version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       turbowalk:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
 
   extensions/mod-highlight:
     devDependencies:
@@ -2722,18 +2428,9 @@ importers:
       redux-thunk:
         specifier: 'catalog:'
         version: 2.4.2(redux@4.2.1)
-      ts-loader:
-        specifier: 'catalog:'
-        version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
 
   extensions/mod-report:
     devDependencies:
@@ -2749,12 +2446,6 @@ importers:
       electron:
         specifier: 'catalog:'
         version: 37.4.0
-      fork-ts-checker-webpack-plugin:
-        specifier: 'catalog:'
-        version: 9.1.0(typescript@5.9.3)(webpack@5.105.2)
-      ts-loader:
-        specifier: 'catalog:'
-        version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       turbowalk:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
@@ -2764,12 +2455,6 @@ importers:
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
 
   extensions/modtype-bepinex:
     dependencies:
@@ -2789,9 +2474,6 @@ importers:
       '@types/semver':
         specifier: 'catalog:'
         version: 7.7.1
-      babel-loader:
-        specifier: 'catalog:'
-        version: 7.1.5(babel-core@6.26.3)(webpack@5.105.2)
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
@@ -2813,21 +2495,12 @@ importers:
       semver:
         specifier: 'catalog:'
         version: 7.7.4
-      ts-loader:
-        specifier: 'catalog:'
-        version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-parse-ini:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
 
   extensions/modtype-dazip:
     devDependencies:
@@ -2837,9 +2510,6 @@ importers:
       '@types/semver':
         specifier: 'catalog:'
         version: 7.7.1
-      babel-loader:
-        specifier: 'catalog:'
-        version: 7.1.5(babel-core@6.26.3)(webpack@5.105.2)
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
@@ -2852,18 +2522,9 @@ importers:
       semver:
         specifier: 'catalog:'
         version: 7.7.4
-      ts-loader:
-        specifier: 'catalog:'
-        version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
 
   extensions/modtype-dinput:
     devDependencies:
@@ -2885,12 +2546,6 @@ importers:
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
 
   extensions/modtype-enb:
     devDependencies:
@@ -2903,9 +2558,6 @@ importers:
       '@types/redux':
         specifier: 'catalog:'
         version: 3.6.0
-      babel-loader:
-        specifier: 'catalog:'
-        version: 7.1.5(babel-core@6.26.3)(webpack@5.105.2)
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
@@ -2918,12 +2570,6 @@ importers:
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
 
   extensions/modtype-gedosato:
     devDependencies:
@@ -2933,9 +2579,6 @@ importers:
       '@types/redux-thunk':
         specifier: 'catalog:'
         version: 2.1.0(redux@4.2.1)
-      babel-loader:
-        specifier: 'catalog:'
-        version: 7.1.5(babel-core@6.26.3)(webpack@5.105.2)
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
@@ -2948,18 +2591,9 @@ importers:
       redux-thunk:
         specifier: 'catalog:'
         version: 2.4.2(redux@4.2.1)
-      ts-loader:
-        specifier: 'catalog:'
-        version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
       winapi-bindings:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
@@ -2979,9 +2613,6 @@ importers:
       '@types/semver':
         specifier: 'catalog:'
         version: 7.7.1
-      babel-loader:
-        specifier: 'catalog:'
-        version: 7.1.5(babel-core@6.26.3)(webpack@5.105.2)
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
@@ -3003,18 +2634,9 @@ importers:
       semver:
         specifier: 'catalog:'
         version: 7.7.4
-      ts-loader:
-        specifier: 'catalog:'
-        version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
       winapi-bindings:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
@@ -3069,9 +2691,6 @@ importers:
       react-i18next:
         specifier: 'catalog:'
         version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
-      ts-loader:
-        specifier: 'catalog:'
-        version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -3081,12 +2700,6 @@ importers:
       vortex-parse-ini:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
 
   extensions/mtframework-arc-support:
     devDependencies:
@@ -3120,12 +2733,6 @@ importers:
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
 
   extensions/new-file-monitor:
     devDependencies:
@@ -3228,18 +2835,9 @@ importers:
       shortid:
         specifier: 'catalog:'
         version: 2.2.17
-      ts-loader:
-        specifier: 'catalog:'
-        version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
       winapi-bindings:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
@@ -3252,9 +2850,6 @@ importers:
       '@types/redux-thunk':
         specifier: 'catalog:'
         version: 2.1.0(redux@4.2.1)
-      babel-loader:
-        specifier: 'catalog:'
-        version: 7.1.5(babel-core@6.26.3)(webpack@5.105.2)
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
@@ -3270,18 +2865,9 @@ importers:
       redux-thunk:
         specifier: 'catalog:'
         version: 2.4.2(redux@4.2.1)
-      ts-loader:
-        specifier: 'catalog:'
-        version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
 
   extensions/quickbms-support:
     devDependencies:
@@ -3297,9 +2883,6 @@ importers:
       '@types/redux':
         specifier: 'catalog:'
         version: 3.6.0
-      babel-loader:
-        specifier: 'catalog:'
-        version: 7.1.5(babel-core@6.26.3)(webpack@5.105.2)
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
@@ -3324,12 +2907,6 @@ importers:
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
 
   extensions/script-extender-error-check:
     devDependencies:
@@ -3427,12 +3004,6 @@ importers:
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
 
   extensions/test-gameversion:
     devDependencies:
@@ -3442,15 +3013,6 @@ importers:
       '@types/redux':
         specifier: 'catalog:'
         version: 3.6.0
-      babel-core:
-        specifier: 'catalog:'
-        version: 6.26.3
-      babel-loader:
-        specifier: 'catalog:'
-        version: 7.1.5(babel-core@6.26.3)(webpack@5.105.2)
-      babel-polyfill:
-        specifier: 'catalog:'
-        version: 6.26.0
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
@@ -3487,21 +3049,12 @@ importers:
       redux-thunk:
         specifier: 'catalog:'
         version: 2.4.2(redux@4.2.1)
-      ts-loader:
-        specifier: 'catalog:'
-        version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-parse-ini:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
 
   extensions/test-setup:
     devDependencies:
@@ -3535,12 +3088,6 @@ importers:
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
       winapi-bindings:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
@@ -3610,18 +3157,9 @@ importers:
       redux-thunk:
         specifier: 'catalog:'
         version: 2.4.2(redux@4.2.1)
-      ts-loader:
-        specifier: 'catalog:'
-        version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      webpack:
-        specifier: 'catalog:'
-        version: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli:
-        specifier: 'catalog:'
-        version: 5.1.4(webpack@5.105.2)
 
   extensions/titlebar-launcher:
     devDependencies:
@@ -3808,6 +3346,9 @@ importers:
       immutability-helper:
         specifier: 'catalog:'
         version: 3.1.1
+      ini:
+        specifier: 'catalog:'
+        version: 6.0.0
       interweave:
         specifier: 'catalog:'
         version: 12.9.0(react@16.14.0)
@@ -5798,6 +5339,9 @@ packages:
   '@oxc-project/types@0.114.0':
     resolution: {integrity: sha512-//nBfbzHQHvJs8oFIjv6coZ6uxQ4alLfiPe6D5vit6c4pmxATHHlVwgB1k+Hv4yoAMyncdxgRBF5K4BYWUCzvA==}
 
+  '@oxc-project/types@0.115.0':
+    resolution: {integrity: sha512-4n91DKnebUS4yjUHl2g3/b2T+IUdCfmoZGhmwsovZCDaJSs+QkVAM+0AqqTxHSsHfeiMuueT75cZaZcT/m0pSw==}
+
   '@parcel/watcher-android-arm64@2.5.6':
     resolution: {integrity: sha512-YQxSS34tPF/6ZG7r/Ih9xy+kP/WwediEUsqmtf0cuCV5TPPKw/PQHRhueUo6JdeFJaqV3pyjm0GdYjZotbRt/A==}
     engines: {node: '>= 10.0.0'}
@@ -5942,8 +5486,20 @@ packages:
     cpu: [arm64]
     os: [android]
 
+  '@rolldown/binding-android-arm64@1.0.0-rc.6':
+    resolution: {integrity: sha512-kvjTSWGcrv+BaR2vge57rsKiYdVR8V8CoS0vgKrc570qRBfty4bT+1X0z3j2TaVV+kAYzA0PjeB9+mdZyqUZlg==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    cpu: [arm64]
+    os: [android]
+
   '@rolldown/binding-darwin-arm64@1.0.0-rc.5':
     resolution: {integrity: sha512-ZP9xb9lPAex36pvkNWCjSEJW/Gfdm9I3ssiqOFLmpZ/vosPXgpoGxCmh+dX1Qs+/bWQE6toNFXWWL8vYoKoK9Q==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@rolldown/binding-darwin-arm64@1.0.0-rc.6':
+    resolution: {integrity: sha512-+tJhD21KvGNtUrpLXrZQlT+j5HZKiEwR2qtcZb3vNOUpvoT9QjEykr75ZW/Kr0W89gose/HVXU6351uVZD8Qvw==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [darwin]
@@ -5954,8 +5510,20 @@ packages:
     cpu: [x64]
     os: [darwin]
 
+  '@rolldown/binding-darwin-x64@1.0.0-rc.6':
+    resolution: {integrity: sha512-DKNhjMk38FAWaHwUt1dFR3rA/qRAvn2NUvSG2UGvxvlMxSmN/qqww/j4ABAbXhNRXtGQNmrAINMXRuwHl16ZHg==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    cpu: [x64]
+    os: [darwin]
+
   '@rolldown/binding-freebsd-x64@1.0.0-rc.5':
     resolution: {integrity: sha512-o/JCk+dL0IN68EBhZ4DqfsfvxPfMeoM6cJtxORC1YYoxGHZyth2Kb2maXDb4oddw2wu8iIbnYXYPEzBtAF5CAg==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    cpu: [x64]
+    os: [freebsd]
+
+  '@rolldown/binding-freebsd-x64@1.0.0-rc.6':
+    resolution: {integrity: sha512-8TThsRkCPAnfyMBShxrGdtoOE6h36QepqRQI97iFaQSCRbHFWHcDHppcojZnzXoruuhPnjMEygzaykvPVJsMRg==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [freebsd]
@@ -5966,8 +5534,21 @@ packages:
     cpu: [arm]
     os: [linux]
 
+  '@rolldown/binding-linux-arm-gnueabihf@1.0.0-rc.6':
+    resolution: {integrity: sha512-ZfmFoOwPUZCWtGOVC9/qbQzfc0249FrRUOzV2XabSMUV60Crp211OWLQN1zmQAsRIVWRcEwhJ46Z1mXGo/L/nQ==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    cpu: [arm]
+    os: [linux]
+
   '@rolldown/binding-linux-arm64-gnu@1.0.0-rc.5':
     resolution: {integrity: sha512-KSol1De1spMZL+Xg7K5IBWXIvRWv7+pveaxFWXpezezAG7CS6ojzRjtCGCiLxQricutTAi/LkNWKMsd2wNhMKQ==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    cpu: [arm64]
+    os: [linux]
+    libc: [glibc]
+
+  '@rolldown/binding-linux-arm64-gnu@1.0.0-rc.6':
+    resolution: {integrity: sha512-ZsGzbNETxPodGlLTYHaCSGVhNN/rvkMDCJYHdT7PZr5jFJRmBfmDi2awhF64Dt2vxrJqY6VeeYSgOzEbHRsb7Q==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [linux]
@@ -5980,8 +5561,22 @@ packages:
     os: [linux]
     libc: [musl]
 
+  '@rolldown/binding-linux-arm64-musl@1.0.0-rc.6':
+    resolution: {integrity: sha512-elPpdevtCdUOqziemR86C4CSCr/5sUxalzDrf/CJdMT+kZt2C556as++qHikNOz0vuFf52h+GJNXZM08eWgGPQ==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    cpu: [arm64]
+    os: [linux]
+    libc: [musl]
+
   '@rolldown/binding-linux-x64-gnu@1.0.0-rc.5':
     resolution: {integrity: sha512-CUlplTujmbDWp2gamvrqVKi2Or8lmngXT1WxsizJfts7JrvfGhZObciaY/+CbdbS9qNnskvwMZNEhTPrn7b+WA==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    cpu: [x64]
+    os: [linux]
+    libc: [glibc]
+
+  '@rolldown/binding-linux-x64-gnu@1.0.0-rc.6':
+    resolution: {integrity: sha512-IBwXsf56o3xhzAyaZxdM1CX8UFiBEUFCjiVUgny67Q8vPIqkjzJj0YKhd3TbBHanuxThgBa59f6Pgutg2OGk5A==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [linux]
@@ -5994,8 +5589,21 @@ packages:
     os: [linux]
     libc: [musl]
 
+  '@rolldown/binding-linux-x64-musl@1.0.0-rc.6':
+    resolution: {integrity: sha512-vOk7G8V9Zm+8a6PL6JTpCea61q491oYlGtO6CvnsbhNLlKdf0bbCPytFzGQhYmCKZDKkEbmnkcIprTEGCURnwg==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    cpu: [x64]
+    os: [linux]
+    libc: [musl]
+
   '@rolldown/binding-openharmony-arm64@1.0.0-rc.5':
     resolution: {integrity: sha512-0CWY7ubu12nhzz+tkpHjoG3IRSTlWYe0wrfJRf4qqjqQSGtAYgoL9kwzdvlhaFdZ5ffVeyYw9qLsChcjUMEloQ==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    cpu: [arm64]
+    os: [openharmony]
+
+  '@rolldown/binding-openharmony-arm64@1.0.0-rc.6':
+    resolution: {integrity: sha512-ASjEDI4MRv7XCQb2JVaBzfEYO98JKCGrAgoW6M03fJzH/ilCnC43Mb3ptB9q/lzsaahoJyIBoAGKAYEjUvpyvQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [openharmony]
@@ -6005,8 +5613,19 @@ packages:
     engines: {node: '>=14.0.0'}
     cpu: [wasm32]
 
+  '@rolldown/binding-wasm32-wasi@1.0.0-rc.6':
+    resolution: {integrity: sha512-mYa1+h2l6Zc0LvmwUh0oXKKYihnw/1WC73vTqw+IgtfEtv47A+rWzzcWwVDkW73+UDr0d/Ie/HRXoaOY22pQDw==}
+    engines: {node: '>=14.0.0'}
+    cpu: [wasm32]
+
   '@rolldown/binding-win32-arm64-msvc@1.0.0-rc.5':
     resolution: {integrity: sha512-jUct1XVeGtyjqJXEAfvdFa8xoigYZ2rge7nYEm70ppQxpfH9ze2fbIrpHmP2tNM2vL/F6Dd0CpXhpjPbC6bSxQ==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    cpu: [arm64]
+    os: [win32]
+
+  '@rolldown/binding-win32-arm64-msvc@1.0.0-rc.6':
+    resolution: {integrity: sha512-e2ABskbNH3MRUBMjgxaMjYIw11DSwjLJxBII3UgpF6WClGLIh8A20kamc+FKH5vIaFVnYQInmcLYSUVpqMPLow==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [win32]
@@ -6017,8 +5636,17 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@rolldown/binding-win32-x64-msvc@1.0.0-rc.6':
+    resolution: {integrity: sha512-dJVc3ifhaRXxIEh1xowLohzFrlQXkJ66LepHm+CmSprTWgVrPa8Fx3OL57xwIqDEH9hufcKkDX2v65rS3NZyRA==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    cpu: [x64]
+    os: [win32]
+
   '@rolldown/pluginutils@1.0.0-rc.5':
     resolution: {integrity: sha512-RxlLX/DPoarZ9PtxVrQgZhPoor987YtKQqCo5zkjX+0S0yLJ7Vv515Wk6+xtTL67VONKJKxETWZwuZjss2idYw==}
+
+  '@rolldown/pluginutils@1.0.0-rc.6':
+    resolution: {integrity: sha512-Y0+JT8Mi1mmW08K6HieG315XNRu4L0rkfCpA364HtytjgiqYnMYRdFPcxRl+BQQqNXzecL2S9nii+RUpO93XIA==}
 
   '@rushstack/node-core-library@5.20.3':
     resolution: {integrity: sha512-95JgEPq2k7tHxhF9/OJnnyHDXfC9cLhhta0An/6MlkDsX2A6dTzDrTUG18vx4vjc280V0fi0xDH9iQczpSuWsw==}
@@ -6612,17 +6240,11 @@ packages:
   '@types/string-template@1.0.7':
     resolution: {integrity: sha512-sQWEsTbB0pKCc1eAC9mwTKftyXuWfSZVfDTskhlQLE/xTtuevqOlFG/t4Djf/VFbRdt7PROaovoqpWfZWhMRfA==}
 
-  '@types/tapable@2.3.0':
-    resolution: {integrity: sha512-oMnbAXeVo+KUnje3hzdORXUbfnzTfqD0H92mLl19NE5hFqH9Q4ktq+xehNSxcNeeLm1COopYwa0zeP6Iz+oIXg==}
-
   '@types/tmp@0.1.0':
     resolution: {integrity: sha512-6IwZ9HzWbCq6XoQWhxLpDjuADodH/MKXRUIDFudvgjcVdjFknvmR+DNsoUeer4XPrEnrZs04Jj+kfV9pFsrhmA==}
 
   '@types/tough-cookie@4.0.5':
     resolution: {integrity: sha512-/Ad8+nIOV7Rl++6f1BdKxFSMgmoqEoYbHRpPcx3JEfv8VRsQe9Z4mCXeJBzxs7mbHY/XOZZuXlRNfhpVPbs6ZA==}
-
-  '@types/uglify-js@3.17.5':
-    resolution: {integrity: sha512-TU+fZFBTBcXj/GpDpDaBmgWk/gn96kMZ+uocaFUlV2f8a6WdMzzI44QBCmGcCiYR0Y6ZlNRiyUyKKt5nl/lbzQ==}
 
   '@types/unist@2.0.11':
     resolution: {integrity: sha512-CmBKiL6NNo/OqgmMn95Fk9Whlp2mtvIv+KNpQKN2F4SjvrEesubTRWGYSg+BnWZOnlCaSTU1sMpsBOzgbYhnsA==}
@@ -6638,9 +6260,6 @@ packages:
 
   '@types/webpack-node-externals@3.0.4':
     resolution: {integrity: sha512-8Z3/edqxE3RRlOJwKSgOFxLZRt/i1qFlv/Bi308ZUKo9jh8oGngd9r8GR0ZNKW5AEJq8QNQE3b17CwghTjQ0Uw==}
-
-  '@types/webpack@2.2.16':
-    resolution: {integrity: sha512-RWL7Qrf9dE2Y3SPR8FZ2ATIJzKzvzvpfAhXs2A+2YpAYufoBqc94766Dv7TLB8zj7P6NK8t4KMrGNnYFJGKGiQ==}
 
   '@types/which@1.3.2':
     resolution: {integrity: sha512-8oDqyLC7eD4HM307boe2QWKyuzdzWBj56xI/imSl2cpL+U3tCMaTAkMJ4ee5JBZ/FsOJlvRGeIShiZDAl1qERA==}
@@ -6991,10 +6610,6 @@ packages:
     resolution: {integrity: sha512-Bq3SmSpyFHaWjPk8If9yc6svM8c56dB5BAtW4Qbw5jHTwwXXcTLoRMkpDJp6VL0XzlWaCHTXrkFURMYmD0sLqg==}
     engines: {node: '>=12'}
 
-  ansi-styles@2.2.1:
-    resolution: {integrity: sha512-kmCevFghRiWM7HB5zTPULl4r9bVFSWjz62MhqizDGUrq2NWuNMQyuv4tHHoKJHs69M/MF64lEcHdYIocrdWQYA==}
-    engines: {node: '>=0.10.0'}
-
   ansi-styles@3.2.1:
     resolution: {integrity: sha512-VT0ZI6kZRdTh8YyJw3SMbYm/u+NqfsAxEpWO0Pf9sq8/e94WxxOpPKx9FR1FlyCtOVDNOQ+8ntlqFxiRc+r5qA==}
     engines: {node: '>=4'}
@@ -7145,18 +6760,6 @@ packages:
     resolution: {tarball: https://codeload.github.com/Nexus-Mods/node-ba2tk/tar.gz/762d8de841ca1c770a0925311fd626d71de67971}
     version: 2.0.9
 
-  babel-code-frame@6.26.0:
-    resolution: {integrity: sha512-XqYMR2dfdGMW+hd0IUZ2PwK+fGeFkOxZJ0wY+JaQAHzt1Zx8LcvpiZD2NiGkEG8qx0CfkAOr5xt76d1e8vG90g==}
-
-  babel-core@6.26.3:
-    resolution: {integrity: sha512-6jyFLuDmeidKmUEb3NM+/yawG0M2bDZ9Z1qbZP59cyHLz8kYGKYwpJP0UwUKKUiTRNvxfLesJnTedqczP7cTDA==}
-
-  babel-generator@6.26.1:
-    resolution: {integrity: sha512-HyfwY6ApZj7BYTcJURpM5tznulaBvyio7/0d4zFOeMPUmfxkCjHocCuoLa2SAGzBI8AREcH3eP3758F672DppA==}
-
-  babel-helpers@6.24.1:
-    resolution: {integrity: sha512-n7pFrqQm44TCYvrCDb0MqabAF+JUBq+ijBvNMUxpkLjJaAu32faIexewMumrH5KLLJ1HDyT0PTEqRyAe/GwwuQ==}
-
   babel-jest@29.7.0:
     resolution: {integrity: sha512-BrvGY3xZSwEcCzKvKsCi2GgHqDqsYkOP4/by5xCgIwGXQxIEh+8ew3gmrE1y7XRR6LHZIj6yLYnUi/mm2KXKBg==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
@@ -7168,16 +6771,6 @@ packages:
     engines: {node: ^18.14.0 || ^20.0.0 || ^22.0.0 || >=24.0.0}
     peerDependencies:
       '@babel/core': ^7.11.0 || ^8.0.0-0
-
-  babel-loader@7.1.5:
-    resolution: {integrity: sha512-iCHfbieL5d1LfOQeeVJEUyD9rTwBcP/fcEbRCfempxTDuqrKpu0AZjLAQHEQa3Yqyj9ORKe2iHfoj4rHLf7xpw==}
-    engines: {node: '>=4'}
-    peerDependencies:
-      babel-core: '6'
-      webpack: 2 || 3 || 4
-
-  babel-messages@6.23.0:
-    resolution: {integrity: sha512-Bl3ZiA+LjqaMtNYopA9TYE9HP1tQ+E5dLxE0XrAzcIJeK2UqF0/EaqXwBn9esd4UmTfEab+P+UYQ1GnioFIb/w==}
 
   babel-plugin-istanbul@6.1.1:
     resolution: {integrity: sha512-Y1IQok9821cC9onCx5otgFfRm7Lm+I+wwxOx738M/WLPZ9Q42m4IG5W0FNX8WLL2gYMZo3JkuXIH2DOpWM+qwA==}
@@ -7214,9 +6807,6 @@ packages:
     peerDependencies:
       '@babel/core': ^7.4.0 || ^8.0.0-0 <8.0.0
 
-  babel-polyfill@6.26.0:
-    resolution: {integrity: sha512-F2rZGQnAdaHWQ8YAoeRbukc7HS9QgdgeyJ0rQDd485v9opwuPvjpPFcOOT/WmkKTdgy9ESgSPXDcTNpzrGr6iQ==}
-
   babel-preset-current-node-syntax@1.2.0:
     resolution: {integrity: sha512-E/VlAEzRrsLEb2+dv8yp3bo4scof3l9nR4lrld+Iy5NyVqgVYUJnDAmunkhPMisRI32Qc4iRiz425d8vM++2fg==}
     peerDependencies:
@@ -7233,25 +6823,6 @@ packages:
     engines: {node: ^18.14.0 || ^20.0.0 || ^22.0.0 || >=24.0.0}
     peerDependencies:
       '@babel/core': ^7.11.0 || ^8.0.0-beta.1
-
-  babel-register@6.26.0:
-    resolution: {integrity: sha512-veliHlHX06wjaeY8xNITbveXSiI+ASFnOqvne/LaIJIqOWi2Ogmj91KOugEz/hoh/fwMhXNBJPCv8Xaz5CyM4A==}
-
-  babel-runtime@6.26.0:
-    resolution: {integrity: sha512-ITKNuq2wKlW1fJg9sSW52eepoYgZBggvOAHC0u/CYu/qxQ9EVzThCgR69BnSXLHjy2f7SY5zaQ4yt7H9ZVxY2g==}
-
-  babel-template@6.26.0:
-    resolution: {integrity: sha512-PCOcLFW7/eazGUKIoqH97sO9A2UYMahsn/yRQ7uOk37iutwjq7ODtcTNF+iFDSHNfkctqsLRjLP7URnOx0T1fg==}
-
-  babel-traverse@6.26.0:
-    resolution: {integrity: sha512-iSxeXx7apsjCHe9c7n8VtRXGzI2Bk1rBSOJgCCjfyXb6v1aCqE1KSEpq/8SXuVN8Ka/Rh1WDTF0MDzkvTA4MIA==}
-
-  babel-types@6.26.0:
-    resolution: {integrity: sha512-zhe3V/26rCWsEZK8kZN+HaQj5yQ1CilTObixFzKW1UWjqG7618Twz6YEsCnjfg5gBcJh02DrpCkS9h98ZqDY+g==}
-
-  babylon@6.18.0:
-    resolution: {integrity: sha512-q/UEjfGJ2Cm3oKV71DJz9d25TPnq5rhBVL2Q4fA5wcC3jcrdn7+SssEybFIxwAvvP+YCsCYNKughoF33GxgycQ==}
-    hasBin: true
 
   bail@1.0.5:
     resolution: {integrity: sha512-xFbRxM1tahm08yHBP16MMjVUAvDaBMD38zsM9EMAUN61omwLmKlOpB/Zku5QkjZ8TZ4vn53pj+t518cH0S03RQ==}
@@ -7444,10 +7015,6 @@ packages:
   caseless@0.12.0:
     resolution: {integrity: sha512-4tYFyifaFfGacoiObjJegolkwSU4xQNGbVgUiNYVUxbQ2x2lUsFvY4hVgVzGiIe6WLOPqycWXA40l+PWsxthUw==}
 
-  chalk@1.1.3:
-    resolution: {integrity: sha512-U3lRVLMSlsCfjqYPbLyVv11M9CPW4I728d6TCKMAOJueEeB9/8o+eSsMnxPJD+Q+K909sdESg7C+tIkoH6on1A==}
-    engines: {node: '>=0.10.0'}
-
   chalk@2.4.2:
     resolution: {integrity: sha512-Mti+f9lpJNcwF4tWV8/OrTTtF1gZi+f8FqlyAdouralcFWFQWF2+NgCHShjkCb+IFBLq9buZwE1xckQU4peSuQ==}
     engines: {node: '>=4'}
@@ -7632,9 +7199,6 @@ packages:
   content-type@1.0.5:
     resolution: {integrity: sha512-nTjqfcBFEipKdXCv4YDQWCfmcLZKm81ldF0pAopTvyrFGVbcR6P/VAAd5G7N+0tTr8QqiU0tFadD6FK4NtJwOA==}
     engines: {node: '>= 0.6'}
-
-  convert-source-map@1.9.0:
-    resolution: {integrity: sha512-ASFBup0Mz1uyiIjANan1jzLQami9z1PoYSZCiiYW2FczPbenXc45FZdBZLzOT+r6+iciuEModtmCti+hjaAk0A==}
 
   convert-source-map@2.0.0:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
@@ -7984,10 +7548,6 @@ packages:
     resolution: {integrity: sha512-2sJGJTaXIIaR1w4iJSNoN0hnMY7Gpc/n8D4qSCJw8QqFWXf7cuAgnEHxBpweaVcPevC2l3KpjYCx3NypQQgaJg==}
     engines: {node: '>= 0.8', npm: 1.2.8000 || >= 1.4.16}
 
-  detect-indent@4.0.0:
-    resolution: {integrity: sha512-BDKtmHlOzwI7iRuEkhzsnPoi5ypEhWAJB5RvHWe1kMr06js3uK5B3734i3ui5Yd+wOJV1cpE4JnivPD283GU/A==}
-    engines: {node: '>=0.10.0'}
-
   detect-libc@2.1.2:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
     engines: {node: '>=8'}
@@ -8158,10 +7718,6 @@ packages:
 
   emoji-regex@9.2.2:
     resolution: {integrity: sha512-L18DaJsXSUk2+42pv8mLs5jJT2hqFkFE4j21wOmgbUqsZ2hL72NsUU785g9RXgo3s0ZNgVl42TiHp3ZtOv/Vyg==}
-
-  emojis-list@3.0.0:
-    resolution: {integrity: sha512-/kyM18EfinwXZbno9FyUGeFh87KC8HRQBQGildHZbEuRyWFOmv1U10o9BBp8XVZDVNNuQKyIGIu5ZYAAXJ0V2Q==}
-    engines: {node: '>= 4'}
 
   empathic@2.0.0:
     resolution: {integrity: sha512-i6UzDscO/XfAcNYD75CfICkmfLedpyPDdozrLMmQc5ORaQcdMoc21OnlEylMIqI7U8eniKrPMxxtj8k0vhmJhA==}
@@ -8560,17 +8116,9 @@ packages:
     resolution: {integrity: sha512-aA4RyPcd3badbdABGDuTXCMTtOneUCAYH/gxoYRTZlIJdF0YPWuGqiAsIrhNnnqdXGswYk6dGujem4w80UJFhg==}
     engines: {node: '>= 0.8'}
 
-  find-cache-dir@1.0.0:
-    resolution: {integrity: sha512-46TFiBOzX7xq/PcSWfFwkyjpemdRnMe31UQF+os0y+1W3k95f6R4SEt02Hj4p3X0Mir9gfrkmOtshFidS0VPUg==}
-    engines: {node: '>=4'}
-
   find-cache-dir@2.1.0:
     resolution: {integrity: sha512-Tq6PixE0w/VMFfCgbONnkiQIVol/JJL7nRMi20fqzA4NRs9AfeqMGeRdPi3wIhYkxjeBaWh2rxwapn5Tu3IqOQ==}
     engines: {node: '>=6'}
-
-  find-up@2.1.0:
-    resolution: {integrity: sha512-NWzkk0jSJtTt08+FBFMvXoeZnOJD+jTtsRmBYbAIzJdX6l7dLgR7CTubCM5/eDdPUBvLCeVasP1brfVR/9/EZQ==}
-    engines: {node: '>=4'}
 
   find-up@3.0.0:
     resolution: {integrity: sha512-1yD6RmLI1XBfxugvORwlck6f75tYL+iR0jqwsOrOxMZyGYqUuDhJ0l4AXdO1iX/FTs9cBAMEk1gWSEx1kSbylg==}
@@ -8814,10 +8362,6 @@ packages:
     resolution: {integrity: sha512-yMqGUQVVCkD4tqjOJf3TnrvaaHDMYp4VlUSObbkIiuCPe/ofdMBFIAcBbCSRFWOnos6qRiTVStDwqPLUclaxIw==}
     engines: {node: '>=18'}
 
-  globals@9.18.0:
-    resolution: {integrity: sha512-S0nG3CLEQiY/ILxqtztTWH/3iRRdyBLw6KMDxnKMchrtbj2OFmehVh0WUCfW3DUrIgx/qFrJPICrq4Z4sTR9UQ==}
-    engines: {node: '>=0.10.0'}
-
   globalthis@1.0.4:
     resolution: {integrity: sha512-DpLKbNU4WylpxJykQujfCcwYWiV/Jhm50Goo0wrVILAv5jOr9d+H+UR3PhSCD2rCCEIg0uc+G+muBTwD54JhDQ==}
     engines: {node: '>= 0.4'}
@@ -8863,10 +8407,6 @@ packages:
     resolution: {integrity: sha512-nmT2T0lljbxdQZfspsno9hgrG3Uir6Ks5afism62poxqBM6sDnMEuPmzTq8XN0OEwqKLLdh1jQI3qyE66Nzb3w==}
     engines: {node: '>=6'}
     deprecated: this library is no longer supported
-
-  has-ansi@2.0.0:
-    resolution: {integrity: sha512-C8vBJ8DwUCx19vhm7urhTuUsr4/IyP6l4VzNQDv+ryHQObW3TTTp9yB68WpYgRe2bbaGuZ/se74IqFeVnMnLZg==}
-    engines: {node: '>=0.10.0'}
 
   has-bigints@1.1.0:
     resolution: {integrity: sha512-R3pbpkcIqv2Pm3dUwgjclDRVmWpTJW2DcMzcIhEXEx1oh/CEMObMm3KLmRJOdvhM7o4uQBnwr8pzRK2sJWIqfg==}
@@ -8917,10 +8457,6 @@ packages:
 
   hoist-non-react-statics@3.3.2:
     resolution: {integrity: sha512-/gGivxi8JPKWNm/W0jSmzcMPpfpPLc3dY/6GxhX2hQ9iGj3aDfklV4ET7NjKpSinLpJ5vafa9iiGIEZg10SfBw==}
-
-  home-or-tmp@2.0.0:
-    resolution: {integrity: sha512-ycURW7oUxE2sNiPVw1HVEFsW+ecOpJ5zaj7eC0RlwhibhRBod20muUN8qu/gzx956YrLolVvs1MTXwKgC2rVEg==}
-    engines: {node: '>=0.10.0'}
 
   hookable@6.0.1:
     resolution: {integrity: sha512-uKGyY8BuzN/a5gvzvA+3FVWo0+wUjgtfSdnmjtrOVwQCZPHpHDH2WRO3VZSOeluYrHoDCiXFffZXs8Dj1ULWtw==}
@@ -9068,6 +8604,10 @@ packages:
   ini@1.3.8:
     resolution: {integrity: sha512-JV/yugV2uzW5iMRSiZAyDtQd+nxtUnjeLt0acNdw98kKLrvuRVyB80tsREOE7yvGVgalhZ6RNXCmEHkUKBKxew==}
 
+  ini@6.0.0:
+    resolution: {integrity: sha512-IBTdIkzZNOpqm7q3dRqJvMaldXjDHWkEDfrwGEQTs5eaQMWV+djAhR+wahyNNMAa+qpbDUhBMVt4ZKNwpPm7xQ==}
+    engines: {node: ^20.17.0 || >=22.9.0}
+
   inline-style-parser@0.1.1:
     resolution: {integrity: sha512-7NXolsK4CAS5+xvdj5OMMbI962hU/wvwoxk+LWR9Ek9bVtyuuYScDN6eS0rUm6TxApFpw7CX1o4uJzcd4AyD3Q==}
 
@@ -9162,10 +8702,6 @@ packages:
   is-finalizationregistry@1.1.1:
     resolution: {integrity: sha512-1pC6N8qWJbWoPtEjgcL2xyhQOP491EQjeUo3qTKcmV8YSDDJrOepfG8pcC7h/QgnQHYSv0mJ3Z/ZWxmatVrysg==}
     engines: {node: '>= 0.4'}
-
-  is-finite@1.1.0:
-    resolution: {integrity: sha512-cdyMtqX/BOqqNBBiKlIVkytNHm49MtMlYyn1zxzvJKWmFMlGzm+ry5BBfYyeY9YmNKbRSo/o7OX9w9ale0wg3w==}
-    engines: {node: '>=0.10.0'}
 
   is-fullwidth-code-point@1.0.0:
     resolution: {integrity: sha512-1pqUqRjkhPJ9miNq9SwMfdvi6lBJcd6eFxvfaivQhaH3SgisfiuudvFntdKOmxuee/77l+FPjKrQjWvmPjWrRw==}
@@ -9512,9 +9048,6 @@ packages:
   jju@1.4.0:
     resolution: {integrity: sha512-8wb9Yw966OSxApiCt0K3yNJL8pnNeIv+OEq2YMidz4FKP6nonSRoOXc80iXY4JaN2FC11B9qsNmDsm+ZOfMROA==}
 
-  js-tokens@3.0.2:
-    resolution: {integrity: sha512-RjTcuD4xjtthQkaWH7dFlH85L+QaVtSoOyGdZ3g6HFhS9dFNDfLyqgm2NFe2X6cQpeFmt0452FJjFG5UameExg==}
-
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
 
@@ -9537,10 +9070,6 @@ packages:
     peerDependenciesMeta:
       canvas:
         optional: true
-
-  jsesc@1.3.0:
-    resolution: {integrity: sha512-Mke0DA0QjUWuJlhsE0ZPPhYiJkRap642SmI/4ztCFaUs6V2AiH1sfecc+57NgaryfAA2VR3v6O+CSjC1jZJKOA==}
-    hasBin: true
 
   jsesc@3.1.0:
     resolution: {integrity: sha512-/sM3dO2FOzXjKQhJuo0Q173wf2KOo8t4I8vHy6lF9poUp7bKT0/NHE8fPX23PwfhnykfqnC2xRxOnVw5XuGIaA==}
@@ -9578,14 +9107,6 @@ packages:
 
   json-stringify-safe@5.0.1:
     resolution: {integrity: sha512-ZClg6AaYvamvYEE82d3Iyd3vSSIjQ+odgjaTzRuO3s7toCdFKczob2i0zCh7JE8kWn17yvAWhUVxvqGwUalsRA==}
-
-  json5@0.5.1:
-    resolution: {integrity: sha512-4xrs1aW+6N5DalkqSVA8fxh458CXvR99WU8WLKmq4v8eWAL86Xo3BVqyd3SkA9wEVjCMqyvvRRkshAdOnBp5rw==}
-    hasBin: true
-
-  json5@1.0.2:
-    resolution: {integrity: sha512-g1MWMLBiz8FKi1e4w0UyVL3w+iJceWAFBAaBnnGKOpNa5f8TLktkbre1+s6oICydWAm+HRUGTmI+//xv2hvXYA==}
-    hasBin: true
 
   json5@2.2.3:
     resolution: {integrity: sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg==}
@@ -9767,14 +9288,6 @@ packages:
     resolution: {integrity: sha512-IWqP2SCPhyVFTBtRcgMHdzlf9ul25NwaFx4wCEH/KjAXuuHY4yNjvPXsBokp8jCB936PyWRaPKUNh8NvylLp2Q==}
     engines: {node: '>=6.11.5'}
 
-  loader-utils@1.4.2:
-    resolution: {integrity: sha512-I5d00Pd/jwMD2QCduo657+YM/6L3KZu++pmX9VFncxaxvHcru9jx1lBaFft+r4Mt2jK0Yhp41XlRAihzPxHNCg==}
-    engines: {node: '>=4.0.0'}
-
-  locate-path@2.0.0:
-    resolution: {integrity: sha512-NCI2kiDkyR7VeEKm27Kda/iQHyKJe1Bu0FlTbYp3CqJu+9IFe9bLyAjMxf5ZDDbEg+iMPzB5zYyUTSm8wVTKmA==}
-    engines: {node: '>=4'}
-
   locate-path@3.0.0:
     resolution: {integrity: sha512-7AO748wWnIhNqAuaty2ZWHkQHRSNfPVIsPIfwEOWO22AmaoVrWavlOcMR5nzTLNYvp36X220/maaRsrec1G65A==}
     engines: {node: '>=6'}
@@ -9899,10 +9412,6 @@ packages:
 
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
-
-  make-dir@1.3.0:
-    resolution: {integrity: sha512-2w31R7SJtieJJnQtGc7RVL2StM2vGYVfqUOvUDxH6bC6aJTxPxTF0GnIgCyu7tjockiUWAYQRbxa7vKn34s5sQ==}
-    engines: {node: '>=4'}
 
   make-dir@2.1.0:
     resolution: {integrity: sha512-LS9X+dc8KLxXCb8dni79fLIIUA5VyZoyjSMCwTluaXA0o27cCK0bhXkpgw+sTXVpPy/lSO57ilRixqk0vDmtRA==}
@@ -10338,10 +9847,6 @@ packages:
     resolution: {integrity: sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g==}
     engines: {node: '>= 0.8.0'}
 
-  os-homedir@1.0.2:
-    resolution: {integrity: sha512-B5JU3cabzk8c67mRRd3ECmROafjYMXbuzlwtqdM8IbS8ktlTix8aFGb2bAGKrSRIlnfKwovGUUr72JUPyOb6kQ==}
-    engines: {node: '>=0.10.0'}
-
   os-tmpdir@1.0.2:
     resolution: {integrity: sha512-D2FR03Vir7FIu45XBY20mTb+/ZSWB00sjU9jdQXt83gDrI4Ztz5Fs7/yy74g2N5SVQY4xY1qDr4rNddwYRVX0g==}
     engines: {node: '>=0.10.0'}
@@ -10361,10 +9866,6 @@ packages:
     resolution: {integrity: sha512-LICb2p9CB7FS+0eR1oqWnHhp0FljGLZCWBE9aix0Uye9W8LTQPwMTYVGWQWIw9RdQiDg4+epXQODwIYJtSJaow==}
     engines: {node: '>=4'}
 
-  p-limit@1.3.0:
-    resolution: {integrity: sha512-vvcXsLAJ9Dr5rQOPk7toZQZJApBl2K4J6dANSsEuh6QI41JYcsS/qhTGa9ErIUUgK3WNQoJYvylxvjqmiqEA9Q==}
-    engines: {node: '>=4'}
-
   p-limit@2.3.0:
     resolution: {integrity: sha512-//88mFWSJx8lxCzwdAABTJL2MyWB12+eIY7MDL2SqLmAkeKU9qxRvWuSyTjm3FUmpBEMuFfckAIqEaVGUDxb6w==}
     engines: {node: '>=6'}
@@ -10376,10 +9877,6 @@ packages:
   p-limit@7.3.0:
     resolution: {integrity: sha512-7cIXg/Z0M5WZRblrsOla88S4wAK+zOQQWeBYfV3qJuJXMr+LnbYjaadrFaS0JILfEDPVqHyKnZ1Z/1d6J9VVUw==}
     engines: {node: '>=20'}
-
-  p-locate@2.0.0:
-    resolution: {integrity: sha512-nQja7m7gSKuewoVRen45CtVfODR3crN3goVQ0DDZ9N3yHxgpkuBhZqsaiotSQRrADUrne346peY7kT3TSACykg==}
-    engines: {node: '>=4'}
 
   p-locate@3.0.0:
     resolution: {integrity: sha512-x+12w/To+4GFfgJhBEpiDcLozRJGegY+Ei7/z0tSLkMmxGZNybVMSfWj9aJn8Z5Fc7dBUNJOOVgPv2H7IwulSQ==}
@@ -10396,10 +9893,6 @@ packages:
   p-map@4.0.0:
     resolution: {integrity: sha512-/bjOqmgETBYB5BoEeGVea8dmvHb2m9GLy1E9W43yeyfP6QQCZGFNa+XRceJEuDB6zqr+gKpIAmlLebMpykw/MQ==}
     engines: {node: '>=10'}
-
-  p-try@1.0.0:
-    resolution: {integrity: sha512-U1etNYuMJoIz3ZXSrrySFjsXQTWOx2/jdi86L+2pRvph/qMKL6sbcCYdH23fqsbm8TH2Gn0OybpT4eSFlCVHww==}
-    engines: {node: '>=4'}
 
   p-try@2.2.0:
     resolution: {integrity: sha512-R4nPAVTAU0B9D35/Gk3uJf/7XYbQcyohSKdvAxIRSNghFl4e71hVoGnBNQz9cWaXxO2I10KTC+3jMdvvoKw6dQ==}
@@ -10500,10 +9993,6 @@ packages:
     resolution: {integrity: sha512-5gTmgEY/sqK6gFXLIsQNH19lWb4ebPDLA4SdLP7dsWkIXHWlG66oPuVvXSGFPppYZz8ZDZq0dYYrbHfBCVUb1Q==}
     engines: {node: '>=12'}
 
-  pify@3.0.0:
-    resolution: {integrity: sha512-C3FsVNH1udSEX48gGX1xfvwTWfsYWj5U+8/uK15BGzIGrKoUpghX8hWZwa/OFnakBiiVNmBvemTJR5mcy7iPcg==}
-    engines: {node: '>=4'}
-
   pify@4.0.1:
     resolution: {integrity: sha512-uB80kBFb/tfd68bVleG9T5GGsGPjJrLAUpR5PZIrhBnIaRTQRjqdJSsIKkOP6OAIFbj7GOrcudc5pNjZ+geV2g==}
     engines: {node: '>=6'}
@@ -10511,10 +10000,6 @@ packages:
   pirates@4.0.7:
     resolution: {integrity: sha512-TfySrs/5nm8fQJDcBDuUng3VOUKsd7S+zqvbOTiGXHfxX4wK31ard+hoNuvkicM/2YFzlpDgABOevKSsB4G/FA==}
     engines: {node: '>= 6'}
-
-  pkg-dir@2.0.0:
-    resolution: {integrity: sha512-ojakdnUgL5pzJYWw2AIDEupaQCX5OPbM688ZevubICjdIX01PRSYKqm33fJoCOJBRseYCTUlQRnBNX+Pchaejw==}
-    engines: {node: '>=4'}
 
   pkg-dir@3.0.0:
     resolution: {integrity: sha512-/E57AYkoeQ25qkxMj5PBOVgF8Kiu/h7cYS30Z5+R7WaiCCBfLq58ZI/dSeaEKb9WVJV5n/03QwrN3IeWIFllvw==}
@@ -10571,10 +10056,6 @@ packages:
     hasBin: true
     peerDependencies:
       prettier: ^3.0.0
-
-  private@0.1.8:
-    resolution: {integrity: sha512-VvivMrbvd2nKkiG38qjULzlc+4Vx4wm/whI9pQD35YrARNnhxeiRktSOhSukRLFNlzg6Br/cJPet5J/u19r/mg==}
-    engines: {node: '>= 0.6'}
 
   proc-log@4.2.0:
     resolution: {integrity: sha512-g8+OnU/L2v+wyiVK+D5fA34J7EH8jZ8DDlvwhRCMxmMj7UCBvxiO1mGeN+36JXIKF4zevU4kRBd8lVgG9vLelA==}
@@ -11034,12 +10515,6 @@ packages:
   regenerate@1.4.2:
     resolution: {integrity: sha512-zrceR/XhGYU/d/opr2EKO7aRHUeiBI8qjtfHqADTwZd6Szfy16la6kqD0MIUs5z5hx6AaKa+PixpPrR289+I0A==}
 
-  regenerator-runtime@0.10.5:
-    resolution: {integrity: sha512-02YopEIhAgiBHWeoTiA8aitHDt8z6w+rQqNuIftlM+ZtvSl/brTouaU7DW6GO/cHtvxJvS4Hwv2ibKdxIRi24w==}
-
-  regenerator-runtime@0.11.1:
-    resolution: {integrity: sha512-MguG95oij0fC3QV3URf4V2SDYGJhJnJGqvIIgdECeODCT98wSWDAJ94SSuVpYQUoTcGUIL6L4yNB7j1DFFHSBg==}
-
   regenerator-runtime@0.13.11:
     resolution: {integrity: sha512-kY1AZVr2Ra+t+piVaJ4gxaFaReZVH40AKNo7UCX6W+dEwBo/2oZJzqfuN1qLq1oL45o56cPaTXELwrTh8Fpggg==}
 
@@ -11068,10 +10543,6 @@ packages:
 
   remark-rehype@8.1.0:
     resolution: {integrity: sha512-EbCu9kHgAxKmW1yEYjx3QafMyGY3q8noUbNUI5xyKbaFP89wbhDrKxyIQNukNYthzjNHZu6J7hwFg7hRm1svYA==}
-
-  repeating@2.0.1:
-    resolution: {integrity: sha512-ZqtSMuVybkISo2OWvqvm7iHSWngvdaW3IpsT9/uP8v4gMi591LY6h35wdOfvQdWCKFWZWm2Y1Opp4kV7vQKT6A==}
-    engines: {node: '>=0.10.0'}
 
   request@2.88.2:
     resolution: {integrity: sha512-MsvtOrfG9ZcrOwAW+Qi+F6HbD0CWXEh9ou77uOb7FM2WPhwT7smM833PzanhJLsgXjN89Ir6V2PczXNnMpwKhw==}
@@ -11180,6 +10651,11 @@ packages:
 
   rolldown@1.0.0-rc.5:
     resolution: {integrity: sha512-0AdalTs6hNTioaCYIkAa7+xsmHBfU5hCNclZnM/lp7lGGDuUOb6N4BVNtwiomybbencDjq/waKjTImqiGCs5sw==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    hasBin: true
+
+  rolldown@1.0.0-rc.6:
+    resolution: {integrity: sha512-B8vFPV1ADyegoYfhg+E7RAucYKv0xdVlwYYsIJgfPNeiSxZGWNxts9RqhyGzC11ULK/VaeXyKezGCwpMiH8Ktw==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
 
@@ -11366,10 +10842,6 @@ packages:
   sisteransi@1.0.5:
     resolution: {integrity: sha512-bLGGlR1QxBcynn2d5YmDX4MGjlZvy2MRBDRNHLJ8VI6l6+9FUiyTFNJ0IveOSP0bcXgVDPRcfGqA0pjaqUpfVg==}
 
-  slash@1.0.0:
-    resolution: {integrity: sha512-3TYDR7xWt4dIqV2JauJr+EJeW356RXijHeUlO+8djJ+uBXPn8/2dpzBc8yQhh583sVvc9CvFAeQVgijsH+PNNg==}
-    engines: {node: '>=0.10.0'}
-
   slash@3.0.0:
     resolution: {integrity: sha512-g9Q1haeby36OSStwb4ntCGGGaKsaVSjQ68fBxoQcutl5fS1vuY18H3wSt3jFyFtrkx+Kz0V1G85A4MyAdDMi2Q==}
     engines: {node: '>=8'}
@@ -11406,18 +10878,11 @@ packages:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
     engines: {node: '>=0.10.0'}
 
-  source-map-support@0.4.18:
-    resolution: {integrity: sha512-try0/JqxPLF9nOjvSta7tVondkP5dwgyLDjVoyMDlmjugT2lRZ1OfsrYTkCd2hkDnJTKRbO/Rl3orm8vlsUzbA==}
-
   source-map-support@0.5.13:
     resolution: {integrity: sha512-SHSKFHadjVA5oR4PPqhtAVdcBWwRYVd6g6cAXnIbRiIwc2EhPrTuKUBdSLvlEKyIP3GCf89fltvcZiP9MMFA1w==}
 
   source-map-support@0.5.21:
     resolution: {integrity: sha512-uBHU3L3czsIyYXKX88fdrGovxdSCoTGDRZ6SYXtSRxLZUzHg5P/66Ht6uoUlHu9EZod+inXhKo3qQgwXUT/y1w==}
-
-  source-map@0.5.7:
-    resolution: {integrity: sha512-LbrmJOMUSdEVxIKvdcJzQC+nQhe8FUZQTXQy6+I75skNgn3OoQ0DZA8YnFa7gp8tqtL3KPf1kmo0R5DoApeSGQ==}
-    engines: {node: '>=0.10.0'}
 
   source-map@0.6.1:
     resolution: {integrity: sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==}
@@ -11564,10 +11029,6 @@ packages:
     resolution: {integrity: sha512-MvjXzkz/BOfyVDkG0oFOtBxHX2u3gKbMHIF/dXblZsgD3BWOFLmHovIpZY7BykJdAjcqRCBi1WYBNdEC9yI7vg==}
     engines: {node: '>= 8.0'}
 
-  supports-color@2.0.0:
-    resolution: {integrity: sha512-KKNVtd6pCYgPIKU4cp2733HWYCpplQhddZLBUryaAHou723x+FRzQ5Df824Fj+IyyuiQTRoub4SnIFfIcrp70g==}
-    engines: {node: '>=0.8.0'}
-
   supports-color@5.5.0:
     resolution: {integrity: sha512-QjVjwdXIt408MIiAqCX4oUKsgU2EqAGzs2Ppkm4aQYbjm+ZEWEcW4SfFNTr4uMNZma0ey4f5lgLrkB0aX0QMow==}
     engines: {node: '>=4'}
@@ -11681,10 +11142,6 @@ packages:
   tmpl@1.0.5:
     resolution: {integrity: sha512-3f0uOEAQwIqGuWW2MVzYg8fV/QNnc/IpuJNG837rLuczAaLVHslWHZQj4IGiEl5Hs3kkbhwL9Ab7Hrsmuj+Smw==}
 
-  to-fast-properties@1.0.3:
-    resolution: {integrity: sha512-lxrWP8ejsq+7E3nNjwYmUBMAgjMTZoTI+sdBOpvNyijeDLa29LUn9QaoXAHv4+Z578hbmHHJKZknzxVtvo77og==}
-    engines: {node: '>=0.10.0'}
-
   to-regex-range@5.0.1:
     resolution: {integrity: sha512-65P7iz6X5yEr1cwcgvQxbbIw7Uk3gOy5dIdtZ4rDveLqhrdJP+Li/Hx6tyK0NEb+2GCyneCMJiGqrADCSNk8sQ==}
     engines: {node: '>=8.0'}
@@ -11711,10 +11168,6 @@ packages:
   tree-kill@1.2.2:
     resolution: {integrity: sha512-L0Orpi8qGpRG//Nd+H90vFB+3iHnue1zSSGmNOOCh1GLJ7rUKVwV2HvijphGQS2UmhUZewS9VgvxYIdgr+fG1A==}
     hasBin: true
-
-  trim-right@1.0.1:
-    resolution: {integrity: sha512-WZGXGstmCWgeevgTL54hrCuw1dyMQIzWy7ZfqRJfSmJZBwklI15egmQytFP6bPidmw3M8d5yEowl1niq4vmqZw==}
-    engines: {node: '>=0.10.0'}
 
   trough@1.0.5:
     resolution: {integrity: sha512-rvuRbTarPXmMb79SmzEp8aqXNKcK+y0XaB298IXueQ8I2PsrATcPBCSPyK/dDNa2iWOhKlfNnOjdAOTBU/nkFA==}
@@ -13925,6 +13378,8 @@ snapshots:
 
   '@oxc-project/types@0.114.0': {}
 
+  '@oxc-project/types@0.115.0': {}
+
   '@parcel/watcher-android-arm64@2.5.6':
     optional: true
 
@@ -14026,31 +13481,61 @@ snapshots:
   '@rolldown/binding-android-arm64@1.0.0-rc.5':
     optional: true
 
+  '@rolldown/binding-android-arm64@1.0.0-rc.6':
+    optional: true
+
   '@rolldown/binding-darwin-arm64@1.0.0-rc.5':
+    optional: true
+
+  '@rolldown/binding-darwin-arm64@1.0.0-rc.6':
     optional: true
 
   '@rolldown/binding-darwin-x64@1.0.0-rc.5':
     optional: true
 
+  '@rolldown/binding-darwin-x64@1.0.0-rc.6':
+    optional: true
+
   '@rolldown/binding-freebsd-x64@1.0.0-rc.5':
+    optional: true
+
+  '@rolldown/binding-freebsd-x64@1.0.0-rc.6':
     optional: true
 
   '@rolldown/binding-linux-arm-gnueabihf@1.0.0-rc.5':
     optional: true
 
+  '@rolldown/binding-linux-arm-gnueabihf@1.0.0-rc.6':
+    optional: true
+
   '@rolldown/binding-linux-arm64-gnu@1.0.0-rc.5':
+    optional: true
+
+  '@rolldown/binding-linux-arm64-gnu@1.0.0-rc.6':
     optional: true
 
   '@rolldown/binding-linux-arm64-musl@1.0.0-rc.5':
     optional: true
 
+  '@rolldown/binding-linux-arm64-musl@1.0.0-rc.6':
+    optional: true
+
   '@rolldown/binding-linux-x64-gnu@1.0.0-rc.5':
+    optional: true
+
+  '@rolldown/binding-linux-x64-gnu@1.0.0-rc.6':
     optional: true
 
   '@rolldown/binding-linux-x64-musl@1.0.0-rc.5':
     optional: true
 
+  '@rolldown/binding-linux-x64-musl@1.0.0-rc.6':
+    optional: true
+
   '@rolldown/binding-openharmony-arm64@1.0.0-rc.5':
+    optional: true
+
+  '@rolldown/binding-openharmony-arm64@1.0.0-rc.6':
     optional: true
 
   '@rolldown/binding-wasm32-wasi@1.0.0-rc.5':
@@ -14058,13 +13543,26 @@ snapshots:
       '@napi-rs/wasm-runtime': 1.1.1
     optional: true
 
+  '@rolldown/binding-wasm32-wasi@1.0.0-rc.6':
+    dependencies:
+      '@napi-rs/wasm-runtime': 1.1.1
+    optional: true
+
   '@rolldown/binding-win32-arm64-msvc@1.0.0-rc.5':
+    optional: true
+
+  '@rolldown/binding-win32-arm64-msvc@1.0.0-rc.6':
     optional: true
 
   '@rolldown/binding-win32-x64-msvc@1.0.0-rc.5':
     optional: true
 
+  '@rolldown/binding-win32-x64-msvc@1.0.0-rc.6':
+    optional: true
+
   '@rolldown/pluginutils@1.0.0-rc.5': {}
+
+  '@rolldown/pluginutils@1.0.0-rc.6': {}
 
   '@rushstack/node-core-library@5.20.3(@types/node@22.19.11)':
     dependencies:
@@ -14734,17 +14232,9 @@ snapshots:
 
   '@types/string-template@1.0.7': {}
 
-  '@types/tapable@2.3.0':
-    dependencies:
-      tapable: 2.3.0
-
   '@types/tmp@0.1.0': {}
 
   '@types/tough-cookie@4.0.5': {}
-
-  '@types/uglify-js@3.17.5':
-    dependencies:
-      source-map: 0.6.1
 
   '@types/unist@2.0.11': {}
 
@@ -14764,12 +14254,6 @@ snapshots:
       - esbuild
       - uglify-js
       - webpack-cli
-
-  '@types/webpack@2.2.16':
-    dependencies:
-      '@types/node': 22.19.11
-      '@types/tapable': 2.3.0
-      '@types/uglify-js': 3.17.5
 
   '@types/which@1.3.2': {}
 
@@ -15186,8 +14670,6 @@ snapshots:
 
   ansi-regex@6.2.2: {}
 
-  ansi-styles@2.2.1: {}
-
   ansi-styles@3.2.1:
     dependencies:
       color-convert: 1.9.3
@@ -15397,54 +14879,6 @@ snapshots:
       - bluebird
       - supports-color
 
-  babel-code-frame@6.26.0:
-    dependencies:
-      chalk: 1.1.3
-      esutils: 2.0.3
-      js-tokens: 3.0.2
-
-  babel-core@6.26.3:
-    dependencies:
-      babel-code-frame: 6.26.0
-      babel-generator: 6.26.1
-      babel-helpers: 6.24.1
-      babel-messages: 6.23.0
-      babel-register: 6.26.0
-      babel-runtime: 6.26.0
-      babel-template: 6.26.0
-      babel-traverse: 6.26.0
-      babel-types: 6.26.0
-      babylon: 6.18.0
-      convert-source-map: 1.9.0
-      debug: 2.6.9
-      json5: 0.5.1
-      lodash: 4.17.23
-      minimatch: 3.1.3
-      path-is-absolute: 1.0.1
-      private: 0.1.8
-      slash: 1.0.0
-      source-map: 0.5.7
-    transitivePeerDependencies:
-      - supports-color
-
-  babel-generator@6.26.1:
-    dependencies:
-      babel-messages: 6.23.0
-      babel-runtime: 6.26.0
-      babel-types: 6.26.0
-      detect-indent: 4.0.0
-      jsesc: 1.3.0
-      lodash: 4.17.23
-      source-map: 0.5.7
-      trim-right: 1.0.1
-
-  babel-helpers@6.24.1:
-    dependencies:
-      babel-runtime: 6.26.0
-      babel-template: 6.26.0
-    transitivePeerDependencies:
-      - supports-color
-
   babel-jest@29.7.0(@babel/core@7.29.0):
     dependencies:
       '@babel/core': 7.29.0
@@ -15471,18 +14905,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
     optional: true
-
-  babel-loader@7.1.5(babel-core@6.26.3)(webpack@5.105.2):
-    dependencies:
-      babel-core: 6.26.3
-      find-cache-dir: 1.0.0
-      loader-utils: 1.4.2
-      mkdirp: 0.5.6
-      webpack: 5.105.2(webpack-cli@5.1.4)
-
-  babel-messages@6.23.0:
-    dependencies:
-      babel-runtime: 6.26.0
 
   babel-plugin-istanbul@6.1.1:
     dependencies:
@@ -15548,12 +14970,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  babel-polyfill@6.26.0:
-    dependencies:
-      babel-runtime: 6.26.0
-      core-js: 2.6.12
-      regenerator-runtime: 0.10.5
-
   babel-preset-current-node-syntax@1.2.0(@babel/core@7.29.0):
     dependencies:
       '@babel/core': 7.29.0
@@ -15585,56 +15001,6 @@ snapshots:
       babel-plugin-jest-hoist: 30.2.0
       babel-preset-current-node-syntax: 1.2.0(@babel/core@7.29.0)
     optional: true
-
-  babel-register@6.26.0:
-    dependencies:
-      babel-core: 6.26.3
-      babel-runtime: 6.26.0
-      core-js: 2.6.12
-      home-or-tmp: 2.0.0
-      lodash: 4.17.23
-      mkdirp: 0.5.6
-      source-map-support: 0.4.18
-    transitivePeerDependencies:
-      - supports-color
-
-  babel-runtime@6.26.0:
-    dependencies:
-      core-js: 2.6.12
-      regenerator-runtime: 0.11.1
-
-  babel-template@6.26.0:
-    dependencies:
-      babel-runtime: 6.26.0
-      babel-traverse: 6.26.0
-      babel-types: 6.26.0
-      babylon: 6.18.0
-      lodash: 4.17.23
-    transitivePeerDependencies:
-      - supports-color
-
-  babel-traverse@6.26.0:
-    dependencies:
-      babel-code-frame: 6.26.0
-      babel-messages: 6.23.0
-      babel-runtime: 6.26.0
-      babel-types: 6.26.0
-      babylon: 6.18.0
-      debug: 2.6.9
-      globals: 9.18.0
-      invariant: 2.2.4
-      lodash: 4.17.23
-    transitivePeerDependencies:
-      - supports-color
-
-  babel-types@6.26.0:
-    dependencies:
-      babel-runtime: 6.26.0
-      esutils: 2.0.3
-      lodash: 4.17.23
-      to-fast-properties: 1.0.3
-
-  babylon@6.18.0: {}
 
   bail@1.0.5: {}
 
@@ -15887,14 +15253,6 @@ snapshots:
 
   caseless@0.12.0: {}
 
-  chalk@1.1.3:
-    dependencies:
-      ansi-styles: 2.2.1
-      escape-string-regexp: 1.0.5
-      has-ansi: 2.0.0
-      strip-ansi: 3.0.1
-      supports-color: 2.0.0
-
   chalk@2.4.2:
     dependencies:
       ansi-styles: 3.2.1
@@ -16062,8 +15420,6 @@ snapshots:
       safe-buffer: 5.2.1
 
   content-type@1.0.5: {}
-
-  convert-source-map@1.9.0: {}
 
   convert-source-map@2.0.0: {}
 
@@ -16473,10 +15829,6 @@ snapshots:
 
   destroy@1.2.0: {}
 
-  detect-indent@4.0.0:
-    dependencies:
-      repeating: 2.0.1
-
   detect-libc@2.1.2: {}
 
   detect-newline@3.1.0: {}
@@ -16730,8 +16082,6 @@ snapshots:
   emoji-regex@8.0.0: {}
 
   emoji-regex@9.2.2: {}
-
-  emojis-list@3.0.0: {}
 
   empathic@2.0.0: {}
 
@@ -17345,21 +16695,11 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  find-cache-dir@1.0.0:
-    dependencies:
-      commondir: 1.0.1
-      make-dir: 1.3.0
-      pkg-dir: 2.0.0
-
   find-cache-dir@2.1.0:
     dependencies:
       commondir: 1.0.1
       make-dir: 2.1.0
       pkg-dir: 3.0.0
-
-  find-up@2.1.0:
-    dependencies:
-      locate-path: 2.0.0
 
   find-up@3.0.0:
     dependencies:
@@ -17675,8 +17015,6 @@ snapshots:
 
   globals@17.3.0: {}
 
-  globals@9.18.0: {}
-
   globalthis@1.0.4:
     dependencies:
       define-properties: 1.2.1
@@ -17730,10 +17068,6 @@ snapshots:
       ajv: 6.14.0
       har-schema: 2.0.0
 
-  has-ansi@2.0.0:
-    dependencies:
-      ansi-regex: 2.1.1
-
   has-bigints@1.1.0: {}
 
   has-flag@3.0.0: {}
@@ -17771,11 +17105,6 @@ snapshots:
   hoist-non-react-statics@3.3.2:
     dependencies:
       react-is: 16.13.1
-
-  home-or-tmp@2.0.0:
-    dependencies:
-      os-homedir: 1.0.2
-      os-tmpdir: 1.0.2
 
   hookable@6.0.1: {}
 
@@ -17928,6 +17257,8 @@ snapshots:
 
   ini@1.3.8: {}
 
+  ini@6.0.0: {}
+
   inline-style-parser@0.1.1: {}
 
   internal-slot@1.1.0:
@@ -18022,8 +17353,6 @@ snapshots:
   is-finalizationregistry@1.1.1:
     dependencies:
       call-bound: 1.0.4
-
-  is-finite@1.1.0: {}
 
   is-fullwidth-code-point@1.0.0:
     dependencies:
@@ -18573,8 +17902,6 @@ snapshots:
 
   jju@1.4.0: {}
 
-  js-tokens@3.0.2: {}
-
   js-tokens@4.0.0: {}
 
   js-yaml@3.14.2:
@@ -18621,8 +17948,6 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  jsesc@1.3.0: {}
-
   jsesc@3.1.0: {}
 
   json-buffer@3.0.1: {}
@@ -18650,12 +17975,6 @@ snapshots:
       object-keys: 1.1.1
 
   json-stringify-safe@5.0.1: {}
-
-  json5@0.5.1: {}
-
-  json5@1.0.2:
-    dependencies:
-      minimist: 1.2.8
 
   json5@2.2.3: {}
 
@@ -18825,17 +18144,6 @@ snapshots:
 
   loader-runner@4.3.1: {}
 
-  loader-utils@1.4.2:
-    dependencies:
-      big.js: 5.2.2
-      emojis-list: 3.0.0
-      json5: 1.0.2
-
-  locate-path@2.0.0:
-    dependencies:
-      p-locate: 2.0.0
-      path-exists: 3.0.0
-
   locate-path@3.0.0:
     dependencies:
       p-locate: 3.0.0
@@ -18935,10 +18243,6 @@ snapshots:
   magic-string@0.30.21:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
-
-  make-dir@1.3.0:
-    dependencies:
-      pify: 3.0.0
 
   make-dir@2.1.0:
     dependencies:
@@ -19428,8 +18732,6 @@ snapshots:
       type-check: 0.4.0
       word-wrap: 1.2.5
 
-  os-homedir@1.0.2: {}
-
   os-tmpdir@1.0.2: {}
 
   outlayer@2.1.1:
@@ -19448,10 +18750,6 @@ snapshots:
 
   p-finally@1.0.0: {}
 
-  p-limit@1.3.0:
-    dependencies:
-      p-try: 1.0.0
-
   p-limit@2.3.0:
     dependencies:
       p-try: 2.2.0
@@ -19463,10 +18761,6 @@ snapshots:
   p-limit@7.3.0:
     dependencies:
       yocto-queue: 1.2.2
-
-  p-locate@2.0.0:
-    dependencies:
-      p-limit: 1.3.0
 
   p-locate@3.0.0:
     dependencies:
@@ -19483,8 +18777,6 @@ snapshots:
   p-map@4.0.0:
     dependencies:
       aggregate-error: 3.1.0
-
-  p-try@1.0.0: {}
 
   p-try@2.2.0: {}
 
@@ -19576,15 +18868,9 @@ snapshots:
 
   picomatch@4.0.3: {}
 
-  pify@3.0.0: {}
-
   pify@4.0.1: {}
 
   pirates@4.0.7: {}
-
-  pkg-dir@2.0.0:
-    dependencies:
-      find-up: 2.1.0
 
   pkg-dir@3.0.0:
     dependencies:
@@ -19661,8 +18947,6 @@ snapshots:
       prettier: 3.6.2
       tinyexec: 0.3.2
       tslib: 2.8.1
-
-  private@0.1.8: {}
 
   proc-log@4.2.0: {}
 
@@ -20260,10 +19544,6 @@ snapshots:
 
   regenerate@1.4.2: {}
 
-  regenerator-runtime@0.10.5: {}
-
-  regenerator-runtime@0.11.1: {}
-
   regenerator-runtime@0.13.11: {}
 
   regexp.prototype.flags@1.5.4:
@@ -20304,10 +19584,6 @@ snapshots:
   remark-rehype@8.1.0:
     dependencies:
       mdast-util-to-hast: 10.2.0
-
-  repeating@2.0.1:
-    dependencies:
-      is-finite: 1.1.0
 
   request@2.88.2:
     dependencies:
@@ -20431,6 +19707,25 @@ snapshots:
       '@rolldown/binding-wasm32-wasi': 1.0.0-rc.5
       '@rolldown/binding-win32-arm64-msvc': 1.0.0-rc.5
       '@rolldown/binding-win32-x64-msvc': 1.0.0-rc.5
+
+  rolldown@1.0.0-rc.6:
+    dependencies:
+      '@oxc-project/types': 0.115.0
+      '@rolldown/pluginutils': 1.0.0-rc.6
+    optionalDependencies:
+      '@rolldown/binding-android-arm64': 1.0.0-rc.6
+      '@rolldown/binding-darwin-arm64': 1.0.0-rc.6
+      '@rolldown/binding-darwin-x64': 1.0.0-rc.6
+      '@rolldown/binding-freebsd-x64': 1.0.0-rc.6
+      '@rolldown/binding-linux-arm-gnueabihf': 1.0.0-rc.6
+      '@rolldown/binding-linux-arm64-gnu': 1.0.0-rc.6
+      '@rolldown/binding-linux-arm64-musl': 1.0.0-rc.6
+      '@rolldown/binding-linux-x64-gnu': 1.0.0-rc.6
+      '@rolldown/binding-linux-x64-musl': 1.0.0-rc.6
+      '@rolldown/binding-openharmony-arm64': 1.0.0-rc.6
+      '@rolldown/binding-wasm32-wasi': 1.0.0-rc.6
+      '@rolldown/binding-win32-arm64-msvc': 1.0.0-rc.6
+      '@rolldown/binding-win32-x64-msvc': 1.0.0-rc.6
 
   rst-selector-parser@2.2.3:
     dependencies:
@@ -20659,8 +19954,6 @@ snapshots:
 
   sisteransi@1.0.5: {}
 
-  slash@1.0.0: {}
-
   slash@3.0.0: {}
 
   slice-ansi@3.0.0:
@@ -20702,10 +19995,6 @@ snapshots:
 
   source-map-js@1.2.1: {}
 
-  source-map-support@0.4.18:
-    dependencies:
-      source-map: 0.5.7
-
   source-map-support@0.5.13:
     dependencies:
       buffer-from: 1.1.2
@@ -20715,8 +20004,6 @@ snapshots:
     dependencies:
       buffer-from: 1.1.2
       source-map: 0.6.1
-
-  source-map@0.5.7: {}
 
   source-map@0.6.1: {}
 
@@ -20864,8 +20151,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  supports-color@2.0.0: {}
-
   supports-color@5.5.0:
     dependencies:
       has-flag: 3.0.0
@@ -20977,8 +20262,6 @@ snapshots:
 
   tmpl@1.0.5: {}
 
-  to-fast-properties@1.0.3: {}
-
   to-regex-range@5.0.1:
     dependencies:
       is-number: 7.0.0
@@ -21004,8 +20287,6 @@ snapshots:
       punycode: 2.3.1
 
   tree-kill@1.2.2: {}
-
-  trim-right@1.0.1: {}
 
   trough@1.0.5: {}
 

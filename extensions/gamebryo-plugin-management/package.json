@@ -7,7 +7,7 @@
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./src/stylesheets/plugin_management.scss ./src/language.json ./src/loot_icon.png dist",
     "_native": "node ../copy-native.mjs ./node_modules/esptk/build/Release/esptk.node ./node_modules/loot/build/Release/node-loot.node ./node_modules/loot/loot_api/loot.dll ./node_modules/loot/async.js && node -e \"const fs=require('fs');const f='dist/async.js';let c=fs.readFileSync(f,'utf8');c=c.replace('./build/Release/node-loot','./node-loot');fs.writeFileSync(f,c);\"",
-    "_build": "pnpm webpack --config webpack.config.js --progress --profile --color && pnpm run _assets && pnpm run _native && extractInfo",
+    "_build": "node build.mjs && pnpm run _assets && pnpm run _native && extractInfo",
     "build": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build && node ../copy-extension.mjs gamebryo-plugin-management out)",
     "dist": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build && node ../copy-extension.mjs gamebryo-plugin-management dist)"
   },
@@ -30,36 +30,33 @@
     "cytoscape": "catalog:",
     "cytoscape-cose-bilkent": "catalog:",
     "cytoscape-edgehandles": "catalog:",
+    "date-fns": "catalog:",
+    "electron": "catalog:",
+    "exe-version": "catalog:",
     "i18next": "catalog:",
     "immutability-helper": "catalog:",
     "js-yaml": "catalog:",
     "json-loader": "catalog:",
+    "lodash": "catalog:",
     "markdown-ast": "catalog:",
     "memoize-one": "catalog:",
-    "lodash": "catalog:",
     "prop-types": "catalog:",
     "react": "catalog:",
     "react-dnd": "catalog:",
+    "react-dnd-html5-backend": "catalog:",
     "react-dom": "catalog:",
     "react-i18next": "catalog:",
+    "react-markdown": "catalog:",
     "react-select": "catalog:",
     "redux": "catalog:",
     "redux-act": "catalog:",
     "redux-thunk": "catalog:",
-    "ts-loader": "catalog:",
-    "vortex-api": "catalog:",
-    "webpack": "catalog:",
-    "webpack-cli": "catalog:",
-    "react-markdown": "catalog:",
     "reselect": "catalog:",
     "shortid": "catalog:",
-    "electron": "catalog:",
-    "react-dnd-html5-backend": "catalog:",
-    "exe-version": "catalog:",
-    "date-fns": "catalog:"
+    "vortex-api": "catalog:"
   },
   "optionalDependencies": {
-    "loot": "catalog:",
-    "esptk": "catalog:"
+    "esptk": "catalog:",
+    "loot": "catalog:"
   }
 }

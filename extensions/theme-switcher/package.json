@@ -6,7 +6,7 @@
   "scripts": {
     "_assets": "copyfiles -u 1 -u 3 themes/**/* dist",
     "_native": "node ../copy-native.mjs -u 4 ./node_modules/font-scanner/build/Release/fontmanager.node",
-    "_build": "pnpm webpack --config webpack.config.js --stats-error-details --progress --profile --color && pnpm run _assets && pnpm run _native && extractInfo",
+    "_build": "node build.mjs && pnpm run _assets && pnpm run _native && extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs theme-switcher out",
     "dist": "pnpm run _build && node ../copy-extension.mjs theme-switcher dist"
   },
@@ -19,24 +19,21 @@
     "@types/react-color": "catalog:",
     "@types/react-dom": "catalog:",
     "@types/react-redux": "catalog:",
-    "react": "catalog:",
-    "react-dom": "catalog:",
     "@types/redux": "catalog:",
     "@types/redux-thunk": "catalog:",
     "bluebird": "catalog:",
     "copyfiles": "catalog:",
     "font-scanner": "catalog:",
+    "i18next": "catalog:",
     "prop-types": "catalog:",
+    "react": "catalog:",
     "react-bootstrap": "catalog:",
     "react-color": "catalog:",
+    "react-dom": "catalog:",
     "react-i18next": "catalog:",
-    "redux-act": "catalog:",
-    "i18next": "catalog:",
     "redux": "catalog:",
-    "ts-loader": "catalog:",
-    "vortex-api": "catalog:",
-    "webpack": "catalog:",
-    "webpack-cli": "catalog:",
-    "redux-thunk": "catalog:"
+    "redux-act": "catalog:",
+    "redux-thunk": "catalog:",
+    "vortex-api": "catalog:"
   }
 }

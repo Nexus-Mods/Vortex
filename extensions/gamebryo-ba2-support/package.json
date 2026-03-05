@@ -5,7 +5,7 @@
   "main": "./out/index.js",
   "scripts": {
     "_native": "node ../copy-native.mjs ./node_modules/ba2tk/build/Release/ba2tk.node",
-    "_build": "pnpm webpack --config webpack.config.js --progress --profile --color && pnpm run _native && extractInfo",
+    "_build": "node build.mjs && pnpm run _native && extractInfo",
     "build": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build && node ../copy-extension.mjs gamebryo-ba2-support out)",
     "dist": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build && node ../copy-extension.mjs gamebryo-ba2-support dist)"
   },
@@ -18,9 +18,6 @@
     "bluebird": "catalog:",
     "copyfiles": "catalog:",
     "rimraf": "catalog:",
-    "ts-loader": "catalog:",
-    "vortex-api": "catalog:",
-    "webpack": "catalog:",
-    "webpack-cli": "catalog:"
+    "vortex-api": "catalog:"
   }
 }

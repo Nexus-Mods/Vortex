@@ -63,6 +63,7 @@
     "i18next-fs-backend": "catalog:",
     "iconv-lite": "catalog:",
     "immutability-helper": "catalog:",
+    "ini": "catalog:",
     "interweave": "catalog:",
     "is-admin": "catalog:",
     "json-socket": "catalog:",

@@ -5,7 +5,7 @@
   "main": "./out/index.js",
   "repository": "",
   "scripts": {
-    "_build": "pnpm webpack --config webpack.config.js --progress --profile --color && extractInfo",
+    "_build": "node build.mjs && extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs gamestore-uplay out",
     "dist": "pnpm run _build && node ../copy-extension.mjs gamestore-uplay dist"
   },
@@ -18,8 +18,6 @@
     "copyfiles": "catalog:",
     "typescript": "catalog:",
     "vortex-api": "catalog:",
-    "webpack": "catalog:",
-    "webpack-cli": "catalog:",
     "winapi-bindings": "catalog:"
   }
 }

@@ -8,7 +8,7 @@
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/language.json src/icons.svg src/collectionicon.svg style.scss src/assets/fallback_tile.png dist",
     "_native": "node ../copy-native.mjs ./node_modules/bsdiff-node/build/Release/bsdiff.node",
-    "_build": "pnpm webpack --config webpack.config.js --progress --profile --color && pnpm run _assets && pnpm run _native && extractInfo",
+    "_build": "node build.mjs && pnpm run _assets && pnpm run _native && extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs collections out",
     "dist": "pnpm run _build && node ../copy-extension.mjs collections dist"
   },
@@ -48,13 +48,10 @@
     "shortid": "catalog:",
     "tmp": "catalog:",
     "ts-jest": "catalog:",
-    "ts-loader": "catalog:",
     "ts-v-gen": "catalog:",
     "turbowalk": "catalog:",
     "typescript": "catalog:",
     "vortex-api": "catalog:",
-    "vortexmt": "catalog:",
-    "webpack": "catalog:",
-    "webpack-cli": "catalog:"
+    "vortexmt": "catalog:"
   }
 }

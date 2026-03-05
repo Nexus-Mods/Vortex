@@ -22,6 +22,7 @@ app/
 
 # Dependencies
 node_modules/
+.pnpm-store/
 
 # Git and coverage
 .git/
