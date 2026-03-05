@@ -223,8 +223,15 @@ if (process.platform === "win32") {
         error["nativeCode"] = error["systemCode"];
       } else {
         const native = nativeErr.GetLastError();
-        error.message = `${native.message} (${native.code})`;
-        error["nativeCode"] = native.code;
+        // Only inject the native code if it's actually meaningful (non-zero).
+        // A code of 0 means ERROR_SUCCESS — the Win32 last-error was already
+        // cleared (e.g. by NAPI internals) before the stack trace was captured,
+        // so it doesn't reflect the real error. Injecting it would overwrite the
+        // original exception message with "The operation completed successfully."
+        if (native.code !== 0) {
+          error.message = `${native.message} (${native.code})`;
+          error["nativeCode"] = native.code;
+        }
       }
     }
     return oldPrep !== undefined ? oldPrep(error, stack) : error.stack;
