@@ -1,6 +1,6 @@
+import type PromiseBB from "bluebird";
 import type { BrowserWindow } from "electron";
 
-import { dialog as dialogIn, ipcRenderer } from "electron";
 import {
   type Span,
   context,
@@ -8,7 +8,9 @@ import {
   SpanStatusCode,
   trace,
 } from "@opentelemetry/api";
-import PromiseBB from "bluebird";
+import { unknownToError } from "@vortex/shared";
+import { recordErrorOnSpan } from "@vortex/shared/telemetry";
+import { ipcRenderer } from "electron";
 import * as fs from "fs-extra";
 import I18next from "i18next";
 import * as path from "path";
@@ -19,8 +21,6 @@ import {} from "uuid";
 import type { IErrorOptions, IExtensionApi } from "../types/api";
 import type { IError } from "../types/IError";
 
-import { unknownToError } from "@vortex/shared";
-import { recordErrorOnSpan } from "@vortex/shared/telemetry";
 import { isTelemetryEnabled } from "../extensions/telemetry/selectors";
 import { getApplication } from "./application";
 import { COMPANY_ID } from "./constants";
@@ -28,7 +28,6 @@ import { UserCanceled } from "./CustomErrors";
 import getVortexPath from "./getVortexPath";
 import { fallbackTFunc } from "./i18n";
 import { log } from "./log";
-import { getSafe } from "./storeHelper";
 import { flatten, getAllPropertyNames, spawnSelf } from "./util";
 
 // Async dialog helpers for cross-process compatibility
@@ -116,7 +115,6 @@ if (ipcRenderer !== undefined) {
   });
 }
 
-
 let defaultWindow: BrowserWindow | null = null;
 
 export function setWindow(window: BrowserWindow | null): void {
@@ -191,13 +189,7 @@ async function showTerminateError(
 
   if (buttons[result.response] === "Report and Quit") {
     // Report
-    createErrorReport(
-      "Crash",
-      error,
-      contextNow,
-      state,
-      source,
-    );
+    createErrorReport("Crash", error, contextNow, state, source);
   } else if (buttons[result.response] === "Ignore") {
     // Ignore
     result = await showMessageBox({

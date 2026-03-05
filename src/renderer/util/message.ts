@@ -145,7 +145,6 @@ function shouldAllowReport(
   return !noReportErrors.includes(err.code);
 }
 
-
 /**
  * show an error notification with an optional "more" button that displays further details
  * in a modal dialog.
