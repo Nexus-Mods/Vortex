@@ -6,17 +6,13 @@
     "../../typings.custom/electron.d.ts",
     "../../typings.custom/promise.d.ts"
   ],
-  "exclude": [
-    "./webpack.config.cjs"
-  ],
+  "exclude": ["./webpack.config.cjs"],
   "compilerOptions": {
     "composite": true,
     "target": "esnext",
     "module": "nodenext",
     "moduleResolution": "nodenext",
-    "types": [
-      "node"
-    ],
+    "types": ["node"],
     "outDir": "../main/out/preload",
     "inlineSourceMap": true,
     "inlineSources": true,

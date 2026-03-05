@@ -322,7 +322,7 @@ class MainWindow {
         log(
           "warn",
           "The Vortex window was found to be mostly offscreen. " +
-          "Moving to a sensible location.",
+            "Moving to a sensible location.",
           { bounds },
         );
         this.mWindow.setPosition(pBounds.x, pBounds.y);
@@ -387,10 +387,7 @@ class MainWindow {
       titleBarStyle:
         windowMetrics?.customTitlebar === true ? "hidden" : "default",
       webPreferences: {
-        preload: path.join(
-          getVortexPath("base"),
-          "preload.js",
-        ),
+        preload: path.join(getVortexPath("base"), "preload.js"),
         nodeIntegration: true, // Required for @electron/remote compatibility
         nodeIntegrationInWorker: true,
         webviewTag: true,

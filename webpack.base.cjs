@@ -67,6 +67,7 @@ function createConfig(entry, target, tsconfig) {
         optimization: {
             minimizer: mode === "development" ? [] : [optimizer],
         },
+        // NOTE(erri120): can't use eval source maps due to CSP
         devtool:
             mode === "development" ? "cheap-module-source-map" : "source-map",
         externals: [

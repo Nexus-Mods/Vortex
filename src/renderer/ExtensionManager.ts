@@ -130,6 +130,9 @@ import {
   wrapExtCBSync,
 } from "./util/util";
 
+// NOTE(erri120): beautiful webpack require hack, see usage for details.
+declare const __non_webpack_require__: NodeJS.Require;
+
 const modmeta = lazyRequire<typeof modmetaT>(() => require("modmeta-db"));
 
 export function isExtSame(
@@ -2941,8 +2944,7 @@ class ExtensionManager {
       return {
         name,
         namespace,
-        initFunc: () =>
-          ExtensionManager.getExtensionInitFunc(require(indexPath)),
+        initFunc: () => ExtensionManager.loadExternalExtension(indexPath),
         path: extensionPath,
         dynamic: true,
         info: {
@@ -2958,6 +2960,14 @@ class ExtensionManager {
       });
       return undefined;
     }
+  }
+
+  private static loadExternalExtension(id: string): ExtensionInit | undefined {
+    // NOTE(erri120): Hack for dynamically importing extensions.
+    // Webpack normally rewrites all requires to a custom __webpack__require
+    // but here we don't want that. We want the raw "normal" require.
+    const mod = __non_webpack_require__(id);
+    return this.getExtensionInitFunc(mod);
   }
 
   /** Finds the default exported extension init function of a module */
@@ -3078,54 +3088,54 @@ class ExtensionManager {
    */
   private prepareExtensions(): IRegisteredExtension[] {
     const staticExtensions = [
-      "settings_interface",
-      "settings_application",
       "about_dialog",
-      "diagnostics_files",
-      "dashboard",
-      "starter_dashlet",
-      "firststeps_dashlet",
-      "mod_load_order",
-      "file_based_loadorder",
-      "mod_management",
+      "analytics",
+      "announcement_dashlet",
+      "browse_nexus",
+      "browser",
       "category_management",
       "collections_integration",
-      "profile_management",
-      "nexus_integration",
-      "download_management",
-      "gameversion_management",
-      "gamemode_management",
-      "announcement_dashlet",
-      "symlink_activator",
-      "symlink_activator_elevate",
-      "hardlink_activator",
-      "move_activator",
-      "null_activator",
-      "updater",
-      "instructions_overlay",
-      "settings_metaserver",
-      "test_runner",
-      "extension_manager",
-      "ini_prep",
-      "news_dashlet",
-      "sticky_mods",
-      "browser",
-      "recovery",
-      "file_preview",
-      "tool_variables_base",
-      "history_management",
-      "telemetry",
-      "analytics",
-      "onboarding_dashlet",
-      "mod_spotlights_dashlet",
+      "dashboard",
       "design_system_dev",
-      "browse_nexus",
+      "diagnostics_files",
+      "download_management",
+      "extension_manager",
+      "file_based_loadorder",
+      "file_preview",
+      "firststeps_dashlet",
+      "gamemode_management",
+      "gameversion_management",
+      "hardlink_activator",
+      "health_check",
+      "history_management",
+      "ini_prep",
       "installer_dotnet",
-      "installer_nested_fomod",
-      "installer_fomod_shared",
       "installer_fomod_ipc",
       "installer_fomod_native",
-      "health_check",
+      "installer_fomod_shared",
+      "installer_nested_fomod",
+      "instructions_overlay",
+      "mod_load_order",
+      "mod_management",
+      "mod_spotlights_dashlet",
+      "move_activator",
+      "news_dashlet",
+      "nexus_integration",
+      "null_activator",
+      "onboarding_dashlet",
+      "profile_management",
+      "recovery",
+      "settings_application",
+      "settings_interface",
+      "settings_metaserver",
+      "starter_dashlet",
+      "sticky_mods",
+      "symlink_activator",
+      "symlink_activator_elevate",
+      "telemetry",
+      "test_runner",
+      "tool_variables_base",
+      "updater",
     ];
 
     require("./util/extensionRequire").default(() => this.extensions);
