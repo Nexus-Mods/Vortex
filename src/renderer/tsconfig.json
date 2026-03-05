@@ -1,7 +1,11 @@
 {
   "$schema": "https://www.schemastore.org/tsconfig.json",
   "extends": "../../tsconfig.base.json",
-  "include": ["**/*", "../../typings.custom/*.d.ts", "./typings.custom/*.d.ts"],
+  "include": [
+    "**/*",
+    "../../typings.custom/*.d.ts",
+    "./typings.custom/*.d.ts"
+  ],
   "exclude": [
     "./util/vortex-run/**/*",
     "./__tests__/",
@@ -9,7 +13,8 @@
     "./dist",
     "./temp",
     "./setupTests.js",
-    "./jest.config.mjs"
+    "./jest.config.mjs",
+    "./webpack.config.cjs"
   ],
   "compilerOptions": {
     "composite": true,
@@ -17,7 +22,11 @@
     "module": "node16", // TODO: change to esnext
     "moduleResolution": "node16", // TODO: change to bundler
     "jsx": "react-jsx",
-    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ESNext",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "outDir": "../main/out/renderer",
     "inlineSourceMap": true,
     "inlineSources": true,
