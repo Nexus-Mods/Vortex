@@ -47,9 +47,6 @@ module.exports = {
     },
     resolve: {
         extensions: [".js", ".jsx", ".ts", ".tsx", ".json"],
-        extensionAlias: {
-            ".js": [".ts", ".js"],
-        },
     },
     plugins,
     optimization: {
