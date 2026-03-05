@@ -103,8 +103,8 @@ class CollectionsMainPage extends ComponentEx<
         this.showPage("view", collectionId);
       });
 
-      props.onAddCallback("editCollection", () => (collectionId: string) => {
-        this.showPage("edit", collectionId);
+      props.onAddCallback('editCollection', (collectionId: string) => {
+        this.showPage('edit', collectionId);
       });
     }
 
