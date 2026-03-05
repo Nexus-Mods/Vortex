@@ -10,11 +10,12 @@
     "outDir": "./out",
     "jsx": "react",
     "sourceMap": false,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "esModuleInterop": true
   },
-    "exclude": [
-      "node_modules"
-    ],
+  "exclude": [
+    "node_modules"
+  ],
   "files": [
     "src/index.ts"
   ]
