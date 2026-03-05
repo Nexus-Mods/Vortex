@@ -1,31 +1,19 @@
-var webpack = require("webpack");
-var nodeExternals = require("webpack-node-externals");
+const webpack = require("webpack");
+const nodeExternals = require("webpack-node-externals");
 const TerserPlugin = require("terser-webpack-plugin");
 const path = require("path");
 
 const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
 
-const mode = "production";
-
-// transpileOnly leads to type declarations not being removed from the js output
-// which for some reason currently leads to starup errors
-const transpileOnly =
-    (ForkTsCheckerWebpackPlugin !== undefined ||
-        process.env["BUILD_QUICK_AND_DIRTY"] !== undefined) &&
-    false;
+const mode =
+    process.env.NODE_ENV === "production" ? "production" : "development";
 
 const plugins = [
     new webpack.DefinePlugin({
-        "process.env.NODE_ENV": JSON.stringify("production"),
+        "process.env.NODE_ENV": JSON.stringify(mode),
     }),
+    new ForkTsCheckerWebpackPlugin(),
 ];
-
-if (
-    ForkTsCheckerWebpackPlugin !== undefined &&
-    process.env["BUILD_QUICK_AND_DIRTY"] === undefined
-) {
-    plugins.push(new ForkTsCheckerWebpackPlugin());
-}
 
 module.exports = {
     entry: {
@@ -38,7 +26,12 @@ module.exports = {
     output: {
         libraryTarget: "commonjs2",
         filename: "[name].js",
-        path: path.resolve(__dirname, "..", "main", "dist"),
+        path: path.resolve(
+            __dirname,
+            "..",
+            "main",
+            mode === "production" ? "dist" : "out",
+        ),
     },
     module: {
         rules: [
@@ -48,7 +41,6 @@ module.exports = {
                 exclude: /node_modules/,
                 options: {
                     configFile: "./tsconfig.json",
-                    transpileOnly,
                     compilerOptions: {
                         composite: false,
                         sourceMap: true,
@@ -64,22 +56,25 @@ module.exports = {
     },
     plugins,
     optimization: {
-        minimizer: [
-            new TerserPlugin({
-                parallel: true,
-                terserOptions: {
-                    compress: {},
-                    output: {
-                        max_line_len: 256,
-                    },
-                    mangle: false,
-                    sourceMap: true,
-                    keep_fnames: true, // required atm, name mangling breaks extensions
-                },
-            }),
-        ],
+        minimizer:
+            mode === "development"
+                ? []
+                : [
+                      new TerserPlugin({
+                          parallel: true,
+                          terserOptions: {
+                              compress: {},
+                              output: {
+                                  max_line_len: 256,
+                              },
+                              mangle: false,
+                              sourceMap: true,
+                              keep_fnames: true,
+                          },
+                      }),
+                  ],
     },
-    devtool: "source-map",
+    devtool: mode === "development" ? "eval-source-map" : "source-map",
     externals: [
         nodeExternals(),
         // Explicitly exclude local file: dependencies that must remain external
