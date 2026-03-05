@@ -6,7 +6,7 @@
   "repository": "",
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/assets/* dist",
-    "_build": "pnpm webpack --config webpack.config.js --progress --profile --color && extractInfo && pnpm run _assets",
+    "_build": "node build.mjs && extractInfo && pnpm run _assets",
     "build": "pnpm run _build && node ../copy-extension.mjs modtype-bepinex out",
     "dist": "pnpm run _build && node ../copy-extension.mjs modtype-bepinex dist"
   },
@@ -14,22 +14,18 @@
   "license": "GPL-3.0",
   "devDependencies": {
     "@types/i18next": "catalog:",
-    "@types/redux": "catalog:",
     "@types/react": "catalog:",
-    "babel-loader": "catalog:",
+    "@types/redux": "catalog:",
+    "@types/semver": "catalog:",
     "bluebird": "catalog:",
+    "copyfiles": "catalog:",
     "i18next": "catalog:",
-    "ts-loader": "catalog:",
-    "vortex-api": "catalog:",
-    "webpack": "catalog:",
-    "webpack-cli": "catalog:",
+    "lodash": "catalog:",
     "react": "catalog:",
     "react-i18next": "catalog:",
-    "lodash": "catalog:",
-    "vortex-parse-ini": "catalog:",
     "semver": "catalog:",
-    "@types/semver": "catalog:",
-    "copyfiles": "catalog:"
+    "vortex-api": "catalog:",
+    "vortex-parse-ini": "catalog:"
   },
   "dependencies": {
     "@iarna/toml": "catalog:"

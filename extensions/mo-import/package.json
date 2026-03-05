@@ -6,17 +6,12 @@
   "repository": "",
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/stylesheets/mo-import.scss dist",
-    "_build": "pnpm webpack --config webpack.config.js --progress --profile --color && pnpm run _assets && extractInfo",
+    "_build": "node build.mjs && pnpm run _assets && extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs mo-import out",
     "dist": "pnpm run _build && node ../copy-extension.mjs mo-import dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
-  "babel": {
-    "presets": [
-      "es2015"
-    ]
-  },
   "devDependencies": {
     "@types/bluebird": "catalog:",
     "@types/i18next": "catalog:",
@@ -40,8 +35,6 @@
     "semver": "catalog:",
     "shortid": "catalog:",
     "vortex-api": "catalog:",
-    "vortex-parse-ini": "catalog:",
-    "webpack": "catalog:",
-    "webpack-cli": "catalog:"
+    "vortex-parse-ini": "catalog:"
   }
 }

@@ -5,7 +5,7 @@
   "main": "./out/index.js",
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/stylesheets/feedback.scss issues.json dist",
-    "_build": "pnpm webpack --config webpack.config.js --progress --profile --color && extractInfo && pnpm run _assets",
+    "_build": "node build.mjs && extractInfo && pnpm run _assets",
     "build": "pnpm run _build && node ../copy-extension.mjs feedback out",
     "dist": "pnpm run _build && node ../copy-extension.mjs feedback dist"
   },
@@ -19,20 +19,17 @@
     "@types/redux": "catalog:",
     "@types/redux-thunk": "catalog:",
     "@types/tmp": "catalog:",
+    "bluebird": "catalog:",
     "copyfiles": "catalog:",
     "cross-fetch": "catalog:",
-    "react-bootstrap": "catalog:",
-    "redux": "catalog:",
-    "tmp": "catalog:",
-    "ts-loader": "catalog:",
-    "vortex-api": "catalog:",
-    "webpack": "catalog:",
-    "webpack-cli": "catalog:",
-    "bluebird": "catalog:",
-    "winapi-bindings": "catalog:",
-    "redux-act": "catalog:",
     "fuzzball": "catalog:",
+    "react-bootstrap": "catalog:",
     "react-i18next": "catalog:",
-    "redux-thunk": "catalog:"
+    "redux": "catalog:",
+    "redux-act": "catalog:",
+    "redux-thunk": "catalog:",
+    "tmp": "catalog:",
+    "vortex-api": "catalog:",
+    "winapi-bindings": "catalog:"
   }
 }

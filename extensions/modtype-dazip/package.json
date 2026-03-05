@@ -5,7 +5,7 @@
   "main": "./out/index.js",
   "repository": "",
   "scripts": {
-    "_build": "pnpm webpack --config webpack.config.js --progress --profile --color && extractInfo",
+    "_build": "node build.mjs && extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs modtype-dazip out",
     "dist": "pnpm run _build && node ../copy-extension.mjs modtype-dazip dist"
   },
@@ -13,15 +13,11 @@
   "license": "GPL-3.0",
   "devDependencies": {
     "@types/redux": "catalog:",
-    "babel-loader": "catalog:",
-    "bluebird": "catalog:",
-    "i18next": "catalog:",
-    "ts-loader": "catalog:",
-    "vortex-api": "catalog:",
-    "webpack": "catalog:",
-    "webpack-cli": "catalog:",
-    "semver": "catalog:",
     "@types/semver": "catalog:",
-    "copyfiles": "catalog:"
+    "bluebird": "catalog:",
+    "copyfiles": "catalog:",
+    "i18next": "catalog:",
+    "semver": "catalog:",
+    "vortex-api": "catalog:"
   }
 }

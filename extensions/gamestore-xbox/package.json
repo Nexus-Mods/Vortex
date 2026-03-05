@@ -5,7 +5,7 @@
   "main": "./out/index.js",
   "repository": "",
   "scripts": {
-    "_build": "pnpm webpack --config webpack.config.js --progress --profile --color && extractInfo",
+    "_build": "node build.mjs && extractInfo",
     "build": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build && node ../copy-extension.mjs gamestore-xbox out)",
     "dist": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build && node ../copy-extension.mjs gamestore-xbox dist)"
   },
@@ -20,8 +20,6 @@
     "turbowalk": "catalog:",
     "typescript": "catalog:",
     "vortex-api": "catalog:",
-    "webpack": "catalog:",
-    "webpack-cli": "catalog:",
     "winapi-bindings": "catalog:",
     "xml2js": "catalog:"
   }

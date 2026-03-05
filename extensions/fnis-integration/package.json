@@ -5,17 +5,12 @@
   "main": "./dist/index.js",
   "repository": "",
   "scripts": {
-    "_build": "pnpm webpack --config webpack.config.js --progress --profile --color && extractInfo",
+    "_build": "node build.mjs && extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs fnis-integration out",
     "dist": "pnpm run _build && node ../copy-extension.mjs fnis-integration dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
-  "babel": {
-    "presets": [
-      "es2015"
-    ]
-  },
   "devDependencies": {
     "@types/bluebird": "catalog:",
     "@types/node": "catalog:",
@@ -25,8 +20,6 @@
     "@types/redux": "catalog:",
     "@types/redux-thunk": "catalog:",
     "@types/semver": "catalog:",
-    "babel-core": "catalog:",
-    "babel-loader": "catalog:",
     "bluebird": "catalog:",
     "copyfiles": "catalog:",
     "exe-version": "catalog:",
@@ -41,8 +34,6 @@
     "redux-thunk": "catalog:",
     "typescript": "catalog:",
     "vortex-api": "catalog:",
-    "webpack": "catalog:",
-    "webpack-cli": "catalog:",
     "winapi-bindings": "catalog:"
   }
 }

@@ -6,19 +6,13 @@
   "repository": "",
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/issue_tracker.scss dist",
-    "_build": "pnpm webpack --config webpack.config.js --progress --profile --color && pnpm run _assets && extractInfo",
+    "_build": "node build.mjs && pnpm run _assets && extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs issue-tracker out",
     "dist": "pnpm run _build && node ../copy-extension.mjs issue-tracker dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
-  "babel": {
-    "presets": [
-      "es2015"
-    ]
-  },
   "devDependencies": {
-    "@babel/core": "catalog:",
     "@nexusmods/nexus-api": "catalog:",
     "@types/bluebird": "catalog:",
     "@types/node": "catalog:",
@@ -27,18 +21,14 @@
     "@types/react-dom": "catalog:",
     "@types/redux": "catalog:",
     "@types/redux-thunk": "catalog:",
-    "babel-loader": "catalog:",
     "copyfiles": "catalog:",
-    "react-redux": "catalog:",
-    "redux-act": "catalog:",
-    "ts-loader": "catalog:",
-    "typescript": "catalog:",
-    "vortex-api": "catalog:",
-    "webpack": "catalog:",
-    "webpack-cli": "catalog:",
+    "lodash": "catalog:",
     "react-i18next": "catalog:",
     "react-markdown": "catalog:",
-    "lodash": "catalog:",
-    "tmp": "catalog:"
+    "react-redux": "catalog:",
+    "redux-act": "catalog:",
+    "tmp": "catalog:",
+    "typescript": "catalog:",
+    "vortex-api": "catalog:"
   }
 }

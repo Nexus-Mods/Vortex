@@ -5,7 +5,7 @@
   "main": "./out/index.js",
   "repository": "",
   "scripts": {
-    "_build": "pnpm webpack --config webpack.config.js --progress --profile --color && extractInfo",
+    "_build": "node build.mjs && extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs gameinfo-steam out",
     "dist": "pnpm run _build && node ../copy-extension.mjs gameinfo-steam dist"
   },
@@ -13,17 +13,13 @@
   "license": "GPL-3.0",
   "devDependencies": {
     "@types/redux": "catalog:",
-    "babel-loader": "catalog:",
     "bluebird": "catalog:",
+    "copyfiles": "catalog:",
     "i18next": "catalog:",
     "react": "catalog:",
     "react-bootstrap": "catalog:",
     "react-dom": "catalog:",
     "react-i18next": "catalog:",
-    "ts-loader": "catalog:",
-    "vortex-api": "catalog:",
-    "webpack": "catalog:",
-    "webpack-cli": "catalog:",
-    "copyfiles": "catalog:"
+    "vortex-api": "catalog:"
   }
 }
