@@ -270,18 +270,16 @@ function PluginCount(props: IPluginCountProps) {
     const plugin = plugins[id];
     return plugin?.enabled || plugin?.isNative;
   };
-  const regular = Object.keys(plugins).filter(
-    (id) => isValid(id) && !plugins[id].isLight && !plugins[id].isMedium,
-  );
-  const light = Object.keys(plugins).filter(
-    (id) => isValid(id) && plugins[id].isLight,
-  );
-  const medium = Object.keys(plugins).filter(
-    (id) => isValid(id) && plugins[id].isMedium,
-  );
 
   const eslGame = supportsESL(gameId);
   const mediumGame = supportsMediumMasters(gameId);
+
+  const active = Object.keys(plugins).filter(isValid);
+  const regular = active.filter(
+    (id) => !plugins[id].isLight && !plugins[id].isMedium,
+  );
+  const light = eslGame ? active.filter((id) => plugins[id].isLight) : [];
+  const medium = mediumGame ? active.filter((id) => plugins[id].isMedium) : [];
 
   const classes = ["gamebryo-plugin-count"];
 
@@ -309,16 +307,38 @@ function PluginCount(props: IPluginCountProps) {
     : "\n" + t("In addition you can have up to 4096 light plugins.");
 
   return (
-    <div className={classes.join(" ")}>
-      <a onClick={nop} className="fake-link" title={tooltipText}>
-        {t("Active: {{ count }}", { count: regular.length })}
-        {mediumGame
-          ? " " + t("Medium: {{ count }}", { count: medium.length })
-          : null}
-        {eslGame
-          ? " " + t("Light: {{ count }}", { count: light.length })
-          : null}
-      </a>
+    <div className={classes.join(" ")} title={tooltipText}>
+      <div className={"active-count"}>
+        <div>
+          {t("Active")}
+          <span>{active.length}</span>
+        </div>
+      </div>
+
+      <div style={eslGame || mediumGame ? null : { display: "none" }}>
+        <span>
+          {t("  Full: {{ count }} /  {{ limit }}", {
+            replace: {
+              count: `   ${regular.length}`.slice(-4),
+              limit: regLimit,
+            },
+          })}
+        </span>
+        <span>
+          {mediumGame
+            ? t("Medium: {{ count }} /  256", {
+                replace: { count: `   ${medium.length}`.slice(-4) },
+              })
+            : null}
+        </span>
+        <span>
+          {eslGame
+            ? t(" Light: {{ count }} / 4096", {
+                replace: { count: `   ${light.length}`.slice(-4) },
+              })
+            : null}
+        </span>
+      </div>
     </div>
   );
 }
