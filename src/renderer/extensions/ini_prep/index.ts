@@ -59,6 +59,9 @@ function ensureIniBackups(
 function genIniFormat(format: string) {
   switch (format) {
     case "winapi":
+      if (process.platform !== "win32") {
+        return undefined;
+      }
       return new WinapiFormat();
     default:
       throw new Error("unsupported ini format: " + format);
@@ -97,7 +100,12 @@ function discoverSettingsChanges(
     return PromiseBB.resolve();
   }
 
-  const parser = new IniParser(genIniFormat(format));
+  const iniFormatter = genIniFormat(format);
+  if (iniFormatter === undefined) {
+    return Promise.resolve();
+  }
+
+  const parser = new IniParser(iniFormatter);
 
   const t: TFunction = api.translate;
 
@@ -176,6 +184,11 @@ function bakeSettings(
     return PromiseBB.resolve();
   }
 
+  const iniFormatter = genIniFormat(format);
+  if (iniFormatter === undefined) {
+    return Promise.resolve();
+  }
+
   const enabledTweaks: { [baseFile: string]: string[] } = {};
 
   const baseFiles = iniFiles(gameMode, discovery)
@@ -185,7 +198,7 @@ function bakeSettings(
   const baseFileNames = baseFiles.map((name) =>
     path.basename(name).toLowerCase(),
   );
-  const parser = new IniParser(genIniFormat(format));
+  const parser = new IniParser(iniFormatter);
 
   // get a list of all tweaks we need to apply
   return PromiseBB.each(mods, (mod) => {
