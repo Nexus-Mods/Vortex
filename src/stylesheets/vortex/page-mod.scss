@@ -1,3 +1,4 @@
+@use "sass:color";
 #popover-mod-description {
     max-width: 700px;
     // this popover tends to align with the top of the screen so the border isn't visible.
@@ -73,13 +74,13 @@
 
 @keyframes pulseColor {
     0% {
-        background-color: lighten($brand-clickable, 15%);
+        background-color: color.adjust($brand-clickable, $lightness: 15%);
     }
     50% {
-        background-color: darken($brand-clickable, 15%);
+        background-color: color.adjust($brand-clickable, $lightness: -15%);
     }
     100% {
-        background-color: lighten($brand-clickable, 15%);
+        background-color: color.adjust($brand-clickable, $lightness: 15%);
     }
 }
 

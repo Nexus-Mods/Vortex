@@ -1,3 +1,4 @@
+@use "sass:color";
 @use "sass:math";
 
 $font-size-large: 1.25em;
@@ -76,15 +77,15 @@ $input-height-base: (
     $line-height-computed + ($padding-base-vertical * 2) + 0.6
 );
 $input-height-large: (
-    ceil($font-size-large * $line-height-large) +
+    math.ceil($font-size-large * $line-height-large) +
         ($padding-large-vertical * 2) + 0.3
 );
 $input-height-small: (
-    floor($font-size-small * $line-height-small) +
+    math.floor($font-size-small * $line-height-small) +
         ($padding-small-vertical * 2) + 0.3
 );
 
-$form-group-margin-bottom: floor($gutter-width * 0.5);
+$form-group-margin-bottom: math.floor($gutter-width * 0.5);
 
 $legend-color: $text-color;
 $legend-border-color: transparent;
@@ -169,7 +170,7 @@ $container-lg: $container-large-desktop;
 $navbar-height: 4.5em;
 $navbar-margin-bottom: $line-height-computed;
 $navbar-border-radius: $border-radius-base;
-$navbar-padding-horizontal: floor(($grid-gutter-width * 0.5));
+$navbar-padding-horizontal: math.floor(($grid-gutter-width * 0.5));
 $navbar-padding-vertical: (($navbar-height - $line-height-computed) * 0.5);
 $navbar-collapse-max-height: 340px;
 
@@ -181,7 +182,7 @@ $navbar-default-link-color: #fff;
 $navbar-default-link-hover-color: $brand-success;
 $navbar-default-link-hover-bg: transparent;
 $navbar-default-link-active-color: #fff;
-$navbar-default-link-active-bg: darken($navbar-default-bg, 10%);
+$navbar-default-link-active-bg: color.adjust($navbar-default-bg, $lightness: -10%);
 $navbar-default-link-disabled-color: #ccc;
 $navbar-default-link-disabled-bg: transparent;
 
@@ -189,9 +190,9 @@ $navbar-default-brand-color: $navbar-default-link-color;
 $navbar-default-brand-hover-color: $navbar-default-link-hover-color;
 $navbar-default-brand-hover-bg: transparent;
 
-$navbar-default-toggle-hover-bg: darken($navbar-default-bg, 10%);
+$navbar-default-toggle-hover-bg: color.adjust($navbar-default-bg, $lightness: -10%);
 $navbar-default-toggle-icon-bar-bg: #fff;
-$navbar-default-toggle-border-color: darken($navbar-default-bg, 10%);
+$navbar-default-toggle-border-color: color.adjust($navbar-default-bg, $lightness: -10%);
 
 //=== Inverted navbar
 $navbar-inverse-color: #fff;
@@ -202,7 +203,7 @@ $navbar-inverse-link-color: #fff;
 $navbar-inverse-link-hover-color: $brand-primary;
 $navbar-inverse-link-hover-bg: transparent;
 $navbar-inverse-link-active-color: #fff;
-$navbar-inverse-link-active-bg: darken($navbar-inverse-bg, 5%);
+$navbar-inverse-link-active-bg: color.adjust($navbar-inverse-bg, $lightness: -5%);
 $navbar-inverse-link-disabled-color: #ccc;
 $navbar-inverse-link-disabled-bg: transparent;
 
@@ -210,9 +211,9 @@ $navbar-inverse-brand-color: $navbar-inverse-link-color;
 $navbar-inverse-brand-hover-color: $navbar-inverse-link-hover-color;
 $navbar-inverse-brand-hover-bg: transparent;
 
-$navbar-inverse-toggle-hover-bg: darken($navbar-inverse-bg, 10%);
+$navbar-inverse-toggle-hover-bg: color.adjust($navbar-inverse-bg, $lightness: -10%);
 $navbar-inverse-toggle-icon-bar-bg: #fff;
-$navbar-inverse-toggle-border-color: darken($navbar-inverse-bg, 10%);
+$navbar-inverse-toggle-border-color: color.adjust($navbar-inverse-bg, $lightness: -10%);
 
 //== Navs
 $nav-link-padding: 10px 15px;
@@ -241,15 +242,15 @@ $pagination-bg: $brand-secondary;
 $pagination-border: transparent;
 
 $pagination-hover-color: $text-color;
-$pagination-hover-bg: darken($pagination-bg, 15%);
+$pagination-hover-bg: color.adjust($pagination-bg, $lightness: -15%);
 $pagination-hover-border: transparent;
 
 $pagination-active-color: $text-color;
-$pagination-active-bg: darken($pagination-bg, 15%);
+$pagination-active-bg: color.adjust($pagination-bg, $lightness: -15%);
 $pagination-active-border: transparent;
 
 $pagination-disabled-color: $gray-lighter;
-$pagination-disabled-bg: lighten($pagination-bg, 15%);
+$pagination-disabled-bg: color.adjust($pagination-bg, $lightness: 15%);
 $pagination-disabled-border: transparent;
 
 //== Pager
@@ -306,16 +307,16 @@ $popover-max-width: 400px;
 $popover-border-color: $border-color;
 $popover-fallback-border-color: $gray-light;
 
-$popover-title-bg: darken($popover-bg, 3%);
+$popover-title-bg: color.adjust($popover-bg, $lightness: -3%);
 
 $popover-arrow-width: 10px;
 $popover-arrow-color: $popover-bg;
 
 $popover-arrow-outer-width: ($popover-arrow-width + 1);
 $popover-arrow-outer-color: $popover-border-color;
-$popover-arrow-outer-fallback-color: darken(
+$popover-arrow-outer-fallback-color: color.adjust(
     $popover-fallback-border-color,
-    20%
+    $lightness: -20%
 );
 
 //== Labels
@@ -393,7 +394,7 @@ $list-group-hover-bg: $gray-lighter;
 $list-group-active-color: $component-active-color;
 $list-group-active-bg: $component-active-bg;
 $list-group-active-border: $list-group-border;
-$list-group-active-text-color: lighten($list-group-active-bg, 40%);
+$list-group-active-text-color: color.adjust($list-group-active-bg, $lightness: 40%);
 
 $list-group-disabled-color: $gray-light;
 $list-group-disabled-bg: $gray-lighter;
@@ -520,7 +521,7 @@ $dl-horizontal-offset: $component-offset-horizontal;
 $dl-horizontal-breakpoint: $grid-float-breakpoint;
 $hr-border: $gray-dark;
 
-$half-gutter: floor($gutter-width * 0.5);
-$slim-gutter: floor($gutter-width * 0.25);
+$half-gutter: math.floor($gutter-width * 0.5);
+$slim-gutter: math.floor($gutter-width * 0.25);
 
-$transition-time-half: floor($transition-time * 0.5);
+$transition-time-half: math.floor($transition-time * 0.5);

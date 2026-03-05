@@ -1,3 +1,4 @@
+@use "sass:color";
 //
 // Popovers
 // --------------------------------------------------
@@ -42,7 +43,7 @@
     padding: 8px 14px;
     font-size: 1em;
     background-color: $popover-title-bg;
-    border-bottom: 1px solid darken($popover-title-bg, 5%);
+    border-bottom: 1px solid color.adjust($popover-title-bg, $lightness: -5%);
     border-radius: ($border-radius-large - 1) ($border-radius-large - 1) 0 0;
 }
 

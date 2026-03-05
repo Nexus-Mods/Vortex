@@ -1,3 +1,4 @@
+@use "sass:color";
 $thumbnail-width: 256px;
 
 #gamepicker-layout {
@@ -249,7 +250,7 @@ $thumbnail-width: 256px;
 
 #game-panel-group {
     .panel-heading {
-        background-color: darken($table-bg, 5%);
+        background-color: color.adjust($table-bg, $lightness: -5%);
         border-bottom: 1px solid $border-color;
         display: flex;
         align-items: center;

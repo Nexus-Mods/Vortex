@@ -1,3 +1,4 @@
+@use "sass:map";
 // Font Families Map
 $font-families: (
     "base": (
@@ -20,49 +21,49 @@ $font-families: (
 // Typography Scale Map
 $typography: (
     "heading-sm-semibold": (
-        "font-family": map-get($font-families, "base"),
+        "font-family": map.get($font-families, "base"),
         "font-size": 22px,
         "font-style": normal,
         "font-weight": 600,
         "line-height": 125%,
     ),
     "body-xl-semibold": (
-        "font-family": map-get($font-families, "base"),
+        "font-family": map.get($font-families, "base"),
         "font-size": 16px,
         "font-style": normal,
         "font-weight": 600,
         "line-height": 150%,
     ),
     "body-lg-normal": (
-        "font-family": map-get($font-families, "base"),
+        "font-family": map.get($font-families, "base"),
         "font-size": 14px,
         "font-style": normal,
         "font-weight": 400,
         "line-height": 150%,
     ),
     "body-lg-semibold": (
-        "font-family": map-get($font-families, "base"),
+        "font-family": map.get($font-families, "base"),
         "font-size": 14px,
         "font-style": normal,
         "font-weight": 600,
         "line-height": 150%,
     ),
     "body-md-normal": (
-        "font-family": map-get($font-families, "base"),
+        "font-family": map.get($font-families, "base"),
         "font-size": 12px,
         "font-style": normal,
         "font-weight": 400,
         "line-height": 150%,
     ),
     "body-md-semibold": (
-        "font-family": map-get($font-families, "base"),
+        "font-family": map.get($font-families, "base"),
         "font-size": 12px,
         "font-style": normal,
         "font-weight": 600,
         "line-height": 150%,
     ),
     "body-sm-normal": (
-        "font-family": map-get($font-families, "base"),
+        "font-family": map.get($font-families, "base"),
         "font-size": 10px,
         "font-style": normal,
         "font-weight": 400,
@@ -73,15 +74,15 @@ $typography: (
 
 // Mixin to apply typography styles
 @mixin typography($style) {
-    $config: map-get($typography, $style);
+    $config: map.get($typography, $style);
 
     @if $config {
-        font-family: map-get($config, "font-family");
-        font-size: map-get($config, "font-size");
-        font-weight: map-get($config, "font-weight");
-        line-height: map-get($config, "line-height");
-        font-style: map-get($config, "font-style");
-        letter-spacing: map-get($config, "letter-spacing", 1);
+        font-family: map.get($config, "font-family");
+        font-size: map.get($config, "font-size");
+        font-weight: map.get($config, "font-weight");
+        line-height: map.get($config, "line-height");
+        font-style: map.get($config, "font-style");
+        letter-spacing: map.get($config, "letter-spacing", 1);
     } @else {
         @warn "Typography style '#{$style}' not found!";
     }
