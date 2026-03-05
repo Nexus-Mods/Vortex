@@ -10,6 +10,7 @@ export const DEPLOY_BLACKLIST: string[] = [
   path.join("**", ".gitattributes"),
   path.join("**", "meta.ini"),
   path.join("**", "_macosx", "**", "*"),
+  path.join("**", "__MACOSX", "**", "*"),
   path.join("**", VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME),
 ];
 
