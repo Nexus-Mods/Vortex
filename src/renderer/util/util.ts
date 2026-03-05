@@ -984,9 +984,8 @@ export function batchDispatch(
 }
 
 export function isFunction(functionToCheck) {
-  return (
-    functionToCheck && {}.toString.call(functionToCheck) === "[object Function]"
-  );
+  const type = functionToCheck && {}.toString.call(functionToCheck);
+  return type === "[object Function]" || type === "[object AsyncFunction]";
 }
 
 /**
