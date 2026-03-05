@@ -76,10 +76,7 @@ jobs:
         run: pnpm run lint:ci
 
       - name: Build
-        run: pnpm run build
-
-      - name: Build subprojects
-        run: pnpm run subprojects:out
+        run: pnpm run build:all
 
       - name: Test
         if: runner.os == 'Windows'
