@@ -1256,7 +1256,7 @@ class InstallManager {
         );
         trackedCallback(error, undefined);
         return;
-      } else {
+      } else if (download) {
         modReference = modReference || downloadToModRef(download);
       }
     }
