@@ -2941,7 +2941,8 @@ class ExtensionManager {
       return {
         name,
         namespace,
-        initFunc: () => ExtensionManager.getExtensionInitFunc(indexPath),
+        initFunc: () =>
+          ExtensionManager.getExtensionInitFunc(require(indexPath)),
         path: extensionPath,
         dynamic: true,
         info: {
@@ -2960,8 +2961,7 @@ class ExtensionManager {
   }
 
   /** Finds the default exported extension init function of a module */
-  private static getExtensionInitFunc(id: string): ExtensionInit | undefined {
-    const mod: unknown = require(id);
+  private static getExtensionInitFunc(mod: unknown): ExtensionInit | undefined {
     if (!mod) return undefined;
 
     if (typeof mod === "function") return mod as ExtensionInit;
@@ -3139,7 +3139,9 @@ class ExtensionManager {
         namespace: name,
         path: path.resolve(__dirname, "extensions", name),
         initFunc: () =>
-          ExtensionManager.getExtensionInitFunc(`./extensions/${name}/index`),
+          ExtensionManager.getExtensionInitFunc(
+            require(`./extensions/${name}/index`),
+          ),
         dynamic: false,
       }))
       .concat(
