@@ -162,7 +162,7 @@ export async function parser(
   // set up groups and their rules
   util.batchDispatch(
     api.store,
-    (collection.pluginRules.groups ?? []).reduce((prev, group) => {
+    (collection.pluginRules?.groups ?? []).reduce((prev, group) => {
       if ((state as any).userlist.groups[group.name] === undefined) {
         prev.push({
           type: "ADD_PLUGIN_GROUP",
