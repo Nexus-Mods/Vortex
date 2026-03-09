@@ -71,7 +71,9 @@ function createConfig(entry, target, tsconfig) {
         devtool:
             mode === "development" ? "cheap-module-source-map" : "source-map",
         externals: [
-            nodeExternals(),
+            nodeExternals({
+                allowlist: [/@vortex\/shared/],
+            }),
             // Explicitly exclude local file: dependencies that must remain external
             "fomod-installer-ipc",
             "fomod-installer-native",
