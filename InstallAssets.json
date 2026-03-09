@@ -21,16 +21,9 @@
       "target": ["out", "dist"]
     },
     {
-      "srcPath": "src/renderer/index.dev.html",
-      "outPath": "",
-      "rename": "index.html",
-      "target": ["out"],
-      "skipPaths": 2
-    },
-    {
       "srcPath": "src/renderer/index.html",
       "outPath": "",
-      "target": ["dist"],
+      "target": ["out", "dist"],
       "skipPaths": 2
     },
     {

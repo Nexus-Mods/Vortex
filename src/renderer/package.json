@@ -5,8 +5,8 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
-    "build": "pnpm tsc --composite false -p tsconfig.json",
-    "dist": "pnpm webpack --config ./webpack.config.cjs",
+    "build": "pnpm cross-env NODE_ENV=development pnpm webpack --config ./webpack.config.cjs",
+    "dist": "pnpm cross-env NODE_ENV=production pnpm webpack --config ./webpack.config.cjs",
     "typecheck": "pnpm tsc --noEmit --composite false -p tsconfig.json",
     "test": "pnpm jest --no-cache",
     "api:build": "pnpm rimraf ./lib && pnpm tsc -p tsconfig.api.json",

@@ -387,10 +387,7 @@ class MainWindow {
       titleBarStyle:
         windowMetrics?.customTitlebar === true ? "hidden" : "default",
       webPreferences: {
-        preload: path.join(
-          getVortexPath("base"),
-          app.isPackaged ? "preload.js" : "preload/index.js",
-        ),
+        preload: path.join(getVortexPath("base"), "preload.js"),
         nodeIntegration: true, // Required for @electron/remote compatibility
         nodeIntegrationInWorker: true,
         webviewTag: true,

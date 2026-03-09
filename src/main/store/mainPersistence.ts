@@ -144,6 +144,36 @@ export async function readPersistedValue<T>(
 }
 
 /**
+ * Write a value directly to the persisted state.
+ * Used by main process to persist values before renderer is ready.
+ *
+ * @param hive - The hive name (e.g., "app")
+ * @param path - The path within the hive (e.g., ["instanceId"])
+ * @param value - The value to persist
+ */
+export async function writePersistedValue<T>(
+  hive: string,
+  path: string[],
+  value: T,
+): Promise<void> {
+  if (levelPersist === undefined) {
+    return;
+  }
+
+  try {
+    const subPersistor = new SubPersistor(levelPersist, hive);
+    await subPersistor.setItem(path, JSON.stringify(value));
+  } catch (err) {
+    const message = getErrorMessageOrDefault(err);
+    log("warn", "Could not write persisted value", {
+      hive,
+      path,
+      error: message,
+    });
+  }
+}
+
+/**
  * Read all hydration data for a specific hive.
  * Used to get initial state for a hive before renderer is ready.
  *

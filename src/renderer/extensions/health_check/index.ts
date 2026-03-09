@@ -37,13 +37,6 @@ let legacyAdapter: LegacyTestAdapter | null = null;
 let healthCheckApi: IHealthCheckApi | null = null;
 
 function init(context: IExtensionContext): boolean {
-  // Only register this page in development mode
-  const isDevelopment = process.env.NODE_ENV !== "production";
-
-  if (!isDevelopment) {
-    return false; // Don't initialize in production
-  }
-
   // Register session reducer for health check state (registered in both main and renderer)
   context.registerReducer(["session", "healthCheck"], sessionReducer);
 
