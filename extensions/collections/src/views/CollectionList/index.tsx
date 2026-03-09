@@ -81,7 +81,7 @@ class CollectionsMainPage extends ComponentEx<ICollectionsMainPageProps, ICompon
         this.showPage('view', collectionId);
       });
 
-      props.onAddCallback('editCollection', () => (collectionId: string) => {
+      props.onAddCallback('editCollection', (collectionId: string) => {
         this.showPage('edit', collectionId);
       });
     }

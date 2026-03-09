@@ -376,11 +376,25 @@ export default function init(context: IExtensionContext) {
             (m: types.IMod) =>
               loadOrder.find((lo) => lo.modId === m.id) !== undefined,
           );
-          const sorted = await util.sortMods(
-            profile.gameId,
-            filtered,
-            context.api,
-          );
+          let sorted: types.IMod[];
+          try {
+            sorted = await util.sortMods(
+              profile.gameId,
+              filtered,
+              context.api,
+            );
+          } catch (err) {
+            if (err instanceof util.CycleError) {
+              context.api.showErrorNotification(
+                'Failed to sort mods',
+                'The load order contains circular rules and cannot be sorted automatically. '
+                + 'Please resolve conflicting rules in the mod dependencies.',
+                { allowReport: false },
+              );
+              return;
+            }
+            throw err;
+          }
           const findIndex = (entry: types.ILoadOrderEntry) => {
             return sorted.findIndex((m) => m.id === entry.modId);
           };
