@@ -5,6 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",
+    "_build": "copyfiles -u 1 -f ./src/index.js dist && pnpm run _assets && extractInfo",
     "build": "pnpm run _build && node ../../copy-extension.mjs out",
     "dist": "pnpm run _build && node ../../copy-extension.mjs dist"
   },
@@ -14,5 +15,8 @@
   "private": true,
   "config": {
     "game": "Oblivion"
+  },
+  "devDependencies": {
+    "vortex-api": "catalog:"
   }
 }

@@ -2114,7 +2114,11 @@ importers:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
 
-  extensions/games/game-oblivion: {}
+  extensions/games/game-oblivion:
+    devDependencies:
+      vortex-api:
+        specifier: 'catalog:'
+        version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
 
   extensions/games/game-oni:
     devDependencies:
