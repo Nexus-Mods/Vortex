@@ -133,7 +133,7 @@ export async function parser(api: types.IExtensionApi,
   const mods = state.persistent.mods[gameId];
 
   // set up groups and their rules
-  util.batchDispatch(api.store, (collection.pluginRules.groups ?? []).reduce((prev, group) => {
+  util.batchDispatch(api.store, (collection.pluginRules?.groups ?? []).reduce((prev, group) => {
     if ((state as any).userlist.groups[group.name] === undefined) {
       prev.push({
         type: 'ADD_PLUGIN_GROUP', payload: {

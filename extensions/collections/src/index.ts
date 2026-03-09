@@ -653,7 +653,7 @@ function register(context: types.IExtensionContext,
   const onRemoveCollection = (gameId: string, modId: string, cancel: boolean) => 
     removeCollection(context.api, gameId, modId, cancel);
   const onUpdateMeta = () => updateMeta(context.api);
-  const editCollection = (id: string) => collectionsCB.editCollection(id);
+  const editCollection = (id: string) => collectionsCB.editCollection?.(id);
   const onInstallCollection = (revision: IRevision) => installCollection(context.api, revision);
 
   context.registerDialog('collection-finish', InstallFinishDialog, () => ({

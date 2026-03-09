@@ -644,9 +644,9 @@ function prettifyNodeErrorMessageInner(
       allowReport: false,
     };
   } else if (err.code === "EPERM") {
-    const filePath = err.path || err.filename;
+    const filePath = err.path || err.filename || undefined;
     const firstLine =
-      filePath !== undefined
+      filePath
         ? 'Vortex needs to access "{{filePath}}" but it\'s write protected.\n'
         : "Vortex needs to access a file that is write protected.\n";
     return {
@@ -659,7 +659,7 @@ function prettifyNodeErrorMessageInner(
       allowReport: false,
     };
   } else if (err.code === "ENOENT") {
-    if (err.path !== undefined || err.filename !== undefined) {
+    if (err.path || err.filename) {
       const filePath = err.path || err.filename;
 
       return {

@@ -715,12 +715,14 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
     const { mods, onShowError, overlays } = this.props;
     const instructions = this.getModInstructions(modId);
     if (instructions === undefined) {
-      // This shouldn't be possible
-      const err = new util.ProcessCanceled('No instructions found', modId);
-      err['attachLogOnReport'] = true;
-      err['Collection'] = this.props.collection?.attributes?.collectionSlug;
-      err['Revision'] = this.props.collection?.attributes?.revisionNumber;
-      onShowError('Failed to display instructions', err, true);
+      // The button is only rendered when instructions exist (customRenderer guards this).
+      // If reached anyway (race condition/state desync), log for debugging but don't
+      // surface a confusing error dialog to the user or auto-report via VortexFeedback.
+      log('warn', 'toggleInstructions called but no instructions found', {
+        modId,
+        collectionSlug: this.props.collection?.attributes?.collectionSlug,
+        revisionNumber: this.props.collection?.attributes?.revisionNumber,
+      });
       return;
     }
 
