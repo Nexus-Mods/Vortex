@@ -22,7 +22,6 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | @tailwindcss/cli | 4.1.17 |
 | @types/bluebird | 3.5.20 |
 | @types/uuid | 3.4.13 |
-| @vortex/shared | link:../shared |
 | bbcode-to-react | 0.2.11 |
 | big.js | 5.2.2 |
 | bluebird | 3.7.2 |

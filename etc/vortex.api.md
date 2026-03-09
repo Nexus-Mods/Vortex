@@ -458,9 +458,6 @@ function batchDispatch(store: Redux.Dispatch | Redux.Store, actions: Redux.Actio
 // @public (undocumented)
 function bbcodeToHTML(input: string): string;
 
-// @public (undocumented)
-function bundleAttachment(options?: IErrorOptions): Promise_2<string | undefined>;
-
 // @public
 class Button_2 extends React_2.PureComponent<ButtonProps, {}> {
     // (undocumented)
@@ -3300,6 +3297,9 @@ interface IRunParameters {
 }
 
 // @public (undocumented)
+const isAnalyticsEnabled: (state: any) => boolean;
+
+// @public (undocumented)
 interface ISaveOptions {
     // (undocumented)
     buttonLabel?: string;
@@ -3749,6 +3749,9 @@ interface ISteamEntry extends IGameStoreEntry {
     // (undocumented)
     usesProton?: boolean;
 }
+
+// @public (undocumented)
+const isTelemetryEnabled: (state: IState) => boolean;
 
 // @public (undocumented)
 interface IStoreQuery {
@@ -4794,6 +4797,8 @@ declare namespace selectors {
         isPremium,
         isLoggedIn,
         nexusIdsFromDownloadId,
+        isAnalyticsEnabled,
+        isTelemetryEnabled,
         getCollectionActiveSession,
         getCollectionLastActiveSessionId,
         getCollectionSessionHistory,
@@ -6100,6 +6105,7 @@ declare namespace util {
         userFriendlyTime,
         walk,
         withContext as withErrorContext,
+        withTrackedActivity,
         writeFileAtomic,
         CollectionsDownloadCompletedEvent,
         CollectionsDownloadFailedEvent,
@@ -6117,7 +6123,6 @@ declare namespace util {
         showSuccess,
         showActivity,
         showInfo,
-        bundleAttachment,
         showError,
         prettifyNodeErrorMessage,
         renderError,
@@ -6198,7 +6203,7 @@ export class Webview extends React_2.Component<IWebviewProps & IWebView_2, {}> {
 const willRemoveProfile: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
 
 // @public
-function withContext(id: string, value: string, fun: () => Promise_2<any>): Promise_2<any>;
+function withContext(id: string, value: string, fun: () => Promise_2<any>): Promise<any>;
 
 // @public (undocumented)
 const withTmpDir: (...args: any[]) => Promise_2<any>;
@@ -6208,6 +6213,12 @@ function withTmpDirImpl<T>(cb: (tmpPath: string) => Promise_2<T>): Promise_2<T>;
 
 // @public (undocumented)
 const withTmpFile: (...args: any[]) => Promise_2<any>;
+
+// Warning: (ae-forgotten-export) The symbol "TrackedFunction" needs to be exported by the entry point api.d.ts
+// Warning: (ae-forgotten-export) The symbol "TrackedActivityOptions" needs to be exported by the entry point api.d.ts
+//
+// @public
+function withTrackedActivity<T>(tracerName: string, spanName: string, attributes: Record<string, string | number | boolean>, fun: TrackedFunction<T>, options?: TrackedActivityOptions): Promise<T>;
 
 // @public (undocumented)
 const writeAsync: <BufferT>(...args: any[]) => Promise_2<{
