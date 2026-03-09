@@ -1837,6 +1837,176 @@ importers:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
 
+  extensions/games/game-7daystodie: {}
+
+  extensions/games/game-ahatintime: {}
+
+  extensions/games/game-baldursgate3: {}
+
+  extensions/games/game-battletech: {}
+
+  extensions/games/game-bladeandsorcery: {}
+
+  extensions/games/game-bloodstainedritualofthenight: {}
+
+  extensions/games/game-breakingwheel: {}
+
+  extensions/games/game-codevein: {}
+
+  extensions/games/game-conanexiles: {}
+
+  extensions/games/game-cyberpunk2077: {}
+
+  extensions/games/game-daggerfallunity: {}
+
+  extensions/games/game-darkestdungeon: {}
+
+  extensions/games/game-darksouls: {}
+
+  extensions/games/game-darksouls2: {}
+
+  extensions/games/game-dawnofman: {}
+
+  extensions/games/game-divinityoriginalsin2: {}
+
+  extensions/games/game-dmc5: {}
+
+  extensions/games/game-dragonage: {}
+
+  extensions/games/game-dragonage2: {}
+
+  extensions/games/game-dragons-dogma: {}
+
+  extensions/games/game-elex: {}
+
+  extensions/games/game-enderal: {}
+
+  extensions/games/game-factorio: {}
+
+  extensions/games/game-fallout3: {}
+
+  extensions/games/game-fallout4: {}
+
+  extensions/games/game-fallout4vr: {}
+
+  extensions/games/game-falloutnv: {}
+
+  extensions/games/game-galciv3: {}
+
+  extensions/games/game-gardenpaws: {}
+
+  extensions/games/game-greedfall: {}
+
+  extensions/games/game-grimdawn: {}
+
+  extensions/games/game-grimrock: {}
+
+  extensions/games/game-kenshi: {}
+
+  extensions/games/game-kerbalspaceprogram: {}
+
+  extensions/games/game-kingdomcome-deliverance: {}
+
+  extensions/games/game-masterchiefcollection: {}
+
+  extensions/games/game-microsoftflightsimulator: {}
+
+  extensions/games/game-monster-hunter-world: {}
+
+  extensions/games/game-morrowind: {}
+
+  extensions/games/game-mount-and-blade: {}
+
+  extensions/games/game-mount-and-blade2: {}
+
+  extensions/games/game-nehrim: {}
+
+  extensions/games/game-neverwinter-nights: {}
+
+  extensions/games/game-neverwinter-nights2: {}
+
+  extensions/games/game-nomanssky: {}
+
+  extensions/games/game-oblivion: {}
+
+  extensions/games/game-oni: {}
+
+  extensions/games/game-palworld: {}
+
+  extensions/games/game-pathfinderkingmaker: {}
+
+  extensions/games/game-pathfinderwrathoftherighteous: {}
+
+  extensions/games/game-prisonarchitect: {}
+
+  extensions/games/game-re2remake: {}
+
+  extensions/games/game-re3remake: {}
+
+  extensions/games/game-rimworld: {}
+
+  extensions/games/game-sekiro: {}
+
+  extensions/games/game-shadowrunreturns: {}
+
+  extensions/games/game-sims3: {}
+
+  extensions/games/game-sims4: {}
+
+  extensions/games/game-skyrim: {}
+
+  extensions/games/game-skyrimse: {}
+
+  extensions/games/game-skyrimvr: {}
+
+  extensions/games/game-spyroreignitedtrilogy: {}
+
+  extensions/games/game-starbound: {}
+
+  extensions/games/game-stardewvalley: {}
+
+  extensions/games/game-starfield: {}
+
+  extensions/games/game-stateofdecay: {}
+
+  extensions/games/game-subnautica: {}
+
+  extensions/games/game-subnauticabelowzero: {}
+
+  extensions/games/game-survivingmars: {}
+
+  extensions/games/game-sw-kotor: {}
+
+  extensions/games/game-teamfortress2: {}
+
+  extensions/games/game-teso: {}
+
+  extensions/games/game-torchlight2: {}
+
+  extensions/games/game-totalwarthreekingdoms: {}
+
+  extensions/games/game-untitledgoose: {}
+
+  extensions/games/game-vtmbloodlines: {}
+
+  extensions/games/game-warthunder: {}
+
+  extensions/games/game-witcher: {}
+
+  extensions/games/game-witcher2: {}
+
+  extensions/games/game-witcher3: {}
+
+  extensions/games/game-wolcen: {}
+
+  extensions/games/game-worldoftanks: {}
+
+  extensions/games/game-x4foundations: {}
+
+  extensions/games/game-xcom2: {}
+
+  extensions/games/game-xrebirth: {}
+
   extensions/gamestore-gog:
     devDependencies:
       '@types/bluebird':
