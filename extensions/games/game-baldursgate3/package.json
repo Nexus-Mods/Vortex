@@ -1,0 +1,25 @@
+{
+  "name": "game-baldursgate3",
+  "version": "1.5.7",
+  "description": "Support for Baldur's Gate 3",
+  "main": "dist/index.js",
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "type": "commonjs",
+  "private": true,
+  "config": {
+    "game": "Baldur's Gate 3"
+  },
+  "scripts": {
+    "_assets": "copyfiles -u 1 -f ./assets/* dist && copyfiles -u 1 -f ./tools/* dist/tools",
+    "_build": "node build.mjs && pnpm run _assets && extractInfo",
+    "build": "pnpm run _build && node ../../copy-extension.mjs out",
+    "dist": "pnpm run _build && node ../../copy-extension.mjs dist"
+  },
+  "devDependencies": {
+    "vortex-api": "catalog:"
+  },
+  "dependencies": {
+    "lru-cache": "catalog:"
+  }
+}

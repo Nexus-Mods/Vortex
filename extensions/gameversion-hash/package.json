@@ -5,8 +5,8 @@
   "main": "./dist/index.js",
   "scripts": {
     "_build": "node build.mjs && extractInfo",
-    "build": "pnpm run _build && node ../copy-extension.mjs gameversion-hash out",
-    "dist": "pnpm run _build && node ../copy-extension.mjs gameversion-hash dist"
+    "build": "pnpm run _build && node ../copy-extension.mjs out",
+    "dist": "pnpm run _build && node ../copy-extension.mjs dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "MIT",

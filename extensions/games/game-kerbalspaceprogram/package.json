@@ -1,0 +1,22 @@
+{
+  "name": "game-kerbalspaceprogram",
+  "version": "1.0.1",
+  "description": "Support for Kerbal Space Program",
+  "main": "dist/index.js",
+  "scripts": {
+    "_assets": "copyfiles -u 1 -f ./assets/* dist",
+    "_build": "copyfiles -u 1 -f ./src/*.js dist && pnpm run _assets && extractInfo",
+    "build": "pnpm run _build && node ../../copy-extension.mjs out",
+    "dist": "pnpm run _build && node ../../copy-extension.mjs dist"
+  },
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "type": "commonjs",
+  "private": true,
+  "config": {
+    "game": "Kerbal Space Program"
+  },
+  "devDependencies": {
+    "vortex-api": "catalog:"
+  }
+}

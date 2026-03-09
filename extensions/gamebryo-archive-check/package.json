@@ -6,8 +6,8 @@
   "repository": "",
   "scripts": {
     "_build": "node build.mjs && extractInfo",
-    "build": "pnpm run _build && node ../copy-extension.mjs gamebryo-archive-check out",
-    "dist": "pnpm run _build && node ../copy-extension.mjs gamebryo-archive-check dist"
+    "build": "pnpm run _build && node ../copy-extension.mjs out",
+    "dist": "pnpm run _build && node ../copy-extension.mjs dist"
   },
   "author": "Pickysaurus",
   "license": "GPL-3.0",

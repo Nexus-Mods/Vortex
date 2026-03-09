@@ -1,0 +1,22 @@
+{
+  "name": "game-nehrim",
+  "version": "1.0.0",
+  "description": "Support for Nehrim: At Fate's Edge (an Oblivion Total Conversion)",
+  "main": "dist/index.js",
+  "scripts": {
+    "_assets": "copyfiles -u 1 -f ./assets/* dist",
+    "_build": "copyfiles -u 1 -f ./src/*.js dist && pnpm run _assets && extractInfo",
+    "build": "pnpm run _build && node ../../copy-extension.mjs out",
+    "dist": "pnpm run _build && node ../../copy-extension.mjs dist"
+  },
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "type": "commonjs",
+  "private": true,
+  "config": {
+    "game": "Nehrim: At Fate's Edge"
+  },
+  "devDependencies": {
+    "vortex-api": "catalog:"
+  }
+}

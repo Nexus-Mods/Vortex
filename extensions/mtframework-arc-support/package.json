@@ -6,8 +6,8 @@
   "repository": "",
   "scripts": {
     "_build": "node build.mjs && node download_arctool.js && extractInfo",
-    "build": "pnpm run _build && node ../copy-extension.mjs mtframework-arc-support out",
-    "dist": "pnpm run _build && node ../copy-extension.mjs mtframework-arc-support dist"
+    "build": "pnpm run _build && node ../copy-extension.mjs out",
+    "dist": "pnpm run _build && node ../copy-extension.mjs dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

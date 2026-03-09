@@ -6,8 +6,8 @@
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/stylesheets/feedback.scss issues.json dist",
     "_build": "node build.mjs && extractInfo && pnpm run _assets",
-    "build": "pnpm run _build && node ../copy-extension.mjs feedback out",
-    "dist": "pnpm run _build && node ../copy-extension.mjs feedback dist"
+    "build": "pnpm run _build && node ../copy-extension.mjs out",
+    "dist": "pnpm run _build && node ../copy-extension.mjs dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

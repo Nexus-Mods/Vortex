@@ -76,18 +76,6 @@
       "srcPath": "assets/licenses/*",
       "outPath": "",
       "target": ["out", "dist"]
-    },
-    {
-      "srcPath": "extensions/games/*",
-      "outPath": "bundledPlugins",
-      "skipPaths": 2,
-      "target": ["out", "dist"]
-    },
-    {
-      "srcPath": "extensions/*/index.js",
-      "outPath": "bundledPlugins",
-      "skipPaths": 1,
-      "target": ["out", "dist"]
     }
   ]
 }

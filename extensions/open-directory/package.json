@@ -6,8 +6,8 @@
   "repository": "",
   "scripts": {
     "_build": "node build.mjs && extractInfo",
-    "build": "pnpm run _build && node ../copy-extension.mjs open-directory out",
-    "dist": "pnpm run _build && node ../copy-extension.mjs open-directory dist"
+    "build": "pnpm run _build && node ../copy-extension.mjs out",
+    "dist": "pnpm run _build && node ../copy-extension.mjs dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

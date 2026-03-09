@@ -7,8 +7,8 @@
   "author": "Black Tree Gaming Ltd.",
   "scripts": {
     "_build": "node build.mjs && extractInfo",
-    "build": "pnpm run _build && node ../copy-extension.mjs mod-report out",
-    "dist": "pnpm run _build && node ../copy-extension.mjs mod-report dist"
+    "build": "pnpm run _build && node ../copy-extension.mjs out",
+    "dist": "pnpm run _build && node ../copy-extension.mjs dist"
   },
   "devDependencies": {
     "@types/node": "catalog:",
