@@ -1,11 +1,22 @@
 {
   "name": "game-7daystodie",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {},
-  "author": "Black Tree Gaming Ltd.",
+  "description": "Support for 7 Days to Die",
+  "author": "nelson3219 & Senjay",
+  "version": "1.1.1",
   "license": "GPL-3.0",
+  "main": "index.js",
   "type": "commonjs",
-  "private": true
+  "private": true,
+  "config": {
+    "game": "7 Days to Die"
+  },
+  "scripts": {
+    "_assets": "copyfiles -u 1 -f ./assets/gameart.jpg dist",
+    "_build": "node build.mjs && pnpm run _assets && extractInfo",
+    "build": "pnpm run _build",
+    "dist": "pnpm run _build"
+  },
+  "devDependencies": {
+    "vortex-api": "catalog:"
+  }
 }
