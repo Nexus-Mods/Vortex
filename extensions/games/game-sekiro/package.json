@@ -1,11 +1,14 @@
 {
   "name": "game-sekiro",
   "version": "1.0.0",
-  "description": "",
+  "description": "Support for Sekiro",
   "main": "index.js",
   "scripts": {},
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "type": "commonjs",
-  "private": true
+  "private": true,
+  "config": {
+    "game": "Sekiro"
+  }
 }

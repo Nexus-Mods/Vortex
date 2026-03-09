@@ -1,11 +1,14 @@
 {
   "name": "game-rimworld",
-  "version": "1.0.0",
-  "description": "",
+  "version": "0.1.2",
+  "description": "Support for RimWorld",
   "main": "index.js",
   "scripts": {},
-  "author": "Black Tree Gaming Ltd.",
+  "author": "Chloe S.",
   "license": "GPL-3.0",
   "type": "commonjs",
-  "private": true
+  "private": true,
+  "config": {
+    "game": "RimWorld"
+  }
 }

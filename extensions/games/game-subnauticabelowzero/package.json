@@ -1,11 +1,14 @@
 {
   "name": "game-subnauticabelowzero",
-  "version": "1.0.0",
-  "description": "",
+  "version": "0.1.0",
+  "description": "This is a stub of the Subnautica: Below Zero extension. It will be downloaded the first time it's managed.",
   "main": "index.js",
   "scripts": {},
-  "author": "Black Tree Gaming Ltd.",
+  "author": "Chloe S. & AlexejheroYTB",
   "license": "GPL-3.0",
   "type": "commonjs",
-  "private": true
+  "private": true,
+  "config": {
+    "game": "Subnautica Below Zero"
+  }
 }

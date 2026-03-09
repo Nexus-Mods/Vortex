@@ -1,11 +1,14 @@
 {
   "name": "game-falloutnv",
-  "version": "1.0.0",
-  "description": "",
+  "version": "1.2.0",
+  "description": "Support for Fallout: New Vegas",
   "main": "index.js",
   "scripts": {},
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "type": "commonjs",
-  "private": true
+  "private": true,
+  "config": {
+    "game": "Fallout: New Vegas"
+  }
 }

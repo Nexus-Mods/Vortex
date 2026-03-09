@@ -1,11 +1,14 @@
 {
   "name": "game-starfield",
-  "version": "1.0.0",
-  "description": "",
+  "version": "0.1.0",
+  "description": "This is a stub of the Starfield extension. It will be downloaded the first time it's managed.",
   "main": "index.js",
   "scripts": {},
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "type": "commonjs",
-  "private": true
+  "private": true,
+  "config": {
+    "game": "Starfield"
+  }
 }

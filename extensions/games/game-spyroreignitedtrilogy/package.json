@@ -1,11 +1,14 @@
 {
   "name": "game-spyroreignitedtrilogy",
-  "version": "1.0.0",
-  "description": "",
+  "version": "1.0.1",
+  "description": "Support for Spyro Reignited Trilogy",
   "main": "index.js",
   "scripts": {},
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "type": "commonjs",
-  "private": true
+  "private": true,
+  "config": {
+    "game": "Spyro Reignited Trilogy"
+  }
 }

@@ -1,11 +1,14 @@
 {
   "name": "game-pathfinderwrathoftherighteous",
-  "version": "1.0.0",
-  "description": "",
+  "version": "1.0.1",
+  "description": "Support for Pathfinder: Wrath of the Righteous",
   "main": "index.js",
   "scripts": {},
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "type": "commonjs",
-  "private": true
+  "private": true,
+  "config": {
+    "game": "Pathfinder: Wrath of the Righteous"
+  }
 }

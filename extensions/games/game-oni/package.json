@@ -1,11 +1,14 @@
 {
   "name": "game-oni",
   "version": "1.0.0",
-  "description": "",
+  "description": "Support for Oxygen Not Included",
   "main": "index.js",
   "scripts": {},
-  "author": "Black Tree Gaming Ltd.",
+  "author": "newman55",
   "license": "GPL-3.0",
   "type": "commonjs",
-  "private": true
+  "private": true,
+  "config": {
+    "game": "Oxygen Not Included"
+  }
 }

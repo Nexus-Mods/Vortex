@@ -1,11 +1,14 @@
 {
   "name": "game-xcom2",
-  "version": "1.0.0",
-  "description": "",
+  "version": "1.1.4",
+  "description": "Support for XCOM 2 and XCOM 2: War of the Chosen",
   "main": "index.js",
   "scripts": {},
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "type": "commonjs",
-  "private": true
+  "private": true,
+  "config": {
+    "game": "XCOM 2"
+  }
 }

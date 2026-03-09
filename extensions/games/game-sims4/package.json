@@ -1,11 +1,14 @@
 {
   "name": "game-sims4",
-  "version": "1.0.0",
-  "description": "",
+  "version": "2.0.1",
+  "description": "Support for The Sims 4",
   "main": "index.js",
   "scripts": {},
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "type": "commonjs",
-  "private": true
+  "private": true,
+  "config": {
+    "game": "The Sims 4"
+  }
 }

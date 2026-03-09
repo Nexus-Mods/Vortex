@@ -1,11 +1,14 @@
 {
   "name": "game-codevein",
   "version": "1.0.0",
-  "description": "",
+  "description": "Support for Code Vein",
   "main": "index.js",
   "scripts": {},
-  "author": "Black Tree Gaming Ltd.",
+  "author": "Daymarr",
   "license": "GPL-3.0",
   "type": "commonjs",
-  "private": true
+  "private": true,
+  "config": {
+    "game": "Code Vein"
+  }
 }
