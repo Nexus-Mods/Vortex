@@ -1,7 +1,3 @@
-[submodule "extensions/games"]
-	path = extensions/games
-	url = https://github.com/Nexus-Mods/vortex-games.git
-	branch = master
 [submodule "api"]
 	path = api
 	url = https://github.com/Nexus-Mods/vortex-api.git
