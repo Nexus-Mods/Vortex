@@ -41,6 +41,7 @@ import LevelPersist, { DatabaseLocked } from "./store/LevelPersist";
 import {
   initMainPersistence,
   readPersistedValue,
+  writePersistedValue,
   registerHive,
   finalizeMainWrite,
 } from "./store/mainPersistence";
@@ -899,6 +900,7 @@ class Application {
           instanceId: newId,
         });
         this.mAppMetadata.instanceId = newId;
+        await writePersistedValue("app", ["instanceId"], newId);
       } else {
         log("debug", "startup instance", { instanceId });
         this.mAppMetadata.instanceId = instanceId;
