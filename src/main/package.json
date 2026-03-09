@@ -119,7 +119,6 @@
     "universal-analytics": "catalog:",
     "uuid": "catalog:",
     "vortex-parse-ini": "catalog:",
-    "vortex-run": "file:../renderer/util/vortex-run",
     "vortexmt": "catalog:",
     "wholocks": "catalog:",
     "winapi-bindings": "catalog:",

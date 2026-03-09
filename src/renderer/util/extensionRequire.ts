@@ -2,10 +2,11 @@ import {} from "module";
 // tslint:disable-next-line:no-var-requires
 const Module = require("module");
 import * as reduxAct from "redux-act";
-import { dynreq } from "vortex-run";
 
 import type { IRegisteredExtension } from "../types/extensions";
 import type { LogLevel } from "./log";
+
+import { webpackRequireHack } from "./webpack-hacks";
 
 import * as api from "../api";
 import * as reactSelect from "../controls/ReactSelectWrap";
@@ -145,7 +146,7 @@ function extensionRequire(orig, getExtensions: () => IRegisteredExtension[]) {
     ) {
       let res;
       try {
-        res = dynreq(id);
+        res = webpackRequireHack(id);
       } catch (err) {
         // nop, leave res undefined so orig gets tried
       }

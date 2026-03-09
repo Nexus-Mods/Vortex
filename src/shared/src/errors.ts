@@ -53,6 +53,33 @@ export function getErrorCode(err: unknown): string | null {
   return err.code;
 }
 
+/**
+ * Extracts the native error code from Windows errors.
+ * Checks both `nativeCode` and `systemCode` properties that are
+ * attached by the native error handling in renderer.tsx.
+ */
+export function getErrorNativeCode(err: unknown): number | bigint | null {
+  if (!(err instanceof Error)) {
+    return null;
+  }
+
+  if (
+    "nativeCode" in err &&
+    (typeof err.nativeCode === "number" || typeof err.nativeCode === "bigint")
+  ) {
+    return err.nativeCode;
+  }
+
+  if (
+    "systemCode" in err &&
+    (typeof err.systemCode === "number" || typeof err.systemCode === "bigint")
+  ) {
+    return err.systemCode;
+  }
+
+  return null;
+}
+
 type ErrorWithSystemCode = Error & { systemCode: number | bigint };
 
 /** Extracts the system code property from a potential error object */

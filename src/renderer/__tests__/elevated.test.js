@@ -1,3 +1,7 @@
+// In webpack, __non_webpack_require__ is the real Node.js require.
+// In Jest (no webpack), we alias it to the normal require.
+globalThis.__non_webpack_require__ = require;
+
 let mockTmpFileCalls = 0;
 let mockTmpFileReportError = undefined;
 jest.mock('tmp', () => ({
@@ -32,7 +36,7 @@ jest.mock('fs', () => ({
 }));
 
 
-import runElevated from '../util/vortex-run/src/elevated';
+import { runElevated } from '../util/elevated';
 
 function dummy() {
   console.log('DUMMY FUNCTION');
