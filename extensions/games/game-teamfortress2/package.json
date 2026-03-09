@@ -1,0 +1,11 @@
+{
+  "name": "game-teamfortress2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {},
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "type": "commonjs",
+  "private": true
+}
