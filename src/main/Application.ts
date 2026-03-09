@@ -675,8 +675,8 @@ class Application {
   }
 
   private async handleGet(getPaths: string[], dbPath: string): Promise<void> {
-    const persist = await Promise.resolve(LevelPersist.create(dbPath));
-    const keys = await Promise.resolve(persist.getAllKeys());
+    const persist = await LevelPersist.create(dbPath);
+    const keys = await persist.getAllKeys();
 
     try {
       const promises = getPaths.map(async (getPath) => {
@@ -688,7 +688,7 @@ class Application {
         try {
           const output = await Promise.all(
             matches.map(async (match) => {
-              const value = await Promise.resolve(persist.getItem(match));
+              const value = await persist.getItem(match);
               return `${match.join(".")} = ${value}`;
             }),
           );
@@ -703,7 +703,7 @@ class Application {
     } catch (err) {
       process.stderr.write(getErrorMessageOrDefault(err) + "\n");
     } finally {
-      await Promise.resolve(persist.close());
+      await persist.close();
     }
   }
 
@@ -711,7 +711,7 @@ class Application {
     setParameters: ISetItem[],
     dbPath: string,
   ): Promise<void> {
-    const persist = await Promise.resolve(LevelPersist.create(dbPath));
+    const persist = await LevelPersist.create(dbPath);
 
     try {
       const promises = setParameters.map(async (setParameter) => {
@@ -726,13 +726,13 @@ class Application {
     } catch (err) {
       process.stderr.write(getErrorMessageOrDefault(err) + "\n");
     } finally {
-      await Promise.resolve(persist.close());
+      await persist.close();
     }
   }
 
   private async handleDel(delPaths: string[], dbPath: string): Promise<void> {
-    const persist = await Promise.resolve(LevelPersist.create(dbPath));
-    const keys = await Promise.resolve(persist.getAllKeys());
+    const persist = await LevelPersist.create(dbPath);
+    const keys = await persist.getAllKeys();
 
     try {
       const promises = delPaths.map(async (getPath) => {
@@ -744,7 +744,7 @@ class Application {
         try {
           await Promise.all(
             matches.map(async (match) => {
-              await Promise.resolve(persist.removeItem(match));
+              await persist.removeItem(match);
               process.stdout.write(`removed ${match.join(".")}\n`);
             }),
           );
@@ -757,7 +757,7 @@ class Application {
     } catch (err) {
       process.stderr.write(getErrorMessageOrDefault(err) + "\n");
     } finally {
-      await Promise.resolve(persist.close());
+      await persist.close();
     }
   }
 
