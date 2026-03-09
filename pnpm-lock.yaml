@@ -495,6 +495,9 @@ catalogs:
     loot:
       specifier: git+https://github.com/Nexus-Mods/node-loot#c4f6d3dbae7bc2e19b8cb2d4cd387fffd90c87ec
       version: 6.1.2
+    lru-cache:
+      specifier: ^11.2.6
+      version: 11.2.6
     markdown-ast:
       specifier: ^0.2.1
       version: 0.2.1
@@ -1849,7 +1852,15 @@ importers:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
 
-  extensions/games/game-baldursgate3: {}
+  extensions/games/game-baldursgate3:
+    dependencies:
+      lru-cache:
+        specifier: 'catalog:'
+        version: 11.2.6
+    devDependencies:
+      vortex-api:
+        specifier: 'catalog:'
+        version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
 
   extensions/games/game-battletech:
     devDependencies:

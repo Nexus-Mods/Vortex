@@ -172,6 +172,7 @@ catalog:
   levelup: ^4.4.0
   lodash: ^4.17.21
   loot: git+https://github.com/Nexus-Mods/node-loot#c4f6d3dbae7bc2e19b8cb2d4cd387fffd90c87ec
+  lru-cache: ^11.2.6
   markdown-ast: ^0.2.1
   memoize-one: ^5.1.1
   minimatch: ^3.0.5
