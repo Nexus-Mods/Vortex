@@ -2,7 +2,7 @@
   "name": "game-baldursgate3",
   "version": "1.5.7",
   "description": "Support for Baldur's Gate 3",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {},
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

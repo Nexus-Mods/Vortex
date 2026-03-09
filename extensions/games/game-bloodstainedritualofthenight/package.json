@@ -2,7 +2,7 @@
   "name": "game-bloodstainedritualofthenight",
   "version": "1.0.4",
   "description": "Support for Bloodstained: Ritual of the Night",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {},
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

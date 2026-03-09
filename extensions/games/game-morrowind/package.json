@@ -2,7 +2,7 @@
   "name": "game-morrowind",
   "version": "1.0.7",
   "description": "Support for The Elder Scrolls III: Morrowind",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {},
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

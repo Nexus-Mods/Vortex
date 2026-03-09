@@ -2,13 +2,21 @@
   "name": "game-dragons-dogma",
   "version": "1.0.3",
   "description": "Support for Dragon's Dogma: Dark Arisen",
-  "main": "index.js",
-  "scripts": {},
+  "main": "dist/index.js",
+  "scripts": {
+    "_assets": "copyfiles -u 1 -f ./assets/*.jpg ./assets/*.png dist",
+    "_build": "copyfiles -u 1 -f ./src/*.js dist && pnpm run _assets && extractInfo",
+    "build": "pnpm run _build",
+    "dist": "pnpm run _build"
+  },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "type": "commonjs",
   "private": true,
   "config": {
     "game": "Dragon's Dogma: Dark Arisen"
+  },
+  "devDependencies": {
+    "vortex-api": "catalog:"
   }
 }

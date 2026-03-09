@@ -2,7 +2,7 @@
   "name": "game-codevein",
   "version": "1.0.0",
   "description": "Support for Code Vein",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {},
   "author": "Daymarr",
   "license": "GPL-3.0",

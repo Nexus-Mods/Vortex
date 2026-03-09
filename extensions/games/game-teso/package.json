@@ -2,13 +2,21 @@
   "name": "game-teso",
   "version": "1.0.1",
   "description": "Support for The Elder Scrolls Online",
-  "main": "index.js",
-  "scripts": {},
+  "main": "dist/index.js",
+  "scripts": {
+    "_assets": "copyfiles -u 1 -f ./assets/gameart.jpg dist",
+    "_build": "copyfiles -u 1 -f ./src/index.js dist && pnpm run _assets && extractInfo",
+    "build": "pnpm run _build",
+    "dist": "pnpm run _build"
+  },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "type": "commonjs",
   "private": true,
   "config": {
     "game": "The Elder Scrolls Online"
+  },
+  "devDependencies": {
+    "vortex-api": "catalog:"
   }
 }

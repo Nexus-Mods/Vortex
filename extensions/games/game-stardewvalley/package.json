@@ -2,7 +2,7 @@
   "name": "game-stardewvalley",
   "version": "0.3.9",
   "description": "Support for Stardew Valley",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {},
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

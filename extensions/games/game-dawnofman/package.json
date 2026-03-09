@@ -2,13 +2,21 @@
   "name": "game-dawnofman",
   "version": "1.0.0",
   "description": "Support for Dawn of Man",
-  "main": "index.js",
-  "scripts": {},
+  "main": "dist/index.js",
+  "scripts": {
+    "_assets": "copyfiles -u 1 -f ./assets/*.jpg ./assets/*.png dist",
+    "_build": "copyfiles -u 1 -f ./src/*.js dist && pnpm run _assets && extractInfo",
+    "build": "pnpm run _build",
+    "dist": "pnpm run _build"
+  },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "type": "commonjs",
   "private": true,
   "config": {
     "game": "Dawn of Man"
+  },
+  "devDependencies": {
+    "vortex-api": "catalog:"
   }
 }

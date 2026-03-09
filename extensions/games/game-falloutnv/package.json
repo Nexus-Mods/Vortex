@@ -2,7 +2,7 @@
   "name": "game-falloutnv",
   "version": "1.2.0",
   "description": "Support for Fallout: New Vegas",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {},
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
