@@ -29,6 +29,7 @@ import { v4 as uuidv4 } from "uuid";
 import winapi from "winapi-bindings";
 
 import { parseCommandline, updateStartupSettings } from "./cli";
+import { installDevelExtensions } from "./devel";
 import { terminate } from "./errorHandling";
 import { disableErrorReporting } from "./errorReporting";
 import { setupMainExtensions } from "./extensions";
@@ -928,7 +929,6 @@ class Application {
 
   private async initDevel(): Promise<void> {
     if (process.env.NODE_ENV === "development") {
-      const { installDevelExtensions } = await import("./devel.js");
       await installDevelExtensions();
     }
   }

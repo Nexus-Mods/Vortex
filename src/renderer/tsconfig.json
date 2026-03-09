@@ -9,7 +9,8 @@
     "./dist",
     "./temp",
     "./setupTests.js",
-    "./jest.config.mjs"
+    "./jest.config.mjs",
+    "./webpack.config.cjs"
   ],
   "compilerOptions": {
     "composite": true,
