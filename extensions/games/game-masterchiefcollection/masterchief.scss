@@ -1,0 +1,24 @@
+.halogameimg {
+  width: 2.5em;
+  height: 2.5em;
+}
+
+.haloimglayout {
+  display: flex !important;
+  justify-content: space-evenly;
+}
+
+.halo-img-div span { 
+  display: none;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #333;
+  color: #fff; 
+}
+
+.halo-img-div:hover span { 
+  display: block;
+  text-align: center;
+}
