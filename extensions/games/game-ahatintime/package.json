@@ -1,11 +1,22 @@
 {
   "name": "game-ahatintime",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {},
+  "description": "Support for A Hat in Time",
   "author": "Black Tree Gaming Ltd.",
+  "version": "1.0.0",
   "license": "GPL-3.0",
+  "main": "index.js",
   "type": "commonjs",
-  "private": true
+  "private": true,
+  "config": {
+    "game": "A Hat in Time"
+  },
+  "scripts": {
+    "_assets": "copyfiles -u 1 -f ./assets/gameart.jpg ./assets/HatinTimeEditor.png dist",
+    "_build": "copyfiles -u 1 -f ./src/index.js dist && pnpm run _assets && extractInfo",
+    "build": "pnpm run _build",
+    "dist": "pnpm run _build"
+  },
+  "devDependencies": {
+    "vortex-api": "catalog:"
+  }
 }
