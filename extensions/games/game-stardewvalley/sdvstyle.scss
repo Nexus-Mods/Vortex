@@ -1,0 +1,24 @@
+.table-mods.cell-sdv-compatibility {
+  text-align: center;
+
+  .sdv-compatibility-broken,
+  .sdv-compatibility-obsolete {
+    color: $brand-danger;
+  }
+
+  .sdv-compatibility-abandoned,
+  .sdv-compatibility-unofficial,
+  .sdv-compatibility-workaround {
+    color: $brand-warning;
+  }
+
+  .sdv-compatibility-unknown {
+    color: $text-color-disabled;
+  }
+
+  .sdv-compatibility-optional,
+  .sdv-compatibility-ok {
+    color: $brand-success;
+  }
+}
+

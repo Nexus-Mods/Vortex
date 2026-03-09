@@ -26,6 +26,8 @@ export default defineConfig([
       "./src/shared/dist",
       "./src/renderer/__tests__",
       "./src/renderer/__mocks__",
+      "./src/renderer/lib",
+      "./src/renderer/dist",
       "./extensions",
       "./api",
       ".pnpm-store",
