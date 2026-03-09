@@ -1,13 +1,22 @@
-import Bluebird from "bluebird";
+import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import * as fs from "fs";
 import * as path from "path";
 import * as tmp from "tmp";
 import * as winapi from "winapi-bindings";
 
+export interface IElevatedIpc {
+  sendMessage(data: unknown): void;
+  sendError(error: unknown): void;
+  sendEndError(error: unknown): void;
+  end(): void;
+}
+
+/* eslint-disable -- elevatedMain is serialized as text into a temp file and executed
+   in a separate elevated Node process. It must use require(), untyped variables, etc. */
 function elevatedMain(
-  moduleRoot: string,
+  moduleRoot: string[],
   ipcPath: string,
-  main: (ipc, req: NodeRequire) => void | Promise<void> | Bluebird<void>,
+  main: (ipc: IElevatedIpc, req: NodeJS.Require) => void | PromiseLike<void>,
 ) {
   let client;
   const syntaxErrors = ["ReferenceError"];
@@ -20,7 +29,6 @@ function elevatedMain(
         }
       });
     };
-    // tslint:disable-next-line:no-console
     console.error("Elevated code failed", error.stack);
     if (client !== undefined) {
       testIfScriptInvalid();
@@ -29,12 +37,9 @@ function elevatedMain(
 
   process.on("uncaughtException", handleError);
   process.on("unhandledRejection", handleError);
-  // tslint:disable-next-line:no-shadowed-variable
-  (module as any).paths.push(moduleRoot);
-  // tslint:disable-next-line:no-shadowed-variable
-  const net = require("net");
+  (module as NodeJS.Module).paths.push(...moduleRoot);
   const JsonSocket = require("json-socket");
-  // tslint:disable-next-line:no-shadowed-variable
+  const net = require("net");
   const path = require("path");
 
   client = new JsonSocket(new net.Socket());
@@ -44,7 +49,7 @@ function elevatedMain(
     .on("connect", () => {
       Promise.resolve(main(client, require))
         .catch((error) => {
-          client.sendError(error);
+          client.sendError(unknownToError(error));
         })
         .finally(() => {
           client.end();
@@ -55,12 +60,11 @@ function elevatedMain(
     })
     .on("error", (err) => {
       if (err.code !== "EPIPE") {
-        // will anyone ever see this?
-        // tslint:disable-next-line:no-console
         console.error("Connection failed", err.message);
       }
     });
 }
+/* eslint-enable */
 
 /**
  * run a function as an elevated process (windows only!).
@@ -87,10 +91,10 @@ function elevatedMain(
  */
 function runElevated(
   ipcPath: string,
-  func: (ipc: any, req: NodeRequire) => void | Promise<void> | Bluebird<void>,
-  args?: any,
-): Bluebird<any> {
-  return new Bluebird((resolve, reject) => {
+  func: (ipc: IElevatedIpc, req: NodeJS.Require) => void | PromiseLike<void>,
+  args?: Record<string, unknown>,
+): Promise<string> {
+  return new Promise((resolve, reject) => {
     tmp.file(
       { postfix: ".js" },
       (err: Error, tmpPath: string, fd: number, cleanup: () => void) => {
@@ -98,10 +102,8 @@ function runElevated(
           return reject(err);
         }
 
-        const projectRoot = path
-          .resolve(__dirname, "../..")
-          .split("\\")
-          .join("/");
+        const modulePaths = module.paths
+          .map((p) => p.split("\\").join("/"));
 
         let mainBody = elevatedMain.toString();
         mainBody = mainBody.slice(
@@ -109,14 +111,14 @@ function runElevated(
           mainBody.lastIndexOf("}"),
         );
 
-        let prog: string = `
-        let moduleRoot = '${projectRoot}';\n
+        let prog = `
+        let moduleRoot = ${JSON.stringify(modulePaths)};\n
         let ipcPath = '${ipcPath}';\n
       `;
 
         if (args !== undefined) {
           for (const argKey of Object.keys(args)) {
-            if (args.hasOwnProperty(argKey)) {
+            if (Object.prototype.hasOwnProperty.call(args, argKey)) {
               prog += `let ${argKey} = ${JSON.stringify(args[argKey])};\n`;
             }
           }
@@ -127,17 +129,15 @@ function runElevated(
         ${mainBody}\n
       `;
 
-        fs.write(fd, prog, (writeErr: Error, written: number, str: string) => {
+        fs.write(fd, prog, (writeErr: Error, _written: number, _str: string) => {
           if (writeErr) {
             try {
               cleanup();
             } catch (cleanupErr) {
-              // tslint:disable-next-line:no-console
+              const errorMessage = getErrorMessageOrDefault(cleanupErr);
               console.error(
                 "failed to clean up temporary script",
-                cleanupErr instanceof Error
-                  ? cleanupErr.message
-                  : String(cleanupErr),
+                errorMessage,
               );
             }
             return reject(writeErr);
@@ -145,12 +145,12 @@ function runElevated(
 
           try {
             fs.closeSync(fd);
-          } catch (err) {
-            if (err instanceof Error && "code" in err && err.code !== "EBADF") {
+          } catch (closeErr) {
+            const err = unknownToError(closeErr);
+            const errCode = getErrorCode(err);
+            if (errCode !== "EBADF") {
               return reject(err);
             }
-            // not sure what causes EBADF, don't want to return now if there is a chance this
-            // will actually work
           }
 
           try {
@@ -162,8 +162,8 @@ function runElevated(
               show: "shownormal",
             });
             return resolve(tmpPath);
-          } catch (err) {
-            return reject(err);
+          } catch (shellErr) {
+            return reject(unknownToError(shellErr));
           }
         });
       },

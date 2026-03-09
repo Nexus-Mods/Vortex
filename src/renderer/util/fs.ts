@@ -20,7 +20,9 @@ import type * as whoLocksT from "wholocks";
 import {
   getErrorCode,
   getErrorMessageOrDefault,
+  getErrorNativeCode,
   isErrorWithSystemCode,
+  unknownToError,
 } from "@vortex/shared";
 import PromiseBB from "bluebird";
 import { dialog as dialogIn } from "electron";
@@ -1061,16 +1063,18 @@ function elevated(
           });
       })
       .listen(path.join("\\\\?\\pipe", ipcPath));
-    vortexRun.runElevated(ipcPath, func, parameters).catch((err) => {
+    vortexRun.runElevated(ipcPath, func, parameters).catch((err: unknown) => {
+      const nativeCode = getErrorNativeCode(err);
+      const error = unknownToError(err);
       if (
-        err.code === 5 ||
-        (process.platform === "win32" && err.systemCode === 1223)
+        getErrorCode(err) === "5" ||
+        (process.platform === "win32" && nativeCode === 1223)
       ) {
         // this code is returned when the user rejected the UAC dialog. Not currently
         // aware of another case
         reject(new UserCanceled());
       } else {
-        reject(new Error(`OS error ${err.message} (${err.code})`));
+        reject(new Error(`OS error ${error.message} (${getErrorCode(err) ?? nativeCode})`));
       }
     });
   }).finally(() => {
