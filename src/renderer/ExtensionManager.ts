@@ -24,7 +24,6 @@ import { toast } from "react-hot-toast";
 import * as semver from "semver";
 import { generate as shortid } from "shortid";
 import stringFormat from "string-template";
-import { dynreq, runElevated } from "vortex-run";
 import { fileMD5 } from "vortexmt";
 
 import type {
@@ -129,9 +128,9 @@ import {
   wrapExtCBAsync,
   wrapExtCBSync,
 } from "./util/util";
+import { webpackRequireHack } from "./util/webpack-hacks";
 
-// NOTE(erri120): beautiful webpack require hack, see usage for details.
-declare const __non_webpack_require__: NodeJS.Require;
+import { runElevated } from "./util/elevated";
 
 const modmeta = lazyRequire<typeof modmetaT>(() => require("modmeta-db"));
 
@@ -2966,7 +2965,7 @@ class ExtensionManager {
     // NOTE(erri120): Hack for dynamically importing extensions.
     // Webpack normally rewrites all requires to a custom __webpack__require
     // but here we don't want that. We want the raw "normal" require.
-    const mod = __non_webpack_require__(id);
+    const mod = webpackRequireHack(id);
     return this.getExtensionInitFunc(mod);
   }
 

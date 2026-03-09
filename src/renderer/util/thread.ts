@@ -1,7 +1,10 @@
 import PromiseBB from "bluebird";
 import * as fs from "fs";
-import * as path from "path";
 import * as tmp from "tmp";
+
+import { getRealNodeModulePaths } from "./webpack-hacks";
+
+declare let __non_webpack_require__: NodeJS.Require;
 
 function getErrorMessage(err: any): string {
   if (err instanceof Error) {
@@ -13,13 +16,15 @@ function getErrorMessage(err: any): string {
   return String(err);
 }
 
+// trampoline is serialized via .toString() and executed in a Worker thread.
+// All require() calls use __non_webpack_require__ so webpack doesn't transform them.
 function trampoline(
   baseDir: string,
   moduleRoot: string,
   main: (...args: any[]) => any,
 ) {
-  const innerPath = require("path");
-  const requireOrig = require;
+  const innerPath = __non_webpack_require__("path");
+  const requireOrig = __non_webpack_require__;
   const newRequire: any = (id: string): any => {
     if (id.startsWith(".")) {
       return requireOrig(innerPath.join(baseDir, id));
@@ -28,7 +33,7 @@ function trampoline(
     }
   };
   newRequire.requireActual = newRequire;
-  require = newRequire;
+  __non_webpack_require__ = newRequire;
   (module as any).paths.push(moduleRoot);
 }
 
@@ -37,9 +42,8 @@ function writeProgram(
   moduleBase: string,
   args?: any[],
 ): string {
-  const projectRoot = path
-    .resolve(__dirname, "../../node_modules")
-    .split("\\")
+  const projectRoot = getRealNodeModulePaths(process.cwd())[0]
+    ?.split("\\")
     .join("/");
 
   let mainBody = trampoline.toString();
@@ -48,7 +52,13 @@ function writeProgram(
     mainBody.lastIndexOf("}"),
   );
 
+  // We use __non_webpack_require__ in the trampoline so webpack doesn't transform
+  // the calls, but that global doesn't exist in plain Node/Worker — alias it here.
+  // __webpack_require__ is also aliased in case the caller's serialized func
+  // contains webpack-transformed requires.
   let prog: string = `
+        let __non_webpack_require__ = require;\n
+        const __webpack_require__ = require;\n
         let moduleRoot = '${projectRoot}';\n
         let baseDir = '${moduleBase.replace(/\\/g, "/")}';\n
       `;
@@ -83,7 +93,7 @@ function writeProgram(
   return prog;
 }
 
-function runThreaded(
+export function runThreaded(
   func: (...args: any[]) => any,
   moduleBase: string,
   ...args: any[]
@@ -123,4 +133,3 @@ function runThreaded(
   });
 }
 
-export default runThreaded;

@@ -8,7 +8,6 @@ import * as net from "net";
 import * as path from "path";
 import * as semver from "semver";
 import { generate as shortid } from "shortid";
-import { runElevated } from "vortex-run";
 import * as winapi from "winapi-bindings";
 
 import type {
@@ -26,6 +25,7 @@ import type {
 
 import { clearUIBlocker, setUIBlocker } from "../../actions";
 import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
+import { runElevated } from "../../util/elevated";
 import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
 import { log } from "../../util/log";

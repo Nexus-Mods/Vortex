@@ -4,6 +4,10 @@ import * as path from "path";
 import * as tmp from "tmp";
 import * as winapi from "winapi-bindings";
 
+import { getRealNodeModulePaths } from "./webpack-hacks";
+
+declare const __non_webpack_require__: NodeJS.Require;
+
 export interface IElevatedIpc {
   sendMessage(data: unknown): void;
   sendError(error: unknown): void;
@@ -12,7 +16,11 @@ export interface IElevatedIpc {
 }
 
 /* eslint-disable -- elevatedMain is serialized as text into a temp file and executed
-   in a separate elevated Node process. It must use require(), untyped variables, etc. */
+   in a separate elevated Node process. All require() calls must use
+   __non_webpack_require__ so webpack doesn't transform them into
+   __webpack_require__ with internal module IDs. Similarly, imported bindings
+   (like unknownToError) can't be used here because webpack mangles their
+   references. */
 function elevatedMain(
   moduleRoot: string[],
   ipcPath: string,
@@ -38,18 +46,19 @@ function elevatedMain(
   process.on("uncaughtException", handleError);
   process.on("unhandledRejection", handleError);
   (module as NodeJS.Module).paths.push(...moduleRoot);
-  const JsonSocket = require("json-socket");
-  const net = require("net");
-  const path = require("path");
+  const JsonSocket = __non_webpack_require__("json-socket");
+  const net = __non_webpack_require__("net");
+  const path = __non_webpack_require__("path");
 
   client = new JsonSocket(new net.Socket());
   client.connect(path.join("\\\\?\\pipe", ipcPath));
 
   client
     .on("connect", () => {
-      Promise.resolve(main(client, require))
+      Promise.resolve(main(client, __non_webpack_require__))
         .catch((error) => {
-          client.sendError(unknownToError(error));
+          const err = error instanceof Error ? error : new Error(String(error));
+          client.sendError(err);
         })
         .finally(() => {
           client.end();
@@ -89,7 +98,7 @@ function elevatedMain(
  *                             the path of the tmpFile we had to create. If the caller can figure
  *                             out when the process is done (using ipc) it should delete it
  */
-function runElevated(
+export function runElevated(
   ipcPath: string,
   func: (ipc: IElevatedIpc, req: NodeJS.Require) => void | PromiseLike<void>,
   args?: Record<string, unknown>,
@@ -102,7 +111,7 @@ function runElevated(
           return reject(err);
         }
 
-        const modulePaths = module.paths
+        const modulePaths = getRealNodeModulePaths(process.cwd())
           .map((p) => p.split("\\").join("/"));
 
         let mainBody = elevatedMain.toString();
@@ -111,7 +120,14 @@ function runElevated(
           mainBody.lastIndexOf("}"),
         );
 
+        // The elevatedMain function body is serialized via .toString() and executed
+        // in a separate Node process. We use __non_webpack_require__ in the function
+        // so webpack doesn't transform the calls, but that global doesn't exist in
+        // plain Node — so we alias it here. __webpack_require__ is also aliased in
+        // case the caller's serialized func callback contains webpack-transformed requires.
         let prog = `
+        const __non_webpack_require__ = require;\n
+        const __webpack_require__ = require;\n
         let moduleRoot = ${JSON.stringify(modulePaths)};\n
         let ipcPath = '${ipcPath}';\n
       `;
@@ -171,4 +187,3 @@ function runElevated(
   });
 }
 
-export default runElevated;

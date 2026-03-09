@@ -14,7 +14,6 @@
  */
 
 import type * as permissionT from "permissions";
-import type * as vortexRunT from "vortex-run";
 import type * as whoLocksT from "wholocks";
 
 import {
@@ -43,6 +42,7 @@ import {
   SelfCopyCheckError,
   UserCanceled,
 } from "./CustomErrors";
+import { runElevated } from "./elevated";
 import { createErrorReport, getVisibleWindow } from "./errorHandling";
 import lazyRequire from "./lazyRequire";
 import { log } from "./log";
@@ -52,7 +52,6 @@ import { restackErr, truthy } from "./util";
 const permission: typeof permissionT = lazyRequire(() =>
   require("permissions"),
 );
-const vortexRun: typeof vortexRunT = lazyRequire(() => require("vortex-run"));
 const wholocks: typeof whoLocksT = lazyRequire(() => require("wholocks"));
 
 const showMessageBox = async (
@@ -1063,7 +1062,7 @@ function elevated(
           });
       })
       .listen(path.join("\\\\?\\pipe", ipcPath));
-    vortexRun.runElevated(ipcPath, func, parameters).catch((err: unknown) => {
+    runElevated(ipcPath, func, parameters).catch((err: unknown) => {
       const nativeCode = getErrorNativeCode(err);
       const error = unknownToError(err);
       if (
