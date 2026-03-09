@@ -9,16 +9,18 @@ import type {
 } from "../extensions/history_management/reducers";
 import type { IMod } from "../extensions/mod_management/types/IMod";
 import type { IProfile } from "../extensions/profile_management/types/IProfile";
-import type { IParameters } from "../../shared/types/cli";
+import type { IParameters } from "@vortex/shared/cli";
 import type { IAvailableExtension, IExtension } from "./extensions";
 import type { IAttributeState } from "./IAttributeState";
 import type { IDialog } from "./IDialog";
 import type { INotification } from "./INotification";
 import type { VortexInstallType } from "./VortexInstallType";
+import type { IHealthCheckSessionState } from "../extensions/health_check/reducers/session";
+import type { IHealthCheckPersistentState } from "../extensions/health_check/reducers/persistent";
 
 // re-export these to keep the imports from extensions local
 export type { IDownload, IDiscoveryResult, IGameStored, IMod, IProfile };
-import type { IDimensions, IPosition, IWindow } from "../../shared/types/state";
+import type { IDimensions, IPosition, IWindow } from "@vortex/shared/state";
 export type { IDimensions, IPosition, IWindow };
 
 /**
@@ -345,6 +347,7 @@ export interface IState {
     browser: IBrowserState;
     history: IHistoryState;
     overlays: IOverlaysState;
+    healthCheck: IHealthCheckSessionState;
     extensions: {
       available: IAvailableExtension[];
       optional: { [extId: string]: IExtensionOptional[] };
@@ -362,6 +365,7 @@ export interface IState {
     deployment: { needToDeploy: { [gameId: string]: boolean } };
     transactions: IStateTransactions;
     history: IHistoryPersistent;
+    healthCheck: IHealthCheckPersistentState;
   };
 }
 

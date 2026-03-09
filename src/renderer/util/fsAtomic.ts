@@ -1,4 +1,4 @@
-import { getErrorCode, unknownToError } from "../../shared/errors";
+import { getErrorCode, unknownToError } from "@vortex/shared";
 import { checksum } from "./checksum";
 import * as fs from "./fs";
 import { log } from "./log";

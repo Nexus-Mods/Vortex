@@ -15,7 +15,7 @@ import type {
   VideoEntryType,
 } from "./types";
 import ModSpotlightsDashlet from "./ModSpotlightsDashlet";
-import { getErrorMessageOrDefault } from "../../../shared/errors";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 
 // Can be used for debugging.
 const DEBUG_MODE: boolean = false;

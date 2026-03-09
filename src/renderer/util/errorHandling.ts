@@ -1,15 +1,18 @@
-import type {
-  IFeedbackResponse,
-  IOAuthCredentials,
-} from "@nexusmods/nexus-api";
-import type NexusT from "@nexusmods/nexus-api";
+import type PromiseBB from "bluebird";
 import type { BrowserWindow } from "electron";
 
-import PromiseBB from "bluebird";
-import { dialog as dialogIn, ipcRenderer } from "electron";
+import {
+  type Span,
+  context,
+  ROOT_CONTEXT,
+  SpanStatusCode,
+  trace,
+} from "@opentelemetry/api";
+import { unknownToError } from "@vortex/shared";
+import { recordErrorOnSpan } from "@vortex/shared/telemetry";
+import { ipcRenderer } from "electron";
 import * as fs from "fs-extra";
 import I18next from "i18next";
-import * as os from "os";
 import * as path from "path";
 import * as semver from "semver";
 import { inspect } from "util";
@@ -18,23 +21,13 @@ import {} from "uuid";
 import type { IErrorOptions, IExtensionApi } from "../types/api";
 import type { IError } from "../types/IError";
 
-import {
-  NEXUS_BASE_URL,
-  OAUTH_CLIENT_ID,
-} from "../extensions/nexus_integration/constants";
-import { getErrorMessageOrDefault } from "../../shared/errors";
+import { isTelemetryEnabled } from "../extensions/telemetry/selectors";
 import { getApplication } from "./application";
 import { COMPANY_ID } from "./constants";
 import { UserCanceled } from "./CustomErrors";
-import { genHash } from "./genHash";
 import getVortexPath from "./getVortexPath";
 import { fallbackTFunc } from "./i18n";
 import { log } from "./log";
-import { bundleAttachment } from "./message";
-import { getCPUArch } from "./nativeArch";
-import opn from "./opn";
-import { getPreloadApi } from "./preloadAccess";
-import { getSafe } from "./storeHelper";
 import { flatten, getAllPropertyNames, spawnSelf } from "./util";
 
 // Async dialog helpers for cross-process compatibility
@@ -48,95 +41,14 @@ const showErrorBox = async (title: string, content: string): Promise<void> => {
   return window.api.dialog.showErrorBox(title, content);
 };
 
-function createTitle(type: string, error: IError, hash: string) {
-  return `${type}: ${error.message}`;
-}
-
 type IErrorContext = Record<string, string>;
 
 const globalContext: IErrorContext = {};
-
-function isWine() {
-  if (process.platform !== "win32") {
-    return false;
-  }
-  try {
-    const winapi = require("winapi-bindings");
-    return winapi.IsThisWine();
-  } catch (err) {
-    return false;
-  }
-}
-
-function createReport(
-  type: string,
-  error: IError,
-  context: IErrorContext,
-  version: string,
-  reporterProcess: string,
-  sourceProcess: string | undefined,
-) {
-  let proc: string = reporterProcess || "unknown";
-  if (sourceProcess !== undefined) {
-    proc = `${sourceProcess} -> ${proc}`;
-  }
-  const sections = [
-    `#### System
-| | |
-|------------ | -------------|
-|Platform | ${process.platform} ${os.release()} ${isWine() ? "(Wine)" : ""} |
-|CPU Architecture | ${getCPUArch()} |
-|Architecture | ${process.arch} |
-|Application Version | ${version} |
-|Process | ${proc} |`,
-    `#### Message
-${error.message}`,
-  ];
-
-  if (error.title) {
-    sections.push(`#### Title
-\`\`\`
-${error.title}
-\`\`\`
-`);
-  }
-
-  if (error.details) {
-    sections.push(`#### Details
-\`\`\`
-${error.details}
-\`\`\``);
-  }
-
-  if (Object.keys(context).length > 0) {
-    sections.push(`#### Context
-\`\`\`
-${Object.keys(context).map((key) => `${key} = ${context[key]}`)}
-\`\`\``);
-  }
-
-  if (error.path) {
-    sections.push(`#### Path
-\`\`\`
-${error.path}
-\`\`\``);
-  }
-
-  if (error.stack) {
-    sections.push(`#### Stack
-\`\`\`
-${error.stack}
-\`\`\``);
-  }
-
-  return `### Application ${type}\n` + sections.join("\n");
-}
 
 export function createErrorReport(
   type: string,
   error: IError,
   context: IErrorContext,
-  labels: string[],
   state: any,
   sourceProcess?: string,
 ) {
@@ -147,102 +59,19 @@ export function createErrorReport(
     JSON.stringify({
       type,
       error,
-      labels: labels || [],
       context,
-      token: getSafe(
-        state,
-        ["confidential", "account", "nexus", "OAuthCredentials"],
-        undefined,
-      ),
       reportProcess: process.type,
       sourceProcess,
       userData,
     }),
   );
-  spawnSelf(["--report", reportPath]);
+  if (isTelemetryEnabled(state)) {
+    spawnSelf(["--report", reportPath]);
+  }
 }
 
-function nexusReport(
-  hash: string,
-  type: string,
-  error: IError,
-  labels: string[],
-  context: IErrorContext,
-  oauthToken: any,
-  reporterProcess: string,
-  sourceProcess: string | undefined,
-  attachment: string | undefined,
-): PromiseBB<IFeedbackResponse> {
-  const Nexus: typeof NexusT = require("@nexusmods/nexus-api").default;
-
-  const referenceId = require("uuid").v4();
-
-  const oauthCredentials: IOAuthCredentials | undefined =
-    oauthToken !== undefined
-      ? {
-          fingerprint: oauthToken.fingerprint,
-          refreshToken: oauthToken.refreshToken,
-          token: oauthToken.token,
-        }
-      : undefined;
-
-  const config = {
-    id: OAUTH_CLIENT_ID,
-  };
-  const anonymous = oauthCredentials === undefined;
-  return PromiseBB.resolve(
-    Nexus.createWithOAuth(
-      oauthCredentials,
-      config,
-      "Vortex",
-      getApplication().version,
-      undefined,
-    ),
-  )
-    .then((nexus) =>
-      nexus.sendFeedback(
-        createTitle(type, error, hash),
-        createReport(
-          type,
-          error,
-          context,
-          getApplication().version,
-          reporterProcess,
-          sourceProcess,
-        ),
-        attachment,
-        anonymous,
-        hash,
-        referenceId,
-      ),
-    )
-    .tap(() =>
-      opn(`${NEXUS_BASE_URL}/crash-report/?key=${referenceId}`).catch(
-        () => null,
-      ),
-    )
-    .catch((err) => {
-      log(
-        "error",
-        "failed to report error to nexus",
-        getErrorMessageOrDefault(err),
-      );
-      return undefined;
-    });
-}
-
-let fallbackAPIKey: string;
-let fallbackOauthToken: any;
 let outdated: boolean = false;
 let errorIgnored: boolean = false;
-
-export function setApiKey(key: string) {
-  fallbackAPIKey = key;
-}
-
-export function setOauthToken(token: any) {
-  fallbackOauthToken = token;
-}
 
 export function setOutdated(api: IExtensionApi) {
   if (process.env.NODE_ENV === "development") {
@@ -284,94 +113,6 @@ if (ipcRenderer !== undefined) {
     log("info", "user ignored error, disabling reporting");
     errorIgnored = true;
   });
-}
-
-export async function sendReportFile(
-  fileName: string,
-): Promise<IFeedbackResponse | undefined> {
-  let reportInfo: any;
-  const reportData = await Promise.resolve(
-    fs.readFile(fileName, { encoding: "utf8" }),
-  );
-  reportInfo = JSON.parse(reportData.toString());
-  const userData = reportInfo["userData"] ?? getVortexPath("userData");
-  const attachment = await bundleAttachment({
-    attachments: [
-      {
-        id: "logfile",
-        type: "file",
-        data: path.join(userData, "vortex.log"),
-        description: "Vortex Log",
-      },
-      {
-        id: "logfile2",
-        type: "file",
-        data: path.join(userData, "vortex1.log"),
-        description: "Vortex Log (old)",
-      },
-    ],
-  });
-  const { type, error, labels, token, reportProcess, sourceProcess, context } =
-    reportInfo;
-  return await sendReport(
-    type,
-    error,
-    context,
-    labels,
-    token,
-    reportProcess,
-    sourceProcess,
-    attachment,
-  );
-}
-
-export function sendReport(
-  type: string,
-  error: IError,
-  context: IErrorContext,
-  labels: string[],
-  reporterToken: any,
-  reporterProcess: string,
-  sourceProcess: string | undefined,
-  attachment: string | undefined,
-): PromiseBB<IFeedbackResponse | undefined> {
-  const hash = genHash(error);
-  if (process.env.NODE_ENV === "development") {
-    const fullMessage =
-      error.title !== undefined
-        ? error.message + `\n(${error.title})`
-        : error.message;
-    return PromiseBB.resolve(
-      showErrorBox(
-        fullMessage,
-        JSON.stringify(
-          {
-            type,
-            error,
-            labels,
-            context,
-            reporterProcess,
-            sourceProcess,
-            attachment,
-          },
-          undefined,
-          2,
-        ),
-      ),
-    ).then(() => undefined);
-  } else {
-    return nexusReport(
-      hash,
-      type,
-      error,
-      labels,
-      context,
-      reporterToken || fallbackOauthToken,
-      reporterProcess,
-      sourceProcess,
-      attachment,
-    );
-  }
 }
 
 let defaultWindow: BrowserWindow | null = null;
@@ -448,14 +189,7 @@ async function showTerminateError(
 
   if (buttons[result.response] === "Report and Quit") {
     // Report
-    createErrorReport(
-      "Crash",
-      error,
-      contextNow,
-      ["bug", "crash"],
-      state,
-      source,
-    );
+    createErrorReport("Crash", error, contextNow, state, source);
   } else if (buttons[result.response] === "Ignore") {
     // Ignore
     result = await showMessageBox({
@@ -702,10 +436,13 @@ export function withContext(
   value: string,
   fun: () => PromiseBB<any>,
 ) {
-  setErrorContext(id, value);
-  return fun().finally(() => {
-    clearErrorContext(id);
-  });
+  return withTrackedActivity(
+    "vortex.context",
+    id,
+    { "context.value": value },
+    () => fun(),
+    { root: true },
+  );
 }
 
 /**
@@ -719,4 +456,126 @@ export function contextify(err: Error): Error {
 
 export function getErrorContext(): IErrorContext {
   return { ...globalContext };
+}
+
+export type SetAttribute = (
+  key: string,
+  value: string | number | boolean,
+) => void;
+
+export type SetError = (error: Error) => void;
+
+export type TrackedFunction<T> = (
+  setAttribute: SetAttribute,
+  setError: SetError,
+) => PromiseBB<T> | Promise<T>;
+
+export interface TrackedActivityOptions {
+  /** Start a new root trace instead of inheriting the active parent span. */
+  root?: boolean;
+}
+
+/**
+ * Execute a function wrapped in an OTel span with full control over
+ * tracer name, span name, and attributes.
+ * The span is automatically ended when the returned promise settles.
+ * The callback receives a `setAttribute` function for adding dynamic attributes.
+ *
+ * Pass `{ root: true }` for top-level operations (downloads, installs) that
+ * should start a new trace rather than becoming children of whatever span
+ * happens to be active in the Bluebird chain.
+ */
+export function withTrackedActivity<T>(
+  tracerName: string,
+  spanName: string,
+  attributes: Record<string, string | number | boolean>,
+  fun: TrackedFunction<T>,
+  options?: TrackedActivityOptions,
+): Promise<T> {
+  const tracer = trace.getTracer(tracerName);
+
+  // Attach ambient context (active game mode, extension version, etc.)
+  const contextAttributes: Record<string, string> = {};
+  for (const [key, value] of Object.entries(globalContext)) {
+    contextAttributes[`context.${key}`] = value;
+  }
+  const spanOptions = { attributes: { ...contextAttributes, ...attributes } };
+  const spanFn = async (span: Span): Promise<T> => {
+    const recordError = (error: Error) => {
+      recordErrorOnSpan(span, error, getApplication().version);
+    };
+
+    let hasError = false;
+    try {
+      const result = await fun(
+        (key, value) => span.setAttribute(key, value),
+        (error) => {
+          hasError = true;
+          recordError(error);
+        },
+      );
+      span.setStatus({
+        code: hasError ? SpanStatusCode.ERROR : SpanStatusCode.OK,
+      });
+      return result;
+    } catch (unknownErr) {
+      const err = unknownToError(unknownErr);
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: err?.message,
+      });
+      recordError(err);
+      throw err;
+    } finally {
+      span.end();
+    }
+  };
+  return options?.root === true
+    ? tracer.startActiveSpan(spanName, spanOptions, ROOT_CONTEXT, spanFn)
+    : tracer.startActiveSpan(spanName, spanOptions, spanFn);
+}
+
+function applyErrorToSpan(
+  span: Span,
+  title: string,
+  error: Error,
+  attributes?: Record<string, string | number | boolean>,
+): void {
+  span.setAttribute("error.title", title);
+  recordErrorOnSpan(
+    span,
+    error,
+    getApplication().version,
+    globalContext,
+    attributes,
+  );
+}
+
+/**
+ * Record an error on the currently active span, or create a new root span
+ * if none exists. The RingBufferSpanProcessor will detect the ERROR status
+ * and export the trace automatically.
+ */
+export function recordErrorSpan(
+  title: string,
+  error: Error,
+  attributes?: Record<string, string | number | boolean>,
+): void {
+  const activeSpan = trace.getSpan(context.active());
+
+  if (activeSpan !== undefined) {
+    applyErrorToSpan(activeSpan, title, error, attributes);
+  } else {
+    // No active span — create a new root span for this orphan error
+    const tracer = trace.getTracer("vortex.errors");
+    tracer.startActiveSpan(
+      "error.report",
+      { attributes: { "error.title": title, ...attributes } },
+      ROOT_CONTEXT,
+      (span) => {
+        applyErrorToSpan(span, title, error, attributes);
+        span.end();
+      },
+    );
+  }
 }

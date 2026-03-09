@@ -4,27 +4,20 @@
   "description": "Support for new gamebryo data archives",
   "main": "./out/index.js",
   "scripts": {
-    "tsc": "tsc -p .",
-    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
-    "clear": "rm-local-modules",
-    "copy_ba2tk": "copyfiles -f ./node_modules/ba2tk/build/Release/ba2tk.node ./dist",
-    "build": "npm run tsc && npm run webpack && npm run copy_ba2tk && extractInfo",
-    "installDev": "copyfiles -u 1 dist/**/* ../../out/bundledPlugins/gamebryo-ba2-support",
-    "buildDev": "npm run build && npm run installDev"
+    "_native": "node ../copy-native.mjs ./node_modules/ba2tk/build/Release/ba2tk.node",
+    "_build": "node build.mjs && pnpm run _native && extractInfo",
+    "build": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build && node ../copy-extension.mjs out)",
+    "dist": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build && node ../copy-extension.mjs dist)"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "devDependencies": {
-    "@types/i18next": "^8.4.0",
-    "@types/rimraf": "^0.0.28",
-    "ba2tk": "Nexus-Mods/node-ba2tk",
-    "bluebird": "^3.5.1",
-    "copyfiles": "^2.1.1",
-    "rimraf": "^2.6.1",
-    "rm-local-modules": "^0.0.2",
-    "ts-loader": "^9.4.2",
-    "vortex-api": "Nexus-Mods/vortex-api",
-    "webpack": "^5.75.0",
-    "webpack-cli": "^5.0.1"
+    "@types/i18next": "catalog:",
+    "@types/rimraf": "catalog:",
+    "ba2tk": "catalog:",
+    "bluebird": "catalog:",
+    "copyfiles": "catalog:",
+    "rimraf": "catalog:",
+    "vortex-api": "catalog:"
   }
 }

@@ -29,16 +29,24 @@ export const LayoutContainer: FC<ILayoutContainerProps> = ({
 
   // Add custom titlebar class on mount
   const initializedRef = useRef(false);
+
   useEffect(() => {
     if (initializedRef.current) {
       return;
     }
+
     initializedRef.current = true;
 
     if (customTitlebar) {
       document.body.classList.add("custom-titlebar-body");
     }
   }, [customTitlebar]);
+
+  useEffect(() => {
+    document.body.classList.add(
+      `${useModernLayout ? "modern" : "legacy"}-layout`,
+    );
+  }, []);
 
   return (
     <div
@@ -49,7 +57,6 @@ export const LayoutContainer: FC<ILayoutContainerProps> = ({
         "window-unfocused": !isFocused,
         "window-frame": customTitlebar,
         "menu-open": menuLayerOpen,
-        "modern-layout": useModernLayout,
         "no-gpu-acceleration": startupSettings.disableGPU,
       })}
       key="main"

@@ -11,8 +11,8 @@ export interface IModMetaInfo {
   md5sum: string;
   archiveName: string;
   source: string;
-  modId: string;
-  fileId: string;
+  modId: number;
+  fileId: number;
   managedGame: string;
   intendedGame: string;
 }

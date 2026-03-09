@@ -1,0 +1,22 @@
+{
+  "name": "game-morrowind",
+  "version": "1.0.7",
+  "description": "Support for The Elder Scrolls III: Morrowind",
+  "main": "dist/index.js",
+  "scripts": {
+    "_assets": "copyfiles -u 1 -f ./assets/* dist",
+    "_build": "node build.mjs && pnpm run _assets && extractInfo",
+    "build": "pnpm run _build && node ../../copy-extension.mjs out",
+    "dist": "pnpm run _build && node ../../copy-extension.mjs dist"
+  },
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "type": "commonjs",
+  "private": true,
+  "config": {
+    "game": "Morrowind"
+  },
+  "devDependencies": {
+    "vortex-api": "catalog:"
+  }
+}

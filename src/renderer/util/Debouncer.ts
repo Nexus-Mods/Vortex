@@ -1,9 +1,9 @@
-import { GenericDebouncer } from "../../shared/Debouncer";
+import { GenericDebouncer } from "@vortex/shared";
 
 export default class Debouncer extends GenericDebouncer<
-  ReturnType<typeof setTimeout>,
-  typeof setTimeout,
-  typeof clearTimeout
+  number,
+  typeof window.setTimeout,
+  typeof window.clearTimeout
 > {
   constructor(
     func: (...args: any[]) => Error | PromiseLike<void>,
@@ -11,8 +11,8 @@ export default class Debouncer extends GenericDebouncer<
     reset?: boolean,
     triggerImmediately: boolean = false,
   ) {
-    const boundSetTimeout = setTimeout.bind(globalThis);
-    const boundClearTimeout = clearTimeout.bind(globalThis);
+    const boundSetTimeout = window.setTimeout.bind(window);
+    const boundClearTimeout = window.clearTimeout.bind(window);
 
     super(
       boundSetTimeout,

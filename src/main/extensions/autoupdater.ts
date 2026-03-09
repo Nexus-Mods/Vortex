@@ -5,18 +5,17 @@
  * UI/notifications are handled by the renderer - this just manages the update mechanics.
  */
 
+import type { UpdateStatus } from "@vortex/shared/ipc";
 import type {
   autoUpdater as AUType,
   CancellationToken,
   UpdateInfo,
 } from "electron-updater";
 
+import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import { app, dialog } from "electron";
 import * as semver from "semver";
 
-import type { UpdateStatus } from "../../shared/types/ipc";
-
-import { getErrorMessageOrDefault, unknownToError } from "../../shared/errors";
 import { betterIpcMain } from "../ipc";
 import { log } from "../logging";
 

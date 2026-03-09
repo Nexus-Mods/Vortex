@@ -34,7 +34,7 @@ async function createFNISMod(
       modId: 42,
       version: "1.0.0",
       variant: sanitizeProfileName(profile.name.replace(INVALID_CHARS, "_")),
-      installTime: new Date(),
+      installTime: new Date().toString(),
     },
     installationPath: modName,
     type: "",

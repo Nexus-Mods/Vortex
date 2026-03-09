@@ -3,6 +3,7 @@
  * These handlers respond to requests from the renderer process via preload.
  */
 
+import type { SerializableMenuItem } from "@vortex/shared/preload";
 import type {
   IpcMainInvokeEvent,
   JumpListCategory,
@@ -13,6 +14,7 @@ import type {
   TraceCategoriesAndOptions,
 } from "electron";
 
+import { ApplicationData } from "@vortex/shared";
 import {
   app,
   BrowserView,
@@ -26,9 +28,6 @@ import {
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
 
-import type { SerializableMenuItem } from "../shared/types/preload";
-
-import { ApplicationData } from "../shared/applicationData";
 import { relaunch } from "./cli";
 import getVortexPath, { setVortexPath, type AppPath } from "./getVortexPath";
 import { betterIpcMain } from "./ipc";

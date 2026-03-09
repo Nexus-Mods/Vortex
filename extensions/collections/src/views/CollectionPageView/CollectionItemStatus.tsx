@@ -1,11 +1,11 @@
 import { IModEx } from "../../types/IModEx";
 
-import i18next from "i18next";
+import type { TFunction } from "i18next";
 import * as React from "react";
 import { Icon, RadialProgress, types } from "vortex-api";
 
 interface ICollectionItemStatusProps {
-  t: i18next.TFunction;
+  t: TFunction;
   mod: IModEx;
   download?: types.IDownload;
   notifications: types.INotification[];

@@ -1,4 +1,4 @@
-import { getErrorMessage, unknownToError } from "../../shared/errors";
+import { getErrorMessage, unknownToError } from "@vortex/shared";
 import { delay } from "./util";
 
 const RETRIES = 5;

@@ -1,4 +1,4 @@
-import { getErrorMessageOrDefault } from "../../shared/errors";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 import type {
   ActionFunc,
   IActionDefinition,

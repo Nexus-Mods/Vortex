@@ -81,7 +81,7 @@ export type {
   ProgressDelegate,
 };
 
-import type { PersistorKey, IPersistor } from "../../shared/types/state";
+import type { PersistorKey, IPersistor } from "@vortex/shared/state";
 export type { PersistorKey, IPersistor };
 
 // tslint:disable-next-line:interface-name

@@ -1,5 +1,5 @@
 import { IGameVersion, RatingOptions } from "@nexusmods/nexus-api";
-import I18next from "i18next";
+import type { TFunction } from "i18next";
 import * as React from "react";
 import {
   FlexLayout,
@@ -11,7 +11,7 @@ import {
 } from "vortex-api";
 
 export interface IHealthIndicatorProps {
-  t: I18next.TFunction;
+  t: TFunction;
   value: { average: number; total: number };
   ownSuccess: RatingOptions;
   revisionNumber: number;

@@ -87,7 +87,7 @@ class LockIndex extends ComponentEx<IProps, {}> {
           <ControlLabel style={{ maxWidth: 250 }}>
             {t(
               "Actual index differs. If this is the case after sorting it may be " +
-                "this index isn't possible.",
+              "this index isn't possible.",
             )}
           </ControlLabel>
         )}
@@ -135,7 +135,7 @@ function mapStateToProps(
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any, any>): IActionProps {
+function mapDispatchToProps(dispatch: Redux.Dispatch): IActionProps {
   return {
     onLockPluginIndex: (gameId: string, pluginId: string, modIndex: number) =>
       dispatch(lockPluginIndex(gameId, pluginId, modIndex)),

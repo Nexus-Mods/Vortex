@@ -632,7 +632,9 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
 
   private remove = (downloadIds: string[]) => {
     const removeId = (id: string) => {
-      this.context.api.events.emit("remove-download", id);
+      this.context.api.events.emit("remove-download", id, undefined, {
+        confirmed: true,
+      });
     };
 
     const { t, onShowDialog } = this.props;
@@ -785,7 +787,12 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         {
           label: "Delete",
           action: () =>
-            this.context.api.events.emit("remove-download", downloadId),
+            this.context.api.events.emit(
+              "remove-download",
+              downloadId,
+              undefined,
+              { confirmed: true },
+            ),
         },
         { label: "Close" },
       ];
@@ -836,7 +843,12 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
           {
             label: "Delete",
             action: () =>
-              this.context.api.events.emit("remove-download", downloadId),
+              this.context.api.events.emit(
+                "remove-download",
+                downloadId,
+                undefined,
+                { confirmed: true },
+              ),
           },
           { label: "Close" },
         ],

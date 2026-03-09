@@ -24,7 +24,7 @@ function getInner(ele: Element): string {
 }
 
 function importMods(
-  t: I18next.TranslationFunction,
+  t: I18next.TFunction,
   store: Redux.Store<types.IState>,
   trace: TraceImport,
   moConfig: IMOConfig,
@@ -59,8 +59,8 @@ function importMods(
             mod.archiveName === undefined || mod.archiveName === ""
               ? Promise.resolve("")
               : genHash(archivePath)
-                  .then((hash) => hash.md5sum)
-                  .catch((err) => ""),
+                .then((hash) => hash.md5sum)
+                .catch((err) => ""),
           )
           .then((md5Hash) => {
             const archiveId = shortid();

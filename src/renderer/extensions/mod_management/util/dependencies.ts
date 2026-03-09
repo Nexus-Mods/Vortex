@@ -32,7 +32,7 @@ import testModReference, {
   isFuzzyVersion,
   testRefByIdentifiers,
 } from "./testModReference";
-import { unknownToError } from "../../../../shared/errors";
+import { unknownToError } from "@vortex/shared";
 
 interface IBrowserResult {
   url: string | (() => Bluebird<string>);

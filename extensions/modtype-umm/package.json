@@ -5,23 +5,27 @@
   "main": "./out/index.js",
   "repository": "",
   "scripts": {
-    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
-    "build": "npm run webpack && extractInfo",
-    "postinstall": "generate-validation -t ./tsconfig.json"
+    "_build": "pnpm generate-validation -t ./tsconfig.json && node build.mjs && extractInfo",
+    "build": "pnpm run _build && node ../copy-extension.mjs out",
+    "dist": "pnpm run _build && node ../copy-extension.mjs dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "devDependencies": {
-    "@types/redux": "^3.6.0",
-    "babel-loader": "^8.2.3",
-    "bluebird": "^3.5.0",
-    "i18next": "^8.4.3",
-    "ts-loader": "^9.2.6",
-    "vortex-api": "Nexus-Mods/vortex-api",
-    "webpack": "^5.66.0",
-    "webpack-cli": "^4.9.1"
+    "@types/react": "catalog:",
+    "@types/redux": "catalog:",
+    "@types/semver": "catalog:",
+    "bluebird": "catalog:",
+    "copyfiles": "catalog:",
+    "i18next": "catalog:",
+    "react": "catalog:",
+    "react-i18next": "catalog:",
+    "redux": "catalog:",
+    "semver": "catalog:",
+    "vortex-api": "catalog:",
+    "winapi-bindings": "catalog:"
   },
   "dependencies": {
-    "ts-v-gen": "^1.0.3"
+    "ts-v-gen": "catalog:"
   }
 }

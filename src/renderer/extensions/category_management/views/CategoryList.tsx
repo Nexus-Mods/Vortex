@@ -49,7 +49,7 @@ import type {
   FullTree,
 } from "react-sortable-tree";
 import SortableTree from "react-sortable-tree";
-import { unknownToError } from "../../../../shared/errors";
+import { unknownToError } from "@vortex/shared";
 
 const nop = () => undefined;
 

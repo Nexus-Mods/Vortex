@@ -3,7 +3,8 @@
  * Handles auto-update functionality in the main process
  */
 
-import { getErrorMessageOrDefault } from "../../shared/errors";
+import { getErrorMessageOrDefault } from "@vortex/shared";
+
 import { log } from "../logging";
 import { setupAutoUpdater } from "./autoupdater";
 

@@ -9,6 +9,7 @@ import type { INotification } from "../../types/INotification";
 import type { IState } from "../../types/IState";
 import getVortexPath from "../../util/getVortexPath";
 import { log } from "../../util/log";
+import type { IPrettifiedError } from "../../util/message";
 import { showError } from "../../util/message";
 import { getSafe } from "../../util/storeHelper";
 import {
@@ -78,6 +79,7 @@ class InstallContext implements IInstallContext {
   private mArchiveId: string;
   private mInstallOutcome: InstallOutcome;
   private mFailReason: string;
+  private mFailError: IPrettifiedError;
   private mIsEnabled: (modId: string) => boolean;
   private mIsDownload: (archiveId: string) => boolean;
   private mSilent: boolean = false;
@@ -90,6 +92,7 @@ class InstallContext implements IInstallContext {
   private mStartTime: number;
   private mNotificationAggregator?: NotificationAggregator;
   private mSourceModId?: string;
+  private mActionBuffer: any[] | null = null;
 
   constructor(
     gameMode: string,
@@ -104,6 +107,13 @@ class InstallContext implements IInstallContext {
     this.mSourceModId = sourceModId;
     const store = api.store;
     const dispatch = store.dispatch;
+    const doDispatch = (action: any) => {
+      if (this.mActionBuffer !== null) {
+        this.mActionBuffer.push(action);
+      } else {
+        dispatch(action);
+      }
+    };
     this.mAddMod = (mod) => dispatch(addMod(gameMode, mod));
     this.mRemoveMod = (modId) => dispatch(removeMod(gameMode, modId));
     this.mAddNotification = (notification) =>
@@ -136,7 +146,7 @@ class InstallContext implements IInstallContext {
     };
     this.mLastProgress = 0;
     this.mSetModState = (id, state) =>
-      dispatch(setModState(gameMode, id, state));
+      doDispatch(setModState(gameMode, id, state));
     this.mSetModAttributes = (modId, attributes) => {
       Object.keys(attributes).forEach((attributeId) => {
         if (attributes[attributeId] === undefined) {
@@ -144,7 +154,7 @@ class InstallContext implements IInstallContext {
         }
       });
       if (Object.keys(attributes).length > 0) {
-        dispatch(setModAttributes(gameMode, modId, attributes));
+        doDispatch(setModAttributes(gameMode, modId, attributes));
       }
     };
     this.mSetModInstallationPath = (id, installPath) =>
@@ -164,7 +174,7 @@ class InstallContext implements IInstallContext {
       return getSafe(profile, ["modState", modId, "enabled"], false);
     };
     this.mSetDownloadInstalled = (archiveId, gameId, modId) => {
-      dispatch(setDownloadInstalled(archiveId, gameId, modId));
+      doDispatch(setDownloadInstalled(archiveId, gameId, modId));
     };
     this.mIsDownload = (archiveId) => {
       const state: IState = store.getState();
@@ -213,7 +223,7 @@ class InstallContext implements IInstallContext {
     PromiseBB.delay(50).then(() => {
       if (!this.mDidReportError) {
         this.mDidReportError = true;
-        const noti = this.outcomeNotification(
+        const noti: INotification = this.outcomeNotification(
           this.mInstallOutcome,
           this.mIndicatorId,
           this.mIsEnabled(this.mAddedId),
@@ -229,10 +239,10 @@ class InstallContext implements IInstallContext {
                 aggregationId,
                 noti.type as "error" | "warning" | "info",
                 noti.title,
-                noti.message,
+                this.mFailError ?? noti.message,
                 mod !== undefined ? getModName(mod) : this.mIndicatorId,
                 {
-                  allowReport: (noti as any).allowReport,
+                  allowReport: this.mFailError?.allowReport ?? true,
                   actions: noti.actions,
                 },
               );
@@ -304,6 +314,7 @@ class InstallContext implements IInstallContext {
     outcome: InstallOutcome,
     info?: any,
     reason?: string,
+    error?: IPrettifiedError,
   ): void {
     log("info", "finish mod install", {
       id: this.mIndicatorId,
@@ -335,11 +346,22 @@ class InstallContext implements IInstallContext {
       }
     } else {
       this.mFailReason = reason;
+      this.mFailError = error;
       if (this.mAddedId !== undefined) {
         this.mRemoveMod(this.mAddedId);
       }
     }
     this.mInstallOutcome = outcome;
+  }
+
+  public beginBatch(): void {
+    this.mActionBuffer = [];
+  }
+
+  public flushBatch(): any[] {
+    const actions = this.mActionBuffer ?? [];
+    this.mActionBuffer = null;
+    return actions;
   }
 
   public setInstallPathCB(id: string, installPath: string) {

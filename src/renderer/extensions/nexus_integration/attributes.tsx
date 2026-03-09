@@ -167,7 +167,7 @@ function createEndorsedIcon(
   let endorseFunc = onEndorse;
   if (mod.attributes?.collectionId) {
     const collectionInfo =
-      store.getState().persistent.collections.collections?.[
+      store.getState().persistent.collections?.collections?.[
         mod.attributes.collectionId
       ]?.info;
     endorsed = collectionInfo?.viewerIsBlocked ? "Blocked" : endorsed;

@@ -2,7 +2,7 @@ import * as electron from "electron";
 import * as os from "os";
 import * as path from "path";
 
-import { ApplicationData } from "../../shared/applicationData";
+import { ApplicationData } from "@vortex/shared";
 import { getPreloadApi } from "./preloadAccess";
 
 // If running as a forked child process, read Electron app info from environment variables

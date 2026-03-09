@@ -12,13 +12,19 @@ import {
 import { HELP_ARTICLE, PRIVACY_POLICY } from "./constants";
 import settingsReducer from "./reducers/settings.reducer";
 import SettingsAnalytics from "./views/SettingsAnalytics";
-import { getErrorMessageOrDefault } from "../../../shared/errors";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 
 let ignoreNextAnalyticsStateChange = false;
 
 function init(context: IExtensionContext): boolean {
   context.registerReducer(["settings", "analytics"], settingsReducer);
-  context.registerSettings("Vortex", SettingsAnalytics);
+  context.registerSettings(
+    "Vortex",
+    SettingsAnalytics,
+    undefined,
+    undefined,
+    110,
+  );
 
   context.once(() => {
     const enabled = () =>

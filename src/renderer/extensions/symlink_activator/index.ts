@@ -21,7 +21,7 @@ import type {
 import PromiseBB from "bluebird";
 import * as path from "path";
 import getVortexPath from "../../util/getVortexPath";
-import { getErrorCode, getErrorMessageOrDefault } from "../../../shared/errors";
+import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
 
 class DeploymendMethod extends LinkingDeployment {
   public compatible: string[] = ["symlink_activator_elevated"];

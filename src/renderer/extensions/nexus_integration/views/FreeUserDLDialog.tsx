@@ -15,7 +15,7 @@ import { log } from "../../../util/log";
 import opn from "../../../util/opn";
 import { Campaign, Content, nexusModsURL, Section } from "../../../util/util";
 import { MainContext } from "../../../views/MainWindow";
-import { getErrorMessageOrDefault } from "../../../../shared/errors";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 import { NEXUS_BASE_URL, PREMIUM_PATH } from "../constants";
 import NXMUrl from "../NXMUrl";
 import { makeFileUID } from "../util/UIDs";

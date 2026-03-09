@@ -23,7 +23,7 @@ import {
   UnsupportedOperatingSystem,
   UserCanceled,
 } from "../../../util/CustomErrors";
-import { withContext } from "../../../util/errorHandling";
+import { withTrackedActivity } from "../../../util/errorHandling";
 import * as fs from "../../../util/fs";
 import getNormalizeFunc from "../../../util/getNormalizeFunc";
 import { log } from "../../../util/log";
@@ -85,7 +85,7 @@ import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
 import getVortexPath from "../../../util/getVortexPath";
 import Image from "../../../controls/Image";
-import { getErrorMessageOrDefault } from "../../../../shared/errors";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 
 const MB = 1024 * 1024;
 
@@ -559,10 +559,14 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     let deleteOldDestination = true;
     this.nextState.progress = 0;
     this.nextState.busy = t("Moving");
-    return withContext(
-      "Transferring Downloads",
-      `from ${oldPath} to ${newPath}`,
-      () =>
+    return withTrackedActivity(
+      "vortex.downloads",
+      "downloads.transfer",
+      {
+        "downloads.transfer.from": oldPath,
+        "downloads.transfer.to": newPath,
+      },
+      (_setAttribute, _setError) =>
         testPathTransfer(oldPath, newPath)
           .then(() => fs.ensureDirWritableAsync(newPath, this.confirmElevate))
           .then(() => this.checkTargetEmpty(oldPath, newPath))
@@ -719,6 +723,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               this.nextState.busy = undefined;
             }
           }),
+      {},
     );
   };
 

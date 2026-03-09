@@ -34,7 +34,7 @@ import type { IAnnouncement, ISurveyInstance } from "./types";
 import { ParserError } from "./types";
 
 import { matchesGameMode, matchesVersion } from "./util";
-import { getErrorMessageOrDefault } from "../../../shared/errors";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 
 const ANNOUNCEMENT_LINK =
   "https://raw.githubusercontent.com/Nexus-Mods/Vortex-Backend/main/out/announcements.json";

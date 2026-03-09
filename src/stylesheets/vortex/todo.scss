@@ -1,3 +1,4 @@
+@use "sass:color";
 .todo-search {
     background-color: $brand-success;
 }
@@ -15,19 +16,19 @@
 }
 
 .todo-search:hover {
-    background-color: darken($brand-success, 10%);
+    background-color: color.adjust($brand-success, $lightness: -10%);
 }
 
 .todo-settings:hover {
-    background-color: darken($brand-info, 10%);
+    background-color: color.adjust($brand-info, $lightness: -10%);
 }
 
 .todo-more:hover {
-    background-color: darken($brand-secondary, 10%);
+    background-color: color.adjust($brand-secondary, $lightness: -10%);
 }
 
 .todo-workaround:hover {
-    background-color: darken($brand-warning, 10%);
+    background-color: color.adjust($brand-warning, $lightness: -10%);
 }
 
 .todo {

@@ -24,7 +24,7 @@ import {
   RatingOptions,
 } from "@nexusmods/nexus-api";
 import Bluebird from "bluebird";
-import i18next from "i18next";
+import type { TFunction } from "i18next";
 import * as _ from "lodash";
 import memoizeOne from "memoize-one";
 import * as React from "react";
@@ -49,7 +49,7 @@ import {
 } from "vortex-api";
 
 export interface ICollectionPageProps {
-  t: i18next.TFunction;
+  t: TFunction;
   className: string;
   profile: types.IProfile;
   collection: types.IMod;
@@ -483,12 +483,15 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
   public async UNSAFE_componentWillReceiveProps(
     newProps: ICollectionPageProps,
   ) {
+    // Note: notification changes are intentionally NOT checked here because
+    // updateModsEx() is expensive (multiple iterations over all mods) and
+    // notification updates fire very frequently during collection installation.
+    // Per-mod progress is already updated when mods/downloads change.
     if (
       this.props.mods !== newProps.mods ||
       this.props.profile !== newProps.profile ||
       this.props.collection !== newProps.collection ||
-      this.props.downloads !== newProps.downloads ||
-      this.installingNotificationsChanged(this.props, newProps)
+      this.props.downloads !== newProps.downloads
     ) {
       this.nextState.modsEx = this.updateModsEx(this.props, newProps);
       const { collection } = this.props;
@@ -1042,7 +1045,12 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
           .then(() => {
             if (removeArchive) {
               archiveIds.forEach((archiveId) => {
-                this.context.api.events.emit("remove-download", archiveId);
+                this.context.api.events.emit(
+                  "remove-download",
+                  archiveId,
+                  undefined,
+                  { confirmed: true },
+                );
               });
             }
             return Bluebird.resolve();

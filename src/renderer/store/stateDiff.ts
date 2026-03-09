@@ -1,4 +1,4 @@
-import type { DiffOperation } from "../../shared/types/ipc";
+import type { DiffOperation } from "@vortex/shared/ipc";
 
 /**
  * Check if a value is a plain object (not null, not array)

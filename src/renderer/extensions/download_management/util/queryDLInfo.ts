@@ -14,7 +14,7 @@ import { convertNXMIdReverse } from "../../nexus_integration/util/convertGameId"
 import { activeGameId } from "../../profile_management/selectors";
 import { setDownloadModInfo } from "../actions/state";
 import { downloadPathForGame } from "../selectors";
-import { getErrorMessageOrDefault } from "../../../../shared/errors";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 
 // Queue management for metadata lookups
 interface IMetadataRequest {

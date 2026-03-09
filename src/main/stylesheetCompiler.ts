@@ -1,5 +1,6 @@
 import path from "path";
 import sass from "sass";
+import { pathToFileURL } from "url";
 
 import getVortexPath from "./getVortexPath";
 import { betterIpcMain } from "./ipc";
@@ -40,12 +41,17 @@ export default class StylesheetCompiler {
   }
 
   private createSource(filePaths: string[]): string {
+    let themePath: string = ".";
+
     const source = filePaths
       .map((filePath) => {
         const fixedPath = StylesheetCompiler.fixPath(filePath);
         const importDecleration = `@import "${fixedPath}";`;
 
         if (path.extname(fixedPath) !== ".scss") {
+          if (path.dirname(filePath) !== ".") {
+            themePath = path.dirname(filePath);
+          }
           return importDecleration + "\n";
         }
 
@@ -56,16 +62,27 @@ export default class StylesheetCompiler {
       })
       .join("\n");
 
-    return source;
+    return `$theme-path: "${pathToFileURL(themePath)}";\n` + source;
   }
 
   private compile(source: string): string {
     const result = this.#compiler.compileString(source, {
       loadPaths: this.#loadPaths,
       style: this.#style,
+      // Silence deprecation warnings from dependencies (node_modules)
+      // while still showing warnings from our own code
+      quietDeps: true,
+      silenceDeprecations: ["import"],
     });
 
-    return result.css;
+    // Remove UTF-8 BOM if present (ef bb bf)
+    // The BOM can cause CSS parsing issues when the CSS is injected inline into HTML
+    let css = result.css;
+    if (css.charCodeAt(0) === 0xfeff) {
+      css = css.substring(1);
+    }
+
+    return css;
   }
 
   private static sanitize(input: string): string {

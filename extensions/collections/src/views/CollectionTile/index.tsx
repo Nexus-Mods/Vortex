@@ -1,4 +1,4 @@
-import I18next from "i18next";
+import type { TFunction } from "i18next";
 import memoizeOne from "memoize-one";
 import * as path from "path";
 import * as React from "react";
@@ -27,7 +27,7 @@ import NewRevisionMarker from "./NewRevisionMarker";
 import { SuccessRating } from "./SuccessRating";
 
 export interface IBaseProps {
-  t: I18next.TFunction;
+  t: TFunction;
   className?: string;
   gameId: string;
   installing?: types.IMod;

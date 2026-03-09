@@ -2,7 +2,7 @@
 const config = {
   testEnvironment: "jsdom",
   transform: {
-    "^.+\\.(ts|tsx)$": ["ts-jest", { tsconfig: "tsconfig.renderer.json" }],
+    "^.+\\.(ts|tsx)$": ["ts-jest", { tsconfig: "tsconfig.json" }],
     "^.+\\.(js|jsx)$": "babel-jest",
   },
   moduleNameMapper: {

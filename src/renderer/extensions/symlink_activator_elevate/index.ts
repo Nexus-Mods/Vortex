@@ -1,44 +1,44 @@
-import { clearUIBlocker, setUIBlocker } from "../../actions";
+import type { TFunction } from "i18next";
+import type * as os from "os";
+
+import { getErrorMessageOrDefault, getErrorNativeCode } from "@vortex/shared";
+import PromiseBB from "bluebird";
+import JsonSocket from "json-socket";
+import * as net from "net";
+import * as path from "path";
+import * as semver from "semver";
+import { generate as shortid } from "shortid";
+import * as winapi from "winapi-bindings";
+
 import type {
   IExtensionApi,
   IExtensionContext,
 } from "../../types/IExtensionContext";
 import type { IGame } from "../../types/IGame";
 import type { IState } from "../../types/IState";
-import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
-import * as fs from "../../util/fs";
 import type { Normalize } from "../../util/getNormalizeFunc";
-import getVortexPath from "../../util/getVortexPath";
-import { log } from "../../util/log";
-import makeReactive from "../../util/makeReactive";
-import { activeGameId, gameName } from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
-
-import { getGame } from "../gamemode_management/util/getGame";
-import LinkingDeployment from "../mod_management/LinkingDeployment";
 import type {
   IDeployedFile,
   IDeploymentMethod,
   IUnavailableReason,
 } from "../mod_management/types/IDeploymentMethod";
 
+import { clearUIBlocker, setUIBlocker } from "../../actions";
+import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
+import { runElevated } from "../../util/elevated";
+import * as fs from "../../util/fs";
+import getVortexPath from "../../util/getVortexPath";
+import { log } from "../../util/log";
+import makeReactive from "../../util/makeReactive";
+import { activeGameId, gameName } from "../../util/selectors";
+import { getSafe } from "../../util/storeHelper";
+import { getGame } from "../gamemode_management/util/getGame";
+import LinkingDeployment from "../mod_management/LinkingDeployment";
+import { enableUserSymlinks } from "./actions";
 import reducer from "./reducers";
 import { remoteCode } from "./remoteCode";
 import Settings from "./Settings";
 import walk from "./walk";
-
-import PromiseBB from "bluebird";
-import type { TFunction } from "i18next";
-import JsonSocket from "json-socket";
-import * as net from "net";
-import type * as os from "os";
-import * as path from "path";
-import * as semver from "semver";
-import { generate as shortid } from "shortid";
-import { runElevated } from "vortex-run";
-import * as winapi from "winapi-bindings";
-import { enableUserSymlinks } from "./actions";
-import { getErrorMessageOrDefault } from "../../../shared/errors";
 
 const TASK_NAME = "Vortex Symlink Deployment";
 const SCRIPT_NAME = "vortexSymlinkService.js";
@@ -568,6 +568,7 @@ class DeploymentMethod extends LinkingDeployment {
               this.mTmpFilePath = tmpPath;
               log("debug", "started elevated process");
             })
+            .then(() => undefined)
             .tapCatch(() => {
               this.api.store.dispatch(clearUIBlocker("elevating"));
               elevating = false;
@@ -839,7 +840,7 @@ function installTask(scriptPath: string) {
     },
     { scriptPath, taskName, exePath, exeArgs },
   ).catch((err) =>
-    err["nativeCode"] === 1223 || err["systemCode"] === 1223
+    getErrorNativeCode(err) === 1223
       ? PromiseBB.reject(new UserCanceled())
       : PromiseBB.reject(err),
   );
@@ -907,7 +908,7 @@ function findTask() {
   }
 }
 
-function removeTask(): PromiseBB<void> {
+function removeTask(): Promise<void> {
   const ipcPath = `ipc_${shortid()}`;
   const ipcServer: net.Server = startIPCServer(
     ipcPath,
@@ -934,19 +935,21 @@ function removeTask(): PromiseBB<void> {
       ipc.sendMessage({ message: "quit" });
     },
     { taskName },
-  ).catch((err) =>
-    err["nativeCode"] === 1223 || err["systemCode"] === 1223
-      ? PromiseBB.reject(new UserCanceled())
-      : PromiseBB.reject(err),
-  );
+  )
+    .then(() => undefined)
+    .catch((err) => {
+      throw getErrorNativeCode(err) === 1223
+        ? new UserCanceled()
+        : err;
+    });
 }
 
-function ensureTaskDeleted(
+async function ensureTaskDeleted(
   api: IExtensionApi,
   delayed: boolean,
-): PromiseBB<void> {
+): Promise<void> {
   if (findTask() === undefined) {
-    return PromiseBB.resolve();
+    return;
   }
 
   if (delayed) {
@@ -969,34 +972,34 @@ function ensureTaskDeleted(
       ],
     });
     // ensureTaskDeleted returns immediately even though nothing has been done yet
-    return PromiseBB.resolve();
+    return;
   } else {
     return removeTask();
   }
 }
 
-function ensureTask(
+async function ensureTask(
   api: IExtensionApi,
   enabled: boolean,
   delayed: boolean,
-): PromiseBB<void> {
+): Promise<void> {
   if (enabled) {
-    return ensureTaskEnabled(api, delayed)
-      .catch((err) => {
-        if (!(err instanceof UserCanceled)) {
-          api.showErrorNotification("Failed to create task", err);
-        }
-        api.store.dispatch(enableUserSymlinks(false));
-      })
-      .then(() => null);
+    try {
+      await ensureTaskEnabled(api, delayed);
+    } catch (err) {
+      if (!(err instanceof UserCanceled)) {
+        api.showErrorNotification("Failed to create task", err);
+      }
+      api.store.dispatch(enableUserSymlinks(false));
+    }
   } else {
-    return ensureTaskDeleted(api, delayed)
-      .catch((err) => {
-        if (!(err instanceof UserCanceled)) {
-          api.showErrorNotification("Failed to remove task", err);
-        }
-      })
-      .then(() => null);
+    try {
+      await ensureTaskDeleted(api, delayed);
+    } catch (err) {
+      if (!(err instanceof UserCanceled)) {
+        api.showErrorNotification("Failed to remove task", err);
+      }
+    }
   }
 }
 
@@ -1075,9 +1078,17 @@ function giveSymlinkRight(enable: boolean) {
             message: "call successful",
           },
         });
-        const enabled = winapiRemote
-          .GetUserPrivilege(sid)
-          .includes("SeCreateSymbolicLinkPrivilege");
+        let enabled: boolean;
+        try {
+          enabled = winapiRemote
+            .GetUserPrivilege(sid)
+            .includes("SeCreateSymbolicLinkPrivilege");
+        } catch {
+          // When removing the last privilege, Windows deletes the account's
+          // LSA policy entry entirely, so GetUserPrivilege (LsaEnumerateAccountRights)
+          // throws ENOENT. Treat that as "no privileges" = disabled.
+          enabled = false;
+        }
         ipc.sendMessage({
           message: "log",
           payload: {
@@ -1103,7 +1114,7 @@ function giveSymlinkRight(enable: boolean) {
     },
     { sid, enable },
   ).catch((err) =>
-    err["nativeCode"] === 1223 || err["systemCode"] === 1223
+    getErrorNativeCode(err) === 1223
       ? PromiseBB.reject(new UserCanceled())
       : PromiseBB.reject(err),
   );
@@ -1136,11 +1147,11 @@ function init(context: IExtensionContextEx): boolean {
 
       const userSymlinksPath = ["settings", "workarounds", "userSymlinks"];
       context.api.onStateChange(userSymlinksPath, (prev, current) => {
-        ensureTask(context.api, current, false);
+        void ensureTask(context.api, current, false);
       });
       const state = context.api.store.getState();
       const userSymlinks = getSafe(state, userSymlinksPath, false);
-      return ensureTask(context.api, userSymlinks, true);
+      void ensureTask(context.api, userSymlinks, true);
     }
   });
 

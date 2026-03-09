@@ -1,23 +1,19 @@
-import type { IFeedbackResponse } from "@nexusmods/nexus-api";
-import type ZipT from "node-7z";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
 
-import PromiseBB from "bluebird";
 import * as _ from "lodash";
 import * as os from "os";
 import * as path from "path";
-import { file as tmpFile, tmpName } from "tmp";
 
 /* disable-eslint */
 import type { IDialogAction, IDialogContent } from "../actions/notifications";
-import type { IAttachment, IErrorOptions } from "../types/IExtensionContext";
+import type { IErrorOptions } from "../types/IExtensionContext";
 import type { IState } from "../types/IState";
 import type { HTTPError } from "./CustomErrors";
 
 import { addNotification, showDialog } from "../actions/notifications";
 import { NoDeployment } from "../extensions/mod_management/util/exceptions";
-import { getErrorMessageOrDefault } from "../../shared/errors";
+import { unknownToError } from "@vortex/shared";
 import { jsonRequest } from "./network";
 import {
   StalledError,
@@ -26,21 +22,12 @@ import {
   ArchiveBrokenError,
   UserCanceled,
 } from "./CustomErrors";
-import {
-  didIgnoreError,
-  getErrorContext,
-  isOutdated,
-  sendReport,
-  toError,
-} from "./errorHandling";
-import * as fs from "./fs";
+import { didIgnoreError, isOutdated, recordErrorSpan } from "./errorHandling";
 import getVortexPath from "./getVortexPath";
 import { log } from "./log";
 import { decodeSystemError } from "./nativeErrors";
 import opn from "./opn";
-import { flatten, nexusModsURL, setdefault, truthy } from "./util";
-
-const GITHUB_PROJ = "Nexus-Mods/Vortex";
+import { flatten, nexusModsURL, truthy } from "./util";
 
 function clamp(min: number, value: number, max: number): number {
   return Math.max(max, Math.min(min, value));
@@ -130,51 +117,6 @@ export function showInfo<S>(
   );
 }
 
-function genGithubUrl(issueId: number) {
-  return `https://github.com/Nexus-Mods/Vortex/issues/${issueId}`;
-}
-
-function genFeedbackText(
-  response: IFeedbackResponse,
-  githubInfo?: any,
-): string {
-  const lines = [
-    "Thank you for your feedback!",
-    "",
-    "If you're reporting a bug, please don't forget to leave additional " +
-      "information in the form that should have opened in your webbrowser.",
-    "",
-  ];
-
-  if (response.github_issue === undefined) {
-    lines.push("Your feedback will be reviewed before it is published.");
-  } else {
-    if (
-      (githubInfo !== undefined && githubInfo.state === "closed") ||
-      response.github_issue.issue_state === "closed"
-    ) {
-      lines.push(
-        "This issue was reported before and seems to be fixed already. " +
-          "If you're not running the newest version of Vortex, please update.",
-      );
-    } else if (
-      (githubInfo !== undefined && githubInfo.comments >= 1) ||
-      response.count > 1
-    ) {
-      lines.push(
-        "This is not the first report about this problem, so your report " +
-          "was added as a comment to the existing one.",
-      );
-    } else {
-      lines.push("You were the first to report this issue.");
-    }
-    const url = genGithubUrl(response.github_issue.issue_number);
-    lines.push(`You can review the created issue on [url]${url}[/url]`);
-  }
-
-  return lines.join("[br][/br]");
-}
-
 const noReportErrors = [
   "ETIMEDOUT",
   "ECONNREFUSED",
@@ -203,95 +145,6 @@ function shouldAllowReport(
   return !noReportErrors.includes(err.code);
 }
 
-function dataToFile(id, input: any) {
-  return new PromiseBB<string>((resolve, reject) => {
-    const data: Buffer = Buffer.from(JSON.stringify(input));
-    tmpFile(
-      {
-        prefix: id,
-        postfix: ".json",
-      },
-      (err, tmpPath: string, fd: number, cleanup: () => void) => {
-        if (err !== null) {
-          return reject(err);
-        }
-        fs.writeAsync(fd, data, 0, data.byteLength, 0)
-          .then(() => fs.closeAsync(fd))
-          .then(() => {
-            resolve(tmpPath);
-          })
-          .catch((innerErr) => {
-            log("error", "failed to write attachment data to file", {
-              error: getErrorMessageOrDefault(innerErr),
-            });
-            return reject(innerErr);
-          });
-      },
-    );
-  });
-}
-
-function zipFiles(files: string[]): PromiseBB<string | undefined> {
-  if (files.length === 0) {
-    return PromiseBB.resolve(undefined);
-  }
-  const Zip: typeof ZipT = require("node-7z");
-  const task: ZipT = new Zip();
-
-  return new PromiseBB<string>((resolve, reject) => {
-    tmpName(
-      {
-        postfix: ".7z",
-      },
-      (err, tmpPath: string) => (err !== null ? reject(err) : resolve(tmpPath)),
-    );
-  }).then((tmpPath) =>
-    task.add(tmpPath, files, { ssw: true }).then(() => tmpPath),
-  );
-}
-
-function serializeAttachments(input: IAttachment): PromiseBB<string> {
-  if (input.type === "file") {
-    return input.data;
-  } else {
-    return dataToFile(input.id, input.data);
-  }
-}
-
-export function bundleAttachment(
-  options?: IErrorOptions,
-): PromiseBB<string | undefined> {
-  if (
-    options === undefined ||
-    options.attachments === undefined ||
-    options.attachments.length === 0
-  ) {
-    return PromiseBB.resolve(undefined);
-  }
-
-  return PromiseBB.reduce(
-    options.attachments,
-    (accum: string[], iter: IAttachment) => {
-      if (iter.type === "file") {
-        return fs
-          .statAsync(iter.data)
-          .then(() => serializeAttachments(iter))
-          .then((fileName) => {
-            accum.push(fileName);
-            return accum;
-          })
-          .catch((err) => accum);
-      } else {
-        return serializeAttachments(iter).then((fileName) => {
-          accum.push(fileName);
-          return accum;
-        });
-      }
-    },
-    [],
-  ).then((fileNames) => zipFiles(fileNames));
-}
-
 /**
  * show an error notification with an optional "more" button that displays further details
  * in a modal dialog.
@@ -312,7 +165,6 @@ export function showError(
   if (options === undefined) {
     options = {};
   }
-  const sourceErr = new Error();
 
   if (
     options.extensionName === undefined &&
@@ -329,6 +181,11 @@ export function showError(
       : shouldAllowReport(details, options);
 
   log(allowReport ? "error" : "warn", title, err);
+
+  if (allowReport && !isOutdated() && !didIgnoreError()) {
+    const error = details instanceof Error ? details : unknownToError(details);
+    recordErrorSpan(title, error);
+  }
 
   const content: IDialogContent =
     truthy(options) && options.isHTML
@@ -360,58 +217,6 @@ export function showError(
             },
           };
 
-  if (
-    details?.["attachLogOnReport"] === true &&
-    (options.attachments ?? []).find((iter) => iter.id === "log") === undefined
-  ) {
-    options.attachments = setdefault(
-      options,
-      "attachments",
-      Array<IAttachment>(),
-    )?.concat([
-      {
-        id: "log",
-        type: "file",
-        data: path.join(getVortexPath("userData"), "vortex.log"),
-        description: "Vortex Log",
-      },
-      {
-        id: "log2",
-        type: "file",
-        data: path.join(getVortexPath("userData"), "vortex1.log"),
-        description: "Vortex Log (old)",
-      },
-    ]);
-  }
-
-  if (details?.["attachFilesOnReport"] !== undefined) {
-    options.attachments = setdefault(
-      options,
-      "attachments",
-      Array<IAttachment>(),
-    )?.concat(
-      details["attachFilesOnReport"].map((filePath: string, idx: number) => ({
-        id: `file${idx}`,
-        type: "file",
-        data: filePath,
-        description: path.basename(filePath),
-      })),
-    );
-  }
-
-  if (
-    options.attachments !== undefined &&
-    options.attachments.length > 0 &&
-    allowReport
-  ) {
-    content.text =
-      (content.text !== undefined ? content.text + "\n\n" : "") +
-      "Note: If you report this error, the following data will be added to the report:\n" +
-      options.attachments
-        .map((attach) => ` - ${attach.description}`)
-        .join("\n");
-  }
-
   let extIssueTrackerURL: string | undefined = undefined;
   if (options.extension?.info?.issueTrackerURL !== undefined) {
     extIssueTrackerURL = options.extension.info.issueTrackerURL;
@@ -437,8 +242,6 @@ export function showError(
   }
 
   const actions: IDialogAction[] = [];
-
-  const context = details?.context ?? getErrorContext();
 
   if (!isOutdated() && !didIgnoreError() && allowReport) {
     if (extIssueTrackerURL !== undefined) {
@@ -474,44 +277,6 @@ export function showError(
           );
         },
       });
-    } else if (options.extension === undefined) {
-      actions.push({
-        label: "Report",
-        action: () =>
-          bundleAttachment(options)
-            .then((attachmentBundle) =>
-              sendReport(
-                "error",
-                toError(details, title, options, sourceErr.stack),
-                context,
-                ["error"],
-                "",
-                process.type,
-                undefined,
-                attachmentBundle,
-              ),
-            )
-            .then((response) => {
-              if (response?.github_issue !== undefined) {
-                const { issue_number } = response.github_issue;
-                const githubURL = `https://api.github.com/repos/${GITHUB_PROJ}/issues/${issue_number}`;
-                jsonRequest<any>(githubURL)
-                  .catch(() => undefined)
-                  .then((githubInfo) => {
-                    dispatch(
-                      showDialog(
-                        "success",
-                        "Issue reported",
-                        {
-                          bbcode: genFeedbackText(response, githubInfo),
-                        },
-                        [{ label: "Close" }],
-                      ),
-                    );
-                  });
-              }
-            }),
-      });
     }
   }
 
@@ -543,19 +308,66 @@ export function showError(
   );
 }
 
-export interface IPrettifiedError {
-  message: string;
+export interface IPrettifiedError extends Error {
   code?: string;
-  replace?: any;
+  replace?: Record<string, string>;
   allowReport?: boolean;
-  stack?: string;
 }
 
+// err is typed as `any` because this function handles many different error shapes
+// with varying properties (.code, .syscall, .path, .host, .address, .filename, etc.)
+// that don't share a common type. This is a reasonable use of `any` at a system boundary.
 export function prettifyNodeErrorMessage(
   err: any,
   options?: IErrorOptions,
   fileName?: string,
 ): IPrettifiedError {
+  const result = prettifyNodeErrorMessageInner(err, options, fileName);
+  // Extend the original error in-place to preserve its identity (instanceof checks).
+  // Some error types (e.g. DOMException) have read-only properties that can't be set,
+  // in which case we fall back to a wrapper Error.
+  try {
+    err.message = result.message;
+    if (result.code !== undefined) {
+      err.code = result.code;
+    }
+    if (result.replace !== undefined) {
+      err.replace = result.replace;
+    }
+    if (result.allowReport !== undefined) {
+      err.allowReport = result.allowReport;
+    }
+    return err;
+  } catch {
+    const wrapped = new Error(result.message) as IPrettifiedError;
+    wrapped.stack = err.stack;
+    wrapped.name = err.name;
+    if (result.code !== undefined) {
+      wrapped.code = result.code;
+    }
+    if (result.replace !== undefined) {
+      wrapped.replace = result.replace;
+    }
+    if (result.allowReport !== undefined) {
+      wrapped.allowReport = result.allowReport;
+    }
+    return wrapped;
+  }
+}
+
+interface IPrettifiedFields {
+  message: string;
+  code?: string;
+  replace?: Record<string, string>;
+  allowReport?: boolean;
+  stack?: string;
+}
+
+function prettifyNodeErrorMessageInner(
+  err: any,
+  options?: IErrorOptions,
+  fileName?: string,
+): IPrettifiedFields {
   const decoded = decodeSystemError(err, err.path ?? err.filename ?? fileName);
   if (decoded !== undefined) {
     return {
@@ -566,8 +378,15 @@ export function prettifyNodeErrorMessage(
   }
 
   if (err instanceof ThirdPartyError || err instanceof ArchiveBrokenError) {
+    const message =
+      err instanceof ArchiveBrokenError
+        ? "The archive appears to be broken/corrupted. Please delete it and try again.\n" +
+          "If downloaded via a collection, pause the collection, remove the archive, and resume the collection.\n" +
+          (err.fileName ? "Archive: " + err.fileName : err.message)
+        : err.message;
     return {
-      message: err.message,
+      message,
+      stack: err.stack,
       allowReport: false,
     };
   } else if (err instanceof TemporaryError) {

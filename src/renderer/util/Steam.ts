@@ -20,7 +20,7 @@ import opn from "./opn";
 import type { IExtensionApi } from "../types/IExtensionContext";
 import { GameEntryNotFound } from "../types/IGameStore";
 import getVortexPath from "./getVortexPath";
-import { getErrorMessageOrDefault } from "../../shared/errors";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 import { findLinuxSteamPath } from "./linux/steamPaths";
 import {
   getProtonInfo,

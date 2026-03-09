@@ -1,5 +1,6 @@
 import * as path from "path";
 import { fs, log, types, util } from "vortex-api";
+import Bluebird from "bluebird";
 
 import * as actions from "./actions";
 import { themesPath } from "./util";
@@ -34,7 +35,7 @@ function saveThemeInternal(
   return fs.writeFileAsync(
     path.join(outputPath, "variables.scss"),
     "// Automatically generated. Changes to this file will be overwritten.\r\n" +
-      theme.join("\r\n"),
+    theme.join("\r\n"),
   );
 }
 
@@ -70,7 +71,7 @@ export function cloneTheme(
   api: types.IExtensionApi,
   themeName: string,
   newName: string,
-): Promise<void> {
+): Bluebird<void> {
   const t = api.translate;
 
   if (
@@ -80,7 +81,7 @@ export function cloneTheme(
     const targetPath = path.join(themesPath(), newName);
     const sourcePath = themePath(themeName);
     if (sourcePath === undefined) {
-      return Promise.reject(new Error("no path for current theme"));
+      return Bluebird.reject(new Error("no path for current theme"));
     }
     api.events.emit("analytics-track-click-event", "Themes", "Clone theme");
 
@@ -93,9 +94,9 @@ export function cloneTheme(
       .then(() =>
         sourcePath !== undefined
           ? fs.readdirAsync(sourcePath)
-          : Promise.resolve([]),
+          : Bluebird.resolve([]),
       )
-      .map((files) =>
+      .map((files: string) =>
         fs.copyAsync(
           path.join(sourcePath, files),
           path.join(targetPath, files),
@@ -115,19 +116,19 @@ export function cloneTheme(
         ),
       );
   } else {
-    return Promise.reject(new util.ArgumentInvalid("Name already used"));
+    return Bluebird.reject(new util.ArgumentInvalid("Name already used"));
     // cloneTheme(api, themeName, themes, t('Name already used.'));
   }
 }
 
 export function readThemeVariables(
   themeName: string,
-): Promise<{ [key: string]: string }> {
+): Bluebird<{ [key: string]: string }> {
   const currentThemePath = themePath(themeName);
   if (currentThemePath === undefined) {
     // likely was deleted outside Vortex
     log("warn", "theme not found", themeName);
-    return Promise.resolve({});
+    return Bluebird.resolve({});
   }
 
   // single and multiline comments

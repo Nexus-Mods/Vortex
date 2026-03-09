@@ -47,10 +47,17 @@ export const install = async (
       ? null
       : getPluginPath(gameId);
 
+    // Skip Redux dialog-state dispatches when we have a preset and are running
+    // unattended (collection install). The C# fomod still calls uiUpdateState
+    // per step, but those TSFN callbacks would otherwise block the JS main
+    // thread — converting/dispatching large installSteps arrays — for no
+    // visible benefit since the dialog is never shown.
+    const isUnattended = unattended === true && fomodChoices != null;
     const modInstaller = await VortexModInstaller.create(
       api,
       instanceId,
       gameId,
+      isUnattended,
     );
 
     const result = await modInstaller.installAsync(

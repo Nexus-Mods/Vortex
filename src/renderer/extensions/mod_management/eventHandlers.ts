@@ -68,7 +68,7 @@ import PromiseBB from "bluebird";
 import * as _ from "lodash";
 import type { RuleType } from "modmeta-db";
 import * as path from "path";
-import { getErrorMessageOrDefault } from "../../../shared/errors";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 
 function checkStagingGame(
   api: IExtensionApi,

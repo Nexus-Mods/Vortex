@@ -1,0 +1,22 @@
+{
+  "name": "game-bladeandsorcery",
+  "version": "0.2.17",
+  "description": "Support for Blade & Sorcery",
+  "main": "dist/index.js",
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "type": "commonjs",
+  "private": true,
+  "config": {
+    "game": "Blade & Sorcery"
+  },
+  "scripts": {
+    "_assets": "copyfiles -u 1 -f ./assets/* dist",
+    "_build": "copyfiles -u 1 -f ./src/*.js dist && pnpm run _assets && extractInfo",
+    "build": "pnpm run _build && node ../../copy-extension.mjs out",
+    "dist": "pnpm run _build && node ../../copy-extension.mjs dist"
+  },
+  "devDependencies": {
+    "vortex-api": "catalog:"
+  }
+}

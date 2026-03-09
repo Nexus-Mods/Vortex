@@ -5,14 +5,18 @@
   "main": "./out/index.js",
   "repository": "",
   "scripts": {
-    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
-    "build": "npm run webpack && extractInfo"
+    "_build": "node build.mjs && extractInfo",
+    "build": "pnpm run _build && node ../copy-extension.mjs out",
+    "dist": "pnpm run _build && node ../copy-extension.mjs dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "devDependencies": {
-    "@types/i18next": "^8.4.0",
-    "@types/redux": "^3.6.0",
-    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies"
+    "@types/bluebird": "catalog:",
+    "@types/i18next": "catalog:",
+    "@types/redux": "catalog:",
+    "bluebird": "catalog:",
+    "copyfiles": "catalog:",
+    "vortex-api": "catalog:"
   }
 }

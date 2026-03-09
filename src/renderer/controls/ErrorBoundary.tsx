@@ -11,7 +11,7 @@ import * as React from "react";
 import { Alert, Button } from "react-bootstrap";
 import type { WithTranslation } from "react-i18next";
 import { getApplication } from "../util/application";
-import { unknownToError } from "../../shared/errors";
+import { unknownToError } from "@vortex/shared";
 
 export type CBFunction = (...args: any[]) => void;
 

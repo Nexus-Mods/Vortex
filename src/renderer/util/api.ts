@@ -79,6 +79,7 @@ import {
   getVisibleWindow,
   terminate,
   withContext as withErrorContext,
+  withTrackedActivity,
 } from "./errorHandling";
 import extractExeIcon from "./exeIcon";
 
@@ -140,7 +141,8 @@ import deepMerge from "./deepMerge";
 import walk from "./walk";
 
 import SevenZip from "node-7z";
-import { runElevated, runThreaded } from "vortex-run";
+import { runElevated } from "./elevated";
+import { runThreaded } from "./thread";
 
 import getTextModManagement from "../extensions/mod_management/texts";
 import getTextProfileManagement from "../extensions/profile_management/texts";
@@ -267,6 +269,7 @@ export {
   userFriendlyTime,
   walk,
   withErrorContext,
+  withTrackedActivity,
   writeFileAtomic,
   CollectionsDownloadCompletedEvent,
   CollectionsDownloadFailedEvent,

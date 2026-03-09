@@ -1,9 +1,30 @@
+import type { PreloadWindow } from "@vortex/shared/preload";
 import type { SpawnOptions } from "child_process";
 import type { OpenDialogOptions, SaveDialogOptions } from "electron";
 import type { IHashResult, ILookupResult, IModInfo } from "modmeta-db";
 import type * as modmetaT from "modmeta-db";
 import type { ToastOptions } from "react-hot-toast";
-import type * as winapiT from "vortex-run";
+
+import { VCREDIST_URL } from "@vortex/shared";
+import {
+  getErrorCode,
+  getErrorMessageOrDefault,
+  unknownToError,
+} from "@vortex/shared";
+import PromiseBB from "bluebird";
+import { spawn } from "child_process";
+import { EventEmitter } from "events";
+import * as fs from "fs-extra";
+import * as fuzz from "fuzzball";
+import JsonSocket from "json-socket";
+import * as _ from "lodash";
+import * as net from "net";
+import * as path from "path";
+import { toast } from "react-hot-toast";
+import * as semver from "semver";
+import { generate as shortid } from "shortid";
+import stringFormat from "string-template";
+import { fileMD5 } from "vortexmt";
 
 import type {
   DialogActions,
@@ -16,6 +37,7 @@ import type {
 } from "./extensions/mod_management/types/IMod";
 import type { SanityCheck } from "./store/reduxSanity";
 import type {
+  ExtensionInit,
   IAvailableExtension,
   IExtension,
   IRegisteredExtension,
@@ -50,22 +72,6 @@ import type {
   IState,
 } from "./types/IState";
 import type { i18n } from "./util/i18n";
-import StyleManager from "./StyleManager";
-
-import PromiseBB from "bluebird";
-import { spawn } from "child_process";
-import { EventEmitter } from "events";
-import * as fs from "fs-extra";
-import * as fuzz from "fuzzball";
-import JsonSocket from "json-socket";
-import * as _ from "lodash";
-import * as net from "net";
-import * as path from "path";
-import { toast } from "react-hot-toast";
-import * as semver from "semver";
-import { generate as shortid } from "shortid";
-import stringFormat from "string-template";
-import { fileMD5 } from "vortexmt";
 
 import {
   forgetExtension,
@@ -82,15 +88,12 @@ import {
 import { suppressNotification } from "./actions/notificationSettings";
 import { setExtensionLoadFailures } from "./actions/session";
 import { setOptionalExtensions } from "./extensions/extension_manager/actions";
-import { VCREDIST_URL } from "../shared/constants";
-import {
-  getErrorCode,
-  getErrorMessageOrDefault,
-  unknownToError,
-} from "../shared/errors";
 import { registerSanityCheck } from "./store/reduxSanity";
-import { Archive } from "./util/archives";
+import ReduxWatcher from "./store/ReduxWatcher";
+import { computeStateDiff } from "./store/stateDiff";
+import StyleManager from "./StyleManager";
 import { getApplication } from "./util/application";
+import { Archive } from "./util/archives";
 import { COMPANY_ID } from "./util/constants";
 import {
   MissingDependency,
@@ -107,13 +110,14 @@ import { TString } from "./util/i18n";
 import lazyRequire from "./util/lazyRequire";
 import { log } from "./util/log";
 import { showError } from "./util/message";
-import runElevatedCustomTool from "./util/runElevatedCustomTool";
-import { activeGameId } from "./util/selectors";
-import { getSafe } from "./util/storeHelper";
+import { getPreloadApi } from "./util/preloadAccess";
 import {
   deregisterProtocolHandler,
   registerProtocolHandler,
 } from "./util/protocolRegistration";
+import runElevatedCustomTool from "./util/runElevatedCustomTool";
+import { activeGameId } from "./util/selectors";
+import { getSafe } from "./util/storeHelper";
 import {
   filteredEnvironment,
   isFunction,
@@ -124,10 +128,9 @@ import {
   wrapExtCBAsync,
   wrapExtCBSync,
 } from "./util/util";
-import ReduxWatcher from "./store/ReduxWatcher";
-import { getPreloadApi } from "./util/preloadAccess";
-import { computeStateDiff } from "./store/stateDiff";
-import type { PreloadWindow } from "../shared/types/preload";
+import { webpackRequireHack } from "./util/webpack-hacks";
+
+import { runElevated } from "./util/elevated";
 
 const modmeta = lazyRequire<typeof modmetaT>(() => require("modmeta-db"));
 
@@ -141,8 +144,6 @@ export function isExtSame(
 
   return installed.name === remote.name;
 }
-
-const winapi = lazyRequire<typeof winapiT>(() => require("vortex-run"));
 
 const ERROR_OUTPUT_CUTOFF = 3;
 
@@ -1796,7 +1797,13 @@ class ExtensionManager {
       try {
         const apiProxy = new APIProxyCreator(ext, this.mEventEmitter);
         const extProxy = new Proxy(contextProxy, apiProxy);
-        ext.initFunc()(extProxy as IExtensionContext);
+        const init = ext.initFunc();
+        if (typeof init !== "function") {
+          throw new Error(
+            `init isn't a function but ${typeof init}: ${init} for ${Object.keys(ext)}`,
+          );
+        }
+        init(extProxy as IExtensionContext);
         apiProxy.enableAPI();
       } catch (unknownError) {
         if (!ext.dynamic) {
@@ -2637,13 +2644,12 @@ class ExtensionManager {
       });
 
       log("debug", "running elevated", { executable, cwd, args });
-      winapi
-        .runElevated(ipcPath, runElevatedCustomTool, {
-          toolPath: executable,
-          toolCWD: cwd,
-          parameters: args,
-          environment: env,
-        })
+      runElevated(ipcPath, runElevatedCustomTool, {
+        toolPath: executable,
+        toolCWD: cwd,
+        parameters: args,
+        environment: env,
+      })
         .then((tmpPath) => {
           tmpFilePath = tmpPath;
           if (onSpawned !== undefined) {
@@ -2937,7 +2943,7 @@ class ExtensionManager {
       return {
         name,
         namespace,
-        initFunc: () => winapi.dynreq(indexPath).default,
+        initFunc: () => ExtensionManager.loadExternalExtension(indexPath),
         path: extensionPath,
         dynamic: true,
         info: {
@@ -2953,6 +2959,28 @@ class ExtensionManager {
       });
       return undefined;
     }
+  }
+
+  private static loadExternalExtension(id: string): ExtensionInit | undefined {
+    // NOTE(erri120): Hack for dynamically importing extensions.
+    // Webpack normally rewrites all requires to a custom __webpack__require
+    // but here we don't want that. We want the raw "normal" require.
+    const mod = webpackRequireHack(id);
+    return this.getExtensionInitFunc(mod);
+  }
+
+  /** Finds the default exported extension init function of a module */
+  private static getExtensionInitFunc(mod: unknown): ExtensionInit | undefined {
+    if (!mod) return undefined;
+
+    if (typeof mod === "function") return mod as ExtensionInit;
+    if (typeof mod !== "object") return undefined;
+
+    // NOTE(erri120): interop hacks because of jank...
+    const fn: unknown = mod["__esModule"]
+      ? mod["default"]
+      : (mod["default"] ?? mod);
+    return typeof fn === "function" ? (fn as ExtensionInit) : undefined;
   }
 
   private loadDynamicExtensions(
@@ -3056,70 +3084,101 @@ class ExtensionManager {
    * retrieves all extensions to the base functionality, both the static
    * and external ones.
    * This loads external extensions from disc synchronously
-   *
-   * @returns {ExtensionInit[]}
    */
   private prepareExtensions(): IRegisteredExtension[] {
-    const staticExtensions = [
-      "settings_interface",
-      "settings_application",
-      "about_dialog",
-      "diagnostics_files",
-      "dashboard",
-      "starter_dashlet",
-      "firststeps_dashlet",
-      "mod_load_order",
-      "file_based_loadorder",
-      "mod_management",
-      "category_management",
-      "collections_integration",
-      "profile_management",
-      "nexus_integration",
-      "download_management",
-      "gameversion_management",
-      "gamemode_management",
-      "announcement_dashlet",
-      "symlink_activator",
-      "symlink_activator_elevate",
-      "hardlink_activator",
-      "move_activator",
-      "null_activator",
-      "updater",
-      "instructions_overlay",
-      "settings_metaserver",
-      "test_runner",
-      "extension_manager",
-      "ini_prep",
-      "news_dashlet",
-      "sticky_mods",
-      "browser",
-      "recovery",
-      "file_preview",
-      "tool_variables_base",
-      "history_management",
-      "analytics",
-      "onboarding_dashlet",
-      "mod_spotlights_dashlet",
-      "design_system_dev",
-      "browse_nexus",
-      "installer_dotnet",
-      "installer_nested_fomod",
-      "installer_fomod_shared",
-      "installer_fomod_ipc",
-      "installer_fomod_native",
-    ];
+    const staticExtensions: Record<string, () => unknown> = {
+      about_dialog: () => require("./extensions/about_dialog/index.ts"),
+      analytics: () => require("./extensions/analytics/index.ts"),
+      announcement_dashlet: () =>
+        require("./extensions/announcement_dashlet/index.ts"),
+      browse_nexus: () => require("./extensions/browse_nexus/index.ts"),
+      browser: () => require("./extensions/browser/index.ts"),
+      category_management: () =>
+        require("./extensions/category_management/index.ts"),
+      collections_integration: () =>
+        require("./extensions/collections_integration/index.ts"),
+      dashboard: () => require("./extensions/dashboard/index.ts"),
+      design_system_dev: () =>
+        require("./extensions/design_system_dev/index.ts"),
+      diagnostics_files: () =>
+        require("./extensions/diagnostics_files/index.ts"),
+      download_management: () =>
+        require("./extensions/download_management/index.ts"),
+      extension_manager: () =>
+        require("./extensions/extension_manager/index.ts"),
+      file_based_loadorder: () =>
+        require("./extensions/file_based_loadorder/index.ts"),
+      file_preview: () => require("./extensions/file_preview/index.ts"),
+      firststeps_dashlet: () =>
+        require("./extensions/firststeps_dashlet/index.ts"),
+      gamemode_management: () =>
+        require("./extensions/gamemode_management/index.ts"),
+      gameversion_management: () =>
+        require("./extensions/gameversion_management/index.ts"),
+      hardlink_activator: () =>
+        require("./extensions/hardlink_activator/index.ts"),
+      health_check: () => require("./extensions/health_check/index.ts"),
+      history_management: () =>
+        require("./extensions/history_management/index.ts"),
+      ini_prep: () => require("./extensions/ini_prep/index.ts"),
+      installer_dotnet: () => require("./extensions/installer_dotnet/index.ts"),
+      installer_fomod_ipc: () =>
+        require("./extensions/installer_fomod_ipc/index.ts"),
+      installer_fomod_native: () =>
+        require("./extensions/installer_fomod_native/index.ts"),
+      installer_fomod_shared: () =>
+        require("./extensions/installer_fomod_shared/index.ts"),
+      installer_nested_fomod: () =>
+        require("./extensions/installer_nested_fomod/index.ts"),
+      instructions_overlay: () =>
+        require("./extensions/instructions_overlay/index.ts"),
+      mod_load_order: () => require("./extensions/mod_load_order/index.ts"),
+      mod_management: () => require("./extensions/mod_management/index.ts"),
+      mod_spotlights_dashlet: () =>
+        require("./extensions/mod_spotlights_dashlet/index.ts"),
+      move_activator: () => require("./extensions/move_activator/index.ts"),
+      news_dashlet: () => require("./extensions/news_dashlet/index.ts"),
+      nexus_integration: () =>
+        require("./extensions/nexus_integration/index.tsx"),
+      null_activator: () => require("./extensions/null_activator/index.ts"),
+      onboarding_dashlet: () =>
+        require("./extensions/onboarding_dashlet/index.ts"),
+      profile_management: () =>
+        require("./extensions/profile_management/index.ts"),
+      recovery: () => require("./extensions/recovery/index.ts"),
+      settings_application: () =>
+        require("./extensions/settings_application/index.ts"),
+      settings_interface: () =>
+        require("./extensions/settings_interface/index.ts"),
+      settings_metaserver: () =>
+        require("./extensions/settings_metaserver/index.ts"),
+      starter_dashlet: () => require("./extensions/starter_dashlet/index.ts"),
+      sticky_mods: () => require("./extensions/sticky_mods/index.ts"),
+      symlink_activator: () =>
+        require("./extensions/symlink_activator/index.ts"),
+      symlink_activator_elevate: () =>
+        require("./extensions/symlink_activator_elevate/index.ts"),
+      telemetry: () => require("./extensions/telemetry/index.ts"),
+      test_runner: () => require("./extensions/test_runner/index.ts"),
+      tool_variables_base: () =>
+        require("./extensions/tool_variables_base/index.ts"),
+      updater: () => require("./extensions/updater/index.ts"),
+    };
 
     require("./util/extensionRequire").default(() => this.extensions);
 
     const extensionPaths = ExtensionManager.getExtensionPaths();
     const loadedExtensions = new Set<string>();
     let dynamicallyLoaded = [];
-    return staticExtensions
+    return Object.keys(staticExtensions)
       .map((name: string) => ({
         name,
         namespace: name,
         path: path.resolve(__dirname, "extensions", name),
-        initFunc: () => require(`./extensions/${name}/index`).default,
+        initFunc: () => {
+          const f = staticExtensions[name];
+          return ExtensionManager.getExtensionInitFunc(f());
+        },
         dynamic: false,
       }))
       .concat(

@@ -25,5 +25,19 @@
   "The mod you {{enabled}} depends on other mods, do you want to {{enable}} those as well?_plural": "The mods you {{enabled}} depend on other mods, do you want to {{enable}} those as well?",
   "actions": {
     "search": "Search"
-  }
+  },
+  "view_all": "View all",
+  "refresh": "Refresh",
+  "settings": "Settings",
+  "beta": "Beta",
+  "hide": "Hide",
+  "hide_all": "Hide all",
+  "unhide": "Unhide",
+  "unhide_all": "Unhide all",
+  "active": "Active",
+  "hidden": "Hidden",
+  "helpful": "Helpful",
+  "not_helpful": "Not helpful",
+  "was_this_helpful": "Was this helpful?",
+  "thanks_for_your_feedback": "Thanks for your feedback"
 }

@@ -14,7 +14,7 @@ import {
 } from "react-bootstrap";
 import { useSelector } from "react-redux";
 
-import type { IParameters } from "../../../shared/types/cli";
+import type { IParameters } from "@vortex/shared/cli";
 import type {
   IAvailableExtension,
   IExtensionDownloadInfo,

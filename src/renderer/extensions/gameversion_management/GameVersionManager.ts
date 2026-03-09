@@ -8,7 +8,7 @@ import type { IGameVersionProvider } from "./types/IGameVersionProvider";
 import { log } from "../../util/log";
 
 import { getExecGameVersion } from "./util/getGameVersion";
-import { unknownToError } from "../../../shared/errors";
+import { unknownToError } from "@vortex/shared";
 
 export default class GameVersionManager {
   private mApi: IExtensionApi;

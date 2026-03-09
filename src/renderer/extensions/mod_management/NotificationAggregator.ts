@@ -1,14 +1,16 @@
+import {
+  getErrorMessageOrDefault,
+  unknownToError,
+} from "@vortex/shared";
 import { createHash } from "crypto";
+
 import type {
   IErrorOptions,
   IExtensionApi,
 } from "../../types/IExtensionContext";
 import type { INotificationAction } from "../../types/INotification";
+
 import { log } from "../../util/log";
-import {
-  getErrorMessageOrDefault,
-  unknownToError,
-} from "../../../shared/errors";
 
 // In test environment, use synchronous execution to avoid timing issues with Jest fake timers
 // Check for jest global or NODE_ENV to detect test environment reliably
@@ -157,9 +159,6 @@ export class NotificationAggregator {
 
     const pending = this.mPendingNotifications[aggregationId] || [];
     if (pending.length === 0) {
-      log("debug", "no pending notifications to flush, scheduling next flush", {
-        aggregationId,
-      });
       // Reset timeout for next batch
       this.mTimeouts[aggregationId] = setTimeout(() => {
         this.flushPendingNotifications(aggregationId, timeoutMs);
@@ -447,7 +446,7 @@ export class NotificationAggregator {
   private normalizeMessage(message: string): string {
     // Check cache first to avoid expensive regex operations
     if (this.mNormalizedMessageCache.has(message)) {
-      return this.mNormalizedMessageCache.get(message)!;
+      return this.mNormalizedMessageCache.get(message);
     }
 
     // Remove variable parts from messages to enable better grouping

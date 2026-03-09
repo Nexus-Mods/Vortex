@@ -30,7 +30,7 @@ function toVortexMod(
   };
   if (input.nexusId) {
     mod.attributes.source = "nexus";
-    mod.attributes.modId = input.nexusId;
+    mod.attributes.modId = parseInt(input.nexusId);
   }
   return mod;
 }

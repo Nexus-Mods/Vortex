@@ -1,4 +1,5 @@
 **/node_modules/*
+.pnpm-store
 typings
 dist
 dist_custom
@@ -91,3 +92,5 @@ flatpak/.venv-flatpak/
 flatpak/flatpak-repo/
 
 flatpak/scripts/__pycache__/
+
+*.tsbuildinfo

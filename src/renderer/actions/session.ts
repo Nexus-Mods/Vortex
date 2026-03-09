@@ -1,6 +1,6 @@
 import { createAction } from "redux-act";
 
-import type { IParameters } from "../../shared/types/cli";
+import type { IParameters } from "@vortex/shared/cli";
 
 const uiOnlyMeta = () => ({ forward: false, scope: "local" });
 

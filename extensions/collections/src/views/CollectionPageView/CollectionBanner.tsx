@@ -1,4 +1,4 @@
-import i18next from "i18next";
+import type { TFunction } from "i18next";
 import * as React from "react";
 import { Button } from "react-bootstrap";
 import { ComponentEx, FlexLayout, Icon, util, Image } from "vortex-api";
@@ -6,7 +6,7 @@ import { PREMIUM_PATH } from "../../constants";
 
 export interface ICollectionBannerProps {
   totalSize: number;
-  t: i18next.TFunction;
+  t: TFunction;
 }
 
 class CollectionBanner extends ComponentEx<ICollectionBannerProps, {}> {

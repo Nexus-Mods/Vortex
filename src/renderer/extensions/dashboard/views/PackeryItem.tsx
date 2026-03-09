@@ -10,7 +10,7 @@ import type { ResizeDirection } from "re-resizable";
 import { Resizable } from "re-resizable";
 import * as React from "react";
 import { Button } from "react-bootstrap";
-import { getErrorMessageOrDefault } from "../../../../shared/errors";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 
 const Draggabilly = lazyRequire<typeof DraggabillyT>(() => ({
   default: require("draggabilly"),

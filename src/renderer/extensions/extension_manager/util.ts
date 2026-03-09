@@ -568,7 +568,9 @@ export function downloadGithubRaw(
   const cleanProm: PromiseBB<void> =
     existing !== undefined
       ? fs.removeAsync(path.join(downloadPath, archiveName)).then(() => {
-          api.events.emit("remove-download", existing);
+          api.events.emit("remove-download", existing, undefined, {
+            confirmed: true,
+          });
         })
       : PromiseBB.resolve();
 
@@ -588,7 +590,9 @@ export function downloadGithubRaw(
           );
         })
         .then(() =>
-          fs.moveAsync(archivePath, path.join(downloadPath, archiveName)),
+          fs.moveAsync(archivePath, path.join(downloadPath, archiveName), {
+            overwrite: true,
+          }),
         )
         .then(() => {
           const archiveId = shortid();

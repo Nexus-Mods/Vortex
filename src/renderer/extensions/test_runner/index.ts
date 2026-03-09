@@ -30,7 +30,7 @@
 
 import type { DialogActions } from "../../actions/notifications";
 import { showDialog } from "../../actions/notifications";
-import { getErrorMessageOrDefault } from "../../../shared/errors";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 import type {
   CheckFunction,
   IExtensionApi,

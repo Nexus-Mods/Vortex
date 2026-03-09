@@ -1524,7 +1524,12 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     ).then(() => {
       if (removeArchives) {
         archiveIds.forEach((archiveId) => {
-          this.context.api.events.emit("remove-download", archiveId);
+          this.context.api.events.emit(
+            "remove-download",
+            archiveId,
+            undefined,
+            { confirmed: true },
+          );
         });
       }
       return PromiseBB.resolve();

@@ -4,7 +4,7 @@ import { getApplication } from "../../../util/application";
 import type { IValidateKeyDataV2 } from "../../nexus_integration/types/IValidateKeyData";
 import { analyticsServiceLog } from "../utils/analyticsLog";
 import type { MixpanelEvent } from "./MixpanelEvents";
-import { getErrorMessageOrDefault } from "../../../../shared/errors";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 
 class MixpanelAnalytics {
   private user: number;

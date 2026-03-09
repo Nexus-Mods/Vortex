@@ -1,4 +1,4 @@
-import type { IPersistor, PersistorKey } from "../../shared/types/state";
+import type { IPersistor, PersistorKey } from "@vortex/shared/state";
 
 class SubPersistor implements IPersistor {
   public getAllKVs:

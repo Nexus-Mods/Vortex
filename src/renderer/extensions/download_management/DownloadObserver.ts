@@ -4,6 +4,7 @@ import PromiseBB from "bluebird";
 import * as path from "path";
 import { generate as shortid } from "shortid";
 
+import type { IDialogResult } from "../../types/IDialog";
 import type { IExtensionApi } from "../../types/IExtensionContext";
 import type { IState } from "../../types/IState";
 import type { RedownloadMode } from "./DownloadManager";
@@ -20,14 +21,14 @@ import {
   TemporaryError,
   UserCanceled,
 } from "../../util/CustomErrors";
-import { withContext } from "../../util/errorHandling";
+import { withTrackedActivity } from "../../util/errorHandling";
 import * as fs from "../../util/fs";
 import { log } from "../../util/log";
 import { renderError, showError } from "../../util/message";
 import * as selectors from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { flatten, setdefault, truthy, batchDispatch } from "../../util/util";
-import { unknownToError } from "../../../shared/errors";
+import { unknownToError } from "@vortex/shared";
 import {
   ModsDownloadStartedClientEvent,
   ModsDownloadCompletedEvent,
@@ -464,56 +465,24 @@ export class DownloadObserver {
 
     const urlIn = urls[0].toString().split("<")[0];
 
-    return withContext(`Downloading "${fileName || urlIn}"`, urlIn, () =>
-      ensureDownloadsDirectory(this.mApi)
-        .then(() => {
-          if (this.wasIntercepted(modInfo?.referenceTag)) {
-            this.mInterceptedDownloads = this.mInterceptedDownloads.filter(
-              (iter) => iter.tag !== modInfo?.referenceTag,
-            );
-            return PromiseBB.reject(new UserCanceled());
-          }
-          log("info", "about to enqueue", { id, tag: modInfo?.referenceTag });
-          return this.mManager.enqueue(
-            id,
-            urls,
-            fileName,
-            processCB,
-            downloadPath,
-            downloadOptions,
-          );
-        })
-        .catch(UserCanceled, (err) => {
-          return PromiseBB.reject(err);
-        })
-        .catch(AlreadyDownloaded, (err) => {
-          const downloads = this.mApi.getState().persistent.downloads.files;
-          const dlId = Object.keys(downloads).find(
-            (iter) => downloads[iter].localPath === err.fileName,
-          );
-          if (dlId !== undefined && downloads[dlId].state !== "failed") {
-            // File already exists and download is successful - return existing download as success
-            const existingDownload = downloads[dlId];
-            const downloadResult: IDownloadResult = {
-              filePath: path.join(
-                downloadPath,
-                existingDownload.localPath || err.fileName,
-              ),
-              headers: existingDownload.modInfo?.headers || {},
-              unfinishedChunks: existingDownload.chunks || [],
-              hadErrors: false,
-              size: existingDownload.size || 0,
-              metaInfo: existingDownload.modInfo || {},
-            };
-            return PromiseBB.resolve(downloadResult);
-          } else if (this.wasIntercepted(modInfo?.referenceTag)) {
-            this.mInterceptedDownloads = this.mInterceptedDownloads.filter(
-              (iter) => iter.tag !== modInfo?.referenceTag,
-            );
-            return PromiseBB.reject(new UserCanceled());
-          } else {
-            // there is a file but with no meta data. force the download instead
-            downloadOptions.redownload = "replace";
+    return withTrackedActivity(
+      "vortex.downloads",
+      "download.start",
+      {
+        "download.fileName": fileName,
+        "download.url": urls[0].toString().split("<")[0],
+        "download.id": id,
+      },
+      () =>
+        ensureDownloadsDirectory(this.mApi)
+          .then(() => {
+            if (this.wasIntercepted(modInfo?.referenceTag)) {
+              this.mInterceptedDownloads = this.mInterceptedDownloads.filter(
+                (iter) => iter.tag !== modInfo?.referenceTag,
+              );
+              return PromiseBB.reject(new UserCanceled());
+            }
+            log("info", "about to enqueue", { id, tag: modInfo?.referenceTag });
             return this.mManager.enqueue(
               id,
               urls,
@@ -522,27 +491,69 @@ export class DownloadObserver {
               downloadPath,
               downloadOptions,
             );
-          }
-        })
-        .then((res: IDownloadResult) => {
-          log("debug", "download finished", { id, file: res.filePath });
-          return this.handleDownloadFinished(
-            id,
-            callback,
-            res,
-            options?.allowInstall ?? true,
-          );
-        })
-        .catch((err) =>
-          this.handleDownloadError(
-            err,
-            id,
-            downloadPath,
-            options?.allowOpenHTML ?? true,
-            callback,
+          })
+          .catch(UserCanceled, (err) => {
+            return PromiseBB.reject(err);
+          })
+          .catch(AlreadyDownloaded, (err) => {
+            const downloads = this.mApi.getState().persistent.downloads.files;
+            const dlId = Object.keys(downloads).find(
+              (iter) => downloads[iter].localPath === err.fileName,
+            );
+            if (dlId !== undefined && downloads[dlId].state !== "failed") {
+              // File already exists and download is successful - return existing download as success
+              const existingDownload = downloads[dlId];
+              const downloadResult: IDownloadResult = {
+                filePath: path.join(
+                  downloadPath,
+                  existingDownload.localPath || err.fileName,
+                ),
+                headers: existingDownload.modInfo?.headers || {},
+                unfinishedChunks: existingDownload.chunks || [],
+                hadErrors: false,
+                size: existingDownload.size || 0,
+                metaInfo: existingDownload.modInfo || {},
+              };
+              return PromiseBB.resolve(downloadResult);
+            } else if (this.wasIntercepted(modInfo?.referenceTag)) {
+              this.mInterceptedDownloads = this.mInterceptedDownloads.filter(
+                (iter) => iter.tag !== modInfo?.referenceTag,
+              );
+              return PromiseBB.reject(new UserCanceled());
+            } else {
+              // there is a file but with no meta data. force the download instead
+              downloadOptions.redownload = "replace";
+              return this.mManager.enqueue(
+                id,
+                urls,
+                fileName,
+                processCB,
+                downloadPath,
+                downloadOptions,
+              );
+            }
+          })
+          .then((res: IDownloadResult) => {
+            log("debug", "download finished", { id, file: res.filePath });
+            return this.handleDownloadFinished(
+              id,
+              callback,
+              res,
+              options?.allowInstall ?? true,
+            );
+          })
+          .catch((err) =>
+            this.handleDownloadError(
+              err,
+              id,
+              downloadPath,
+              options?.allowOpenHTML ?? true,
+              callback,
+            ),
           ),
-        ),
-    ).catch((err) => {
+      { root: true },
+    ).catch((unknownErr) => {
+      const err = unknownToError(unknownErr);
       log("error", "unhandled error starting download", {
         id,
         error: err.message,
@@ -599,10 +610,7 @@ export class DownloadObserver {
         }),
       );
       this.mApi.events.emit("did-finish-download", id, "failed");
-      callback?.(
-        new ProcessCanceled("Download completed with chunk errors"),
-        id,
-      );
+      callback?.(null, id);
       return onceFinished();
     } else if (res.unfinishedChunks.length > 0) {
       this.mApi.store.dispatch(pauseDownload(id, true, res.unfinishedChunks));
@@ -797,79 +805,108 @@ export class DownloadObserver {
       return;
     }
 
-    const callCB = (err: Error) => {
-      if (cb !== undefined) {
-        cb(err);
-      }
-    };
+    const proceedWithRemoval = () => {
+      const callCB = (err: Error) => {
+        if (cb !== undefined) {
+          cb(err);
+        }
+      };
 
-    const onceStopped = (): PromiseBB<void> => {
-      if (truthy(download.localPath) && truthy(download.game)) {
-        // this is a workaround required as of 1.3.5. Previous versions (1.3.4 and 1.3.5)
-        // would put manually added downloads into the download root if no game was being managed.
-        // Newer versions won't do this anymore (hopefully) but we still need to enable users to
-        // clean up these broken downloads
-        const rawGameId = getDownloadGames(download)[0];
-        const gameId = rawGameId
-          ? convertGameIdReverse(
-              selectors.knownGames(this.mApi.store.getState()),
-              rawGameId,
-            )
-          : undefined;
-        const dlPath = truthy(gameId)
-          ? selectors.downloadPathForGame(this.mApi.store.getState(), gameId)
-          : selectors.downloadPath(this.mApi.store.getState());
+      const onceStopped = (): PromiseBB<void> => {
+        if (truthy(download.localPath) && truthy(download.game)) {
+          // this is a workaround required as of 1.3.5. Previous versions (1.3.4 and 1.3.5)
+          // would put manually added downloads into the download root if no game was being managed.
+          // Newer versions won't do this anymore (hopefully) but we still need to enable users to
+          // clean up these broken downloads
+          const rawGameId = getDownloadGames(download)[0];
+          const gameId = rawGameId
+            ? convertGameIdReverse(
+                selectors.knownGames(this.mApi.store.getState()),
+                rawGameId,
+              )
+            : undefined;
+          const dlPath = truthy(gameId)
+            ? selectors.downloadPathForGame(this.mApi.store.getState(), gameId)
+            : selectors.downloadPath(this.mApi.store.getState());
 
-        return fs
-          .removeAsync(path.join(dlPath, download.localPath))
-          .then(() => {
-            this.mApi.store.dispatch(
-              options?.silent
-                ? removeDownloadSilent(downloadId)
-                : removeDownload(downloadId),
-            );
-            callCB(null);
-          })
-          .catch(UserCanceled, callCB)
-          .catch((err) => {
-            if (cb !== undefined) {
-              cb(err);
-            } else {
-              showError(
-                this.mApi.store.dispatch,
-                "Failed to remove file",
-                err,
-                {
-                  allowReport: ["EBUSY", "EPERM"].indexOf(err.code) === -1,
-                },
+          return fs
+            .removeAsync(path.join(dlPath, download.localPath))
+            .then(() => {
+              this.mApi.store.dispatch(
+                options?.silent
+                  ? removeDownloadSilent(downloadId)
+                  : removeDownload(downloadId),
               );
-            }
+              callCB(null);
+            })
+            .catch(UserCanceled, callCB)
+            .catch((err) => {
+              if (cb !== undefined) {
+                cb(err);
+              } else {
+                showError(
+                  this.mApi.store.dispatch,
+                  "Failed to remove file",
+                  err,
+                  {
+                    allowReport: ["EBUSY", "EPERM"].indexOf(err.code) === -1,
+                  },
+                );
+              }
+            });
+        } else {
+          this.mApi.store.dispatch(
+            options?.silent
+              ? removeDownloadSilent(downloadId)
+              : removeDownload(downloadId),
+          );
+          return PromiseBB.resolve();
+        }
+      };
+
+      if (["init", "started", "paused", "failed"].includes(download.state)) {
+        // need to cancel the download
+        if (!this.mManager.stop(downloadId)) {
+          // error case, for some reason the manager didn't know about this download, maybe some
+          // delay?
+          this.mInterceptedDownloads.push({
+            time: Date.now(),
+            tag: download.modInfo?.referenceTag,
           });
+          onceStopped();
+        } else {
+          this.queueFinishCB(downloadId, () => onceStopped());
+        }
       } else {
-        this.mApi.store.dispatch(
-          options?.silent
-            ? removeDownloadSilent(downloadId)
-            : removeDownload(downloadId),
-        );
-        return PromiseBB.resolve();
+        onceStopped();
       }
     };
 
-    if (["init", "started", "paused", "failed"].includes(download.state)) {
-      // need to cancel the download
-      if (!this.mManager.stop(downloadId)) {
-        // error case, for some reason the manager didn't know about this download, maybe some
-        // delay?
-        this.mInterceptedDownloads.push({
-          time: Date.now(),
-          tag: download.modInfo?.referenceTag,
-        });
-        onceStopped();
-      } else {
-        this.queueFinishCB(downloadId, () => onceStopped());
-      }
+    if (options?.confirmed) {
+      proceedWithRemoval();
     } else {
-      onceStopped();
+      const fileName = download.localPath
+        ? path.basename(download.localPath)
+        : downloadId;
+      this.mApi
+        .showDialog(
+          "question",
+          "Confirm Deletion",
+          {
+            text: "Do you really want to delete this archive?",
+            message: fileName,
+          },
+          [{ label: "Cancel" }, { label: "Delete" }],
+        )
+        .then((result: IDialogResult) => {
+          if (result.action === "Delete") {
+            proceedWithRemoval();
+          } else {
+            if (cb !== undefined) {
+              cb(new UserCanceled());
+            }
+          }
+        });
     }
   }
 
@@ -945,10 +982,16 @@ export class DownloadObserver {
           "always",
         );
 
-        withContext(
-          `Resuming "${download.localPath}"`,
-          download.urls[0],
-          () => {
+        withTrackedActivity(
+          "vortex.downloads",
+          "download.resume",
+          {
+            "download.fileName": download.localPath ?? "",
+            "download.url": download.urls?.[0] ?? "",
+            "download.id": downloadId,
+            "download.previousState": download.state,
+          },
+          (_setAttribute, _setError) => {
             if (download.state === "failed") {
               return ensureDownloadsDirectory(this.mApi)
                 .then(() =>
@@ -1018,7 +1061,9 @@ export class DownloadObserver {
                 );
             }
           },
-        ).catch((err) => {
+          {},
+        ).catch((unknownErr) => {
+          const err = unknownToError(unknownErr);
           log("error", "unhandled error resuming download", {
             downloadId,
             error: err.message,
@@ -1062,6 +1107,7 @@ export class DownloadObserver {
         state: download.state,
       });
       this.handleResumeDownload(downloadId, callback);
+      return;
     }
     log("debug", "not resuming download", {
       id: downloadId,

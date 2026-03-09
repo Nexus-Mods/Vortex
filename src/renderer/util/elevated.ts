@@ -1,0 +1,189 @@
+import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import * as fs from "fs";
+import * as path from "path";
+import * as tmp from "tmp";
+import * as winapi from "winapi-bindings";
+
+import { getRealNodeModulePaths } from "./webpack-hacks";
+
+declare const __non_webpack_require__: NodeJS.Require;
+
+export interface IElevatedIpc {
+  sendMessage(data: unknown): void;
+  sendError(error: unknown): void;
+  sendEndError(error: unknown): void;
+  end(): void;
+}
+
+/* eslint-disable -- elevatedMain is serialized as text into a temp file and executed
+   in a separate elevated Node process. All require() calls must use
+   __non_webpack_require__ so webpack doesn't transform them into
+   __webpack_require__ with internal module IDs. Similarly, imported bindings
+   (like unknownToError) can't be used here because webpack mangles their
+   references. */
+function elevatedMain(
+  moduleRoot: string[],
+  ipcPath: string,
+  main: (ipc: IElevatedIpc, req: NodeJS.Require) => void | PromiseLike<void>,
+) {
+  let client;
+  const syntaxErrors = ["ReferenceError"];
+  const handleError = (error: any) => {
+    const testIfScriptInvalid = () => {
+      syntaxErrors.forEach((errType) => {
+        if (error.stack.startsWith(errType)) {
+          error = "InvalidScriptError: " + error.stack;
+          client.sendEndError(error);
+        }
+      });
+    };
+    console.error("Elevated code failed", error.stack);
+    if (client !== undefined) {
+      testIfScriptInvalid();
+    }
+  };
+
+  process.on("uncaughtException", handleError);
+  process.on("unhandledRejection", handleError);
+  (module as NodeJS.Module).paths.push(...moduleRoot);
+  const JsonSocket = __non_webpack_require__("json-socket");
+  const net = __non_webpack_require__("net");
+  const path = __non_webpack_require__("path");
+
+  client = new JsonSocket(new net.Socket());
+  client.connect(path.join("\\\\?\\pipe", ipcPath));
+
+  client
+    .on("connect", () => {
+      Promise.resolve(main(client, __non_webpack_require__))
+        .catch((error) => {
+          const err = error instanceof Error ? error : new Error(String(error));
+          client.sendError(err);
+        })
+        .finally(() => {
+          client.end();
+        });
+    })
+    .on("close", () => {
+      process.exit(0);
+    })
+    .on("error", (err) => {
+      if (err.code !== "EPIPE") {
+        console.error("Connection failed", err.message);
+      }
+    });
+}
+/* eslint-enable */
+
+/**
+ * run a function as an elevated process (windows only!).
+ * This is quite a hack because obviously windows doesn't allow us to elevate a
+ * running process so instead we have to store the function code into a file and start a
+ * new node process elevated to execute that script.
+ *
+ * IMPORTANT As a consequence the function can not bind any parameters
+ *
+ * @param {string} ipcPath a unique identifier for a local ipc channel that can be used to
+ *                 communicate with the elevated process (as stdin/stdout can not be)
+ *                 redirected
+ * @param {Function} func The closure to run in the elevated process. Try to avoid
+ *                        'fancy' code. This function receives two parameters, one is an ipc stream,
+ *                        connected to the path specified in the first parameter.
+ *                        The second function is a require function which you need to use instead of
+ *                        the global require. Regular require calls will not work in production
+ *                        builds
+ * @param {Object} args arguments to be passed into the elevated process
+ * @returns {Bluebird<string>} a promise that will be resolved as soon as the process is started
+ *                             (which happens after the user confirmed elevation). It resolves to
+ *                             the path of the tmpFile we had to create. If the caller can figure
+ *                             out when the process is done (using ipc) it should delete it
+ */
+export function runElevated(
+  ipcPath: string,
+  func: (ipc: IElevatedIpc, req: NodeJS.Require) => void | PromiseLike<void>,
+  args?: Record<string, unknown>,
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    tmp.file(
+      { postfix: ".js" },
+      (err: Error, tmpPath: string, fd: number, cleanup: () => void) => {
+        if (err) {
+          return reject(err);
+        }
+
+        const modulePaths = getRealNodeModulePaths(process.cwd())
+          .map((p) => p.split("\\").join("/"));
+
+        let mainBody = elevatedMain.toString();
+        mainBody = mainBody.slice(
+          mainBody.indexOf("{") + 1,
+          mainBody.lastIndexOf("}"),
+        );
+
+        // The elevatedMain function body is serialized via .toString() and executed
+        // in a separate Node process. We use __non_webpack_require__ in the function
+        // so webpack doesn't transform the calls, but that global doesn't exist in
+        // plain Node — so we alias it here. __webpack_require__ is also aliased in
+        // case the caller's serialized func callback contains webpack-transformed requires.
+        let prog = `
+        const __non_webpack_require__ = require;\n
+        const __webpack_require__ = require;\n
+        let moduleRoot = ${JSON.stringify(modulePaths)};\n
+        let ipcPath = '${ipcPath}';\n
+      `;
+
+        if (args !== undefined) {
+          for (const argKey of Object.keys(args)) {
+            if (Object.prototype.hasOwnProperty.call(args, argKey)) {
+              prog += `let ${argKey} = ${JSON.stringify(args[argKey])};\n`;
+            }
+          }
+        }
+
+        prog += `
+        let main = ${func.toString()};\n
+        ${mainBody}\n
+      `;
+
+        fs.write(fd, prog, (writeErr: Error, _written: number, _str: string) => {
+          if (writeErr) {
+            try {
+              cleanup();
+            } catch (cleanupErr) {
+              const errorMessage = getErrorMessageOrDefault(cleanupErr);
+              console.error(
+                "failed to clean up temporary script",
+                errorMessage,
+              );
+            }
+            return reject(writeErr);
+          }
+
+          try {
+            fs.closeSync(fd);
+          } catch (closeErr) {
+            const err = unknownToError(closeErr);
+            const errCode = getErrorCode(err);
+            if (errCode !== "EBADF") {
+              return reject(err);
+            }
+          }
+
+          try {
+            winapi.ShellExecuteEx({
+              verb: "runas",
+              file: process.execPath,
+              parameters: `--run ${tmpPath}`,
+              directory: path.dirname(process.execPath),
+              show: "shownormal",
+            });
+            return resolve(tmpPath);
+          } catch (shellErr) {
+            return reject(unknownToError(shellErr));
+          }
+        });
+      },
+    );
+  });
+}
+

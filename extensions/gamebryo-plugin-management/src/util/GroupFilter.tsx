@@ -28,10 +28,10 @@ class GroupFilterComponent extends React.Component<IProps, {}> {
 
     return (
       <Select
-        isMulti
+        multi={true}
         className="select-compact"
         options={options}
-        value={filter}
+        value={Array.isArray(filter) ? filter : []}
         onChange={this.changeFilter}
       />
     );
@@ -41,7 +41,7 @@ class GroupFilterComponent extends React.Component<IProps, {}> {
     const { attributeId, onSetFilter } = this.props;
     onSetFilter(
       attributeId,
-      (value ?? []).map((val) => val.value),
+      (Array.isArray(value) ? value : []).map((val) => val.value),
     );
   };
 }
@@ -70,7 +70,7 @@ class GroupFilter implements types.ITableFilter {
   public raw = false;
 
   public matches(filter: any, value: any, state: types.IState): boolean {
-    if (filter.length === 0) {
+    if (!Array.isArray(filter) || filter.length === 0) {
       // no filter category set
       return true;
     }
@@ -79,7 +79,7 @@ class GroupFilter implements types.ITableFilter {
   }
 
   public isEmpty(filter: any): boolean {
-    return filter.length === 0;
+    return !Array.isArray(filter) || filter.length === 0;
   }
 }
 

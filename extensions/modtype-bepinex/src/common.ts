@@ -112,8 +112,8 @@ const AVAILABLE: IAvailableDownloads = {
     architecture: "x64",
     domainId: "site",
     version: "5.4.10",
-    modId: "115",
-    fileId: "1023",
+    modId: 115,
+    fileId: 1023,
     archiveName: "BepInEx_x64_5.4.10.0.zip",
     allowAutoInstall: true,
     githubUrl: "https://github.com/BepInEx/BepInEx/releases/tag/v5.4.10",
@@ -122,8 +122,8 @@ const AVAILABLE: IAvailableDownloads = {
     architecture: "x64",
     domainId: "site",
     version: "5.4.13",
-    modId: "115",
-    fileId: "1137",
+    modId: 115,
+    fileId: 1137,
     archiveName: "BepInEx_x64_5.4.13.0.zip",
     allowAutoInstall: true,
     githubUrl: "https://github.com/BepInEx/BepInEx/releases/tag/v5.4.13",
@@ -132,8 +132,8 @@ const AVAILABLE: IAvailableDownloads = {
     architecture: "x64",
     domainId: "site",
     version: "5.4.15",
-    modId: "115",
-    fileId: "1175",
+    modId: 115,
+    fileId: 1175,
     archiveName: "BepInEx_x64_5.4.15.0.zip",
     allowAutoInstall: true,
     githubUrl: "https://github.com/BepInEx/BepInEx/releases/tag/v5.4.15",
@@ -142,8 +142,8 @@ const AVAILABLE: IAvailableDownloads = {
     architecture: "x64",
     domainId: "site",
     version: "5.4.17",
-    modId: "115",
-    fileId: "1273",
+    modId: 115,
+    fileId: 1273,
     archiveName: "BepInEx_x64_5.4.17.0.zip",
     allowAutoInstall: true,
     githubUrl: "https://github.com/BepInEx/BepInEx/releases/tag/v5.4.17",
@@ -152,8 +152,8 @@ const AVAILABLE: IAvailableDownloads = {
     architecture: "x86",
     domainId: "site",
     version: "5.4.22",
-    modId: "115",
-    fileId: "2528",
+    modId: 115,
+    fileId: 2528,
     archiveName: "BepInEx_x86_5.4.22.0.zip",
     allowAutoInstall: true,
     githubUrl: "https://github.com/BepInEx/BepInEx/releases/tag/v5.4.22",
@@ -162,8 +162,8 @@ const AVAILABLE: IAvailableDownloads = {
     architecture: "x64",
     domainId: "site",
     version: "5.4.22",
-    modId: "115",
-    fileId: "2526",
+    modId: 115,
+    fileId: 2526,
     archiveName: "BepInEx_x64_5.4.22.0.zip",
     allowAutoInstall: true,
     githubUrl: "https://github.com/BepInEx/BepInEx/releases/tag/v5.4.22",
@@ -188,7 +188,7 @@ export const getDownload = (
   const versionKey = `${gameConf.bepinexVersion}${arch}`;
   const download: INexusDownloadInfoExt =
     gameConf.bepinexVersion !== undefined &&
-    Object.keys(AVAILABLE).includes(versionKey)
+      Object.keys(AVAILABLE).includes(versionKey)
       ? AVAILABLE[versionKey]
       : AVAILABLE[getLatestVersion(arch)];
   return {

@@ -1,20 +1,18 @@
 import Bluebird from "bluebird";
 import * as path from "path";
-
-import * as fs from "./fs";
-import { log } from "./log";
-
 import * as winapi from "winapi-bindings";
-import { makeExeId } from "../reducers/session";
+
+import type { IExtensionApi } from "../types/IExtensionContext";
+import type { IGameStore } from "../types/IGameStore";
+import type { IGameStoreEntry } from "../types/IGameStoreEntry";
 
 import { getGameStores } from "../extensions/gamemode_management/util/getGame";
-
-import { ProcessCanceled, UserCanceled } from "./CustomErrors";
-import type { IGameStore } from "../types/IGameStore";
+import { makeExeId } from "../reducers/session";
 import { GameEntryNotFound, GameStoreNotFound } from "../types/IGameStore";
-import type { IGameStoreEntry } from "../types/IGameStoreEntry";
-import type { IExtensionApi } from "../types/IExtensionContext";
+import { ProcessCanceled, UserCanceled } from "./CustomErrors";
+import * as fs from "./fs";
 import getNormalizeFunc from "./getNormalizeFunc";
+import { log } from "./log";
 import { toBlue } from "./util";
 
 export const defaultPriority = 100;
@@ -130,7 +128,7 @@ class GameStoreHelper {
       const result: IGameStoreEntry = {
         appid: lookup,
         gamePath: instPath.value as string,
-        gameStoreId: undefined,
+        gameStoreId: "registry",
         name: path.basename(instPath.value as string),
         priority: defaultPriority,
       };
@@ -170,16 +168,12 @@ class GameStoreHelper {
               });
             }
           }
-          if (
-            result &&
-            result.gameStoreId !== undefined &&
-            result.priority !== undefined
-          ) {
+          if (result && result.priority !== undefined) {
             result.priority =
               storeQuery.prefer ??
               this.mStoresDict[result.gameStoreId]?.priority ??
               defaultPriority;
-            result.priority! += prioOffset++ / 1000;
+            result.priority += prioOffset++ / 1000;
             results.push(result);
           }
         }
@@ -477,7 +471,7 @@ class GameStoreHelper {
     // queriedStore object is only populated if the game store helper caller
     //  is looking for a specific game store.
     let queriedStore: IGameStore | undefined = undefined;
-    if (!!storeId) {
+    if (storeId) {
       try {
         queriedStore = this.getGameStore(storeId);
       } catch (err) {
@@ -519,7 +513,7 @@ class GameStoreHelper {
                 ? entries.find(matcher)
                 : entries.find((ent) => rgxMatcher.test(ent.name));
 
-            if (!!entry) {
+            if (entry) {
               accum.push(entry);
             }
 

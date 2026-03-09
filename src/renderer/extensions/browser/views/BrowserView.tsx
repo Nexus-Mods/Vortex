@@ -21,7 +21,7 @@ import * as ReactDOM from "react-dom";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
 import * as nodeUrl from "url";
-import { getErrorMessageOrDefault } from "../../../../shared/errors";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 
 export type SubscriptionResult = "close" | "continue" | "ignore";
 

@@ -18,7 +18,7 @@ import type {
 } from "../../installer_fomod_shared/types/interface";
 
 import type * as fomodT from "fomod-installer-native";
-import { getErrorMessageOrDefault } from "../../../../shared/errors";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 
 /**
  * UI Delegate for native FOMOD installer

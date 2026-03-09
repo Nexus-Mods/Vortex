@@ -17,7 +17,7 @@ import { MERGED_PATH } from "./modMerging";
 import PromiseBB from "bluebird";
 import * as path from "path";
 import { UserCanceled } from "../../util/CustomErrors";
-import { getErrorMessageOrDefault } from "../../../shared/errors";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 
 function ensureWritable(api: IExtensionApi, modPath: string): PromiseBB<void> {
   return fs.ensureDirWritableAsync(modPath, () =>

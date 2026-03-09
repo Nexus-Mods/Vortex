@@ -1,0 +1,22 @@
+{
+  "name": "game-7daystodie",
+  "description": "Support for 7 Days to Die",
+  "author": "nelson3219 & Senjay",
+  "version": "1.1.1",
+  "license": "GPL-3.0",
+  "main": "dist/index.js",
+  "type": "commonjs",
+  "private": true,
+  "config": {
+    "game": "7 Days to Die"
+  },
+  "scripts": {
+    "_assets": "copyfiles -u 1 -f ./assets/* dist",
+    "_build": "node build.mjs && pnpm run _assets && extractInfo",
+    "build": "pnpm run _build && node ../../copy-extension.mjs out",
+    "dist": "pnpm run _build && node ../../copy-extension.mjs dist"
+  },
+  "devDependencies": {
+    "vortex-api": "catalog:"
+  }
+}

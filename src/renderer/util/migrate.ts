@@ -26,7 +26,7 @@ import * as path from "path";
 import type * as Redux from "redux";
 import * as semver from "semver";
 import format from "string-template";
-import { getErrorCode } from "../../shared/errors";
+import { getErrorCode } from "@vortex/shared";
 
 interface IMigration {
   id: string;

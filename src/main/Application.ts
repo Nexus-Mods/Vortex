@@ -1,3 +1,20 @@
+import type { IParameters, ISetItem } from "@vortex/shared/cli";
+import type { AppInitMetadata } from "@vortex/shared/ipc";
+import type { IWindow } from "@vortex/shared/state";
+
+import { ApplicationData } from "@vortex/shared";
+import {
+  getErrorCode,
+  getErrorMessageOrDefault,
+  unknownToError,
+} from "@vortex/shared";
+import {
+  DataInvalid,
+  DocumentsPathMissing,
+  ProcessCanceled,
+  UserCanceled,
+} from "@vortex/shared/errors";
+import { currentStatePath } from "@vortex/shared/state";
 import crashDump from "crash-dump";
 import { app, dialog, ipcMain, protocol, shell } from "electron";
 import contextMenu from "electron-context-menu";
@@ -11,24 +28,8 @@ import * as semver from "semver";
 import { v4 as uuidv4 } from "uuid";
 import winapi from "winapi-bindings";
 
-import type { IParameters, ISetItem } from "../shared/types/cli";
-import type { AppInitMetadata } from "../shared/types/ipc";
-import type { IWindow } from "../shared/types/state";
-
-import { ApplicationData } from "../shared/applicationData";
-import {
-  getErrorCode,
-  getErrorMessageOrDefault,
-  unknownToError,
-} from "../shared/errors";
-import {
-  DataInvalid,
-  DocumentsPathMissing,
-  ProcessCanceled,
-  UserCanceled,
-} from "../shared/types/errors";
-import { currentStatePath } from "../shared/types/state";
 import { parseCommandline, updateStartupSettings } from "./cli";
+import { installDevelExtensions } from "./devel";
 import { terminate } from "./errorHandling";
 import { disableErrorReporting } from "./errorReporting";
 import { setupMainExtensions } from "./extensions";
@@ -41,10 +42,12 @@ import LevelPersist, { DatabaseLocked } from "./store/LevelPersist";
 import {
   initMainPersistence,
   readPersistedValue,
+  writePersistedValue,
   registerHive,
   finalizeMainWrite,
 } from "./store/mainPersistence";
 import SubPersistor from "./store/SubPersistor";
+import { setTelemetryEnabled } from "./telemetry/state";
 import TrayIcon from "./TrayIcon";
 
 /** test if the running version is a major downgrade (downgrading by a major or minor version,
@@ -63,7 +66,7 @@ export function isMajorDowngrade(previous: string, current: string): boolean {
 class Application {
   public static shouldIgnoreError(error: unknown, promise?: unknown): boolean {
     const err = unknownToError(error);
-    if (err instanceof UserCanceled) {
+    if (err instanceof UserCanceled || err instanceof ProcessCanceled) {
       return true;
     }
 
@@ -321,17 +324,15 @@ class Application {
       },
     );
 
-    // Default open or close DevTools by F12 in development
-    if (process.env.NODE_ENV === "development") {
-      app.on("browser-window-created", (_, window) => {
-        const { webContents } = window;
-        webContents.on("before-input-event", (_, input) => {
-          if (input.type !== "keyDown") return;
-          if (input.code !== "F12") return;
-          webContents.toggleDevTools();
-        });
+    // Enable F12 to toggle DevTools in all builds
+    app.on("browser-window-created", (_, window) => {
+      const { webContents } = window;
+      webContents.on("before-input-event", (_, input) => {
+        if (input.type !== "keyDown") return;
+        if (input.code !== "F12") return;
+        webContents.toggleDevTools();
       });
-    }
+    });
   }
 
   private attachWebView = (
@@ -674,8 +675,8 @@ class Application {
   }
 
   private async handleGet(getPaths: string[], dbPath: string): Promise<void> {
-    const persist = await Promise.resolve(LevelPersist.create(dbPath));
-    const keys = await Promise.resolve(persist.getAllKeys());
+    const persist = await LevelPersist.create(dbPath);
+    const keys = await persist.getAllKeys();
 
     try {
       const promises = getPaths.map(async (getPath) => {
@@ -687,7 +688,7 @@ class Application {
         try {
           const output = await Promise.all(
             matches.map(async (match) => {
-              const value = await Promise.resolve(persist.getItem(match));
+              const value = await persist.getItem(match);
               return `${match.join(".")} = ${value}`;
             }),
           );
@@ -702,7 +703,7 @@ class Application {
     } catch (err) {
       process.stderr.write(getErrorMessageOrDefault(err) + "\n");
     } finally {
-      await Promise.resolve(persist.close());
+      await persist.close();
     }
   }
 
@@ -710,7 +711,7 @@ class Application {
     setParameters: ISetItem[],
     dbPath: string,
   ): Promise<void> {
-    const persist = await Promise.resolve(LevelPersist.create(dbPath));
+    const persist = await LevelPersist.create(dbPath);
 
     try {
       const promises = setParameters.map(async (setParameter) => {
@@ -725,13 +726,13 @@ class Application {
     } catch (err) {
       process.stderr.write(getErrorMessageOrDefault(err) + "\n");
     } finally {
-      await Promise.resolve(persist.close());
+      await persist.close();
     }
   }
 
   private async handleDel(delPaths: string[], dbPath: string): Promise<void> {
-    const persist = await Promise.resolve(LevelPersist.create(dbPath));
-    const keys = await Promise.resolve(persist.getAllKeys());
+    const persist = await LevelPersist.create(dbPath);
+    const keys = await persist.getAllKeys();
 
     try {
       const promises = delPaths.map(async (getPath) => {
@@ -743,7 +744,7 @@ class Application {
         try {
           await Promise.all(
             matches.map(async (match) => {
-              await Promise.resolve(persist.removeItem(match));
+              await persist.removeItem(match);
               process.stdout.write(`removed ${match.join(".")}\n`);
             }),
           );
@@ -756,7 +757,7 @@ class Application {
     } catch (err) {
       process.stderr.write(getErrorMessageOrDefault(err) + "\n");
     } finally {
-      await Promise.resolve(persist.close());
+      await persist.close();
     }
   }
 
@@ -900,9 +901,20 @@ class Application {
           instanceId: newId,
         });
         this.mAppMetadata.instanceId = newId;
+        await writePersistedValue("app", ["instanceId"], newId);
       } else {
         log("debug", "startup instance", { instanceId });
         this.mAppMetadata.instanceId = instanceId;
+      }
+
+      // 8. Read initial analytics opt-in state for telemetry gating.
+      // Subsequent changes are picked up via persist:diff listener in ipcHandler.
+      const analyticsEnabled = await readPersistedValue<boolean>("settings", [
+        "analytics",
+        "enabled",
+      ]);
+      if (analyticsEnabled === true) {
+        setTelemetryEnabled(true);
       }
 
       log("debug", "persistence setup complete");
@@ -919,7 +931,6 @@ class Application {
 
   private async initDevel(): Promise<void> {
     if (process.env.NODE_ENV === "development") {
-      const { installDevelExtensions } = await import("./devel");
       await installDevelExtensions();
     }
   }

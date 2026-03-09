@@ -1,4 +1,5 @@
-import { getErrorMessageOrDefault } from "../shared/errors";
+import { getErrorMessageOrDefault } from "@vortex/shared";
+
 import { log } from "./logging";
 
 /**
@@ -8,7 +9,7 @@ import { log } from "./logging";
 export async function installDevelExtensions(): Promise<void> {
   if (process.env.NODE_ENV !== "development") return;
 
-  const installer = await import("electron-devtools-installer");
+  const installer = (await import("electron-devtools-installer")).default;
 
   const options = {
     loadExtensionOptions: { allowFileAccess: true },

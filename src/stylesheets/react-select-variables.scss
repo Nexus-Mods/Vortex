@@ -1,3 +1,5 @@
+@use "sass:color";
+@use "sass:math";
 $select-input-bg: $input-bg !default;
 $select-input-bg-disabled: $input-bg-disabled !default;
 $select-input-border-color: $input-border !default;
@@ -19,18 +21,18 @@ $select-padding-horizontal: $padding-xs-horizontal !default;
 $select-menu-zindex: $zindex-modal;
 $select-menu-max-height: 340px;
 
-$select-option-color: lighten($select-text-color, 20%) !default;
+$select-option-color: color.adjust($select-text-color, $lightness: 20%) !default;
 $select-option-bg: $select-input-bg !default;
 $select-option-focused-color: $select-text-color !default;
 $select-option-focused-bg: $brand-secondary !default; // pale blue
 $select-option-selected-color: $select-text-color !default;
 $select-option-selected-bg: $brand-secondary !default; // lightest blue
-$select-option-disabled-color: lighten($select-text-color, 60%) !default;
+$select-option-disabled-color: color.adjust($select-text-color, $lightness: 60%) !default;
 
-$select-noresults-color: lighten($select-text-color, 40%) !default;
+$select-noresults-color: color.adjust($select-text-color, $lightness: 40%) !default;
 
 // clear "x" button
-$select-clear-size: floor(($select-input-height * 0.5)) !default;
+$select-clear-size: math.floor(($select-input-height * 0.5)) !default;
 $select-clear-color: $gray-dark;
 $select-clear-hover-color: $gray;
 $select-clear-width: ($select-input-internal-height * 0.5) !default;
@@ -53,12 +55,12 @@ $select-item-padding-horizontal: $padding-base-horizontal !default;
 $select-item-font-size: $font-size-small;
 $select-item-color: $brand-highlight !default;
 $select-item-bg: $gray-lighter !default;
-$select-item-border-color: darken($select-item-bg, 10%) !default;
-$select-item-hover-color: darken($select-item-color, 5%) !default; // pale blue
-$select-item-hover-bg: darken($select-item-bg, 5%) !default;
+$select-item-border-color: color.adjust($select-item-bg, $lightness: -10%) !default;
+$select-item-hover-color: color.adjust($select-item-color, $lightness: -5%) !default; // pale blue
+$select-item-hover-bg: color.adjust($select-item-bg, $lightness: -5%) !default;
 $select-item-disabled-color: $btn-link-disabled-color;
 $select-item-disabled-bg: $btn-default-bg;
-$select-item-disabled-border-color: darken(
+$select-item-disabled-border-color: color.adjust(
     $select-item-disabled-bg,
-    10%
+    $lightness: -10%
 ) !default;

@@ -4,22 +4,26 @@
   "description": "Dashlet to advertise newly released dashlets and remind user to endorse",
   "main": "./out/index.js",
   "scripts": {
-    "webpack": "webpack --config webpack.config.js --progress --profile --color",
-    "build": "npm run webpack && copyfiles -f src/extensions-dashlet.scss dist && extractInfo"
+    "_assets": "copyfiles -u 1 -f src/extensions-dashlet.scss dist",
+    "_build": "node build.mjs && pnpm run _assets && extractInfo",
+    "build": "pnpm run _build && node ../copy-extension.mjs out",
+    "dist": "pnpm run _build && node ../copy-extension.mjs dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "devDependencies": {
-    "@types/node": "^13.5.1",
-    "@types/react": "^16.9.21",
-    "@types/react-bootstrap": "^0.32.20",
-    "@types/react-redux": "^7.1.5",
-    "copyfiles": "^2.2.0",
-    "react-i18next": "^11.2.2",
-    "redux": "^4.0.5",
-    "redux-thunk": "^2.3.0",
-    "turbowalk": "Nexus-Mods/node-turbowalk",
-    "typescript": "^4.9.5",
-    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies"
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-bootstrap": "catalog:",
+    "@types/react-redux": "catalog:",
+    "copyfiles": "catalog:",
+    "i18next": "catalog:",
+    "memoize-one": "catalog:",
+    "react-i18next": "catalog:",
+    "redux": "catalog:",
+    "redux-thunk": "catalog:",
+    "turbowalk": "catalog:",
+    "typescript": "catalog:",
+    "vortex-api": "catalog:"
   }
 }

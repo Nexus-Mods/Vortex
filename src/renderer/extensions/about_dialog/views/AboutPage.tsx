@@ -14,7 +14,7 @@ import { Image, Media, Panel } from "react-bootstrap";
 import ReactMarkdown from "react-markdown";
 import { getApplication } from "../../../util/application";
 import getVortexPath from "../../../util/getVortexPath";
-import { getErrorMessageOrDefault } from "../../../../shared/errors";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 
 let modules = {};
 let ownLicenseText: string = "";

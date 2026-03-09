@@ -1,5 +1,5 @@
 import { removeExtension } from "../../actions";
-import { unknownToError } from "../../../shared/errors";
+import { unknownToError } from "@vortex/shared";
 import type { IExtensionApi } from "../../types/IExtensionContext";
 import type { IState } from "../../types/IState";
 import { DataInvalid } from "../../util/CustomErrors";
@@ -8,6 +8,7 @@ import getVortexPath from "../../util/getVortexPath";
 import lazyRequire from "../../util/lazyRequire";
 import { log } from "../../util/log";
 import { INVALID_FILENAME_RE } from "../../util/util";
+import { webpackRequireHack } from "../../util/webpack-hacks";
 
 import {
   countryExists,
@@ -22,9 +23,6 @@ import * as _ from "lodash";
 import type ZipT from "node-7z";
 import * as path from "path";
 import rimraf from "rimraf";
-import type * as vortexRunT from "vortex-run";
-
-const vortexRun: typeof vortexRunT = lazyRequire(() => require("vortex-run"));
 
 const rimrafAsync: (removePath: string, options: any) => PromiseBB<void> =
   PromiseBB.promisify(rimraf);
@@ -68,7 +66,7 @@ function installExtensionDependencies(
   const context = new Proxy({}, handler);
 
   try {
-    const extension = vortexRun.dynreq(path.join(extPath, "index.js"));
+    const extension = webpackRequireHack(path.join(extPath, "index.js"));
     extension.default(context);
 
     const state: IState = api.store.getState();
@@ -399,12 +397,13 @@ function installExtension(
         }
       })
       .catch(DataInvalid, (err) =>
-        rimrafAsync(tempPath, { glob: false }).then(() =>
+        rimrafAsync(tempPath, { glob: false }).then(() => {
           api.showErrorNotification("Invalid Extension", err, {
             allowReport: false,
             message: archivePath,
-          }),
-        ),
+          });
+          return Promise.reject(err);
+        }),
       )
       .catch((err) =>
         rimrafAsync(tempPath, { glob: false }).then(() =>

@@ -2,6 +2,7 @@ import * as ops from "./operations";
 import settingsReducer from "./reducers";
 import SettingsTheme from "./SettingsTheme";
 import { getAvailableFonts, themesPath } from "./util";
+import Bluebird from "bluebird";
 
 import * as path from "path";
 import { fs, log, types, util } from "vortex-api";
@@ -46,7 +47,7 @@ function applyTheme(api: types.IExtensionApi, theme: string, initial: boolean) {
     });
 }
 
-function editStyle(api: types.IExtensionApi, themeName: string): Promise<void> {
+function editStyle(api: types.IExtensionApi, themeName: string): Bluebird<void> {
   const stylePath = path.join(ops.themePath(themeName), "style.scss");
   return fs.ensureFileAsync(stylePath).then(() =>
     util

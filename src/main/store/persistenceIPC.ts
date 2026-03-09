@@ -10,9 +10,9 @@
  * 3. Main process applies operations to LevelDB via ReduxPersistorIPC
  */
 
+import type { PersistedHive, PersistedState } from "@vortex/shared/state";
 import type { WebContents } from "electron";
 
-import type { PersistedHive, PersistedState } from "../../shared/types/state";
 import type ReduxPersistorIPC from "./ReduxPersistorIPC";
 
 import { betterIpcMain } from "../ipc";

@@ -12,10 +12,12 @@
  * 3. Persists diffs to LevelDB
  * 4. Provides hydration data to renderer
  */
-import type { Serializable } from "../../shared/types/ipc";
+import type { Serializable } from "@vortex/shared/ipc";
+
+import { getErrorMessageOrDefault } from "@vortex/shared";
+
 import type LevelPersist from "./LevelPersist";
 
-import { getErrorMessageOrDefault } from "../../shared/errors";
 import { log } from "../logging";
 import { setupPersistenceIPC } from "./persistenceIPC";
 import ReduxPersistorIPC from "./ReduxPersistorIPC";
@@ -138,6 +140,36 @@ export async function readPersistedValue<T>(
       error: message,
     });
     return undefined;
+  }
+}
+
+/**
+ * Write a value directly to the persisted state.
+ * Used by main process to persist values before renderer is ready.
+ *
+ * @param hive - The hive name (e.g., "app")
+ * @param path - The path within the hive (e.g., ["instanceId"])
+ * @param value - The value to persist
+ */
+export async function writePersistedValue<T>(
+  hive: string,
+  path: string[],
+  value: T,
+): Promise<void> {
+  if (levelPersist === undefined) {
+    return;
+  }
+
+  try {
+    const subPersistor = new SubPersistor(levelPersist, hive);
+    await subPersistor.setItem(path, JSON.stringify(value));
+  } catch (err) {
+    const message = getErrorMessageOrDefault(err);
+    log("warn", "Could not write persisted value", {
+      hive,
+      path,
+      error: message,
+    });
   }
 }
 

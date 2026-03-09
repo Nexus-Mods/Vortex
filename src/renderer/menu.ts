@@ -1,5 +1,5 @@
 import type { IMainPageOptions } from "./types/IExtensionContext";
-import type { SerializableMenuItem } from "../shared/types/preload";
+import type { SerializableMenuItem } from "@vortex/shared/preload";
 
 import type ExtensionManager from "../renderer/ExtensionManager";
 import { debugTranslations, getMissingTranslations } from "./util/i18n";

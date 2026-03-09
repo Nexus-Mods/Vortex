@@ -7,7 +7,7 @@ import type {
   IGameStored,
   IGameStoredExt,
 } from "../../gamemode_management/types/IGameStored";
-import { getErrorMessageOrDefault } from "../../../../shared/errors";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 
 /**
  * get the nexus page id for a game

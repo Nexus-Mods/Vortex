@@ -22,6 +22,7 @@ app/
 
 # Dependencies
 node_modules/
+.pnpm-store/
 
 # Git and coverage
 .git/
@@ -30,3 +31,20 @@ coverage/
 # Test mocks and temporary files
 __tests__/
 __mocks__/
+
+.babelrc
+.github
+.storybook
+.vscode
+*.md
+.devcontainer
+extensions/
+flatpak/
+samples/
+tools/
+
+pnpm-lock.yaml
+pnpm-workspace.yaml
+
+assets/
+

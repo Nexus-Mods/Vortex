@@ -1,0 +1,84 @@
+@layer components {
+    .nxm-modal {
+        inset: 0;
+        display: flex;
+        position: fixed;
+        overflow-y: auto;
+        align-items: center;
+        flex-direction: column;
+        justify-content: center;
+        z-index: var(--z-index-modal);
+        padding: calc(var(--spacing) * 4);
+
+        .nxm-modal-overlay {
+            inset: 0;
+            z-index: -1;
+            position: fixed;
+            background-color: var(--color-translucent-dark-800);
+        }
+
+        .nxm-modal-panel {
+            width: 100%;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: var(--shadow-xl);
+            max-width: var(--container-md);
+            padding: calc(var(--spacing) * 4);
+            border-radius: calc(var(--spacing) * 2);
+            background-color: var(--color-surface-low);
+            border: 1px solid var(--color-surface-translucent-low);
+        }
+
+        .nxm-modal-title {
+            color: var(--color-neutral-strong);
+            margin-bottom: calc(var(--spacing) * 4);
+
+            font-size: var(--text-body-md);
+            font-weight: var(--font-weight-semibold);
+            line-height: var(--text-body-md--line-height);
+            letter-spacing: var(--text-body-md--letter-spacing);
+        }
+
+        .nxm-modal-close {
+            cursor: pointer;
+            position: absolute;
+            top: calc(var(--spacing) * 3);
+            right: calc(var(--spacing) * 3);
+            padding: calc(var(--spacing) * 1);
+            color: var(--color-neutral-strong);
+            border-radius: calc(var(--spacing) * 1);
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            transition-property: color, fill, stroke;
+            transition-duration: var(--default-transition-duration);
+            transition-timing-function: var(
+                --default-transition-timing-function
+            );
+
+            &:hover {
+                color: var(--color-neutral-moderate);
+            }
+        }
+
+        &.nxm-modal-sm {
+            & .nxm-modal-panel {
+                max-width: var(--container-xs);
+            }
+        }
+
+        &.nxm-modal-lg {
+            & .nxm-modal-panel {
+                max-width: var(--container-2xl);
+            }
+        }
+
+        &.nxm-modal-xl {
+            & .nxm-modal-panel {
+                max-width: var(--container-5xl);
+            }
+        }
+    }
+}

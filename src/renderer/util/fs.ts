@@ -13,42 +13,45 @@
  * - ignoring ENOENT error when deleting a file.
  */
 
+import type * as permissionT from "permissions";
+import type * as whoLocksT from "wholocks";
+
+import {
+  getErrorCode,
+  getErrorMessageOrDefault,
+  getErrorNativeCode,
+  isErrorWithSystemCode,
+  unknownToError,
+} from "@vortex/shared";
+import PromiseBB from "bluebird";
+import { dialog as dialogIn } from "electron";
+import * as fs from "fs-extra";
+import { decode } from "iconv-lite";
+import JsonSocket from "json-socket";
+import * as _ from "lodash";
+import * as net from "net";
+import * as path from "path";
+import rimraf from "rimraf";
+import { generate as shortid } from "shortid";
+import * as tmp from "tmp";
+
+import type { TFunction } from "./i18n";
+
 import {
   ProcessCanceled,
   SelfCopyCheckError,
   UserCanceled,
 } from "./CustomErrors";
+import { runElevated } from "./elevated";
 import { createErrorReport, getVisibleWindow } from "./errorHandling";
-import type { TFunction } from "./i18n";
 import lazyRequire from "./lazyRequire";
 import { log } from "./log";
 import { decodeSystemError } from "./nativeErrors";
 import { restackErr, truthy } from "./util";
 
-import PromiseBB from "bluebird";
-import { decode } from "iconv-lite";
-import { dialog as dialogIn } from "electron";
-import * as fs from "fs-extra";
-import JsonSocket from "json-socket";
-import * as _ from "lodash";
-import * as net from "net";
-import * as path from "path";
-import type * as permissionT from "permissions";
-import rimraf from "rimraf";
-import { generate as shortid } from "shortid";
-import * as tmp from "tmp";
-import type * as vortexRunT from "vortex-run";
-import type * as whoLocksT from "wholocks";
-import {
-  getErrorCode,
-  getErrorMessageOrDefault,
-  isErrorWithSystemCode,
-} from "../../shared/errors";
-
 const permission: typeof permissionT = lazyRequire(() =>
   require("permissions"),
 );
-const vortexRun: typeof vortexRunT = lazyRequire(() => require("vortex-run"));
 const wholocks: typeof whoLocksT = lazyRequire(() => require("wholocks"));
 
 const showMessageBox = async (
@@ -107,6 +110,44 @@ const RETRY_ERRORS = new Set([
   "EMFILE",
   "UNKNOWN",
 ]);
+
+// Tracks paths where elevated permissions have been successfully granted,
+// so we don't show the unlock dialog repeatedly for child paths or
+// loop infinitely when permissions don't stick.
+// Entries are removed when they prove ineffective (isPathAlreadyUnlocked),
+// keeping the set small over time.
+const elevatedUnlockPaths = new Set<string>();
+
+function normalizePath(filePath: string): string {
+  return path.normalize(filePath).toLowerCase();
+}
+
+function isPathAlreadyUnlocked(filePath: string): boolean {
+  const normalized = normalizePath(filePath);
+  if (elevatedUnlockPaths.has(normalized)) {
+    // Remove the entry: if we already unlocked this exact path and the
+    // operation still fails, the unlock didn't help. Removing it ensures
+    // future EPERM errors on this path will show the dialog again.
+    elevatedUnlockPaths.delete(normalized);
+    return true;
+  }
+  return false;
+}
+
+function isChildOfUnlockedPath(filePath: string): boolean {
+  const normalized = normalizePath(filePath);
+  let found = false;
+  elevatedUnlockPaths.forEach((unlocked) => {
+    if (normalized.startsWith(unlocked + path.sep)) {
+      found = true;
+    }
+  });
+  return found;
+}
+
+function recordUnlockedPath(filePath: string): void {
+  elevatedUnlockPaths.add(normalizePath(filePath));
+}
 
 const simfail =
   process.env.SIMULATE_FS_ERRORS === "true"
@@ -219,6 +260,43 @@ function unlockConfirm(filePath: string): PromiseBB<boolean> {
   );
 }
 
+function elevatedUnlock(
+  unlockPath: string,
+  filePath: string,
+  originalError: NodeJS.ErrnoException,
+): PromiseBB<boolean> {
+  // Record the path immediately (before the async elevated call) so that
+  // concurrent operations on child paths see it and skip the dialog
+  recordUnlockedPath(unlockPath);
+  const userId = permission.getUserId();
+  return elevated(
+    (ipcPath, req: NodeJS.Require) => {
+      return req("permissions").allow(unlockPath, userId, "rwx", {
+        recursive: true,
+      });
+    },
+    { unlockPath, userId },
+  )
+    .then(() => true)
+    .catch((elevatedErr) => {
+      if (
+        elevatedErr instanceof UserCanceled ||
+        elevatedErr.message.indexOf(
+          "The operation was canceled by the user",
+        ) !== -1
+      ) {
+        return Promise.reject(new UserCanceled());
+      }
+      // if elevation failed, return the original error because the one from
+      // elevate - while interesting as well - would make error handling too complicated
+      log("error", "failed to acquire permission", {
+        filePath,
+        error: elevatedErr.message,
+      });
+      return Promise.reject(originalError);
+    });
+}
+
 function unknownErrorRetry(
   filePath: string,
   err: Error,
@@ -276,7 +354,6 @@ function unknownErrorRetry(
           path: filePath,
         },
         {},
-        ["bug"],
         {},
       );
       return PromiseBB.reject(new UserCanceled());
@@ -377,36 +454,25 @@ function errorRepeat(
           return PromiseBB.reject(statErr);
         }
       })
-      .then(() => unlockConfirm(unlockPath))
-      .then((doUnlock) => {
-        if (doUnlock) {
-          const userId = permission.getUserId();
-          return elevated(
-            (ipcPath, req: NodeRequire) => {
-              return req("permissions").allow(unlockPath, userId as any, "rwx");
-            },
-            { unlockPath, userId },
-          )
-            .then(() => true)
-            .catch((elevatedErr) => {
-              const message = getErrorMessageOrDefault(elevatedErr);
-              if (
-                elevatedErr instanceof UserCanceled ||
-                message.indexOf("The operation was canceled by the user") !== -1
-              ) {
-                return Promise.reject(new UserCanceled());
-              }
-              // if elevation failed, return the original error because the one from
-              // elevate - while interesting as well - would make error handling too complicated
-              log("error", "failed to acquire permission", {
-                filePath,
-                error: message,
-              });
-              return Promise.reject(error);
-            });
-        } else {
-          return PromiseBB.resolve(true);
+      .then(() => {
+        // If we already granted elevated permissions on this exact path and the
+        // operation still fails, the permission change didn't help.
+        // Stop retrying to avoid an infinite dialog loop.
+        if (isPathAlreadyUnlocked(unlockPath)) {
+          return PromiseBB.resolve(false);
         }
+        // If this path is under a directory where permissions were already
+        // granted recursively, auto-grant without showing the dialog again
+        if (isChildOfUnlockedPath(unlockPath)) {
+          return elevatedUnlock(unlockPath, filePath, error);
+        }
+        return unlockConfirm(unlockPath).then((doUnlock) => {
+          if (doUnlock) {
+            return elevatedUnlock(unlockPath, filePath, error);
+          } else {
+            return PromiseBB.resolve(true);
+          }
+        });
       });
   } else if (error.code === "UNKNOWN") {
     return unknownErrorRetry(filePath, error, stackErr);
@@ -996,16 +1062,18 @@ function elevated(
           });
       })
       .listen(path.join("\\\\?\\pipe", ipcPath));
-    vortexRun.runElevated(ipcPath, func, parameters).catch((err) => {
+    runElevated(ipcPath, func, parameters).catch((err: unknown) => {
+      const nativeCode = getErrorNativeCode(err);
+      const error = unknownToError(err);
       if (
-        err.code === 5 ||
-        (process.platform === "win32" && err.systemCode === 1223)
+        getErrorCode(err) === "5" ||
+        (process.platform === "win32" && nativeCode === 1223)
       ) {
         // this code is returned when the user rejected the UAC dialog. Not currently
         // aware of another case
         reject(new UserCanceled());
       } else {
-        reject(new Error(`OS error ${err.message} (${err.code})`));
+        reject(new Error(`OS error ${error.message} (${getErrorCode(err) ?? nativeCode})`));
       }
     });
   }).finally(() => {

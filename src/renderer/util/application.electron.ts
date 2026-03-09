@@ -4,7 +4,7 @@ import os from "node:os";
 
 import type { IApplication } from "./application";
 
-import { ApplicationData } from "../../shared/applicationData";
+import { ApplicationData } from "@vortex/shared";
 import { setApplication } from "./application";
 import { getPreloadWindow } from "./preloadAccess";
 
