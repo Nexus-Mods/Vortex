@@ -1,3 +1,4 @@
+@use "sass:color";
 html {
     // 16px base for correct rem calculations (Tailwind assumes 1rem = 16px)
     font-size: 16px;
@@ -72,7 +73,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: darken($gray-darker, 10%);
+    background: color.adjust($gray-darker, $lightness: -10%);
 }
 
 @layer base {

@@ -1,3 +1,5 @@
+@use "sass:color";
+@use "sass:math";
 // the topmost button bar
 // (containing the quick launcher, login control, game-specific action buttons)
 #main-toolbar {
@@ -276,7 +278,7 @@
         max-width: 0%;
         background: $brand-menu;
         border-style: solid;
-        border-color: lighten($brand-menu, 30%);
+        border-color: color.adjust($brand-menu, $lightness: 30%);
         border-width: 0px;
         transition:
             max-width $transition-time-half cubic-bezier(0, 1, 1, 1),
@@ -306,7 +308,7 @@
     opacity: 1;
     &.mainpage-leave-active {
         opacity: 0;
-        transition: opacity floor($transition-time-half * 0.5) ease-out;
+        transition: opacity math.floor($transition-time-half * 0.5) ease-out;
     }
 }
 

@@ -1,6 +1,6 @@
 import path from "path";
-import { pathToFileURL } from "url";
 import sass from "sass";
+import { pathToFileURL } from "url";
 
 import getVortexPath from "./getVortexPath";
 import { betterIpcMain } from "./ipc";
@@ -69,6 +69,10 @@ export default class StylesheetCompiler {
     const result = this.#compiler.compileString(source, {
       loadPaths: this.#loadPaths,
       style: this.#style,
+      // Silence deprecation warnings from dependencies (node_modules)
+      // while still showing warnings from our own code
+      quietDeps: true,
+      silenceDeprecations: ["import"],
     });
 
     // Remove UTF-8 BOM if present (ef bb bf)

@@ -1,3 +1,4 @@
+@use "sass:color";
 // Gradients
 
 // Horizontal gradient, from left to right
@@ -26,7 +27,7 @@
         $end-color $end-percent
     ); // Standard, IE10, Firefox 16+, Opera 12.10+, Safari 7+, Chrome 26+
     background-repeat: repeat-x;
-    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#{ie-hex-str($start-color)}', endColorstr='#{ie-hex-str($end-color)}', GradientType=1); // IE9 and down
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#{color.ie-hex-str($start-color)}', endColorstr='#{color.ie-hex-str($end-color)}', GradientType=1); // IE9 and down
 }
 
 // Vertical gradient, from top to bottom
@@ -55,7 +56,7 @@
         $end-color $end-percent
     ); // Standard, IE10, Firefox 16+, Opera 12.10+, Safari 7+, Chrome 26+
     background-repeat: repeat-x;
-    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#{ie-hex-str($start-color)}', endColorstr='#{ie-hex-str($end-color)}', GradientType=0); // IE9 and down
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#{color.ie-hex-str($start-color)}', endColorstr='#{color.ie-hex-str($end-color)}', GradientType=0); // IE9 and down
 }
 
 @mixin gradient-directional($start-color: #555, $end-color: #333, $deg: 45deg) {
@@ -101,7 +102,7 @@
         $end-color
     );
     background-repeat: no-repeat;
-    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#{ie-hex-str($start-color)}', endColorstr='#{ie-hex-str($end-color)}', GradientType=1); // IE9 and down, gets no color-stop at all for proper fallback
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#{color.ie-hex-str($start-color)}', endColorstr='#{color.ie-hex-str($end-color)}', GradientType=1); // IE9 and down, gets no color-stop at all for proper fallback
 }
 @mixin gradient-vertical-three-colors(
     $start-color: #00b3ee,
@@ -125,7 +126,7 @@
         $end-color
     );
     background-repeat: no-repeat;
-    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#{ie-hex-str($start-color)}', endColorstr='#{ie-hex-str($end-color)}', GradientType=0); // IE9 and down, gets no color-stop at all for proper fallback
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#{color.ie-hex-str($start-color)}', endColorstr='#{color.ie-hex-str($end-color)}', GradientType=0); // IE9 and down, gets no color-stop at all for proper fallback
 }
 @mixin gradient-radial($inner-color: #555, $outer-color: #333) {
     background-image: -webkit-radial-gradient(

@@ -1,3 +1,5 @@
+@use "sass:color";
+@use "sass:math";
 .dashlet {
     border: $border-width solid $border-color;
     background-color: $brand-menu;
@@ -11,7 +13,7 @@
 
     li {
         border: 0px;
-        background-color: lighten($brand-menu, 5%);
+        background-color: color.adjust($brand-menu, $lightness: 5%);
         margin-bottom: 2px;
         .icon-todo-type {
             margin-top: auto;
@@ -274,7 +276,7 @@
 .packery-item,
 .stamp,
 .fixed-item {
-    padding: floor(($half-gutter * 0.5));
+    padding: math.floor(($half-gutter * 0.5));
     // overflow: hidden;
 
     .packery-buttons {

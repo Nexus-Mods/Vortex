@@ -1,3 +1,4 @@
+@use "sass:color";
 .table-actions {
     display: inline-flex;
 
@@ -45,7 +46,7 @@
 }
 
 .table-sort-column {
-    background-color: darken($table-bg, 5%);
+    background-color: color.adjust($table-bg, $lightness: -5%);
 }
 
 .table-header-pane {
@@ -128,7 +129,7 @@
 }
 
 .table-group-header {
-    background-color: darken($table-bg, 5%);
+    background-color: color.adjust($table-bg, $lightness: -5%);
     border-bottom: 1px solid $gray-dark !important;
     border-top: 1em solid $table-bg !important;
 

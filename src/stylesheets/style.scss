@@ -1,3 +1,4 @@
+@use "sass:color";
 ////////////////////////
 // generic control rules
 
@@ -285,7 +286,7 @@ div:hover > .hover-expand {
     .dropdown-toggle {
         padding: 3px;
         border: 0px;
-        border-left: 1px solid darken($brand-primary, 10%);
+        border-left: 1px solid color.adjust($brand-primary, $lightness: -10%);
     }
 }
 
@@ -562,7 +563,7 @@ div:hover > .hover-expand {
 
     &:hover,
     &:focus {
-        background-color: darken($brand-success, 10%);
+        background-color: color.adjust($brand-success, $lightness: -10%);
     }
 }
 
@@ -574,7 +575,7 @@ div:hover > .hover-expand {
 
     &:hover,
     &:focus {
-        background-color: darken($gray, 10%);
+        background-color: color.adjust($gray, $lightness: -10%);
     }
 }
 
@@ -586,7 +587,7 @@ div:hover > .hover-expand {
 
     &:hover,
     &:focus {
-        background-color: darken($brand-info, 10%);
+        background-color: color.adjust($brand-info, $lightness: -10%);
     }
 }
 
@@ -595,10 +596,10 @@ div:hover > .hover-expand {
     background-color: $gray;
 }
 .btn-mods-enabled-installing:hover {
-    background-color: darken($gray, 10%);
+    background-color: color.adjust($gray, $lightness: -10%);
 }
 .toggle-mods-enabled-installing:hover {
-    background-color: darken($gray, 10%);
+    background-color: color.adjust($gray, $lightness: -10%);
 }
 
 .option-mods-enabled-uninstalled {
@@ -634,7 +635,7 @@ div:hover > .hover-expand {
         }
     }
     > .dropdown-toggle {
-        border-left: $border-width solid transparentize($white, 0.5);
+        border-left: $border-width solid color.adjust($white, $alpha: -0.5);
     }
 }
 
@@ -714,7 +715,7 @@ div:hover > .hover-expand {
 }
 
 .nexus-orange-darker {
-    fill: darken(#d78f46, 15%);
+    fill: color.adjust(#d78f46, $lightness: -15%);
 }
 
 .nexus-outline {
@@ -803,7 +804,7 @@ $other: (
         border-color: $brand-highlight;
     }
     100% {
-        border-color: darken($brand-highlight, 20%);
+        border-color: color.adjust($brand-highlight, $lightness: -20%);
     }
 }
 
@@ -812,7 +813,7 @@ $other: (
         color: $brand-highlight;
     }
     100% {
-        color: darken($brand-highlight, 20%);
+        color: color.adjust($brand-highlight, $lightness: -20%);
     }
 }
 

@@ -1,3 +1,4 @@
+@use "sass:color";
 //
 // Jumbotron
 // --------------------------------------------------
@@ -21,7 +22,7 @@
     }
 
     > hr {
-        border-top-color: darken($jumbotron-bg, 10%);
+        border-top-color: color.adjust($jumbotron-bg, $lightness: -10%);
     }
 
     .container &,
