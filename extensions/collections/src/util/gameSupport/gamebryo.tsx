@@ -133,24 +133,26 @@ export async function parser(api: types.IExtensionApi,
   const mods = state.persistent.mods[gameId];
 
   // set up groups and their rules
-  util.batchDispatch(api.store, (collection.pluginRules.groups ?? []).reduce((prev, group) => {
-    if ((state as any).userlist.groups[group.name] === undefined) {
-      prev.push({
-        type: 'ADD_PLUGIN_GROUP', payload: {
-          group: group.name,
-        },
+  if (Array.isArray(collection.pluginRules?.groups)) {
+    util.batchDispatch(api.store, collection.pluginRules.groups.reduce((prev, group) => {
+      if ((state as any).userlist.groups[group.name] === undefined) {
+        prev.push({
+          type: 'ADD_PLUGIN_GROUP', payload: {
+            group: group.name,
+          },
+        });
+      }
+      (group.after ?? []).forEach(after => {
+        prev.push({
+          type: 'ADD_GROUP_RULE', payload: {
+            groupId: group.name,
+            reference: after,
+          },
+        });
       });
-    }
-    group.after.forEach(after => {
-      prev.push({
-        type: 'ADD_GROUP_RULE', payload: {
-          groupId: group.name,
-          reference: after,
-        },
-      });
-    });
-    return prev;
-  }, []));
+      return prev;
+    }, []));
+  }
 
   const collectionModIds = collectionMod.rules
     .filter(rule => ['requires', 'recommends'].includes(rule.type))
