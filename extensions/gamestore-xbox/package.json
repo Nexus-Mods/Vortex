@@ -6,8 +6,8 @@
   "repository": "",
   "scripts": {
     "_build": "node build.mjs && extractInfo",
-    "build": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build && node ../copy-extension.mjs gamestore-xbox out)",
-    "dist": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build && node ../copy-extension.mjs gamestore-xbox dist)"
+    "build": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build && node ../copy-extension.mjs out)",
+    "dist": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build && node ../copy-extension.mjs dist)"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

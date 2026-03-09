@@ -6,8 +6,8 @@
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",
     "_build": "copyfiles -u 1 -f ./src/index.js dist && pnpm run _assets && extractInfo",
-    "build": "pnpm run _build",
-    "dist": "pnpm run _build"
+    "build": "pnpm run _build && node ../../copy-extension.mjs out",
+    "dist": "pnpm run _build && node ../../copy-extension.mjs dist"
   },
   "author": "m0nster",
   "license": "GPL-3.0",

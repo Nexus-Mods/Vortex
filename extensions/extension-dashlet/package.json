@@ -6,8 +6,8 @@
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/extensions-dashlet.scss dist",
     "_build": "node build.mjs && pnpm run _assets && extractInfo",
-    "build": "pnpm run _build && node ../copy-extension.mjs extension-dashlet out",
-    "dist": "pnpm run _build && node ../copy-extension.mjs extension-dashlet dist"
+    "build": "pnpm run _build && node ../copy-extension.mjs out",
+    "dist": "pnpm run _build && node ../copy-extension.mjs dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
