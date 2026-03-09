@@ -189,12 +189,11 @@ class InfoCache {
     collectionSlug: string,
     revisionNumber: number,
   ): void {
-    log("info", "revision info cache outdated", {
-      timestamp: revisions[revisionId]?.timestamp,
-      now: Date.now(),
-    });
-
     if (this.mCacheRevRequests[revisionId] === undefined) {
+      log("info", "revision info cache outdated", {
+        timestamp: revisions[revisionId]?.timestamp,
+        now: Date.now(),
+      });
       this.mCacheRevRequests[revisionId] = this.cacheRevisionInfo(
         revisionId,
         collectionSlug,
