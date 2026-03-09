@@ -11,7 +11,7 @@
     "game": "7 Days to Die"
   },
   "scripts": {
-    "_assets": "copyfiles -u 1 -f ./assets/gameart.jpg dist",
+    "_assets": "copyfiles -u 1 -f ./assets/* dist",
     "_build": "node build.mjs && pnpm run _assets && extractInfo",
     "build": "pnpm run _build",
     "dist": "pnpm run _build"

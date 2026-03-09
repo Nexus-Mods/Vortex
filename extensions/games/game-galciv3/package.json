@@ -4,7 +4,7 @@
   "description": "Support for Galactic Civilizations III",
   "main": "dist/index.js",
   "scripts": {
-    "_assets": "copyfiles -u 1 -f ./assets/*.jpg ./assets/*.png dist",
+    "_assets": "copyfiles -u 1 -f ./assets/* dist",
     "_build": "copyfiles -u 1 -f ./src/*.js dist && pnpm run _assets && extractInfo",
     "build": "pnpm run _build",
     "dist": "pnpm run _build"

@@ -3,7 +3,9 @@
   "version": "1.0.3",
   "description": "Support for The Elder Scrolls IV: Oblivion",
   "main": "dist/index.js",
-  "scripts": {},
+  "scripts": {
+    "_assets": "copyfiles -u 1 -f ./assets/* dist"
+  },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "type": "commonjs",

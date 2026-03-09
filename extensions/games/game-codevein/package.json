@@ -3,12 +3,20 @@
   "version": "1.0.0",
   "description": "Support for Code Vein",
   "main": "dist/index.js",
-  "scripts": {},
+  "scripts": {
+    "_assets": "copyfiles -u 1 -f ./assets/* dist",
+    "_build": "node build.mjs && pnpm run _assets && extractInfo",
+    "build": "pnpm run _build",
+    "dist": "pnpm run _build"
+  },
   "author": "Daymarr",
   "license": "GPL-3.0",
   "type": "commonjs",
   "private": true,
   "config": {
     "game": "Code Vein"
+  },
+  "devDependencies": {
+    "vortex-api": "catalog:"
   }
 }

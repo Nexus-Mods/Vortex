@@ -1874,7 +1874,11 @@ importers:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
 
-  extensions/games/game-bloodstainedritualofthenight: {}
+  extensions/games/game-bloodstainedritualofthenight:
+    devDependencies:
+      vortex-api:
+        specifier: 'catalog:'
+        version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
 
   extensions/games/game-breakingwheel:
     devDependencies:
@@ -1882,7 +1886,11 @@ importers:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
 
-  extensions/games/game-codevein: {}
+  extensions/games/game-codevein:
+    devDependencies:
+      vortex-api:
+        specifier: 'catalog:'
+        version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
 
   extensions/games/game-conanexiles:
     devDependencies:
@@ -1992,7 +2000,11 @@ importers:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
 
-  extensions/games/game-falloutnv: {}
+  extensions/games/game-falloutnv:
+    devDependencies:
+      vortex-api:
+        specifier: 'catalog:'
+        version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
 
   extensions/games/game-galciv3:
     devDependencies:
@@ -2036,9 +2048,17 @@ importers:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
 
-  extensions/games/game-kingdomcome-deliverance: {}
+  extensions/games/game-kingdomcome-deliverance:
+    devDependencies:
+      vortex-api:
+        specifier: 'catalog:'
+        version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
 
-  extensions/games/game-masterchiefcollection: {}
+  extensions/games/game-masterchiefcollection:
+    devDependencies:
+      vortex-api:
+        specifier: 'catalog:'
+        version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
 
   extensions/games/game-microsoftflightsimulator:
     devDependencies:
@@ -2052,7 +2072,11 @@ importers:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
 
-  extensions/games/game-morrowind: {}
+  extensions/games/game-morrowind:
+    devDependencies:
+      vortex-api:
+        specifier: 'catalog:'
+        version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
 
   extensions/games/game-mount-and-blade:
     devDependencies:
@@ -2084,7 +2108,11 @@ importers:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
 
-  extensions/games/game-nomanssky: {}
+  extensions/games/game-nomanssky:
+    devDependencies:
+      vortex-api:
+        specifier: 'catalog:'
+        version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
 
   extensions/games/game-oblivion: {}
 
@@ -2106,7 +2134,11 @@ importers:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
 
-  extensions/games/game-pathfinderwrathoftherighteous: {}
+  extensions/games/game-pathfinderwrathoftherighteous:
+    devDependencies:
+      vortex-api:
+        specifier: 'catalog:'
+        version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
 
   extensions/games/game-prisonarchitect:
     devDependencies:
@@ -2174,7 +2206,11 @@ importers:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
 
-  extensions/games/game-spyroreignitedtrilogy: {}
+  extensions/games/game-spyroreignitedtrilogy:
+    devDependencies:
+      vortex-api:
+        specifier: 'catalog:'
+        version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
 
   extensions/games/game-starbound:
     devDependencies:
@@ -2182,7 +2218,11 @@ importers:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
 
-  extensions/games/game-stardewvalley: {}
+  extensions/games/game-stardewvalley:
+    devDependencies:
+      vortex-api:
+        specifier: 'catalog:'
+        version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
 
   extensions/games/game-starfield:
     devDependencies:
@@ -2244,7 +2284,11 @@ importers:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
 
-  extensions/games/game-untitledgoose: {}
+  extensions/games/game-untitledgoose:
+    devDependencies:
+      vortex-api:
+        specifier: 'catalog:'
+        version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
 
   extensions/games/game-vtmbloodlines:
     devDependencies:
@@ -2270,7 +2314,11 @@ importers:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
 
-  extensions/games/game-witcher3: {}
+  extensions/games/game-witcher3:
+    devDependencies:
+      vortex-api:
+        specifier: 'catalog:'
+        version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
 
   extensions/games/game-wolcen:
     devDependencies:

@@ -11,7 +11,7 @@
     "game": "Breaking Wheel"
   },
   "scripts": {
-    "_assets": "copyfiles -u 1 -f ./assets/*.png ./assets/*.jpg dist",
+    "_assets": "copyfiles -u 1 -f ./assets/* dist",
     "_build": "copyfiles -u 1 -f ./src/*.js dist && pnpm run _assets && extractInfo",
     "build": "pnpm run _build",
     "dist": "pnpm run _build"
