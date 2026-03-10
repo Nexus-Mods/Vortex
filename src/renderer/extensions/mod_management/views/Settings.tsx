@@ -1,6 +1,7 @@
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
 
+import { getErrorMessageOrDefault } from "@vortex/shared";
 import PromiseBB from "bluebird";
 import * as path from "path";
 import * as React from "react";
@@ -17,7 +18,6 @@ import {
   Panel,
   ProgressBar,
 } from "react-bootstrap";
-import * as winapi from "winapi-bindings";
 
 import type {
   DialogActions,
@@ -69,7 +69,6 @@ import {
   isPathValid,
   isReservedDirectory,
 } from "../../../util/util";
-import { getErrorMessageOrDefault } from "@vortex/shared";
 import {
   currentGame,
   currentGameDiscovery,
@@ -1113,7 +1112,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         if (stats[0].dev === stats[1].dev) {
           suggestion = path.join("{USERDATA}", "{game}", "mods");
         } else {
-          const volume = winapi.GetVolumePathName(modPaths[""]);
+          const volume = fs.getVolumePath(modPaths[""]);
           suggestion = path.join(volume, suggestInstallPathDirectory, "{game}");
         }
         this.changePath(suggestion);

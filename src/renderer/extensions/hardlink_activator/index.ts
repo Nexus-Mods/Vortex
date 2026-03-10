@@ -1,29 +1,29 @@
+import type { TFunction } from "i18next";
+
+import { getErrorCode } from "@vortex/shared";
+import PromiseBB from "bluebird";
+import * as path from "path";
+import turbowalk from "turbowalk";
+import * as util from "util";
+
 import type {
   IExtensionApi,
   IExtensionContext,
 } from "../../types/IExtensionContext";
 import type { IGame } from "../../types/IGame";
-import * as fs from "../../util/fs";
-import { log } from "../../util/log";
-import { installPathForGame } from "../../util/selectors";
-
 import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
-import { getGame } from "../gamemode_management/util/getGame";
-import LinkingDeployment from "../mod_management/LinkingDeployment";
 import type {
   IDeployedFile,
   IDeploymentMethod,
   IUnavailableReason,
 } from "../mod_management/types/IDeploymentMethod";
 
-import PromiseBB from "bluebird";
-import type { TFunction } from "i18next";
-import * as path from "path";
-import turbowalk from "turbowalk";
-import * as util from "util";
-import * as winapi from "winapi-bindings";
 import { setSettingsPage } from "../../actions/session";
-import { getErrorCode } from "@vortex/shared";
+import * as fs from "../../util/fs";
+import { log } from "../../util/log";
+import { installPathForGame } from "../../util/selectors";
+import { getGame } from "../gamemode_management/util/getGame";
+import LinkingDeployment from "../mod_management/LinkingDeployment";
 
 export class FileFound extends Error {
   constructor(name) {
@@ -130,7 +130,7 @@ class DeploymentMethod extends LinkingDeployment {
           solution: (t) => {
             let displayPath = modPaths[typeId];
             try {
-              displayPath = winapi.GetVolumePathName(modPaths[typeId]);
+              displayPath = fs.getVolumePath(modPaths[typeId]);
             } catch (err) {
               log("warn", "Failed to resolve volume path", {
                 path: modPaths[typeId],
