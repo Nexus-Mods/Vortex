@@ -24,7 +24,7 @@
     "dist:all": "pnpm run dist && pnpm run dist:extensions && pnpm run dist:assets",
     "dist:extensions": "pnpm --filter \"./extensions/**\" run dist",
     "dist:assets": "node ./scripts/dependency-report.mjs && node ./InstallAssets.mjs ./src/main/dist && pnpm sass --style compressed --silence-deprecation=import ./src/stylesheets/loadingScreen.scss ./src/main/dist/assets/css/loadingScreen.css && pnpm tailwindcss -i ./src/stylesheets/tailwind-v4.css -o ./src/main/dist/assets/css/tailwind-v4.css -m",
-    "package": "pnpm run dist:all && npm -F @vortex/main run package",
+    "package": "pnpm run dist:all && pnpm -F @vortex/main run package",
     "package:nosign": "pnpm run dist:all && pnpm -F @vortex/main run package:nosign",
     "typecheck": "pnpm -F @vortex/shared run build && pnpm --filter \"@vortex/*\" -r run typecheck",
     "test": "pnpm --filter \"@vortex/*\" -r --no-bail run test",
