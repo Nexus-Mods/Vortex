@@ -4,10 +4,17 @@ const childProcess = require("child_process");
 require("dotenv").config();
 
 const TEMP_DIR = path.join(__dirname, "temp");
+const PROJECT_ROOT = path.resolve(__dirname, "..", "..");
+const CODE_SIGN_TOOL_DIR = path.join(PROJECT_ROOT, "CodeSignTool");
 
-// these were being incorrectly flagged by esigner as malware
-// make sure these are lowercase
-const ignoreFileList = ["arctool.exe"];
+// These were being incorrectly flagged by esigner as malware
+// We don't need to resign MS redist files
+// Make sure these are lowercase
+const ignoreFileList = [
+  "arctool.exe",
+  "vc_redist.x64.exe",
+  "windowsdesktop-runtime-win-x64.exe",
+];
 
 if (!fs.existsSync(TEMP_DIR)) {
   fs.mkdirSync(TEMP_DIR, { recursive: true });
@@ -39,7 +46,7 @@ async function sign(configuration) {
     // y/m interaction so we are creating a new file in a temp directory and
     // then replacing the original file with the signed file.
 
-    const setDir = `cd ./CodeSignTool`;
+    const setDir = `cd "${CODE_SIGN_TOOL_DIR}"`;
     const signFile = `CodeSignTool sign -input_file_path="${configuration.path}" -output_dir_path="${TEMP_DIR}" -credential_id="${ES_CREDENTIAL_ID}" -username="${ES_USERNAME}" -password="${ES_PASSWORD}" -totp_secret="${ES_TOTP_SECRET}"`;
     const moveFile = `move "${tempFile}" "${dir}"`;
 
