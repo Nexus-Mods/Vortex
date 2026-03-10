@@ -13,10 +13,6 @@ workflow:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_PIPELINE_SOURCE == "web"
 
-# Prevent duplicate pipelines for merge requests
-.default_rules:
-  interruptible: true
-
 .cache_linux:
   cache:
     key:
@@ -47,6 +43,10 @@ workflow:
     - pnpm run build:all
     - pnpm run test
     - pnpm run dist:all
+  artifacts:
+    when: always
+    reports:
+      junit: test-results/junit.xml
 
 build:linux:
   extends:
