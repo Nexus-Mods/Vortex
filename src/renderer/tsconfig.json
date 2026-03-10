@@ -10,7 +10,8 @@
     "./temp",
     "./setupTests.js",
     "./jest.config.mjs",
-    "./webpack.config.cjs"
+    "./webpack.config.cjs",
+    "./vitest.config.ts"
   ],
   "compilerOptions": {
     "composite": true,

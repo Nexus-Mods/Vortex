@@ -30,6 +30,10 @@ catalog:
   "@opentelemetry/semantic-conventions": ^1.30.0
   "@stylistic/eslint-plugin": ^5.7.1
   "@tailwindcss/cli": ^4.1.17
+  '@testing-library/dom': ^10.4.1
+  '@testing-library/jest-dom': ^6.9.1
+  '@testing-library/react': ^12.1.5
+  '@testing-library/user-event': ^14.6.1
   "@types/babel__preset-env": ~7.10.0
   "@types/babel__register": ~7.17.3
   "@types/bbcode-to-react": ~0.2.4
@@ -99,6 +103,7 @@ catalog:
   "@types/ws": ~7.4.7
   "@types/xml2js": ~0.4.14
   "@typescript-eslint/utils": 8.47.0
+  '@vitejs/plugin-react': ^5.1.4
   "@welldone-software/why-did-you-render": ^10.0.1
   ba2tk: git+https://github.com/Nexus-Mods/node-ba2tk#762d8de841ca1c770a0925311fd626d71de67971
   babel-jest: ^29.7.0
@@ -154,6 +159,7 @@ catalog:
   glob: ^11.0.3
   globals: ^17.3.0
   graphlib: ^2.1.7
+  happy-dom: ^20.8.3
   i18next: ^19.0.1
   i18next-fs-backend: ^2.1.1
   iconv-lite: ^0.5.0
@@ -240,6 +246,7 @@ catalog:
   typescript-eslint: 8.47.0
   universal-analytics: ^0.4.23
   uuid: ^3.3.3
+  vitest: ^4.0.18
   vortex-api: git+https://github.com/Nexus-Mods/vortex-api#bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
   vortex-parse-ini: git+https://github.com/Nexus-Mods/vortex-parse-ini#2425af99d1cff2331ccf3aacfa892c314e99e18d
   vortexmt: git+https://github.com/Nexus-Mods/node-vortexmt#5251ea012ce856742aeaf73a583073497aff773a
@@ -274,6 +281,7 @@ onlyBuiltDependencies:
   - diskusage
   - drivelist
   - electron
+  - esbuild
   - esptk
   - fomod-installer-native
   - font-scanner
