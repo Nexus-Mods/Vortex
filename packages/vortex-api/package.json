@@ -6,12 +6,16 @@
   "private": true,
   "type": "module",
   "types": "./lib/api.d.ts",
+  "bin": {
+    "extractInfo": "./bin/extractInfo.mjs"
+  },
   "exports": {
     ".": {
       "types": "./lib/api.d.ts"
     }
   },
   "files": [
-    "lib"
+    "lib",
+    "bin"
   ]
 }
