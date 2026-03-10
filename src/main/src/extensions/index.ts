@@ -10,7 +10,7 @@ import { log } from "../logging";
 import { initNexusIntegration } from "./nexusIntegration";
 import { initUpdater } from "./updater";
 
-let initialized = false;
+let initialized = false; 
 
 /**
  * Set up IPC handler for main process extensions initialization.

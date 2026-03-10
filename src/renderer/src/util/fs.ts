@@ -34,12 +34,15 @@ import * as path from "path";
 import rimraf from "rimraf";
 import { generate as shortid } from "shortid";
 import * as tmp from "tmp";
+import * as winapi from "winapi-bindings";
 
 import type { TFunction } from "./i18n";
 
 import {
+  NotSupportedError,
   ProcessCanceled,
   SelfCopyCheckError,
+  UnsupportedOperatingSystem,
   UserCanceled,
 } from "./CustomErrors";
 import { runElevated } from "./elevated";
@@ -75,6 +78,7 @@ export {
   readdirSync,
   readFileSync,
   statSync,
+  statfsSync,
   symlinkSync,
   watch,
   writeFileSync,
@@ -1087,7 +1091,11 @@ function elevated(
         // aware of another case
         reject(new UserCanceled());
       } else {
-        reject(new Error(`OS error ${error.message} (${getErrorCode(err) ?? nativeCode})`));
+        reject(
+          new Error(
+            `OS error ${error.message} (${getErrorCode(err) ?? nativeCode})`,
+          ),
+        );
       }
     });
   }).finally(() => {
@@ -1483,4 +1491,27 @@ export function readFileBOM(
       );
     }
   });
+}
+
+export function getVolumePath(filePath: string): string {
+  if (process.platform === "win32") {
+    return winapi.GetVolumePathName(filePath);
+  } else if (process.platform === "linux") {
+    let volume = "/";
+    volume += filePath;
+    const lastDev = fs.statSync(volume).dev;
+    while (true) {
+      if (volume === "/") {
+        break;
+      }
+      const newVolume = path.normalize(path.join(volume, ".."));
+      if (fs.statSync(newVolume).dev !== lastDev) {
+        break;
+      }
+      volume = newVolume;
+    }
+    return volume;
+  } else {
+    throw new UnsupportedOperatingSystem();
+  }
 }

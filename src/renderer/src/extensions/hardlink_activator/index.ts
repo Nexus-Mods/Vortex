@@ -5,7 +5,6 @@ import PromiseBB from "bluebird";
 import * as path from "path";
 import turbowalk from "turbowalk";
 import * as util from "util";
-import * as winapi from "winapi-bindings";
 
 import type {
   IExtensionApi,
@@ -27,19 +26,23 @@ import { installPathForGame } from "../../util/selectors";
 import { getGame } from "../gamemode_management/util/getGame";
 import LinkingDeployment from "../mod_management/LinkingDeployment";
 
-export class FileFound extends Error {
-  constructor(name: string) {
+export class FileFound extends Error
+{
+  constructor(name: string)
+  {
     super(name);
     this.name = this.constructor.name;
   }
 }
 
-class DeploymentMethod extends LinkingDeployment {
+class DeploymentMethod extends LinkingDeployment
+{
   public priority: number = 5;
 
   private mInstallationFiles: Set<string>;
 
-  constructor(api: IExtensionApi) {
+  constructor(api: IExtensionApi)
+  {
     super(
       "hardlink_activator",
       "Hardlink Deployment",
@@ -49,26 +52,27 @@ class DeploymentMethod extends LinkingDeployment {
     );
   }
 
-  public detailedDescription(t: TFunction): string {
+  public detailedDescription(t: TFunction): string
+  {
     return t(
       "File Systems store files in two parts: \n" +
-        " - an index entry that contains the file name, " +
-        "access rights, change and creating times and so on\n" +
-        " - the actual file data\n" +
-        "Hard Links work by creating a second index entry referencing " +
-        "the same data as the original. The second index is " +
-        'a full-fledged index, so there is no differentiation between "original" and "link" ' +
-        "after the link was created.\n" +
-        "Advantages:\n" +
-        " - perfect compatibility with all applications\n" +
-        " - no performance penalty\n" +
-        " - Wide OS and FS support\n" +
-        "Disadvantages:\n" +
-        " - mods have to be on the same partition as the game\n" +
-        ' - Due to fact hard links are so "compatible", a lot of applications will act ' +
-        "as if original and link were separate files. This includes some backup solutions, tools " +
-        "that measure used disk space and so on, so it will often look like the link was actually " +
-        "a copy.",
+      " - an index entry that contains the file name, " +
+      "access rights, change and creating times and so on\n" +
+      " - the actual file data\n" +
+      "Hard Links work by creating a second index entry referencing " +
+      "the same data as the original. The second index is " +
+      'a full-fledged index, so there is no differentiation between "original" and "link" ' +
+      "after the link was created.\n" +
+      "Advantages:\n" +
+      " - perfect compatibility with all applications\n" +
+      " - no performance penalty\n" +
+      " - Wide OS and FS support\n" +
+      "Disadvantages:\n" +
+      " - mods have to be on the same partition as the game\n" +
+      ' - Due to fact hard links are so "compatible", a lot of applications will act ' +
+      "as if original and link were separate files. This includes some backup solutions, tools " +
+      "that measure used disk space and so on, so it will often look like the link was actually " +
+      "a copy.",
     );
   }
 
@@ -76,10 +80,12 @@ class DeploymentMethod extends LinkingDeployment {
     state: IState,
     gameId: string,
     typeId: string,
-  ): IUnavailableReason {
+  ): IUnavailableReason
+  {
     const discovery: IDiscoveryResult =
       state.settings.gameMode.discovered[gameId];
-    if (discovery?.path == null) {
+    if (discovery?.path == null)
+    {
       return {
         description: (t) => t("Game not discovered."),
       };
@@ -88,13 +94,16 @@ class DeploymentMethod extends LinkingDeployment {
     const game: IGame = getGame(gameId);
     const modPaths = game.getModPaths(discovery.path);
 
-    if (modPaths[typeId] === undefined) {
+    if (modPaths[typeId] === undefined)
+    {
       return undefined;
     }
 
-    try {
+    try
+    {
       fs.accessSync(modPaths[typeId], fs.constants.W_OK);
-    } catch {
+    } catch
+    {
       log(
         "info",
         "hardlink deployment not supported due to lack of write access",
@@ -106,7 +115,7 @@ class DeploymentMethod extends LinkingDeployment {
         solution: (t) =>
           t(
             "To resolve this problem, the current user account needs to be given " +
-              'write permission to "{{modPath}}".',
+            'write permission to "{{modPath}}".',
             {
               replace: {
                 modPath: modPaths[typeId],
@@ -118,10 +127,12 @@ class DeploymentMethod extends LinkingDeployment {
 
     const installationPath = installPathForGame(state, gameId);
 
-    try {
+    try
+    {
       if (
         fs.statSync(installationPath).dev !== fs.statSync(modPaths[typeId]).dev
-      ) {
+      )
+      {
         // hard links work only on the same drive
         return {
           description: (t) =>
@@ -129,18 +140,21 @@ class DeploymentMethod extends LinkingDeployment {
               "Works only if mods are installed on the same drive as the game.",
             ),
           order: 5,
-          solution: (t) => {
+          solution: (t) =>
+          {
             let displayPath = modPaths[typeId];
-            try {
-              displayPath = winapi.GetVolumePathName(modPaths[typeId]);
-            } catch {
+            try
+            {
+              displayPath = fs.getVolumePath(modPaths[typeId]);
+            } catch
+            {
               log("warn", "Failed to resolve volume path", {
                 path: modPaths[typeId],
               });
             }
             return t(
               "Please go to Settings->Mods and set the mod staging folder to be on " +
-                "the same drive as the game ({{gameVolume}}).",
+              "the same drive as the game ({{gameVolume}}).",
               {
                 replace: {
                   gameVolume: displayPath,
@@ -149,7 +163,8 @@ class DeploymentMethod extends LinkingDeployment {
             );
           },
           fixCallback: (api: IExtensionApi) =>
-            new PromiseBB((_resolve, _reject) => {
+            new PromiseBB((_resolve, _reject) =>
+            {
               api.events.emit("show-main-page", "application_settings");
               api.store.dispatch(setSettingsPage("Mods"));
               api.highlightControl(
@@ -160,7 +175,8 @@ class DeploymentMethod extends LinkingDeployment {
             }),
         };
       }
-    } catch (err) {
+    } catch (err)
+    {
       // this can happen when managing the the game for the first time
       log("info", "failed to stat. directory missing?", {
         dir1: installationPath || "undefined",
@@ -177,10 +193,13 @@ class DeploymentMethod extends LinkingDeployment {
 
     let res: IUnavailableReason;
 
-    try {
-      try {
+    try
+    {
+      try
+      {
         fs.removeSync(canary + ".link");
-      } catch {
+      } catch
+      {
         // nop
       }
       fs.writeFileSync(
@@ -188,10 +207,12 @@ class DeploymentMethod extends LinkingDeployment {
         "Should only exist temporarily, feel free to delete",
       );
       fs.linkSync(canary, canary + ".link");
-    } catch (err) {
+    } catch (err)
+    {
       // EMFILE shouldn't keep us from using hard linking
       const code = getErrorCode(err);
-      if (code !== "EMFILE") {
+      if (code !== "EMFILE")
+      {
         // the error code we're actually getting is EISDIR, which makes no sense at all
         res = {
           description: (t) => t("Filesystem doesn't support hard links."),
@@ -199,21 +220,24 @@ class DeploymentMethod extends LinkingDeployment {
       }
     }
 
-    try {
+    try
+    {
       fs.removeSync(canary + ".link");
       fs.removeSync(canary);
-    } catch {
+    } catch
+    {
       // cleanup failed, this is almost certainly due to an AV jumping in to check these new files,
       // I mean, why would I be able to create the files but not delete them?
       // just try again later - can't do that synchronously though
       PromiseBB.delay(100)
         .then(() => fs.removeAsync(canary + ".link"))
         .then(() => fs.removeAsync(canary))
-        .catch((err) => {
+        .catch((err) =>
+        {
           log(
             "error",
             "failed to clean up canary file. This indicates we were able to create " +
-              "a file in the target directory but not delete it",
+            "a file in the target directory but not delete it",
             { installationPath, message: getErrorMessageOrDefault(err) },
           );
         });
@@ -227,11 +251,13 @@ class DeploymentMethod extends LinkingDeployment {
     dataPath: string,
     installationPath: string,
     progressCB?: (files: number, total: number) => void,
-  ): PromiseLike<IDeployedFile[]> {
+  ): PromiseLike<IDeployedFile[]>
+  {
     return super.finalize(gameId, dataPath, installationPath, progressCB);
   }
 
-  public postPurge(): PromiseBB<void> {
+  public postPurge(): PromiseBB<void>
+  {
     delete this.mInstallationFiles;
     this.mInstallationFiles = undefined;
     return PromiseBB.resolve();
@@ -241,26 +267,33 @@ class DeploymentMethod extends LinkingDeployment {
     installationPath: string,
     dataPath: string,
     onProgress?: (num: number, total: number) => void,
-  ): PromiseBB<void> {
+  ): PromiseBB<void>
+  {
     let installEntryProm: PromiseBB<Set<string>>;
 
     // find ids of all files in our mods directory
     // using idStr (string) instead of id (number) to avoid precision loss
     // for NTFS file IDs exceeding Number.MAX_SAFE_INTEGER
-    if (this.mInstallationFiles !== undefined) {
+    if (this.mInstallationFiles !== undefined)
+    {
       installEntryProm = PromiseBB.resolve(this.mInstallationFiles);
-    } else {
+    } else
+    {
       this.mInstallationFiles = new Set<string>();
       installEntryProm = turbowalk(
         installationPath,
-        (entries) => {
-          if (this.mInstallationFiles === undefined) {
+        (entries) =>
+        {
+          if (this.mInstallationFiles === undefined)
+          {
             // don't know when this would be necessary but apparently
             // it is, see https://github.com/Nexus-Mods/Vortex/issues/3684
             return;
           }
-          entries.forEach((entry) => {
-            if (entry.linkCount > 1 && entry.idStr !== undefined) {
+          entries.forEach((entry) =>
+          {
+            if (entry.linkCount > 1 && entry.idStr !== undefined)
+            {
               this.mInstallationFiles.add(entry.idStr);
             }
           });
@@ -280,26 +313,32 @@ class DeploymentMethod extends LinkingDeployment {
 
     // now remove all files in the game directory that have the same id
     // as a file in the mods directory
-    return installEntryProm.then((inos) => {
+    return installEntryProm.then((inos) =>
+    {
       const total = inos.size;
       let purged: number = 0;
 
       let queue = PromiseBB.resolve();
-      if (inos.size === 0) {
+      if (inos.size === 0)
+      {
         return PromiseBB.resolve();
       }
       return turbowalk(
         dataPath,
-        (entries) => {
+        (entries) =>
+        {
           queue = queue.then(() =>
-            PromiseBB.map(entries, (entry) => {
+            PromiseBB.map(entries, (entry) =>
+            {
               if (
                 entry.linkCount > 1 &&
                 entry.idStr !== undefined &&
                 inos.has(entry.idStr)
-              ) {
+              )
+              {
                 ++purged;
-                if (purged % 1000 === 0) {
+                if (purged % 1000 === 0)
+                {
                   onProgress?.(purged, total);
                 }
                 return fs
@@ -307,7 +346,8 @@ class DeploymentMethod extends LinkingDeployment {
                   .catch((err) =>
                     log("warn", "failed to remove", entry.filePath),
                   );
-              } else {
+              } else
+              {
                 return PromiseBB.resolve();
               }
             }).then(() => undefined),
@@ -322,19 +362,21 @@ class DeploymentMethod extends LinkingDeployment {
     linkPath: string,
     sourcePath: string,
     dirTags?: boolean,
-  ): Promise<void> {
+  ): Promise<void>
+  {
     return this.ensureDir(path.dirname(linkPath), dirTags)
       .then(() => fs.linkAsync(sourcePath, linkPath))
       .catch((err: unknown) =>
         getErrorCode(err) !== "EEXIST"
           ? Promise.reject(unknownToError(err))
           : fs
-              .removeAsync(linkPath)
-              .then(() => fs.linkAsync(sourcePath, linkPath)),
+            .removeAsync(linkPath)
+            .then(() => fs.linkAsync(sourcePath, linkPath)),
       );
   }
 
-  protected unlinkFile(linkPath: string): PromiseBB<void> {
+  protected unlinkFile(linkPath: string): PromiseBB<void>
+  {
     return fs.unlinkAsync(linkPath);
   }
 
@@ -343,8 +385,10 @@ class DeploymentMethod extends LinkingDeployment {
     sourcePath: string,
     linkStatsIn: fs.Stats,
     sourceStatsIn: fs.Stats,
-  ): PromiseBB<boolean> {
-    if (linkStatsIn !== undefined && sourceStatsIn !== undefined) {
+  ): PromiseBB<boolean>
+  {
+    if (linkStatsIn !== undefined && sourceStatsIn !== undefined)
+    {
       return PromiseBB.resolve(
         linkStatsIn.nlink > 1 && linkStatsIn.ino === sourceStatsIn.ino,
       );
@@ -356,8 +400,8 @@ class DeploymentMethod extends LinkingDeployment {
         linkStats.nlink === 1
           ? PromiseBB.resolve(false)
           : fs
-              .lstatAsync(sourcePath)
-              .then((sourceStats) => linkStats.ino === sourceStats.ino),
+            .lstatAsync(sourcePath)
+            .then((sourceStats) => linkStats.ino === sourceStats.ino),
       )
       .catch((err) =>
         getErrorCode(err) === "ENOENT"
@@ -366,16 +410,19 @@ class DeploymentMethod extends LinkingDeployment {
       );
   }
 
-  protected canRestore(): boolean {
+  protected canRestore(): boolean
+  {
     return true;
   }
 }
 
-export interface IExtensionContextEx extends IExtensionContext {
+export interface IExtensionContextEx extends IExtensionContext
+{
   registerDeploymentMethod: (activator: IDeploymentMethod) => void;
 }
 
-function init(context: IExtensionContextEx): boolean {
+function init(context: IExtensionContextEx): boolean
+{
   context.registerDeploymentMethod(new DeploymentMethod(context.api));
 
   return true;
