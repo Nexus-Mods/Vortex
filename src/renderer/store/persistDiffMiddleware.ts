@@ -197,13 +197,13 @@ export function createPersistDiffMiddleware(
       const newState = store.getState();
 
       // Initialize previous state on first action
-      if (previousState === null) {
+      if (previousState == null) {
         previousState = newState;
         return result;
       }
 
       // Skip if no persist API available
-      if (getApi() === null) {
+      if (getApi() == null) {
         return result;
       }
 
