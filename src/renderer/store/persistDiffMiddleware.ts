@@ -141,7 +141,7 @@ export function createPersistDiffMiddleware(
    */
   const flushDiffs = () => {
     const persistApi = getApi();
-    if (persistApi === null) {
+    if (persistApi == null) {
       return;
     }
 
@@ -163,7 +163,7 @@ export function createPersistDiffMiddleware(
    * Schedule a flush of pending diffs
    */
   const scheduleFlush = () => {
-    if (flushTimeout === null) {
+    if (flushTimeout == null) {
       flushTimeout = setTimeout(flushDiffs, DEBOUNCE_MS);
     }
   };
