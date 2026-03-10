@@ -5,7 +5,7 @@
   "main": "index.js",
   "private": true,
   "type": "module",
-  "types": "./lib/api.d.ts",
+  "types": "./src/index.ts",
   "bin": {
     "extractInfo": "./bin/extractInfo.mjs"
   },
