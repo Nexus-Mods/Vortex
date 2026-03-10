@@ -129,7 +129,9 @@ const cachedAppPath = (id: string) => {
       if (id === "__app") {
         cache[id] = app.getAppPath();
       } else {
-        cache[id] = app.getPath(id as any);
+        // Normalize to fix mixed separators from scoped package names
+        // (e.g. "@vortex/main" produces a forward slash in userData path)
+        cache[id] = path.normalize(app.getPath(id as any));
       }
     } else {
       // Fallback for non-Electron processes (tests)

@@ -318,16 +318,15 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
         {text}
         <p>
           {actions.map((action) => (
-            <>
+            <React.Fragment key={action.key}>
               <a
-                key={action.key}
                 onClick={this.setAll[type]}
                 href={"#" + action.key}
               >
                 {t(action.allText)}
               </a>
               <span className="link-action-seperator">&nbsp; | &nbsp;</span>
-            </>
+            </React.Fragment>
           ))}
         </p>
         <div style={{ overflowY: "auto", flex: "1 1 0" }}>
@@ -470,7 +469,6 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
             placement: "table",
             edit: {
               inline: true,
-              actions: false,
               choices: () => possibleActions[type],
               onChangeValue: (source: ISourceEntry, value: any) => {
                 let newAction = value;
@@ -556,7 +554,6 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
             placement: "table",
             edit: {
               inline: true,
-              actions: false,
               choices: () => possibleActions[type],
               onChangeValue: (file: IFileEntry, value: any) => {
                 const typeActions = possibleActions[type];
