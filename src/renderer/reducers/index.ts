@@ -2,18 +2,27 @@
  * top level reducer. This combines all reducers into one
  */
 
-/**
- * dummy comment
- */
+import type { Reducer, ReducersMapObject } from "redux";
+
+import { unknownToError } from "@vortex/shared";
+import update from "immutability-helper";
+import { pick } from "lodash";
+import * as path from "path";
+import { combineReducers } from "redux";
+import { createReducer } from "redux-act";
+import { enableBatching } from "redux-batched-actions";
+
 import type { IExtensionReducer } from "../types/extensions";
 import type { IReducerSpec, IStateVerifier } from "../types/IExtensionContext";
+import type { IState } from "../types/IState";
+
+import { log } from "../logging";
 import { VerifierDrop, VerifierDropParent } from "../types/IExtensionContext";
 import { UserCanceled } from "../util/CustomErrors";
 import deepMerge from "../util/deepMerge";
 import * as fs from "../util/fs";
-import { log } from "../util/log";
+import getVortexPath from "../util/getVortexPath";
 import { deleteOrNop, getSafe, rehydrate, setSafe } from "../util/storeHelper";
-
 import { appReducer } from "./app";
 import { loReducer } from "./loadOrder";
 import { notificationsReducer } from "./notifications";
@@ -22,17 +31,6 @@ import { sessionReducer } from "./session";
 import { tableReducer } from "./tables";
 import { userReducer } from "./user";
 import { windowReducer } from "./window";
-
-import { app } from "electron";
-import update from "immutability-helper";
-import { pick } from "lodash";
-import * as path from "path";
-import type { Reducer, ReducersMapObject } from "redux";
-import { combineReducers } from "redux";
-import { createReducer } from "redux-act";
-import { enableBatching } from "redux-batched-actions";
-import type { IState } from "../types/IState";
-import { unknownToError } from "@vortex/shared";
 
 export const STATE_BACKUP_PATH = "state_backups";
 
@@ -215,7 +213,7 @@ function hydrateRed(
       }
       const decision = querySanitize(errors);
       if (decision === Decision.SANITIZE) {
-        const backupPath = path.join(app.getPath("temp"), STATE_BACKUP_PATH);
+        const backupPath = path.join(getVortexPath("temp"), STATE_BACKUP_PATH);
         log("info", "sanitizing application state");
         let backupData;
         if (backupTime !== undefined) {
@@ -235,7 +233,7 @@ function hydrateRed(
         );
         payload = setSafe(payload, pathArray, sanitized);
       } else if (decision === Decision.QUIT) {
-        app.exit();
+        void window.api.app.exit(0);
         throw new UserCanceled();
       } // in case of ignore we just continue with the original payload
     }
