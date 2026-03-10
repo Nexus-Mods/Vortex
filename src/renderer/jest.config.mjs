@@ -11,7 +11,7 @@ const config = {
     "^shortid$": "<rootDir>/__mocks__/shortid.js",
     "^../util/ComponentEx$": "<rootDir>/__mocks__/ComponentEx.js",
   },
-  testRegex: "(/__tests__/.*|\\.(test|spec))\\.(js|jsx|ts|tsx)$",
+  testRegex: "(/__tests__/.*)\\.(js|jsx|ts|tsx)$",
   testPathIgnorePatterns: [
     "/node_modules/",
     "/dist/",

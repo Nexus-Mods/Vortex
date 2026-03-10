@@ -94,3 +94,5 @@ flatpak/flatpak-repo/
 flatpak/scripts/__pycache__/
 
 *.tsbuildinfo
+
+test-results/

@@ -4,14 +4,18 @@
   "include": [
     "./BuildSubprojects.mjs",
     "./InstallAssets.mjs",
-    "./ts-to-zod.config.mjs",
-    "./eslint.config.mjs",
     "./eslint-rules/*.mjs",
+    "./eslint.config.mjs",
+    "./scripts/*.mjs",
     "./src/main/prepare-dist-package.mjs",
+    "./src/renderer/vitest.config.ts",
     "./src/shared/tsdown.config.ts",
-    "./scripts/*.mjs"
+    "./ts-to-zod.config.mjs",
+    "./vitest.config.ts"
   ],
   "compilerOptions": {
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "composite": true,
     "noEmit": true,
     "allowJs": true,
