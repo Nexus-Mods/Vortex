@@ -95,15 +95,12 @@ jobs:
       - name: Print dotnet info
         run: dotnet --info
 
-      - name: Download Microsoft Visual C++ Redistributable
+      - name: Download Runtime Dependencies
         shell: pwsh
         run: |
-          Invoke-WebRequest -Uri "https://aka.ms/vs/17/release/vc_redist.x64.exe" -OutFile "build\\VC_redist.x64.exe"
-
-      - name: Download .NET 9 Runtime
-        shell: pwsh
-        run: | 
-          Invoke-WebRequest -Uri "https://aka.ms/dotnet/9.0/windowsdesktop-runtime-win-x64.exe" -OutFile "build\\windowsdesktop-runtime-win-x64.exe"
+          New-Item -ItemType Directory -Force -Path "src\\main\\build"
+          Invoke-WebRequest -Uri "https://aka.ms/vs/17/release/vc_redist.x64.exe" -OutFile "src\\main\\build\\VC_redist.x64.exe"
+          Invoke-WebRequest -Uri "https://aka.ms/dotnet/9.0/windowsdesktop-runtime-win-x64.exe" -OutFile "src\\main\\build\\windowsdesktop-runtime-win-x64.exe"
 
       - name: Download CodeSignTool
         id: codesign
@@ -119,43 +116,31 @@ jobs:
           echo "NODE_VERSION=$nodeVersion" >> $env:GITHUB_OUTPUT
           echo "Using Node.js version: $nodeVersion"
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ steps.node-version.outputs.NODE_VERSION }}
-          cache: "yarn"
+          cache: "pnpm"
 
-      - name: Install dependencies 
-        run: yarn --non-interactive install
- 
-      - name: Build API 
-        run: yarn --non-interactive build_api 
-       
-      - name: Install Production Dependencies 
-        run: yarn --non-interactive _install_app 
-       
-      - name: Build Extensions (Submodules)
-        run: yarn --non-interactive subprojects_app_ci 
-       
-      - name: Build Static Assets 
-        run: yarn --non-interactive _assets_app 
-         
-      - name: Bundle Application (Webpack)
-        run: yarn build_dist
+      - name: Build FOMOD
+        run: pnpm run build:fomod
 
-      - name: Test
-        run: yarn test
+      - name: Install dependencies
+        run: pnpm install
 
       - name: Create Signed Installer
         if: ${{ inputs.use-codesigning == true }}
-        run: yarn package
+        run: pnpm run package
 
       - name: Create Unsigned Installer
         if: ${{ inputs.use-codesigning == false }}
-        run: yarn package:nocodesign
+        run: pnpm run package:nosign
 
-      - name: Extract Debug Sourcemaps
-        run: yarn extract_sourcemaps
+      # - name: Extract Debug Sourcemaps
+      #   run: pnpm run extract_sourcemaps
 
       - name: Validate Package Creation
         shell: pwsh
