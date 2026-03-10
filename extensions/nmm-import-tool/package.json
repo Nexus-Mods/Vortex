@@ -37,7 +37,7 @@
     "redux-thunk": "catalog:",
     "semver": "catalog:",
     "shortid": "catalog:",
-    "vortex-api": "catalog:",
+    "vortex-api": "workspace:*",
     "winapi-bindings": "catalog:"
   }
 }

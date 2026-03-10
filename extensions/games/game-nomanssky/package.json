@@ -17,6 +17,6 @@
     "game": "No Man's Sky"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

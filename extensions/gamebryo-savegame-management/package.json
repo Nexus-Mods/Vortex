@@ -37,7 +37,7 @@
     "redux-act": "catalog:",
     "redux-thunk": "catalog:",
     "turbowalk": "catalog:",
-    "vortex-api": "catalog:",
+    "vortex-api": "workspace:*",
     "vortex-parse-ini": "catalog:"
   },
   "optionalDependencies": {

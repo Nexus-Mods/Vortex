@@ -23,6 +23,6 @@
     "copyfiles": "catalog:",
     "rimraf": "catalog:",
     "tmp": "catalog:",
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

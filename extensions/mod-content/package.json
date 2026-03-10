@@ -28,6 +28,6 @@
     "react-bootstrap": "catalog:",
     "redux": "catalog:",
     "turbowalk": "catalog:",
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

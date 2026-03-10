@@ -17,6 +17,6 @@
     "game": "Untitled Goose Game"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

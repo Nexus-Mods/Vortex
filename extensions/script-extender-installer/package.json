@@ -27,7 +27,7 @@
     "react-bootstrap": "catalog:",
     "redux": "catalog:",
     "typescript": "catalog:",
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   },
   "dependencies": {
     "semver": "catalog:"

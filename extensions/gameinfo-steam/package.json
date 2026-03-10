@@ -20,6 +20,6 @@
     "react-bootstrap": "catalog:",
     "react-dom": "catalog:",
     "react-i18next": "catalog:",
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

@@ -21,6 +21,6 @@
     "copyfiles": "catalog:",
     "react-bootstrap": "catalog:",
     "typescript": "catalog:",
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

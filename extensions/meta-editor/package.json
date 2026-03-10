@@ -30,6 +30,6 @@
     "react-i18next": "catalog:",
     "redux-act": "catalog:",
     "semver": "catalog:",
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

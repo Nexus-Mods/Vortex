@@ -53,7 +53,7 @@
     "redux-thunk": "catalog:",
     "reselect": "catalog:",
     "shortid": "catalog:",
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   },
   "optionalDependencies": {
     "esptk": "catalog:",

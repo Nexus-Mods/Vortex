@@ -17,6 +17,6 @@
     "game": "Daggerfall Unity"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

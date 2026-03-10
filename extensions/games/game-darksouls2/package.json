@@ -17,6 +17,6 @@
     "game": "Dark Souls II"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

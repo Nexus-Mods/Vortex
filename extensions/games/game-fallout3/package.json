@@ -17,6 +17,6 @@
     "game": "Fallout 3"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

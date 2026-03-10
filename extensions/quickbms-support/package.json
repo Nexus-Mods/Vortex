@@ -23,6 +23,6 @@
     "node-7z": "catalog:",
     "react": "catalog:",
     "react-i18next": "catalog:",
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

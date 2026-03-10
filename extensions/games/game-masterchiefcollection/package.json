@@ -17,6 +17,6 @@
     "game": "Halo: The Master Chief Collection"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

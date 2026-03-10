@@ -17,6 +17,6 @@
     "electron": "catalog:",
     "turbowalk": "catalog:",
     "typescript": "catalog:",
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

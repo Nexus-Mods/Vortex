@@ -18,7 +18,7 @@
     "copyfiles": "catalog:",
     "turbowalk": "catalog:",
     "typescript": "catalog:",
-    "vortex-api": "catalog:",
+    "vortex-api": "workspace:*",
     "winapi-bindings": "catalog:",
     "xml2js": "catalog:"
   }

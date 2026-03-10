@@ -17,6 +17,6 @@
     "game": "Monster Hunter: World"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

@@ -32,7 +32,7 @@
     "redux": "catalog:",
     "redux-act": "catalog:",
     "redux-thunk": "catalog:",
-    "vortex-api": "catalog:",
+    "vortex-api": "workspace:*",
     "vortex-parse-ini": "catalog:"
   }
 }

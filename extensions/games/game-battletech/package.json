@@ -17,6 +17,6 @@
     "dist": "pnpm run _build && node ../../copy-extension.mjs dist"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

@@ -17,6 +17,6 @@
     "game": "Nehrim: At Fate's Edge"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

@@ -17,6 +17,6 @@
     "game": "Microsoft Flight Simulator"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

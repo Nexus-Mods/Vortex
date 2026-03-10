@@ -17,6 +17,6 @@
     "game": "Galactic Civilizations III"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

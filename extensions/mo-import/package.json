@@ -34,7 +34,7 @@
     "redux": "catalog:",
     "semver": "catalog:",
     "shortid": "catalog:",
-    "vortex-api": "catalog:",
+    "vortex-api": "workspace:*",
     "vortex-parse-ini": "catalog:"
   }
 }

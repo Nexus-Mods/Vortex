@@ -17,6 +17,6 @@
     "game": "X4: Foundations"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

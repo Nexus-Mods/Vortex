@@ -17,6 +17,6 @@
     "game": "Mount and Blade II: Bannerlord"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

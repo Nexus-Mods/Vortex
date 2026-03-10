@@ -17,6 +17,6 @@
     "game": "Dragon Age: Origins"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

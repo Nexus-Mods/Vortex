@@ -26,6 +26,6 @@
     "redux": "catalog:",
     "redux-act": "catalog:",
     "typescript": "catalog:",
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

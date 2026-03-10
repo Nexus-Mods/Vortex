@@ -17,6 +17,6 @@
     "game": "Vampire the Masquerade - Bloodlines"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

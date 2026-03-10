@@ -17,6 +17,6 @@
     "game": "Oblivion"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

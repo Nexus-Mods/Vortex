@@ -17,6 +17,6 @@
     "game": "Prison Architect"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

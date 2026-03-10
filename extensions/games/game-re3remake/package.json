@@ -17,6 +17,6 @@
     "game": "Resident Evil 3 (2020)"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

@@ -21,7 +21,7 @@
     "react-bootstrap": "catalog:",
     "react-dom": "catalog:",
     "typescript": "catalog:",
-    "vortex-api": "catalog:",
+    "vortex-api": "workspace:*",
     "vortexmt": "catalog:"
   },
   "dependencies": {

@@ -17,6 +17,6 @@
     "game": "Surviving Mars"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

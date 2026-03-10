@@ -17,6 +17,6 @@
     "game": "Skyrim: Special Edition"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

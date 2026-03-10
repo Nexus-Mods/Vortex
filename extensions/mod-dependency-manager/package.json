@@ -52,6 +52,6 @@
     "semver": "catalog:",
     "shortid": "catalog:",
     "turbowalk": "catalog:",
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

@@ -17,6 +17,6 @@
     "game": "Bloodstained: Ritual of the Night"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

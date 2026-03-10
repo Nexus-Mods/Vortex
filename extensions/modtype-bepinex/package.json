@@ -24,7 +24,7 @@
     "react": "catalog:",
     "react-i18next": "catalog:",
     "semver": "catalog:",
-    "vortex-api": "catalog:",
+    "vortex-api": "workspace:*",
     "vortex-parse-ini": "catalog:"
   },
   "dependencies": {

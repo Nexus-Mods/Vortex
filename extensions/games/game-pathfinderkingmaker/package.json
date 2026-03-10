@@ -17,6 +17,6 @@
     "game": "Pathfinder: Kingmaker"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

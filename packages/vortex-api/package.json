@@ -1,0 +1,17 @@
+{
+  "$schema": "https://www.schemastore.org/package.json",
+  "name": "vortex-api",
+  "version": "1.0.0",
+  "main": "index.js",
+  "private": true,
+  "type": "module",
+  "types": "./lib/api.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/api.d.ts"
+    }
+  },
+  "files": [
+    "lib"
+  ]
+}

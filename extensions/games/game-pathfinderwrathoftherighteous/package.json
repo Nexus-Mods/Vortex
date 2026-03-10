@@ -17,6 +17,6 @@
     "game": "Pathfinder: Wrath of the Righteous"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

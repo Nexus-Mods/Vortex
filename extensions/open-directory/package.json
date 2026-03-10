@@ -19,6 +19,6 @@
     "i18next": "catalog:",
     "redux": "catalog:",
     "redux-thunk": "catalog:",
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

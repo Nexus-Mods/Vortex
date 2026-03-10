@@ -17,6 +17,6 @@
     "game": "Spyro Reignited Trilogy"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

@@ -17,6 +17,6 @@
     "game": "World of Tanks"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

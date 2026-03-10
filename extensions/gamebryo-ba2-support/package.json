@@ -18,6 +18,6 @@
     "bluebird": "catalog:",
     "copyfiles": "catalog:",
     "rimraf": "catalog:",
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

@@ -30,7 +30,7 @@
     "react-dnd": "catalog:",
     "react-i18next": "catalog:",
     "typescript": "catalog:",
-    "vortex-api": "catalog:",
+    "vortex-api": "workspace:*",
     "vortex-parse-ini": "catalog:"
   }
 }

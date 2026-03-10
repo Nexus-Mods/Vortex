@@ -17,6 +17,6 @@
     "game": "Kenshi"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

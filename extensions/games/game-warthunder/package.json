@@ -17,6 +17,6 @@
     "game": "War Thunder"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

@@ -17,6 +17,6 @@
     "@types/redux": "catalog:",
     "bluebird": "catalog:",
     "copyfiles": "catalog:",
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

@@ -17,6 +17,6 @@
     "game": "Devil May Cry 5"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

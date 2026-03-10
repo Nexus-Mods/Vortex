@@ -29,7 +29,7 @@
     "redux-act": "catalog:",
     "redux-thunk": "catalog:",
     "tmp": "catalog:",
-    "vortex-api": "catalog:",
+    "vortex-api": "workspace:*",
     "winapi-bindings": "catalog:"
   }
 }

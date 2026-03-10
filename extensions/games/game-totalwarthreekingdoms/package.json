@@ -17,6 +17,6 @@
     "game": "Total War: Three Kingdoms"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

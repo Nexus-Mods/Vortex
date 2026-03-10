@@ -17,6 +17,6 @@
     "game": "Subnautica Below Zero"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

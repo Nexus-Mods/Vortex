@@ -17,6 +17,6 @@
     "game": "Dragon's Dogma: Dark Arisen"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

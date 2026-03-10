@@ -17,6 +17,6 @@
     "game": "Divinity: Original Sin 2"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

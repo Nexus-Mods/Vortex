@@ -17,6 +17,6 @@
     "game": "Dawn of Man"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

@@ -17,6 +17,6 @@
     "game": "Subnautica"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

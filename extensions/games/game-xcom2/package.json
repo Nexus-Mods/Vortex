@@ -17,6 +17,6 @@
     "game": "XCOM 2"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

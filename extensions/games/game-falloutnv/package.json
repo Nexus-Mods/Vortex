@@ -17,6 +17,6 @@
     "game": "Fallout: New Vegas"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

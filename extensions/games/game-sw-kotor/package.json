@@ -17,6 +17,6 @@
     "game": "Star Wars: Knights of the Old Republic II"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

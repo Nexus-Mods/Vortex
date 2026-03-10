@@ -18,7 +18,7 @@
     "copyfiles": "catalog:",
     "i18next": "catalog:",
     "redux-thunk": "catalog:",
-    "vortex-api": "catalog:",
+    "vortex-api": "workspace:*",
     "winapi-bindings": "catalog:"
   }
 }

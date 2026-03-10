@@ -17,6 +17,6 @@
     "game": "Neverwinter Nights"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

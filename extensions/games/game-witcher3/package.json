@@ -17,6 +17,6 @@
     "game": "The Witcher 3"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }
