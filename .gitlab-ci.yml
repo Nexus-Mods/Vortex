@@ -66,6 +66,8 @@ build:windows:
     GIT_CONFIG_COUNT: "1"
     GIT_CONFIG_KEY_0: "core.longpaths"
     GIT_CONFIG_VALUE_0: "true"
+    GIT_CLONE_PATH: $CI_BUILDS_DIR\vortex
+    ComSpec: C:\Windows\System32\cmd.exe
   before_script:
     # Install Node and Yarn via Volta (reads versions from package.json)
     - volta install node yarn
