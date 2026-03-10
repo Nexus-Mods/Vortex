@@ -5,7 +5,7 @@
   "main": "./out/index.js",
   "repository": "",
   "scripts": {
-    "_build": "pnpm generate-validation -t ./tsconfig.json && node build.mjs && extractInfo",
+    "_build": "pnpm generate-validation -t ./tsconfig.json && node build.mjs && pnpm extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs out",
     "dist": "pnpm run _build && node ../copy-extension.mjs dist"
   },
@@ -22,7 +22,7 @@
     "react-i18next": "catalog:",
     "redux": "catalog:",
     "semver": "catalog:",
-    "vortex-api": "catalog:",
+    "vortex-api": "workspace:*",
     "winapi-bindings": "catalog:"
   },
   "dependencies": {

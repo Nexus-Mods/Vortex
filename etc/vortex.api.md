@@ -84,8 +84,6 @@ import { readdirSync } from 'original-fs';
 import { readFileSync } from 'original-fs';
 import type * as Redux from 'redux';
 import * as reduxAct from 'redux-act';
-import { runElevated } from 'vortex-run';
-import { runThreaded } from 'vortex-run';
 import type { SelectCallback } from 'react-bootstrap';
 import * as semver from 'semver';
 import SevenZip from 'node-7z';
@@ -4736,6 +4734,14 @@ type Revertability = "yes" | "never" | "invalid";
 
 // @public (undocumented)
 function rmdirAsync(dirPath: string): Promise_2<void>;
+
+// Warning: (ae-forgotten-export) The symbol "IElevatedIpc" needs to be exported by the entry point api.d.ts
+//
+// @public
+function runElevated(ipcPath: string, func: (ipc: IElevatedIpc, req: NodeJS.Require) => void | PromiseLike<void>, args?: Record<string, unknown>): Promise<string>;
+
+// @public (undocumented)
+function runThreaded(func: (...args: any[]) => any, moduleBase: string, ...args: any[]): Promise_2<any>;
 
 // @public
 function sanitizeCSSId(input: string): string;

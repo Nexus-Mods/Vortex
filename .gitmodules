@@ -1,7 +1,3 @@
-[submodule "api"]
-	path = api
-	url = https://github.com/Nexus-Mods/vortex-api.git
-	branch = maste
 [submodule "extensions/fomod-installer"]
 	path = extensions/fomod-installer
 	url = https://github.com/Nexus-Mods/fomod-installer

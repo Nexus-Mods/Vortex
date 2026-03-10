@@ -6,7 +6,7 @@
   "repository": "Nexus-Mods/extension-script-extender-error-check",
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/style.scss dist",
-    "_build": "node build.mjs && pnpm run _assets && extractInfo",
+    "_build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs out",
     "dist": "pnpm run _build && node ../copy-extension.mjs dist"
   },
@@ -25,6 +25,6 @@
     "react": "catalog:",
     "react-bootstrap": "catalog:",
     "turbowalk": "catalog:",
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

@@ -5,7 +5,7 @@
   "main": "./out/index.js",
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/stylesheets/feedback.scss issues.json dist",
-    "_build": "node build.mjs && extractInfo && pnpm run _assets",
+    "_build": "node build.mjs && pnpm extractInfo && pnpm run _assets",
     "build": "pnpm run _build && node ../copy-extension.mjs out",
     "dist": "pnpm run _build && node ../copy-extension.mjs dist"
   },
@@ -29,7 +29,7 @@
     "redux-act": "catalog:",
     "redux-thunk": "catalog:",
     "tmp": "catalog:",
-    "vortex-api": "catalog:",
+    "vortex-api": "workspace:*",
     "winapi-bindings": "catalog:"
   }
 }

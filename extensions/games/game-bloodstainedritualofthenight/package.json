@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",
-    "_build": "node build.mjs && pnpm run _assets && extractInfo",
+    "_build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
     "build": "pnpm run _build && node ../../copy-extension.mjs out",
     "dist": "pnpm run _build && node ../../copy-extension.mjs dist"
   },
@@ -17,6 +17,6 @@
     "game": "Bloodstained: Ritual of the Night"
   },
   "devDependencies": {
-    "vortex-api": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }

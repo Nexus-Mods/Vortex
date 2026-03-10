@@ -112,7 +112,6 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | universal-analytics | 0.4.23 |
 | uuid | 3.4.0 |
 | vortex-parse-ini | 0.4.0 |
-| vortex-run | file:src/renderer/util/vortex-run |
 | vortexmt | 0.3.0 |
 | wholocks | 1.1.0 |
 | winapi-bindings | 2.7.3 |

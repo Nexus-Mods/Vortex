@@ -1,0 +1,24 @@
+{
+  "$schema": "https://www.schemastore.org/package.json",
+  "name": "vortex-api",
+  "version": "1.0.0",
+  "main": "index.js",
+  "private": true,
+  "type": "module",
+  "types": "./src/index.ts",
+  "bin": {
+    "extractInfo": "./bin/extractInfo.mjs"
+  },
+  "exports": {
+    ".": {
+      "types": "./lib/api.d.ts"
+    }
+  },
+  "files": [
+    "lib",
+    "bin"
+  ],
+  "scripts": {
+    "build": "pnpm rimraf ./lib && node ./build.mjs"
+  }
+}

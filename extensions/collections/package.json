@@ -8,7 +8,7 @@
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/language.json src/icons.svg src/collectionicon.svg style.scss src/assets/fallback_tile.png dist",
     "_native": "node ../copy-native.mjs ./node_modules/bsdiff-node/build/Release/bsdiff.node",
-    "_build": "node build.mjs && pnpm run _assets && pnpm run _native && extractInfo",
+    "_build": "node build.mjs && pnpm run _assets && pnpm run _native && pnpm extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs out",
     "dist": "pnpm run _build && node ../copy-extension.mjs dist"
   },
@@ -51,7 +51,7 @@
     "ts-v-gen": "catalog:",
     "turbowalk": "catalog:",
     "typescript": "catalog:",
-    "vortex-api": "catalog:",
+    "vortex-api": "workspace:*",
     "vortexmt": "catalog:"
   }
 }
