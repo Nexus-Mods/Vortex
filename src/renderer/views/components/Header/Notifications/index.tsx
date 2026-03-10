@@ -1,6 +1,6 @@
 import { Popover } from "@headlessui/react";
 import { mdiBell, mdiBellOutline } from "@mdi/js";
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
 import { useExtensionContext } from "../../../../ExtensionProvider";
@@ -11,89 +11,94 @@ import { useNotificationActions } from "./useNotificationActions";
 import { useNotificationFiltering } from "./useNotificationFiltering";
 import { useNotificationItems } from "./useNotificationItems";
 
-export const Notifications = () => {
+/**
+ * Inner component that receives popoverOpen as a prop so hooks can
+ * react to it directly. The outer component just manages the Popover state.
+ * This allows us to reset expand state and trigger auto-open when new notifications arrive.
+ */
+const NotificationsContent: React.FC<{ popoverOpen: boolean }> = ({
+  popoverOpen,
+}) => {
   const extensions = useExtensionContext();
   const api = extensions.getApi();
 
   const notifications = useSelector(notificationsSelector);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const prevIdsRef = useRef(new Set(notifications.map((n) => n.id)));
 
   const [expand, setExpand] = useState<string | undefined>(undefined);
-  const [open, setOpen] = useState(false);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const prevCountRef = useRef(notifications.length);
 
-  const filtered = useNotificationFiltering({ notifications, open });
+  const filtered = useNotificationFiltering({
+    notifications,
+    open: popoverOpen,
+  });
   const { dismissAll, suppress, triggerAction } = useNotificationActions({
     notifications,
     expand,
   });
 
-  const toggle = useCallback(() => {
-    api.events.emit(
-      "analytics-track-click-event",
-      "Notifications",
-      `${open ? "Close" : "Open"} Notifications`,
-    );
-    setOpen(!open);
-  }, [api, open]);
-
   const handleExpandGroup = useCallback((groupId: string) => {
     setExpand(groupId);
   }, []);
 
-  // Reset expand state when notifications close
+  // Reset expand state when panel closes
   useEffect(() => {
-    if (!open && expand !== undefined) {
+    if (!popoverOpen && expand !== undefined) {
       setExpand(undefined);
     }
-  }, [open, expand]);
+  }, [popoverOpen, expand]);
 
   // Auto-open popover when new notifications arrive
   useEffect(() => {
-    if (notifications.length > prevCountRef.current) {
-      if (!open && buttonRef.current) {
-        buttonRef.current.click();
-      }
-    }
-    prevCountRef.current = notifications.length;
-  }, [notifications.length, open]);
+    const currentIds = new Set(notifications.map((n) => n.id));
+    const hasNew = notifications.some((n) => !prevIdsRef.current.has(n.id));
+    prevIdsRef.current = currentIds;
 
-  // Get grouped and sorted notification data
-  const { items, collapsed } = useNotificationItems({
-    filtered,
-    expand,
-  });
+    if (hasNew && !popoverOpen && buttonRef.current) {
+      buttonRef.current.click();
+    }
+  }, [notifications, popoverOpen]);
+
+  const { items, collapsed } = useNotificationItems({ filtered, expand });
 
   return (
-    <Popover className="relative">
-      {({ open: popoverOpen }) => (
-        <>
-          <Popover.Button
-            as={IconButton}
-            iconPath={notifications.length > 0 ? mdiBell : mdiBellOutline}
-            itemCount={notifications.length}
-            ref={buttonRef}
-            title="Notifications"
-            onClick={toggle}
-          />
+    <>
+      <Popover.Button
+        as={IconButton}
+        iconPath={notifications.length > 0 ? mdiBell : mdiBellOutline}
+        itemCount={notifications.length}
+        ref={buttonRef}
+        title="Notifications"
+        onClick={() => {
+          api.events.emit(
+            "analytics-track-click-event",
+            "Notifications",
+            `${popoverOpen ? "Close" : "Open"} Notifications`,
+          );
+        }}
+      />
 
-          {popoverOpen && items.length > 0 && (
-            <Popover.Panel className="absolute right-0 z-popover mt-2.5 max-h-[50vh] w-sm space-y-0.5 overflow-y-auto rounded-sm border border-stroke-weak bg-surface-base p-1 shadow-md">
-              {items.map((notification) => (
-                <NotificationItem
-                  collapsed={collapsed[notification.group]}
-                  key={notification.id}
-                  notification={notification}
-                  onDismiss={dismissAll}
-                  onExpand={handleExpandGroup}
-                  onSuppress={suppress}
-                  onTriggerAction={triggerAction}
-                />
-              ))}
-            </Popover.Panel>
-          )}
-        </>
+      {popoverOpen && items.length > 0 && (
+        <Popover.Panel className="absolute right-0 z-popover mt-2.5 max-h-[50vh] w-sm space-y-0.5 overflow-y-auto rounded-sm border border-stroke-weak bg-surface-base p-1 shadow-md">
+          {items.map((notification) => (
+            <NotificationItem
+              collapsed={collapsed[notification.group]}
+              key={notification.id}
+              notification={notification}
+              onDismiss={dismissAll}
+              onExpand={handleExpandGroup}
+              onSuppress={suppress}
+              onTriggerAction={triggerAction}
+            />
+          ))}
+        </Popover.Panel>
       )}
-    </Popover>
+    </>
   );
 };
+
+export const Notifications = () => (
+  <Popover className="relative">
+    {({ open }) => <NotificationsContent popoverOpen={open} />}
+  </Popover>
+);
