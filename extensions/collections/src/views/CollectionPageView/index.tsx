@@ -69,6 +69,7 @@ interface IComponentState {
   modsEx: { [modId: string]: IModEx };
   modSelection: Array<{ local: IModEx, remote: ICollectionRevisionMod }>;
   currentTab: string;
+  driverStep: string;
 }
 
 const getCollator = (() => {
@@ -131,6 +132,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
       modsEx: {},
       modSelection: [],
       currentTab: 'instructions',
+      driverStep: props.driver?.step ?? 'prepare',
     });
 
     this.mModActions = [
@@ -409,6 +411,9 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
           downloads: currentDownloads,
         });
       }
+      if (driver.step !== this.state.driverStep) {
+        this.nextState.driverStep = driver.step;
+      }
     });
   }
 
@@ -452,7 +457,8 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
         || (this.props.showDownvoteResponse !== newProps.showDownvoteResponse)
         || (this.state.currentTab !== newState.currentTab)
         || (this.state.modSelection !== newState.modSelection)
-        || (this.state.modsEx !== newState.modsEx)) {
+        || (this.state.modsEx !== newState.modsEx)
+        || (this.state.driverStep !== newState.driverStep)) {
       return true;
     }
     return false;
@@ -571,24 +577,26 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
             </Tab>
           </Tabs>
         </FlexLayout.Flex>
-        <FlexLayout.Fixed>
-          <CollectionProgress
-            t={t}
-            isPremium={userInfo?.isPremium}
-            mods={modsEx}
-            profile={profile}
-            downloads={downloads}
-            totalSize={totalSize}
-            activity={activity}
-            onCancel={this.cancel}
-            onPause={this.mInstalling ? this.pause : undefined}
-            onResume={this.mInstalling
-              ? undefined
-              : (driver.collection !== undefined) && !driver.installDone
-                ? null // installing something else
-                : this.resume}
-          />
-        </FlexLayout.Fixed>
+        {(driver.step !== 'review' || driver.collection?.id !== collection?.id) && (
+          <FlexLayout.Fixed>
+            <CollectionProgress
+              t={t}
+              isPremium={userInfo?.isPremium}
+              mods={modsEx}
+              profile={profile}
+              downloads={downloads}
+              totalSize={totalSize}
+              activity={activity}
+              onCancel={this.cancel}
+              onPause={this.mInstalling ? this.pause : undefined}
+              onResume={this.mInstalling
+                ? undefined
+                : (driver.collection !== undefined) && !driver.installDone
+                  ? null // installing something else
+                  : this.resume}
+            />
+          </FlexLayout.Fixed>
+        )}
       </FlexLayout>
     );
   }
