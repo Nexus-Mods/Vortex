@@ -82,6 +82,7 @@ import { applyMiddleware, compose, createStore } from "redux";
 import thunkMiddleware from "redux-thunk";
 import { generate as shortid } from "shortid";
 
+import type { AppInitMetadata } from "@vortex/shared/ipc";
 import type { ThunkStore } from "./types/IExtensionContext";
 import type { IState } from "./types/IState";
 
@@ -436,8 +437,39 @@ async function initGlobals(): Promise<void> {
   await ApplicationData.init();
 }
 
+function applyAppMetadata(metadata: AppInitMetadata): void {
+  if (metadata.version) {
+    store.dispatch(setApplicationVersion(metadata.version));
+  }
+  if (metadata.installType) {
+    store.dispatch(setInstallType(metadata.installType));
+  }
+  if (metadata.instanceId) {
+    store.dispatch(setInstanceId(metadata.instanceId));
+  }
+  if (metadata.warnedAdmin !== undefined) {
+    store.dispatch(setWarnedAdmin(metadata.warnedAdmin));
+  }
+}
+
 async function init(): Promise<ExtensionManager | null> {
   await StyleManager.renderDefault();
+
+  // Register app:init listener BEFORE async hydration to avoid race condition.
+  // Main process sends app:init immediately after window creation, which can
+  // arrive before hydration completes. Buffer the metadata and apply it after
+  // the store is created.
+  let bufferedAppMetadata: AppInitMetadata | null = null;
+  if (window.api?.app) {
+    window.api.app.onInit((metadata) => {
+      log("debug", "received app:init metadata from main", metadata);
+      if (store !== undefined) {
+        applyAppMetadata(metadata);
+      } else {
+        bufferedAppMetadata = metadata;
+      }
+    });
+  }
 
   // Fetch hydration data from main process (persisted state)
   log("debug", "fetching hydration data from main process");
@@ -495,23 +527,10 @@ async function init(): Promise<ExtensionManager | null> {
     });
   }
 
-  // Set up app initialization handler from main process
-  if (window.api?.app) {
-    window.api.app.onInit((metadata) => {
-      log("debug", "received app:init metadata from main", metadata);
-      if (metadata.version) {
-        store.dispatch(setApplicationVersion(metadata.version));
-      }
-      if (metadata.installType) {
-        store.dispatch(setInstallType(metadata.installType));
-      }
-      if (metadata.instanceId) {
-        store.dispatch(setInstanceId(metadata.instanceId));
-      }
-      if (metadata.warnedAdmin !== undefined) {
-        store.dispatch(setWarnedAdmin(metadata.warnedAdmin));
-      }
-    });
+  // Apply any buffered app:init metadata that arrived during hydration
+  if (bufferedAppMetadata !== null) {
+    applyAppMetadata(bufferedAppMetadata);
+    bufferedAppMetadata = null;
   }
 
   extensions.setStore(store);
