@@ -1,6 +1,6 @@
 import { Popover } from "@headlessui/react";
 import { mdiBell, mdiBellOutline } from "@mdi/js";
-import React, { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
 import { useExtensionContext } from "../../../../ExtensionProvider";
@@ -19,6 +19,8 @@ export const Notifications = () => {
 
   const [expand, setExpand] = useState<string | undefined>(undefined);
   const [open, setOpen] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const prevCountRef = useRef(notifications.length);
 
   const filtered = useNotificationFiltering({ notifications, open });
   const { dismissAll, suppress, triggerAction } = useNotificationActions({
@@ -46,6 +48,16 @@ export const Notifications = () => {
     }
   }, [open, expand]);
 
+  // Auto-open popover when new notifications arrive
+  useEffect(() => {
+    if (notifications.length > prevCountRef.current) {
+      if (!open && buttonRef.current) {
+        buttonRef.current.click();
+      }
+    }
+    prevCountRef.current = notifications.length;
+  }, [notifications.length, open]);
+
   // Get grouped and sorted notification data
   const { items, collapsed } = useNotificationItems({
     filtered,
@@ -60,6 +72,7 @@ export const Notifications = () => {
             as={IconButton}
             iconPath={notifications.length > 0 ? mdiBell : mdiBellOutline}
             itemCount={notifications.length}
+            ref={buttonRef}
             title="Notifications"
             onClick={toggle}
           />
