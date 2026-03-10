@@ -17,5 +17,8 @@
   "files": [
     "lib",
     "bin"
-  ]
+  ],
+  "scripts": {
+    "build": "pnpm rimraf ./lib && node ./build.mjs"
+  }
 }
