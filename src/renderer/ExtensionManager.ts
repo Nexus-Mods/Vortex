@@ -3111,10 +3111,13 @@ class ExtensionManager {
       file_preview: () => require("./extensions/file_preview/index.ts"),
       firststeps_dashlet: () =>
         require("./extensions/firststeps_dashlet/index.ts"),
-      gamemode_management: () =>
-        require("./extensions/gamemode_management/index.ts"),
+      // gameversion_management must be listed before gamemode_management so that
+      // GameVersionManager is initialized before gamemode_management's once()
+      // calls setupGameMode -> getInstalledVersion
       gameversion_management: () =>
         require("./extensions/gameversion_management/index.ts"),
+      gamemode_management: () =>
+        require("./extensions/gamemode_management/index.ts"),
       hardlink_activator: () =>
         require("./extensions/hardlink_activator/index.ts"),
       health_check: () => require("./extensions/health_check/index.ts"),
