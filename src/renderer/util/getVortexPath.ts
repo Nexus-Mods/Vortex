@@ -72,7 +72,9 @@ const getAppPath = (id: string): string => {
     if (id === "__app") {
       cache[id] = electron.app.getAppPath();
     } else {
-      cache[id] = electron.app.getPath(id as any);
+      // Normalize to fix mixed separators from scoped package names
+      // (e.g. "@vortex/main" produces a forward slash in userData path)
+      cache[id] = path.normalize(electron.app.getPath(id as any));
     }
   }
   const value = cache[id];
