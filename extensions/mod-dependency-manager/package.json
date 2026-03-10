@@ -6,7 +6,7 @@
   "repository": "",
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/stylesheets/*.scss src/language.json dist",
-    "_build": "node build.mjs && pnpm run _assets && extractInfo",
+    "_build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs out",
     "dist": "pnpm run _build && node ../copy-extension.mjs dist"
   },

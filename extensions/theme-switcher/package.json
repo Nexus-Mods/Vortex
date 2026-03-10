@@ -6,7 +6,7 @@
   "scripts": {
     "_assets": "copyfiles -u 1 -u 3 themes/**/* dist",
     "_native": "node ../copy-native.mjs -u 4 ./node_modules/font-scanner/build/Release/fontmanager.node",
-    "_build": "node build.mjs && pnpm run _assets && pnpm run _native && extractInfo",
+    "_build": "node build.mjs && pnpm run _assets && pnpm run _native && pnpm extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs out",
     "dist": "pnpm run _build && node ../copy-extension.mjs dist"
   },
