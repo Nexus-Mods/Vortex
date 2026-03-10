@@ -7,14 +7,15 @@
  * for persistence to LevelDB.
  */
 
-import type { Middleware, MiddlewareAPI, Dispatch, AnyAction } from "redux";
-
 import type { DiffOperation } from "@vortex/shared/ipc";
 import type { PersistedHive } from "@vortex/shared/state";
-import type { IState } from "../types/IState";
+import type { Middleware, MiddlewareAPI, Dispatch, AnyAction } from "redux";
 
 import { getErrorMessageOrDefault } from "@vortex/shared";
-import { log } from "../util/log";
+
+import type { IState } from "../types/IState";
+
+import { log } from "../logging";
 import { computeStateDiff } from "./stateDiff";
 
 /**
@@ -140,7 +141,7 @@ export function createPersistDiffMiddleware(
    */
   const flushDiffs = () => {
     const persistApi = getApi();
-    if (persistApi === null) {
+    if (persistApi == null) {
       return;
     }
 
@@ -162,7 +163,7 @@ export function createPersistDiffMiddleware(
    * Schedule a flush of pending diffs
    */
   const scheduleFlush = () => {
-    if (flushTimeout === null) {
+    if (flushTimeout == null) {
       flushTimeout = setTimeout(flushDiffs, DEBOUNCE_MS);
     }
   };
@@ -185,12 +186,8 @@ export function createPersistDiffMiddleware(
       // Let the action process first
       const result = next(action);
 
-      // Skip if no persist API available
-      if (getApi() === null) {
-        return result;
-      }
-
-      // Skip hydration actions - these come from persistence, don't re-persist
+      // Allow hydration to update previous state even if the persist API isn't
+      // available yet, since they won't trigger diffs until after hydration completes.
       if (action.type === "__hydrate" || action.type === "__hydrate_replace") {
         // Update previous state without computing diff
         previousState = store.getState();
@@ -200,8 +197,13 @@ export function createPersistDiffMiddleware(
       const newState = store.getState();
 
       // Initialize previous state on first action
-      if (previousState === null) {
+      if (previousState == null) {
         previousState = newState;
+        return result;
+      }
+
+      // Skip if no persist API available
+      if (getApi() == null) {
         return result;
       }
 
