@@ -1,4 +1,7 @@
-import group from '../extensions/mod_management/util/modGrouping';
+import { describe, it, expect } from "vitest";
+
+import { type IModWithState } from "../views/CheckModVersionsButton";
+import group from "./modGrouping"
 
 describe('modGrouping', () => {
   it('can group by mod id', () => {
@@ -7,10 +10,10 @@ describe('modGrouping', () => {
       { id: 'b', attributes: { modId: 43 } },
       { id: 'c', attributes: { modId: 42 } },
     ];
-    const result = group(input, { groupBy: 'modId', multipleEnabled: true });
+    const result = group(input as IModWithState[], { groupBy: 'modId', multipleEnabled: true });
     expect(result).toEqual([
       [{ id: 'a', attributes: { modId: 42 } },
-       { id: 'c', attributes: { modId: 42 } }],
+      { id: 'c', attributes: { modId: 42 } }],
       [{ id: 'b', attributes: { modId: 43 } }],
     ]);
   });
@@ -21,10 +24,10 @@ describe('modGrouping', () => {
       { id: 'c', enabled: false, attributes: { modId: 42, version: '1.0.0' } },
       { id: 'd', enabled: true, attributes: { modId: 42, version: '1.0.0' } },
     ];
-    const result = group(input, { groupBy: 'modId', multipleEnabled: false });
+    const result = group(input as IModWithState[], { groupBy: 'modId', multipleEnabled: false });
     expect(result).toEqual([
       [{ id: 'a', enabled: true, attributes: { modId: 42, version: '1.1.0' } },
-       { id: 'c', enabled: false, attributes: { modId: 42, version: '1.0.0' } }],
+      { id: 'c', enabled: false, attributes: { modId: 42, version: '1.0.0' } }],
       [{ id: 'd', enabled: true, attributes: { modId: 42, version: '1.0.0' } }],
       [{ id: 'b', enabled: true, attributes: { modId: 43, version: '1.0.0' } }],
     ]);
@@ -36,10 +39,10 @@ describe('modGrouping', () => {
       { id: 'c', attributes: { modId: 42, logicalFileName: '42' } },
       { id: 'd', attributes: { modId: 42, logicalFileName: '42_2' } },
     ];
-    const result = group(input, { groupBy: 'file', multipleEnabled: true });
+    const result = group(input as IModWithState[], { groupBy: 'file', multipleEnabled: true });
     expect(result).toEqual([
       [{ id: 'a', attributes: { modId: 42, logicalFileName: '42' } },
-       { id: 'c', attributes: { modId: 42, logicalFileName: '42' } }],
+      { id: 'c', attributes: { modId: 42, logicalFileName: '42' } }],
       [{ id: 'd', attributes: { modId: 42, logicalFileName: '42_2' } }],
       [{ id: 'b', attributes: { modId: 43, logicalFileName: '43' } }],
     ]);
@@ -51,7 +54,7 @@ describe('modGrouping', () => {
       { id: 'c', attributes: { modId: 42 } },
       { id: 'd', attributes: { modId: 42 } },
     ];
-    const result = group(input, { groupBy: 'file', multipleEnabled: true });
+    const result = group(input as IModWithState[], { groupBy: 'file', multipleEnabled: true });
     expect(result).toEqual([
       [{ id: 'a', attributes: { modId: 42 } }],
       [{ id: 'c', attributes: { modId: 42 } }],
