@@ -96,6 +96,7 @@ build:windows:
     GIT_CONFIG_KEY_0: "core.longpaths"
     GIT_CONFIG_VALUE_0: "true"
     GIT_CLONE_PATH: $CI_BUILDS_DIR\vortex
+    ComSpec: C:\Windows\System32\cmd.exe
   before_script:
     # Enable long path support (>260 chars) system-wide and for Git
     - New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' -Name 'LongPathsEnabled' -Value 1 -PropertyType DWORD -Force
