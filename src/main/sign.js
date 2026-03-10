@@ -5,9 +5,14 @@ require("dotenv").config();
 
 const TEMP_DIR = path.join(__dirname, "temp");
 
-// these were being incorrectly flagged by esigner as malware
-// make sure these are lowercase
-const ignoreFileList = ["arctool.exe"];
+// These were being incorrectly flagged by esigner as malware
+// We don't need to resign MS redist files
+// Make sure these are lowercase
+const ignoreFileList = [
+  "arctool.exe",
+  "vc_redist.x64.exe",
+  "windowsdesktop-runtime-win-x64.exe",
+];
 
 if (!fs.existsSync(TEMP_DIR)) {
   fs.mkdirSync(TEMP_DIR, { recursive: true });
