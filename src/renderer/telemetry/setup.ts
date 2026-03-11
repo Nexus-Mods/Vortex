@@ -41,10 +41,7 @@ class ForwardingSpanProcessor implements SpanProcessor {
 export const createRendererTelemetryProvider = async (): Promise<void> => {
   // Check if preload API is available
   if (typeof window === "undefined" || !window.api?.persist) {
-    log(
-      "warn",
-      "Preload persist API not available, telemetry will be disabled",
-    );
+    log("warn", "Preload API not available, telemetry will be disabled");
     return;
   }
 
