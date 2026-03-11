@@ -33,9 +33,8 @@ class ForwardingSpanProcessor implements SpanProcessor {
   }
 }
 
-const init = async (): Promise<boolean> => {
-  const version = await window.api.app.getVersion();
-  const resource = createRendererResource(version);
+const init = (): boolean => {
+  const resource = createRendererResource();
 
   const provider = new BasicTracerProvider({
     resource,
