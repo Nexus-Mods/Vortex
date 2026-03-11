@@ -43,10 +43,16 @@ workflow:
     - pnpm run build:all
     - pnpm run test
     - pnpm run dist:all
+  # NOTE(erri120): This extracts Stmts from vitest v8 coverage results
+  # https://regex101.com/r/sPcu5n/1
+  coverage: '/^All files\s*\|\s*([\d.]+)\s*\|/'
   artifacts:
     when: always
     reports:
       junit: test-results/junit.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: test-results/coverage/lcov.info
 
 build:linux:
   extends:
