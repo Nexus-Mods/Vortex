@@ -112,6 +112,9 @@ export function isErrorWithSystemCode(
  *   "at f (C:\Users\user\AppData\Roaming\Vortex\plugins\x\index.js:1:2)" → "at f (plugins\x\index.js:1:2)"
  *   "at f (chrome-extension://id/page.js:1:2)" → unchanged
  */
+export const sanitizeFramePath = (frame: string): string =>
+  frame.replace(INSTALL_PATH_RE, "");
+
 const _SEP = String.raw`[/\\]`;
 const _WIN = String.raw`[A-Za-z]:${_SEP}`; // C:\ or C:/
 const _UNIX = String.raw`(?<!\/)\/`; // / not inside ://
@@ -123,9 +126,6 @@ const INSTALL_PATH_RE = new RegExp(
   String.raw`(?:${_WIN}|${_UNIX})${_SEGS}(?=${_ANCHORS}${_SEP})`,
   "g",
 );
-
-const sanitizeFramePath = (frame: string): string =>
-  frame.replace(INSTALL_PATH_RE, "");
 
 /**
  * Compute a fingerprint from the stack trace call frames and app version.
