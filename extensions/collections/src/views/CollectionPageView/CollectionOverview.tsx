@@ -436,7 +436,7 @@ class CollectionOverview extends ComponentEx<
   private openUrl = () => {
     const { revision } = this.props;
     const { collection } = revision;
-    if (collection !== undefined && revision?.revisionNumber !== undefined) {
+    if (collection !== undefined && collection.game !== undefined && revision?.revisionNumber !== undefined) {
       this.context.api.events.emit(
         "analytics-track-click-event",
         "Collections",

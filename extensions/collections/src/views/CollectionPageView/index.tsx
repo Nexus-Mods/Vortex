@@ -99,6 +99,7 @@ interface IComponentState {
   modsEx: { [modId: string]: IModEx };
   modSelection: Array<{ local: IModEx; remote: ICollectionRevisionMod }>;
   currentTab: string;
+  driverStep: string;
 }
 
 const getCollator = (() => {
@@ -178,6 +179,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
       modsEx: {},
       modSelection: [],
       currentTab: "instructions",
+      driverStep: props.driver?.step ?? "prepare",
     });
 
     this.mModActions = [
@@ -478,6 +480,27 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
 
     const modsEx = this.initModsEx(this.props);
     this.nextState.modsEx = modsEx;
+
+    this.props.driver.onUpdate(() => {
+      const state: types.IState = this.context.api.getState();
+      const gameId = this.props.profile?.gameId;
+      if (gameId === undefined) {
+        return;
+      }
+      const currentMods = state.persistent.mods[gameId] ?? {};
+      const currentDownloads = state.persistent.downloads.files;
+      if ((currentMods !== this.props.mods)
+          || (currentDownloads !== this.props.downloads)) {
+        this.nextState.modsEx = this.updateModsEx(this.props, {
+          ...this.props,
+          mods: currentMods,
+          downloads: currentDownloads,
+        });
+      }
+      if (this.props.driver.step !== this.state.driverStep) {
+        this.nextState.driverStep = this.props.driver.step;
+      }
+    });
   }
 
   public async UNSAFE_componentWillReceiveProps(
@@ -532,7 +555,8 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
       this.props.showDownvoteResponse !== newProps.showDownvoteResponse ||
       this.state.currentTab !== newState.currentTab ||
       this.state.modSelection !== newState.modSelection ||
-      this.state.modsEx !== newState.modsEx
+      this.state.modsEx !== newState.modsEx ||
+      this.state.driverStep !== newState.driverStep
     ) {
       return true;
     }
@@ -671,26 +695,28 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
             </Tab>
           </Tabs>
         </FlexLayout.Flex>
-        <FlexLayout.Fixed>
-          <CollectionProgress
-            t={t}
-            isPremium={userInfo?.isPremium}
-            mods={modsEx}
-            profile={profile}
-            downloads={downloads}
-            totalSize={totalSize}
-            activity={activity}
-            onCancel={this.cancel}
-            onPause={this.mInstalling ? this.pause : undefined}
-            onResume={
-              this.mInstalling
-                ? undefined
-                : driver.collection !== undefined && !driver.installDone
-                  ? null // installing something else
-                  : this.resume
-            }
-          />
-        </FlexLayout.Fixed>
+        {(driver.step !== "review" || driver.collection?.id !== collection?.id) && (
+          <FlexLayout.Fixed>
+            <CollectionProgress
+              t={t}
+              isPremium={userInfo?.isPremium}
+              mods={modsEx}
+              profile={profile}
+              downloads={downloads}
+              totalSize={totalSize}
+              activity={activity}
+              onCancel={this.cancel}
+              onPause={this.mInstalling ? this.pause : undefined}
+              onResume={
+                this.mInstalling
+                  ? undefined
+                  : driver.collection !== undefined && !driver.installDone
+                    ? null // installing something else
+                    : this.resume
+              }
+            />
+          </FlexLayout.Fixed>
+        )}
       </FlexLayout>
     );
   }
@@ -846,12 +872,14 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
     const { mods, onShowError, overlays } = this.props;
     const instructions = this.getModInstructions(modId);
     if (instructions === undefined) {
-      // This shouldn't be possible
-      const err = new util.ProcessCanceled("No instructions found", modId);
-      err["attachLogOnReport"] = true;
-      err["Collection"] = this.props.collection?.attributes?.collectionSlug;
-      err["Revision"] = this.props.collection?.attributes?.revisionNumber;
-      onShowError("Failed to display instructions", err, true);
+      // The button is only rendered when instructions exist (customRenderer guards this).
+      // If reached anyway (race condition/state desync), log for debugging but don't
+      // surface a confusing error dialog to the user or auto-report via VortexFeedback.
+      log('warn', 'toggleInstructions called but no instructions found', {
+        modId,
+        collectionSlug: this.props.collection?.attributes?.collectionSlug,
+        revisionNumber: this.props.collection?.attributes?.revisionNumber,
+      });
       return;
     }
 
