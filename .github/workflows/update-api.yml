@@ -1,0 +1,73 @@
+name: Update API Repo
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  update-api-repo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: "recursive"
+
+      - name: Print dotnet info
+        run: dotnet --info
+
+      - name: Read Node.js version from package.json
+        id: node-version
+        shell: pwsh
+        run: |
+          $packageJson = Get-Content package.json | ConvertFrom-Json
+          $nodeVersion = $packageJson.engines.node
+          echo "NODE_VERSION=$nodeVersion" >> $env:GITHUB_OUTPUT
+          echo "Using Node.js version: $nodeVersion"
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ steps.node-version.outputs.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Build FOMOD
+        run: pnpm run build:fomod
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Build API
+        run: pnpm run api
+
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: Nexus-Mods
+          repositories: vortex-api
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "nexusmodsvortex[bot]"
+          git config --global user.email "${{ secrets.APP_USER_ID }}+nexusmodsvortex[bot]@users.noreply.github.com"
+
+      - name: Run update script
+        env:
+          MAIN_REPO: Nexus-Mods/Vortex
+          API_REPO: https://x-access-token:${{ secrets.API_REPO_PAT }}@github.com/Nexus-Mods/vortex-api.git
+          PUSH_BRANCH: master
+        run: node packages/vortex-api/update-repo.mjs
