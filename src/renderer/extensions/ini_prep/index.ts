@@ -1,34 +1,34 @@
+import type { TFunction } from "i18next";
+import type { IniFile } from "vortex-parse-ini";
+
+import PromiseBB from "bluebird";
+import * as path from "path";
+import IniParser, { WinapiFormat } from "vortex-parse-ini";
+
 import type {
   IExtensionApi,
   IExtensionContext,
 } from "../../types/IExtensionContext";
 import type { IProfile, IState } from "../../types/IState";
 import type { ITestResult } from "../../types/ITestResult";
+import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
+import type { IMod } from "../mod_management/types/IMod";
+import type { IModWithState } from "../mod_management/types/IModProps";
+
+import { log } from "../../logging";
 import { UserCanceled } from "../../util/CustomErrors";
 import deepMerge from "../../util/deepMerge";
 import { disableErrorReport } from "../../util/errorHandling";
 import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
-import { log } from "../../util/log";
 import { installPathForGame } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { objDiff, setdefault } from "../../util/util";
-
-import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
 import { INI_TWEAKS_PATH } from "../mod_management/InstallManager";
-import type { IMod } from "../mod_management/types/IMod";
-import type { IModWithState } from "../mod_management/types/IModProps";
 import { NEXUS_DOMAIN } from "../nexus_integration/constants";
 import { activeGameId } from "../profile_management/selectors";
-
 import { iniFiles, iniFormat } from "./gameSupport";
 import renderINITweaks from "./TweakList";
-
-import PromiseBB from "bluebird";
-import type { TFunction } from "i18next";
-import * as path from "path";
-import type { IniFile } from "vortex-parse-ini";
-import IniParser, { WinapiFormat } from "vortex-parse-ini";
 
 function ensureIniBackups(
   t: TFunction,
@@ -102,7 +102,7 @@ function discoverSettingsChanges(
 
   const iniFormatter = genIniFormat(format);
   if (iniFormatter === undefined) {
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
 
   const parser = new IniParser(iniFormatter);
@@ -186,7 +186,7 @@ function bakeSettings(
 
   const iniFormatter = genIniFormat(format);
   if (iniFormatter === undefined) {
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
 
   const enabledTweaks: { [baseFile: string]: string[] } = {};
@@ -528,7 +528,7 @@ function main(context: IExtensionContext) {
         })
         .catch((err) => {
           context.api.showErrorNotification("Failed to purge ini edits", err, {
-            allowReport: (err as any).code !== "ENOENT",
+            allowReport: (err).code !== "ENOENT",
           });
         });
     });
