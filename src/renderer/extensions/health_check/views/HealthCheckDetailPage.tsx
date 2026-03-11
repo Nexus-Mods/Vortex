@@ -13,6 +13,7 @@ import { useSelector } from "react-redux";
 
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IState } from "../../../types/IState";
+import { shouldShowPremiumAd } from "../../../util/selectors";
 import type { IModRequirementExt, IModFileInfo } from "../types";
 
 import { Button } from "../../../ui/components/button/Button";
@@ -81,10 +82,7 @@ function HealthCheckDetailPage({
     isModFilesLoading(state, mod.modId),
   );
 
-  const isPremium = useSelector(
-    (state: IState) =>
-      state.persistent?.["nexus"]?.userInfo?.isPremium ?? false,
-  );
+  const showPremiumAd = useSelector(shouldShowPremiumAd);
 
   // Check if this requirement is currently hidden
   const hiddenReqsMap = useSelector(hiddenRequirements);
@@ -115,7 +113,7 @@ function HealthCheckDetailPage({
   const handleDownload = React.useCallback(
     async (file?: IModFileInfo) => {
       setShowPremiumModal(false);
-      if (isPremium) {
+      if (!showPremiumAd) {
         await onDownloadMod?.(mod, file);
         onBack();
         // Health check list is refreshed automatically by the debounced
@@ -124,7 +122,7 @@ function HealthCheckDetailPage({
         setShowPremiumModal(true);
       }
     },
-    [onDownloadMod, mod, isPremium, onBack],
+    [onDownloadMod, mod, showPremiumAd, onBack],
   );
 
   // Memoized callback for positive feedback (thumbs up)
@@ -236,7 +234,7 @@ function HealthCheckDetailPage({
             </div>
           </div>
 
-          {!isPremium && (
+          {showPremiumAd && (
             <div className="mb-4 flex items-center justify-between gap-x-6 rounded-sm border border-premium-moderate/23 bg-linear-to-r from-premium-moderate/25 via-premium-moderate/10 to-premium-moderate/25 px-4 py-3 shadow-xs">
               <div className="flex items-center gap-x-1.5">
                 <Icon
@@ -315,7 +313,7 @@ function HealthCheckDetailPage({
                 modFiles={modFiles}
                 onConfirmInstall={handleConfirmInstall}
                 onShowVortexModal={
-                  isPremium ? handleDownload : () => setShowPremiumModal(true)
+                  !showPremiumAd ? handleDownload : () => setShowPremiumModal(true)
                 }
               />
             </div>

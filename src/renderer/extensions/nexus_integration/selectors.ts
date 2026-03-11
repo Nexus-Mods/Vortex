@@ -4,8 +4,8 @@ import type { IState } from "../../types/IState";
 
 import { getSafe } from "../../util/storeHelper";
 import { truthy } from "../../util/util";
-import { nexusGames } from "./util";
 import { hasConfidentialWithNexus, hasPersistentWithNexus } from "./guards";
+import { nexusGames } from "./util";
 
 const downloadFiles = (state: IState) => state.persistent.downloads.files;
 
@@ -28,6 +28,23 @@ export const isPremium = (state: IState) => {
     return false;
   }
   return state.persistent.nexus.userInfo?.isPremium ?? false;
+};
+
+/**
+ * Returns true only when we know for certain the user is not premium.
+ * While userInfo is still loading, assumes premium to avoid flashing
+ * "Go Premium" ads at paying customers on startup.
+ * Use this for ad/banner visibility only — not for feature gating.
+ */
+export const shouldShowPremiumAd = (state: IState) => {
+  if (!hasPersistentWithNexus(state.persistent)) {
+    return false;
+  }
+  const info = state.persistent.nexus.userInfo;
+  if (info === undefined) {
+    return false;
+  }
+  return !info.isPremium && !info.isSupporter;
 };
 
 export const isLoggedIn = (state: IState) => {

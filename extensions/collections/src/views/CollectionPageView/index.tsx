@@ -69,6 +69,7 @@ export interface ICollectionPageProps {
 
 interface IConnectedProps {
   userInfo: any;
+  showPremiumAd: boolean;
   votedSuccess: RatingOptions;
   activity: { [id: string]: string };
   language: string;
@@ -674,7 +675,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
         <FlexLayout.Fixed>
           <CollectionProgress
             t={t}
-            isPremium={userInfo?.isPremium}
+            isPremium={!this.props.showPremiumAd}
             mods={modsEx}
             profile={profile}
             downloads={downloads}
@@ -1460,6 +1461,7 @@ function mapStateToProps(
 
   return {
     userInfo: nexus.userInfo,
+    showPremiumAd: selectors.shouldShowPremiumAd(state),
     votedSuccess,
     activity: state.session.base.activity,
     language: state.settings.interface.language,
