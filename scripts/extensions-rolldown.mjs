@@ -58,6 +58,14 @@ export function createConfig(input, output, customPlugins = []) {
     external: externals,
     platform: "node",
     plugins: customPlugins,
+    onLog: (level, log, defaultHandler) => {
+      if (log.code === "UNRESOLVED_IMPORT") {
+        defaultHandler("error", log);
+        return;
+      }
+
+      defaultHandler(level, log);
+    },
     output: {
       file: output,
       format: "commonjs",
