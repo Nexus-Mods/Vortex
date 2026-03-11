@@ -125,9 +125,9 @@ catalog:
   cross-env: ^10.1.0
   cross-fetch: ^3.1.5
   csstype: 3.2.3
+  cytoscape: ^3.6.0
   cytoscape-cose-bilkent: ^4.1.0
   cytoscape-edgehandles: ^3.5.1
-  cytoscape: ^3.6.0
   d3: ^5.14.1
   date-fns: ^2.8.0
   dayjs: ^1.11.10
@@ -136,19 +136,19 @@ catalog:
   dnd-core: ^9.4.0
   draggabilly: ^2.2.0
   drivelist: git+https://github.com/TanninOne/drivelist#720d1890db11482ec05fc0f6aa176cfa6e6844dd
+  electron: 37.4.0
   electron-builder: 24.13.3
   electron-context-menu: ^3.1.1
   electron-devtools-installer: ^3.2.0
   electron-redux: git+https://github.com/TanninOne/electron-redux#66bbd9d389579806e8c4ebd87bd513a668cc64a8
   electron-updater: ^4.2.0
-  electron: 37.4.0
   encoding-down: ^6.3.0
-  enzyme-adapter-react-16: ^1.15.1
   enzyme: ^3.10.0
+  enzyme-adapter-react-16: ^1.15.1
+  eslint: 9.39.1
   eslint-config-prettier: 10.1.8
   eslint-plugin-better-tailwindcss: ^4.0.2
   eslint-plugin-perfectionist: ^5.4.0
-  eslint: 9.39.1
   esptk: git+https://github.com/Nexus-Mods/node-esptk#6b8900658d66438fe92ac55bc182a45404e8bf3f
   exe-version: git+https://github.com/Nexus-Mods/node-exe-version#eded60fc0a0f3c234e1d586d2eb9952401945406
   feedparser: ^2.2.9
@@ -161,16 +161,16 @@ catalog:
   globals: ^17.3.0
   graphlib: ^2.1.7
   happy-dom: ^20.8.3
-  i18next-fs-backend: ^2.1.1
   i18next: ^19.0.1
+  i18next-fs-backend: ^2.1.1
   iconv-lite: ^0.5.0
   immutability-helper: ^3.0.1
   ini: ^6.0.0
   interweave: ^12.9.0
   is-admin: ^3.0.0
+  jest: ^29.7.0
   jest-cli: ^29.7.0
   jest-environment-jsdom: ^29.7.0
-  jest: ^29.7.0
   js-yaml: ^4.1.0
   json-loader: ^0.5.7
   json-socket: git+https://github.com/foi/node-json-socket#d56c8e2938fa4284c4001b815d9b6e4a92b5c07b
@@ -200,11 +200,12 @@ catalog:
   ps-list: ^7.2.0
   re-reselect: 4.0.1
   re-resizable: ^6.9.9
+  react: ^16.12.0
   react-bootstrap: ^0.33.0
   react-color: ^2.17.0
   react-datepicker: ^3.3.0
-  react-dnd-html5-backend: ^14.0.5
   react-dnd: ^14.0.5
+  react-dnd-html5-backend: ^14.0.5
   react-dom: ^16.12.0
   react-hot-toast: ^2.6.0
   react-i18next: ^11.11.0
@@ -214,15 +215,14 @@ catalog:
   react-resize-detector: ^4.2.1
   react-select: ^1.2.1
   react-shallow-testutils: ^3.0.1
-  react-sortable-tree-theme-file-explorer: ^2.0.0
   react-sortable-tree: ^2.6.2
-  react: ^16.12.0
+  react-sortable-tree-theme-file-explorer: ^2.0.0
   recharts: ^1.8.5
+  redux: ^4.0.4
   redux-act: ^1.8.0
   redux-batched-actions: ^0.5.0
   redux-freeze: 0.1.7
   redux-thunk: ^2.3.0
-  redux: ^4.0.4
   relaxed-json: ^1.0.3
   reselect: ^4.1.7
   resolve: ^1.12.0
@@ -233,6 +233,7 @@ catalog:
   shortid: 2.2.17
   simple-git: ^3.7.1
   simple-vdf: git+https://github.com/Nexus-Mods/vdf-parser#df279ff89cb480597544d3029e12f90cb8c79464
+  source-map-loader: ^5.0.0
   source-map-support: ^0.5.16
   string-template: ^1.0.0
   tailwindcss: ^4.1.17
@@ -243,16 +244,16 @@ catalog:
   ts-v-gen: ^1.0.1
   tsdown: 0.21.0-beta.1
   turbowalk: git+https://github.com/Nexus-Mods/node-turbowalk#3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
-  typescript-eslint: 8.47.0
   typescript: 5.9.3
+  typescript-eslint: 8.47.0
   universal-analytics: ^0.4.23
   uuid: ^3.3.3
   vitest: ^4.0.18
   vortex-parse-ini: git+https://github.com/Nexus-Mods/vortex-parse-ini#2425af99d1cff2331ccf3aacfa892c314e99e18d
   vortexmt: git+https://github.com/Nexus-Mods/node-vortexmt#5251ea012ce856742aeaf73a583073497aff773a
+  webpack: ^5.94.0
   webpack-cli: ^5.1.4
   webpack-node-externals: ^3.0.0
-  webpack: ^5.94.0
   which: ^1.3.1
   wholocks: git+https://github.com/Nexus-Mods/node-wholocks#28da3bcf312312e577d7c636799a59011998b4af
   winapi-bindings: git+https://github.com/Nexus-Mods/node-winapi-bindings#faa92afe3320731e98abc15b3f5f19c60896d7c1

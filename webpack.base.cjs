@@ -52,6 +52,12 @@ function createConfig(entry, target, tsconfig) {
         module: {
             rules: [
                 {
+                    test: /\.[cm]?js$/,
+                    include: path.resolve(__dirname, "src", "shared", "dist"),
+                    enforce: "pre",
+                    use: ["source-map-loader"],
+                },
+                {
                     test: /\.tsx?$/,
                     loader: "ts-loader",
                     exclude: /node_modules/,
@@ -59,6 +65,9 @@ function createConfig(entry, target, tsconfig) {
                         configFile: tsconfig,
                         compilerOptions: {
                             composite: false,
+                            sourceMap: true,
+                            inlineSourceMap: false,
+                            inlineSources: false,
                         },
                     },
                 },
@@ -67,9 +76,9 @@ function createConfig(entry, target, tsconfig) {
         optimization: {
             minimizer: mode === "development" ? [] : [optimizer],
         },
-        // NOTE(erri120): can't use eval source maps due to CSP
-        devtool:
-            mode === "development" ? "cheap-module-source-map" : "source-map",
+        // NOTE(erri120): can't use eval source maps due to CSP.
+        // Use full source-map for accurate breakpoint support in VSCode.
+        devtool: "source-map",
         externals: [
             nodeExternals({
                 allowlist: [/@vortex\/shared/],
