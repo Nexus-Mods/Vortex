@@ -148,7 +148,7 @@ function merge(filePath, mergeDir) {
 }
 
 function main(context) {
-  context.requireExtension('modtype-dragonage');
+  context.requireExtension('modtype-dazip');
   context.registerGame({
     id: 'dragonage',
     name: 'Dragon Age: Origins',
