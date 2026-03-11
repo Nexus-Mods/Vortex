@@ -17,9 +17,6 @@ import { testSupported, installScriptExtender } from "./installer";
 import { IGameSupport } from "./types";
 
 import * as nexusModsDownloader from "./nexusModsDownloader";
-const nxmDownloader: typeof nexusModsDownloader = util.lazyRequire(() =>
-  require("./nexusModsDownloader"),
-);
 
 async function onCheckModVersion(
   api: types.IExtensionApi,
@@ -183,7 +180,7 @@ async function downloadScriptExtender(
   gameId: string,
 ): Promise<void> {
   if (!!gameSupport?.nexusMods)
-    return nxmDownloader.downloadScriptExtender(api, gameSupport);
+    return nexusModsDownloader.downloadScriptExtender(api, gameSupport);
   else if (!!gameSupport?.gitHubAPIUrl)
     return gitHubDownloader.downloadScriptExtender(api, gameSupport);
   else return silverlockDownloader.notifyNotInstalled(gameSupport, api);

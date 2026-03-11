@@ -55,6 +55,9 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
       // bit of a hack because we got componentWillReceiveProps trigger twice with the same
       // props which causes an error further down the line as we try to update the graph
       this.mLastProps = newProps;
+      if (this.mGraph === undefined) {
+        return;
+      }
 
       const newConnections = [];
 

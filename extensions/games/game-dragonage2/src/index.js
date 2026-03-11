@@ -42,7 +42,7 @@ function prepareForModding() {
 }
 
 function main(context) {
-  context.requireExtension('modtype-dragonage');
+  context.requireExtension('modtype-dazip');
   context.registerGame({
     id: 'dragonage2',
     name: 'Dragon Age 2',

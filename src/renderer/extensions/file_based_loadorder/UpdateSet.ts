@@ -172,7 +172,7 @@ export default class UpdateSet {
       // This is an external entry, we need to find it in the external entries.
       const extEntry = Object.entries(this.mExternalEntries).find((entry) => {
         const [eId, loEntries] = entry;
-        return loEntries.some((l) => l.id === lookUpEntry.id);
+        return Array.isArray(loEntries) && loEntries.some((l) => l.id === lookUpEntry.id);
       });
       if (extEntry !== undefined) {
         return { entries: this.mExternalEntries[extEntry[0]] };
@@ -180,7 +180,7 @@ export default class UpdateSet {
     } else {
       const numericId = Object.entries(this.mModEntries).find((entry) => {
         const [nId, loEntries] = entry;
-        return loEntries.some(
+        return Array.isArray(loEntries) && loEntries.some(
           (l) => l.modId === lookUpEntry.modId || l.id === lookUpEntry.id,
         );
       })?.[0];
