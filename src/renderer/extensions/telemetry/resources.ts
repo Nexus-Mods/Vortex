@@ -3,7 +3,7 @@ import {
   ATTR_SERVICE_NAME,
   ATTR_SERVICE_VERSION,
 } from "@opentelemetry/semantic-conventions";
-import { VORTEX_VERSION } from "@vortex/shared";
+import { ApplicationData } from "@vortex/shared";
 import { SHARED_TELEMETRY_ATTRIBUTES } from "@vortex/shared/telemetry";
 import os from "os";
 
@@ -15,7 +15,7 @@ export const createRendererResource = (): Resource => {
   return new Resource({
     ...SHARED_TELEMETRY_ATTRIBUTES,
     [ATTR_SERVICE_NAME]: "vortex",
-    [ATTR_SERVICE_VERSION]: VORTEX_VERSION,
+    [ATTR_SERVICE_VERSION]: ApplicationData.version ?? "0.0.0",
     "process.type": "renderer",
     "process.pid": process.pid,
     "os.type": os.type(),

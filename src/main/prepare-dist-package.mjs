@@ -166,7 +166,7 @@ async function createMinimalPackageJson(workspacePackageMap, catalog) {
 
   const minimal = {
     name: "Vortex",
-    version: "2.0.0",
+    version: process.env.VORTEX_VERSION || "1.0.0",
     main: "main.js",
     author: "Black Tree Gaming Ltd.",
     description:

@@ -105,7 +105,7 @@ Stable across machines; version-scoped so different releases produce different f
 | Attribute | Value |
 |-----------|-------|
 | `service.name` | `"vortex"` |
-| `service.version` | `VORTEX_VERSION` |
+| `service.version` | `app.getVersion()` |
 | `process.type` | `"main"`, `"renderer"`, or `"report"` |
 | `process.pid` | Runtime PID |
 | `os.type` / `os.version` | OS info |
