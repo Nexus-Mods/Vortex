@@ -18,7 +18,7 @@ import { calculateCollectionSize, isRelevant } from "../../util/util";
 
 export interface ICollectionProgressProps {
   t: TFunction;
-  isPremium: boolean;
+  showPremiumAd: boolean;
   mods: { [modId: string]: IModEx };
   downloads: { [dlId: string]: types.IDownload };
   profile: types.IProfile;
@@ -55,7 +55,7 @@ class CollectionProgress extends ComponentEx<
       t,
       activity,
       downloads,
-      isPremium,
+      showPremiumAd,
       mods,
       profile,
       totalSize,
@@ -157,11 +157,11 @@ class CollectionProgress extends ComponentEx<
             </FlexLayout>
           </Panel>
         </FlexLayout.Flex>
-        {isPremium ? null : (
+        {showPremiumAd ? (
           <FlexLayout.Fixed className="collection-banner-container">
             <CollectionBanner t={t} totalSize={totalSize} />
           </FlexLayout.Fixed>
-        )}
+        ) : null}
       </FlexLayout>
     );
   }
