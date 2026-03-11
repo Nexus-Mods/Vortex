@@ -21,7 +21,7 @@ import {} from "uuid";
 import type { IErrorOptions, IExtensionApi } from "../types/api";
 import type { IError } from "../types/IError";
 
-import { isTelemetryEnabled } from "../extensions/telemetry/selectors";
+import { isTelemetryEnabled } from "../telemetry/selectors";
 import { getApplication } from "./application";
 import { COMPANY_ID } from "./constants";
 import { UserCanceled } from "./CustomErrors";

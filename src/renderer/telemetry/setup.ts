@@ -33,7 +33,11 @@ class ForwardingSpanProcessor implements SpanProcessor {
   }
 }
 
-const init = async (): Promise<boolean> => {
+/**
+ * Create and register the renderer-process TracerProvider.
+ * Call once early in renderer startup, before extensions load.
+ */
+export const createRendererTelemetryProvider = async (): Promise<void> => {
   const version = await window.api.app.getVersion();
   const resource = createRendererResource(version);
 
@@ -47,8 +51,4 @@ const init = async (): Promise<boolean> => {
   });
 
   patchBluebirdContext();
-
-  return true;
-}
-
-export default init;
+};
