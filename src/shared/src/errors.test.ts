@@ -18,9 +18,9 @@ const VERSION = "1.2.3";
 
 describe("sanitizeFramePath", () => {
   describe("src/ anchor", () => {
-    it("strips Windows absolute prefix before src/", () => {
+    it("strips Windows absolute prefix before src/ and normalizes separators", () => {
       expect(sanitizeFramePath(`at f (D:\\Dev\\Vortex\\src\\foo.ts:1:2)`)).toBe(
-        `at f (src\\foo.ts:1:2)`,
+        `at f (src/foo.ts:1:2)`,
       );
     });
 
@@ -38,12 +38,12 @@ describe("sanitizeFramePath", () => {
   });
 
   describe("node_modules/ anchor", () => {
-    it("strips Windows prefix before node_modules/", () => {
+    it("strips Windows prefix before node_modules/ and normalizes separators", () => {
       expect(
         sanitizeFramePath(
           `at f (D:\\Dev\\Vortex\\node_modules\\lib\\index.js:5:10)`,
         ),
-      ).toBe(`at f (node_modules\\lib\\index.js:5:10)`);
+      ).toBe(`at f (node_modules/lib/index.js:5:10)`);
     });
 
     it("strips Unix prefix before node_modules/", () => {
@@ -56,20 +56,20 @@ describe("sanitizeFramePath", () => {
   });
 
   describe("app.asar anchor", () => {
-    it("strips Windows prefix before app.asar/", () => {
+    it("strips Windows prefix before app.asar/ and normalizes separators", () => {
       expect(
         sanitizeFramePath(
           `at f (C:\\Program Files\\Vortex\\resources\\app.asar\\renderer.js:1:2)`,
         ),
-      ).toBe(`at f (app.asar\\renderer.js:1:2)`);
+      ).toBe(`at f (app.asar/renderer.js:1:2)`);
     });
 
-    it("strips Windows prefix before app.asar.unpacked/", () => {
+    it("strips Windows prefix before app.asar.unpacked/ and normalizes separators", () => {
       expect(
         sanitizeFramePath(
           `at f (D:\\Program Files\\Vortex\\resources\\app.asar.unpacked\\bundledPlugins\\x\\index.js:1:2)`,
         ),
-      ).toBe(`at f (app.asar.unpacked\\bundledPlugins\\x\\index.js:1:2)`);
+      ).toBe(`at f (app.asar.unpacked/bundledPlugins/x/index.js:1:2)`);
     });
 
     it("strips Unix prefix before app.asar/", () => {
@@ -82,12 +82,12 @@ describe("sanitizeFramePath", () => {
   });
 
   describe("plugins/ anchor", () => {
-    it("strips Windows AppData prefix before plugins/", () => {
+    it("strips Windows AppData prefix before plugins/ and normalizes separators", () => {
       expect(
         sanitizeFramePath(
           `at f (C:\\Users\\user\\AppData\\Roaming\\Vortex\\plugins\\x\\index.js:1:2)`,
         ),
-      ).toBe(`at f (plugins\\x\\index.js:1:2)`);
+      ).toBe(`at f (plugins/x/index.js:1:2)`);
     });
 
     it("strips Unix prefix before plugins/", () => {
@@ -106,15 +106,21 @@ describe("sanitizeFramePath", () => {
     });
   });
 
-  describe("paths with no known anchor — left unchanged", () => {
+  describe("paths with no known anchor — separators still normalized", () => {
     it("does not strip a path with no recognised anchor segment", () => {
       const frame = `at f (/some/unknown/path/foo.ts:1:2)`;
       expect(sanitizeFramePath(frame)).toBe(frame);
     });
+
+    it("normalizes backslashes even when no prefix is stripped", () => {
+      expect(sanitizeFramePath(`at f (some\\relative\\path.ts:1:2)`)).toBe(
+        `at f (some/relative/path.ts:1:2)`,
+      );
+    });
   });
 
   describe("already-clean frames — left unchanged", () => {
-    it("does not modify a frame already starting at src/", () => {
+    it("does not modify a frame already starting at src/ with forward slashes", () => {
       const frame = `at f (src/foo.ts:1:2)`;
       expect(sanitizeFramePath(frame)).toBe(frame);
     });
@@ -212,19 +218,19 @@ describe("computeErrorFingerprint", () => {
     });
   });
 
-  describe("install-path stripping feeds through correctly", () => {
-    it("hashes a Windows path and its stripped equivalent identically", () => {
+  describe("install-path stripping and normalization feed through correctly", () => {
+    it("Windows and Unix paths to the same file produce identical hashes", () => {
       const windows = stack(`at f (D:\\Dev\\Vortex\\src\\foo.ts:1:2)`);
-      const clean = stack(`at f (src\\foo.ts:1:2)`);
+      const unix = stack(`at f (/home/user/Vortex/src/foo.ts:1:2)`);
       expect(computeErrorFingerprint(windows, VERSION)).toBe(
-        computeErrorFingerprint(clean, VERSION),
+        computeErrorFingerprint(unix, VERSION),
       );
     });
 
-    it("hashes a Unix path and its stripped equivalent identically", () => {
-      const unix = stack(`at f (/home/user/Vortex/src/foo.ts:1:2)`);
+    it("Windows backslash path and clean forward-slash path produce identical hashes", () => {
+      const windows = stack(`at f (D:\\Dev\\Vortex\\src\\foo.ts:1:2)`);
       const clean = stack(`at f (src/foo.ts:1:2)`);
-      expect(computeErrorFingerprint(unix, VERSION)).toBe(
+      expect(computeErrorFingerprint(windows, VERSION)).toBe(
         computeErrorFingerprint(clean, VERSION),
       );
     });
