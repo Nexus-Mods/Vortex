@@ -3,6 +3,7 @@ import {
   ATTR_SERVICE_NAME,
   ATTR_SERVICE_VERSION,
 } from "@opentelemetry/semantic-conventions";
+import { ApplicationData } from "@vortex/shared";
 import { SHARED_TELEMETRY_ATTRIBUTES } from "@vortex/shared/telemetry";
 import os from "os";
 
@@ -10,11 +11,11 @@ import os from "os";
  * Create the standard Vortex OTel Resource for the renderer process.
  * Mirrors the main-process createVortexResource but runs in the renderer.
  */
-export const createRendererResource = (version: string): Resource => {
+export const createRendererResource = (): Resource => {
   return new Resource({
     ...SHARED_TELEMETRY_ATTRIBUTES,
     [ATTR_SERVICE_NAME]: "vortex",
-    [ATTR_SERVICE_VERSION]: version,
+    [ATTR_SERVICE_VERSION]: ApplicationData.version ?? "0.0.0",
     "process.type": "renderer",
     "process.pid": process.pid,
     "os.type": os.type(),
