@@ -7,13 +7,13 @@ import { PREMIUM_PATH } from "../../../extensions/nexus_integration/constants";
 import { Button } from "../../../ui/components/button/Button";
 import { Typography } from "../../../ui/components/typography/Typography";
 import opn from "../../../util/opn";
-import { isPremium as isPremiumSelector } from "../../../util/selectors";
+import { shouldShowPremiumAd } from "../../../util/selectors";
 import { Campaign, Content, nexusModsURL, Section } from "../../../util/util";
 
 export const PremiumIndicator: FC = () => {
   const { t } = useTranslation();
 
-  const isPremium = useSelector(isPremiumSelector);
+  const showAd = useSelector(shouldShowPremiumAd);
 
   const handleGoPremium = useCallback(() => {
     opn(
@@ -25,7 +25,7 @@ export const PremiumIndicator: FC = () => {
     ).catch(() => undefined);
   }, []);
 
-  if (isPremium) {
+  if (!showAd) {
     return (
       <Typography appearance="moderate" typographyType="title-sm">
         {t("Premium")}

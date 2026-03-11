@@ -2357,29 +2357,17 @@ function init(context: IExtensionContextExt): boolean {
     },
     {
       props: {
-        isPremium: (state) =>
-          getSafe(
-            state,
-            ["persistent", "nexus", "userInfo", "isPremium"],
-            false,
-          ),
+        showAd: (state) => sel.shouldShowPremiumAd(state),
       },
-      condition: (props: any): boolean => !props.isPremium,
+      condition: (props: any): boolean => props.showAd,
     },
   );
 
   context.registerBanner("main-toolbar", toolbarBanner(context.api.translate), {
     props: {
-      isPremium: (state) =>
-        getSafe(state, ["persistent", "nexus", "userInfo", "isPremium"], false),
-      isSupporter: (state) =>
-        getSafe(
-          state,
-          ["persistent", "nexus", "userInfo", "isSupporter"],
-          false,
-        ),
+      showAd: (state) => sel.shouldShowPremiumAd(state),
     },
-    condition: (props: any): boolean => !props.isPremium && !props.isSupporter,
+    condition: (props: any): boolean => props.showAd,
   });
 
   context.registerModSource(
@@ -2439,17 +2427,7 @@ function init(context: IExtensionContextExt): boolean {
     2,
     200,
     GoPremiumDashlet,
-    (state: IState) =>
-      getSafe(
-        state,
-        ["persistent", "nexus", "userInfo", "isPremium"],
-        undefined,
-      ) !== true &&
-      getSafe(
-        state,
-        ["persistent", "nexus", "userInfo", "isSupporter"],
-        undefined,
-      ) !== true,
+    (state: IState) => sel.shouldShowPremiumAd(state),
     undefined,
     {
       fixed: false,
