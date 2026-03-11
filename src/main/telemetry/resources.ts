@@ -3,8 +3,8 @@ import {
   ATTR_SERVICE_NAME,
   ATTR_SERVICE_VERSION,
 } from "@opentelemetry/semantic-conventions";
-import { VORTEX_VERSION } from "@vortex/shared";
 import { SHARED_TELEMETRY_ATTRIBUTES } from "@vortex/shared/telemetry";
+import { app } from "electron";
 import os from "os";
 
 /**
@@ -15,7 +15,7 @@ export const createVortexResource = (processType: string): Resource => {
   return new Resource({
     ...SHARED_TELEMETRY_ATTRIBUTES,
     [ATTR_SERVICE_NAME]: "vortex",
-    [ATTR_SERVICE_VERSION]: VORTEX_VERSION,
+    [ATTR_SERVICE_VERSION]: app.getVersion(),
     "process.type": processType,
     "process.pid": process.pid,
     "os.type": os.type(),

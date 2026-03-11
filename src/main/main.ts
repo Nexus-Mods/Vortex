@@ -22,7 +22,7 @@ if (process.send) {
   });
 }
 
-import { DEBUG_PORT, HTTP_HEADER_SIZE, VORTEX_VERSION } from "@vortex/shared";
+import { DEBUG_PORT, HTTP_HEADER_SIZE } from "@vortex/shared";
 import { app, dialog } from "electron";
 import i18next from "i18next";
 import child_process from "node:child_process";
@@ -43,7 +43,6 @@ import { initTelemetryIpcHandler } from "./telemetry/ipcHandler";
 import { createMainTelemetryProvider } from "./telemetry/setup";
 
 process.env["UV_THREADPOOL_SIZE"] = (os.cpus().length * 2).toString();
-process.env["VORTEX_VERSION"] = VORTEX_VERSION;
 
 const earlyErrHandler = (error: Error) => {
   if (error.stack.includes("[as dlopen]")) {
