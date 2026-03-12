@@ -22,7 +22,7 @@ if (process.send) {
   });
 }
 
-import { DEBUG_PORT, HTTP_HEADER_SIZE } from "@vortex/shared";
+import { DEBUG_PORT, getErrorMessageOrDefault, HTTP_HEADER_SIZE } from "@vortex/shared";
 import { app, dialog } from "electron";
 import i18next from "i18next";
 import child_process from "node:child_process";
@@ -38,6 +38,7 @@ import { terminate } from "./errorHandling";
 import { sendReportFile } from "./errorReporting";
 import getVortexPath from "./getVortexPath";
 import { init as initIpcHandlers } from "./ipcHandlers";
+import { log } from "./logging";
 import StylesheetCompiler from "./stylesheetCompiler";
 import { initTelemetryIpcHandler } from "./telemetry/ipcHandler";
 import { createMainTelemetryProvider } from "./telemetry/setup";
@@ -141,7 +142,14 @@ async function main(): Promise<void> {
   // important: The following has to be synchronous!
   const mainArgs = parseCommandline(process.argv, false);
   if (mainArgs.report) {
-    return sendReportFile(mainArgs.report).then(() => app.quit());
+    return sendReportFile(mainArgs.report)
+      .catch((err: unknown) => {
+        log("warn", "failed to send crash report", {
+          error: getErrorMessageOrDefault(err),
+        });
+      })
+      .then(() => app.quit());
+  }
   }
 
   const NODE_OPTIONS = process.env.NODE_OPTIONS || "";

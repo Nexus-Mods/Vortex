@@ -249,7 +249,7 @@ export function makeQueue<T>() {
  * @param args
  */
 export function spawnSelf(args: string[]) {
-  if (process.execPath.endsWith("electron.exe")) {
+  if (process.execPath.toLowerCase().endsWith("electron.exe")) {
     // development version
     args = [getVortexPath("package")].concat(args);
   }

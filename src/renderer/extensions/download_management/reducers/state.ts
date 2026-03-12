@@ -64,7 +64,7 @@ export const stateReducer: IReducerSpec = {
               "'. " +
               "This is a bug in the calling code, please report it.",
           },
-          {},
+          undefined,
         );
         return state;
       }

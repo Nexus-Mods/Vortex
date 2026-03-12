@@ -201,7 +201,7 @@ let store: ThunkStore<IState>;
 
 const terminateFromError = (error: any, allowReport?: boolean) => {
   log("warn", "about to report an error", { stack: new Error().stack });
-  terminate(toError(error), allowReport);
+  terminate(toError(error), store?.getState(), allowReport);
 };
 
 function errorHandler(evt: any) {

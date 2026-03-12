@@ -354,7 +354,7 @@ function unknownErrorRetry(
           path: filePath,
         },
         {},
-        {},
+        undefined,
       );
       return PromiseBB.reject(new UserCanceled());
     }

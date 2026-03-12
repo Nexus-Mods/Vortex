@@ -4321,8 +4321,8 @@ class InstallManager {
                 `MD5 checksum: ${hashResult.md5sum}\n`,
             },
             {},
-            ["installer"],
             api.store.getState(),
+            "installer",
           ),
         );
     const showUnsupportedDialog = () =>
