@@ -33,6 +33,7 @@ export default defineConfig([
       ".pnpm-store",
       "./node_modules/",
       "./dist",
+      "./packages/vortex-api",
     ],
   },
 
