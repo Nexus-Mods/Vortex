@@ -53,6 +53,7 @@ function formatLogLevel(level: string): string {
   }
 }
 
+const LOG_MAX_SIZE = 1024 * 1024 * 10; // 10 MB
 const timestamp = () => new Date().toISOString();
 const fileFormatter = (options: unknown) =>
   customFormatter(options as FormatOptions, false);
@@ -64,7 +65,7 @@ function createFileTransport(basePath: string): winston.FileTransportInstance {
     filename: path.join(basePath, "vortex.log"),
     json: false,
     level: "debug",
-    maxsize: 1024 * 1024,
+    maxsize: LOG_MAX_SIZE,
     maxFiles: 5,
     tailable: true,
     timestamp: timestamp,
@@ -136,10 +137,18 @@ export function setupLogging(basePath: string, useConsole: boolean): void {
 
 export function changeLogPath(newBasePath: string): void {
   const logger = LoggerSingleton.instance();
-  const fileTransport = createFileTransport(newBasePath);
 
   logger.remove(winston.transports.File);
-  logger.add(fileTransport);
+  logger.add(winston.transports.File, {
+    filename: path.join(newBasePath, "vortex.log"),
+    json: false,
+    level: "debug",
+    maxsize: LOG_MAX_SIZE,
+    maxFiles: 5,
+    tailable: true,
+    timestamp: timestamp,
+    formatter: fileFormatter,
+  });
 }
 
 function sanitize(message: string): string {

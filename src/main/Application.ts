@@ -21,7 +21,7 @@ import contextMenu from "electron-context-menu";
 import isAdmin from "is-admin";
 import * as _ from "lodash";
 import { mkdirSync, statSync } from "node:fs";
-import { writeFile, rm, stat } from "node:fs/promises";
+import { readFile, writeFile, rm, stat } from "node:fs/promises";
 import path from "node:path";
 import permissions from "permissions";
 import * as semver from "semver";
@@ -770,6 +770,55 @@ class Application {
     }
   }
 
+  private async importBackup(
+    persistor: LevelPersist,
+    backupPath: string,
+    replace: boolean,
+  ): Promise<void> {
+    log("info", "importing state backup", { backupPath, replace });
+
+    const backupData = JSON.parse(
+      await readFile(backupPath, "utf-8"),
+    ) as Record<string, unknown>;
+
+    for (const [hive, hiveData] of Object.entries(backupData)) {
+      const sub = new SubPersistor(persistor, hive);
+
+      if (replace) {
+        const existingKeys = await sub.getAllKeys();
+        await Promise.all(existingKeys.map((key) => sub.removeItem(key)));
+      }
+
+      const leaves = this.flattenState(hiveData, []);
+      await Promise.all(
+        leaves.map(({ key, value }) =>
+          sub.setItem(key, JSON.stringify(value)),
+        ),
+      );
+    }
+
+    log("info", "state backup imported");
+  }
+
+  private flattenState(
+    obj: unknown,
+    prefix: string[],
+  ): Array<{ key: string[]; value: unknown }> {
+    if (obj === null || obj === undefined || typeof obj !== "object") {
+      return [{ key: prefix, value: obj }];
+    }
+
+    if (Array.isArray(obj)) {
+      return [{ key: prefix, value: obj }];
+    }
+
+    const result: Array<{ key: string[]; value: unknown }> = [];
+    for (const [key, value] of Object.entries(obj)) {
+      result.push(...this.flattenState(value, [...prefix, key]));
+    }
+    return result;
+  }
+
   private createTray(): void {
     // Pass null api since ExtensionManager is now renderer-only
     //  and TrayIcon used to receive the api from there.
@@ -886,7 +935,14 @@ class Application {
         finalPersistor = newLevelPersistor;
       }
 
-      // 5. Initialize the IPC-based persistence system
+      // 5. Restore or merge state backup if requested
+      if (this.mArgs.restore !== undefined) {
+        await this.importBackup(finalPersistor, this.mArgs.restore, true);
+      } else if (this.mArgs.merge !== undefined) {
+        await this.importBackup(finalPersistor, this.mArgs.merge, false);
+      }
+
+      // 6. Initialize the IPC-based persistence system
       log("debug", "initializing main persistence system");
       initMainPersistence(finalPersistor);
 
