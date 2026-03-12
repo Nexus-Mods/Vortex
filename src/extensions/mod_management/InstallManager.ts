@@ -1657,7 +1657,10 @@ class InstallManager {
               .then(() => {
                 // If no choices were provided (e.g. manual reinstall), preserve the
                 // existing mod's installerChoices so the user doesn't have to redo them.
-                if (existingMod !== undefined && fullInfo.choices === undefined) {
+                if (
+                  existingMod !== undefined &&
+                  fullInfo.choices === undefined
+                ) {
                   const prevChoices = existingMod.attributes?.installerChoices;
                   if (prevChoices !== undefined) {
                     fullInfo.choices = prevChoices;

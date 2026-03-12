@@ -645,10 +645,9 @@ function prettifyNodeErrorMessageInner(
     };
   } else if (err.code === "EPERM") {
     const filePath = err.path || err.filename || undefined;
-    const firstLine =
-      filePath
-        ? 'Vortex needs to access "{{filePath}}" but it\'s write protected.\n'
-        : "Vortex needs to access a file that is write protected.\n";
+    const firstLine = filePath
+      ? 'Vortex needs to access "{{filePath}}" but it\'s write protected.\n'
+      : "Vortex needs to access a file that is write protected.\n";
     return {
       message:
         firstLine +
