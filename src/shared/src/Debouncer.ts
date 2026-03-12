@@ -72,7 +72,7 @@ export class GenericDebouncer<
    *             and the function actually gets invoked, only the last set of
    *             parameters will be used
    */
-  public schedule(callback?: (err: Error) => void, ...args: any[]): void {
+  public schedule(callback?: Callback, ...args: any[]): void {
     if (callback !== undefined && callback !== null) {
       this.mCallbacks.push(callback);
     }
@@ -110,7 +110,7 @@ export class GenericDebouncer<
    *
    * @memberOf Debouncer
    */
-  public runNow(callback: (err: Error) => void, ...args: any[]): void {
+  public runNow(callback: Callback, ...args: any[]): void {
     if (this.mTimer !== undefined) {
       this.clear();
     }
@@ -160,7 +160,10 @@ export class GenericDebouncer<
   }
 
   public clear(): void {
-    this.#clearTimeoutFunc(this.mTimer);
+    if (this.mTimer) {
+      this.#clearTimeoutFunc(this.mTimer);
+    }
+
     this.mTimer = undefined;
   }
 
@@ -178,9 +181,13 @@ export class GenericDebouncer<
       prom = unknownToError(err);
     }
 
-    if (prom?.["then"] !== undefined) {
+    if (prom instanceof Error) {
+      this.invokeCallbacks(callbacks, prom);
+    } else {
       this.mRunning = true;
-      prom["then"](() => this.invokeCallbacks(callbacks, null))
+      const nativePromise = Promise.resolve(prom);
+      nativePromise
+        .then(() => this.invokeCallbacks(callbacks, null))
         .catch((err: Error) => this.invokeCallbacks(callbacks, err))
         .finally(() => {
           this.mRunning = false;
@@ -192,8 +199,6 @@ export class GenericDebouncer<
             this.reschedule();
           }
         });
-    } else {
-      this.invokeCallbacks(callbacks, prom as Error);
     }
 
     // in the default case the "run" marks the end of the timer,

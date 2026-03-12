@@ -1,6 +1,6 @@
 {
   "$schema": "https://www.schemastore.org/tsconfig.json",
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../tsconfig.strict.json",
   "include": ["**/*", "../../typings.custom/promise.d.ts"],
   "compilerOptions": {
     "composite": true,
