@@ -22,7 +22,11 @@ if (process.send) {
   });
 }
 
-import { DEBUG_PORT, getErrorMessageOrDefault, HTTP_HEADER_SIZE } from "@vortex/shared";
+import {
+  DEBUG_PORT,
+  getErrorMessageOrDefault,
+  HTTP_HEADER_SIZE,
+} from "@vortex/shared";
 import { app, dialog } from "electron";
 import i18next from "i18next";
 import child_process from "node:child_process";
@@ -149,7 +153,6 @@ async function main(): Promise<void> {
         });
       })
       .then(() => app.quit());
-  }
   }
 
   const NODE_OPTIONS = process.env.NODE_OPTIONS || "";
