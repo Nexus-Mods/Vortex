@@ -59,6 +59,8 @@
     "glob": "catalog:",
     "globals": "catalog:",
     "minimist": "catalog:",
+    "oxlint": "catalog:",
+    "oxlint-tsgolint": "catalog:",
     "p-limit": "catalog:",
     "prettier": "catalog:",
     "pretty-quick": "catalog:",
