@@ -112,6 +112,7 @@ import { persistDiffMiddleware } from "./store/persistDiffMiddleware";
 import { reduxLogger } from "./store/reduxLogger";
 import { reduxSanity, type StateError } from "./store/reduxSanity";
 import StyleManager from "./StyleManager";
+import { createRendererTelemetryProvider } from "./telemetry/setup";
 import { relaunch } from "./util/commandLine";
 import { UserCanceled } from "./util/CustomErrors";
 import { setOutdated, terminate, toError } from "./util/errorHandling";
@@ -460,6 +461,8 @@ function applyAppMetadata(metadata: AppInitMetadata): void {
 }
 
 async function init(): Promise<ExtensionManager | null> {
+  await createRendererTelemetryProvider();
+
   await StyleManager.renderDefault();
 
   // Register app:init listener BEFORE async hydration to avoid race condition.
