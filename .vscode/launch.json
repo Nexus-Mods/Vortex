@@ -55,6 +55,16 @@
       },
       "envFile": "${workspaceFolder}/.env",
       "console": "integratedTerminal",
+      "sourceMaps": true,
+      "outFiles": ["${workspaceFolder}/src/main/out/**/*.js"],
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**"
+      ],
+      "sourceMapPathOverrides": {
+        "webpack://@vortex/main/./*": "${workspaceFolder}/src/main/*",
+        "webpack://@vortex/main/*": "${workspaceFolder}/src/main/*"
+      },
       "autoAttachChildProcesses": true,
       "timeout": 60000,
       "skipFiles": ["<node_internals>/**", "${workspaceFolder}/node_modules/**"]
@@ -77,11 +87,15 @@
       "envFile": "${workspaceFolder}/.env",
       "console": "integratedTerminal",
       "sourceMaps": true,
-      "outFiles": ["${workspaceFolder}/out/**/*.js"],
+      "outFiles": ["${workspaceFolder}/src/main/out/**/*.js"],
       "resolveSourceMapLocations": [
         "${workspaceFolder}/**",
         "!**/node_modules/**"
       ],
+      "sourceMapPathOverrides": {
+        "webpack://@vortex/main/./*": "${workspaceFolder}/src/main/*",
+        "webpack://@vortex/main/*": "${workspaceFolder}/src/main/*"
+      },
       "timeout": 60000,
       "skipFiles": ["<node_internals>/**", "${workspaceFolder}/node_modules/**"]
     },
@@ -104,7 +118,11 @@
       "envFile": "${workspaceFolder}/.env",
       "console": "internalConsole",
       "sourceMaps": true,
-      "outFiles": ["${workspaceFolder}/out/**/*.js"],
+      "outFiles": ["${workspaceFolder}/src/main/out/**/*.js"],
+      "sourceMapPathOverrides": {
+        "webpack://@vortex/main/./*": "${workspaceFolder}/src/main/*",
+        "webpack://@vortex/main/*": "${workspaceFolder}/src/main/*"
+      },
       "skipFiles": [
         "<node_internals>/**",
         "${workspaceFolder}/node_modules/**"
@@ -120,7 +138,11 @@
       "timeout": 60000,
       "webRoot": "${workspaceFolder}",
       "sourceMaps": true,
-      "outFiles": ["${workspaceFolder}/out/**/*.js"],
+      "outFiles": ["${workspaceFolder}/src/main/out/**/*.js"],
+      "sourceMapPathOverrides": {
+        "webpack://@vortex/renderer/./*": "${workspaceFolder}/src/renderer/*",
+        "webpack://@vortex/renderer/*": "${workspaceFolder}/src/renderer/*"
+      },
       "skipFiles": [
         "<node_internals>/**",
         "${workspaceRoot}/node_modules/**",

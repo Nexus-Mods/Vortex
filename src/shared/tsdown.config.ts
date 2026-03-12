@@ -6,6 +6,7 @@ export default defineConfig({
     "*": "./src/api/*.ts",
   },
   format: ["esm", "commonjs"],
+  sourcemap: true,
   dts: {
     sourcemap: true,
   },

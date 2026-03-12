@@ -65,6 +65,7 @@
     "rimraf": "catalog:",
     "rolldown": "catalog:",
     "sass": "catalog:",
+    "source-map-loader": "catalog:",
     "tailwindcss": "catalog:",
     "terser-webpack-plugin": "catalog:",
     "ts-loader": "catalog:",

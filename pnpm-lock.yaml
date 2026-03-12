@@ -678,6 +678,9 @@ catalogs:
     simple-vdf:
       specifier: git+https://github.com/Nexus-Mods/vdf-parser#df279ff89cb480597544d3029e12f90cb8c79464
       version: 1.1.3
+    source-map-loader:
+      specifier: ^5.0.0
+      version: 5.0.0
     source-map-support:
       specifier: ^0.5.16
       version: 0.5.21
@@ -856,6 +859,9 @@ importers:
       sass:
         specifier: 'catalog:'
         version: 1.97.3
+      source-map-loader:
+        specifier: 'catalog:'
+        version: 5.0.0(webpack@5.105.2)
       tailwindcss:
         specifier: 'catalog:'
         version: 4.1.17
@@ -11918,6 +11924,12 @@ packages:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
     engines: {node: '>=0.10.0'}
 
+  source-map-loader@5.0.0:
+    resolution: {integrity: sha512-k2Dur7CbSLcAH73sBcIkV5xjPV4SzqO1NJ7+XaQl8if3VODDUj3FNchNGpqgJSKbvUfJuhVdv8K2Eu8/TNl2eA==}
+    engines: {node: '>= 18.12.0'}
+    peerDependencies:
+      webpack: ^5.72.1
+
   source-map-support@0.5.13:
     resolution: {integrity: sha512-SHSKFHadjVA5oR4PPqhtAVdcBWwRYVd6g6cAXnIbRiIwc2EhPrTuKUBdSLvlEKyIP3GCf89fltvcZiP9MMFA1w==}
 
@@ -21574,6 +21586,12 @@ snapshots:
       is-plain-obj: 1.1.0
 
   source-map-js@1.2.1: {}
+
+  source-map-loader@5.0.0(webpack@5.105.2):
+    dependencies:
+      iconv-lite: 0.6.3
+      source-map-js: 1.2.1
+      webpack: 5.105.2(webpack-cli@5.1.4)
 
   source-map-support@0.5.13:
     dependencies:
