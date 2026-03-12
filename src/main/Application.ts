@@ -315,9 +315,13 @@ class Application {
       if (startupMode !== undefined) {
         startupMode
           .then(() => app.quit())
-          .catch((err: unknown) => console.error(err));
+          .catch((err: unknown) => {
+            terminate(unknownToError(err));
+          });
       } else {
-        this.regularStart(args).catch((err: unknown) => console.error(err));
+        this.regularStart(args).catch((err: unknown) => {
+          terminate(unknownToError(err));
+        });
       }
     };
 

@@ -39,7 +39,11 @@ import winapi from "winapi-bindings";
 import Application from "./Application";
 import { parseCommandline } from "./cli";
 import { terminate } from "./errorHandling";
-import { sendReportFile } from "./errorReporting";
+import {
+  reportCrash,
+  errorToReportableError,
+  sendReportFile,
+} from "./errorReporting";
 import getVortexPath from "./getVortexPath";
 import { init as initIpcHandlers } from "./ipcHandlers";
 import { log } from "./logging";
@@ -50,6 +54,13 @@ import { createMainTelemetryProvider } from "./telemetry/setup";
 process.env["UV_THREADPOOL_SIZE"] = (os.cpus().length * 2).toString();
 
 const earlyErrHandler = (error: Error) => {
+  // Attempt to report the crash via OTel before showing the dialog.
+  // reportCrash creates its own short-lived provider so it works before
+  // the main telemetry provider is initialized.
+  reportCrash("EarlyCrash", errorToReportableError(error)).catch(() => {
+    /* best-effort — if this fails we still show the dialog */
+  });
+
   if (error.stack.includes("[as dlopen]")) {
     dialog.showErrorBox(
       "Vortex failed to start up",
@@ -175,6 +186,13 @@ async function main(): Promise<void> {
 
   createMainTelemetryProvider();
 
+  // Now that telemetry is available, swap in the proper error handler
+  // that supports crash reporting
+  process.removeListener("uncaughtException", earlyErrHandler);
+  process.removeListener("unhandledRejection", earlyErrHandler);
+  process.on("uncaughtException", handleError);
+  process.on("unhandledRejection", handleError);
+
   initIpcHandlers();
   initTelemetryIpcHandler();
   StylesheetCompiler.init();
@@ -252,9 +270,6 @@ async function main(): Promise<void> {
     // no-op
   }
 
-  process.on("uncaughtException", handleError);
-  process.on("unhandledRejection", handleError);
-
   if (
     process.env.NODE_ENV === "development" &&
     !app.commandLine.hasSwitch("remote-debugging-port")
@@ -272,4 +287,10 @@ async function main(): Promise<void> {
   application = new Application(mainArgs);
 }
 
-main().catch((err: unknown) => console.error("failed to start", err));
+main().catch((err: unknown) => {
+  if (err instanceof Error) {
+    handleError(err);
+  } else {
+    earlyErrHandler(new Error(getErrorMessageOrDefault(err)));
+  }
+});
