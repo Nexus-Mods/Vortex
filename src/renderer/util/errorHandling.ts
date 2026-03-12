@@ -18,9 +18,10 @@ import * as semver from "semver";
 import { inspect } from "util";
 import {} from "uuid";
 
-import type { IErrorOptions, IExtensionApi } from "../types/api";
+import type { IErrorOptions, IExtensionApi, IState } from "../types/api";
 import type { IError } from "../types/IError";
 
+import { hasPersistentWithNexus } from "../extensions/nexus_integration/guards";
 import { isTelemetryEnabled } from "../telemetry/selectors";
 import { getApplication } from "./application";
 import { COMPANY_ID } from "./constants";
@@ -49,7 +50,7 @@ export function createErrorReport(
   type: string,
   error: IError,
   context: IErrorContext,
-  state: any,
+  state: IState | undefined,
   sourceProcess?: string,
 ) {
   const userData = getVortexPath("userData");
@@ -65,7 +66,7 @@ export function createErrorReport(
       userData,
     }),
   );
-  if (isTelemetryEnabled(state)) {
+  if (state !== undefined && isTelemetryEnabled(state)) {
     spawnSelf(["--report", reportPath]);
   }
 }
@@ -77,22 +78,27 @@ export function setOutdated(api: IExtensionApi) {
   if (process.env.NODE_ENV === "development") {
     return;
   }
-  const state = api.store?.getState();
+  const state = api.getState();
   const version = getApplication().version;
-  if (state.persistent.nexus?.newestVersion !== undefined) {
-    try {
-      outdated = semver.lt(version, state.persistent.nexus.newestVersion);
-    } catch (err) {
-      // not really a big issue
-      log("warn", "failed to update outdated status", err);
+  if (hasPersistentWithNexus(state.persistent)) {
+    if (state.persistent.nexus?.newestVersion !== undefined) {
+      try {
+        outdated = semver.lt(
+          version,
+          state.persistent.nexus.newestVersion ?? "0.0.0",
+        );
+      } catch (err) {
+        // not really a big issue
+        log("warn", "failed to update outdated status", err);
+      }
     }
+    api.onStateChange?.<string>(
+      ["persistent", "nexus", "newestVersion"],
+      (prev, next) => {
+        outdated = semver.lt(version, next ?? "0.0.0");
+      },
+    );
   }
-  api.onStateChange?.(
-    ["persistent", "nexus", "newestVersion"],
-    (prev, next) => {
-      outdated = semver.lt(version, next);
-    },
-  );
 }
 
 export function isOutdated(): boolean {
@@ -148,7 +154,7 @@ export function getVisibleWindow(
 
 async function showTerminateError(
   error: IError,
-  state: any,
+  state: IState | undefined,
   source: string | undefined,
   allowReport: boolean | undefined,
   withDetails: boolean,
@@ -223,7 +229,7 @@ async function showTerminateError(
  */
 export function terminate(
   error: IError,
-  state: any,
+  state: IState | undefined,
   allowReport?: boolean,
   source?: string,
 ) {

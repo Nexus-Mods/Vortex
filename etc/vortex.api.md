@@ -5618,7 +5618,7 @@ export class TableTextFilter implements ITableFilter {
 // Warning: (ae-forgotten-export) The symbol "ReportableError" needs to be exported by the entry point api.d.ts
 //
 // @public
-function terminate(error: ReportableError, state: any, allowReport?: boolean, source?: string): void;
+function terminate(error: ReportableError, state: IState | undefined, allowReport?: boolean, source?: string): void;
 
 // @public (undocumented)
 function testModReference(mod: IMod | IModLookupInfo, reference: IModReference, source?: {
