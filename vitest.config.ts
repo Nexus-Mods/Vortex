@@ -10,5 +10,10 @@ export default defineConfig({
     outputFile: {
       junit: path.join(RESULTS_DIR, "junit.xml"),
     },
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "lcov"],
+      reportsDirectory: path.join(RESULTS_DIR, "coverage"),
+    },
   },
 });

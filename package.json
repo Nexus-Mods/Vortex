@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "commonjs",
-  "packageManager": "pnpm@10.31.0+sha512.e3927388bfaa8078ceb79b748ffc1e8274e84d75163e67bc22e06c0d3aed43dd153151cbf11d7f8301ff4acb98c68bdc5cadf6989532801ffafe3b3e4a63c268",
+  "packageManager": "pnpm@10.32.1+sha512.a706938f0e89ac1456b6563eab4edf1d1faf3368d1191fc5c59790e96dc918e4456ab2e67d613de1043d2e8c81f87303e6b40d4ffeca9df15ef1ad567348f2be",
   "engines": {
     "node": "22"
   },
@@ -27,7 +27,7 @@
     "package": "pnpm run dist:all && pnpm -F @vortex/main run package",
     "package:nosign": "pnpm run dist:all && pnpm -F @vortex/main run package:nosign",
     "typecheck": "pnpm -F @vortex/shared run build && pnpm --filter \"@vortex/*\" -r run typecheck",
-    "test": "pnpm vitest run && pnpm -F @vortex/renderer run test:jest",
+    "test": "pnpm vitest run --coverage && pnpm -F @vortex/renderer run test:jest",
     "test:watch": "pnpm vitest",
     "api": "pnpm -F @vortex/renderer run api:build && pnpm -F @vortex/renderer run api:docs && pnpm -F vortex-api run build",
     "lint": "pnpm eslint --cache --concurrency auto .",
@@ -48,6 +48,7 @@
     "@types/node": "catalog:",
     "@types/webpack-node-externals": "catalog:",
     "@typescript-eslint/utils": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
     "copyfiles": "catalog:",
     "cross-env": "catalog:",
     "eslint": "catalog:",

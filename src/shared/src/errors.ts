@@ -102,16 +102,20 @@ export function isErrorWithSystemCode(
 /**
  * Strip the installation-specific path prefix from a stack frame, keeping
  * only from `src/` or `node_modules/` onward so fingerprints are stable
- * across different machines and install locations.
+ * across different machines and install locations. Path separators are
+ * normalized to forward slashes.
  *
  * Examples:
- *   "at f (D:\Dev\Vortex\src\foo.ts:1:2)" → "at f (src\foo.ts:1:2)"
+ *   "at f (D:\Dev\Vortex\src\foo.ts:1:2)" → "at f (src/foo.ts:1:2)"
  *   "at f (/home/user/Vortex/src/foo.ts:1:2)" → "at f (src/foo.ts:1:2)"
- *   "at f (C:\Program Files\Vortex\resources\app.asar\renderer.js:1:2)" → "at f (app.asar\renderer.js:1:2)"
- *   "at f (D:\Program Files\Vortex\resources\app.asar.unpacked\bundledPlugins\x\index.js:1:2)" → "at f (app.asar.unpacked\bundledPlugins\x\index.js:1:2)"
- *   "at f (C:\Users\user\AppData\Roaming\Vortex\plugins\x\index.js:1:2)" → "at f (plugins\x\index.js:1:2)"
+ *   "at f (C:\Program Files\Vortex\resources\app.asar\renderer.js:1:2)" → "at f (app.asar/renderer.js:1:2)"
+ *   "at f (D:\Program Files\Vortex\resources\app.asar.unpacked\bundledPlugins\x\index.js:1:2)" → "at f (app.asar.unpacked/bundledPlugins/x/index.js:1:2)"
+ *   "at f (C:\Users\user\AppData\Roaming\Vortex\plugins\x\index.js:1:2)" → "at f (plugins/x/index.js:1:2)"
  *   "at f (chrome-extension://id/page.js:1:2)" → unchanged
  */
+export const sanitizeFramePath = (frame: string): string =>
+  frame.replace(INSTALL_PATH_RE, "").replace(/\\/g, "/");
+
 const _SEP = String.raw`[/\\]`;
 const _WIN = String.raw`[A-Za-z]:${_SEP}`; // C:\ or C:/
 const _UNIX = String.raw`(?<!\/)\/`; // / not inside ://
@@ -123,9 +127,6 @@ const INSTALL_PATH_RE = new RegExp(
   String.raw`(?:${_WIN}|${_UNIX})${_SEGS}(?=${_ANCHORS}${_SEP})`,
   "g",
 );
-
-const sanitizeFramePath = (frame: string): string =>
-  frame.replace(INSTALL_PATH_RE, "");
 
 /**
  * Compute a fingerprint from the stack trace call frames and app version.

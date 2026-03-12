@@ -220,25 +220,12 @@ function extractCatalogBlock(yamlText) {
 }
 
 /**
- * Extracts "onlyBuiltDependencies" from a pnpm-workspace.yaml file
+ * Extracts "allowBuilds" from a pnpm-workspace.yaml file
  * @param {string} yamlText  */
-function extractOnlyBuiltDependencies(yamlText) {
-  const match = yamlText.match(
-    /^onlyBuiltDependencies:\s*\n((?:\s*-\s*.+\n?)*)/m,
-  );
-
+function extractAllowBuildsBlock(yamlText) {
+  const match = yamlText.match(/^allowBuilds:[ \t]*\n((?:[ \t]+\S.*\n?)*)/m);
   if (!match) return null;
-  const listBlock = match[1];
-
-  const entries = listBlock
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => line.startsWith("- "))
-    .map((line) => line.slice(2).trim())
-    .filter(Boolean);
-
-  if (!entries.length) return null;
-  return entries;
+  return "allowBuilds:\n" + match[1];
 }
 
 /** Prepares all PNPM related files */
@@ -247,18 +234,12 @@ async function preparePNPM(rawWorkspaceYaml) {
   await writeFile(resolve(DIST_DIR, ".npmrc"), npmrc);
   console.log("✔  Created dist/.npmrc");
 
-  const onlyBuiltDependencies = extractOnlyBuiltDependencies(rawWorkspaceYaml);
-
+  const allowBuilds = extractAllowBuildsBlock(rawWorkspaceYaml);
   const catalog = extractCatalogBlock(rawWorkspaceYaml);
   const overrides = extractOverridesBlock(rawWorkspaceYaml);
 
   const minimalYaml =
-    (overrides ? overrides + "\n" : "") +
-    catalog +
-    "\n" +
-    "onlyBuiltDependencies:\n" +
-    onlyBuiltDependencies.map((dep) => `  - ${dep}`).join("\n") +
-    "\n";
+    (overrides ? overrides + "\n" : "") + catalog + "\n" + allowBuilds + "\n";
 
   await writeFile(resolve(DIST_DIR, "pnpm-workspace.yaml"), minimalYaml);
   console.log("✔  Created dist/pnpm-workspace.yaml");

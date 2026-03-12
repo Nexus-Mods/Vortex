@@ -9,6 +9,7 @@ import { AsyncLocalStorageContextManager } from "@opentelemetry/context-async-ho
 import { BasicTracerProvider } from "@opentelemetry/sdk-trace-base";
 import { serializeSpan } from "@vortex/shared/telemetry";
 
+import { log } from "../logging";
 import { patchBluebirdContext } from "./bluebird-patch";
 import { createRendererResource } from "./resources";
 
@@ -33,21 +34,34 @@ class ForwardingSpanProcessor implements SpanProcessor {
   }
 }
 
-const init = (): boolean => {
-  const resource = createRendererResource();
+/**
+ * Create and register the renderer-process TracerProvider.
+ * Call once early in renderer startup, before extensions load.
+ */
+export const createRendererTelemetryProvider = async (): Promise<void> => {
+  // Check if preload API is available
+  if (typeof window === "undefined" || !window.api?.persist) {
+    log("warn", "Preload API not available, telemetry will be disabled");
+    return;
+  }
 
-  const provider = new BasicTracerProvider({
-    resource,
-    spanProcessors: [new ForwardingSpanProcessor()],
-  });
-  provider.register({
-    // TODO: Switch to ZoneContextManager when Node.js is removed from renderer
-    contextManager: new AsyncLocalStorageContextManager(),
-  });
+  try {
+    const version = await window.api.app.getVersion();
+    const resource = createRendererResource(version);
 
-  patchBluebirdContext();
+    const provider = new BasicTracerProvider({
+      resource,
+      spanProcessors: [new ForwardingSpanProcessor()],
+    });
+    provider.register({
+      // TODO: Switch to ZoneContextManager when Node.js is removed from renderer
+      contextManager: new AsyncLocalStorageContextManager(),
+    });
 
-  return true;
-}
-
-export default init;
+    patchBluebirdContext();
+  } catch (err) {
+    log("error", "Failed to create renderer telemetry provider", {
+      error: err,
+    });
+  }
+};

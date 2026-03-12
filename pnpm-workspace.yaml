@@ -1,3 +1,5 @@
+# yaml-language-server: $schema=https://www.schemastore.org/pnpm-workspace.json
+
 packages:
   - ./src/shared
   - ./src/preload
@@ -6,6 +8,30 @@ packages:
   - ./extensions/*
   - ./extensions/games/*
   - ./packages/*
+
+allowBuilds:
+  "@parcel/watcher": true
+  ba2tk: true
+  bsatk: true
+  bsdiff-node: true
+  core-js: true
+  crash-dump: true
+  diskusage: true
+  drivelist: true
+  electron: true
+  esbuild: true
+  esptk: true
+  fomod-installer-native: true
+  font-scanner: true
+  gamebryo-savegame: true
+  leveldown: true
+  loot: true
+  native-errors: true
+  protobufjs: true
+  unrs-resolver: true
+  vortexmt: true
+  winapi-bindings: true
+  xxhash-addon: true
 
 catalog:
   7z-bin: git+https://github.com/Nexus-Mods/7z-bin#3298c42e69e3220dc39694bc2f610c077c3e213a
@@ -105,6 +131,7 @@ catalog:
   "@types/xml2js": ~0.4.14
   "@typescript-eslint/utils": 8.47.0
   "@vitejs/plugin-react": ^5.1.4
+  '@vitest/coverage-v8': ^4.0.18
   "@welldone-software/why-did-you-render": ^10.0.1
   ba2tk: git+https://github.com/Nexus-Mods/node-ba2tk#762d8de841ca1c770a0925311fd626d71de67971
   babel-jest: ^29.7.0
@@ -265,36 +292,10 @@ catalog:
   zod: ^4.3.5
 
 catalogMode: strict
-
 cleanupUnusedCatalogs: true
 
 engineStrict: true
-
 failIfNoMatch: true
-
-onlyBuiltDependencies:
-  - "@parcel/watcher"
-  - ba2tk
-  - bsatk
-  - bsdiff-node
-  - core-js
-  - crash-dump
-  - diskusage
-  - drivelist
-  - electron
-  - esbuild
-  - esptk
-  - fomod-installer-native
-  - font-scanner
-  - gamebryo-savegame
-  - leveldown
-  - loot
-  - native-errors
-  - protobufjs
-  - unrs-resolver
-  - vortexmt
-  - winapi-bindings
-  - xxhash-addon
 
 overrides:
   "@types/react": "16"

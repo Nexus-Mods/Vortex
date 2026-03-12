@@ -3161,7 +3161,6 @@ class ExtensionManager {
         require("./extensions/symlink_activator/index.ts"),
       symlink_activator_elevate: () =>
         require("./extensions/symlink_activator_elevate/index.ts"),
-      telemetry: () => require("./extensions/telemetry/index.ts"),
       test_runner: () => require("./extensions/test_runner/index.ts"),
       tool_variables_base: () =>
         require("./extensions/tool_variables_base/index.ts"),

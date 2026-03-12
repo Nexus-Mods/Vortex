@@ -4,6 +4,6 @@ export * from "../extensions/mod_management/selectors";
 export * from "../extensions/gamemode_management/selectors";
 export * from "../extensions/nexus_integration/selectors";
 export * from "../extensions/analytics/selectors";
-export * from "../extensions/telemetry/selectors";
+export * from "../telemetry/selectors";
 export * from "../extensions/collections_integration/selectors";
 export * from "../selectors";
