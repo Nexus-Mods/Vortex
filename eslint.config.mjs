@@ -7,6 +7,7 @@ import perfectionist from "eslint-plugin-perfectionist";
 import { defineConfig } from "eslint/config";
 import globals from "globals";
 import tseslint from "typescript-eslint";
+import { builtinModules } from "node:module";
 
 import noBluebirdPromiseAliasRule from "./eslint-rules/no-bluebird-promise-alias.mjs";
 import noBluebirdResolveWithPromiseLike from "./eslint-rules/no-bluebird-resolve-promiselike.mjs";
@@ -18,95 +19,38 @@ const tseslintConfig = isCI
   : tseslint.configs.recommendedTypeChecked;
 
 export default defineConfig([
+  // ─── Global ignores ─────────────────────────────────────────────────────────
   {
-    // NOTE(erri120): exclude build output and tests as well as any submodules
     ignores: [
-      "./src/main/out",
-      "./src/main/dist",
-      "./src/shared/dist",
-      "./src/renderer/__tests__",
-      "./src/renderer/__mocks__",
-      "./src/renderer/lib",
-      "./src/renderer/dist",
-      "./extensions",
-      "./api",
-      ".pnpm-store",
-      "./node_modules/",
-      "./dist",
-      "./packages/vortex-api",
+      // NOTE(erri120): old tests and mocks
+      "**/__mocks__/**",
+      "**/__tests__/**",
+
+      // Build outputs
+      "**/dist/**",
+      "**/out/**",
+      "**/lib/**",
     ],
   },
 
+  // ─── Global: base configs ────────────────────────────────────────────────────
+  // These apply to all files matched by per-package `files` globs below.
   {
-    files: ["**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
-  },
-
-  eslint.configs.recommended,
-  tseslintConfig,
-  eslintReact.configs["recommended-typescript"],
-  prettierConfig,
-  betterTailwindcss.configs.recommended,
-
-  {
+    files: ["src/**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
+    extends: [eslint.configs.recommended, tseslintConfig, prettierConfig],
     languageOptions: {
-      globals: { ...globals.browser, ...globals.node },
       parserOptions: {
         projectService: !isCI,
       },
     },
-    settings: {
-      "react-x": {
-        version: "16",
-      },
-      "better-tailwindcss": {
-        entryPoint: "src/stylesheets/tailwind-v4.css",
-        callees: [
-          ["joinClasses", [{ match: "strings" }]],
-          ["joinClasses", [{ match: "objectKeys" }]],
-        ],
-      },
-    },
   },
 
+  // ─── Global: shared plugins + rules ─────────────────────────────────────────
   {
+    files: ["src/**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
     plugins: {
       perfectionist,
-    },
-    rules: {
-      "@eslint-react/jsx-shorthand-boolean": ["warn", -1],
-      "@eslint-react/no-useless-fragment": "warn",
-      "better-tailwindcss/enforce-consistent-line-wrapping": "off",
-      "better-tailwindcss/no-unknown-classes": "off",
-      "perfectionist/sort-imports": "warn",
-      "perfectionist/sort-exports": "warn",
-      "perfectionist/sort-jsx-props": [
-        "warn",
-        {
-          type: "alphabetical",
-          groups: ["shorthand-prop", "unknown", "callback"],
-          customGroups: [
-            { groupName: "callback", elementNamePattern: "^on.+" },
-          ],
-        },
-      ],
-    },
-  },
-
-  // Stylistic rules that complement Prettier without conflicts.
-  // These rules support consistent decisions.
-  {
-    plugins: {
       "@stylistic": stylistic,
-    },
-    rules: {
-      "@stylistic/jsx-newline": ["warn", { prevent: false }],
-      "@stylistic/jsx-self-closing-comp": "warn",
-    },
-  },
-
-  {
-    name: "Vortex custom rules",
-    plugins: {
       vortex: {
         rules: {
           "no-bluebird-promise-alias": noBluebirdPromiseAliasRule,
@@ -117,8 +61,17 @@ export default defineConfig([
       },
     },
     rules: {
+      // Perfectionist
+      "perfectionist/sort-imports": "warn",
+      "perfectionist/sort-exports": "warn",
+
+      // Stylistic
+      "@stylistic/jsx-newline": ["warn", { prevent: false }],
+      "@stylistic/jsx-self-closing-comp": "warn",
+
+      // Vortex custom rules
       "vortex/no-bluebird-promise-alias": "error",
-      "vortex/no-bluebird-resolve-promiselike": "warn", // TODO: change to error
+      "vortex/no-bluebird-resolve-promiselike": "warn",
       "vortex/no-restricted-imports-errors": [
         "error",
         {
@@ -147,102 +100,11 @@ export default defineConfig([
           ],
         },
       ],
-    },
-  },
 
-  {
-    name: "Migrating Webpack to Vite",
-    rules: {
+      // Migrating Webpack to Vite
       "@typescript-eslint/consistent-type-imports": "error",
-    },
-  },
 
-  {
-    name: "Shared package - no platform-specific imports",
-    files: ["src/shared/src/**/*.{ts,js,mjs,cjs}"],
-    rules: {
-      "no-restricted-imports": [
-        "error",
-        {
-          patterns: [
-            {
-              regex: "^node:",
-              message:
-                "Node.js built-ins are not allowed in the shared package. This package must be platform-agnostic.",
-            },
-            {
-              regex: "^electron(/|$)",
-              message:
-                "Electron is not allowed in the shared package. This package must be platform-agnostic.",
-            },
-          ],
-          paths: [
-            // Node.js built-in modules (legacy imports without 'node:' prefix)
-            ...[
-              "assert",
-              "async_hooks",
-              "buffer",
-              "child_process",
-              "cluster",
-              "crypto",
-              "dgram",
-              "diagnostics_channel",
-              "dns",
-              "domain",
-              "events",
-              "fs",
-              "http",
-              "http2",
-              "https",
-              "inspector",
-              "module",
-              "net",
-              "os",
-              "path",
-              "perf_hooks",
-              "process",
-              "querystring",
-              "readline",
-              "repl",
-              "stream",
-              "string_decoder",
-              "timers",
-              "tls",
-              "tty",
-              "url",
-              "util",
-              "v8",
-              "vm",
-              "wasi",
-              "worker_threads",
-              "zlib",
-            ].map((name) => ({
-              name,
-              message: `'${name}' is a Node.js built-in and is not allowed in the shared package. This package must be platform-agnostic.`,
-            })),
-          ],
-        },
-      ],
-    },
-  },
-
-  {
-    // NOTE(erri120): This legacy config only exists "temporarily" (we'll see how true that holds)
-    name: "Vortex legacy config",
-    rules: {
-      // NOTE(erri120): These rules were errors by default but got turned into warnings until we fix the code
-      // To get the codebase up to stuff, we want all of these warnings to go back to being errors.
-      // How to do that:
-      // 1) Pick one of these rules and remove it
-      // 2) Fix all errors
-      // 3) Repeat until there are no rules left
-      "@eslint-react/dom/no-find-dom-node": "warn",
-      "@eslint-react/dom/no-void-elements-with-children": "warn",
-      "@eslint-react/no-access-state-in-setstate": "warn",
-      "@eslint-react/no-class-component": "warn",
-      "@eslint-react/no-create-ref": "warn",
-      "@eslint-react/no-direct-mutation-state": "warn",
-      "@eslint-react/no-missing-key": "warn",
+      // Legacy rules (warnings until fixed, then promote to errors one by one)
       "@typescript-eslint/await-thenable": "warn",
       "@typescript-eslint/ban-ts-comment": "warn",
       "@typescript-eslint/no-array-constructor": "warn",
@@ -298,6 +160,100 @@ export default defineConfig([
       "prefer-const": "warn",
       "prefer-rest-params": "warn",
       "prefer-spread": "warn",
+    },
+  },
+
+  {
+    name: "Renderer",
+    files: ["src/renderer/**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
+    languageOptions: {
+      // TODO: remove Node globals after removing nodeIntegration
+      globals: { ...globals.browser, ...globals.node },
+    },
+    extends: [
+      eslintReact.configs["recommended-typescript"],
+      betterTailwindcss.configs.recommended,
+    ],
+    settings: {
+      "react-x": {
+        version: "16",
+      },
+      "better-tailwindcss": {
+        entryPoint: "src/stylesheets/tailwind-v4.css",
+        callees: [
+          ["joinClasses", [{ match: "strings" }]],
+          ["joinClasses", [{ match: "objectKeys" }]],
+        ],
+      },
+    },
+    rules: {
+      // React
+      "@eslint-react/jsx-shorthand-boolean": ["warn", -1],
+      "@eslint-react/no-useless-fragment": "warn",
+
+      // Tailwind
+      "better-tailwindcss/enforce-consistent-line-wrapping": "off",
+      "better-tailwindcss/no-unknown-classes": "off",
+
+      // Perfectionist: JSX props sorting (renderer-only, no JSX elsewhere)
+      "perfectionist/sort-jsx-props": [
+        "warn",
+        {
+          type: "alphabetical",
+          groups: ["shorthand-prop", "unknown", "callback"],
+          customGroups: [
+            { groupName: "callback", elementNamePattern: "^on.+" },
+          ],
+        },
+      ],
+
+      // Legacy React rules
+      "@eslint-react/dom/no-find-dom-node": "warn",
+      "@eslint-react/dom/no-void-elements-with-children": "warn",
+      "@eslint-react/no-access-state-in-setstate": "warn",
+      "@eslint-react/no-class-component": "warn",
+      "@eslint-react/no-create-ref": "warn",
+      "@eslint-react/no-direct-mutation-state": "warn",
+      "@eslint-react/no-missing-key": "warn",
+    },
+  },
+
+  // ─── src/shared ──────────────────────────────────────────────────────────────
+  {
+    name: "Shared",
+    files: ["src/shared/src/**/*.{ts,mjs}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              regex: "^node:",
+              message:
+                "Node.js built-ins are not allowed in the shared package. This package must be platform-agnostic.",
+            },
+            {
+              regex: "^electron(/|$)",
+              message:
+                "Electron is not allowed in the shared package. This package must be platform-agnostic.",
+            },
+          ],
+          paths: [
+            ...builtinModules.map((name) => ({
+              name,
+              message: `'${name}' is a Node.js built-in and is not allowed in the shared package. This package must be platform-agnostic.`,
+            })),
+          ],
+        },
+      ],
+    },
+  },
+
+  {
+    name: "Main",
+    files: ["src/main/**/*.{ts,js,mjs,cjs}"],
+    languageOptions: {
+      globals: { ...globals.node },
     },
   },
 ]);
