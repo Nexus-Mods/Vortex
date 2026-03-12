@@ -1,5 +1,5 @@
 import type { IParameters, ISetItem } from "@vortex/shared/cli";
-import type { AppInitMetadata, VortexPaths } from "@vortex/shared/ipc";
+import type { AppInitMetadata } from "@vortex/shared/ipc";
 import type { IWindow } from "@vortex/shared/state";
 
 import {
@@ -33,7 +33,7 @@ import { terminate } from "./errorHandling";
 import { disableErrorReporting } from "./errorReporting";
 import { setupMainExtensions } from "./extensions";
 import { validateFiles } from "./fileValidation";
-import getVortexPath, { setVortexPath } from "./getVortexPath";
+import { getVortexPath, setVortexPath } from "./getVortexPath";
 import { log, setupLogging, changeLogPath } from "./logging";
 import MainWindow from "./MainWindow";
 import SplashScreen from "./SplashScreen";
@@ -141,7 +141,7 @@ class Application {
     this.mBasePath = app.getPath("userData");
     mkdirSync(this.mBasePath, { recursive: true });
 
-    setVortexPath("temp", () => path.join(getVortexPath("userData"), "temp"));
+    setVortexPath("temp", path.join(getVortexPath("userData"), "temp"));
     const tempPath = getVortexPath("temp");
     mkdirSync(path.join(tempPath, "dumps"), { recursive: true });
 

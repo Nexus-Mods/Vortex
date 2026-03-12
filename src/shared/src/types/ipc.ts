@@ -208,8 +208,8 @@ export interface InvokeChannels {
   "app:getName": () => Promise<string>;
 
   // App path channels
-  "app:getPath": (name: string) => Promise<string>;
-  "app:setPath": (name: string, value: string) => Promise<void>;
+  "app:getPath": (name: keyof VortexPaths) => Promise<string>;
+  "app:setPath": (name: keyof VortexPaths, value: string) => Promise<void>;
 
   // File icon extraction
   "app:extractFileIcon": (exePath: string, iconPath: string) => Promise<void>;

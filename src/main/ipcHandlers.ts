@@ -29,7 +29,7 @@ import { writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { relaunch } from "./cli";
-import getVortexPath, { setVortexPath, type AppPath } from "./getVortexPath";
+import { getVortexPath, setVortexPath } from "./getVortexPath";
 import { betterIpcMain } from "./ipc";
 import { openUrl, openFile } from "./open";
 import { extraWebViews } from "./webview";
@@ -210,21 +210,9 @@ export function init() {
     return app.getName();
   });
 
-  betterIpcMain.handle(
-    "app:getPath",
-    (_event: IpcMainInvokeEvent, name: string) => {
-      // Use Vortex's custom path logic instead of Electron's native paths
-      return getVortexPath(name as AppPath);
-    },
-  );
-
-  betterIpcMain.handle(
-    "app:setPath",
-    (_event: IpcMainInvokeEvent, name: string, value: string) => {
-      // Use Vortex's custom path setter
-      setVortexPath(name as AppPath, value);
-    },
-  );
+  betterIpcMain.handle("app:getPath", (_event: IpcMainInvokeEvent, name) => {
+    return getVortexPath(name);
+  });
 
   betterIpcMain.handle(
     "app:extractFileIcon",

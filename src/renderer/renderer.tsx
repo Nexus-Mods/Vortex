@@ -116,7 +116,6 @@ import { UserCanceled } from "./util/CustomErrors";
 import { setOutdated, terminate, toError } from "./util/errorHandling";
 import {} from "./util/extensionRequire";
 import { setTFunction } from "./util/fs";
-import getVortexPath, { setVortexPath } from "./util/getVortexPath";
 import GlobalNotifications from "./util/GlobalNotifications";
 import getI18n, {
   changeLanguage,
@@ -130,8 +129,6 @@ import { AppLayout } from "./views/AppLayout";
 import LoadingScreen from "./views/LoadingScreen";
 
 log("debug", "renderer process started", { pid: process["pid"] });
-
-setVortexPath("temp", () => path.join(getVortexPath("userData"), "temp"));
 
 let deinitCrashDump: () => void;
 
