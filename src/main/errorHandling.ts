@@ -24,6 +24,22 @@ export async function terminateAsync(error: Error): Promise<void> {
 
   const allowReport = !isErrorReportingDisabled();
 
+  // dialog.showMessageBox requires the app to be ready. If we crash
+  // before that, fall back to the synchronous showErrorBox + direct report.
+  if (!app.isReady()) {
+    dialog.showErrorBox(
+      "An unrecoverable error occurred",
+      getErrorMessage(error) + "\n\n" + (error.stack ?? ""),
+    );
+    if (allowReport) {
+      await reportCrash("Crash", errorToReportableError(error)).catch(() => {
+        /* best-effort */
+      });
+    }
+    app.exit(1);
+    return;
+  }
+
   try {
     const isIgnored = await showTerminateError(error, allowReport, false);
     if (isIgnored) return;
