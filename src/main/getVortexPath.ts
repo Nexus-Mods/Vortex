@@ -102,7 +102,7 @@ function getPackagePath(unpacked: boolean): string {
   return res;
 }
 
-let cache: VortexPaths;
+const cache: Partial<VortexPaths> = {};
 
 type ElectronPathId = Parameters<App["getPath"]>["0"] & keyof VortexPaths;
 
