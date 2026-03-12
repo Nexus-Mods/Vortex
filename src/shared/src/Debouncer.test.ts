@@ -9,8 +9,8 @@ type Timeout = ReturnType<typeof setTimeout>;
 function makeTimers() {
   vi.useFakeTimers();
   return {
-    setFn: (cb: () => void, ms: number) => setTimeout(cb, ms),
-    clearFn: (t: Timeout) => clearTimeout(t),
+    setFn: setTimeout,
+    clearFn: clearTimeout,
     advance: (ms: number) => vi.advanceTimersByTimeAsync(ms),
     runAll: () => vi.runAllTimersAsync(),
   };
@@ -23,14 +23,11 @@ function makeDebouncer(
   triggerImmediately = false,
 ) {
   const { setFn, clearFn, advance, runAll } = makeTimers();
-  const d = new GenericDebouncer(
-    setFn,
-    clearFn,
-    func,
-    debounceMS,
-    reset,
-    triggerImmediately,
-  );
+  const d = new GenericDebouncer<
+    Timeout,
+    typeof setTimeout,
+    typeof clearTimeout
+  >(setFn, clearFn, func, debounceMS, reset, triggerImmediately);
   return { d, advance, runAll };
 }
 
@@ -230,11 +227,13 @@ describe("GenericDebouncer", () => {
 
       expect(fn).toHaveBeenCalledOnce();
 
-      resolvers[0](); // resolve first run → finally → second run() starts, resolvers[1] pending
+      expect(resolvers.length).toBeGreaterThanOrEqual(1);
+      resolvers[0]!(); // resolve first run → finally → second run() starts, resolvers[1] pending
       await advance(0); // flush microtasks so second run() has been invoked
       expect(fn).toHaveBeenCalledTimes(2);
 
-      resolvers[1](); // resolve second run → invokeCallbacks → cb(null)
+      expect(resolvers.length).toBeGreaterThanOrEqual(2);
+      resolvers[1]!(); // resolve second run → invokeCallbacks → cb(null)
       await advance(0); // flush microtasks
 
       expect(cb).toHaveBeenCalledWith(null);

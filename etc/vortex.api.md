@@ -4801,6 +4801,7 @@ declare namespace selectors {
         apiKey,
         userInfo,
         isPremium,
+        shouldShowPremiumAd,
         isLoggedIn,
         nexusIdsFromDownloadId,
         isAnalyticsEnabled,
@@ -5405,6 +5406,9 @@ const setWindowSize: reduxAct.ComplexActionCreator1<any, any, {}>;
 
 // @public (undocumented)
 const setZoomFactor: reduxAct.ComplexActionCreator1<any, any, {}>;
+
+// @public
+const shouldShowPremiumAd: (state: IState) => boolean;
 
 // @public
 function showActivity<S>(dispatch: ThunkDispatch<IState, null, Redux.Action>, message: string, id?: string): void;

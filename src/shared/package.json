@@ -7,7 +7,7 @@
   "scripts": {
     "build": "pnpm tsdown",
     "dist": "pnpm run build",
-    "typecheck": "pnpm tsc --noEmit -p tsconfig.json"
+    "typecheck": "pnpm tsc"
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",

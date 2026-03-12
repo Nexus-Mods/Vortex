@@ -7,7 +7,7 @@
   "scripts": {
     "build": "pnpm cross-env NODE_ENV=development pnpm webpack --config ./webpack.config.cjs",
     "dist": "pnpm cross-env NODE_ENV=production pnpm webpack --config ./webpack.config.cjs",
-    "typecheck": "pnpm tsc --noEmit --composite false -p tsconfig.json"
+    "typecheck": "pnpm tsc"
   },
   "devDependencies": {
     "electron": "catalog:"

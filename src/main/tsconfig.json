@@ -3,19 +3,17 @@
   "extends": "../../tsconfig.base.json",
   "include": [
     "**/*",
+    "../../webpack.base.cjs",
     "../../typings.custom/electron.d.ts",
     "../../typings.custom/promise.d.ts"
   ],
-  "exclude": ["./*.js", "./*.mjs", "./*.cjs", "./dist", "./out"],
+  "exclude": ["node_modules", "dist", "out"],
   "compilerOptions": {
     "composite": true,
+    "noEmit": true,
     "target": "esnext",
     "module": "node16", // TODO: change to nodenext
     "moduleResolution": "node16", // TODO: change to nodenext
-    "types": ["node"],
-    "outDir": "./out/main",
-    "inlineSourceMap": true,
-    "inlineSources": true,
-    "removeComments": true
+    "types": ["node"]
   }
 }
