@@ -25,6 +25,10 @@ addStyle(ReactButton, "link");
 addStyle(ReactButton, "inverted");
 
 const LayoutSwitcher = () => {
+  if (process.env.NODE_ENV !== "development") {
+    return null;
+  }
+
   const dispatch = useDispatch();
   const useModernLayout = useSelector(
     (state: IState) => state.settings.window.useModernLayout,

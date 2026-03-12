@@ -102,6 +102,10 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
   }, [mainPage, selection]);
 
   useEffect(() => {
+    const currentPageValid = visiblePages.some((p) => p.id === mainPage);
+    if (currentPageValid) {
+      return;
+    }
     if (selection.type === "game" && defaultGamePage !== undefined) {
       dispatch(setOpenMainPage(defaultGamePage, false));
     } else if (selection.type === "home" && defaultHomePage !== undefined) {

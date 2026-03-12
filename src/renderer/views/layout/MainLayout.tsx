@@ -24,7 +24,7 @@ export const MainLayout: FC = () => {
   const sidebarTimer = useRef<NodeJS.Timeout | undefined>(undefined);
   const initializedRef = useRef(false);
 
-  // Set initial page on mount (first page from sorted list)
+  // Set initial page on mount, preserving current page if it's still valid
   useEffect(() => {
     if (initializedRef.current) {
       return;
@@ -32,9 +32,12 @@ export const MainLayout: FC = () => {
     initializedRef.current = true;
 
     if (mainPages.length > 0) {
-      dispatch(setOpenMainPage(mainPages[0].id, false));
+      const currentPageValid = mainPages.some((p) => p.id === mainPage);
+      if (!currentPageValid) {
+        dispatch(setOpenMainPage(mainPages[0].id, false));
+      }
     }
-  }, [mainPages, dispatch]);
+  }, [mainPages, mainPage, dispatch]);
 
   const setMainPage = useCallback(
     (pageId: string, secondary: boolean) => {

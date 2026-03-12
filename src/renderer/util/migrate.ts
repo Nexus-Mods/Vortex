@@ -10,6 +10,7 @@ import {
   setForcedLogout,
   setDownloadPath,
   setInstallPath,
+  setUseModernLayout,
   setUserAPIKey,
   setUserInfo,
 } from "../actions";
@@ -243,6 +244,14 @@ function updateInstallPath_0_16(
   }).then(() => {});
 }
 
+function enableModernLayout_2_0(
+  _window: BrowserWindow,
+  store: Redux.Store<IState>,
+): PromiseBB<void> {
+  store.dispatch(setUseModernLayout(true));
+  return PromiseBB.resolve();
+}
+
 const migrations: IMigration[] = [
   {
     id: "move-downloads-0.16",
@@ -270,6 +279,14 @@ const migrations: IMigration[] = [
     description:
       "forcing logout for anything pre-oauth, and deprecating apikey logins",
     apply: forceLogoutForOauth_1_9,
+  },
+  {
+    id: "enableModernLayout_2_0",
+    minVersion: "2.0.0",
+    maySkip: false,
+    doQuery: false,
+    description: "Switch to Modern UI layout for 2.0",
+    apply: enableModernLayout_2_0,
   },
 ];
 
