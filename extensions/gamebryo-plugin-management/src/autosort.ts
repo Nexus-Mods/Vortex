@@ -509,9 +509,7 @@ class LootInterface {
 
     log("debug", "requesting plugin info", plugins);
     try {
-      // not really interested in these messages but apparently it's the only way to make the api
-      // drop its cache of _all_ previously evaluated conditions
-      await loot.getGeneralMessagesAsync(true);
+      await loot.clearConditionCacheAsync();
       if (loot.isClosed()) {
         callback({});
         return;
