@@ -256,4 +256,12 @@ export default defineConfig([
       globals: { ...globals.node },
     },
   },
+
+  {
+    name: "Preload webpack",
+    files: ["src/preload/webpack.config.cjs"],
+    languageOptions: {
+      globals: { ...globals.node },
+    },
+  },
 ]);
