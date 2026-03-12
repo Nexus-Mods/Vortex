@@ -2,6 +2,7 @@
 // Everything in here is compile-time only, meaning the interfaces you find here
 // are never used to create an object. They are only used for type inferrence.
 
+import type { SerializedSpan } from "../telemetry/types";
 import type {
   BrowserViewConstructorOptions,
   Cookie,
@@ -20,7 +21,6 @@ import type {
 } from "./electron";
 import type { Level } from "./logging";
 import type { PersistedHive, PersistedState } from "./state";
-import type { SerializedSpan } from "../telemetry/types";
 
 // NOTE(erri120): You should use unique channel names to prevent overlap. You can prefix
 // channel names with an "area" like "example:" to somewhat categorize them and reduce the possibility of overlap.
@@ -64,10 +64,8 @@ export interface UpdateStatus {
   error?: string;
 }
 
-/** Vortex application paths - computed once in main process and shared */
+/** Vortex application paths */
 export type VortexPaths = {
-  [key: string]: string;
-} & {
   base: string;
   assets: string;
   assets_unpacked: string;
