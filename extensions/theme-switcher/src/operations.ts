@@ -131,6 +131,14 @@ export function readThemeVariables(
     return Bluebird.resolve({});
   }
 
+  // single and multiline comments
+  const commentRegex = /\/\/.*?$|\/\*.+?\*\//gms;
+
+  // leading whitespace and dollar signs ($)
+  // trailing whitespace and semicolons (;)
+  // blank or whitespace-only lines
+  const cleanupRegex = /^[ \t$]*|[ \t;]*$|\r?\n[ \t]*(?=\r?\n)/gms;
+
   return (
     fs
       .readFileAsync(path.join(currentThemePath, "variables.scss"))
@@ -138,11 +146,14 @@ export function readThemeVariables(
         const variables = {};
         data
           .toString("utf-8")
-          .split("\r\n")
+          .replaceAll(commentRegex, "")
+          .replaceAll(cleanupRegex, "")
+          .replaceAll("\r\n", "\n")
+          .split("\n")
           .forEach((line) => {
-            const [key, value] = line.split(":");
+            const [key, value] = line.split(/\s*:\s*/);
             if (value !== undefined) {
-              variables[key.substr(1)] = value.trim().replace(/;*$/, "");
+              variables[key] = value;
             }
           });
         return variables;
