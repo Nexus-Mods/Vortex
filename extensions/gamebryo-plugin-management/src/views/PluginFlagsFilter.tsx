@@ -14,6 +14,7 @@ export class PluginFlagFilterComponent extends React.Component<
     const selectionFilters = [
       "Master",
       "Light",
+      "Dummy",
       "Loads Archive",
       "Could be light",
       "Native",
