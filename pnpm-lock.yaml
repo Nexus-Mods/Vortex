@@ -2105,7 +2105,7 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/vortex-api
 
-  extensions/game-pillarsofeternity2:
+  extensions/games/game-pillarsofeternity2:
     devDependencies:
       '@types/bluebird':
         specifier: 'catalog:'
