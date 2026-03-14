@@ -1304,66 +1304,6 @@ importers:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
 
-  extensions/games/game-pillarsofeternity2:
-    devDependencies:
-      '@types/bluebird':
-        specifier: 'catalog:'
-        version: 3.5.20
-      '@types/node':
-        specifier: 'catalog:'
-        version: 22.19.11
-      '@types/react':
-        specifier: '16'
-        version: 16.14.66
-      '@types/react-bootstrap':
-        specifier: 'catalog:'
-        version: 0.32.37
-      '@types/react-dnd':
-        specifier: 'catalog:'
-        version: 3.0.2(@types/hoist-non-react-statics@3.3.7(@types/react@16.14.66))(@types/node@22.19.11)(@types/react@16.14.66)(react@16.14.0)
-      '@types/react-dom':
-        specifier: '16'
-        version: 16.9.25(@types/react@16.14.66)
-      '@types/redux':
-        specifier: 'catalog:'
-        version: 3.6.0
-      '@types/redux-thunk':
-        specifier: 'catalog:'
-        version: 2.1.0(redux@4.2.1)
-      '@types/semver':
-        specifier: 'catalog:'
-        version: 7.7.1
-      bluebird:
-        specifier: 'catalog:'
-        version: 3.7.2
-      copyfiles:
-        specifier: 'catalog:'
-        version: 2.4.1
-      react:
-        specifier: 'catalog:'
-        version: 16.14.0
-      react-dnd:
-        specifier: 'catalog:'
-        version: 14.0.5(@types/hoist-non-react-statics@3.3.7(@types/react@16.14.66))(@types/node@22.19.11)(@types/react@16.14.66)(react@16.14.0)
-      react-i18next:
-        specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
-      react-redux:
-        specifier: 'catalog:'
-        version: 7.2.9(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
-      redux-act:
-        specifier: 'catalog:'
-        version: 1.8.0
-      semver:
-        specifier: 'catalog:'
-        version: 7.7.4
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
-      vortex-api:
-        specifier: workspace:*
-        version: link:../../../packages/vortex-api
-
   extensions/gamebryo-archive-check:
     devDependencies:
       '@types/bluebird':
@@ -2161,6 +2101,66 @@ importers:
 
   extensions/games/game-pathfinderwrathoftherighteous:
     devDependencies:
+      vortex-api:
+        specifier: workspace:*
+        version: link:../../../packages/vortex-api
+
+  extensions/game-pillarsofeternity2:
+    devDependencies:
+      '@types/bluebird':
+        specifier: 'catalog:'
+        version: 3.5.20
+      '@types/node':
+        specifier: 'catalog:'
+        version: 22.19.11
+      '@types/react':
+        specifier: '16'
+        version: 16.14.66
+      '@types/react-bootstrap':
+        specifier: 'catalog:'
+        version: 0.32.37
+      '@types/react-dnd':
+        specifier: 'catalog:'
+        version: 3.0.2(@types/hoist-non-react-statics@3.3.7(@types/react@16.14.66))(@types/node@22.19.11)(@types/react@16.14.66)(react@16.14.0)
+      '@types/react-dom':
+        specifier: '16'
+        version: 16.9.25(@types/react@16.14.66)
+      '@types/redux':
+        specifier: 'catalog:'
+        version: 3.6.0
+      '@types/redux-thunk':
+        specifier: 'catalog:'
+        version: 2.1.0(redux@4.2.1)
+      '@types/semver':
+        specifier: 'catalog:'
+        version: 7.7.1
+      bluebird:
+        specifier: 'catalog:'
+        version: 3.7.2
+      copyfiles:
+        specifier: 'catalog:'
+        version: 2.4.1
+      react:
+        specifier: 'catalog:'
+        version: 16.14.0
+      react-dnd:
+        specifier: 'catalog:'
+        version: 14.0.5(@types/hoist-non-react-statics@3.3.7(@types/react@16.14.66))(@types/node@22.19.11)(@types/react@16.14.66)(react@16.14.0)
+      react-i18next:
+        specifier: 'catalog:'
+        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+      react-redux:
+        specifier: 'catalog:'
+        version: 7.2.9(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+      redux-act:
+        specifier: 'catalog:'
+        version: 1.8.0
+      semver:
+        specifier: 'catalog:'
+        version: 7.7.4
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
       vortex-api:
         specifier: workspace:*
         version: link:../../../packages/vortex-api
