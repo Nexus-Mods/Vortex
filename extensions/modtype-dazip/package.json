@@ -2,7 +2,6 @@
   "name": "modtype-dazip",
   "version": "1.0.0",
   "description": "Support for dazip (Dragon Age) mods",
-  "repository": "",
   "scripts": {
     "_build": "node build.mjs && pnpm extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs out",

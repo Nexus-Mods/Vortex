@@ -2,7 +2,6 @@
   "name": "morrowind-plugin-management",
   "version": "0.1.0",
   "description": "Management for morrowind plugins",
-  "repository": "",
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/stylesheet.scss dist",
     "_build": "node build.mjs && pnpm run _assets && pnpm extractInfo",

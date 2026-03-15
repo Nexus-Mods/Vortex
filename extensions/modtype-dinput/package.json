@@ -2,7 +2,6 @@
   "name": "modtype-dinput",
   "version": "0.1.0",
   "description": "Support for dinput mods",
-  "repository": "",
   "scripts": {
     "_build": "node build.mjs && pnpm extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs out",

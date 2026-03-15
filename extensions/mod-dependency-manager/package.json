@@ -2,7 +2,6 @@
   "name": "mod-dependency-manager",
   "version": "0.3.0",
   "description": "Control mod dependencies through drag&drop",
-  "repository": "",
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/stylesheets/*.scss src/language.json dist",
     "_build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
