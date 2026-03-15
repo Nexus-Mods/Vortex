@@ -9,6 +9,11 @@
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
+  "type": "commonjs",
+  "private": true,
+  "config": {
+    "extensionName": "Game Store: Origin/EA"
+  },
   "devDependencies": {
     "@types/bluebird": "catalog:",
     "@types/libxmljs": "catalog:",

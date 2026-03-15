@@ -10,6 +10,11 @@
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
+  "type": "commonjs",
+  "private": true,
+  "config": {
+    "extensionName": "Mod Type: BepInEx"
+  },
   "devDependencies": {
     "@types/i18next": "catalog:",
     "@types/react": "catalog:",

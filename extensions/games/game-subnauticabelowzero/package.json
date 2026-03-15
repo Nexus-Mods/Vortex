@@ -13,7 +13,7 @@
   "type": "commonjs",
   "private": true,
   "config": {
-    "game": "Subnautica Below Zero"
+    "game": "Subnautica: Below Zero"
   },
   "devDependencies": {
     "vortex-api": "workspace:*"

@@ -1,7 +1,7 @@
 {
   "name": "mo-import",
   "version": "0.0.2",
-  "description": "Import Mods from Mod Organizer",
+  "description": "Import mods from Mod Organizer (MO)",
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/stylesheets/mo-import.scss dist",
     "_build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
@@ -10,6 +10,11 @@
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
+  "type": "commonjs",
+  "private": true,
+  "config": {
+    "extensionName": "Import Tool: Mod Organizer (MO)"
+  },
   "devDependencies": {
     "@types/bluebird": "catalog:",
     "@types/i18next": "catalog:",

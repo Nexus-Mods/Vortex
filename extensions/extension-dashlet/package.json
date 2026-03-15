@@ -1,7 +1,7 @@
 {
   "name": "extensions-dashlet",
   "version": "0.0.3",
-  "description": "Dashlet to advertise newly released dashlets and remind user to endorse",
+  "description": "Dashlet to advertise newly released extensions and remind user to endorse",
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/extensions-dashlet.scss dist",
     "_build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
@@ -10,6 +10,11 @@
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
+  "type": "commonjs",
+  "private": true,
+  "config": {
+    "extensionName": "Dashlet: Extensions"
+  },
   "devDependencies": {
     "@types/node": "catalog:",
     "@types/react": "catalog:",
