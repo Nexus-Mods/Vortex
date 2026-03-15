@@ -1,7 +1,7 @@
 {
   "name": "gamestore-gog",
   "version": "0.0.5",
-  "description": "Provides discovery and launch support for GoG games",
+  "description": "Provides discovery and launch support for GOG games",
   "scripts": {
     "_build": "node build.mjs && pnpm extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs out",

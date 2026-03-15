@@ -1,7 +1,7 @@
 {
   "name": "modtype-enb",
   "version": "0.0.2",
-  "description": "Support for enb mods",
+  "description": "Support for ENB mods",
   "scripts": {
     "_build": "node build.mjs && pnpm extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs out",

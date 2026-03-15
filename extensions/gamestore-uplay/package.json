@@ -1,7 +1,7 @@
 {
   "name": "gamestore-uplay",
   "version": "0.0.4",
-  "description": "Provides discovery and launch support for UPlay games",
+  "description": "Provides discovery and launch support for Uplay games",
   "scripts": {
     "_build": "node build.mjs && pnpm extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs out",

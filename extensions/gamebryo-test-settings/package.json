@@ -1,7 +1,7 @@
 {
   "name": "gamebryo-test-settings",
   "version": "0.1.5",
-  "description": "Management for gamebryo tests settings",
+  "description": "Management for Gamebryo tests settings",
   "scripts": {
     "_build": "node build.mjs && pnpm extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs out",
