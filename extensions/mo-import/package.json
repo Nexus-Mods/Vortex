@@ -2,7 +2,6 @@
   "name": "mo-import",
   "version": "0.0.2",
   "description": "Import Mods from Mod Organizer",
-  "main": "./out/index.js",
   "repository": "",
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/stylesheets/mo-import.scss dist",

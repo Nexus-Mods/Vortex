@@ -2,7 +2,6 @@
   "name": "game-stardewvalley",
   "version": "0.3.9",
   "description": "Support for Stardew Valley",
-  "main": "dist/index.js",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",
     "_build": "node build.mjs && pnpm run _assets && pnpm extractInfo",

@@ -2,7 +2,6 @@
   "name": "game-conanexiles",
   "version": "1.0.0",
   "description": "Support for Conan Exiles",
-  "main": "dist/index.js",
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "type": "commonjs",

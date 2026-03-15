@@ -2,7 +2,6 @@
   "name": "gamebryo-plugin-management",
   "version": "0.5.3",
   "description": "Management for gamebryo plugins",
-  "main": "./out/index.js",
   "repository": "",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./src/stylesheets/plugin_management.scss ./src/language.json ./src/loot_icon.png dist",

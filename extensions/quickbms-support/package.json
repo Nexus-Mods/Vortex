@@ -2,7 +2,6 @@
   "name": "quickbms-support",
   "version": "0.2.5",
   "description": "QuickBMS extractor support",
-  "main": "./out/index.js",
   "repository": "",
   "scripts": {
     "_build": "node build.mjs && node download_dependencies.js && pnpm extractInfo",

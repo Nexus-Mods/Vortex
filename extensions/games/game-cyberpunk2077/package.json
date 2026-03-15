@@ -2,7 +2,6 @@
   "name": "game-cyberpunk2077",
   "version": "0.1.0",
   "description": "This is a stub of the Cyberpunk 2077 extension. It will be downloaded the first time it's managed.",
-  "main": "dist/index.js",
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "type": "commonjs",

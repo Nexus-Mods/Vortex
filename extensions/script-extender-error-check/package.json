@@ -2,7 +2,6 @@
   "name": "script-extender-error-check",
   "version": "0.1.1",
   "description": "Warn if the script extender log contains error message",
-  "main": "./out/index.js",
   "repository": "Nexus-Mods/extension-script-extender-error-check",
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/style.scss dist",

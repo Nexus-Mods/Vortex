@@ -2,7 +2,6 @@
   "name": "gamestore-origin",
   "version": "0.1.0",
   "description": "Discovery and game launch support for the Origin/EA game store",
-  "main": "./out/index.js",
   "repository": "",
   "scripts": {
     "_build": "node build.mjs && pnpm extractInfo",

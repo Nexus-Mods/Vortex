@@ -2,7 +2,6 @@
   "name": "meta-editor",
   "version": "0.0.1",
   "description": "Editor for Mod Meta Data",
-  "main": "./out/index.js",
   "repository": "",
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/stylesheets/metaeditor.scss dist",

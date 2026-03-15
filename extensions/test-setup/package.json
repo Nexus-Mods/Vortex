@@ -2,7 +2,6 @@
   "name": "test-setup",
   "version": "0.1.0",
   "description": "Test for common problems with the Vortex setup itself",
-  "main": "./out/index.js",
   "repository": "",
   "scripts": {
     "_build": "node build.mjs && pnpm extractInfo",

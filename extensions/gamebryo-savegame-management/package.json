@@ -2,7 +2,6 @@
   "name": "gamebryo-savegame-management",
   "version": "0.2.0",
   "description": "Management for gamebryo savegames",
-  "main": "./dist/index.js",
   "repository": "",
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/stylesheets/savegame_management.scss dist",

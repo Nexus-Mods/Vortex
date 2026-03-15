@@ -2,7 +2,6 @@
   "name": "extensions-dashlet",
   "version": "0.0.3",
   "description": "Dashlet to advertise newly released dashlets and remind user to endorse",
-  "main": "./out/index.js",
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/extensions-dashlet.scss dist",
     "_build": "node build.mjs && pnpm run _assets && pnpm extractInfo",

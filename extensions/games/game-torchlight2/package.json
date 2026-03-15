@@ -2,7 +2,6 @@
   "name": "game-torchlight2",
   "version": "1.0.2",
   "description": "Support for Torchlight II",
-  "main": "dist/index.js",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",
     "_build": "copyfiles -u 1 -f ./src/index.js dist && pnpm run _assets && pnpm extractInfo",

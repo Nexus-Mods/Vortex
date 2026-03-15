@@ -2,7 +2,6 @@
   "name": "modtype-gedosato",
   "version": "0.0.1",
   "description": "Support for GeDoSaTo mods",
-  "main": "./out/index.js",
   "repository": "",
   "scripts": {
     "_build": "node build.mjs && pnpm extractInfo",
