@@ -2,7 +2,6 @@
   "name": "changelog-dashlet",
   "version": "0.0.5",
   "description": "Shows the changelog of the current vortex version on the dashlet",
-  "main": "./out/index.js",
   "repository": "",
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/changelog.scss dist",

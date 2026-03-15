@@ -2,7 +2,6 @@
   "name": "game-pillarsofeternity2",
   "version": "0.2.2",
   "description": "Vortex support for Pillars Of Eternity 2: Deadfire",
-  "main": "./out/index.js",
   "repository": "",
   "scripts": {
     "_assets": "copyfiles -u 1 -f assets/gameart.png src/stylesheet.scss dist",

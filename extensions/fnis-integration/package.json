@@ -2,7 +2,6 @@
   "name": "fnis-integration",
   "version": "0.1.0",
   "description": "Keeps animation data updated and local to the profile",
-  "main": "./dist/index.js",
   "repository": "",
   "scripts": {
     "_build": "node build.mjs && pnpm extractInfo",

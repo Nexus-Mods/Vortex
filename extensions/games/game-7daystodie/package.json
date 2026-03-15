@@ -4,7 +4,6 @@
   "author": "nelson3219 & Senjay",
   "version": "1.1.1",
   "license": "GPL-3.0",
-  "main": "dist/index.js",
   "type": "commonjs",
   "private": true,
   "config": {

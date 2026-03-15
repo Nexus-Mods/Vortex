@@ -2,7 +2,6 @@
   "name": "game-witcher3",
   "version": "1.7.3",
   "description": "Support for The Witcher 3",
-  "main": "dist/index.js",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",
     "_build": "node build.mjs && pnpm run _assets && pnpm extractInfo",

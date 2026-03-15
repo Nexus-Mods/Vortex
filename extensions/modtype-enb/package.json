@@ -2,7 +2,6 @@
   "name": "modtype-enb",
   "version": "0.0.2",
   "description": "Support for enb mods",
-  "main": "./out/index.js",
   "repository": "",
   "scripts": {
     "_build": "node build.mjs && pnpm extractInfo",
