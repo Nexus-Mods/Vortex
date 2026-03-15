@@ -9,6 +9,11 @@
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
+  "type": "commonjs",
+  "private": true,
+  "config": {
+    "extensionName": "Game Store: Uplay"
+  },
   "devDependencies": {
     "@types/bluebird": "catalog:",
     "@types/node": "catalog:",

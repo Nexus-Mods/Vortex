@@ -13,6 +13,11 @@
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
+  "type": "commonjs",
+  "private": true,
+  "config": {
+    "extensionName": "Gamebryo BSA Support"
+  },
   "devDependencies": {
     "@types/i18next": "catalog:",
     "@types/node": "catalog:",

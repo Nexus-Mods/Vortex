@@ -1,7 +1,7 @@
 {
   "name": "gameinfo-steam",
   "version": "0.0.1",
-  "description": "Retrieve information about supported games from steam",
+  "description": "Retrieve information about supported games from Steam",
   "scripts": {
     "_build": "node build.mjs && pnpm extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs out",
@@ -9,6 +9,11 @@
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
+  "type": "commonjs",
+  "private": true,
+  "config": {
+    "extensionName": "Game Store: Steam"
+  },
   "devDependencies": {
     "@types/redux": "catalog:",
     "bluebird": "catalog:",

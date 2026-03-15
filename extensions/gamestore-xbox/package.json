@@ -9,6 +9,11 @@
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
+  "type": "commonjs",
+  "private": true,
+  "config": {
+    "extensionName": "Game Store: Xbox"
+  },
   "devDependencies": {
     "@types/node": "catalog:",
     "@types/redux": "catalog:",

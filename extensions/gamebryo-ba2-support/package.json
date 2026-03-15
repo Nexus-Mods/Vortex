@@ -10,6 +10,11 @@
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
+  "type": "commonjs",
+  "private": true,
+  "config": {
+    "extensionName": "Gamebryo BA2 Support"
+  },
   "devDependencies": {
     "@types/i18next": "catalog:",
     "@types/rimraf": "catalog:",

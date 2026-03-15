@@ -1,7 +1,7 @@
 {
   "name": "game-re2remake",
   "version": "0.2.6",
-  "description": "Support for RE2 (2019)",
+  "description": "Support for Resident Evil 2 (2019)",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",
     "_build": "copyfiles -u 1 -f ./src/index.js dist && pnpm run _assets && pnpm extractInfo",
