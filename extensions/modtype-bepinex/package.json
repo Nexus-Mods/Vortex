@@ -1,7 +1,7 @@
 {
   "name": "modtype-bepinex",
   "version": "0.2.9",
-  "description": "Adds several BepInEx specific modTypes and the ability to automatically download and install the library.",
+  "description": "Adds several BepInEx-specific modTypes and the ability to automatically download and install the library.",
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/assets/* dist",
     "_build": "node build.mjs && pnpm extractInfo && pnpm run _assets",

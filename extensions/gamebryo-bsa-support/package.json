@@ -1,7 +1,7 @@
 {
   "name": "gamebryo-bsa-support",
   "version": "0.1.0",
-  "description": "Support for (old) gamebryo data archives",
+  "description": "Support for (old) Gamebryo data archives",
   "exports": {
     "node": "./out/index.js"
   },

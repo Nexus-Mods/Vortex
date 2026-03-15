@@ -1,7 +1,7 @@
 {
   "name": "new-file-monitor",
   "version": "0.1.0",
-  "description": "generate events when new files are added to a mod directory",
+  "description": "Generate events when new files are added to a mod directory",
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/stylesheets/import-tool.scss src/images/* dist",
     "_build": "node build.mjs && pnpm run _assets && pnpm extractInfo",

@@ -1,7 +1,7 @@
 {
   "name": "gamestore-xbox",
   "version": "0.2.3",
-  "description": "Provides discovery and launch support for Microsoft Store (XBox pass) games",
+  "description": "Provides discovery and launch support for Microsoft Store (Xbox Pass) games",
   "scripts": {
     "_build": "node build.mjs && pnpm extractInfo",
     "build": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build && node ../copy-extension.mjs out)",
