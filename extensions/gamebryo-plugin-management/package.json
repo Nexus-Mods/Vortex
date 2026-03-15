@@ -2,7 +2,6 @@
   "name": "gamebryo-plugin-management",
   "version": "0.5.2",
   "description": "Management for gamebryo plugins",
-  "repository": "",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./src/stylesheets/plugin_management.scss ./src/language.json ./src/loot_icon.png dist",
     "_native": "node ../copy-native.mjs ./node_modules/esptk/build/Release/esptk.node ./node_modules/loot/build/Release/node-loot.node ./node_modules/loot/loot_api/libloot.dll ./node_modules/loot/async.js && node -e \"const fs=require('fs');const f='dist/async.js';let c=fs.readFileSync(f,'utf8');c=c.replace('./build/Release/node-loot','./node-loot');fs.writeFileSync(f,c);\"",

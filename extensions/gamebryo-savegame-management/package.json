@@ -2,7 +2,6 @@
   "name": "gamebryo-savegame-management",
   "version": "0.2.0",
   "description": "Management for gamebryo savegames",
-  "repository": "",
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/stylesheets/savegame_management.scss dist",
     "_native": "node ../copy-native.mjs ./node_modules/gamebryo-savegame/build/Release/GamebryoSave.node ./node_modules/gamebryo-savegame/dist/liblz4.dll ./node_modules/gamebryo-savegame/dist/zlib.dll",

@@ -2,7 +2,6 @@
   "name": "script-extender-installer",
   "version": "1.1.14",
   "description": "Install script extenders for Gamebyro games with Vortex",
-  "repository": "",
   "scripts": {
     "_build": "node build.mjs && pnpm extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs out",

@@ -2,7 +2,6 @@
   "name": "local-gamesettings",
   "version": "0.1.4",
   "description": "Management for local game settings",
-  "repository": "",
   "scripts": {
     "_build": "node build.mjs && pnpm extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs out",
