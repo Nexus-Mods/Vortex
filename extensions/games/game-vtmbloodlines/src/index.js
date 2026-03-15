@@ -73,7 +73,7 @@ function getGameVersion(discoveryPath) {
 function main(context) {
   context.registerGame({
     id: GAME_ID,
-    name: 'Vampire the Masquerade\tBloodlines',
+    name: 'Vampire: The Masquerade\tBloodlines',
     shortName: 'VTMB',
     logo: 'gameart.jpg',
     mergeMods: true,
@@ -94,7 +94,7 @@ function main(context) {
     setup: prepareForModding,
   });
 
-  // The "unofficial patch" mod modifies the mods folder. GoG seems to include
+  // The "unofficial patch" mod modifies the mods folder. GOG seems to include
   //  this by default ?
   context.registerModType('vtmb-up-modtype', 25,
     (gameId) => gameId === GAME_ID, () => getUnofficialModPath(context.api),

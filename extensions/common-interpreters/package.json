@@ -1,7 +1,6 @@
 {
   "name": "common-interpreters",
   "version": "1.0.0",
-  "main": "./out/index.js",
   "author": "Black Tree Gaming Ltd.",
   "description": "Adds support for running java, python, ... executables",
   "license": "GPL-3.0",
