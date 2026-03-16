@@ -41,7 +41,6 @@ import { ModRequirement } from "../components/mod_requirement";
 import { PremiumModal } from "../components/premium_modal";
 import {
   getModFiles,
-  isModFilesLoading,
   hiddenRequirements,
   feedbackGivenMap,
 } from "../selectors";
@@ -77,9 +76,6 @@ function HealthCheckDetailPage({
   // Get mod files from Redux cache
   const modFiles = useSelector((state: IState) =>
     getModFiles(state, mod.modId),
-  );
-  const loading = useSelector((state: IState) =>
-    isModFilesLoading(state, mod.modId),
   );
 
   const showPremiumAd = useSelector(shouldShowPremiumAd);
@@ -308,7 +304,6 @@ function HealthCheckDetailPage({
 
               <ModRequirement
                 key={`${mod.modId}`}
-                loadingFiles={loading}
                 mod={mod}
                 modFiles={modFiles}
                 onConfirmInstall={handleConfirmInstall}

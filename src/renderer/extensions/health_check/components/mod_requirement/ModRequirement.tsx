@@ -5,7 +5,6 @@ import {
   mdiOpenInNew,
   mdiWeb,
 } from "@mdi/js";
-import React from "react";
 import { useTranslation } from "react-i18next";
 
 import type { IModFileInfo, IModRequirementExt } from "../../types";
@@ -14,24 +13,20 @@ import { Button } from "../../../../ui/components/button/Button";
 import { Icon } from "../../../../ui/components/icon/Icon";
 import { Typography } from "../../../../ui/components/typography/Typography";
 import { opn } from "../../../../util/api";
-import { bytesToString } from "../../../../util/util";
 
 export const ModRequirement = ({
   mod,
   modFiles,
-  loadingFiles,
   onShowVortexModal,
   onConfirmInstall,
 }: {
   mod: IModRequirementExt;
   modFiles?: IModFileInfo[];
-  loadingFiles?: boolean;
   onShowVortexModal?: (file?: IModFileInfo) => void;
   onConfirmInstall?: () => void;
 }) => {
   const { t } = useTranslation(["health_check"]);
 
-  const hasFiles = modFiles && modFiles.length > 0;
   const previewImageSrc = modFiles?.[0]?.thumbnailUrl || "";
 
   return (
@@ -136,77 +131,6 @@ export const ModRequirement = ({
           </div>
         )}
 
-        {!mod.externalRequirement && (loadingFiles || hasFiles) && (
-          <div className="space-y-2">
-            <Typography appearance="moderate" typographyType="body-sm">
-              Available files {!loadingFiles && `(${modFiles.length}):`}
-            </Typography>
-
-            <div className="max-h-48 space-y-1 overflow-y-auto">
-              {loadingFiles ? (
-                <div className="flex animate-pulse items-center gap-x-4 rounded-sm bg-surface-translucent-mid px-3 py-2">
-                  <div className="grow space-y-1.5">
-                    <div className="h-5 w-1/3 rounded-sm bg-surface-translucent-mid" />
-
-                    <div className="flex gap-x-1">
-                      <div className="h-4 w-12 rounded-sm bg-surface-translucent-mid" />
-
-                      <div className="h-4 w-12 rounded-sm bg-surface-translucent-mid" />
-
-                      <div className="h-4 w-12 rounded-sm bg-surface-translucent-mid" />
-                    </div>
-                  </div>
-
-                  <div className="h-7 w-24 shrink-0 rounded-sm bg-surface-translucent-mid" />
-                </div>
-              ) : (
-                <>
-                  {modFiles.map((file) => (
-                    <div
-                      className="flex items-center justify-between rounded-sm border border-stroke-weak bg-surface-translucent-low px-3 py-2"
-                      key={file.fileId}
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-x-2">
-                          <Typography className="truncate">
-                            {file.name}
-                          </Typography>
-
-                          {file.isPrimary && (
-                            <Typography
-                              className="shrink-0 rounded-sm bg-premium-moderate px-1.5 py-0.5"
-                              typographyType="body-sm"
-                            >
-                              Primary
-                            </Typography>
-                          )}
-                        </div>
-
-                        <Typography
-                          appearance="subdued"
-                          className="truncate"
-                          typographyType="body-sm"
-                        >
-                          {`v${file.version} • ${file.categoryName} • ${bytesToString(file.size)}`}
-                        </Typography>
-                      </div>
-
-                      <Button
-                        buttonType="tertiary"
-                        filled="weak"
-                        leftIconPath={mdiDownload}
-                        size="sm"
-                        onClick={() => onShowVortexModal?.(file)}
-                      >
-                        {t("detail::item::install_in_app")}
-                      </Button>
-                    </div>
-                  ))}
-                </>
-              )}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -29,6 +29,7 @@ import { isLoggedIn } from "../../nexus_integration/selectors";
 import { numericGameIdToDomainName } from "../../nexus_integration/util";
 import { makeModUID } from "../../nexus_integration/util/UIDs";
 import { activeProfile } from "../../profile_management/selectors";
+import { getModFilesWithCache } from "../util";
 
 export const MOD_REQUIREMENTS_CHECK_ID = "check-nexus-mod-requirements";
 
@@ -164,6 +165,7 @@ export async function checkModRequirements(
     const enabledMods = getEnabledMods(api, gameId).filter(
       (mod: IMod) =>
         mod.type !== "collection" &&
+        !mod.attributes?.installedAsDependency &&
         mod.attributes?.modId &&
         mod.attributes?.source === "nexus",
     );
@@ -329,6 +331,21 @@ export async function checkModRequirements(
           const gameIdForStorage = domainName ?? gameId;
 
           if (!installedModIds.has(requiredModId)) {
+            // Only show items for mods with exactly one main file
+            try {
+              const mainFiles = await getModFilesWithCache(
+                api,
+                gameIdForStorage,
+                requiredModId,
+              );
+              if (mainFiles.length !== 1) {
+                continue;
+              }
+            } catch {
+              // If we can't fetch files, skip this requirement
+              continue;
+            }
+
             getModEntry().missingMods.push({
               ...req,
               modId: requiredModId,
