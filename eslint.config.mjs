@@ -7,7 +7,6 @@ import perfectionist from "eslint-plugin-perfectionist";
 import { defineConfig } from "eslint/config";
 import globals from "globals";
 import tseslint from "typescript-eslint";
-import { builtinModules } from "node:module";
 
 import noBluebirdPromiseAliasRule from "./eslint-rules/no-bluebird-promise-alias.mjs";
 import noBluebirdResolveWithPromiseLike from "./eslint-rules/no-bluebird-resolve-promiselike.mjs";
@@ -30,6 +29,9 @@ export default defineConfig([
       "**/dist/**",
       "**/out/**",
       "**/lib/**",
+
+      // NOTE(erri120): shared project uses oxlint
+      "src/shared/**",
     ],
   },
 
@@ -215,37 +217,6 @@ export default defineConfig([
       "@eslint-react/no-create-ref": "warn",
       "@eslint-react/no-direct-mutation-state": "warn",
       "@eslint-react/no-missing-key": "warn",
-    },
-  },
-
-  // ─── src/shared ──────────────────────────────────────────────────────────────
-  {
-    name: "Shared",
-    files: ["src/shared/src/**/*.{ts,mjs}"],
-    rules: {
-      "no-restricted-imports": [
-        "error",
-        {
-          patterns: [
-            {
-              regex: "^node:",
-              message:
-                "Node.js built-ins are not allowed in the shared package. This package must be platform-agnostic.",
-            },
-            {
-              regex: "^electron(/|$)",
-              message:
-                "Electron is not allowed in the shared package. This package must be platform-agnostic.",
-            },
-          ],
-          paths: [
-            ...builtinModules.map((name) => ({
-              name,
-              message: `'${name}' is a Node.js built-in and is not allowed in the shared package. This package must be platform-agnostic.`,
-            })),
-          ],
-        },
-      ],
     },
   },
 
