@@ -6,6 +6,7 @@
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",
     "_build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
+    "typecheck:strict": "pnpm exec tsc -p tsconfig.strict.json",
     "build": "pnpm run _build && node ../../copy-extension.mjs out",
     "dist": "pnpm run _build && node ../../copy-extension.mjs dist"
   },
