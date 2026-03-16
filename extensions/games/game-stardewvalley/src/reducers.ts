@@ -1,9 +1,12 @@
-import * as actions from './actions';
+import type { types} from 'vortex-api';
 
-import { types, util } from 'vortex-api';
+import { util } from 'vortex-api';
+
+import * as actions from './actions';
 
 export interface IStateSDV {
   useRecommendations: boolean;
+  mergeConfigs?: { [profileId: string]: boolean };
 }
 
 const sdvReducers: types.IReducerSpec<IStateSDV> = {
@@ -17,8 +20,9 @@ const sdvReducers: types.IReducerSpec<IStateSDV> = {
     },
   },
   defaults: {
-    useRecommendations: undefined,
+    useRecommendations: false,
   },
 }
 
-export default sdvReducers;
+// Needed because the API expects the generic IReducerSpec
+export default sdvReducers as unknown as types.IReducerSpec;

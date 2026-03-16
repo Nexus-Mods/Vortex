@@ -1,13 +1,16 @@
-import { actions, types, selectors, util } from 'vortex-api';
-import { GAME_ID } from './common';
+import type { types } from 'vortex-api';
+
 import { gte } from 'semver';
+import { actions, selectors, util } from 'vortex-api';
+
+import { GAME_ID } from './common';
 import { SMAPI_MOD_ID, SMAPI_URL } from './constants';
 
 export function findSMAPITool(api: types.IExtensionApi): types.IDiscoveredTool | undefined {
   const state = api.getState();
   const discovery = selectors.discoveryByGame(state, GAME_ID);
   const tool = discovery?.tools?.['smapi'];
-  return !!tool?.path ? tool : undefined;
+  return tool?.path ? tool : undefined;
 }
 
 export function getSMAPIMods(api: types.IExtensionApi): types.IMod[] {
@@ -21,12 +24,12 @@ export function getSMAPIMods(api: types.IExtensionApi): types.IMod[] {
   return Object.values(mods).filter((mod: types.IMod) => isSMAPI(mod) && isActive(mod.id));
 }
 
-export function findSMAPIMod(api: types.IExtensionApi): types.IMod {
+export function findSMAPIMod(api: types.IExtensionApi): types.IMod | undefined {
   const SMAPIMods = getSMAPIMods(api);
   return (SMAPIMods.length === 0)
     ? undefined
     : SMAPIMods.length > 1
-      ? SMAPIMods.reduce((prev, iter) => {
+      ? SMAPIMods.reduce<types.IMod | undefined>((prev, iter) => {
         if (prev === undefined) {
           return iter;
         }
@@ -41,14 +44,14 @@ export async function deploySMAPI(api: types.IExtensionApi) {
 
   const discovery = selectors.discoveryByGame(api.getState(), GAME_ID);
   const tool = discovery?.tools?.['smapi'];
-  if (tool) {
+  if (tool && api.store !== undefined) {
     api.store.dispatch(actions.setPrimaryTool(GAME_ID, tool.id));
   }
 }
 
 export async function downloadSMAPI(api: types.IExtensionApi, update?: boolean) {
-  api.dismissNotification('smapi-missing');
-  api.sendNotification({
+  api.dismissNotification?.('smapi-missing');
+  api.sendNotification?.({
     id: 'smapi-installing',
     message: update ? 'Updating SMAPI' : 'Installing SMAPI',
     type: 'activity',
@@ -61,7 +64,7 @@ export async function downloadSMAPI(api: types.IExtensionApi, update?: boolean) 
   }
 
   try {
-    const modFiles = await api.ext.nexusGetModFiles(GAME_ID, SMAPI_MOD_ID);
+    const modFiles = await api.ext?.nexusGetModFiles?.(GAME_ID, SMAPI_MOD_ID) ?? [];
 
     const fileTime = (input: any) => Number.parseInt(input.uploaded_time, 10);
 
@@ -91,9 +94,9 @@ export async function downloadSMAPI(api: types.IExtensionApi, update?: boolean) 
 
     await deploySMAPI(api);
   } catch (err) {
-    api.showErrorNotification('Failed to download/install SMAPI', err);
+    api.showErrorNotification?.('Failed to download/install SMAPI', err);
     util.opn(SMAPI_URL).catch(() => null);
   } finally {
-    api.dismissNotification('smapi-installing');
+    api.dismissNotification?.('smapi-installing');
   }
 }

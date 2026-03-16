@@ -1,8 +1,11 @@
+import type { types } from 'vortex-api';
+
 import React from 'react';
 import { ControlLabel, FormGroup, HelpBlock, Panel } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { useSelector, useStore } from 'react-redux';
-import { Toggle, More, selectors, types } from 'vortex-api';
+import { Toggle, More, selectors } from 'vortex-api';
+
 import { setRecommendations } from './actions';
 import { GAME_ID } from './common';
 
@@ -37,12 +40,14 @@ function Settings(props: IBaseProps) {
         <Panel>
           <Panel.Body>
             <ControlLabel>{t('Stardew Valley')}</ControlLabel>
+
             <Toggle
               checked={useRecommendations}
-              onToggle={setUseRecommendations}
               disabled={true}
+              onToggle={setUseRecommendations}
             >
               {t('Use recommendations from the mod manifests')}
+
               <More id='sdv_use_recommendations' name='SDV Use Recommendations'>
                 {t('If checked, when you install a mod for Stardew Valley you may get '
                   + 'suggestions for installing further mods, required or recommended by it.'
@@ -50,8 +55,10 @@ function Settings(props: IBaseProps) {
                   + 'consider before accepting them.')}
               </More>
             </Toggle>
+
             <Toggle checked={mergeEnabled} onToggle={setMergeConfigSetting}>
               {t('Manage SDV mod configuration files')}
+
               <More id='sdv_mod_configuration' name='SDV Mod Configuration'>
                 {t('Vortex by default is configured to attempt to pull-in newly created files (mod configuration json files for example) '
                   + 'created externally (by the game itself or tools) into their respective mod folders.\n\n'

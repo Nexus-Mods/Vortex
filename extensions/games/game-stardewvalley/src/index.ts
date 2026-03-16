@@ -40,6 +40,10 @@ function toBlue<T>(func: (...args: any[]) => Promise<T>): (...args: any[]) => Bl
   return (...args: any[]) => Bluebird.resolve(func(...args));
 }
 
+function errorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
 class StardewValley implements types.IGame {
   public context: types.IExtensionContext;
   public id: string = GAME_ID;
@@ -111,18 +115,26 @@ class StardewValley implements types.IGame {
    * This may be left undefined but then the tool/game can only be discovered by searching the disk
    * which is slow and only happens manually.
    */
-  public queryPath = toBlue(async () => {
-    // check Steam
-    const game = await util.GameStoreHelper.findByAppId(['413150', '1453375253', 'ConcernedApe.StardewValleyPC']);
-    if (game)
-      return game.gamePath;
+  public queryPath = toBlue<string>(async () => {
+    // check known game stores first
+    const game = await util.GameStoreHelper.findByAppId([
+      '413150',
+      '1453375253',
+      'ConcernedApe.StardewValleyPC',
+    ]).catch(() => undefined);
 
-    // check default paths
-    for (const defaultPath of this.defaultPaths)
-    {
-      if (await this.getPathExistsAsync(defaultPath))
-        return defaultPath;
+    if (game !== undefined) {
+      return game.gamePath;
     }
+
+    // then check fallback default paths
+    for (const defaultPath of this.defaultPaths) {
+      if (await this.getPathExistsAsync(defaultPath)) {
+        return defaultPath;
+      }
+    }
+
+    throw new Error('Stardew Valley install path not found');
   });
 
   /**
@@ -203,9 +215,9 @@ class StardewValley implements types.IGame {
     const action = () => (smapiMod
       ? deploySMAPI(this.context.api)
       : downloadSMAPI(this.context.api))
-      .then(() => this.context.api.dismissNotification('smapi-missing'));
+      .then(() => this.context.api.dismissNotification?.('smapi-missing'));
 
-    this.context.api.sendNotification({
+    this.context.api.sendNotification?.({
       id: 'smapi-missing',
       type: 'warning',
       title,
@@ -328,7 +340,7 @@ async function install(api,
     modFiles: string[];
   }
 
-  let parseError: Error;
+  let parseError: unknown;
 
   await dependencyManager.scanManifests(true);
   let mods: IModInfo[] = await Promise.all(manifestFiles.map(async manifestFile => {
@@ -354,9 +366,12 @@ async function install(api,
         modFiles,
       };
     } catch (err) {
+      const parsedErr = err instanceof Error
+        ? err
+        : new Error(String(err));
       // just a warning at this point as this may not be the main manifest for the mod
-      log('warn', 'Failed to parse manifest', { manifestFile, error: err.message });
-      parseError = err;
+      log('warn', 'Failed to parse manifest', { manifestFile, error: parsedErr.message });
+      parseError = parsedErr;
       return undefined;
     }
   }));
@@ -366,7 +381,7 @@ async function install(api,
   if (mods.length === 0) {
     api.showErrorNotification(
       'The mod manifest is invalid and can\'t be read. You can try to install the mod anyway via right-click -> "Unpack (as-is)"',
-      parseError, {
+      parseError ?? new Error('Unknown manifest parse error'), {
       allowReport: false,
     });
   }
@@ -404,7 +419,7 @@ async function install(api,
       const versionMatch = dep.MinimumVersion !== undefined
         ? `>=${dep.MinimumVersion}`
         : '*';
-      const rule: types.IModRule = {
+      const rule = {
         // treating all dependencies as recommendations because the dependency information
         // provided by some mod authors is a bit hit-and-miss and Vortex fairly aggressively
         // enforces requirements
@@ -413,12 +428,12 @@ async function install(api,
         reference: {
           logicalFileName: dep.UniqueID.toLowerCase(),
           versionMatch,
-        },
+        } as any,
         extra: {
           onlyIfFulfillable: true,
           automatic: true,
         },
-      };
+      } as any;
       instructions.push({
         type: 'rule',
         rule,
@@ -436,8 +451,8 @@ async function install(api,
     }*/
     return instructions;
   })
-    .then(data => {
-      const instructions = [].concat(data).reduce((accum, iter) => accum.concat(iter), []);
+    .then((data: types.IInstruction[][]) => {
+      const instructions = data.reduce<types.IInstruction[]>((accum, iter) => accum.concat(iter), []);
       return Promise.resolve({ instructions });
     });
 }
@@ -486,9 +501,9 @@ async function installSMAPI(getDiscoveryPath: () => string, files: string[], des
   }
 
   // file will be outdated after the walk operation so prepare a replacement. 
-  const updatedFiles = [];
+  const updatedFiles: string[] = [];
 
-  const szip = new SevenZip();
+  const szip = new (SevenZip as any)();
   // Unzip the files from the data archive. This doesn't seem to behave as described here: https://www.npmjs.com/package/node-7z#events
   await szip.extractFull(path.join(destinationPath, dataFile), destinationPath);
 
@@ -563,7 +578,7 @@ async function onShowSMAPILog(api) {
       await showSMAPILog(api, basePath, "SMAPI-latest.txt");
     } catch (err) {
       //Or Inform the user there are no logs.
-      api.sendNotification({ type: 'info', title: 'No SMAPI logs found.', message: '', displayMS: 5000 });
+      api.sendNotification?.({ type: 'info', title: 'No SMAPI logs found.', message: '', displayMS: 5000 });
     }
   }
 }
@@ -590,13 +605,17 @@ function updateConflictInfo(api: types.IExtensionApi,
                             gameId: string,
                             modId: string)
                             : Promise<void> {
-  const mod = api.getState().persistent.mods[gameId][modId];
+  const mod = util.getSafe(api.getState(), ['persistent', 'mods', gameId, modId], undefined as any);
 
   if (mod === undefined) {
     return Promise.resolve();
   }
 
   const now = Date.now();
+  const store = api.store;
+  if (store === undefined) {
+    return Promise.resolve();
+  }
 
   if ((now - (mod.attributes?.lastSMAPIQuery ?? 0)) < SMAPI_QUERY_FREQUENCY) {
     return Promise.resolve();
@@ -640,42 +659,43 @@ function updateConflictInfo(api: types.IExtensionApi,
     .then(results => {
       const worstStatus: ISMAPIResult[] = results
         .sort((lhs, rhs) => compatibilityPrio(lhs) - compatibilityPrio(rhs));
-      if (worstStatus.length > 0) {
-        api.store.dispatch(actions.setModAttributes(gameId, modId, {
+      const worst = worstStatus[0];
+      if (worst !== undefined) {
+        store.dispatch(actions.setModAttributes(gameId, modId, {
           lastSMAPIQuery: now,
-          compatibilityStatus: worstStatus[0].metadata.compatibilityStatus,
-          compatibilityMessage: worstStatus[0].metadata.compatibilitySummary,
-          compatibilityUpdate: worstStatus[0].suggestedUpdate?.version,
+          compatibilityStatus: worst.metadata?.compatibilityStatus,
+          compatibilityMessage: worst.metadata?.compatibilitySummary,
+          compatibilityUpdate: worst.suggestedUpdate?.version,
         }));
       } else {
         log('debug', 'no manifest');
-        api.store.dispatch(actions.setModAttribute(gameId, modId, 'lastSMAPIQuery', now));
+        store.dispatch(actions.setModAttribute(gameId, modId, 'lastSMAPIQuery', now));
       }
     })
     .catch(err => {
-      log('warn', 'error reading manifest', err.message);
-      api.store.dispatch(actions.setModAttribute(gameId, modId, 'lastSMAPIQuery', now));
+      log('warn', 'error reading manifest', errorMessage(err));
+      store.dispatch(actions.setModAttribute(gameId, modId, 'lastSMAPIQuery', now));
     });
 }
 
 function init(context: types.IExtensionContext) {
   let dependencyManager: DependencyManager;
-  const getDiscoveryPath = () => {
-    const state = context.api.store.getState();
-    const discovery = util.getSafe(state, ['settings', 'gameMode', 'discovered', GAME_ID], undefined);
-    if ((discovery === undefined) || (discovery.path === undefined)) {
+
+  const getDiscoveryPath = (): string => {
+    const state = context.api.getState();
+    const discoveryPath = util.getSafe(state, ['settings', 'gameMode', 'discovered', GAME_ID, 'path'], undefined);
+    if (discoveryPath === undefined) {
       // should never happen and if it does it will cause errors elsewhere as well
       log('error', 'stardewvalley was not discovered');
-      return undefined;
+      throw new Error('Stardew Valley was not discovered');
     }
 
-    return discovery.path;
+    return discoveryPath;
   }
 
   const getSMAPIPath = (game) => {
-    const state = context.api.store.getState();
-    const discovery = state.settings.gameMode.discovered[game.id];
-    return discovery.path;
+    const state = context.api.getState();
+    return util.getSafe(state, ['settings', 'gameMode', 'discovered', game.id, 'path'], '');
   };
 
   const manifestExtractor = toBlue(
@@ -691,7 +711,7 @@ function init(context: types.IExtensionContext) {
           try {
             return await parseManifest(manifest);
           } catch (err) {
-            log('warn', 'Failed to parse manifest', { manifestFile: manifest, error: err.message });
+            log('warn', 'Failed to parse manifest', { manifestFile: manifest, error: errorMessage(err) });
             return undefined;
           }
         }))).filter(manifest => manifest !== undefined);
@@ -738,9 +758,9 @@ function init(context: types.IExtensionContext) {
     onMergeConfigToggle: async (profileId: string, enabled: boolean) => {
       if (!enabled) {
         await onRevertFiles(context.api, profileId);
-        context.api.sendNotification({ type: 'info', message: 'Mod configs returned to their respective mods', displayMS: 5000 });
+        context.api.sendNotification?.({ type: 'info', message: 'Mod configs returned to their respective mods', displayMS: 5000 });
       }
-      context.api.store.dispatch(setMergeConfigs(profileId, enabled));
+      context.api.store?.dispatch(setMergeConfigs(profileId, enabled));
       return Promise.resolve();
     }
   }), () => selectors.activeGameId(context.api.getState()) === GAME_ID, 150);
@@ -777,12 +797,12 @@ function init(context: types.IExtensionContext) {
       //      ../Content/
       //      ../Mods/
       //      ../Mods/A_SMAPI_MOD\manifest.json
-      const hasManifest = copyInstructions.find(instr =>
-        instr.destination.endsWith(MANIFEST_FILE))
-      const hasModsFolder = copyInstructions.find(instr =>
-        instr.destination.startsWith(defaultModsRelPath() + path.sep)) !== undefined;
-      const hasContentFolder = copyInstructions.find(instr =>
-        instr.destination.startsWith('Content' + path.sep)) !== undefined
+      const hasManifest = copyInstructions.some(instr =>
+        instr.destination?.endsWith(MANIFEST_FILE) === true);
+      const hasModsFolder = copyInstructions.some(instr =>
+        instr.destination?.startsWith(defaultModsRelPath() + path.sep) === true);
+      const hasContentFolder = copyInstructions.some(instr =>
+        instr.destination?.startsWith('Content' + path.sep) === true);
 
       return (hasManifest)
         ? Bluebird.resolve(hasContentFolder && hasModsFolder)
@@ -794,7 +814,7 @@ function init(context: types.IExtensionContext) {
     () => { onShowSMAPILog(context.api); },
     () => {
       //Only show the SMAPI log button for SDV. 
-      const state = context.api.store.getState();
+      const state = context.api.getState();
       const gameMode = selectors.activeGameId(state);
       return (gameMode === GAME_ID);
     });
@@ -832,7 +852,7 @@ function init(context: types.IExtensionContext) {
       loopbackCB: (query: IQuery) => {
         return Bluebird.resolve(proxy.find(query))
           .catch(err => {
-            log('error', 'failed to look up smapi meta info', err.message);
+            log('error', 'failed to look up smapi meta info', errorMessage(err));
             return Bluebird.resolve([]);
           });
       },
@@ -854,7 +874,7 @@ function init(context: types.IExtensionContext) {
       const smapiMod = findSMAPIMod(context.api);
       const primaryTool = util.getSafe(state, ['settings', 'interface', 'primaryTool', GAME_ID], undefined);
       if (smapiMod && primaryTool === undefined) {
-        context.api.store.dispatch(actions.setPrimaryTool(GAME_ID, 'smapi'));
+        context.api.store?.dispatch(actions.setPrimaryTool(GAME_ID, 'smapi'));
       }
 
       return Promise.resolve();
@@ -870,7 +890,7 @@ function init(context: types.IExtensionContext) {
       const smapiMod = findSMAPIMod(context.api);
       const primaryTool = util.getSafe(state, ['settings', 'interface', 'primaryTool', GAME_ID], undefined);
       if (smapiMod && primaryTool === 'smapi') {
-        context.api.store.dispatch(actions.setPrimaryTool(GAME_ID, undefined));
+        context.api.store?.dispatch(actions.setPrimaryTool(GAME_ID, undefined as any));
       }
 
       return Promise.resolve();
@@ -882,7 +902,7 @@ function init(context: types.IExtensionContext) {
       }
       updateConflictInfo(context.api, proxy, gameId, modId)
         .then(() => log('debug', 'added compatibility info', { modId }))
-        .catch(err => log('error', 'failed to add compatibility info', { modId, error: err.message }));
+        .catch(err => log('error', 'failed to add compatibility info', { modId, error: errorMessage(err) }));
 
     });
 
@@ -899,7 +919,7 @@ function init(context: types.IExtensionContext) {
           log('debug', 'done updating compatibility info');
         })
         .catch(err => {
-          log('error', 'failed to update conflict info', err.message);
+          log('error', 'failed to update conflict info', errorMessage(err));
         });
     });
   });

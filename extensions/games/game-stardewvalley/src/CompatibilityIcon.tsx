@@ -1,6 +1,9 @@
+import type { types } from 'vortex-api';
+
 import React from 'react';
-import { tooltip, types } from 'vortex-api';
-import { CompatibilityStatus } from './types';
+import { tooltip } from 'vortex-api';
+
+import type { CompatibilityStatus } from './types';
 
 export interface ICompatibilityIconProps {
   t: types.TFunction,
@@ -44,8 +47,8 @@ function CompatibilityIcon(props: ICompatibilityIconProps) {
   const icon = iconMap[status] ?? iconMap['unknown'];
   return (
     <tooltip.Icon
-      name={icon}
       className={`sdv-compatibility-${status}`}
+      name={icon}
       tooltip={mod.attributes?.compatibilityMessage ?? t('No information')}
     />
   );

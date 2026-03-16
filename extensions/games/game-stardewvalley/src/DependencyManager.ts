@@ -11,7 +11,7 @@ import path from 'path';
 type ManifestMap = { [modId: string]: ISDVModManifest[] };
 export default class DependencyManager {
   private mApi: types.IExtensionApi;
-  private mManifests: ManifestMap;
+  private mManifests: ManifestMap | undefined;
   private mLoading: boolean = false;
 
   constructor(api: types.IExtensionApi) {
@@ -20,7 +20,7 @@ export default class DependencyManager {
 
   public async getManifests(): Promise<ManifestMap> {
     await this.scanManifests();
-    return this.mManifests;
+    return this.mManifests ?? {};
   }
 
   public async refresh(): Promise<void> {
@@ -56,7 +56,8 @@ export default class DependencyManager {
           try {
             manifest = await parseManifest(entry.filePath);
           } catch (err) {
-            log('error', 'failed to parse manifest', { error: err.message, manifest: entry.filePath });
+            const message = err instanceof Error ? err.message : String(err);
+            log('error', 'failed to parse manifest', { error: message, manifest: entry.filePath });
             continue;
           }
           const list = accum[iter.id] ?? [];

@@ -1,12 +1,12 @@
-import { types, selectors } from 'vortex-api';
-
-import DependencyManager from './DependencyManager';
+import type { types} from 'vortex-api';
 
 import { coerce, gte } from 'semver';
+import { selectors } from 'vortex-api';
 
-import { downloadSMAPI, findSMAPIMod } from './SMAPI';
+import type DependencyManager from './DependencyManager';
 
 import { GAME_ID } from './common';
+import { downloadSMAPI, findSMAPIMod } from './SMAPI';
 
 export async function testSMAPIOutdated(api: types.IExtensionApi,
                                         depManager: DependencyManager)
@@ -14,13 +14,13 @@ export async function testSMAPIOutdated(api: types.IExtensionApi,
   const state = api.getState();
   const activeGameId = selectors.activeGameId(state);
   if (activeGameId !== GAME_ID) {
-    return Promise.resolve(undefined);
+    return Promise.resolve(undefined as any);
   }
 
   let currentSMAPIVersion = findSMAPIMod(api)?.attributes?.version;
   if (currentSMAPIVersion === undefined) {
     // SMAPI isn't installed or enabled.
-    return Promise.resolve(undefined);
+    return Promise.resolve(undefined as any);
   }
 
   const isSmapiOutdated = async () => {
@@ -29,8 +29,10 @@ export async function testSMAPIOutdated(api: types.IExtensionApi,
     const incompatibleModIds: string[] = [];
     for (const [id, manifests] of Object.entries(enabledManifests)) {
       const incompatible = manifests.filter((iter) => {
+        const installedVersion = currentSMAPIVersion;
         if (iter.MinimumApiVersion !== undefined) {
-          return !gte(currentSMAPIVersion, coerce(iter.MinimumApiVersion ?? '0.0.0'));
+          return (installedVersion !== undefined)
+            && !gte(installedVersion, iter.MinimumApiVersion ?? '0.0.0');
         }
         return false;
       });
@@ -54,5 +56,5 @@ export async function testSMAPIOutdated(api: types.IExtensionApi,
       onRecheck: () => isSmapiOutdated(),
       severity: 'warning' as types.ProblemSeverity,
     }) as any
-    : Promise.resolve(undefined);
+    : Promise.resolve(undefined as any);
 }

@@ -1,11 +1,15 @@
-import { IFileInfo } from '@nexusmods/nexus-api';
+import type { IFileInfo } from '@nexusmods/nexus-api';
+import type { ILookupResult, IQuery } from 'modmeta-db';
+import type { types } from 'vortex-api';
+
 import * as https from 'https';
-import { ILookupResult, IQuery } from 'modmeta-db';
 import * as semver from 'semver';
-import { log, types } from 'vortex-api';
+import { log } from 'vortex-api';
+
+import type { ISMAPIIOQuery, ISMAPIResult } from './types';
+
 import { GAME_ID } from './common';
 import { SMAPI_IO_API_VERSION } from './constants';
-import { ISMAPIIOQuery, ISMAPIResult } from './types';
 import { coerce, semverCompare } from './util';
 
 const SMAPI_HOST = 'smapi.io';
@@ -29,22 +33,23 @@ class SMAPIProxy {
   public async find(query: IQuery): Promise<ILookupResult[]> {
     if (query.name !== undefined) {
       const res = await this.findByNames([{ id: query.name }]);
-      if ((res.length === 0) || (res[0].metadata?.main === undefined)) {
+      const first = res[0];
+      if ((first === undefined) || (first.metadata?.main === undefined)) {
         return [];
       }
       const key = this.makeKey(query);
-      if (res[0].metadata.nexusID !== undefined) {
+      if (first.metadata.nexusID !== undefined) {
         return await this.lookupOnNexus(
-          query, res[0].metadata.nexusID, res[0].metadata.main.version);
+          query, first.metadata.nexusID, first.metadata.main.version ?? '0.0.0');
       } else {
         return [
           { key, value: {
             gameId: GAME_ID,
-            fileMD5: undefined,
-            fileName: query.name,
+            fileMD5: '',
+            fileName: query.name ?? '',
             fileSizeBytes: 0,
             fileVersion: '',
-            sourceURI: res[0].metadata.main?.url,
+            sourceURI: first.metadata.main?.url ?? '',
           } },
         ];
       }
@@ -91,7 +96,7 @@ class SMAPIProxy {
                               nexusId: number,
                               version: string)
                               : Promise<ILookupResult[]> {
-    await this.mAPI.ext.ensureLoggedIn();
+    await this.mAPI.ext?.ensureLoggedIn?.();
 
     const files: IFileInfo[] = await this.mAPI.ext.nexusGetModFiles?.(GAME_ID, nexusId) ?? [];
 
@@ -107,13 +112,13 @@ class SMAPIProxy {
     return [{
       key: this.makeKey(query),
       value: {
-        fileMD5: undefined,
-        fileName: file.file_name,
+        fileMD5: '',
+        fileName: file.file_name ?? '',
         fileSizeBytes: file.size * 1024,
-        fileVersion: file.version,
+        fileVersion: file.version ?? '',
         gameId: GAME_ID,
         sourceURI: `nxm://${GAME_ID}/mods/${nexusId}/files/${file.file_id}`,
-        logicalFileName: query.name.toLowerCase(),
+        logicalFileName: (query.name ?? '').toLowerCase(),
         source: 'nexus',
         domainName: GAME_ID,
         details: {
