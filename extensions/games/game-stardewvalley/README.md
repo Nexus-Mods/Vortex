@@ -1,110 +1,217 @@
-# Stardew Valley Extension Architecture
+# Stardew Valley Vortex Extension
 
 This extension adds Stardew Valley support to Vortex.
 
-The codebase is organised so that `index.ts` is only responsible for wiring
-modules together, while feature logic lives in dedicated files/folders.
+It is written so contributors can understand two things quickly:
 
-## Quick orientation
+1. How Stardew Valley modding works.
+2. How Vortex models and installs those mods.
 
-- If you are new to Vortex extension APIs, start with `index.ts`.
-- If you need to change install behaviour, start in `installers/`.
-- If you need to change runtime event behaviour, start in `runtime/`.
-- If you need to change UI behaviour, start in `registration/registerUi.ts` and
-  `Settings.tsx`.
+If you are new to Vortex extension development, read this file top-to-bottom once,
+then start in [`index.ts`](index.ts).
 
-## Structure map
+## Stardew Valley Modding Fundamentals
 
-- `index.ts`
-  - Composition root for this extension.
-  - Registers game metadata, installers, mod types, UI, tests, attribute
-    extractors, and runtime event handlers.
+### Stores and IDs
 
-- `game/StardewValleyGame.ts`
-  - Class: `StardewValleyGame` (`types.IGame` implementation).
-  - Owns game discovery, executable info, mod path, and setup flow.
+- Steam app ID: `413150`
+- GOG ID: `1453375253`
+- Xbox Game Pass ID: `ConcernedApe.StardewValleyPC`
 
-- `installers/`
-  - `rootFolderInstaller.ts`
-    - Functions: `testRootFolder`, `installRootFolder`.
-    - Installs to the game root. Automatically selected when a mod archive
-      contains a top-level `Content/` folder.
-  - `smapiInstaller.ts`
-    - Functions: `testSMAPI`, `installSMAPI`, `isSMAPIModType`.
-    - Handles SMAPI package extraction and SMAPI mod-type matching.
-  - `stardewValleyInstaller.ts`
-    - Functions: `testSupported`, `installStardewValley`.
-    - Handles manifest-based Stardew mod archives.
+### Runtime and mod loader
 
-- `registration/`
-  - `registerInstallers.ts`
-    - Registers installer matchers/installers with Vortex.
-  - `registerModTypes.ts`
-    - Registers `SMAPI`, `sdv-configuration-mod`, and `sdvrootfolder` mod
-      types.
-  - `registerUi.ts`
-    - Registers settings panel, SMAPI log action, and compatibility table
-      column.
-  - `registerTests.ts`
-    - Registers extension tests (`sdv-incompatible-mods`).
+- Stardew Valley is a MonoGame/.NET game.
+- Practically all desktop modding is done through
+  [SMAPI](https://smapi.io/), which is a mod loader and API.
+- Without SMAPI, standard Stardew mods do not load.
 
-- `runtime/registerRuntimeEvents.ts`
-  - Registers runtime event handlers (`did-deploy`, `did-purge`,
-    `did-install-mod`, `gamemode-activated`, etc.).
+### Core game/mod files
 
-- `ui/smapiLog.ts`
-  - Functions: `onShowSMAPILog` (and internal dialog helper).
-  - Handles reading, displaying, and sharing SMAPI logs.
+- Game executables:
+  - Windows: `Stardew Valley.exe`
+  - Linux/macOS: `StardewValley`
+- Standard mod deployment root: `<GameDir>/Mods`
+- Saves:
+  - Windows: `%AppData%/StardewValley/Saves`
+  - Linux: `~/.config/StardewValley/Saves`
 
-- `compatibility/updateConflictInfo.ts`
-  - Function: `updateConflictInfo`.
-  - Queries SMAPI compatibility metadata and updates mod attributes.
+### What a Stardew mod usually looks like
 
-- `manifests/`
-  - `getModManifests.ts`
-    - Function: `getModManifests`.
-    - Finds all `manifest.json` files in a mod path.
-  - `createManifestAttributeExtractor.ts`
-    - Factory: `createManifestAttributeExtractor`.
-    - Builds Vortex attribute extractor for manifest-derived metadata.
+Most SMAPI mods include a `manifest.json` file. SMAPI uses it for identification,
+load behaviour, dependency info, and compatibility checks.
 
-- `modtypes/sdvRootFolderMatcher.ts`
-  - Function: `isSdvRootFolderModType`.
-  - Detects root-level installs by checking for copy instructions targeting
-    `Content/`, so `sdvrootfolder` is assigned automatically.
+Two common shapes:
 
-- `helpers.ts`
-  - Shared helpers: `toBlue` and `errorMessage`.
-  - Keeps cross-cutting utility behaviour consistent.
+1. **C# SMAPI mod**
+   - Includes `manifest.json` plus an `EntryDll` that SMAPI loads.
+2. **Content pack**
+   - Includes `manifest.json` with `ContentPackFor` (for example
+     `Pathoschild.ContentPatcher`) and asset/data files.
 
-- `configMod.ts`
-  - Owns SDV configuration-file merge/sync workflow.
-  - Handles config mod creation, file imports, and revert behaviour.
+### Dependencies and ordering
 
-- `SMAPI.ts`
-  - SMAPI install/deploy/update helper flows and SMAPI mod/tool discovery.
+- `manifest.json` can declare dependencies and minimum SMAPI version.
+- Content packs are generally applied in dependency order by their framework mod.
+- Optional user grouping in nested `Mods` folders is supported by SMAPI.
 
-- `smapiProxy.ts`
-  - Class: `SMAPIProxy`.
-  - Adapter for SMAPI.io metadata API lookups and Nexus fallback.
+### Legacy/root-folder mods
 
-- `DependencyManager.ts`
-  - Class: `DependencyManager`.
-  - Scans active mods and caches parsed manifests for dependency tests.
+Some older mods target the game root and especially `Content/` (classic XNB-style
+replacement patterns). These are different from normal SMAPI mods and require
+different deployment behaviour.
 
-- `actions.ts`
-  - SDV-specific Redux actions.
+## Vortex Integration Fundamentals
 
-- `reducers.ts`
-  - SDV settings reducer (`settings.SDV`).
+### Key Vortex concepts (plain English)
 
-## State and data touchpoints
+- **Installer**: Code that inspects an archive and decides if it knows how to
+  install it.
+- **Mod type**: A Vortex classification that decides where/how a mod deploys.
+- **Deployment**: The operation that writes/links staged files into the game
+  directory.
+- **Attribute extractor**: Reads files (like `manifest.json`) and attaches
+  metadata to the mod in Vortex.
 
-- Reads from:
-  - `settings.gameMode.discovered.stardewvalley`
-  - `persistent.mods.stardewvalley`
-  - `settings.SDV`
-- Writes to:
-  - `settings.SDV.useRecommendations`
-  - `settings.SDV.mergeConfigs`
-  - mod attributes like compatibility fields and config-mod metadata
+Installers and mod types are separate phases:
+
+- Installer: "Can I handle this archive, and what install instructions should I emit?"
+- Mod type: "Given the resulting instructions/mod, where should it deploy and how should Vortex treat it?"
+- They are not 1:1. A name can exist in both systems (for example `sdvrootfolder`) but registration and matching are separate. Some mod types have no archive installer (for example `sdv-configuration-mod`).
+
+### How this extension boots
+
+[`index.ts`](index.ts) is the composition root. It registers:
+
+- game definition (`StardewValleyGame`)
+- installers
+- mod types
+- SDV settings state updater (a Redux "reducer")
+- UI integrations
+- diagnostics/tests
+- runtime event handlers
+
+### Installer decision matrix
+
+When a user installs an archive, each installer runs a quick test against the archive file list.
+A test only answers "can I handle this archive?" (`supported: true/false`).
+
+1. **SMAPI installer** (`smapi-installer`)
+   - Test checks for: `SMAPI.Installer.dll`
+   - Behaviour: extract platform payload and deploy SMAPI loader files.
+2. **Root-folder installer** (`sdvrootfolder`)
+   - Test checks for: top-level `Content/`
+   - Behaviour: deploy archive paths to game root (not `Mods/`).
+3. **Manifest installer** (`stardew-valley-installer`)
+   - Test checks for: valid `manifest.json` and no root `Content/` match
+   - Behaviour: install as Stardew/SMAPI mod content.
+
+### Mod types in this extension
+
+- `SMAPI`
+  - Special type used for SMAPI loader/tool payloads.
+- `sdv-configuration-mod`
+  - Vortex-created config mod that preserves `config.json` files generated by mods after you start the game with those mods installed.
+- `sdvrootfolder`
+  - Root-level content deployments for archives that target `Content/`.
+
+### Concrete examples (installer vs mod type)
+
+1. **Archive install (regular SMAPI mod)**
+
+   ```text
+   LookupAnything.zip
+   └── LookupAnything/
+       ├── manifest.json
+       └── LookupAnything.dll
+   ```
+
+   - Installer selected: `stardew-valley-installer` (has `manifest.json`, no top-level `Content/`).
+   - Example instructions:
+     - `source: LookupAnything/manifest.json` -> `destination: LookupAnything/manifest.json`
+     - `source: LookupAnything/LookupAnything.dll` -> `destination: LookupAnything/LookupAnything.dll`
+   - Resulting mod type: default (`''`), which deploys to `<GameDir>/Mods`.
+
+2. **Mod config files (no archive)**
+
+   ```text
+   After running the game with the mod installed:
+   <GameDir>/Mods/LookupAnything/config.json
+
+   Stored by Vortex in the config mod (staging):
+   <Staging>/Stardew Valley Configuration (<Profile>)/LookupAnything/config.json
+
+   Deployed back into the game on deploy:
+   <GameDir>/Mods/LookupAnything/config.json
+   ```
+
+   - Installer selected: none (there is no archive to test).
+   - Resulting mod type: `sdv-configuration-mod` (deploy path: `<GameDir>/Mods`).
+
+## Structure Map (Contributor View)
+
+- [`index.ts`](index.ts)
+  - Extension entrypoint and registration wiring.
+- [`game/StardewValleyGame.ts`](game/StardewValleyGame.ts)
+  - Implements `types.IGame` (discovery, executable, setup, SMAPI recommendation).
+- [`installers/`](installers)
+  - All installer/matcher logic lives here; start with
+    [`installers/README.md`](installers/README.md) for a short map of each
+    installer and [`archiveClassifier.ts`](installers/archiveClassifier.ts).
+- [`registration/registerInstallers.ts`](registration/registerInstallers.ts)
+  - Registers installer IDs/priorities with Vortex.
+- [`registration/registerModTypes.ts`](registration/registerModTypes.ts)
+  - Registers mod-type IDs/priorities and deployment roots.
+- [`runtime/registerRuntimeEvents.ts`](runtime/registerRuntimeEvents.ts)
+  - Hooks deploy/purge/install events and SMAPI metadata lookups.
+- [`manifests/createManifestAttributeExtractor.ts`](manifests/createManifestAttributeExtractor.ts)
+  - Derives mod metadata from `manifest.json`.
+- [`DependencyManager.ts`](DependencyManager.ts)
+  - Caches active mod manifests for dependency/version diagnostics.
+- [`tests.ts`](tests.ts)
+  - Extension diagnostics (for example outdated SMAPI checks).
+- [`configMod.ts`](configMod.ts)
+  - Config-file sync/merge logic via the Vortex config mod.
+- [`state/selectors.ts`](state/selectors.ts)
+  - Shared state path helpers to avoid repeating deep Redux paths.
+
+## Common Contributor Tasks
+
+### Add support for a new archive pattern
+
+1. Add detection logic in [`installers/archiveClassifier.ts`](installers/archiveClassifier.ts).
+2. Update or add installer test/install function in [`installers/`](installers).
+3. Register installer in [`registration/registerInstallers.ts`](registration/registerInstallers.ts).
+4. If deployment semantics differ, register/adjust a mod type in
+   [`registration/registerModTypes.ts`](registration/registerModTypes.ts).
+
+### Change where files deploy
+
+1. Confirm installer instruction destinations.
+2. Confirm mod type deployment root callback.
+3. Verify runtime file-ingestion behaviour in [`configMod.ts`](configMod.ts)
+   for side effects.
+
+### Debug compatibility metadata
+
+1. Start in [`runtime/registerRuntimeEvents.ts`](runtime/registerRuntimeEvents.ts) (event hooks).
+2. Check [`compatibility/updateConflictInfo.ts`](compatibility/updateConflictInfo.ts).
+3. Check [`smapiProxy.ts`](smapiProxy.ts) request/response mapping.
+
+## Glossary
+
+- **SMAPI**: Stardew Modding API loader required for most mods.
+- **Manifest**: `manifest.json` metadata file used by SMAPI and this extension.
+- **Framework mod**: A mod that loads content packs (example: Content Patcher).
+- **Content pack**: Data/asset mod consumed by a framework mod.
+- **Root-folder mod**: Archive that installs to game root (often `Content/`).
+- **Reducer (Redux)**: Function that takes current state + an action and returns
+  updated state.
+- **Installer matcher**: Function that decides whether an installer supports an archive.
+- **Mod type matcher**: Function that classifies installed instructions into a Vortex mod type.
+
+## References
+
+- SMAPI: <https://smapi.io/>
+- Stardew modding wiki index: <https://stardewvalleywiki.com/Modding:Index>
+- Vortex game extension guide:
+  <https://github.com/Nexus-Mods/Vortex/wiki/How-to-develop-a-game-extension>

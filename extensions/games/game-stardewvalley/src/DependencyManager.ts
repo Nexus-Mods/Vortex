@@ -3,6 +3,7 @@ import { ISDVModManifest } from './types';
 import turbowalk from 'turbowalk';
 import { log, types, selectors, util } from 'vortex-api';
 import { GAME_ID } from './common';
+import { selectSdvMods } from './state/selectors';
 
 import { parseManifest } from './util';
 
@@ -49,7 +50,7 @@ export default class DependencyManager {
     const profile = selectors.profileById(state, profileId);
     const isInstalled = (mod: types.IMod) => mod?.state === 'installed';
     const isActive = (modId: string) => util.getSafe(profile, ['modState', modId, 'enabled'], false);
-    const mods: { [modId: string]: types.IMod } = util.getSafe(state, ['persistent', 'mods', GAME_ID], {});
+    const mods: { [modId: string]: types.IMod } = selectSdvMods(state);
     const manifests = await Object.values(mods).reduce(async (accumP, iter) => {
       const accum = await accumP;      
       if (!isInstalled(iter) || !isActive(iter.id)) {

@@ -4,8 +4,8 @@ import path from 'path';
 import { log, types } from 'vortex-api';
 
 import type DependencyManager from '../DependencyManager';
-import { GAME_ID } from '../common';
-import { ISDVDependency, ISDVModManifest } from '../types';
+import { classifyArchive, makeInstallerTestResult } from './archiveClassifier';
+import type { IInstallerTestResult, ISDVDependency, ISDVModManifest } from '../types';
 import { parseManifest } from '../util';
 
 /**
@@ -20,8 +20,6 @@ import { parseManifest } from '../util';
  * - `testSupported`: installer matcher for manifest-based Stardew mods.
  * - `installStardewValley`: installer that copies files and generates dependency rules.
  */
-const PTRN_CONTENT = path.sep + 'Content' + path.sep;
-
 export const MANIFEST_FILE = 'manifest.json';
 
 function isValidManifest(filePath: string): boolean {
@@ -31,23 +29,18 @@ function isValidManifest(filePath: string): boolean {
   return isManifestFile && !isLocale;
 }
 
-export function testSupported(files: string[], gameId: string) {
-  const supported = (gameId === GAME_ID)
-    && (files.find(isValidManifest) !== undefined)
-    && (files.find(file => {
-      // We create a prefix fake directory just in case the content
-      //  folder is in the archive's root folder. This is to ensure we
-      //  find a match for "/Content/"
-      const testFile = path.join('fakeDir', file);
-      return (testFile.endsWith(PTRN_CONTENT));
-    }) === undefined);
-  return Bluebird.resolve({ supported, requiredFiles: [] });
+export function testSupported(files: string[], gameId: string): Bluebird<IInstallerTestResult> {
+  const archiveInfo = classifyArchive(files, gameId);
+  const supported = archiveInfo.isGameArchive
+    && archiveInfo.hasManifest
+    && !archiveInfo.hasContentFolder;
+  return Bluebird.resolve(makeInstallerTestResult(supported));
 }
 
 export async function installStardewValley(api: types.IExtensionApi,
                                            dependencyManager: DependencyManager,
                                            files: string[],
-                                           destinationPath: string) {
+                                           destinationPath: string): Promise<types.IInstallResult> {
   // The archive may contain multiple manifest files which would
   //  imply that we're installing multiple mods.
   const manifestFiles = files.filter(isValidManifest);

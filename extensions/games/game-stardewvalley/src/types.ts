@@ -28,6 +28,22 @@ export interface ISMAPIIOQuery {
   installedVersion?: string;
 }
 
+export type SdvModTypeId = 'SMAPI' | 'sdv-configuration-mod' | 'sdvrootfolder';
+
+export type SdvInstallerId = 'smapi-installer' | 'sdvrootfolder' | 'stardew-valley-installer';
+
+export interface IInstallerTestResult {
+  supported: boolean;
+  requiredFiles: string[];
+}
+
+export interface IArchiveClassifierResult {
+  isGameArchive: boolean;
+  hasManifest: boolean;
+  hasContentFolder: boolean;
+  hasSmapiInstallerDll: boolean;
+}
+
 export const compatibilityOptions = [
   'broken', 'obsolete', 'abandoned', 'unofficial', 'workaround', 'unknown', 'optional', 'ok',
 ] as const;
@@ -46,6 +62,7 @@ export interface ISMAPIResult {
     nexusID?: number,
     chucklefishID?: number,
     curseForgeID?: number,
+    curseForgeKey?: string,
     curseForkeKey?: string,
     modDropID?: number,
     gitHubRepo: string,

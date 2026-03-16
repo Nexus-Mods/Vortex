@@ -4,7 +4,8 @@ import path from 'path';
 
 import type { types } from 'vortex-api';
 
-import { GAME_ID } from '../common';
+import { classifyArchive, makeInstallerTestResult } from './archiveClassifier';
+import type { IInstallerTestResult } from '../types';
 
 /**
  * Root-level installer for Stardew Valley archives that include `Content/`.
@@ -19,18 +20,14 @@ import { GAME_ID } from '../common';
  */
 const PTRN_CONTENT = path.sep + 'Content' + path.sep;
 
-export function testRootFolder(files: string[], gameId: string) {
-  // Any archive containing "/Content/" is treated as a root-level install.
-  const filtered = files.filter(file => file.endsWith(path.sep))
-    .map(file => path.join('fakeDir', file));
-  const contentDir = filtered.find(file => file.endsWith(PTRN_CONTENT));
-  const supported = ((gameId === GAME_ID)
-    && (contentDir !== undefined));
+export function testRootFolder(files: string[], gameId: string): Bluebird<IInstallerTestResult> {
+  const archiveInfo = classifyArchive(files, gameId);
+  const supported = archiveInfo.isGameArchive && archiveInfo.hasContentFolder;
 
-  return Bluebird.resolve({ supported, requiredFiles: [] });
+  return Bluebird.resolve(makeInstallerTestResult(supported));
 }
 
-export function installRootFolder(files: string[], destinationPath: string) {
+export function installRootFolder(files: string[], destinationPath: string): Bluebird<types.IInstallResult> {
   // Deploy "Content/" and sibling folders into the game root.
   //  i.e. SomeMod.7z
   //  Will be deployed     => ../SomeMod/Content/

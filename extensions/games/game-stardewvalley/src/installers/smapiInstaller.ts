@@ -3,7 +3,9 @@ import Bluebird from 'bluebird';
 import path from 'path';
 import { fs, log, types, util } from 'vortex-api';
 
-import { GAME_ID, _SMAPI_BUNDLED_MODS, getBundledMods } from '../common';
+import { _SMAPI_BUNDLED_MODS, getBundledMods } from '../common';
+import { classifyArchive, makeInstallerTestResult } from './archiveClassifier';
+import type { IInstallerTestResult } from '../types';
 
 /**
  * SMAPI installer helpers for Stardew Valley.
@@ -20,10 +22,9 @@ import { GAME_ID, _SMAPI_BUNDLED_MODS, getBundledMods } from '../common';
 const { SevenZip } = util;
 
 export const SMAPI_EXE = 'StardewModdingAPI.exe';
-const SMAPI_DLL = 'SMAPI.Installer.dll';
 const SMAPI_DATA = ['windows-install.dat', 'install.dat'];
 
-export function isSMAPIModType(instructions: types.IInstruction[]) {
+export function isSMAPIModType(instructions: types.IInstruction[]): Bluebird<boolean> {
   // Find the SMAPI exe file.
   const smapiData = instructions.find(inst => (inst.type === 'copy')
     && (typeof inst.source === 'string')
@@ -32,17 +33,15 @@ export function isSMAPIModType(instructions: types.IInstruction[]) {
   return Bluebird.resolve(smapiData !== undefined);
 }
 
-export function testSMAPI(files: string[], gameId: string) {
-  // Make sure the download contains the SMAPI data archive.s
-  const supported = (gameId === GAME_ID) && (files.find(file =>
-    path.basename(file) === SMAPI_DLL) !== undefined)
-  return Bluebird.resolve({
-      supported,
-      requiredFiles: [],
-  });
+export function testSMAPI(files: string[], gameId: string): Bluebird<IInstallerTestResult> {
+  const archiveInfo = classifyArchive(files, gameId);
+  const supported = archiveInfo.isGameArchive && archiveInfo.hasSmapiInstallerDll;
+  return Bluebird.resolve(makeInstallerTestResult(supported));
 }
 
-export async function installSMAPI(getDiscoveryPath: () => string, files: string[], destinationPath: string) {
+export async function installSMAPI(getGameInstallPath: () => string,
+                                   files: string[],
+                                   destinationPath: string): Promise<types.IInstallResult> {
   const folder = process.platform === 'win32'
     ? 'windows'
     : process.platform === 'linux'
@@ -63,7 +62,7 @@ export async function installSMAPI(getDiscoveryPath: () => string, files: string
   }
   let data = '';
   try {
-    data = await fs.readFileAsync(path.join(getDiscoveryPath(), 'Stardew Valley.deps.json'), { encoding: 'utf8' });
+    data = await fs.readFileAsync(path.join(getGameInstallPath(), 'Stardew Valley.deps.json'), { encoding: 'utf8' });
   } catch (err) {
     log('error', 'failed to parse SDV dependencies', err);
   }

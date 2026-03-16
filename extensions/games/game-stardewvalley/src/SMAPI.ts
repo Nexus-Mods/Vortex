@@ -3,8 +3,9 @@ import type { types } from 'vortex-api';
 import { gte } from 'semver';
 import { actions, selectors, util } from 'vortex-api';
 
-import { GAME_ID } from './common';
+import { GAME_ID, MOD_TYPE_SMAPI } from './common';
 import { SMAPI_MOD_ID, SMAPI_URL } from './constants';
+import { selectSdvMods } from './state/selectors';
 
 /**
  * SMAPI integration helpers.
@@ -28,8 +29,8 @@ export function getSMAPIMods(api: types.IExtensionApi): types.IMod[] {
   const profile = selectors.profileById(state, profileId);
   const isActive = (modId: string) => util.getSafe(profile, ['modState', modId, 'enabled'], false);
   const isSMAPI = (mod: types.IMod) =>
-    mod.type === 'SMAPI' && mod.attributes?.modId === SMAPI_MOD_ID;
-  const mods: { [modId: string]: types.IMod } = util.getSafe(state, ['persistent', 'mods', GAME_ID], {});
+    mod.type === MOD_TYPE_SMAPI && mod.attributes?.modId === SMAPI_MOD_ID;
+  const mods: { [modId: string]: types.IMod } = selectSdvMods(state);
   return Object.values(mods).filter((mod: types.IMod) => isSMAPI(mod) && isActive(mod.id));
 }
 

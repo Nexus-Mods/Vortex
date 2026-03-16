@@ -3,6 +3,7 @@
 This folder contains installer modules for Stardew Valley mod package
 detection and deployment.
 
+- `archiveClassifier.ts`: shared archive-shape checks used by installer matchers.
 - `rootFolderInstaller.ts`: installs files at the game root and is
   automatically used when a mod archive contains `Content/`.
 - `stardewValleyInstaller.ts`: handles manifest-based Stardew Valley mods,
