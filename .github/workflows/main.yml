@@ -64,14 +64,14 @@ jobs:
         run: pnpm run test
 
       - name: Upload API artifacts
-        if: runner.os == 'Linux'
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push' && runner.os == 'Linux'
         uses: actions/upload-artifact@v4
         with:
           name: api-artifacts
           retention-days: 1
           path: |
             etc/vortex.api.md
-            src/renderer/lib
+            packages/vortex-api/lib
 
   api:
     needs: build
@@ -84,7 +84,7 @@ jobs:
           submodules: "recursive"
 
       - name: Download API artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: api-artifacts
 
@@ -93,7 +93,7 @@ jobs:
 
       - name: Generate GitHub App token
         id: app-token
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
