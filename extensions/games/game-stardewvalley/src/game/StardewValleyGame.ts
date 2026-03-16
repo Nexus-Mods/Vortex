@@ -1,8 +1,6 @@
-/* eslint-disable */
 import path from 'path';
 
 import { fs, types, util } from 'vortex-api';
-import * as winapi from 'winapi-bindings';
 
 import { GAME_ID } from '../common';
 import { toBlue } from '../helpers';
@@ -49,7 +47,9 @@ class StardewValleyGame implements types.IGame {
   ];
   public mergeMods: boolean = true;
   public requiresCleanup: boolean = true;
+  // Whether to boot the game through a shell.
   public shell: boolean = process.platform === 'win32';
+  // Fallback locations to search for the game, if store discovery fails.
   public defaultPaths: string[];
 
   /**
@@ -82,6 +82,7 @@ class StardewValleyGame implements types.IGame {
    * Query known stores/default locations for the install path.
    */
   public queryPath = toBlue<string>(async () => {
+    // First try querying the known game stores, by their known IDs
     const game = await util.GameStoreHelper.findByAppId([
       '413150',
       '1453375253',
@@ -92,6 +93,7 @@ class StardewValleyGame implements types.IGame {
       return game.gamePath;
     }
 
+    // If that doesn't work, try the default locations for each platform
     for (const defaultPath of this.defaultPaths) {
       if (await this.getPathExistsAsync(defaultPath)) {
         return defaultPath;
@@ -111,6 +113,11 @@ class StardewValleyGame implements types.IGame {
     return defaultModsRelPath();
   }
 
+  /**
+   * Runs when Stardew Valley is selected in Vortex.
+   * Ensures the Mods folder is writable and, if SMAPI is missing from the
+   * game install folder, shows an install/deploy recommendation.
+   */
   public setup = toBlue(async discovery => {
     try {
       await fs.ensureDirWritableAsync(path.join(discovery.path, defaultModsRelPath()));
@@ -125,6 +132,9 @@ class StardewValleyGame implements types.IGame {
     }
   });
 
+  /**
+   * Shows a SMAPI warning with a one-click Deploy/Get action.
+   */
   private recommendSmapi() {
     const smapiMod = findSMAPIMod(this.context.api);
     const title = smapiMod ? 'SMAPI is not deployed' : 'SMAPI is not installed';
@@ -157,21 +167,6 @@ class StardewValleyGame implements types.IGame {
       return true;
     } catch (err) {
       return false;
-    }
-  }
-
-  /**
-   * Asynchronously read a registry key value.
-   */
-  private async readRegistryKeyAsync(hive: any, key: string, name: string) {
-    try {
-      const instPath = winapi.RegGetValue(hive, key, name);
-      if (!instPath) {
-        throw new Error('empty registry key');
-      }
-      return Promise.resolve(instPath.value);
-    } catch (err) {
-      return Promise.resolve(undefined);
     }
   }
 }

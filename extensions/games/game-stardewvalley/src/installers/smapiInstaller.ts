@@ -21,6 +21,7 @@ import type { IInstallerTestResult } from '../types';
  */
 const { SevenZip } = util;
 
+// TODO: Linux support (this executable name is Windows-specific).
 export const SMAPI_EXE = 'StardewModdingAPI.exe';
 const SMAPI_DATA = ['windows-install.dat', 'install.dat'];
 
