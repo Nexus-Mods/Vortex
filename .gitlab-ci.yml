@@ -52,7 +52,7 @@ workflow:
       junit: test-results/junit.xml
       coverage_report:
         coverage_format: cobertura
-        path: test-results/coverage/lcov.info
+        path: test-results/cobertura-coverage.xml
 
 build:linux:
   extends:

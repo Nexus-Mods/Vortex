@@ -6,14 +6,14 @@ const RESULTS_DIR = path.join(import.meta.dirname, "test-results");
 export default defineConfig({
   test: {
     projects: ["./src/main", "./src/renderer", "./src/shared"],
-    reporters: ["default", "junit"],
+    reporters: ["default", "junit", process.env.GITHUB_ACTIONS === "true" ? "github-actions" : undefined].filter(Boolean),
     outputFile: {
       junit: path.join(RESULTS_DIR, "junit.xml"),
     },
     coverage: {
       provider: "v8",
-      reporter: ["text", "lcov"],
-      reportsDirectory: path.join(RESULTS_DIR, "coverage"),
+      reporter: ["text", "cobertura"],
+      reportsDirectory: path.join(RESULTS_DIR),
     },
   },
 });
