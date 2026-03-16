@@ -10,10 +10,13 @@ import CompatibilityIcon from './CompatibilityIcon';
 import { SMAPI_QUERY_FREQUENCY } from './constants';
 
 import DependencyManager from './DependencyManager';
+import { installRootFolder, testRootFolder } from './installers/rootFolderInstaller';
+import { installSMAPI, isSMAPIModType, SMAPI_EXE, testSMAPI } from './installers/smapiInstaller';
+import { installStardewValley, MANIFEST_FILE, testSupported } from './installers/stardewValleyInstaller';
 import sdvReducers from './reducers';
 import SMAPIProxy from './smapiProxy';
 import { testSMAPIOutdated } from './tests';
-import { compatibilityOptions, CompatibilityStatus, ISDVDependency, ISDVModManifest, ISMAPIResult } from './types';
+import { compatibilityOptions, CompatibilityStatus, ISMAPIResult } from './types';
 import { parseManifest, defaultModsRelPath } from './util';
 
 import Settings from './Settings';
@@ -24,16 +27,8 @@ import { onAddedFiles, onRevertFiles, onWillEnableMods, registerConfigMod } from
 
 const path = require('path'),
   { clipboard } = require('electron'),
-  rjson = require('relaxed-json'),
-  { SevenZip } = util,
   { deploySMAPI, downloadSMAPI, findSMAPIMod } = require('./SMAPI'),
-  { GAME_ID, _SMAPI_BUNDLED_MODS, getBundledMods, MOD_TYPE_CONFIG } = require('./common');
-
-const MANIFEST_FILE = 'manifest.json';
-const PTRN_CONTENT = path.sep + 'Content' + path.sep;
-const SMAPI_EXE = 'StardewModdingAPI.exe';
-const SMAPI_DLL = 'SMAPI.Installer.dll';
-const SMAPI_DATA = ['windows-install.dat', 'install.dat'];
+  { GAME_ID, MOD_TYPE_CONFIG } = require('./common');
 
 
 function toBlue<T>(func: (...args: any[]) => Promise<T>): (...args: any[]) => Bluebird<T> {
@@ -270,288 +265,6 @@ class StardewValley implements types.IGame {
   }
 }
 
-function testRootFolder(files, gameId) {
-  // We assume that any mod containing "/Content/" in its directory
-  //  structure is meant to be deployed to the root folder.
-  const filtered = files.filter(file => file.endsWith(path.sep))
-    .map(file => path.join('fakeDir', file));
-  const contentDir = filtered.find(file => file.endsWith(PTRN_CONTENT));
-  const supported = ((gameId === GAME_ID)
-    && (contentDir !== undefined));
-
-  return Bluebird.resolve({ supported, requiredFiles: [] });
-}
-
-function installRootFolder(files, destinationPath) {
-  // We're going to deploy "/Content/" and whatever folders come alongside it.
-  //  i.e. SomeMod.7z
-  //  Will be deployed     => ../SomeMod/Content/
-  //  Will be deployed     => ../SomeMod/Mods/
-  //  Will NOT be deployed => ../Readme.doc
-  const contentFile = files.find(file => path.join('fakeDir', file).endsWith(PTRN_CONTENT));
-  const idx = contentFile.indexOf(PTRN_CONTENT) + 1;
-  const rootDir = path.basename(contentFile.substring(0, idx));
-  const filtered = files.filter(file => !file.endsWith(path.sep)
-    && (file.indexOf(rootDir) !== -1)
-    && (path.extname(file) !== '.txt'));
-  const instructions = filtered.map(file => {
-    return {
-      type: 'copy',
-      source: file,
-      destination: file.substr(idx),
-    };
-  });
-
-  return Bluebird.resolve({ instructions });
-}
-
-function isValidManifest(filePath) {
-  const segments = filePath.toLowerCase().split(path.sep);
-  const isManifestFile = segments[segments.length - 1] === MANIFEST_FILE;
-  const isLocale = segments.includes('locale');
-  return isManifestFile && !isLocale;
-}
-
-function testSupported(files, gameId) {
-  const supported = (gameId === GAME_ID)
-    && (files.find(isValidManifest) !== undefined)
-    && (files.find(file => {
-      // We create a prefix fake directory just in case the content
-      //  folder is in the archive's root folder. This is to ensure we
-      //  find a match for "/Content/"
-      const testFile = path.join('fakeDir', file);
-      return (testFile.endsWith(PTRN_CONTENT));
-    }) === undefined);
-  return Bluebird.resolve({ supported, requiredFiles: [] });
-}
-
-async function install(api,
-                       dependencyManager,
-                       files,
-                       destinationPath) {
-  // The archive may contain multiple manifest files which would
-  //  imply that we're installing multiple mods.
-  const manifestFiles = files.filter(isValidManifest);
-
-  interface IModInfo {
-    manifest: ISDVModManifest;
-    rootFolder: string;
-    manifestIndex: number;
-    modFiles: string[];
-  }
-
-  let parseError: unknown;
-
-  await dependencyManager.scanManifests(true);
-  let mods: IModInfo[] = await Promise.all(manifestFiles.map(async manifestFile => {
-    const rootFolder = path.dirname(manifestFile);
-    const rootSegments = rootFolder.toLowerCase().split(path.sep);
-    const manifestIndex = manifestFile.toLowerCase().indexOf(MANIFEST_FILE);
-    const filterFunc = (file: string) => {
-      const isFile = !file.endsWith(path.sep) && path.extname(path.basename(file)) !== '';
-      const fileSegments = file.toLowerCase().split(path.sep);
-      const isInRootFolder = (rootSegments.length > 0)
-        ? fileSegments?.[rootSegments.length - 1] === rootSegments[rootSegments.length - 1]
-        : true;
-      return isInRootFolder && isFile;
-    };
-    try {
-      const manifest: ISDVModManifest =
-        await parseManifest(path.join(destinationPath, manifestFile));
-      const modFiles = files.filter(filterFunc);
-      return {
-        manifest,
-        rootFolder,
-        manifestIndex,
-        modFiles,
-      };
-    } catch (err) {
-      const parsedErr = err instanceof Error
-        ? err
-        : new Error(String(err));
-      // just a warning at this point as this may not be the main manifest for the mod
-      log('warn', 'Failed to parse manifest', { manifestFile, error: parsedErr.message });
-      parseError = parsedErr;
-      return undefined;
-    }
-  }));
-
-  mods = mods.filter(x => x !== undefined);
-  
-  if (mods.length === 0) {
-    api.showErrorNotification(
-      'The mod manifest is invalid and can\'t be read. You can try to install the mod anyway via right-click -> "Unpack (as-is)"',
-      parseError ?? new Error('Unknown manifest parse error'), {
-      allowReport: false,
-    });
-  }
-
-  return Bluebird.map(mods, mod => {
-    // TODO: we might get here with a mod that has a manifest.json file but wasn't intended for Stardew Valley, all
-    //  thunderstore mods will contain a manifest.json file
-    const modName = (mod.rootFolder !== '.')
-      ? mod.rootFolder
-      : mod.manifest.Name ?? mod.rootFolder;
-
-    if (modName === undefined) {
-      return [];
-    }
-
-    const dependencies = mod.manifest.Dependencies || [];
-
-    const instructions: types.IInstruction[] = [];
-
-    for (const file of mod.modFiles) {
-      const destination = path.join(modName, file.substr(mod.manifestIndex));
-      instructions.push({
-        type: 'copy',
-        source: file,
-        destination: destination,
-      });
-    }
-
-    const addRuleForDependency = (dep: ISDVDependency) => {
-      if ((dep.UniqueID === undefined)
-          || (dep.UniqueID.toLowerCase() === 'yourname.yourotherspacksandmods')) {
-        return;
-      }
-
-      const versionMatch = dep.MinimumVersion !== undefined
-        ? `>=${dep.MinimumVersion}`
-        : '*';
-      const rule = {
-        // treating all dependencies as recommendations because the dependency information
-        // provided by some mod authors is a bit hit-and-miss and Vortex fairly aggressively
-        // enforces requirements
-        // type: (dep.IsRequired ?? true) ? 'requires' : 'recommends',
-        type: 'recommends',
-        reference: {
-          logicalFileName: dep.UniqueID.toLowerCase(),
-          versionMatch,
-        } as any,
-        extra: {
-          onlyIfFulfillable: true,
-          automatic: true,
-        },
-      } as any;
-      instructions.push({
-        type: 'rule',
-        rule,
-      });
-    }
-
-    /*
-    if (api.getState().settings['SDV']?.useRecommendations ?? false) {
-      for (const dep of dependencies) {
-        addRuleForDependency(dep);
-      }
-      if (mod.manifest.ContentPackFor !== undefined) {
-        addRuleForDependency(mod.manifest.ContentPackFor);
-      }
-    }*/
-    return instructions;
-  })
-    .then((data: types.IInstruction[][]) => {
-      const instructions = data.reduce<types.IInstruction[]>((accum, iter) => accum.concat(iter), []);
-      return Promise.resolve({ instructions });
-    });
-}
-
-function isSMAPIModType(instructions) {
-  // Find the SMAPI exe file.
-  const smapiData = instructions.find(inst => (inst.type === 'copy') && inst.source.endsWith(SMAPI_EXE));
-
-  return Bluebird.resolve(smapiData !== undefined);
-}
-
-function testSMAPI(files, gameId) {
-  // Make sure the download contains the SMAPI data archive.s
-  const supported = (gameId === GAME_ID) && (files.find(file =>
-    path.basename(file) === SMAPI_DLL) !== undefined)
-  return Bluebird.resolve({
-      supported,
-      requiredFiles: [],
-  });
-}
-
-async function installSMAPI(getDiscoveryPath: () => string, files: string[], destinationPath: string) {
-  const folder = process.platform === 'win32'
-    ? 'windows'
-    : process.platform === 'linux'
-      ? 'linux'
-      : 'macos';
-  const fileHasCorrectPlatform = (file: string) => {
-    const segments = file.split(path.sep).map(seg => seg.toLowerCase());
-    return (segments.includes(folder));
-  }
-  // Find the SMAPI data archive
-  const dataFile = files.find(file => {
-    const isCorrectPlatform = fileHasCorrectPlatform(file);
-    return isCorrectPlatform && SMAPI_DATA.includes(path.basename(file).toLowerCase())
-  });
-  if (dataFile === undefined) {
-    return Promise.reject(new util.DataInvalid('Failed to find the SMAPI data files - download appears '
-      + 'to be corrupted; please re-download SMAPI and try again'));
-  }
-  let data = '';
-  try {
-    data = await fs.readFileAsync(path.join(getDiscoveryPath(), 'Stardew Valley.deps.json'), { encoding: 'utf8' });
-  } catch (err) {
-    log('error', 'failed to parse SDV dependencies', err);
-  }
-
-  // file will be outdated after the walk operation so prepare a replacement. 
-  const updatedFiles: string[] = [];
-
-  const szip = new (SevenZip as any)();
-  // Unzip the files from the data archive. This doesn't seem to behave as described here: https://www.npmjs.com/package/node-7z#events
-  await szip.extractFull(path.join(destinationPath, dataFile), destinationPath);
-
-  // Find any files that are not in the parent folder. 
-  await util.walk(destinationPath, (iter, stats) => {
-      const relPath = path.relative(destinationPath, iter);
-      // Filter out files from the original install as they're no longer required.
-      if (!files.includes(relPath) && stats.isFile() && !files.includes(relPath+path.sep)) updatedFiles.push(relPath);
-      const segments = relPath.toLocaleLowerCase().split(path.sep);
-      const modsFolderIdx = segments.indexOf('mods');
-      if ((modsFolderIdx !== -1) && (segments.length > modsFolderIdx + 1)) {
-        _SMAPI_BUNDLED_MODS.push(segments[modsFolderIdx + 1]);
-      }
-      return Bluebird.resolve();
-  });
-
-  // Find the SMAPI exe file. 
-  const smapiExe = updatedFiles.find(file => file.toLowerCase().endsWith(SMAPI_EXE.toLowerCase()));
-  if (smapiExe === undefined) {
-    return Promise.reject(new util.DataInvalid(`Failed to extract ${SMAPI_EXE} - download appears `
-      + 'to be corrupted; please re-download SMAPI and try again'));
-  }
-  const idx = smapiExe.indexOf(path.basename(smapiExe));
-
-  // Build the instructions for installation. 
-  const instructions: types.IInstruction[] = updatedFiles.map(file => {
-      return {
-          type: 'copy',
-          source: file,
-          destination: path.join(file.substr(idx)),
-      }
-  });
-
-  instructions.push({
-    type: 'attribute',
-    key: 'smapiBundledMods',
-    value: getBundledMods(),
-  });
-
-  instructions.push({
-    type: 'generatefile',
-    data,
-    destination: 'StardewModdingAPI.deps.json',
-  });
-
-  return Promise.resolve({ instructions });
-}
-
 async function showSMAPILog(api, basePath, logFile) {
   const logData = await fs.readFileAsync(path.join(basePath, logFile), { encoding: 'utf-8' });
   await api.showDialog('info', 'SMAPI Log', {
@@ -769,7 +482,7 @@ function init(context: types.IExtensionContext) {
   context.registerInstaller('smapi-installer', 30, testSMAPI, (files, dest) => Bluebird.resolve(installSMAPI(getDiscoveryPath, files, dest)));
   context.registerInstaller('sdvrootfolder', 50, testRootFolder, installRootFolder);
   context.registerInstaller('stardew-valley-installer', 50, testSupported,
-    (files, destinationPath) => Bluebird.resolve(install(context.api, dependencyManager, files, destinationPath)));
+    (files, destinationPath) => Bluebird.resolve(installStardewValley(context.api, dependencyManager, files, destinationPath)));
 
   context.registerModType('SMAPI', 30, gameId => gameId === GAME_ID, getSMAPIPath, isSMAPIModType);
   context.registerModType(MOD_TYPE_CONFIG, 30, (gameId) => (gameId === GAME_ID),
