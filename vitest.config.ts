@@ -6,7 +6,6 @@ const RESULTS_DIR = path.join(import.meta.dirname, "test-results");
 const isGitHubCI = process.env.CI && process.env.GITHUB_ACTIONS;
 
 export default defineConfig({
-  logLevel: "info",
   test: {
     projects: ["./src/main", "./src/renderer", "./src/shared"],
     reporters: ["default", "junit", isGitHubCI ? "github-actions" : undefined].filter(Boolean),
