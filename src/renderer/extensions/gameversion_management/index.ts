@@ -1,15 +1,17 @@
 import type { IExtensionContext } from "../../types/IExtensionContext";
-import local from "../../util/local";
-import { wrapExtCBAsync } from "../../util/util";
-
-import GameVersionManager from "./GameVersionManager";
 import type {
   GameVersionProviderFunc,
   GameVersionProviderTest,
   IGameVersionProvider,
   IGameVersionProviderOptions,
 } from "./types/IGameVersionProvider";
-import {
+
+import local from "../../util/local";
+import { log } from "../../util/log";
+import { wrapExtCBAsync } from "../../util/util";
+import GameVersionManager from "./GameVersionManager";
+import
+{
   getExecGameVersion,
   getExtGameVersion,
   testExecProvider,
@@ -26,7 +28,8 @@ const $ = local<{
 
 const gameVersionProviders: IGameVersionProvider[] = [];
 
-function init(context: IExtensionContext): boolean {
+function init(context: IExtensionContext): boolean
+{
   context.registerGameVersionProvider = ((
     id: string,
     priority: number,
@@ -34,14 +37,16 @@ function init(context: IExtensionContext): boolean {
     getGameVersion: GameVersionProviderFunc,
     options?: IGameVersionProviderOptions,
     extPath?: any,
-  ) => {
+  ) =>
+  {
     const errors = isVersionProvider({
       id,
       priority,
       supported,
       getGameVersion,
     });
-    if (errors !== null) {
+    if (errors !== null)
+    {
       context.api.showErrorNotification(
         "Invalid game version provider",
         errors,
@@ -80,12 +85,10 @@ function init(context: IExtensionContext): boolean {
     () => Promise.resolve("0.0.0"),
   );
 
-  context.once(() => {
-    $.gameVersionManager = new GameVersionManager(
-      context.api,
-      gameVersionProviders,
-    );
-  });
+  $.gameVersionManager = new GameVersionManager(
+    context.api,
+    gameVersionProviders,
+  );
 
   return true;
 }

@@ -9,7 +9,6 @@ import PromiseBB from "bluebird";
 import * as diskusage from "diskusage";
 import * as path from "path";
 import turbowalk from "turbowalk";
-import * as winapi from "winapi-bindings";
 
 import type { Normalize } from "./getNormalizeFunc";
 
@@ -44,13 +43,13 @@ export function testPathTransfer(
   source: string,
   destination: string,
 ): PromiseBB<void> {
-  if (process.platform !== "win32") {
+  if (process.platform !== "win32" && process.platform !== "linux") {
     return PromiseBB.reject(new UnsupportedOperatingSystem());
   }
 
   let destinationRoot: string;
   try {
-    destinationRoot = winapi.GetVolumePathName(destination);
+    destinationRoot = fs.getVolumePath(destination);
   } catch (err) {
     if (isErrorWithSystemCode(err)) {
       if (err.systemCode === 2) {

@@ -1,28 +1,23 @@
+import { isErrorWithSystemCode, unknownToError } from "@vortex/shared";
 import Bluebird from "bluebird";
 import * as path from "path";
 import { generate as shortid } from "shortid";
+
 import type { IDialogResult } from "../../types/IDialog";
 import type { IExtensionApi } from "../../types/IExtensionContext";
 import type { IState } from "../../types/IState";
+
 import { getApplication } from "../../util/application";
 import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
-import lazyRequire from "../../util/lazyRequire";
 import { log } from "../../util/log";
 import { activeGameId, installPathForGame } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { truthy } from "../../util/util";
-
 import { suggestStagingPath } from "../gamemode_management/util/discovery";
-
 import { setInstallPath } from "./actions/settings";
 import { fallbackPurge } from "./util/activationStore";
 import { resolveInstallPath } from "./util/getInstallPath";
-
-import type * as winapiT from "winapi-bindings";
-import { isErrorWithSystemCode, unknownToError } from "@vortex/shared";
-
-const winapi: typeof winapiT = lazyRequire(() => require("winapi-bindings"));
 
 export const STAGING_DIR_TAG = "__vortex_staging_folder";
 
@@ -164,7 +159,7 @@ async function ensureStagingDirectoryImpl(
 
   let partitionExists = true;
   try {
-    winapi.GetVolumePathName(instPath);
+    fs.getVolumePath(instPath);
   } catch (err) {
     // On Windows, error number 2 (0x2) translates to ERROR_FILE_NOT_FOUND.
     //  the only way for this error to be reported at this point is when
