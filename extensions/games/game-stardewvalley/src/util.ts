@@ -7,6 +7,11 @@ import { fs, util } from 'vortex-api';
 
 import type { ISDVModManifest } from './types';
 
+/**
+ * Shared utility helpers for manifest parsing, semantic version comparison,
+ * and safe directory traversal operations.
+ */
+
 export function defaultModsRelPath(): string {
   return 'Mods';
 }

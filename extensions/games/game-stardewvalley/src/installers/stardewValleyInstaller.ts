@@ -62,7 +62,7 @@ export async function installStardewValley(api: types.IExtensionApi,
   let parseError: unknown;
 
   await dependencyManager.scanManifests(true);
-  const mods: IModInfo[] = (await Promise.all(manifestFiles.map(async manifestFile => {
+  const scannedMods = await Promise.all(manifestFiles.map(async manifestFile => {
     const rootFolder = path.dirname(manifestFile);
     const rootSegments = rootFolder.toLowerCase().split(path.sep);
     const manifestIndex = manifestFile.toLowerCase().indexOf(MANIFEST_FILE);
@@ -93,7 +93,9 @@ export async function installStardewValley(api: types.IExtensionApi,
       parseError = parsedErr;
       return undefined;
     }
-  }))).filter((x): x is IModInfo => x !== undefined);
+  }));
+
+  const mods: IModInfo[] = scannedMods.filter((mod): mod is IModInfo => mod !== undefined);
 
   if (mods.length === 0) {
     api.showErrorNotification?.(

@@ -9,6 +9,13 @@ import { parseManifest } from './util';
 import path from 'path';
 
 type ManifestMap = { [modId: string]: ISDVModManifest[] };
+
+/**
+ * Caches parsed manifests for currently active/installed Stardew mods.
+ *
+ * Used by health checks to detect whether the installed SMAPI version satisfies
+ * minimum API requirements declared by mods.
+ */
 export default class DependencyManager {
   private mApi: types.IExtensionApi;
   private mManifests: ManifestMap | undefined;

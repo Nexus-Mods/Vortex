@@ -25,7 +25,9 @@ const SMAPI_DATA = ['windows-install.dat', 'install.dat'];
 
 export function isSMAPIModType(instructions: types.IInstruction[]) {
   // Find the SMAPI exe file.
-  const smapiData = instructions.find(inst => (inst.type === 'copy') && (inst.source?.endsWith(SMAPI_EXE) === true));
+  const smapiData = instructions.find(inst => (inst.type === 'copy')
+    && (typeof inst.source === 'string')
+    && inst.source.endsWith(SMAPI_EXE));
 
   return Bluebird.resolve(smapiData !== undefined);
 }
@@ -80,9 +82,11 @@ export async function installSMAPI(getDiscoveryPath: () => string, files: string
       if (!files.includes(relPath) && stats.isFile() && !files.includes(relPath + path.sep)) updatedFiles.push(relPath);
       const segments = relPath.toLocaleLowerCase().split(path.sep);
       const modsFolderIdx = segments.indexOf('mods');
-      const bundledMod = (modsFolderIdx !== -1) ? segments[modsFolderIdx + 1] : undefined;
-      if (bundledMod !== undefined) {
-        _SMAPI_BUNDLED_MODS.push(bundledMod);
+      if (modsFolderIdx !== -1) {
+        const bundledMod = segments[modsFolderIdx + 1];
+        if (bundledMod !== undefined) {
+          _SMAPI_BUNDLED_MODS.push(bundledMod);
+        }
       }
       return Bluebird.resolve();
   });

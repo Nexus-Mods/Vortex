@@ -6,6 +6,15 @@ import { actions, selectors, util } from 'vortex-api';
 import { GAME_ID } from './common';
 import { SMAPI_MOD_ID, SMAPI_URL } from './constants';
 
+/**
+ * SMAPI integration helpers.
+ *
+ * Responsibilities:
+ * - identify discovered SMAPI tool/mod entries
+ * - deploy SMAPI and set it as primary tool when available
+ * - download/install/update SMAPI through Nexus APIs
+ */
+
 export function findSMAPITool(api: types.IExtensionApi): types.IDiscoveredTool | undefined {
   const state = api.getState();
   const discovery = selectors.discoveryByGame(state, GAME_ID);
@@ -64,7 +73,10 @@ export async function downloadSMAPI(api: types.IExtensionApi, update?: boolean) 
   }
 
   try {
-    const modFiles = await api.ext?.nexusGetModFiles?.(GAME_ID, SMAPI_MOD_ID) ?? [];
+    if (api.ext?.nexusGetModFiles === undefined) {
+      throw new util.ProcessCanceled('Nexus API unavailable');
+    }
+    const modFiles = await api.ext.nexusGetModFiles(GAME_ID, SMAPI_MOD_ID);
 
     const fileTime = (input: any) => Number.parseInt(input.uploaded_time, 10);
 

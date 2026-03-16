@@ -1,3 +1,9 @@
+/**
+ * Cross-module constants used by the Stardew Valley extension.
+ *
+ * Keep values here stable so installer, runtime, and UI modules share the same
+ * identifiers for game IDs, file names, and mod types.
+ */
 export const GAME_ID = 'stardewvalley';
 export const MOD_CONFIG = 'config.json';
 export const MOD_MANIFEST = 'manifest.json';

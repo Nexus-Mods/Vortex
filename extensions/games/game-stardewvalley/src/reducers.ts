@@ -4,6 +4,12 @@ import { util } from 'vortex-api';
 
 import * as actions from './actions';
 
+/**
+ * Redux reducer spec for Stardew Valley extension settings.
+ *
+ * Mounted under `settings.SDV` by `index.ts`.
+ */
+
 export interface IStateSDV {
   useRecommendations: boolean;
   mergeConfigs?: { [profileId: string]: boolean };

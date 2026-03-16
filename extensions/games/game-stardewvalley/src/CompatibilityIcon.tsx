@@ -5,6 +5,13 @@ import { tooltip } from 'vortex-api';
 
 import type { CompatibilityStatus } from './types';
 
+/**
+ * Renderer for the Stardew compatibility table column.
+ *
+ * Displays SMAPI compatibility state and update suggestions based on mod
+ * attributes written by compatibility metadata queries.
+ */
+
 export interface ICompatibilityIconProps {
   t: types.TFunction,
   mod: types.IMod,

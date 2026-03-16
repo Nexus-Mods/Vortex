@@ -1,3 +1,9 @@
+/**
+ * Domain types shared across the Stardew Valley extension.
+ *
+ * Includes manifest schema shapes, SMAPI API payloads, compatibility enums,
+ * and event payload utility types.
+ */
 export interface ISDVModManifest {
   Name: string;
   Author: string;

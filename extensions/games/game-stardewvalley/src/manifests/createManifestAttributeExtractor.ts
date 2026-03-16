@@ -1,0 +1,72 @@
+/* eslint-disable */
+import * as semver from 'semver';
+
+import { log, selectors, types } from 'vortex-api';
+
+import { SMAPI_MOD_ID } from '../constants';
+import { GAME_ID } from '../common';
+import { errorMessage, toBlue } from '../helpers';
+import { parseManifest } from '../util';
+import { getModManifests } from './getModManifests';
+
+/**
+ * Factory for the Stardew Valley manifest attribute extractor.
+ *
+ * The extractor runs for installed archives and enriches mod attributes with
+ * data derived from parsed `manifest.json` files, including:
+ * - `additionalLogicalFileNames`
+ * - `minSMAPIVersion`
+ * - `customFileName` (except for SMAPI itself)
+ * - `manifestVersion`
+ */
+export function createManifestAttributeExtractor(context: types.IExtensionContext) {
+  return toBlue(async (modInfo: any, modPath?: string): Promise<{ [key: string]: any }> => {
+    if (selectors.activeGameId(context.api.getState()) !== GAME_ID) {
+      return Promise.resolve({});
+    }
+
+    const manifests = await getModManifests(modPath);
+
+    const parsedManifests = (await Promise.all(manifests.map(
+      async manifest => {
+        try {
+          return await parseManifest(manifest);
+        } catch (err) {
+          log('warn', 'Failed to parse manifest', { manifestFile: manifest, error: errorMessage(err) });
+          return undefined;
+        }
+      }))).filter(manifest => manifest !== undefined);
+
+    if (parsedManifests.length === 0) {
+      return Promise.resolve({});
+    }
+
+    const refManifest = parsedManifests[0];
+
+    const additionalLogicalFileNames = parsedManifests
+      .filter(manifest => manifest.UniqueID !== undefined)
+      .map(manifest => manifest.UniqueID.toLowerCase());
+
+    const minSMAPIVersion = parsedManifests
+      .map(manifest => manifest.MinimumApiVersion)
+      .filter(version => semver.valid(version))
+      .sort((lhs, rhs) => semver.compare(rhs, lhs))[0];
+
+    const result = {
+      additionalLogicalFileNames,
+      minSMAPIVersion,
+    };
+
+    if (refManifest !== undefined) {
+      if (modInfo.download.modInfo?.nexus?.ids?.modId !== SMAPI_MOD_ID) {
+        result['customFileName'] = refManifest.Name;
+      }
+
+      if (typeof (refManifest.Version) === 'string') {
+        result['manifestVersion'] = refManifest.Version;
+      }
+    }
+
+    return Promise.resolve(result);
+  });
+}

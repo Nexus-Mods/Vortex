@@ -1,12 +1,19 @@
 import type { types} from 'vortex-api';
 
-import { coerce, gte } from 'semver';
+import { coerce as semverCoerce, gte } from 'semver';
 import { selectors } from 'vortex-api';
 
 import type DependencyManager from './DependencyManager';
 
 import { GAME_ID } from './common';
 import { downloadSMAPI, findSMAPIMod } from './SMAPI';
+
+/**
+ * Extension-level runtime tests shown in Vortex diagnostics.
+ *
+ * Current test validates whether active mods require a newer SMAPI version than
+ * the one currently installed/enabled.
+ */
 
 export async function testSMAPIOutdated(api: types.IExtensionApi,
                                         depManager: DependencyManager)
@@ -25,14 +32,20 @@ export async function testSMAPIOutdated(api: types.IExtensionApi,
 
   const isSmapiOutdated = async () => {
     currentSMAPIVersion = findSMAPIMod(api)?.attributes?.version;
+    if (currentSMAPIVersion === undefined) {
+      return false;
+    }
+    const installedVersion = currentSMAPIVersion;
     const enabledManifests = await depManager.getManifests();
     const incompatibleModIds: string[] = [];
     for (const [id, manifests] of Object.entries(enabledManifests)) {
       const incompatible = manifests.filter((iter) => {
-        const installedVersion = currentSMAPIVersion;
         if (iter.MinimumApiVersion !== undefined) {
-          return (installedVersion !== undefined)
-            && !gte(installedVersion, iter.MinimumApiVersion ?? '0.0.0');
+          const minApiVersion = semverCoerce(iter.MinimumApiVersion ?? '0.0.0');
+          if (minApiVersion === null) {
+            return false;
+          }
+          return !gte(installedVersion, minApiVersion);
         }
         return false;
       });

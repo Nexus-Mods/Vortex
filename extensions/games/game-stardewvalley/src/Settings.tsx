@@ -9,6 +9,13 @@ import { Toggle, More, selectors } from 'vortex-api';
 import { setRecommendations } from './actions';
 import { GAME_ID } from './common';
 
+/**
+ * Stardew Valley settings panel for Vortex.
+ *
+ * Exposes SDV-specific toggles including recommendation behaviour and
+ * configuration file merge management.
+ */
+
 interface IBaseProps {
   onMergeConfigToggle: (profileId: string, enabled: boolean) => Promise<void>;
 }
