@@ -154,7 +154,7 @@ class MainWindow {
           // this isn't ideal as we don't have a stack trace of the error message here
           cancelTimer = setTimeout(() => {
             if (!this.mShown) {
-              terminate(new Error("Vortex failed to start"), true);
+              terminate(new Error("Vortex failed to start"));
             }
           }, 15000);
         }

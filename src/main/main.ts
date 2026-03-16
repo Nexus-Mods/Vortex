@@ -38,8 +38,12 @@ import winapi from "winapi-bindings";
 
 import Application from "./Application";
 import { parseCommandline } from "./cli";
-import { terminate } from "./errorHandling";
-import { sendReportFile } from "./errorReporting";
+import { terminateAsync } from "./errorHandling";
+import {
+  reportCrash,
+  errorToReportableError,
+  sendReportFile,
+} from "./errorReporting";
 import { getVortexPath } from "./getVortexPath";
 import { init as initIpcHandlers } from "./ipcHandlers";
 import { log } from "./logging";
@@ -50,6 +54,8 @@ import { createMainTelemetryProvider } from "./telemetry/setup";
 process.env["UV_THREADPOOL_SIZE"] = (os.cpus().length * 2).toString();
 
 const earlyErrHandler = (error: Error) => {
+  // Show the dialog first — dialog.showErrorBox is synchronous in Electron
+  // and blocks until the user dismisses it, giving the report time to send.
   if (error.stack.includes("[as dlopen]")) {
     dialog.showErrorBox(
       "Vortex failed to start up",
@@ -72,7 +78,17 @@ const earlyErrHandler = (error: Error) => {
         error.stack,
     );
   }
-  app.exit(1);
+
+  // Send the crash report after the dialog is dismissed, then exit.
+  // reportCrash creates its own short-lived provider so it works before
+  // the main telemetry provider is initialized.
+  reportCrash("EarlyCrash", errorToReportableError(error))
+    .catch(() => {
+      /* best-effort — if this fails we still exit */
+    })
+    .finally(() => {
+      app.exit(1);
+    });
 };
 
 process.on("uncaughtException", earlyErrHandler);
@@ -139,7 +155,11 @@ const handleError = (error: Error) => {
     return;
   }
 
-  terminate(error);
+  // Use terminateAsync instead of terminate here because this handler is
+  // registered on process 'uncaughtException' — throwing UserCanceled
+  // from terminate() would be a double-fault that kills the process
+  // before the dialog/report can run.
+  void terminateAsync(error);
 };
 
 async function main(): Promise<void> {
@@ -174,6 +194,13 @@ async function main(): Promise<void> {
   );
 
   createMainTelemetryProvider();
+
+  // Now that telemetry is available, swap in the proper error handler
+  // that supports crash reporting
+  process.removeListener("uncaughtException", earlyErrHandler);
+  process.removeListener("unhandledRejection", earlyErrHandler);
+  process.on("uncaughtException", handleError);
+  process.on("unhandledRejection", handleError);
 
   initIpcHandlers();
   initTelemetryIpcHandler();
@@ -252,9 +279,6 @@ async function main(): Promise<void> {
     // no-op
   }
 
-  process.on("uncaughtException", handleError);
-  process.on("unhandledRejection", handleError);
-
   if (
     process.env.NODE_ENV === "development" &&
     !app.commandLine.hasSwitch("remote-debugging-port")
@@ -272,4 +296,10 @@ async function main(): Promise<void> {
   application = new Application(mainArgs);
 }
 
-main().catch((err: unknown) => console.error("failed to start", err));
+main().catch((err: unknown) => {
+  if (err instanceof Error) {
+    handleError(err);
+  } else {
+    earlyErrHandler(new Error(getErrorMessageOrDefault(err)));
+  }
+});

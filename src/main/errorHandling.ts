@@ -1,8 +1,6 @@
 import { getErrorMessage } from "@vortex/shared";
 import { UserCanceled } from "@vortex/shared/errors";
 import { app, dialog } from "electron";
-import { writeFile } from "node:fs/promises";
-import path from "node:path";
 
 import {
   reportCrash,
@@ -10,44 +8,41 @@ import {
   disableErrorReporting,
   isErrorReportingDisabled,
 } from "./errorReporting";
-import { getVortexPath } from "./getVortexPath";
 import { log } from "./logging";
 
 /** Terminates the applpication on an error */
-export function terminate(error: Error, allowReport?: boolean): void {
-  terminateAsync(error, allowReport).catch(() => {
+export function terminate(error: Error): void {
+  terminateAsync(error).catch(() => {
     /* ignored */
   });
 
   throw new UserCanceled();
 }
 
-const COMPANY_ID = "Black Tree Gaming Ltd.";
-
-export async function terminateAsync(
-  error: Error,
-  allowReport?: boolean,
-): Promise<void> {
+export async function terminateAsync(error: Error): Promise<void> {
   log("error", "unrecoverable error", error);
 
-  allowReport =
-    allowReport === undefined
-      ? "extension" in error && error.extension === COMPANY_ID
-      : false;
+  const allowReport = !isErrorReportingDisabled();
 
-  // TODO: disallow reporting when Vortex is outdated
-  if (isErrorReportingDisabled()) allowReport = false;
+  // dialog.showMessageBox requires the app to be ready. If we crash
+  // before that, fall back to the synchronous showErrorBox + direct report.
+  if (!app.isReady()) {
+    dialog.showErrorBox(
+      "An unrecoverable error occurred",
+      getErrorMessage(error) + "\n\n" + (error.stack ?? ""),
+    );
+    if (allowReport) {
+      await reportCrash("Crash", errorToReportableError(error)).catch(() => {
+        /* best-effort */
+      });
+    }
+    app.exit(1);
+    return;
+  }
 
   try {
     const isIgnored = await showTerminateError(error, allowReport, false);
     if (isIgnored) return;
-
-    if ("extension" in error && typeof error.extension === "string") {
-      const shouldDisableExtension = await askDisableExtension(error.extension);
-      if (shouldDisableExtension) {
-        await disableExtension(error.extension);
-      }
-    }
   } catch (err) {
     log("error", "error while handling unrecoverable error", err);
   }
@@ -60,33 +55,6 @@ const BUTTON_QUIT = "Quit";
 const BUTTON_DETAILS = "Show Details";
 const BUTTON_REPORT = "Report and Quit";
 const BUTTON_CONFIRM = "I understand";
-const BUTTON_DISABLE = "Disable";
-const BUTTON_KEEP = "Keep";
-
-async function askDisableExtension(extension: string): Promise<boolean> {
-  const buttons = [BUTTON_DISABLE, BUTTON_KEEP];
-
-  const result = await dialog.showMessageBox({
-    type: "error",
-    title: "Extension crashed",
-    message:
-      `This crash was caused by an extension (${extension}). ` +
-      "Do you want to disable this extension? All functionality provided " +
-      "by the extension will be removed from Vortex!",
-    buttons: buttons,
-    noLink: true,
-  });
-
-  const response = buttons[result.response];
-  return response === BUTTON_DISABLE;
-}
-
-async function disableExtension(extension: string): Promise<void> {
-  log("warn", "extension will be disabled after causing a crash", extension);
-
-  const filePath = path.join(getVortexPath("temp"), `__disable_${extension}`);
-  await writeFile(filePath, "");
-}
 
 /** @returns true if the user ignores the error */
 async function showTerminateError(

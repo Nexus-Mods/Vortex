@@ -205,7 +205,6 @@ class ReduxPersistorIPC {
       } else {
         terminate(
           new Error(`Failed to store application state: ${err.message}`),
-          true,
         );
       }
     }

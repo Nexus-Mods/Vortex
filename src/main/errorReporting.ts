@@ -1,6 +1,5 @@
 import type { ReportableError } from "@vortex/shared/errors";
 
-import { trace } from "@opentelemetry/api";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import {
   BasicTracerProvider,
@@ -68,10 +67,13 @@ export async function reportCrash(
     resource,
     spanProcessors: [new SimpleSpanProcessor(exporter)],
   });
-  provider.register();
+  // Don't call provider.register() — if a global provider is already
+  // registered, OTel silently ignores subsequent registrations. Use
+  // provider.getTracer() directly so spans go through this provider's
+  // exporter and forceFlush() actually sends them.
 
   try {
-    const tracer = trace.getTracer("vortex.crash");
+    const tracer = provider.getTracer("vortex.crash");
     const span = tracer.startSpan("crash.report", {
       attributes: {
         "crash.type": type,

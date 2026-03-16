@@ -29,7 +29,7 @@ import winapi from "winapi-bindings";
 
 import { parseCommandline, updateStartupSettings } from "./cli";
 import { installDevelExtensions } from "./devel";
-import { terminate } from "./errorHandling";
+import { terminate, terminateAsync } from "./errorHandling";
 import { disableErrorReporting } from "./errorReporting";
 import { setupMainExtensions } from "./extensions";
 import { validateFiles } from "./fileValidation";
@@ -278,9 +278,13 @@ class Application {
       if (startupMode !== undefined) {
         startupMode
           .then(() => app.quit())
-          .catch((err: unknown) => console.error(err));
+          .catch((err: unknown) => {
+            terminate(unknownToError(err));
+          });
       } else {
-        this.regularStart(args).catch((err: unknown) => console.error(err));
+        this.regularStart(args).catch((err: unknown) => {
+          terminate(unknownToError(err));
+        });
       }
     };
 
@@ -326,7 +330,9 @@ class Application {
         return;
       }
 
-      terminate(error);
+      // Use terminateAsync because this handler is registered on process
+      // 'uncaughtException' — throwing from terminate() would double-fault.
+      void terminateAsync(error);
     };
   }
 
@@ -343,7 +349,10 @@ class Application {
       log("error", "quitting with exception", getErrorMessageOrDefault(err));
 
       if (err instanceof UserCanceled) {
-        app.exit();
+        // UserCanceled is thrown by terminate() to unwind the stack.
+        // Don't call app.exit() here — terminateAsync() is still running
+        // and will handle the dialog + crash report + exit.
+        return;
       } else if (err instanceof ProcessCanceled) {
         app.quit();
       } else if (err instanceof DocumentsPathMissing) {
