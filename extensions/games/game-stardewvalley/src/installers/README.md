@@ -10,8 +10,9 @@ detection and deployment.
   automatically used when a mod archive contains `Content/`.
 - `stardewValleyInstaller.ts`: handles manifest-based Stardew Valley mods,
   including dependency-rule generation.
-- `smapiInstaller.ts`: handles SMAPI package detection/extraction and SMAPI
-  mod-type detection.
+- `smapi/`: platform-aware SMAPI installer implementation (`index.ts` +
+  per-platform modules for windows/linux/macos, with a stubbed darwin variant).
+- `smapiInstaller.ts`: compatibility re-export shim for legacy imports.
 
 Each installer module exports both matcher functions (`test*`) and installer
 functions so detection and install behaviour stay co-located.
@@ -31,7 +32,7 @@ If none match, Vortex falls back to generic handling.
 - Add support for new archive shape:
   - update `archiveClassifier.ts`,
   - then update the relevant installer module.
-- Change dependency-rule behavior:
+- Change dependency-rule behaviour:
   - edit `stardewValleyInstaller.ts`.
 - Change SMAPI package handling:
-  - edit `smapiInstaller.ts`.
+  - edit `smapi/index.ts` and/or platform files under `smapi/`.

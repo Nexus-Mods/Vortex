@@ -16,7 +16,7 @@ import {
   MODS_REL_PATH,
   MOD_TYPE_SMAPI,
 } from '../common';
-import { isSMAPIModType } from '../installers/smapiInstaller';
+import { isSMAPIModType } from '../installers/smapi';
 import { isSdvRootFolderModType } from '../modtypes/sdvRootFolderMatcher';
 
 /**

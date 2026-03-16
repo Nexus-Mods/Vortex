@@ -14,7 +14,7 @@ import {
   INSTALLER_PRIORITY_SMAPI,
 } from '../common';
 import { installRootFolder, testRootFolder } from '../installers/rootFolderInstaller';
-import { installSMAPI, testSMAPI } from '../installers/smapiInstaller';
+import { installSMAPI, testSMAPI } from '../installers/smapi';
 import { installStardewValley, testSupported } from '../installers/stardewValleyInstaller';
 
 /**
