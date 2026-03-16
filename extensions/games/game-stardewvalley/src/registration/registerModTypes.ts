@@ -1,4 +1,6 @@
-/* eslint-disable */
+/**
+ * Registers Stardew Valley mod type matchers and deployment roots.
+ */
 import Bluebird from 'bluebird';
 import path from 'path';
 

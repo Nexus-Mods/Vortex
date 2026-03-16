@@ -1,34 +1,20 @@
-/* eslint-disable */
+/**
+ * Detects and installs manifest-based Stardew Valley mod archives.
+ */
 import Bluebird from 'bluebird';
 import path from 'path';
-import { log, types } from 'vortex-api';
+import { log } from 'vortex-api';
+import type { types } from 'vortex-api';
 
 import type DependencyManager from '../DependencyManager';
 import { classifyArchive, makeInstallerTestResult } from './archiveClassifier';
 import type { IInstallerTestResult, ISDVDependency, ISDVModManifest } from '../types';
 import { parseManifest } from '../util';
 
-/**
- * Primary Stardew Valley installer for manifest-based SMAPI mods.
- *
- * This module owns detection and installation for archives that include one or
- * more valid `manifest.json` files and are intended for deployment under the
- * game's mod path.
- *
- * Exports:
- * - `MANIFEST_FILE`: canonical manifest filename used by installer/mod-type logic.
- * - `testSupported`: installer matcher for manifest-based Stardew mods.
- * - `installStardewValley`: installer that copies files and generates dependency rules.
- */
+/** Canonical SMAPI manifest filename used by SDV installer matching logic. */
 export const MANIFEST_FILE = 'manifest.json';
 
-function isValidManifest(filePath: string): boolean {
-  const segments = filePath.toLowerCase().split(path.sep);
-  const isManifestFile = segments[segments.length - 1] === MANIFEST_FILE;
-  const isLocale = segments.includes('locale');
-  return isManifestFile && !isLocale;
-}
-
+/** Tests whether an archive should be handled by the manifest-based installer. */
 export function testSupported(files: string[], gameId: string): Bluebird<IInstallerTestResult> {
   const archiveInfo = classifyArchive(files, gameId);
   const supported = archiveInfo.isGameArchive
@@ -37,6 +23,7 @@ export function testSupported(files: string[], gameId: string): Bluebird<IInstal
   return Bluebird.resolve(makeInstallerTestResult(supported));
 }
 
+/** Builds install instructions for one or more valid manifest-based SDV mods. */
 export async function installStardewValley(api: types.IExtensionApi,
                                            dependencyManager: DependencyManager,
                                            files: string[],
@@ -167,4 +154,11 @@ export async function installStardewValley(api: types.IExtensionApi,
       const instructions = data.reduce<types.IInstruction[]>((accum, iter) => accum.concat(iter), []);
       return Promise.resolve({ instructions });
     });
+}
+
+function isValidManifest(filePath: string): boolean {
+  const segments = filePath.toLowerCase().split(path.sep);
+  const isManifestFile = segments[segments.length - 1] === MANIFEST_FILE;
+  const isLocale = segments.includes('locale');
+  return isManifestFile && !isLocale;
 }

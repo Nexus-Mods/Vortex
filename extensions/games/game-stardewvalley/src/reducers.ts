@@ -1,15 +1,13 @@
+/**
+ * Defines Redux reducer state and handlers for Stardew Valley settings.
+ */
 import type { types} from 'vortex-api';
 
 import { util } from 'vortex-api';
 
 import * as actions from './actions';
 
-/**
- * Redux reducer spec for Stardew Valley extension settings.
- *
- * Mounted under `settings.SDV` by `index.ts`.
- */
-
+/** Shape of `settings.SDV` reducer state. */
 export interface IStateSDV {
   useRecommendations: boolean;
   mergeConfigs?: { [profileId: string]: boolean };
@@ -31,4 +29,5 @@ const sdvReducers: types.IReducerSpec<IStateSDV> = {
 }
 
 // Needed because the API expects the generic IReducerSpec
+/** Reducer spec mounted as `settings.SDV` by the extension bootstrap. */
 export default sdvReducers as unknown as types.IReducerSpec;

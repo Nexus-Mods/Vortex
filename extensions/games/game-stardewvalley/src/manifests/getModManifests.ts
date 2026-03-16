@@ -1,14 +1,11 @@
-/* eslint-disable */
+/**
+ * Scans installed mod content and returns discovered `manifest.json` paths.
+ */
 import path from 'path';
 
 import turbowalk from 'turbowalk';
 
-/**
- * Manifest discovery helpers.
- *
- * Recursively scans a mod directory and returns all `manifest.json` paths.
- * Used by attribute extraction to infer metadata from installed content.
- */
+/** Recursively returns all `manifest.json` files found under a mod directory. */
 export function getModManifests(modPath?: string): Promise<string[]> {
   const manifests: string[] = [];
 

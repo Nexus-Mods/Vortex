@@ -1,3 +1,6 @@
+/**
+ * Adapts SMAPI.io compatibility data into Vortex modmeta lookup responses.
+ */
 import type { IFileInfo } from '@nexusmods/nexus-api';
 import type { ILookupResult, IQuery } from 'modmeta-db';
 import type { types } from 'vortex-api';
@@ -12,14 +15,11 @@ import { GAME_ID } from './common';
 import { SMAPI_IO_API_VERSION } from './constants';
 import { coerce, semverCompare } from './util';
 
-const SMAPI_HOST = 'smapi.io';
-
 /**
  * Adapter for querying SMAPI.io compatibility metadata and translating results
  * into Vortex modmeta lookup responses.
  */
-
-class SMAPIProxy {
+export default class SMAPIProxy {
   private mAPI: types.IExtensionApi;
   private mOptions: https.RequestOptions;
   constructor(api: types.IExtensionApi) {
@@ -139,4 +139,4 @@ class SMAPIProxy {
   }
 }
 
-export default SMAPIProxy;
+const SMAPI_HOST = 'smapi.io';

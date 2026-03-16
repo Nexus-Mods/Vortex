@@ -1,6 +1,10 @@
+/**
+ * Implements Vortex game integration for Stardew Valley.
+ */
 import path from 'path';
 
-import { fs, types, util } from 'vortex-api';
+import { fs, util } from 'vortex-api';
+import type { types } from 'vortex-api';
 
 import { GAME_ID } from '../common';
 import { toBlue } from '../helpers';
@@ -20,7 +24,7 @@ import { defaultModsRelPath } from '../util';
  * - default mod path and setup flow
  * - SMAPI presence checks and install/deploy recommendation prompt
  */
-class StardewValleyGame implements types.IGame {
+export default class StardewValleyGame implements types.IGame {
   public context: types.IExtensionContext;
   public id: string = GAME_ID;
   public name: string = 'Stardew Valley';
@@ -170,5 +174,3 @@ class StardewValleyGame implements types.IGame {
     }
   }
 }
-
-export default StardewValleyGame;

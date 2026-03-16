@@ -1,7 +1,10 @@
-/* eslint-disable */
+/**
+ * Creates the manifest-based mod attribute extractor used during installation.
+ */
 import * as semver from 'semver';
 
-import { log, selectors, types } from 'vortex-api';
+import { log, selectors } from 'vortex-api';
+import type { types } from 'vortex-api';
 
 import { SMAPI_MOD_ID } from '../constants';
 import { GAME_ID } from '../common';

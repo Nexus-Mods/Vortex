@@ -1,7 +1,10 @@
-/* eslint-disable */
+/**
+ * Registers Stardew-specific settings, actions, and table renderers in the UI.
+ */
 import React from 'react';
 
-import { selectors, types } from 'vortex-api';
+import { selectors } from 'vortex-api';
+import type { types } from 'vortex-api';
 
 import { setMergeConfigs } from '../actions';
 import CompatibilityIcon from '../CompatibilityIcon';

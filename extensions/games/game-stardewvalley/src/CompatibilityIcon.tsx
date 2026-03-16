@@ -1,3 +1,6 @@
+/**
+ * Renders Stardew mod compatibility status in the mods table.
+ */
 import type { types } from 'vortex-api';
 
 import React from 'react';
@@ -6,30 +9,9 @@ import { tooltip } from 'vortex-api';
 import type { CompatibilityStatus } from './types';
 
 /**
- * Renderer for the Stardew compatibility table column.
- *
- * Displays SMAPI compatibility state and update suggestions based on mod
- * attributes written by compatibility metadata queries.
+ * Displays SMAPI compatibility state and update suggestions for a mod row.
  */
-
-export interface ICompatibilityIconProps {
-  t: types.TFunction,
-  mod: types.IMod,
-  detailCell: boolean,
-}
-
-const iconMap: Record<CompatibilityStatus, string> = {
-  broken: 'feedback-error',
-  obsolete: 'feedback-error',
-  abandoned: 'feedback-warning',
-  unofficial: 'feedback-warning',
-  workaround: 'feedback-warning',
-  unknown: 'feedback-info',
-  optional: 'feedback-success',
-  ok: 'feedback-success',
-};
-
-function CompatibilityIcon(props: ICompatibilityIconProps) {
+export default function CompatibilityIcon(props: ICompatibilityIconProps) {
   const { t, mod } = props;
 
   const version = mod.attributes?.manifestVersion
@@ -61,4 +43,19 @@ function CompatibilityIcon(props: ICompatibilityIconProps) {
   );
 }
 
-export default CompatibilityIcon;
+interface ICompatibilityIconProps {
+  t: types.TFunction,
+  mod: types.IMod,
+  detailCell: boolean,
+}
+
+const iconMap: Record<CompatibilityStatus, string> = {
+  broken: 'feedback-error',
+  obsolete: 'feedback-error',
+  abandoned: 'feedback-warning',
+  unofficial: 'feedback-warning',
+  workaround: 'feedback-warning',
+  unknown: 'feedback-info',
+  optional: 'feedback-success',
+  ok: 'feedback-success',
+};

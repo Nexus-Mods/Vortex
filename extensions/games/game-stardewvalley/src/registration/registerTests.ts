@@ -1,4 +1,6 @@
-/* eslint-disable */
+/**
+ * Registers Stardew Valley extension diagnostics with Vortex.
+ */
 import Bluebird from 'bluebird';
 
 import type { types } from 'vortex-api';

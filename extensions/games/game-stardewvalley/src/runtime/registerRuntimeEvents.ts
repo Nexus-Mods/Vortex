@@ -1,9 +1,12 @@
-/* eslint-disable */
+/**
+ * Registers runtime event handlers used by the Stardew Valley extension.
+ */
 import Bluebird from 'bluebird';
-import { IQuery } from 'modmeta-db';
+import type { IQuery } from 'modmeta-db';
 import path from 'path';
 
-import { actions, log, selectors, types, util } from 'vortex-api';
+import { actions, log, selectors, util } from 'vortex-api';
+import type { types } from 'vortex-api';
 
 import { updateConflictInfo } from '../compatibility/updateConflictInfo';
 import type DependencyManager from '../DependencyManager';

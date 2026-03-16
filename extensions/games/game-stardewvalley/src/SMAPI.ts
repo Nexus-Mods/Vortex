@@ -1,3 +1,6 @@
+/**
+ * Provides SMAPI discovery, selection, deployment, and download helpers.
+ */
 import type { types } from 'vortex-api';
 
 import { gte } from 'semver';
@@ -7,15 +10,7 @@ import { GAME_ID, MOD_TYPE_SMAPI } from './common';
 import { SMAPI_MOD_ID, SMAPI_URL } from './constants';
 import { selectSdvMods } from './state/selectors';
 
-/**
- * SMAPI integration helpers.
- *
- * Responsibilities:
- * - identify discovered SMAPI tool/mod entries
- * - deploy SMAPI and set it as primary tool when available
- * - download/install/update SMAPI through Nexus APIs
- */
-
+/** Returns the discovered SMAPI tool entry for Stardew Valley, if available. */
 export function findSMAPITool(api: types.IExtensionApi): types.IDiscoveredTool | undefined {
   const state = api.getState();
   const discovery = selectors.discoveryByGame(state, GAME_ID);
@@ -23,6 +18,7 @@ export function findSMAPITool(api: types.IExtensionApi): types.IDiscoveredTool |
   return tool?.path ? tool : undefined;
 }
 
+/** Returns currently enabled mods that correspond to the SMAPI package. */
 export function getSMAPIMods(api: types.IExtensionApi): types.IMod[] {
   const state = api.getState();
   const profileId = selectors.lastActiveProfileForGame(state, GAME_ID);
@@ -34,6 +30,7 @@ export function getSMAPIMods(api: types.IExtensionApi): types.IMod[] {
   return Object.values(mods).filter((mod: types.IMod) => isSMAPI(mod) && isActive(mod.id));
 }
 
+/** Returns the newest active SMAPI mod entry by semantic version. */
 export function findSMAPIMod(api: types.IExtensionApi): types.IMod | undefined {
   const SMAPIMods = getSMAPIMods(api);
   return (SMAPIMods.length === 0)
@@ -48,6 +45,7 @@ export function findSMAPIMod(api: types.IExtensionApi): types.IMod | undefined {
       : SMAPIMods[0];
 }
 
+/** Deploys mods and sets SMAPI as primary tool when discovered. */
 export async function deploySMAPI(api: types.IExtensionApi) {
   await util.toPromise(cb => api.events.emit('deploy-mods', cb));
   await util.toPromise(cb => api.events.emit('start-quick-discovery', () => cb(null)));
@@ -59,6 +57,7 @@ export async function deploySMAPI(api: types.IExtensionApi) {
   }
 }
 
+/** Downloads and installs (or updates) SMAPI from Nexus, then deploys it. */
 export async function downloadSMAPI(api: types.IExtensionApi, update?: boolean) {
   api.dismissNotification?.('smapi-missing');
   api.sendNotification?.({

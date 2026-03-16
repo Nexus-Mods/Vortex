@@ -1,13 +1,16 @@
-/* eslint-disable */
+/**
+ * Manages the synthetic Stardew configuration mod and file sync lifecycle.
+ */
 import path from 'path';
-import { actions, fs, types, selectors, log, util } from 'vortex-api';
+import { actions, fs, selectors, log, util } from 'vortex-api';
+import type { types } from 'vortex-api';
 import {
   NOTIF_ACTIVITY_CONFIG_MOD, GAME_ID, MOD_CONFIG,
   RGX_INVALID_CHARS_WINDOWS, MOD_TYPE_CONFIG, MOD_TYPE_ROOT, MOD_TYPE_SMAPI,
   MOD_MANIFEST, SMAPI_INTERNAL_DIRECTORY, getBundledMods
 } from './common';
 import { setMergeConfigs } from './actions';
-import { IFileEntry } from './types';
+import type { IFileEntry } from './types';
 import { walkPath, defaultModsRelPath, deleteFolder } from './util';
 import {
   selectConfigModAttributes,
@@ -16,24 +19,9 @@ import {
 } from './state/selectors';
 
 import { getSMAPIMods, findSMAPITool } from './SMAPI';
-import { IEntry } from 'turbowalk';
+import type { IEntry } from 'turbowalk';
 
-/**
- * Configuration file sync subsystem for Stardew Valley.
- *
- * This module manages the synthetic "configuration mod" used to preserve
- * generated `config.json` files across mod updates/reinstalls.
- *
- * Main entry points:
- * - `registerConfigMod` (UI action registration)
- * - `onAddedFiles` / `onWillEnableMods` (runtime hooks)
- * - `onRevertFiles` (restore configs to owning mods)
- */
-
-const syncWrapper = (api: types.IExtensionApi) => {
-  onSyncModConfigurations(api);
-}
-
+/** Registers the manual "Sync Mod Configurations" action in the mods view. */
 export function registerConfigMod(context: types.IExtensionContext) {
   context.registerAction('mod-icons', 999, 'swap', {}, 'Sync Mod Configurations',
     () => syncWrapper(context.api),
@@ -42,6 +30,31 @@ export function registerConfigMod(context: types.IExtensionContext) {
       const gameMode = selectors.activeGameId(state);
       return (gameMode === GAME_ID);
     });
+}
+
+/** Handles enable/disable transitions to keep synced config files consistent. */
+export async function onWillEnableMods(api: types.IExtensionApi,
+                                       profileId: string,
+                                       modIds: string[],
+                                       enabled: boolean,
+                                       options?: any): Promise<void> {
+  return onWillEnableModsImpl(api, profileId, modIds, enabled, options);
+}
+
+/** Restores tracked config files from the synthetic config mod to owning mods. */
+export async function onRevertFiles(api: types.IExtensionApi, profileId: string) {
+  return onRevertFilesImpl(api, profileId);
+}
+
+/** Handles newly added files and routes SDV config files through sync logic. */
+async function onAddedFilesImpl(api: types.IExtensionApi,
+                                profileId: string,
+                                files: IFileEntry[]): Promise<void> {
+  return onAddedFilesImpl(api, profileId, files);
+}
+
+function syncWrapper(api: types.IExtensionApi): void {
+  onSyncModConfigurations(api);
 }
 
 const shouldSuppressSync = (api: types.IExtensionApi) => {
@@ -180,7 +193,7 @@ async function initialize(api: types.IExtensionApi): Promise<ConfigMod | undefin
   }
 }
 
-export async function addModConfig(api: types.IExtensionApi, files: IFileEntry[], modsPath?: string) {
+async function addModConfig(api: types.IExtensionApi, files: IFileEntry[], modsPath?: string) {
   const configMod = await initialize(api);
   if (configMod === undefined) {
     return;
@@ -241,7 +254,7 @@ export async function addModConfig(api: types.IExtensionApi, files: IFileEntry[]
   setConfigModAttribute(api, configMod.mod.id, Array.from(new Set(newConfigAttributes)));
 }
 
-export async function ensureConfigMod(api: types.IExtensionApi): Promise<types.IMod> {
+async function ensureConfigMod(api: types.IExtensionApi): Promise<types.IMod> {
   const state = api.getState();
   const mods: { [modId: string]: types.IMod } = selectSdvMods(state);
   const modInstalled = Object.values(mods).find(iter => iter.type === MOD_TYPE_CONFIG);
@@ -289,11 +302,11 @@ async function createConfigMod(api: types.IExtensionApi, modName: string, profil
   });
 }
 
-export async function onWillEnableMods(api: types.IExtensionApi,
-                                       profileId: string,
-                                       modIds: string[],
-                                       enabled: boolean,
-                                       options?: any): Promise<void> {
+async function onWillEnableModsImpl(api: types.IExtensionApi,
+                                    profileId: string,
+                                    modIds: string[],
+                                    enabled: boolean,
+                                    options?: any): Promise<void> {
   const state = api.getState();
   const profile = selectors.profileById(state, profileId);
   if (profile?.gameId !== GAME_ID) {
@@ -313,7 +326,7 @@ export async function onWillEnableMods(api: types.IExtensionApi,
   if (modIds.includes(configMod.mod.id)) {
     // The config mod is getting disabled/uninstalled - re-instate all of
     //  the configuration files.
-    await onRevertFiles(api, profileId);
+    await onRevertFilesImpl(api, profileId);
     return;
   }
 
@@ -360,7 +373,7 @@ export async function onWillEnableMods(api: types.IExtensionApi,
   removeConfigModAttributes(api, configMod.mod, relevant);
 }
 
-export async function applyToModConfig(api: types.IExtensionApi, cb: () => Promise<void>) {
+async function applyToModConfig(api: types.IExtensionApi, cb: () => Promise<void>) {
   // Applying file operations to the config mod requires us to
   //  remove it from the game directory and deployment manifest before
   //  re-introducing it (this is to avoid ECD)
@@ -377,7 +390,7 @@ export async function applyToModConfig(api: types.IExtensionApi, cb: () => Promi
   }
 }
 
-export async function onRevertFiles(api: types.IExtensionApi, profileId: string) {
+async function onRevertFilesImpl(api: types.IExtensionApi, profileId: string) {
   const state = api.getState();
   const profile = selectors.profileById(state, profileId);
   if (profile?.gameId !== GAME_ID) {
@@ -392,7 +405,7 @@ export async function onRevertFiles(api: types.IExtensionApi, profileId: string)
     return;
   }
 
-  await onWillEnableMods(api, profileId, attrib, false);
+  await onWillEnableModsImpl(api, profileId, attrib, false);
   return;
 }
 

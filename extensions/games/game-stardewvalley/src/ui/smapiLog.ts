@@ -1,18 +1,32 @@
-/* eslint-disable */
+/**
+ * Displays and shares SMAPI logs through the Stardew Valley UI action.
+ */
 import path from 'path';
 
-import { fs, types, util } from 'vortex-api';
+import { fs, util } from 'vortex-api';
+import type { types } from 'vortex-api';
+
+/** Opens the latest available SMAPI log dialog or shows a missing-log notice. */
+export async function onShowSMAPILog(api: types.IExtensionApi) {
+  const basePath = path.join(util.getVortexPath('appData'), 'stardewvalley', 'errorlogs');
+  try {
+    await showSMAPILog(api, basePath, 'SMAPI-crash.txt');
+  } catch (err) {
+    try {
+      await showSMAPILog(api, basePath, 'SMAPI-latest.txt');
+    } catch (innerErr) {
+      api.sendNotification?.({
+        type: 'info',
+        title: 'No SMAPI logs found.',
+        message: '',
+        displayMS: 5000,
+      });
+    }
+  }
+}
 
 const { clipboard } = require('electron');
 
-/**
- * SMAPI log display helpers.
- *
- * This module owns the "SMAPI Log" UI action flow:
- * - locate crash/latest log files in the Vortex app data directory
- * - show log content in a dialog
- * - support one-click copy + open of https://smapi.io/log
- */
 async function showSMAPILog(api: types.IExtensionApi, basePath: string, logFile: string) {
   const logData = await fs.readFileAsync(path.join(basePath, logFile), { encoding: 'utf-8' });
   if (api.showDialog === undefined) {
@@ -33,22 +47,4 @@ async function showSMAPILog(api: types.IExtensionApi, basePath: string, logFile:
     label: 'Close',
     action: () => undefined,
   }]);
-}
-
-export async function onShowSMAPILog(api: types.IExtensionApi) {
-  const basePath = path.join(util.getVortexPath('appData'), 'stardewvalley', 'errorlogs');
-  try {
-    await showSMAPILog(api, basePath, 'SMAPI-crash.txt');
-  } catch (err) {
-    try {
-      await showSMAPILog(api, basePath, 'SMAPI-latest.txt');
-    } catch (innerErr) {
-      api.sendNotification?.({
-        type: 'info',
-        title: 'No SMAPI logs found.',
-        message: '',
-        displayMS: 5000,
-      });
-    }
-  }
 }

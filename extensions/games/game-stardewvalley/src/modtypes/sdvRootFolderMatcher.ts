@@ -1,4 +1,6 @@
-/* eslint-disable */
+/**
+ * Detects installed mods that should use the `sdvrootfolder` mod type.
+ */
 import Bluebird from 'bluebird';
 import path from 'path';
 

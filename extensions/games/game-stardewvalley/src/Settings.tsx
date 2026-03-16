@@ -1,3 +1,6 @@
+/**
+ * Renders Stardew Valley extension settings controls in the Vortex UI.
+ */
 import type { types } from 'vortex-api';
 
 import React from 'react';
@@ -10,21 +13,9 @@ import { setRecommendations } from './actions';
 import { GAME_ID } from './common';
 
 /**
- * Stardew Valley settings panel for Vortex.
- *
- * Exposes SDV-specific toggles including recommendation behaviour and
- * configuration file merge management.
+ * Displays SDV-specific settings toggles and forwards updates to extension callbacks.
  */
-
-interface IBaseProps {
-  onMergeConfigToggle: (profileId: string, enabled: boolean) => Promise<void>;
-}
-
-interface IConnectedProps {
-  profileId: string;
-}
-
-function Settings(props: IBaseProps) {
+export default function Settings(props: IBaseProps) {
   const { onMergeConfigToggle } = props;
   const sdvSettings = useSelector((state: any) => state.settings['SDV']);
   const { useRecommendations, mergeConfigs } = sdvSettings;
@@ -82,11 +73,17 @@ function Settings(props: IBaseProps) {
   );
 }
 
+interface IBaseProps {
+  onMergeConfigToggle: (profileId: string, enabled: boolean) => Promise<void>;
+}
+
+interface IConnectedProps {
+  profileId: string;
+}
+
 function mapStateToProps(state: types.IState): IConnectedProps {
   const profileId = selectors.lastActiveProfileForGame(state, GAME_ID);
   return {
     profileId,
   }
 }
-
-export default Settings;

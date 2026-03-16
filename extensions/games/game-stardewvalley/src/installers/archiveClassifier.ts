@@ -1,11 +1,10 @@
-/* eslint-disable */
+/**
+ * Classifies Stardew Valley archives for installer matcher decisions.
+ */
 import path from 'path';
 
 import { GAME_ID } from '../common';
 import type { IArchiveClassifierResult, IInstallerTestResult } from '../types';
-
-const PTRN_CONTENT = path.sep + 'Content' + path.sep;
-const SMAPI_INSTALLER_DLL = 'smapi.installer.dll';
 
 /**
  * Classifies an archive based on markers used by Stardew Valley installers.
@@ -67,3 +66,6 @@ function hasManifest(files: string[], manifestFileName: string = 'manifest.json'
 function hasSmapiInstallerDll(files: string[]): boolean {
   return files.some(file => path.basename(file).toLowerCase() === SMAPI_INSTALLER_DLL);
 }
+
+const PTRN_CONTENT = path.sep + 'Content' + path.sep;
+const SMAPI_INSTALLER_DLL = 'smapi.installer.dll';

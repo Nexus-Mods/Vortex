@@ -1,12 +1,16 @@
-/* eslint-disable */
+/**
+ * Updates persisted mod compatibility attributes using SMAPI metadata.
+ */
 import * as semver from 'semver';
 
-import { actions, log, types } from 'vortex-api';
+import { actions, log } from 'vortex-api';
+import type { types } from 'vortex-api';
 
 import { SMAPI_QUERY_FREQUENCY } from '../constants';
 import { errorMessage } from '../helpers';
-import SMAPIProxy from '../smapiProxy';
-import { compatibilityOptions, CompatibilityStatus, ISMAPIResult } from '../types';
+import type SMAPIProxy from '../smapiProxy';
+import { compatibilityOptions } from '../types';
+import type { CompatibilityStatus, ISMAPIResult } from '../types';
 
 /**
  * Compatibility metadata updater for installed mods.

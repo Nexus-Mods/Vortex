@@ -1,15 +1,16 @@
-/* eslint-disable */
-import { ISDVModManifest } from './types';
+/**
+ * Caches parsed manifests for currently active Stardew Valley mods.
+ */
+import type { ISDVModManifest } from './types';
 import turbowalk from 'turbowalk';
-import { log, types, selectors, util } from 'vortex-api';
+import { log, selectors, util } from 'vortex-api';
+import type { types } from 'vortex-api';
 import { GAME_ID } from './common';
 import { selectSdvMods } from './state/selectors';
 
 import { parseManifest } from './util';
 
 import path from 'path';
-
-type ManifestMap = { [modId: string]: ISDVModManifest[] };
 
 /**
  * Caches parsed manifests for currently active/installed Stardew mods.
@@ -87,3 +88,5 @@ export default class DependencyManager {
     return Promise.resolve();
   }
 }
+
+type ManifestMap = { [modId: string]: ISDVModManifest[] };

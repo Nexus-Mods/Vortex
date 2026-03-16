@@ -1,25 +1,15 @@
-/* eslint-disable */
+/**
+ * Installs Stardew archives that deploy directly into the game root.
+ */
 import Bluebird from 'bluebird';
 import path from 'path';
 
 import type { types } from 'vortex-api';
 
-import { classifyArchive, makeInstallerTestResult } from './archiveClassifier';
 import type { IInstallerTestResult } from '../types';
+import { classifyArchive, makeInstallerTestResult } from './archiveClassifier';
 
-/**
- * Root-level installer for Stardew Valley archives that include `Content/`.
- *
- * These archives install into the game root and usually include a top-level
- * `Content/` directory (sometimes alongside `Mods/`).
- *
- * Exports:
- * - `testRootFolder`: matcher that auto-selects this installer when
- *   `Content/` is present.
- * - `installRootFolder`: copies matched archive files into the game root.
- */
-const PTRN_CONTENT = path.sep + 'Content' + path.sep;
-
+/** Tests whether an archive should be handled as a root-folder install. */
 export function testRootFolder(files: string[], gameId: string): Bluebird<IInstallerTestResult> {
   const archiveInfo = classifyArchive(files, gameId);
   const supported = archiveInfo.isGameArchive && archiveInfo.hasContentFolder;
@@ -27,6 +17,7 @@ export function testRootFolder(files: string[], gameId: string): Bluebird<IInsta
   return Bluebird.resolve(makeInstallerTestResult(supported));
 }
 
+/** Generates copy instructions that place archive files into the game root. */
 export function installRootFolder(files: string[], destinationPath: string): Bluebird<types.IInstallResult> {
   // Deploy "Content/" and sibling folders into the game root.
   //  i.e. SomeMod.7z
@@ -52,3 +43,5 @@ export function installRootFolder(files: string[], destinationPath: string): Blu
 
   return Bluebird.resolve<types.IInstallResult>({ instructions });
 }
+
+const PTRN_CONTENT = path.sep + 'Content' + path.sep;

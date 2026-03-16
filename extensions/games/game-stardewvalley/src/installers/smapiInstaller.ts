@@ -1,30 +1,20 @@
-/* eslint-disable */
+/**
+ * Detects and installs SMAPI archives for Stardew Valley.
+ */
 import Bluebird from 'bluebird';
 import path from 'path';
-import { fs, log, types, util } from 'vortex-api';
+import { fs, log, util } from 'vortex-api';
+import type { types } from 'vortex-api';
 
 import { _SMAPI_BUNDLED_MODS, getBundledMods } from '../common';
 import { classifyArchive, makeInstallerTestResult } from './archiveClassifier';
 import type { IInstallerTestResult } from '../types';
 
-/**
- * SMAPI installer helpers for Stardew Valley.
- *
- * This module handles SMAPI package detection/installation and exposes a
- * mod-type matcher that identifies installed SMAPI payloads by instruction set.
- *
- * Exports:
- * - `SMAPI_EXE`: canonical executable filename used across the extension.
- * - `testSMAPI`: installer matcher for SMAPI installer archives.
- * - `installSMAPI`: installer that extracts and deploys platform-specific SMAPI files.
- * - `isSMAPIModType`: mod-type matcher for installed SMAPI packages.
- */
-const { SevenZip } = util;
-
 // TODO: Linux support (this executable name is Windows-specific).
+/** Canonical SMAPI executable file name used by discovery and deployment logic. */
 export const SMAPI_EXE = 'StardewModdingAPI.exe';
-const SMAPI_DATA = ['windows-install.dat', 'install.dat'];
 
+/** Detects whether a set of install instructions contains the SMAPI executable. */
 export function isSMAPIModType(instructions: types.IInstruction[]): Bluebird<boolean> {
   // Find the SMAPI exe file.
   const smapiData = instructions.find(inst => (inst.type === 'copy')
@@ -34,12 +24,14 @@ export function isSMAPIModType(instructions: types.IInstruction[]): Bluebird<boo
   return Bluebird.resolve(smapiData !== undefined);
 }
 
+/** Tests whether an archive contains the SMAPI installer payload. */
 export function testSMAPI(files: string[], gameId: string): Bluebird<IInstallerTestResult> {
   const archiveInfo = classifyArchive(files, gameId);
   const supported = archiveInfo.isGameArchive && archiveInfo.hasSmapiInstallerDll;
   return Bluebird.resolve(makeInstallerTestResult(supported));
 }
 
+/** Extracts platform-specific SMAPI files and returns installation instructions. */
 export async function installSMAPI(getGameInstallPath: () => string,
                                    files: string[],
                                    destinationPath: string): Promise<types.IInstallResult> {
@@ -71,7 +63,7 @@ export async function installSMAPI(getGameInstallPath: () => string,
   // file will be outdated after the walk operation so prepare a replacement.
   const updatedFiles: string[] = [];
 
-  const szip = new (SevenZip as any)();
+  const szip = new (util.SevenZip as any)();
   // Unzip the files from the data archive. This doesn't seem to behave as described here: https://www.npmjs.com/package/node-7z#events
   await szip.extractFull(path.join(destinationPath, dataFile), destinationPath);
 
@@ -122,3 +114,5 @@ export async function installSMAPI(getGameInstallPath: () => string,
 
   return Promise.resolve({ instructions });
 }
+
+const SMAPI_DATA = ['windows-install.dat', 'install.dat'];

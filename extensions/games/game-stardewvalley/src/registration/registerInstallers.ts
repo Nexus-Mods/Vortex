@@ -1,4 +1,6 @@
-/* eslint-disable */
+/**
+ * Registers Stardew Valley archive installers and priorities with Vortex.
+ */
 import Bluebird from 'bluebird';
 
 import type { types } from 'vortex-api';

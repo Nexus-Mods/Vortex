@@ -1,3 +1,6 @@
+/**
+ * Provides shared manifest, semver, and filesystem helper utilities.
+ */
 import type { IEntry, IWalkOptions } from 'turbowalk';
 
 import { parse } from 'relaxed-json';
@@ -7,15 +10,12 @@ import { fs, util } from 'vortex-api';
 
 import type { ISDVModManifest } from './types';
 
-/**
- * Shared utility helpers for manifest parsing, semantic version comparison,
- * and safe directory traversal operations.
- */
-
+/** Returns the default Mods folder path relative to the game root. */
 export function defaultModsRelPath(): string {
   return 'Mods';
 }
 
+/** Reads and parses a SMAPI manifest file from disk. */
 export async function parseManifest(manifestFilePath: string): Promise<ISDVModManifest> {
   try {
     const manifestData = await fs.readFileAsync(manifestFilePath, { encoding: 'utf-8' });
@@ -41,6 +41,7 @@ export function coerce(input: string): semver.SemVer {
   }
 }
 
+/** Compares two semantic versions using SMAPI-compatible coercion rules. */
 export function semverCompare(lhs: string, rhs: string): number {
   const l = coerce(lhs);
   const r = coerce(rhs);
@@ -51,6 +52,7 @@ export function semverCompare(lhs: string, rhs: string): number {
   }
 }
 
+/** Recursively walks a directory with safe defaults and returns collected entries. */
 export async function walkPath(dirPath: string, walkOptions?: IWalkOptions): Promise<IEntry[]> {
   walkOptions = walkOptions
     ? { ...walkOptions, skipHidden: true, skipInaccessible: true, skipLinks: true }
@@ -72,6 +74,7 @@ export async function walkPath(dirPath: string, walkOptions?: IWalkOptions): Pro
   return walkResults;
 }
 
+/** Deletes a directory by removing nested entries from deepest to shallowest. */
 export async function deleteFolder(dirPath: string, walkOptions?: IWalkOptions): Promise<void> {
   try {
     const entries = await walkPath(dirPath, walkOptions);

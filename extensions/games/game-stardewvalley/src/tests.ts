@@ -1,3 +1,6 @@
+/**
+ * Defines Stardew Valley diagnostic tests shown in Vortex health checks.
+ */
 import type { types} from 'vortex-api';
 
 import { coerce as semverCoerce, gte } from 'semver';
@@ -8,13 +11,7 @@ import type DependencyManager from './DependencyManager';
 import { GAME_ID } from './common';
 import { downloadSMAPI, findSMAPIMod } from './SMAPI';
 
-/**
- * Extension-level runtime tests shown in Vortex diagnostics.
- *
- * Current test validates whether active mods require a newer SMAPI version than
- * the one currently installed/enabled.
- */
-
+/** Verifies whether active mods require a newer SMAPI version. */
 export async function testSMAPIOutdated(api: types.IExtensionApi,
                                         depManager: DependencyManager)
                                         : Promise<types.ITestResult> {
