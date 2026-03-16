@@ -29,6 +29,6 @@ export const windowReducer: IReducerSpec = {
     size: {},
     tabsMinimized: false,
     customTitlebar: true,
-    useModernLayout: false,
+    useModernLayout: true,
   },
 };

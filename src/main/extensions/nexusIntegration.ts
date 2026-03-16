@@ -6,7 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import getVortexPath from "../getVortexPath";
+import { getVortexPath } from "../getVortexPath";
 import { log } from "../logging";
 
 /**

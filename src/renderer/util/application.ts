@@ -46,4 +46,5 @@ const proxy: unknown = new Proxy(app, {
   },
 });
 
+/** @deprecated Use ApplicationData directly */
 export default proxy as IApplication;

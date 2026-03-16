@@ -26,7 +26,7 @@
   "nsis": {
     "perMachine": true,
     "runAfterFinish": true,
-    "menuCategory": true,
+    "menuCategory": false,
     "oneClick": false,
     "allowToChangeInstallationDirectory": true,
     "uninstallDisplayName": "${productName}",

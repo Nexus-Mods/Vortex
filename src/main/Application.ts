@@ -1,8 +1,7 @@
 import type { IParameters, ISetItem } from "@vortex/shared/cli";
-import type { AppInitMetadata, VortexPaths } from "@vortex/shared/ipc";
+import type { AppInitMetadata } from "@vortex/shared/ipc";
 import type { IWindow } from "@vortex/shared/state";
 
-import { ApplicationData } from "@vortex/shared";
 import {
   getErrorCode,
   getErrorMessageOrDefault,
@@ -21,7 +20,7 @@ import contextMenu from "electron-context-menu";
 import isAdmin from "is-admin";
 import * as _ from "lodash";
 import { mkdirSync, statSync } from "node:fs";
-import { writeFile, rm, stat } from "node:fs/promises";
+import { readFile, writeFile, rm, stat } from "node:fs/promises";
 import path from "node:path";
 import permissions from "permissions";
 import * as semver from "semver";
@@ -34,7 +33,7 @@ import { terminate, terminateAsync } from "./errorHandling";
 import { disableErrorReporting } from "./errorReporting";
 import { setupMainExtensions } from "./extensions";
 import { validateFiles } from "./fileValidation";
-import getVortexPath, { setVortexPath } from "./getVortexPath";
+import { getVortexPath, setVortexPath } from "./getVortexPath";
 import { log, setupLogging, changeLogPath } from "./logging";
 import MainWindow from "./MainWindow";
 import SplashScreen from "./SplashScreen";
@@ -130,42 +129,6 @@ class Application {
   constructor(args: IParameters) {
     this.mArgs = args;
 
-    // Initialize ApplicationData cache for IPC handlers
-    // This must happen before any IPC handlers are called by the renderer
-    // Normalize all paths to use consistent separators. This is necessary
-    // because the scoped package name "@vortex/main" contains a forward slash
-    // which Electron preserves in app.getPath("userData"), producing mixed
-    // separators that break symlink detection (readlink returns OS-normalized paths).
-    const vortexPaths: VortexPaths = {
-      base: getVortexPath("base"),
-      assets: getVortexPath("assets"),
-      assets_unpacked: getVortexPath("assets_unpacked"),
-      modules: getVortexPath("modules"),
-      modules_unpacked: getVortexPath("modules_unpacked"),
-      bundledPlugins: getVortexPath("bundledPlugins"),
-      locales: getVortexPath("locales"),
-      package: getVortexPath("package"),
-      package_unpacked: getVortexPath("package_unpacked"),
-      application: getVortexPath("application"),
-      userData: getVortexPath("userData"),
-      appData: getVortexPath("appData"),
-      localAppData: getVortexPath("localAppData"),
-      temp: getVortexPath("temp"),
-      home: getVortexPath("home"),
-      documents: getVortexPath("documents"),
-      exe: getVortexPath("exe"),
-      desktop: getVortexPath("desktop"),
-    };
-    for (const key of Object.keys(vortexPaths)) {
-      vortexPaths[key] = path.normalize(vortexPaths[key]);
-    }
-
-    ApplicationData.set({
-      appName: app.getName(),
-      appVersion: app.getVersion(),
-      vortexPaths: vortexPaths,
-    });
-
     // Set up main process extensions IPC handlers
     setupMainExtensions();
 
@@ -178,7 +141,7 @@ class Application {
     this.mBasePath = app.getPath("userData");
     mkdirSync(this.mBasePath, { recursive: true });
 
-    setVortexPath("temp", () => path.join(getVortexPath("userData"), "temp"));
+    setVortexPath("temp", path.join(getVortexPath("userData"), "temp"));
     const tempPath = getVortexPath("temp");
     mkdirSync(path.join(tempPath, "dumps"), { recursive: true });
 
@@ -779,6 +742,55 @@ class Application {
     }
   }
 
+  private async importBackup(
+    persistor: LevelPersist,
+    backupPath: string,
+    replace: boolean,
+  ): Promise<void> {
+    log("info", "importing state backup", { backupPath, replace });
+
+    const backupData = JSON.parse(
+      await readFile(backupPath, "utf-8"),
+    ) as Record<string, unknown>;
+
+    for (const [hive, hiveData] of Object.entries(backupData)) {
+      const sub = new SubPersistor(persistor, hive);
+
+      if (replace) {
+        const existingKeys = await sub.getAllKeys();
+        await Promise.all(existingKeys.map((key) => sub.removeItem(key)));
+      }
+
+      const leaves = this.flattenState(hiveData, []);
+      await Promise.all(
+        leaves.map(({ key, value }) =>
+          sub.setItem(key, JSON.stringify(value)),
+        ),
+      );
+    }
+
+    log("info", "state backup imported");
+  }
+
+  private flattenState(
+    obj: unknown,
+    prefix: string[],
+  ): Array<{ key: string[]; value: unknown }> {
+    if (obj === null || obj === undefined || typeof obj !== "object") {
+      return [{ key: prefix, value: obj }];
+    }
+
+    if (Array.isArray(obj)) {
+      return [{ key: prefix, value: obj }];
+    }
+
+    const result: Array<{ key: string[]; value: unknown }> = [];
+    for (const [key, value] of Object.entries(obj)) {
+      result.push(...this.flattenState(value, [...prefix, key]));
+    }
+    return result;
+  }
+
   private createTray(): void {
     // Pass null api since ExtensionManager is now renderer-only
     //  and TrayIcon used to receive the api from there.
@@ -895,7 +907,14 @@ class Application {
         finalPersistor = newLevelPersistor;
       }
 
-      // 5. Initialize the IPC-based persistence system
+      // 5. Restore or merge state backup if requested
+      if (this.mArgs.restore !== undefined) {
+        await this.importBackup(finalPersistor, this.mArgs.restore, true);
+      } else if (this.mArgs.merge !== undefined) {
+        await this.importBackup(finalPersistor, this.mArgs.merge, false);
+      }
+
+      // 6. Initialize the IPC-based persistence system
       log("debug", "initializing main persistence system");
       initMainPersistence(finalPersistor);
 

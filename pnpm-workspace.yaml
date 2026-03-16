@@ -131,7 +131,7 @@ catalog:
   "@types/xml2js": ~0.4.14
   "@typescript-eslint/utils": 8.47.0
   "@vitejs/plugin-react": ^5.1.4
-  '@vitest/coverage-v8': ^4.0.18
+  "@vitest/coverage-v8": ^4.0.18
   "@welldone-software/why-did-you-render": ^10.0.1
   ba2tk: git+https://github.com/Nexus-Mods/node-ba2tk#762d8de841ca1c770a0925311fd626d71de67971
   babel-jest: ^29.7.0
@@ -163,7 +163,7 @@ catalog:
   dnd-core: ^9.4.0
   draggabilly: ^2.2.0
   drivelist: git+https://github.com/TanninOne/drivelist#720d1890db11482ec05fc0f6aa176cfa6e6844dd
-  electron: 37.4.0
+  electron: 39.8.0
   electron-builder: 24.13.3
   electron-context-menu: ^3.1.1
   electron-devtools-installer: ^3.2.0

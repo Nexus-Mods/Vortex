@@ -15,14 +15,13 @@ import type {
 } from "../../actions";
 import { showDialog } from "../../actions";
 import type { IState } from "../../types/IState";
-import { getApplication } from "../../util/application";
 import { ComponentEx } from "../../controls/ComponentEx";
 import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
 import { log } from "../../util/log";
 import relativeTime from "../../util/relativeTime";
 import { FULL_BACKUP_PATH } from "../../store/store";
-import { spawnSelf } from "../../util/util";
+import { relaunch } from "../../util/commandLine";
 import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
 
 export interface IBaseProps {
@@ -200,8 +199,7 @@ class Settings extends ComponentEx<IProps, {}> {
           [{ label: "Cancel", default: true }, { label: "Confirm" }],
         );
         if (confirm.action === "Confirm") {
-          spawnSelf(["--restore", filePath]);
-          getApplication().quit();
+          relaunch(["--restore", filePath]);
         }
       }
     } catch (err) {

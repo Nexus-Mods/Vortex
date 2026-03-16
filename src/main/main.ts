@@ -44,7 +44,7 @@ import {
   errorToReportableError,
   sendReportFile,
 } from "./errorReporting";
-import getVortexPath from "./getVortexPath";
+import { getVortexPath } from "./getVortexPath";
 import { init as initIpcHandlers } from "./ipcHandlers";
 import { log } from "./logging";
 import StylesheetCompiler from "./stylesheetCompiler";

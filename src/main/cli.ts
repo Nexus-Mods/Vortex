@@ -5,7 +5,7 @@ import { app } from "electron";
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
-import getVortexPath from "./getVortexPath";
+import { getVortexPath } from "./getVortexPath";
 import { log } from "./logging";
 
 const ARG_COUNTS = {

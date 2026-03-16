@@ -16,18 +16,18 @@ export interface SerializedSpan {
   startTime: [number, number];
   endTime: [number, number];
   status: { code: number; message?: string };
-  attributes: Record<string, unknown>;
+  attributes: Attributes;
   links: Array<{
     context: { traceId: string; spanId: string; traceFlags: number };
-    attributes?: Record<string, unknown>;
+    attributes?: Attributes;
   }>;
   events: Array<{
     name: string;
     time: [number, number];
-    attributes?: Record<string, unknown>;
+    attributes?: Attributes;
   }>;
   duration: [number, number];
-  resource: Record<string, unknown>;
+  resource: Attributes;
   instrumentationLibrary: {
     name: string;
     version?: string;
@@ -92,23 +92,23 @@ export const deserializeSpan = (data: SerializedSpan): ReadableSpan => {
     startTime: data.startTime,
     endTime: data.endTime,
     status: data.status,
-    attributes: data.attributes as Attributes,
+    attributes: data.attributes,
     links: data.links.map((link) => ({
       context: {
         traceId: link.context.traceId,
         spanId: link.context.spanId,
         traceFlags: link.context.traceFlags,
       },
-      attributes: link.attributes as Attributes | undefined,
+      attributes: link.attributes,
     })),
     events: data.events.map((event) => ({
       name: event.name,
       time: event.time,
-      attributes: event.attributes as Attributes | undefined,
+      attributes: event.attributes,
     })),
     duration: data.duration,
     ended: true,
-    resource: new Resource(data.resource as Attributes),
+    resource: new Resource(data.resource),
     instrumentationLibrary: data.instrumentationLibrary,
     droppedAttributesCount: data.droppedAttributesCount,
     droppedEventsCount: data.droppedEventsCount,

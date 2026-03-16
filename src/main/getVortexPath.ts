@@ -1,6 +1,7 @@
-import { app } from "electron";
-import * as os from "os";
-import * as path from "path";
+import type { VortexPaths } from "@vortex/shared/ipc";
+
+import { app, type App } from "electron";
+import * as path from "node:path";
 
 // If running as a forked child process, read Electron app info from environment variables
 const electronAppInfoEnv: { [key: string]: string | undefined } =
@@ -26,26 +27,6 @@ const electronAppInfoEnv: { [key: string]: string | undefined } =
         package_unpacked: process.env.ELECTRON_PACKAGE_UNPACKED,
       }
     : {};
-
-export type AppPath =
-  | "base"
-  | "assets"
-  | "assets_unpacked"
-  | "modules"
-  | "modules_unpacked"
-  | "bundledPlugins"
-  | "locales"
-  | "package"
-  | "package_unpacked"
-  | "application"
-  | "userData"
-  | "appData"
-  | "localAppData"
-  | "temp"
-  | "home"
-  | "documents"
-  | "exe"
-  | "desktop";
 
 /**
  * app.getAppPath() returns the path to the app.asar,
@@ -121,56 +102,34 @@ function getPackagePath(unpacked: boolean): string {
   return res;
 }
 
-const cache: { [id: string]: string | (() => string) } = {};
+const cache: Partial<VortexPaths> = {};
 
-const cachedAppPath = (id: string) => {
-  if (cache[id] === undefined) {
-    if (app !== undefined) {
-      if (id === "__app") {
-        cache[id] = app.getAppPath();
-      } else {
-        // Normalize to fix mixed separators from scoped package names
-        // (e.g. "@vortex/main" produces a forward slash in userData path)
-        cache[id] = path.normalize(app.getPath(id as any));
-      }
-    } else {
-      // Fallback for non-Electron processes (tests)
-      if (id === "__app") {
-        cache[id] = path.resolve(__dirname, "..", "..");
-      } else {
-        cache[id] = os.tmpdir();
-      }
-    }
-  }
-  const value = cache[id];
-  if (typeof value === "string") {
+type ElectronPathId = Parameters<App["getPath"]>["0"] & keyof VortexPaths;
+
+function cachedAppPath(id: ElectronPathId) {
+  let value = cache[id];
+  if (value) {
     return value;
-  } else {
-    return value();
   }
-};
 
-const localAppData = (() => {
-  let cached;
-  return () => {
-    if (cached === undefined) {
-      cached =
-        process.env.LOCALAPPDATA ||
-        path.resolve(cachedAppPath("appData"), "..", "Local");
-    }
-    return cached;
-  };
-})();
+  // Normalize to fix mixed separators from scoped package names
+  // (e.g. "@vortex/main" produces a forward slash in userData path)
+  value = path.normalize(app.getPath(id));
 
-export function setVortexPath(id: AppPath, value: string | (() => string)) {
   cache[id] = value;
-  if (app !== undefined) {
-    if (typeof value === "string") {
-      app.setPath(id as any, value);
-    } else {
-      app.setPath(id as any, value());
-    }
-  }
+  return value;
+}
+
+function localAppData(): string {
+  return (
+    process.env.LOCALAPPDATA ||
+    path.resolve(cachedAppPath("appData"), "..", "Local")
+  );
+}
+
+export function setVortexPath(id: ElectronPathId, value: string) {
+  cache[id] = value;
+  app.setPath(id, value);
 }
 
 /**
@@ -180,10 +139,10 @@ export function setVortexPath(id: AppPath, value: string | (() => string)) {
  *
  * This version is designed to run ONLY in the main process where electron.app is available.
  */
-function getVortexPath(id: AppPath): string {
+export function getVortexPath(id: keyof VortexPaths): string {
   if (electronAppInfoEnv && Object.keys(electronAppInfoEnv).length > 0) {
     if (id in electronAppInfoEnv && electronAppInfoEnv[id]) {
-      return electronAppInfoEnv[id]!;
+      return electronAppInfoEnv[id];
     }
     // If not found, fall through to next logic (do not throw)
   }
@@ -226,5 +185,3 @@ function getVortexPath(id: AppPath): string {
       return getLocalesPath();
   }
 }
-
-export default getVortexPath;

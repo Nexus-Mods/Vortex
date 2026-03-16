@@ -3,7 +3,7 @@ import type { BrowserWindow } from "electron";
 import { app, Menu, Tray } from "electron";
 import path from "node:path";
 
-import getVortexPath from "./getVortexPath";
+import { getVortexPath } from "./getVortexPath";
 import { log } from "./logging";
 
 /**

@@ -8,7 +8,7 @@ import { pathToFileURL } from "url";
 import type TrayIcon from "./TrayIcon";
 
 import { terminate } from "./errorHandling";
-import getVortexPath from "./getVortexPath";
+import { getVortexPath } from "./getVortexPath";
 import { log } from "./logging";
 import Debouncer from "./NodeDebouncer";
 import { openUrl } from "./open";

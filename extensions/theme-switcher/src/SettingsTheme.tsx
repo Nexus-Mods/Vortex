@@ -1,4 +1,3 @@
-import { selectTheme } from "./actions";
 import ThemeEditor from "./ThemeEditor";
 import Bluebird from "bluebird";
 
@@ -9,13 +8,14 @@ import {
   ControlLabel,
   FormControl,
   FormGroup,
+  HelpBlock,
   InputGroup,
 } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import * as Redux from "redux";
 import { ThunkDispatch } from "redux-thunk";
-import { actions, ComponentEx, log, tooltip, types, util } from "vortex-api";
+import { actions, ComponentEx, log, Toggle, tooltip, types, util } from "vortex-api";
 
 export interface ISettingsThemeProps {
   readThemes: () => Promise<string[]>;
@@ -36,6 +36,7 @@ export interface ISettingsThemeProps {
 
 interface IConnectedProps {
   currentTheme: string;
+  useModernLayout: boolean;
 }
 
 interface IActionProps {
@@ -46,6 +47,7 @@ interface IActionProps {
     actions: types.DialogActions,
   ) => Bluebird<types.IDialogResult>;
   onShowError: (title: string, details: any) => void;
+  onSetUseModernLayout: (useModern: boolean) => void;
 }
 
 type IWrapperProps = ISettingsThemeProps & IConnectedProps & IActionProps;
@@ -88,11 +90,18 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, currentTheme, themes } = this.props;
+    const { t, currentTheme, themes, useModernLayout } = this.props;
     const { editable, variables } = this.state;
+    const isLegacy = !useModernLayout;
     return (
       <div style={{ position: "relative" }}>
         <form>
+          <FormGroup>
+            <ControlLabel>{t("Appearance")}</ControlLabel>
+            <Toggle checked={isLegacy} onToggle={this.toggleLegacyUI}>
+              {t("Use legacy Vortex UI")}
+            </Toggle>
+          </FormGroup>
           <FormGroup controlId="themeSelect">
             <ControlLabel>{t("Theme")}</ControlLabel>
             <InputGroup style={{ width: 300 }}>
@@ -117,6 +126,11 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
                 ) : null}
               </InputGroup.Button>
             </InputGroup>
+            <HelpBlock>
+              {isLegacy
+                ? t("Some community themes were designed for the new UI and may not display correctly in the legacy one.")
+                : t("Some community themes were designed for the old UI and may not display correctly in the new one.")}
+            </HelpBlock>
             {editable ? null : (
               <Alert bsStyle="info">
                 {t("Please clone this theme to modify it.")}
@@ -259,6 +273,15 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
     );
   };
 
+  private toggleLegacyUI = (useLegacy: boolean) => {
+    this.context.api.events.emit(
+      "analytics-track-click-event",
+      "Themes",
+      "Toggle legacy UI",
+    );
+    this.props.onSetUseModernLayout(!useLegacy);
+  };
+
   private selectTheme = (evt) => {
     this.context.api.events.emit(
       "analytics-track-click-event",
@@ -276,6 +299,7 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
 function mapStateToProps(state: any): IConnectedProps {
   return {
     currentTheme: state.settings.interface.currentTheme,
+    useModernLayout: state.settings.window.useModernLayout ?? true,
   };
 }
 
@@ -287,6 +311,8 @@ function mapDispatchToProps(
       util.showError(dispatch, title, details),
     onShowDialog: (type, title, content, dialogActions) =>
       dispatch(actions.showDialog(type, title, content, dialogActions)),
+    onSetUseModernLayout: (useModern: boolean) =>
+      dispatch(actions.setUseModernLayout(useModern)),
   };
 }
 

@@ -1,3 +1,53 @@
+import type { IHashResult, ILookupResult, IRule } from "modmeta-db";
+import type * as Redux from "redux";
+
+import { HTTPError } from "@nexusmods/nexus-api";
+import {
+  getErrorCode,
+  getErrorMessage,
+  getErrorMessageOrDefault,
+  unknownToError,
+} from "@vortex/shared";
+import Bluebird, { method as toBluebird } from "bluebird";
+import * as _ from "lodash";
+import Zip from "node-7z";
+import * as os from "os";
+import * as path from "path";
+import { generate as shortid } from "shortid";
+
+import type { ICheckbox, IDialogResult } from "../../types/IDialog";
+import type { IExtensionApi, ThunkStore } from "../../types/IExtensionContext";
+import type { IProfile, IState } from "../../types/IState";
+import type { TFunction } from "../../util/i18n";
+import type { IDownload } from "../download_management/types/IDownload";
+import type { IModType } from "../gamemode_management/types/IModType";
+import type {
+  Dependency,
+  IDependency,
+  IDependencyError,
+  IModInfoEx,
+} from "./types/IDependency";
+import type { IInstallContext } from "./types/IInstallContext";
+import type { IInstallOptions } from "./types/IInstallOptions";
+import type {
+  IInstallResult,
+  IInstruction,
+  InstructionType,
+} from "./types/IInstallResult";
+import type {
+  IFileListItem,
+  IMod,
+  IModReference,
+  IModRule,
+} from "./types/IMod";
+import type { IModInstaller, ISupportedInstaller } from "./types/IModInstaller";
+import type { IInstallationDetails, InstallFunc } from "./types/InstallFunc";
+import type {
+  ISupportedResult,
+  ITestSupportedDetails,
+  TestSupported,
+} from "./types/TestSupported";
+
 /**
  * InstallManager - Handles mod installation with phased collection support.
  *
@@ -51,12 +101,9 @@ import {
   showDialog,
   dismissNotification,
 } from "../../actions/notifications";
-import type { ICheckbox, IDialogResult } from "../../types/IDialog";
-import type { IExtensionApi, ThunkStore } from "../../types/IExtensionContext";
-import type { IProfile, IState } from "../../types/IState";
 import { getBatchContext, type IBatchContext } from "../../util/BatchContext";
+import calculateFolderSize from "../../util/calculateFolderSize";
 import ConcurrencyLimiter from "../../util/ConcurrencyLimiter";
-import { NotificationAggregator } from "./NotificationAggregator";
 import {
   DataInvalid,
   NotFound,
@@ -74,7 +121,6 @@ import {
   withTrackedActivity,
 } from "../../util/errorHandling";
 import * as fs from "../../util/fs";
-import type { TFunction } from "../../util/i18n";
 import { log } from "../../util/log";
 import { prettifyNodeErrorMessage } from "../../util/message";
 import {
@@ -97,9 +143,7 @@ import {
   truthy,
 } from "../../util/util";
 import walk from "../../util/walk";
-
-import calculateFolderSize from "../../util/calculateFolderSize";
-
+import { resolveCategoryId } from "../category_management/util/retrieveCategoryPath";
 import {
   getCollectionActiveSession,
   getCollectionInstallProgress,
@@ -108,25 +152,20 @@ import {
   getCollectionStatusBreakdown,
   isCollectionPhaseComplete,
 } from "../collections_integration/selectors";
-import { resolveCategoryId } from "../category_management/util/retrieveCategoryPath";
+import { generateCollectionSessionId } from "../collections_integration/util";
+import { finishDownload } from "../download_management/actions/state";
 import {
   AlreadyDownloaded,
   DownloadIsHTML,
 } from "../download_management/DownloadManager";
-import { finishDownload } from "../download_management/actions/state";
-import type { IDownload } from "../download_management/types/IDownload";
 import getDownloadGames from "../download_management/util/getDownloadGames";
-
-import type { IModType } from "../gamemode_management/types/IModType";
 import { discoveryByGame } from "../gamemode_management/selectors";
 import { getGame } from "../gamemode_management/util/getGame";
-import modName, { renderModReference } from "./util/modName";
 import { convertGameIdReverse } from "../nexus_integration/util/convertGameId";
 import {
   setModEnabled,
   setModsEnabled,
 } from "../profile_management/actions/profiles";
-
 import {
   addModRule,
   removeModRule,
@@ -136,48 +175,6 @@ import {
   setModAttributes,
   setModType,
 } from "./actions/mods";
-import type {
-  Dependency,
-  IDependency,
-  IDependencyError,
-  IModInfoEx,
-} from "./types/IDependency";
-import type { IInstallContext } from "./types/IInstallContext";
-import type {
-  IInstallResult,
-  IInstruction,
-  InstructionType,
-} from "./types/IInstallResult";
-import type {
-  IFileListItem,
-  IMod,
-  IModReference,
-  IModRule,
-} from "./types/IMod";
-import type { IModInstaller, ISupportedInstaller } from "./types/IModInstaller";
-import type { IInstallationDetails, InstallFunc } from "./types/InstallFunc";
-import type {
-  ISupportedResult,
-  ITestSupportedDetails,
-  TestSupported,
-} from "./types/TestSupported";
-import gatherDependencies, {
-  findDownloadByRef,
-  findModByRef,
-  lookupFromDownload,
-} from "./util/dependencies";
-import filterModInfo from "./util/filterModInfo";
-import metaLookupMatch from "./util/metaLookupMatch";
-import queryGameId from "./util/queryGameId";
-import testModReference, {
-  downloadToModRef,
-  idOnlyRef,
-  isFuzzyVersion,
-  referenceEqual,
-  testRefByIdentifiers,
-} from "./util/testModReference";
-import { getCSharpScriptAllowListForGame } from "./util/cSharpScriptAllowList";
-
 import {
   MAX_VARIANT_NAME,
   MIN_VARIANT_NAME,
@@ -186,25 +183,24 @@ import {
 import InstallContext from "./InstallContext";
 import makeListInstaller from "./listInstaller";
 import deriveModInstallName from "./modIdManager";
-
-import { HTTPError } from "@nexusmods/nexus-api";
-import Bluebird, { method as toBluebird } from "bluebird";
-import * as _ from "lodash";
-import type { IHashResult, ILookupResult, IRule } from "modmeta-db";
-import Zip from "node-7z";
-import * as os from "os";
-import * as path from "path";
-import type * as Redux from "redux";
-
-import { generate as shortid } from "shortid";
-import type { IInstallOptions } from "./types/IInstallOptions";
-import { generateCollectionSessionId } from "../collections_integration/util";
-import {
-  getErrorCode,
-  getErrorMessage,
-  getErrorMessageOrDefault,
-  unknownToError,
-} from "@vortex/shared";
+import { NotificationAggregator } from "./NotificationAggregator";
+import { getCSharpScriptAllowListForGame } from "./util/cSharpScriptAllowList";
+import gatherDependencies, {
+  findDownloadByRef,
+  findModByRef,
+  lookupFromDownload,
+} from "./util/dependencies";
+import filterModInfo from "./util/filterModInfo";
+import metaLookupMatch from "./util/metaLookupMatch";
+import modName, { renderModReference } from "./util/modName";
+import queryGameId from "./util/queryGameId";
+import testModReference, {
+  downloadToModRef,
+  idOnlyRef,
+  isFuzzyVersion,
+  referenceEqual,
+  testRefByIdentifiers,
+} from "./util/testModReference";
 
 // Interface for tracking active installation information
 interface IActiveInstallation {
@@ -1321,14 +1317,23 @@ class InstallManager {
           };
           let existingMod: IMod;
           // Start the installation process - the promise will resolve when callback is called
+          const dlInfo = archiveId != null
+            ? api.getState().persistent.downloads.files[archiveId]
+            : undefined;
           const installationPromise = withTrackedActivity(
             "vortex.mod-management",
             "mod.install",
             {
               "mod.baseName": baseName,
               "mod.archiveId": archiveId ?? "",
+              "mod.numericModId": dlInfo?.modInfo?.nexus?.ids?.modId ?? "",
+              "mod.fileId": dlInfo?.modInfo?.nexus?.ids?.fileId ?? "",
+              "mod.installerChoices": fullInfo.choices != null
+                ? JSON.stringify(fullInfo.choices) : "",
+              "mod.hasPatches": fullInfo.patches != null,
+              "mod.hasFileList": fileList != null,
             },
-            (_setAttribute, _setError) =>
+            (setAttribute, setError) =>
               (forceGameId !== undefined
                 ? Bluebird.resolve(forceGameId)
                 : queryGameId(api.store, downloadGameIds, modId)
@@ -1403,6 +1408,7 @@ class InstallManager {
                     modId,
                     fullInfo,
                   );
+                  setAttribute("mod.installGameId", installGameId);
                   return Bluebird.resolve(installGameId);
                 })
                 // calculate the md5 hash here so we can store it with the mod meta information later,
@@ -1775,7 +1781,16 @@ class InstallManager {
                     details,
                   );
                 })
-                .then((result) => {
+                .then((result: IInstallResult & { installerId?: string }) => {
+                  setAttribute("mod.modId", modId);
+                  setAttribute("mod.installerId", result.installerId ?? "unknown");
+                  setAttribute("mod.fileCount",
+                    result.instructions.filter(i => i.type === "copy").length);
+                  // update choices now that the installer may have produced new ones
+                  if (fullInfo.choices != null) {
+                    setAttribute("mod.installerChoices",
+                      JSON.stringify(fullInfo.choices));
+                  }
                   const state: IState = api.store.getState();
 
                   if (
@@ -1790,6 +1805,7 @@ class InstallManager {
                       result.instructions,
                     ).then((type) => {
                       installContext.setModType(modId, type);
+                      setAttribute("mod.modType", type);
                       return result;
                     });
                   } else {
@@ -1797,6 +1813,12 @@ class InstallManager {
                   }
                 })
                 .then(async (result: { instructions: IInstruction[] }) => {
+                  const setModTypeInstr: IInstruction = result.instructions.find(
+                    (instr) => instr.type === "setmodtype",
+                  );
+                  if (setModTypeInstr) {
+                    setAttribute("mod.modType", setModTypeInstr.value);
+                  }
                   try {
                     const overrideFile = result.instructions.find(
                       (iter) =>
@@ -1931,6 +1953,9 @@ class InstallManager {
                     err.message === "Canceled" ||
                     (truthy(err.stack) &&
                       err.stack.startsWith("UserCanceled: canceled by user"));
+                  if (!canceled && err instanceof Error) {
+                    setError(err);
+                  }
                   let prom =
                     destinationPath !== undefined
                       ? fs
@@ -4084,7 +4109,7 @@ class InstallManager {
           installer: installer.id,
           enforced: forceInstaller !== undefined,
         });
-        const installerResult = await installer.install(
+        const installerResult: IInstallResult & { installerId?: string } = await installer.install(
           fileList,
           tempPath,
           gameId,
@@ -4097,6 +4122,7 @@ class InstallManager {
           archivePath,
           innerDetails,
         );
+        installerResult.installerId = installer.id;
         if (!installerResult.instructions) {
           return installerResult;
         }
@@ -7918,8 +7944,8 @@ class InstallManager {
             : undefined,
         );
         const identifiers = {
-          fileNames: Array.from(nameSet).filter(truthy) as string[],
-          fileIds: Array.from(fileIdsSet).filter(truthy) as string[],
+          fileNames: Array.from(nameSet).filter(x => x != null),
+          fileIds: Array.from(fileIdsSet).filter(x => x != null),
           gameId:
             download.modInfo?.nexus?.ids?.gameId || download.modInfo?.gameId,
           modId: download.modInfo?.nexus?.ids?.modId,
