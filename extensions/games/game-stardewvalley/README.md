@@ -169,10 +169,29 @@ A test only answers "can I handle this archive?" (`supported: true/false`).
   - Caches active mod manifests for dependency/version diagnostics.
 - [`tests.ts`](tests.ts)
   - Extension diagnostics (for example outdated SMAPI checks).
-- [`configMod.ts`](configMod.ts)
-  - Config-file sync/merge logic via the Vortex config mod.
+- [`configMod/`](configMod)
+  - Config-file sync/merge feature split into focused modules.
+  - Start with [`configMod/README.md`](configMod/README.md) for a plain-English
+    walkthrough.
 - [`state/selectors.ts`](state/selectors.ts)
   - Shared state path helpers to avoid repeating deep Redux paths.
+
+### Config mod module map (plain English)
+
+If terms like "lifecycle" or "policy" are unfamiliar, use this map:
+
+- [`configMod/index.ts`](configMod/index.ts)
+  - Public entry points (what other files import and call).
+- [`configMod/sync.ts`](configMod/sync.ts)
+  - "Move generated config files into the synthetic config mod" logic.
+- [`configMod/ingest.ts`](configMod/ingest.ts)
+  - Handles newly detected files and decides where they should go.
+- [`configMod/transitions.ts`](configMod/transitions.ts)
+  - Handles enable/disable transitions so config ownership stays correct.
+- [`configMod/lifecycle.ts`](configMod/lifecycle.ts)
+  - Finds or creates the synthetic config mod and updates its tracking metadata.
+- [`configMod/policy.ts`](configMod/policy.ts)
+  - Safety rules (for example, skip SMAPI internal files).
 
 ## Common Contributor Tasks
 
@@ -188,8 +207,8 @@ A test only answers "can I handle this archive?" (`supported: true/false`).
 
 1. Confirm installer instruction destinations.
 2. Confirm mod type deployment root callback.
-3. Verify runtime file-ingestion behaviour in [`configMod.ts`](configMod.ts)
-   for side effects.
+3. Verify runtime file-ingestion behaviour in [`configMod/ingest.ts`](configMod/ingest.ts)
+   and sync behavior in [`configMod/sync.ts`](configMod/sync.ts) for side effects.
 
 ### Debug compatibility metadata
 
