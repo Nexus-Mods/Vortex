@@ -388,8 +388,8 @@ catalogs:
       specifier: git+https://github.com/TanninOne/drivelist#720d1890db11482ec05fc0f6aa176cfa6e6844dd
       version: 10.0.2
     electron:
-      specifier: 37.4.0
-      version: 37.4.0
+      specifier: 39.8.0
+      version: 39.8.0
     electron-builder:
       specifier: 24.13.3
       version: 24.13.3
@@ -1644,7 +1644,7 @@ importers:
         version: 2.30.0
       electron:
         specifier: 'catalog:'
-        version: 37.4.0
+        version: 39.8.0
       exe-version:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-exe-version/tar.gz/eded60fc0a0f3c234e1d586d2eb9952401945406
@@ -2995,7 +2995,7 @@ importers:
         version: 2.4.1
       electron:
         specifier: 'catalog:'
-        version: 37.4.0
+        version: 39.8.0
       turbowalk:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
@@ -3529,7 +3529,7 @@ importers:
         version: 2.4.1
       electron:
         specifier: 'catalog:'
-        version: 37.4.0
+        version: 39.8.0
       exe-version:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-exe-version/tar.gz/eded60fc0a0f3c234e1d586d2eb9952401945406
@@ -3756,7 +3756,7 @@ importers:
     dependencies:
       '@electron/remote':
         specifier: 'catalog:'
-        version: 2.1.3(electron@37.4.0)
+        version: 2.1.3(electron@39.8.0)
       '@headlessui/react':
         specifier: 'catalog:'
         version: 1.7.19(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
@@ -4210,7 +4210,7 @@ importers:
         version: 10.1.0
       electron:
         specifier: 'catalog:'
-        version: 37.4.0
+        version: 39.8.0
       electron-builder:
         specifier: 'catalog:'
         version: 24.13.3(electron-builder-squirrel-windows@24.13.3)
@@ -4229,7 +4229,7 @@ importers:
     devDependencies:
       electron:
         specifier: 'catalog:'
-        version: 37.4.0
+        version: 39.8.0
 
   src/renderer:
     devDependencies:
@@ -4250,7 +4250,7 @@ importers:
         version: 7.16.8(@babel/core@7.29.0)
       '@electron/remote':
         specifier: 'catalog:'
-        version: 2.1.3(electron@37.4.0)
+        version: 2.1.3(electron@39.8.0)
       '@headlessui/react':
         specifier: 'catalog:'
         version: 1.7.19(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
@@ -4505,7 +4505,7 @@ importers:
         version: https://codeload.github.com/TanninOne/drivelist/tar.gz/720d1890db11482ec05fc0f6aa176cfa6e6844dd
       electron:
         specifier: 'catalog:'
-        version: 37.4.0
+        version: 39.8.0
       electron-context-menu:
         specifier: 'catalog:'
         version: 3.6.1
@@ -8701,8 +8701,8 @@ packages:
   electron-updater@4.6.5:
     resolution: {integrity: sha512-kdTly8O9mSZfm9fslc1mnCY+mYOeaYRy7ERa2Fed240u01BKll3aiupzkd07qKw69KvhBSzuHroIW3mF0D8DWA==}
 
-  electron@37.4.0:
-    resolution: {integrity: sha512-HhsSdWowE5ODOeWNc/323Ug2C52mq/TqNBG+4uMeOA3G2dMXNc/nfyi0RYu1rJEgiaJLEjtHveeZZaYRYFsFCQ==}
+  electron@39.8.0:
+    resolution: {integrity: sha512-K+f3YelSyh9Q4LgUXuIhLB4kq73LJrqnIbe8ih9vpWi+iSdPebj0w7FRYwILCMDoyBQMFC9LicYHuIPmZzdKlg==}
     engines: {node: '>= 12.20.55'}
     hasBin: true
 
@@ -13868,9 +13868,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@electron/remote@2.1.3(electron@37.4.0)':
+  '@electron/remote@2.1.3(electron@39.8.0)':
     dependencies:
-      electron: 37.4.0
+      electron: 39.8.0
 
   '@electron/universal@1.5.1':
     dependencies:
@@ -17550,7 +17550,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  electron@37.4.0:
+  electron@39.8.0:
     dependencies:
       '@electron/get': 2.0.3
       '@types/node': 22.19.11

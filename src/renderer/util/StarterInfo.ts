@@ -1,19 +1,21 @@
-import { setToolRunning, setToolStopped } from "../actions";
-import type { IDiscoveredTool } from "../types/IDiscoveredTool";
-import type { IGame } from "../types/IGame";
-import { log } from "./log";
-
-import GameStoreHelper from "./GameStoreHelper";
-
-import { getSafe } from "./storeHelper";
+import { getErrorCode, unknownToError } from "@vortex/shared";
+import PromiseBB from "bluebird";
+import * as fs from "fs";
+import * as path from "path";
 
 import type { IDiscoveryResult } from "../extensions/gamemode_management/types/IDiscoveryResult";
 import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 import type { IToolStored } from "../extensions/gamemode_management/types/IToolStored";
-import { getGame } from "../extensions/gamemode_management/util/getGame";
-
+import type { IDiscoveredTool } from "../types/IDiscoveredTool";
 import type { IExtensionApi } from "../types/IExtensionContext";
+import type { IGame } from "../types/IGame";
+import type { Steam, ISteamEntry } from "./Steam";
 
+import { setToolRunning, setToolStopped } from "../actions";
+import { ApplicationData } from "../applicationData";
+import { getGame } from "../extensions/gamemode_management/util/getGame";
+import { log } from "../logging";
+import { GameEntryNotFound, GameStoreNotFound } from "../types/IGameStore";
 import { getApplication } from "./application";
 import {
   MissingDependency,
@@ -21,27 +23,21 @@ import {
   ProcessCanceled,
   UserCanceled,
 } from "./CustomErrors";
+import GameStoreHelper from "./GameStoreHelper";
 import getVortexPath from "./getVortexPath";
-
-import PromiseBB from "bluebird";
-import * as fs from "fs";
-import * as path from "path";
-import { GameEntryNotFound, GameStoreNotFound } from "../types/IGameStore";
-import { getErrorCode, unknownToError } from "@vortex/shared";
 import { isWindowsExecutable } from "./linux/proton";
-import type { Steam, ISteamEntry } from "./Steam";
-import { ApplicationData } from "@vortex/shared";
+import { getSafe } from "./storeHelper";
 
 async function hideWindow(): Promise<void> {
-  await window.api.window.hide(ApplicationData.windowId);
+  await window.api.window.hide(ApplicationData.instance.windowId);
 }
 
 async function showWindow(): Promise<void> {
-  await window.api.window.show(ApplicationData.windowId);
+  await window.api.window.show(ApplicationData.instance.windowId);
 }
 
 async function isWindowVisible(): Promise<boolean> {
-  return window.api.window.isVisible(ApplicationData.windowId);
+  return window.api.window.isVisible(ApplicationData.instance.windowId);
 }
 
 export interface IStarterInfo {
@@ -202,7 +198,7 @@ class StarterInfo implements IStarterInfo {
       if (res !== undefined) {
         const infoObj =
           res.addInfo === undefined
-            ? !!game.details
+            ? game.details
               ? game.details
               : path.dirname(info.exePath)
             : res.addInfo;

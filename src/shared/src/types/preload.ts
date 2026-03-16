@@ -1,3 +1,4 @@
+import type { SerializedSpan } from "../telemetry/types";
 import type {
   BrowserViewConstructorOptions,
   Cookie,
@@ -24,7 +25,6 @@ import type {
 } from "./ipc";
 import type { Level } from "./logging";
 import type { PersistedHive, PersistedState } from "./state";
-import type { SerializedSpan } from "../telemetry/types";
 
 /** Globals exposed by the preload script to the renderer */
 export interface PreloadWindow {
@@ -143,10 +143,7 @@ export interface App {
   getName(): Promise<string>;
 
   /** Get app path */
-  getPath(name: string): Promise<string>;
-
-  /** Set app path */
-  setPath(name: string, value: string): Promise<void>;
+  getPath(name: keyof VortexPaths): Promise<string>;
 
   /** Extract file icon */
   extractFileIcon(exePath: string, iconPath: string): Promise<void>;

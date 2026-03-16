@@ -56,25 +56,21 @@ if (SetProcessPreferredUILanguages !== undefined) {
   SetProcessPreferredUILanguages(["en-US"]);
 }
 
+import type { AppInitMetadata } from "@vortex/shared/ipc";
 import type crashDumpT from "crash-dump";
-import type * as I18next from "i18next";
 
 import "./util/application.electron";
-import {
-  getErrorCode,
-  getErrorMessageOrDefault,
-  unknownToError,
-  ApplicationData,
-} from "@vortex/shared";
+
+import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import Bluebird from "bluebird";
 import { ipcRenderer, webFrame } from "electron";
 import { EventEmitter } from "events";
 import * as nativeErr from "native-errors";
 import { readFile } from "node:fs/promises";
 import * as path from "path";
-import { DndProvider } from "react-dnd";
 
 import "./util/monkeyPatching";
+import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import * as ReactDOM from "react-dom";
 import { I18nextProvider } from "react-i18next";
@@ -83,7 +79,6 @@ import { applyMiddleware, compose, createStore } from "redux";
 import thunkMiddleware from "redux-thunk";
 import { generate as shortid } from "shortid";
 
-import type { AppInitMetadata } from "@vortex/shared/ipc";
 import type { ThunkStore } from "./types/IExtensionContext";
 import type { IState } from "./types/IState";
 
@@ -103,6 +98,7 @@ import {
   setWindowPosition,
   setWindowSize,
 } from "./actions/window";
+import { ApplicationData } from "./applicationData";
 import ExtensionManager from "./ExtensionManager";
 import { ExtensionContext } from "./ExtensionProvider";
 import { log } from "./logging";
@@ -119,7 +115,6 @@ import { UserCanceled } from "./util/CustomErrors";
 import { recordErrorSpan, setOutdated, terminate, toError } from "./util/errorHandling";
 import {} from "./util/extensionRequire";
 import { setTFunction } from "./util/fs";
-import getVortexPath, { setVortexPath } from "./util/getVortexPath";
 import GlobalNotifications from "./util/GlobalNotifications";
 import getI18n, {
   changeLanguage,
@@ -133,8 +128,6 @@ import { AppLayout } from "./views/AppLayout";
 import LoadingScreen from "./views/LoadingScreen";
 
 log("debug", "renderer process started", { pid: process["pid"] });
-
-setVortexPath("temp", () => path.join(getVortexPath("userData"), "temp"));
 
 let deinitCrashDump: () => void;
 
