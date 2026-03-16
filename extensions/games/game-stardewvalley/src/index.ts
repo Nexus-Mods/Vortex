@@ -6,7 +6,7 @@ import type { types } from 'vortex-api';
 
 // Core identifiers and shared state wiring.
 import { GAME_ID } from './common';
-import sdvReducers from './reducers';
+import sdvReducers from './state/reducers';
 
 // Feature modules registered during startup.
 import { registerConfigMod } from './configMod';
