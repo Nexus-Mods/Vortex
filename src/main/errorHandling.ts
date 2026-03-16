@@ -10,7 +10,7 @@ import {
   disableErrorReporting,
   isErrorReportingDisabled,
 } from "./errorReporting";
-import getVortexPath from "./getVortexPath";
+import { getVortexPath } from "./getVortexPath";
 import { log } from "./logging";
 
 /** Terminates the applpication on an error */

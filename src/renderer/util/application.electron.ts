@@ -4,7 +4,7 @@ import os from "node:os";
 
 import type { IApplication } from "./application";
 
-import { ApplicationData } from "@vortex/shared";
+import { ApplicationData } from "../applicationData";
 import { setApplication } from "./application";
 import { getPreloadWindow } from "./preloadAccess";
 
@@ -29,11 +29,11 @@ class ElectronApplication implements IApplication {
   }
 
   public get name() {
-    return ApplicationData.name ?? "Vortex";
+    return ApplicationData.instance.name;
   }
 
   public get version() {
-    return ApplicationData.version ?? "0.0.0";
+    return ApplicationData.instance.version;
   }
 
   public get window(): BrowserWindow | null {

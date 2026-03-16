@@ -1,8 +1,7 @@
 import type { IParameters, ISetItem } from "@vortex/shared/cli";
-import type { AppInitMetadata, VortexPaths } from "@vortex/shared/ipc";
+import type { AppInitMetadata } from "@vortex/shared/ipc";
 import type { IWindow } from "@vortex/shared/state";
 
-import { ApplicationData } from "@vortex/shared";
 import {
   getErrorCode,
   getErrorMessageOrDefault,
@@ -34,7 +33,7 @@ import { terminate } from "./errorHandling";
 import { disableErrorReporting } from "./errorReporting";
 import { setupMainExtensions } from "./extensions";
 import { validateFiles } from "./fileValidation";
-import getVortexPath, { setVortexPath } from "./getVortexPath";
+import { getVortexPath, setVortexPath } from "./getVortexPath";
 import { log, setupLogging, changeLogPath } from "./logging";
 import MainWindow from "./MainWindow";
 import SplashScreen from "./SplashScreen";
@@ -130,42 +129,6 @@ class Application {
   constructor(args: IParameters) {
     this.mArgs = args;
 
-    // Initialize ApplicationData cache for IPC handlers
-    // This must happen before any IPC handlers are called by the renderer
-    // Normalize all paths to use consistent separators. This is necessary
-    // because the scoped package name "@vortex/main" contains a forward slash
-    // which Electron preserves in app.getPath("userData"), producing mixed
-    // separators that break symlink detection (readlink returns OS-normalized paths).
-    const vortexPaths: VortexPaths = {
-      base: getVortexPath("base"),
-      assets: getVortexPath("assets"),
-      assets_unpacked: getVortexPath("assets_unpacked"),
-      modules: getVortexPath("modules"),
-      modules_unpacked: getVortexPath("modules_unpacked"),
-      bundledPlugins: getVortexPath("bundledPlugins"),
-      locales: getVortexPath("locales"),
-      package: getVortexPath("package"),
-      package_unpacked: getVortexPath("package_unpacked"),
-      application: getVortexPath("application"),
-      userData: getVortexPath("userData"),
-      appData: getVortexPath("appData"),
-      localAppData: getVortexPath("localAppData"),
-      temp: getVortexPath("temp"),
-      home: getVortexPath("home"),
-      documents: getVortexPath("documents"),
-      exe: getVortexPath("exe"),
-      desktop: getVortexPath("desktop"),
-    };
-    for (const key of Object.keys(vortexPaths)) {
-      vortexPaths[key] = path.normalize(vortexPaths[key]);
-    }
-
-    ApplicationData.set({
-      appName: app.getName(),
-      appVersion: app.getVersion(),
-      vortexPaths: vortexPaths,
-    });
-
     // Set up main process extensions IPC handlers
     setupMainExtensions();
 
@@ -178,7 +141,7 @@ class Application {
     this.mBasePath = app.getPath("userData");
     mkdirSync(this.mBasePath, { recursive: true });
 
-    setVortexPath("temp", () => path.join(getVortexPath("userData"), "temp"));
+    setVortexPath("temp", path.join(getVortexPath("userData"), "temp"));
     const tempPath = getVortexPath("temp");
     mkdirSync(path.join(tempPath, "dumps"), { recursive: true });
 

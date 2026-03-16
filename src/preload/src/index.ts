@@ -108,9 +108,7 @@ try {
       exit: (exitCode: number) =>
         betterIpcRenderer.invoke("app:exit", exitCode),
       getName: () => betterIpcRenderer.invoke("app:getName"),
-      getPath: (name: string) => betterIpcRenderer.invoke("app:getPath", name),
-      setPath: (name: string, value: string) =>
-        betterIpcRenderer.invoke("app:setPath", name, value),
+      getPath: (name) => betterIpcRenderer.invoke("app:getPath", name),
       extractFileIcon: (exePath: string, iconPath: string) =>
         betterIpcRenderer.invoke("app:extractFileIcon", exePath, iconPath),
       setJumpList: (categories) =>

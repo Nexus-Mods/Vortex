@@ -3,6 +3,7 @@
  * These handlers respond to requests from the renderer process via preload.
  */
 
+import type { VortexPaths } from "@vortex/shared/ipc";
 import type { SerializableMenuItem } from "@vortex/shared/preload";
 import type {
   IpcMainInvokeEvent,
@@ -14,7 +15,6 @@ import type {
   TraceCategoriesAndOptions,
 } from "electron";
 
-import { ApplicationData } from "@vortex/shared";
 import {
   app,
   BrowserView,
@@ -29,7 +29,7 @@ import { writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { relaunch } from "./cli";
-import getVortexPath, { setVortexPath, type AppPath } from "./getVortexPath";
+import { getVortexPath, setVortexPath } from "./getVortexPath";
 import { betterIpcMain } from "./ipc";
 import { openUrl, openFile } from "./open";
 import { extraWebViews } from "./webview";
@@ -41,6 +41,35 @@ export interface GlobalWithRedux {
 }
 
 export function init() {
+  const vortexPaths: VortexPaths = {
+    base: getVortexPath("base"),
+    assets: getVortexPath("assets"),
+    assets_unpacked: getVortexPath("assets_unpacked"),
+    modules: getVortexPath("modules"),
+    modules_unpacked: getVortexPath("modules_unpacked"),
+    bundledPlugins: getVortexPath("bundledPlugins"),
+    locales: getVortexPath("locales"),
+    package: getVortexPath("package"),
+    package_unpacked: getVortexPath("package_unpacked"),
+    application: getVortexPath("application"),
+    userData: getVortexPath("userData"),
+    appData: getVortexPath("appData"),
+    localAppData: getVortexPath("localAppData"),
+    temp: getVortexPath("temp"),
+    home: getVortexPath("home"),
+    documents: getVortexPath("documents"),
+    exe: getVortexPath("exe"),
+    desktop: getVortexPath("desktop"),
+  };
+
+  // Normalize all paths to use consistent separators. This is necessary
+  // because the scoped package name "@vortex/main" contains a forward slash
+  // which Electron preserves in app.getPath("userData"), producing mixed
+  // separators that break symlink detection (readlink returns OS-normalized paths).
+  for (const key of Object.keys(vortexPaths)) {
+    vortexPaths[key] = path.normalize(vortexPaths[key]);
+  }
+
   // ============================================================================
   // Example handler
   // ============================================================================
@@ -178,24 +207,12 @@ export function init() {
   });
 
   betterIpcMain.handle("app:getName", () => {
-    return ApplicationData.name ?? app.getName();
+    return app.getName();
   });
 
-  betterIpcMain.handle(
-    "app:getPath",
-    (_event: IpcMainInvokeEvent, name: string) => {
-      // Use Vortex's custom path logic instead of Electron's native paths
-      return getVortexPath(name as AppPath);
-    },
-  );
-
-  betterIpcMain.handle(
-    "app:setPath",
-    (_event: IpcMainInvokeEvent, name: string, value: string) => {
-      // Use Vortex's custom path setter
-      setVortexPath(name as AppPath, value);
-    },
-  );
+  betterIpcMain.handle("app:getPath", (_event: IpcMainInvokeEvent, name) => {
+    return getVortexPath(name);
+  });
 
   betterIpcMain.handle(
     "app:extractFileIcon",
@@ -210,11 +227,11 @@ export function init() {
   });
 
   betterIpcMain.handle("app:getVersion", () => {
-    return ApplicationData.version ?? app.getVersion();
+    return app.getVersion();
   });
 
   betterIpcMain.handle("app:getVortexPaths", () => {
-    return ApplicationData.vortexPaths;
+    return vortexPaths;
   });
 
   // ============================================================================

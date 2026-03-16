@@ -2,7 +2,7 @@ import path from "path";
 import sass from "sass";
 import { pathToFileURL } from "url";
 
-import getVortexPath from "./getVortexPath";
+import { getVortexPath } from "./getVortexPath";
 import { betterIpcMain } from "./ipc";
 import { log } from "./logging";
 
