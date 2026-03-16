@@ -131,7 +131,7 @@ catalog:
   "@types/xml2js": ~0.4.14
   "@typescript-eslint/utils": 8.47.0
   "@vitejs/plugin-react": ^5.1.4
-  "@vitest/coverage-v8": ^4.0.18
+  "@vitest/coverage-v8": ^4.1.0
   "@welldone-software/why-did-you-render": ^10.0.1
   ba2tk: git+https://github.com/Nexus-Mods/node-ba2tk#762d8de841ca1c770a0925311fd626d71de67971
   babel-jest: ^29.7.0
@@ -275,7 +275,7 @@ catalog:
   typescript-eslint: 8.47.0
   universal-analytics: ^0.4.23
   uuid: ^3.3.3
-  vitest: ^4.0.18
+  vitest: ^4.1.0
   vortex-parse-ini: git+https://github.com/Nexus-Mods/vortex-parse-ini#2425af99d1cff2331ccf3aacfa892c314e99e18d
   vortexmt: git+https://github.com/Nexus-Mods/node-vortexmt#5251ea012ce856742aeaf73a583073497aff773a
   webpack: ^5.94.0
