@@ -4,6 +4,35 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.16.7] - 2026-03-17
+
+### Added
+
+- Ability to link profiles to specific collections ([#21283](https://github.com/Nexus-Mods/Vortex/issues/21283))
+
+### Changed
+
+- Upgraded libloot from 0.27.0 to 0.29.0 — plugin sorting ~2x faster
+- Re-apply installer choices/preset on manual re-install of a mod
+
+### Fixed
+
+- Confusing "No instructions found" error dialog when toggling mod instructions during a race condition — now logs silently instead ([#21300](https://github.com/Nexus-Mods/Vortex/issues/21300))
+- Crash in file-based load order when external entries were not stored as arrays ([#21309](https://github.com/Nexus-Mods/Vortex/issues/21309))
+- `editCollection` callback being wrapped incorrectly, causing crash when editing a collection ([#21319](https://github.com/Nexus-Mods/Vortex/issues/21319))
+- Crash in dependency graph view when the graph component wasn't initialized yet ([#21327](https://github.com/Nexus-Mods/Vortex/issues/21327))
+- Crash in collection overview when the collection's game domain was undefined ([#21328](https://github.com/Nexus-Mods/Vortex/issues/21328))
+- Error messages showing empty file paths for ENOENT/EPERM errors when `path`/`filename` was an empty string instead of undefined ([#21337](https://github.com/Nexus-Mods/Vortex/issues/21337), [#21343](https://github.com/Nexus-Mods/Vortex/issues/21343), [#21377](https://github.com/Nexus-Mods/Vortex/issues/21377))
+- Crash when accessing `modInfo` on a null download reference during mod installation ([#21338](https://github.com/Nexus-Mods/Vortex/issues/21338))
+- `minimatch` throwing on invalid patterns in the dependency blacklist — now catches and skips bad patterns ([#21352](https://github.com/Nexus-Mods/Vortex/issues/21352))
+- `winapi.GetPrivateProfileSectionNames` crash on non-Windows platforms by skipping WinAPI ini format on Linux/Mac ([#21355](https://github.com/Nexus-Mods/Vortex/issues/21355))
+- Crash when load order contained circular rules — now shows a user-friendly notification instead ([#21356](https://github.com/Nexus-Mods/Vortex/issues/21356))
+- Crash from stale OAuth callback arriving after the login flow was already completed or abandoned ([#21362](https://github.com/Nexus-Mods/Vortex/issues/21362))
+- `__MACOSX` resource fork directories not being excluded during deployment — case-sensitive match was missing ([#21364](https://github.com/Nexus-Mods/Vortex/issues/21364))
+- Win32 `GetLastError` code of 0 (`ERROR_SUCCESS`) overwriting real error messages with "The operation completed successfully" ([#21366](https://github.com/Nexus-Mods/Vortex/issues/21366), [#21375](https://github.com/Nexus-Mods/Vortex/issues/21375), [#21380](https://github.com/Nexus-Mods/Vortex/issues/21380))
+- Crash when importing collection plugin rules/groups that weren't exported ([#21381](https://github.com/Nexus-Mods/Vortex/issues/21381))
+- Collection overview not re-rendering correctly on install complete
+
 ## [1.16.6] - 2026-03-02
 
 - Fixed gamebryo plugin group filter crashing the renderer process ([#20436](https://github.com/Nexus-Mods/Vortex/issues/20436), [#19848](https://github.com/Nexus-Mods/Vortex/issues/19848))
@@ -1465,6 +1494,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[1.16.7]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.7
 [1.16.6]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.6
 [1.16.5]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.5
 [1.16.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.4
