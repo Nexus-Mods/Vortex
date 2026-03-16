@@ -25,6 +25,7 @@ import type { IDownloadViewProps } from "./views/DownloadView";
 import ReduxProp from "../../ReduxProp";
 import { unknownToError } from "@vortex/shared";
 import { getApplication } from "../../util/application";
+import { setErrorContext } from "../../util/errorHandling";
 import {
   DataInvalid,
   ProcessCanceled,
@@ -1361,7 +1362,9 @@ function init(context: IExtensionContextExt): boolean {
 
         const state: IState = context.api.store.getState();
 
-        updateShutdown(selectors.activeDownloads(state));
+        const activeDls = selectors.activeDownloads(state);
+        updateShutdown(activeDls);
+        setErrorContext("active_downloads", String(Object.keys(activeDls).length));
 
         PromiseBB.map(filtered, (dlId) => {
           const rawGameId = getDownloadGames(cur[dlId])[0];

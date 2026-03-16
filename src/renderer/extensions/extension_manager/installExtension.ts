@@ -7,6 +7,7 @@ import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
 import lazyRequire from "../../util/lazyRequire";
 import { log } from "../../util/log";
+import { withTrackedActivity } from "../../util/errorHandling";
 import { INVALID_FILENAME_RE } from "../../util/util";
 import { webpackRequireHack } from "../../util/webpack-hacks";
 
@@ -311,7 +312,15 @@ function installExtension(
   let type: ExtensionType;
 
   let extName: string;
-  return (
+  return PromiseBB.resolve(withTrackedActivity(
+    "vortex.extension-manager",
+    "extension.install",
+    {
+      "extension.archive": path.basename(archivePath),
+      "extension.name": info?.name,
+      "extension.type": info?.type,
+    },
+    () =>
     extractor
       .extractFull(
         archivePath,
@@ -409,8 +418,8 @@ function installExtension(
         rimrafAsync(tempPath, { glob: false }).then(() =>
           PromiseBB.reject(err),
         ),
-      )
-  );
+      ),
+  ));
 }
 
 export default installExtension;

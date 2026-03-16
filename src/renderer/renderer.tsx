@@ -63,6 +63,7 @@ import "./util/application.electron";
 import {
   getErrorCode,
   getErrorMessageOrDefault,
+  unknownToError,
   ApplicationData,
 } from "@vortex/shared";
 import Bluebird from "bluebird";
@@ -115,7 +116,7 @@ import StyleManager from "./StyleManager";
 import { createRendererTelemetryProvider } from "./telemetry/setup";
 import { relaunch } from "./util/commandLine";
 import { UserCanceled } from "./util/CustomErrors";
-import { setOutdated, terminate, toError } from "./util/errorHandling";
+import { recordErrorSpan, setOutdated, terminate, toError } from "./util/errorHandling";
 import {} from "./util/extensionRequire";
 import { setTFunction } from "./util/fs";
 import getVortexPath, { setVortexPath } from "./util/getVortexPath";
@@ -328,6 +329,9 @@ function errorHandler(evt: any) {
         name: extName,
         error: error.stack,
       });
+      recordErrorSpan("Unhandled exception in extension", unknownToError(error), {
+        "extension.name": extName,
+      });
       extensions
         ?.getApi()
         ?.showErrorNotification?.("Unhandled exception in extension", error, {
@@ -402,6 +406,7 @@ function errorHandler(evt: any) {
     console.error(error.stack);
     return true;
   } else {
+    recordErrorSpan("Unhandled error", unknownToError(error));
     terminateFromError(error);
   }
 }

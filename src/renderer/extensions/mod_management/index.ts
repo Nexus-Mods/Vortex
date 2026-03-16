@@ -157,6 +157,8 @@ import React from "react";
 import type * as Redux from "redux";
 import shortid from "shortid";
 import { getErrorCode } from "@vortex/shared";
+import { withTrackedActivity } from "../../util/errorHandling";
+import { enabledModCountForProfile } from "../profile_management/selectors";
 import { nxmMod } from "../../ui/lib/icon_paths/icon-paths";
 
 interface IAppContext {
@@ -811,8 +813,19 @@ function genUpdateModDeployment() {
       }
     };
 
+    const enabledModCount = enabledModCountForProfile(state, profile.id);
+
     // test if anything was changed by an external application
-    return (manual ? Bluebird.resolve() : userGate())
+    return Bluebird.resolve(withTrackedActivity(
+      "vortex.mod-management",
+      "deployment.deploy",
+      {
+        "deployment.gameId": gameId,
+        "deployment.method": activator.name,
+        "deployment.modCount": enabledModCount,
+        "deployment.manual": manual,
+      },
+      () => (manual ? Bluebird.resolve() : userGate())
       .tap(() => {
         notification.id = api.sendNotification(notification);
       })
@@ -1003,7 +1016,7 @@ function genUpdateModDeployment() {
             api.store.dispatch(stopActivity("mods", "deployment"));
             api.dismissNotification(notification.id);
           }),
-      );
+      )));
   };
 }
 

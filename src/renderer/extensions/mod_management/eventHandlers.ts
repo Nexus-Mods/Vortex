@@ -334,9 +334,17 @@ export function onGameModeActivated(
   }
 
   setErrorContext("gamemode", game.name);
+  setErrorContext("extension_type", game.contributed ? "community" : "official");
   if (truthy(game?.version)) {
     setErrorContext("extension_version", game.version);
   }
+  if (activatorToUse !== undefined) {
+    setErrorContext("deployment_method", activatorToUse.id);
+  }
+  const updateChannel = getSafe(state, ["settings", "update", "channel"], "stable");
+  setErrorContext("update_channel", updateChannel);
+  const modTable = getSafe(state, ["persistent", "mods", gameId], {});
+  setErrorContext("mod_count", String(Object.keys(modTable).length));
 
   let instPath = installPath(state);
 
