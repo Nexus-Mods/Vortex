@@ -18,46 +18,28 @@ jobs:
         os: [ubuntu-latest, windows-latest]
 
     runs-on: ${{ matrix.os }}
-    env:
-      NO_PARALLEL: true
-      NEXUS_API_KEY: ${{ secrets.NEXUS_API_KEY }}
     steps:
       - uses: actions/checkout@v6
         with:
           submodules: "recursive"
 
-      - name: Print dotnet info
-        run: dotnet --info
-
-      - name: Read Node.js version from package.json
-        id: node-version
-        shell: pwsh
-        run: |
-          $packageJson = Get-Content package.json | ConvertFrom-Json
-          $nodeVersion = $packageJson.engines.node
-          echo "NODE_VERSION=$nodeVersion" >> $env:GITHUB_OUTPUT
-          echo "Using Node.js version: $nodeVersion"
-
       - name: Setup Python 3.11
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
-          python-version: '3.11'
+          python-version: "3.11"
+
+      - name: Install volta, Node.js and Yarn
+        uses: volta-cli/action@v4
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
-
-      - name: Use Node.js
-        uses: actions/setup-node@v6
         with:
-          node-version: ${{ steps.node-version.outputs.NODE_VERSION }}
-          cache: "pnpm"
+          cache: true
 
       - name: Configure node-gyp for VS 2022
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $env:npm_config_msvs_version = "2022"
-          $env:GYP_MSVS_VERSION = "2022"
           echo "npm_config_msvs_version=2022" >> $env:GITHUB_ENV
           echo "GYP_MSVS_VERSION=2022" >> $env:GITHUB_ENV
 
@@ -79,5 +61,4 @@ jobs:
         run: pnpm run build:all
 
       - name: Test
-        if: runner.os == 'Windows'
         run: pnpm run test

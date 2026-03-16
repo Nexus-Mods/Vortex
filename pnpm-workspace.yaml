@@ -130,8 +130,8 @@ catalog:
   "@types/ws": ~7.4.7
   "@types/xml2js": ~0.4.14
   "@typescript-eslint/utils": 8.47.0
-  "@vitejs/plugin-react": ^5.1.4
-  "@vitest/coverage-v8": ^4.0.18
+  "@vitejs/plugin-react": ^6.0.1
+  "@vitest/coverage-v8": ^4.1.0
   "@welldone-software/why-did-you-render": ^10.0.1
   ba2tk: git+https://github.com/Nexus-Mods/node-ba2tk#762d8de841ca1c770a0925311fd626d71de67971
   babel-jest: ^29.7.0
@@ -254,7 +254,7 @@ catalog:
   reselect: ^4.1.7
   resolve: ^1.12.0
   rimraf: git+https://github.com/TanninOne/rimraf#7b8b70d4e8783cd233fca3283cf1f930af4e39c2
-  rolldown: 1.0.0-rc.6
+  rolldown: 1.0.0-rc.9
   sass: 1.97.3
   semver: ^7.6.0
   shortid: 2.2.17
@@ -275,7 +275,8 @@ catalog:
   typescript-eslint: 8.47.0
   universal-analytics: ^0.4.23
   uuid: ^3.3.3
-  vitest: ^4.0.18
+  vite: ^8.0.0
+  vitest: ^4.1.0
   vortex-parse-ini: git+https://github.com/Nexus-Mods/vortex-parse-ini#2425af99d1cff2331ccf3aacfa892c314e99e18d
   vortexmt: git+https://github.com/Nexus-Mods/node-vortexmt#5251ea012ce856742aeaf73a583073497aff773a
   webpack: ^5.94.0
