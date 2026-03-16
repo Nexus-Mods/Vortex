@@ -43,7 +43,7 @@
             dotnetCorePackages.sdk_9_0
 
             # Electron (wrapped with GTK dependencies)
-            electron_39 # 14 Dec 2025: We're ahead of Vortex which is on 37. Doing this for default Wayland support.
+            electron_39
 
             # GTK dependencies for Electron runtime
             gtk3

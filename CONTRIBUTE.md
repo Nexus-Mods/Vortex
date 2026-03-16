@@ -118,7 +118,7 @@ sudo pacman -S base-devel python python-setuptools dotnet-sdk-9.0
 - Install toolchain requirements: `volta install node@22 yarn@v1`
 - Install PNPM via Corepack: `npm install --global corepack@latest && corepack install`
 - Setup dependencies: `pnpm run build:fomod && pnpm install`
-- Build: `pnpm run build`
+- Build: `pnpm run build:all`
 - Start: `pnpm run start`
     - Wayland: `pnpm run start -- --ozone-platform-hint=auto`
 
@@ -155,7 +155,7 @@ There is a `flake.nix` that provides all required dependencies: `node`, `pnpm`, 
     - Or if using direnv: `direnv allow` (from now on shell will auto-activate when you `cd` into this folder)
 - Use shell-provided `pnpm` directly (do not run `corepack enable` inside Nix shells)
 - Setup dependencies: `pnpm run build:fomod && pnpm install`
-- Build: `pnpm run build`
+- Build: `pnpm run build:all`
 - Start: `pnpm run start`
 
 Python is included in the dev shell (with `setuptools`) for node-gyp and the Flatpak helper scripts.

@@ -250,7 +250,7 @@ Once complete, you can build Vortex:
 ```powershell
 cd C:\vortex\Vortex
 pnpm run build:fomod && pnpm install  # Setup dependencies
-pnpm run build        # Build the application
+pnpm run build:all    # Build the app, assets, and bundled extensions
 ```
 
 ### Support
