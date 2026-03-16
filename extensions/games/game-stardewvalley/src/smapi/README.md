@@ -36,3 +36,14 @@ entries.
   - SMAPI.io compatibility lookup adapter with Nexus fallback metadata lookup.
 - `version.ts`
   - SMAPI-compatible semver coercion/comparison helpers used by proxy lookups.
+
+## Common contributor tasks
+
+- Change tool/mod discovery logic:
+  - edit `selectors.ts`.
+- Change download source or archive download behavior:
+  - edit `download.ts`.
+- Change install/enable behavior after download:
+  - edit `install.ts` and/or `workflow.ts`.
+- Change compatibility metadata lookup behavior:
+  - edit `proxy.ts`.

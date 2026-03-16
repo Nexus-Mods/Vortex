@@ -64,18 +64,16 @@ different deployment behaviour.
 
 ### Key Vortex concepts (plain English)
 
-- **Installer**: Code that inspects an archive and decides if it knows how to
-  install it.
-- **Mod type**: A Vortex classification that decides where/how a mod deploys.
-- **Deployment**: The operation that writes/links staged files into the game
-  directory.
-- **Attribute extractor**: Reads files (like `manifest.json`) and attaches
-  metadata to the mod in Vortex.
+- **Installer**: The steps Vortex uses to install a mod archive.
+- **Mod type**: Where a mod deploys.
+- **Deployment**: Putting staged mod files into the game folder.
+- **Attribute extractor**: Reads files (like `manifest.json`) and saves mod
+  metadata in Vortex.
 
 Installers and mod types are separate phases:
 
-- Installer: "Can I handle this archive, and what install instructions should I emit?"
-- Mod type: "Given the resulting instructions/mod, where should it deploy and how should Vortex treat it?"
+- Installer: "Can I install this archive, and if yes, what steps should I use?"
+- Mod type: "Where should the installed files go?"
 - They are not 1:1. A name can exist in both systems (for example `sdvrootfolder`) but registration and matching are separate. Some mod types have no archive installer (for example `sdv-configuration-mod`).
 
 ### How this extension boots
@@ -85,7 +83,7 @@ Installers and mod types are separate phases:
 - game definition (`StardewValleyGame`)
 - installers
 - mod types
-- SDV settings state updater (a Redux "reducer")
+- SDV settings Redux state wiring (actions/reducer/selectors)
 - UI integrations
 - diagnostics/tests
 - runtime event handlers
@@ -154,9 +152,8 @@ A test only answers "can I handle this archive?" (`supported: true/false`).
 - [`game/StardewValleyGame.ts`](game/StardewValleyGame.ts)
   - Implements `types.IGame` (discovery, executable, setup, SMAPI recommendation).
 - [`installers/`](installers)
-  - All installer/matcher logic lives here; start with
-    [`installers/README.md`](installers/README.md) for a short map of each
-    installer and [`archiveClassifier.ts`](installers/archiveClassifier.ts).
+  - Installer matcher/install logic and archive classification.
+  - Start with [`installers/README.md`](installers/README.md).
 - [`registration/registerInstallers.ts`](registration/registerInstallers.ts)
   - Registers installer IDs/priorities with Vortex.
 - [`registration/registerModTypes.ts`](registration/registerModTypes.ts)
@@ -164,11 +161,7 @@ A test only answers "can I handle this archive?" (`supported: true/false`).
 - [`runtime/registerRuntimeEvents.ts`](runtime/registerRuntimeEvents.ts)
   - Hooks deploy/purge/install events and SMAPI metadata lookups.
 - [`smapi/`](smapi)
-  - Consolidated SMAPI selectors, deployment/download workflows, and metadata
-    proxy adapter.
-  - Download/install is intentionally split into `download.ts` (download only),
-    `install.ts` (install + enable), and `workflow.ts` (user-facing
-    orchestration).
+  - SMAPI selectors, deployment/download/install workflow, and compatibility adapter.
   - Start with [`smapi/README.md`](smapi/README.md).
 - [`manifests/createManifestAttributeExtractor.ts`](manifests/createManifestAttributeExtractor.ts)
   - Derives mod metadata from `manifest.json`.
@@ -179,53 +172,37 @@ A test only answers "can I handle this archive?" (`supported: true/false`).
 - [`tests.ts`](tests.ts)
   - Extension diagnostics (for example outdated SMAPI checks).
 - [`configMod/`](configMod)
-  - Config-file sync/merge feature split into focused modules.
+  - Config-file sync/merge feature and runtime lifecycle hooks.
   - Start with [`configMod/README.md`](configMod/README.md) for a plain-English
     walkthrough.
-- [`state/selectors.ts`](state/selectors.ts)
-  - Shared state path helpers to avoid repeating deep Redux paths.
-
-### Config mod module map (plain English)
-
-If terms like "lifecycle" or "policy" are unfamiliar, use this map:
-
-- [`configMod/index.ts`](configMod/index.ts)
-  - Public entry points (what other files import and call).
-- [`configMod/sync.ts`](configMod/sync.ts)
-  - "Move generated config files into the synthetic config mod" logic.
-- [`configMod/ingest.ts`](configMod/ingest.ts)
-  - Handles newly detected files and decides where they should go.
-- [`configMod/transitions.ts`](configMod/transitions.ts)
-  - Handles enable/disable transitions so config ownership stays correct.
-- [`configMod/filesystem.ts`](configMod/filesystem.ts)
-  - Shared directory walk/delete helpers used by config-mod sync and transitions.
-- [`configMod/lifecycle.ts`](configMod/lifecycle.ts)
-  - Finds or creates the synthetic config mod and updates its tracking metadata.
-- [`configMod/policy.ts`](configMod/policy.ts)
-  - Safety rules (for example, skip SMAPI internal files).
+- [`state/`](state)
+  - Redux state module (`actions.ts`, `reducers.ts`, `selectors.ts`) and beginner guide.
+  - Start with [`state/README.md`](state/README.md).
 
 ## Common Contributor Tasks
 
 ### Add support for a new archive pattern
 
-1. Add detection logic in [`installers/archiveClassifier.ts`](installers/archiveClassifier.ts).
-2. Update or add installer test/install function in [`installers/`](installers).
-3. Register installer in [`registration/registerInstallers.ts`](registration/registerInstallers.ts).
-4. If deployment semantics differ, register/adjust a mod type in
+1. Start with [`installers/README.md`](installers/README.md) to choose the right installer.
+2. Add detection logic in [`installers/archiveClassifier.ts`](installers/archiveClassifier.ts).
+3. Update or add installer test/install function in [`installers/`](installers).
+4. Register installer in [`registration/registerInstallers.ts`](registration/registerInstallers.ts).
+5. If deployment semantics differ, register/adjust a mod type in
    [`registration/registerModTypes.ts`](registration/registerModTypes.ts).
 
 ### Change where files deploy
 
 1. Confirm installer instruction destinations.
 2. Confirm mod type deployment root callback.
-3. Verify runtime file-ingestion behaviour in [`configMod/ingest.ts`](configMod/ingest.ts)
-   and sync behavior in [`configMod/sync.ts`](configMod/sync.ts) for side effects.
+3. Use [`configMod/README.md`](configMod/README.md) to locate ingest/sync side effects,
+   then verify the relevant files.
 
 ### Debug compatibility metadata
 
 1. Start in [`runtime/registerRuntimeEvents.ts`](runtime/registerRuntimeEvents.ts) (event hooks).
 2. Check [`compatibility/updateConflictInfo.ts`](compatibility/updateConflictInfo.ts).
-3. Check [`smapi/proxy.ts`](smapi/proxy.ts) request/response mapping.
+3. Use [`smapi/README.md`](smapi/README.md) to navigate proxy/version flow, then check
+   [`smapi/proxy.ts`](smapi/proxy.ts) request/response mapping.
 
 ## Glossary
 

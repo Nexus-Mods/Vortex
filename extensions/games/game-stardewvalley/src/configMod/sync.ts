@@ -12,7 +12,7 @@ import { fs, log, selectors, util } from 'vortex-api';
 import type { types } from 'vortex-api';
 import type { IEntry } from 'turbowalk';
 
-import { setMergeConfigs } from '../actions';
+import { setMergeConfigs } from '../state/actions';
 import {
   GAME_ID,
   MOD_CONFIG,
