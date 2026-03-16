@@ -182,9 +182,12 @@ export function showError(
 
   log(allowReport ? "error" : "warn", title, err);
 
+  const isCommunityExtension = options.extensionName !== undefined;
   if (allowReport && !isOutdated() && !didIgnoreError()) {
     const error = details instanceof Error ? details : unknownToError(details);
-    recordErrorSpan(title, error);
+    recordErrorSpan(title, error, {
+      "error.isCommunityExtension": isCommunityExtension,
+    });
   }
 
   const content: IDialogContent =

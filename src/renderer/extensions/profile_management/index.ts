@@ -51,6 +51,7 @@ import {
   TemporaryError,
   UserCanceled,
 } from "../../util/CustomErrors";
+import { withTrackedActivity } from "../../util/errorHandling";
 import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
 import { log } from "../../util/log";
@@ -494,7 +495,15 @@ function genOnProfileChange(
 
         sanitizeProfile(store, profile);
 
-        return (
+        return PromiseBB.resolve(withTrackedActivity(
+          "vortex.profile-management",
+          "profile.switch",
+          {
+            "profile.from": prev,
+            "profile.to": current,
+            "profile.gameId": profile?.gameId,
+          },
+          () =>
           queue
             .then(() => {
               log("debug", "starting refresh profile export");
@@ -530,8 +539,8 @@ function genOnProfileChange(
               log("info", "switched to profile", { gameId, current });
               confirmProfile(gameId, current);
               return null;
-            })
-        );
+            }),
+        ));
       })
       .catch((err) => {
         cancelSwitch();

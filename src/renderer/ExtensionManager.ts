@@ -88,6 +88,7 @@ import {
 import { suppressNotification } from "./actions/notificationSettings";
 import { setExtensionLoadFailures } from "./actions/session";
 import { setOptionalExtensions } from "./extensions/extension_manager/actions";
+import { log } from "./logging";
 import { registerSanityCheck } from "./store/reduxSanity";
 import ReduxWatcher from "./store/ReduxWatcher";
 import { computeStateDiff } from "./store/stateDiff";
@@ -103,14 +104,13 @@ import {
   TimeoutError,
   UserCanceled,
 } from "./util/CustomErrors";
-import { disableErrorReport, isOutdated } from "./util/errorHandling";
+import { runElevated } from "./util/elevated";
+import { disableErrorReport, isOutdated, recordErrorSpan } from "./util/errorHandling";
 import * as fsVortex from "./util/fs";
 import getVortexPath from "./util/getVortexPath";
 import { TString } from "./util/i18n";
 import lazyRequire from "./util/lazyRequire";
-import { log } from "./util/log";
 import { showError } from "./util/message";
-import { getPreloadApi } from "./util/preloadAccess";
 import {
   deregisterProtocolHandler,
   registerProtocolHandler,
@@ -129,8 +129,6 @@ import {
   wrapExtCBSync,
 } from "./util/util";
 import { webpackRequireHack } from "./util/webpack-hacks";
-
-import { runElevated } from "./util/elevated";
 
 const modmeta = lazyRequire<typeof modmetaT>(() => require("modmeta-db"));
 
@@ -151,27 +149,27 @@ const ERROR_OUTPUT_CUTOFF = 3;
 const showOpenDialog = (
   options: Electron.OpenDialogOptions,
 ): Promise<Electron.OpenDialogReturnValue> => {
-  return getPreloadApi().dialog.showOpen(options);
+  return window.api.dialog.showOpen(options);
 };
 
 const showSaveDialog = (
   options: Electron.SaveDialogOptions,
 ): Promise<Electron.SaveDialogReturnValue> => {
-  return getPreloadApi().dialog.showSave(options);
+  return window.api.dialog.showSave(options);
 };
 
 const appExit = (exitCode?: number): Promise<void> => {
-  return getPreloadApi().app.exit(exitCode);
+  return window.api.app.exit(exitCode);
 };
 
 const showErrorBox = (title: string, content: string): Promise<void> => {
-  return getPreloadApi().dialog.showErrorBox(title, content);
+  return window.api.dialog.showErrorBox(title, content);
 };
 
 const showMessageBox = (
   options: Electron.MessageBoxOptions,
 ): Promise<Electron.MessageBoxReturnValue> => {
-  return getPreloadApi().dialog.showMessageBox(options);
+  return window.api.dialog.showMessageBox(options);
 };
 
 interface IWatcherRegistry {
@@ -1313,6 +1311,7 @@ class ExtensionManager {
         keyCount: Object.keys(hydrationData).length,
       });
     } catch (err) {
+      recordErrorSpan("Failed to hydrate from extension persistor", unknownToError(err));
       log("error", "Failed to hydrate from extension persistor", {
         hive,
         error: getErrorMessageOrDefault(err),
@@ -1490,6 +1489,9 @@ class ExtensionManager {
         log("warn", "failed to call once", {
           err: err.message,
           stack: err.stack,
+        });
+        recordErrorSpan("Extension once-callback failed", err, {
+          "extension.name": call.extension,
         });
       } else {
         log("warn", "failed to call once", err);
@@ -1820,6 +1822,7 @@ class ExtensionManager {
         this.mLoadFailures[ext.name] = [
           { id: "exception", args: { message: err.message } },
         ];
+        recordErrorSpan("Extension initialization failed", err);
         log("warn", "couldn't initialize extension", {
           name: ext.name,
           err: err.message,
@@ -1898,9 +1901,11 @@ class ExtensionManager {
                   );
                 })
                 .catch((err) => {
+                  const error = unknownToError(err);
+                  recordErrorSpan("Extension failed to migrate", error);
                   this.mApi.showErrorNotification(
                     "Extension failed to migrate",
-                    err,
+                    error,
                     {
                       allowReport: ext.info.author === COMPANY_ID,
                     },
@@ -1910,7 +1915,8 @@ class ExtensionManager {
             }
           }
         } catch (err) {
-          this.mApi.showErrorNotification("Extension invalid", err, {
+          const error = unknownToError(err);
+          this.mApi.showErrorNotification("Extension invalid", error, {
             allowReport: false,
             message: ext.name,
           });

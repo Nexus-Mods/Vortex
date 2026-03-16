@@ -52,6 +52,22 @@ export function profileById(state: IState, profileId: string) {
   return profileByIdImpl(state, profileId);
 }
 
+export const enabledModCountForProfile = createCachedSelector(
+  (state: IState) => state.persistent.mods,
+  (state: IState, profileId: string) => profileById(state, profileId),
+  (mods, profile): number => {
+    if (profile?.modState === undefined) {
+      return 0;
+    }
+    const gameMods = mods[profile.gameId] ?? {};
+    return Object.keys(profile.modState).filter(
+      (id) =>
+        profile.modState[id]?.enabled &&
+        gameMods[id]?.state === "installed",
+    ).length;
+  },
+)((state, profileId) => profileId ?? "___empty");
+
 export const lastActiveProfileForGame = createCachedSelector(
   lastActiveProfiles,
   (state: IState, gameId: string) => gameId,
