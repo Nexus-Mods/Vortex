@@ -8,8 +8,8 @@ import type { types } from 'vortex-api';
 
 import { GAME_ID, SMAPI_MOD_ID } from '../common';
 import { errorMessage, toBlue } from '../helpers';
-import { parseManifest } from '../util';
 import { getModManifests } from './getModManifests';
+import { parseManifest } from './parseManifest';
 
 /**
  * Factory for the Stardew Valley manifest attribute extractor.

@@ -174,6 +174,8 @@ A test only answers "can I handle this archive?" (`supported: true/false`).
   - Derives mod metadata from `manifest.json`.
 - [`manifests/ModManifestCache.ts`](manifests/ModManifestCache.ts)
   - Caches active mod manifests for dependency/version diagnostics.
+- [`manifests/parseManifest.ts`](manifests/parseManifest.ts)
+  - Shared manifest parser (`relaxed-json` + BOM-safe read) used by installer and manifest services.
 - [`tests.ts`](tests.ts)
   - Extension diagnostics (for example outdated SMAPI checks).
 - [`configMod/`](configMod)
@@ -195,6 +197,8 @@ If terms like "lifecycle" or "policy" are unfamiliar, use this map:
   - Handles newly detected files and decides where they should go.
 - [`configMod/transitions.ts`](configMod/transitions.ts)
   - Handles enable/disable transitions so config ownership stays correct.
+- [`configMod/filesystem.ts`](configMod/filesystem.ts)
+  - Shared directory walk/delete helpers used by config-mod sync and transitions.
 - [`configMod/lifecycle.ts`](configMod/lifecycle.ts)
   - Finds or creates the synthetic config mod and updates its tracking metadata.
 - [`configMod/policy.ts`](configMod/policy.ts)

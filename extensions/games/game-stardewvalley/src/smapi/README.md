@@ -34,3 +34,5 @@ entries.
     deployment/notifications.
 - `proxy.ts`
   - SMAPI.io compatibility lookup adapter with Nexus fallback metadata lookup.
+- `version.ts`
+  - SMAPI-compatible semver coercion/comparison helpers used by proxy lookups.

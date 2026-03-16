@@ -13,6 +13,9 @@ export const MOD_CONFIG = 'config.json';
 /** Standard manifest file name for SMAPI mods. */
 export const MOD_MANIFEST = 'manifest.json';
 
+/** Standard Mods folder path relative to the game root. */
+export const MODS_REL_PATH = 'Mods';
+
 /** Invalid Windows path characters replaced during generated-name sanitization. */
 export const RGX_INVALID_CHARS_WINDOWS = /[:/\\*?"<>|]/g;
 

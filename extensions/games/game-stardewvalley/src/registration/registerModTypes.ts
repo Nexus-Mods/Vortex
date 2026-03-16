@@ -13,11 +13,11 @@ import {
   MOD_TYPE_PRIORITY_ROOT,
   MOD_TYPE_PRIORITY_SMAPI,
   MOD_TYPE_ROOT,
+  MODS_REL_PATH,
   MOD_TYPE_SMAPI,
 } from '../common';
 import { isSMAPIModType } from '../installers/smapiInstaller';
 import { isSdvRootFolderModType } from '../modtypes/sdvRootFolderMatcher';
-import { defaultModsRelPath } from '../util';
 
 /**
  * Registers Stardew Valley mod types.
@@ -34,7 +34,7 @@ export function registerModTypes(context: types.IExtensionContext,
     gameId => gameId === GAME_ID, getSMAPIPath, isSMAPIModType);
 
   context.registerModType(MOD_TYPE_CONFIG, MOD_TYPE_PRIORITY_CONFIG, gameId => gameId === GAME_ID,
-    () => path.join(getGameInstallPath(), defaultModsRelPath()), () => Bluebird.resolve(false));
+    () => path.join(getGameInstallPath(), MODS_REL_PATH), () => Bluebird.resolve(false));
 
   context.registerModType(MOD_TYPE_ROOT, MOD_TYPE_PRIORITY_ROOT, gameId => gameId === GAME_ID,
     () => getGameInstallPath(), isSdvRootFolderModType);

@@ -3,7 +3,7 @@
  */
 import path from 'path';
 
-import { GAME_ID } from '../common';
+import { GAME_ID, MOD_MANIFEST } from '../common';
 import type { IArchiveClassifierResult, IInstallerTestResult } from '../types';
 
 /**
@@ -53,7 +53,7 @@ function hasContentFolder(files: string[]): boolean {
     .some(file => file.endsWith(PTRN_CONTENT));
 }
 
-function hasManifest(files: string[], manifestFileName: string = 'manifest.json'): boolean {
+function hasManifest(files: string[], manifestFileName: string = MOD_MANIFEST): boolean {
   const manifestName = manifestFileName.toLowerCase();
   return files.some(filePath => {
     const segments = filePath.toLowerCase().split(path.sep);

@@ -12,7 +12,7 @@ import { log } from 'vortex-api';
 import type { ISMAPIIOQuery, ISMAPIResult } from '../types';
 
 import { GAME_ID, SMAPI_IO_API_VERSION } from '../common';
-import { coerce, semverCompare } from '../util';
+import { coerce, semverCompare } from './version';
 
 /**
  * Adapter for querying SMAPI.io compatibility metadata and translating results

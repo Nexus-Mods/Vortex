@@ -51,6 +51,10 @@ staging copy of the synthetic mod, then lets deploy put them back into the game.
   - When disabling/removing tracked mods, restores `config.json` back to the
     original mod before removing it from the synthetic config mod.
 
+- `filesystem.ts`
+  - Shared recursive directory walk/delete helpers for sync and transitions.
+  - Keeps filesystem-specific behavior separate from feature orchestration.
+
 - `lifecycle.ts`
   - Finds or creates the synthetic config mod.
   - Resolves where that mod lives on disk.

@@ -6,12 +6,10 @@ import path from 'path';
 import { log } from 'vortex-api';
 import type { types } from 'vortex-api';
 
+import { MOD_MANIFEST } from '../common';
 import { classifyArchive, makeInstallerTestResult } from './archiveClassifier';
+import { parseManifest } from '../manifests/parseManifest';
 import type { IInstallerTestResult, ISDVDependency, ISDVModManifest } from '../types';
-import { parseManifest } from '../util';
-
-/** Canonical SMAPI manifest filename used by SDV installer matching logic. */
-export const MANIFEST_FILE = 'manifest.json';
 
 /** Tests whether an archive should be handled by the manifest-based installer. */
 export function testSupported(files: string[], gameId: string): Bluebird<IInstallerTestResult> {
@@ -42,7 +40,7 @@ export async function installStardewValley(api: types.IExtensionApi,
   const scannedMods = await Promise.all(manifestFiles.map(async manifestFile => {
     const rootFolder = path.dirname(manifestFile);
     const rootSegments = rootFolder.toLowerCase().split(path.sep);
-    const manifestIndex = manifestFile.toLowerCase().indexOf(MANIFEST_FILE);
+    const manifestIndex = manifestFile.toLowerCase().indexOf(MOD_MANIFEST);
     const filterFunc = (file: string) => {
       const isFile = !file.endsWith(path.sep) && path.extname(path.basename(file)) !== '';
       const fileSegments = file.toLowerCase().split(path.sep);
@@ -155,7 +153,7 @@ export async function installStardewValley(api: types.IExtensionApi,
 
 function isValidManifest(filePath: string): boolean {
   const segments = filePath.toLowerCase().split(path.sep);
-  const isManifestFile = segments[segments.length - 1] === MANIFEST_FILE;
+  const isManifestFile = segments[segments.length - 1] === MOD_MANIFEST;
   const isLocale = segments.includes('locale');
   return isManifestFile && !isLocale;
 }

@@ -5,6 +5,8 @@ import path from 'path';
 
 import turbowalk from 'turbowalk';
 
+import { MOD_MANIFEST } from '../common';
+
 /** Recursively returns all `manifest.json` files found under a mod directory. */
 export function getModManifests(modPath?: string): Promise<string[]> {
   const manifests: string[] = [];
@@ -15,7 +17,7 @@ export function getModManifests(modPath?: string): Promise<string[]> {
 
   return turbowalk(modPath, async entries => {
     for (const entry of entries) {
-      if (path.basename(entry.filePath) === 'manifest.json') {
+      if (path.basename(entry.filePath) === MOD_MANIFEST) {
         manifests.push(entry.filePath);
       }
     }

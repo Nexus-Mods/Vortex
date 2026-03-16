@@ -17,12 +17,12 @@ import {
   MOD_MANIFEST,
 } from '../common';
 import { selectSdvMods } from '../state/selectors';
-import { deleteFolder, walkPath } from '../util';
 import {
   extractConfigModAttributes,
   initializeConfigMod,
   removeConfigModAttributes,
 } from './lifecycle';
+import { deleteFolder, walkPath } from './filesystem';
 import { onSyncModConfigurations } from './sync';
 
 /**

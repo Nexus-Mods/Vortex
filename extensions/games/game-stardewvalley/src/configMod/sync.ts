@@ -16,12 +16,13 @@ import { setMergeConfigs } from '../actions';
 import {
   GAME_ID,
   MOD_CONFIG,
+  MODS_REL_PATH,
   NOTIF_ACTIVITY_CONFIG_MOD,
 } from '../common';
 import { findSMAPITool, getSMAPIMods } from '../smapi';
 import { selectMergeConfigsEnabled } from '../state/selectors';
 import type { IFileEntry } from '../types';
-import { defaultModsRelPath, walkPath } from '../util';
+import { walkPath } from './filesystem';
 import {
   extractConfigModAttributes,
   initializeConfigMod,
@@ -149,7 +150,7 @@ export async function addModConfig(
   const isInstallPath = modsPath !== undefined;
   const resolvedModsPath = modsPath
     ?? ((discovery?.path !== undefined)
-      ? path.join(discovery.path, defaultModsRelPath())
+      ? path.join(discovery.path, MODS_REL_PATH)
       : undefined);
   if (resolvedModsPath === undefined) {
     return;

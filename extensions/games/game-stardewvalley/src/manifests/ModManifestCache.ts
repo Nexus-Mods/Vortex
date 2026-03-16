@@ -5,10 +5,9 @@ import type { ISDVModManifest } from '../types';
 import turbowalk from 'turbowalk';
 import { log, selectors, util } from 'vortex-api';
 import type { types } from 'vortex-api';
-import { GAME_ID } from '../common';
+import { GAME_ID, MOD_MANIFEST } from '../common';
 import { selectSdvMods } from '../state/selectors';
-
-import { parseManifest } from '../util';
+import { parseManifest } from './parseManifest';
 
 import path from 'path';
 
@@ -60,7 +59,7 @@ export default class ModManifestCache {
       const modPath = path.join(staging, iter.installationPath);
       return turbowalk(modPath, async entries => {
       for (const entry of entries) {
-        if (path.basename(entry.filePath) === 'manifest.json') {
+        if (path.basename(entry.filePath) === MOD_MANIFEST) {
           let manifest;
           try {
             manifest = await parseManifest(entry.filePath);

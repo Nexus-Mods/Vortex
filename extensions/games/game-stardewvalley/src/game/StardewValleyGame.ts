@@ -6,11 +6,10 @@ import path from 'path';
 import { fs, util } from 'vortex-api';
 import type { types } from 'vortex-api';
 
-import { GAME_ID } from '../common';
+import { GAME_ID, MODS_REL_PATH } from '../common';
 import { toBlue } from '../helpers';
 import { SMAPI_EXE } from '../installers/smapiInstaller';
 import { deploySMAPI, downloadAndInstallSMAPI, findSMAPIMod } from '../smapi';
-import { defaultModsRelPath } from '../util';
 
 /**
  * Vortex `IGame` implementation for Stardew Valley.
@@ -114,7 +113,7 @@ export default class StardewValleyGame implements types.IGame {
   }
 
   public queryModPath() {
-    return defaultModsRelPath();
+    return MODS_REL_PATH;
   }
 
   /**
@@ -124,7 +123,7 @@ export default class StardewValleyGame implements types.IGame {
    */
   public setup = toBlue(async discovery => {
     try {
-      await fs.ensureDirWritableAsync(path.join(discovery.path, defaultModsRelPath()));
+      await fs.ensureDirWritableAsync(path.join(discovery.path, MODS_REL_PATH));
     } catch (err) {
       return Promise.reject(err);
     }
