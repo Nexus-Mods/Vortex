@@ -163,6 +163,13 @@ A test only answers "can I handle this archive?" (`supported: true/false`).
   - Registers mod-type IDs/priorities and deployment roots.
 - [`runtime/registerRuntimeEvents.ts`](runtime/registerRuntimeEvents.ts)
   - Hooks deploy/purge/install events and SMAPI metadata lookups.
+- [`smapi/`](smapi)
+  - Consolidated SMAPI selectors, deployment/download workflows, and metadata
+    proxy adapter.
+  - Download/install is intentionally split into `download.ts` (download only),
+    `install.ts` (install + enable), and `workflow.ts` (user-facing
+    orchestration).
+  - Start with [`smapi/README.md`](smapi/README.md).
 - [`manifests/createManifestAttributeExtractor.ts`](manifests/createManifestAttributeExtractor.ts)
   - Derives mod metadata from `manifest.json`.
 - [`manifests/ModManifestCache.ts`](manifests/ModManifestCache.ts)
@@ -214,7 +221,7 @@ If terms like "lifecycle" or "policy" are unfamiliar, use this map:
 
 1. Start in [`runtime/registerRuntimeEvents.ts`](runtime/registerRuntimeEvents.ts) (event hooks).
 2. Check [`compatibility/updateConflictInfo.ts`](compatibility/updateConflictInfo.ts).
-3. Check [`smapiProxy.ts`](smapiProxy.ts) request/response mapping.
+3. Check [`smapi/proxy.ts`](smapi/proxy.ts) request/response mapping.
 
 ## Glossary
 

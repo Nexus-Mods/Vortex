@@ -18,7 +18,7 @@ import {
   MOD_CONFIG,
   NOTIF_ACTIVITY_CONFIG_MOD,
 } from '../common';
-import { getSMAPIMods, findSMAPITool } from '../SMAPI';
+import { findSMAPITool, getSMAPIMods } from '../smapi';
 import { selectMergeConfigsEnabled } from '../state/selectors';
 import type { IFileEntry } from '../types';
 import { defaultModsRelPath, walkPath } from '../util';

@@ -11,9 +11,8 @@ import type { types } from 'vortex-api';
 import { updateConflictInfo } from '../compatibility/updateConflictInfo';
 import { GAME_ID } from '../common';
 import { errorMessage } from '../helpers';
-import { findSMAPIMod } from '../SMAPI';
-import SMAPIProxy from '../smapiProxy';
 import { onAddedFiles, onWillEnableMods } from '../configMod';
+import { findSMAPIMod, SMAPIProxy } from '../smapi';
 
 /**
  * Registers long-lived runtime handlers that should run once the extension is

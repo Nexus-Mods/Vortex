@@ -9,18 +9,25 @@ import * as https from 'https';
 import * as semver from 'semver';
 import { log } from 'vortex-api';
 
-import type { ISMAPIIOQuery, ISMAPIResult } from './types';
+import type { ISMAPIIOQuery, ISMAPIResult } from '../types';
 
-import { GAME_ID, SMAPI_IO_API_VERSION } from './common';
-import { coerce, semverCompare } from './util';
+import { GAME_ID, SMAPI_IO_API_VERSION } from '../common';
+import { coerce, semverCompare } from '../util';
 
 /**
  * Adapter for querying SMAPI.io compatibility metadata and translating results
  * into Vortex modmeta lookup responses.
  */
-export default class SMAPIProxy {
+export class SMAPIProxy {
   private mAPI: types.IExtensionApi;
   private mOptions: https.RequestOptions;
+
+  /**
+   * Creates a proxy bound to a Vortex extension API instance.
+   *
+   * @param api Vortex extension API (`types.IExtensionApi`) used for Nexus
+   * fallback metadata lookups.
+   */
   constructor(api: types.IExtensionApi) {
     this.mAPI = api;
     this.mOptions = {
@@ -34,6 +41,14 @@ export default class SMAPIProxy {
     };
   }
 
+  /**
+   * Resolves compatibility metadata for a single modmeta query.
+   *
+   * @param query Modmeta query (`IQuery`) containing mod name and version
+   * constraints.
+   * @returns Lookup results (`ILookupResult[]`) used by Vortex metadata
+   * pipelines.
+   */
   public async find(query: IQuery): Promise<ILookupResult[]> {
     const queryName = query.name;
     if (queryName === undefined) {
@@ -62,6 +77,13 @@ export default class SMAPIProxy {
     } }];
   }
 
+  /**
+   * Sends one or more mod ids to the SMAPI.io compatibility endpoint.
+   *
+   * @param query SMAPI.io request payload (`ISMAPIIOQuery[]`).
+   * @returns Parsed compatibility results (`ISMAPIResult[]`) returned by
+   * SMAPI.io.
+   */
   public async findByNames(query: ISMAPIIOQuery[]): Promise<ISMAPIResult[]> {
     return new Promise((resolve, reject) => {
       const req = https.request(this.mOptions, res => {
@@ -82,7 +104,8 @@ export default class SMAPIProxy {
             }
           });
       })
-        .on('error', err => reject(err))
+        .on('error', err => reject(err));
+
       req.write(JSON.stringify({
         mods: query,
         includeExtendedMetadata: true,
@@ -93,7 +116,7 @@ export default class SMAPIProxy {
   }
 
   private makeKey(query: IQuery): string {
-    return `smapio:${query.name}:${query.versionMatch}`;    
+    return `smapio:${query.name}:${query.versionMatch}`;
   }
 
   private async lookupOnNexus(query: IQuery,
@@ -115,6 +138,7 @@ export default class SMAPIProxy {
     if (file === undefined) {
       throw new Error('no file found');
     }
+
     return [{
       key: this.makeKey(query),
       value: {
@@ -132,7 +156,7 @@ export default class SMAPIProxy {
           description: file.description,
           modId: nexusId.toString(),
           fileId: file.file_id.toString(),
-        }
+        },
       },
     }];
   }

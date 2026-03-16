@@ -9,7 +9,7 @@ import { selectors } from 'vortex-api';
 import type ModManifestCache from './manifests/ModManifestCache';
 
 import { GAME_ID } from './common';
-import { downloadSMAPI, findSMAPIMod } from './SMAPI';
+import { downloadAndInstallSMAPI, findSMAPIMod } from './smapi';
 
 /** Verifies whether active mods require a newer SMAPI version. */
 export async function testSMAPIOutdated(api: types.IExtensionApi,
@@ -62,7 +62,7 @@ export async function testSMAPIOutdated(api: types.IExtensionApi,
         long: t('Some Stardew Valley mods require a newer version of SMAPI to function correctly, '
               + 'you should check for SMAPI updates in the mods page.'),
       },
-      automaticFix: () => downloadSMAPI(api, true),
+      automaticFix: () => downloadAndInstallSMAPI(api, true),
       onRecheck: () => isSmapiOutdated(),
       severity: 'warning' as types.ProblemSeverity,
     }) as any

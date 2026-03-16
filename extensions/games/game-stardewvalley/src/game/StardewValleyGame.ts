@@ -8,8 +8,8 @@ import type { types } from 'vortex-api';
 
 import { GAME_ID } from '../common';
 import { toBlue } from '../helpers';
-import { deploySMAPI, downloadSMAPI, findSMAPIMod } from '../SMAPI';
 import { SMAPI_EXE } from '../installers/smapiInstaller';
+import { deploySMAPI, downloadAndInstallSMAPI, findSMAPIMod } from '../smapi';
 import { defaultModsRelPath } from '../util';
 
 /**
@@ -145,7 +145,7 @@ export default class StardewValleyGame implements types.IGame {
     const actionTitle = smapiMod ? 'Deploy' : 'Get SMAPI';
     const action = () => (smapiMod
       ? deploySMAPI(this.context.api)
-      : downloadSMAPI(this.context.api))
+      : downloadAndInstallSMAPI(this.context.api))
       .then(() => this.context.api.dismissNotification?.('smapi-missing'));
 
     this.context.api.sendNotification?.({

@@ -8,7 +8,7 @@ import type { types } from 'vortex-api';
 
 import { SMAPI_QUERY_FREQUENCY } from '../common';
 import { errorMessage } from '../helpers';
-import type SMAPIProxy from '../smapiProxy';
+import type { SMAPIProxy } from '../smapi';
 import { compatibilityOptions } from '../types';
 import type { CompatibilityStatus, ISMAPIResult } from '../types';
 
