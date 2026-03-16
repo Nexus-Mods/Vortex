@@ -2,7 +2,7 @@
  * Cross-module constants used by the Stardew Valley extension.
  *
  * Keep values here stable so installer, runtime, and UI modules share the same
- * identifiers for game IDs, file names, and mod types.
+ * identifiers, priorities, and SMAPI integration settings.
  */
 /** Vortex game id for Stardew Valley. */
 export const GAME_ID = 'stardewvalley';
@@ -57,6 +57,18 @@ export const SMAPI_INTERNAL_DIRECTORY = 'smapi-internal';
 
 /** Mutable list of bundled SMAPI framework mods detected at runtime. */
 export const _SMAPI_BUNDLED_MODS = ['ErrorHandler', 'ConsoleCommands', 'SaveBackup'];
+
+/** SMAPI compatibility query interval (once per week). */
+export const SMAPI_QUERY_FREQUENCY: number = 1000 * 60 * 24 * 7;
+
+/** SMAPI.io API version used for compatibility lookups. */
+export const SMAPI_IO_API_VERSION = '3.0.0';
+
+/** Nexus mod id for the SMAPI package. */
+export const SMAPI_MOD_ID = 2400;
+
+/** Public Nexus page for SMAPI downloads. */
+export const SMAPI_URL = `https://www.nexusmods.com/stardewvalley/mods/${SMAPI_MOD_ID}`;
 
 /** Notification id for config-mod import activity toasts. */
 export const NOTIF_ACTIVITY_CONFIG_MOD = 'sdv-config-mod-activity';

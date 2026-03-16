@@ -6,7 +6,7 @@ import * as semver from 'semver';
 import { actions, log } from 'vortex-api';
 import type { types } from 'vortex-api';
 
-import { SMAPI_QUERY_FREQUENCY } from '../constants';
+import { SMAPI_QUERY_FREQUENCY } from '../common';
 import { errorMessage } from '../helpers';
 import type SMAPIProxy from '../smapiProxy';
 import { compatibilityOptions } from '../types';

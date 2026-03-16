@@ -6,8 +6,7 @@ import * as semver from 'semver';
 import { log, selectors } from 'vortex-api';
 import type { types } from 'vortex-api';
 
-import { SMAPI_MOD_ID } from '../constants';
-import { GAME_ID } from '../common';
+import { GAME_ID, SMAPI_MOD_ID } from '../common';
 import { errorMessage, toBlue } from '../helpers';
 import { parseManifest } from '../util';
 import { getModManifests } from './getModManifests';

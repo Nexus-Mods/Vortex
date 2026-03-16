@@ -11,8 +11,7 @@ import { log } from 'vortex-api';
 
 import type { ISMAPIIOQuery, ISMAPIResult } from './types';
 
-import { GAME_ID } from './common';
-import { SMAPI_IO_API_VERSION } from './constants';
+import { GAME_ID, SMAPI_IO_API_VERSION } from './common';
 import { coerce, semverCompare } from './util';
 
 /**

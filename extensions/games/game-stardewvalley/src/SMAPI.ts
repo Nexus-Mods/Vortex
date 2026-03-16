@@ -6,8 +6,7 @@ import type { types } from 'vortex-api';
 import { gte } from 'semver';
 import { actions, selectors, util } from 'vortex-api';
 
-import { GAME_ID, MOD_TYPE_SMAPI } from './common';
-import { SMAPI_MOD_ID, SMAPI_URL } from './constants';
+import { GAME_ID, MOD_TYPE_SMAPI, SMAPI_MOD_ID, SMAPI_URL } from './common';
 import { selectSdvMods } from './state/selectors';
 
 /** Returns the discovered SMAPI tool entry for Stardew Valley, if available. */
