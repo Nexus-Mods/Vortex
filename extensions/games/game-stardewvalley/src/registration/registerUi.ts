@@ -7,10 +7,10 @@ import { selectors } from 'vortex-api';
 import type { types } from 'vortex-api';
 
 import { setMergeConfigs } from '../state/actions';
-import CompatibilityIcon from '../CompatibilityIcon';
+import CompatibilityIcon from '../ui/CompatibilityIcon';
 import { GAME_ID } from '../common';
 import { onRevertFiles } from '../configMod';
-import Settings from '../Settings';
+import Settings from '../ui/Settings';
 import { onShowSMAPILog } from '../ui/smapiLog';
 
 /**

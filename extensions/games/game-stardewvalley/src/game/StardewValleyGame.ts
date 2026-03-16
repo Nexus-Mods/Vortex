@@ -27,7 +27,7 @@ export default class StardewValleyGame implements types.IGame {
   public context: types.IExtensionContext;
   public id: string = GAME_ID;
   public name: string = 'Stardew Valley';
-  public logo: string = 'gameart.jpg';
+  public logo: string = 'assets/gameart.jpg';
   public requiredFiles: string[];
   public environment: { [key: string]: string } = {
     SteamAPPId: '413150',
@@ -39,7 +39,7 @@ export default class StardewValleyGame implements types.IGame {
     {
       id: 'smapi',
       name: 'SMAPI',
-      logo: 'smapi.png',
+      logo: 'assets/smapi.png',
       executable: () => SMAPI_EXE,
       requiredFiles: [SMAPI_EXE],
       shell: true,

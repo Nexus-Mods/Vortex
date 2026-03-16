@@ -6,7 +6,7 @@ import type { types } from 'vortex-api';
 import React from 'react';
 import { tooltip } from 'vortex-api';
 
-import type { CompatibilityStatus } from './types';
+import type { CompatibilityStatus } from '../types';
 
 /**
  * Displays SMAPI compatibility state and update suggestions for a mod row.

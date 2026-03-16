@@ -151,6 +151,8 @@ A test only answers "can I handle this archive?" (`supported: true/false`).
   - Extension entrypoint and registration wiring.
 - [`game/StardewValleyGame.ts`](game/StardewValleyGame.ts)
   - Implements `types.IGame` (discovery, executable, setup, SMAPI recommendation).
+- [`assets/`](assets)
+  - Extension image assets used for game/tool logos.
 - [`installers/`](installers)
   - Installer matcher/install logic and archive classification.
   - Start with [`installers/README.md`](installers/README.md).
@@ -160,6 +162,8 @@ A test only answers "can I handle this archive?" (`supported: true/false`).
   - Registers mod-type IDs/priorities and deployment roots.
 - [`runtime/registerRuntimeEvents.ts`](runtime/registerRuntimeEvents.ts)
   - Hooks deploy/purge/install events and SMAPI metadata lookups.
+- [`ui/`](ui)
+  - UI components/actions/styles for settings, compatibility rendering, and SMAPI log actions.
 - [`smapi/`](smapi)
   - SMAPI selectors, deployment/download/install workflow, and compatibility adapter.
   - Start with [`smapi/README.md`](smapi/README.md).

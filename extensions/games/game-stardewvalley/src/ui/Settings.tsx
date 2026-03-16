@@ -9,8 +9,8 @@ import { useTranslation } from 'react-i18next';
 import { useSelector, useStore } from 'react-redux';
 import { Toggle, More, selectors } from 'vortex-api';
 
-import { setRecommendations } from './state/actions';
-import { GAME_ID } from './common';
+import { setRecommendations } from '../state/actions';
+import { GAME_ID } from '../common';
 
 /**
  * Displays SDV-specific settings toggles and forwards updates to extension callbacks.

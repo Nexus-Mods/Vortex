@@ -33,7 +33,7 @@ export function registerRuntimeEvents(context: types.IExtensionContext) {
     }
 
     const proxy = new SMAPIProxy(context.api);
-    context.api.setStylesheet('sdv', path.join(__dirname, 'sdvstyle.scss'));
+    context.api.setStylesheet('sdv', path.join(__dirname, 'ui', 'sdvstyle.scss'));
 
     context.api.addMetaServer('smapi.io', {
       url: '',
