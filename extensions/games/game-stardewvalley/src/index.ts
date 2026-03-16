@@ -10,9 +10,9 @@ import sdvReducers from './state/reducers';
 
 // Feature modules registered during startup.
 import { registerConfigMod } from './configMod';
-import DependencyManager from './DependencyManager';
 import StardewValleyGame from './game/StardewValleyGame';
 import { createManifestAttributeExtractor } from './manifests/createManifestAttributeExtractor';
+import ModManifestCache from './manifests/ModManifestCache';
 import { registerInstallers } from './registration/registerInstallers';
 import { registerModTypes } from './registration/registerModTypes';
 import { registerTests } from './registration/registerTests';
@@ -23,7 +23,7 @@ import { selectDiscoveredToolPath, selectSdvDiscoveryPath } from './state/select
 /** Registers all Stardew Valley game, installer, runtime, and UI integrations. */
 export default function init(context: types.IExtensionContext): void {
   // Tracks active mod manifests for dependency and compatibility checks.
-  const dependencyManager = new DependencyManager(context.api);
+  const modManifestCache = new ModManifestCache(context.api);
 
   // Reads the game's install folder from Vortex state.
   const getGameInstallPath = (): string => {
@@ -50,7 +50,7 @@ export default function init(context: types.IExtensionContext): void {
   // Register user-facing UI (settings, actions, table columns).
   registerUi(context);
   // Register different mod installers (SMAPI, root folder, config mod) and their matching logic.
-  registerInstallers(context, getGameInstallPath, dependencyManager);
+  registerInstallers(context, getGameInstallPath);
   registerModTypes(context, getGameInstallPath, getSMAPIPath);
   registerConfigMod(context);
 
@@ -58,6 +58,6 @@ export default function init(context: types.IExtensionContext): void {
   context.registerAttributeExtractor(25, createManifestAttributeExtractor(context));
 
   // Register diagnostics and runtime event hooks.
-  registerTests(context, dependencyManager);
-  registerRuntimeEvents(context, dependencyManager);
+  registerTests(context, modManifestCache);
+  registerRuntimeEvents(context);
 }

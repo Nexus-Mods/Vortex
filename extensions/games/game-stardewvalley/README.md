@@ -165,7 +165,7 @@ A test only answers "can I handle this archive?" (`supported: true/false`).
   - Hooks deploy/purge/install events and SMAPI metadata lookups.
 - [`manifests/createManifestAttributeExtractor.ts`](manifests/createManifestAttributeExtractor.ts)
   - Derives mod metadata from `manifest.json`.
-- [`DependencyManager.ts`](DependencyManager.ts)
+- [`manifests/ModManifestCache.ts`](manifests/ModManifestCache.ts)
   - Caches active mod manifests for dependency/version diagnostics.
 - [`tests.ts`](tests.ts)
   - Extension diagnostics (for example outdated SMAPI checks).

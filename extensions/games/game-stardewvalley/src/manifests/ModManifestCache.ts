@@ -1,14 +1,14 @@
 /**
  * Caches parsed manifests for currently active Stardew Valley mods.
  */
-import type { ISDVModManifest } from './types';
+import type { ISDVModManifest } from '../types';
 import turbowalk from 'turbowalk';
 import { log, selectors, util } from 'vortex-api';
 import type { types } from 'vortex-api';
-import { GAME_ID } from './common';
-import { selectSdvMods } from './state/selectors';
+import { GAME_ID } from '../common';
+import { selectSdvMods } from '../state/selectors';
 
-import { parseManifest } from './util';
+import { parseManifest } from '../util';
 
 import path from 'path';
 
@@ -18,7 +18,7 @@ import path from 'path';
  * Used by health checks to detect whether the installed SMAPI version satisfies
  * minimum API requirements declared by mods.
  */
-export default class DependencyManager {
+export default class ModManifestCache {
   private mApi: types.IExtensionApi;
   private mManifests: ManifestMap | undefined;
   private mLoading: boolean = false;
@@ -53,7 +53,7 @@ export default class DependencyManager {
     const isActive = (modId: string) => util.getSafe(profile, ['modState', modId, 'enabled'], false);
     const mods: { [modId: string]: types.IMod } = selectSdvMods(state);
     const manifests = await Object.values(mods).reduce(async (accumP, iter) => {
-      const accum = await accumP;      
+      const accum = await accumP;
       if (!isInstalled(iter) || !isActive(iter.id)) {
         return Promise.resolve(accum);
       }

@@ -6,14 +6,14 @@ import type { types} from 'vortex-api';
 import { coerce as semverCoerce, gte } from 'semver';
 import { selectors } from 'vortex-api';
 
-import type DependencyManager from './DependencyManager';
+import type ModManifestCache from './manifests/ModManifestCache';
 
 import { GAME_ID } from './common';
 import { downloadSMAPI, findSMAPIMod } from './SMAPI';
 
 /** Verifies whether active mods require a newer SMAPI version. */
 export async function testSMAPIOutdated(api: types.IExtensionApi,
-                                        depManager: DependencyManager)
+                                        modManifestCache: ModManifestCache)
                                         : Promise<types.ITestResult> {
   const state = api.getState();
   const activeGameId = selectors.activeGameId(state);
@@ -33,7 +33,7 @@ export async function testSMAPIOutdated(api: types.IExtensionApi,
       return false;
     }
     const installedVersion = currentSMAPIVersion;
-    const enabledManifests = await depManager.getManifests();
+    const enabledManifests = await modManifestCache.getManifests();
     const incompatibleModIds: string[] = [];
     for (const [id, manifests] of Object.entries(enabledManifests)) {
       const incompatible = manifests.filter((iter) => {

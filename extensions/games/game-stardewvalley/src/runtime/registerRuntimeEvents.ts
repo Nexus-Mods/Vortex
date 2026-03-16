@@ -9,7 +9,6 @@ import { actions, log, selectors, util } from 'vortex-api';
 import type { types } from 'vortex-api';
 
 import { updateConflictInfo } from '../compatibility/updateConflictInfo';
-import type DependencyManager from '../DependencyManager';
 import { GAME_ID } from '../common';
 import { errorMessage } from '../helpers';
 import { findSMAPIMod } from '../SMAPI';
@@ -26,8 +25,7 @@ import { onAddedFiles, onWillEnableMods } from '../configMod';
  * - file ingestion hooks
  * - compatibility refresh hooks
  */
-export function registerRuntimeEvents(context: types.IExtensionContext,
-                                      _dependencyManager: DependencyManager) {
+export function registerRuntimeEvents(context: types.IExtensionContext) {
   context.once(() => {
     const store = context.api.store;
     if (store === undefined) {

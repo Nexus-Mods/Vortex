@@ -6,7 +6,6 @@ import path from 'path';
 import { log } from 'vortex-api';
 import type { types } from 'vortex-api';
 
-import type DependencyManager from '../DependencyManager';
 import { classifyArchive, makeInstallerTestResult } from './archiveClassifier';
 import type { IInstallerTestResult, ISDVDependency, ISDVModManifest } from '../types';
 import { parseManifest } from '../util';
@@ -25,7 +24,6 @@ export function testSupported(files: string[], gameId: string): Bluebird<IInstal
 
 /** Builds install instructions for one or more valid manifest-based SDV mods. */
 export async function installStardewValley(api: types.IExtensionApi,
-                                           dependencyManager: DependencyManager,
                                            files: string[],
                                            destinationPath: string): Promise<types.IInstallResult> {
   // The archive may contain multiple manifest files which would
@@ -41,7 +39,6 @@ export async function installStardewValley(api: types.IExtensionApi,
 
   let parseError: unknown;
 
-  await dependencyManager.scanManifests(true);
   const scannedMods = await Promise.all(manifestFiles.map(async manifestFile => {
     const rootFolder = path.dirname(manifestFile);
     const rootSegments = rootFolder.toLowerCase().split(path.sep);
