@@ -23,13 +23,6 @@
   },
   "peerDependencies": {
     "@types/bluebird": "catalog:",
-    "@types/immutability-helper": "catalog:",
-    "@types/react": "catalog:",
-    "@types/react-bootstrap": "catalog:",
-    "@types/react-dom": "catalog:",
-    "@types/react-redux": "catalog:",
-    "@types/redux": "catalog:",
-    "@types/redux-thunk": "catalog:",
     "bluebird": "catalog:",
     "fs-extra": "catalog:",
     "immutability-helper": "catalog:",
