@@ -50,8 +50,9 @@ export default class StardewValleyGame implements types.IGame {
   ];
   public mergeMods: boolean = true;
   public requiresCleanup: boolean = true;
-  // Whether to boot the game through a shell.
-  public shell: boolean = process.platform === 'win32';
+  // Keep the existing Windows shell-launch behaviour and use the same path for
+  // Linux/macOS, where `StardewValley` is a wrapper script.
+  public shell: boolean = true;
   // Fallback locations to search for the game, if store discovery fails.
   public defaultPaths: string[];
 

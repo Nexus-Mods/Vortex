@@ -34,6 +34,12 @@ then start in [`index.ts`](index.ts).
 - Saves:
   - Windows: `%AppData%/StardewValley/Saves`
   - Linux: `~/.config/StardewValley/Saves`
+- SMAPI logs:
+  - Windows: `%AppData%/StardewValley/ErrorLogs`
+  - Linux: `~/.config/StardewValley/ErrorLogs`
+  - macOS: `~/Library/Application Support/StardewValley/ErrorLogs`
+
+On Linux and macOS, `StardewValley` is a wrapper script around the `Stardew Valley` binary.
 
 ### What a Stardew mod usually looks like
 

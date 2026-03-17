@@ -8,7 +8,7 @@ import type { types } from 'vortex-api';
 
 /** Opens the latest available SMAPI log dialog or shows a missing-log notice. */
 export async function onShowSMAPILog(api: types.IExtensionApi) {
-  const basePath = path.join(util.getVortexPath('appData'), 'stardewvalley', 'errorlogs');
+  const basePath = path.join(util.getVortexPath('appData'), 'StardewValley', 'ErrorLogs');
   try {
     await showSMAPILog(api, basePath, 'SMAPI-crash.txt');
   } catch (err) {
