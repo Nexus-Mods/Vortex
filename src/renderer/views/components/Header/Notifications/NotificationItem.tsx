@@ -3,6 +3,7 @@ import {
   mdiAlertOutline,
   mdiCheckCircleOutline,
   mdiInformationOutline,
+  mdiLoading,
 } from "@mdi/js";
 import React, { type FC, useCallback } from "react";
 
@@ -27,7 +28,7 @@ const STATUS_MAP = {
   warning: { className: "text-warning-strong", icon: mdiAlertOutline },
   success: { className: "text-success-strong", icon: mdiCheckCircleOutline },
   info: { className: "text-info-strong", icon: mdiInformationOutline },
-  activity: { className: "text-info-strong", icon: mdiInformationOutline },
+  activity: { className: "text-info-strong animate-spin", icon: mdiLoading },
   global: { className: "text-info-strong", icon: mdiInformationOutline },
   silent: { className: "text-info-strong", icon: mdiInformationOutline },
 } satisfies Record<NotificationType, { className: string; icon: string }>;
