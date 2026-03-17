@@ -3761,27 +3761,6 @@ importers:
       '@types/bluebird':
         specifier: 'catalog:'
         version: 3.5.20
-      '@types/immutability-helper':
-        specifier: 'catalog:'
-        version: 2.6.3
-      '@types/react':
-        specifier: '16'
-        version: 16.14.66
-      '@types/react-bootstrap':
-        specifier: 'catalog:'
-        version: 0.32.37
-      '@types/react-dom':
-        specifier: '16'
-        version: 16.9.25(@types/react@16.14.66)
-      '@types/react-redux':
-        specifier: 'catalog:'
-        version: 7.1.34
-      '@types/redux':
-        specifier: 'catalog:'
-        version: 3.6.0
-      '@types/redux-thunk':
-        specifier: 'catalog:'
-        version: 2.1.0(redux@4.2.1)
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
