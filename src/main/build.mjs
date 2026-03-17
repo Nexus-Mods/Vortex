@@ -11,12 +11,17 @@ const OUTPUT = path.resolve(
   "main.mjs",
 );
 
+const packagesToBundle = ["@vortex/shared"];
+
 const config = defineConfig({
   input: INPUT,
   platform: "node",
   external: (id) => {
-    if (id.startsWith("@vortex/shared")) return false;
-    return !id.startsWith(".") && !id.startsWith("/");
+    if (packagesToBundle.find((pkg) => id.startsWith(pkg))) return false;
+
+    const isRelativePath = id.startsWith(".");
+    const isAbsolutePath = path.isAbsolute(id);
+    return !isRelativePath && !isAbsolutePath;
   },
   transform: {
     define: {
