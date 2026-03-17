@@ -14,11 +14,9 @@
   "license": "GPL-3.0",
   "devDependencies": {
     "@types/i18next": "catalog:",
-    "@types/immutability-helper": "catalog:",
     "@types/react": "catalog:",
     "@types/react-bootstrap": "catalog:",
     "@types/react-dom": "catalog:",
-    "@types/react-i18next": "catalog:",
     "@types/react-redux": "catalog:",
     "@types/react-router": "catalog:",
     "@types/redux": "catalog:",
