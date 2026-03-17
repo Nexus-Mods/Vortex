@@ -17,6 +17,17 @@ export const patchBluebirdContext = (): void => {
     onFulfilled?: ((...args: any[]) => any) | null,
     onRejected?: ((...args: any[]) => any) | null,
   ) {
+    // Bluebird internally calls .then() with undefined handlers (e.g. from
+    // .timeout(), .catch()). Bypass wrapping entirely to avoid triggering
+    // Bluebird's "only accepts functions" warning, but only for the
+    // "no handlers" case. Let Bluebird validate and warn on any other
+    // non-function handlers.
+    if (
+      arguments.length === 0 ||
+      (onFulfilled === undefined && onRejected === undefined)
+    ) {
+      return originalThen.apply(this, arguments as any);
+    }
     const ctx = context.active();
     const wrappedFulfilled =
       typeof onFulfilled === "function"
