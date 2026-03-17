@@ -82,6 +82,10 @@ const notificationActions = local<{ [id: string]: NotificationFunc[] }>(
   "notification-actions",
   {},
 );
+const notificationDismissHandlers = local<{ [id: string]: () => void }>(
+  "notification-dismiss-handlers",
+  {},
+);
 
 export function fireNotificationAction(
   notiId: string,
@@ -181,6 +185,10 @@ export function addNotification(notification: INotification) {
     notificationActions[noti.id] =
       noti.actions == null ? [] : noti.actions.map((action) => action.action);
 
+    if (noti.onDismiss !== undefined) {
+      notificationDismissHandlers[noti.id] = noti.onDismiss;
+    }
+
     const storeNoti: any = JSON.parse(JSON.stringify(noti));
     storeNoti.process = process.type;
     storeNoti.actions = (storeNoti.actions || []).map((action) => ({
@@ -204,9 +212,12 @@ export function addNotification(notification: INotification) {
 export function dismissNotification(id: string) {
   return (dispatch) =>
     new PromiseBB<void>((resolve, reject) => {
+      const onDismiss = notificationDismissHandlers[id];
       delete timers[id];
       delete notificationActions[id];
+      delete notificationDismissHandlers[id];
       dispatch(stopNotification(id));
+      onDismiss?.();
       resolve();
     });
 }

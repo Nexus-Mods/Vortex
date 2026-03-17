@@ -2957,6 +2957,7 @@ interface INotification {
     message: string;
     noDismiss?: boolean;
     noToast?: boolean;
+    onDismiss?: () => void;
     process?: string;
     progress?: number;
     replace?: {
