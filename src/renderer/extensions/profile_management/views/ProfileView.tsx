@@ -1,10 +1,24 @@
+import type { WithTranslation } from "react-i18next";
+
+import { shell } from "electron";
+import update from "immutability-helper";
+import * as path from "path";
+import * as React from "react";
+import { Button, Collapse } from "react-bootstrap";
+import { generate as shortid } from "shortid";
+
 import type {
   DialogActions,
   DialogType,
   IDialogContent,
 } from "../../../actions/notifications";
-import { showDialog } from "../../../actions/notifications";
 import type { IMod, IState } from "../../../types/IState";
+import type { IDiscoveryResult } from "../../gamemode_management/types/IDiscoveryResult";
+import type { IGameStored } from "../../gamemode_management/types/IGameStored";
+import type { IProfile } from "../types/IProfile";
+import type { IProfileFeature } from "../types/IProfileFeature";
+
+import { showDialog } from "../../../actions/notifications";
 import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
 import * as fs from "../../../util/fs";
 import getVortexPath from "../../../util/getVortexPath";
@@ -12,27 +26,12 @@ import { log } from "../../../util/log";
 import { activeGameId } from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
 import MainPage from "../../../views/MainPage";
-
-import type { IDiscoveryResult } from "../../gamemode_management/types/IDiscoveryResult";
-import type { IGameStored } from "../../gamemode_management/types/IGameStored";
 import { getGame } from "../../gamemode_management/util/getGame";
-
 import { setFeature, setProfile } from "../actions/profiles";
 import { setNextProfile } from "../actions/settings";
-import type { IProfile } from "../types/IProfile";
-import type { IProfileFeature } from "../types/IProfileFeature";
 import { profilePath, removeProfile } from "../util/manage";
-
 import ProfileEdit from "./ProfileEdit";
 import ProfileItem from "./ProfileItem";
-
-import { shell } from "electron";
-import update from "immutability-helper";
-import * as path from "path";
-import * as React from "react";
-import { Button, Collapse } from "react-bootstrap";
-import type { WithTranslation } from "react-i18next";
-import { generate as shortid } from "shortid";
 
 export interface IBaseProps {
   features: IProfileFeature[];
@@ -129,15 +128,19 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
               this.renderProfile(profileId, supportedFeatures),
             )}
           </div>
+
           {this.renderAddOrEdit(edit)}
+
           {!this.props.useModernLayout && (
             <>
               <div>
                 {t("Other Games")}{" "}
+
                 <a onClick={this.toggleOther}>
                   {showOther ? t("Hide") : t("Show")}
                 </a>
               </div>
+
               <Collapse in={showOther}>
                 <div>
                   <div className="profile-list">
@@ -149,6 +152,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
               </Collapse>
             </>
           )}
+
           {isDeploying ? this.renderOverlay() : null}
         </MainPage.Body>
       </MainPage>
@@ -200,20 +204,20 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
 
     return (
       <ProfileItem
-        t={t}
-        key={profileId}
-        profile={profile}
-        mods={mods[profile.gameId] ?? emptyObject}
-        features={features}
         active={currentProfile === profileId}
         available={available && gameAvailable}
-        onClone={this.onCloneProfile}
-        onRemove={this.onRemoveProfile}
-        onActivate={onSetNextProfile}
-        onStartEditing={this.editExistingProfile}
+        features={features}
         highlightGameId={this.state.highlightGameId}
-        onSetHighlightGameId={this.setHighlightGameId}
+        key={profileId}
+        mods={mods[profile.gameId] ?? emptyObject}
+        profile={profile}
+        t={t}
+        onActivate={onSetNextProfile}
+        onClone={this.onCloneProfile}
         onCreateShortcut={this.setShortcut}
+        onRemove={this.onRemoveProfile}
+        onSetHighlightGameId={this.setHighlightGameId}
+        onStartEditing={this.editExistingProfile}
       />
     );
   };
@@ -237,16 +241,28 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
   private setShortcut = (profileId: string) => {
     const { t, profiles } = this.props;
     const profile = profiles[profileId];
-    const appDir = path.dirname(getVortexPath("exe"));
 
+    const exePath = getVortexPath("exe");
+    const isDevelopment = exePath.toLowerCase().endsWith("electron.exe");
+    
     const desktopLocation = getVortexPath("desktop");
     const shortcutPath = path.join(
       desktopLocation,
       `Start Vortex Profile_${profileId}(${profile.gameId}).lnk`,
     );
+
+    // In development, electron.exe needs the app directory as first argument
+    const target = isDevelopment
+      ? exePath
+      : path.join(path.dirname(exePath), "Vortex.exe");
+    
+    const args = isDevelopment
+      ? `"${getVortexPath("package")}" --profile ${profileId}`
+      : `--profile ${profileId}`;
+
     const created = shell.writeShortcutLink(shortcutPath, "create", {
-      target: path.join(appDir, "Vortex.exe"),
-      args: `--profile ${profileId}`,
+      target,
+      args,
     });
 
     const displayMS = 5000;
@@ -276,15 +292,15 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
 
     return (
       <ProfileEdit
-        key={edit}
-        profileId={edit}
-        gameId={gameId}
-        t={t}
         features={features}
+        gameId={gameId}
+        key={edit}
         profile={profile}
-        onSetFeature={onSetFeature}
-        onSaveEdit={this.saveEdit}
+        profileId={edit}
+        t={t}
         onCancelEdit={this.endEdit}
+        onSaveEdit={this.saveEdit}
+        onSetFeature={onSetFeature}
       />
     );
   }
