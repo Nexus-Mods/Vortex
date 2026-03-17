@@ -8,7 +8,7 @@ const INPUT = path.resolve(import.meta.dirname, "src", "main.ts");
 const OUTPUT = path.resolve(
   import.meta.dirname,
   mode === "production" ? "dist" : "out",
-  "main.js",
+  "main.mjs",
 );
 
 const config = defineConfig({
@@ -25,7 +25,7 @@ const config = defineConfig({
   },
   output: {
     file: OUTPUT,
-    format: "commonjs",
+    format: "esm",
     comments: false,
     dynamicImportInCjs: false,
     minify: mode === "production",
