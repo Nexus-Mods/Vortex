@@ -763,9 +763,7 @@ class Application {
 
       const leaves = this.flattenState(hiveData, []);
       await Promise.all(
-        leaves.map(({ key, value }) =>
-          sub.setItem(key, JSON.stringify(value)),
-        ),
+        leaves.map(({ key, value }) => sub.setItem(key, JSON.stringify(value))),
       );
     }
 
