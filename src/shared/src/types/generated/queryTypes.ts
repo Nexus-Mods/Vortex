@@ -12,15 +12,11 @@ export interface RecentlyManagedGamesResult {
 
 /** Maps query names to their parameter types */
 export interface QueryParamsMap {
-  active_mods: ActiveModsParams;
-  mod_by_id: ModByIdParams;
   recently_managed_games: RecentlyManagedGamesParams;
 }
 
 /** Maps query names to their result row types */
 export interface QueryResultMap {
-  active_mods: ActiveModsResult;
-  mod_by_id: ModByIdResult;
   recently_managed_games: RecentlyManagedGamesResult;
 }
 

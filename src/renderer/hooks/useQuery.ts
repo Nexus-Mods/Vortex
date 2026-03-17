@@ -4,7 +4,7 @@ import type {
   QueryName,
   QueryParamsMap,
   QueryResultMap,
-} from "../../shared/types/generated/queryTypes";
+} from "@vortex/shared/preload";
 
 export interface UseQueryOptions {
   /** Whether to auto-refresh when invalidation events are received (default: true) */

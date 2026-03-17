@@ -1,4 +1,4 @@
-import type { Serializable } from "../../shared/types/ipc";
+import type { Serializable } from "@vortex/shared/ipc";
 import { log } from "../logging";
 import type QueryRegistry from "./QueryRegistry";
 

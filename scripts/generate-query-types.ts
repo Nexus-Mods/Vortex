@@ -16,7 +16,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 
-import type { DuckDBConnection, DuckDBInstance, DuckDBType } from "@duckdb/node-api";
+import { type DuckDBConnection, DuckDBInstance, type DuckDBType } from "@duckdb/node-api";
 
 // Import the parser from source
 import { parseAllQueries } from "../src/main/store/queryParser";
@@ -112,8 +112,7 @@ async function main(): Promise<void> {
   );
 
   // Create temporary DuckDB instance for schema introspection
-  const { DuckDBInstance: DuckDBInstanceCtor } = require("@duckdb/node-api");
-  const instance: DuckDBInstance = await DuckDBInstanceCtor.create(":memory:");
+  const instance: DuckDBInstance = await DuckDBInstance.create(":memory:");
   const connection: DuckDBConnection = await instance.connect();
 
   try {

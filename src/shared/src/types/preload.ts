@@ -22,6 +22,11 @@ export type {
   QueryResultMap,
 } from "./generated/queryTypes";
 import type {
+  QueryName,
+  QueryParamsMap,
+  QueryResultMap,
+} from "./generated/queryTypes";
+import type {
   DiffOperation,
   AppInitMetadata,
   Serializable,
