@@ -4623,14 +4623,14 @@ class InstallManager {
     unattended: boolean,
     details: IInstallationDetails,
   ) {
-    if (result.instructions == null) {
+    if (result.instructions === null) {
       // this is the signal that the installer has already reported what went
       // wrong. Not necessarily a "user canceled" but the error handling happened
       // in the installer so we don't know what happened.
       return Promise.reject(new UserCanceled());
     }
 
-    if (result.instructions == null || result.instructions.length === 0) {
+    if (result.instructions === undefined || result.instructions.length === 0) {
       return Promise.reject(
         new ProcessCanceled("Empty archive or no options selected"),
       );
