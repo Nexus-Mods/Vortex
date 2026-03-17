@@ -1,28 +1,29 @@
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
+
+import { getErrorCode, unknownToError } from "@vortex/shared";
+import * as React from "react";
+
 import type {
   DialogActions,
   DialogType,
   IDialogContent,
   IDialogResult,
 } from "../../../actions/notifications";
-import { addNotification, showDialog } from "../../../actions/notifications";
-import { setSettingsPage } from "../../../actions/session";
-import ToolbarIcon from "../../../controls/ToolbarIcon";
 import type { INotificationAction } from "../../../types/INotification";
 import type { IState } from "../../../types/IState";
+import type { IDeploymentMethod } from "../types/IDeploymentMethod";
+
+import { addNotification, showDialog } from "../../../actions/notifications";
+import { setSettingsPage } from "../../../actions/session";
 import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
+import ToolbarIcon from "../../../controls/ToolbarIcon";
 import { TemporaryError, UserCanceled } from "../../../util/CustomErrors";
 import { showError } from "../../../util/message";
 import { activeGameId } from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
-import { getErrorCode, unknownToError } from "@vortex/shared";
-
-import type { IDeploymentMethod } from "../types/IDeploymentMethod";
-import { NoDeployment } from "../util/exceptions";
-
-import * as React from "react";
-import type * as Redux from "redux";
-import type { ThunkDispatch } from "redux-thunk";
 import { setConfirmPurge } from "../actions/settings";
+import { NoDeployment } from "../util/exceptions";
 
 interface IConnectedProps {
   activator: IDeploymentMethod;
@@ -65,8 +66,8 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
 
     return (
       <ToolbarIcon
-        id="purge-mods"
         icon="purge"
+        id="purge-mods"
         text={t("Purge Mods")}
         onClick={activator !== undefined ? this.activate : this.noMethod}
       />
@@ -119,7 +120,7 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
         }
 
         const errCode = getErrorCode(err);
-        if (errCode === null && (err as {errno?: number}).errno !== undefined) {
+        if (errCode == null && (err as {errno?: number}).errno !== undefined) {
           // unresolved windows error code
           onShowError(
             "Failed to purge mods",

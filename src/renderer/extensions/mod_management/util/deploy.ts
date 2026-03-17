@@ -264,6 +264,7 @@ async function purgeModsImpl(
       onProgress(0, "Preparing purge");
 
       let lastDeployment: { [typeId: string]: IDeployedFile[] };
+      let purgeSucceeded = true;
       api.store.dispatch(startActivity("mods", "purging"));
 
       // TODO: we really should be using the deployment specified in the manifest,
@@ -348,16 +349,17 @@ async function purgeModsImpl(
             ),
           );
         }
-        if (err instanceof ProcessCanceled) {
-          return null;
+        if (!(err instanceof ProcessCanceled)) {
+          purgeSucceeded = false;
+          throw err;
         }
-        throw err;
       } finally {
+        onProgress(85, "Post purge events");
         await activator.postPurge();
+        if (purgeSucceeded) {
+          await api.emitAndAwait("did-purge", profile.id);
+        }
       }
-
-      onProgress(85, "Post purge events");
-      await api.emitAndAwait("did-purge", profile.id);
     }, true);
   } finally {
     api.dismissNotification(notificationId);
@@ -447,6 +449,7 @@ export function purgeModsInPath(
       // TODO: we really should be using the deployment specified in the manifest,
       //   not the current one! This only works because we force a purge when switching
       //   deployment method.
+      let purgeSucceeded = true;
       try {
         await activator.prePurge(stagingPath);
         onProgress(25, "Removing links");
@@ -462,16 +465,17 @@ export function purgeModsInPath(
           activator.id,
         );
       } catch (err: unknown) {
-        if (err instanceof ProcessCanceled) {
-          return null;
+        if (!(err instanceof ProcessCanceled)) {
+          purgeSucceeded = false;
+          throw err;
         }
-        throw err;
       } finally {
+        onProgress(75, "Post purge events");
         await activator.postPurge();
+        if (purgeSucceeded) {
+          await api.emitAndAwait("did-purge", profile.id);
+        }
       }
-
-      onProgress(75, "Post purge events");
-      await api.emitAndAwait("did-purge", profile.id);
     }, true)
       .then(() => null)
       .finally(() => {
