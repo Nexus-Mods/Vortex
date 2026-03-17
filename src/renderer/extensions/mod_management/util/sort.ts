@@ -8,7 +8,6 @@ import type { IMod } from "../types/IMod";
 
 import testModReference, { isFuzzyVersion } from "./testModReference";
 
-import PromiseBB from "bluebird";
 import { alg, Graph } from "graphlib";
 import * as _ from "lodash";
 import type { ILookupResult, IReference, IRule } from "modmeta-db";
@@ -40,20 +39,20 @@ function findByRef(
 
 let sortModsCache: {
   id: { gameId: string; mods: IMod[] };
-  sorted: PromiseBB<IMod[]>;
+  sorted: Promise<IMod[]>;
 } = {
   id: { gameId: undefined, mods: [] },
-  sorted: PromiseBB.resolve([]),
+  sorted: Promise.resolve([]),
 };
 
 function sortMods(
   gameId: string,
   mods: IMod[],
   api: IExtensionApi,
-): PromiseBB<IMod[]> {
+): Promise<IMod[]> {
   if (mods.length === 0) {
     // don't flush the cache if the input is empty
-    return PromiseBB.resolve([]);
+    return Promise.resolve([]);
   }
 
   if (
@@ -124,7 +123,7 @@ function sortMods(
             }
           }
         });
-        return PromiseBB.resolve();
+        return Promise.resolve();
       });
   };
 
@@ -132,7 +131,7 @@ function sortMods(
     dependencies.setNode(mod.id);
   });
 
-  const sorted = PromiseBB.map(mods, modMapper)
+  const sorted = Promise.all(mods.map(modMapper))
     .catch((err: Error) => {
       log("error", "failed to sort mods", {
         msg: err.message,
@@ -149,15 +148,15 @@ function sortMods(
         }, {});
         const elapsed = Math.floor((Date.now() - startTime) / 100) / 10;
         log("info", "done sorting mods", { elapsed, numRules });
-        return PromiseBB.resolve(res.map((id) => lookup[id]));
+        return Promise.resolve(res.map((id) => lookup[id]));
       } catch (err) {
         // exception type not included in typings
         if (err instanceof (alg.topsort as any).CycleException) {
           const res = new CycleError(alg.findCycles(dependencies));
           res.stack = stackErr.stack;
-          return PromiseBB.reject(res);
+          return Promise.reject(res);
         } else {
-          return PromiseBB.reject(err);
+          return Promise.reject(err);
         }
       }
     });

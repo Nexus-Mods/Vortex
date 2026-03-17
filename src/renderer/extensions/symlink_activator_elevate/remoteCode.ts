@@ -1,4 +1,5 @@
-import { getErrorCode } from "@vortex/shared";
+// This function is serialized via .toString() and run in an elevated process
+// outside of webpack. Module imports are NOT available — use only inline code.
 
 export function remoteCode(ipcClient, req) {
   const RETRY_ERRORS = new Set(["EPERM", "EBUSY", "EIO", "EBADF", "UNKNOWN"]);
@@ -11,7 +12,7 @@ export function remoteCode(ipcClient, req) {
 
   const doFS = (op: () => Promise<any>, tries: number = 5) => {
     return op().catch((err) => {
-      const code = getErrorCode(err);
+      const code = (err as any)?.code;
       if (RETRY_ERRORS.has(code) && tries > 0) {
         return delayed(100).then(() => doFS(op, tries - 1));
       } else {

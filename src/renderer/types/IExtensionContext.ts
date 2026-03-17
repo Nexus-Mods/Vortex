@@ -100,7 +100,7 @@ export type PropsCallbackTyped<T> = () => T;
  */
 export type PersistingType = "global" | "game" | "profile";
 
-export type CheckFunction = () => PromiseBB<ITestResult>;
+export type CheckFunction = () => PromiseLike<ITestResult>;
 
 export type RegisterSettings = (
   title: string,
@@ -334,7 +334,7 @@ export type ArchiveHandlerCreator = (
 export type AttributeExtractor = (
   modInfo: any,
   modPath: string,
-) => PromiseBB<{ [key: string]: any }>;
+) => PromiseLike<{ [key: string]: any }>;
 
 export interface IGameDetail {
   title: string;
@@ -377,7 +377,7 @@ export interface IErrorOptions {
  */
 export type GameInfoQuery = (
   game: any,
-) => PromiseBB<{ [key: string]: IGameDetail }>;
+) => PromiseLike<{ [key: string]: IGameDetail }>;
 
 export interface IMergeFilter {
   // files to use as basis for merge, will be copied to the merge
@@ -404,7 +404,7 @@ export type MergeTest = (
 export type MergeFunc = (
   filePath: string,
   mergePath: string,
-) => PromiseBB<void>;
+) => PromiseLike<void>;
 
 /**
  * options used when starting an external application through runExecutable
@@ -1384,7 +1384,7 @@ export interface IExtensionContext {
   registerStartHook: (
     priority: number,
     id: string,
-    hook: (call: IRunParameters) => PromiseBB<IRunParameters>,
+    hook: (call: IRunParameters) => PromiseLike<IRunParameters>,
   ) => void;
 
   /**
@@ -1563,7 +1563,7 @@ export interface IExtensionContext {
    *
    * @memberOf IExtensionContext
    */
-  once: (callback: () => void | PromiseBB<void>) => void;
+  once: (callback: () => void | PromiseLike<void>) => void;
 
   /**
    * similar to once but this callback will be run (only) on the electron "main" process.

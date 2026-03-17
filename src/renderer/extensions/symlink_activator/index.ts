@@ -170,13 +170,13 @@ class DeploymendMethod extends LinkingDeployment {
     linkPath: string,
     sourcePath: string,
     dirTags?: boolean,
-  ): PromiseBB<void> {
+  ): Promise<void> {
     return this.ensureDir(path.dirname(linkPath), dirTags).then(() =>
       fs
         .symlinkAsync(sourcePath, linkPath)
         .catch((err) =>
           err.code !== "EEXIST"
-            ? PromiseBB.reject(err)
+            ? Promise.reject(err)
             : fs
                 .removeAsync(linkPath)
                 .then(() => fs.symlinkAsync(sourcePath, linkPath)),
@@ -184,8 +184,8 @@ class DeploymendMethod extends LinkingDeployment {
     );
   }
 
-  protected unlinkFile(linkPath: string): PromiseBB<void> {
-    return fs.lstatAsync(linkPath).then((stats) => {
+  protected unlinkFile(linkPath: string): Promise<void> {
+    return Promise.resolve(fs.lstatAsync(linkPath)).then((stats) => {
       if (stats.isSymbolicLink()) {
         return fs.removeAsync(linkPath);
       } else {
@@ -195,7 +195,7 @@ class DeploymendMethod extends LinkingDeployment {
     });
   }
 
-  protected purgeLinks(installPath: string, dataPath: string): PromiseBB<void> {
+  protected purgeLinks(installPath: string, dataPath: string): Promise<void> {
     let hadErrors = false;
     let canceled = false;
 
@@ -204,7 +204,7 @@ class DeploymendMethod extends LinkingDeployment {
     // purge by removing all symbolic links that point to a file inside the install directory
     return walk(dataPath, (iterPath: string, stats: fs.Stats) => {
       if (canceled || !stats.isSymbolicLink()) {
-        return PromiseBB.resolve();
+        return Promise.resolve();
       }
       return fs
         .readlinkAsync(iterPath)
@@ -217,7 +217,7 @@ class DeploymendMethod extends LinkingDeployment {
         .catch((err) => {
           if (err instanceof UserCanceled) {
             canceled = true;
-            return PromiseBB.reject(err);
+            return Promise.reject(err);
           } else if (err.code === "ENOENT") {
             log("debug", "link already gone", { iterPath, error: err.message });
           } else {
@@ -234,9 +234,9 @@ class DeploymendMethod extends LinkingDeployment {
           "Some files could not be purged, please check the log file",
         );
         err["attachLogOnReport"] = true;
-        return PromiseBB.reject(err);
+        return Promise.reject(err);
       } else {
-        return PromiseBB.resolve();
+        return Promise.resolve();
       }
     });
   }

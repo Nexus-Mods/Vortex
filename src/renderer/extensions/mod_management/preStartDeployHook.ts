@@ -7,20 +7,19 @@ import onceCB from "../../util/onceCB";
 
 import { needToDeploy } from "./selectors";
 
-import PromiseBB from "bluebird";
 import getText from "./texts";
 import { UserCanceled } from "../../util/CustomErrors";
 
 type DeployResult = "auto" | "yes" | "skip" | "cancel";
 
-function queryDeploy(api: IExtensionApi): PromiseBB<DeployResult> {
+function queryDeploy(api: IExtensionApi): Promise<DeployResult> {
   const state: IState = api.store.getState();
   if (!needToDeploy(state)) {
-    return PromiseBB.resolve<DeployResult>("auto");
+    return Promise.resolve<DeployResult>("auto");
   } else {
     const t = api.translate;
-    return api
-      .showDialog(
+    return Promise.resolve(
+      api.showDialog(
         "question",
         t("Pending deployment"),
         {
@@ -38,24 +37,24 @@ function queryDeploy(api: IExtensionApi): PromiseBB<DeployResult> {
           ),
         },
         [{ label: "Cancel" }, { label: "Skip" }, { label: "Deploy" }],
-      )
-      .then((result) => {
-        switch (result.action) {
-          case "Skip":
-            return PromiseBB.resolve<DeployResult>("skip");
-          case "Deploy":
-            return PromiseBB.resolve<DeployResult>("yes");
-          default:
-            return PromiseBB.resolve<DeployResult>("cancel");
-        }
-      });
+      ),
+    ).then((result) => {
+      switch (result.action) {
+        case "Skip":
+          return "skip" as DeployResult;
+        case "Deploy":
+          return "yes" as DeployResult;
+        default:
+          return "cancel" as DeployResult;
+      }
+    });
   }
 }
 
-function checkDeploy(api: IExtensionApi): PromiseBB<void> {
+function checkDeploy(api: IExtensionApi): Promise<void> {
   return queryDeploy(api).then((shouldDeploy) => {
     if (shouldDeploy === "yes") {
-      return new PromiseBB<void>((resolve, reject) => {
+      return new Promise<void>((resolve, reject) => {
         api.events.emit(
           "deploy-mods",
           onceCB((err) => {
@@ -68,7 +67,7 @@ function checkDeploy(api: IExtensionApi): PromiseBB<void> {
         );
       });
     } else if (shouldDeploy === "auto") {
-      return new PromiseBB<void>((resolve, reject) => {
+      return new Promise<void>((resolve, reject) => {
         api.events.emit("await-activation", (err: Error) => {
           if (err !== null) {
             reject(err);
@@ -78,10 +77,10 @@ function checkDeploy(api: IExtensionApi): PromiseBB<void> {
         });
       });
     } else if (shouldDeploy === "cancel") {
-      return PromiseBB.reject(new UserCanceled());
+      return Promise.reject(new UserCanceled());
     } else {
       // skip
-      return PromiseBB.resolve();
+      return Promise.resolve();
     }
   });
 }
@@ -89,10 +88,10 @@ function checkDeploy(api: IExtensionApi): PromiseBB<void> {
 function preStartDeployHook(
   api: IExtensionApi,
   input: IRunParameters,
-): PromiseBB<IRunParameters> {
+): Promise<IRunParameters> {
   return input.options.suggestDeploy === true
     ? checkDeploy(api).then(() => input)
-    : PromiseBB.resolve(input);
+    : Promise.resolve(input);
 }
 
 export default preStartDeployHook;

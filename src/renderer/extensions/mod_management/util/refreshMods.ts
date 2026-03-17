@@ -1,16 +1,16 @@
+import { getErrorCode } from "@vortex/shared";
+import * as path from "path";
+
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IState } from "../../../types/IState";
-import { getApplication } from "../../../util/application";
-import * as fs from "../../../util/fs";
-import { log } from "../../../util/log";
-import { IGNORABLE_PREFIXES } from "../../../util/getFileList";
-import { getSafe } from "../../../util/storeHelper";
-
-import { setModArchiveId } from "../actions/mods";
 import type { IMod } from "../types/IMod";
 
-import PromiseBB from "bluebird";
-import * as path from "path";
+import { log } from "../../../logging";
+import { getApplication } from "../../../util/application";
+import * as fs from "../../../util/fs";
+import { IGNORABLE_PREFIXES } from "../../../util/getFileList";
+import { getSafe } from "../../../util/storeHelper";
+import { setModArchiveId } from "../actions/mods";
 
 /**
  * reads the installation dir and adds mods missing in our database
@@ -34,11 +34,15 @@ function refreshMods(
   return fs
     .ensureDirAsync(installPath)
     .then(() => fs.readdirAsync(installPath))
-    .filter((modName: string) =>
-      fs
-        .statAsync(path.join(installPath, modName))
-        .then((stats) => stats.isDirectory())
-        .catch(() => PromiseBB.resolve(false)),
+    .then((allNames: string[]) =>
+      Promise.all(
+        allNames.map((modName) =>
+          fs
+            .statAsync(path.join(installPath, modName))
+            .then((stats) => (stats.isDirectory() ? modName : null))
+            .catch(() => null),
+        ),
+      ).then((results) => results.filter((name): name is string => name != null)),
     )
     .then((modNames: string[]) => {
       const filtered = modNames
@@ -57,7 +61,7 @@ function refreshMods(
       );
 
       if (addedMods.length === 0 && removedMods.length === 0) {
-        return PromiseBB.resolve();
+        return Promise.resolve();
       }
 
       log("warn", "manual mod changed", {
@@ -108,7 +112,7 @@ function refreshMods(
         )
         .then((res) => {
           if (res.action === "Apply Changes") {
-            return PromiseBB.map(addedMods, (modName: string) => {
+            return Promise.all(addedMods.map((modName: string) => {
               const fullPath: string = path.join(installPath, modName);
               return fs
                 .statAsync(fullPath)
@@ -126,8 +130,11 @@ function refreshMods(
                     });
                   }
                 })
-                .catch({ code: "ENOENT" }, () =>
-                  fs.statAsync(fullPath + ".installing").then(() =>
+                .catch((err: unknown) => {
+                  if (getErrorCode(err) !== "ENOENT") {
+                    throw err;
+                  }
+                  return fs.statAsync(fullPath + ".installing").then(() =>
                     // since we're removing the '.installing' extension above we might be discovering
                     // a mod here that was not installed successfully but doesn't have an entry in the
                     // mods database so it wouldn't get cleaned up eiather
@@ -148,9 +155,9 @@ function refreshMods(
                           return fs.removeAsync(fullPath + ".installing");
                         }
                       }),
-                  ),
-                );
-            }).then(() => onRemoveMods(removedMods));
+                  );
+                });
+            })).then(() => onRemoveMods(removedMods));
           } else {
             getApplication().quit();
           }
@@ -161,14 +168,10 @@ function refreshMods(
       const downloads = state.persistent.downloads.files;
       knownModNames.forEach((modId) => {
         if (
-          !!knownMods[modId].archiveId &&
+          knownMods[modId]?.archiveId &&
           downloads[knownMods[modId].archiveId] === undefined
         ) {
-          const fileName = getSafe(
-            knownMods,
-            [modId, "attributes", "fileName"],
-            undefined,
-          );
+          const fileName = knownMods[modId]?.attributes?.fileName;
           log("info", "archive referenced in mod doesn't exist", {
             modId,
             archiveId: knownMods[modId].archiveId,

@@ -1,32 +1,34 @@
+import type { TFunction } from "i18next";
+
+import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import PromiseBB from "bluebird";
+import * as path from "path";
+import turbowalk from "turbowalk";
+import * as util from "util";
+import * as winapi from "winapi-bindings";
+
 import type {
   IExtensionApi,
   IExtensionContext,
 } from "../../types/IExtensionContext";
 import type { IGame } from "../../types/IGame";
-import * as fs from "../../util/fs";
-import { log } from "../../util/log";
-import { installPathForGame } from "../../util/selectors";
-
+import type { IState } from '../../types/IState';
 import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
-import { getGame } from "../gamemode_management/util/getGame";
-import LinkingDeployment from "../mod_management/LinkingDeployment";
 import type {
   IDeployedFile,
   IDeploymentMethod,
   IUnavailableReason,
 } from "../mod_management/types/IDeploymentMethod";
 
-import PromiseBB from "bluebird";
-import type { TFunction } from "i18next";
-import * as path from "path";
-import turbowalk from "turbowalk";
-import * as util from "util";
-import * as winapi from "winapi-bindings";
 import { setSettingsPage } from "../../actions/session";
-import { getErrorCode } from "@vortex/shared";
+import { log } from "../../logging";
+import * as fs from "../../util/fs";
+import { installPathForGame } from "../../util/selectors";
+import { getGame } from "../gamemode_management/util/getGame";
+import LinkingDeployment from "../mod_management/LinkingDeployment";
 
 export class FileFound extends Error {
-  constructor(name) {
+  constructor(name: string) {
     super(name);
     this.name = this.constructor.name;
   }
@@ -71,13 +73,13 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   public isSupported(
-    state: any,
+    state: IState,
     gameId: string,
     typeId: string,
   ): IUnavailableReason {
     const discovery: IDiscoveryResult =
       state.settings.gameMode.discovered[gameId];
-    if (discovery === undefined || discovery.path === undefined) {
+    if (discovery?.path == null) {
       return {
         description: (t) => t("Game not discovered."),
       };
@@ -92,7 +94,7 @@ class DeploymentMethod extends LinkingDeployment {
 
     try {
       fs.accessSync(modPaths[typeId], fs.constants.W_OK);
-    } catch (err) {
+    } catch {
       log(
         "info",
         "hardlink deployment not supported due to lack of write access",
@@ -131,7 +133,7 @@ class DeploymentMethod extends LinkingDeployment {
             let displayPath = modPaths[typeId];
             try {
               displayPath = winapi.GetVolumePathName(modPaths[typeId]);
-            } catch (err) {
+            } catch {
               log("warn", "Failed to resolve volume path", {
                 path: modPaths[typeId],
               });
@@ -147,7 +149,7 @@ class DeploymentMethod extends LinkingDeployment {
             );
           },
           fixCallback: (api: IExtensionApi) =>
-            new PromiseBB((resolve, reject) => {
+            new PromiseBB((_resolve, _reject) => {
               api.events.emit("show-main-page", "application_settings");
               api.store.dispatch(setSettingsPage("Mods"));
               api.highlightControl(
@@ -178,7 +180,7 @@ class DeploymentMethod extends LinkingDeployment {
     try {
       try {
         fs.removeSync(canary + ".link");
-      } catch (err) {
+      } catch {
         // nop
       }
       fs.writeFileSync(
@@ -200,7 +202,7 @@ class DeploymentMethod extends LinkingDeployment {
     try {
       fs.removeSync(canary + ".link");
       fs.removeSync(canary);
-    } catch (err) {
+    } catch {
       // cleanup failed, this is almost certainly due to an AV jumping in to check these new files,
       // I mean, why would I be able to create the files but not delete them?
       // just try again later - can't do that synchronously though
@@ -212,7 +214,7 @@ class DeploymentMethod extends LinkingDeployment {
             "error",
             "failed to clean up canary file. This indicates we were able to create " +
               "a file in the target directory but not delete it",
-            { installationPath, message: err.message },
+            { installationPath, message: getErrorMessageOrDefault(err) },
           );
         });
     }
@@ -225,7 +227,7 @@ class DeploymentMethod extends LinkingDeployment {
     dataPath: string,
     installationPath: string,
     progressCB?: (files: number, total: number) => void,
-  ): PromiseBB<IDeployedFile[]> {
+  ): PromiseLike<IDeployedFile[]> {
     return super.finalize(gameId, dataPath, installationPath, progressCB);
   }
 
@@ -320,12 +322,12 @@ class DeploymentMethod extends LinkingDeployment {
     linkPath: string,
     sourcePath: string,
     dirTags?: boolean,
-  ): PromiseBB<void> {
+  ): Promise<void> {
     return this.ensureDir(path.dirname(linkPath), dirTags)
       .then(() => fs.linkAsync(sourcePath, linkPath))
-      .catch((err) =>
-        err.code !== "EEXIST"
-          ? PromiseBB.reject(err)
+      .catch((err: unknown) =>
+        getErrorCode(err) !== "EEXIST"
+          ? Promise.reject(unknownToError(err))
           : fs
               .removeAsync(linkPath)
               .then(() => fs.linkAsync(sourcePath, linkPath)),
@@ -358,9 +360,9 @@ class DeploymentMethod extends LinkingDeployment {
               .then((sourceStats) => linkStats.ino === sourceStats.ino),
       )
       .catch((err) =>
-        err.code === "ENOENT"
+        getErrorCode(err) === "ENOENT"
           ? PromiseBB.resolve(false)
-          : PromiseBB.reject(err),
+          : PromiseBB.reject(unknownToError(err)),
       );
   }
 

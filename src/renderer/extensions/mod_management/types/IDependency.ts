@@ -1,10 +1,9 @@
-import type PromiseBB from "bluebird";
 import type { ILookupResult, IModInfo } from "modmeta-db";
 import type { IFileListItem, IMod, IModReference } from "./IMod";
 
 export interface IModInfoEx extends IModInfo {
-  referer?: string | (() => PromiseBB<string>);
-  sourceURI: string | (() => PromiseBB<string>);
+  referer?: string | (() => PromiseLike<string>);
+  sourceURI: string | (() => PromiseLike<string>);
 }
 
 export interface ILookupResultEx extends ILookupResult {

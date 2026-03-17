@@ -2,8 +2,6 @@ import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { Normalize } from "../../../util/getNormalizeFunc";
 import type { TFunction } from "../../../util/i18n";
 
-import type PromiseBB from "bluebird";
-
 /**
  * details about a file change
  */
@@ -87,7 +85,7 @@ export interface IUnavailableReason {
    * if the problem can be fixed automatically, this can be set to a function that takes care
    * of it
    */
-  fixCallback?: (api: IExtensionApi) => PromiseBB<void>;
+  fixCallback?: (api: IExtensionApi) => PromiseLike<void>;
   /**
    * When no method is supported, Vortex will offer possible solutions in this order.
    * It should indicate both how much effort the solution is and also a general preference for
@@ -177,13 +175,13 @@ export interface IDeploymentMethod {
    *
    * @memberof IDeploymentMethod
    */
-  userGate: () => PromiseBB<void>;
+  userGate: () => PromiseLike<void>;
 
   /**
    * called before the deployment method is selected. Primary use is to show usage instructions
    * the user needs to know before using it
    */
-  onSelected?: (api: IExtensionApi) => PromiseBB<void>;
+  onSelected?: (api: IExtensionApi) => PromiseLike<void>;
 
   /**
    * called before any calls to activate/deactivate, in case the
@@ -205,7 +203,7 @@ export interface IDeploymentMethod {
     clean: boolean,
     lastActivation: IDeployedFile[],
     normalize: Normalize,
-  ) => PromiseBB<void>;
+  ) => PromiseLike<void>;
 
   /**
    * called after an activate call was made for all active mods,
@@ -227,7 +225,7 @@ export interface IDeploymentMethod {
     dataPath: string,
     installationPath: string,
     progressCB?: (files: number, total: number) => void,
-  ) => PromiseBB<IDeployedFile[]>;
+  ) => PromiseLike<IDeployedFile[]>;
 
   /**
    * if defined, this gets called instead of finalize if an error occurred since prepare was called.
@@ -240,7 +238,7 @@ export interface IDeploymentMethod {
     gameId: string,
     dataPath: string,
     installationPath: string,
-  ) => PromiseBB<void>;
+  ) => PromiseLike<void>;
 
   /**
    * activate the specified mod in the specified location
@@ -257,7 +255,7 @@ export interface IDeploymentMethod {
     sourceName: string,
     deployPath: string,
     blackList: Set<string>,
-  ) => PromiseBB<void>;
+  ) => PromiseLike<void>;
 
   /**
    * deactivate the specified mod, removing all files it has deployed to the destination
@@ -272,7 +270,7 @@ export interface IDeploymentMethod {
     sourcePath: string,
     dataPath: string,
     sourceName: string,
-  ) => PromiseBB<void>;
+  ) => PromiseLike<void>;
 
   /**
    * called before mods are being purged. If multiple mod types are going to be purged,
@@ -280,7 +278,7 @@ export interface IDeploymentMethod {
    * This is primarily useful for optimization, to avoid work being done redundantly
    * for every modtype-purge
    */
-  prePurge: (installPath: string) => PromiseBB<void>;
+  prePurge: (installPath: string) => PromiseLike<void>;
 
   /**
    * deactivate all mods at the destination location
@@ -301,14 +299,14 @@ export interface IDeploymentMethod {
     dataPath: string,
     gameId?: string,
     onProgress?: (num: number, total: number) => void,
-  ) => PromiseBB<void>;
+  ) => PromiseLike<void>;
 
   /**
    * called after mods were purged. If multiple mod types wer purged, this is only called
    * after they are all done.
    * Like prePurge, this is intended for optimizations
    */
-  postPurge: () => PromiseBB<void>;
+  postPurge: () => PromiseLike<void>;
 
   /**
    * retrieve list of external changes, that is: files that were installed by this
@@ -323,7 +321,7 @@ export interface IDeploymentMethod {
     installPath: string,
     dataPath: string,
     activation: IDeployedFile[],
-  ) => PromiseBB<IFileChange[]>;
+  ) => PromiseLike<IFileChange[]>;
 
   /**
    * given a file path (relative to a staging path), return the name under which the
@@ -344,5 +342,5 @@ export interface IDeploymentMethod {
     installPath: string,
     dataPath: string,
     file: IDeployedFile,
-  ) => PromiseBB<boolean>;
+  ) => PromiseLike<boolean>;
 }

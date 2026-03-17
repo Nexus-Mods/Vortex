@@ -1,4 +1,4 @@
-import PromiseBB from "bluebird";
+import { getErrorCode } from "@vortex/shared";
 import { generate as shortid } from "shortid";
 
 import type {
@@ -35,7 +35,6 @@ import {
 import { getActivator, getCurrentActivator } from "./deploymentMethods";
 import { NoDeployment } from "./exceptions";
 import { dealWithExternalChanges } from "./externalChanges";
-
 const MERGE_SUBDIR = "zzz_merge";
 
 export function genSubDirFunc(
@@ -68,18 +67,22 @@ export function genSubDirFunc(
   }
 }
 
-function filterManifest(
+async function filterManifest(
   activator: IDeploymentMethod,
   deployPath: string,
   stagingPath: string,
   deployment: IDeployedFile[],
-): PromiseBB<IDeployedFile[]> {
-  return PromiseBB.filter(deployment, (file) =>
-    activator.isDeployed(stagingPath, deployPath, file),
+): Promise<IDeployedFile[]> {
+  const results = await Promise.all(
+    deployment.map(async (item) => ({
+      item,
+      keep: await activator.isDeployed(stagingPath, deployPath, item),
+    })),
   );
+  return results.filter((r) => r.keep).map((r) => r.item);
 }
 
-export function loadAllManifests(
+export async function loadAllManifests(
   api: IExtensionApi,
   deploymentMethod: IDeploymentMethod,
   gameId: string,
@@ -90,29 +93,26 @@ export function loadAllManifests(
     truthy(modPaths[typeId]),
   );
 
-  return PromiseBB.reduce(
-    modTypes,
-    (prev, typeId) =>
-      loadActivation(
-        api,
-        gameId,
-        typeId,
-        modPaths[typeId],
-        stagingPath,
-        deploymentMethod,
-      ).then((deployment) => {
-        prev[typeId] = deployment;
-        return prev;
-      }),
-    {},
-  );
+  const prev: { [typeId: string]: IDeployedFile[] } = {};
+  for (const typeId of modTypes) {
+    const deployment = await loadActivation(
+      api,
+      gameId,
+      typeId,
+      modPaths[typeId],
+      stagingPath,
+      deploymentMethod,
+    );
+    prev[typeId] = deployment;
+  }
+  return prev;
 }
 
 export function purgeMods(
   api: IExtensionApi,
   gameId?: string,
   isUnmanaging?: boolean,
-): PromiseBB<void> {
+): Promise<void> {
   const state = api.store.getState();
   let profile =
     gameId !== undefined
@@ -140,12 +140,12 @@ export function purgeMods(
   }
 
   if (profile === undefined) {
-    return PromiseBB.reject(new TemporaryError("No active profile"));
+    return Promise.reject(new TemporaryError("No active profile"));
   }
 
   const effectiveGameId = gameId ?? profile.gameId;
 
-  return PromiseBB.resolve(withTrackedActivity(
+  return withTrackedActivity(
     "vortex.mod-management",
     "deployment.purge",
     {
@@ -160,11 +160,11 @@ export function purgeMods(
         const deployedActivator = getActivator(manifest?.deploymentMethod);
         return purgeModsImpl(api, deployedActivator, profile);
       } else {
-        return purgeModsImpl(api, undefined, profile).catch((err) => {
+        return purgeModsImpl(api, undefined, profile).catch((err: unknown) => {
           // If the user is unmanaging the game and the purge was unable to find any
           //  of the game's mods path during the purge, that suggests that the user
           //  has uninstalled the game and is trying to "unmanage" the game.
-          if (["ENOENT"].includes(err.code) && isUnmanaging) {
+          if (["ENOENT"].includes(getErrorCode(err)) && isUnmanaging) {
             const game = getGame(gameId);
             const discovery = getSafe(
               state,
@@ -172,31 +172,29 @@ export function purgeMods(
               undefined,
             );
             if (game === undefined || discovery?.path === undefined) {
-              return PromiseBB.reject(err);
+              return Promise.reject(err);
             }
             const modTypePaths = game.getModPaths(discovery.path);
             const modPaths = Object.keys(modTypePaths).map(
               (modType) => modTypePaths[modType],
             );
-            if (modPaths.includes(err.path)) {
-              // This confirms it - the mods folder is missing - user removed it.
-              //  In this case we still want to allow the removal.
-              return PromiseBB.resolve();
+            if (modPaths.includes((err as NodeJS.ErrnoException).path)) {
+              return Promise.resolve();
             }
           } else {
-            return PromiseBB.reject(err);
+            return Promise.reject(err);
           }
         });
       }
     }),
-  ));
+  );
 }
 
-function purgeModsImpl(
+async function purgeModsImpl(
   api: IExtensionApi,
   activator: IDeploymentMethod,
   profile: IProfile,
-): PromiseBB<void> {
+): Promise<void> {
   const state = api.store.getState();
   const { gameId } = profile;
   const stagingPath = installPathForGame(state, gameId);
@@ -209,7 +207,7 @@ function purgeModsImpl(
       message: "Can't purge because game is not discovered",
       displayMS: 5000,
     });
-    return PromiseBB.resolve();
+    return;
   }
 
   log("info", "current deployment method is", {
@@ -223,7 +221,7 @@ function purgeModsImpl(
     // throwing this exception on stagingPath === undefined isn't exactly
     // accurate but the effect is the same: User has to activate the game
     // and review settings before deployment is possible
-    return PromiseBB.reject(new NoDeployment());
+    throw new NoDeployment();
   }
 
   if (
@@ -236,7 +234,7 @@ function purgeModsImpl(
       message: "Can't purge while the game or a tool is running",
       displayMS: 5000,
     });
-    return PromiseBB.resolve();
+    return;
   }
 
   const notificationId: string = shortid();
@@ -260,66 +258,62 @@ function purgeModsImpl(
     truthy(modPaths[typeId]),
   );
 
-  return withActivationLock(() => {
-    log("debug", "purging mods", { activatorId: activator.id, stagingPath });
-    onProgress(0, "Preparing purge");
+  try {
+    await withActivationLock(async () => {
+      log("debug", "purging mods", { activatorId: activator.id, stagingPath });
+      onProgress(0, "Preparing purge");
 
-    let lastDeployment: { [typeId: string]: IDeployedFile[] };
-    api.store.dispatch(startActivity("mods", "purging"));
+      let lastDeployment: { [typeId: string]: IDeployedFile[] };
+      api.store.dispatch(startActivity("mods", "purging"));
 
-    // TODO: we really should be using the deployment specified in the manifest,
-    //   not the current one! This only works because we force a purge when switching
-    //   deployment method.
-    return (
-      activator
-        .prePurge(stagingPath)
-        // load previous deployments
-        .then(() =>
-          loadAllManifests(api, activator, gameId, modPaths, stagingPath).then(
-            (deployments) => {
-              lastDeployment = deployments;
-            },
-          ),
-        )
-        .then(() => api.emitAndAwait("will-purge", profile.id, lastDeployment))
-        .tap(() => onProgress(10, "Removing links"))
-        // deal with all external changes
-        .then(() =>
-          dealWithExternalChanges(
-            api,
-            activator,
-            profile.id,
-            stagingPath,
-            modPaths,
-            lastDeployment,
-          ),
-        )
-        .tap(() => onProgress(25, "Removing links"))
-        // purge all mod types
-        .then(() =>
-          PromiseBB.mapSeries(modTypes, (typeId: string, idx: number) => {
-            // calculating progress for the actual file removal is a bit awkward, we get the idx
-            // and total for each mod type separately. The total removal progress should cover 50%
-            // of our progress bar, each mod type is then a fraction of that.
-            const cover = 50 / modTypes.length;
-            const progressType = (num: number, total: number) => {
-              onProgress(
-                25 + idx * cover + Math.floor((num * cover) / total),
-                "Removing links",
-              );
-            };
-            return activator.purge(
-              stagingPath,
-              modPaths[typeId],
-              gameId,
-              progressType,
+      // TODO: we really should be using the deployment specified in the manifest,
+      //   not the current one! This only works because we force a purge when switching
+      //   deployment method.
+      try {
+        await activator.prePurge(stagingPath);
+
+        const deployments = await loadAllManifests(
+          api,
+          activator,
+          gameId,
+          modPaths,
+          stagingPath,
+        );
+        lastDeployment = deployments;
+
+        await api.emitAndAwait("will-purge", profile.id, lastDeployment);
+        onProgress(10, "Removing links");
+
+        await dealWithExternalChanges(
+          api,
+          activator,
+          profile.id,
+          stagingPath,
+          modPaths,
+          lastDeployment,
+        );
+        onProgress(25, "Removing links");
+
+        for (const [idx, typeId] of modTypes.entries()) {
+          const cover = 50 / modTypes.length;
+          const progressType = (num: number, total: number) => {
+            onProgress(
+              25 + idx * cover + Math.floor((num * cover) / total),
+              "Removing links",
             );
-          }),
-        )
-        .tap(() => onProgress(75, "Saving updated manifest"))
-        // save (empty) activation
-        .then(() =>
-          PromiseBB.map(modTypes, (typeId) =>
+          };
+          await activator.purge(
+            stagingPath,
+            modPaths[typeId],
+            gameId,
+            progressType,
+          );
+        }
+
+        onProgress(75, "Saving updated manifest");
+
+        await Promise.all(
+          modTypes.map((typeId) =>
             saveActivation(
               gameId,
               typeId,
@@ -330,45 +324,45 @@ function purgeModsImpl(
               activator.id,
             ),
           ),
-        )
-        // the deployment may be changed so on an exception we still need to update it
-        .tapCatch(() => {
-          if (lastDeployment === undefined) {
-            // exception happened before the deployment is even loaded so there is nothing
-            // to clean up
-            return;
-          }
-          return PromiseBB.map(modTypes, (typeId) =>
-            filterManifest(
-              activator,
-              modPaths[typeId],
-              stagingPath,
-              lastDeployment[typeId],
-            ).then((files) =>
-              saveActivation(
-                gameId,
-                typeId,
-                state.app.instanceId,
+        );
+      } catch (err: unknown) {
+        if (lastDeployment !== undefined) {
+          await Promise.all(
+            modTypes.map((typeId) =>
+              filterManifest(
+                activator,
                 modPaths[typeId],
                 stagingPath,
-                files,
-                activator.id,
+                lastDeployment[typeId],
+              ).then((files) =>
+                saveActivation(
+                  gameId,
+                  typeId,
+                  state.app.instanceId,
+                  modPaths[typeId],
+                  stagingPath,
+                  files,
+                  activator.id,
+                ),
               ),
             ),
           );
-        })
-        .catch(ProcessCanceled, () => null)
-        .then(() => PromiseBB.resolve())
-        .tap(() => onProgress(85, "Post purge events"))
-        .finally(() => activator.postPurge())
-        .then(() => api.emitAndAwait("did-purge", profile.id))
-    );
-  }, true)
-    .then(() => null)
-    .finally(() => {
-      api.dismissNotification(notificationId);
-      api.store.dispatch(stopActivity("mods", "purging"));
-    });
+        }
+        if (err instanceof ProcessCanceled) {
+          return null;
+        }
+        throw err;
+      } finally {
+        await activator.postPurge();
+      }
+
+      onProgress(85, "Post purge events");
+      await api.emitAndAwait("did-purge", profile.id);
+    }, true);
+  } finally {
+    api.dismissNotification(notificationId);
+    api.store.dispatch(stopActivity("mods", "purging"));
+  }
 }
 
 export function purgeModsInPath(
@@ -376,7 +370,7 @@ export function purgeModsInPath(
   gameId: string,
   typeId: string,
   modPath: string,
-): PromiseBB<void> {
+): Promise<void> {
   const state = api.store.getState();
   const profile: IProfile =
     gameId !== undefined
@@ -392,7 +386,7 @@ export function purgeModsInPath(
   const activator = getCurrentActivator(state, gameId, false);
 
   if (activator === undefined) {
-    return PromiseBB.reject(new NoDeployment());
+    return Promise.reject(new NoDeployment());
   }
 
   if (
@@ -405,7 +399,7 @@ export function purgeModsInPath(
       message: "Can't purge while the game or a tool is running",
       displayMS: 5000,
     });
-    return PromiseBB.resolve();
+    return Promise.resolve();
   }
 
   const notificationId: string = shortid();
@@ -422,7 +416,7 @@ export function purgeModsInPath(
 
   onProgress(0, "Waiting for other operations to complete");
 
-  return PromiseBB.resolve(withTrackedActivity(
+  return withTrackedActivity(
     "vortex.mod-management",
     "deployment.purge-path",
     {
@@ -431,7 +425,7 @@ export function purgeModsInPath(
       "deployment.modPath": modPath,
       "deployment.method": activator.name,
     },
-    () => withActivationLock(() => {
+    () => withActivationLock(async () => {
       log("debug", "purging mods", { activatorId: activator.id, stagingPath });
       onProgress(0, "Preparing purge");
 
@@ -453,35 +447,35 @@ export function purgeModsInPath(
       // TODO: we really should be using the deployment specified in the manifest,
       //   not the current one! This only works because we force a purge when switching
       //   deployment method.
-      return (
-        activator
-          .prePurge(stagingPath)
-          .tap(() => onProgress(25, "Removing links"))
-          // purge the specified mod type
-          .then(() => activator.purge(stagingPath, modPath, gameId))
-          .tap(() => onProgress(50, "Saving updated manifest"))
-          // save (empty) activation
-          .then(() =>
-            saveActivation(
-              gameId,
-              typeId,
-              state.app.instanceId,
-              modPath,
-              stagingPath,
-              [],
-              activator.id,
-            ),
-          )
-          .catch(ProcessCanceled, () => null)
-          .then(() => PromiseBB.resolve())
-          .finally(() => activator.postPurge())
-          .tap(() => onProgress(75, "Post purge events"))
-          .then(() => api.emitAndAwait("did-purge", profile.id))
-      );
+      try {
+        await activator.prePurge(stagingPath);
+        onProgress(25, "Removing links");
+        await activator.purge(stagingPath, modPath, gameId);
+        onProgress(50, "Saving updated manifest");
+        await saveActivation(
+          gameId,
+          typeId,
+          state.app.instanceId,
+          modPath,
+          stagingPath,
+          [],
+          activator.id,
+        );
+      } catch (err: unknown) {
+        if (err instanceof ProcessCanceled) {
+          return null;
+        }
+        throw err;
+      } finally {
+        await activator.postPurge();
+      }
+
+      onProgress(75, "Post purge events");
+      await api.emitAndAwait("did-purge", profile.id);
     }, true)
       .then(() => null)
       .finally(() => {
         api.dismissNotification(notificationId);
       }),
-  ));
+  );
 }

@@ -742,7 +742,7 @@ function manageGameUndiscovered(
     });
 }
 
-function manageGame(api: IExtensionApi, gameId: string): PromiseBB<void> {
+function manageGame(api: IExtensionApi, gameId: string): PromiseLike<void> {
   const state: IState = api.store.getState();
   const discoveredGames = state.settings.gameMode?.discovered || {};
   const profiles = state.persistent.profiles || {};
@@ -870,7 +870,12 @@ function unmanageGame(
             ),
           )
           .then(() => PromiseBB.resolve())
-          .catch(UserCanceled, () => PromiseBB.resolve())
+          .catch((err) => {
+            if (err instanceof UserCanceled) {
+              return PromiseBB.resolve();
+            }
+            throw err;
+          })
           .catch((err) => {
             const isSetupError =
               err instanceof NoDeployment || err instanceof TemporaryError;

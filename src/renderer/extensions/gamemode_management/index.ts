@@ -1,6 +1,7 @@
 import type * as Redux from "redux";
 
 import { mdiGamepadSquare } from "@mdi/js";
+import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
 import PromiseBB from "bluebird";
 import { clipboard } from "electron";
 import * as fsExtra from "fs-extra";
@@ -24,13 +25,13 @@ import type { IDiscoveryResult } from "./types/IDiscoveryResult";
 import type { IGameStored } from "./types/IGameStored";
 import type { IModType } from "./types/IModType";
 
-import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
 import { showDialog } from "../../actions/notifications";
 import { setDialogVisible } from "../../actions/session";
 import LazyComponent from "../../controls/LazyComponent";
 import OptionsFilter, {
   type ISelectOption,
 } from "../../controls/table/OptionsFilter";
+import { log } from "../../logging";
 import ReduxProp from "../../ReduxProp";
 import { COMPANY_ID, NEXUSMODS_EXT_ID } from "../../util/constants";
 import {
@@ -42,7 +43,6 @@ import {
 import * as fs from "../../util/fs";
 import GameStoreHelper from "../../util/GameStoreHelper";
 import local from "../../util/local";
-import { log } from "../../util/log";
 import { showError } from "../../util/message";
 import opn from "../../util/opn";
 import { activeGameId, activeProfile } from "../../util/selectors";
@@ -175,8 +175,7 @@ function refreshGameInfo(
 
   return PromiseBB.map(providersToQuery, (prov) => {
     const expires = now + prov.expireMS;
-    return prov
-      .query({ ...game, ...gameDiscovery })
+    return Promise.resolve(prov.query({ ...game, ...gameDiscovery }))
       .then((details) => {
         const receivedKeys = Object.keys(details);
         const values = receivedKeys
@@ -208,7 +207,7 @@ function refreshGameInfo(
       .catch((err) => {
         log("error", "failed to retrieve game info", {
           provider: prov.id,
-          error: err.message,
+          error: getErrorMessageOrDefault(err),
         });
       });
   }).then(() => undefined);

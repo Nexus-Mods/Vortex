@@ -14,11 +14,11 @@ import { TemporaryError, UserCanceled } from "../../../util/CustomErrors";
 import { showError } from "../../../util/message";
 import { activeGameId } from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
+import { getErrorCode, unknownToError } from "@vortex/shared";
 
 import type { IDeploymentMethod } from "../types/IDeploymentMethod";
 import { NoDeployment } from "../util/exceptions";
 
-import PromiseBB from "bluebird";
 import * as React from "react";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
@@ -40,7 +40,7 @@ interface IActionProps {
     title: string,
     content: IDialogContent,
     actions: DialogActions,
-  ) => PromiseBB<IDialogResult>;
+  ) => Promise<IDialogResult>;
   onSetConfirmPurge: (enabled: boolean) => void;
   onShowWarning: (
     message: string,
@@ -76,11 +76,11 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
   private activate = () => {
     const { confirmPurge, onShowError } = this.props;
     const prom =
-      confirmPurge !== false ? this.confirmPurge() : PromiseBB.resolve();
+      confirmPurge !== false ? this.confirmPurge() : Promise.resolve();
     prom
       .then(
         () =>
-          new PromiseBB((resolve, reject) => {
+          new Promise<void>((resolve, reject) => {
             this.context.api.events.emit("purge-mods", false, (err) => {
               if (err !== null) {
                 reject(err);
@@ -96,46 +96,51 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
             });
           }),
       )
-      .catch(UserCanceled, () => null)
-      .catch(TemporaryError, (err) =>
-        onShowError(
-          "Failed to purge mods, please try again",
-          err.message,
-          false,
-        ),
-      )
-      .catch(NoDeployment, () => {
-        onShowError(
-          "You need to select a deployment method in settings",
-          undefined,
-          false,
-        );
-      })
       .catch((err) => {
         if (err instanceof UserCanceled) {
           // not sure how we'd get here, UserCanceled is caught further up!
-          return PromiseBB.resolve();
+          return;
+        }
+        if (err instanceof TemporaryError) {
+          onShowError(
+            "Failed to purge mods, please try again",
+            err.message,
+            false,
+          );
+          return;
+        }
+        if (err instanceof NoDeployment) {
+          onShowError(
+            "You need to select a deployment method in settings",
+            undefined,
+            false,
+          );
+          return;
         }
 
-        if (err.code === undefined && err.errno !== undefined) {
+        const errCode = getErrorCode(err);
+        if (errCode === null && (err as {errno?: number}).errno !== undefined) {
           // unresolved windows error code
           onShowError(
             "Failed to purge mods",
             {
               error: err,
-              ErrorCode: err.errno,
+              ErrorCode: (err as {errno?: number}).errno,
             },
             true,
           );
         } else {
-          const isFSErr = ["ENOTFOUND", "ENOENT", "EMFILE"].includes(err.code);
+          const isFSErr = ["ENOTFOUND", "ENOENT", "EMFILE"].includes(errCode);
           if (isFSErr) {
-            err.message =
+            const converted = unknownToError(err);
+            converted.message =
               "A filesystem error prevented purging some files. " +
               "please try purging again.\n" +
-              err.message;
+              converted.message;
+            onShowError("Failed to purge mods", converted, !isFSErr);
+          } else {
+            onShowError("Failed to purge mods", err, !isFSErr);
           }
-          onShowError("Failed to purge mods", err, !isFSErr);
         }
       });
   };
@@ -159,7 +164,7 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
     );
   };
 
-  private confirmPurge(): PromiseBB<void> {
+  private confirmPurge(): Promise<void> {
     const { onSetConfirmPurge, onShowDialog } = this.props;
     return onShowDialog(
       "question",
@@ -178,12 +183,12 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
       [{ label: "Cancel" }, { label: "Continue" }],
     ).then((result) => {
       if (result.action === "Cancel") {
-        return PromiseBB.reject(new UserCanceled());
+        return Promise.reject(new UserCanceled());
       } else {
         if (result.input.confirm_purge) {
           onSetConfirmPurge(false);
         }
-        return PromiseBB.resolve();
+        return Promise.resolve();
       }
     });
   }
@@ -215,7 +220,8 @@ function mapDispatchToProps(
     onShowError: (message: string, details?: string, allowReport?: boolean) =>
       showError(dispatch, message, details, { allowReport }),
     onShowDialog: (type, title, content, dialogActions) =>
-      dispatch(showDialog(type, title, content, dialogActions)),
+      // showDialog thunk returns Bluebird — see comment in notifications.ts
+      Promise.resolve(dispatch(showDialog(type, title, content, dialogActions))),
     onSetConfirmPurge: (enabled: boolean) => dispatch(setConfirmPurge(enabled)),
     onShowWarning: (
       message: string,
