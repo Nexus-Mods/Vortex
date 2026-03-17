@@ -1282,7 +1282,14 @@ async function triggerVoteNotification(
       type: "info",
       message: revInfo.collection.name,
       title: "Did the Collection work for you?",
-      noDismiss: true,
+      onDismiss: () => {
+        api.events.emit(
+          "analytics-track-click-event",
+          "Notifications",
+          "Success rating - Dismiss",
+        );
+        resolve();
+      },
       actions: [
         {
           title: "Yes",
@@ -1310,18 +1317,6 @@ async function triggerVoteNotification(
             dismiss();
           },
         },
-        {
-          icon: "close",
-          action: (dismiss) => {
-            api.events.emit(
-              "analytics-track-click-event",
-              "Notifications",
-              "Success rating - Dismiss",
-            );
-            resolve();
-            dismiss();
-          },
-        } as any,
       ],
     });
   });

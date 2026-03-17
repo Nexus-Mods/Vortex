@@ -6,7 +6,6 @@ import {
   MIN_COLLECTION_NAME_LENGTH,
   MOD_TYPE,
   NAMESPACE,
-  NEXUS_BASE_GAMES_URL,
   NEXUS_BASE_URL,
 } from "../../constants";
 import InfoCache from "../../util/InfoCache";
@@ -25,6 +24,7 @@ import { Trans } from "react-i18next";
 import { connect } from "react-redux";
 import Select from "react-select";
 import {
+  actions,
   ComponentEx,
   EmptyPlaceholder,
   Icon,
@@ -581,17 +581,14 @@ class StartPage extends ComponentEx<IProps, IComponentState> {
   };
 
   private openCollections = () => {
-    const { game } = this.props;
     this.context.api.events.emit(
       "analytics-track-click-event",
       "Collections",
       "Discover more",
     );
-    util
-      .opn(
-        `${NEXUS_BASE_GAMES_URL}/${(util as any).nexusGameId(game)}/collections`,
-      )
-      .catch(() => null);
+    this.context.api.store?.dispatch(
+      actions.setOpenMainPage("Browse Nexus Mods", false),
+    );
   };
 
   private openMyCollectionsPage = () => {

@@ -146,7 +146,7 @@ try {
   // nop
 }
 
-process.env.Path = process.env.Path + path.delimiter + __dirname;
+process.env.Path = process.env.Path + path.delimiter + import.meta.dirname;
 
 let application: Application;
 

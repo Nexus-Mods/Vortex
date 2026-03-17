@@ -19,8 +19,8 @@ import * as path from "node:path";
 import { type DuckDBConnection, DuckDBInstance, type DuckDBType } from "@duckdb/node-api";
 
 // Import the parser from source
-import { parseAllQueries } from "../src/main/store/queryParser";
-import type { ParsedQuery, ParsedQueryParam } from "../src/main/store/queryParser";
+import { parseAllQueries } from "../src/main/src/store/queryParser";
+import type { ParsedQuery, ParsedQueryParam } from "../src/main/src/store/queryParser";
 
 const QUERIES_DIR = path.resolve(__dirname, "..", "src", "queries");
 const OUTPUT_FILE = path.resolve(

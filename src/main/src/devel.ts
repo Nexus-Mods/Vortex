@@ -26,7 +26,12 @@ export async function installDevelExtensions(): Promise<void> {
     type ExtensionRef = { id: string; electron: string };
     type InstallFn = (
       ref: ExtensionRef | string | Array<ExtensionRef | string>,
-      options?: { forceDownload?: boolean; loadExtensionOptions?: Record<string, unknown> } | boolean,
+      options?:
+        | {
+            forceDownload?: boolean;
+            loadExtensionOptions?: Record<string, unknown>;
+          }
+        | boolean,
     ) => Promise<string>;
     await (install as unknown as InstallFn)(REACT_DEVELOPER_TOOLS, options);
     await (install as unknown as InstallFn)(REDUX_DEVTOOLS, options);

@@ -14,7 +14,6 @@
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "devDependencies": {
-    "@types/cytoscape": "catalog:",
     "@types/js-yaml": "catalog:",
     "@types/react": "catalog:",
     "@types/react-bootstrap": "catalog:",

@@ -166,4 +166,11 @@ export interface INotification {
    * id of the process that triggered this action
    */
   process?: string;
+
+  /**
+   * callback invoked when the notification is dismissed (via the dismiss button
+   * or programmatically). Useful when the caller needs to perform cleanup or
+   * resolve a promise on dismiss.
+   */
+  onDismiss?: () => void;
 }
