@@ -17,7 +17,6 @@
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-bootstrap": "catalog:",
-    "@types/react-dnd": "catalog:",
     "@types/react-dom": "catalog:",
     "@types/redux": "catalog:",
     "@types/redux-thunk": "catalog:",

@@ -15,7 +15,6 @@
   "devDependencies": {
     "@types/bluebird": "catalog:",
     "@types/i18next": "catalog:",
-    "@types/immutability-helper": "catalog:",
     "@types/react": "catalog:",
     "@types/react-bootstrap": "catalog:",
     "@types/react-dom": "catalog:",
