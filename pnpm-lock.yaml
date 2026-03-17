@@ -3758,9 +3758,30 @@ importers:
 
   packages/vortex-api:
     dependencies:
-      big.js:
+      '@types/bluebird':
         specifier: 'catalog:'
-        version: 5.2.2
+        version: 3.5.20
+      '@types/immutability-helper':
+        specifier: 'catalog:'
+        version: 2.6.3
+      '@types/react':
+        specifier: '16'
+        version: 16.14.66
+      '@types/react-bootstrap':
+        specifier: 'catalog:'
+        version: 0.32.37
+      '@types/react-dom':
+        specifier: '16'
+        version: 16.9.25(@types/react@16.14.66)
+      '@types/react-redux':
+        specifier: 'catalog:'
+        version: 7.1.34
+      '@types/redux':
+        specifier: 'catalog:'
+        version: 3.6.0
+      '@types/redux-thunk':
+        specifier: 'catalog:'
+        version: 2.1.0(redux@4.2.1)
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
@@ -3770,9 +3791,6 @@ importers:
       immutability-helper:
         specifier: 'catalog:'
         version: 3.1.1
-      lodash:
-        specifier: 'catalog:'
-        version: 4.17.23
       minimatch:
         specifier: 'catalog:'
         version: 3.1.3
@@ -3809,9 +3827,6 @@ importers:
       semver:
         specifier: 'catalog:'
         version: 7.7.4
-      shortid:
-        specifier: 'catalog:'
-        version: 2.2.17
       string-template:
         specifier: 'catalog:'
         version: 1.0.0
