@@ -7643,7 +7643,7 @@ class InstallManager {
     }
   }
 
-  private installModAsync(
+  private async installModAsync(
     requirement: IModReference,
     api: IExtensionApi,
     downloadId: string,
@@ -7653,46 +7653,45 @@ class InstallManager {
     silent?: boolean,
     sourceModId?: string,
   ): Promise<string> {
-    return new Promise<string>(async (resolve, reject) => {
-      const state = api.store.getState();
-      const download: IDownload = state.persistent.downloads.files[downloadId];
-      if (download === undefined) {
-        return reject(new NotFound(renderModReference(requirement)));
+    const state = api.store.getState();
+    const download: IDownload = state.persistent.downloads.files[downloadId];
+    if (download === undefined) {
+      return Promise.reject(new NotFound(renderModReference(requirement)));
+    }
+    const downloadGame: string[] = getDownloadGames(download);
+
+    // Handle race condition: downloads may still be in Nexus domain ID folder while
+    // installation expects internal ID folder. Try converted path first, fall back to original.
+    const games = knownGames(state);
+    const convertedGameId = convertGameIdReverse(games, downloadGame[0]);
+    const pathGameId = convertedGameId || downloadGame[0];
+
+    let fullPath: string = path.join(
+      downloadPathForGame(state, pathGameId),
+      download.localPath,
+    );
+
+    // If converted path doesn't exist and we have a different original ID, try original path
+    if (convertedGameId && convertedGameId !== downloadGame[0]) {
+      try {
+        await fs.statAsync(fullPath).catch(async () => {
+          const originalPath = path.join(
+            downloadPathForGame(state, downloadGame[0]),
+            download.localPath,
+          );
+          try {
+            await fs.statAsync(originalPath);
+            fullPath = originalPath;
+          } catch {
+            // Keep converted path if neither exists
+          }
+        });
+      } catch {
+        // Continue with converted path if check fails
       }
-      const downloadGame: string[] = getDownloadGames(download);
+    }
 
-      // Handle race condition: downloads may still be in Nexus domain ID folder while
-      // installation expects internal ID folder. Try converted path first, fall back to original.
-      const games = knownGames(state);
-      const convertedGameId = convertGameIdReverse(games, downloadGame[0]);
-      const pathGameId = convertedGameId || downloadGame[0];
-
-      let fullPath: string = path.join(
-        downloadPathForGame(state, pathGameId),
-        download.localPath,
-      );
-
-      // If converted path doesn't exist and we have a different original ID, try original path
-      if (convertedGameId && convertedGameId !== downloadGame[0]) {
-        try {
-          // Check if file exists at converted path
-          await fs.statAsync(fullPath).catch(async () => {
-            // File doesn't exist at converted path, try original Nexus domain ID path
-            const originalPath = path.join(
-              downloadPathForGame(state, downloadGame[0]),
-              download.localPath,
-            );
-            try {
-              await fs.statAsync(originalPath);
-              fullPath = originalPath; // Use original path if it exists
-            } catch (originalErr) {
-              // Keep converted path if neither exists
-            }
-          });
-        } catch (err) {
-          // Continue with converted path if check fails
-        }
-      }
+    return new Promise<string>((resolve, reject) => {
       this.install(
         downloadId,
         fullPath,
