@@ -1,3 +1,5 @@
+import type { Locale } from "date-fns";
+
 import {
   af,
   arSA as ar_sa,

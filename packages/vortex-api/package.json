@@ -19,7 +19,24 @@
     "bin"
   ],
   "scripts": {
-    "build": "pnpm rimraf ./lib && node ./build.mjs"
+    "build": "pnpm rimraf ./lib && node ./build.mjs && pnpm run check",
+    "check": "pnpm tsc -p tsconfig.lib.json"
+  },
+  "devDependencies": {
+    "@nexusmods/nexus-api": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@types/redux": "catalog:",
+    "@vortex/shared": "workspace:",
+    "date-fns": "catalog:",
+    "electron": "catalog:",
+    "i18next": "catalog:",
+    "modmeta-db": "catalog:",
+    "node-7z": "catalog:",
+    "re-reselect": "catalog:",
+    "react": "catalog:",
+    "redux": "catalog:",
+    "reselect": "catalog:"
   },
   "peerDependencies": {
     "@types/bluebird": "catalog:",
