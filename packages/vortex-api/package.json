@@ -20,5 +20,28 @@
   ],
   "scripts": {
     "build": "pnpm rimraf ./lib && node ./build.mjs"
+  },
+  "peerDependencies": {
+    "big.js": "catalog:",
+    "bluebird": "catalog:",
+    "fs-extra": "catalog:",
+    "immutability-helper": "catalog:",
+    "lodash": "catalog:",
+    "minimatch": "catalog:",
+    "react": "catalog:",
+    "react-bootstrap": "catalog:",
+    "react-dom": "catalog:",
+    "react-i18next": "catalog:",
+    "react-redux": "catalog:",
+    "react-select": "catalog:",
+    "redux": "catalog:",
+    "redux-act": "catalog:",
+    "redux-thunk": "catalog:",
+    "relaxed-json": "catalog:",
+    "semver": "catalog:",
+    "shortid": "catalog:",
+    "string-template": "catalog:",
+    "uuid": "catalog:",
+    "xml2js": "catalog:"
   }
 }

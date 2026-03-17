@@ -3756,7 +3756,71 @@ importers:
         specifier: workspace:*
         version: link:../../packages/vortex-api
 
-  packages/vortex-api: {}
+  packages/vortex-api:
+    dependencies:
+      big.js:
+        specifier: 'catalog:'
+        version: 5.2.2
+      bluebird:
+        specifier: 'catalog:'
+        version: 3.7.2
+      fs-extra:
+        specifier: 'catalog:'
+        version: 9.1.0
+      immutability-helper:
+        specifier: 'catalog:'
+        version: 3.1.1
+      lodash:
+        specifier: 'catalog:'
+        version: 4.17.23
+      minimatch:
+        specifier: 'catalog:'
+        version: 3.1.3
+      react:
+        specifier: 'catalog:'
+        version: 16.14.0
+      react-bootstrap:
+        specifier: 'catalog:'
+        version: 0.33.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+      react-dom:
+        specifier: 'catalog:'
+        version: 16.14.0(react@16.14.0)
+      react-i18next:
+        specifier: 'catalog:'
+        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+      react-redux:
+        specifier: 'catalog:'
+        version: 7.2.9(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+      react-select:
+        specifier: 'catalog:'
+        version: 1.3.0(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+      redux:
+        specifier: 'catalog:'
+        version: 4.2.1
+      redux-act:
+        specifier: 'catalog:'
+        version: 1.8.0
+      redux-thunk:
+        specifier: 'catalog:'
+        version: 2.4.2(redux@4.2.1)
+      relaxed-json:
+        specifier: 'catalog:'
+        version: 1.0.3
+      semver:
+        specifier: 'catalog:'
+        version: 7.7.4
+      shortid:
+        specifier: 'catalog:'
+        version: 2.2.17
+      string-template:
+        specifier: 'catalog:'
+        version: 1.0.0
+      uuid:
+        specifier: 'catalog:'
+        version: 3.4.0
+      xml2js:
+        specifier: 'catalog:'
+        version: 0.5.0
 
   src/main:
     dependencies:
