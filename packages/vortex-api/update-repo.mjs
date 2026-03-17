@@ -99,8 +99,6 @@ packageJson.devDependencies = devDependenciesToSync;
 
 writeFileSync(API_PACKAGE, JSON.stringify(packageJson, null, 2) + "\n");
 
-process.exit(0);
-
 console.log("Staging changes...");
 run("git add -A", DEST_DIR);
 
