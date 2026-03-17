@@ -18,7 +18,7 @@ Vortex depends on native Node modules which require [node-gyp](https://github.co
 - Windows: VS 2022 Build Tools, follow [node-gyp documentation](https://github.com/nodejs/node-gyp?tab=readme-ov-file#on-windows) for installation instructions
 - Linux: make and GCC (package `build-essentails` on Debian/Ubuntu and `base-devel` on Arch Linux)
 
-Starting with Python 3.12 you also need to install the `setuptools` packages. Verify your version by running `python3 --version` and install the package through `pip` or your systems package manager.
+Starting with Python 3.12 you also need to install the `setuptools` packages. Verify your version by running `python3 --version` and install the package through `pip` or your system's package manager.
 
 ## Setup
 
@@ -37,4 +37,11 @@ Starting with Python 3.12 you also need to install the `setuptools` packages. Ve
 ## Packaging
 
 1) `pnpm run package:nosign`
+
+## Further Reading
+
+- [Debugging](./docs/DEBUGGING-GUIDE.md)
+- [Flatpak](./docs/flatpak-maintenance.md)
+- [Docker Dev Containers](./docker)
+- [Nix](./flake.nix)
 
