@@ -25,6 +25,6 @@
     "strictFunctionTypes": false,
     "strictNullChecks": false,
     "strictPropertyInitialization": false,
-    "skipLibCheck": false
+    "skipLibCheck": true
   }
 }
