@@ -3756,7 +3756,99 @@ importers:
         specifier: workspace:*
         version: link:../../packages/vortex-api
 
-  packages/vortex-api: {}
+  packages/vortex-api:
+    dependencies:
+      '@types/bluebird':
+        specifier: 'catalog:'
+        version: 3.5.20
+      bluebird:
+        specifier: 'catalog:'
+        version: 3.7.2
+      fs-extra:
+        specifier: 'catalog:'
+        version: 9.1.0
+      immutability-helper:
+        specifier: 'catalog:'
+        version: 3.1.1
+      minimatch:
+        specifier: 'catalog:'
+        version: 3.1.3
+      react-bootstrap:
+        specifier: 'catalog:'
+        version: 0.33.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+      react-dom:
+        specifier: 'catalog:'
+        version: 16.14.0(react@16.14.0)
+      react-i18next:
+        specifier: 'catalog:'
+        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+      react-redux:
+        specifier: 'catalog:'
+        version: 7.2.9(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+      react-select:
+        specifier: 'catalog:'
+        version: 1.3.0(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+      redux-act:
+        specifier: 'catalog:'
+        version: 1.8.0
+      redux-thunk:
+        specifier: 'catalog:'
+        version: 2.4.2(redux@4.2.1)
+      relaxed-json:
+        specifier: 'catalog:'
+        version: 1.0.3
+      semver:
+        specifier: 'catalog:'
+        version: 7.7.4
+      string-template:
+        specifier: 'catalog:'
+        version: 1.0.0
+      uuid:
+        specifier: 'catalog:'
+        version: 3.4.0
+      xml2js:
+        specifier: 'catalog:'
+        version: 0.5.0
+    devDependencies:
+      '@nexusmods/nexus-api':
+        specifier: 'catalog:'
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4192c0c9f34306c2167e258dd4fef773af406161
+      '@types/react':
+        specifier: '16'
+        version: 16.14.66
+      '@types/react-dom':
+        specifier: '16'
+        version: 16.9.25(@types/react@16.14.66)
+      '@types/redux':
+        specifier: 'catalog:'
+        version: 3.6.0
+      date-fns:
+        specifier: 'catalog:'
+        version: 2.30.0
+      electron:
+        specifier: 'catalog:'
+        version: 39.8.0
+      i18next:
+        specifier: 'catalog:'
+        version: 19.9.2
+      modmeta-db:
+        specifier: 'catalog:'
+        version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@10.0.1)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
+      node-7z:
+        specifier: 'catalog:'
+        version: https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/3d98d2ba40906f8afa9de52d2ceb6a44f7143198
+      re-reselect:
+        specifier: 'catalog:'
+        version: 4.0.1(reselect@4.1.8)
+      react:
+        specifier: 'catalog:'
+        version: 16.14.0
+      redux:
+        specifier: 'catalog:'
+        version: 4.2.1
+      reselect:
+        specifier: 'catalog:'
+        version: 4.1.8
 
   src/main:
     dependencies:

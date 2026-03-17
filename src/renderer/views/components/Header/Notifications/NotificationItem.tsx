@@ -107,6 +107,15 @@ export const NotificationItem: FC<INotificationItemProps> = ({
       <div className="relative flex grow flex-col gap-y-2">
         <NotificationContent lines={lines} title={translatedTitle} />
 
+        {type === "activity" && notification.progress !== undefined && (
+          <div className="h-1 w-full overflow-hidden rounded-full bg-surface-high">
+            <div
+              className="h-full rounded-full bg-info-strong transition-[width] duration-300"
+              style={{ width: `${notification.progress}%` }}
+            />
+          </div>
+        )}
+
         <NotificationActions
           actions={actions}
           collapsed={collapsed}
