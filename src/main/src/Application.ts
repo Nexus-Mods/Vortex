@@ -24,7 +24,8 @@ import { readFile, writeFile, rm, stat } from "node:fs/promises";
 import path from "node:path";
 import permissions from "permissions";
 import * as semver from "semver";
-import { v4 as uuidv4 } from "uuid";
+import uuidpkg from "uuid";
+const { v4: uuidv4 } = uuidpkg;
 import winapi from "winapi-bindings";
 
 import { parseCommandline, updateStartupSettings } from "./cli";
@@ -763,9 +764,7 @@ class Application {
 
       const leaves = this.flattenState(hiveData, []);
       await Promise.all(
-        leaves.map(({ key, value }) =>
-          sub.setItem(key, JSON.stringify(value)),
-        ),
+        leaves.map(({ key, value }) => sub.setItem(key, JSON.stringify(value))),
       );
     }
 
