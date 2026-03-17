@@ -3822,9 +3822,6 @@ importers:
       '@types/redux':
         specifier: 'catalog:'
         version: 3.6.0
-      '@vortex/shared':
-        specifier: 'workspace:'
-        version: link:../../src/shared
       date-fns:
         specifier: 'catalog:'
         version: 2.30.0
