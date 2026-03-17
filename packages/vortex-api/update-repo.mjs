@@ -84,10 +84,22 @@ for (const dependencyName in peerDependencies) {
     peerDependencies[dependencyName].version;
 }
 
-const packageJson = JSON.parse(readFileSync(API_PACKAGE));
+const rawDevDependencies = dependencyJson[0].devDependencies ?? {};
+const devDependenciesToSync = {};
+
+for (const depName in rawDevDependencies) {
+  if (rawDevDependencies[depName].version !== "workspace:*") {
+    devDependenciesToSync[depName] = rawDevDependencies[depName].version;
+  }
+}
+
+const packageJson = JSON.parse(readFileSync(API_PACKAGE, "utf-8"));
 packageJson.peerDependencies = peerDependenciesToSync;
+packageJson.devDependencies = devDependenciesToSync;
 
 writeFileSync(API_PACKAGE, JSON.stringify(packageJson, null, 2) + "\n");
+
+process.exit(0);
 
 console.log("Staging changes...");
 run("git add -A", DEST_DIR);
