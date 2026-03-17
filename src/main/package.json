@@ -7,8 +7,8 @@
   "main": "out/main.js",
   "scripts": {
     "start": "pnpm cross-env NODE_ENV=development pnpm electron .",
-    "build": "pnpm cross-env NODE_ENV=development pnpm webpack --config ./webpack.config.cjs",
-    "dist": "pnpm cross-env NODE_ENV=production pnpm webpack --config ./webpack.config.cjs",
+    "build": "pnpm cross-env NODE_ENV=development node ./build.mjs",
+    "dist": "pnpm cross-env NODE_ENV=production node ./build.mjs",
     "typecheck": "pnpm tsc",
     "package": "node ./prepare-dist-package.mjs && pnpm install --dir=./dist && pnpm electron-builder --config ./electron-builder.config.json --config.win.forceCodeSigning=true --config.win.sign=./sign.js --publish never",
     "package:nosign": "node ./prepare-dist-package.mjs && pnpm install --dir=./dist && pnpm electron-builder --config ./electron-builder.config.json --publish never",
