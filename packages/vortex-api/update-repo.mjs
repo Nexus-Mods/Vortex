@@ -1,14 +1,20 @@
 import { execSync } from "node:child_process";
-import { existsSync, cpSync, rmSync } from "node:fs";
+import {
+  existsSync,
+  cpSync,
+  rmSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import * as path from "node:path";
 
 const API_REPO = process.env.API_REPO;
 const MAIN_REPO = process.env.MAIN_REPO;
 const PUSH_BRANCH = process.env.PUSH_BRANCH;
 
-const DEST_DIR = path.resolve(import.meta.dirname, "api-repo");
+const DEST_DIR = path.join(import.meta.dirname, "api-repo");
 
-const LIB_SRC = path.resolve(import.meta.dirname, "lib");
+const LIB_SRC = path.join(import.meta.dirname, "lib");
 const LIB_DEST = path.join(DEST_DIR, "lib");
 
 const API_EXTRACTOR_SRC = path.resolve(
@@ -19,6 +25,8 @@ const API_EXTRACTOR_SRC = path.resolve(
   "vortex.api.md",
 );
 const API_EXTRACTOR_DEST = path.join(DEST_DIR, "etc", "api.md");
+
+const API_PACKAGE = path.join(DEST_DIR, "package.json");
 
 const run = (cmd, cwd) => execSync(cmd, { stdio: "inherit", cwd });
 
@@ -63,6 +71,33 @@ if (existsSync(LIB_DEST)) {
 console.log(`Copying ${LIB_SRC} to ${LIB_DEST}...`);
 cpSync(LIB_SRC, LIB_DEST, { recursive: true });
 console.log("Copy complete.");
+
+const dependencyJson = JSON.parse(
+  execSync("pnpm -F vortex-api list --json").toString().trim(),
+);
+
+const peerDependencies = dependencyJson[0].dependencies;
+const peerDependenciesToSync = {};
+
+for (const dependencyName in peerDependencies) {
+  peerDependenciesToSync[dependencyName] =
+    peerDependencies[dependencyName].version;
+}
+
+const rawDevDependencies = dependencyJson[0].devDependencies ?? {};
+const devDependenciesToSync = {};
+
+for (const depName in rawDevDependencies) {
+  if (rawDevDependencies[depName].version !== "workspace:*") {
+    devDependenciesToSync[depName] = rawDevDependencies[depName].version;
+  }
+}
+
+const packageJson = JSON.parse(readFileSync(API_PACKAGE, "utf-8"));
+packageJson.peerDependencies = peerDependenciesToSync;
+packageJson.devDependencies = devDependenciesToSync;
+
+writeFileSync(API_PACKAGE, JSON.stringify(packageJson, null, 2) + "\n");
 
 console.log("Staging changes...");
 run("git add -A", DEST_DIR);

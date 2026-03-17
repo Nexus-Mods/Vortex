@@ -948,6 +948,20 @@ export class EmptyPlaceholder extends React_2.PureComponent<IEmptyPlaceholderPro
 }
 
 // @public (undocumented)
+const enabledModCountForProfile: ParametricSelector<IState, string, number> & {
+    resultFunc: (res1: IModTable, res2: IProfile) => number;
+    dependencies: [ParametricSelector<IState, string, IModTable>, ParametricSelector<IState, string, IProfile>];
+    recomputations: () => number;
+    resetRecomputations: () => number;
+} & {
+    getMatchingSelector: (state: IState, props: string, ...args: any[]) => OutputParametricSelector<IState, string, number, (res1: IModTable, res2: IProfile) => number, [ParametricSelector<IState, string, IModTable>, ParametricSelector<IState, string, IProfile>]>;
+    removeMatchingSelector: (state: IState, props: string, ...args: any[]) => void;
+    clearCache: () => void;
+    cache: ICacheObject;
+    keySelector: ParametricKeySelector<IState, string>;
+};
+
+// @public (undocumented)
 function encodingFromBOM(buf: Buffer): {
     encoding: string;
     length: number;
@@ -1468,7 +1482,7 @@ function getVisibleWindow(win?: BrowserWindow | null): BrowserWindow | null;
 
 // Warning: (ae-forgotten-export) The symbol "AppPath" needs to be exported by the entry point api.d.ts
 //
-// @public
+// @public (undocumented)
 function getVortexPath(id: AppPath): string;
 
 // @public
@@ -4779,6 +4793,7 @@ declare namespace selectors {
         activeProfileId,
         nextProfileId,
         activeProfile,
+        enabledModCountForProfile,
         lastActiveProfileForGame,
         installPath,
         installPathForGame,
