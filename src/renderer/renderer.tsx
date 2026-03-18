@@ -110,8 +110,9 @@ import { reduxLogger } from "./store/reduxLogger";
 import { reduxSanity, type StateError } from "./store/reduxSanity";
 import StyleManager from "./StyleManager";
 import { createRendererTelemetryProvider } from "./telemetry/setup";
+import { GameEntryNotFound } from "./types/IGameStore";
 import { relaunch } from "./util/commandLine";
-import { UserCanceled } from "./util/CustomErrors";
+import { ProcessCanceled, UserCanceled } from "./util/CustomErrors";
 import { recordErrorSpan, setOutdated, terminate, toError } from "./util/errorHandling";
 import {} from "./util/extensionRequire";
 import { setTFunction } from "./util/fs";
@@ -205,7 +206,26 @@ function errorHandler(evt: any) {
     (evt.detail !== undefined ? evt.detail.reason : undefined) ||
     evt.message;
 
-  if (error instanceof UserCanceled) {
+  if (error instanceof UserCanceled || error instanceof ProcessCanceled) {
+    return;
+  }
+
+  if (error instanceof GameEntryNotFound) {
+    // We have error handling in the game store helper to cater
+    // for this specific error, but some community game extensions
+    // have floating `findByAppId` calls within their setup which
+    // is a complete separate chain that may not have catch block.
+    // The app shouldn't crash in such circumstances.
+    log("warn", "suppressing unhandled GameEntryNotFound", {
+      game: error.gameName,
+      store: error.storeName,
+    });
+
+    if (store !== undefined) {
+      showError(store.dispatch, "The game extension's discovery mechanism failed to find the game installation on your device", error, {
+        allowReport: false,
+      });
+    }
     return;
   }
 
