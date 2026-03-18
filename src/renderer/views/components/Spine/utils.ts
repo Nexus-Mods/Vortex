@@ -1,4 +1,3 @@
-import { net } from "electron";
 import { readFileSync } from "fs";
 import * as path from "path";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -75,29 +74,18 @@ const cachedImagePath = (gameId: string, ext: string = ".jpg"): string =>
   path.join(iconCacheDir(), `${gameId}${ext}`);
 
 /** Download a remote image and save it to the icon cache directory. */
-const downloadImage = (imageUrl: string, gameId: string): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const ext = path.extname(new URL(imageUrl).pathname) || ".jpg";
-    const request = net.request(imageUrl);
-    request.on("response", (response) => {
-      if (response.statusCode !== 200) {
-        reject(new Error(`HTTP ${response.statusCode}`));
-        return;
-      }
-      const chunks: Buffer[] = [];
-      response.on("data", (chunk: Buffer) => chunks.push(chunk));
-      response.on("end", () => {
-        const filePath = cachedImagePath(gameId, ext);
-        ensureDirWritableAsync(iconCacheDir())
-          .then(() => writeFileAsync(filePath, Buffer.concat(chunks)))
-          .then(() => resolve(url.pathToFileURL(filePath).href))
-          .catch(reject);
-      });
-      response.on("error", reject);
-    });
-    request.on("error", reject);
-    request.end();
-  });
+const downloadImage = async (imageUrl: string, gameId: string): Promise<string> => {
+  const response = await fetch(imageUrl);
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+  }
+  const ext = path.extname(new URL(imageUrl).pathname) || ".jpg";
+  const buffer = Buffer.from(await response.arrayBuffer());
+  const filePath = cachedImagePath(gameId, ext);
+  await ensureDirWritableAsync(iconCacheDir());
+  await writeFileAsync(filePath, buffer);
+  return url.pathToFileURL(filePath).href;
+};
 
 // ---------------------------------------------------------------------------
 // URL resolution
