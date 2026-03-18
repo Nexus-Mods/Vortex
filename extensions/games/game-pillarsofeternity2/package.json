@@ -1,17 +1,21 @@
 {
   "name": "game-pillarsofeternity2",
-  "version": "0.2.2",
-  "description": "Vortex support for Pillars Of Eternity 2: Deadfire",
-  "main": "./out/index.js",
-  "repository": "",
+  "version": "0.2.3",
+  "description": "Support for Pillars of Eternity 2: Deadfire",
+  "main": "dist/index.js",
   "scripts": {
-    "_assets": "copyfiles -u 1 -f assets/gameart.png src/stylesheet.scss dist",
+    "_assets": "copyfiles -u 1 -f ./assets/gameart.png src/stylesheet.scss dist",
     "_build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
-    "build": "pnpm run _build && node ../copy-extension.mjs out",
-    "dist": "pnpm run _build && node ../copy-extension.mjs dist"
+    "build": "pnpm run _build && node ../../copy-extension.mjs out",
+    "dist": "pnpm run _build && node ../../copy-extension.mjs dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
+  "type": "commonjs",
+  "private": true,
+  "config": {
+    "game": "Pillars of Eternity 2: Deadfire"
+  },
   "devDependencies": {
     "@types/bluebird": "catalog:",
     "@types/node": "catalog:",
