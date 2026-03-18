@@ -7,9 +7,8 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 
-import { setOpenMainPage } from "../../../actions";
 import {
   discovered as discoveredGamesSelector,
   knownGames as knownGamesSelector,
@@ -23,8 +22,7 @@ import { useSpineContext } from "./SpineContext";
 import { getGameImageUrl } from "./utils";
 
 export const Spine: FC = () => {
-  const dispatch = useDispatch();
-  const { selection, selectHome, selectGame } = useSpineContext();
+  const { selection, selectHome, selectGame, selectGlobalPage } = useSpineContext();
 
   const [canScrollUp, setCanScrollUp] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -34,21 +32,12 @@ export const Spine: FC = () => {
   const allProfiles = useSelector(profilesSelector);
   const mainPage = useSelector(mainPageSelector);
 
-  // Whether a standalone spine button (Downloads, Games) owns the current page,
-  // so the context buttons (Home / Game) should not appear active.
-  const isStandalonePageActive =
-    mainPage === "Downloads" ||
-    mainPage === "game-downloads" ||
-    mainPage === "Games";
 
   const handleGlobalPageClick = useCallback(
     (pageId: string) => {
-      // Global pages need Home to be selected first
-      selectHome();
-      // Then navigate to the specific page (overriding the default Dashboard page)
-      dispatch(setOpenMainPage(pageId, false));
+      selectGlobalPage(pageId);
     },
-    [selectHome, dispatch],
+    [selectGlobalPage],
   );
 
   const profileGameIds = useMemo(() => {
@@ -89,7 +78,7 @@ export const Spine: FC = () => {
       <SpineButton
         className="border-2"
         iconPath={mdiHome}
-        isActive={selection.type === "home" && !isStandalonePageActive}
+        isActive={selection.type === "home"}
         onClick={selectHome}
       />
 
@@ -108,8 +97,7 @@ export const Spine: FC = () => {
                 imageSrc={getGameImageUrl(game, discoveredGames[game.id])}
                 isActive={
                   selection.type === "game" &&
-                  selection.gameId === game.id &&
-                  !isStandalonePageActive
+                  selection.gameId === game.id
                 }
                 key={game.id}
                 store={discoveredGames[game.id]?.store}
