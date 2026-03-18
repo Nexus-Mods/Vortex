@@ -1,5 +1,3 @@
-import type { Action } from "redux";
-
 import React, {
   type FC,
   createContext,
@@ -9,6 +7,7 @@ import React, {
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -24,8 +23,6 @@ import {
   mainPage as mainPageSelector,
   profileById as profileByIdSelector,
 } from "../../../util/selectors";
-import { batchDispatch } from "../../../util/util";
-
 export type SpineSelection =
   | { type: "home" }
   | { type: "game"; gameId: string };
@@ -49,12 +46,18 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
   const activeProfileId = useSelector(activeProfileIdSelector);
   const activeGameId = useSelector(activeGameIdSelector);
 
+  // Tracks the gameId that was active when the user navigated to home.
+  // When non-null and matches activeGameId, we show home pages.
+  // When activeGameId changes externally (e.g., via extension or deep-link),
+  // the mismatch automatically switches back to game view - no effect needed.
+  const [homeForGameId, setHomeForGameId] = useState<string | null>(null);
+
   const selection: SpineSelection = useMemo(() => {
-    if (activeGameId !== undefined) {
+    if (activeGameId !== undefined && homeForGameId !== activeGameId) {
       return { type: "game", gameId: activeGameId };
     }
     return { type: "home" };
-  }, [activeGameId]);
+  }, [homeForGameId, activeGameId]);
 
   const isPageVisible = useCallback((page: IMainPage) => {
     try {
@@ -129,18 +132,16 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
   const selectHome = useCallback(() => {
     if (defaultHomePage === undefined) return;
     const targetPage = lastPageRef.current["home"] || defaultHomePage;
-    const actions: Action[] = [setOpenMainPage(targetPage, false)];
-    if (activeProfileId !== undefined) {
-      actions.push(setNextProfile(undefined));
-    }
-    batchDispatch(api.store, actions);
-  }, [activeProfileId, api.store, defaultHomePage]);
+    setHomeForGameId(activeGameId ?? null);
+    dispatch(setOpenMainPage(targetPage, false));
+  }, [activeGameId, defaultHomePage, dispatch]);
 
   const selectGame = useCallback(
     (gameId: string) => {
       if (defaultGamePage === undefined) return;
       const targetPage = lastPageRef.current[gameId] || defaultGamePage;
       const profileId = lastActiveProfile[gameId];
+      setHomeForGameId(null);
       if (
         profileId !== undefined &&
         profileId !== activeProfileId &&
@@ -161,17 +162,20 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
 
   const selectGlobalPage = useCallback(
     (pageId: string) => {
-      const actions: Action[] = [setOpenMainPage(pageId, false)];
-      if (activeProfileId !== undefined) {
-        actions.push(setNextProfile(undefined));
-      }
-      batchDispatch(api.store, actions);
+      setHomeForGameId(activeGameId ?? null);
+      dispatch(setOpenMainPage(pageId, false));
     },
-    [activeProfileId, api.store],
+    [activeGameId, dispatch],
   );
 
   const value = useMemo(
-    () => ({ selection, visiblePages, selectHome, selectGame, selectGlobalPage }),
+    () => ({
+      selection,
+      visiblePages,
+      selectHome,
+      selectGame,
+      selectGlobalPage,
+    }),
     [selection, visiblePages, selectHome, selectGame, selectGlobalPage],
   );
 
