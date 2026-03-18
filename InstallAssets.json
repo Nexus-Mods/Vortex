@@ -35,7 +35,7 @@
         "out",
         "dist"
       ],
-      "skipPaths": 2
+      "skipPaths": 3
     },
     {
       "srcPath": "src/renderer/src/splash.html",
@@ -44,7 +44,7 @@
         "out",
         "dist"
       ],
-      "skipPaths": 2
+      "skipPaths": 3
     },
     {
       "srcPath": "locales/*/*",
