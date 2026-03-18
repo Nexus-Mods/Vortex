@@ -1,5 +1,3 @@
-import type { Action } from "redux";
-
 import React, {
   type FC,
   createContext,
@@ -9,6 +7,7 @@ import React, {
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -24,7 +23,7 @@ import {
   mainPage as mainPageSelector,
   profileById as profileByIdSelector,
 } from "../../../util/selectors";
-import { batchDispatch } from "../../../util/util";
+type SpineSelectionType = "home" | "game";
 
 export type SpineSelection =
   | { type: "home" }
@@ -49,12 +48,18 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
   const activeProfileId = useSelector(activeProfileIdSelector);
   const activeGameId = useSelector(activeGameIdSelector);
 
+  // Selection is independent UI state — it does NOT drive profile changes.
+  // The profile/gamemode remains active even when viewing home pages.
+  const [selectionType, setSelectionType] = useState<SpineSelectionType>(
+    activeGameId !== undefined ? "game" : "home",
+  );
+
   const selection: SpineSelection = useMemo(() => {
-    if (activeGameId !== undefined) {
+    if (selectionType === "game" && activeGameId !== undefined) {
       return { type: "game", gameId: activeGameId };
     }
     return { type: "home" };
-  }, [activeGameId]);
+  }, [selectionType, activeGameId]);
 
   const isPageVisible = useCallback((page: IMainPage) => {
     try {
@@ -129,18 +134,16 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
   const selectHome = useCallback(() => {
     if (defaultHomePage === undefined) return;
     const targetPage = lastPageRef.current["home"] || defaultHomePage;
-    const actions: Action[] = [setOpenMainPage(targetPage, false)];
-    if (activeProfileId !== undefined) {
-      actions.push(setNextProfile(undefined));
-    }
-    batchDispatch(api.store, actions);
-  }, [activeProfileId, api.store, defaultHomePage]);
+    setSelectionType("home");
+    dispatch(setOpenMainPage(targetPage, false));
+  }, [defaultHomePage, dispatch]);
 
   const selectGame = useCallback(
     (gameId: string) => {
       if (defaultGamePage === undefined) return;
       const targetPage = lastPageRef.current[gameId] || defaultGamePage;
       const profileId = lastActiveProfile[gameId];
+      setSelectionType("game");
       if (
         profileId !== undefined &&
         profileId !== activeProfileId &&
@@ -161,13 +164,10 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
 
   const selectGlobalPage = useCallback(
     (pageId: string) => {
-      const actions: Action[] = [setOpenMainPage(pageId, false)];
-      if (activeProfileId !== undefined) {
-        actions.push(setNextProfile(undefined));
-      }
-      batchDispatch(api.store, actions);
+      setSelectionType("home");
+      dispatch(setOpenMainPage(pageId, false));
     },
-    [activeProfileId, api.store],
+    [dispatch],
   );
 
   const value = useMemo(

@@ -1810,7 +1810,15 @@ function once(api: types.IExtensionApi, collectionsCB: () => ICallbackMap) {
       localState.ownCollections = result[0] ?? [];
     });
 
-  api.events.on("gamemode-activated", updateOwnCollectionsCB);
+  const onGameModeChange = (gameMode: string) => {
+    if (driver.profile?.gameId && driver.profile.gameId !== gameMode) {
+      pauseCollection(api, driver.profile?.gameId, driver.collection?.id, false);
+    }
+
+    updateOwnCollectionsCB(gameMode);
+  };
+
+  api.events.on("gamemode-activated", onGameModeChange);
 
   api.onStateChange(["persistent", "nexus", "userInfo"], (prev, cur) => {
     const gameMode = selectors.activeGameId(api.getState());
