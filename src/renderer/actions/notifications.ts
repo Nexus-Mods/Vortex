@@ -82,6 +82,10 @@ const notificationActions = local<{ [id: string]: NotificationFunc[] }>(
   "notification-actions",
   {},
 );
+const notificationDismissHandlers = local<{ [id: string]: () => void }>(
+  "notification-dismiss-handlers",
+  {},
+);
 
 export function fireNotificationAction(
   notiId: string,
@@ -181,6 +185,10 @@ export function addNotification(notification: INotification) {
     notificationActions[noti.id] =
       noti.actions == null ? [] : noti.actions.map((action) => action.action);
 
+    if (noti.onDismiss !== undefined) {
+      notificationDismissHandlers[noti.id] = noti.onDismiss;
+    }
+
     const storeNoti: any = JSON.parse(JSON.stringify(noti));
     storeNoti.process = process.type;
     storeNoti.actions = (storeNoti.actions || []).map((action) => ({
@@ -204,9 +212,12 @@ export function addNotification(notification: INotification) {
 export function dismissNotification(id: string) {
   return (dispatch) =>
     new PromiseBB<void>((resolve, reject) => {
+      const onDismiss = notificationDismissHandlers[id];
       delete timers[id];
       delete notificationActions[id];
+      delete notificationDismissHandlers[id];
       dispatch(stopNotification(id));
+      onDismiss?.();
       resolve();
     });
 }
@@ -259,6 +270,9 @@ export function showDialog(
   inId?: string,
 ) {
   return (dispatch) => {
+    // Returns Bluebird for backwards compatibility with external extensions.
+    // Callers within mod_management wrap this in Promise.resolve() to get
+    // a native Promise. Migrate to native Promise when extensions are updated.
     return new PromiseBB<IDialogResult>((resolve, reject) => {
       const id = inId || shortid();
       const defaultAction = actions.find((iter) => iter.default === true);

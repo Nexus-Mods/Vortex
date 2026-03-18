@@ -1,7 +1,6 @@
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
 
-import PromiseBB from "bluebird";
 import * as path from "path";
 import * as React from "react";
 import {
@@ -69,7 +68,7 @@ import {
   isPathValid,
   isReservedDirectory,
 } from "../../../util/util";
-import { getErrorMessageOrDefault } from "@vortex/shared";
+import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import {
   currentGame,
   currentGameDiscovery,
@@ -116,7 +115,7 @@ interface IActionProps {
     title: string,
     content: IDialogContent,
     actions: DialogActions,
-  ) => PromiseBB<IDialogResult>;
+  ) => Promise<IDialogResult>;
   onShowError: (
     message: string,
     details: string | Error | any,
@@ -372,13 +371,13 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             //  error cases pop up.
             log("warn", "Transfer failed - missing source directory", err);
             return ["ENOENT", "UNKNOWN"].indexOf(err.code) !== -1
-              ? PromiseBB.resolve(undefined)
-              : PromiseBB.reject(err);
+              ? Promise.resolve(undefined)
+              : Promise.reject(err);
           })
           .then((stats) => {
             const queryReset =
               stats !== undefined
-                ? PromiseBB.resolve(false)
+                ? Promise.resolve(false)
                 : onShowDialog(
                     "question",
                     "Missing staging folder",
@@ -399,8 +398,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                     [{ label: "Cancel" }, { label: "Reinitialize" }],
                   ).then((result) =>
                     result.action === "Cancel"
-                      ? PromiseBB.reject(new UserCanceled())
-                      : PromiseBB.resolve(true),
+                      ? Promise.reject(new UserCanceled())
+                      : Promise.resolve(true),
                   );
 
             return queryReset.then((didReset) => {
@@ -420,9 +419,12 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                     this.nextState.progressFile = path.basename(from);
                   }
                 },
-              ).catch({ code: "ENOENT" }, (err) =>
-                didReset ? PromiseBB.resolve() : PromiseBB.reject(err),
-              );
+              ).catch((err) => {
+                if (err?.code === "ENOENT") {
+                  return didReset ? Promise.resolve() : Promise.reject(err);
+                }
+                throw err;
+              });
             });
           }),
       {},
@@ -570,8 +572,13 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const doPurge = () =>
       oldInstallPath !== newInstallPath
         ? // ignore if there is no deployment method because in that case there is nothing to purge
-          this.purgeActivation().catch(NoDeployment, () => PromiseBB.resolve())
-        : PromiseBB.resolve();
+          this.purgeActivation().catch((err) => {
+            if (err instanceof NoDeployment) {
+              return;
+            }
+            throw err;
+          })
+        : Promise.resolve();
 
     this.nextState.progress = 0;
     this.nextState.busy = t("Calculating required disk space");
@@ -588,60 +595,69 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           this.nextState.busy = t("Moving mod staging folder");
           return this.transferPath();
         } else {
-          return PromiseBB.resolve();
+          return Promise.resolve();
         }
       })
       .then(() => {
         onSetTransfer(gameMode, undefined);
         onSetInstallPath(gameMode, this.state.installPath);
       })
-      .catch(TemporaryError, (err) => {
-        onShowError("Failed to move directories, please try again", err, false);
-      })
-      .catch(UserCanceled, () => null)
-      .catch(CleanupFailedException, (err) => {
-        deleteOldDestination = false;
-        onSetTransfer(gameMode, undefined);
-        onSetInstallPath(gameMode, this.state.installPath);
-        onShowDialog(
-          "info",
-          "Cleanup failed",
-          {
-            bbcode: t(
-              "The mods staging folder has been copied [b]successfully[/b] to " +
-                "your chosen destination!<br />" +
-                "Clean-up of the old staging folder has been cancelled.<br /><br />" +
-                "Old staging folder: [url]{{thePath}}[/url]",
-              { replace: { thePath: oldInstallPath } },
-            ),
-          },
-          [{ label: "Close", action: () => PromiseBB.resolve() }],
-        );
-
-        if (!(err.errorObject instanceof UserCanceled)) {
-          this.context.api.showErrorNotification(
-            "Clean-up failed",
-            err.errorObject,
-          );
-        }
-      })
-      .catch(InsufficientDiskSpace, () => notEnoughDiskSpace())
-      .catch(UnsupportedOperatingSystem, () =>
-        onShowError(
-          "Unsupported operating system",
-          "This functionality is currently unavailable for your operating system!",
-          false,
-        ),
-      )
-      .catch(NotFound, () =>
-        onShowError(
-          "Invalid destination",
-          "The destination partition you selected is invalid - please choose a different " +
-            "destination",
-          false,
-        ),
-      )
       .catch((err) => {
+        if (err instanceof TemporaryError) {
+          onShowError("Failed to move directories, please try again", err, false);
+          return;
+        }
+        if (err instanceof UserCanceled) {
+          return;
+        }
+        if (err instanceof CleanupFailedException) {
+          deleteOldDestination = false;
+          onSetTransfer(gameMode, undefined);
+          onSetInstallPath(gameMode, this.state.installPath);
+          onShowDialog(
+            "info",
+            "Cleanup failed",
+            {
+              bbcode: t(
+                "The mods staging folder has been copied [b]successfully[/b] to " +
+                  "your chosen destination!<br />" +
+                  "Clean-up of the old staging folder has been cancelled.<br /><br />" +
+                  "Old staging folder: [url]{{thePath}}[/url]",
+                { replace: { thePath: oldInstallPath } },
+              ),
+            },
+            [{ label: "Close", action: () => Promise.resolve() }],
+          );
+
+          if (!(err.errorObject instanceof UserCanceled)) {
+            this.context.api.showErrorNotification(
+              "Clean-up failed",
+              err.errorObject,
+            );
+          }
+          return;
+        }
+        if (err instanceof InsufficientDiskSpace) {
+          notEnoughDiskSpace();
+          return;
+        }
+        if (err instanceof UnsupportedOperatingSystem) {
+          onShowError(
+            "Unsupported operating system",
+            "This functionality is currently unavailable for your operating system!",
+            false,
+          );
+          return;
+        }
+        if (err instanceof NotFound) {
+          onShowError(
+            "Invalid destination",
+            "The destination partition you selected is invalid - please choose a different " +
+              "destination",
+            false,
+          );
+          return;
+        }
         if (err !== null) {
           if (err.code === "EPERM") {
             onShowError(
@@ -713,11 +729,11 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               onSetTransfer(gameMode, undefined);
               this.nextState.busy = undefined;
             })
-            .catch(UserCanceled, () => {
-              this.nextState.busy = undefined;
-            })
             .catch((err) => {
               this.nextState.busy = undefined;
+              if (err instanceof UserCanceled) {
+                return;
+              }
               if (err.code === "ENOENT") {
                 // Folder is already gone, that's fine.
                 onSetTransfer(gameMode, undefined);
@@ -739,7 +755,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   };
 
   private checkTargetEmpty(oldInstallPath: string, newInstallPath: string) {
-    let queue = PromiseBB.resolve();
+    let queue = Promise.resolve();
     let fileCount = 0;
     let hasStagingTag: boolean = false;
     let tagInstance: string;
@@ -771,7 +787,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     // ensure the destination directories are empty
     return queue.then(
       () =>
-        new PromiseBB((resolve, reject) => {
+        new Promise((resolve, reject) => {
           if (fileCount > 0 && tagInstance !== this.props.instanceId) {
             if (tagInstance !== undefined) {
               return this.props.onShowDialog(
@@ -793,7 +809,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                     action: () => reject(new UserCanceled()),
                     default: true,
                   },
-                  { label: "Continue", action: () => resolve() },
+                  { label: "Continue", action: () => resolve(undefined) },
                 ],
               );
             } else {
@@ -813,13 +829,13 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               );
             }
           } else {
-            resolve();
+            resolve(undefined);
           }
         }),
     );
   }
 
-  private purgeActivation(): PromiseBB<void> {
+  private purgeActivation(): Promise<void> {
     const { currentActivator } = this.props;
     const { supportedActivators } = this.state;
 
@@ -830,24 +846,24 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       supportedActivators.length === 0 ||
       currentActivator === undefined
     ) {
-      return PromiseBB.resolve();
+      return Promise.resolve();
     }
 
-    return new PromiseBB((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       this.context.api.events.emit("purge-mods", true, (err) =>
         err !== null ? reject(err) : resolve(),
       );
     });
   }
 
-  private querySwitch(newActivatorId: string): PromiseBB<void> {
+  private querySwitch(newActivatorId: string): Promise<void> {
     const { activators } = this.props;
     const activator = activators.find((iter) => iter.id === newActivatorId);
     if (activator === undefined || activator.onSelected === undefined) {
-      return PromiseBB.resolve();
+      return Promise.resolve();
     }
 
-    return activator.onSelected(this.context.api);
+    return Promise.resolve(activator.onSelected(this.context.api));
   }
 
   private applyActivator = () => {
@@ -857,8 +873,11 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     this.nextState.changingActivator = true;
     this.querySwitch(currentActivator)
       .then(() => this.purgeActivation())
-      .catch(NoDeployment, () =>
-        this.context.api
+      .catch((err) => {
+        if (!(err instanceof NoDeployment)) {
+          throw err;
+        }
+        return this.context.api
           .showDialog(
             "error",
             "Purge not possible",
@@ -873,10 +892,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           )
           .then((result) =>
             result.action === "Cancel"
-              ? PromiseBB.reject(new UserCanceled())
-              : PromiseBB.resolve(),
-          ),
-      )
+              ? Promise.reject(new UserCanceled())
+              : Promise.resolve(),
+          );
+      })
       .then(() => {
         onSetActivator(gameMode, currentActivator);
       })
@@ -886,22 +905,26 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       .then(() => {
         this.context.api.store.dispatch(setDeploymentNecessary(gameMode, true));
       })
-      .catch(UserCanceled, () => null)
-      .catch(TemporaryError, (err) => {
-        onShowError(
-          "Failed to purge previous deployment, please try again",
-          err,
-          false,
-        );
-      })
       .catch((err) => {
-        if (err.code === undefined && err.errno !== undefined) {
+        if (err instanceof UserCanceled) {
+          return;
+        }
+        if (err instanceof TemporaryError) {
+          onShowError(
+            "Failed to purge previous deployment, please try again",
+            err,
+            false,
+          );
+          return;
+        }
+        const errCode = getErrorCode(err);
+        if (errCode === null && (err as {errno?: number}).errno !== undefined) {
           // unresolved windows error code
           onShowError(
             "Failed to purge previous deployment",
             {
               error: err,
-              ErrorCode: err.errno,
+              ErrorCode: (err as {errno?: number}).errno,
             },
             true,
           );
@@ -909,7 +932,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           onShowError(
             "Failed to purge previous deployment",
             err,
-            !["ENOTFOUND", "ENOENT"].includes(err.code),
+            !["ENOTFOUND", "ENOENT"].includes(errCode),
           );
         }
       });
@@ -1094,34 +1117,39 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     }
   };
 
-  private onApply = () => {
-    getNormalizeFunc(
+  private onApply = async () => {
+    const normalize = await getNormalizeFunc(
       getInstallPath(this.state.installPath, this.props.gameMode),
-    ).then((normalize) => this.applyPaths(normalize));
+    );
+    this.applyPaths(normalize);
   };
 
-  private suggestPath = () => {
+  private suggestPath = async () => {
     const { modPaths, onShowError, suggestInstallPathDirectory } = this.props;
-    PromiseBB.join(
-      fs.statAsync(modPaths[""]),
-      window.api.app
-        .getPath("userData")
-        .then((userDataPath) => fs.statAsync(userDataPath)),
-    )
-      .then((stats) => {
-        let suggestion: string;
-        if (stats[0].dev === stats[1].dev) {
-          suggestion = path.join("{USERDATA}", "{game}", "mods");
-        } else {
-          const volume = winapi.GetVolumePathName(modPaths[""]);
-          suggestion = path.join(volume, suggestInstallPathDirectory, "{game}");
-        }
-        this.changePath(suggestion);
-      })
-      .catch(UserCanceled, () => null)
-      .catch((err) => {
-        onShowError("Failed to suggest path", err);
-      });
+    try {
+      // stat the volume root rather than the full mod path — the mod directory
+      // may not exist yet (e.g. first-time setup), but we only need the device id
+      const [modPathStats, userDataStats] = await Promise.all([
+        fs.statAsync(path.parse(modPaths[""]).root),
+        window.api.app
+          .getPath("userData")
+          .then((userDataPath) => fs.statAsync(userDataPath)),
+      ]);
+
+      let suggestion: string;
+      if (modPathStats.dev === userDataStats.dev) {
+        suggestion = path.join("{USERDATA}", "{game}", "mods");
+      } else {
+        const volume = winapi.GetVolumePathName(modPaths[""]);
+        suggestion = path.join(volume, suggestInstallPathDirectory, "{game}");
+      }
+      this.changePath(suggestion);
+    } catch (err) {
+      if (err instanceof UserCanceled) {
+        return;
+      }
+      onShowError("Failed to suggest path", err);
+    }
   };
 
   private changePathEvt = (evt) => {
@@ -1295,7 +1323,8 @@ function mapDispatchToProps(
       dispatch(setInstallPathMode(installPathMode));
     },
     onShowDialog: (type, title, content, actions) =>
-      dispatch(showDialog(type, title, content, actions)),
+      // showDialog thunk returns Bluebird — see comment in notifications.ts
+      Promise.resolve(dispatch(showDialog(type, title, content, actions))),
     onShowError: (
       message: string,
       details: string | Error,

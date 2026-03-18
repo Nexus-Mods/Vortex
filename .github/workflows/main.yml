@@ -62,3 +62,58 @@ jobs:
 
       - name: Test
         run: pnpm run test
+
+      - name: Upload API artifacts
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push' && runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-artifacts
+          retention-days: 1
+          path: |
+            etc/vortex.api.md
+            packages/vortex-api/lib
+
+  api:
+    needs: build
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: "recursive"
+
+      - name: Download API artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: api-artifacts
+
+      - name: Install volta, Node.js
+        uses: volta-cli/action@v4
+
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: Nexus-Mods
+          repositories: vortex-api
+
+      - name: Get GitHub App User ID
+        id: get-user-id
+        run: echo "user-id=$(gh api "/users/${{ steps.app-token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+
+      - name: Configure Git
+        run: |
+          git config --global user.name '${{ steps.app-token.outputs.app-slug }}[bot]'
+          git config --global user.email '${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com'
+
+      - name: Run update script
+        env:
+          MAIN_REPO: Nexus-Mods/Vortex
+          API_REPO: https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/Nexus-Mods/vortex-api.git
+          PUSH_BRANCH: master
+        run: node packages/vortex-api/update-repo.mjs

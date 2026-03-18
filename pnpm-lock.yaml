@@ -111,9 +111,6 @@ catalogs:
     '@types/copyfiles':
       specifier: ~2.4.4
       version: 2.4.4
-    '@types/cytoscape':
-      specifier: ^3.19.16
-      version: 3.31.0
     '@types/d3':
       specifier: ~7.4.3
       version: 7.4.3
@@ -144,9 +141,6 @@ catalogs:
     '@types/iconv-lite':
       specifier: ^0.0.1
       version: 0.0.1
-    '@types/immutability-helper':
-      specifier: ^2.0.15
-      version: 2.6.3
     '@types/jest':
       specifier: ^29.4.0
       version: 29.5.14
@@ -201,15 +195,9 @@ catalogs:
     '@types/react-datepicker':
       specifier: ^2.9.4
       version: 2.11.1
-    '@types/react-dnd':
-      specifier: ^3.0.2
-      version: 3.0.2
     '@types/react-faux-dom':
       specifier: ^4.1.1
       version: 4.1.8
-    '@types/react-i18next':
-      specifier: ^8.1.0
-      version: 8.1.0
     '@types/react-redux':
       specifier: ^7.1.9
       version: 7.1.34
@@ -231,9 +219,6 @@ catalogs:
     '@types/redux':
       specifier: ^3.6.0
       version: 3.6.0
-    '@types/redux-devtools':
-      specifier: ^3.0.47
-      version: 3.7.0
     '@types/redux-devtools-log-monitor':
       specifier: ^1.0.34
       version: 1.0.35
@@ -1336,9 +1321,6 @@ importers:
       '@types/react-bootstrap':
         specifier: 'catalog:'
         version: 0.32.37
-      '@types/react-dnd':
-        specifier: 'catalog:'
-        version: 3.0.2(@types/hoist-non-react-statics@3.3.7(@types/react@16.14.66))(@types/node@22.19.11)(@types/react@16.14.66)(react@16.14.0)
       '@types/react-dom':
         specifier: '16'
         version: 16.9.25(@types/react@16.14.66)
@@ -1423,9 +1405,6 @@ importers:
       '@types/iconv-lite':
         specifier: 'catalog:'
         version: 0.0.1
-      '@types/immutability-helper':
-        specifier: 'catalog:'
-        version: 2.6.3
       '@types/react':
         specifier: '16'
         version: 16.14.66
@@ -1540,9 +1519,6 @@ importers:
 
   extensions/gamebryo-plugin-indexlock:
     devDependencies:
-      '@types/immutability-helper':
-        specifier: 'catalog:'
-        version: 2.6.3
       '@types/react':
         specifier: '16'
         version: 16.14.66
@@ -1597,9 +1573,6 @@ importers:
 
   extensions/gamebryo-plugin-management:
     devDependencies:
-      '@types/cytoscape':
-        specifier: 'catalog:'
-        version: 3.31.0
       '@types/js-yaml':
         specifier: 'catalog:'
         version: 4.0.9
@@ -1727,9 +1700,6 @@ importers:
 
   extensions/gamebryo-savegame-management:
     devDependencies:
-      '@types/immutability-helper':
-        specifier: 'catalog:'
-        version: 2.6.3
       '@types/react':
         specifier: '16'
         version: 16.14.66
@@ -3170,9 +3140,6 @@ importers:
       '@types/bluebird':
         specifier: 'catalog:'
         version: 3.5.20
-      '@types/immutability-helper':
-        specifier: 'catalog:'
-        version: 2.6.3
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
@@ -3215,9 +3182,6 @@ importers:
 
   extensions/meta-editor:
     devDependencies:
-      '@types/immutability-helper':
-        specifier: 'catalog:'
-        version: 2.6.3
       '@types/node':
         specifier: 'catalog:'
         version: 22.19.11
@@ -3278,9 +3242,6 @@ importers:
       '@types/i18next':
         specifier: 'catalog:'
         version: 12.1.0
-      '@types/immutability-helper':
-        specifier: 'catalog:'
-        version: 2.6.3
       '@types/react':
         specifier: '16'
         version: 16.14.66
@@ -3395,9 +3356,6 @@ importers:
 
   extensions/mod-dependency-manager:
     devDependencies:
-      '@types/immutability-helper':
-        specifier: 'catalog:'
-        version: 2.6.3
       '@types/lodash':
         specifier: 'catalog:'
         version: 4.17.24
@@ -3766,9 +3724,6 @@ importers:
       '@types/i18next':
         specifier: 'catalog:'
         version: 12.1.0
-      '@types/immutability-helper':
-        specifier: 'catalog:'
-        version: 2.6.3
       '@types/react':
         specifier: '16'
         version: 16.14.66
@@ -3883,9 +3838,6 @@ importers:
 
   extensions/nmm-import-tool:
     devDependencies:
-      '@types/immutability-helper':
-        specifier: 'catalog:'
-        version: 2.6.3
       '@types/node':
         specifier: 'catalog:'
         version: 22.19.11
@@ -4320,7 +4272,99 @@ importers:
         specifier: workspace:*
         version: link:../../packages/vortex-api
 
-  packages/vortex-api: {}
+  packages/vortex-api:
+    dependencies:
+      '@types/bluebird':
+        specifier: 'catalog:'
+        version: 3.5.20
+      bluebird:
+        specifier: 'catalog:'
+        version: 3.7.2
+      fs-extra:
+        specifier: 'catalog:'
+        version: 9.1.0
+      immutability-helper:
+        specifier: 'catalog:'
+        version: 3.1.1
+      minimatch:
+        specifier: 'catalog:'
+        version: 3.1.3
+      react-bootstrap:
+        specifier: 'catalog:'
+        version: 0.33.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+      react-dom:
+        specifier: 'catalog:'
+        version: 16.14.0(react@16.14.0)
+      react-i18next:
+        specifier: 'catalog:'
+        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+      react-redux:
+        specifier: 'catalog:'
+        version: 7.2.9(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+      react-select:
+        specifier: 'catalog:'
+        version: 1.3.0(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+      redux-act:
+        specifier: 'catalog:'
+        version: 1.8.0
+      redux-thunk:
+        specifier: 'catalog:'
+        version: 2.4.2(redux@4.2.1)
+      relaxed-json:
+        specifier: 'catalog:'
+        version: 1.0.3
+      semver:
+        specifier: 'catalog:'
+        version: 7.7.4
+      string-template:
+        specifier: 'catalog:'
+        version: 1.0.0
+      uuid:
+        specifier: 'catalog:'
+        version: 3.4.0
+      xml2js:
+        specifier: 'catalog:'
+        version: 0.5.0
+    devDependencies:
+      '@nexusmods/nexus-api':
+        specifier: 'catalog:'
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4192c0c9f34306c2167e258dd4fef773af406161
+      '@types/react':
+        specifier: '16'
+        version: 16.14.66
+      '@types/react-dom':
+        specifier: '16'
+        version: 16.9.25(@types/react@16.14.66)
+      '@types/redux':
+        specifier: 'catalog:'
+        version: 3.6.0
+      date-fns:
+        specifier: 'catalog:'
+        version: 2.30.0
+      electron:
+        specifier: 'catalog:'
+        version: 39.8.0
+      i18next:
+        specifier: 'catalog:'
+        version: 19.9.2
+      modmeta-db:
+        specifier: 'catalog:'
+        version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@10.0.1)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
+      node-7z:
+        specifier: 'catalog:'
+        version: https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/3d98d2ba40906f8afa9de52d2ceb6a44f7143198
+      re-reselect:
+        specifier: 'catalog:'
+        version: 4.0.1(reselect@4.1.8)
+      react:
+        specifier: 'catalog:'
+        version: 16.14.0
+      redux:
+        specifier: 'catalog:'
+        version: 4.2.1
+      reselect:
+        specifier: 'catalog:'
+        version: 4.1.8
 
   src/main:
     dependencies:
@@ -4965,9 +5009,6 @@ importers:
       '@types/redux':
         specifier: 'catalog:'
         version: 3.6.0
-      '@types/redux-devtools':
-        specifier: 'catalog:'
-        version: 3.7.0(react-redux@7.2.9(react-dom@16.14.0(react@16.14.0))(react@16.14.0))(react@16.14.0)(redux@4.2.1)
       '@types/redux-devtools-log-monitor':
         specifier: 'catalog:'
         version: 1.0.35
@@ -7222,10 +7263,6 @@ packages:
   '@types/css-font-loading-module@0.0.7':
     resolution: {integrity: sha512-nl09VhutdjINdWyXxHWN/w9zlNCfr60JUqJbd24YXUuCwgeL0TpFSdElCwb6cxfB6ybE19Gjj4g0jsgkXxKv1Q==}
 
-  '@types/cytoscape@3.31.0':
-    resolution: {integrity: sha512-EXHOHxqQjGxLDEh5cP4te6J0bi7LbCzmZkzsR6f703igUac8UGMdEohMyU3GHAayCTZrLQOMnaE/lqB2Ekh8Ww==}
-    deprecated: This is a stub types definition. cytoscape provides its own type definitions, so you do not need this installed.
-
   '@types/d3-array@3.2.2':
     resolution: {integrity: sha512-hOLWVbm7uRza0BYXpIIW5pxfrKe0W+D5lrFiAEYR+pb6w3N2SwSMaJbXdUfSEv+dT4MfHBLtn5js0LAWaO6otw==}
 
@@ -7506,10 +7543,6 @@ packages:
   '@types/react-datepicker@2.11.1':
     resolution: {integrity: sha512-MVz1vcv3ButoDfKPUA40lSxPBGsT1f05zqvUsP4t5997TX9C4btlYyREJ+h9sRw9R10EpokkS08GFK4XI+Q0Qg==}
 
-  '@types/react-dnd@3.0.2':
-    resolution: {integrity: sha512-Z1BqHYGFtfSPfWs+kgX4b6wQmwwtqq4/pLo4zdO9xcDUB1ZQP8iWTAYNf3EJ2f0WiVQpSLN8UytP+ILzZHDLYw==}
-    deprecated: This is a stub types definition. react-dnd provides its own type definitions, so you don't need this installed.
-
   '@types/react-dom@16.9.25':
     resolution: {integrity: sha512-ZK//eAPhwft9Ul2/Zj+6O11YR6L4JX0J2sVeBC9Ft7x7HFN7xk7yUV/zDxqV6rjvqgl6r8Dq7oQImxtyf/Mzcw==}
     peerDependencies:
@@ -7517,10 +7550,6 @@ packages:
 
   '@types/react-faux-dom@4.1.8':
     resolution: {integrity: sha512-jP9uLEjIaqXptKrUckGm5JKSNMpiHzFLbO0Bb06WSYOOvhj6EsEFc2iLu3dNyYT1oKwyLIMCCsyrjrbxC+C7Qw==}
-
-  '@types/react-i18next@8.1.0':
-    resolution: {integrity: sha512-d4xhcjX5b3roNMObRNMfb1HinHQlQLPo8xlDj60dnHeeAw2bBymR2cy/l1giJpHzo/ZFgSvgVUvIWr4kCrenCg==}
-    deprecated: This is a stub types definition. react-i18next provides its own type definitions, so you do not need this installed.
 
   '@types/react-redux@7.1.34':
     resolution: {integrity: sha512-GdFaVjEbYv4Fthm2ZLvj1VSCedV7TqE5y1kNwnjSdBOTXuRSgowux6J8TAct15T3CKBr63UMk+2CO7ilRhyrAQ==}
@@ -7555,10 +7584,6 @@ packages:
 
   '@types/redux-devtools-log-monitor@1.0.35':
     resolution: {integrity: sha512-HjtupMQ6uoJbbyxqwr2FZl5Qp0uI7YFH3tc5/Mg7ZiOKO2ortTVpV34OKzNoHgs1qaB1bOc7SXsKZFfX65UB4g==}
-
-  '@types/redux-devtools@3.7.0':
-    resolution: {integrity: sha512-LqGeLonnRkk90yqayE5ZGdGaiwHVFd5W241/fx2WYCagW7qWO2dfqVI0ta7lWLtMB+Idwvdr3B6MPFLd8UaC0g==}
-    deprecated: This is a stub types definition. redux-devtools provides its own type definitions, so you do not need this installed.
 
   '@types/redux-thunk@2.1.0':
     resolution: {integrity: sha512-8M+kcrnZQYO3A40d8a1lieBFur/ab8EXHqa2dGMQqsmBaVCbNp3gd8ed/HuSjLoLA63ov/trXaXWlkiKVF4VUw==}
@@ -12016,20 +12041,6 @@ packages:
     peerDependencies:
       redux: '>=1.0.0'
 
-  redux-devtools-instrument@1.10.0:
-    resolution: {integrity: sha512-X8JRBCzX2ADSMp+iiV7YQ8uoTNyEm0VPFPd4T854coz6lvRiBrFSqAr9YAS2n8Kzxx8CJQotR0QF9wsMM+3DvA==}
-    deprecated: Package moved to @redux-devtools/instrument.
-    peerDependencies:
-      redux: ^3.4.0 || ^4.0.0
-
-  redux-devtools@3.7.0:
-    resolution: {integrity: sha512-Lnx3UX7mnJij2Xs+RicPK1GyKkbuodrCKtfYmJsN603wC0mc99W//xCAskGVNmRhIXg4e57m2k1CyX0kVzCsBg==}
-    deprecated: Package moved to @redux-devtools/core.
-    peerDependencies:
-      react: ^0.14.9 || ^15.3.0 || ^16.0.0
-      react-redux: ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0
-      redux: ^3.5.2 || ^4.0.0
-
   redux-freeze@0.1.7:
     resolution: {integrity: sha512-L+S9pvWW4u7BRqM2nmeOR/ZTU5k/3pWd+0Vq/oH4vliObKzMLBvENkzmicL/eb44gO3C/OX0fov6NHIlDGw8Zg==}
 
@@ -15635,10 +15646,6 @@ snapshots:
 
   '@types/css-font-loading-module@0.0.7': {}
 
-  '@types/cytoscape@3.31.0':
-    dependencies:
-      cytoscape: 3.33.1
-
   '@types/d3-array@3.2.2': {}
 
   '@types/d3-axis@3.0.6':
@@ -15966,15 +15973,6 @@ snapshots:
       date-fns: 2.30.0
       popper.js: 1.16.1
 
-  '@types/react-dnd@3.0.2(@types/hoist-non-react-statics@3.3.7(@types/react@16.14.66))(@types/node@22.19.11)(@types/react@16.14.66)(react@16.14.0)':
-    dependencies:
-      react-dnd: 14.0.5(@types/hoist-non-react-statics@3.3.7(@types/react@16.14.66))(@types/node@22.19.11)(@types/react@16.14.66)(react@16.14.0)
-    transitivePeerDependencies:
-      - '@types/hoist-non-react-statics'
-      - '@types/node'
-      - '@types/react'
-      - react
-
   '@types/react-dom@16.9.25(@types/react@16.14.66)':
     dependencies:
       '@types/react': 16.14.66
@@ -16044,14 +16042,6 @@ snapshots:
     dependencies:
       '@types/base16': 1.0.5
       '@types/react': 16.14.66
-
-  '@types/redux-devtools@3.7.0(react-redux@7.2.9(react-dom@16.14.0(react@16.14.0))(react@16.14.0))(react@16.14.0)(redux@4.2.1)':
-    dependencies:
-      redux-devtools: 3.7.0(react-redux@7.2.9(react-dom@16.14.0(react@16.14.0))(react@16.14.0))(react@16.14.0)(redux@4.2.1)
-    transitivePeerDependencies:
-      - react
-      - react-redux
-      - redux
 
   '@types/redux-thunk@2.1.0(redux@4.2.1)':
     dependencies:
@@ -21727,22 +21717,6 @@ snapshots:
   redux-batched-actions@0.5.0(redux@4.2.1):
     dependencies:
       redux: 4.2.1
-
-  redux-devtools-instrument@1.10.0(redux@4.2.1):
-    dependencies:
-      lodash: 4.17.23
-      redux: 4.2.1
-      symbol-observable: 1.2.0
-
-  redux-devtools@3.7.0(react-redux@7.2.9(react-dom@16.14.0(react@16.14.0))(react@16.14.0))(react@16.14.0)(redux@4.2.1):
-    dependencies:
-      '@types/prop-types': 15.7.15
-      lodash: 4.17.23
-      prop-types: 15.8.1
-      react: 16.14.0
-      react-redux: 7.2.9(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
-      redux: 4.2.1
-      redux-devtools-instrument: 1.10.0(redux@4.2.1)
 
   redux-freeze@0.1.7:
     dependencies:

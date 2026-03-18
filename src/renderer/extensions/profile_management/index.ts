@@ -18,22 +18,23 @@
 
 import type * as Redux from "redux";
 
+import { getErrorMessageOrDefault } from "@vortex/shared";
 import PromiseBB from "bluebird";
 import * as path from "path";
 import { generate as shortid } from "shortid";
 
 import type { IDialogResult } from "../../actions/notifications";
 import type {
+  IExtension,
+  IExtensionDownloadInfo,
+  IRegisteredExtension,
+} from "../../types/extensions";
+import type {
   IExtensionApi,
   IExtensionContext,
   ThunkStore,
 } from "../../types/IExtensionContext";
 import type { IGameStored, IState } from "../../types/IState";
-import type {
-  IExtension,
-  IExtensionDownloadInfo,
-  IRegisteredExtension,
-} from "../../types/extensions";
 import type { IProfile } from "./types/IProfile";
 import type { IProfileFeature } from "./types/IProfileFeature";
 
@@ -65,7 +66,6 @@ import {
 } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, truthy } from "../../util/util";
-
 import { readExtensions } from "../extension_manager/util";
 import {
   getGame,
@@ -101,7 +101,6 @@ import { CorruptActiveProfile } from "./types/Errors";
 import Connector from "./views/Connector";
 import ProfileView from "./views/ProfileView";
 import TransferDialog from "./views/TransferDialog";
-import { getErrorMessageOrDefault } from "@vortex/shared";
 
 const profileFiles: {
   [gameId: string]: Array<string | (() => PromiseLike<string[]>)>;
@@ -742,7 +741,7 @@ function manageGameUndiscovered(
     });
 }
 
-function manageGame(api: IExtensionApi, gameId: string): PromiseBB<void> {
+function manageGame(api: IExtensionApi, gameId: string): PromiseLike<void> {
   const state: IState = api.store.getState();
   const discoveredGames = state.settings.gameMode?.discovered || {};
   const profiles = state.persistent.profiles || {};
@@ -870,7 +869,12 @@ function unmanageGame(
             ),
           )
           .then(() => PromiseBB.resolve())
-          .catch(UserCanceled, () => PromiseBB.resolve())
+          .catch((err) => {
+            if (err instanceof UserCanceled) {
+              return PromiseBB.resolve();
+            }
+            throw err;
+          })
           .catch((err) => {
             const isSetupError =
               err instanceof NoDeployment || err instanceof TemporaryError;
@@ -948,7 +952,7 @@ function init(context: IExtensionContext): boolean {
   });
 
   context.registerMainPage("profile", "Profiles", ProfileView, {
-    priority: 35,
+    priority: 70,
     id: "game-profiles",
     hotkey: "P",
     group: "per-game",

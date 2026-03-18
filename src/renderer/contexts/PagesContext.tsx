@@ -18,7 +18,7 @@ import { GameSettings } from "../views/GameSettings";
 import { Settings } from "../views/Settings";
 
 const gameSettingsPage: IMainPage = {
-  priority: 200,
+  priority: 80,
   id: "game_settings",
   title: "Game preferences",
   group: "per-game",

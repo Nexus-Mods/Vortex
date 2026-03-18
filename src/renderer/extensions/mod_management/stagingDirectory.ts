@@ -1,4 +1,3 @@
-import Bluebird from "bluebird";
 import * as path from "path";
 import { generate as shortid } from "shortid";
 import type { IDialogResult } from "../../types/IDialog";
@@ -35,65 +34,56 @@ function writeStagingTag(api: IExtensionApi, tagPath: string, gameId: string) {
   return fs.writeFileAsync(tagPath, JSON.stringify(data), { encoding: "utf8" });
 }
 
-function validateStagingTag(
+async function validateStagingTag(
   api: IExtensionApi,
   tagPath: string,
-): Bluebird<void> {
-  return fs
-    .readFileAsync(tagPath, { encoding: "utf8" })
-    .then((data) => {
-      const state: IState = api.store.getState();
-      const tag = JSON.parse(data);
-      if (tag.instance !== state.app.instanceId) {
-        return api
-          .showDialog(
-            "question",
-            "Confirm",
-            {
-              text:
-                "This is a staging folder but it appears to belong to a different Vortex " +
-                'instance. If you\'re using Vortex in shared and "regular" mode, do not use ' +
-                "the same staging folder for both!",
-            },
-            [{ label: "Cancel" }, { label: "Continue" }],
-          )
-          .then((result) =>
-            result.action === "Cancel"
-              ? Bluebird.reject(new UserCanceled())
-              : Bluebird.resolve(),
-          );
+): Promise<void> {
+  try {
+    const data = await fs.readFileAsync(tagPath, { encoding: "utf8" });
+    const state: IState = api.store.getState();
+    const tag = JSON.parse(data);
+    if (tag.instance !== state.app.instanceId) {
+      const result = await api.showDialog(
+        "question",
+        "Confirm",
+        {
+          text:
+            "This is a staging folder but it appears to belong to a different Vortex " +
+            'instance. If you\'re using Vortex in shared and "regular" mode, do not use ' +
+            "the same staging folder for both!",
+        },
+        [{ label: "Cancel" }, { label: "Continue" }],
+      );
+      if (result.action === "Cancel") {
+        return Promise.reject(new UserCanceled());
       }
-      return Bluebird.resolve();
-    })
-    .catch((err) => {
-      if (err instanceof UserCanceled) {
-        return Bluebird.reject(err);
-      }
-      return api
-        .showDialog(
-          "question",
-          "Confirm",
-          {
-            text:
-              "This directory is not marked as a staging folder. " +
-              "Are you *sure* it's the right directory?",
-          },
-          [{ label: "Cancel" }, { label: "I'm sure" }],
-        )
-        .then((result) =>
-          result.action === "Cancel"
-            ? Bluebird.reject(new UserCanceled())
-            : Bluebird.resolve(),
-        );
-    });
+    }
+  } catch (err) {
+    if (err instanceof UserCanceled) {
+      return Promise.reject(err);
+    }
+    const result = await api.showDialog(
+      "question",
+      "Confirm",
+      {
+        text:
+          "This directory is not marked as a staging folder. " +
+          "Are you *sure* it's the right directory?",
+      },
+      [{ label: "Cancel" }, { label: "I'm sure" }],
+    );
+    if (result.action === "Cancel") {
+      return Promise.reject(new UserCanceled());
+    }
+  }
 }
 
-function queryStagingFolderInvalid(
+async function queryStagingFolderInvalid(
   api: IExtensionApi,
   err: Error,
   dirExists: boolean,
   instPath: string,
-): Bluebird<IDialogResult> {
+): Promise<IDialogResult> {
   if (dirExists) {
     // dir exists but not tagged
     return api.showDialog(
@@ -192,7 +182,7 @@ async function ensureStagingDirectoryImpl(
       // profile_management/index.ts as soon as we start managing the game for the
       // first time but we probably still don't want to report an error if we have
       // no meta information about any mods anyway
-      await fs.ensureDirWritableAsync(instPath, () => Bluebird.resolve());
+      await fs.ensureDirWritableAsync(instPath, () => Promise.resolve());
     } else {
       const err = unknownToError(unknownError);
       const dialogResult = await queryStagingFolderInvalid(
@@ -212,11 +202,8 @@ async function ensureStagingDirectoryImpl(
           message: "Purging mods",
         });
         try {
-          // Wrap Bluebird promise to ensure proper error handling with try/catch
-          await new Promise<void>((resolve, reject) => {
-            fallbackPurge(api, gameId).then(resolve).catch(reject);
-          });
-          await fs.ensureDirWritableAsync(instPath, () => Bluebird.resolve());
+          await fallbackPurge(api, gameId);
+          await fs.ensureDirWritableAsync(instPath, () => Promise.resolve());
         } catch (purgeErr) {
           if (!partitionExists) {
             // Can't purge a non-existing partition!
@@ -276,6 +263,6 @@ export function ensureStagingDirectory(
   api: IExtensionApi,
   instPath?: string,
   gameId?: string,
-): Bluebird<string> {
-  return Bluebird.resolve(ensureStagingDirectoryImpl(api, instPath, gameId));
+): Promise<string> {
+  return Promise.resolve(ensureStagingDirectoryImpl(api, instPath, gameId));
 }

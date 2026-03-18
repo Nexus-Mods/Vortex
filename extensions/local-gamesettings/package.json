@@ -13,7 +13,6 @@
   "license": "GPL-3.0",
   "devDependencies": {
     "@types/bluebird": "catalog:",
-    "@types/immutability-helper": "catalog:",
     "bluebird": "catalog:",
     "copyfiles": "catalog:",
     "i18next": "catalog:",

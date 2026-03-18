@@ -133,6 +133,11 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
       {},
     );
 
+    // Dashlets not in the layout (e.g. just re-enabled) are appended after
+    // all existing items so Packery places them in the first available gap
+    // instead of overlapping with items that already claimed their old position.
+    const layoutSize = layout.length;
+
     const sorted = dashlets
       .filter(
         (dash: IDashletProps) =>
@@ -142,8 +147,8 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
       )
       .sort(
         (lhs: IDashletProps, rhs: IDashletProps) =>
-          (layoutMap[lhs.title] || lhs.position) -
-          (layoutMap[rhs.title] || rhs.position),
+          (layoutMap[lhs.title] ?? layoutSize + lhs.position) -
+          (layoutMap[rhs.title] ?? layoutSize + rhs.position),
       );
     const { fixed, dynamic } = sorted.reduce(
       (prev, dash) => {

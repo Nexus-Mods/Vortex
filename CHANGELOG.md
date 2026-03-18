@@ -2,7 +2,65 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [2.0.0-alpha.1](https://github.com/Nexus-Mods/Vortex/releases/tag/2.0.0-alpha.1) - 2026-03-16
+
+_Internal alpha release for testing — not for public distribution._
+
+### Added
+
+- New Healthcheck feature which notifies you of common issues in your mod setup, such as missing dependencies, and suggests fixes to keep your modded game stable and functioning properly.  
+- New UI with 1-click game switching and cleaner visual style. Added a toggle in Settings to revert to the legacy UI.  
+- Design system restructure with component demos and documentation ([#20669](https://github.com/Nexus-Mods/Vortex/pull/20669))  
+- Vortex API package is now synced and tagged for every Vortex release. See [Nexus-Mods/vortex-api](https://github.com/Nexus-Mods/vortex-api/) for more information.  
+- Better crash and error reporting
+
+### Changed
+
+- Upgraded from Electron 37.4.0 to Electron 39.8.0 (Node.js 22)   
+- **[BREAKING]** Internal project structure has changed drastically. Extensions with deep path imports instead of API imports will break. See [Nexus-Mods/vortex-api](https://github.com/Nexus-Mods/vortex-api/) for more information.  
+- Changed default installation path 
+
+### Fixed
+
+- Permission elevation fixes ([#20547](https://github.com/Nexus-Mods/Vortex/pull/20547))  
+- Process cancellation error handling ([#20549](https://github.com/Nexus-Mods/Vortex/pull/20549))  
+- Plugin list renderer crash prevention ([#20522](https://github.com/Nexus-Mods/Vortex/pull/20522))  
+- Collection extension disabled crash prevention ([#20637](https://github.com/Nexus-Mods/Vortex/pull/20637))  
+- Notification aggregator and group rendering protective code  
+- Main process exception handling  
+- State backup import fixes
+
+## [1.16.7] - 2026-03-17
+
+### Added
+
+- Ability to link profiles to specific collections ([#21283](https://github.com/Nexus-Mods/Vortex/issues/21283))
+
+### Changed
+
+- Upgraded libloot from 0.27.0 to 0.29.0 — plugin sorting ~2x faster
+- Re-apply installer choices/preset on manual re-install of a mod
+
+### Fixed
+
+- Confusing "No instructions found" error dialog when toggling mod instructions during a race condition — now logs silently instead ([#21300](https://github.com/Nexus-Mods/Vortex/issues/21300))
+- Crash in file-based load order when external entries were not stored as arrays ([#21309](https://github.com/Nexus-Mods/Vortex/issues/21309))
+- `editCollection` callback being wrapped incorrectly, causing crash when editing a collection ([#21319](https://github.com/Nexus-Mods/Vortex/issues/21319))
+- Crash in dependency graph view when the graph component wasn't initialized yet ([#21327](https://github.com/Nexus-Mods/Vortex/issues/21327))
+- Crash in collection overview when the collection's game domain was undefined ([#21328](https://github.com/Nexus-Mods/Vortex/issues/21328))
+- Error messages showing empty file paths for ENOENT/EPERM errors when `path`/`filename` was an empty string instead of undefined ([#21337](https://github.com/Nexus-Mods/Vortex/issues/21337), [#21343](https://github.com/Nexus-Mods/Vortex/issues/21343), [#21377](https://github.com/Nexus-Mods/Vortex/issues/21377))
+- Crash when accessing `modInfo` on a null download reference during mod installation ([#21338](https://github.com/Nexus-Mods/Vortex/issues/21338))
+- `minimatch` throwing on invalid patterns in the dependency blacklist — now catches and skips bad patterns ([#21352](https://github.com/Nexus-Mods/Vortex/issues/21352))
+- `winapi.GetPrivateProfileSectionNames` crash on non-Windows platforms by skipping WinAPI ini format on Linux/Mac ([#21355](https://github.com/Nexus-Mods/Vortex/issues/21355))
+- Crash when load order contained circular rules — now shows a user-friendly notification instead ([#21356](https://github.com/Nexus-Mods/Vortex/issues/21356))
+- Crash from stale OAuth callback arriving after the login flow was already completed or abandoned ([#21362](https://github.com/Nexus-Mods/Vortex/issues/21362))
+- `__MACOSX` resource fork directories not being excluded during deployment — case-sensitive match was missing ([#21364](https://github.com/Nexus-Mods/Vortex/issues/21364))
+- Win32 `GetLastError` code of 0 (`ERROR_SUCCESS`) overwriting real error messages with "The operation completed successfully" ([#21366](https://github.com/Nexus-Mods/Vortex/issues/21366), [#21375](https://github.com/Nexus-Mods/Vortex/issues/21375), [#21380](https://github.com/Nexus-Mods/Vortex/issues/21380))
+- Crash when importing collection plugin rules/groups that weren't exported ([#21381](https://github.com/Nexus-Mods/Vortex/issues/21381))
+- Collection overview not re-rendering correctly on install complete
 
 ## [1.16.6] - 2026-03-02
 
@@ -1465,6 +1523,8 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[2.0.0-alpha.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.0.0-alpha.1
+[1.16.7]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.7
 [1.16.6]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.6
 [1.16.5]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.5
 [1.16.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.4

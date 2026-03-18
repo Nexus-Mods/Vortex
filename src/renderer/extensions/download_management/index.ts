@@ -1,5 +1,7 @@
 import type * as Redux from "redux";
 
+import { mdiDownload } from "@mdi/js";
+import { unknownToError } from "@vortex/shared";
 import PromiseBB from "bluebird";
 import * as _ from "lodash";
 import Zip from "node-7z";
@@ -23,15 +25,14 @@ import type { IProtocolHandlers, IResolvedURL } from "./types/ProtocolHandlers";
 import type { IDownloadViewProps } from "./views/DownloadView";
 
 import ReduxProp from "../../ReduxProp";
-import { unknownToError } from "@vortex/shared";
 import { getApplication } from "../../util/application";
-import { setErrorContext } from "../../util/errorHandling";
 import {
   DataInvalid,
   ProcessCanceled,
   UserCanceled,
 } from "../../util/CustomErrors";
 import Debouncer from "../../util/Debouncer";
+import { setErrorContext } from "../../util/errorHandling";
 import * as fs from "../../util/fs";
 import getNormalizeFunc from "../../util/getNormalizeFunc";
 import { log } from "../../util/log";
@@ -72,7 +73,6 @@ import DownloadView from "./views/DownloadView";
 import Settings from "./views/Settings";
 import ShutdownButton from "./views/ShutdownButton";
 import SpeedOMeter from "./views/SpeedOMeter";
-import { mdiDownload } from "@mdi/js";
 
 let observer: DownloadObserver;
 let manager: DownloadManager;
@@ -1133,7 +1133,7 @@ function init(context: IExtensionContextExt): boolean {
   });
 
   context.registerMainPage("download", "Downloads", DownloadView, {
-    priority: 210,
+    priority: 80,
     id: "game-downloads",
     hotkey: "D",
     group: "per-game",

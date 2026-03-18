@@ -70,7 +70,6 @@ import CheckModVersionsButton from "./CheckModVersionsButton";
 import Description from "./Description";
 import InstallArchiveButton from "./InstallArchiveButton";
 
-import PromiseBB from "bluebird";
 import type { TFunction } from "i18next";
 import * as _ from "lodash";
 import path from "path";
@@ -158,7 +157,7 @@ interface IActionProps {
     title: string,
     content: IDialogContent,
     actions: DialogActions,
-  ) => PromiseBB<IDialogResult>;
+  ) => Promise<IDialogResult>;
   onRemoveMods: (gameMode: string, modIds: string[]) => void;
   onShowDropzone: (show: boolean) => void;
 }
@@ -997,7 +996,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     const stagingFolder = this.props.installPath;
     const mod = this.props.mods[modId];
     if (mod === undefined) {
-      return PromiseBB.resolve();
+      return Promise.resolve();
     }
     const modPath = path.join(stagingFolder, mod.installationPath);
     return calculateFolderSize(modPath)
@@ -1005,14 +1004,14 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         api.store.dispatch(
           setModAttribute(this.props.gameMode, mod.id, "modSize", totalSize),
         );
-        return PromiseBB.resolve();
+        return Promise.resolve();
       })
       .catch((err) => {
-        return PromiseBB.resolve();
+        return Promise.resolve();
       });
   };
 
-  private updateModsWithState(newProps: IProps): PromiseBB<void> {
+  private updateModsWithState(newProps: IProps): Promise<void> {
     const { gameMode } = newProps;
     let changed = false;
     const newModsWithState: { [modId: string]: IModWithState } = {};
@@ -1042,7 +1041,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     // insert downloads. Since this requires deriving mod attributes from
     // the source-specific data we need to do this asynchronously although
     // we expect all attributes to be available instantaneous.
-    return PromiseBB.map(Object.keys(newProps.downloads), (archiveId) => {
+    return Promise.all(Object.keys(newProps.downloads).map((archiveId) => {
       if (
         getDownloadGames(newProps.downloads[archiveId]).indexOf(gameMode) !==
           -1 &&
@@ -1064,9 +1063,9 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           undefined,
         ).then((info) => ({ archiveId, info }));
       } else {
-        return PromiseBB.resolve(undefined);
+        return Promise.resolve(undefined);
       }
-    }).then((modAttributes: Array<{ archiveId: string; info: any }>) => {
+    })).then((modAttributes: Array<{ archiveId: string; info: any }>) => {
       modAttributes
         .filter((attribute) => attribute !== undefined)
         .forEach((mod) => {
@@ -1130,7 +1129,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     modId: string,
     value: string,
     onSetModEnabled: (modId: string, value: boolean) => void,
-  ): PromiseBB<void> {
+  ): Promise<void> {
     const { gameMode } = this.props;
     const { modsWithState } = this.state;
     if (modsWithState[modId] === undefined) {
@@ -1142,33 +1141,36 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       if (modsWithState[modId].state !== "downloaded") {
         return removeMods(this.context.api, gameMode, [modId])
           .then(() => null)
-          .catch(UserCanceled, () => null)
-          .catch(ProcessCanceled, (err) => {
-            this.context.api.sendNotification({
-              id: "cant-remove-mod",
-              type: "warning",
-              title: 'Failed to remove "{{modName}}"',
-              message: err.message,
-              replace: {
-                modName: modName(modsWithState[modId]),
-              },
-            });
-          })
           .catch((err) => {
+            if (err instanceof UserCanceled) {
+              return;
+            }
+            if (err instanceof ProcessCanceled) {
+              this.context.api.sendNotification({
+                id: "cant-remove-mod",
+                type: "warning",
+                title: 'Failed to remove "{{modName}}"',
+                message: err.message,
+                replace: {
+                  modName: modName(modsWithState[modId]),
+                },
+              });
+              return;
+            }
             // Activation store can potentially provide an err.allowReport value
             //  if/when the manifest is corrupted - we're going to suppress the
             //  report button for that use case.
             this.context.api.showErrorNotification(
               "Failed to set mod to uninstalled",
               err,
-              { allowReport: err?.allowReport !== false },
+              { allowReport: (err as {allowReport?: boolean})?.allowReport !== false },
             );
           });
       }
     } else if (modsWithState[modId].state === "downloaded") {
       // selected "enabled" or "disabled" from "not installed" so first the mod
       // needs to be installed
-      return new PromiseBB((resolve) => {
+      return new Promise((resolve) => {
         this.context.api.events.emit(
           "start-install-download",
           modId,
@@ -1186,7 +1188,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       this.setModsEnabled([modId], value === "enabled");
     }
 
-    return PromiseBB.resolve();
+    return Promise.resolve();
   }
 
   private changeModEnabled = (mod: IModWithState, value: any) => {
@@ -1342,20 +1344,20 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     return setModsEnabled(this.context.api, profileId, modIds, enabled);
   }
 
-  private installIfNecessary(modId: string): PromiseBB<string> {
+  private installIfNecessary(modId: string): Promise<string> {
     const { modsWithState } = this.state;
 
     if (modsWithState[modId]?.state === "downloaded") {
-      return toPromise((cb) =>
+      return Promise.resolve(toPromise<string>((cb) =>
         this.context.api.events.emit(
           "start-install-download",
           modId,
           false,
           cb,
         ),
-      );
+      ));
     } else {
-      return PromiseBB.resolve(modId);
+      return Promise.resolve(modId);
     }
   }
 
@@ -1366,7 +1368,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       (modId) => mods[modId] === undefined || modState[modId]?.enabled !== true,
     );
 
-    PromiseBB.all(
+    Promise.all(
       filtered.map((modId) =>
         this.installIfNecessary(modId).catch((err) => {
           if (err instanceof UserCanceled || err instanceof ProcessCanceled) {
@@ -1472,16 +1474,19 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           return this.removeSelectedImpl(idsToRemove, true, removeArchives);
         }
       })
-      .catch(ProcessCanceled, (err) => {
-        this.context.api.sendNotification({
-          id: "cant-remove-mod",
-          type: "warning",
-          title: "Failed to remove mods",
-          message: err.message,
-        });
-      })
-      .catch(UserCanceled, () => null)
       .catch((err) => {
+        if (err instanceof ProcessCanceled) {
+          this.context.api.sendNotification({
+            id: "cant-remove-mod",
+            type: "warning",
+            title: "Failed to remove mods",
+            message: err.message,
+          });
+          return;
+        }
+        if (err instanceof UserCanceled) {
+          return;
+        }
         this.context.api.showErrorNotification(
           "Failed to remove selected mods",
           err,
@@ -1520,7 +1525,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         ? removeMods(this.context.api, gameMode, wereInstalled).then(() =>
             onRemoveMods(gameMode, wereInstalled),
           )
-        : PromiseBB.resolve()
+        : Promise.resolve()
     ).then(() => {
       if (removeArchives) {
         archiveIds.forEach((archiveId) => {
@@ -1532,7 +1537,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           );
         });
       }
-      return PromiseBB.resolve();
+      return Promise.resolve();
     });
   }
 
@@ -1604,16 +1609,19 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           removeArchive,
         );
       })
-      .catch(ProcessCanceled, (err) => {
-        this.context.api.sendNotification({
-          id: "cant-remove-mod",
-          type: "warning",
-          title: "Failed to remove mods",
-          message: err.message,
-        });
-      })
-      .catch(UserCanceled, () => null)
       .catch((err) => {
+        if (err instanceof ProcessCanceled) {
+          this.context.api.sendNotification({
+            id: "cant-remove-mod",
+            type: "warning",
+            title: "Failed to remove mods",
+            message: err.message,
+          });
+          return;
+        }
+        if (err instanceof UserCanceled) {
+          return;
+        }
         this.context.api.showErrorNotification(
           "Failed to remove selected mods",
           err,
@@ -1624,7 +1632,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   private install = (archiveIds: string | string[]) => {
     if (Array.isArray(archiveIds)) {
       withBatchContext("install-mod", archiveIds, () => {
-        return PromiseBB.all(
+        return Promise.all(
           archiveIds.map(async (archiveId) => {
             return toPromise<string>((cb) =>
               this.context.api.events.emit(
@@ -1637,7 +1645,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
               ),
             ).catch((err) => {
               if (err instanceof UserCanceled) {
-                return PromiseBB.resolve(null);
+                return Promise.resolve(null);
               }
             });
           }),
@@ -1646,7 +1654,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           if (this.props.autoInstall && filtered.length > 0) {
             this.props.onSetModsEnabled(this.props.profileId, filtered, true);
           }
-          return PromiseBB.resolve();
+          return Promise.resolve();
         });
       });
     } else {
@@ -1689,7 +1697,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         "install-mod",
         validIds.map((modId) => mods[modId].archiveId),
         () => {
-          return PromiseBB.all(
+          return Promise.all(
             validIds.map((modId) => {
               const choices = getSafe(
                 mods[modId],
@@ -1895,7 +1903,8 @@ function mapDispatchToProps(
       );
     },
     onShowDialog: (type, title, content, actions) =>
-      dispatch(showDialog(type, title, content, actions)),
+      // showDialog thunk returns Bluebird — see comment in notifications.ts
+      Promise.resolve(dispatch(showDialog(type, title, content, actions))),
     onRemoveMods: (gameMode: string, modIds: string[]) =>
       batchDispatch(
         dispatch,

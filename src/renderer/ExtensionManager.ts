@@ -105,7 +105,11 @@ import {
   UserCanceled,
 } from "./util/CustomErrors";
 import { runElevated } from "./util/elevated";
-import { disableErrorReport, isOutdated, recordErrorSpan } from "./util/errorHandling";
+import {
+  disableErrorReport,
+  isOutdated,
+  recordErrorSpan,
+} from "./util/errorHandling";
 import * as fsVortex from "./util/fs";
 import getVortexPath from "./util/getVortexPath";
 import { TString } from "./util/i18n";
@@ -798,9 +802,7 @@ class ExtensionManager {
   private mUIStartedPromise: PromiseBB<void>;
   private mOutdated: string[] = [];
   private mFailedWatchers: Set<string> = new Set();
-  // the idea behind this was that we might want to support things like typescript
-  // or coffescript directly but that would require us shipping the corresponding compilers
-  private mExtensionFormats: string[] = ["index.js"];
+  private mExtensionFormats: string[] = ["index.cjs", "index.js"];
   // Pending actions to dispatch when setStore() is called (renderer-only architecture)
   private mPendingDisables: string[] = [];
   private mPendingRemoves: string[] = [];
@@ -1311,7 +1313,10 @@ class ExtensionManager {
         keyCount: Object.keys(hydrationData).length,
       });
     } catch (err) {
-      recordErrorSpan("Failed to hydrate from extension persistor", unknownToError(err));
+      recordErrorSpan(
+        "Failed to hydrate from extension persistor",
+        unknownToError(err),
+      );
       log("error", "Failed to hydrate from extension persistor", {
         hive,
         error: getErrorMessageOrDefault(err),

@@ -67,7 +67,6 @@
     "@types/react-test-renderer": "catalog:",
     "@types/react-transition-group": "catalog:",
     "@types/redux": "catalog:",
-    "@types/redux-devtools": "catalog:",
     "@types/redux-devtools-log-monitor": "catalog:",
     "@types/relaxed-json": "catalog:",
     "@types/resolve": "catalog:",

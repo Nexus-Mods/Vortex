@@ -1,5 +1,4 @@
 import * as util from '../util/util';
-import { isMajorDowngrade } from "../../main/Application";
 
 // for the tests regarding invalid filename detection/sanitation we need a consistent
 // platform and windows is just way more "interesting" in this regard
@@ -317,27 +316,6 @@ describeOnWindows('isPathValid', () => {
     validNames.forEach(name => {
       expect(util.isPathValid(name, true)).toBe(true);
     });
-  });
-});
-
-describe('isMajorUpgrade', () => {
-  it('detects major downgrade', () => {
-    expect(isMajorDowngrade('2.0.0', '1.0.0')).toBe(true);
-    expect(isMajorDowngrade('1.0.0', '0.9.0')).toBe(true);
-  });
-  it('detects minor downgrade', () => {
-    expect(isMajorDowngrade('1.2.0', '1.1.0')).toBe(true);
-    expect(isMajorDowngrade('0.2.0', '0.1.0')).toBe(true);
-  });
-  it('doesn\'t report patch downgrade', () => {
-    expect(isMajorDowngrade('1.0.2', '1.0.1')).toBe(false);
-    expect(isMajorDowngrade('0.2.2', '0.2.1')).toBe(false);
-  });
-  it('doesn\'t report upgrade', () => {
-    expect(isMajorDowngrade('1.1.0', '1.2.0')).toBe(false);
-    expect(isMajorDowngrade('0.1.0', '0.2.0')).toBe(false);
-    expect(isMajorDowngrade('1.0.0', '2.0.0')).toBe(false);
-    expect(isMajorDowngrade('0.9.0', '1.0.0')).toBe(false);
   });
 });
 

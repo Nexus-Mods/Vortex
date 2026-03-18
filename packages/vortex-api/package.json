@@ -19,6 +19,43 @@
     "bin"
   ],
   "scripts": {
-    "build": "pnpm rimraf ./lib && node ./build.mjs"
+    "build": "pnpm rimraf ./lib && node ./build.mjs && pnpm run check",
+    "check": "pnpm tsc -p tsconfig.lib.json"
+  },
+  "devDependencies": {
+    "@nexusmods/nexus-api": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@types/redux": "catalog:",
+    "date-fns": "catalog:",
+    "electron": "catalog:",
+    "i18next": "catalog:",
+    "modmeta-db": "catalog:",
+    "node-7z": "catalog:",
+    "re-reselect": "catalog:",
+    "react": "catalog:",
+    "redux": "catalog:",
+    "reselect": "catalog:"
+  },
+  "peerDependencies": {
+    "@types/bluebird": "catalog:",
+    "bluebird": "catalog:",
+    "fs-extra": "catalog:",
+    "immutability-helper": "catalog:",
+    "minimatch": "catalog:",
+    "react": "catalog:",
+    "react-bootstrap": "catalog:",
+    "react-dom": "catalog:",
+    "react-i18next": "catalog:",
+    "react-redux": "catalog:",
+    "react-select": "catalog:",
+    "redux": "catalog:",
+    "redux-act": "catalog:",
+    "redux-thunk": "catalog:",
+    "relaxed-json": "catalog:",
+    "semver": "catalog:",
+    "string-template": "catalog:",
+    "uuid": "catalog:",
+    "xml2js": "catalog:"
   }
 }

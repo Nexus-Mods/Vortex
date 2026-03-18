@@ -203,7 +203,7 @@ class DeploymentMethod extends LinkingDeployment {
     dataPath: string,
     installationPath: string,
     progressCB?: (files: number, total: number) => void,
-  ): PromiseBB<IDeployedFile[]> {
+  ): PromiseLike<IDeployedFile[]> {
     const deployment: IDeployment = this.context.newDeployment;
     const lnkExtUpper = LNK_EXT.toUpperCase();
     const extLen = LNK_EXT.length;
@@ -287,10 +287,10 @@ class DeploymentMethod extends LinkingDeployment {
     linkPath: string,
     sourcePath: string,
     dirTags?: boolean,
-  ): PromiseBB<void> {
+  ): Promise<void> {
     if (path.extname(sourcePath) === LNK_EXT) {
       // sanity check, don't link the links
-      return PromiseBB.resolve();
+      return Promise.resolve();
     }
     const basePath = path.dirname(linkPath);
     return this.ensureDir(basePath).then(() =>

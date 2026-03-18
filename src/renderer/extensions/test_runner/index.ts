@@ -64,8 +64,7 @@ function applyFix(api: IExtensionApi, check: ICheckEntry, result: ITestResult) {
     return PromiseBB.resolve();
   }
   fixTriggered[check.id] = true;
-  return result
-    .automaticFix()
+  return Promise.resolve(result.automaticFix())
     .then(() => runCheck(api, check))
     .catch((err) => {
       if (err instanceof UserCanceled || err instanceof ProcessCanceled) {
@@ -83,8 +82,8 @@ function applyFix(api: IExtensionApi, check: ICheckEntry, result: ITestResult) {
     });
 }
 
-function runCheck(api: IExtensionApi, check: ICheckEntry): PromiseBB<void> {
-  let res: PromiseBB<ITestResult>;
+function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
+  let res: PromiseLike<ITestResult>;
   try {
     res = check.check();
   } catch (err) {
@@ -95,9 +94,9 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): PromiseBB<void> {
     });
   }
   if (res === undefined || res.then === undefined) {
-    res = PromiseBB.resolve(undefined);
+    res = Promise.resolve(undefined);
   }
-  return res
+  return Promise.resolve(res)
     .then((result) => {
       const id: string = `test-${check.id}`;
       if (result === undefined) {
@@ -179,7 +178,7 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): PromiseBB<void> {
     .catch((err) => {
       log("warn", "check failed to run", {
         id: check.id,
-        err: err.message,
+        err: getErrorMessageOrDefault(err),
         stack: check.stack(),
       });
     });

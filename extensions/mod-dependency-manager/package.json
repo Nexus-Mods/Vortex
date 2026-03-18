@@ -13,7 +13,6 @@
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "devDependencies": {
-    "@types/immutability-helper": "catalog:",
     "@types/lodash": "catalog:",
     "@types/minimatch": "catalog:",
     "@types/react": "catalog:",

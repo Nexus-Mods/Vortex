@@ -1,5 +1,3 @@
-import type { Action } from "redux";
-
 import React, {
   type FC,
   createContext,
@@ -9,14 +7,15 @@ import React, {
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import type { IMainPage } from "../../../types/IMainPage";
 
-import { setNextProfile } from "../../../extensions/profile_management/actions/settings";
 import { setOpenMainPage } from "../../../actions/session";
 import { useMainContext, usePagesContext } from "../../../contexts";
+import { setNextProfile } from "../../../extensions/profile_management/actions/settings";
 import {
   activeGameId as activeGameIdSelector,
   activeProfileId as activeProfileIdSelector,
@@ -24,8 +23,6 @@ import {
   mainPage as mainPageSelector,
   profileById as profileByIdSelector,
 } from "../../../util/selectors";
-import { batchDispatch } from "../../../util/util";
-
 export type SpineSelection =
   | { type: "home" }
   | { type: "game"; gameId: string };
@@ -35,6 +32,7 @@ interface ISpineContext {
   visiblePages: IMainPage[];
   selectHome: () => void;
   selectGame: (gameId: string) => void;
+  selectGlobalPage: (pageId: string) => void;
 }
 
 const SpineContext = createContext<ISpineContext | undefined>(undefined);
@@ -48,12 +46,18 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
   const activeProfileId = useSelector(activeProfileIdSelector);
   const activeGameId = useSelector(activeGameIdSelector);
 
+  // Tracks the gameId that was active when the user navigated to home.
+  // When non-null and matches activeGameId, we show home pages.
+  // When activeGameId changes externally (e.g., via extension or deep-link),
+  // the mismatch automatically switches back to game view - no effect needed.
+  const [homeForGameId, setHomeForGameId] = useState<string | null>(null);
+
   const selection: SpineSelection = useMemo(() => {
-    if (activeGameId !== undefined) {
+    if (activeGameId !== undefined && homeForGameId !== activeGameId) {
       return { type: "game", gameId: activeGameId };
     }
     return { type: "home" };
-  }, [activeGameId]);
+  }, [homeForGameId, activeGameId]);
 
   const isPageVisible = useCallback((page: IMainPage) => {
     try {
@@ -65,7 +69,7 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
 
   // activeGameId is included as dependency to re-filter when game changes
   // since page.visible() checks often depend on the active game
-  const homePages = useMemo(
+  const homePages: IMainPage[] = useMemo(
     () =>
       mainPages.filter(
         (page) =>
@@ -76,7 +80,7 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
     [mainPages, isPageVisible, activeGameId],
   );
 
-  const gamePages = useMemo(
+  const gamePages: IMainPage[] = useMemo(
     () =>
       mainPages.filter(
         (page) => page.group === "per-game" && isPageVisible(page),
@@ -94,15 +98,27 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
   // Track the last active page per spine context (home / per game)
   const lastPageRef = useRef<Record<string, string>>({});
 
-  // Save the current page whenever it changes
+  // Save the current page whenever it changes, but only if it's
+  // a valid page for the current context (avoid saving e.g. "Games"
+  // global page as a game's last page)
   useEffect(() => {
     if (!mainPage) return;
+    const isValidForContext = visiblePages.some((p) => p.id === mainPage);
+    if (!isValidForContext) return;
     const key = selection.type === "game" ? selection.gameId : "home";
     lastPageRef.current[key] = mainPage;
-  }, [mainPage, selection]);
+  }, [mainPage, selection, visiblePages]);
+
+  // When the spine selection changes (home↔game or between games), ensure
+  // we're on a valid page for the new context. Uses a ref for mainPage so the
+  // effect only fires on selection change, not on every page navigation.
+  const mainPageRef = useRef(mainPage);
+  mainPageRef.current = mainPage;
 
   useEffect(() => {
-    const currentPageValid = visiblePages.some((p) => p.id === mainPage);
+    const currentPageValid = visiblePages.some(
+      (p) => p.id === mainPageRef.current,
+    );
     if (currentPageValid) {
       return;
     }
@@ -111,23 +127,21 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
     } else if (selection.type === "home" && defaultHomePage !== undefined) {
       dispatch(setOpenMainPage(defaultHomePage, false));
     }
-  }, []);
+  }, [selection, visiblePages, defaultGamePage, defaultHomePage, dispatch]);
 
   const selectHome = useCallback(() => {
     if (defaultHomePage === undefined) return;
     const targetPage = lastPageRef.current["home"] || defaultHomePage;
-    const actions: Action[] = [setOpenMainPage(targetPage, false)];
-    if (activeProfileId !== undefined) {
-      actions.push(setNextProfile(undefined));
-    }
-    batchDispatch(api.store, actions);
-  }, [activeProfileId, api.store, defaultHomePage]);
+    setHomeForGameId(activeGameId ?? null);
+    dispatch(setOpenMainPage(targetPage, false));
+  }, [activeGameId, defaultHomePage, dispatch]);
 
   const selectGame = useCallback(
     (gameId: string) => {
       if (defaultGamePage === undefined) return;
       const targetPage = lastPageRef.current[gameId] || defaultGamePage;
       const profileId = lastActiveProfile[gameId];
+      setHomeForGameId(null);
       if (
         profileId !== undefined &&
         profileId !== activeProfileId &&
@@ -146,9 +160,23 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
     [lastActiveProfile, activeProfileId, dispatch, api, defaultGamePage],
   );
 
+  const selectGlobalPage = useCallback(
+    (pageId: string) => {
+      setHomeForGameId(activeGameId ?? null);
+      dispatch(setOpenMainPage(pageId, false));
+    },
+    [activeGameId, dispatch],
+  );
+
   const value = useMemo(
-    () => ({ selection, visiblePages, selectHome, selectGame }),
-    [selection, visiblePages, selectHome, selectGame],
+    () => ({
+      selection,
+      visiblePages,
+      selectHome,
+      selectGame,
+      selectGlobalPage,
+    }),
+    [selection, visiblePages, selectHome, selectGame, selectGlobalPage],
   );
 
   return (

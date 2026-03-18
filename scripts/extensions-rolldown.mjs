@@ -1,7 +1,9 @@
 import { readFileSync } from "node:fs";
 import { builtinModules } from "node:module";
 import * as path from "node:path";
-import { rolldown, defineConfig } from "rolldown";
+import { rolldown } from "rolldown";
+
+import { createConfig as createCoreConfig } from "../rolldown.base.mjs";
 
 const packageJsonPath = path.resolve(
   import.meta.dirname,
@@ -53,31 +55,7 @@ export function nativeRemapPlugin(mappings) {
 export function createConfig(input, output, customPlugins = []) {
   const externals = getExternals();
 
-  return defineConfig({
-    input: input,
-    external: externals,
-    platform: "node",
-    plugins: customPlugins,
-    onLog: (level, log, defaultHandler) => {
-      if (log.code === "UNRESOLVED_IMPORT") {
-        defaultHandler("error", log);
-        return;
-      }
-
-      defaultHandler(level, log);
-    },
-    output: {
-      file: output,
-      format: "commonjs",
-      dynamicImportInCjs: false,
-      minify: false,
-      sourcemap: true,
-      sourcemapPathTransform: (relativeSourcePath, sourcemapPath) => {
-        // Turn relative sourcemap paths into absolute paths
-        return path.resolve(path.dirname(sourcemapPath), relativeSourcePath);
-      },
-    },
-  });
+  return createCoreConfig(input, output, "cjs", customPlugins, externals);
 }
 
 /**

@@ -1,13 +1,11 @@
-import {
-  dismissNotification,
-  type ICheckbox,
-  updateNotification,
-} from "../../actions/notifications";
-import {
-  setSettingsPage,
-  startActivity,
-  stopActivity,
-} from "../../actions/session";
+import type * as Redux from "redux";
+
+import { getErrorCode, unknownToError } from "@vortex/shared";
+import * as _ from "lodash";
+import * as path from "path";
+import React from "react";
+import shortid from "shortid";
+
 import type {
   IExtensionApi,
   IExtensionContext,
@@ -20,23 +18,57 @@ import type { INotification } from "../../types/INotification";
 import type { IDiscoveryResult, IState } from "../../types/IState";
 import type { ITableAttribute } from "../../types/ITableAttribute";
 import type { ITestResult } from "../../types/ITestResult";
+import type {
+  IProfile,
+  IProfileMod,
+} from "../profile_management/types/IProfile";
+import type {
+  IDeployedFile,
+  IDeploymentMethod,
+  IUnavailableReason,
+} from "./types/IDeploymentMethod";
 import type { IDeployOptions } from "./types/IDeployOptions";
+import type { IFileMerge } from "./types/IFileMerge";
+import type { IInstallOptions } from "./types/IInstallOptions";
+import type { IMod, IModReference } from "./types/IMod";
+import type { InstallFunc } from "./types/InstallFunc";
+import type { IRemoveModOptions } from "./types/IRemoveModOptions";
+import type { IResolvedMerger } from "./types/IResolvedMerger";
+import type { TestSupported } from "./types/TestSupported";
+import type {
+  IDuplicatesMap,
+  IRemoveDuplicateMap,
+} from "./views/DuplicatesDialog";
+
+import { setDialogVisible } from "../../actions";
+import {
+  dismissNotification,
+  type ICheckbox,
+  updateNotification,
+} from "../../actions/notifications";
+import {
+  setSettingsPage,
+  startActivity,
+  stopActivity,
+} from "../../actions/session";
+import LazyComponent from "../../controls/LazyComponent";
+import ReduxProp from "../../ReduxProp";
+import { nxmMod } from "../../ui/lib/icon_paths/icon-paths";
+import { opn } from "../../util/api";
 import {
   ProcessCanceled,
   TemporaryError,
   UserCanceled,
 } from "../../util/CustomErrors";
 import Debouncer from "../../util/Debouncer";
-import { waitForCondition } from "../../util/waitForCondition";
+import { withTrackedActivity } from "../../util/errorHandling";
 import * as fs from "../../util/fs";
-import getNormalizeFunc, { type Normalize } from "../../util/getNormalizeFunc";
+import getNormalizeFunc from "../../util/getNormalizeFunc";
 import getVortexPath from "../../util/getVortexPath";
 import { laterT, type TFunction } from "../../util/i18n";
-import LazyComponent from "../../controls/LazyComponent";
 import { log } from "../../util/log";
 import { showError } from "../../util/message";
 import onceCB from "../../util/onceCB";
-import ReduxProp from "../../ReduxProp";
 import {
   activeGameId,
   activeProfile,
@@ -55,84 +87,22 @@ import {
   truthy,
   wrapExtCBAsync,
 } from "../../util/util";
-import { setAutoDeployment } from "../settings_interface/actions/automation";
-
-import { setDialogVisible } from "../../actions";
+import { waitForCondition } from "../../util/waitForCondition";
 import { setDownloadModInfo } from "../download_management/actions/state";
 import { getGame } from "../gamemode_management/util/getGame";
 import { getModType } from "../gamemode_management/util/modTypeExtensions";
+import { convertGameIdReverse } from "../nexus_integration/util/convertGameId";
 import {
   type IEnableOptions,
   setModEnabled,
   forgetMod,
 } from "../profile_management/actions/profiles";
-import type {
-  IProfile,
-  IProfileMod,
-} from "../profile_management/types/IProfile";
-
+import { enabledModCountForProfile } from "../profile_management/selectors";
+import { setAutoDeployment } from "../settings_interface/actions/automation";
 import { setDeploymentNecessary } from "./actions/deployment";
 import { cacheModReference, removeMod, setModAttribute } from "./actions/mods";
 import { setDeploymentProblem } from "./actions/session";
 import { setTransferMods } from "./actions/transactions";
-import { deploymentReducer } from "./reducers/deployment";
-import { modsReducer } from "./reducers/mods";
-import { sessionReducer } from "./reducers/session";
-import { settingsReducer } from "./reducers/settings";
-import { transactionsReducer } from "./reducers/transactions";
-import type {
-  IDeployedFile,
-  IDeploymentMethod,
-  IUnavailableReason,
-} from "./types/IDeploymentMethod";
-import type { IFileMerge } from "./types/IFileMerge";
-import type { IInstallOptions } from "./types/IInstallOptions";
-import type { IMod, IModReference } from "./types/IMod";
-import type { InstallFunc } from "./types/InstallFunc";
-import type { IRemoveModOptions } from "./types/IRemoveModOptions";
-import type { IResolvedMerger } from "./types/IResolvedMerger";
-import type { TestSupported } from "./types/TestSupported";
-import {
-  fallbackPurge,
-  loadActivation,
-  saveActivation,
-  withActivationLock,
-} from "./util/activationStore";
-import allTypesSupported from "./util/allTypesSupported";
-import BlacklistSet from "./util/BlacklistSet";
-import * as basicInstaller from "./util/basicInstaller";
-import { genSubDirFunc, purgeMods, purgeModsInPath } from "./util/deploy";
-import {
-  getAllActivators,
-  getCurrentActivator,
-  getSelectedActivator,
-  getSupportedActivators,
-  registerDeploymentMethod,
-} from "./util/deploymentMethods";
-import { NoDeployment } from "./util/exceptions";
-import { dealWithExternalChanges } from "./util/externalChanges";
-import { registerAttributeExtractor } from "./util/filterModInfo";
-import ModHistory from "./util/ModHistory";
-import renderModName from "./util/modName";
-import { getModSources, registerModSource } from "./util/modSource";
-import sortMods, { CycleError } from "./util/sort";
-import { setResolvedCB } from "./util/testModReference";
-import ActivationButton from "./views/ActivationButton";
-import DeactivationButton from "./views/DeactivationButton";
-import {} from "./views/ExternalChangeDialog";
-import type {
-  IDuplicatesMap,
-  IRemoveDuplicateMap,
-} from "./views/DuplicatesDialog";
-import {} from "./views/FixDeploymentDialog";
-import {} from "./views/ModList";
-import {} from "./views/Settings";
-import URLInput from "./views/URLInput";
-import Workarounds from "./views/Workarounds";
-
-import extendApi from "./util/extendAPI";
-import { opn } from "../../util/api";
-
 import {
   onAddMod,
   onGameModeActivated,
@@ -146,20 +116,47 @@ import InstallManager from "./InstallManager";
 import deployMods from "./modActivation";
 import mergeMods, { MERGED_PATH } from "./modMerging";
 import preStartDeployHook from "./preStartDeployHook";
+import { deploymentReducer } from "./reducers/deployment";
+import { modsReducer } from "./reducers/mods";
+import { sessionReducer } from "./reducers/session";
+import { settingsReducer } from "./reducers/settings";
+import { transactionsReducer } from "./reducers/transactions";
 import getText from "./texts";
+import {
+  fallbackPurge,
+  loadActivation,
+  saveActivation,
+  withActivationLock,
+} from "./util/activationStore";
+import allTypesSupported from "./util/allTypesSupported";
+import * as basicInstaller from "./util/basicInstaller";
+import BlacklistSet from "./util/BlacklistSet";
 import { findModByRef } from "./util/dependencies";
-import { convertGameIdReverse } from "../nexus_integration/util/convertGameId";
-
-import Bluebird from "bluebird";
-import * as _ from "lodash";
-import * as path from "path";
-import React from "react";
-import type * as Redux from "redux";
-import shortid from "shortid";
-import { getErrorCode } from "@vortex/shared";
-import { withTrackedActivity } from "../../util/errorHandling";
-import { enabledModCountForProfile } from "../profile_management/selectors";
-import { nxmMod } from "../../ui/lib/icon_paths/icon-paths";
+import { genSubDirFunc, purgeMods, purgeModsInPath } from "./util/deploy";
+import {
+  getAllActivators,
+  getCurrentActivator,
+  getSelectedActivator,
+  getSupportedActivators,
+  registerDeploymentMethod,
+} from "./util/deploymentMethods";
+import { NoDeployment } from "./util/exceptions";
+import extendApi from "./util/extendAPI";
+import { dealWithExternalChanges } from "./util/externalChanges";
+import { registerAttributeExtractor } from "./util/filterModInfo";
+import ModHistory from "./util/ModHistory";
+import renderModName from "./util/modName";
+import { getModSources, registerModSource } from "./util/modSource";
+import sortMods, { CycleError } from "./util/sort";
+import { setResolvedCB } from "./util/testModReference";
+import ActivationButton from "./views/ActivationButton";
+import DeactivationButton from "./views/DeactivationButton";
+import {} from "./views/ExternalChangeDialog";
+import {} from "./views/FixDeploymentDialog";
+import {} from "./views/ModList";
+import {} from "./views/Settings";
+import URLInput from "./views/URLInput";
+import Workarounds from "./views/Workarounds";
 
 interface IAppContext {
   isProfileChanging: boolean;
@@ -232,7 +229,7 @@ function bakeSettings(
   sortedModList: IMod[],
 ) {
   return shouldSuppressUpdate(api)
-    ? Bluebird.resolve()
+    ? Promise.resolve()
     : api.emitAndAwait("bake-settings", profile.gameId, sortedModList, profile);
 }
 
@@ -260,7 +257,7 @@ function showCycles(api: IExtensionApi, cycles: string[][], gameId: string) {
   );
 }
 
-function deployModType(
+async function deployModType(
   api: IExtensionApi,
   activator: IDeploymentMethod,
   game: IGame,
@@ -272,7 +269,7 @@ function deployModType(
   mergeResult: { [modType: string]: IMergeResultByType },
   lastDeployment: IDeployedFile[],
   onProgress: (text: string, perc: number) => void,
-): Bluebird<IDeployedFile[]> {
+): Promise<IDeployedFile[]> {
   const filteredModList = sortedModList.filter(
     (mod) => (mod.type || "") === typeId,
   );
@@ -281,77 +278,74 @@ function deployModType(
     path: targetPath,
     count: lastDeployment.length,
   });
-  let normalize: Normalize;
 
-  return getNormalizeFunc(targetPath)
-    .then((normalizeIn) => {
-      normalize = normalizeIn;
-      return deployMods(
-        api,
-        game.id,
-        stagingPath,
-        targetPath,
-        filteredModList,
-        activator,
-        lastDeployment,
-        typeId,
-        new BlacklistSet(
-          mergeResult[typeId]?.usedInMerge ?? [],
-          game,
-          normalize,
-        ),
-        genSubDirFunc(game, getModType(typeId)),
-        onProgress,
-      );
-    })
-    .then((newActivation: IDeployedFile[]) => {
-      const mergedMap = mergeResult[typeId]?.mergeInfluences;
-      if (!!mergedMap && Object.keys(mergedMap).length > 0) {
-        newActivation.forEach((act) => {
-          const merged = Array.from(new Set(mergedMap[normalize(act.relPath)]));
-          if (merged.length > 0) {
-            act.merged = merged;
-          }
-        });
+  const normalize = await getNormalizeFunc(targetPath);
+  const newActivation = await deployMods(
+    api,
+    game.id,
+    stagingPath,
+    targetPath,
+    filteredModList,
+    activator,
+    lastDeployment,
+    typeId,
+    new BlacklistSet(
+      mergeResult[typeId]?.usedInMerge ?? [],
+      game,
+      normalize,
+    ),
+    genSubDirFunc(game, getModType(typeId)),
+    onProgress,
+  );
+
+  const mergedMap = mergeResult[typeId]?.mergeInfluences;
+  if (!!mergedMap && Object.keys(mergedMap).length > 0) {
+    newActivation.forEach((act) => {
+      const merged = Array.from(new Set(mergedMap[normalize(act.relPath)]));
+      if (merged.length > 0) {
+        act.merged = merged;
       }
-      overwritten.push(
-        ...filteredModList.filter(
-          (mod) =>
-            newActivation.find(
-              (entry) =>
-                entry.source === mod.installationPath ||
-                (entry.merged || []).includes(mod.id),
-            ) === undefined,
-        ),
-      );
-
-      return doSaveActivation(
-        api,
-        game.id,
-        typeId,
-        targetPath,
-        stagingPath,
-        newActivation,
-        activator.id,
-      )
-        .catch((err) =>
-          api.showDialog(
-            "error",
-            "Saving manifest failed",
-            {
-              text:
-                "Saving the manifest failed (see error below). " +
-                "This could lead to errors later on, ",
-              message: err.message,
-            },
-            [],
-          ),
-        )
-        .then(() => newActivation);
     });
+  }
+  overwritten.push(
+    ...filteredModList.filter(
+      (mod) =>
+        newActivation.find(
+          (entry) =>
+            entry.source === mod.installationPath ||
+            (entry.merged || []).includes(mod.id),
+        ) === undefined,
+    ),
+  );
+
+  try {
+    await doSaveActivation(
+      api,
+      game.id,
+      typeId,
+      targetPath,
+      stagingPath,
+      newActivation,
+      activator.id,
+    );
+  } catch (unknownErr) {
+    const err = unknownToError(unknownErr);
+    await api.showDialog(
+      "error",
+      "Saving manifest failed",
+      {
+        text:
+          "Saving the manifest failed (see error below). " +
+          "This could lead to errors later on, ",
+        message: err.message,
+      },
+      [],
+    );
+  }
+  return newActivation;
 }
 
-function deployAllModTypes(
+async function deployAllModTypes(
   api: IExtensionApi,
   activator: IDeploymentMethod,
   profile: IProfile,
@@ -368,8 +362,9 @@ function deployAllModTypes(
 
   api.dismissNotification("redundant-mods");
 
-  return Bluebird.each(deployableModTypes(modPaths), (typeId) =>
-    deployModType(
+  // sequential: deploy order matters per mod type
+  for (const typeId of deployableModTypes(modPaths)) {
+    const deployment = await deployModType(
       api,
       activator,
       game,
@@ -381,41 +376,37 @@ function deployAllModTypes(
       mergeResult,
       lastDeployment[typeId],
       onProgress,
-    ).then((deployment) => (newDeployment[typeId] = deployment)),
-  ).then(() => {
-    if (activator.noRedundancy !== true) {
-      return reportRedundant(api, profile.id, overwritten);
-    } else {
-      return Bluebird.resolve();
-    }
-  });
+    );
+    newDeployment[typeId] = deployment;
+  }
+
+  if (activator.noRedundancy !== true) {
+    return reportRedundant(api, profile.id, overwritten);
+  }
 }
 
-function validateDeploymentTarget(api: IExtensionApi, undiscovered: string[]) {
+async function validateDeploymentTarget(api: IExtensionApi, undiscovered: string[]) {
   if (undiscovered.length === 0) {
-    return Bluebird.resolve();
+    return;
   }
-  return api
-    .showDialog(
-      "error",
-      "Deployment target unknown",
-      {
-        text:
-          "The deployment directory for some mod type(s) ({{ types }}) " +
-          "is unknown. Mods of these types will not be deployed. " +
-          "Maybe this/these type(s) require further configuration or " +
-          "external tools.",
-        parameters: {
-          types: undiscovered.join(", "),
-        },
+  const result = await api.showDialog(
+    "error",
+    "Deployment target unknown",
+    {
+      text:
+        "The deployment directory for some mod type(s) ({{ types }}) " +
+        "is unknown. Mods of these types will not be deployed. " +
+        "Maybe this/these type(s) require further configuration or " +
+        "external tools.",
+      parameters: {
+        types: undiscovered.join(", "),
       },
-      [{ label: "Cancel" }, { label: "Ignore" }],
-    )
-    .then((result) =>
-      result.action === "Cancel"
-        ? Bluebird.reject(new UserCanceled())
-        : Bluebird.resolve(),
-    );
+    },
+    [{ label: "Cancel" }, { label: "Ignore" }],
+  );
+  if (result.action === "Cancel") {
+    throw new UserCanceled();
+  }
 }
 
 function checkIncompatibilities(
@@ -479,9 +470,9 @@ function checkIncompatibilities(
         },
       ],
     });
-    return Bluebird.reject(new ProcessCanceled("Incompatible mods"));
+    return Promise.reject(new ProcessCanceled("Incompatible mods"));
   } else {
-    return Bluebird.resolve();
+    return Promise.resolve();
   }
 }
 
@@ -497,14 +488,16 @@ function doSortMods(
     .map((key: string) => mods[key])
     .filter((mod: IMod) => getSafe(modState, [mod.id, "enabled"], false));
 
-  return sortMods(profile.gameId, unsorted, api).catch(CycleError, (err) =>
-    Bluebird.reject(
-      new ProcessCanceled(
+  return sortMods(profile.gameId, unsorted, api).catch((unknownErr) => {
+    const err = unknownToError(unknownErr);
+    if (unknownErr instanceof CycleError) {
+      throw new ProcessCanceled(
         "Deployment is not possible when you have cyclical mod rules. " +
           err.message,
-      ),
-    ),
-  );
+      );
+    }
+    throw unknownErr;
+  });
 }
 
 interface IMergeResultByType {
@@ -512,7 +505,7 @@ interface IMergeResultByType {
   mergeInfluences: { [outPath: string]: string[] };
 }
 
-function doMergeMods(
+async function doMergeMods(
   api: IExtensionApi,
   game: IGame,
   gameDiscovery: IDiscoveryResult,
@@ -520,7 +513,7 @@ function doMergeMods(
   sortedModList: IMod[],
   modPaths: { [typeId: string]: string },
   lastDeployment: { [typeId: string]: IDeployedFile[] },
-): Bluebird<{ [typeId: string]: IMergeResultByType }> {
+): Promise<{ [typeId: string]: IMergeResultByType }> {
   const fileMergers = mergers.reduce((prev: IResolvedMerger[], merge) => {
     const match = merge.test(game, gameDiscovery);
     if (match !== undefined) {
@@ -543,60 +536,57 @@ function doMergeMods(
     return prev;
   }, {});
 
-  // clean up merged mods
-  return (
-    Bluebird.mapSeries(mergeModTypes, (typeId) => {
-      const mergePath = truthy(typeId)
-        ? MERGED_PATH + "." + typeId
-        : MERGED_PATH;
-      return fs.removeAsync(path.join(stagingPath, mergePath));
-    })
-      // update merged mods
-      .then(() =>
-        Bluebird.each(mergeModTypes, (typeId) =>
-          mergeMods(
-            api,
-            game,
-            stagingPath,
-            modPaths[typeId],
-            sortedModList.filter(
-              (mod) =>
-                (mod.type || "") === typeId &&
-                mod.installationPath !== undefined,
-            ),
-            lastDeployment[typeId],
-            fileMergers.filter((merger) => merger.modType === typeId),
-          ).then((mergeResult) => {
-            // some transformation required because in a merge we may use files from one modtype
-            // to generate a file for another. usedInMerge is used to skip files already applied to
-            // a merge so we need that information when processing the mod type where the merge source
-            // came from.
-            // However the list of sources used to generate a merge we need in the modtype used to
-            // deploy the merge
+  // sequential: clean up merged mods in order
+  for (const typeId of mergeModTypes) {
+    const mergePath = truthy(typeId)
+      ? MERGED_PATH + "." + typeId
+      : MERGED_PATH;
+    await fs.removeAsync(path.join(stagingPath, mergePath));
+  }
 
-            const { usedInMerge, mergeInfluences } = mergeResult;
-            result[typeId].usedInMerge = usedInMerge;
-            Object.keys(mergeInfluences).forEach((outPath) => {
-              if (result[mergeInfluences[outPath].modType] === undefined) {
-                result[mergeInfluences[outPath].modType] = {
-                  usedInMerge: [],
-                  mergeInfluences: {},
-                };
-              }
-              result[mergeInfluences[outPath].modType].mergeInfluences[
-                outPath
-              ] = [
-                ...(result[mergeInfluences[outPath].modType].mergeInfluences[
-                  outPath
-                ] ?? []),
-                ...mergeInfluences[outPath].sources,
-              ];
-            });
-          }),
-        ),
-      )
-      .then(() => result)
-  );
+  // sequential: update merged mods in order
+  for (const typeId of mergeModTypes) {
+    const mergeResult = await mergeMods(
+      api,
+      game,
+      stagingPath,
+      modPaths[typeId],
+      sortedModList.filter(
+        (mod) =>
+          (mod.type || "") === typeId &&
+          mod.installationPath !== undefined,
+      ),
+      lastDeployment[typeId],
+      fileMergers.filter((merger) => merger.modType === typeId),
+    );
+    // some transformation required because in a merge we may use files from one modtype
+    // to generate a file for another. usedInMerge is used to skip files already applied to
+    // a merge so we need that information when processing the mod type where the merge source
+    // came from.
+    // However the list of sources used to generate a merge we need in the modtype used to
+    // deploy the merge
+
+    const { usedInMerge, mergeInfluences } = mergeResult;
+    result[typeId].usedInMerge = usedInMerge;
+    Object.keys(mergeInfluences).forEach((outPath) => {
+      if (result[mergeInfluences[outPath].modType] === undefined) {
+        result[mergeInfluences[outPath].modType] = {
+          usedInMerge: [],
+          mergeInfluences: {},
+        };
+      }
+      result[mergeInfluences[outPath].modType].mergeInfluences[
+        outPath
+      ] = [
+        ...(result[mergeInfluences[outPath].modType].mergeInfluences[
+          outPath
+        ] ?? []),
+        ...mergeInfluences[outPath].sources,
+      ];
+    });
+  }
+
+  return result;
 }
 
 function reportRedundant(
@@ -683,7 +673,7 @@ function reportRedundant(
       ],
     });
   }
-  return Bluebird.resolve();
+  return Promise.resolve();
 }
 
 function deployableModTypes(modPaths: { [typeId: string]: string }) {
@@ -697,7 +687,7 @@ function genUpdateModDeployment() {
     profileId?: string,
     progressCB?: (text: string, percent: number) => void,
     deployOptions?: IDeployOptions,
-  ): Bluebird<void> => {
+  ): Promise<void> => {
     const t = api.translate;
 
     const notification: INotification = {
@@ -729,7 +719,7 @@ function genUpdateModDeployment() {
         message: "Can't deploy while the game or a tool is running",
         displayMS: 5000,
       });
-      return Bluebird.resolve();
+      return Promise.resolve();
     }
 
     if (profile === undefined) {
@@ -737,7 +727,7 @@ function genUpdateModDeployment() {
       // can be delayed so it's completely possible there is no profile active at the the time
       // or has been deleted by then. Rare but not a bug
       api.store.dispatch(dismissNotification(notification.id));
-      return Bluebird.resolve();
+      return Promise.resolve();
     }
     const gameId = profile.gameId;
     const gameDiscovery = getSafe(
@@ -749,7 +739,7 @@ function genUpdateModDeployment() {
     if (game === undefined || gameDiscovery?.path === undefined) {
       const err = new Error("Game no longer available");
       err["attachLogOnReport"] = true;
-      return Bluebird.reject(err);
+      return Promise.reject(err);
     }
     const stagingPath = installPathForGame(state, gameId);
 
@@ -796,7 +786,7 @@ function genUpdateModDeployment() {
           });
         }
       } // otherwise there should already be a notification
-      return Bluebird.resolve();
+      return Promise.resolve();
     }
 
     const newDeployment: { [typeId: string]: IDeployedFile[] } = {};
@@ -816,7 +806,7 @@ function genUpdateModDeployment() {
     const enabledModCount = enabledModCountForProfile(state, profile.id);
 
     // test if anything was changed by an external application
-    return Bluebird.resolve(withTrackedActivity(
+    return Promise.resolve(withTrackedActivity(
       "vortex.mod-management",
       "deployment.deploy",
       {
@@ -825,150 +815,144 @@ function genUpdateModDeployment() {
         "deployment.modCount": enabledModCount,
         "deployment.manual": manual,
       },
-      () => (manual ? Bluebird.resolve() : userGate())
-      .tap(() => {
+      async () => {
+        if (!manual) {
+          await userGate();
+        }
         notification.id = api.sendNotification(notification);
-      })
-      .then(() =>
-        withActivationLock(() => {
-          log("debug", "deploying mods", {
-            game: gameId,
-            profile: profile?.id,
-            method: activator.name,
+
+        try {
+          await withActivationLock(async () => {
+            log("debug", "deploying mods", {
+              game: gameId,
+              profile: profile?.id,
+              method: activator.name,
+            });
+
+            let mergeResult: { [modType: string]: IMergeResultByType };
+            const lastDeployment: { [typeId: string]: IDeployedFile[] } = {};
+            const mods = state.persistent.mods[profile.gameId] || {};
+            notification.message = t("Deploying mods");
+            api.sendNotification(notification);
+            api.store.dispatch(startActivity("mods", "deployment"));
+            progress(t("Loading deployment manifest"), 0);
+
+            // sequential: load activation order matters per mod type
+            for (const typeId of deployableModTypes(modPaths)) {
+              const deployedFiles = await loadActivation(
+                api,
+                gameId,
+                typeId,
+                modPaths[typeId],
+                stagingPath,
+                activator,
+              );
+              lastDeployment[typeId] = deployedFiles;
+            }
+
+            progress(t("Running pre-deployment events"), 2);
+            await api.emitAndAwait(
+              "will-deploy",
+              profile.id,
+              lastDeployment,
+              deployOptions,
+            );
+
+            // need to update the profile so that if a will-deploy handler disables a mod, that
+            // actually has an affect on this deployment
+            const updatedState = api.getState();
+            const updatedProfile =
+              updatedState.persistent.profiles[profile.id];
+            if (updatedProfile !== undefined) {
+              profile = updatedProfile;
+            } else {
+              // I don't think this can happen
+              log("warn", "profile no longer found?", profileId);
+            }
+
+            progress(t("Checking for external changes"), 5);
+            await dealWithExternalChanges(
+              api,
+              activator,
+              profileId,
+              stagingPath,
+              modPaths,
+              lastDeployment,
+            );
+
+            progress(t("Checking for mod incompatibilities"), 25);
+            await checkIncompatibilities(api, profile, mods);
+
+            progress(t("Sorting mods"), 30);
+            sortedModList = await doSortMods(api, profile, mods);
+
+            progress(t("Merging mods"), 35);
+            mergeResult = await doMergeMods(
+              api,
+              game,
+              gameDiscovery,
+              stagingPath,
+              sortedModList,
+              modPaths,
+              lastDeployment,
+            );
+
+            progress(t("Starting deployment"), 35);
+            const deployProgress = (name, percent) =>
+              progress(t("Deploying: ") + name, 50 + percent / 2);
+
+            const undiscovered = Object.keys(modPaths).filter(
+              (typeId) => !truthy(modPaths[typeId]),
+            );
+            await validateDeploymentTarget(api, undiscovered);
+            await deployAllModTypes(
+              api,
+              activator,
+              profile,
+              sortedModList,
+              stagingPath,
+              mergeResult,
+              modPaths,
+              lastDeployment,
+              newDeployment,
+              deployProgress,
+            );
           });
 
-          let mergeResult: { [modType: string]: IMergeResultByType };
-          const lastDeployment: { [typeId: string]: IDeployedFile[] } = {};
-          const mods = state.persistent.mods[profile.gameId] || {};
-          notification.message = t("Deploying mods");
-          api.sendNotification(notification);
-          api.store.dispatch(startActivity("mods", "deployment"));
-          progress(t("Loading deployment manifest"), 0);
-
-          return Bluebird.each(deployableModTypes(modPaths), (typeId) =>
-            loadActivation(
-              api,
-              gameId,
-              typeId,
-              modPaths[typeId],
-              stagingPath,
-              activator,
-            ).then((deployedFiles) => (lastDeployment[typeId] = deployedFiles)),
-          )
-            .tap(() => progress(t("Running pre-deployment events"), 2))
-            .then(() =>
-              api.emitAndAwait(
-                "will-deploy",
-                profile.id,
-                lastDeployment,
-                deployOptions,
-              ),
-            )
-            .then(() => {
-              // need to update the profile so that if a will-deploy handler disables a mod, that
-              // actually has an affect on this deployment
-              const updatedState = api.getState();
-              const updatedProfile =
-                updatedState.persistent.profiles[profile.id];
-              if (updatedProfile !== undefined) {
-                profile = updatedProfile;
-              } else {
-                // I don't think this can happen
-                log("warn", "profile no longer found?", profileId);
-              }
-            })
-            .tap(() => progress(t("Checking for external changes"), 5))
-            .then(() =>
-              dealWithExternalChanges(
-                api,
-                activator,
-                profileId,
-                stagingPath,
-                modPaths,
-                lastDeployment,
-              ),
-            )
-            .tap(() => progress(t("Checking for mod incompatibilities"), 25))
-            .then(() => checkIncompatibilities(api, profile, mods))
-            .tap(() => progress(t("Sorting mods"), 30))
-            .then(() =>
-              doSortMods(api, profile, mods).then((sortedModListIn: IMod[]) => {
-                sortedModList = sortedModListIn;
-              }),
-            )
-            .tap(() => progress(t("Merging mods"), 35))
-            .then(() =>
-              doMergeMods(
-                api,
-                game,
-                gameDiscovery,
-                stagingPath,
-                sortedModList,
-                modPaths,
-                lastDeployment,
-              ).then((mergeResultIn) => (mergeResult = mergeResultIn)),
-            )
-            .tap(() => progress(t("Starting deployment"), 35))
-            .then(() => {
-              const deployProgress = (name, percent) =>
-                progress(t("Deploying: ") + name, 50 + percent / 2);
-
-              const undiscovered = Object.keys(modPaths).filter(
-                (typeId) => !truthy(modPaths[typeId]),
-              );
-              return validateDeploymentTarget(api, undiscovered).then(() =>
-                deployAllModTypes(
-                  api,
-                  activator,
-                  profile,
-                  sortedModList,
-                  stagingPath,
-                  mergeResult,
-                  modPaths,
-                  lastDeployment,
-                  newDeployment,
-                  deployProgress,
-                ),
-              );
-            });
-        })
           // at this point the deployment lock gets released so another deployment
           // can be started during post-deployment
-          .tap(() => progress(t("Running post-deployment events"), 99))
-          .then(() =>
-            api.emitAndAwait(
-              "did-deploy",
-              profile.id,
-              newDeployment,
-              (title: string) => progress(title, 99),
-              deployOptions,
-            ),
-          )
-          .tap(() => {
-            api.events.emit("mods-did-deploy", profile.id, newDeployment);
-            progress(t("Preparing game settings"), 100);
-          })
-          .then(() => bakeSettings(api, profile, sortedModList))
-          // finally wrapping up
-          .then(() => {
-            api.store.dispatch(setDeploymentNecessary(game.id, false));
-          })
-          .catch(UserCanceled, () => undefined)
-          .catch(ProcessCanceled, (err) => {
+          progress(t("Running post-deployment events"), 99);
+          await api.emitAndAwait(
+            "did-deploy",
+            profile.id,
+            newDeployment,
+            (title: string) => progress(title, 99),
+            deployOptions,
+          );
+
+          api.events.emit("mods-did-deploy", profile.id, newDeployment);
+          progress(t("Preparing game settings"), 100);
+
+          await bakeSettings(api, profile, sortedModList);
+
+          api.store.dispatch(setDeploymentNecessary(game.id, false));
+        } catch (unknownErr) {
+          const err = unknownToError(unknownErr);
+          if (err instanceof UserCanceled) {
+            // nop
+          } else if (err instanceof ProcessCanceled) {
             api.sendNotification({
               type: "warning",
               title: "Deployment interrupted",
               message: err.message,
             });
-          })
-          .catch(TemporaryError, (err) => {
+          } else if (err instanceof TemporaryError) {
             api.showErrorNotification(
               "Failed to deploy mods, please try again",
               err.message,
               { allowReport: false },
             );
-          })
-          .catch(CycleError, (err) => {
+          } else if (err instanceof CycleError) {
             api.sendNotification({
               id: "mod-cycle-warning",
               type: "warning",
@@ -977,46 +961,43 @@ function genUpdateModDeployment() {
                 {
                   title: "Show",
                   action: () => {
-                    showCycles(api, err.cycles, profile.gameId);
+                    showCycles(api, (err).cycles, profile.gameId);
                   },
                 },
               ],
             });
-          })
-          .catch((err) => {
-            if (err instanceof UserCanceled) {
-              // not sure how we'd get here, UserCanceled is caught further up!
-              return Bluebird.resolve();
-            }
-            if (err.code === undefined && err.errno !== undefined) {
+          } else {
+            if (err["code"] === undefined && err["errno"] !== undefined) {
               // unresolved windows error code
-              return api.showErrorNotification("Failed to deploy mods", {
+              api.showErrorNotification("Failed to deploy mods", {
                 error: err,
-                ErrorCode: err.errno,
+                ErrorCode: err["errno"],
+              });
+            } else {
+              // Error codes that we can't debug without a log.
+              const attachLogErrCodes: string[] = ["ELOOP"];
+              if (attachLogErrCodes.includes(err["code"])) {
+                err["attachLogOnReport"] = true;
+              }
+              const isFSErr = ["EMFILE"].includes(err["code"]);
+              if (isFSErr) {
+                err.message =
+                  "A filesystem error prevented deploying some files. " +
+                  "please try deploying again.\n" +
+                  err.message;
+              }
+              api.showErrorNotification("Failed to deploy mods", err, {
+                allowReport:
+                  err["code"] !== "EPERM" && !isFSErr && err["allowReport"] !== false,
               });
             }
-            // Error codes that we can't debug without a log.
-            const attachLogErrCodes: string[] = ["ELOOP"];
-            if (attachLogErrCodes.includes(err.code)) {
-              err["attachLogOnReport"] = true;
-            }
-            const isFSErr = ["EMFILE"].includes(err.code);
-            if (isFSErr) {
-              err.message =
-                "A filesystem error prevented deploying some files. " +
-                "please try deploying again.\n" +
-                err.message;
-            }
-            return api.showErrorNotification("Failed to deploy mods", err, {
-              allowReport:
-                err.code !== "EPERM" && !isFSErr && err.allowReport !== false,
-            });
-          })
-          .finally(() => {
-            api.store.dispatch(stopActivity("mods", "deployment"));
-            api.dismissNotification(notification.id);
-          }),
-      )));
+          }
+        } finally {
+          api.store.dispatch(stopActivity("mods", "deployment"));
+          api.dismissNotification(notification.id);
+        }
+      },
+    ));
   };
 }
 
@@ -1030,7 +1011,7 @@ function doSaveActivation(
   activatorId: string,
 ) {
   const state: IState = api.store.getState();
-  return saveActivation(
+  return Promise.resolve(saveActivation(
     gameId,
     typeId,
     state.app.instanceId,
@@ -1038,7 +1019,7 @@ function doSaveActivation(
     stagingPath,
     files,
     activatorId,
-  ).catch((err) => {
+  )).catch((err) => {
     const canceled = err instanceof UserCanceled;
     let text = canceled
       ? "You canceled the writing of the manifest file."
@@ -1055,7 +1036,7 @@ function doSaveActivation(
         "Saving manifest failed",
         {
           text,
-          message: canceled ? undefined : err.stack,
+          message: canceled ? undefined : unknownToError(err).stack,
         },
         [{ label: "Retry" }, { label: "Ignore" }],
       )
@@ -1070,7 +1051,7 @@ function doSaveActivation(
               files,
               activatorId,
             )
-          : Bluebird.resolve(),
+          : Promise.resolve(),
       );
   });
 }
@@ -1162,7 +1143,7 @@ function genWebsiteAttribute(api: IExtensionApi): ITableAttribute<IMod> {
 
 function genValidActivatorCheck(api: IExtensionApi) {
   return () =>
-    new Bluebird<ITestResult>((resolve, reject) => {
+    new Promise<ITestResult>((resolve, reject) => {
       const state = api.store.getState();
       if (getSupportedActivators(state).length > 0) {
         return resolve(undefined);
@@ -1202,7 +1183,7 @@ function genValidActivatorCheck(api: IExtensionApi) {
         },
         severity: "error",
         automaticFix: () =>
-          new Bluebird<void>((fixResolve, fixReject) => {
+          new Promise<void>((fixResolve, fixReject) => {
             api.store.dispatch(
               setDeploymentProblem(
                 reasons
@@ -1242,7 +1223,7 @@ function genValidActivatorCheck(api: IExtensionApi) {
 }
 
 function attributeExtractor(input: any) {
-  return Bluebird.resolve({
+  return Promise.resolve({
     version: getSafe(input.meta, ["fileVersion"], undefined),
     logicalFileName: getSafe(input.meta, ["logicalFileName"], undefined),
     rules: getSafe(input.meta, ["rules"], undefined),
@@ -1256,7 +1237,7 @@ function attributeExtractor(input: any) {
 }
 
 function upgradeExtractor(input: any) {
-  return Bluebird.resolve({
+  return Promise.resolve({
     category: getSafe(input.previous, ["category"], undefined),
     customFileName: getSafe(input.previous, ["customFileName"], undefined),
     variant: getSafe(input.previous, ["variant"], undefined),
@@ -1338,7 +1319,7 @@ function onModsEnabled(api: IExtensionApi, deploymentTimer: Debouncer) {
 }
 
 function onDeploySingleMod(api: IExtensionApi) {
-  return (gameId: string, modId: string, enable?: boolean) => {
+  return async (gameId: string, modId: string, enable?: boolean) => {
     const state: IState = api.store.getState();
     const game = getGame(gameId);
     const discovery = getSafe(
@@ -1351,7 +1332,7 @@ function onDeploySingleMod(api: IExtensionApi) {
       discovery === undefined ||
       discovery.path === undefined
     ) {
-      return Bluebird.resolve();
+      return;
     }
     const mod: IMod = getSafe(
       state,
@@ -1359,17 +1340,17 @@ function onDeploySingleMod(api: IExtensionApi) {
       undefined,
     );
     if (mod === undefined) {
-      return Bluebird.resolve();
+      return;
     }
     const activator = getCurrentActivator(state, gameId, false);
 
     if (activator === undefined) {
-      return Bluebird.resolve();
+      return;
     }
 
     const dataPath = game.getModPaths(discovery.path)[mod.type || ""];
     if (!truthy(dataPath)) {
-      return Bluebird.resolve();
+      return;
     }
     const stagingPath: string = installPathForGame(state, gameId);
     let modPath: string;
@@ -1383,71 +1364,64 @@ function onDeploySingleMod(api: IExtensionApi) {
       api.showErrorNotification("Failed to deploy mod", err, {
         message: modId,
       });
-      return Bluebird.resolve();
+      return;
     }
 
     const subdir = genSubDirFunc(game, getModType(mod.type));
-    let normalize: Normalize;
-    return withActivationLock(() =>
-      getNormalizeFunc(dataPath)
-        .then((norm) => {
-          normalize = norm;
-          return loadActivation(
-            api,
-            gameId,
-            mod.type,
-            dataPath,
-            stagingPath,
-            activator,
-          );
-        })
-        .then((lastActivation) =>
-          activator.prepare(dataPath, false, lastActivation, normalize),
-        )
-        .then(() =>
-          mod !== undefined
-            ? enable !== false
-              ? activator.activate(
-                  modPath,
-                  mod.installationPath,
-                  subdir(mod),
-                  new BlacklistSet(mod.fileOverrides ?? [], game, normalize),
-                )
-              : activator.deactivate(modPath, subdir(mod), mod.installationPath)
-            : Bluebird.resolve(),
-        )
-        .tapCatch(() => {
-          if (activator.cancel !== undefined) {
-            activator.cancel(gameId, dataPath, stagingPath);
+    await withActivationLock(async () => {
+      try {
+        const normalize = await getNormalizeFunc(dataPath);
+        const lastActivation = await loadActivation(
+          api,
+          gameId,
+          mod.type,
+          dataPath,
+          stagingPath,
+          activator,
+        );
+        await activator.prepare(dataPath, false, lastActivation, normalize);
+        if (mod !== undefined) {
+          if (enable !== false) {
+            await activator.activate(
+              modPath,
+              mod.installationPath,
+              subdir(mod),
+              new BlacklistSet(mod.fileOverrides ?? [], game, normalize),
+            );
+          } else {
+            await activator.deactivate(modPath, subdir(mod), mod.installationPath);
           }
-        })
-        .then(() => activator.finalize(gameId, dataPath, stagingPath))
-        .then((newActivation) =>
-          doSaveActivation(
-            api,
-            gameId,
-            mod.type,
-            dataPath,
-            stagingPath,
-            newActivation,
-            activator.id,
-          ),
-        )
-        .catch(ProcessCanceled, (err) => {
+        }
+        const newActivation = await activator.finalize(gameId, dataPath, stagingPath);
+        await doSaveActivation(
+          api,
+          gameId,
+          mod.type,
+          dataPath,
+          stagingPath,
+          newActivation,
+          activator.id,
+        );
+      } catch (unknownErr) {
+        if (activator.cancel !== undefined) {
+          activator.cancel(gameId, dataPath, stagingPath);
+        }
+        const err = unknownToError(unknownErr);
+        if (err instanceof ProcessCanceled) {
           api.sendNotification({
             type: "warning",
             title: "Deployment interrupted",
             message: err.message,
           });
-        })
-        .catch((err) => {
+        } else {
           const userCanceled = err instanceof UserCanceled;
           api.showErrorNotification("Failed to deploy mod", err, {
             message: modId,
             allowReport: !userCanceled,
           });
-        }),
-    ).then(() => null);
+        }
+      }
+    });
   };
 }
 
@@ -1596,7 +1570,7 @@ function once(api: IExtensionApi) {
         displayMS: 3000,
       });
 
-      return Bluebird.resolve();
+      return Promise.resolve();
     },
     1000,
     true,
@@ -1618,7 +1592,7 @@ function once(api: IExtensionApi) {
       if (options?.silent !== true && options?.willBeReplaced !== true) {
         removeModToastDebouncer.schedule();
       }
-      return Bluebird.resolve();
+      return Promise.resolve();
     },
   );
 
@@ -1628,20 +1602,26 @@ function once(api: IExtensionApi) {
     "purge-mods-in-path",
     (gameId: string, modType: string, modPath: string) => {
       return purgeModsInPath(api, gameId, modType, modPath)
-        .catch(UserCanceled, () => Bluebird.resolve())
-        .catch(NoDeployment, () => {
-          api.showErrorNotification(
-            "Failed to purge mods",
-            "No deployment method currently available",
-            { allowReport: false },
-          );
-        })
-        .catch(ProcessCanceled, (err) =>
-          api.showErrorNotification("Failed to purge mods", err, {
-            allowReport: false,
-          }),
-        )
-        .catch((err) => api.showErrorNotification("Failed to purge mods", err));
+        .catch((err) => {
+          if (err instanceof UserCanceled) {
+            return Promise.resolve();
+          }
+          if (err instanceof NoDeployment) {
+            api.showErrorNotification(
+              "Failed to purge mods",
+              "No deployment method currently available",
+              { allowReport: false },
+            );
+            return;
+          }
+          if (err instanceof ProcessCanceled) {
+            api.showErrorNotification("Failed to purge mods", err, {
+              allowReport: false,
+            });
+            return;
+          }
+          api.showErrorNotification("Failed to purge mods", err);
+        });
     },
   );
 
@@ -1650,10 +1630,10 @@ function once(api: IExtensionApi) {
     (allowFallback: boolean, callback: (err: Error) => void) => {
       purgeMods(api)
         .catch((err) =>
-          allowFallback ? fallbackPurge(api) : Bluebird.reject(err),
+          allowFallback ? fallbackPurge(api) : Promise.reject(err),
         )
         .then(() => callback(null))
-        .catch((err) => callback(err));
+        .catch((err) => callback(unknownToError(err)));
     },
   );
 
@@ -1677,7 +1657,7 @@ function once(api: IExtensionApi) {
         undefined,
       );
 
-      Bluebird.map(modIds, (modId) =>
+      Promise.all(modIds.map((modId) =>
         installManager
           .installDependencies(
             api,
@@ -1687,9 +1667,14 @@ function once(api: IExtensionApi) {
             silent === true,
             false,
           )
-          .catch(ProcessCanceled, () => null)
-          .catch(UserCanceled, () => null),
-      ).catch((err) => {
+          .catch((err) => {
+            if ((err instanceof ProcessCanceled)
+                || (err instanceof UserCanceled)) {
+              return null;
+            }
+            throw err;
+          }),
+      )).catch((err) => {
         api.showErrorNotification("Failed to install dependencies", err);
       });
     },
@@ -1712,11 +1697,16 @@ function once(api: IExtensionApi) {
           );
         }
 
-        Bluebird.map(modIds, (modId) =>
+        Promise.all(modIds.map((modId) =>
           installManager
             .installRecommendations(api, profile, gameId, modId)
-            .catch(ProcessCanceled, () => null),
-        ).catch((err) =>
+            .catch((err) => {
+              if (err instanceof ProcessCanceled) {
+                return null;
+              }
+              throw err;
+            }),
+        )).catch((err) =>
           api.showErrorNotification("Failed to install recommendations", err),
         );
       } catch (err) {
@@ -1750,9 +1740,10 @@ function once(api: IExtensionApi) {
           modId,
         ),
       )
-      .catch(ProcessCanceled, () => null)
-      .catch(UserCanceled, () => null)
       .catch((err) => {
+        if (err instanceof ProcessCanceled || err instanceof UserCanceled) {
+          return null;
+        }
         api.showErrorNotification("Failed to install dependencies", err);
       });
   });
@@ -1887,7 +1878,7 @@ function once(api: IExtensionApi) {
       gameId: string,
       archiveId: string,
       options: IInstallOptions,
-      cb: (instructions: IInstallResult, tempPath: string) => Bluebird<void>,
+      cb: (instructions: IInstallResult, tempPath: string) => PromiseLike<void>,
     ) => {
       const state = api.getState();
       const download = state.persistent.downloads.files[archiveId];
@@ -1930,7 +1921,7 @@ function once(api: IExtensionApi) {
   const cacheModRefActions: Redux.Action[] = [];
   const cacheModRefDebouncer = new Debouncer(() => {
     batchDispatch(api.store, cacheModRefActions);
-    return Bluebird.resolve();
+    return Promise.resolve();
   }, 500);
 
   setResolvedCB(
@@ -1948,13 +1939,13 @@ function once(api: IExtensionApi) {
   );
 }
 
-function checkPendingTransfer(api: IExtensionApi): Bluebird<ITestResult> {
+function checkPendingTransfer(api: IExtensionApi): Promise<ITestResult> {
   let result: ITestResult;
   const state = api.store.getState();
 
   const gameMode = activeGameId(state);
   if (gameMode === undefined) {
-    return Bluebird.resolve(result);
+    return Promise.resolve(result);
   }
 
   const pendingTransfer: string[] = [
@@ -1965,7 +1956,7 @@ function checkPendingTransfer(api: IExtensionApi): Bluebird<ITestResult> {
   ];
   const transferDestination = getSafe(state, pendingTransfer, undefined);
   if (transferDestination === undefined) {
-    return Bluebird.resolve(result);
+    return Promise.resolve(result);
   }
 
   result = {
@@ -1977,7 +1968,7 @@ function checkPendingTransfer(api: IExtensionApi): Bluebird<ITestResult> {
         "Vortex clean up now, otherwise you may be left with unnecessary copies of files.",
     },
     automaticFix: () =>
-      new Bluebird<void>((fixResolve, fixReject) => {
+      new Promise<void>((fixResolve, fixReject) => {
         return fs
           .removeAsync(transferDestination)
           .then(() => {
@@ -1996,7 +1987,7 @@ function checkPendingTransfer(api: IExtensionApi): Bluebird<ITestResult> {
       }),
   };
 
-  return Bluebird.resolve(result);
+  return Promise.resolve(result);
 }
 
 function openDuplicateLocation(api: IExtensionApi, modId: string) {
@@ -2096,11 +2087,11 @@ function getDuplicateMods(api: IExtensionApi): IDuplicatesMap {
     : undefined;
 }
 
-function checkDuplicateMods(api: IExtensionApi): Bluebird<ITestResult> {
+function checkDuplicateMods(api: IExtensionApi): Promise<ITestResult> {
   let result: ITestResult;
   const duplicateMap = getDuplicateMods(api);
   if (duplicateMap === undefined) {
-    return Bluebird.resolve(result);
+    return Promise.resolve(result);
   }
 
   const preSelectedTxt =
@@ -2121,7 +2112,7 @@ function checkDuplicateMods(api: IExtensionApi): Bluebird<ITestResult> {
         "Proceeding past this point will allow you to select which mods to remove.",
     },
     automaticFix: () =>
-      new Bluebird<void>((fixResolve, fixReject) => {
+      new Promise<void>((fixResolve, fixReject) => {
         api.store.dispatch(setDialogVisible("duplicates-dialog"));
         api.events.on("duplicates-removed", () => {
           fixResolve();
@@ -2129,10 +2120,10 @@ function checkDuplicateMods(api: IExtensionApi): Bluebird<ITestResult> {
       }),
   };
 
-  return Bluebird.resolve(result);
+  return Promise.resolve(result);
 }
 
-function checkStagingFolder(api: IExtensionApi): Bluebird<ITestResult> {
+function checkStagingFolder(api: IExtensionApi): Promise<ITestResult> {
   let result: ITestResult;
   const state = api.store.getState();
 
@@ -2140,7 +2131,7 @@ function checkStagingFolder(api: IExtensionApi): Bluebird<ITestResult> {
 
   log("debug", "[checking staging folder]", { gameMode });
   if (gameMode === undefined) {
-    return Bluebird.resolve(result);
+    return Promise.resolve(result);
   }
 
   const discovery = currentGameDiscovery(state);
@@ -2180,7 +2171,7 @@ function checkStagingFolder(api: IExtensionApi): Bluebird<ITestResult> {
           "application uses.",
       },
       automaticFix: () =>
-        new Bluebird<void>((fixResolve, fixReject) => {
+        new Promise<void>((fixResolve, fixReject) => {
           api.events.emit("show-main-page", "application_settings");
           api.store.dispatch(setSettingsPage("Mods"));
           api.highlightControl("#install-path-form", 5000);
@@ -2192,7 +2183,7 @@ function checkStagingFolder(api: IExtensionApi): Bluebird<ITestResult> {
         }),
     };
   }
-  return Bluebird.resolve(result);
+  return Promise.resolve(result);
 }
 
 function init(context: IExtensionContext): boolean {
@@ -2213,7 +2204,7 @@ function init(context: IExtensionContext): boolean {
     "Mods",
     LazyComponent(() => require("./views/ModList")),
     {
-      priority: 40,
+      priority: 1,
       hotkey: "M",
       group: "per-game",
       visible: () => activeGameId(context.api.store.getState()) !== undefined,
@@ -2243,19 +2234,25 @@ function init(context: IExtensionContext): boolean {
       const profile = activeProfile(context.api.getState());
       // installRecommendations should already do nothing if there are no recommendations
       // on a mod so no need to make the code more complicated here
-      Bluebird.mapSeries(instanceIds, (modId) =>
-        installManager.installRecommendations(
-          context.api,
-          profile,
-          profile.gameId,
-          modId,
-        ),
-      ).catch((err) => {
-        context.api.showErrorNotification(
-          "Failed to install recommendations",
-          err,
-        );
-      });
+      const installSequentially = async () => {
+        try {
+          // sequential: install order matters per mod
+          for (const modId of instanceIds) {
+            await installManager.installRecommendations(
+              context.api,
+              profile,
+              profile.gameId,
+              modId,
+            );
+          }
+        } catch (err) {
+          context.api.showErrorNotification(
+            "Failed to install recommendations",
+            err,
+          );
+        }
+      };
+      void installSequentially();
     },
     (modIds) => {
       // only show the option if there is at least one recommendation not already fulfilled.

@@ -79,8 +79,14 @@ export const useTools = (
   const visibleTools = useMemo(() => {
     const result: IStarterInfo[] = [];
 
-    // Add game starter first if available and valid
-    if (gameStarter && isToolValid(gameStarter)) {
+    // Only show the game starter as a separate tool button when
+    // the primary tool is a different tool (otherwise the Play button
+    // already launches the game starter, making a separate button redundant)
+    if (
+      gameStarter &&
+      isToolValid(gameStarter) &&
+      primaryToolId !== undefined
+    ) {
       result.push(gameStarter);
     }
 
@@ -96,7 +102,7 @@ export const useTools = (
     result.push(...visibleToolsList);
 
     return result.slice(0, MAX_VISIBLE_TOOLS);
-  }, [gameStarter, tools, discoveredTools, isToolValid]);
+  }, [gameStarter, tools, discoveredTools, isToolValid, primaryToolId]);
 
   const startTool = useCallback(
     (info: IStarterInfo) => {

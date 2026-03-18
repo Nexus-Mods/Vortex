@@ -165,9 +165,9 @@ function InstructionsOverlay(props: IInstructionsOverlayProps) {
   };
 
   return ReactDOM.createPortal(
-    <div className={className} ref={ref} style={{ left: pos.x, top: pos.y }}>
+    <div className={className} ref={ref} style={{ left: pos.x, top: pos.y, height: open ? undefined : "auto" }}>
       <FlexLayout type="column">
-        <FlexLayout.Fixed style={{ height: "5%" }}>
+        <FlexLayout.Fixed>
           <FlexLayout className="instructions-overlay-header" type="row">
             {/*
             <FlexLayout.Fixed className='drag-icon-container' draggable onDragStart={startDrag}>

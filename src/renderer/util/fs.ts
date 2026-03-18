@@ -655,7 +655,7 @@ export function ensureFileAsync(filePath: string): PromiseBB<void> {
 
 export function ensureDirAsync(
   dirPath: string,
-  onDirCreatedCB?: (created: string) => PromiseBB<void>,
+  onDirCreatedCB?: (created: string) => PromiseLike<void>,
 ): PromiseBB<void> {
   const stackErr = new Error();
   // If a onDirCreated callback is provided, we can't use fs-extra's
@@ -687,7 +687,7 @@ function ensureDirInt(
 
 function ensureDir(
   targetDir: string,
-  onDirCreatedCB: (created: string) => PromiseBB<void>,
+  onDirCreatedCB: (created: string) => PromiseLike<void>,
 ) {
   // Please note, onDirCreatedCB will be called for _each_ directory
   //  we create.

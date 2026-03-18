@@ -1,0 +1,30 @@
+{
+  "$schema": "https://www.schemastore.org/tsconfig.json",
+  "files": [
+    "lib/api.d.ts"
+  ],
+  "include": [
+    "lib/*.d.ts"
+  ],
+  "compilerOptions": {
+    "declaration": true,
+    "noEmit": true,
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": [
+      "ESNext",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "noImplicitAny": false,
+    "noImplicitOverride": false,
+    "noImplicitThis": false,
+    "noUncheckedIndexedAccess": false,
+    "strict": false,
+    "strictFunctionTypes": false,
+    "strictNullChecks": false,
+    "strictPropertyInitialization": false,
+    "skipLibCheck": true
+  }
+}

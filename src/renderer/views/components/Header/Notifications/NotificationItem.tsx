@@ -3,6 +3,7 @@ import {
   mdiAlertOutline,
   mdiCheckCircleOutline,
   mdiInformationOutline,
+  mdiLoading,
 } from "@mdi/js";
 import React, { type FC, useCallback } from "react";
 
@@ -27,7 +28,7 @@ const STATUS_MAP = {
   warning: { className: "text-warning-strong", icon: mdiAlertOutline },
   success: { className: "text-success-strong", icon: mdiCheckCircleOutline },
   info: { className: "text-info-strong", icon: mdiInformationOutline },
-  activity: { className: "text-info-strong", icon: mdiInformationOutline },
+  activity: { className: "text-info-strong animate-spin", icon: mdiLoading },
   global: { className: "text-info-strong", icon: mdiInformationOutline },
   silent: { className: "text-info-strong", icon: mdiInformationOutline },
 } satisfies Record<NotificationType, { className: string; icon: string }>;
@@ -106,6 +107,15 @@ export const NotificationItem: FC<INotificationItemProps> = ({
 
       <div className="relative flex grow flex-col gap-y-2">
         <NotificationContent lines={lines} title={translatedTitle} />
+
+        {type === "activity" && notification.progress !== undefined && (
+          <div className="h-1 w-full overflow-hidden rounded-full bg-surface-high">
+            <div
+              className="h-full rounded-full bg-info-strong transition-[width] duration-300"
+              style={{ width: `${notification.progress}%` }}
+            />
+          </div>
+        )}
 
         <NotificationActions
           actions={actions}
