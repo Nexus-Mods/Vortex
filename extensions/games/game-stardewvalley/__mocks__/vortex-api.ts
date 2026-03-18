@@ -1,15 +1,17 @@
-export const readFileAsyncMock = jest.fn();
-export const extractFullMock = jest.fn();
-export const walkMock = jest.fn();
-export const SevenZipMock = jest.fn(() => ({
-  extractFull: extractFullMock,
-}));
+import { vi } from 'vitest';
+
+export const readFileAsyncMock = vi.fn();
+export const extractFullMock = vi.fn();
+export const walkMock = vi.fn();
+export const SevenZipMock = vi.fn(class SevenZipMock {
+  public extractFull = extractFullMock;
+});
 
 export const fs = {
   readFileAsync: readFileAsyncMock,
 };
 
-export const log = jest.fn();
+export const log = vi.fn();
 
 export class DataInvalid extends Error {
   constructor(message: string) {

@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 import {
   installSMAPI,
   windowsSMAPIPlatform,
@@ -19,7 +20,7 @@ import {
 
 describe('installers/smapi installSMAPI (windows)', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     readFileAsyncMock.mockResolvedValue('{"deps":true}');
     extractFullMock.mockResolvedValue(undefined);
   });

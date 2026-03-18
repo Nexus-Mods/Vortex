@@ -8,8 +8,7 @@
     "strictNullChecks": true,
     "noUncheckedIndexedAccess": true,
     "types": [
-      "node",
-      "jest"
+      "node"
     ]
   },
   "include": [

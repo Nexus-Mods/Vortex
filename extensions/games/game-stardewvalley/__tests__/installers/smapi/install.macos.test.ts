@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 import {
   installSMAPI,
   macosSMAPIPlatform,
@@ -7,7 +8,7 @@ import { extractFullMock } from '../../../__mocks__/vortex-api';
 
 describe('installers/smapi installSMAPI (macOS stub variant)', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test('fails with a clear stub message', async () => {

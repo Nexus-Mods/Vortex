@@ -7,7 +7,7 @@
   "scripts": {
     "build": "node -e \"process.exit(0)\"",
     "dist": "node -e \"process.exit(0)\"",
-    "test:stardew": "jest -c ./jest.config.cjs"
+    "test:stardew": "vitest run --config ./game-stardewvalley/vitest.config.ts"
   },
   "devDependencies": {
     "@babel/polyfill": "catalog:",
@@ -187,6 +187,7 @@
     "universal-analytics": "catalog:",
     "uuid": "catalog:",
     "vortex-api": "workspace:*",
+    "vitest": "catalog:",
     "vortex-parse-ini": "catalog:",
     "vortexmt": "catalog:",
     "wholocks": "catalog:",
