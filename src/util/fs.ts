@@ -1017,6 +1017,8 @@ function readlinkInt(
   );
 }
 
+const ELEVATED_TIMEOUT_MS = 30000;
+
 function elevated(
   func: (ipc, req: NodeRequireFunction) => Promise<void>,
   parameters: any,
@@ -1025,21 +1027,28 @@ function elevated(
   return new PromiseBB<void>((resolve, reject) => {
     const id = shortid();
     let resolved = false;
+    let elevatedError: string | undefined;
 
     const ipcPath = `__fs_elevated_${id}`;
 
+    const timeout = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        reject(new Error("Elevated process did not connect within the expected time. "
+          + "This usually indicates it crashed or failed to start."));
+      }
+    }, ELEVATED_TIMEOUT_MS);
+
     server = net
       .createServer((connRaw) => {
+        clearTimeout(timeout);
         const conn = new JsonSocket(connRaw);
 
         conn
           .on("message", (data) => {
             if (data.error !== undefined) {
-              if (data.error.startsWith("InvalidScriptError")) {
-                reject(new Error(data.error));
-              } else {
-                log("error", "elevated process failed", data.error);
-              }
+              log("error", "elevated process failed", data.error);
+              elevatedError = data.error;
             } else {
               log("warn", "got unexpected ipc message", JSON.stringify(data));
             }
@@ -1047,7 +1056,11 @@ function elevated(
           .on("end", () => {
             if (!resolved) {
               resolved = true;
-              resolve();
+              if (elevatedError !== undefined) {
+                reject(new Error(elevatedError));
+              } else {
+                resolve();
+              }
             }
           })
           .on("error", (err) => {

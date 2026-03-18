@@ -441,7 +441,7 @@ export default function init(context: IExtensionContext) {
           });
           if (loPath) {
             try {
-              await fs.ensureDirWritableAsync(path.basename(loPath));
+              await fs.ensureDirWritableAsync(path.dirname(loPath));
               await fs.writeFileAsync(loPath, data);
               api.sendNotification({
                 type: "success",
