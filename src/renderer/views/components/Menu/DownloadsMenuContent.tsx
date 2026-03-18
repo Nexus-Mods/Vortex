@@ -10,7 +10,7 @@ import { Typography } from "../../../ui/components/typography/Typography";
 import { joinClasses } from "../../../ui/utils/joinClasses";
 import { discovered as discoveredGamesSelector } from "../../../util/selectors";
 import { useSpineContext } from "../Spine/SpineContext";
-import { getGameImageUrl } from "../Spine/utils";
+import { getGameImageUrls, useGameImage } from "../Spine/utils";
 import { MenuButton } from "./MenuButton";
 
 /** Deterministic hue from a string, for the letter-avatar background. */
@@ -47,7 +47,15 @@ const GameMenuEntry: FC<{
   onClick: () => void;
 }> = ({ game, isActive, onClick }) => {
   const discoveredGames = useSelector(discoveredGamesSelector);
-  const imageSrc = getGameImageUrl(game, discoveredGames[game.id]);
+  const { cacheKey, sources, preferred } = getGameImageUrls(
+    game,
+    discoveredGames[game.id],
+  );
+  const { src, exhausted, onError, onLoad } = useGameImage(
+    cacheKey,
+    sources,
+    preferred,
+  );
 
   return (
     <button
@@ -60,13 +68,7 @@ const GameMenuEntry: FC<{
       title={game.name}
       onClick={onClick}
     >
-      {imageSrc !== undefined ? (
-        <img
-          alt=""
-          className="size-4 shrink-0 rounded-sm object-cover"
-          src={imageSrc}
-        />
-      ) : (
+      {exhausted ? (
         <span
           className="flex size-4 shrink-0 items-center justify-center rounded-sm text-xs font-bold text-white"
           style={{
@@ -75,6 +77,14 @@ const GameMenuEntry: FC<{
         >
           {game.name.charAt(0).toUpperCase()}
         </span>
+      ) : (
+        <img
+          alt=""
+          className="size-4 shrink-0 rounded-sm object-cover"
+          src={src}
+          onError={onError}
+          onLoad={onLoad}
+        />
       )}
 
       <Typography
