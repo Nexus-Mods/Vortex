@@ -65,6 +65,7 @@ const NotificationsContent: React.FC<{ popoverOpen: boolean }> = ({
     <>
       <Popover.Button
         as={IconButton}
+        disabled={notifications.length === 0}
         iconPath={notifications.length > 0 ? mdiBell : mdiBellOutline}
         itemCount={notifications.length}
         ref={buttonRef}
