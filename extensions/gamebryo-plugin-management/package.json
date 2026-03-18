@@ -1,6 +1,6 @@
 {
   "name": "gamebryo-plugin-management",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "description": "Management for gamebryo plugins",
   "main": "./out/index.js",
   "repository": "",
