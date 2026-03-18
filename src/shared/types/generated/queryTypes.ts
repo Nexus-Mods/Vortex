@@ -6,7 +6,7 @@ export interface RecentlyManagedGamesParams {
 }
 
 /** Result row for the 'recently_managed_games' query */
-export interface RecentlyManagedGamesResult {
+export interface RecentlyManagedGamesRow {
   game_id: string;
 }
 
@@ -17,7 +17,7 @@ export interface QueryParamsMap {
 
 /** Maps query names to their result row types */
 export interface QueryResultMap {
-  recently_managed_games: RecentlyManagedGamesResult;
+  recently_managed_games: RecentlyManagedGamesRow;
 }
 
 /** All valid query names */
