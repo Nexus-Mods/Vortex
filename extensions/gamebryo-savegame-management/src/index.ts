@@ -717,7 +717,7 @@ function init(context: IExtensionContextExt): boolean {
   const getInstalledPluginsProp = () => getInstalledPlugins(context.api);
 
   context.registerMainPage("savegame", "Save games", SavegameList, {
-    priority: 80,
+    priority: 50,
     id: "gamebryo-savegames",
     hotkey: "A",
     group: "per-game",

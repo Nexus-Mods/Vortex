@@ -2204,7 +2204,7 @@ function init(context: IExtensionContext): boolean {
     "Mods",
     LazyComponent(() => require("./views/ModList")),
     {
-      priority: 40,
+      priority: 1,
       hotkey: "M",
       group: "per-game",
       visible: () => activeGameId(context.api.store.getState()) !== undefined,
