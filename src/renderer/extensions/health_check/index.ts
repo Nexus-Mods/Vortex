@@ -53,7 +53,8 @@ function init(context: IExtensionContext): boolean {
   );
 
   // Register the Health Check page
-  context.registerMainPage("health", "Health Check", HealthCheckPage, {
+  context.registerMainPage("health", "Health check", HealthCheckPage, {
+    priority: 60,
     hotkey: "H",
     group: "per-game",
     visible: () => activeGameId(context.api.store.getState()) !== undefined,
@@ -68,7 +69,6 @@ function init(context: IExtensionContext): boolean {
         await onDownloadRequirement(context.api, req, file);
       },
     }),
-    priority: 0, // Force top of game section
   });
 
   context.once(() => {

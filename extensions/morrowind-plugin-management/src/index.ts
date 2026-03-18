@@ -107,6 +107,7 @@ function refreshPlugins(api: types.IExtensionApi): Promise<void> {
 function init(context: types.IExtensionContext) {
   context.registerMainPage("plugins", "Plugins", PluginList, {
     id: "morrowind-plugins",
+    priority: 30,
     hotkey: "E",
     group: "per-game",
     visible: () =>

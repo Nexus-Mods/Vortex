@@ -847,7 +847,7 @@ function register(
   };
 
   context.registerMainPage("collection", "Collections", CollectionsMainPage, {
-    priority: 50,
+    priority: 10,
     hotkey: "C",
     group: "per-game",
     visible: () => selectors.activeGameId(context.api.getState()) !== undefined,

@@ -1,10 +1,22 @@
+import { unknownToError } from "@vortex/shared";
 import * as _ from "lodash";
-
 import * as path from "path";
 
-import { setValidationResult } from "./actions/session";
-
+import type * as types from "../../types/api";
 import type { IExtensionContext } from "../../types/IExtensionContext";
+import type { ICollection } from "./types/collections";
+
+import * as util from "../../util/api";
+import * as fs from "../../util/fs";
+import { log } from "../../util/log";
+import * as selectors from "../../util/selectors";
+import { setFBLoadOrder } from "./actions/loadOrder";
+import { setValidationResult } from "./actions/session";
+import { generate, Interface, parser } from "./collections/loadOrder";
+import { addGameEntry, findGameEntry } from "./gameSupport";
+import { modLoadOrderReducer } from "./reducers/loadOrder";
+import { sessionReducer } from "./reducers/session";
+import { currentGameMods, currentLoadOrderForProfile } from "./selectors";
 import {
   type ILoadOrderGameInfo,
   type ILoadOrderGameInfoExt,
@@ -13,36 +25,13 @@ import {
   LoadOrderValidationError,
   type ILoadOrderEntryExt,
 } from "./types/types";
-
-import type { ICollection } from "./types/collections";
-
-import { generate, Interface, parser } from "./collections/loadOrder";
-
-import FileBasedLoadOrderPage from "./views/FileBasedLoadOrderPage";
-
-import { modLoadOrderReducer } from "./reducers/loadOrder";
-import { sessionReducer } from "./reducers/session";
-
-import type * as types from "../../types/api";
-import * as util from "../../util/api";
-import * as selectors from "../../util/selectors";
-
-import { log } from "../../util/log";
-import { setFBLoadOrder } from "./actions/loadOrder";
-
-import { addGameEntry, findGameEntry } from "./gameSupport";
+import UpdateSet from "./UpdateSet";
 import {
   assertValidationResult,
   errorHandler,
   toExtendedLoadOrderEntry,
 } from "./util";
-
-import * as fs from "../../util/fs";
-
-import { currentGameMods, currentLoadOrderForProfile } from "./selectors";
-
-import UpdateSet from "./UpdateSet";
-import { unknownToError } from "@vortex/shared";
+import FileBasedLoadOrderPage from "./views/FileBasedLoadOrderPage";
 
 interface IDeployment {
   [modType: string]: types.IDeployedFile[];
@@ -350,7 +339,7 @@ export default function init(context: IExtensionContext) {
     context.api.store.dispatch(setFBLoadOrder(profileId, loadOrder));
   };
   context.registerMainPage("sort-none", "Load order", FileBasedLoadOrderPage, {
-    priority: 120,
+    priority: 30,
     id: "file-based-loadorder",
     hotkey: "E",
     group: "per-game",

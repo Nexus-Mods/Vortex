@@ -356,6 +356,7 @@ function main(context: types.IExtensionContext) {
 
   context.registerMainPage('sort-none', 'Load Order', LoadOrder, {
     id: 'kcd-load-order',
+    priority: 30,
     hotkey: 'E',
     group: 'per-game',
     visible: () => selectors.activeGameId(context.api.store.getState()) === GAME_ID,
