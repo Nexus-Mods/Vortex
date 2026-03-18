@@ -3,7 +3,7 @@ import { createConfig, bundle, nativeRemapPlugin } from "../../scripts/extension
 
 const extensionPath = path.resolve(import.meta.dirname);
 const entryPoint = path.resolve(extensionPath, "src", "index.ts");
-const output = path.resolve(extensionPath, "dist", "index.js");
+const output = path.resolve(extensionPath, "dist", "index.cjs");
 
 const remapPlugin = nativeRemapPlugin({
   "./build/Release/bsatk": "./bsatk.node"
