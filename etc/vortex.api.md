@@ -438,7 +438,7 @@ class ArgumentInvalid extends Error {
 }
 
 // @public
-type AttributeExtractor = (modInfo: any, modPath: string) => Promise_2<{
+type AttributeExtractor = (modInfo: any, modPath: string) => PromiseLike<{
     [key: string]: any;
 }>;
 
@@ -480,7 +480,7 @@ const cacheModReference: reduxAct.ComplexActionCreator4<string, string, IModRefe
 function calcDuration(messageLength: number): number;
 
 // @public (undocumented)
-function calculateFolderSize(dirPath: string): Bluebird<number>;
+function calculateFolderSize(dirPath: string): Promise<number>;
 
 // @public
 enum Campaign {
@@ -503,7 +503,7 @@ function changeFileOwnership(filePath: string, stat: fs_2.Stats): Promise_2<void
 function changeOrNop<T>(state: T, path: Array<string | number>, value: any): T;
 
 // @public (undocumented)
-type CheckFunction = () => Promise_2<ITestResult>;
+type CheckFunction = () => PromiseLike<ITestResult>;
 
 // @public (undocumented)
 function checksum(input: Buffer): string;
@@ -973,7 +973,7 @@ instanceId: string;
 }, {}>;
 
 // @public (undocumented)
-function ensureDirAsync(dirPath: string, onDirCreatedCB?: (created: string) => Promise_2<void>): Promise_2<void>;
+function ensureDirAsync(dirPath: string, onDirCreatedCB?: (created: string) => PromiseLike<void>): Promise_2<void>;
 
 // @public (undocumented)
 function ensureDirSync(dirPath: string): void;
@@ -1193,7 +1193,7 @@ class GameEntryNotFound extends Error {
 }
 
 // @public
-type GameInfoQuery = (game: any) => Promise_2<{
+type GameInfoQuery = (game: any) => PromiseLike<{
     [key: string]: IGameDetail;
 }>;
 
@@ -1429,7 +1429,7 @@ function getGame(gameId: string): IGame;
 function getGames(): IGame[];
 
 // @public
-function getManifest(api: IExtensionApi, modType?: string, gameId?: string): Bluebird<IDeploymentManifest>;
+function getManifest(api: IExtensionApi, modType?: string, gameId?: string): Promise<IDeploymentManifest>;
 
 // @public (undocumented)
 const getMod: ((state: IState, gameId: string, modId: string | number) => IMod) & OutputSelectorFields<(args_0: {
@@ -1830,28 +1830,28 @@ interface IDeploymentManifest {
 
 // @public (undocumented)
 interface IDeploymentMethod {
-    activate: (sourcePath: string, sourceName: string, deployPath: string, blackList: Set<string>) => Promise_2<void>;
-    cancel?: (gameId: string, dataPath: string, installationPath: string) => Promise_2<void>;
+    activate: (sourcePath: string, sourceName: string, deployPath: string, blackList: Set<string>) => PromiseLike<void>;
+    cancel?: (gameId: string, dataPath: string, installationPath: string) => PromiseLike<void>;
     readonly compatible?: string[];
-    deactivate: (sourcePath: string, dataPath: string, sourceName: string) => Promise_2<void>;
+    deactivate: (sourcePath: string, dataPath: string, sourceName: string) => PromiseLike<void>;
     readonly description: string;
     detailedDescription: (t: TFunction) => string;
-    externalChanges: (gameId: string, installPath: string, dataPath: string, activation: IDeployedFile[]) => Promise_2<IFileChange[]>;
-    finalize: (gameId: string, dataPath: string, installationPath: string, progressCB?: (files: number, total: number) => void) => Promise_2<IDeployedFile[]>;
+    externalChanges: (gameId: string, installPath: string, dataPath: string, activation: IDeployedFile[]) => PromiseLike<IFileChange[]>;
+    finalize: (gameId: string, dataPath: string, installationPath: string, progressCB?: (files: number, total: number) => void) => PromiseLike<IDeployedFile[]>;
     getDeployedPath: (input: string) => string;
     readonly id: string;
-    isDeployed: (installPath: string, dataPath: string, file: IDeployedFile) => Promise_2<boolean>;
+    isDeployed: (installPath: string, dataPath: string, file: IDeployedFile) => PromiseLike<boolean>;
     readonly isFallbackPurgeSafe: boolean;
     isSupported: (state: any, gameId: string, modTypeId: string) => IUnavailableReason;
     readonly name: string;
     readonly noRedundancy?: boolean;
-    onSelected?: (api: IExtensionApi) => Promise_2<void>;
-    postPurge: () => Promise_2<void>;
-    prepare: (dataPath: string, clean: boolean, lastActivation: IDeployedFile[], normalize: Normalize) => Promise_2<void>;
-    prePurge: (installPath: string) => Promise_2<void>;
+    onSelected?: (api: IExtensionApi) => PromiseLike<void>;
+    postPurge: () => PromiseLike<void>;
+    prepare: (dataPath: string, clean: boolean, lastActivation: IDeployedFile[], normalize: Normalize) => PromiseLike<void>;
+    prePurge: (installPath: string) => PromiseLike<void>;
     readonly priority: number;
-    purge: (installPath: string, dataPath: string, gameId?: string, onProgress?: (num: number, total: number) => void) => Promise_2<void>;
-    userGate: () => Promise_2<void>;
+    purge: (installPath: string, dataPath: string, gameId?: string, onProgress?: (num: number, total: number) => void) => PromiseLike<void>;
+    userGate: () => PromiseLike<void>;
 }
 
 // @public (undocumented)
@@ -2224,7 +2224,7 @@ interface IExtensionApiExtension extends INexusAPIExtension, IModsAPIExtension, 
 // @public
 interface IExtensionContext {
     api: IExtensionApi;
-    once: (callback: () => void | Promise_2<void>) => void;
+    once: (callback: () => void | PromiseLike<void>) => void;
     // @deprecated
     onceMain: (callback: () => void) => void;
     optional: any;
@@ -2271,7 +2271,7 @@ interface IExtensionContext {
     registerReducer: (path: string[], spec: IReducerSpec) => void;
     registerSettings: RegisterSettings;
     registerSettingsHive: (type: PersistingType, hive: string) => void;
-    registerStartHook: (priority: number, id: string, hook: (call: IRunParameters) => Promise_2<IRunParameters>) => void;
+    registerStartHook: (priority: number, id: string, hook: (call: IRunParameters) => PromiseLike<IRunParameters>) => void;
     registerTableAttribute: (tableId: string, attribute: ITableAttribute) => void;
     registerTest: (id: string, event: string, check: CheckFunction) => void;
     registerToDo: RegisterToDo;
@@ -2987,7 +2987,7 @@ interface INotificationState {
 }
 
 // @public (undocumented)
-type InstallFunc = (files: string[], destinationPath: string, gameId: string, progressDelegate: ProgressDelegate, choices?: any, unattended?: boolean, archivePath?: string, options?: IInstallationDetails) => Promise_2<IInstallResult>;
+type InstallFunc = (files: string[], destinationPath: string, gameId: string, progressDelegate: ProgressDelegate, choices?: any, unattended?: boolean, archivePath?: string, options?: IInstallationDetails) => PromiseLike<IInstallResult>;
 
 // @public
 const installIconSet: (set: string, setPath: string) => Promise<Set<string>>;
@@ -3880,7 +3880,7 @@ interface ITableStates {
 // @public (undocumented)
 interface ITestResult {
     // (undocumented)
-    automaticFix?: () => Promise_2<void>;
+    automaticFix?: () => PromiseLike<void>;
     // (undocumented)
     description: {
         short: string;
@@ -3892,7 +3892,7 @@ interface ITestResult {
         context?: any;
     };
     // (undocumented)
-    onRecheck?: () => Promise_2<void>;
+    onRecheck?: () => PromiseLike<void>;
     // (undocumented)
     severity: ProblemSeverity;
 }
@@ -4045,7 +4045,7 @@ interface IUIBlocker {
 // @public
 interface IUnavailableReason {
     description: (t: TFunction) => string;
-    fixCallback?: (api: IExtensionApi) => Promise_2<void>;
+    fixCallback?: (api: IExtensionApi) => PromiseLike<void>;
     order?: number;
     solution?: (t: TFunction) => string;
 }
@@ -4199,7 +4199,7 @@ function makeOverlayableDictionary<KeyT extends string | number | symbol, ValueT
 }, deduceLayer: (key: KeyT, extraArg: any) => string): Overlayable<KeyT, ValueT>;
 
 // @public
-function makeQueue<T>(): (func: () => Bluebird<T>, tryOnly: boolean) => Bluebird<T>;
+function makeQueue<T>(): (func: () => PromiseLike<T>, tryOnly: boolean) => Bluebird<T>;
 
 // @public
 function makeReactive<T extends object>(value: T): T;
@@ -4223,7 +4223,7 @@ value: any;
 }, {}>;
 
 // @public
-type MergeFunc = (filePath: string, mergePath: string) => Promise_2<void>;
+type MergeFunc = (filePath: string, mergePath: string) => PromiseLike<void>;
 
 // @public
 type MergeTest = (game: IGame, gameDiscovery: IDiscoveryResult) => IMergeFilter;
@@ -4697,7 +4697,7 @@ const removeModRule: reduxAct.ComplexActionCreator3<string, string, IModRule, {
 }, {}>;
 
 // @public (undocumented)
-function removeMods(api: IExtensionApi, gameId: string, modIds: string[]): Promise_2<void>;
+function removeMods(api: IExtensionApi, gameId: string, modIds: string[]): Promise<void>;
 
 // @public (undocumented)
 const removeProfile: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
@@ -5456,7 +5456,7 @@ const showUsageInstruction: reduxAct.ComplexActionCreator2<string, boolean, {
 type SortDirection = "none" | "asc" | "desc";
 
 // @public (undocumented)
-function sortMods(gameId: string, mods: IMod[], api: IExtensionApi): Promise_2<IMod[]>;
+function sortMods(gameId: string, mods: IMod[], api: IExtensionApi): Promise<IMod[]>;
 
 // @public (undocumented)
 type SortType = "ascending" | "descending";
@@ -5657,7 +5657,7 @@ function testRefByIdentifiers(identifiers: {
 }, ref: IModReference): boolean;
 
 // @public (undocumented)
-type TestSupported = (files: string[], gameId: string, archivePath?: string, details?: ITestSupportedDetails) => Promise_2<ISupportedResult>;
+type TestSupported = (files: string[], gameId: string, archivePath?: string, details?: ITestSupportedDetails) => PromiseLike<ISupportedResult>;
 
 // @public (undocumented)
 type TextGroup = "mod" | "profile";
@@ -6208,7 +6208,7 @@ export class VisibilityProxy extends React_2.PureComponent<any, {}> {
 // Warning: (ae-forgotten-export) The symbol "IWalkOptions" needs to be exported by the entry point api.d.ts
 //
 // @public
-function walk(target: string, callback: (iterPath: string, stats: fs.Stats) => Promise_2<any>, options?: IWalkOptions): Promise_2<void>;
+function walk(target: string, callback: (iterPath: string, stats: fs.Stats) => PromiseLike<any>, options?: IWalkOptions): Promise<void>;
 
 // Warning: (ae-forgotten-export) The symbol "IWebviewProps" needs to be exported by the entry point api.d.ts
 // Warning: (ae-forgotten-export) The symbol "IWebView_2" needs to be exported by the entry point api.d.ts
