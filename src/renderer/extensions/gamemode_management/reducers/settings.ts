@@ -21,7 +21,16 @@ export const settingsReducer: IReducerSpec<ISettingsGameMode> = {
       // don't replace previously discovered games as the settings
       // there may also be user configuration
       const gamePath = ["discovered", payload.id];
-      const res = merge(state, gamePath, payload.result);
+      let result = payload.result;
+      // If the path was manually set by the user, don't let auto-discovery overwrite it
+      if (
+        getSafe(state, [...gamePath, "pathSetManually"], false) &&
+        !result.pathSetManually
+      ) {
+        const { path: _path, ...rest } = result;
+        result = rest;
+      }
+      const res = merge(state, gamePath, result);
       const merged = getSafe(res, gamePath, undefined);
       if (merged.executable === undefined) {
         // work around a problem where a value of undefined will be picked up as a
@@ -29,7 +38,7 @@ export const settingsReducer: IReducerSpec<ISettingsGameMode> = {
         // every startup
         delete merged.executable;
       }
-      if (payload.path !== undefined && payload.store === undefined) {
+      if (result.path !== undefined && result.store === undefined) {
         // new path set but no store? fall back to default
         setSafe(res, [...gamePath, "store"], undefined);
       }
@@ -53,15 +62,21 @@ export const settingsReducer: IReducerSpec<ISettingsGameMode> = {
       return deleteOrNop(state, ["discovered", id, "path"]);
     },
     [actions.setGamePath as any]: (state, payload) => {
-      const input = {
+      const input: any = {
         path: payload.gamePath,
         pathSetManually: payload.gamePath !== undefined,
         store: payload.store,
+        // always include executable so that switching stores clears a stale
+        // custom executable (e.g. gamepass.exe -> default game.exe)
+        executable: payload.exePath,
       };
-      if (payload.exePath !== undefined) {
-        input["executable"] = payload.exePath;
+      const gamePath = ["discovered", payload.gameId];
+      const res = merge(state, gamePath, input);
+      const merged = getSafe(res, gamePath, undefined);
+      if (merged.executable === undefined) {
+        delete merged.executable;
       }
-      return merge(state, ["discovered", payload.gameId], input);
+      return res;
     },
     [actions.addDiscoveredTool as any]: (state, payload) => {
       if (state.discovered[payload.gameId] === undefined) {

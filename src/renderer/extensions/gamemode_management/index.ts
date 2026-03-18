@@ -17,6 +17,7 @@ import type {
 } from "../../types/IExtensionContext";
 import type { IGame } from "../../types/IGame";
 import type { IGameStore } from "../../types/IGameStore";
+import type { NotificationDismiss } from '../../types/INotification';
 import type { IProfile, IRunningTool, IState } from "../../types/IState";
 import type { IEditChoice, ITableAttribute } from "../../types/ITableAttribute";
 import type { IModWithState } from "../mod_management/views/CheckModVersionsButton";
@@ -378,6 +379,44 @@ function browseGameLocation(
                   store,
                 }),
               );
+            }
+
+            // discovery should still point to the old data at this point.
+            const previousStore = discovery?.store;
+            if (previousStore != null && previousStore !== store) {
+              const storeChangedDialog = async () => api.showDialog(
+                "info",
+                "Game Store Changed",
+                {
+                  text: api.translate(
+                    "The game store has changed from \"{{oldStore}}\" to \"{{newStore}}\".\n\n"
+                    + "Some mods, mod loaders, and tools such as UE4SS or Script Extenders "
+                    + "install files into store-specific directories (e.g. win64 for Steam "
+                    + "vs winGDK for Xbox). These may need to be re-installed for the game "
+                    + "to function correctly at the new location.",
+                    { replace: { oldStore: previousStore, newStore: store ?? "unknown" } },
+                  ),
+                },
+                [{ label: "Close" }],
+              );
+
+              api.sendNotification({
+                id: `game-store-changed-${game.id}`,
+                type: "warning",
+                allowSuppress: true,
+                message: api.translate("Game store changed - mod loaders and tools "
+                  + "(e.g. UE4SS) may need to be re-installed."),
+                actions: [
+                  {
+                    title: "More",
+                    action: (dismiss: NotificationDismiss) => {
+                      void storeChangedDialog()
+                        .then(() => dismiss())
+                        .catch(() => undefined);
+                    },
+                  },
+                ],
+              });
             }
             resolve();
           })
