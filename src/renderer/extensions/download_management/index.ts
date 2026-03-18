@@ -1133,7 +1133,7 @@ function init(context: IExtensionContextExt): boolean {
   });
 
   context.registerMainPage("download", "Downloads", DownloadView, {
-    priority: 90,
+    priority: 80,
     id: "game-downloads",
     hotkey: "D",
     group: "per-game",
