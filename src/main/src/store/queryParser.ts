@@ -15,7 +15,10 @@ export interface ParsedQuery {
   params: ParsedQueryParam[];
   description: string;
   filePath: string;
+  alias?: string;
 }
+
+const ALIAS_RE = /^--\s*@alias\s+(\S+)\s*$/;
 
 /**
  * Parse a single .sql file containing one or more queries.
@@ -33,6 +36,7 @@ function parseFile(filePath: string, content: string): ParsedQuery[] {
   let fileType: QueryType | undefined;
   let currentName: string | undefined;
   let currentDescription = "";
+  let currentAlias: string | undefined;
   let currentParams: ParsedQueryParam[] = [];
   let currentSqlLines: string[] = [];
 
@@ -47,11 +51,13 @@ function parseFile(filePath: string, content: string): ParsedQuery[] {
           params: currentParams,
           description: currentDescription,
           filePath,
+          ...(currentAlias !== undefined ? { alias: currentAlias } : {}),
         });
       }
     }
     currentName = undefined;
     currentDescription = "";
+    currentAlias = undefined;
     currentParams = [];
     currentSqlLines = [];
   }
@@ -88,6 +94,15 @@ function parseFile(filePath: string, content: string): ParsedQuery[] {
         name: paramMatch[1],
         duckdbType: paramMatch[2],
       });
+      continue;
+    }
+
+    // Parse @alias
+    const aliasMatch = trimmed.match(ALIAS_RE);
+    if (aliasMatch !== null) {
+      if (currentName !== undefined) {
+        currentAlias = aliasMatch[1];
+      }
       continue;
     }
 
