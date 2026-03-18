@@ -51,7 +51,7 @@ describe("View", () => {
 
       expect(result).toEqual(rows);
       expect(conn.runAndReadAll).toHaveBeenCalledWith(
-        "SELECT * FROM test_table WHERE name = $1",
+        'SELECT * FROM test_table WHERE "name" = $1',
         ["a"]
       );
     });
@@ -63,7 +63,7 @@ describe("View", () => {
       await view.where({ name: "a", value: 10 });
 
       expect(conn.runAndReadAll).toHaveBeenCalledWith(
-        "SELECT * FROM test_table WHERE name = $1 AND value = $2",
+        'SELECT * FROM test_table WHERE "name" = $1 AND "value" = $2',
         ["a", 10]
       );
     });
@@ -92,7 +92,7 @@ describe("View", () => {
 
       expect(result).toEqual(row);
       expect(conn.runAndReadAll).toHaveBeenCalledWith(
-        "SELECT * FROM test_table WHERE id = $1 LIMIT 1",
+        'SELECT * FROM test_table WHERE "id" = $1 LIMIT 1',
         ["1"]
       );
     });

@@ -120,22 +120,4 @@ describe("Database", () => {
     });
   });
 
-  describe("autoTransaction()", () => {
-    it("wraps a single write in BEGIN/COMMIT with invalidation", async () => {
-      const dirty = [{ database: "db", table: "mods_pivot", type: "write" }];
-      const persist = createMockLevelPersist();
-      persist.getDirtyTables.mockResolvedValue(dirty);
-      const invalidator = createMockInvalidator();
-      const db = new Database(persist, invalidator);
-
-      await db.autoTransaction(async (conn) => {
-        await conn.run("INSERT INTO mods_pivot VALUES ($1, $2)", ["1", "a"]);
-      });
-
-      expect(persist.beginTransaction).toHaveBeenCalledTimes(1);
-      expect(persist.getDirtyTables).toHaveBeenCalled();
-      expect(persist.commitTransaction).toHaveBeenCalledTimes(1);
-      expect(invalidator.notifyDirtyTables).toHaveBeenCalledWith(dirty);
-    });
-  });
 });

@@ -1,10 +1,22 @@
 import type { DuckDBConnection } from "@duckdb/node-api";
 
+const VALID_IDENTIFIER = /^[a-zA-Z_][a-zA-Z0-9_.]*$/;
+
+export function quoteIdentifier(name: string): string {
+  if (!VALID_IDENTIFIER.test(name)) {
+    throw new Error(`Invalid SQL identifier: ${name}`);
+  }
+  return `"${name}"`;
+}
+
 export class View<T extends Record<string, unknown>> {
   protected readonly _connection: DuckDBConnection;
   protected readonly _tableName: string;
 
   constructor(connection: DuckDBConnection, tableName: string) {
+    if (!VALID_IDENTIFIER.test(tableName)) {
+      throw new Error(`Invalid table name: ${tableName}`);
+    }
     this._connection = connection;
     this._tableName = tableName;
   }
@@ -23,7 +35,7 @@ export class View<T extends Record<string, unknown>> {
     }
 
     const clauses = entries.map(
-      (_, i) => `${entries[i][0]} = $${i + 1}`
+      (_, i) => `${quoteIdentifier(entries[i][0])} = $${i + 1}`
     );
     const values = entries.map(([, v]) => v);
     const sql = `SELECT * FROM ${this._tableName} WHERE ${clauses.join(" AND ")}`;
@@ -35,7 +47,7 @@ export class View<T extends Record<string, unknown>> {
   async findOne(filter: Partial<T>): Promise<T | null> {
     const entries = Object.entries(filter);
     const clauses = entries.map(
-      (_, i) => `${entries[i][0]} = $${i + 1}`
+      (_, i) => `${quoteIdentifier(entries[i][0])} = $${i + 1}`
     );
     const values = entries.map(([, v]) => v);
 

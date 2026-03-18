@@ -1,4 +1,3 @@
-import type { DuckDBConnection } from "@duckdb/node-api";
 import type LevelPersist from "./LevelPersist";
 import type QueryInvalidator from "./QueryInvalidator";
 import { Table } from "./Table";
@@ -21,7 +20,7 @@ export class Database {
     this.#invalidator = invalidator;
   }
 
-  get #connection(): DuckDBConnection {
+  get #connection() {
     return this.#levelPersist.connection;
   }
 
@@ -61,18 +60,4 @@ export class Database {
     }
   }
 
-  async autoTransaction(fn: (conn: DuckDBConnection) => Promise<void>): Promise<void> {
-    await this.#levelPersist.beginTransaction();
-    try {
-      await fn(this.#connection);
-      const dirtyTables = await this.#levelPersist.getDirtyTables();
-      await this.#levelPersist.commitTransaction();
-      if (this.#invalidator && dirtyTables.length > 0) {
-        this.#invalidator.notifyDirtyTables(dirtyTables);
-      }
-    } catch (err) {
-      await this.#levelPersist.rollbackTransaction();
-      throw err;
-    }
-  }
 }

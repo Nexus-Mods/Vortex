@@ -1,11 +1,12 @@
-import { View } from "./View";
+import { View, quoteIdentifier } from "./View";
 
 export class Table<T extends Record<string, unknown>> extends View<T> {
   async insert(row: T): Promise<void> {
     const keys = Object.keys(row);
+    const quotedKeys = keys.map(quoteIdentifier);
     const placeholders = keys.map((_, i) => `$${i + 1}`);
     const values = Object.values(row);
-    const sql = `INSERT INTO ${this._tableName} (${keys.join(", ")}) VALUES (${placeholders.join(", ")})`;
+    const sql = `INSERT INTO ${this._tableName} (${quotedKeys.join(", ")}) VALUES (${placeholders.join(", ")})`;
     await this._connection.run(sql, values);
   }
 
@@ -25,10 +26,10 @@ export class Table<T extends Record<string, unknown>> extends View<T> {
     let paramIndex = 1;
 
     const setClauses = setEntries.map(
-      ([key]) => `${key} = $${paramIndex++}`
+      ([key]) => `${quoteIdentifier(key)} = $${paramIndex++}`
     );
     const whereClauses = whereEntries.map(
-      ([key]) => `${key} = $${paramIndex++}`
+      ([key]) => `${quoteIdentifier(key)} = $${paramIndex++}`
     );
     const values = [
       ...setEntries.map(([, v]) => v),
@@ -49,7 +50,7 @@ export class Table<T extends Record<string, unknown>> extends View<T> {
     }
 
     const clauses = entries.map(
-      (_, i) => `${entries[i][0]} = $${i + 1}`
+      (_, i) => `${quoteIdentifier(entries[i][0])} = $${i + 1}`
     );
     const values = entries.map(([, v]) => v);
     const sql = `DELETE FROM ${this._tableName} WHERE ${clauses.join(" AND ")}`;

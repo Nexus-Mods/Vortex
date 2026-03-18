@@ -36,7 +36,7 @@ describe("Table", () => {
       await table.insert({ id: "1", name: "a", value: 10 });
 
       expect(conn.run).toHaveBeenCalledWith(
-        "INSERT INTO test_table (id, name, value) VALUES ($1, $2, $3)",
+        'INSERT INTO test_table ("id", "name", "value") VALUES ($1, $2, $3)',
         ["1", "a", 10]
       );
     });
@@ -64,7 +64,7 @@ describe("Table", () => {
       await table.update({ id: "1" }, { name: "updated" });
 
       expect(conn.run).toHaveBeenCalledWith(
-        "UPDATE test_table SET name = $1 WHERE id = $2",
+        'UPDATE test_table SET "name" = $1 WHERE "id" = $2',
         ["updated", "1"]
       );
     });
@@ -87,7 +87,7 @@ describe("Table", () => {
       await table.delete({ id: "1" });
 
       expect(conn.run).toHaveBeenCalledWith(
-        "DELETE FROM test_table WHERE id = $1",
+        'DELETE FROM test_table WHERE "id" = $1',
         ["1"]
       );
     });
