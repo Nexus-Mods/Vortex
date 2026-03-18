@@ -611,6 +611,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         incompatibilities: [],
         requirements: [],
         loadsArchive: false,
+        isEmpty: false,
         version: "",
       };
       prev[key] = empty;
