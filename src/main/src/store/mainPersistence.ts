@@ -29,11 +29,21 @@ import { parseAllQueries } from "./queryParser";
 import { setupQueryIPC } from "./queryIPC";
 import ReduxPersistorIPC from "./ReduxPersistorIPC";
 import SubPersistor from "./SubPersistor";
+import { Database } from "./Database";
 
 let mainPersistor: ReduxPersistorIPC | undefined;
 let levelPersist: LevelPersist | undefined;
 let queryRegistry: QueryRegistry | undefined;
 let queryInvalidator: QueryInvalidator | undefined;
+let database: Database | undefined;
+
+/**
+ * Get the Database instance for typed model access.
+ * Available after the query system initializes (async).
+ */
+export function getDatabase(): Database | undefined {
+  return database;
+}
 
 /**
  * Initialize the main process persistence system.
@@ -111,6 +121,9 @@ async function initQuerySystem(levelPersistor: LevelPersist): Promise<void> {
   // Create invalidator and wire to persistor
   queryInvalidator = new QueryInvalidator(queryRegistry);
   mainPersistor?.setQueryInvalidator(levelPersistor, queryInvalidator);
+
+  // Create Database instance for typed model access
+  database = new Database(levelPersistor, queryInvalidator);
 
   // Create watcher and wire to invalidator
   const queryWatcher = new QueryWatcher(queryRegistry);
