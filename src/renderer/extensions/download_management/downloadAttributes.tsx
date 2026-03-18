@@ -1,3 +1,15 @@
+import type { TFunction } from "i18next";
+
+import PromiseBB from "bluebird";
+import * as path from "path";
+import * as React from "react";
+import * as url from "url";
+
+import type { IExtensionApi } from "../../types/IExtensionContext";
+import type { ITableAttribute } from "../../types/ITableAttribute";
+import type { IDownload } from "./types/IDownload";
+import type { IDownloadViewProps } from "./views/DownloadView";
+
 import { SITE_GAME_NAME } from "../../controls/constants";
 import ProgressBar from "../../controls/ProgressBar";
 import Spinner from "../../controls/Spinner";
@@ -5,30 +17,17 @@ import DateTimeFilter from "../../controls/table/DateTimeFilter";
 import GameFilter from "../../controls/table/GameFilter";
 import TextFilter from "../../controls/table/TextFilter";
 import { Icon } from "../../controls/TooltipControls";
-
-import type { IExtensionApi } from "../../types/IExtensionContext";
-import type { ITableAttribute } from "../../types/ITableAttribute";
 import * as fs from "../../util/fs";
 import { getCurrentLanguage } from "../../util/i18n";
 import { getSafe } from "../../util/storeHelper";
 import { bytesToString, truthy } from "../../util/util";
-
 import { SITE_ID } from "../gamemode_management/constants";
 import { gameName } from "../gamemode_management/selectors";
-
-import type { IDownload } from "./types/IDownload";
 import getDownloadGames from "./util/getDownloadGames";
 import setDownloadGames from "./util/setDownloadGames";
 import DownloadGameList from "./views/DownloadGameList";
 import DownloadProgressFilter from "./views/DownloadProgressFilter";
-import type { IDownloadViewProps } from "./views/DownloadView";
 import FileTime from "./views/FileTime";
-
-import PromiseBB from "bluebird";
-import type { TFunction } from "i18next";
-import * as path from "path";
-import * as React from "react";
-import * as url from "url";
 
 function progress(props: { t: TFunction; download: IDownload }) {
   const { t, download } = props;
@@ -48,11 +47,11 @@ function progress(props: { t: TFunction; download: IDownload }) {
       return (
         <div style={{ display: "flex" }}>
           <ProgressBar
-            style={{ flex: "1 1 0" }}
-            now={verified}
-            max={size}
             labelLeft={t("Finalizing")}
-            showPercentage
+            max={size}
+            now={verified}
+            showPercentage={true}
+            style={{ flex: "1 1 0" }}
           />
         </div>
       );
@@ -64,12 +63,13 @@ function progress(props: { t: TFunction; download: IDownload }) {
       return (
         <div style={{ display: "flex" }}>
           <ProgressBar
-            style={{ flex: "1 1 0" }}
-            now={received}
             max={size}
-            showPercentage
-            showTimeLeft
+            now={received}
+            showPercentage={true}
+            showTimeLeft={true}
+            style={{ flex: "1 1 0" }}
           />
+
           {!download.pausable ? (
             <Icon
               name="feedback-warning"
@@ -131,6 +131,9 @@ function createColumns(
     cb: () => PromiseLike<void>,
   ) => PromiseLike<void>,
 ): Array<ITableAttribute<IDownload>> {
+  const state = api.getState();
+  const isModernLayout = state.settings.window.useModernLayout;
+
   let lang: string;
   let collator: Intl.Collator;
 
@@ -189,6 +192,7 @@ function createColumns(
         "You can associate a download with multiple compatible games so it will show up " +
         "when managing those games as well.",
       icon: "game",
+      isDefaultVisible: !isModernLayout,
       customRenderer: (
         download: IDownload,
         detailCell: boolean,
@@ -203,10 +207,10 @@ function createColumns(
         if (detailCell) {
           return (
             <DownloadGameList
-              t={t}
-              id={id}
               currentGames={getDownloadGames(download)}
               games={knownGames}
+              id={id}
+              t={t}
               onSetDownloadGames={onSetDownloadGames}
             />
           );
@@ -220,6 +224,7 @@ function createColumns(
           return (
             <div>
               {name}
+
               {more}
             </div>
           );
@@ -231,7 +236,7 @@ function createColumns(
       edit: {},
       isSortable: true,
       isGroupable: true,
-      filter: new GameFilter(),
+      filter: isModernLayout ? undefined : new GameFilter(),
       sortFunc: (lhs: string, rhs: string, locale: string): number =>
         getCollator(locale).compare(lhs, rhs),
     },
@@ -253,12 +258,12 @@ function createColumns(
         }
         return (
           <FileTime
-            t={t}
-            time={time}
+            detail={detail}
             download={attributes}
             downloadPath={downloadPath}
-            detail={detail}
             language={getCurrentLanguage()}
+            t={t}
+            time={time}
           />
         );
       },

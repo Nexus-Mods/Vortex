@@ -12,8 +12,12 @@ import React, {
 import { useDispatch, useSelector } from "react-redux";
 
 import type { IMainPage } from "../../../types/IMainPage";
+import type { IState } from "../../../types/IState";
 
-import { setOpenMainPage } from "../../../actions/session";
+import {
+  setDownloadGameFilter as setDownloadGameFilterAction,
+  setOpenMainPage,
+} from "../../../actions/session";
 import { useMainContext, usePagesContext } from "../../../contexts";
 import { setNextProfile } from "../../../extensions/profile_management/actions/settings";
 import {
@@ -23,15 +27,21 @@ import {
   mainPage as mainPageSelector,
   profileById as profileByIdSelector,
 } from "../../../util/selectors";
+
 export type SpineSelection =
   | { type: "home" }
-  | { type: "game"; gameId: string };
+  | { type: "game"; gameId: string }
+  | { type: "downloads" };
 
 interface ISpineContext {
   selection: SpineSelection;
   visiblePages: IMainPage[];
+  /** When selection is "downloads", the game to filter by (null = all) */
+  downloadGameFilter: string | null;
   selectHome: () => void;
   selectGame: (gameId: string) => void;
+  selectDownloads: (gameId?: string) => void;
+  setDownloadGameFilter: (gameId: string | null) => void;
   selectGlobalPage: (pageId: string) => void;
 }
 
@@ -52,12 +62,27 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
   // the mismatch automatically switches back to game view - no effect needed.
   const [homeForGameId, setHomeForGameId] = useState<string | null>(null);
 
+  // When true, we're in downloads mode (overrides home/game selection)
+  const [isDownloadsMode, setIsDownloadsMode] = useState(false);
+
+  // Game filter for downloads mode, stored in session state
+  const downloadGameFilter = useSelector(
+    (state: IState) => state.session.base?.downloadGameFilter ?? null,
+  );
+  const setDownloadGameFilter = useCallback(
+    (gameId: string | null) => dispatch(setDownloadGameFilterAction(gameId)),
+    [dispatch],
+  );
+
   const selection: SpineSelection = useMemo(() => {
+    if (isDownloadsMode) {
+      return { type: "downloads" };
+    }
     if (activeGameId !== undefined && homeForGameId !== activeGameId) {
       return { type: "game", gameId: activeGameId };
     }
     return { type: "home" };
-  }, [homeForGameId, activeGameId]);
+  }, [isDownloadsMode, homeForGameId, activeGameId]);
 
   const isPageVisible = useCallback((page: IMainPage) => {
     try {
@@ -75,6 +100,7 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
         (page) =>
           page.group !== "per-game" &&
           page.group !== "hidden" &&
+          page.id !== "Downloads" &&
           isPageVisible(page),
       ),
     [mainPages, isPageVisible, activeGameId],
@@ -83,7 +109,10 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
   const gamePages: IMainPage[] = useMemo(
     () =>
       mainPages.filter(
-        (page) => page.group === "per-game" && isPageVisible(page),
+        (page) =>
+          page.group === "per-game" &&
+          page.id !== "game-downloads" &&
+          isPageVisible(page),
       ),
     [mainPages, isPageVisible, activeGameId],
   );
@@ -93,7 +122,21 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
   const defaultHomePage = homePages[0]?.id;
   const defaultGamePage = gamePages[0]?.id;
 
-  const visiblePages = selection.type === "home" ? homePages : gamePages;
+  // Downloads mode shows a single "Downloads" page
+  const downloadsPages: IMainPage[] = useMemo(
+    () =>
+      mainPages.filter(
+        (page) => page.id === "Downloads" && isPageVisible(page),
+      ),
+    [mainPages, isPageVisible],
+  );
+
+  const visiblePages =
+    selection.type === "downloads"
+      ? downloadsPages
+      : selection.type === "home"
+        ? homePages
+        : gamePages;
 
   // Track the last active page per spine context (home / per game)
   const lastPageRef = useRef<Record<string, string>>({});
@@ -122,7 +165,9 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
     if (currentPageValid) {
       return;
     }
-    if (selection.type === "game" && defaultGamePage !== undefined) {
+    if (selection.type === "downloads") {
+      dispatch(setOpenMainPage("Downloads", false));
+    } else if (selection.type === "game" && defaultGamePage !== undefined) {
       dispatch(setOpenMainPage(defaultGamePage, false));
     } else if (selection.type === "home" && defaultHomePage !== undefined) {
       dispatch(setOpenMainPage(defaultHomePage, false));
@@ -132,15 +177,26 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
   const selectHome = useCallback(() => {
     if (defaultHomePage === undefined) return;
     const targetPage = lastPageRef.current["home"] || defaultHomePage;
+    setIsDownloadsMode(false);
     setHomeForGameId(activeGameId ?? null);
     dispatch(setOpenMainPage(targetPage, false));
   }, [activeGameId, defaultHomePage, dispatch]);
+
+  const selectDownloads = useCallback(
+    (gameId?: string) => {
+      setIsDownloadsMode(true);
+      setDownloadGameFilter(gameId ?? null);
+      dispatch(setOpenMainPage("Downloads", false));
+    },
+    [dispatch],
+  );
 
   const selectGame = useCallback(
     (gameId: string) => {
       if (defaultGamePage === undefined) return;
       const targetPage = lastPageRef.current[gameId] || defaultGamePage;
       const profileId = lastActiveProfile[gameId];
+      setIsDownloadsMode(false);
       setHomeForGameId(null);
       if (
         profileId !== undefined &&
@@ -172,11 +228,23 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
     () => ({
       selection,
       visiblePages,
+      downloadGameFilter,
       selectHome,
       selectGame,
+      selectDownloads,
+      setDownloadGameFilter,
       selectGlobalPage,
     }),
-    [selection, visiblePages, selectHome, selectGame, selectGlobalPage],
+    [
+      selection,
+      visiblePages,
+      downloadGameFilter,
+      selectHome,
+      selectGame,
+      selectDownloads,
+      setDownloadGameFilter,
+      selectGlobalPage,
+    ],
   );
 
   return (

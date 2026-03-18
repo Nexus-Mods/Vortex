@@ -33,6 +33,9 @@ export const Header: FC = () => {
     if (selection.type === "home") {
       return t("Home");
     }
+    if (selection.type === "downloads") {
+      return t("Downloads");
+    }
     const game = knownGames.find((g) => g.id === selection.gameId);
     return game?.name ?? t("Home");
   }, [selection, knownGames, t]);
@@ -42,7 +45,7 @@ export const Header: FC = () => {
   }, [setMenuIsCollapsed]);
 
   const profileName = useMemo(() => {
-    if (selection.type === "home" || !activeProfile) {
+    if (selection.type !== "game" || !activeProfile) {
       return undefined;
     }
     return gameProfiles.length > 1 ? activeProfile.name : undefined;

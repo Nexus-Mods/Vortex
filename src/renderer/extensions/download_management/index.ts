@@ -1132,22 +1132,6 @@ function init(context: IExtensionContextExt): boolean {
     mdi: mdiDownload,
   });
 
-  context.registerMainPage("download", "Downloads", DownloadView, {
-    priority: 80,
-    id: "game-downloads",
-    hotkey: "D",
-    group: "per-game",
-    badge: downloadCount,
-    isModernOnly: true,
-    visible: () =>
-      selectors.activeGameId(context.api.store.getState()) !== undefined,
-    props: () => ({
-      downloadPathForGame,
-      columns: downloadColumns,
-    }),
-    mdi: mdiDownload,
-  });
-
   context.registerSettings("Download", Settings, undefined, undefined, 75);
 
   context.registerFooter("speed-o-meter", SpeedOMeter);

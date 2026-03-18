@@ -13,6 +13,7 @@ import { usePagesContext, useWindowContext } from "../../../contexts";
 import { joinClasses } from "../../../ui/utils/joinClasses";
 import { getIconPath } from "../iconMap";
 import { useSpineContext } from "../Spine/SpineContext";
+import { DownloadsMenuContent } from "./DownloadsMenuContent";
 import { MenuButton } from "./MenuButton";
 import { ToolsProvider, useToolsContext } from "./ToolsContext";
 import { ToolsSection } from "./ToolsSection";
@@ -28,7 +29,7 @@ const toolPadding = {
 const MenuContent: FC = () => {
   const { t } = useTranslation();
   const { menuIsCollapsed } = useWindowContext();
-  const { visiblePages } = useSpineContext();
+  const { selection, visiblePages } = useSpineContext();
   const dispatch = useDispatch();
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -77,16 +78,20 @@ const MenuContent: FC = () => {
             menuIsCollapsed ? `w-10 ${toolPadding[toolCount]}` : "w-50 pb-28",
           ])}
         >
-          {visiblePages.map((page) => (
-            <MenuButton
-              iconPath={page.mdi ?? getIconPath(page.icon)}
-              isActive={mainPage === page.id}
-              key={page.id}
-              onClick={() => dispatch(setOpenMainPage(page.id, false))}
-            >
-              {t(page.title, { ns: page.namespace })}
-            </MenuButton>
-          ))}
+          {selection.type === "downloads" ? (
+            <DownloadsMenuContent />
+          ) : (
+            visiblePages.map((page) => (
+              <MenuButton
+                iconPath={page.mdi ?? getIconPath(page.icon)}
+                isActive={mainPage === page.id}
+                key={page.id}
+                onClick={() => dispatch(setOpenMainPage(page.id, false))}
+              >
+                {t(page.title, { ns: page.namespace })}
+              </MenuButton>
+            ))
+          )}
         </div>
 
         {/* hack to hide bottom of scrollbar :( */}
