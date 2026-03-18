@@ -5,8 +5,8 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
-    "build": "pnpm cross-env NODE_ENV=development pnpm webpack --config ./webpack.config.cjs",
-    "dist": "pnpm cross-env NODE_ENV=production pnpm webpack --config ./webpack.config.cjs",
+    "build": "pnpm cross-env NODE_ENV=development node ./build.mjs",
+    "dist": "pnpm cross-env NODE_ENV=production node ./build.mjs",
     "typecheck": "pnpm tsc"
   },
   "devDependencies": {
