@@ -1,4 +1,4 @@
-import * as sessionActions from '../../../extensions/feedback/src/actions/session';
+import * as sessionActions from '../../../../extensions/feedback/src/actions/session';
 
 describe('addFeedbackFile', () => {
   it('creates the correct action', () => {

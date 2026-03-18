@@ -7,7 +7,7 @@ const config = {
   },
   moduleNameMapper: {
     "^cheerio$": "<rootDir>/src/__mocks__/cheerio.js",
-    "^cheerio/lib/utils$": "<rootDir>/src__mocks__/cheerio-utils.js",
+    "^cheerio/lib/utils$": "<rootDir>/src/__mocks__/cheerio-utils.js",
     "^shortid$": "<rootDir>/src/__mocks__/shortid.js",
     "^../util/ComponentEx$": "<rootDir>/src/__mocks__/ComponentEx.js",
   },

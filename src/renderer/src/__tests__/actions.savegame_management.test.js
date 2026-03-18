@@ -1,4 +1,4 @@
-import * as sessionActions from '../../../extensions/gamebryo-savegame-management/src/actions/session';
+import * as sessionActions from '../../../../extensions/gamebryo-savegame-management/src/actions/session';
 
 describe('setSavegames', () => {
   it('creates the correct action', () => {
