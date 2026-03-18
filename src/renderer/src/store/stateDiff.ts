@@ -1,10 +1,19 @@
 import type { DiffOperation } from "@vortex/shared/ipc";
 
 /**
- * Check if a value is a plain object (not null, not array)
+ * Check if a value is a plain object (not null, not array, not Date or other
+ * built-in objects that have no enumerable own properties).
+ * Non-plain objects like Date must be treated as leaf values, otherwise
+ * collectSetOperations/collectRemoveOperations silently drop them because
+ * Object.keys() returns [].
  */
 function isObject(state: unknown): state is Record<string, unknown> {
-  return state !== null && typeof state === "object" && !Array.isArray(state);
+  return (
+    state != null &&
+    typeof state === "object" &&
+    !Array.isArray(state) &&
+    Object.getPrototypeOf(state) === Object.prototype
+  );
 }
 
 /**

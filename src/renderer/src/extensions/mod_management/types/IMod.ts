@@ -73,7 +73,10 @@ export interface ICommonModAttributes {
   updatedTimestamp?: number;
 
   // Installation tracking
-  installTime?: string;
+  // Note: callers may set this as a Date object, but it is always serialized
+  // to an ISO string during persistence (via JSON.stringify) and rehydrated
+  // as a string on the next startup.
+  installTime?: string | Date;
   installedAsDependency?: boolean;
   referenceTag?: string;
 
