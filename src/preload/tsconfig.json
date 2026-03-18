@@ -2,8 +2,7 @@
   "$schema": "https://www.schemastore.org/tsconfig.json",
   "extends": "../../tsconfig.base.json",
   "include": [
-    "**/*",
-    "../../webpack.base.cjs",
+    "src/**/*",
     "../../typings.custom/electron.d.ts",
     "../../typings.custom/promise.d.ts"
   ],
@@ -11,8 +10,8 @@
     "composite": true,
     "noEmit": true,
     "target": "esnext",
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "types": ["node"]
   }
 }
