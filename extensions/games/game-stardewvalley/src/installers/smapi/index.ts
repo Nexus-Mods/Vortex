@@ -107,10 +107,10 @@ export async function installSMAPI(getGameInstallPath: () => string,
   await szip.extractFull(path.join(destinationPath, dataFile), destinationPath);
 
   await util.walk(destinationPath, (iter, stats) => {
-    const relPath = path.relative(destinationPath, iter);
+    const relPath = normalizePathSeparators(path.relative(destinationPath, iter));
 
     // Filter out files from the original install as they're no longer required.
-    if (!files.includes(relPath) && stats.isFile() && !files.includes(relPath + path.sep)) {
+    if (!files.includes(relPath) && stats.isFile() && !files.includes(relPath + '/')) {
       updatedFiles.push(relPath);
     }
 
@@ -139,7 +139,7 @@ export async function installSMAPI(getGameInstallPath: () => string,
   const instructions: types.IInstruction[] = updatedFiles.map(file => ({
     type: 'copy',
     source: file,
-    destination: path.join(file.substr(idx)),
+    destination: file.substr(idx),
   }));
 
   instructions.push({
@@ -165,10 +165,14 @@ export async function installSMAPI(getGameInstallPath: () => string,
  * - `internal/linux/install.dat` -> [`internal`, `linux`, `install.dat`]
  */
 function splitArchivePath(filePath: string): string[] {
-  return filePath
-    .replace(/\\/g, '/')
+  return normalizePathSeparators(filePath)
     .split('/')
     .filter(segment => segment.length > 0);
+}
+
+function normalizePathSeparators(filePath: string): string {
+  return filePath
+    .replace(/\\/g, '/');
 }
 
 /**

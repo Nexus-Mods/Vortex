@@ -17,6 +17,8 @@ import {
 } from '../../../__mocks__/vortex-api';
 
 describe('installers/smapi installSMAPI (linux)', () => {
+  const normalizePathSeparators = (input: string) => input.replace(/\\/g, '/');
+
   beforeEach(() => {
     vi.clearAllMocks();
     readFileAsyncMock.mockResolvedValue('{"deps":true}');
@@ -28,14 +30,15 @@ describe('installers/smapi installSMAPI (linux)', () => {
 
     walkMock.mockImplementation(async (_destination: string,
                                        cb: (iter: string, stats: { isFile: () => boolean }) => Promise<void>) => {
-      await walkArchiveEntries('/staging', linuxInstallDatEntries, cb);
+      await walkArchiveEntries('/staging', [...files, ...linuxInstallDatEntries], cb);
     });
 
     const result = await installSMAPI(() => '/game', files, '/staging', linuxSMAPIPlatform);
     const copyInstructions = result.instructions.filter(instr => instr.type === 'copy');
 
     expect(SevenZipMock).toHaveBeenCalledTimes(1);
-    expect(extractFullMock).toHaveBeenCalledWith('/staging/internal/linux/install.dat', '/staging');
+    expect(normalizePathSeparators(extractFullMock.mock.calls[0][0])).toBe('/staging/internal/linux/install.dat');
+    expect(extractFullMock.mock.calls[0][1]).toBe('/staging');
     expect(copyInstructions).toHaveLength(archiveFileEntries(linuxInstallDatEntries).length);
     expect(copyInstructions.some(instr => instr.source === 'StardewModdingAPI')).toBe(true);
     expect(copyInstructions.some(instr => instr.source === 'smapi-internal/config.json')).toBe(true);

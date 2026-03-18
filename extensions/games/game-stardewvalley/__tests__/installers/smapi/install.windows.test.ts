@@ -19,6 +19,8 @@ import {
 } from '../../../__mocks__/vortex-api';
 
 describe('installers/smapi installSMAPI (windows)', () => {
+  const normalizePathSeparators = (input: string) => input.replace(/\\/g, '/');
+
   beforeEach(() => {
     vi.clearAllMocks();
     readFileAsyncMock.mockResolvedValue('{"deps":true}');
@@ -31,14 +33,15 @@ describe('installers/smapi installSMAPI (windows)', () => {
 
     walkMock.mockImplementation(async (_destination: string,
                                        cb: (iter: string, stats: { isFile: () => boolean }) => Promise<void>) => {
-      await walkArchiveEntries(destinationPath, windowsInstallDatEntries, cb);
+      await walkArchiveEntries(destinationPath, [...files, ...windowsInstallDatEntries], cb);
     });
 
     const result = await installSMAPI(() => '/game', files, destinationPath, windowsSMAPIPlatform);
     const copyInstructions = result.instructions.filter(instr => instr.type === 'copy');
 
     expect(SevenZipMock).toHaveBeenCalledTimes(1);
-    expect(extractFullMock).toHaveBeenCalledWith('/staging/internal/windows/install.dat', '/staging');
+    expect(normalizePathSeparators(extractFullMock.mock.calls[0][0])).toBe('/staging/internal/windows/install.dat');
+    expect(extractFullMock.mock.calls[0][1]).toBe('/staging');
     expect(copyInstructions).toHaveLength(archiveFileEntries(windowsInstallDatEntries).length);
     expect(copyInstructions.some(instr => instr.source === 'StardewModdingAPI.exe')).toBe(true);
     expect(copyInstructions.some(instr => instr.source === 'smapi-internal/config.json')).toBe(true);
@@ -46,7 +49,8 @@ describe('installers/smapi installSMAPI (windows)', () => {
       && instr.source.startsWith('internal/windows/'))).toBe(false);
     expect(result.instructions.some(instr => instr.type === 'generatefile'
       && instr.destination === 'StardewModdingAPI.deps.json')).toBe(true);
-    expect(fs.readFileAsync).toHaveBeenCalledWith('/game/Stardew Valley.deps.json', { encoding: 'utf8' });
+    expect(normalizePathSeparators(fs.readFileAsync.mock.calls[0][0])).toBe('/game/Stardew Valley.deps.json');
+    expect(fs.readFileAsync.mock.calls[0][1]).toEqual({ encoding: 'utf8' });
     expect(util.walk).toHaveBeenCalledTimes(1);
   });
 
