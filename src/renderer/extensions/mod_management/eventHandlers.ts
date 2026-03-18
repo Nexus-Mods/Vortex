@@ -64,125 +64,113 @@ import type InstallManager from "./InstallManager";
 import { currentActivator, installPath, installPathForGame } from "./selectors";
 import { ensureStagingDirectory } from "./stagingDirectory";
 
-import PromiseBB from "bluebird";
 import * as _ from "lodash";
 import type { RuleType } from "modmeta-db";
 import * as path from "path";
-import { getErrorMessageOrDefault } from "@vortex/shared";
+import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 
-function checkStagingGame(
+async function checkStagingGame(
   api: IExtensionApi,
   gameId: string,
   manifestGameId: string,
-): PromiseBB<boolean> {
+): Promise<boolean> {
   if (manifestGameId !== undefined && gameId !== manifestGameId) {
-    return api
-      .showDialog(
-        "error",
-        "Game managed by different game extension",
-        {
-          text:
-            "You seem to have multiple games inside Vortex trying to manage the same game " +
-            "directory. This can happen in case of total conversions or if you use a " +
-            "third-party extension for a game that has also bundled support in Vortex.\n" +
-            "If you continue now, Vortex will purge the deployment from the other extension. " +
-            "This is not destructive, you can go back to the other extension any time.",
-        },
-        [{ label: "Cancel" }, { label: "Purge" }],
-      )
-      .then((result) => {
-        if (result.action === "Cancel") {
-          return PromiseBB.reject(new UserCanceled());
-        } else {
-          return purgeMods(api, manifestGameId).then(() => true);
-        }
-      });
-  } else {
-    return PromiseBB.resolve(false);
+    const result = await api.showDialog(
+      "error",
+      "Game managed by different game extension",
+      {
+        text:
+          "You seem to have multiple games inside Vortex trying to manage the same game " +
+          "directory. This can happen in case of total conversions or if you use a " +
+          "third-party extension for a game that has also bundled support in Vortex.\n" +
+          "If you continue now, Vortex will purge the deployment from the other extension. " +
+          "This is not destructive, you can go back to the other extension any time.",
+      },
+      [{ label: "Cancel" }, { label: "Purge" }],
+    );
+    if (result.action === "Cancel") {
+      throw new UserCanceled();
+    }
+    await purgeMods(api, manifestGameId);
+    return true;
   }
+  return false;
 }
 
 // check staging folder against deployment manifest
-function checkStagingFolder(
+async function checkStagingFolder(
   api: IExtensionApi,
   gameId: string,
   manifestPath: string,
   configuredPath: string,
-): PromiseBB<boolean> {
+): Promise<boolean> {
   const t = api.translate;
 
   // manifestPath can be undefined if the manifest is older
-  return (
-    manifestPath !== undefined
-      ? getNormalizeFunc(manifestPath)
-      : PromiseBB.resolve(undefined)
-  ).then((normalize) => {
-    if (
-      manifestPath !== undefined &&
-      normalize(manifestPath) !== normalize(configuredPath)
-    ) {
-      log(
-        "error",
-        "staging folder stored in manifest differs from configured one",
-        {
-          configured: configuredPath,
-          manifest: manifestPath,
-        },
-      );
-      return api
-        .showDialog(
-          "error",
-          "Staging folder changed",
+  const normalize = manifestPath !== undefined
+    ? await getNormalizeFunc(manifestPath)
+    : undefined;
+
+  if (
+    manifestPath !== undefined &&
+    normalize(manifestPath) !== normalize(configuredPath)
+  ) {
+    log(
+      "error",
+      "staging folder stored in manifest differs from configured one",
+      {
+        configured: configuredPath,
+        manifest: manifestPath,
+      },
+    );
+    const result: IDialogResult = await api.showDialog(
+      "error",
+      "Staging folder changed",
+      {
+        bbcode:
+          "The staging folder configured in Vortex doesn't match what was " +
+          "previously used to deploy mods. This may be caused by manual tampering " +
+          "with the application state or some other kind of data corruption " +
+          "(hardware failure, virus, ...).<br/><br/>" +
+          "[color=red]If you continue with the wrong settings all installed mods " +
+          "may get corrupted![/color].<br/><br/>" +
+          "Please check the following two folders and pick the one that actually " +
+          "contains your mods.",
+        choices: [
           {
-            bbcode:
-              "The staging folder configured in Vortex doesn't match what was " +
-              "previously used to deploy mods. This may be caused by manual tampering " +
-              "with the application state or some other kind of data corruption " +
-              "(hardware failure, virus, ...).<br/><br/>" +
-              "[color=red]If you continue with the wrong settings all installed mods " +
-              "may get corrupted![/color].<br/><br/>" +
-              "Please check the following two folders and pick the one that actually " +
-              "contains your mods.",
-            choices: [
-              {
-                id: "configured",
-                text: t("From config: {{path}}", {
-                  replace: { path: configuredPath },
-                }),
-                value: true,
-              },
-              {
-                id: "manifest",
-                text: t("From manifest: {{path}}", {
-                  replace: { path: manifestPath },
-                }),
-                value: false,
-              },
-            ],
+            id: "configured",
+            text: t("From config: {{path}}", {
+              replace: { path: configuredPath },
+            }),
+            value: true,
           },
-          [{ label: "Quit Vortex" }, { label: "Use selected" }],
-        )
-        .then((result: IDialogResult) => {
-          if (result.action === "Quit Vortex") {
-            getApplication().quit();
-            // resolve never
-            return new PromiseBB(() => null);
-          } else if (
-            result.action === "Use selected" &&
-            result.input.manifest
-          ) {
-            return true;
-          } else {
-            return false;
-          }
-        });
-    } else {
-      return PromiseBB.resolve(false);
+          {
+            id: "manifest",
+            text: t("From manifest: {{path}}", {
+              replace: { path: manifestPath },
+            }),
+            value: false,
+          },
+        ],
+      },
+      [{ label: "Quit Vortex" }, { label: "Use selected" }],
+    );
+    if (result.action === "Quit Vortex") {
+      getApplication().quit();
+      // resolve never
+      return new Promise<never>(() => {});
+    } else if (
+      result.action === "Use selected" &&
+      result.input.manifest
+    ) {
+      return true;
     }
-  });
+    return false;
+  }
+  return false;
 }
 
-function purgeOldMethod(
+async function purgeOldMethod(
   api: IExtensionApi,
   oldActivator: IDeploymentMethod,
   profile: IProfile,
@@ -195,51 +183,50 @@ function purgeOldMethod(
   const manifests: { [typeId: string]: IDeploymentManifest } = {};
   const deployments: { [typeId: string]: IDeployedFile[] } = {};
 
-  return (
-    PromiseBB.all(
+  try {
+    await Promise.all(
       Object.keys(modPaths).map((modType) =>
         getManifest(api, modType, gameId).then((manifest) => {
           manifests[modType] = manifest;
           deployments[modType] = manifest.files;
         }),
       ),
-    )
-      .then(() => api.emitAndAwait("will-purge", profile.id, deployments))
-      .then(() => oldActivator.prePurge(instPath))
-      .then(() =>
-        PromiseBB.mapSeries(Object.keys(modPaths), (typeId) => {
-          return getNormalizeFunc(modPaths[typeId]).then((normalize) => {
-            // test for the special case where the game has been moved since the deployment
-            // happened. Based on the assumption that this is the reason the deployment method
-            // changed, the regular purge is almost guaranteed to not work correctly and we're
-            // better off using the manifest-based fallback purge.
-            // For example: if the game directory with hard links was moved, those links were
-            // turned into real files, the regular purge op wouldn't clean up anything
-            if (
-              manifests[typeId].targetPath !== undefined &&
-              normalize(modPaths[typeId]) !==
-                normalize(manifests[typeId].targetPath) &&
-              oldActivator.isFallbackPurgeSafe
-            ) {
-              log(
-                "warn",
-                "using manifest-based purge because deployment path changed",
-                { from: manifests[typeId].targetPath, to: modPaths[typeId] },
-              );
-              return purgeDeployedFiles(modPaths[typeId], deployments[typeId]);
-            } else {
-              return oldActivator.purge(
-                instPath,
-                modPaths[typeId],
-                profile.gameId,
-              );
-            }
-          });
-        }),
-      )
-      // save (empty) activation
-      .then(() =>
-        PromiseBB.map(Object.keys(modPaths), (typeId) =>
+    );
+    await api.emitAndAwait("will-purge", profile.id, deployments);
+    await oldActivator.prePurge(instPath);
+    try {
+      // sequential: purge order matters per mod type
+      for (const typeId of Object.keys(modPaths)) {
+        const normalize = await getNormalizeFunc(modPaths[typeId]);
+        // test for the special case where the game has been moved since the deployment
+        // happened. Based on the assumption that this is the reason the deployment method
+        // changed, the regular purge is almost guaranteed to not work correctly and we're
+        // better off using the manifest-based fallback purge.
+        // For example: if the game directory with hard links was moved, those links were
+        // turned into real files, the regular purge op wouldn't clean up anything
+        if (
+          manifests[typeId].targetPath !== undefined &&
+          normalize(modPaths[typeId]) !==
+            normalize(manifests[typeId].targetPath) &&
+          oldActivator.isFallbackPurgeSafe
+        ) {
+          log(
+            "warn",
+            "using manifest-based purge because deployment path changed",
+            { from: manifests[typeId].targetPath, to: modPaths[typeId] },
+          );
+          await purgeDeployedFiles(modPaths[typeId], deployments[typeId]);
+        } else {
+          await oldActivator.purge(
+            instPath,
+            modPaths[typeId],
+            profile.gameId,
+          );
+        }
+      }
+      // save (empty) activation - parallel is fine here, no ordering dependency
+      await Promise.all(
+        Object.keys(modPaths).map((typeId) =>
           saveActivation(
             gameId,
             typeId,
@@ -250,23 +237,26 @@ function purgeOldMethod(
             oldActivator.id,
           ),
         ),
-      )
-      .then(() => undefined)
-      .finally(() => oldActivator.postPurge())
-      .catch(ProcessCanceled, () => PromiseBB.resolve())
-      .catch(TemporaryError, (err) =>
-        api.showErrorNotification(
-          "Purge failed, please try again",
-          err.message,
-          { allowReport: false },
-        ),
-      )
-      .catch((err) =>
-        api.showErrorNotification("Purge failed", err, {
-          allowReport: ["ENOENT", "ENOTFOUND"].indexOf(err.code) !== -1,
-        }),
-      )
-  );
+      );
+    } finally {
+      await oldActivator.postPurge();
+    }
+  } catch (err) {
+    if (err instanceof ProcessCanceled) {
+      return;
+    }
+    if (err instanceof TemporaryError) {
+      api.showErrorNotification(
+        "Purge failed, please try again",
+        err.message,
+        { allowReport: false },
+      );
+      return;
+    }
+    api.showErrorNotification("Purge failed", err, {
+      allowReport: ["ENOENT", "ENOTFOUND"].indexOf(getErrorCode(err)) !== -1,
+    });
+  }
 }
 
 export async function updateDeploymentMethod(
@@ -280,7 +270,7 @@ export async function updateDeploymentMethod(
   const selected: IDeploymentMethod = getSelectedActivator(state, gameId);
   if (selected !== undefined) {
     // do nothing if there already is a selected activator
-    return PromiseBB.resolve();
+    return Promise.resolve();
   }
 
   const valid = getCurrentActivator(state, gameId, true);
@@ -352,20 +342,20 @@ export function onGameModeActivated(
 
   let existingManifest: IDeploymentManifest;
 
-  let initProm: () => PromiseBB<void> = () =>
-    getManifest(api, "", gameId)
+  let initProm: () => Promise<void> = () =>
+    Promise.resolve(getManifest(api, "", gameId))
       .then((manifest: IDeploymentManifest) => {
         if (manifest.instance !== state.app.instanceId) {
           // if the manifest is from a different instance we do nothing with it, there
           // is other code to deal with that during deployment
-          return PromiseBB.resolve();
+          return Promise.resolve();
         }
         existingManifest = manifest;
 
         return checkStagingGame(api, gameId, manifest.gameId)
           .then((purged: boolean) =>
             purged
-              ? PromiseBB.resolve(false)
+              ? Promise.resolve(false)
               : checkStagingFolder(api, gameId, manifest.stagingPath, instPath),
           )
           .then((useManifest) => {
@@ -393,8 +383,7 @@ export function onGameModeActivated(
           });
       })
       .then(() => ensureStagingDirectory(api, instPath, gameId))
-      .tap((updatedPath) => (instPath = updatedPath))
-      .then(() => undefined);
+      .then((updatedPath) => { instPath = updatedPath; });
 
   const configuredActivatorId = currentActivator(state);
 
@@ -492,9 +481,13 @@ export function onGameModeActivated(
                     instPath,
                     modPaths,
                   )
-                : PromiseBB.resolve(),
+                : Promise.resolve(),
             )
-            .catch(ProcessCanceled, () => PromiseBB.resolve());
+            .catch((err) => {
+              if (!(err instanceof ProcessCanceled)) {
+                throw err;
+              }
+            });
       }
 
       {
@@ -553,11 +546,12 @@ export function onGameModeActivated(
       api.events.emit("mods-refreshed");
       return null;
     })
-    .catch(UserCanceled, () => undefined)
-    .catch(ProcessCanceled, (err) => {
-      log("warn", "Failed to refresh mods", err.message);
-    })
     .catch((err: Error) => {
+      if (err instanceof UserCanceled) return undefined;
+      if (err instanceof ProcessCanceled) {
+        log("warn", "Failed to refresh mods", err.message);
+        return;
+      }
       const error: any = err as any;
       const allowReport =
         error.allowReport !== undefined
@@ -676,12 +670,12 @@ export function onModsChanged(
   }
 }
 
-function undeploy(
+async function undeploy(
   api: IExtensionApi,
   activators: IDeploymentMethod[],
   gameMode: string,
   mods: IMod[],
-): PromiseBB<void> {
+): Promise<void> {
   const store = api.store;
   const state: IState = store.getState();
 
@@ -689,14 +683,14 @@ function undeploy(
 
   if (discovery === undefined || discovery.path === undefined) {
     // if the game hasn't been discovered we can't deploy, but that's not really a problem
-    return PromiseBB.resolve();
+    return;
   }
 
   const game = getGame(gameMode);
 
   if (game === undefined) {
     log("info", "tried to undeploy for unknown game", gameMode);
-    return PromiseBB.resolve();
+    return;
   }
 
   const modPaths = game.getModPaths(discovery.path);
@@ -723,7 +717,7 @@ function undeploy(
         );
 
   if (activator === undefined) {
-    return PromiseBB.reject(new ProcessCanceled("No deployment method active"));
+    throw new ProcessCanceled("No deployment method active");
   }
 
   const stagingPath = installPathForGame(state, gameMode);
@@ -739,18 +733,18 @@ function undeploy(
     {},
   );
 
-  return PromiseBB.all(
-    Object.keys(byModTypes).map((typeId) => {
-      const subdir = genSubDirFunc(game, getModType(typeId));
-      const deployPath = modPaths[typeId || ""];
-      if (deployPath === undefined) {
-        return PromiseBB.resolve();
-      }
-      let normalize: Normalize;
-      return getNormalizeFunc(deployPath)
-        .then((norm) => {
-          normalize = norm;
-          return loadActivation(
+  try {
+    await Promise.all(
+      Object.keys(byModTypes).map(async (typeId) => {
+        const subdir = genSubDirFunc(game, getModType(typeId));
+        const deployPath = modPaths[typeId || ""];
+        if (deployPath === undefined) {
+          return;
+        }
+        let normalize: Normalize;
+        try {
+          normalize = await getNormalizeFunc(deployPath);
+          const lastActivation = await loadActivation(
             api,
             gameMode,
             typeId,
@@ -758,12 +752,8 @@ function undeploy(
             stagingPath,
             activator,
           );
-        })
-        .then((lastActivation) =>
-          activator.prepare(deployPath, false, lastActivation, normalize),
-        )
-        .then(() =>
-          PromiseBB.all(
+          await activator.prepare(deployPath, false, lastActivation, normalize);
+          await Promise.all(
             byModTypes[typeId].map((mod) =>
               activator.deactivate(
                 path.join(stagingPath, mod.installationPath),
@@ -771,34 +761,31 @@ function undeploy(
                 mod.installationPath,
               ),
             ),
-          ),
-        )
-        .tapCatch(() => {
+          );
+        } catch (err) {
           if (activator.cancel !== undefined) {
             activator.cancel(gameMode, deployPath, stagingPath);
           }
-        })
-        .then(() => activator.finalize(gameMode, deployPath, stagingPath))
-        .then((newActivation) =>
-          saveActivation(
-            gameMode,
-            typeId,
-            state.app.instanceId,
-            deployPath,
-            stagingPath,
-            newActivation,
-            activator.id,
-          ),
+          throw err;
+        }
+        const newActivation = await activator.finalize(gameMode, deployPath, stagingPath);
+        await saveActivation(
+          gameMode,
+          typeId,
+          state.app.instanceId,
+          deployPath,
+          stagingPath,
+          newActivation,
+          activator.id,
         );
-    }),
-  )
-    .finally(() => {
-      log("debug", "done undeploying single mod", {
-        game: gameMode,
-        modIds: mods.map((mod) => mod.id).join(", "),
-      });
-    })
-    .then(() => PromiseBB.resolve());
+      }),
+    );
+  } finally {
+    log("debug", "done undeploying single mod", {
+      game: gameMode,
+      modIds: mods.map((mod) => mod.id).join(", "),
+    });
+  }
 }
 
 function undeployMods(
@@ -812,8 +799,8 @@ function undeployMods(
   mods = mods.filter((mod) => mod.installationPath !== undefined);
 
   return undeploy(api, activators, gameId, mods).catch((err) => {
-    if (!["ENOENT", "ENOTFOUND"].includes(err.code)) {
-      return PromiseBB.reject(err);
+    if (!["ENOENT", "ENOTFOUND"].includes(getErrorCode(err))) {
+      throw err;
     }
     return api
       .showDialog(
@@ -832,7 +819,7 @@ function undeployMods(
       )
       .then((result) => {
         if (result.action === "Deploy") {
-          return new PromiseBB<void>((resolve, reject) => {
+          return new Promise<void>((resolve, reject) => {
             api.events.emit("deploy-mods", (deployErr) => {
               if (deployErr !== null) {
                 return reject(deployErr);
@@ -840,8 +827,6 @@ function undeployMods(
               return resolve();
             });
           });
-        } else {
-          return PromiseBB.resolve();
         }
       });
   });
@@ -929,9 +914,8 @@ export function onRemoveMods(
       let completedCount = 0;
       const totalCount = removeMods.length;
       let batched = [];
-      return PromiseBB.map(
-        removeMods,
-        async (mod: IMod) => {
+      return Promise.all(
+        removeMods.map(async (mod: IMod) => {
           const forwardOptions = { ...(options || {}), modData: { ...mod } };
           try {
             await api.emitAndAwait(
@@ -951,11 +935,11 @@ export function onRemoveMods(
               });
               await fs
                 .removeAsync(fullModPath)
-                .catch((err) =>
-                  err.code === "ENOENT"
-                    ? PromiseBB.resolve()
-                    : PromiseBB.reject(err),
-                );
+                .catch((err) => {
+                  if (err.code !== "ENOENT") {
+                    throw err;
+                  }
+                });
             }
             await api.emitAndAwait(
               "did-remove-mod",
@@ -980,8 +964,7 @@ export function onRemoveMods(
               error: getErrorMessageOrDefault(error),
             });
           }
-        },
-        { concurrency: 5 },
+        }),
       );
     })
     .then(() => {
@@ -989,35 +972,21 @@ export function onRemoveMods(
         callback(null);
       }
     })
-    .catch(TemporaryError, (err) => {
+    .catch((unknownErr) => {
+      const err = unknownToError(unknownErr);
       if (callback !== undefined) {
         callback(err);
-      } else {
+      } else if (err instanceof TemporaryError) {
         api.showErrorNotification(
           "Failed to undeploy mod, please try again",
           getErrorMessageOrDefault(err),
           { allowReport: false },
         );
-      }
-    })
-    .catch(ProcessCanceled, (err) => {
-      if (callback !== undefined) {
-        callback(err);
-      } else {
+      } else if (err instanceof ProcessCanceled) {
         api.showErrorNotification("Failed to remove mod", err, {
           allowReport: false,
         });
-      }
-    })
-    .catch(UserCanceled, (err) => {
-      if (callback !== undefined) {
-        callback(err);
-      }
-    })
-    .catch((err) => {
-      if (callback !== undefined) {
-        callback(err);
-      } else {
+      } else if (!(err instanceof UserCanceled)) {
         api.showErrorNotification("Failed to remove mod", err);
       }
     })
@@ -1088,7 +1057,7 @@ export async function onStartInstallDownload(
         { allowReport: false },
       );
     }
-    return PromiseBB.resolve();
+    return Promise.resolve();
   }
 
   if (download.state !== "finished") {
@@ -1104,7 +1073,7 @@ export async function onStartInstallDownload(
         { allowReport: false },
       );
     }
-    return PromiseBB.resolve();
+    return Promise.resolve();
   }
 
   const downloadGames = getDownloadGames(download);
@@ -1130,7 +1099,7 @@ export async function onStartInstallDownload(
         { allowReport: false },
       );
     });
-    return PromiseBB.resolve();
+    return Promise.resolve();
   }
 
   const downloadPath = downloadPathForGame(state, convertedGameId);
@@ -1138,7 +1107,7 @@ export async function onStartInstallDownload(
 
   try {
     // Small delay to ensure file handles are released and filesystem buffers are flushed
-    await new PromiseBB((resolve) => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Verify file exists and is accessible by checking its stats
     const stats = await fs.statAsync(fullPath);

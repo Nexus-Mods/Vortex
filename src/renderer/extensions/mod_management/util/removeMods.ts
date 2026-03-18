@@ -1,17 +1,19 @@
-import PromiseBB from "bluebird";
+import { unknownToError } from '@vortex/shared';
+
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { INotification } from "../../../types/INotification";
+
 import { toPromise } from "../../../util/util";
 
 export function removeMod(
   api: IExtensionApi,
   gameId: string,
   modId: string,
-): PromiseBB<void> {
-  return new PromiseBB((resolve, reject) => {
+): Promise<void> {
+  return new Promise((resolve, reject) => {
     api.events.emit("remove-mod", gameId, modId, (err) => {
       if (err) {
-        reject(err);
+        reject(unknownToError(err));
       } else {
         resolve();
       }
@@ -23,9 +25,9 @@ export function removeMods(
   api: IExtensionApi,
   gameId: string,
   modIds: string[],
-): PromiseBB<void> {
+): Promise<void> {
   if (modIds.length === 0) {
-    return PromiseBB.resolve();
+    return Promise.resolve();
   }
 
   const notiParams: INotification = {
@@ -47,9 +49,9 @@ export function removeMods(
     });
   };
 
-  return toPromise((cb) =>
+  return Promise.resolve(toPromise((cb) =>
     api.events.emit("remove-mods", gameId, modIds, cb, { progressCB }),
-  )
+  ))
     .then(() => {
       api.events.emit("mods-enabled", modIds, false, gameId);
     })

@@ -1,6 +1,5 @@
 import type { IInstallResult } from "./IInstallResult";
 
-import type PromiseBB from "bluebird";
 import type { IModReference } from "./IMod";
 
 export type ProgressDelegate = (perc: number) => void;
@@ -23,4 +22,4 @@ export type InstallFunc = (
   unattended?: boolean,
   archivePath?: string,
   options?: IInstallationDetails,
-) => PromiseBB<IInstallResult>;
+) => PromiseLike<IInstallResult>;

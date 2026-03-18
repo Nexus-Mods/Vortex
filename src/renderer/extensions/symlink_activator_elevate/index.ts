@@ -1,7 +1,7 @@
 import type { TFunction } from "i18next";
 import type * as os from "os";
 
-import { getErrorMessageOrDefault, getErrorNativeCode } from "@vortex/shared";
+import { getErrorCode, getErrorMessageOrDefault, getErrorNativeCode, unknownToError } from "@vortex/shared";
 import PromiseBB from "bluebird";
 import JsonSocket from "json-socket";
 import * as net from "net";
@@ -24,11 +24,11 @@ import type {
 } from "../mod_management/types/IDeploymentMethod";
 
 import { clearUIBlocker, setUIBlocker } from "../../actions";
+import { log } from "../../logging";
 import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
 import { runElevated } from "../../util/elevated";
 import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
-import { log } from "../../util/log";
 import makeReactive from "../../util/makeReactive";
 import { activeGameId, gameName } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
@@ -210,7 +210,7 @@ class DeploymentMethod extends LinkingDeployment {
     clean: boolean,
     lastActivation: IDeployedFile[],
     normalize: Normalize,
-  ): PromiseBB<void> {
+  ): PromiseLike<void> {
     this.mCounter = 0;
     this.mOpenRequests = {};
     return super.prepare(dataPath, clean, lastActivation, normalize);
@@ -220,7 +220,7 @@ class DeploymentMethod extends LinkingDeployment {
     gameId: string,
     dataPath: string,
     installationPath: string,
-  ): PromiseBB<IDeployedFile[]> {
+  ): PromiseLike<IDeployedFile[]> {
     Object.keys(this.mOpenRequests).forEach((num) => {
       this.mOpenRequests[num].reject(new ProcessCanceled("unfinished"));
     });
@@ -228,7 +228,7 @@ class DeploymentMethod extends LinkingDeployment {
     return this.closeServer()
       .then(() => this.startElevated())
       .tapCatch((err) => {
-        log("info", "elevated process failed", { error: err.message });
+        log("info", "elevated process failed", { error: getErrorMessageOrDefault(err) });
         this.context.onComplete();
       })
       .then(() => super.finalize(gameId, dataPath, installationPath))
@@ -287,7 +287,7 @@ class DeploymentMethod extends LinkingDeployment {
     linkPath: string,
     sourcePath: string,
     dirTags?: boolean,
-  ): PromiseBB<void> {
+  ): Promise<void> {
     const dirName = path.dirname(linkPath);
     return this.ensureDir(dirName, dirTags)
       .then((created) =>
@@ -297,17 +297,17 @@ class DeploymentMethod extends LinkingDeployment {
             fs
               .removeAsync(linkPath)
               .catch((err) =>
-                err.code === "ENOENT"
-                  ? PromiseBB.resolve()
-                  : PromiseBB.reject(err),
+                getErrorCode(err) === "ENOENT"
+                  ? Promise.resolve()
+                  : Promise.reject(unknownToError(err)),
               )
-          : PromiseBB.resolve(),
+          : Promise.resolve(),
       )
       .then(() =>
-        this.emitOperation("link-file", {
+        Promise.resolve(this.emitOperation("link-file", {
           source: sourcePath,
           destination: linkPath,
-        }),
+        })),
       );
   }
 

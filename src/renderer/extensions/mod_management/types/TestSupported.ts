@@ -1,5 +1,3 @@
-import type PromiseBB from "bluebird";
-
 export interface ISupportedResult {
   supported: boolean;
   requiredFiles: string[];
@@ -15,4 +13,4 @@ export type TestSupported = (
   gameId: string,
   archivePath?: string,
   details?: ITestSupportedDetails,
-) => PromiseBB<ISupportedResult>;
+) => PromiseLike<ISupportedResult>;

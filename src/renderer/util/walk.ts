@@ -1,9 +1,8 @@
-import * as fs from "./fs";
-
-import PromiseBB from "bluebird";
-import * as fsOrig from "fs-extra";
-import * as path from "path";
 import { getErrorCode } from "@vortex/shared";
+import * as path from "path";
+
+import { log } from "../logging";
+import * as fs from "./fs";
 
 export interface IWalkOptions {
   ignoreErrors?: string[] | true;
@@ -17,65 +16,64 @@ export interface IWalkOptions {
  *                       corresponding fs stats as parameter. Should return a promise that will be
  *                       awaited before proceeding to the next directory. If this promise is
  *                       rejected, the walk is interrupted
- * @returns {PromiseBB<void>} a promise that is resolved once the search is complete
+ * @returns {Promise<void>} a promise that is resolved once the search is complete
  */
-function walk(
+async function walk(
   target: string,
-  callback: (iterPath: string, stats: fs.Stats) => PromiseBB<any>,
+  callback: (iterPath: string, stats: fs.Stats) => PromiseLike<any>,
   options?: IWalkOptions,
-): PromiseBB<void> {
+): Promise<void> {
   const opt = options || {};
-  let allFileNames: string[];
 
-  return fs
-    .readdirAsync(target)
-    .catch((err) =>
-      getErrorCode(err) === "ENOENT"
-        ? PromiseBB.resolve([])
-        : PromiseBB.reject(err),
-    )
-    .then((fileNames: string[]) => {
-      allFileNames = fileNames;
-      return PromiseBB.map(fileNames, (statPath: string) =>
-        PromiseBB.resolve(
-          fsOrig.lstat([target, statPath].join(path.sep)),
-        ).reflect(),
-      );
-    })
-    .then((res: Array<PromiseBB.Inspection<fs.Stats>>) => {
-      // use the stats results to generate a list of paths of the directories
-      // in the searched directory
-      const subDirs: string[] = [];
-      const cbPromises: Array<PromiseBB<any>> = [];
-      res.forEach((stat, idx) => {
-        if (!stat.isFulfilled()) {
-          return;
-        }
-        const fullPath: string = path.join(target, allFileNames[idx]);
-        cbPromises.push(callback(fullPath, stat.value()));
-        if (stat.value().isDirectory() && path.extname(fullPath) !== ".asar") {
-          subDirs.push(fullPath);
-        }
-      });
-      return PromiseBB.all(
-        cbPromises.concat(
-          PromiseBB.mapSeries(subDirs, (subDir) => walk(subDir, callback)),
-        ),
-      );
-    })
-    .catch((err) => {
-      const code = getErrorCode(err);
-      if (
-        opt.ignoreErrors !== undefined &&
-        (opt.ignoreErrors === true ||
-          (code && opt.ignoreErrors.indexOf(code) !== -1))
-      ) {
-        return PromiseBB.resolve();
-      } else {
-        return PromiseBB.reject(err);
+  try {
+    let fileNames: string[];
+    try {
+      fileNames = await fs.readdirAsync(target);
+    } catch (err) {
+      if (getErrorCode(err) === "ENOENT") {
+        log("debug", "walk: ENOENT on target", { target });
+        return;
       }
-    })
-    .then(() => PromiseBB.resolve());
+      throw err;
+    }
+
+    const statResults = await Promise.all<fs.Stats | null>(
+      fileNames.map((statPath) =>
+        fs.lstatAsync(path.join(target, statPath))
+          .catch(() => null),
+      ),
+    );
+
+    const subDirs: string[] = [];
+    const cbPromises: Array<PromiseLike<any>> = [];
+    statResults.forEach((stat, idx) => {
+      if (stat === null) {
+        return;
+      }
+      const fullPath = path.join(target, fileNames[idx]);
+      cbPromises.push(callback(fullPath, stat));
+      if (stat.isDirectory() && path.extname(fullPath) !== ".asar") {
+        subDirs.push(fullPath);
+      }
+    });
+
+    const walkSubDirs = async () => {
+      for (const subDir of subDirs) {
+        await walk(subDir, callback, options);
+      }
+    };
+    await Promise.all([...cbPromises, walkSubDirs()]);
+  } catch (err) {
+    const code = getErrorCode(err);
+    if (
+      opt.ignoreErrors !== undefined &&
+      (opt.ignoreErrors === true ||
+        (code && opt.ignoreErrors.indexOf(code) !== -1))
+    ) {
+      return;
+    }
+    throw err;
+  }
 }
 
 export default walk;

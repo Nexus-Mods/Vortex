@@ -270,6 +270,9 @@ export function showDialog(
   inId?: string,
 ) {
   return (dispatch) => {
+    // Returns Bluebird for backwards compatibility with external extensions.
+    // Callers within mod_management wrap this in Promise.resolve() to get
+    // a native Promise. Migrate to native Promise when extensions are updated.
     return new PromiseBB<IDialogResult>((resolve, reject) => {
       const id = inId || shortid();
       const defaultAction = actions.find((iter) => iter.default === true);

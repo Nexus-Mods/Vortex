@@ -39,7 +39,6 @@ import type { IInstallContext, InstallOutcome } from "./types/IInstallContext";
 import type { IMod, ModState } from "./types/IMod";
 import getModName from "./util/modName";
 
-import PromiseBB from "bluebird";
 import * as path from "path";
 
 class InstallContext implements IInstallContext {
@@ -220,7 +219,7 @@ class InstallContext implements IInstallContext {
     this.mDismissNotification("install_" + this.mIndicatorId);
     this.mStopActivity(`installing_${this.mIndicatorId}`);
 
-    PromiseBB.delay(50).then(() => {
+    new Promise(resolve => setTimeout(resolve, 50)).then(() => {
       if (!this.mDidReportError) {
         this.mDidReportError = true;
         const noti: INotification = this.outcomeNotification(

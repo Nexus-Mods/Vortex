@@ -18,9 +18,9 @@ import {
   NEXUS_PROTOCOL,
   NEXUS_USERS_SUBDOMAIN,
 } from "../extensions/nexus_integration/constants";
+import { log } from "../logging";
 import { TimeoutError } from "./CustomErrors";
 import getVortexPath from "./getVortexPath";
-import { log } from "./log";
 
 /**
  * count the elements in an array for which the predicate matches
@@ -198,7 +198,7 @@ export function restackErr(error: unknown, stackErr: Error): Error {
 }
 
 interface IQueueItem {
-  func: () => Bluebird<any>;
+  func: () => PromiseLike<any>;
   stackErr: Error;
   resolve: (value: any) => void;
   reject: (err: Error) => void;
@@ -217,8 +217,9 @@ export function makeQueue<T>() {
   const tick = () => {
     processing = pending.shift();
     if (processing !== undefined) {
-      processing
-        .func()
+      // TODO: convert to native promises once we start migrating the
+      //  DownloadManager.
+      Bluebird.resolve(processing.func())
         .then(processing.resolve)
         .catch((err) =>
           processing?.reject(restackErr(err, processing.stackErr)),
@@ -229,7 +230,7 @@ export function makeQueue<T>() {
     }
   };
 
-  return (func: () => Bluebird<T>, tryOnly: boolean) => {
+  return (func: () => PromiseLike<T>, tryOnly: boolean) => {
     const stackErr = new Error();
 
     return new Bluebird<T>((resolve, reject) => {

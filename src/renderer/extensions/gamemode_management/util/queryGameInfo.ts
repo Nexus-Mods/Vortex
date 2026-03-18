@@ -6,13 +6,13 @@ import walk from "../../../util/walk";
 
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 
-import PromiseBB from "bluebird";
+import { unknownToError } from "@vortex/shared";
 
 function queryGameInfo(
   game: IGame & IDiscoveryResult,
-): PromiseBB<{ [key: string]: IGameDetail }> {
+): Promise<{ [key: string]: IGameDetail }> {
   if (game.path === undefined) {
-    return PromiseBB.resolve({});
+    return Promise.resolve({});
   }
   let totalSize = 0;
   let sizeWithoutLinks = 0;
@@ -24,7 +24,7 @@ function queryGameInfo(
     if (stats.nlink === 1) {
       sizeWithoutLinks += stats.size;
     }
-    return PromiseBB.resolve();
+    return Promise.resolve();
   })
     .then(() => {
       return {
@@ -37,7 +37,7 @@ function queryGameInfo(
       };
     })
     .catch((err) => {
-      log("error", "failed to query game info", { err: err.message });
+      log("error", "failed to query game info", { err: unknownToError(err).message });
       return {};
     });
 }
