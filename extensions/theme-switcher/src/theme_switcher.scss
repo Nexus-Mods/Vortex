@@ -1,0 +1,28 @@
+.chrome-picker {
+    background-color: $brand-menu !important;
+    font-size: $font-size-base !important;
+
+    input {
+        @extend .form-control;
+        font-family: $font-family-monospace !important;
+        font-size: $font-size-base !important;
+        color: $text-color !important;
+        padding: 0 !important;
+        height: 22px !important;
+    }
+
+    label {
+        font-family: $font-family-monospace !important;
+        color: $text-color !important;
+    }
+
+    svg {
+        margin-left: 4px !important;
+        fill: $text-color !important;
+        background-color: $brand-primary !important;
+
+        &:hover {
+            background-color: darken($brand-primary, 15%) !important;
+        }
+    }
+}
