@@ -51,7 +51,9 @@ class RuleEntry extends React.Component<IRuleEntryProps, {}> {
           tooltip=""
           onClick={this.click}
         />
-          {pluginId} {this.renderType(type)} {reference}
+        <div className="rule-name">{pluginId}</div>
+        <div className="rule-type">{this.renderType(type)}</div>
+        <div className="rule-name">{reference}</div>
       </ListGroupItem>
     );
   }
