@@ -12,7 +12,6 @@ import { useSelector } from "react-redux";
 import {
   discovered as discoveredGamesSelector,
   knownGames as knownGamesSelector,
-  mainPage as mainPageSelector,
   profiles as profilesSelector,
 } from "../../../util/selectors";
 import { DownloadButton } from "./DownloadButton";
@@ -30,7 +29,6 @@ export const Spine: FC = () => {
   const knownGames = useSelector(knownGamesSelector);
   const discoveredGames = useSelector(discoveredGamesSelector);
   const allProfiles = useSelector(profilesSelector);
-  const mainPage = useSelector(mainPageSelector);
 
 
   const handleGlobalPageClick = useCallback(
@@ -117,7 +115,6 @@ export const Spine: FC = () => {
             <SpineButton
               className="border-2 border-dotted hover:border-solid"
               iconPath={mdiPlus}
-              isActive={mainPage === "Games"}
               title="Games"
               onClick={() => handleGlobalPageClick("Games")}
             />
