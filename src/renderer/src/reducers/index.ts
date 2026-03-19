@@ -307,11 +307,9 @@ function addToTree(tree: any, statePath: string[], spec: IReducerSpec) {
  * @param {IExtensionReducer[]} extensionReducers
  * @returns
  */
-function reducers(
+export function buildReducerTree(
   extensionReducers: IExtensionReducer[],
-  querySanitize: (errors: string[]) => Decision,
-  onError: (err: Error) => void,
-) {
+): ReducerTree {
   const tree = {
     user: userReducer,
     app: appReducer,
@@ -332,7 +330,130 @@ function reducers(
   extensionReducers.forEach((extensionReducer) => {
     addToTree(tree, extensionReducer.path, extensionReducer.reducer);
   });
-  return enableBatching(deriveReducer("", tree, querySanitize, onError));
+  return tree;
+}
+
+type ReducerTree = IReducerSpec | { [key: string]: ReducerTree };
+
+interface VerifierSpec {
+  statePath: string;
+  verifiers: { [key: string]: IStateVerifier };
+  defaults: { [key: string]: any };
+}
+
+function collectVerifierSpecs(
+  tree: ReducerTree,
+  statePath: string = "",
+): VerifierSpec[] {
+  const specs: VerifierSpec[] = [];
+
+  if ("reducers" in tree && "defaults" in tree) {
+    // leaf node (IReducerSpec)
+    const spec = tree as IReducerSpec;
+    if (spec.verifiers !== undefined) {
+      specs.push({
+        statePath,
+        verifiers: spec.verifiers,
+        defaults: spec.defaults,
+      });
+    }
+  } else {
+    // branch node
+    const branch = tree as { [key: string]: ReducerTree };
+    for (const attr of Object.keys(branch)) {
+      specs.push(...collectVerifierSpecs(branch[attr], statePath + "." + attr));
+    }
+  }
+
+  return specs;
+}
+
+/**
+ * Pre-sanitize hydration state before dispatching __hydrate actions.
+ * Runs verification on all reducer specs, and if corruption is found,
+ * shows an async dialog to let the user decide how to proceed.
+ *
+ * @param tree - The reducer tree built by buildReducerTree
+ * @param hydratedState - The raw hydration payload from persistence
+ * @param queryDecision - Async callback to ask the user what to do
+ * @returns The (possibly sanitized) hydration state
+ */
+export async function sanitizeHydrationState(
+  tree: ReducerTree,
+  hydratedState: Partial<IState>,
+  queryDecision: (errors: string[]) => Promise<Decision>,
+): Promise<Partial<IState>> {
+  const specs = collectVerifierSpecs(tree);
+  const allErrors: string[] = [];
+  const sanitizedPaths: Array<{ pathArray: string[]; sanitized: unknown }> = [];
+
+  for (const { statePath, verifiers, defaults } of specs) {
+    const pathArray = statePath.split(".").slice(1);
+    const input: unknown = getSafe(hydratedState, pathArray, undefined);
+    const errors: string[] = [];
+    let moreCount = 0;
+    const sanitized: unknown = verify(
+      statePath,
+      verifiers,
+      input,
+      defaults,
+      (error: string) => {
+        if (errors.length < 10) {
+          errors.push(error);
+        } else {
+          ++moreCount;
+        }
+      },
+    );
+    if (sanitized !== input) {
+      if (moreCount > 0) {
+        errors.push(`... ${moreCount} more errors ...`);
+      }
+      allErrors.push(...errors);
+      sanitizedPaths.push({ pathArray, sanitized });
+    }
+  }
+
+  if (allErrors.length === 0) {
+    return hydratedState;
+  }
+
+  const decision = await queryDecision(allErrors);
+
+  if (decision === Decision.SANITIZE) {
+    const backupPath = path.join(getVortexPath("temp"), STATE_BACKUP_PATH);
+    log("info", "sanitizing application state");
+    const backupStamp = Date.now();
+    fs.ensureDirSync(backupPath);
+    fs.writeFileSync(
+      path.join(backupPath, `backup_${backupStamp}.json`),
+      JSON.stringify(hydratedState, undefined, 2),
+    );
+
+    let result = hydratedState;
+    for (const { pathArray, sanitized } of sanitizedPaths) {
+      result = setSafe(result, pathArray, sanitized);
+    }
+    return result;
+  } else if (decision === Decision.QUIT) {
+    void window.api.app.exit(0);
+    throw new UserCanceled();
+  }
+
+  // Decision.IGNORE — return original state unchanged
+  return hydratedState;
+}
+
+function reducers(
+  extensionReducers: IExtensionReducer[],
+  onError: (err: Error) => void,
+) {
+  const tree = buildReducerTree(extensionReducers);
+  // querySanitize is no longer needed — sanitization is handled
+  // asynchronously before hydration via sanitizeHydrationState()
+  return enableBatching(
+    deriveReducer("", tree, () => Decision.SANITIZE, onError),
+  );
 }
 
 export default reducers;

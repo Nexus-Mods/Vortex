@@ -79,6 +79,7 @@ import { applyMiddleware, compose, createStore } from "redux";
 import thunkMiddleware from "redux-thunk";
 import { generate as shortid } from "shortid";
 
+import type { IExtensionReducer } from './types/extensions';
 import type { ThunkStore } from "./types/IExtensionContext";
 import type { IState } from "./types/IState";
 
@@ -103,7 +104,11 @@ import ExtensionManager from "./ExtensionManager";
 import { ExtensionContext } from "./ExtensionProvider";
 import { log } from "./logging";
 import { initApplicationMenu } from "./menu";
-import reducer, { Decision } from "./reducers/index";
+import reducer, {
+  buildReducerTree,
+  Decision,
+  sanitizeHydrationState,
+} from "./reducers/index";
 import { fetchHydrationState } from "./store/hydration";
 import { persistDiffMiddleware } from "./store/persistDiffMiddleware";
 import { reduxLogger } from "./store/reduxLogger";
@@ -519,26 +524,48 @@ async function init(): Promise<ExtensionManager | null> {
     return null;
   }
 
-  const extReducers = extensions.getReducers();
+  const extReducers = extensions.getReducers() as IExtensionReducer[];
 
   const reportReducerError = (err) =>
     extensions
       .getApi()
       .showErrorNotification("Failed to update application state", err);
 
+  // Pre-sanitize hydration state: verify integrity and show dialog if needed
+  const tree = buildReducerTree(extReducers);
+  const sanitizedState = await sanitizeHydrationState(
+    tree,
+    hydratedState,
+    async (errors: string[]) => {
+      const result = await window.api.dialog.showMessageBox({
+        type: "warning",
+        title: "Application State Corrupted",
+        message:
+          "Application state is invalid. You can try to repair it but you may lose some data.",
+        detail: errors.join("\n"),
+        buttons: ["Quit", "Ignore", "Repair"],
+        defaultId: 2,
+        cancelId: 0,
+      });
+      return [Decision.QUIT, Decision.IGNORE, Decision.SANITIZE][
+        result.response
+      ];
+    },
+  );
+
   // Create store WITHOUT preloaded state - reducers will initialize with defaults
   // Then we dispatch __hydrate to merge persisted data with defaults
   store = createStore(
-    reducer(extReducers, () => Decision.QUIT, reportReducerError),
+    reducer(extReducers, reportReducerError),
     enhancer,
   );
 
   // Hydrate each hive by dispatching __hydrate action
   // This merges persisted data with reducer defaults (like the old architecture)
-  for (const hive of Object.keys(hydratedState)) {
+  for (const hive of Object.keys(sanitizedState)) {
     store.dispatch({
       type: "__hydrate",
-      payload: { [hive]: hydratedState[hive] },
+      payload: { [hive]: sanitizedState[hive] },
     });
   }
 

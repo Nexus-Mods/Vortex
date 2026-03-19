@@ -40,6 +40,7 @@ import type {
   ExtensionInit,
   IAvailableExtension,
   IExtension,
+  IExtensionReducer,
   IRegisteredExtension,
 } from "./types/extensions";
 import type {
@@ -1171,8 +1172,8 @@ class ExtensionManager {
   /**
    * retrieve list of all reducers registered by extensions
    */
-  public getReducers() {
-    const reducers = [];
+  public getReducers(): IExtensionReducer[] {
+    const reducers: IExtensionReducer[] = [];
     this.apply(
       "registerReducer",
       (statePath: string[], reducer: IReducerSpec) => {
