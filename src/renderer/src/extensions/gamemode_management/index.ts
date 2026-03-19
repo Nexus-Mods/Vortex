@@ -1305,10 +1305,14 @@ function init(context: IExtensionContext): boolean {
           getGame(gameMode) !== undefined
         ) {
           changeGameMode(undefined, gameMode, profile.id).then(() => null);
-        } else {
-          // if the game is no longer discovered we can't keep this profile as active
+        } else if (getGame(gameMode) !== undefined) {
+          // Game extension is loaded but the game is no longer discovered
+          // (e.g. uninstalled) — clear the active profile
           store.dispatch(setNextProfile(undefined));
         }
+        // If getGame returns undefined the extension may not be installed yet
+        // (e.g. community extension pending install). Don't clear the profile —
+        // removeDisappearedGames/stubs will handle offering to install it.
       }
     }
   });
