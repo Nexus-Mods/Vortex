@@ -8,6 +8,8 @@
     "build": "pnpm cross-env NODE_ENV=development pnpm webpack --config ./webpack.config.cjs",
     "dist": "pnpm cross-env NODE_ENV=production pnpm webpack --config ./webpack.config.cjs",
     "typecheck": "pnpm tsc -p tsconfig.json",
+    "lint": "pnpm eslint --concurrency auto .",
+    "lint:quiet": "pnpm eslint --concurrency auto --quiet .",
     "test:jest": "pnpm jest --no-cache",
     "api:build": "pnpm rimraf ./lib && pnpm tsc -p tsconfig.api.json",
     "api:docs": "pnpm api-extractor run --local"

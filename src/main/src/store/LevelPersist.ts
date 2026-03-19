@@ -87,7 +87,7 @@ class LevelPersist implements IPersistor {
   }
 
   public async getItem(key: string[]): Promise<string> {
-    const value = await this.mDB.get(key.join(SEPARATOR));
+    const value: string = await this.mDB.get(key.join(SEPARATOR));
     return value;
   }
 

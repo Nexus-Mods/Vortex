@@ -165,6 +165,7 @@ export interface MainChannels {
 }
 
 /** Type containing all known channels for synchronous IPC operations (used primarily by preload scripts) */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface SyncChannels {
   // NOTE: These are synchronous IPC channels used during preload initialization.
   // Use sparingly as they block the renderer process.
@@ -261,8 +262,9 @@ export interface InvokeChannels {
   "contentTracing:stopRecording": (resultPath: string) => Promise<string>;
 
   // Redux state transfer
-  // NOTE: Redux state is a complex nested object that is serializable
-  // but too complex to type precisely. The actual data is always serializable.
+  // NOTE: Redux state is a complex nested object that is serializable but too complex to type precisely. The actual data is always serializable.
+
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   "redux:getState": () => Promise<{}>;
   // Returns a base64-encoded msgpack chunk of the Redux state
   "redux:getStateMsgpack": (idx?: number) => Promise<string | undefined>;

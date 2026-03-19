@@ -148,8 +148,6 @@ try {
 
 process.env.Path = process.env.Path + path.delimiter + import.meta.dirname;
 
-let application: Application;
-
 const handleError = (error: Error) => {
   if (Application.shouldIgnoreError(error)) {
     return;
@@ -290,10 +288,10 @@ async function main(): Promise<void> {
   try {
     fixedT("dummy");
   } catch {
-    fixedT = (input) => input;
+    fixedT = (input: unknown) => input;
   }
 
-  application = new Application(mainArgs);
+  new Application(mainArgs);
 }
 
 main().catch((err: unknown) => {

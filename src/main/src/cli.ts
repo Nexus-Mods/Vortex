@@ -8,7 +8,7 @@ import path from "node:path";
 import { getVortexPath } from "./getVortexPath";
 import { log } from "./logging";
 
-const ARG_COUNTS = {
+const ARG_COUNTS: Record<string, number> = {
   "-d": 1,
   "-i": 1,
   "-g": 1,
@@ -82,7 +82,7 @@ function electronIsShitArgumentSort(argv: string[]): string[] {
  * I think we are hitting walls atm with having only a single hyphen but with a word and a =
  */
 function transformEpicArguments(argv: string[]): string[] {
-  const epicParameterSwaps = {
+  const epicParameterSwaps: Record<string, string> = {
     "-AUTH_LOGIN": "--epic-auth-login",
     "-AUTH_PASSWORD": "--epic-auth-password",
     "-AUTH_TYPE": "--epic-auth-type",

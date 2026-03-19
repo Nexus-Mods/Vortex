@@ -6,17 +6,14 @@ export default class Debouncer extends GenericDebouncer<
   typeof clearTimeout
 > {
   constructor(
-    func: (...args: any[]) => Error | PromiseLike<void>,
+    func: (...args: unknown[]) => Error | PromiseLike<void>,
     debounceMS: number,
     reset?: boolean,
     triggerImmediately: boolean = false,
   ) {
-    const boundSetTimeout = setTimeout.bind(globalThis);
-    const boundClearTimeout = clearTimeout.bind(globalThis);
-
     super(
-      boundSetTimeout,
-      boundClearTimeout,
+      setTimeout,
+      clearTimeout,
       func,
       debounceMS,
       reset,

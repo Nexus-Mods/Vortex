@@ -39,8 +39,8 @@ workflow:
   script:
     - pnpm run build:fomod
     - pnpm install
-    - pnpm run lint:ci
     - pnpm run build:all
+    - pnpm run lint:ci
     - pnpm run test
   # NOTE(erri120): This extracts Stmts from vitest v8 coverage results
   # https://regex101.com/r/sPcu5n/1
