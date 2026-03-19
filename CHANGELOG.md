@@ -5,6 +5,62 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0-alpha.2] - 2026-03-19
+
+_Internal alpha release for testing — not for public distribution._
+
+### Added
+
+- Workflow for automated PR maintenance ([#21622](https://github.com/Nexus-Mods/Vortex/pull/21622))
+- Progress bar for activity-type notifications ([#21612](https://github.com/Nexus-Mods/Vortex/pull/21612))
+- Timeout to permission elevation attempts when writing files ([#21670](https://github.com/Nexus-Mods/Vortex/pull/21670))
+
+### Changed
+
+- Downloads moved to separate page in new UI ([#21704](https://github.com/Nexus-Mods/Vortex/pull/21704))
+- Bundled main project as ESM using rolldown ([#21616](https://github.com/Nexus-Mods/Vortex/pull/21616))
+- Replaced webpack with rolldown for preload script ([#21667](https://github.com/Nexus-Mods/Vortex/pull/21667))
+- Moved renderer source files into `src` sub-directory ([#21678](https://github.com/Nexus-Mods/Vortex/pull/21678))
+- Switched to Thumbnail API for image display ([#21684](https://github.com/Nexus-Mods/Vortex/pull/21684))
+- Extensions now support loading index.cjs files ([#21669](https://github.com/Nexus-Mods/Vortex/pull/21669))
+- Improved plugin count display ([#20990](https://github.com/Nexus-Mods/Vortex/pull/20990))
+- Exposed LOOT's isEmpty property for dummy plugins ([#20972](https://github.com/Nexus-Mods/Vortex/pull/20972))
+- "Discover more collections" now navigates to Browse NexusMods page ([#21618](https://github.com/Nexus-Mods/Vortex/pull/21618))
+- Updated page display order in UI ([#21666](https://github.com/Nexus-Mods/Vortex/pull/21666))
+- Synced peer dependencies to vortex-api ([#21605](https://github.com/Nexus-Mods/Vortex/pull/21605))
+- Simplified API updating workflow ([#21582](https://github.com/Nexus-Mods/Vortex/pull/21582))
+- Added restrictions to healthcheck extension ([#21580](https://github.com/Nexus-Mods/Vortex/pull/21580))
+- Removed deprecated @types packages ([#21619](https://github.com/Nexus-Mods/Vortex/pull/21619))
+- Cleaned up GitHub workflows ([#21578](https://github.com/Nexus-Mods/Vortex/pull/21578))
+- Aligned build documentation with current setup ([#21583](https://github.com/Nexus-Mods/Vortex/pull/21583))
+- General extensions cleanup ([#21557](https://github.com/Nexus-Mods/Vortex/pull/21557))
+- Plugin rules editor improvements ([#21695](https://github.com/Nexus-Mods/Vortex/pull/21695))
+- Cleanup for Pillars of Eternity 2 game extension ([#21547](https://github.com/Nexus-Mods/Vortex/pull/21547))
+- Removed bluebird dependency from mod_management extension ([#21606](https://github.com/Nexus-Mods/Vortex/pull/21606))
+
+### Fixed
+
+- State corruption issues causing Vortex to crash and failing to recover on restart ([#21677](https://github.com/Nexus-Mods/Vortex/pull/21677))
+- Native frame values not being read correctly from state ([#21698](https://github.com/Nexus-Mods/Vortex/pull/21698))
+- Stale discovery data when setting game location manually ([#21675](https://github.com/Nexus-Mods/Vortex/pull/21675))
+- Removing active profile not switching user to dashboard ([#21697](https://github.com/Nexus-Mods/Vortex/pull/21697))
+- Profile switch to undefined when clicking "Home" button in new UI ([#21665](https://github.com/Nexus-Mods/Vortex/pull/21665))
+- Crash from unhandled findByAppId calls in community extensions ([#21661](https://github.com/Nexus-Mods/Vortex/pull/21661))
+- Bluebird warning when receiving undefined handlers ([#21609](https://github.com/Nexus-Mods/Vortex/pull/21609))
+- Overlay not minimizing correctly ([#21608](https://github.com/Nexus-Mods/Vortex/pull/21608))
+- Packery layout issues on dashboard ([#21614](https://github.com/Nexus-Mods/Vortex/pull/21614))
+- Profile shortcut creation not working in development environment ([#21607](https://github.com/Nexus-Mods/Vortex/pull/21607))
+- Windows rolldown build failures ([#21625](https://github.com/Nexus-Mods/Vortex/pull/21625))
+- Artifact paths in build workflow ([#21587](https://github.com/Nexus-Mods/Vortex/pull/21587))
+- Theme switcher issues ([#20824](https://github.com/Nexus-Mods/Vortex/pull/20824))
+- Tools section display problems ([#21634](https://github.com/Nexus-Mods/Vortex/pull/21634))
+- Spine UI component issues ([#21633](https://github.com/Nexus-Mods/Vortex/pull/21633))
+- Notification rendering issues ([#21636](https://github.com/Nexus-Mods/Vortex/pull/21636))
+- "Did the Collection work for you" notification dismiss behavior ([#21629](https://github.com/Nexus-Mods/Vortex/pull/21629))
+- Removed stroke border visual artifact ([#21620](https://github.com/Nexus-Mods/Vortex/pull/21620))
+- Premium badge shown in title bar while logged out ([#21585](https://github.com/Nexus-Mods/Vortex/pull/21585))
+- Vortex API bundle and workflow issues ([#21703](https://github.com/Nexus-Mods/Vortex/pull/21703), [#21699](https://github.com/Nexus-Mods/Vortex/pull/21699))
+
 ## [2.0.0-alpha.1](https://github.com/Nexus-Mods/Vortex/releases/tag/2.0.0-alpha.1) - 2026-03-16
 
 _Internal alpha release for testing — not for public distribution._
