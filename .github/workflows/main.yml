@@ -91,6 +91,11 @@ jobs:
       - name: Install volta, Node.js
         uses: volta-cli/action@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          cache: false
+
       - name: Generate GitHub App token
         id: app-token
         uses: actions/create-github-app-token@v3
