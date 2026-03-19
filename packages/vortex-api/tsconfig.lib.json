@@ -3,9 +3,6 @@
   "files": [
     "lib/api.d.ts"
   ],
-  "include": [
-    "lib/*.d.ts"
-  ],
   "compilerOptions": {
     "declaration": true,
     "noEmit": true,
