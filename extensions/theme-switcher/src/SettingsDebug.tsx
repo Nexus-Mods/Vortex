@@ -282,14 +282,14 @@ class SettingsDebug extends ComponentEx<IProps, IComponentState> {
             <form>
               <FormGroup
                 controlId="formBasicText"
-                //validationState={this.getValidationState()}
+              //validationState={this.getValidationState()}
               >
                 <ControlLabel>Working example with validation</ControlLabel>
                 <FormControl
                   type="text"
                   //value={this.state.value}
                   placeholder="Enter text"
-                  //onChange={this.handleChange}
+                //onChange={this.handleChange}
                 />
                 <FormControl.Feedback />
                 <HelpBlock>Validation is based on string length.</HelpBlock>
@@ -480,8 +480,7 @@ function mapDispatchToProps(
   return {
     onShowError: (title: string, details: any) =>
       util.showError(dispatch, title, details),
-    onShowDialog: (type, title, content, dialogActions) =>
-      dispatch(actions.showDialog(type, title, content, dialogActions)),
+    onShowDialog: (type, title, content, dialogActions) => Promise.resolve(dispatch(actions.showDialog(type, title, content, dialogActions))),
     onShowInfo: (message: string) =>
       dispatch(
         actions.addNotification({
