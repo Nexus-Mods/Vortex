@@ -1,4 +1,10 @@
+import * as _ from "lodash";
+
+import type { IDiscoveredTool } from "../../../types/IDiscoveredTool";
 import type { IReducerSpec } from "../../../types/IExtensionContext";
+import type { ISettingsGameMode } from "../../../types/IState";
+import type { IDiscoveryResult } from "../types/IDiscoveryResult";
+
 import {
   deleteOrNop,
   getSafe,
@@ -6,11 +12,6 @@ import {
   setSafe,
 } from "../../../util/storeHelper";
 import * as actions from "../actions/settings";
-
-import * as _ from "lodash";
-import { log } from "../../../util/log";
-import type { IDiscoveredTool } from "../../../types/IDiscoveredTool";
-import type { ISettingsGameMode } from "../../../types/IState";
 
 /**
  * reducer for changes to the window state
@@ -62,7 +63,7 @@ export const settingsReducer: IReducerSpec<ISettingsGameMode> = {
       return deleteOrNop(state, ["discovered", id, "path"]);
     },
     [actions.setGamePath as any]: (state, payload) => {
-      const input: any = {
+      const input: IDiscoveryResult = {
         path: payload.gamePath,
         pathSetManually: payload.gamePath !== undefined,
         store: payload.store,
