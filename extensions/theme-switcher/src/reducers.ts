@@ -8,7 +8,7 @@ const settingsReducer: types.IReducerSpec = {
       util.setSafe(state, ["currentTheme"], payload),
   },
   defaults: {
-    currentTheme: "__default",
+    currentTheme: "default",
   },
 };
 
