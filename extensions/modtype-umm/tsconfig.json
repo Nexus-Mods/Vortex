@@ -1,6 +1,10 @@
 {
   "$schema": "https://www.schemastore.org/tsconfig.json",
   "extends": "../tsconfig.extensions.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./out"
+  },
   "include": [
     "src"
   ]
