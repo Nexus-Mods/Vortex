@@ -7,6 +7,7 @@
     "moduleResolution": "bundler",
     "noEmit": true,
     "composite": true,
-    "useUnknownInCatchVariables": false
+    "useUnknownInCatchVariables": false,
+    "jsx": "react"
   }
 }

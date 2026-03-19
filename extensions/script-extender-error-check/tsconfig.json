@@ -1,9 +1,6 @@
 {
   "$schema": "https://www.schemastore.org/tsconfig.json",
   "extends": "../tsconfig.extensions.json",
-  "compilerOptions": {
-    "jsx": "react-jsx",
-  },
   "include": [
     "src"
   ]
