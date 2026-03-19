@@ -139,9 +139,9 @@ class LevelPersist implements IPersistor {
       prefix === undefined
         ? undefined
         : {
-          gt: `${prefix}${SEPARATOR}`,
-          lt: `${prefix}${SEPARATOR}zzzzzzzzzzz`,
-        };
+            gt: `${prefix}${SEPARATOR}`,
+            lt: `${prefix}${SEPARATOR}zzzzzzzzzzz`,
+          };
 
     const writable = new Writable({
       objectMode: true,

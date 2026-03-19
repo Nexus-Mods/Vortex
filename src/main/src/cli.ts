@@ -208,12 +208,12 @@ export function parseCommandline(
     .option(
       "-d, --download <url>",
       "Start downloading the specified url " +
-      "(any supported protocol like nxm:, https:, ...).",
+        "(any supported protocol like nxm:, https:, ...).",
     )
     .option(
       "-i, --install <url>",
       "Start downloading & installing the specified url " +
-      "(any supported protocol like nxm:, https:, ...).",
+        "(any supported protocol like nxm:, https:, ...).",
     )
     .option(
       "--install-archive <path>",
@@ -222,26 +222,26 @@ export function parseCommandline(
     .option(
       "--install-extension <id>",
       "Start downloading & installing the specified " +
-      'vortex extension. id can be "modId:<number>".',
+        'vortex extension. id can be "modId:<number>".',
     )
     .option(
       "-g, --get <path>",
       "Print the state variable at the specified path and quit. " +
-      "This can be used repeatedly to print multiple items",
+        "This can be used repeatedly to print multiple items",
       collect,
     )
     .option(
       "-s, --set <path=value>",
       "Change a value in the state. Please be very careful " +
-      "with this, incorrect use will break Vortex and you may " +
-      "lose data",
+        "with this, incorrect use will break Vortex and you may " +
+        "lose data",
       assign,
     )
     .option("--del <path>", "Remove a value in state", collect)
     .option(
       "--user-data <path>",
       "Starts Vortex with a custom directory for the user data. " +
-      "Only use if you know what you're doing.",
+        "Only use if you know what you're doing.",
     )
     .option("--start-minimized", "Starts Vortex in the task bar")
     .option("--game <game id>", "Starts Vortex with a different game enabled")
@@ -251,12 +251,12 @@ export function parseCommandline(
     .option(
       "--merge <path>",
       "Merge a state backup. Unlike restore, the content of the specified " +
-      "state file will be merged into the existing state.",
+        "state file will be merged into the existing state.",
     )
     .option(
       "--shared",
       "Used in conjunction with set, get or del, this will access the database" +
-      "in the shared location instead of the per-user one",
+        "in the shared location instead of the per-user one",
     )
     .option(
       "--max-memory <size in MB>",

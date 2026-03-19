@@ -87,9 +87,9 @@ export class RingBufferSpanProcessor implements SpanProcessor {
       this.#count < this.#maxSpans
         ? this.#buffer.slice(0, this.#count)
         : [
-          ...this.#buffer.slice(this.#head),
-          ...this.#buffer.slice(0, this.#head),
-        ];
+            ...this.#buffer.slice(this.#head),
+            ...this.#buffer.slice(0, this.#head),
+          ];
 
     return raw.filter((s): s is ReadableSpan => s !== undefined);
   }
@@ -120,7 +120,10 @@ export class RingBufferSpanProcessor implements SpanProcessor {
   #markTraceExported(traceId: string): void {
     this.#exportedTraceIds.add(traceId);
     if (this.#exportedTraceIds.size > MAX_EXPORTED_TRACE_IDS) {
-      const next = this.#exportedTraceIds.values().next() as IteratorResult<string, never>;
+      const next = this.#exportedTraceIds.values().next() as IteratorResult<
+        string,
+        never
+      >;
       if (!next.done) {
         this.#exportedTraceIds.delete(next.value);
       }

@@ -232,7 +232,11 @@ class Application {
 
     app.on("activate", () => {
       if (this.mMainWindow !== undefined) {
-        this.mMainWindow.create().catch((err: unknown) => log("error", "failed to create main window", err));
+        this.mMainWindow
+          .create()
+          .catch((err: unknown) =>
+            log("error", "failed to create main window", err),
+          );
       }
     });
 
@@ -252,12 +256,12 @@ class Application {
         args.userData ??
         // (only on windows) use ProgramData from environment
         (args.shared &&
-          process.platform === "win32" &&
-          process.env.ProgramData !== undefined
+        process.platform === "win32" &&
+        process.env.ProgramData !== undefined
           ? path.join(process.env.ProgramData, "vortex")
           : // this allows the development build to access data from the
-          // production version and vice versa
-          path.resolve(app.getPath("userData"), "..", vortexPath));
+            // production version and vice versa
+            path.resolve(app.getPath("userData"), "..", vortexPath));
       userData = path.join(userData, currentStatePath);
 
       // handle nxm:// internally
@@ -384,7 +388,7 @@ class Application {
         dialog.showErrorBox(
           "Startup failed",
           "Vortex seems to be running already. " +
-          "If you can't see it, please check the task manager.",
+            "If you can't see it, please check the task manager.",
         );
 
         app.quit();
@@ -394,9 +398,9 @@ class Application {
           dialog.showErrorBox(
             "Startup failed",
             "Your system drive is full. " +
-            "You should always ensure your system drive has some space free (ideally " +
-            "at least 10% of the total capacity, especially on SSDs). " +
-            "Vortex can't start until you have freed up some space.",
+              "You should always ensure your system drive has some space free (ideally " +
+              "at least 10% of the total capacity, especially on SSDs). " +
+              "Vortex can't start until you have freed up some space.",
           );
           app.quit();
           return;
@@ -877,7 +881,11 @@ class Application {
         created = true;
       }
       if (multiUser && created) {
-        permissions.allow(dataPath, "group", "rwx").catch(err => log("error", `failed to set permissions on ${dataPath}`, err));
+        permissions
+          .allow(dataPath, "group", "rwx")
+          .catch((err) =>
+            log("error", `failed to set permissions on ${dataPath}`, err),
+          );
       }
       mkdirSync(path.join(dataPath, "temp"), { recursive: true });
 
@@ -1059,8 +1067,8 @@ class Application {
     const delay = this.mMainWindow
       ? Promise.resolve()
       : new Promise<void>((resolve) => {
-        setTimeout(() => resolve(), 2000);
-      });
+          setTimeout(() => resolve(), 2000);
+        });
 
     await delay;
     if (!this.mMainWindow) {

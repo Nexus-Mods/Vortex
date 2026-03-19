@@ -174,11 +174,11 @@ class MainWindow {
             process.env.CRASH_REPORTING =
               Math.random() > 0.5 ? "vortex" : "electron";
             if (this.mWindow !== null) {
-              this.mWindow.loadURL(
-                `file://${getVortexPath("base")}/index.html`,
-              ).catch((err: unknown) => {
-                log("error", "failed to load index.html", err);
-              });
+              this.mWindow
+                .loadURL(`file://${getVortexPath("base")}/index.html`)
+                .catch((err: unknown) => {
+                  log("error", "failed to load index.html", err);
+                });
             } else {
               process.exit();
             }
@@ -324,7 +324,7 @@ class MainWindow {
         log(
           "warn",
           "The Vortex window was found to be mostly offscreen. " +
-          "Moving to a sensible location.",
+            "Moving to a sensible location.",
           { bounds },
         );
         this.mWindow.setPosition(pBounds.x, pBounds.y);
