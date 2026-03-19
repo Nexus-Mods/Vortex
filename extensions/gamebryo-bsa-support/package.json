@@ -9,7 +9,8 @@
     "_native": "node ../copy-native.mjs ./node_modules/bsatk/build/Release/bsatk.node",
     "_build": "node build.mjs && pnpm run _native && pnpm extractInfo",
     "build": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build && node ../copy-extension.mjs out)",
-    "dist": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build && node ../copy-extension.mjs dist)"
+    "dist": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build && node ../copy-extension.mjs dist)",
+    "typecheck": "pnpm tsc"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

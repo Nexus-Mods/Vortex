@@ -1,11 +1,12 @@
 import * as React from "react";
+import { TFunction } from "react-i18next";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import { Spinner, tooltip, util } from "vortex-api";
 import { NAMESPACE } from "../statics";
 
 interface IBaseProps {
-  t: ReactI18Next.TranslationFunction;
+  t: TFunction;
 }
 
 interface IConnectedProps {

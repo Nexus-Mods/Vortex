@@ -1,4 +1,4 @@
-import minimatch = require("minimatch");
+import minimatch from "minimatch";
 import * as path from "path";
 import { types } from "vortex-api";
 
@@ -26,9 +26,9 @@ const getBlacklist = (() => {
       const filterList = (item) => typeof item === "string";
       lastBlacklist = customBlacklist
         ? [].concat(
-            blacklist,
-            (game?.details?.ignoreConflicts || []).filter(filterList),
-          )
+          blacklist,
+          (game?.details?.ignoreConflicts || []).filter(filterList),
+        )
         : blacklist;
     }
 

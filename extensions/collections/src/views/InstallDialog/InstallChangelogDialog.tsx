@@ -1,6 +1,6 @@
 import CollectionThumbnail from "../CollectionTile";
-
-import React = require("react");
+import React from "react";
+import { useContext, useCallback, Component } from "react";
 import { Button, Media, Modal } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
@@ -29,9 +29,9 @@ function InstallChangelogDialogImpl(props: IInstallChangelogDialogProps) {
     (state) => state.settings.interface.language,
   );
 
-  const context = React.useContext(MainContext);
+  const context = useContext(MainContext);
 
-  const openUrl = React.useCallback(() => {
+  const openUrl = useCallback(() => {
     context.api.events.emit(
       "analytics-track-click-event",
       "Collections",
@@ -129,7 +129,7 @@ const localState = util.makeReactive<{ job: IInstallChangelogDialogProps }>({
   },
 });
 
-export class InstallChangelogDialog extends React.Component<{}> {
+export class InstallChangelogDialog extends Component<{}> {
   public componentDidMount(): void {
     localState["attach"]?.(this);
   }

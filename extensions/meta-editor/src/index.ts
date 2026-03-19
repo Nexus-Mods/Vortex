@@ -5,7 +5,7 @@ import sessionReducer from "./reducers";
 
 import type { ILookupResult, IModInfo } from "modmeta-db";
 import * as path from "path";
-import semver = require("semver");
+import semver from "semver";
 import * as url from "url";
 import { inspect } from "util";
 import { log, selectors, types } from "vortex-api";

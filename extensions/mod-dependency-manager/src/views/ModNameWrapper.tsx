@@ -62,7 +62,6 @@ function ModNameWrapper(props: React.PropsWithChildren<IModNameWrapper>) {
         key="dependency"
         name="turn-s"
         rotate={270}
-        rotateId="turn-s-270"
         className="filter-dependencies-icon"
       />,
     );

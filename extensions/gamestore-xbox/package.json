@@ -5,7 +5,8 @@
   "scripts": {
     "_build": "node build.mjs && pnpm extractInfo",
     "build": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build && node ../copy-extension.mjs out)",
-    "dist": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build && node ../copy-extension.mjs dist)"
+    "dist": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build && node ../copy-extension.mjs dist)",
+    "typecheck": "pnpm tsc"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
@@ -15,8 +16,10 @@
     "extensionName": "Game Store: Xbox"
   },
   "devDependencies": {
+    "@types/bluebird": "catalog:",
     "@types/node": "catalog:",
     "@types/redux": "catalog:",
+    "bluebird": "catalog:",
     "copyfiles": "catalog:",
     "redux": "catalog:",
     "redux-thunk": "catalog:",

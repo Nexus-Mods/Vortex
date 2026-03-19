@@ -14,7 +14,7 @@ import { Trans, withTranslation, WithTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import { Action } from "redux-act";
 import * as TreeT from "react-sortable-tree";
-import {} from "react-sortable-tree-theme-file-explorer";
+import { } from "react-sortable-tree-theme-file-explorer";
 import {
   actions,
   ComponentEx,
@@ -244,19 +244,19 @@ class OverrideEditor extends ComponentEx<IProps, IComponentState> {
               <div>
                 {t(
                   'The mod marked as "Default" is the one that will provide the ' +
-                    "file based on current mod rules, if you make no change.",
+                  "file based on current mod rules, if you make no change.",
                 )}
               </div>
               <div>
                 {t(
                   "Please try to minimize the number of overrides you set up here. " +
-                    "Use mod rules to order entire mods.",
+                  "Use mod rules to order entire mods.",
                 )}
               </div>
               <div>
                 {t(
                   "This lists only the files in the selected mod that aren't exclusive " +
-                    "to it.",
+                  "to it.",
                 )}
               </div>
             </Usage>
@@ -409,29 +409,29 @@ class OverrideEditor extends ComponentEx<IProps, IComponentState> {
       buttons: node.isDirectory
         ? []
         : [
-            <a key="preview" data-row={rowInfo.path} onClick={this.preview}>
-              {t("Preview")}
-            </a>,
-            <Dropdown
-              id={key}
-              key={key}
-              data-filepath={node.path}
-              onSelect={this.changeProvider as any}
-              title={renderName(node.selected)}
-              pullRight
-            >
-              <Dropdown.Toggle>
-                <span>{renderName(node.selected, 30)}</span>
-              </Dropdown.Toggle>
-              <Dropdown.Menu>
-                {node.providers.map((provider) => (
-                  <MenuItem key={provider} eventKey={provider}>
-                    {renderName(provider)}
-                  </MenuItem>
-                ))}
-              </Dropdown.Menu>
-            </Dropdown>,
-          ],
+          <a key="preview" data-row={rowInfo.path} onClick={this.preview}>
+            {t("Preview")}
+          </a>,
+          <Dropdown
+            id={key}
+            key={key}
+            data-filepath={node.path}
+            onSelect={this.changeProvider as any}
+            title={renderName(node.selected)}
+            pullRight
+          >
+            <Dropdown.Toggle>
+              <span>{renderName(node.selected, 30)}</span>
+            </Dropdown.Toggle>
+            <Dropdown.Menu>
+              {node.providers.map((provider) => (
+                <MenuItem key={provider} eventKey={provider}>
+                  {renderName(provider)}
+                </MenuItem>
+              ))}
+            </Dropdown.Menu>
+          </Dropdown>,
+        ],
     };
   };
 
@@ -645,8 +645,10 @@ class OverrideEditor extends ComponentEx<IProps, IComponentState> {
       .map((key) => mods[key]);
     return util
       .sortMods(gameId, enabled, this.context.api)
-      .map((mod) => (mod as any).id)
-      .tap(() => (this.nextState.sortError = false))
+      .then((mods) => {
+        this.nextState.sortError = false;
+        return mods.map(x => x.id);
+      })
       .catch(() => {
         this.nextState.sortError = true;
         return [];

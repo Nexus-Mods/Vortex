@@ -1,5 +1,6 @@
-import * as path from "path";
-import React = require("react");
+import React from "react";
+import * as path from "node:path";
+import { useCallback, useEffect, useState } from "react";
 import { ControlLabel, ListGroup, ListGroupItem, Panel } from "react-bootstrap";
 import { useSelector, useStore } from "react-redux";
 import { fs, log, selectors, Spinner, tooltip, types, util } from "vortex-api";
@@ -382,7 +383,7 @@ function renderType(t: types.TFunction, type: string) {
 export function PluginRule(props: IPluginRuleProps) {
   const { t, onRemove, rule } = props;
 
-  const remove = React.useCallback(
+  const remove = useCallback(
     (evt: React.MouseEvent<any>) => {
       onRemove(rule);
     },
@@ -410,8 +411,8 @@ export function PluginRule(props: IPluginRuleProps) {
 export function Interface(props: IExtendedInterfaceProps): JSX.Element {
   const { t, collection } = props;
 
-  const [pluginRules, setPluginRules] = React.useState<IRule[]>(null);
-  const [groupAssignments, setGroupAssignments] = React.useState<{
+  const [pluginRules, setPluginRules] = useState<IRule[]>(null);
+  const [groupAssignments, setGroupAssignments] = useState<{
     [name: string]: string;
   }>(null);
   const store = useStore();
@@ -423,7 +424,7 @@ export function Interface(props: IExtendedInterfaceProps): JSX.Element {
 
   const state = store.getState();
 
-  React.useEffect(() => {
+  useEffect(() => {
     // need to get list of mods, then read the directories to figure out which plugins they include
     const modIds = collection.rules
       .map((rule) => rule.reference.id)
@@ -476,7 +477,7 @@ export function Interface(props: IExtendedInterfaceProps): JSX.Element {
     });
   }, [collection, mods, userlist, setPluginRules]);
 
-  const removeRule = React.useCallback(
+  const removeRule = useCallback(
     (rule: IRule) => {
       store.dispatch({
         type: "REMOVE_USERLIST_RULE",
@@ -490,7 +491,7 @@ export function Interface(props: IExtendedInterfaceProps): JSX.Element {
     [store],
   );
 
-  const removeGroupRule = React.useCallback(
+  const removeGroupRule = useCallback(
     (rule: IRule) => {
       store.dispatch({
         type: "REMOVE_GROUP_RULE",
@@ -503,7 +504,7 @@ export function Interface(props: IExtendedInterfaceProps): JSX.Element {
     [store],
   );
 
-  const unassignGroup = React.useCallback(
+  const unassignGroup = useCallback(
     (rule: IRule) => {
       store.dispatch({
         type: "SET_PLUGIN_GROUP",
@@ -543,7 +544,7 @@ export function Interface(props: IExtendedInterfaceProps): JSX.Element {
         <p>
           {t(
             "The collection will include your custom load order rules so that " +
-              "users of your collection will get the same load order.",
+            "users of your collection will get the same load order.",
           )}
           <br />
           {t("Rules you remove here are also removed from your actual setup.")}
