@@ -45,13 +45,13 @@ class RuleEntry extends React.Component<IRuleEntryProps, {}> {
     const { pluginId, reference, type } = this.props;
     return (
       <ListGroupItem key={`${pluginId}-${type}-${reference}`}>
-        {pluginId} {this.renderType(type)} {reference}
         <tooltip.IconButton
           className="btn-embed"
           icon="remove"
           tooltip=""
           onClick={this.click}
         />
+          {pluginId} {this.renderType(type)} {reference}
       </ListGroupItem>
     );
   }
