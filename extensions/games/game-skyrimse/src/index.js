@@ -146,7 +146,7 @@ function main(context) {
   context.registerGame({
     id: GAME_ID,
     name: 'Skyrim Special Edition',
-    shortName: 'SSE',
+    shortName: 'Skyrim SE',
     mergeMods: true,
     queryArgs: {
       // prefer steam because it was released first and users may have pre-1.6.12 installs with store not saved in state

@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useWindowContext } from "../../../contexts";
 import { Button } from "../../../ui/components/button/Button";
 import { joinClasses } from "../../../ui/utils/joinClasses";
+import { useSpineContext } from "../Spine/SpineContext";
 import { ToolButton } from "./ToolButton";
 import { useToolsContext } from "./ToolsContext";
 
@@ -15,6 +16,7 @@ interface ToolsSectionProps {
 export const ToolsSection: FC<ToolsSectionProps> = ({ isAnimating }) => {
   const { t } = useTranslation();
   const { menuIsCollapsed } = useWindowContext();
+  const { selection } = useSpineContext();
   const {
     gameId,
     visibleTools,
@@ -27,7 +29,7 @@ export const ToolsSection: FC<ToolsSectionProps> = ({ isAnimating }) => {
     handlePlay,
   } = useToolsContext();
 
-  if (gameId === undefined) {
+  if (gameId === undefined || selection.type !== "game") {
     return null;
   }
 
