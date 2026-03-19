@@ -19,7 +19,7 @@ import { DownloadButton } from "./DownloadButton";
 import { GameButton } from "./GameButton";
 import { SpineButton } from "./SpineButton";
 import { useSpineContext } from "./SpineContext";
-import { getGameImageUrl } from "./utils";
+import { getGameImageUrls } from "./utils";
 
 export const Spine: FC = () => {
   const { selection, selectHome, selectGame, selectGlobalPage } = useSpineContext();
@@ -92,19 +92,27 @@ export const Spine: FC = () => {
           ref={scrollRef}
         >
           <div className="flex flex-col gap-y-3 pb-6">
-            {managedGames.map((game) => (
-              <GameButton
-                imageSrc={getGameImageUrl(game, discoveredGames[game.id])}
-                isActive={
-                  selection.type === "game" &&
-                  selection.gameId === game.id
-                }
-                key={game.id}
-                store={discoveredGames[game.id]?.store}
-                title={game.name}
-                onClick={() => selectGame(game.id)}
-              />
-            ))}
+            {managedGames.map((game) => {
+              const { cacheKey, sources, preferred } = getGameImageUrls(
+                game,
+                discoveredGames[game.id],
+              );
+              return (
+                <GameButton
+                  cacheKey={cacheKey}
+                  isActive={
+                    selection.type === "game" &&
+                    selection.gameId === game.id
+                  }
+                  key={game.id}
+                  preferred={preferred}
+                  sources={sources}
+                  store={discoveredGames[game.id]?.store}
+                  title={game.name}
+                  onClick={() => selectGame(game.id)}
+                />
+              );
+            })}
 
             <SpineButton
               className="border-2 border-dotted hover:border-solid"

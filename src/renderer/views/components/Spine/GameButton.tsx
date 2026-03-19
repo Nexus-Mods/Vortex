@@ -11,8 +11,8 @@ import {
   nxmElectronicArts,
   nxmEpicGames,
 } from "../../../ui/lib/icon_paths/icon-paths";
-// import { Icon } from "../../../tailwind/components/next/icon";
 import { joinClasses } from "../../../ui/utils/joinClasses";
+import { useGameImage } from "./utils";
 
 // Fallback for stores without specific icons
 const _DEFAULT_STORE_ICON = mdiHelp;
@@ -31,31 +31,65 @@ const _STORE_ICONS: Record<string, string> = {
   uplay: mdiUbisoft,
 };
 
+/** Deterministic hue from a string, for the letter-avatar background. */
+function stringToHue(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return Math.abs(hash) % 360;
+}
+
 interface GameButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  imageSrc: string;
+  cacheKey: string;
   isActive?: boolean;
+  preferred?: string;
+  sources?: string[];
   store?: string;
 }
 
 export const GameButton: FC<GameButtonProps> = ({
-  imageSrc,
+  cacheKey,
   isActive,
+  preferred,
+  sources = [],
   store: _store,
+  title,
   ...props
 }) => {
   // TODO: Re-enable store icon
   // const storeIcon = _store ? (STORE_ICONS[_store] ?? DEFAULT_STORE_ICON) : null;
 
+  const { src, exhausted, onError, onLoad } = useGameImage(
+    cacheKey,
+    sources,
+    preferred,
+  );
+
   return (
     <button
       className="group relative size-12 shrink-0 overflow-hidden rounded-lg"
+      title={title}
       {...props}
     >
-      <img
-        alt=""
-        className="absolute inset-0 size-full object-cover"
-        src={imageSrc}
-      />
+      {exhausted ? (
+        <span
+          className="absolute inset-0 flex items-center justify-center text-xl font-bold text-white"
+          style={{
+            backgroundColor: `hsl(${stringToHue(title ?? "")}, 40%, 35%)`,
+          }}
+        >
+          {title?.charAt(0)?.toUpperCase() ?? "?"}
+        </span>
+      ) : (
+        <img
+          alt=""
+          className="absolute inset-0 size-full object-cover"
+          src={src}
+          onError={onError}
+          onLoad={onLoad}
+        />
+      )}
 
       <span
         className={joinClasses([
