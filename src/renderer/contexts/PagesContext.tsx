@@ -13,7 +13,11 @@ import type { IState } from "../types/IState";
 
 import { setOpenMainPage } from "../actions/session";
 import { useMainPages } from "../hooks/useMainPages";
-import { mainPage as mainPageSelector } from "../util/selectors";
+import {
+  activeGameId as activeGameIdSelector,
+  activeProfileId as activeProfileIdSelector,
+  mainPage as mainPageSelector,
+} from "../util/selectors";
 import { GameSettings } from "../views/GameSettings";
 import { Settings } from "../views/Settings";
 
@@ -68,6 +72,8 @@ export const PagesProvider: FC<IPagesProviderProps> = ({ children }) => {
   const dispatch = useDispatch();
   const mainPages = useMainPages();
   const mainPage = useSelector(mainPageSelector);
+  const activeProfileId = useSelector(activeProfileIdSelector);
+  const activeGameId = useSelector(activeGameIdSelector);
   const useModernLayout = useSelector(
     (state: IState) => state.settings.window.useModernLayout,
   );
@@ -94,12 +100,23 @@ export const PagesProvider: FC<IPagesProviderProps> = ({ children }) => {
   useEffect(() => {
     const page = sortedPages.find((iter) => iter.id === mainPage);
     if (page !== undefined && !isPageVisible(page)) {
+      // When no game/profile is active, redirect to the dashboard rather than
+      // the first visible page (which could be the Games page)
+      if (activeProfileId === undefined && activeGameId === undefined) {
+        const dashboard = sortedPages.find(
+          (iter) => iter.group === "dashboard" && isPageVisible(iter),
+        );
+        if (dashboard !== undefined) {
+          dispatch(setOpenMainPage(dashboard.id, false));
+          return;
+        }
+      }
       const firstVisible = sortedPages.find((iter) => isPageVisible(iter));
       if (firstVisible !== undefined) {
         dispatch(setOpenMainPage(firstVisible.id, false));
       }
     }
-  }, [mainPage, sortedPages, dispatch]);
+  }, [mainPage, sortedPages, activeProfileId, activeGameId, dispatch]);
 
   const contextValue = useMemo(
     () => ({
