@@ -68,6 +68,7 @@ import { EventEmitter } from "events";
 import * as nativeErr from "native-errors";
 import { readFile } from "node:fs/promises";
 import * as path from "path";
+import React from "react";
 
 import "./util/monkeyPatching";
 import { DndProvider } from "react-dnd";

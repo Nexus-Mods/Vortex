@@ -21,7 +21,11 @@
     "target": "esnext",
     "module": "node16", // TODO: change to esnext
     "moduleResolution": "node16", // TODO: change to bundler
-    "jsx": "react-jsx",
-    "lib": ["ESNext", "DOM", "DOM.Iterable"]
+    "jsx": "react",
+    "lib": [
+      "ESNext",
+      "DOM",
+      "DOM.Iterable"
+    ]
   }
 }

@@ -1,5 +1,5 @@
 import { Menu } from "@headlessui/react";
-import { type ComponentProps } from "react";
+import React, { type ComponentProps } from "react";
 
 import { joinClasses } from "../../utils/joinClasses";
 
