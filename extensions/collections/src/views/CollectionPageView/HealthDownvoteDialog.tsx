@@ -1,31 +1,21 @@
-import { IRevision, RatingOptions } from "@nexusmods/nexus-api";
+import { IRevision } from "@nexusmods/nexus-api";
 import { useTranslation } from "react-i18next";
 import * as React from "react";
-import { Button, Checkbox, Form, FormGroup, Radio } from "react-bootstrap";
+import { Button, Checkbox, FormGroup } from "react-bootstrap";
 import {
-  FlexLayout,
-  Icon,
-  RadialProgress,
-  tooltip,
   MainContext,
   types,
   Modal,
-  Usage,
   selectors,
   util,
 } from "vortex-api";
 import { NAMESPACE } from "../../constants";
-import { useDispatch, useSelector, useStore } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { healthDownvoteDialog } from "../../actions/session";
-import { IMod, IState } from "vortex-api/lib/types/IState";
 import { updateSuccessRate } from "../../actions/persistent";
 import * as nexus from "@nexusmods/nexus-api";
-import { IConnectedProps } from "vortex-api/lib/views/MainWindow";
-import { getSafe } from "vortex-api/lib/util/api";
-import { ICollection } from "../../types/ICollection";
-import { IStateEx } from "../../types/IStateEx";
 
-export interface IHealthDownvoteDialogProps {}
+export interface IHealthDownvoteDialogProps { }
 
 function HealthDownvoteDialog(props: IHealthDownvoteDialogProps) {
   const [optionValue, setOptionValue] = React.useState(undefined);
@@ -42,7 +32,7 @@ function HealthDownvoteDialog(props: IHealthDownvoteDialogProps) {
     (state: any) => state.session.collections.healthDownvoteDialog ?? undefined,
   );
 
-  const collection: IMod =
+  const collection: types.IMod =
     collectionId !== undefined
       ? state.persistent.mods[gameId]?.[collectionId]
       : undefined;

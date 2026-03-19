@@ -2,7 +2,6 @@
   "name": "sample-extension",
   "version": "0.0.1",
   "description": "Sample",
-  "main": "./out/index.js",
   "repository": "",
   "scripts": {
     "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress",

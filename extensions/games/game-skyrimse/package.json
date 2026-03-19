@@ -2,7 +2,6 @@
   "name": "game-skyrimse",
   "version": "1.0.6",
   "description": "Support for The Elder Scrolls V: Skyrim Special Edition",
-  "main": "dist/index.js",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",
     "_build": "copyfiles -u 1 -f ./src/index.js dist && pnpm run _assets && pnpm extractInfo",

@@ -49,6 +49,10 @@ export function getPluginFlags(
     result.push("Loads Archive");
   }
 
+  if (plugin.isEmpty) {
+    result.push("Dummy");
+  }
+
   if (plugin.dirtyness !== undefined && plugin.dirtyness.length > 0) {
     result.push("Dirty");
   }
@@ -201,6 +205,18 @@ const PluginFlags = (props: IProps): JSX.Element => {
         key={key}
         name="archive"
         tooltip={t("Loads an archive")}
+      />,
+    );
+  }
+
+  if (plugin.isEmpty) {
+    const key = `ico-dummy-${plugin.id}`;
+    flags.push(
+      <tooltip.Icon
+        id={key}
+        key={key}
+        name="checkbox-unchecked"
+        tooltip={t("Dummy plugin")}
       />,
     );
   }

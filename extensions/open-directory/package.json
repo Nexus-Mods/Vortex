@@ -2,12 +2,11 @@
   "name": "open-directory",
   "version": "0.1.4",
   "description": "Adds several buttons to open relevant directories in the file manager",
-  "main": "./out/index.js",
-  "repository": "",
   "scripts": {
     "_build": "node build.mjs && pnpm extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs out",
-    "dist": "pnpm run _build && node ../copy-extension.mjs dist"
+    "dist": "pnpm run _build && node ../copy-extension.mjs dist",
+    "typecheck": "pnpm tsc"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

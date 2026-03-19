@@ -2,12 +2,12 @@
   "name": "mod-highlight",
   "version": "0.1.0",
   "description": "Custom highlighting (and notes) for mods",
-  "main": "./out/index.js",
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/stylesheets/mod-highlight.scss dist",
     "_build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs out",
-    "dist": "pnpm run _build && node ../copy-extension.mjs dist"
+    "dist": "pnpm run _build && node ../copy-extension.mjs dist",
+    "typecheck": "pnpm tsc"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

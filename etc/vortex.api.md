@@ -175,6 +175,7 @@ declare namespace actions {
         clearUIBlocker,
         setNetworkConnected,
         setCommandLine,
+        setDownloadGameFilter,
         setAttributeVisible,
         setAttributeSort,
         setAttributeFilter,
@@ -356,17 +357,17 @@ actions: string[];
 }, {}>;
 
 // @public
-const addDiscoveredGame: reduxAct.ComplexActionCreator2<string, IDiscoveryResult, {
-    id: string;
-    result: IDiscoveryResult;
+const addDiscoveredGame: ComplexActionCreator2<string, IDiscoveryResult, {
+id: string;
+result: IDiscoveryResult;
 }, {}>;
 
 // @public
-const addDiscoveredTool: reduxAct.ComplexActionCreator4<string, string, IDiscoveredTool, boolean, {
-    gameId: string;
-    toolId: string;
-    result: IDiscoveredTool;
-    manual: boolean;
+const addDiscoveredTool: ComplexActionCreator4<string, string, IDiscoveredTool, boolean, {
+gameId: string;
+toolId: string;
+result: IDiscoveredTool;
+manual: boolean;
 }, {}>;
 
 // @public
@@ -517,8 +518,8 @@ instanceId: string;
 }, {}>;
 
 // @public (undocumented)
-const clearDiscoveredGame: reduxAct.ComplexActionCreator1<string, {
-    id: string;
+const clearDiscoveredGame: ComplexActionCreator1<string, {
+id: string;
 }, {}>;
 
 // @public (undocumented)
@@ -798,12 +799,6 @@ function deepMerge(lhs: any, rhs: any): any;
 //
 // @public (undocumented)
 const _default: GitHub;
-
-// @public (undocumented)
-function <T>(load: () => any): (props: any) => JSX.Element;
-
-// @public (undocumented)
-function <T>(delayed: () => T, exportId?: string): T;
 
 // @public
 function delay(timeoutMS: number): Bluebird<void>;
@@ -3358,6 +3353,8 @@ interface ISession {
         [id: string]: string;
     };
     // (undocumented)
+    downloadGameFilter: string | null;
+    // (undocumented)
     extLoadFailures: {
         [extId: string]: IExtensionLoadFailure[];
     };
@@ -4128,6 +4125,12 @@ const lastActiveProfileForGame: ParametricSelector<IState, string, string> & {
 const lastActiveProfiles: (state: IState) => {
     [gameId: string]: string;
 };
+
+// @public (undocumented)
+function LazyComponent<T>(load: () => any): (props: any) => JSX.Element;
+
+// @public (undocumented)
+function lazyRequire<T>(delayed: () => T, exportId?: string): T;
 
 // @public (undocumented)
 function linkAsync(src: string, dest: string, options?: ILinkFileOptions): Promise_2<void>;
@@ -5002,6 +5005,9 @@ filePath: string;
 }, {}>;
 
 // @public (undocumented)
+const setDownloadGameFilter: ComplexActionCreator1<string, string, {}>;
+
+// @public (undocumented)
 const setDownloadHash: ComplexActionCreator2<string, string, {
 id: string;
 fileMD5: string;
@@ -5106,27 +5112,27 @@ const setForcedLogout: reduxAct.ComplexActionCreator1<boolean, boolean, {}>;
 const setForegroundDL: reduxAct.ComplexActionCreator1<boolean, boolean, {}>;
 
 // @public
-const setGameHidden: reduxAct.ComplexActionCreator2<string, boolean, {
-    gameId: string;
-    hidden: boolean;
+const setGameHidden: ComplexActionCreator2<string, boolean, {
+gameId: string;
+hidden: boolean;
 }, {}>;
 
 // @public
-const setGameParameters: reduxAct.ComplexActionCreator2<string, any, {
-    gameId: string;
-    parameters: any;
+const setGameParameters: ComplexActionCreator2<string, any, {
+gameId: string;
+parameters: any;
 }, {}>;
 
 // @public
-const setGamePath: reduxAct.ComplexActionCreator4<string, string, string, string, {
-    gameId: string;
-    gamePath: string;
-    store: string;
-    exePath: string;
+const setGamePath: ComplexActionCreator4<string, string, string, string, {
+gameId: string;
+gamePath: string;
+store: string;
+exePath: string;
 }, {}>;
 
 // @public (undocumented)
-const setGameSearchPaths: reduxAct.ComplexActionCreator1<string[], string[], {}>;
+const setGameSearchPaths: ComplexActionCreator1<string[], string[], {}>;
 
 // @public (undocumented)
 const setGroupingAttribute: reduxAct.ComplexActionCreator2<string, string, {
@@ -5272,8 +5278,8 @@ secondary: boolean;
 function setOrNop<T>(state: T, path: string[], value: any): T;
 
 // @public (undocumented)
-const setPickerLayout: reduxAct.ComplexActionCreator1<"list" | "small" | "large", {
-    layout: "list" | "small" | "large";
+const setPickerLayout: ComplexActionCreator1<"list" | "small" | "large", {
+layout: "list" | "small" | "large";
 }, {}>;
 
 // @public (undocumented)
@@ -5322,10 +5328,10 @@ const setShowDLGraph: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
 const setShowModDropzone: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
 
 // @public (undocumented)
-const setSortManaged: reduxAct.ComplexActionCreator1<string, string, {}>;
+const setSortManaged: ComplexActionCreator1<string, string, {}>;
 
 // @public (undocumented)
-const setSortUnmanaged: reduxAct.ComplexActionCreator1<string, string, {}>;
+const setSortUnmanaged: ComplexActionCreator1<string, string, {}>;
 
 // @public (undocumented)
 const setStartMinimized: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
@@ -5375,10 +5381,10 @@ valid: boolean;
 }, {}>;
 
 // @public
-const setToolVisible: reduxAct.ComplexActionCreator3<string, string, boolean, {
-    gameId: string;
-    toolId: string;
-    visible: boolean;
+const setToolVisible: ComplexActionCreator3<string, string, boolean, {
+gameId: string;
+toolId: string;
+visible: boolean;
 }, {}>;
 
 // @public (undocumented)
@@ -6076,8 +6082,8 @@ declare namespace util {
         isFilenameValid,
         isFuzzyVersion,
         isPathValid,
-        default_2 as LazyComponent,
-        default_3 as lazyRequire,
+        LazyComponent,
+        lazyRequire,
         local,
         lookupFromDownload,
         makeModReference,
@@ -6279,10 +6285,10 @@ export class ZoomableImage extends React_2.Component<IZoomableImageProps, {
 //
 // lib/extensions/mod_management/selectors.d.ts:59:5 - (ae-forgotten-export) The symbol "INeedToDeployMap" needs to be exported by the entry point api.d.ts
 // lib/types/IDialog.d.ts:84:9 - (ae-forgotten-export) The symbol "IBBCodeContext" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:350:9 - (ae-forgotten-export) The symbol "IHistoryState" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:352:9 - (ae-forgotten-export) The symbol "IHealthCheckSessionState" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:381:9 - (ae-forgotten-export) The symbol "IHistoryPersistent" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:382:9 - (ae-forgotten-export) The symbol "IHealthCheckPersistentState" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:351:9 - (ae-forgotten-export) The symbol "IHistoryState" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:353:9 - (ae-forgotten-export) The symbol "IHealthCheckSessionState" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:382:9 - (ae-forgotten-export) The symbol "IHistoryPersistent" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:383:9 - (ae-forgotten-export) The symbol "IHealthCheckPersistentState" needs to be exported by the entry point api.d.ts
 // lib/views/MainPage.d.ts:12:5 - (ae-forgotten-export) The symbol "MainPageBody" needs to be exported by the entry point api.d.ts
 // lib/views/MainPage.d.ts:13:5 - (ae-forgotten-export) The symbol "MainPageHeader" needs to be exported by the entry point api.d.ts
 

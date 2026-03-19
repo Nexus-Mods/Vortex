@@ -2,12 +2,11 @@
   "name": "local-gamesettings",
   "version": "0.1.4",
   "description": "Management for local game settings",
-  "main": "./out/index.js",
-  "repository": "",
   "scripts": {
     "_build": "node build.mjs && pnpm extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs out",
-    "dist": "pnpm run _build && node ../copy-extension.mjs dist"
+    "dist": "pnpm run _build && node ../copy-extension.mjs dist",
+    "typecheck": "pnpm tsc"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

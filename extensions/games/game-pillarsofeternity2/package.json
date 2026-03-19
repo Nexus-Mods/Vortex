@@ -1,0 +1,38 @@
+{
+  "name": "game-pillarsofeternity2",
+  "version": "0.2.3",
+  "description": "Support for Pillars of Eternity 2: Deadfire",
+  "scripts": {
+    "_assets": "copyfiles -u 1 -f ./assets/gameart.png src/stylesheet.scss dist",
+    "_build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
+    "build": "pnpm run _build && node ../../copy-extension.mjs out",
+    "dist": "pnpm run _build && node ../../copy-extension.mjs dist"
+  },
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "type": "commonjs",
+  "private": true,
+  "config": {
+    "game": "Pillars of Eternity 2: Deadfire"
+  },
+  "devDependencies": {
+    "@types/bluebird": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-bootstrap": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@types/redux": "catalog:",
+    "@types/redux-thunk": "catalog:",
+    "@types/semver": "catalog:",
+    "bluebird": "catalog:",
+    "copyfiles": "catalog:",
+    "react": "catalog:",
+    "react-dnd": "catalog:",
+    "react-i18next": "catalog:",
+    "react-redux": "catalog:",
+    "redux-act": "catalog:",
+    "semver": "catalog:",
+    "typescript": "catalog:",
+    "vortex-api": "workspace:*"
+  }
+}

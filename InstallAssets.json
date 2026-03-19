@@ -21,16 +21,16 @@
       "target": ["out", "dist"]
     },
     {
-      "srcPath": "src/renderer/index.html",
+      "srcPath": "src/renderer/src/index.html",
       "outPath": "",
       "target": ["out", "dist"],
-      "skipPaths": 2
+      "skipPaths": 3
     },
     {
-      "srcPath": "src/renderer/splash.html",
+      "srcPath": "src/renderer/src/splash.html",
       "outPath": "",
       "target": ["out", "dist"],
-      "skipPaths": 2
+      "skipPaths": 3
     },
     {
       "srcPath": "locales/*/*",

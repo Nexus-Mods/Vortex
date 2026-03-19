@@ -1,17 +1,21 @@
 {
   "name": "modtype-bepinex",
   "version": "0.2.9",
-  "description": "Adds several BepInEx specific modTypes and the ability to automatically download and install the library.",
-  "main": "./out/index.js",
-  "repository": "",
+  "description": "Adds several BepInEx-specific modTypes and the ability to automatically download and install the library.",
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/assets/* dist",
     "_build": "node build.mjs && pnpm extractInfo && pnpm run _assets",
     "build": "pnpm run _build && node ../copy-extension.mjs out",
-    "dist": "pnpm run _build && node ../copy-extension.mjs dist"
+    "dist": "pnpm run _build && node ../copy-extension.mjs dist",
+    "typecheck": "pnpm tsc"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
+  "type": "commonjs",
+  "private": true,
+  "config": {
+    "extensionName": "Mod Type: BepInEx"
+  },
   "devDependencies": {
     "@types/i18next": "catalog:",
     "@types/react": "catalog:",

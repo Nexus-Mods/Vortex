@@ -1,22 +1,7 @@
 {
-  "compilerOptions": {
-    "target": "es6",
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "noImplicitAny": false,
-    "removeComments": true,
-    "preserveConstEnums": true,
-    "rootDir": "./src",
-    "outDir": "./out",
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "jsx": "react",
-    "sourceMap": false
-  },
-    "exclude": [
-      "node_modules"
-    ],
-  "files": [
-    "src/index.tsx"
+  "$schema": "https://www.schemastore.org/tsconfig.json",
+  "extends": "../tsconfig.extensions.json",
+  "include": [
+    "src"
   ]
 }

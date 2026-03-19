@@ -1,16 +1,20 @@
 {
   "name": "modtype-umm",
   "version": "1.0.4",
-  "description": "Unity Mod Manager modtype to support unity games which rely on UMM to install mods",
-  "main": "./out/index.js",
-  "repository": "",
+  "description": "Unity Mod Manager modtype to support Unity games which rely on UMM to install mods",
   "scripts": {
     "_build": "pnpm generate-validation -t ./tsconfig.json && node build.mjs && pnpm extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs out",
-    "dist": "pnpm run _build && node ../copy-extension.mjs dist"
+    "dist": "pnpm run _build && node ../copy-extension.mjs dist",
+    "typecheck": "pnpm generate-validation -t ./tsconfig.json && pnpm tsc"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
+  "type": "commonjs",
+  "private": true,
+  "config": {
+    "extensionName": "Mod Type: Unity Mod Manager (UMM)"
+  },
   "devDependencies": {
     "@types/react": "catalog:",
     "@types/redux": "catalog:",

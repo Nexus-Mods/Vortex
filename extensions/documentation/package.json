@@ -2,12 +2,12 @@
   "name": "documentation",
   "version": "1.0.1",
   "description": "In-Application documentation and tutorial videos",
-  "main": "./dist/index.js",
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/stylesheets/*.scss dist",
     "_build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs out",
-    "dist": "pnpm run _build && node ../copy-extension.mjs dist"
+    "dist": "pnpm run _build && node ../copy-extension.mjs dist",
+    "typecheck": "pnpm tsc"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

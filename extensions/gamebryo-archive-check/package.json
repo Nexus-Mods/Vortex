@@ -2,12 +2,11 @@
   "name": "gamebryo-archive-check",
   "version": "1.0.5",
   "description": "Check BSA/BA2 archives are valid for the current game after updating your load order.",
-  "main": "./out/index.js",
-  "repository": "",
   "scripts": {
     "_build": "node build.mjs && pnpm extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs out",
-    "dist": "pnpm run _build && node ../copy-extension.mjs dist"
+    "dist": "pnpm run _build && node ../copy-extension.mjs dist",
+    "typecheck": "pnpm tsc"
   },
   "author": "Pickysaurus",
   "license": "GPL-3.0",

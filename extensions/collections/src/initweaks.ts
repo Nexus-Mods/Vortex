@@ -1,5 +1,5 @@
 /* eslint-disable */
-import path = require("path");
+import * as path from "node:path";
 import * as React from "react";
 import { actions, fs, log, selectors, types, util } from "vortex-api";
 import { ICollection } from "./types/ICollection";

@@ -19,8 +19,7 @@
     "bin"
   ],
   "scripts": {
-    "build": "pnpm rimraf ./lib && node ./build.mjs && pnpm run check",
-    "check": "pnpm tsc -p tsconfig.lib.json"
+    "typecheck": "pnpm tsc -p tsconfig.lib.json"
   },
   "devDependencies": {
     "@nexusmods/nexus-api": "catalog:",

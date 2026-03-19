@@ -18,8 +18,8 @@ export const updateSavegame = createAction(
 
 export const clearSavegames = createAction("CLEAR_SAVEGAMES");
 
-export const removeSavegame = createAction("REMOVE_SAVEGAME");
+export const removeSavegame = createAction("REMOVE_SAVEGAME", (id: string) => id);
 
-export const setSavegamePath = createAction("SET_SAVEGAME_PATH");
+export const setSavegamePath = createAction("SET_SAVEGAME_PATH", (path: string) => path);
 
-export const showTransferDialog = createAction("SHOW_TRANSFER_DIALOG");
+export const showTransferDialog = createAction("SHOW_TRANSFER_DIALOG", (b: boolean) => b);

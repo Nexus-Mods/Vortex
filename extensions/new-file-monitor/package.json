@@ -1,13 +1,13 @@
 {
   "name": "new-file-monitor",
   "version": "0.1.0",
-  "description": "generate events when new files are added to a mod directory",
-  "main": "./out/index.js",
+  "description": "Generate events when new files are added to a mod directory",
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/stylesheets/import-tool.scss src/images/* dist",
     "_build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs out",
-    "dist": "pnpm run _build && node ../copy-extension.mjs dist"
+    "dist": "pnpm run _build && node ../copy-extension.mjs dist",
+    "typecheck": "pnpm tsc"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

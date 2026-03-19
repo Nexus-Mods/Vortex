@@ -1,0 +1,13 @@
+{
+  "$schema": "https://www.schemastore.org/tsconfig.json",
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "composite": true,
+    "useUnknownInCatchVariables": false,
+    "jsx": "react"
+  }
+}

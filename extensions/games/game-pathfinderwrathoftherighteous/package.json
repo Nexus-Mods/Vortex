@@ -2,7 +2,6 @@
   "name": "game-pathfinderwrathoftherighteous",
   "version": "1.0.1",
   "description": "Support for Pathfinder: Wrath of the Righteous",
-  "main": "dist/index.js",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",
     "_build": "node build.mjs && pnpm run _assets && pnpm extractInfo",

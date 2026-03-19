@@ -893,7 +893,7 @@ function register(
   const collectionsMap = () =>
     collectionsMapFunc(
       stateFunc().persistent.mods[selectors.activeGameId(stateFunc())] ??
-        emptyObj,
+      emptyObj,
     );
   const collectionOptions = memoize(generateCollectionOptions);
 
@@ -947,7 +947,7 @@ function register(
     groupName: (modId: string) =>
       util.renderModName(
         stateFunc().persistent.mods[selectors.activeGameId(stateFunc())]?.[
-          modId
+        modId
         ],
       ),
     isDefaultVisible: false,
@@ -1221,7 +1221,7 @@ function register(
         if (driver.profile !== undefined) {
           collection =
             state.persistent.mods[driver.profile.gameId]?.[
-              driver.collection.id
+            driver.collection.id
             ] ?? driver.collection;
         } else {
           collection = driver.collection;

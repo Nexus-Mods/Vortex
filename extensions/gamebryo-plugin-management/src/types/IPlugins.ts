@@ -88,6 +88,7 @@ export interface IPluginLoot {
   requirements: ILootReference[];
   incompatibilities: ILootReference[];
   loadsArchive: boolean;
+  isEmpty: boolean;
   version: string;
 }
 
