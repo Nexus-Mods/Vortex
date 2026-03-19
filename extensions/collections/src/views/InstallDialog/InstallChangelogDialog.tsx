@@ -1,5 +1,5 @@
 import CollectionThumbnail from "../CollectionTile";
-
+import React from "react";
 import { useContext, useCallback, Component } from "react";
 import { Button, Media, Modal } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
