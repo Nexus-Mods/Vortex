@@ -2,8 +2,6 @@
   "name": "issue-tracker",
   "version": "0.1.4",
   "description": "Track issues you reported on the dashboard",
-  "main": "./out/index.js",
-  "repository": "",
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/issue_tracker.scss dist",
     "_build": "node build.mjs && pnpm run _assets && pnpm extractInfo",

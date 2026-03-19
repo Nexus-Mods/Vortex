@@ -2,8 +2,6 @@
   "name": "mod-content",
   "version": "0.2.4",
   "description": "Add mod column indicating the content it contains",
-  "main": "./out/index.js",
-  "repository": "",
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/icons.svg src/mod-content.scss dist",
     "_build": "node build.mjs && pnpm run _assets && pnpm extractInfo",

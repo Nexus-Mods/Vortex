@@ -1,8 +1,7 @@
 {
   "name": "game-re3remake",
   "version": "0.1.5",
-  "description": "Support for RE3 (2020)",
-  "main": "dist/index.js",
+  "description": "Support for Resident Evil 3 (2020)",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",
     "_build": "copyfiles -u 1 -f ./src/index.js dist && pnpm run _assets && pnpm extractInfo",

@@ -1,8 +1,7 @@
 {
   "name": "gamebryo-ba2-support",
   "version": "0.0.1",
-  "description": "Support for new gamebryo data archives",
-  "main": "./out/index.js",
+  "description": "Support for new Gamebryo data archives",
   "scripts": {
     "_native": "node ../copy-native.mjs ./node_modules/ba2tk/build/Release/ba2tk.node",
     "_build": "node build.mjs && pnpm run _native && pnpm extractInfo",
@@ -11,6 +10,11 @@
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
+  "type": "commonjs",
+  "private": true,
+  "config": {
+    "extensionName": "Gamebryo BA2 Support"
+  },
   "devDependencies": {
     "@types/i18next": "catalog:",
     "@types/rimraf": "catalog:",

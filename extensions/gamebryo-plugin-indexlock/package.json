@@ -1,9 +1,7 @@
 {
   "name": "gamebryo-plugin-indexlock",
   "version": "0.1.0",
-  "description": "Allows gamebryo plugin to be locked to a specific index",
-  "main": "./out/index.js",
-  "repository": "",
+  "description": "Allows Gamebryo plugins to be locked to a specific index",
   "scripts": {
     "_build": "node build.mjs && pnpm extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs out",

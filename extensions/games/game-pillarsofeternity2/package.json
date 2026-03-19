@@ -2,7 +2,6 @@
   "name": "game-pillarsofeternity2",
   "version": "0.2.3",
   "description": "Support for Pillars of Eternity 2: Deadfire",
-  "main": "dist/index.js",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/gameart.png src/stylesheet.scss dist",
     "_build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
