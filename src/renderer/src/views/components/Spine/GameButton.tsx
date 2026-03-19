@@ -11,7 +11,6 @@ import {
   nxmElectronicArts,
   nxmEpicGames,
 } from "../../../ui/icon-paths";
-// import { Icon } from "../../../tailwind/components/next/icon";
 import { joinClasses } from "../../../ui/utils/joinClasses";
 import { useGameImage } from "./utils";
 

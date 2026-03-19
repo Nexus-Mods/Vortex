@@ -6,6 +6,7 @@
 import { mdiPalette } from "@mdi/js";
 
 import type { IExtensionContext } from "../../types/IExtensionContext";
+
 import DesignSystemPage from "./views/DesignSystemPage";
 
 function init(context: IExtensionContext): boolean {
@@ -18,6 +19,7 @@ function init(context: IExtensionContext): boolean {
 
   // Register the design system development page
   context.registerMainPage("highlight-ui", "Design System", DesignSystemPage, {
+    priority: 40,
     group: "global",
     mdi: mdiPalette,
   });

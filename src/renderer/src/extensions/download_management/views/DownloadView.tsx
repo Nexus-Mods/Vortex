@@ -75,6 +75,8 @@ interface IConnectedProps {
   showDropzone: boolean;
   showGraph: boolean;
   maxBandwidth: number;
+  useModernLayout: boolean;
+  downloadGameFilter: string | null;
 }
 
 type DownloadFinishState = "finished" | "failed" | "redirect";
@@ -242,6 +244,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
       this.props.secondary !== nextProps.secondary ||
       this.props.showDropzone !== nextProps.showDropzone ||
       this.props.showGraph !== nextProps.showGraph ||
+      this.props.downloadGameFilter !== nextProps.downloadGameFilter ||
       this.state.viewAll !== nextState.viewAll
     );
   }
@@ -258,6 +261,13 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
     let content = null;
 
     let filteredIds = Object.keys(downloads);
+
+    const { downloadGameFilter, useModernLayout } = this.props;
+    if (useModernLayout && downloadGameFilter !== null) {
+      filteredIds = filteredIds.filter(
+        (dlId) => (downloads[dlId].game ?? []).includes(downloadGameFilter),
+      );
+    }
 
     if (filteredIds.length === 0 && gameMode !== undefined) {
       content = this.renderDropzone();
@@ -928,6 +938,8 @@ function mapStateToProps(state: IState): IConnectedProps {
     showDropzone: state.settings.downloads.showDropzone,
     showGraph: state.settings.downloads.showGraph,
     maxBandwidth: state.settings.downloads.maxBandwidth,
+    useModernLayout: state.settings.window.useModernLayout,
+    downloadGameFilter: (state.session as any).base?.downloadGameFilter ?? null,
   };
 }
 

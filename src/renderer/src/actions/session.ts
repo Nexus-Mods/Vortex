@@ -102,3 +102,8 @@ export const setCommandLine = createAction(
   "SET_COMMAND_LINE",
   (args: IParameters) => args,
 );
+
+export const setDownloadGameFilter = createAction(
+  "SET_DOWNLOAD_GAME_FILTER",
+  (gameId: string | null) => gameId,
+);

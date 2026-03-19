@@ -98,6 +98,7 @@ export interface ISession {
   uiBlockers: { [id: string]: IUIBlocker };
   networkConnected: boolean;
   commandLine: IParameters;
+  downloadGameFilter: string | null;
 }
 
 export interface IRowState {

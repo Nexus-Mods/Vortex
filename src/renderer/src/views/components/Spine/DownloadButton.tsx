@@ -1,15 +1,13 @@
 import { mdiDownload } from "@mdi/js";
 import React, { type FC } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 
 import type { DownloadState } from "../../../extensions/download_management/types/IDownload";
 import type { IState } from "../../../types/IState";
 
-import { setOpenMainPage } from "../../../actions/session";
 import { Icon } from "../../../ui/components/icon/Icon";
 import { Typography } from "../../../ui/components/typography/Typography";
 import { joinClasses } from "../../../ui/utils/joinClasses";
-import { mainPage as mainPageSelector } from "../../../util/selectors";
 import { useSpineContext } from "./SpineContext";
 
 const ACTIVE_DOWNLOAD_STATES: DownloadState[] = [
@@ -132,12 +130,9 @@ const ProgressRing: FC<{
 };
 
 export const DownloadButton: FC = () => {
-  const dispatch = useDispatch();
-  const { selection } = useSpineContext();
+  const { selection, selectDownloads } = useSpineContext();
 
-  const mainPage = useSelector(mainPageSelector);
-  const targetPage = selection.type === "game" ? "game-downloads" : "Downloads";
-  const isActive = mainPage === targetPage;
+  const isActive = selection.type === "downloads";
 
   const { isDownloading, isPaused, progress, speedMBps, estimatedMins } =
     useDownloadProgress();
@@ -160,7 +155,7 @@ export const DownloadButton: FC = () => {
         { "bg-surface-translucent-low": isActive },
       )}
       title="Downloads"
-      onClick={() => dispatch(setOpenMainPage(targetPage, false))}
+      onClick={() => selectDownloads()}
     >
       {isPaused || isDownloading ? (
         <>

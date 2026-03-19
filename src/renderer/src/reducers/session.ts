@@ -81,6 +81,8 @@ export const sessionReducer: IReducerSpec = {
       setSafe(state, ["networkConnected"], payload),
     [actions.setCommandLine as any]: (state, payload) =>
       setSafe(state, ["commandLine"], payload),
+    [actions.setDownloadGameFilter as any]: (state, payload) =>
+      setSafe(state, ["downloadGameFilter"], payload),
   },
   defaults: {
     displayGroups: {},
@@ -96,5 +98,6 @@ export const sessionReducer: IReducerSpec = {
     toolsRunning: {},
     uiBlockers: {},
     commandLine: {},
+    downloadGameFilter: null,
   },
 };
