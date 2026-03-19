@@ -211,8 +211,11 @@ export const modsReducer: IReducerSpec = {
   defaults: {},
   verifiers: {
     _: {
-      // shouldn't be possible
+      type: "object",
       description: () => "Severe! Corrupted mod list",
+      // only delete the individual corrupt game entry, never propagate upward
+      // to avoid wiping the entire persistent.mods tree
+      deleteBroken: true,
       elements: {
         _: {
           type: "object",
