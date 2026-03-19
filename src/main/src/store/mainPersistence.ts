@@ -125,13 +125,52 @@ export async function readPersistedValue<T>(
     return undefined;
   }
 
+  // First, try a direct read — works for leaf values stored at the exact key
   try {
     const subPersistor = new SubPersistor(levelPersist, hive);
     const value = await subPersistor.getItem(path);
-    if (value === undefined || value === "") {
+    if (value !== undefined && value !== "") {
+      return JSON.parse(value) as T;
+    }
+    return undefined;
+  } catch {
+    // Direct read failed (key not found). The value may be a non-leaf node
+    // whose children are stored as separate leaf keys (e.g. the diff-based
+    // persistence writes "settings###window###customTitlebar" rather than
+    // "settings###window"). Reconstruct the object from all matching leaf keys.
+  }
+
+  try {
+    const prefix = [hive, ...path].join("###");
+    const kvs = await levelPersist.getAllKVs(prefix);
+    if (kvs.length === 0) {
       return undefined;
     }
-    return JSON.parse(value) as T;
+
+    const pathDepth = path.length + 1; // +1 for the hive prefix
+    const result: Record<string, unknown> = {};
+    for (const { key, value } of kvs) {
+      const remainingKey = key.slice(pathDepth);
+      if (remainingKey.length === 0) {
+        continue;
+      }
+
+      let current: Record<string, unknown> = result;
+      for (let i = 0; i < remainingKey.length - 1; i++) {
+        if (current[remainingKey[i]] === undefined) {
+          current[remainingKey[i]] = {};
+        }
+        current = current[remainingKey[i]] as Record<string, unknown>;
+      }
+
+      try {
+        current[remainingKey[remainingKey.length - 1]] = JSON.parse(value);
+      } catch {
+        current[remainingKey[remainingKey.length - 1]] = value;
+      }
+    }
+
+    return result as T;
   } catch (err) {
     const message = getErrorMessageOrDefault(err);
     log("warn", "Could not read persisted value", {
