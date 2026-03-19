@@ -7,7 +7,7 @@ import { Typography } from "../../../ui/components/typography/Typography";
 import {
   nxmPanelClose,
   nxmPanelOpen,
-} from "../../../ui/lib/icon_paths/icon-paths";
+} from "../../../ui/icon-paths";
 import {
   activeProfile as activeProfileSelector,
   gameProfiles as gameProfilesSelector,

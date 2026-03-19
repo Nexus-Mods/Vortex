@@ -8,7 +8,7 @@ jest.mock('vortex-api', () => {
   };
 });
 
-import { sessionReducer } from '../../../extensions/gamebryo-savegame-management/src/reducers/session';
+import { sessionReducer } from '../../../../extensions/gamebryo-savegame-management/src/reducers/session';
 
 describe('setSavegames', () => {
   it('sets the savegames', () => {

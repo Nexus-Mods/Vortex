@@ -20,7 +20,7 @@ import {
   nxmMod,
   nxmRosette,
   nxmVortex,
-} from "../../lib/icon_paths/icon-paths";
+} from "../../icon-paths";
 import { Typography } from "../typography/Typography";
 import { Icon } from "./Icon";
 

@@ -20,7 +20,7 @@ import type { IExtensionApi } from "../../../types/IExtensionContext";
 import Debouncer from "../../../util/Debouncer";
 import { isCollectionModPresent } from "../../../util/selectors";
 import { delayed } from "../../../util/util";
-import { nxmFileSize, nxmMod } from "../../lib/icon_paths/icon-paths";
+import { nxmFileSize, nxmMod } from "../../icon-paths";
 import { joinClasses } from "../../utils/joinClasses";
 import { Button } from "../button/Button";
 import { Icon } from "../icon/Icon";

@@ -53,7 +53,7 @@ import {
 } from "../../actions/session";
 import LazyComponent from "../../controls/LazyComponent";
 import ReduxProp from "../../ReduxProp";
-import { nxmMod } from "../../ui/lib/icon_paths/icon-paths";
+import { nxmMod } from "../../ui/icon-paths";
 import { opn } from "../../util/api";
 import {
   ProcessCanceled,

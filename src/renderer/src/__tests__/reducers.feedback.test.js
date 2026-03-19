@@ -8,7 +8,7 @@ jest.mock('vortex-api', () => {
   };
 });
 
-import { sessionReducer } from '../../../extensions/feedback/src/reducers/session';
+import { sessionReducer } from '../../../../extensions/feedback/src/reducers/session';
 
 describe('addFeedbackFile', () => {
   it('adds a new feedback file', () => {
