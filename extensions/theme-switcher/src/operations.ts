@@ -21,7 +21,6 @@ export function themeName(location: string): string {
 }
 
 export function themePath(themeName: string): string | undefined {
-  themeName = themeName.replace(/^__/, "");
   return themes.find((theme) => path.basename(theme) === themeName);
 }
 
