@@ -6,31 +6,20 @@ const config = {
     "^.+\\.(js|jsx)$": "babel-jest",
   },
   moduleNameMapper: {
-    "^cheerio$": "<rootDir>/__mocks__/cheerio.js",
-    "^cheerio/lib/utils$": "<rootDir>/__mocks__/cheerio-utils.js",
-    "^shortid$": "<rootDir>/__mocks__/shortid.js",
-    "^../util/ComponentEx$": "<rootDir>/__mocks__/ComponentEx.js",
+    "^cheerio$": "<rootDir>/src/__mocks__/cheerio.js",
+    "^cheerio/lib/utils$": "<rootDir>/src__mocks__/cheerio-utils.js",
+    "^shortid$": "<rootDir>/src/__mocks__/shortid.js",
+    "^../util/ComponentEx$": "<rootDir>/src/__mocks__/ComponentEx.js",
   },
-  testRegex: "(/__tests__/.*)\\.(js|jsx|ts|tsx)$",
-  testPathIgnorePatterns: [
-    "/node_modules/",
-    "/dist/",
-    "/out/",
-    "/playwright/",
-    "<rootDir>/app/",
-    "<rootDir>/extensions/fomod-installer/",
-  ],
+  testRegex: "(/src/__tests__/.*)\\.(js|jsx|ts|tsx)$",
+  testPathIgnorePatterns: ["/node_modules/", "/dist/", "/out/"],
   modulePathIgnorePatterns: [
     "<rootDir>/out/",
     "<rootDir>/dist/",
     "<rootDir>/temp/",
-    "<rootDir>/app/",
-    "<rootDir>/extensions/fomod-installer/",
-    "<rootDir>/node_modules/fomod-installer-ipc/",
-    "<rootDir>/node_modules/fomod-installer-native/",
   ],
   moduleFileExtensions: ["js", "json", "jsx", "ts", "tsx", "node"],
-  setupFilesAfterEnv: ["<rootDir>setupTests.js"],
+  setupFilesAfterEnv: ["<rootDir>/src/setupTests.js"],
 };
 
 export default config;

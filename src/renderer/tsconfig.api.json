@@ -2,8 +2,8 @@
   "$schema": "https://www.schemastore.org/tsconfig.json",
   "extends": "../../tsconfig.base.json",
   "include": [
-    "api.ts",
-    "preload.ts",
+    "src/api.ts",
+    "src/preload.ts",
     "../../typings.custom/index.d.ts"
   ],
   "compilerOptions": {
@@ -14,7 +14,7 @@
     "emitDeclarationOnly": true,
     "jsx": "react-jsx",
     "outDir": "lib",
-    "rootDir": ".",
+    "rootDir": "src",
     "removeComments": false,
     "lib": [
       "ESNext",

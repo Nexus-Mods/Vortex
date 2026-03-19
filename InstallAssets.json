@@ -5,77 +5,117 @@
       "srcPath": "./LICENSE.md",
       "outPath": "",
       "skipPaths": 0,
-      "target": ["dist"]
+      "target": [
+        "dist"
+      ]
     },
     {
       "srcPath": "src/stylesheets",
       "outPath": "assets/css",
       "skipPaths": 2,
-      "target": ["out", "dist"]
+      "target": [
+        "out",
+        "dist"
+      ]
     },
     {
       "srcPath": "node_modules/bootstrap-sass/assets/stylesheets/_bootstrap.scss",
       "outPath": "assets/css",
       "rename": "bootstrap.scss",
       "skipPaths": 4,
-      "target": ["out", "dist"]
+      "target": [
+        "out",
+        "dist"
+      ]
     },
     {
-      "srcPath": "src/renderer/index.html",
+      "srcPath": "src/renderer/src/index.html",
       "outPath": "",
-      "target": ["out", "dist"],
+      "target": [
+        "out",
+        "dist"
+      ],
       "skipPaths": 2
     },
     {
-      "srcPath": "src/renderer/splash.html",
+      "srcPath": "src/renderer/src/splash.html",
       "outPath": "",
-      "target": ["out", "dist"],
+      "target": [
+        "out",
+        "dist"
+      ],
       "skipPaths": 2
     },
     {
       "srcPath": "locales/*/*",
       "outPath": "",
-      "target": ["out"]
+      "target": [
+        "out"
+      ]
     },
     {
       "srcPath": "assets/images/",
       "outPath": "",
-      "target": ["out", "dist"]
+      "target": [
+        "out",
+        "dist"
+      ]
     },
     {
       "srcPath": "assets/icons/",
       "outPath": "",
-      "target": ["out", "dist"]
+      "target": [
+        "out",
+        "dist"
+      ]
     },
     {
       "srcPath": "assets/pictograms/",
       "outPath": "",
-      "target": ["out", "dist"]
+      "target": [
+        "out",
+        "dist"
+      ]
     },
     {
       "srcPath": "assets/fonts/*",
       "outPath": "",
-      "target": ["out", "dist"]
+      "target": [
+        "out",
+        "dist"
+      ]
     },
     {
       "srcPath": "assets/dotnetprobe.exe",
       "outPath": "",
-      "target": ["out", "dist"]
+      "target": [
+        "out",
+        "dist"
+      ]
     },
     {
       "srcPath": "assets/dotnetprobe",
       "outPath": "",
-      "target": ["out", "dist"]
+      "target": [
+        "out",
+        "dist"
+      ]
     },
     {
       "srcPath": "assets/*.json",
       "outPath": "",
-      "target": ["out", "dist"]
+      "target": [
+        "out",
+        "dist"
+      ]
     },
     {
       "srcPath": "assets/licenses/*",
       "outPath": "",
-      "target": ["out", "dist"]
+      "target": [
+        "out",
+        "dist"
+      ]
     }
   ]
 }

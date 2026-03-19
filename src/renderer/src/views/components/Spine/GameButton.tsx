@@ -10,7 +10,8 @@ import React, { type ButtonHTMLAttributes, type FC } from "react";
 import {
   nxmElectronicArts,
   nxmEpicGames,
-} from "../../../ui/lib/icon_paths/icon-paths";
+} from "../../../ui/icon-paths";
+// import { Icon } from "../../../tailwind/components/next/icon";
 import { joinClasses } from "../../../ui/utils/joinClasses";
 import { useGameImage } from "./utils";
 
@@ -95,8 +96,8 @@ export const GameButton: FC<GameButtonProps> = ({
         className={joinClasses([
           "absolute inset-0 z-1 rounded-lg transition-colors",
           isActive
-            ? "border-2 border-neutral-strong"
-            : "border border-stroke-weak group-hover:border-2 group-hover:border-neutral-strong",
+            ? "border-neutral-strong border-2"
+            : "border-stroke-weak group-hover:border-neutral-strong border group-hover:border-2",
         ])}
       />
 

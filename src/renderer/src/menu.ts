@@ -1,15 +1,16 @@
-import type { IMainPageOptions } from "./types/IExtensionContext";
 import type { SerializableMenuItem } from "@vortex/shared/preload";
-
-import type ExtensionManager from "../renderer/ExtensionManager";
-import { debugTranslations, getMissingTranslations } from "./util/i18n";
-import { log } from "./util/log";
 
 import { webFrame } from "electron";
 import * as path from "path";
+
+import type ExtensionManager from "./ExtensionManager";
+import type { IMainPageOptions } from "./types/IExtensionContext";
+
 import { setZoomFactor } from "./actions/window";
 import { getApplication } from "./util/application";
 import getVortexPath from "./util/getVortexPath";
+import { debugTranslations, getMissingTranslations } from "./util/i18n";
+import { log } from "./util/log";
 import { getWindowId } from "./util/preloadAccess";
 
 // Map to store click handlers by menu item ID
@@ -42,7 +43,7 @@ function processMenuTemplate(
     // Recursively process submenus
     if (item.submenu && Array.isArray(item.submenu)) {
       processed.submenu = processMenuTemplate(
-        item.submenu as Electron.MenuItemConstructorOptions[],
+        item.submenu,
       );
     }
 
