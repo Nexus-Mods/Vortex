@@ -1,15 +1,26 @@
+import PromiseBB from "bluebird";
+import * as _ from "lodash";
+import * as semver from "semver";
+
+import type {
+  IAvailableExtension,
+  IExtension,
+  IExtensionDownloadInfo,
+} from "../../types/extensions";
 import type {
   IExtensionApi,
   IExtensionContext,
 } from "../../types/IExtensionContext";
 import type { NotificationDismiss } from "../../types/INotification";
 import type { IExtensionLoadFailure, IState } from "../../types/IState";
+
+import { setDialogVisible, setExtensionEnabled } from "../../actions";
+import { isExtSame } from "../../ExtensionManager";
+import { getGame } from "../../util/api";
 import { relaunch } from "../../util/commandLine";
 import { DataInvalid, ProcessCanceled } from "../../util/CustomErrors";
-import { isExtSame } from "../../ExtensionManager";
 import { log } from "../../util/log";
 import makeReactive from "../../util/makeReactive";
-
 import {
   setAvailableExtensions,
   setExtensionsUpdate,
@@ -18,22 +29,11 @@ import {
 import BrowseExtensions from "./BrowseExtensions";
 import ExtensionManager from "./ExtensionManager";
 import sessionReducer from "./reducers";
-import type {
-  IAvailableExtension,
-  IExtension,
-  IExtensionDownloadInfo,
-} from "../../types/extensions";
 import {
   downloadAndInstallExtension,
   fetchAvailableExtensions,
   readExtensions,
 } from "./util";
-
-import PromiseBB from "bluebird";
-import * as _ from "lodash";
-import * as semver from "semver";
-import { setDialogVisible, setExtensionEnabled } from "../../actions";
-import { getGame } from "../../util/api";
 
 interface ILocalState {
   reloadNecessary: boolean;
@@ -369,7 +369,7 @@ function init(context: IExtensionContext) {
   context.registerReducer(["session", "extensions"], sessionReducer);
 
   context.registerMainPage("extensions", "Extensions", ExtensionManager, {
-    priority: 10,
+    priority: 20,
     hotkey: "X",
     group: "global",
     // visible: () => context.api.store.getState().settings.interface.advanced,
