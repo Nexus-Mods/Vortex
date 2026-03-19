@@ -1,6 +1,6 @@
 import * as reqResolve from "resolve";
 
-export default function <T>(delayed: () => T, exportId?: string): T {
+export default function lazyRequire<T>(delayed: () => T, exportId?: string): T {
   const handler = {
     get(target, name) {
       if (target.mod === undefined) {
