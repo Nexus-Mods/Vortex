@@ -1,3 +1,4 @@
+import { getErrorCode } from "@vortex/shared";
 import { readFileSync } from "fs";
 import * as path from "path";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -74,7 +75,10 @@ const cachedImagePath = (gameId: string, ext: string = ".jpg"): string =>
   path.join(iconCacheDir(), `${gameId}${ext}`);
 
 /** Download a remote image and save it to the icon cache directory. */
-const downloadImage = async (imageUrl: string, gameId: string): Promise<string> => {
+const downloadImage = async (
+  imageUrl: string,
+  gameId: string,
+): Promise<string> => {
   const response = await fetch(imageUrl);
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}`);
@@ -83,7 +87,13 @@ const downloadImage = async (imageUrl: string, gameId: string): Promise<string> 
   const buffer = Buffer.from(await response.arrayBuffer());
   const filePath = cachedImagePath(gameId, ext);
   await ensureDirWritableAsync(iconCacheDir());
-  await writeFileAsync(filePath, buffer);
+  try {
+    await writeFileAsync(filePath, buffer, { flag: "wx" });
+  } catch (err) {
+    if (getErrorCode(err) !== "EEXIST") {
+      throw err;
+    }
+  }
   return url.pathToFileURL(filePath).href;
 };
 
