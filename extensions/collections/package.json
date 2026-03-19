@@ -9,7 +9,8 @@
     "_native": "node ../copy-native.mjs ./node_modules/bsdiff-node/build/Release/bsdiff.node",
     "_build": "node build.mjs && pnpm run _assets && pnpm run _native && pnpm extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs out",
-    "dist": "pnpm run _build && node ../copy-extension.mjs dist"
+    "dist": "pnpm run _build && node ../copy-extension.mjs dist",
+    "typecheck": "pnpm tsc"
   },
   "devDependencies": {
     "7z-bin": "catalog:",

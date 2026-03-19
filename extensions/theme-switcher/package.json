@@ -7,7 +7,8 @@
     "_native": "node ../copy-native.mjs -u 4 ./node_modules/font-scanner/build/Release/fontmanager.node",
     "_build": "node build.mjs && pnpm run _assets && pnpm run _native && pnpm extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs out",
-    "dist": "pnpm run _build && node ../copy-extension.mjs dist"
+    "dist": "pnpm run _build && node ../copy-extension.mjs dist",
+    "typecheck": "pnpm tsc"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
