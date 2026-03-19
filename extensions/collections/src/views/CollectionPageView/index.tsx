@@ -29,7 +29,7 @@ import * as _ from "lodash";
 import memoizeOne from "memoize-one";
 import * as React from "react";
 import { Image, Panel, Tab, Tabs } from "react-bootstrap";
-import ReactDOM = require("react-dom");
+import { findDOMNode } from "react-dom";
 import { connect } from "react-redux";
 import * as Redux from "redux";
 import * as semver from "semver";
@@ -215,8 +215,8 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
           }
           return typeof instanceId === "string"
             ? ["downloaded", "installed"].includes(
-                this.state.modsEx[instanceId].state,
-              )
+              this.state.modsEx[instanceId].state,
+            )
             : true;
         },
         hotKey: { code: 46 },
@@ -337,11 +337,11 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
         calc: (mod) =>
           mod.state !== null
             ? util.renderModReference(mod.collectionRule.reference, mod, {
-                version: false,
-              })
+              version: false,
+            })
             : util.renderModReference(mod.collectionRule.reference, undefined, {
-                version: false,
-              }),
+              version: false,
+            }),
         placement: "table",
         edit: {},
         isToggleable: false,
@@ -491,7 +491,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
       const currentMods = state.persistent.mods[gameId] ?? {};
       const currentDownloads = state.persistent.downloads.files;
       if ((currentMods !== this.props.mods)
-          || (currentDownloads !== this.props.downloads)) {
+        || (currentDownloads !== this.props.downloads)) {
         this.nextState.modsEx = this.updateModsEx(this.props, {
           ...this.props,
           mods: currentMods,
@@ -617,9 +617,9 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
     const selection =
       (this.mInstalling && driver.collectionInfo !== undefined
         ? revisionInfo?.modFiles?.map?.((file) => ({
-            local: undefined,
-            remote: file,
-          }))
+          local: undefined,
+          remote: file,
+        }))
         : modSelection) ?? [];
 
     return (
@@ -865,7 +865,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
 
   private setTableContainerRef = (ref: any) => {
     this.mTableContainerRef =
-      ref !== null ? (ReactDOM.findDOMNode(ref) as Element) : null;
+      ref !== null ? (findDOMNode(ref) as Element) : null;
   };
 
   private toggleInstructions = (evt: React.MouseEvent<any>) => {
@@ -1007,9 +1007,9 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
       modsEx[modId].state !== null
         ? util.renderModName(modsEx[modId], { version: true })
         : util.renderModReference(
-            modsEx[modId].collectionRule.reference,
-            undefined,
-          ),
+          modsEx[modId].collectionRule.reference,
+          undefined,
+        ),
     );
 
     const checkboxes = [

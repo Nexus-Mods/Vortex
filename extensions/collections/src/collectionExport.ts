@@ -13,7 +13,7 @@ import {
 } from "@nexusmods/nexus-api";
 import Bluebird from "bluebird";
 import * as _ from "lodash";
-import Zip = require("node-7z");
+import Zip from "node-7z";
 import * as path from "path";
 import { dir as tmpDir } from "tmp";
 import { actions, fs, log, selectors, types, util } from "vortex-api";
@@ -154,10 +154,10 @@ function filterInfoMod(mod: ICollectionMod): ICollectionMod {
 
 type RecursivePartial<T> = {
   [P in keyof T]?: T[P] extends (infer U)[]
-    ? RecursivePartial<U>[]
-    : T[P] extends object
-      ? RecursivePartial<T[P]>
-      : T[P];
+  ? RecursivePartial<U>[]
+  : T[P] extends object
+  ? RecursivePartial<T[P]>
+  : T[P];
 };
 
 function filterInfo(input: ICollection): RecursivePartial<ICollection> {
@@ -206,7 +206,7 @@ function renderGraphLocateError(
       if (missingMod !== undefined) {
         return t(
           "Mod not found on nexusmods.com: {{modName}} (modId: {{modId}}), " +
-            "it may have been removed.",
+          "it may have been removed.",
           {
             replace: {
               modName: util.renderModName(missingMod),
@@ -228,8 +228,8 @@ function renderGraphLocateError(
       if (missingMod !== undefined) {
         return t(
           "Mod not found on nexusmods.com: {{modName}} " +
-            "(modId: {{modId}}, fileId: {{fileId}}), " +
-            "it may have been removed.",
+          "(modId: {{modId}}, fileId: {{fileId}}), " +
+          "it may have been removed.",
           {
             replace: {
               modName: util.renderModName(missingMod, { version: true }),
@@ -427,16 +427,16 @@ export async function doExportToAPI(
                     details.length === 0
                       ? message
                       : details
-                          .map((detail) =>
-                            renderGraphErrorDetail(
-                              api,
-                              gameId,
-                              modId,
-                              message,
-                              detail,
-                            ),
-                          )
-                          .join("\n"),
+                        .map((detail) =>
+                          renderGraphErrorDetail(
+                            api,
+                            gameId,
+                            modId,
+                            message,
+                            detail,
+                          ),
+                        )
+                        .join("\n"),
                 },
                 [{ label: "Close" }],
               );
