@@ -1,4 +1,4 @@
-import Base58 = require("bs58");
+import Base58 from "bs58";
 import * as crypto from "crypto";
 import * as http from "http";
 import * as https from "https";
