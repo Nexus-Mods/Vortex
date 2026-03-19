@@ -68,7 +68,10 @@ export const GameButton: FC<GameButtonProps> = ({
 
   return (
     <button
-      className="group relative size-12 shrink-0 overflow-hidden rounded-lg"
+      className={joinClasses(
+        "absolute inset-0 z-1 rounded-lg transition-colors",
+        { "outline-2 outline-offset-2 outline-neutral-strong focus-within:outline-info-subdued": isActive },
+      )}
       title={title}
       {...props}
     >
@@ -92,12 +95,13 @@ export const GameButton: FC<GameButtonProps> = ({
       )}
 
       <span
-        className={joinClasses([
+        className={joinClasses(
           "absolute inset-0 z-1 rounded-lg transition-colors",
-          isActive
-            ? "border-neutral-strong border-2"
-            : "border-stroke-weak group-hover:border-neutral-strong border group-hover:border-2",
-        ])}
+          {
+            "border border-stroke-weak group-hover:border-2 group-hover:border-neutral-strong":
+              !isActive,
+          },
+        )}
       />
 
       {/* TODO: Re-enable store icon

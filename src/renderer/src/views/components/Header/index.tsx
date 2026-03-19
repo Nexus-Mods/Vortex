@@ -61,6 +61,7 @@ export const Header: FC = () => {
         style={{ WebkitAppRegion: "no-drag" }}
       >
         <IconButton
+          appearance="secondary"
           iconPath={menuIsCollapsed ? nxmPanelOpen : nxmPanelClose}
           title={menuIsCollapsed ? "Open menu" : "Collapse menu"}
           onClick={handleToggleMenu}
