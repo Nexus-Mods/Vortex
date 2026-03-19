@@ -1,4 +1,4 @@
-import * as Bluebird from "bluebird";
+import Bluebird from "bluebird";
 import { fs, selectors, types, log } from "vortex-api";
 import supportData from "./gameSupport";
 import { IGameSupport } from "./types";
