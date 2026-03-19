@@ -2,8 +2,6 @@
   "name": "modtype-dazip",
   "version": "1.0.0",
   "description": "Support for dazip (Dragon Age) mods",
-  "main": "./out/index.js",
-  "repository": "",
   "scripts": {
     "_build": "node build.mjs && pnpm extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs out",
@@ -11,6 +9,11 @@
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
+  "type": "commonjs",
+  "private": true,
+  "config": {
+    "extensionName": "Mod Type: dazip (Dragon Age)"
+  },
   "devDependencies": {
     "@types/redux": "catalog:",
     "@types/semver": "catalog:",

@@ -357,17 +357,17 @@ actions: string[];
 }, {}>;
 
 // @public
-const addDiscoveredGame: reduxAct.ComplexActionCreator2<string, IDiscoveryResult, {
-    id: string;
-    result: IDiscoveryResult;
+const addDiscoveredGame: ComplexActionCreator2<string, IDiscoveryResult, {
+id: string;
+result: IDiscoveryResult;
 }, {}>;
 
 // @public
-const addDiscoveredTool: reduxAct.ComplexActionCreator4<string, string, IDiscoveredTool, boolean, {
-    gameId: string;
-    toolId: string;
-    result: IDiscoveredTool;
-    manual: boolean;
+const addDiscoveredTool: ComplexActionCreator4<string, string, IDiscoveredTool, boolean, {
+gameId: string;
+toolId: string;
+result: IDiscoveredTool;
+manual: boolean;
 }, {}>;
 
 // @public
@@ -518,8 +518,8 @@ instanceId: string;
 }, {}>;
 
 // @public (undocumented)
-const clearDiscoveredGame: reduxAct.ComplexActionCreator1<string, {
-    id: string;
+const clearDiscoveredGame: ComplexActionCreator1<string, {
+id: string;
 }, {}>;
 
 // @public (undocumented)
@@ -799,12 +799,6 @@ function deepMerge(lhs: any, rhs: any): any;
 //
 // @public (undocumented)
 const _default: GitHub;
-
-// @public (undocumented)
-function <T>(load: () => any): (props: any) => JSX.Element;
-
-// @public (undocumented)
-function <T>(delayed: () => T, exportId?: string): T;
 
 // @public
 function delay(timeoutMS: number): Bluebird<void>;
@@ -4133,6 +4127,12 @@ const lastActiveProfiles: (state: IState) => {
 };
 
 // @public (undocumented)
+function LazyComponent<T>(load: () => any): (props: any) => JSX.Element;
+
+// @public (undocumented)
+function lazyRequire<T>(delayed: () => T, exportId?: string): T;
+
+// @public (undocumented)
 function linkAsync(src: string, dest: string, options?: ILinkFileOptions): Promise_2<void>;
 
 // Warning: (ae-forgotten-export) The symbol "ICategoryDictionary" needs to be exported by the entry point api.d.ts
@@ -5112,27 +5112,27 @@ const setForcedLogout: reduxAct.ComplexActionCreator1<boolean, boolean, {}>;
 const setForegroundDL: reduxAct.ComplexActionCreator1<boolean, boolean, {}>;
 
 // @public
-const setGameHidden: reduxAct.ComplexActionCreator2<string, boolean, {
-    gameId: string;
-    hidden: boolean;
+const setGameHidden: ComplexActionCreator2<string, boolean, {
+gameId: string;
+hidden: boolean;
 }, {}>;
 
 // @public
-const setGameParameters: reduxAct.ComplexActionCreator2<string, any, {
-    gameId: string;
-    parameters: any;
+const setGameParameters: ComplexActionCreator2<string, any, {
+gameId: string;
+parameters: any;
 }, {}>;
 
 // @public
-const setGamePath: reduxAct.ComplexActionCreator4<string, string, string, string, {
-    gameId: string;
-    gamePath: string;
-    store: string;
-    exePath: string;
+const setGamePath: ComplexActionCreator4<string, string, string, string, {
+gameId: string;
+gamePath: string;
+store: string;
+exePath: string;
 }, {}>;
 
 // @public (undocumented)
-const setGameSearchPaths: reduxAct.ComplexActionCreator1<string[], string[], {}>;
+const setGameSearchPaths: ComplexActionCreator1<string[], string[], {}>;
 
 // @public (undocumented)
 const setGroupingAttribute: reduxAct.ComplexActionCreator2<string, string, {
@@ -5278,8 +5278,8 @@ secondary: boolean;
 function setOrNop<T>(state: T, path: string[], value: any): T;
 
 // @public (undocumented)
-const setPickerLayout: reduxAct.ComplexActionCreator1<"list" | "small" | "large", {
-    layout: "list" | "small" | "large";
+const setPickerLayout: ComplexActionCreator1<"list" | "small" | "large", {
+layout: "list" | "small" | "large";
 }, {}>;
 
 // @public (undocumented)
@@ -5328,10 +5328,10 @@ const setShowDLGraph: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
 const setShowModDropzone: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
 
 // @public (undocumented)
-const setSortManaged: reduxAct.ComplexActionCreator1<string, string, {}>;
+const setSortManaged: ComplexActionCreator1<string, string, {}>;
 
 // @public (undocumented)
-const setSortUnmanaged: reduxAct.ComplexActionCreator1<string, string, {}>;
+const setSortUnmanaged: ComplexActionCreator1<string, string, {}>;
 
 // @public (undocumented)
 const setStartMinimized: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
@@ -5381,10 +5381,10 @@ valid: boolean;
 }, {}>;
 
 // @public
-const setToolVisible: reduxAct.ComplexActionCreator3<string, string, boolean, {
-    gameId: string;
-    toolId: string;
-    visible: boolean;
+const setToolVisible: ComplexActionCreator3<string, string, boolean, {
+gameId: string;
+toolId: string;
+visible: boolean;
 }, {}>;
 
 // @public (undocumented)
@@ -6082,8 +6082,8 @@ declare namespace util {
         isFilenameValid,
         isFuzzyVersion,
         isPathValid,
-        default_2 as LazyComponent,
-        default_3 as lazyRequire,
+        LazyComponent,
+        lazyRequire,
         local,
         lookupFromDownload,
         makeModReference,

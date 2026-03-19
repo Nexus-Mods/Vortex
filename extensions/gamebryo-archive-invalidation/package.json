@@ -1,9 +1,7 @@
 {
   "name": "gamebryo-archive-invalidation",
   "version": "0.1.4",
-  "description": "Management for gamebryo archive invalidation",
-  "main": "./out/index.js",
-  "repository": "",
+  "description": "Management for Gamebryo archive invalidation",
   "scripts": {
     "_build": "node build.mjs && pnpm extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs out",

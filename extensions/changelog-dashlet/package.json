@@ -1,9 +1,7 @@
 {
   "name": "changelog-dashlet",
   "version": "0.0.5",
-  "description": "Shows the changelog of the current vortex version on the dashlet",
-  "main": "./out/index.js",
-  "repository": "",
+  "description": "Dashlet to show the changelog of the current Vortex version",
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/changelog.scss dist",
     "_build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
@@ -12,6 +10,11 @@
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
+  "type": "commonjs",
+  "private": true,
+  "config": {
+    "extensionName": "Dashlet: Changelog"
+  },
   "devDependencies": {
     "@types/bluebird": "catalog:",
     "@types/react": "catalog:",

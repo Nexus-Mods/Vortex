@@ -2,7 +2,6 @@
   "name": "game-dragonage",
   "version": "1.0.1",
   "description": "Support for Dragon Age: Origins",
-  "main": "dist/index.js",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",
     "_build": "copyfiles -u 1 -f ./src/*.js dist && pnpm run _assets && pnpm extractInfo",

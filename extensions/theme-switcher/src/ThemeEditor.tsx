@@ -74,7 +74,7 @@ class ColorPreview extends React.Component<IColorProps, never> {
         <ChromePicker
           color={color}
           disableAlpha={true}
-          onChangeComplete={this.onUpdate}
+          onChange={this.onUpdate}
         />
       </Popover>
     );
@@ -124,19 +124,20 @@ export interface IBaseProps {
 type IProps = IBaseProps;
 
 const colorDefaults: IColorEntry[] = [
-  { name: "brand-primary", value: "#D78F46" },
-  { name: "brand-highlight", value: "#00C1FF" },
-  { name: "brand-success", value: "#86B951" },
-  { name: "brand-info", value: "#00C1FF" },
-  { name: "brand-warning", value: "#FF7300" },
-  { name: "brand-danger", value: "#FF1C38" },
-  { name: "brand-bg", value: "#2A2C2B" },
-  { name: "brand-menu", value: "#4C4C4C" },
-  { name: "brand-secondary", value: "#D78F46" },
-  { name: "brand-clickable", value: "#D78F46" },
-  { name: "text-color", value: "#eeeeee" },
-  { name: "text-color-disabled", value: "#bbbbbb" },
-  { name: "link-color", value: "#D78F46" },
+  { name: "brand-primary", value: "#C87B28" },
+  { name: "brand-highlight", value: "#1D4ED8" },
+  { name: "brand-success", value: "#166534" },
+  { name: "brand-info", value: "#1D4ED8" },
+  { name: "brand-warning", value: "#FACC15" },
+  { name: "brand-danger", value: "#991B1B" },
+  { name: "brand-bg", value: "#18181B" },
+  { name: "brand-menu", value: "#27272A" },
+  { name: "brand-secondary", value: "#C87B28" },
+  { name: "brand-clickable", value: "#C87B28" },
+  { name: "text-color", value: "#F4F4F5" },
+  { name: "text-color-disabled", value: "#898994" },
+  { name: "link-color", value: "#C87B28" },
+  { name: "border-color", value: "#ffffff1a" },
 ];
 
 interface IComponentState {
@@ -159,7 +160,7 @@ const defaultTheme = {
   fontFamily: "Inter",
   fontFamilyHeadings: "Inter",
   hidpiScale: 100,
-  margin: 30,
+  margin: 24,
   dashletHeight: 120,
   titlebarRows: 2,
   dark: true,
@@ -502,11 +503,11 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
     }
     const theme: { [key: string]: string } = {
       ...this.state.colors,
-      "font-size-base": this.state.fontSize.toString() + "px",
-      "hidpi-scale-factor": this.state.hidpiScale.toString() + "%",
+      "font-size-base": `${this.state.fontSize}px`,
+      "hidpi-scale-factor": `${this.state.hidpiScale}%`,
       "font-family-base": fontFamily,
-      "font-family-headings": '"' + this.state.fontFamilyHeadings + '"',
-      "gutter-width": this.state.margin.toString() + "px",
+      "font-family-headings": `"${this.state.fontFamilyHeadings}"`,
+      "gutter-width": `${this.state.margin}px`,
       "dashlet-height": `${this.state.dashletHeight}px`,
       "dark-theme": this.state.dark ? "true" : "false",
       "titlebar-rows": this.state.titlebarRows.toString(),
@@ -518,13 +519,13 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
       "gray-dark",
       "gray-darker",
     ];
-    let grayColors = ["DEE2E6", "DDDDDD", "A9A9A9", "4C4C4C", "2A2C2B"];
+    let grayColors = ["#D4D4D8", "#A1A1AA", "#3F3F46", "#27272A", "#18181B"];
     if (this.state.dark) {
-      grayColors = grayColors.reverse();
+      grayColors.reverse();
     }
 
     grayNames.forEach((id: string, idx: number) => {
-      theme[id] = "#" + grayColors[idx];
+      theme[id] = grayColors[idx];
     });
 
     this.props.onApply(theme);
@@ -599,33 +600,30 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
   }
 
   private setDashletHeight(theme: { [name: string]: string }) {
-    if (theme["dashlet-height"] !== undefined) {
-      this.nextState.dashletHeight = parseInt(theme["dashlet-height"], 10);
-    }
+    this.nextState.dashletHeight =
+      theme["dashlet-height"] !== undefined
+        ? parseInt(theme["dashlet-height"], 10)
+        : defaultTheme.dashletHeight;
   }
 
   private setDark(theme: { [name: string]: string }) {
-    const dark =
+    this.nextState.dark =
       theme["dark-theme"] !== undefined
         ? theme["dark-theme"] === "true"
         : defaultTheme.dark;
-    this.nextState.dark = dark;
   }
 
   private setTitlebarRows(theme: { [name: string]: string }) {
-    if (theme["titlebar-rows"] !== undefined) {
-      this.nextState.titlebarRows = parseInt(theme["titlebar-rows"], 10);
-    }
+    this.nextState.titlebarRows =
+      theme["titlebar-rows"] !== undefined
+        ? parseInt(theme["titlebar-rows"], 10)
+        : defaultTheme.titlebarRows;
   }
 
   private setColors(theme: { [name: string]: string }) {
     this.nextState.colors = {};
     colorDefaults.forEach((entry) => {
-      if (
-        colorDefaults.find((color) => color.name === entry.name) !== undefined
-      ) {
-        this.nextState.colors[entry.name] = theme[entry.name] || entry.value;
-      }
+      this.nextState.colors[entry.name] = theme[entry.name] || entry.value;
     });
   }
 }

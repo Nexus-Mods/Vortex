@@ -2,8 +2,6 @@
   "name": "test-gameversion",
   "version": "0.1.1",
   "description": "Report an error if a mod isn't compatible with the current game version",
-  "main": "./out/index.js",
-  "repository": "",
   "scripts": {
     "_build": "node build.mjs && pnpm extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs out",

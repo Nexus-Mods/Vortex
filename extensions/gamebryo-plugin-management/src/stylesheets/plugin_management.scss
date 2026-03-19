@@ -126,8 +126,22 @@
         overflow-y: auto;
         max-height: 300px;
 
-        .btn {
-            margin-left: 8px;
+        .list-group-item {
+            display: flex;
+
+            .btn {
+                margin-right: 0.5em;
+            }
+
+            .rule-name {
+                color: $text-color;
+            }
+
+            .rule-type {
+                color: $brand-info-lighter;
+                font-style: italic;
+                margin: 0 0.5em;
+            }
         }
     }
 

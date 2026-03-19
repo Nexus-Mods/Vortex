@@ -2,7 +2,6 @@
   "name": "mod-report",
   "description": "Create a report on the final effects of a mod on disk",
   "version": "0.0.7",
-  "main": "./out/index.js",
   "license": "GPL-3.0",
   "author": "Black Tree Gaming Ltd.",
   "scripts": {

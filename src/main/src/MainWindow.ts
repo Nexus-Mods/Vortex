@@ -380,7 +380,7 @@ class MainWindow {
       x: windowMetrics?.position?.x ?? undefined,
       y: windowMetrics?.position?.y ?? undefined,
       backgroundColor: "#fff",
-      autoHideMenuBar: true,
+      autoHideMenuBar: windowMetrics?.customTitlebar ?? true,
       frame: !(windowMetrics?.customTitlebar ?? true),
       show: false,
       title: "Vortex",
