@@ -1,17 +1,25 @@
-/* eslint-disable */
-import { ISDVModManifest } from './types';
+/**
+ * Caches parsed manifests for currently active Stardew Valley mods.
+ */
+import type { ISDVModManifest } from '../types';
 import turbowalk from 'turbowalk';
-import { log, types, selectors, util } from 'vortex-api';
-import { GAME_ID } from './common';
-
-import { parseManifest } from './util';
+import { log, selectors, util } from 'vortex-api';
+import type { types } from 'vortex-api';
+import { GAME_ID, MOD_MANIFEST } from '../common';
+import { selectSdvMods } from '../state/selectors';
+import { parseManifest } from './parseManifest';
 
 import path from 'path';
 
-type ManifestMap = { [modId: string]: ISDVModManifest[] };
-export default class DependencyManager {
+/**
+ * Caches parsed manifests for currently active/installed Stardew mods.
+ *
+ * Used by health checks to detect whether the installed SMAPI version satisfies
+ * minimum API requirements declared by mods.
+ */
+export default class ModManifestCache {
   private mApi: types.IExtensionApi;
-  private mManifests: ManifestMap;
+  private mManifests: ManifestMap | undefined;
   private mLoading: boolean = false;
 
   constructor(api: types.IExtensionApi) {
@@ -20,7 +28,7 @@ export default class DependencyManager {
 
   public async getManifests(): Promise<ManifestMap> {
     await this.scanManifests();
-    return this.mManifests;
+    return this.mManifests ?? {};
   }
 
   public async refresh(): Promise<void> {
@@ -42,21 +50,22 @@ export default class DependencyManager {
     const profile = selectors.profileById(state, profileId);
     const isInstalled = (mod: types.IMod) => mod?.state === 'installed';
     const isActive = (modId: string) => util.getSafe(profile, ['modState', modId, 'enabled'], false);
-    const mods: { [modId: string]: types.IMod } = util.getSafe(state, ['persistent', 'mods', GAME_ID], {});
+    const mods: { [modId: string]: types.IMod } = selectSdvMods(state);
     const manifests = await Object.values(mods).reduce(async (accumP, iter) => {
-      const accum = await accumP;      
+      const accum = await accumP;
       if (!isInstalled(iter) || !isActive(iter.id)) {
         return Promise.resolve(accum);
       }
       const modPath = path.join(staging, iter.installationPath);
       return turbowalk(modPath, async entries => {
       for (const entry of entries) {
-        if (path.basename(entry.filePath) === 'manifest.json') {
+        if (path.basename(entry.filePath) === MOD_MANIFEST) {
           let manifest;
           try {
             manifest = await parseManifest(entry.filePath);
           } catch (err) {
-            log('error', 'failed to parse manifest', { error: err.message, manifest: entry.filePath });
+            const message = err instanceof Error ? err.message : String(err);
+            log('error', 'failed to parse manifest', { error: message, manifest: entry.filePath });
             continue;
           }
           const list = accum[iter.id] ?? [];
@@ -78,3 +87,5 @@ export default class DependencyManager {
     return Promise.resolve();
   }
 }
+
+type ManifestMap = { [modId: string]: ISDVModManifest[] };

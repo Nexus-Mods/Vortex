@@ -7,8 +7,17 @@ const isGitHubCI = process.env.CI && process.env.GITHUB_ACTIONS;
 
 export default defineConfig({
   test: {
-    projects: ["./src/main", "./src/renderer", "./src/shared"],
-    reporters: ["default", "junit", isGitHubCI ? "github-actions" : undefined].filter(Boolean),
+    projects: [
+      "./src/main",
+      "./src/renderer",
+      "./src/shared",
+      "./extensions/games/game-stardewvalley",
+    ],
+    reporters: [
+      "default",
+      "junit",
+      isGitHubCI ? "github-actions" : undefined,
+    ].filter(Boolean),
     outputFile: {
       junit: path.join(RESULTS_DIR, "junit.xml"),
     },

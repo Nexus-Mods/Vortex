@@ -3,8 +3,9 @@
   "version": "0.3.9",
   "description": "Support for Stardew Valley",
   "scripts": {
-    "_assets": "copyfiles -u 1 -f ./assets/* dist",
+    "_assets": "copyfiles -u 1 -f ./assets/* dist/assets && copyfiles -u 2 -f ./src/ui/sdvstyle.scss dist/ui",
     "_build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
+    "typecheck:strict": "pnpm exec tsc -p tsconfig.strict.json",
     "build": "pnpm run _build && node ../../copy-extension.mjs out",
     "dist": "pnpm run _build && node ../../copy-extension.mjs dist"
   },
