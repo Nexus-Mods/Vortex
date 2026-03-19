@@ -7,7 +7,7 @@ import type {
   AssertSerializable,
   Serializable,
 } from "@vortex/shared/ipc";
-import type { PreloadWindow } from "@vortex/shared/preload";
+import type { PreloadWindow, QueryApi, QueryName } from "@vortex/shared/preload";
 import type { PersistedHive } from "@vortex/shared/state";
 
 import { contextBridge, ipcRenderer } from "electron";
@@ -269,6 +269,25 @@ try {
     telemetry: {
       forwardSpan: (span) =>
         betterIpcRenderer.send("telemetry:forward-span", span),
+    },
+    query: {
+      execute: ((name: QueryName, params: Record<string, Serializable>) =>
+        betterIpcRenderer.invoke(
+          "query:execute",
+          name,
+          params,
+        )) as QueryApi["execute"],
+      list: () =>
+        betterIpcRenderer.invoke("query:list") as Promise<QueryName[]>,
+      onInvalidated: (callback) => {
+        const listener = (
+          _: Electron.IpcRendererEvent,
+          queryNames: QueryName[],
+        ) => callback(queryNames);
+        ipcRenderer.on("query:invalidated", listener);
+        return () =>
+          ipcRenderer.removeListener("query:invalidated", listener);
+      },
     },
   });
 } catch (err) {

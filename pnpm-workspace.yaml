@@ -10,6 +10,7 @@ packages:
   - ./packages/*
 
 allowBuilds:
+  "@duckdb/node-api": true
   "@parcel/watcher": true
   ba2tk: true
   bsatk: true
@@ -40,6 +41,7 @@ catalog:
   "@babel/preset-react": ^7.24.4
   "@babel/preset-typescript": 7.16.7
   "@babel/register": 7.16.8
+  "@duckdb/node-api": 1.5.0-r.1
   "@electron/remote": ^2.0.12
   "@eslint-react/eslint-plugin": 2.3.7
   "@eslint/js": 9.39.1
