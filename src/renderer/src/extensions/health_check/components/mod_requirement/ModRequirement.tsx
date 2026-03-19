@@ -5,6 +5,7 @@ import {
   mdiOpenInNew,
   mdiWeb,
 } from "@mdi/js";
+import React from "react";
 import { useTranslation } from "react-i18next";
 
 import type { IModFileInfo, IModRequirementExt } from "../../types";

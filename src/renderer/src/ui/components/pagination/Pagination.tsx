@@ -1,5 +1,5 @@
 import { mdiMenuLeft, mdiMenuRight } from "@mdi/js";
-import { useMemo, type ClassAttributes, type RefObject } from "react";
+import React, { useMemo, type ClassAttributes, type RefObject } from "react";
 
 import { joinClasses } from "../../utils/joinClasses";
 import { Icon } from "../icon/Icon";
