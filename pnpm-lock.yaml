@@ -2443,12 +2443,18 @@ importers:
 
   extensions/gamestore-xbox:
     devDependencies:
+      '@types/bluebird':
+        specifier: 'catalog:'
+        version: 3.5.20
       '@types/node':
         specifier: 'catalog:'
         version: 22.19.11
       '@types/redux':
         specifier: 'catalog:'
         version: 3.6.0
+      bluebird:
+        specifier: 'catalog:'
+        version: 3.7.2
       copyfiles:
         specifier: 'catalog:'
         version: 2.4.1
