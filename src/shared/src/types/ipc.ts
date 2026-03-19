@@ -165,6 +165,7 @@ export interface MainChannels {
 }
 
 /** Type containing all known channels for synchronous IPC operations (used primarily by preload scripts) */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface SyncChannels {
   // NOTE: These are synchronous IPC channels used during preload initialization.
   // Use sparingly as they block the renderer process.
@@ -261,8 +262,9 @@ export interface InvokeChannels {
   "contentTracing:stopRecording": (resultPath: string) => Promise<string>;
 
   // Redux state transfer
-  // NOTE: Redux state is a complex nested object that is serializable
-  // but too complex to type precisely. The actual data is always serializable.
+  // NOTE: Redux state is a complex nested object that is serializable but too complex to type precisely. The actual data is always serializable.
+
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   "redux:getState": () => Promise<{}>;
   // Returns a base64-encoded msgpack chunk of the Redux state
   "redux:getStateMsgpack": (idx?: number) => Promise<string | undefined>;
@@ -356,10 +358,10 @@ type IsAny<T> = 0 extends 1 & T ? true : false;
 type HasError<T> = T extends { __error__: string }
   ? true
   : T extends object
-    ? { [K in keyof T]: HasError<T[K]> }[keyof T] extends true
-      ? true
-      : false
-    : false;
+  ? { [K in keyof T]: HasError<T[K]> }[keyof T] extends true
+  ? true
+  : false
+  : false;
 
 // NOTE(erri120): If you found this type because you got an error, that means you're trying to pass data across the IPC
 // that can't be serialized. Check the list of supported types above and pick one of them. If you think there is a type missing
@@ -369,17 +371,17 @@ type HasError<T> = T extends { __error__: string }
 export type AssertSerializable<T> =
   // any
   IsAny<T> extends true
-    ? { __error__: "any is not serializable for IPC" }
-    : // known serializables
-      T extends Serializable
-      ? T
-      : // objects
-        T extends object
-        ? HasError<{ [K in keyof T]: AssertSerializable<T[K]> }> extends true
-          ? { __error__: "Type is not serializable for IPC" }
-          : T
-        : // everything else
-          { __error__: "Type is not serializable for IPC" };
+  ? { __error__: "any is not serializable for IPC" }
+  : // known serializables
+  T extends Serializable
+  ? T
+  : // objects
+  T extends object
+  ? HasError<{ [K in keyof T]: AssertSerializable<T[K]> }> extends true
+  ? { __error__: "Type is not serializable for IPC" }
+  : T
+  : // everything else
+  { __error__: "Type is not serializable for IPC" };
 
 /** Utility type to check all args are serializable */
 export type SerializableArgs<T extends readonly unknown[]> = {

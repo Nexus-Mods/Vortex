@@ -29,7 +29,7 @@ import { writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { relaunch } from "./cli";
-import { getVortexPath, setVortexPath } from "./getVortexPath";
+import { getVortexPath } from "./getVortexPath";
 import { betterIpcMain } from "./ipc";
 import { openUrl, openFile } from "./open";
 import { extraWebViews } from "./webview";
@@ -66,8 +66,8 @@ export function init() {
   // because the scoped package name "@vortex/main" contains a forward slash
   // which Electron preserves in app.getPath("userData"), producing mixed
   // separators that break symlink detection (readlink returns OS-normalized paths).
-  for (const key of Object.keys(vortexPaths)) {
-    vortexPaths[key] = path.normalize(vortexPaths[key]);
+  for (const [key, value] of Object.entries(vortexPaths)) {
+    vortexPaths[key] = path.normalize(value);
   }
 
   // ============================================================================

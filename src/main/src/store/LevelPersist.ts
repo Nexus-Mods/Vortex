@@ -87,7 +87,7 @@ class LevelPersist implements IPersistor {
   }
 
   public async getItem(key: string[]): Promise<string> {
-    const value = await this.mDB.get(key.join(SEPARATOR));
+    const value: string = await this.mDB.get(key.join(SEPARATOR));
     return value;
   }
 
@@ -139,9 +139,9 @@ class LevelPersist implements IPersistor {
       prefix === undefined
         ? undefined
         : {
-            gt: `${prefix}${SEPARATOR}`,
-            lt: `${prefix}${SEPARATOR}zzzzzzzzzzz`,
-          };
+          gt: `${prefix}${SEPARATOR}`,
+          lt: `${prefix}${SEPARATOR}zzzzzzzzzzz`,
+        };
 
     const writable = new Writable({
       objectMode: true,

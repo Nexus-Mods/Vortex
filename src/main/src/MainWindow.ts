@@ -176,7 +176,9 @@ class MainWindow {
             if (this.mWindow !== null) {
               this.mWindow.loadURL(
                 `file://${getVortexPath("base")}/index.html`,
-              );
+              ).catch((err: unknown) => {
+                log("error", "failed to load index.html", err);
+              });
             } else {
               process.exit();
             }
@@ -273,7 +275,7 @@ class MainWindow {
           resolve = undefined!;
         }
       });
-      ipcMain.on("webview-dom-ready", (evt, id) => {
+      ipcMain.on("webview-dom-ready", (evt, id: number) => {
         const contents = webContents.fromId(id);
         contents?.setWindowOpenHandler(({ url, disposition }) => {
           evt.sender.send("webview-open-url", id, url, disposition);
@@ -322,7 +324,7 @@ class MainWindow {
         log(
           "warn",
           "The Vortex window was found to be mostly offscreen. " +
-            "Moving to a sensible location.",
+          "Moving to a sensible location.",
           { bounds },
         );
         this.mWindow.setPosition(pBounds.x, pBounds.y);
