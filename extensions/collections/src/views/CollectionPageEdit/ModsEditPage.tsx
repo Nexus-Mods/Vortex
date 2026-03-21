@@ -803,6 +803,12 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
         },
         placement: "table",
         edit: {},
+        isSortable: true,
+        isGroupable: true,
+        groupName: (instructions: string) => {
+          const { t } = this.props;
+          return instructions ? t("Has Instructions") : t("<No Instructions>")
+        },
       },
       {
         id: "local_edits",
