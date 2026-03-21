@@ -537,7 +537,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
         },
         isSortable: true,
         isGroupable: true,
-        groupName: (required: string) => {
+        groupName: (required: "required" | false) => {
           const { t } = this.props;
           return required ? t("Required") : t("Optional")
         },
