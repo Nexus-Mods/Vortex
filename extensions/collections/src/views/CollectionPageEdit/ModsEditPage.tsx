@@ -484,7 +484,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
           util.resolveCategoryName(
             mod.mod?.attributes?.category,
             this.context.api.store.getState(),
-          ) || t("<No category>"),
+          ) || t("<No Category>"),
         filter: new OptionsFilter(
           () => {
             const state: types.IState = this.context.api.getState();
@@ -918,7 +918,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
         isGroupable: true,
         groupName: (saveEdits: "" | true) => {
           const { t } = this.props;
-          return saveEdits ? t("Has Binary Patching") : t("No Binary Patching")
+          return saveEdits ? t("Has Binary Patching") : t("<No Binary Patching>")
         },
         filter: new OptionsFilter(
           [
