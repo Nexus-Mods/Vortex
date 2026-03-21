@@ -690,7 +690,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
       },
       {
         id: "install-type",
-        name: "Install",
+        name: "Install Type",
         description: "How the mod should be installed on the user system",
         filter: new OptionsFilter(
           [{ value: "has-install-options", label: "Has Installation Options" }],
