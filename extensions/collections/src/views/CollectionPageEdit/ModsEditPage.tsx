@@ -908,6 +908,20 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
             })();
           },
         },
+        isSortable: true,
+        isGroupable: true,
+        groupName: (saveEdits: "" | true) => {
+          const { t } = this.props;
+          return saveEdits ? t("Has Binary Patching") : t("No Binary Patching")
+        },
+        filter: new OptionsFilter(
+          [
+            { value: true, label: this.props.t("Yes") },
+            { value: false, label: this.props.t("No") },
+          ],
+          false,
+          false,
+        ),
       },
       {
         id: "phase",
