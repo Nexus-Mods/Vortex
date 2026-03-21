@@ -806,11 +806,10 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
       },
       {
         id: "local_edits",
-        name: "Binary patching",
+        name: "Binary Patching",
         icon: "edit",
         help:
-          "With this option enabled, any changes you did to the files in this mods will " +
-          "also be included in the Collection.",
+          "With this option enabled, any changes you did to the files in this mods will also be included in the Collection.",
         placement: "table",
         calc: (entry: IModEntry) => {
           const { collection } = this.props;
