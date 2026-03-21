@@ -535,6 +535,20 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
             this.props.onAddRule(newRule);
           },
         },
+        isSortable: true,
+        isGroupable: true,
+        groupName: (required: string) => {
+          const { t } = this.props;
+          return required ? t("Required") : t("Optional")
+        },
+        filter: new OptionsFilter(
+          [
+            { value: true, label: "Required" },
+            { value: false, label: "Optional" },
+          ],
+          false,
+          false,
+        ),
       },
       {
         id: "source",
@@ -605,8 +619,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
         name: "Version",
         description: "The version to install",
         calc: (entry: IModEntry) => {
-          const { collection } = this.props;
-          const { t } = this.props;
+          const { t, collection } = this.props;
           const id = entry.mod?.id ?? entry.rule?.reference?.id;
           const version = entry.mod?.attributes?.["version"] ?? t("N/A");
 
