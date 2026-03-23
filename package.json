@@ -34,9 +34,8 @@
     "test": "pnpm vitest run --coverage && pnpm -F @vortex/renderer run test:jest",
     "test:watch": "pnpm vitest",
     "api": "pnpm -F @vortex/renderer run api:build && pnpm -F @vortex/renderer run api:docs && pnpm -F vortex-api run typecheck",
-    "format": "pnpm prettier --write .",
-    "format:check": "pnpm prettier --check .",
-    "format:quick": "pnpm pretty-quick"
+    "format": "pnpm oxfmt",
+    "format:check": "pnpm oxfmt --check"
   },
   "devDependencies": {
     "@eslint-react/eslint-plugin": "catalog:",
@@ -62,9 +61,8 @@
     "glob": "catalog:",
     "globals": "catalog:",
     "minimist": "catalog:",
+    "oxfmt": "catalog:",
     "p-limit": "catalog:",
-    "prettier": "catalog:",
-    "pretty-quick": "catalog:",
     "rimraf": "catalog:",
     "rolldown": "catalog:",
     "sass": "catalog:",

@@ -3,17 +3,10 @@
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
   },
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "editor.formatOnSave": true,
-  "jest.pathToJest": "node_modules\\.bin\\jest",
   "typescript.tsdk": "./node_modules/typescript/lib",
   "typescript.preferences.quoteStyle": "single",
   "tailwindCSS.experimental.configFile": "./src/stylesheets/tailwind-v4.css",
-  "i18n-ally.localesPaths": ["locales", "out/locales"],
-  "i18n-ally.keystyle": "nested",
-  "i18n-ally.namespace": true,
-  "i18n-ally.pathMatcher": "{locale}/{namespace}.json",
-  "i18n-ally.enabledFrameworks": ["react", "i18next"],
-  "i18n-ally.sourceLanguage": "en",
-  "i18n-ally.displayLanguage": "en"
+  "oxc.fmt.configPath": ".oxfmtrc.json",
+  "editor.defaultFormatter": "oxc.oxc-vscode",
+  "editor.formatOnSave": true
 }
