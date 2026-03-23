@@ -69,6 +69,9 @@ jobs:
       - name: Install Playwright
         run: pnpm -F @vortex/e2e exec playwright install chromium
 
+      - name: Patch Playwright for Electron 30+
+        run: node packages/e2e/scripts/patch-playwright-electron.mjs
+
       - name: Run E2E tests (Windows)
         if: runner.os == 'Windows'
         run: pnpm e2e

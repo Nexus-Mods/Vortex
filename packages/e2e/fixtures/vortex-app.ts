@@ -93,12 +93,13 @@ async function waitForMainWindow(vortexApp: ElectronApplication): Promise<Page> 
       }
     }, 500);
 
+    // CI runners can be slow — allow up to 2 minutes for the main window
     setTimeout(() => {
       clearInterval(interval);
       vortexApp.off('window', onWindow);
       const windows = vortexApp.windows();
       resolve(windows[windows.length - 1]);
-    }, 60_000);
+    }, 120_000);
   });
 }
 
@@ -155,18 +156,19 @@ export const test = base.extend<VortexTestFixtures, VortexWorkerFixtures>({
       ],
       env: buildElectronEnv(sharedUserDataDir),
       cwd: mainDir,
-      timeout: 45_000,
+      // CI runners are slower — allow up to 2 minutes for cold start
+      timeout: 120_000,
     });
 
     await use(app);
     await app.close().catch(() => {});
-  }, { scope: 'worker' }],
+  }, { scope: 'worker', timeout: 180_000 }],
 
   sharedVortexWindow: [async ({ sharedVortexApp }, use) => {
     const mainWindow = await waitForMainWindow(sharedVortexApp);
     await mainWindow.waitForLoadState('domcontentloaded');
     await use(mainWindow);
-  }, { scope: 'worker' }],
+  }, { scope: 'worker', timeout: 180_000 }],
 
   // Test-scoped aliases that reference the shared worker fixtures
   vortexApp: async ({ sharedVortexApp }, use) => {
