@@ -247,7 +247,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
             {
               text:
                 "Please choose how Vortex should choose the version of the mod to be installed. " +
-                '"Exact" means that the user should install the same version as you have ' +
+                '"Exact" means that Vortex should install the same version as you have ' +
                 'installed right now. "Latest" means it should get the newest version at ' +
                 "the time of installation.",
               choices: [
@@ -750,7 +750,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
         },
         placement: "table",
         help:
-          'If set to "Fresh Install" the mod will simply be installed fresh on the users system, ' +
+          'If set to "Fresh Install" the mod will simply be installed fresh on the user\'s system, ' +
           "installer (if applicable) and everything.\n" +
           'If set to "Replicate" Vortex will try to replicate your exact setup for this mod. ' +
           "This does not bundle the mod itself but the list of files to install and patches if " +
@@ -896,7 +896,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
                       "This allows for more customization but there are considerable drawbacks:\n" +
                       "[list]" +
                       "[*]Uploading the collection will take longer - a lot if it's a big mod\n" +
-                      "[*]these patches apply only to the exact same version&variant of the mod, " +
+                      "[*]these patches apply only to the exact same version & variant of the mod; " +
                       "if the user updates the mod the patch will be undone." +
                       "[/list]\n" +
                       "Therefore please only use this option if you absolutely have to.",
@@ -1055,7 +1055,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
           </p>
           <p>
             {t(
-              "Required: Select whether the user has to install the mod or whether it's an optional recommendation, recommended mods are presented last and the user is given the choice to install them or not.",
+              "Required: Select whether the user has to install the mod or whether it's an optional recommendation. Optional mods are presented last and the user is given the choice to install them or not.",
             )}
           </p>
           <p>
@@ -1065,14 +1065,14 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
                 "extracted yourself, in exactly the same location. This basically ensures the user " +
                 "gets the same options as you without having to pick them but it only works when you " +
                 'have selected "Exact version" in the Version column. It will also considerably ' +
-                "increase the time it takes to build the pack.",
+                "increase the time it takes to export the collection.",
             )}
           </p>
           <p>
             {t(
               'Source: Decides how the user downloads the mod. "Nexus Mods" is easiest, use the ' +
                 "other options when the mod in only hosted on a different source. " +
-                'The options also include "pack" which bundles the mod directly into the collection. ' +
+                'The options also include "bundle" which packs the mod directly into the collection. ' +
                 "Do this only for stuff created during setup (e.g. generated LODs, " +
                 "customized configuration files and such). " +
                 "You must not include any material you don't hold the copyright to. " +
@@ -1162,10 +1162,10 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
         type: "invalid-ids",
         summary: t("Missing file identifiers"),
         message: t(
-          'When using "Nexus Mods" as a source, both the mod id and file id have to be ' +
+          'When using "Nexus Mods" as a source, both the mod ID and file ID have to be ' +
             "known. If you didn't download the mod through Vortex they may not be set. " +
             'To solve this you have to change the source of the mod to "Nexus Mods" ' +
-            'and use the options below "Nexus Mods IDs" to fill in the ' +
+            'and use the sidebar options below "Nexus Mods IDs" to fill in the ' +
             "missing data (the automated options should be quite reliable).",
         ),
       });
@@ -1180,7 +1180,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
         summary: t('"Replicate" requires "Exact only" as the version'),
         message: t(
           '"Replicate" install can only be used when installing ' +
-            "a specific version of a mod. This will definitively break " +
+            "an exact version of a mod. This will definitively break " +
             "as soon as the mod gets updated.",
         ),
       });
@@ -1192,8 +1192,8 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
           '"Same Installer Options" should not be used with "Latest" version',
         ),
         message: t(
-          'Installing with "Same choices options" may break if the mod gets updated, ' +
-            'you may want to switch to "Prefer exact" to be safe.',
+          'Installing with "Same Installer Options" may break if the mod gets updated. ' +
+            'You may want to switch to "Exact only" to be safe.',
         ),
       });
     }
@@ -1206,8 +1206,8 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
         type: "bundled-fuzzy-version",
         summary: t('Version choice has no effect on "Bundled" mod'),
         message: t(
-          "If you bundle a mod the user gets exactly the version of the mod you " +
-            "have, the Version selection is pointless in this case.",
+          "If you bundle a mod, the user gets exactly the version of the mod you " +
+            "have. The Version selection is pointless in this case.",
         ),
       });
     } else if (["browse", "direct"].includes(sourceType)) {
@@ -1218,7 +1218,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
             "Version choice has no effect on mods using generic download.",
           ),
           message: t(
-            'The option to "prefer exact version" only works with sources that ' +
+            'The option to "prefer exact" version only works with sources that ' +
               "support mod updates (Nexus Mods). For other sources your options " +
               "are to use the exact same version you have locally or to accept whatever " +
               "version the user downloads.",
@@ -1285,7 +1285,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
         type: "bundle-copyright",
         summary: t("Only bundle mods you have the right to do so"),
         message: t(
-          "Mods are copyright protected, only pack mods if you are sure you " +
+          "Mods are copyright protected. Only bundle mods if you are sure you " +
             "have the right to do so, e.g. if it's dynamically generated content " +
             "or if it's your own mod.",
         ),
@@ -1294,10 +1294,10 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
       res.push({
         type: "direct-download",
         summary: t(
-          "Please verify you are allowed to do direct download on this site",
+          "Please verify you are allowed to do direct downloads on this site",
         ),
         message: t(
-          "Most websites don't allow direct downloads, Plese make sure you are " +
+          "Most websites don't allow direct downloads. Please make sure you are " +
             "allowed to use direct links to the specified page.",
         ),
       });
@@ -1324,10 +1324,10 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
         type: "no-version-set",
         summary: t("No version set for this mod"),
         message: t(
-          "The mod has no version number set. This isn't strictly necessary, we use the " +
-            "file id to identify the exact version but for the purpose of informing the " +
+          "The mod has no version number set. This isn't strictly necessary; we use the " +
+            "file ID to identify the exact version but for the purpose of informing the " +
             "user it would be nicer if a version was specified. " +
-            "(Please don't forget to update the collection)",
+            "(Please don't forget to update the collection.)",
         ),
       });
     }
@@ -1523,8 +1523,8 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
         "It is intended to allow curators to include configuration files or " +
         "outputs from automated tools for the convenience of users. " +
         'Any content that would qualify as a "mod" should be uploaded to a ' +
-        "Nexus Mods mod page and included in the collection, rather than being bundled.\n\n" +
-        "You should only include content that you have permission to share freely. " +
+        "Nexus Mods mod page and added to the collection, rather than being bundled.\n\n" +
+        "You should only bundle content that you have permission to share freely. " +
         "Failure to respect the permissions/license of mod authors may result in " +
         "moderation against your account.";
     } else if (["direct", "browse", "manual"].includes(type)) {
@@ -1596,7 +1596,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
         {
           md:
             "Instructions added to **required mods** will display alongside the mod as it installs.  \n" +
-            "Instructions added to **optional mods** will display before the mod installs, the user " +
+            "Instructions added to **optional mods** will display before the mod installs. The user " +
             "will be given the option to either install or skip the mod.  \n" +
             'All added instructions will be available in the "Instructions" tab on the Collections page.',
           input: [
