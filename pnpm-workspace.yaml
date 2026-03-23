@@ -297,3 +297,5 @@ overrides:
   "@types/react": "16"
   "@types/react-dom": "16"
   node-addon-api: 8.5.0
+patchedDependencies:
+  playwright-core@1.58.2: patches/playwright-core@1.58.2.patch

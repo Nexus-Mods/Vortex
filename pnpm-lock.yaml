@@ -762,6 +762,11 @@ overrides:
   '@types/react-dom': '16'
   node-addon-api: 8.5.0
 
+patchedDependencies:
+  playwright-core@1.58.2:
+    hash: d20016d2ebd264257c6e1885fb814dc7d150de5b41b3a46557b431ab8de2cf34
+    path: patches/playwright-core@1.58.2.patch
+
 importers:
 
   .:
@@ -20568,11 +20573,11 @@ snapshots:
     dependencies:
       find-up: 4.1.0
 
-  playwright-core@1.58.2: {}
+  playwright-core@1.58.2(patch_hash=d20016d2ebd264257c6e1885fb814dc7d150de5b41b3a46557b431ab8de2cf34): {}
 
   playwright@1.58.2:
     dependencies:
-      playwright-core: 1.58.2
+      playwright-core: 1.58.2(patch_hash=d20016d2ebd264257c6e1885fb814dc7d150de5b41b3a46557b431ab8de2cf34)
     optionalDependencies:
       fsevents: 2.3.2
 
