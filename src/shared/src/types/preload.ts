@@ -88,7 +88,6 @@ export interface Api {
 
   /** Telemetry APIs - span export from renderer to main */
   telemetry: TelemetryApi;
-
 }
 
 export interface Example {
