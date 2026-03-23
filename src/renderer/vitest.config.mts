@@ -10,4 +10,7 @@ export default defineConfig({
     include: ["src/**/*.test.{ts,tsx}"],
     exclude: ["node_modules", "src/**/__tests__/*"],
   },
+  resolve: {
+    tsconfigPaths: true,
+  },
 });

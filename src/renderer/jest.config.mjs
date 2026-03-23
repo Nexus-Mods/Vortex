@@ -10,6 +10,7 @@ const config = {
     "^cheerio/lib/utils$": "<rootDir>/src/__mocks__/cheerio-utils.js",
     "^shortid$": "<rootDir>/src/__mocks__/shortid.js",
     "^../util/ComponentEx$": "<rootDir>/src/__mocks__/ComponentEx.js",
+    "^@/(.*)$": "<rootDir>/src/$1",
   },
   testRegex: "(/src/__tests__/.*)\\.(js|jsx|ts|tsx)$",
   testPathIgnorePatterns: ["/node_modules/", "/dist/", "/out/"],
