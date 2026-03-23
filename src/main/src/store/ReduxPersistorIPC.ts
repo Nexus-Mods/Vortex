@@ -231,10 +231,11 @@ class ReduxPersistorIPC {
 
       const err = unknownToError(unknownError);
 
-      // Handle disk full error
+      // Handle disk full error (covers LevelDB and DuckDB/OS-level patterns)
+      const diskFullPattern = /IO error: .*Append: cannot write|no space left on device|disk full|not enough space/i;
       if (
-        err.message.match(/IO error: .*Append: cannot write/) !== null ||
-        err.stack?.match(/IO error: .*Append: cannot write/) !== null
+        diskFullPattern.test(err.message) ||
+        (err.stack !== undefined && diskFullPattern.test(err.stack))
       ) {
         terminate(
           new Error(

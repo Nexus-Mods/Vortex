@@ -184,7 +184,9 @@ export async function pushStateToRenderer(
     return;
   }
 
-  await mainPersistor.applyDiffOperations(hive, operations);
+  mainPersistor.applyDiffOperations(hive, operations);
+  // Wait for the queue to drain so the data is on disk before notifying the renderer
+  await mainPersistor.finalizeWrite();
 
   for (const win of BrowserWindow.getAllWindows()) {
     if (!win.isDestroyed()) {

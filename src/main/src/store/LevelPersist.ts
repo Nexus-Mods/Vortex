@@ -1,7 +1,6 @@
 import type { IPersistor } from "@vortex/shared/state";
 
 import type { DuckDBConnection } from "@duckdb/node-api";
-import leveldown from "leveldown";
 
 import { DataInvalid, unknownToError } from "@vortex/shared/errors";
 
@@ -17,19 +16,6 @@ export class DatabaseLocked extends Error {
   }
 }
 
-function repairDB(dbPath: string): Promise<void> {
-  return new Promise<void>((resolve, reject) => {
-    log("warn", "repairing database", dbPath);
-    leveldown.repair(dbPath, (err: Error) => {
-      if (err !== null) {
-        reject(err);
-      } else {
-        resolve();
-      }
-    });
-  });
-}
-
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -40,20 +26,15 @@ class LevelPersist implements IPersistor {
     tries: number = 10,
     repair: boolean = false,
   ): Promise<LevelPersist> {
+    if (repair) {
+      // Repair is a LevelDB concept — not applicable to DuckDB/level_pivot
+      log("warn", "duckdb: repair requested but not supported, ignoring", { path: persistPath });
+    }
     try {
-      if (repair) {
-        await repairDB(persistPath);
-      }
-
       const singleton = DuckDBSingleton.getInstance();
       await singleton.initialize();
 
-      // Generate a unique alias for this database
-      const alias =
-        singleton.attachedDatabases.size === 0
-          ? "db"
-          : `db_${singleton.attachedDatabases.size}`;
-
+      const alias = singleton.nextAlias();
       const connection = await singleton.attachDatabase(persistPath, alias);
       return new LevelPersist(connection, alias);
     } catch (unknownErr) {
@@ -98,8 +79,8 @@ class LevelPersist implements IPersistor {
     await DuckDBSingleton.getInstance().detachDatabase(this.#mAlias);
   });
 
-  public setResetCallback(cb: () => PromiseLike<void>): void {
-    return undefined;
+  public setResetCallback(_cb: () => PromiseLike<void>): void {
+    // Not implemented for DuckDB backend — DuckDB handles durability internally
   }
 
   public getItem = this.#restackingFunc(
@@ -128,21 +109,19 @@ class LevelPersist implements IPersistor {
 
   /**
    * Get all unique hive names that have persisted data.
-   * Extracts the first segment of each key to find all hives.
+   * Extracts the first path segment (hive) from each key entirely in SQL.
    */
   public async getPersistedHives(): Promise<string[]> {
     const reader = await this.#mConnection.runAndReadAll(
-      `SELECT DISTINCT key FROM ${this.#mAlias}.kv`,
+      `SELECT DISTINCT
+         CASE WHEN INSTR(key, '${SEPARATOR}') > 0
+           THEN SUBSTR(key, 1, INSTR(key, '${SEPARATOR}') - 1)
+           ELSE key
+         END AS hive
+       FROM ${this.#mAlias}.kv`,
     );
     const rows = reader.getRows();
-    const hives = new Set<string>();
-    for (const row of rows) {
-      const key = row[0] as string;
-      const separatorIndex = key.indexOf(SEPARATOR);
-      const hive = separatorIndex >= 0 ? key.slice(0, separatorIndex) : key;
-      hives.add(hive);
-    }
-    return [...hives];
+    return rows.map((row) => row[0] as string);
   }
 
   public async getAllKVs(
@@ -169,7 +148,8 @@ class LevelPersist implements IPersistor {
   public setItem = this.#restackingFunc(
     async (statePath: string[], newState: string): Promise<void> => {
       await this.#mConnection.run(
-        `INSERT INTO ${this.#mAlias}.kv VALUES ($1, $2)`,
+        `INSERT INTO ${this.#mAlias}.kv VALUES ($1, $2)
+         ON CONFLICT (key) DO UPDATE SET value = excluded.value`,
         [statePath.join(SEPARATOR), newState],
       );
     },

@@ -11,6 +11,8 @@ class DuckDBSingleton {
 
   #mDuckDB: DuckDBInstance | undefined;
   #mInitialized: boolean = false;
+  #mInitPromise: Promise<void> | undefined;
+  #mNextAliasId: number = 0;
   #mAttachedDatabases: Map<string, string> = new Map(); // alias -> path
   #mConnections: DuckDBConnection[] = [];
 
@@ -27,30 +29,40 @@ class DuckDBSingleton {
    * Initialize the shared DuckDB instance, installing and loading level_pivot.
    * Safe to call multiple times -- only initializes once.
    */
-  public async initialize(): Promise<void> {
+  public initialize(): Promise<void> {
     if (this.#mInitialized) {
-      return;
+      return Promise.resolve();
     }
 
-    log("debug", "duckdb-singleton: creating shared instance");
-    this.#mDuckDB = await DuckDBInstance.create(":memory:", {
-      allow_unsigned_extensions: "true",
-    });
-
-    const connection = await this.#mDuckDB.connect();
-    try {
-      log("debug", "duckdb-singleton: installing level_pivot");
-      await connection.run(
-        "INSTALL level_pivot FROM 'https://halgari.github.io/duckdb-level-pivot/current_release'",
-      );
-      log("debug", "duckdb-singleton: loading level_pivot");
-      await connection.run("LOAD level_pivot");
-    } finally {
-      connection.closeSync();
+    // Guard against concurrent callers — return the in-flight promise if one exists
+    if (this.#mInitPromise !== undefined) {
+      return this.#mInitPromise;
     }
 
-    this.#mInitialized = true;
-    log("debug", "duckdb-singleton: initialized");
+    this.#mInitPromise = (async () => {
+      log("debug", "duckdb-singleton: creating shared instance");
+      this.#mDuckDB = await DuckDBInstance.create(":memory:", {
+        allow_unsigned_extensions: "true",
+      });
+
+      const connection = await this.#mDuckDB.connect();
+      try {
+        log("debug", "duckdb-singleton: installing level_pivot");
+        await connection.run(
+          "INSTALL level_pivot FROM 'https://halgari.github.io/duckdb-level-pivot/current_release'",
+        );
+        log("debug", "duckdb-singleton: loading level_pivot");
+        await connection.run("LOAD level_pivot");
+      } finally {
+        connection.closeSync();
+      }
+
+      this.#mInitialized = true;
+      this.#mInitPromise = undefined;
+      log("debug", "duckdb-singleton: initialized");
+    })();
+
+    return this.#mInitPromise;
   }
 
   /**
@@ -151,8 +163,19 @@ class DuckDBSingleton {
 
     this.#mAttachedDatabases.clear();
     this.#mInitialized = false;
+    this.#mInitPromise = undefined;
+    this.#mNextAliasId = 0;
     DuckDBSingleton.#sInstance = undefined;
     log("debug", "duckdb-singleton: closed");
+  }
+
+  /**
+   * Generate a unique, monotonically-increasing database alias.
+   * Safe to call concurrently — each call returns a distinct alias.
+   */
+  public nextAlias(): string {
+    const id = this.#mNextAliasId++;
+    return id === 0 ? "db" : `db_${id}`;
   }
 
   public get isInitialized(): boolean {
