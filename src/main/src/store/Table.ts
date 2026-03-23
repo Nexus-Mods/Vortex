@@ -1,3 +1,5 @@
+import type { DuckDBValue } from "@duckdb/node-api/lib/values/DuckDBValue";
+
 import { View, quoteIdentifier } from "./View";
 
 export class Table<T extends Record<string, unknown>> extends View<T> {
@@ -7,7 +9,7 @@ export class Table<T extends Record<string, unknown>> extends View<T> {
     const placeholders = keys.map((_, i) => `$${i + 1}`);
     const values = Object.values(row);
     const sql = `INSERT INTO ${this._tableName} (${quotedKeys.join(", ")}) VALUES (${placeholders.join(", ")})`;
-    await this._connection.run(sql, values);
+    await this._connection.run(sql, values as DuckDBValue[]);
   }
 
   async insertMany(rows: T[]): Promise<void> {
@@ -40,7 +42,7 @@ export class Table<T extends Record<string, unknown>> extends View<T> {
     if (whereClauses.length > 0) {
       sql += ` WHERE ${whereClauses.join(" AND ")}`;
     }
-    await this._connection.run(sql, values);
+    await this._connection.run(sql, values as DuckDBValue[]);
   }
 
   async delete(where: Partial<T>): Promise<void> {
@@ -54,6 +56,6 @@ export class Table<T extends Record<string, unknown>> extends View<T> {
     );
     const values = entries.map(([, v]) => v);
     const sql = `DELETE FROM ${this._tableName} WHERE ${clauses.join(" AND ")}`;
-    await this._connection.run(sql, values);
+    await this._connection.run(sql, values as DuckDBValue[]);
   }
 }

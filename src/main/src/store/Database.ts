@@ -1,3 +1,5 @@
+import type { DuckDBValue } from "@duckdb/node-api/lib/values/DuckDBValue";
+
 import type LevelPersist from "./LevelPersist";
 import type QueryInvalidator from "./QueryInvalidator";
 import { Table } from "./Table";
@@ -33,7 +35,7 @@ export class Database {
   }
 
   async query<T>(sql: string, params?: unknown[]): Promise<T[]> {
-    const reader = await this.#connection.runAndReadAll(sql, params);
+    const reader = await this.#connection.runAndReadAll(sql, params as DuckDBValue[]);
     return reader.getRowObjectsJson() as T[];
   }
 
