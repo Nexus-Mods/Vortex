@@ -780,6 +780,19 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
             />
           );
         },
+        isSortable: true,
+        isGroupable: (entry: IModEntry, t: types.TFunction) => {
+          const { collection } = this.props;
+          const id = entry.mod?.id ?? entry.rule?.reference?.id;
+
+          const installMode = util.getSafe(
+            collection,
+            ["attributes", "collection", "installMode", id],
+            "fresh",
+          );
+
+          return INSTALL_MODES[installMode];
+        },
       },
       {
         id: "instructions",
