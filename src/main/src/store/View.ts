@@ -1,4 +1,5 @@
 import type { DuckDBConnection } from "@duckdb/node-api";
+import type { DuckDBValue } from "@duckdb/node-api/lib/values/DuckDBValue";
 
 const VALID_IDENTIFIER = /^[a-zA-Z_][a-zA-Z0-9_.]*$/;
 
@@ -37,7 +38,7 @@ export class View<T extends Record<string, unknown>> {
     const clauses = entries.map(
       (_, i) => `${quoteIdentifier(entries[i][0])} = $${i + 1}`
     );
-    const values: unknown[] = entries.map(([, v]) => v as unknown);
+    const values = entries.map(([, v]) => v as DuckDBValue);
     const sql = `SELECT * FROM ${this._tableName} WHERE ${clauses.join(" AND ")}`;
 
     const reader = await this._connection.runAndReadAll(sql, values);
@@ -49,7 +50,7 @@ export class View<T extends Record<string, unknown>> {
     const clauses = entries.map(
       (_, i) => `${quoteIdentifier(entries[i][0])} = $${i + 1}`
     );
-    const values: unknown[] = entries.map(([, v]) => v as unknown);
+    const values = entries.map(([, v]) => v as DuckDBValue);
 
     let sql = `SELECT * FROM ${this._tableName}`;
     if (clauses.length > 0) {
