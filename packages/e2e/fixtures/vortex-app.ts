@@ -199,9 +199,14 @@ export const test = base.extend<VortexTestFixtures, VortexWorkerFixtures>({
     const mainWindow = await waitForMainWindow(sharedVortexApp);
     await mainWindow.waitForLoadState('domcontentloaded');
 
-    // Force all fonts to load before any test runs. Playwright's screenshot()
-    // waits for document.fonts.ready, which can hang indefinitely in headless
-    // mode if fonts haven't been triggered by a visible render.
+    // Wait for the app to actually render — domcontentloaded fires before
+    // React renders anything. On CI with multiple workers this can be slow.
+    await mainWindow.waitForFunction(
+      '(document.body?.innerText?.length ?? 0) > 0',
+      { timeout: 60_000 },
+    ).catch(() => {});
+
+    // Force all fonts to load before any test runs.
     await mainWindow.evaluate('document.fonts.ready').catch(() => {});
 
     await use(mainWindow);

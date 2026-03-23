@@ -69,6 +69,17 @@ jobs:
       - name: Install Playwright
         run: pnpm -F @vortex/e2e exec playwright install chromium
 
+      # Fix chrome-sandbox permissions for Electron on Linux
+      # The SUID sandbox requires the binary to be owned by root with mode 4755
+      - name: Fix Chrome sandbox permissions
+        if: runner.os == 'Linux'
+        run: |
+          SANDBOX_PATH=$(find node_modules -name chrome-sandbox -type f 2>/dev/null | head -1)
+          if [ -n "$SANDBOX_PATH" ]; then
+            sudo chown root:root "$SANDBOX_PATH"
+            sudo chmod 4755 "$SANDBOX_PATH"
+          fi
+
       - name: Run E2E tests (Windows)
         if: runner.os == 'Windows'
         run: pnpm e2e
