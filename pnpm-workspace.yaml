@@ -169,7 +169,9 @@ catalog:
   enzyme-adapter-react-16: ^1.15.1
   eslint: 9.39.1
   eslint-config-prettier: 10.1.8
+  eslint-import-resolver-typescript: ^4.4.4
   eslint-plugin-better-tailwindcss: ^4.0.2
+  eslint-plugin-import: ^2.32.0
   eslint-plugin-perfectionist: ^5.4.0
   esptk: git+https://github.com/Nexus-Mods/node-esptk#6b8900658d66438fe92ac55bc182a45404e8bf3f
   exe-version: git+https://github.com/Nexus-Mods/node-exe-version#eded60fc0a0f3c234e1d586d2eb9952401945406
@@ -264,6 +266,7 @@ catalog:
   ts-jest: ^29.2.5
   ts-loader: ^9.5.1
   ts-v-gen: ^1.0.1
+  tsconfig-paths-webpack-plugin: ^4.2.0
   tsdown: 0.21.0-beta.1
   turbowalk: git+https://github.com/Nexus-Mods/node-turbowalk#3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
   typescript: 5.9.3

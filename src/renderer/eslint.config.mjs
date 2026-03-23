@@ -1,9 +1,13 @@
+import * as path from "node:path";
+
 import eslintReact from "@eslint-react/eslint-plugin";
 import eslint from "@eslint/js";
 import stylistic from "@stylistic/eslint-plugin";
 import prettierConfig from "eslint-config-prettier";
 import betterTailwindcss from "eslint-plugin-better-tailwindcss";
 import perfectionist from "eslint-plugin-perfectionist";
+import importPlugin from "eslint-plugin-import";
+import { createTypeScriptImportResolver } from "eslint-import-resolver-typescript";
 import { defineConfig } from "eslint/config";
 import globals from "globals";
 import tseslint from "typescript-eslint";
@@ -38,6 +42,11 @@ export default defineConfig([
         projectService: true,
       },
     },
+    plugins: {
+      perfectionist,
+      "@stylistic": stylistic,
+      import: importPlugin,
+    },
     settings: {
       "react-x": {
         version: "16",
@@ -49,10 +58,12 @@ export default defineConfig([
           ["joinClasses", [{ match: "objectKeys" }]],
         ],
       },
-    },
-    plugins: {
-      perfectionist,
-      "@stylistic": stylistic,
+      "import/resolverNext": [
+        createTypeScriptImportResolver({
+          alwaysTryTypes: true,
+          project: path.resolve(import.meta.dirname, "tsconfig.json"),
+        }),
+      ],
     },
     rules: {
       // React
