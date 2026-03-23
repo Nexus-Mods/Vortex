@@ -7,7 +7,7 @@ export class Table<T extends Record<string, unknown>> extends View<T> {
     const keys = Object.keys(row);
     const quotedKeys = keys.map(quoteIdentifier);
     const placeholders = keys.map((_, i) => `$${i + 1}`);
-    const values = Object.values(row);
+    const values = Object.values(row) as DuckDBValue[];
     const sql = `INSERT INTO ${this._tableName} (${quotedKeys.join(", ")}) VALUES (${placeholders.join(", ")})`;
     await this._connection.run(sql, values);
   }
