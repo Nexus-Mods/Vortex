@@ -694,6 +694,27 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
             this.props.onAddRule(newRule);
           },
         },
+        isSortable: true,
+        isGroupable: (entry: IModEntry) => {
+          const { t, collection } = this.props;
+          const id = entry.mod?.id ?? entry.rule?.reference?.id;
+
+          if (
+            collection.attributes?.collection?.source?.[id]?.type === "bundle"
+          ) {
+            return t("Exact only");
+          }
+
+          if (entry.rule.reference.versionMatch === "*") {
+            return t("Latest");
+          } else if (
+            (entry.rule.reference.versionMatch || "").endsWith("+prefer")
+          ) {
+            return t("Prefer exact");
+          } else {
+            return t("Exact only");
+          }
+        },
       },
       {
         id: "install-type",
