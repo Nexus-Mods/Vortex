@@ -1,20 +1,14 @@
 {
   "$schema": "https://www.schemastore.org/tsconfig.json",
   "extends": "../../tsconfig.strict.json",
-  "include": [
-    "tests",
-    "fixtures",
-    "playwright.config.ts"
-  ],
+  "include": ["tests", "fixtures", "selectors", "helpers", "playwright.config.ts"],
   "compilerOptions": {
     "composite": true,
     "noEmit": true,
     "target": "esnext",
     "module": "esnext",
     "moduleResolution": "bundler",
-    "lib": [
-      "ESNext"
-    ],
-    "types": [],
+    "lib": ["ESNext"],
+    "types": []
   }
 }

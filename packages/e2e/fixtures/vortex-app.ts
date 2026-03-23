@@ -42,8 +42,19 @@ function buildElectronEnv(userDataDir: string): Record<string, string> {
     }
   }
   env.NODE_ENV = 'development';
-  env.ELECTRON_USERDATA = userDataDir;
-  env.ELECTRON_APPDATA = path.dirname(userDataDir);
+  // Fully isolate each worker — separate userData and appData so parallel
+  // instances share no data at all.
+  const appDataDir = path.join(userDataDir, 'appData');
+  const userDataSubDir = path.join(userDataDir, 'userData');
+  // Pre-create the app name subdirectory that Vortex expects for startup.json.
+  // The app name comes from src/main/package.json ("@vortex/main").
+  const appNameDir = path.join(appDataDir, '@vortex', 'main');
+  fs.mkdirSync(appNameDir, { recursive: true });
+  fs.mkdirSync(userDataSubDir, { recursive: true });
+  env.ELECTRON_USERDATA = userDataSubDir;
+  env.ELECTRON_APPDATA = appDataDir;
+  // Always set — disables single-instance lock so parallel workers can run
+  env.VORTEX_E2E = '1';
   // Hide windows unless debugging with PWDEBUG
   if (!process.env.PWDEBUG) {
     env.VORTEX_E2E_HEADLESS = '1';
@@ -72,21 +83,37 @@ async function waitForMainWindow(vortexApp: ElectronApplication): Promise<Page> 
   }
 
   // Wait for the main window via event + polling
-  return new Promise<Page>((resolve) => {
+  return new Promise<Page>((resolve, reject) => {
+    const cleanup = () => {
+      clearInterval(interval);
+      vortexApp.off('window', onWindow);
+      vortexApp.process().off('exit', onExit);
+    };
+
     const onWindow = (page: Page) => {
       if (isMainWindow(page)) {
-        vortexApp.off('window', onWindow);
-        clearInterval(interval);
+        cleanup();
         resolve(page);
       }
     };
+
+    // If the Electron process crashes/exits before the main window appears,
+    // fail fast instead of waiting for the full timeout.
+    const onExit = (code: number | null) => {
+      cleanup();
+      reject(new Error(
+        `Vortex process exited unexpectedly with code ${code} before the main window appeared. ` +
+        `Check the app logs for "App threw an error during load" or similar startup errors.`
+      ));
+    };
+
     vortexApp.on('window', onWindow);
+    vortexApp.process().on('exit', onExit);
 
     const interval = setInterval(() => {
       for (const win of vortexApp.windows()) {
         if (isMainWindow(win)) {
-          clearInterval(interval);
-          vortexApp.off('window', onWindow);
+          cleanup();
           resolve(win);
           return;
         }
@@ -95,10 +122,14 @@ async function waitForMainWindow(vortexApp: ElectronApplication): Promise<Page> 
 
     // CI runners can be slow — allow up to 2 minutes for the main window
     setTimeout(() => {
-      clearInterval(interval);
-      vortexApp.off('window', onWindow);
+      cleanup();
       const windows = vortexApp.windows();
-      resolve(windows[windows.length - 1]);
+      const lastWindow = windows[windows.length - 1];
+      if (lastWindow) {
+        resolve(lastWindow);
+      } else {
+        reject(new Error('Timed out waiting for the Vortex main window to appear.'));
+      }
     }, 120_000);
   });
 }
@@ -167,6 +198,12 @@ export const test = base.extend<VortexTestFixtures, VortexWorkerFixtures>({
   sharedVortexWindow: [async ({ sharedVortexApp }, use) => {
     const mainWindow = await waitForMainWindow(sharedVortexApp);
     await mainWindow.waitForLoadState('domcontentloaded');
+
+    // Force all fonts to load before any test runs. Playwright's screenshot()
+    // waits for document.fonts.ready, which can hang indefinitely in headless
+    // mode if fonts haven't been triggered by a visible render.
+    await mainWindow.evaluate('document.fonts.ready').catch(() => {});
+
     await use(mainWindow);
   }, { scope: 'worker', timeout: 180_000 }],
 
