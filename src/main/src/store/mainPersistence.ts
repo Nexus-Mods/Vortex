@@ -12,9 +12,11 @@
  * 3. Persists diffs to LevelDB
  * 4. Provides hydration data to renderer
  */
-import type { Serializable } from "@vortex/shared/ipc";
+import type { DiffOperation, Serializable } from "@vortex/shared/ipc";
+import type { PersistedHive } from "@vortex/shared/state";
 
 import { getErrorMessageOrDefault } from "@vortex/shared";
+import { BrowserWindow } from "electron";
 import * as path from "node:path";
 
 import type LevelPersist from "./LevelPersist";
@@ -160,6 +162,35 @@ export function registerHive(
  */
 export function getMainPersistor(): ReduxPersistorIPC | undefined {
   return mainPersistor;
+}
+
+/**
+ * Write diff operations to LevelDB and push the changes to all renderer windows.
+ *
+ * Use this (instead of writing to LevelPersist directly) whenever main-process code
+ * needs to update Redux-persisted state. The renderer applies the operations via
+ * __persist_push, which is excluded from persistDiffMiddleware so there is no
+ * feedback loop.
+ *
+ * @param hive - The persisted hive to update (e.g. "settings", "persistent")
+ * @param operations - Diff operations to apply
+ */
+export async function pushStateToRenderer(
+  hive: PersistedHive,
+  operations: DiffOperation[],
+): Promise<void> {
+  if (mainPersistor === undefined || levelPersist === undefined) {
+    log("warn", "pushStateToRenderer called before persistence is initialized");
+    return;
+  }
+
+  await mainPersistor.applyDiffOperations(hive, operations);
+
+  for (const win of BrowserWindow.getAllWindows()) {
+    if (!win.isDestroyed()) {
+      win.webContents.send("persist:push", hive, operations);
+    }
+  }
 }
 
 /**

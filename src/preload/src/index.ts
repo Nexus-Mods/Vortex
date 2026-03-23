@@ -59,6 +59,11 @@ try {
         betterIpcRenderer.on("persist:hydrate", (_, hive, data) =>
           callback(hive, data),
         ),
+
+      onPush: (callback) =>
+        betterIpcRenderer.on("persist:push", (_, hive, operations) =>
+          callback(hive, operations),
+        ),
     },
 
     extensions: {
