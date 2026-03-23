@@ -1,0 +1,93 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            required: true
+          - os: ubuntu-latest
+            required: false
+
+    runs-on: ${{ matrix.os }}
+    # Linux failures don't block PRs
+    continue-on-error: ${{ !matrix.required }}
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: "recursive"
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install volta, Node.js and Yarn
+        uses: volta-cli/action@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          cache: true
+
+      - name: Configure node-gyp for VS 2022
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          echo "npm_config_msvs_version=2022" >> $env:GITHUB_ENV
+          echo "GYP_MSVS_VERSION=2022" >> $env:GITHUB_ENV
+
+      - name: Install fontconfig
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libfontconfig1-dev
+
+      - name: Build FOMOD
+        run: pnpm run build:fomod
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build
+        run: pnpm run build:all
+
+      - name: Install Playwright
+        run: pnpm -F @vortex/e2e exec playwright install chromium
+
+      - name: Run E2E tests (Windows)
+        if: runner.os == 'Windows'
+        run: pnpm e2e
+
+      - name: Run E2E tests (Linux)
+        if: runner.os == 'Linux'
+        run: xvfb-run pnpm e2e
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-report-${{ matrix.os }}
+          retention-days: 14
+          path: packages/e2e/playwright-report/
+
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results-${{ matrix.os }}
+          retention-days: 7
+          path: packages/e2e/test-results/
