@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "commonjs",
-  "main": "out/main.mjs",
+  "main": "out/main.cjs",
   "scripts": {
     "start": "pnpm cross-env NODE_ENV=development pnpm electron .",
     "build": "pnpm cross-env NODE_ENV=development node ./build.mjs",

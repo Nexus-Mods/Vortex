@@ -295,9 +295,11 @@ class MainWindow {
   public show(maximized: boolean, startMinimized?: boolean) {
     this.mShown = true;
     if (this.mWindow) {
-      this.mWindow.show();
-      if (maximized) {
-        this.mWindow.maximize();
+      if (process.env.VORTEX_E2E_HEADLESS !== "1") {
+        this.mWindow.show();
+        if (maximized) {
+          this.mWindow.maximize();
+        }
       }
 
       if (startMinimized === true) {

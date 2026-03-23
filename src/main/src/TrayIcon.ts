@@ -63,6 +63,9 @@ class TrayIcon {
       if (window.isDestroyed()) {
         return;
       }
+      if (process.env.VORTEX_E2E_HEADLESS === "1") {
+        return;
+      }
       if (window.isVisible()) {
         window.hide();
       } else {

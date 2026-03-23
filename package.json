@@ -36,7 +36,10 @@
     "api": "pnpm -F @vortex/renderer run api:build && pnpm -F @vortex/renderer run api:docs && pnpm -F vortex-api run typecheck",
     "format": "pnpm prettier --write .",
     "format:check": "pnpm prettier --check .",
-    "format:quick": "pnpm pretty-quick"
+    "format:quick": "pnpm pretty-quick",
+    "e2e": "pnpm -F @vortex/e2e run test",
+    "e2e:headed": "pnpm -F @vortex/e2e run test:headed",
+    "e2e:debug": "pnpm -F @vortex/e2e run test:debug"
   },
   "devDependencies": {
     "@eslint-react/eslint-plugin": "catalog:",

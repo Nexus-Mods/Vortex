@@ -4,9 +4,9 @@ import { rolldown } from "rolldown";
 import { createConfig, mainOutputDirectory } from "../../rolldown.base.mjs";
 
 const INPUT = path.resolve(import.meta.dirname, "src", "main.ts");
-const OUTPUT = path.join(mainOutputDirectory, "main.mjs");
+const OUTPUT = path.join(mainOutputDirectory, "main.cjs");
 
-const config = createConfig(INPUT, OUTPUT, "esm", [], (id) => {
+const config = createConfig(INPUT, OUTPUT, "cjs", [], (id) => {
   if (id.startsWith("@vortex/shared")) return false;
 
   if (id.startsWith(".")) return false;
