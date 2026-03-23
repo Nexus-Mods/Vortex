@@ -1,13 +1,20 @@
 {
+  "$schema": "https://www.schemastore.org/tsconfig.json",
+  "extends": "../../tsconfig.strict.json",
+  "include": [
+    "tests",
+    "fixtures",
+    "playwright.config.ts"
+  ],
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "ESNext",
+    "composite": true,
+    "noEmit": true,
+    "target": "esnext",
+    "module": "esnext",
     "moduleResolution": "bundler",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "outDir": "dist",
-    "rootDir": "."
-  },
-  "include": ["tests/**/*.ts", "fixtures/**/*.ts", "playwright.config.ts"]
+    "lib": [
+      "ESNext"
+    ],
+    "types": [],
+  }
 }
