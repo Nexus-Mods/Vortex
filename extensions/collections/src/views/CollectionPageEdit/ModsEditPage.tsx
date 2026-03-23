@@ -758,7 +758,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
           "export it considerably.",
         edit: {},
         customRenderer: (entry: IModEntry) => {
-          const { t, collection } = this.props;
+          const { collection } = this.props;
           const id = entry.mod?.id ?? entry.rule?.reference?.id;
 
           const hasInstallerOptions =
