@@ -1,7 +1,7 @@
 import type { DuckDBConnection } from "@duckdb/node-api";
 import type { DuckDBValue } from "@duckdb/node-api/lib/values/DuckDBValue";
 
-import type { Serializable } from "../../shared/types/ipc";
+import type { Serializable } from "@vortex/shared/ipc";
 import { log } from "../logging";
 import type { ParsedQuery } from "./queryParser";
 

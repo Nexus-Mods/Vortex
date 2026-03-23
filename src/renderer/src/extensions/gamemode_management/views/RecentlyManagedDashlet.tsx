@@ -1,9 +1,8 @@
 import Dashlet from "../../../controls/Dashlet";
 import Placeholder from "../../../controls/EmptyPlaceholder";
-import Spinner from "../../../controls/Spinner";
 import { MainContext } from "../../../views/MainWindow";
-import { useQuery } from "../../../hooks/useQuery";
-import type { IState } from "../../../types/IState";
+import type { IProfile, IState } from "../../../types/IState";
+import { getSafe } from "../../../util/storeHelper";
 
 import { activeGameId } from "../../profile_management/selectors";
 
@@ -29,24 +28,31 @@ function RecentlyManagedDashlet() {
     IState,
     { [id: string]: IDiscoveryResult }
   >((state) => state.settings.gameMode.discovered);
-
-  const {
-    data: recentGames,
-    loading,
-    error,
-  } = useQuery("recently_managed_games", { current_game_id: gameMode ?? "" });
+  const lastActiveProfile = useSelector<IState, { [gameId: string]: string }>(
+    (state) => state.settings.profiles.lastActiveProfile,
+  );
+  const profiles = useSelector<IState, { [id: string]: IProfile }>(
+    (state) => state.persistent.profiles,
+  );
 
   const games = React.useMemo(() => {
-    if (recentGames === undefined) {
-      return [];
-    }
-    return recentGames
-      .map((row) => knownGames.find((g) => g.id === row.game_id))
-      .filter(
-        (game): game is IGameStored =>
-          game !== undefined && discoveredGames[game.id]?.path !== undefined,
+    const lastManaged = (id: string) =>
+      getSafe(
+        profiles,
+        [getSafe(lastActiveProfile, [id], undefined), "lastActivated"],
+        0,
       );
-  }, [recentGames, knownGames, discoveredGames]);
+
+    return knownGames
+      .filter(
+        (game) =>
+          game.id !== gameMode &&
+          lastManaged(game.id) !== 0 &&
+          getSafe(discoveredGames, [game.id, "path"], undefined) !== undefined,
+      )
+      .sort((lhs, rhs) => lastManaged(rhs.id) - lastManaged(lhs.id))
+      .slice(0, 3);
+  }, [knownGames, gameMode, discoveredGames, lastActiveProfile, profiles]);
 
   const analyticsTrack = React.useCallback(() => {
     api?.events.emit("analytics-track-click-event", "Dashboard", "Recent game");
@@ -68,17 +74,7 @@ function RecentlyManagedDashlet() {
   );
 
   let content: JSX.Element;
-  if (loading) {
-    content = <Spinner />;
-  } else if (error !== undefined) {
-    content = (
-      <Placeholder
-        icon="feedback-warning"
-        text={t("Failed to load recently managed games")}
-        fill
-      />
-    );
-  } else if (games.length === 0) {
+  if (games.length === 0) {
     content = (
       <Placeholder
         icon="game"

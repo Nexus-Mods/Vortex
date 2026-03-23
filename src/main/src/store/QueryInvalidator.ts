@@ -1,5 +1,3 @@
-import { BrowserWindow } from "electron";
-
 import { log } from "../logging";
 import type QueryRegistry from "./QueryRegistry";
 import type QueryWatcher from "./QueryWatcher";
@@ -70,17 +68,10 @@ class QueryInvalidator {
       return;
     }
 
-    log("debug", "query-invalidator: notifying renderer", {
+    log("debug", "query-invalidator: queries invalidated", {
       tables,
       queries: affectedQueries,
     });
-
-    // Send to all renderer windows
-    for (const window of BrowserWindow.getAllWindows()) {
-      if (!window.isDestroyed() && window.webContents !== undefined) {
-        window.webContents.send("query:invalidated", affectedQueries);
-      }
-    }
 
     // Notify watcher (fire-and-forget)
     this.#mWatcher?.onQueriesInvalidated(affectedQueries).catch((err) => {

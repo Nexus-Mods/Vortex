@@ -26,7 +26,6 @@ import QueryRegistry from "./QueryRegistry";
 import QueryWatcher from "./QueryWatcher";
 import { setupPersistenceIPC } from "./persistenceIPC";
 import { parseAllQueries } from "./queryParser";
-import { setupQueryIPC } from "./queryIPC";
 import ReduxPersistorIPC from "./ReduxPersistorIPC";
 import SubPersistor from "./SubPersistor";
 import { Database } from "./Database";
@@ -128,9 +127,6 @@ async function initQuerySystem(levelPersistor: LevelPersist): Promise<void> {
   // Create watcher and wire to invalidator
   const queryWatcher = new QueryWatcher(queryRegistry);
   queryInvalidator.setWatcher(queryWatcher);
-
-  // Set up IPC handlers
-  setupQueryIPC(queryRegistry);
 
   log("info", "Query system initialized", {
     queryCount: queryRegistry.getQueryNames().length,
