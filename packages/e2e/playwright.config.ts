@@ -8,8 +8,11 @@ export default defineConfig({
   },
   retries: 1,
   // Each worker launches its own Electron instance with isolated user data.
-  // CI runners have fewer resources — use 2 workers there, 4 locally.
-  workers: process.env.CI ? 2 : 4,
+  // CI: Windows runners are slower (1 worker), Linux can handle 2.
+  // Local: 4 workers.
+  workers: process.env.CI
+    ? process.platform === 'win32' ? 1 : 2
+    : 4,
   reporter: [
     ["list"],
     ["html", { open: "never" }],

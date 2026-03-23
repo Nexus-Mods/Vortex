@@ -204,10 +204,7 @@ export const test = base.extend<VortexTestFixtures, VortexWorkerFixtures>({
     await mainWindow.waitForFunction(
       '(document.body?.innerText?.length ?? 0) > 0',
       { timeout: 60_000 },
-    ).catch(() => {});
-
-    // Force all fonts to load before any test runs.
-    await mainWindow.evaluate('document.fonts.ready').catch(() => {});
+    );
 
     await use(mainWindow);
   }, { scope: 'worker', timeout: 180_000 }],
