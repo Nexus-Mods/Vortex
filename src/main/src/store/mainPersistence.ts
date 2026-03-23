@@ -27,6 +27,7 @@ import QueryInvalidator from "./QueryInvalidator";
 import QueryRegistry from "./QueryRegistry";
 import QueryWatcher from "./QueryWatcher";
 import { setupPersistenceIPC } from "./persistenceIPC";
+import type { ParsedQuery } from "./queryParser";
 import { parseAllQueries } from "./queryParser";
 import ReduxPersistorIPC from "./ReduxPersistorIPC";
 import SubPersistor from "./SubPersistor";
@@ -99,7 +100,7 @@ async function initQuerySystem(levelPersistor: LevelPersist): Promise<void> {
 
   // Parse all SQL query files
   const queriesDir = path.resolve(__dirname, "..", "..", "queries");
-  let queries;
+  let queries: ParsedQuery[];
   try {
     queries = parseAllQueries(queriesDir);
   } catch (err) {

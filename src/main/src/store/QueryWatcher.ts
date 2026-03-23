@@ -79,7 +79,7 @@ class QueryWatcher {
   public async onQueriesInvalidated(affectedQueries: string[]): Promise<void> {
     const affected = new Set(affectedQueries);
 
-    for (const [id, entry] of this.#mWatches) {
+    for (const [, entry] of this.#mWatches) {
       if (!affected.has(entry.queryName)) {
         continue;
       }

@@ -195,12 +195,14 @@ class ReduxPersistorIPC {
     persistor: IPersistor,
     operations: DiffOperation[],
   ): Promise<void> {
+    const levelPersist = this.#mLevelPersist;
+    const invalidator = this.#mInvalidator;
     const useTransaction =
-      this.#mLevelPersist !== undefined && this.#mInvalidator !== undefined;
+      levelPersist !== undefined && invalidator !== undefined;
 
     try {
       if (useTransaction) {
-        await this.#mLevelPersist!.beginTransaction();
+        await levelPersist.beginTransaction();
       }
 
       // Process operations sequentially to maintain order
@@ -210,18 +212,18 @@ class ReduxPersistorIPC {
 
       if (useTransaction) {
         // Check dirty tables BEFORE commit (while transaction is active)
-        const dirtyTables = await this.#mLevelPersist!.getDirtyTables();
-        await this.#mLevelPersist!.commitTransaction();
+        const dirtyTables = await levelPersist.getDirtyTables();
+        await levelPersist.commitTransaction();
 
         // Notify after commit
         if (dirtyTables.length > 0) {
-          this.#mInvalidator!.notifyDirtyTables(dirtyTables);
+          invalidator.notifyDirtyTables(dirtyTables);
         }
       }
     } catch (unknownError) {
       if (useTransaction) {
         try {
-          await this.#mLevelPersist!.rollbackTransaction();
+          await levelPersist.rollbackTransaction();
         } catch (rollbackErr) {
           log("warn", "Failed to rollback transaction", {
             error: unknownToError(rollbackErr).message,

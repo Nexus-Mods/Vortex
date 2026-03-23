@@ -142,7 +142,7 @@ class LevelPersist implements IPersistor {
     return rows.map((row) => ({
       key: (row[0] as string).split(SEPARATOR),
       value: row[1] as string,
-    }));
+    })) as Array<{ key: string[]; value: string }>;
   }
 
   public setItem = this.#restackingFunc(
@@ -203,6 +203,7 @@ class LevelPersist implements IPersistor {
     }));
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   #restackingFunc<T extends (...args: any[]) => Promise<any>>(
     cb: T,
   ): (...args: Parameters<T>) => ReturnType<T> {

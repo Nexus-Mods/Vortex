@@ -33,9 +33,9 @@ export class Table<T extends Record<string, unknown>> extends View<T> {
     const whereClauses = whereEntries.map(
       ([key]) => `${quoteIdentifier(key)} = $${paramIndex++}`
     );
-    const values = [
-      ...setEntries.map(([, v]) => v),
-      ...whereEntries.map(([, v]) => v),
+    const values: unknown[] = [
+      ...setEntries.map(([, v]) => v as unknown),
+      ...whereEntries.map(([, v]) => v as unknown),
     ];
 
     let sql = `UPDATE ${this._tableName} SET ${setClauses.join(", ")}`;
@@ -54,7 +54,7 @@ export class Table<T extends Record<string, unknown>> extends View<T> {
     const clauses = entries.map(
       (_, i) => `${quoteIdentifier(entries[i][0])} = $${i + 1}`
     );
-    const values = entries.map(([, v]) => v);
+    const values: unknown[] = entries.map(([, v]) => v as unknown);
     const sql = `DELETE FROM ${this._tableName} WHERE ${clauses.join(" AND ")}`;
     await this._connection.run(sql, values as DuckDBValue[]);
   }
