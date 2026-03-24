@@ -35,7 +35,7 @@ function CopyClipboardInput(props: ICopyClipboardInputProps) {
   return (
     <FormGroup>
       <InputGroup>
-        <FormControl type="text" value={props.inputValue} readOnly />
+        <FormControl type="text" value={props.inputValue ?? ""} readOnly />
         <InputGroup.Addon>
           <IconButton
             className="btn-embed"
