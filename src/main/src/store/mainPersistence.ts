@@ -33,6 +33,7 @@ import ReduxPersistorIPC from "./ReduxPersistorIPC";
 import SubPersistor from "./SubPersistor";
 import { Database } from "./Database";
 import { getVortexPath } from "../getVortexPath";
+import { betterIpcMain } from "../ipc";
 
 let mainPersistor: ReduxPersistorIPC | undefined;
 let levelPersist: LevelPersist | undefined;
@@ -192,7 +193,7 @@ export async function pushStateToRenderer(
 
   for (const win of BrowserWindow.getAllWindows()) {
     if (!win.isDestroyed()) {
-      win.webContents.send("persist:push", hive, operations);
+      betterIpcMain.send(win.webContents, "persist:push", hive, operations);
     }
   }
 }
