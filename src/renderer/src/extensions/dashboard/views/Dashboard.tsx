@@ -247,6 +247,11 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
     const { dashletSettings } = this.props;
     const dashId = evt.currentTarget.getAttribute("data-id");
     const old = dashletSettings[dashId]?.enabled !== false;
+    if (old) {
+      // Clear pending layout save so it can't restore a stale position
+      // for this dashlet after the reducer has already removed it.
+      this.mLayoutDebouncer.clear();
+    }
     this.props.onSetDashletEnabled(dashId, !old);
   };
 
@@ -344,6 +349,7 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
   };
 
   private dismissDashlet = (dashletId: string) => {
+    this.mLayoutDebouncer.clear();
     this.props.onSetDashletEnabled(dashletId, false);
   };
 }
