@@ -1,5 +1,4 @@
-import type { DuckDBConnection } from "@duckdb/node-api";
-import type { DuckDBValue } from "@duckdb/node-api/lib/values/DuckDBValue";
+import type { DuckDBConnection, DuckDBValue } from "@duckdb/node-api";
 
 import type { Serializable } from "@vortex/shared/ipc";
 import { log } from "../logging";

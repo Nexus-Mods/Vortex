@@ -1,4 +1,4 @@
-import type { DuckDBValue } from "@duckdb/node-api/lib/values/DuckDBValue";
+import type { DuckDBValue } from "@duckdb/node-api";
 
 import type LevelPersist from "./LevelPersist";
 import type QueryInvalidator from "./QueryInvalidator";
@@ -6,7 +6,9 @@ import { Table } from "./Table";
 import { View } from "./View";
 
 export interface TransactionContext {
-  createTable<T extends Record<string, unknown>>(sqlTableName: string): Table<T>;
+  createTable<T extends Record<string, unknown>>(
+    sqlTableName: string,
+  ): Table<T>;
   createView<T extends Record<string, unknown>>(sqlTableName: string): View<T>;
 }
 
@@ -26,7 +28,9 @@ export class Database {
     return this.#levelPersist.connection;
   }
 
-  createTable<T extends Record<string, unknown>>(sqlTableName: string): Table<T> {
+  createTable<T extends Record<string, unknown>>(
+    sqlTableName: string,
+  ): Table<T> {
     return new Table<T>(this.#connection, sqlTableName);
   }
 
@@ -35,11 +39,16 @@ export class Database {
   }
 
   async query<T>(sql: string, params?: unknown[]): Promise<T[]> {
-    const reader = await this.#connection.runAndReadAll(sql, params as DuckDBValue[]);
+    const reader = await this.#connection.runAndReadAll(
+      sql,
+      params as DuckDBValue[],
+    );
     return reader.getRowObjectsJson() as T[];
   }
 
-  async transaction(fn: (tx: TransactionContext) => Promise<void>): Promise<void> {
+  async transaction(
+    fn: (tx: TransactionContext) => Promise<void>,
+  ): Promise<void> {
     await this.#levelPersist.beginTransaction();
     try {
       const tx: TransactionContext = {
@@ -61,5 +70,4 @@ export class Database {
       throw err;
     }
   }
-
 }

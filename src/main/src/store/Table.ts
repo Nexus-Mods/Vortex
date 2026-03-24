@@ -1,4 +1,4 @@
-import type { DuckDBValue } from "@duckdb/node-api/lib/values/DuckDBValue";
+import type { DuckDBValue } from "@duckdb/node-api";
 
 import { View, quoteIdentifier } from "./View";
 
@@ -28,10 +28,10 @@ export class Table<T extends Record<string, unknown>> extends View<T> {
     let paramIndex = 1;
 
     const setClauses = setEntries.map(
-      ([key]) => `${quoteIdentifier(key)} = $${paramIndex++}`
+      ([key]) => `${quoteIdentifier(key)} = $${paramIndex++}`,
     );
     const whereClauses = whereEntries.map(
-      ([key]) => `${quoteIdentifier(key)} = $${paramIndex++}`
+      ([key]) => `${quoteIdentifier(key)} = $${paramIndex++}`,
     );
     const values = [
       ...setEntries.map(([, v]) => v as DuckDBValue),
@@ -52,7 +52,7 @@ export class Table<T extends Record<string, unknown>> extends View<T> {
     }
 
     const clauses = entries.map(
-      (_, i) => `${quoteIdentifier(entries[i][0])} = $${i + 1}`
+      (_, i) => `${quoteIdentifier(entries[i][0])} = $${i + 1}`,
     );
     const values = entries.map(([, v]) => v as DuckDBValue);
     const sql = `DELETE FROM ${this._tableName} WHERE ${clauses.join(" AND ")}`;
