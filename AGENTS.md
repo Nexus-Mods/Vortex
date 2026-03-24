@@ -25,6 +25,7 @@
 
 - `pnpm run test` - Run Jest tests
 - `pnpm run lint` - Run ESLint
+- If the touched area has a `tsconfig.strict.json`, run its strict typecheck before replying
 
 ### Packaging
 
@@ -61,6 +62,7 @@ Extensions add functionality: game support, UI tools, service integrations.
 
 - Game extensions live in `extensions/games/`
 - Use `pnpm run subprojects:out` to build bundled extensions
+- When touching `extensions/games/`, run the touched extension build before replying, it may include a type check with `tsconfig.strict.json`.
 
 ## Native Modules
 
