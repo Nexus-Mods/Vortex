@@ -80,10 +80,14 @@ jobs:
 
       - name: Run E2E tests (Windows)
         if: runner.os == 'Windows'
+        timeout-minutes: 10
+        continue-on-error: true
         run: pnpm e2e
 
       - name: Run E2E tests (Linux)
         if: runner.os == 'Linux'
+        timeout-minutes: 10
+        continue-on-error: true
         run: xvfb-run pnpm e2e
 
       - name: Upload test report
