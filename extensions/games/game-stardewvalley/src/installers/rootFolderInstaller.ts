@@ -1,7 +1,6 @@
 /**
  * Installs Stardew archives that deploy directly into the game root.
  */
-import Bluebird from "bluebird";
 import path from "path";
 
 import type { types } from "vortex-api";
@@ -13,18 +12,18 @@ import { classifyArchive, makeInstallerTestResult } from "./archiveClassifier";
 export function testRootFolder(
   files: string[],
   gameId: string,
-): Bluebird<IInstallerTestResult> {
+): PromiseLike<IInstallerTestResult> {
   const archiveInfo = classifyArchive(files, gameId);
   const supported = archiveInfo.isGameArchive && archiveInfo.hasContentFolder;
 
-  return Bluebird.resolve(makeInstallerTestResult(supported));
+  return Promise.resolve(makeInstallerTestResult(supported));
 }
 
 /** Generates copy instructions that place archive files into the game root. */
 export function installRootFolder(
   files: string[],
   destinationPath: string,
-): Bluebird<types.IInstallResult> {
+): PromiseLike<types.IInstallResult> {
   // Deploy "Content/" and sibling folders into the game root.
   //  i.e. SomeMod.7z
   //  Will be deployed     => ../SomeMod/Content/
@@ -34,7 +33,7 @@ export function installRootFolder(
     path.join("fakeDir", file).endsWith(PTRN_CONTENT),
   );
   if (contentFile === undefined) {
-    return Bluebird.resolve<types.IInstallResult>({ instructions: [] });
+    return Promise.resolve<types.IInstallResult>({ instructions: [] });
   }
   const idx = contentFile.indexOf(PTRN_CONTENT) + 1;
   const rootDir = path.basename(contentFile.substring(0, idx));
@@ -52,7 +51,7 @@ export function installRootFolder(
     };
   });
 
-  return Bluebird.resolve<types.IInstallResult>({ instructions });
+  return Promise.resolve<types.IInstallResult>({ instructions });
 }
 
 const PTRN_CONTENT = path.sep + "Content" + path.sep;

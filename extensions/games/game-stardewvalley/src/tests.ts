@@ -20,13 +20,13 @@ export async function testSMAPIOutdated(
   const state = api.getState();
   const activeGameId = selectors.activeGameId(state);
   if (activeGameId !== GAME_ID) {
-    return Promise.resolve(undefined as any);
+    return undefined as any;
   }
 
   let currentSMAPIVersion = findSMAPIMod(api)?.attributes?.version;
   if (currentSMAPIVersion === undefined) {
     // SMAPI isn't installed or enabled.
-    return Promise.resolve(undefined as any);
+    return undefined as any;
   }
 
   const isSmapiOutdated = async () => {
@@ -52,13 +52,13 @@ export async function testSMAPIOutdated(
         incompatibleModIds.push(id);
       }
     }
-    return Promise.resolve(incompatibleModIds.length > 0);
+    return incompatibleModIds.length > 0;
   };
 
   const outdated = await isSmapiOutdated();
   const t = api.translate;
   return outdated
-    ? (Promise.resolve({
+    ? ({
         description: {
           short: t("SMAPI update required"),
           long: t(
@@ -69,6 +69,6 @@ export async function testSMAPIOutdated(
         automaticFix: () => downloadAndInstallSMAPI(api, true),
         onRecheck: () => isSmapiOutdated(),
         severity: "warning" as types.ProblemSeverity,
-      }) as any)
-    : Promise.resolve(undefined as any);
+      } as any)
+    : (undefined as any);
 }

@@ -1,8 +1,7 @@
 /**
  * Registers runtime event handlers used by the Stardew Valley extension.
  */
-import Bluebird from "bluebird";
-import type { IQuery } from "modmeta-db";
+import type { IQuery, IServer } from "modmeta-db";
 import path from "path";
 import { getErrorMessageOrDefault } from "@vortex/shared";
 
@@ -14,6 +13,8 @@ import { GAME_ID } from "../common";
 import { onAddedFiles, onWillEnableMods } from "../configMod";
 import { SMAPIProxy } from "../smapi/proxy";
 import { findSMAPIMod } from "../smapi/selectors";
+
+type LoopbackCB = NonNullable<IServer["loopbackCB"]>;
 
 /**
  * Registers long-lived runtime handlers that should run once the extension is
@@ -37,6 +38,16 @@ export function registerRuntimeEvents(context: types.IExtensionContext) {
     }
 
     const proxy = new SMAPIProxy(context.api);
+    const loopbackCB: LoopbackCB = ((query: IQuery) =>
+      proxy.find(query).catch((err) => {
+        log(
+          "error",
+          "failed to look up smapi meta info",
+          getErrorMessageOrDefault(err),
+        );
+        return [];
+      })) as unknown as LoopbackCB;
+
     context.api.setStylesheet(
       "sdv",
       path.join(__dirname, "ui", "sdvstyle.scss"),
@@ -44,16 +55,7 @@ export function registerRuntimeEvents(context: types.IExtensionContext) {
 
     context.api.addMetaServer("smapi.io", {
       url: "",
-      loopbackCB: (query: IQuery) => {
-        return Bluebird.resolve(proxy.find(query)).catch((err) => {
-          log(
-            "error",
-            "failed to look up smapi meta info",
-            getErrorMessageOrDefault(err),
-          );
-          return Bluebird.resolve([]);
-        });
-      },
+      loopbackCB,
       cacheDurationSec: 86400,
       priority: 25,
     });
@@ -80,7 +82,7 @@ export function registerRuntimeEvents(context: types.IExtensionContext) {
       const state = context.api.getState();
       const profile = selectors.profileById(state, profileId);
       if (profile?.gameId !== GAME_ID) {
-        return Promise.resolve();
+        return;
       }
 
       const smapiMod = findSMAPIMod(context.api);
@@ -92,15 +94,13 @@ export function registerRuntimeEvents(context: types.IExtensionContext) {
       if (smapiMod && primaryTool === undefined) {
         store.dispatch(actions.setPrimaryTool(GAME_ID, "smapi"));
       }
-
-      return Promise.resolve();
     });
 
     context.api.onAsync("did-purge", async (profileId) => {
       const state = context.api.getState();
       const profile = selectors.profileById(state, profileId);
       if (profile?.gameId !== GAME_ID) {
-        return Promise.resolve();
+        return;
       }
 
       const smapiMod = findSMAPIMod(context.api);
@@ -112,8 +112,6 @@ export function registerRuntimeEvents(context: types.IExtensionContext) {
       if (smapiMod && primaryTool === "smapi") {
         store.dispatch(actions.setPrimaryTool(GAME_ID, undefined as any));
       }
-
-      return Promise.resolve();
     });
 
     context.api.events.on(

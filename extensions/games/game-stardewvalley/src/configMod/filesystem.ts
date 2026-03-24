@@ -25,7 +25,6 @@ export async function walkPath(
       dirPath,
       (entries: IEntry[]) => {
         walkResults.push(...entries);
-        return Promise.resolve() as any;
       },
       walkOptions,
     );
@@ -45,14 +44,10 @@ export async function deleteFolder(
   dirPath: string,
   walkOptions?: IWalkOptions,
 ): Promise<void> {
-  try {
-    const entries = await walkPath(dirPath, walkOptions);
-    entries.sort((a, b) => b.filePath.length - a.filePath.length);
-    for (const entry of entries) {
-      await fs.removeAsync(entry.filePath);
-    }
-    await fs.rmdirAsync(dirPath);
-  } catch (err) {
-    return Promise.reject(err);
+  const entries = await walkPath(dirPath, walkOptions);
+  entries.sort((a, b) => b.filePath.length - a.filePath.length);
+  for (const entry of entries) {
+    await fs.removeAsync(entry.filePath);
   }
+  await fs.rmdirAsync(dirPath);
 }

@@ -1,7 +1,6 @@
 /**
  * Registers Stardew Valley mod type matchers and deployment roots.
  */
-import Bluebird from "bluebird";
 import path from "path";
 
 import type { types } from "vortex-api";
@@ -19,6 +18,8 @@ import {
 import { isSMAPIModType } from "../installers/smapi";
 import { isSdvRootFolderModType } from "../modtypes/sdvRootFolderMatcher";
 
+type ModTypeTest = Parameters<types.IExtensionContext["registerModType"]>[4];
+
 /**
  * Registers Stardew Valley mod types.
  *
@@ -32,12 +33,18 @@ export function registerModTypes(
   getGameInstallPath: () => string,
   getSMAPIPath: (game: types.IGame) => string,
 ): void {
+  const isSMAPIModTypeBoundary = isSMAPIModType as unknown as ModTypeTest;
+  const isConfigModTypeBoundary = (() =>
+    Promise.resolve(false)) as unknown as ModTypeTest;
+  const isSdvRootFolderModTypeBoundary =
+    isSdvRootFolderModType as unknown as ModTypeTest;
+
   context.registerModType(
     MOD_TYPE_SMAPI,
     MOD_TYPE_PRIORITY_SMAPI,
     (gameId) => gameId === GAME_ID,
     getSMAPIPath,
-    isSMAPIModType,
+    isSMAPIModTypeBoundary,
   );
 
   context.registerModType(
@@ -45,7 +52,7 @@ export function registerModTypes(
     MOD_TYPE_PRIORITY_CONFIG,
     (gameId) => gameId === GAME_ID,
     () => path.join(getGameInstallPath(), MODS_REL_PATH),
-    () => Bluebird.resolve(false),
+    isConfigModTypeBoundary,
   );
 
   context.registerModType(
@@ -53,6 +60,6 @@ export function registerModTypes(
     MOD_TYPE_PRIORITY_ROOT,
     (gameId) => gameId === GAME_ID,
     () => getGameInstallPath(),
-    isSdvRootFolderModType,
+    isSdvRootFolderModTypeBoundary,
   );
 }

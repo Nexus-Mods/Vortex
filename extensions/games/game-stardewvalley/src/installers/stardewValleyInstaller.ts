@@ -1,7 +1,6 @@
 /**
  * Detects and installs manifest-based Stardew Valley mod archives.
  */
-import Bluebird from "bluebird";
 import path from "path";
 import { log } from "vortex-api";
 import type { types } from "vortex-api";
@@ -19,13 +18,13 @@ import type {
 export function testSupported(
   files: string[],
   gameId: string,
-): Bluebird<IInstallerTestResult> {
+): PromiseLike<IInstallerTestResult> {
   const archiveInfo = classifyArchive(files, gameId);
   const supported =
     archiveInfo.isGameArchive &&
     archiveInfo.hasManifest &&
     !archiveInfo.hasContentFolder;
-  return Bluebird.resolve(makeInstallerTestResult(supported));
+  return Promise.resolve(makeInstallerTestResult(supported));
 }
 
 /** Builds install instructions for one or more valid manifest-based SDV mods. */
@@ -101,79 +100,79 @@ export async function installStardewValley(
     );
   }
 
-  return Bluebird.map(mods, (mod) => {
-    // TODO: we might get here with a mod that has a manifest.json file but wasn't intended for Stardew Valley, all
-    //  thunderstore mods will contain a manifest.json file
-    const modName =
-      mod.rootFolder !== "."
-        ? mod.rootFolder
-        : (mod.manifest.Name ?? mod.rootFolder);
+  const data = await Promise.all(
+    mods.map((mod) => {
+      // TODO: we might get here with a mod that has a manifest.json file but wasn't intended for Stardew Valley, all
+      //  thunderstore mods will contain a manifest.json file
+      const modName =
+        mod.rootFolder !== "."
+          ? mod.rootFolder
+          : (mod.manifest.Name ?? mod.rootFolder);
 
-    if (modName === undefined) {
-      return [];
-    }
-
-    const dependencies = mod.manifest.Dependencies || [];
-
-    const instructions: types.IInstruction[] = [];
-
-    for (const file of mod.modFiles) {
-      const destination = path.join(modName, file.substr(mod.manifestIndex));
-      instructions.push({
-        type: "copy",
-        source: file,
-        destination: destination,
-      });
-    }
-
-    const addRuleForDependency = (dep: ISDVDependency) => {
-      if (
-        dep.UniqueID === undefined ||
-        dep.UniqueID.toLowerCase() === "yourname.yourotherspacksandmods"
-      ) {
-        return;
+      if (modName === undefined) {
+        return [];
       }
 
-      const versionMatch =
-        dep.MinimumVersion !== undefined ? `>=${dep.MinimumVersion}` : "*";
-      const rule = {
-        // treating all dependencies as recommendations because the dependency information
-        // provided by some mod authors is a bit hit-and-miss and Vortex fairly aggressively
-        // enforces requirements
-        // type: (dep.IsRequired ?? true) ? 'requires' : 'recommends',
-        type: "recommends",
-        reference: {
-          logicalFileName: dep.UniqueID.toLowerCase(),
-          versionMatch,
-        } as any,
-        extra: {
-          onlyIfFulfillable: true,
-          automatic: true,
-        },
-      } as any;
-      instructions.push({
-        type: "rule",
-        rule,
-      });
-    };
+      const instructions: types.IInstruction[] = [];
 
-    /*
+      for (const file of mod.modFiles) {
+        const destination = path.join(modName, file.substr(mod.manifestIndex));
+        instructions.push({
+          type: "copy",
+          source: file,
+          destination: destination,
+        });
+      }
+
+      const addRuleForDependency = (dep: ISDVDependency) => {
+        if (
+          dep.UniqueID === undefined ||
+          dep.UniqueID.toLowerCase() === "yourname.yourotherspacksandmods"
+        ) {
+          return;
+        }
+
+        const versionMatch =
+          dep.MinimumVersion !== undefined ? `>=${dep.MinimumVersion}` : "*";
+        const rule = {
+          // treating all dependencies as recommendations because the dependency information
+          // provided by some mod authors is a bit hit-and-miss and Vortex fairly aggressively
+          // enforces requirements
+          // type: (dep.IsRequired ?? true) ? 'requires' : 'recommends',
+          type: "recommends",
+          reference: {
+            logicalFileName: dep.UniqueID.toLowerCase(),
+            versionMatch,
+          } as any,
+          extra: {
+            onlyIfFulfillable: true,
+            automatic: true,
+          },
+        } as any;
+        instructions.push({
+          type: "rule",
+          rule,
+        });
+      };
+
+      /*
     if (api.getState().settings['SDV']?.useRecommendations ?? false) {
       for (const dep of dependencies) {
         addRuleForDependency(dep);
       }
-      if (mod.manifest.ContentPackFor !== undefined) {
-        addRuleForDependency(mod.manifest.ContentPackFor);
-      }
-    }*/
-    return instructions;
-  }).then((data: types.IInstruction[][]) => {
-    const instructions = data.reduce<types.IInstruction[]>(
-      (accum, iter) => accum.concat(iter),
-      [],
-    );
-    return Promise.resolve({ instructions });
-  });
+    if (mod.manifest.ContentPackFor !== undefined) {
+      addRuleForDependency(mod.manifest.ContentPackFor);
+    }
+  }*/
+      return instructions;
+    }),
+  );
+
+  const instructions = data.reduce<types.IInstruction[]>(
+    (accum, iter) => accum.concat(iter),
+    [],
+  );
+  return { instructions };
 }
 
 function isValidManifest(filePath: string): boolean {

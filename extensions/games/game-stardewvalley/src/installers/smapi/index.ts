@@ -6,7 +6,6 @@
  * - linux.ts
  * - macos.ts (stubbed darwin variant)
  */
-import Bluebird from "bluebird";
 import path from "path";
 import { fs, log, util } from "vortex-api";
 import type { types } from "vortex-api";
@@ -58,7 +57,7 @@ export const SMAPI_EXE = resolveSMAPIPlatform().executableName;
 export function isSMAPIModType(
   instructions: types.IInstruction[],
   platform: ISMAPIPlatformVariant = resolveSMAPIPlatform(),
-): Bluebird<boolean> {
+): PromiseLike<boolean> {
   const expectedExecutable = platform.executableName.toLowerCase();
   const smapiData = instructions.find(
     (inst) =>
@@ -67,18 +66,18 @@ export function isSMAPIModType(
       archiveFileName(inst.source).toLowerCase() === expectedExecutable,
   );
 
-  return Bluebird.resolve(smapiData !== undefined);
+  return Promise.resolve(smapiData !== undefined);
 }
 
 /** Tests whether an archive contains the SMAPI installer payload. */
 export function testSMAPI(
   files: string[],
   gameId: string,
-): Bluebird<IInstallerTestResult> {
+): PromiseLike<IInstallerTestResult> {
   const archiveInfo = classifyArchive(files, gameId);
   const supported =
     archiveInfo.isGameArchive && archiveInfo.hasSmapiInstallerDll;
-  return Bluebird.resolve(makeInstallerTestResult(supported));
+  return Promise.resolve(makeInstallerTestResult(supported));
 }
 
 /**
@@ -95,11 +94,9 @@ export async function installSMAPI(
   platform: ISMAPIPlatformVariant = resolveSMAPIPlatform(),
 ): Promise<types.IInstallResult> {
   if (!platform.implemented) {
-    return Promise.reject(
-      new util.DataInvalid(
-        platform.unsupportedReason ??
-          "SMAPI automatic installation is not implemented for this platform.",
-      ),
+    throw new util.DataInvalid(
+      platform.unsupportedReason ??
+        "SMAPI automatic installation is not implemented for this platform.",
     );
   }
 
@@ -113,11 +110,9 @@ export async function installSMAPI(
   );
 
   if (dataFile === undefined) {
-    return Promise.reject(
-      new util.DataInvalid(
-        "Failed to find the SMAPI data files - download appears " +
-          "to be corrupted; please re-download SMAPI and try again",
-      ),
+    throw new util.DataInvalid(
+      "Failed to find the SMAPI data files - download appears " +
+        "to be corrupted; please re-download SMAPI and try again",
     );
   }
 
@@ -160,7 +155,7 @@ export async function installSMAPI(
       }
     }
 
-    return Bluebird.resolve();
+    return Promise.resolve();
   });
 
   const expectedExecutable = platform.executableName.toLowerCase();
@@ -168,11 +163,9 @@ export async function installSMAPI(
     (file) => archiveFileName(file).toLowerCase() === expectedExecutable,
   );
   if (smapiExe === undefined) {
-    return Promise.reject(
-      new util.DataInvalid(
-        `Failed to extract ${platform.executableName} - download appears ` +
-          "to be corrupted; please re-download SMAPI and try again",
-      ),
+    throw new util.DataInvalid(
+      `Failed to extract ${platform.executableName} - download appears ` +
+        "to be corrupted; please re-download SMAPI and try again",
     );
   }
 
@@ -197,7 +190,7 @@ export async function installSMAPI(
     destination: "StardewModdingAPI.deps.json",
   });
 
-  return Promise.resolve({ instructions });
+  return { instructions };
 }
 
 /**

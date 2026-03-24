@@ -7,11 +7,13 @@ import { fs, util } from "vortex-api";
 import type { types } from "vortex-api";
 
 import { GAME_ID, MODS_REL_PATH } from "../common";
-import { toBlue } from "../helpers";
 import { SMAPI_EXE } from "../installers/smapi";
 import { deploySMAPI } from "../smapi/lifecycle";
 import { findSMAPIMod } from "../smapi/selectors";
 import { downloadAndInstallSMAPI } from "../smapi/workflow";
+
+type QueryPath = NonNullable<types.IGame["queryPath"]>;
+type Setup = NonNullable<types.IGame["setup"]>;
 
 /**
  * Vortex `IGame` implementation for Stardew Valley.
@@ -87,13 +89,15 @@ export default class StardewValleyGame implements types.IGame {
   /**
    * Query known stores/default locations for the install path.
    */
-  public queryPath = toBlue<string>(async () => {
+  public queryPath: QueryPath = (async () => {
     // First try querying the known game stores, by their known IDs
-    const game = await util.GameStoreHelper.findByAppId([
-      "413150",
-      "1453375253",
-      "ConcernedApe.StardewValleyPC",
-    ]).catch(() => undefined);
+    const game = await Promise.resolve(
+      util.GameStoreHelper.findByAppId([
+        "413150",
+        "1453375253",
+        "ConcernedApe.StardewValleyPC",
+      ]).catch(() => undefined),
+    );
 
     if (game !== undefined) {
       return game.gamePath;
@@ -107,7 +111,7 @@ export default class StardewValleyGame implements types.IGame {
     }
 
     throw new Error("Stardew Valley install path not found");
-  });
+  }) as unknown as QueryPath;
 
   public executable() {
     return process.platform == "win32" ? "Stardew Valley.exe" : "StardewValley";
@@ -122,19 +126,19 @@ export default class StardewValleyGame implements types.IGame {
    * Ensures the Mods folder is writable and, if SMAPI is missing from the
    * game install folder, shows an install/deploy recommendation.
    */
-  public setup = toBlue(async (discovery) => {
-    try {
-      await fs.ensureDirWritableAsync(path.join(discovery.path, MODS_REL_PATH));
-    } catch (err) {
-      return Promise.reject(err);
+  public setup: Setup = (async (discovery) => {
+    if (discovery.path === undefined) {
+      throw new Error("Stardew Valley install path is not set");
     }
+
+    await fs.ensureDirWritableAsync(path.join(discovery.path, MODS_REL_PATH));
 
     const smapiPath = path.join(discovery.path, SMAPI_EXE);
     const smapiFound = await this.getPathExistsAsync(smapiPath);
     if (!smapiFound) {
       this.recommendSmapi();
     }
-  });
+  }) as unknown as Setup;
 
   /**
    * Shows a SMAPI warning with a one-click Deploy/Get action.

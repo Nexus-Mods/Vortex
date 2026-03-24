@@ -36,7 +36,6 @@ export function registerUi(context: types.IExtensionContext) {
           });
         }
         context.api.store?.dispatch(setMergeConfigs(profileId, enabled));
-        return Promise.resolve();
       },
     }),
     () => selectors.activeGameId(context.api.getState()) === GAME_ID,

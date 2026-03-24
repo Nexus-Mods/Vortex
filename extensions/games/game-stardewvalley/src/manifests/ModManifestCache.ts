@@ -2,11 +2,11 @@
  * Caches parsed manifests for currently active Stardew Valley mods.
  */
 import type { ISDVModManifest } from "../types";
-import turbowalk from "turbowalk";
 import { log, selectors, util } from "vortex-api";
 import type { types } from "vortex-api";
 import { GAME_ID, MOD_MANIFEST } from "../common";
 import { selectSdvMods } from "../state/selectors";
+import { getModManifests } from "./getModManifests";
 import { parseManifest } from "./parseManifest";
 
 import path from "path";
@@ -52,53 +52,40 @@ export default class ModManifestCache {
     const isActive = (modId: string) =>
       util.getSafe(profile, ["modState", modId, "enabled"], false);
     const mods: { [modId: string]: types.IMod } = selectSdvMods(state);
-    const manifests = await Object.values(mods).reduce(async (accumP, iter) => {
-      const accum = await accumP;
+    const manifests: ManifestMap = {};
+
+    for (const iter of Object.values(mods)) {
       if (!isInstalled(iter) || !isActive(iter.id)) {
-        return Promise.resolve(accum);
+        continue;
       }
+
       const modPath = path.join(staging, iter.installationPath);
-      return turbowalk(
-        modPath,
-        async (entries) => {
-          for (const entry of entries) {
-            if (path.basename(entry.filePath) === MOD_MANIFEST) {
-              let manifest;
-              try {
-                manifest = await parseManifest(entry.filePath);
-              } catch (err) {
-                const message =
-                  err instanceof Error ? err.message : String(err);
-                log("error", "failed to parse manifest", {
-                  error: message,
-                  manifest: entry.filePath,
-                });
-                continue;
-              }
-              const list = accum[iter.id] ?? [];
-              list.push(manifest);
-              accum[iter.id] = list;
-            }
-          }
-        },
-        {
-          skipHidden: false,
-          recurse: true,
-          skipInaccessible: true,
-          skipLinks: true,
-        },
-      )
-        .then(() => Promise.resolve(accum))
-        .catch((err) => {
-          if (err["code"] === "ENOENT") {
-            return Promise.resolve([]);
-          } else {
-            return Promise.reject(err);
-          }
-        });
-    }, {});
+      const manifestFiles = await getModManifests(modPath);
+
+      for (const manifestFile of manifestFiles) {
+        if (path.basename(manifestFile) !== MOD_MANIFEST) {
+          continue;
+        }
+
+        let manifest: ISDVModManifest;
+        try {
+          manifest = await parseManifest(manifestFile);
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          log("error", "failed to parse manifest", {
+            error: message,
+            manifest: manifestFile,
+          });
+          continue;
+        }
+
+        const list = manifests[iter.id] ?? [];
+        list.push(manifest);
+        manifests[iter.id] = list;
+      }
+    }
+
     this.mManifests = manifests;
-    return Promise.resolve();
   }
 }
 

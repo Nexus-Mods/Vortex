@@ -1,7 +1,6 @@
 /**
  * Detects installed mods that should use the `sdvrootfolder` mod type.
  */
-import Bluebird from "bluebird";
 import path from "path";
 
 import type { types } from "vortex-api";
@@ -30,6 +29,6 @@ export function isSdvRootFolderModType(instructions: types.IInstruction[]) {
   );
 
   return hasManifest
-    ? Bluebird.resolve(hasContentFolder && hasModsFolder)
-    : Bluebird.resolve(hasContentFolder);
+    ? Promise.resolve(hasContentFolder && hasModsFolder)
+    : Promise.resolve(hasContentFolder);
 }

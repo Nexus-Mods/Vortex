@@ -1,8 +1,6 @@
 /**
  * Registers Stardew Valley archive installers and priorities with Vortex.
  */
-import Bluebird from "bluebird";
-
 import type { types } from "vortex-api";
 
 import {
@@ -40,9 +38,7 @@ export function registerInstallers(
     INSTALLER_PRIORITY_SMAPI,
     testSMAPI,
     (files, destinationPath) =>
-      Bluebird.resolve(
-        installSMAPI(getGameInstallPath, files, destinationPath),
-      ),
+      installSMAPI(getGameInstallPath, files, destinationPath),
   );
 
   context.registerInstaller(
@@ -57,8 +53,6 @@ export function registerInstallers(
     INSTALLER_PRIORITY_MANIFEST,
     testSupported,
     (files, destinationPath) =>
-      Bluebird.resolve(
-        installStardewValley(context.api, files, destinationPath),
-      ),
+      installStardewValley(context.api, files, destinationPath),
   );
 }
