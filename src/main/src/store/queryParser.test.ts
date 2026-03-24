@@ -1,7 +1,9 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { parseAllQueries } from "../../src/main/store/queryParser";
+import { describe, beforeEach, afterEach, it, expect } from "vitest";
+
+import { parseAllQueries } from "./queryParser";
 
 describe("queryParser", () => {
   let tmpDir: string;
@@ -19,7 +21,7 @@ describe("queryParser", () => {
   it("parses @alias annotation", () => {
     fs.writeFileSync(
       path.join(tmpDir, "select", "test.sql"),
-      `-- @type select\n-- @name my_long_query_name\n-- @alias myQuery\nSELECT 1;\n`
+      `-- @type select\n-- @name my_long_query_name\n-- @alias myQuery\nSELECT 1;\n`,
     );
 
     const queries = parseAllQueries(tmpDir);
@@ -32,7 +34,7 @@ describe("queryParser", () => {
   it("alias is undefined when not specified", () => {
     fs.writeFileSync(
       path.join(tmpDir, "select", "test.sql"),
-      `-- @type select\n-- @name simple_query\nSELECT 1;\n`
+      `-- @type select\n-- @name simple_query\nSELECT 1;\n`,
     );
 
     const queries = parseAllQueries(tmpDir);
@@ -43,7 +45,7 @@ describe("queryParser", () => {
   it("parses @alias on setup queries", () => {
     fs.writeFileSync(
       path.join(tmpDir, "setup", "test.sql"),
-      `-- @type setup\n-- @name my_pivot\n-- @alias myModel\nSELECT 1;\n`
+      `-- @type setup\n-- @name my_pivot\n-- @alias myModel\nSELECT 1;\n`,
     );
 
     const queries = parseAllQueries(tmpDir);

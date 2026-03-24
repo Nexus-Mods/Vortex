@@ -1,42 +1,47 @@
-import { Database } from "../../src/main/store/Database";
-import { View } from "../../src/main/store/View";
-import { Table } from "../../src/main/store/Table";
+import { describe, it, expect, vi } from "vitest";
 
-interface ModRow {
+import type LevelPersist from "./LevelPersist";
+import type QueryInvalidator from "./QueryInvalidator";
+
+import { Database } from "./Database";
+import { Table } from "./Table";
+import { View } from "./View";
+
+type ModRow = {
   mod_id: string;
   name: string;
-}
+};
 
 function createMockConnection() {
   return {
-    run: jest.fn().mockResolvedValue(undefined),
-    runAndReadAll: jest.fn().mockResolvedValue({
+    run: vi.fn().mockResolvedValue(undefined),
+    runAndReadAll: vi.fn().mockResolvedValue({
       getRowObjectsJson: () => [],
     }),
-  } as any;
+  };
 }
 
 function createMockLevelPersist() {
   return {
     connection: createMockConnection(),
-    beginTransaction: jest.fn().mockResolvedValue(undefined),
-    commitTransaction: jest.fn().mockResolvedValue(undefined),
-    rollbackTransaction: jest.fn().mockResolvedValue(undefined),
-    getDirtyTables: jest.fn().mockResolvedValue([]),
-  } as any;
+    beginTransaction: vi.fn().mockResolvedValue(undefined),
+    commitTransaction: vi.fn().mockResolvedValue(undefined),
+    rollbackTransaction: vi.fn().mockResolvedValue(undefined),
+    getDirtyTables: vi.fn().mockResolvedValue([]),
+  };
 }
 
 function createMockInvalidator() {
   return {
-    notifyDirtyTables: jest.fn(),
-  } as any;
+    notifyDirtyTables: vi.fn(),
+  } as unknown as QueryInvalidator;
 }
 
 describe("Database", () => {
   describe("createTable / createView", () => {
     it("creates Table instances", () => {
       const persist = createMockLevelPersist();
-      const db = new Database(persist, null);
+      const db = new Database(persist as unknown as LevelPersist, null);
 
       const table = db.createTable("mods_pivot");
       expect(table).toBeInstanceOf(Table);
@@ -44,7 +49,7 @@ describe("Database", () => {
 
     it("creates View instances", () => {
       const persist = createMockLevelPersist();
-      const db = new Database(persist, null);
+      const db = new Database(persist as unknown as LevelPersist, null);
 
       const view = db.createView("profiles_view");
       expect(view).toBeInstanceOf(View);
@@ -58,7 +63,7 @@ describe("Database", () => {
       persist.connection.runAndReadAll.mockResolvedValue({
         getRowObjectsJson: () => rows,
       });
-      const db = new Database(persist, null);
+      const db = new Database(persist as unknown as LevelPersist, null);
 
       const result = await db.query<ModRow>("SELECT * FROM mods_pivot");
 
@@ -70,7 +75,7 @@ describe("Database", () => {
     it("commits on success", async () => {
       const persist = createMockLevelPersist();
       const invalidator = createMockInvalidator();
-      const db = new Database(persist, invalidator);
+      const db = new Database(persist as unknown as LevelPersist, invalidator);
 
       await db.transaction(async (tx) => {
         const mods = tx.createTable<ModRow>("mods_pivot");
@@ -84,12 +89,12 @@ describe("Database", () => {
 
     it("rolls back on error", async () => {
       const persist = createMockLevelPersist();
-      const db = new Database(persist, null);
+      const db = new Database(persist as unknown as LevelPersist, null);
 
       await expect(
-        db.transaction(async () => {
+        db.transaction(() => {
           throw new Error("boom");
-        })
+        }),
       ).rejects.toThrow("boom");
 
       expect(persist.beginTransaction).toHaveBeenCalledTimes(1);
@@ -102,22 +107,23 @@ describe("Database", () => {
       const persist = createMockLevelPersist();
       persist.getDirtyTables.mockResolvedValue(dirty);
       const invalidator = createMockInvalidator();
-      const db = new Database(persist, invalidator);
+      const db = new Database(persist as unknown as LevelPersist, invalidator);
 
       await db.transaction(async () => {});
 
       expect(persist.getDirtyTables).toHaveBeenCalled();
+
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(invalidator.notifyDirtyTables).toHaveBeenCalledWith(dirty);
     });
 
     it("does not notify invalidator when no invalidator set", async () => {
       const persist = createMockLevelPersist();
-      const db = new Database(persist, null);
+      const db = new Database(persist as unknown as LevelPersist, null);
 
       await db.transaction(async () => {});
 
       expect(persist.commitTransaction).toHaveBeenCalled();
     });
   });
-
 });
