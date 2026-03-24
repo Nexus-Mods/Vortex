@@ -247,6 +247,21 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
     ],
   );
 
+  // When show-main-page targets a per-game page, switch the Spine to game
+  // context so the page becomes visible
+  useEffect(() => {
+    const handler = (pageId: string) => {
+      if (gamePages.some((p) => p.id === pageId) && activeGameId !== undefined) {
+        setHomeForGameId(null);
+        setIsDownloadsMode(false);
+      }
+    };
+    api.events.on("show-main-page", handler);
+    return () => {
+      api.events.removeListener("show-main-page", handler);
+    };
+  }, [api, gamePages, activeGameId]);
+
   return (
     <SpineContext.Provider value={value}>{children}</SpineContext.Provider>
   );
