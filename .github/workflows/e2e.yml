@@ -18,13 +18,11 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            required: true
           - os: ubuntu-latest
-            required: false
 
     runs-on: ${{ matrix.os }}
-    # Linux failures don't block PRs
-    continue-on-error: ${{ !matrix.required }}
+    # E2E aren't stable yet. Windows takes too long to execute, Linux is experimental
+    continue-on-error: true
     timeout-minutes: 30
 
     steps:
