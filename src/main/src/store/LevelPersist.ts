@@ -2,7 +2,8 @@ import type { IPersistor } from "@vortex/shared/state";
 
 import type { DuckDBConnection } from "@duckdb/node-api";
 
-import { DataInvalid, unknownToError } from "@vortex/shared/errors";
+import { unknownToError } from "@vortex/shared";
+import { DataInvalid } from "@vortex/shared/errors";
 
 import { log } from "../logging";
 import DuckDBSingleton from "./DuckDBSingleton";
@@ -28,7 +29,9 @@ class LevelPersist implements IPersistor {
   ): Promise<LevelPersist> {
     if (repair) {
       // Repair is a LevelDB concept — not applicable to DuckDB/level_pivot
-      log("warn", "duckdb: repair requested but not supported, ignoring", { path: persistPath });
+      log("warn", "duckdb: repair requested but not supported, ignoring", {
+        path: persistPath,
+      });
     }
     try {
       const singleton = DuckDBSingleton.getInstance();
