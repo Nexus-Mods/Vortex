@@ -1,36 +1,50 @@
-import { types, selectors } from 'vortex-api';
+/**
+ * Defines Stardew Valley diagnostic tests shown in Vortex health checks.
+ */
+import type { types } from "vortex-api";
 
-import DependencyManager from './DependencyManager';
+import { coerce as semverCoerce, gte } from "semver";
+import { selectors } from "vortex-api";
 
-import { coerce, gte } from 'semver';
+import type ModManifestCache from "./manifests/ModManifestCache";
 
-import { downloadSMAPI, findSMAPIMod } from './SMAPI';
+import { GAME_ID } from "./common";
+import { findSMAPIMod } from "./smapi/selectors";
+import { downloadAndInstallSMAPI } from "./smapi/workflow";
 
-import { GAME_ID } from './common';
-
-export async function testSMAPIOutdated(api: types.IExtensionApi,
-                                        depManager: DependencyManager)
-                                        : Promise<types.ITestResult> {
+/** Verifies whether active mods require a newer SMAPI version. */
+export async function testSMAPIOutdated(
+  api: types.IExtensionApi,
+  modManifestCache: ModManifestCache,
+): Promise<types.ITestResult> {
   const state = api.getState();
   const activeGameId = selectors.activeGameId(state);
   if (activeGameId !== GAME_ID) {
-    return Promise.resolve(undefined);
+    return undefined as any;
   }
 
   let currentSMAPIVersion = findSMAPIMod(api)?.attributes?.version;
   if (currentSMAPIVersion === undefined) {
     // SMAPI isn't installed or enabled.
-    return Promise.resolve(undefined);
+    return undefined as any;
   }
 
   const isSmapiOutdated = async () => {
     currentSMAPIVersion = findSMAPIMod(api)?.attributes?.version;
-    const enabledManifests = await depManager.getManifests();
+    if (currentSMAPIVersion === undefined) {
+      return false;
+    }
+    const installedVersion = currentSMAPIVersion;
+    const enabledManifests = await modManifestCache.getManifests();
     const incompatibleModIds: string[] = [];
     for (const [id, manifests] of Object.entries(enabledManifests)) {
       const incompatible = manifests.filter((iter) => {
         if (iter.MinimumApiVersion !== undefined) {
-          return !gte(currentSMAPIVersion, coerce(iter.MinimumApiVersion ?? '0.0.0'));
+          const minApiVersion = semverCoerce(iter.MinimumApiVersion ?? "0.0.0");
+          if (minApiVersion === null) {
+            return false;
+          }
+          return !gte(installedVersion, minApiVersion);
         }
         return false;
       });
@@ -38,21 +52,23 @@ export async function testSMAPIOutdated(api: types.IExtensionApi,
         incompatibleModIds.push(id);
       }
     }
-    return Promise.resolve((incompatibleModIds.length > 0));
-  }
+    return incompatibleModIds.length > 0;
+  };
 
   const outdated = await isSmapiOutdated();
   const t = api.translate;
   return outdated
-    ? Promise.resolve({
-      description: {
-        short: t('SMAPI update required'),
-        long: t('Some Stardew Valley mods require a newer version of SMAPI to function correctly, '
-              + 'you should check for SMAPI updates in the mods page.'),
-      },
-      automaticFix: () => downloadSMAPI(api, true),
-      onRecheck: () => isSmapiOutdated(),
-      severity: 'warning' as types.ProblemSeverity,
-    }) as any
-    : Promise.resolve(undefined);
+    ? ({
+        description: {
+          short: t("SMAPI update required"),
+          long: t(
+            "Some Stardew Valley mods require a newer version of SMAPI to function correctly, " +
+              "you should check for SMAPI updates in the mods page.",
+          ),
+        },
+        automaticFix: () => downloadAndInstallSMAPI(api, true),
+        onRecheck: () => isSmapiOutdated(),
+        severity: "warning" as types.ProblemSeverity,
+      } as any)
+    : (undefined as any);
 }

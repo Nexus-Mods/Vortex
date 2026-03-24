@@ -3,8 +3,10 @@
   "version": "0.3.9",
   "description": "Support for Stardew Valley",
   "scripts": {
-    "_assets": "copyfiles -u 1 -f ./assets/* dist",
+    "_assets": "copyfiles -u 1 -f ./assets/* dist/assets && copyfiles -u 2 -f ./src/ui/sdvstyle.scss dist/ui",
     "_build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
+    "typecheck": "pnpm exec tsc -p tsconfig.json",
+    "test": "vitest run --config vitest.config.ts",
     "build": "pnpm run _build && node ../../copy-extension.mjs out",
     "dist": "pnpm run _build && node ../../copy-extension.mjs dist"
   },
@@ -15,7 +17,30 @@
   "config": {
     "game": "Stardew Valley"
   },
+  "dependencies": {
+    "@vortex/shared": "workspace:*",
+    "react": "catalog:",
+    "react-bootstrap": "catalog:",
+    "react-i18next": "catalog:",
+    "react-redux": "catalog:",
+    "redux-act": "catalog:",
+    "relaxed-json": "catalog:",
+    "semver": "catalog:",
+    "turbowalk": "catalog:"
+  },
   "devDependencies": {
+    "@nexusmods/nexus-api": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-bootstrap": "catalog:",
+    "@types/react-redux": "catalog:",
+    "@types/relaxed-json": "catalog:",
+    "@types/semver": "catalog:",
+    "copyfiles": "catalog:",
+    "electron": "catalog:",
+    "modmeta-db": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:",
     "vortex-api": "workspace:*"
   }
 }
