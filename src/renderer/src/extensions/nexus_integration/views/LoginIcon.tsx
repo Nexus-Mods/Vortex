@@ -9,6 +9,7 @@ import opn from "../../../util/opn";
 import { truthy } from "../../../util/util";
 
 import { clearOAuthCredentials, setUserAPIKey } from "../actions/account";
+import { setUserInfo } from "../actions/persistent";
 import type { IValidateKeyDataV2 } from "../types/IValidateKeyData";
 
 import { FALLBACK_AVATAR, NEXUS_BASE_URL, OAUTH_URL } from "../constants";
@@ -38,6 +39,7 @@ interface IConnectedProps {
 interface IActionProps {
   onSetAPIKey: (APIKey: string) => void;
   onClearOAuthCredentials: () => void;
+  onClearUserInfo: () => void;
   onShowDialog: () => void;
   onShowError: (title: string, err: Error) => void;
 }
@@ -66,9 +68,10 @@ class LoginIcon extends ComponentEx<IProps, {}> {
   }
 
   private logOut = () => {
-    const { onClearOAuthCredentials, onSetAPIKey } = this.props;
+    const { onClearOAuthCredentials, onSetAPIKey, onClearUserInfo } = this.props;
     onSetAPIKey(undefined);
     onClearOAuthCredentials();
+    onClearUserInfo();
   };
 
   private getMembershipText(userInfo: IValidateKeyDataV2): string {
@@ -207,6 +210,7 @@ function mapDispatchToProps(
   return {
     onSetAPIKey: (APIKey: string) => dispatch(setUserAPIKey(APIKey)),
     onClearOAuthCredentials: () => dispatch(clearOAuthCredentials(null)),
+    onClearUserInfo: () => dispatch(setUserInfo(undefined)),
     onShowDialog: () => dispatch(setDialogVisible("login-dialog")),
     onShowError: (title: string, err: Error) =>
       showError(dispatch, title, err, { allowReport: false }),

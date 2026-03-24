@@ -8,6 +8,7 @@ import getVortexPath from "../../../util/getVortexPath";
 import opn from "../../../util/opn";
 import { truthy } from "../../../util/util";
 import { clearOAuthCredentials, setUserAPIKey } from "../actions/account";
+import { setUserInfo } from "../actions/persistent";
 import type { IValidateKeyData } from "../types/IValidateKeyData";
 
 import { FALLBACK_AVATAR, NEXUS_BASE_URL } from "../constants";
@@ -28,6 +29,7 @@ interface IConnectedProps {
 interface IActionProps {
   onSetAPIKey: (APIKey?: string) => void;
   onClearOAuthCredentials: () => void;
+  onClearUserInfo: () => void;
   onSetDialogVisible: (id: string) => void;
 }
 
@@ -143,9 +145,10 @@ class DashboardBanner extends ComponentEx<IProps, { requested: boolean }> {
   };
 
   private logout = () => {
-    const { onClearOAuthCredentials, onSetAPIKey } = this.props;
+    const { onClearOAuthCredentials, onClearUserInfo, onSetAPIKey } = this.props;
     onSetAPIKey(undefined);
     onClearOAuthCredentials();
+    onClearUserInfo();
   };
 }
 
@@ -162,6 +165,7 @@ function mapDispatchToProps(
   return {
     onSetAPIKey: (APIKey?: string) => dispatch(setUserAPIKey(APIKey)),
     onClearOAuthCredentials: () => dispatch(clearOAuthCredentials(null)),
+    onClearUserInfo: () => dispatch(setUserInfo(undefined)),
     onSetDialogVisible: (id: string) => dispatch(setDialogVisible(id)),
   };
 }
