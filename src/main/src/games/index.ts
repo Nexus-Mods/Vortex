@@ -1,16 +1,24 @@
 /**
  * Main-process game adaptor system.
  *
- * To add support for a new game, implement IGameAdaptor (and optionally IInstallerAdaptor),
- * then register the instance below using `registry.registerGame(...)`.
+ * Games can be registered two ways:
  *
- * Example:
+ * 1. YAML data files — place *.yaml files in the configured directory and they
+ *    are loaded automatically via registerYamlAdaptors().
+ *
+ * 2. Code-based — implement IGameAdaptor (and optionally IInstallerAdaptor),
+ *    then register the instance below using `registry.registerGame(...)`.
+ *
+ * Example (code-based):
  *
  *   import { StardewValley } from "./stardewvalley";
  *   registry.registerGame(new StardewValley());
  */
 
+import * as path from "node:path";
+
 import { GameAdaptorRegistry } from "./GameAdaptorRegistry";
+import { registerYamlAdaptors } from "./yaml";
 
 export { GameAdaptorRegistry };
 export { initGameAdaptorIPC } from "./gameAdaptorIPC";
@@ -23,13 +31,15 @@ export type {
   ISerializedInstallerMeta,
   ISupportedResult,
 } from "./IGameAdaptor";
+export { registerYamlAdaptors } from "./yaml";
 
 const registry = GameAdaptorRegistry.getInstance();
 
-// ─── Register game adaptors here ─────────────────────────────────────────────
+// ─── YAML-based game adaptors ─────────────────────────────────────────────────
+// Default: look for *.yaml files next to the built output (src/main/out/game-adaptors/)
+const yamlDir = path.resolve(__dirname, "..", "game-adaptors");
+registerYamlAdaptors(registry, yamlDir);
+
+// ─── Code-based game adaptors ─────────────────────────────────────────────────
 // registry.registerGame(new StardewValley());
-
-// ─── Register installer adaptors here ────────────────────────────────────────
 // registry.registerInstaller(new StardewValleyInstaller());
-
-void registry; // suppress unused-variable lint until first registration is added

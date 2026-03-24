@@ -50,6 +50,7 @@ export class GameAdaptorRegistry {
       parameters: g.parameters,
       details: g.details,
       compatible: g.compatible,
+      queryArgs: g.queryArgs,
       hasQueryPath: g.queryPath !== undefined,
       hasSetup: g.setup !== undefined,
       hasGetGameVersion: g.getGameVersion !== undefined,

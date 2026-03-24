@@ -33,6 +33,12 @@ export interface ISerializedGameMeta {
   parameters?: string[];
   details?: Record<string, string | number | boolean>;
   compatible?: Record<string, boolean>;
+  /**
+   * Store-based game discovery arguments. When present, Vortex uses these to
+   * locate the game via Steam, GOG, Epic, Xbox, or the Windows registry instead
+   * of calling queryPath() over IPC.
+   */
+  queryArgs?: Record<string, Array<{ id: string }>>;
   // Capability flags — tells the bridge which optional IPC calls are valid.
   hasQueryPath: boolean;
   hasSetup: boolean;

@@ -28,6 +28,11 @@ export interface IGameAdaptor {
   readonly parameters?: string[];
   readonly details?: Record<string, string | number | boolean>;
   readonly compatible?: Record<string, boolean>;
+  /**
+   * Optional store-based discovery arguments (Steam appId, GOG id, etc.).
+   * When present, Vortex uses its built-in game-store helpers instead of calling queryPath().
+   */
+  readonly queryArgs?: Record<string, Array<{ id: string }>>;
 
   /** Optional: discover the game installation path (e.g. via Steam, registry, or file system). */
   queryPath?(): Promise<string | null>;

@@ -129,6 +129,7 @@
     "ws": "catalog:",
     "xml2js": "catalog:",
     "xxhash-addon": "catalog:",
+    "js-yaml": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
@@ -166,6 +167,7 @@
     "@types/universal-analytics": "catalog:",
     "@types/write-file-atomic": "catalog:",
     "@types/ws": "catalog:",
+    "@types/js-yaml": "catalog:",
     "@types/xml2js": "catalog:",
     "@vortex/shared": "workspace:*",
     "@welldone-software/why-did-you-render": "catalog:",

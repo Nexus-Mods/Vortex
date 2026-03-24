@@ -24,6 +24,7 @@ export class MainProcessGameBridge implements IGame {
   readonly details?: { [key: string]: unknown };
   readonly compatible?: { [key: string]: boolean };
 
+  readonly queryArgs?: { [storeId: string]: Array<{ id: string }> };
   readonly queryPath?: () => PromiseBB<string>;
   readonly queryModPath: (gamePath: string) => string;
   readonly executable: (discoveredPath?: string) => string;
@@ -41,6 +42,7 @@ export class MainProcessGameBridge implements IGame {
     this.parameters = meta.parameters;
     this.details = meta.details;
     this.compatible = meta.compatible;
+    this.queryArgs = meta.queryArgs;
 
     this.executable = (_discoveredPath?: string) => meta.executablePath;
     this.queryModPath = (_gamePath: string) => meta.modPath;
