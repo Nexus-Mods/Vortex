@@ -39,6 +39,22 @@ const supportData: { [gameId: string]: IGameSupport } = {
       gameId: "skyrimspecialedition",
       modId: 30379,
     },
+    versionMap: [
+      // Pre-Anniversary Edition (SE 1.5.x)
+      { gameVersionRange: ">=1.5.0 <1.5.62", label: "SE (1.5.53)", scriptExtenderVersion: "2.0.7" },
+      { gameVersionRange: ">=1.5.62 <1.5.73", label: "SE (1.5.62)", scriptExtenderVersion: "2.0.10" },
+      { gameVersionRange: ">=1.5.73 <1.5.80", label: "SE (1.5.73)", scriptExtenderVersion: "2.0.15" },
+      { gameVersionRange: ">=1.5.80 <1.5.97", label: "SE (1.5.80)", scriptExtenderVersion: "2.0.16" },
+      { gameVersionRange: ">=1.5.97 <1.6.0", label: "SE (1.5.97)", scriptExtenderVersion: "2.0.20" },
+      // Anniversary Edition (AE 1.6.x)
+      { gameVersionRange: ">=1.6.0 <1.6.323", label: "AE (1.6.318)", scriptExtenderVersion: "2.1.0" },
+      { gameVersionRange: ">=1.6.323 <1.6.342", label: "AE (1.6.323)", scriptExtenderVersion: "2.1.1" },
+      { gameVersionRange: ">=1.6.342 <1.6.353", label: "AE (1.6.342)", scriptExtenderVersion: "2.1.2" },
+      { gameVersionRange: ">=1.6.353 <1.6.629", label: "AE (1.6.353)", scriptExtenderVersion: "2.1.3" },
+      { gameVersionRange: ">=1.6.629 <1.6.640", label: "AE (1.6.629)", scriptExtenderVersion: "2.2.0" },
+      { gameVersionRange: ">=1.6.640 <1.6.1130", label: "AE (1.6.640)", scriptExtenderVersion: "2.2.3" },
+      { gameVersionRange: ">=1.6.1130", label: "AE (Latest)", scriptExtenderVersion: "2.2.6" },
+    ],
   },
   skyrimvr: {
     name: "Skyrim Script Extender VR (SKSEVR)",
@@ -77,6 +93,21 @@ const supportData: { [gameId: string]: IGameSupport } = {
       gameId: "fallout4",
       modId: 42147,
     },
+    versionMap: [
+      // Pre-Next-Gen (1.10.x, pre-980)
+      { gameVersionRange: ">=1.10.0 <1.10.50", label: "Early post-launch", scriptExtenderVersion: "0.4.0" },
+      { gameVersionRange: ">=1.10.50 <1.10.75", label: "Pre-CC", scriptExtenderVersion: "0.5.0" },
+      { gameVersionRange: ">=1.10.75 <1.10.82", label: "CC era (1.10.75)", scriptExtenderVersion: "0.6.0" },
+      { gameVersionRange: ">=1.10.82 <1.10.89", label: "CC era (1.10.82)", scriptExtenderVersion: "0.6.5" },
+      { gameVersionRange: ">=1.10.89 <1.10.98", label: "CC era (1.10.89)", scriptExtenderVersion: "0.6.9" },
+      { gameVersionRange: ">=1.10.98 <1.10.120", label: "CC era (1.10.98)", scriptExtenderVersion: "0.6.13" },
+      { gameVersionRange: ">=1.10.120 <1.10.130", label: "CC era (1.10.120)", scriptExtenderVersion: "0.6.17" },
+      { gameVersionRange: ">=1.10.130 <1.10.138", label: "CC era (1.10.130)", scriptExtenderVersion: "0.6.20" },
+      { gameVersionRange: ">=1.10.138 <1.10.162", label: "CC era (1.10.138)", scriptExtenderVersion: "0.6.21" },
+      { gameVersionRange: ">=1.10.162 <1.10.980", label: "Pre-Next-Gen (1.10.162)", scriptExtenderVersion: "0.6.23" },
+      // Next-Gen Update (2024+)
+      { gameVersionRange: ">=1.10.980", label: "Next-Gen", scriptExtenderVersion: "0.7.0" },
+    ],
   },
   fallout4vr: {
     name: "Fallout 4 Script Extender VR (F4SE)",

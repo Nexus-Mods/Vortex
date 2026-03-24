@@ -8,7 +8,7 @@ import {
   getGamePath,
   toBlue,
   clearNotifications,
-  ignoreNotifications,
+  resolveVersionMapping,
 } from "./util";
 import * as gitHubDownloader from "./githubDownloader";
 import * as silverlockDownloader from "./silverlockDownloader";
@@ -36,7 +36,7 @@ async function onCheckModVersion(
   }
 
   //If the script extender has a Nexus Mods page. Exit here as Vortex can check itself.
-  if (!!gameSupport.nexusMods) {
+  if (gameSupport.nexusMods) {
     return;
   }
 
@@ -76,7 +76,7 @@ async function onCheckModVersion(
   });
 
   // Check for update.
-  const latestVersion: string = !!gameSupport?.gitHubAPIUrl
+  const latestVersion: string = gameSupport?.gitHubAPIUrl
     ? await gitHubDownloader.checkForUpdates(
         api,
         gameSupport,
@@ -107,13 +107,18 @@ async function onCheckModVersion(
   });
 }
 
-async function isMissingScriptExtender(
+interface IScriptExtenderStatus {
+  status: "ok" | "missing" | "mismatched";
+  installedVersion?: string;
+}
+
+async function checkScriptExtenderStatus(
   api: types.IExtensionApi,
   gameId: string,
-) {
+): Promise<IScriptExtenderStatus> {
   // If the game is unsupported, exit here.
   if (!supportData[gameId]) {
-    return false;
+    return { status: "ok" };
   }
   const gameSupport = supportData[gameId];
 
@@ -130,14 +135,14 @@ async function isMissingScriptExtender(
     //  pretty sure this issue will pop up again in a different location
     //  unless the user of 6999 gets back to us.
     log("warn", "user switched to an undiscovered gamemode", gameId);
-    return false;
+    return { status: "ok" };
   }
 
   // Work out which game store the user has.
   const gameStore = getGameStore(gameId, api);
 
   // SKSE is not compatible with Xbox Game Pass or Epic Games, so we don't want to notify the user in this case.
-  if (["xbox", "epic"].includes(gameStore)) return false;
+  if (["xbox", "epic"].includes(gameStore)) return { status: "ok" };
 
   // Check for disabled (but installed) script extenders.
   const mods = util.getSafe(
@@ -150,28 +155,44 @@ async function isMissingScriptExtender(
     .statAsync(path.join(gamePath, gameSupport.scriptExtExe))
     .then(() => true)
     .catch(() => false);
-  if (isManuallyInstalled) {
-    log("info", "Script extender detected as manually installed", {
-      game: gameId,
-    });
-    return false;
-  }
-  const installedScriptExtenders = modArray.filter(
-    (mod) => !!mod?.attributes?.scriptExtender,
-  ).length;
-  if (installedScriptExtenders) {
-    return false;
-  }
 
   // Grab our current script extender version.
   const scriptExtenderVersion: string = await getScriptExtenderVersion(
     path.join(gamePath, gameSupport.scriptExtExe),
   );
 
-  // If the script extender isn't installed, return. Perhaps we should recommend installing it?
-  if (!scriptExtenderVersion) {
-    return true;
+  // If the script extender isn't installed at all, it's missing.
+  if (!scriptExtenderVersion && !isManuallyInstalled) {
+    const installedScriptExtenders = modArray.filter(
+      (mod) => mod?.attributes?.scriptExtender,
+    ).length;
+    if (!installedScriptExtenders) {
+      return { status: "missing" };
+    }
   }
+
+  // If the script extender is installed, check if it's the right version for this game.
+  if (scriptExtenderVersion && gameSupport.versionMap?.length) {
+    const state = api.store.getState();
+    const discovery = selectors.discoveryByGame(state, gameId);
+    const game = util.getGame(gameId);
+    const gameVersion = await game?.getInstalledVersion?.(discovery);
+    const versionBasic = gameVersion
+      ? gameVersion.split(".").slice(0, 3).join(".")
+      : undefined;
+    const versionMapping = resolveVersionMapping(gameSupport, versionBasic);
+    if (versionMapping && scriptExtenderVersion !== versionMapping.scriptExtenderVersion) {
+      return { status: "mismatched", installedVersion: scriptExtenderVersion };
+    }
+  }
+
+  if (isManuallyInstalled) {
+    log("info", "Script extender detected as manually installed", {
+      game: gameId,
+    });
+  }
+
+  return { status: "ok" };
 }
 
 async function downloadScriptExtender(
@@ -179,9 +200,9 @@ async function downloadScriptExtender(
   gameSupport: IGameSupport,
   gameId: string,
 ): Promise<void> {
-  if (!!gameSupport?.nexusMods)
+  if (gameSupport?.nexusMods)
     return nexusModsDownloader.downloadScriptExtender(api, gameSupport);
-  else if (!!gameSupport?.gitHubAPIUrl)
+  else if (gameSupport?.gitHubAPIUrl)
     return gitHubDownloader.downloadScriptExtender(api, gameSupport);
   else return silverlockDownloader.notifyNotInstalled(gameSupport, api);
 }
@@ -196,22 +217,48 @@ async function testMissingScriptExtender(
     // Not applicable.
     return Promise.resolve(undefined);
   }
-  const isMissing = await isMissingScriptExtender(api, gameMode);
-  if (!isMissing) {
+  const seStatus = await checkScriptExtenderStatus(api, gameMode);
+  if (seStatus.status === "ok") {
     return Promise.resolve(undefined);
   }
 
-  // Get game version and store info for Nexus Mods extenders
-  let gameVersion: string;
-  let gameStore: string;
+  // Get game version and store info.
+  const discovery = selectors.discoveryByGame(state, gameMode);
+  const game = util.getGame(gameMode);
+  const gameVersion = await game?.getInstalledVersion?.(discovery);
+  const versionBasic = gameVersion
+    ? gameVersion.split(".").slice(0, 3).join(".")
+    : undefined;
+  const gameStore = getGameStore(gameMode, api);
+  const versionMapping = resolveVersionMapping(gameSupport, versionBasic);
+
+  // Version mismatch: SE is installed but wrong version for this game runtime.
+  if (seStatus.status === "mismatched") {
+    return Promise.resolve({
+      description: {
+        short: `${gameSupport.name} version mismatch`,
+        long:
+          `You have {{name}} version {{installed}} installed, but your game version {{gameVersion}} ({{label}}) requires version {{expected}}.\n\n` +
+          `Using the wrong script extender version will cause it to fail on launch. ` +
+          `Please install the correct version to avoid issues.`,
+        replace: {
+          name: gameSupport.name,
+          installed: seStatus.installedVersion,
+          gameVersion: versionBasic,
+          label: versionMapping?.label,
+          expected: versionMapping?.scriptExtenderVersion,
+        },
+      },
+      severity: "warning" as types.ProblemSeverity,
+      automaticFix: () => downloadScriptExtender(api, gameSupport, gameMode),
+    });
+  }
+
+  // Missing: SE is not installed at all.
   if (gameSupport.nexusMods) {
-    const discovery = selectors.discoveryByGame(state, gameMode);
-    const game = util.getGame(gameMode);
-    gameVersion = await game?.getInstalledVersion?.(discovery);
-    const versionBasic = gameVersion
-      ? gameVersion.split(".").slice(0, 3).join(".")
-      : undefined;
-    gameStore = getGameStore(gameMode, api);
+    const recommendedText = versionMapping
+      ? `\n\nBased on your game version ({{label}}), the recommended script extender version is {{recommended}}.`
+      : "";
 
     return Promise.resolve({
       description: {
@@ -219,11 +266,14 @@ async function testMissingScriptExtender(
         long:
           `Vortex could not detect "{{name}}". This means it is either not installed or installed incorrectly.\n\n` +
           `For the best modding experience, we recommend downloading and installing the script extender.\n\n` +
-          `You are running version {{version}} ({{store}}) of the game, please make sure you use the correct script extender version.`,
+          `You are running version {{version}} ({{store}}) of the game, please make sure you use the correct script extender version.` +
+          recommendedText,
         replace: {
           name: gameSupport.name,
           version: versionBasic || "?.?.?",
           store: storeName(gameStore),
+          recommended: versionMapping?.scriptExtenderVersion,
+          label: versionMapping?.label,
         },
       },
       severity: "warning" as types.ProblemSeverity,

@@ -1,7 +1,7 @@
 import Bluebird from "bluebird";
 import { fs, selectors, types, log } from "vortex-api";
 import supportData from "./gameSupport";
-import { IGameSupport } from "./types";
+import { IGameSupport, IGameVersionMapping } from "./types";
 import getVersion from "exe-version";
 import * as semver from "semver";
 
@@ -67,6 +67,27 @@ function ignoreNotifications(gameSupport: IGameSupport) {
   supportData[match].ignore = true;
 }
 
+/**
+ * Resolves the correct version mapping for a given game version.
+ * Returns the matching entry from the game support's versionMap, or undefined
+ * if no versionMap exists or no range matches the installed game version.
+ */
+function resolveVersionMapping(
+  gameSupport: IGameSupport,
+  gameVersion: string | undefined,
+): IGameVersionMapping | undefined {
+  if (!gameSupport.versionMap?.length || !gameVersion) {
+    return undefined;
+  }
+  const coerced = semver.coerce(gameVersion);
+  if (!coerced) {
+    return undefined;
+  }
+  return gameSupport.versionMap.find(
+    (mapping) => semver.satisfies(coerced, mapping.gameVersionRange),
+  );
+}
+
 export {
   getGameStore,
   getScriptExtenderVersion,
@@ -74,4 +95,5 @@ export {
   toBlue,
   clearNotifications,
   ignoreNotifications,
+  resolveVersionMapping,
 };

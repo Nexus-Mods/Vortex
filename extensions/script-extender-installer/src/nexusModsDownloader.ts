@@ -3,7 +3,7 @@ import { IFileInfo } from "@nexusmods/nexus-api";
 import { actions, log, selectors, types, util } from "vortex-api";
 import { storeName } from "./common";
 import { IGameSupport } from "./types";
-import { getGameStore, ignoreNotifications } from "./util";
+import { getGameStore, ignoreNotifications, resolveVersionMapping } from "./util";
 
 export async function downloadScriptExtender(
   api: types.IExtensionApi,
@@ -99,11 +99,16 @@ async function startDownload(
     );
     if (!allModFiles.length)
       throw new util.DataInvalid("Unable to get a list of files from the API");
-    // Look for either files that include the game version in the description or the primary file.
+    // Use the version map to find the expected script extender version for this game version.
+    const versionMapping = resolveVersionMapping(gameSupport, gameVersion);
+    // Look for files that match the expected script extender version, the game version in the description, or the primary file.
     let modFiles = allModFiles.filter(
       (f) =>
-        (!!gameVersion &&
-          !!f.description &&
+        (versionMapping &&
+          f.version &&
+          f.version === versionMapping.scriptExtenderVersion) ||
+        (gameVersion &&
+          f.description &&
           f.description.includes(gameVersion)) ||
         (!f.description && f.is_primary),
     );
@@ -123,6 +128,9 @@ async function startDownload(
       const title = (
         selectors.gameById(api.getState(), gameId)?.name || "game"
       ).replace("\t", " ");
+      const recommendedVersion = versionMapping
+        ? `\n\nBased on your game version, the recommended script extender version is {{recommended}} ({{label}}).`
+        : "";
       const userChoice: types.IDialogResult = await api.showDialog(
         "question",
         "Select script extender version",
@@ -130,12 +138,15 @@ async function startDownload(
           text: api.translate(
             "Vortex could not automatically determine the correct version of {{name}} for your game. \n\n" +
               "You have {{title}} version {{version}} installed from {{store}}.\n\n" +
-              "Please select the file you wish to download below.",
+              "Please select the file you wish to download below." +
+              recommendedVersion,
             {
               name: gameSupport.name,
               version: gameVersion,
               store: storeName(gameStore),
               title,
+              recommended: versionMapping?.scriptExtenderVersion,
+              label: versionMapping?.label,
             },
           ),
           choices: fileChoices.map((m, idx) => ({
