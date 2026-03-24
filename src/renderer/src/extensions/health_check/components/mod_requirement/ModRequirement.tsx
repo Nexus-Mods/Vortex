@@ -18,11 +18,13 @@ import { opn } from "../../../../util/api";
 export const ModRequirement = ({
   mod,
   modFiles,
+  showPremiumBadge = false,
   onShowVortexModal,
   onConfirmInstall,
 }: {
   mod: IModRequirementExt;
   modFiles?: IModFileInfo[];
+  showPremiumBadge?: boolean;
   onShowVortexModal?: (file?: IModFileInfo) => void;
   onConfirmInstall?: () => void;
 }) => {
@@ -91,13 +93,15 @@ export const ModRequirement = ({
                   filled="strong"
                   leftIconPath={mdiDownload}
                   rightIcon={
-                    <span className="-m-1 flex size-5 items-center justify-center rounded-sm bg-premium-moderate text-neutral-strong">
-                      <Icon
-                        className="size-4"
-                        path={mdiDiamondStone}
-                        size="none"
-                      />
-                    </span>
+                    showPremiumBadge ? (
+                      <span className="-m-1 flex size-5 items-center justify-center rounded-sm bg-premium-moderate text-neutral-strong">
+                        <Icon
+                          className="size-4"
+                          path={mdiDiamondStone}
+                          size="none"
+                        />
+                      </span>
+                    ) : undefined
                   }
                   size="sm"
                   onClick={() => onShowVortexModal?.()}
