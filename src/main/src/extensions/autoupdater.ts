@@ -7,13 +7,13 @@
 
 import type { UpdateStatus } from "@vortex/shared/ipc";
 import type {
-  autoUpdater as AUType,
   CancellationToken,
   UpdateInfo,
 } from "electron-updater";
 
 import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import { app, dialog } from "electron";
+import { autoUpdater } from "electron-updater";
 import * as semver from "semver";
 
 import { betterIpcMain } from "../ipc";
@@ -47,8 +47,6 @@ const updateStatus: UpdateStatus = {
  * Handles checking for updates, downloading, and installing.
  */
 export function setupAutoUpdater(installType: string): void {
-  const autoUpdater: typeof AUType = require("electron-updater").autoUpdater;
-
   let cancellationToken: CancellationToken;
   const currentVersion = semver.parse(app.getVersion());
   let updateChannel = "stable";
@@ -169,7 +167,7 @@ export function setupAutoUpdater(installType: string): void {
         cancellationToken = check?.cancellationToken;
 
         // Auto-download for regular installs
-        if (installType === "regular" && check?.downloadPromise) {
+        if (installType === "regular" && check?.downloadPromise !== null) {
           check.downloadPromise.catch((err) => {
             log("warn", "Auto-download failed", {
               error: getErrorMessageOrDefault(err),

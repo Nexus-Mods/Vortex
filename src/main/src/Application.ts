@@ -155,6 +155,7 @@ class Application {
     }
 
     // NOTE(erri120): crash-dump is mistyped
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this.mDeinitCrashDump = (crashDump as any).default(
       path.join(tempPath, "dumps", `crash-main-${Date.now()}.dmp`),
     );
@@ -198,10 +199,6 @@ class Application {
     }
 
     log("debug", "window created");
-
-    // Send app initialization metadata to renderer
-    // Renderer will dispatch Redux actions based on this
-    webContents.send("app:init", this.mAppMetadata);
   }
 
   private async startSplash(): Promise<SplashScreen> {
@@ -231,7 +228,11 @@ class Application {
 
     app.on("activate", () => {
       if (this.mMainWindow !== undefined) {
-        this.mMainWindow.create();
+        this.mMainWindow
+          .create()
+          .catch((err: unknown) =>
+            log("error", "failed to create main window", err),
+          );
       }
     });
 
@@ -506,7 +507,7 @@ class Application {
           "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System",
           key,
         );
-        log("debug", "UAC settings found", `${key}: ${res.value}`);
+        log("debug", "UAC settings found", `${key}: ${res.value.toString()}`);
         return { key, type: res.type, value: res.value };
       } catch (err) {
         // We couldn't retrieve the value, log this and resolve positively
@@ -519,9 +520,6 @@ class Application {
 
     const promptBehaviorAdmin = getSystemPolicyValue(
       "ConsentPromptBehaviorAdmin",
-    );
-    const promptBehaviorUser = getSystemPolicyValue(
-      "ConsentPromptBehaviorUser",
     );
 
     if (!promptBehaviorAdmin) return true;
@@ -841,6 +839,10 @@ class Application {
       commandLine: this.mArgs as unknown as Record<string, unknown>,
     };
 
+    // Register handler so renderer can request metadata via invoke (avoids
+    // race conditions with the fire-and-forget app:init send pattern)
+    ipcMain.handle("app:getInitMetadata", () => this.mAppMetadata);
+
     // 1. Create LevelPersist for the base path
     const levelPersistor = await LevelPersist.create(
       path.join(this.mBasePath, currentStatePath),
@@ -879,7 +881,11 @@ class Application {
         created = true;
       }
       if (multiUser && created) {
-        permissions.allow(dataPath, "group", "rwx");
+        permissions
+          .allow(dataPath, "group", "rwx")
+          .catch((err) =>
+            log("error", `failed to set permissions on ${dataPath}`, err),
+          );
       }
       mkdirSync(path.join(dataPath, "temp"), { recursive: true });
 

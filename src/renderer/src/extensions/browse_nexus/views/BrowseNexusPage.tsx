@@ -92,6 +92,12 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
   const gameId = useSelector((state: IState) => activeGameId(state));
   const gameDomainName = nexusGameId(getGame(gameId), gameId);
 
+  const isLoggedIn = useSelector(
+    (state: IState) => {
+      const nexus = state.confidential?.account?.["nexus"];
+      return !!(nexus?.APIKey || nexus?.OAuthCredentials);
+    },
+  );
   const adultContentFilter = useSelector(
     (state: IState) => state.persistent["nexus"]?.userInfo?.adult,
   );
@@ -355,6 +361,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                   <CollectionTile
                     api={api}
                     collection={collection}
+                    isLoggedIn={isLoggedIn}
                     key={collection.id}
                     onAddCollection={() => handleAddCollection(collection)}
                     onViewPage={() =>

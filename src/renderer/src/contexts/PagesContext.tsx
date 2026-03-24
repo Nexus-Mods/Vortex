@@ -24,7 +24,7 @@ import { Settings } from "../views/Settings";
 const gameSettingsPage: IMainPage = {
   priority: 80,
   id: "game_settings",
-  title: "Game preferences",
+  title: "Preferences",
   group: "per-game",
   isModernOnly: true,
   component: GameSettings,

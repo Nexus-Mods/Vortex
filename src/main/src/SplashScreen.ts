@@ -51,7 +51,9 @@ class SplashScreen {
 
       const onReady = () => {
         clearTimeout(timeout);
-        this.mWindow?.show();
+        if (process.env.VORTEX_E2E_HEADLESS !== "1") {
+          this.mWindow?.show();
+        }
         resolve();
       };
 

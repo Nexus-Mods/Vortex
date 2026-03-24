@@ -54,11 +54,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Lint
-        run: pnpm run lint:ci
-
       - name: Build
         run: pnpm run build:all
+
+      - name: Lint
+        run: pnpm run lint:ci
 
       - name: Test
         run: pnpm run test

@@ -120,9 +120,13 @@ export class RingBufferSpanProcessor implements SpanProcessor {
   #markTraceExported(traceId: string): void {
     this.#exportedTraceIds.add(traceId);
     if (this.#exportedTraceIds.size > MAX_EXPORTED_TRACE_IDS) {
-      this.#exportedTraceIds.delete(
-        this.#exportedTraceIds.values().next().value!,
-      );
+      const next = this.#exportedTraceIds.values().next() as IteratorResult<
+        string,
+        never
+      >;
+      if (!next.done) {
+        this.#exportedTraceIds.delete(next.value);
+      }
     }
   }
 

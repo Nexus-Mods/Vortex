@@ -36,6 +36,17 @@ import os from "os";
 import * as sourceMapSupport from "source-map-support";
 import winapi from "winapi-bindings";
 
+// E2E test isolation: redirect userData and appData to temp directories so
+// parallel test workers share no data and don't conflict with the real install.
+if (process.env.VORTEX_E2E === "1") {
+  if (process.env.ELECTRON_USERDATA) {
+    app.setPath("userData", process.env.ELECTRON_USERDATA);
+  }
+  if (process.env.ELECTRON_APPDATA) {
+    app.setPath("appData", process.env.ELECTRON_APPDATA);
+  }
+}
+
 import Application from "./Application";
 import { parseCommandline } from "./cli";
 import { terminateAsync } from "./errorHandling";
@@ -147,8 +158,6 @@ try {
 }
 
 process.env.Path = process.env.Path + path.delimiter + import.meta.dirname;
-
-let application: Application;
 
 const handleError = (error: Error) => {
   if (Application.shouldIgnoreError(error)) {
@@ -263,7 +272,10 @@ async function main(): Promise<void> {
     return;
   }
 
-  if (!app.requestSingleInstanceLock()) {
+  if (process.env.VORTEX_E2E === "1") {
+    // Skip single-instance lock in e2e tests — each test worker runs its
+    // own Electron instance with an isolated user data directory.
+  } else if (!app.requestSingleInstanceLock()) {
     app.disableHardwareAcceleration();
     app.commandLine.appendSwitch("--in-process-gpu");
     app.commandLine.appendSwitch("--disable-software-rasterizer");
@@ -283,17 +295,20 @@ async function main(): Promise<void> {
     process.env.NODE_ENV === "development" &&
     !app.commandLine.hasSwitch("remote-debugging-port")
   ) {
-    app.commandLine.appendSwitch("remote-debugging-port", DEBUG_PORT);
+    // In e2e mode, use port 0 (OS-assigned random port) to avoid conflicts
+    // between parallel test workers. Otherwise use the fixed debug port.
+    const port = process.env.VORTEX_E2E === "1" ? "0" : DEBUG_PORT;
+    app.commandLine.appendSwitch("remote-debugging-port", port);
   }
 
   let fixedT = i18next.getFixedT("en");
   try {
     fixedT("dummy");
   } catch {
-    fixedT = (input) => input;
+    fixedT = (input: unknown) => input;
   }
 
-  application = new Application(mainArgs);
+  new Application(mainArgs);
 }
 
 main().catch((err: unknown) => {

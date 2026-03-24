@@ -56,12 +56,17 @@ if (SetProcessPreferredUILanguages !== undefined) {
   SetProcessPreferredUILanguages(["en-US"]);
 }
 
+import type { IParameters } from "@vortex/shared/cli";
 import type { AppInitMetadata } from "@vortex/shared/ipc";
 import type crashDumpT from "crash-dump";
 
 import "./util/application.electron";
 
-import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import {
+  getErrorCode,
+  getErrorMessageOrDefault,
+  unknownToError,
+} from "@vortex/shared";
 import Bluebird from "bluebird";
 import { ipcRenderer, webFrame } from "electron";
 import { EventEmitter } from "events";
@@ -84,7 +89,7 @@ import type { IExtensionReducer } from './types/extensions';
 import type { ThunkStore } from "./types/IExtensionContext";
 import type { IState } from "./types/IState";
 
-import { setLanguage, setNetworkConnected } from "./actions";
+import { setCommandLine, setLanguage, setNetworkConnected } from "./actions";
 import {
   setApplicationVersion,
   setInstallType,
@@ -119,7 +124,12 @@ import { createRendererTelemetryProvider } from "./telemetry/setup";
 import { GameEntryNotFound } from "./types/IGameStore";
 import { relaunch } from "./util/commandLine";
 import { ProcessCanceled, UserCanceled } from "./util/CustomErrors";
-import { recordErrorSpan, setOutdated, terminate, toError } from "./util/errorHandling";
+import {
+  recordErrorSpan,
+  setOutdated,
+  terminate,
+  toError,
+} from "./util/errorHandling";
 import {} from "./util/extensionRequire";
 import { setTFunction } from "./util/fs";
 import GlobalNotifications from "./util/GlobalNotifications";
@@ -228,9 +238,14 @@ function errorHandler(evt: any) {
     });
 
     if (store !== undefined) {
-      showError(store.dispatch, "The game extension's discovery mechanism failed to find the game installation on your device", error, {
-        allowReport: false,
-      });
+      showError(
+        store.dispatch,
+        "The game extension's discovery mechanism failed to find the game installation on your device",
+        error,
+        {
+          allowReport: false,
+        },
+      );
     }
     return;
   }
@@ -348,9 +363,13 @@ function errorHandler(evt: any) {
         name: extName,
         error: error.stack,
       });
-      recordErrorSpan("Unhandled exception in extension", unknownToError(error), {
-        "extension.name": extName,
-      });
+      recordErrorSpan(
+        "Unhandled exception in extension",
+        unknownToError(error),
+        {
+          "extension.name": extName,
+        },
+      );
       extensions
         ?.getApi()
         ?.showErrorNotification?.("Unhandled exception in extension", error, {
@@ -470,6 +489,9 @@ async function initGlobals(): Promise<void> {
 }
 
 function applyAppMetadata(metadata: AppInitMetadata): void {
+  if (metadata.commandLine) {
+    store.dispatch(setCommandLine(metadata.commandLine as IParameters));
+  }
   if (metadata.version) {
     store.dispatch(setApplicationVersion(metadata.version));
   }
@@ -489,20 +511,18 @@ async function init(): Promise<ExtensionManager | null> {
 
   await StyleManager.renderDefault();
 
-  // Register app:init listener BEFORE async hydration to avoid race condition.
-  // Main process sends app:init immediately after window creation, which can
-  // arrive before hydration completes. Buffer the metadata and apply it after
-  // the store is created.
-  let bufferedAppMetadata: AppInitMetadata | null = null;
-  if (window.api?.app) {
-    window.api.app.onInit((metadata) => {
-      log("debug", "received app:init metadata from main", metadata);
-      if (store !== undefined) {
-        applyAppMetadata(metadata);
-      } else {
-        bufferedAppMetadata = metadata;
-      }
-    });
+  // Fetch app init metadata (commandLine, version, etc.) from main process.
+  // Uses invoke (request/response) to avoid race conditions with the old
+  // fire-and-forget app:init send pattern — commandLine must be in the store
+  // before doOnce() runs.
+  let appInitMetadata: AppInitMetadata | null = null;
+  if (window.api?.app?.getInitMetadata) {
+    try {
+      appInitMetadata = await window.api.app.getInitMetadata();
+      log("debug", "received app init metadata from main", appInitMetadata);
+    } catch (err) {
+      log("warn", "failed to fetch app init metadata", { error: err });
+    }
   }
 
   // Fetch hydration data from main process (persisted state)
@@ -583,10 +603,10 @@ async function init(): Promise<ExtensionManager | null> {
     });
   }
 
-  // Apply any buffered app:init metadata that arrived during hydration
-  if (bufferedAppMetadata !== null) {
-    applyAppMetadata(bufferedAppMetadata);
-    bufferedAppMetadata = null;
+  // Apply app init metadata (commandLine, version, etc.) before extensions
+  // interact with the store — extensions depend on commandLine state
+  if (appInitMetadata !== null) {
+    applyAppMetadata(appInitMetadata);
   }
 
   extensions.setStore(store);

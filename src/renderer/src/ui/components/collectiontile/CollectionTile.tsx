@@ -49,6 +49,7 @@ const userInfoDebouncer = new Debouncer(
 export interface CollectionTileProps {
   api: IExtensionApi;
   collection: ICollection;
+  isLoggedIn?: boolean;
   onAddCollection?: () => void;
   onViewPage?: () => void;
   className?: string;
@@ -70,6 +71,7 @@ const Stat = ({
 export const CollectionTile: ComponentType<CollectionTileProps> = ({
   api,
   collection,
+  isLoggedIn = true,
   onAddCollection,
   onViewPage,
   className,
@@ -99,8 +101,8 @@ export const CollectionTile: ComponentType<CollectionTileProps> = ({
       state,
       collection.slug,
     );
-    setCanBeAdded(!collectionModInstalled);
-  }, [api, collection.slug, pending, isHovered]);
+    setCanBeAdded(!collectionModInstalled && isLoggedIn);
+  }, [api, collection.slug, pending, isHovered, isLoggedIn]);
 
   // Refresh user info when user hovers on the tile, debounced to once per 5 seconds
   useEffect(() => {
@@ -112,11 +114,11 @@ export const CollectionTile: ComponentType<CollectionTileProps> = ({
   }, [isHovered]);
 
   const addCollection = useCallback(() => {
-    if (!pending && canBeAdded) {
+    if (!pending && canBeAdded && isLoggedIn) {
       setPending(true);
       addCollectionDebounced();
     }
-  }, [onAddCollection, canBeAdded, pending]);
+  }, [onAddCollection, canBeAdded, pending, isLoggedIn]);
 
   // Find the "Easy install" badge (if it exists)
   const easyInstallBadge = collection.badges?.find(
@@ -235,10 +237,11 @@ export const CollectionTile: ComponentType<CollectionTileProps> = ({
           <Button
             buttonType="tertiary"
             disabled={true}
-            leftIconPath={mdiCheck}
+            leftIconPath={!isLoggedIn ? undefined : mdiCheck}
             size="xs"
+            title={!isLoggedIn ? "Log in to add collections" : undefined}
           >
-            Added
+            {!isLoggedIn ? "Log in to add" : "Added"}
           </Button>
         ) : (
           <Button size="xs" onClick={addCollection}>

@@ -139,9 +139,6 @@ export interface MainChannels {
   // Persistence: Send hydration data to renderer on startup
   "persist:hydrate": (hive: PersistedHive, data: Serializable) => void;
 
-  // App initialization: Main sends all startup metadata to renderer in one message
-  "app:init": (metadata: AppInitMetadata) => void;
-
   // Extensions: Response from main process after initializing an extension
   "extensions:init-main-response": (response: {
     extensionName: string;
@@ -165,6 +162,7 @@ export interface MainChannels {
 }
 
 /** Type containing all known channels for synchronous IPC operations (used primarily by preload scripts) */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface SyncChannels {
   // NOTE: These are synchronous IPC channels used during preload initialization.
   // Use sparingly as they block the renderer process.
@@ -206,6 +204,7 @@ export interface InvokeChannels {
   ) => Promise<void>;
   "app:exit": (exitCode?: number) => Promise<void>;
   "app:getName": () => Promise<string>;
+  "app:getInitMetadata": () => Promise<AppInitMetadata>;
 
   // App path channels
   "app:getPath": (name: keyof VortexPaths) => Promise<string>;
@@ -261,8 +260,9 @@ export interface InvokeChannels {
   "contentTracing:stopRecording": (resultPath: string) => Promise<string>;
 
   // Redux state transfer
-  // NOTE: Redux state is a complex nested object that is serializable
-  // but too complex to type precisely. The actual data is always serializable.
+  // NOTE: Redux state is a complex nested object that is serializable but too complex to type precisely. The actual data is always serializable.
+
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   "redux:getState": () => Promise<{}>;
   // Returns a base64-encoded msgpack chunk of the Redux state
   "redux:getStateMsgpack": (idx?: number) => Promise<string | undefined>;

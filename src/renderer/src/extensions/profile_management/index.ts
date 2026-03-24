@@ -44,6 +44,7 @@ import {
   setProgress,
   setUIBlocker,
 } from "../../actions/session";
+import { log } from "../../logging";
 import { relaunch } from "../../util/commandLine";
 import {
   ProcessCanceled,
@@ -55,7 +56,6 @@ import {
 import { withTrackedActivity } from "../../util/errorHandling";
 import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
-import { log } from "../../util/log";
 import { showError } from "../../util/message";
 import onceCB from "../../util/onceCB";
 import {
@@ -958,8 +958,7 @@ function init(context: IExtensionContext): boolean {
     group: "per-game",
     isModernOnly: true,
     visible: () =>
-      activeGameId(context.api.store.getState()) !== undefined &&
-      context.api.store.getState().settings.interface.profilesVisible,
+      activeGameId(context.api.store.getState()) !== undefined,
     props: () => ({ features: profileFeatures }),
   });
 
@@ -1174,68 +1173,66 @@ function init(context: IExtensionContext): boolean {
       },
     );
 
-    let first = true;
-    context.api.onStateChange(
-      ["session", "gameMode", "known"],
-      (prev: IGameStored[], current: IGameStored[]) => {
-        // known games should only be set once but better safe than sorry
-        if (!first) {
-          return;
-        }
-        first = false;
-        const state: IState = store.getState();
-        const { commandLine } = state.session.base;
-        if (commandLine.profile !== undefined) {
-          const profile: IProfile = getSafe(
-            state,
-            ["persistent", "profiles", commandLine.profile],
-            undefined,
-          );
+    // Handle --profile and --game command line arguments.
+    // This runs directly in once() rather than via onStateChange because
+    // gamemode_management's once() (which dispatches setKnownGames) runs
+    // before profile_management's once(), so the state change would be missed.
+    // But the data we need from the state (the known games and the command line arguments)
+    // Should be available by the time this runs.
+    {
+      const state: IState = store.getState();
+      const { commandLine } = state.session.base;
+      const known: IGameStored[] = state.session.gameMode.known;
+      if (commandLine.profile !== undefined) {
+        const profile: IProfile = getSafe(
+          state,
+          ["persistent", "profiles", commandLine.profile],
+          undefined,
+        );
 
-          if (profile !== undefined) {
-            context.api.store.dispatch(setNextProfile(profile.id));
-          } else {
-            log(
-              "warn",
-              "profile cmdline argument detected - but profile is missing",
-              commandLine.profile,
+        if (profile !== undefined) {
+          context.api.store.dispatch(setNextProfile(profile.id));
+        } else {
+          log(
+            "warn",
+            "profile cmdline argument detected - but profile is missing",
+            commandLine.profile,
+          );
+        }
+      } else if (commandLine.game !== undefined && known.length > 0) {
+        // the game specified on the command line may be a game id or an extension
+        // name, because at the time we download an extension we don't actually know
+        // the game id yet.
+
+        readExtensions(false).then(
+          (extensions: { [extId: string]: IExtension }) => {
+            const extPathLookup = Object.values(extensions).reduce(
+              (prevExt, ext) => {
+                if (ext.path !== undefined) {
+                  prevExt[ext.path] = ext.name;
+                }
+                return prevExt;
+              },
+              {},
             );
-          }
-        } else if (commandLine.game !== undefined) {
-          // the game specified on the command line may be a game id or an extension
-          // name, because at the time we download an extension we don't actually know
-          // the game id yet.
 
-          readExtensions(false).then(
-            (extensions: { [extId: string]: IExtension }) => {
-              const extPathLookup = Object.values(extensions).reduce(
-                (prevExt, ext) => {
-                  if (ext.path !== undefined) {
-                    prevExt[ext.path] = ext.name;
-                  }
-                  return prevExt;
-                },
-                {},
-              );
+            const game = known.find(
+              (iter) =>
+                iter.id === commandLine.game ||
+                extPathLookup[iter.extensionPath] === commandLine.game,
+            );
 
-              const game = current.find(
-                (iter) =>
-                  iter.id === commandLine.game ||
-                  extPathLookup[iter.extensionPath] === commandLine.game,
-              );
-
-              if (game !== undefined) {
-                manageGame(context.api, game.id);
-              } else {
-                log("warn", "game specified on command line not found", {
-                  game: commandLine.game,
-                });
-              }
-            },
-          );
-        }
-      },
-    );
+            if (game !== undefined) {
+              manageGame(context.api, game.id);
+            } else {
+              log("warn", "game specified on command line not found", {
+                game: commandLine.game,
+              });
+            }
+          },
+        );
+      }
+    }
 
     context.api.onStateChange(
       ["persistent", "profiles"],

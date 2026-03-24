@@ -55,6 +55,7 @@ catalog:
   "@opentelemetry/resources": ^1.30.0
   "@opentelemetry/sdk-trace-base": ^1.30.0
   "@opentelemetry/semantic-conventions": ^1.30.0
+  "@playwright/test": ^1.58.2
   "@stylistic/eslint-plugin": ^5.7.1
   "@tailwindcss/cli": ^4.1.17
   "@testing-library/dom": ^10.4.1
@@ -170,7 +171,9 @@ catalog:
   enzyme-adapter-react-16: ^1.15.1
   eslint: 9.39.1
   eslint-config-prettier: 10.1.8
+  eslint-import-resolver-typescript: ^4.4.4
   eslint-plugin-better-tailwindcss: ^4.0.2
+  eslint-plugin-import: ^2.32.0
   eslint-plugin-perfectionist: ^5.4.0
   esptk: git+https://github.com/Nexus-Mods/node-esptk#6b8900658d66438fe92ac55bc182a45404e8bf3f
   exe-version: git+https://github.com/Nexus-Mods/node-exe-version#eded60fc0a0f3c234e1d586d2eb9952401945406
@@ -201,7 +204,7 @@ catalog:
   leveldown: ^5.6.0
   levelup: ^4.4.0
   lodash: ^4.17.21
-  loot: git+https://github.com/Nexus-Mods/node-loot#d8071f95fa9d110099c38adbb67c3c4ec30aaa42
+  loot: git+https://github.com/Nexus-Mods/node-loot#04a77fcae028b0838b5e0c53cfcdc65898c49727
   lru-cache: ^11.2.6
   markdown-ast: ^0.2.1
   memoize-one: ^5.1.1
@@ -214,11 +217,11 @@ catalog:
   node-7z: git+https://github.com/Nexus-Mods/node-7z#3d98d2ba40906f8afa9de52d2ceb6a44f7143198
   normalize-url: ^6.0.1
   numeral: ^2.0.6
+  oxfmt: ^0.41.0
   p-limit: ^7.3.0
   packery: ^2.1.2
   permissions: git+https://github.com/Nexus-Mods/node-permissions#7c1b6f1d6437f2238be51316de823b0fbd63e4c0
-  prettier: 3.6.2
-  pretty-quick: ^4.2.2
+  playwright: ^1.58.2
   prop-types: ^15.7.2
   ps-list: ^7.2.0
   re-reselect: 4.0.1
@@ -265,6 +268,7 @@ catalog:
   ts-jest: ^29.2.5
   ts-loader: ^9.5.1
   ts-v-gen: ^1.0.1
+  tsconfig-paths-webpack-plugin: ^4.2.0
   tsdown: 0.21.0-beta.1
   turbowalk: git+https://github.com/Nexus-Mods/node-turbowalk#3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
   typescript: 5.9.3
@@ -298,3 +302,5 @@ overrides:
   "@types/react": "16"
   "@types/react-dom": "16"
   node-addon-api: 8.5.0
+patchedDependencies:
+  playwright-core@1.58.2: patches/playwright-core@1.58.2.patch

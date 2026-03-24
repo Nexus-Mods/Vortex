@@ -62,7 +62,7 @@ export default class StylesheetCompiler {
       })
       .join("\n");
 
-    return `$theme-path: "${pathToFileURL(themePath)}";\n` + source;
+    return `$theme-path: "${pathToFileURL(themePath).toString()}";\n` + source;
   }
 
   private compile(source: string): string {

@@ -208,7 +208,7 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
             {
               id: "name",
               placeholder: "Theme Name",
-              value: themeName !== "__default" ? themeName : "",
+              value: themeName !== "default" ? themeName : "",
             },
           ],
           condition: (content: types.IDialogContent) => {

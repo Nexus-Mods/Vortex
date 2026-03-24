@@ -52,7 +52,17 @@ export const Settings: React.FC = () => {
   const dispatch = useDispatch();
 
   // Get extension objects using the hook instead of HOC
-  const settingPages = useExtensionObjects<ISettingsPage>(registerSettings);
+  const allSettingPages = useExtensionObjects<ISettingsPage>(registerSettings);
+
+  const useModernLayout = useSelector(
+    (state: IState) => state.settings.window.useModernLayout,
+  );
+
+  // In Modern UI, game-specific settings (those with a visible callback) are shown
+  // in the dedicated Game Settings page, so exclude them here to avoid duplication.
+  const settingPages = useModernLayout
+    ? allSettingPages.filter((page) => page.visible === undefined)
+    : allSettingPages;
 
   const settingsPage = useSelector(
     (state: IState) => state.session.base.settingsPage || undefined,

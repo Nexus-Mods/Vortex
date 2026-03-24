@@ -38,6 +38,7 @@ interface IConnectedProps {
   userInfo: { userId: number };
   nextProfileId: string;
   collectionsInstallWhileDownloading: boolean;
+  useModernLayout: boolean;
 }
 
 interface IActionProps {
@@ -57,6 +58,7 @@ interface IActionProps {
   onAddRule: (gameId: string, modId: string, rule: types.IModRule) => void;
   onRemoveRule: (gameId: string, modId: string, rule: types.IModRule) => void;
   onSetProfilesVisible: () => void;
+  onShowProfilesPage: (useModernLayout: boolean) => void;
 }
 
 type IProps = IInstallDialogProps & IConnectedProps & IActionProps;
@@ -341,7 +343,8 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
       this.state.selectedProfile !== this.props.driver?.profile?.id
     ) {
       if (this.state.selectedProfile === "__new") {
-        const { driver, onAddProfile, onSetProfilesVisible } = this.props;
+        const { driver, onAddProfile, onShowProfilesPage, useModernLayout } =
+          this.props;
         const { profile } = driver;
 
         const profileId = shortid();
@@ -354,7 +357,7 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
           lastActivated: 0,
         };
         onAddProfile(newProfile);
-        onSetProfilesVisible();
+        onShowProfilesPage(useModernLayout);
         this.nextState.selectedProfile = profileId;
       }
       this.nextState.confirmProfile = true;
@@ -367,8 +370,8 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
     const { selectedProfile } = this.state;
     await this.props.onSwitchProfile(selectedProfile);
 
-    // Make sure the profiles are visible.
-    this.props.onSetProfilesVisible();
+    // Make sure the profiles page is visible and navigate to it.
+    this.props.onShowProfilesPage(this.props.useModernLayout);
     this.startInstall();
   };
 
@@ -416,6 +419,7 @@ function mapStateToProps(
     userInfo,
     nextProfileId: state.settings.profiles.nextProfileId,
     collectionsInstallWhileDownloading,
+    useModernLayout: state.settings.window.useModernLayout ?? true,
   };
 }
 
@@ -439,6 +443,14 @@ function mapDispatchToProps(dispatch: Redux.Dispatch): IActionProps {
     onAddProfile: (profile: types.IProfile) =>
       dispatch(actions.setProfile(profile)),
     onSetProfilesVisible: () => dispatch(actions.setProfilesVisible(true)),
+    onShowProfilesPage: (useModernLayout: boolean) =>
+      util.batchDispatch(dispatch, [
+        actions.setProfilesVisible(true),
+        actions.setOpenMainPage(
+          useModernLayout ? "game-profiles" : "Profiles",
+          false,
+        ),
+      ]),
     onSetCollectionConcurrency: (enabled: boolean) =>
       dispatch(actions.setCollectionConcurrency(enabled)),
   };

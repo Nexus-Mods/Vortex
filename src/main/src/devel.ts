@@ -8,6 +8,7 @@ import { log } from "./logging";
  */
 export async function installDevelExtensions(): Promise<void> {
   if (process.env.NODE_ENV !== "development") return;
+  if (process.env.VORTEX_E2E === "1") return;
 
   const {
     default: install,

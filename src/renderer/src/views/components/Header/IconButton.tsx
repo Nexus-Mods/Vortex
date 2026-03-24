@@ -6,16 +6,28 @@ import { joinClasses } from "../../../ui/utils/joinClasses";
 
 interface IconButtonProps
   extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
+  appearance?: 'primary' | 'secondary';
   className?: string;
   iconPath: string;
   itemCount?: number;
 }
 
+const appearanceMap: Record<IconButtonProps["appearance"], string> = {
+  primary:
+    "text-neutral-moderate hover:text-neutral-strong aria-expanded:text-neutral-strong",
+  secondary:
+    "text-neutral-subdued hover:text-neutral-moderate aria-expanded:text-neutral-moderate",
+};
+
 export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
-  ({ className, iconPath, itemCount, ...props }, ref) => (
+  (
+    { appearance = "primary", className, iconPath, itemCount, ...props },
+    ref,
+  ) => (
     <button
       className={joinClasses([
-        "group/icon-button relative flex size-7 items-center justify-center rounded-sm text-neutral-moderate transition-colors hover:bg-surface-translucent-mid hover:text-neutral-strong aria-expanded:bg-surface-translucent-mid aria-expanded:text-neutral-strong",
+        "group/icon-button relative flex size-7 items-center justify-center rounded-sm transition-colors hover:bg-surface-translucent-mid aria-expanded:bg-surface-translucent-mid",
+        appearanceMap[appearance],
         className,
       ])}
       ref={ref}

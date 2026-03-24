@@ -174,9 +174,11 @@ class MainWindow {
             process.env.CRASH_REPORTING =
               Math.random() > 0.5 ? "vortex" : "electron";
             if (this.mWindow !== null) {
-              this.mWindow.loadURL(
-                `file://${getVortexPath("base")}/index.html`,
-              );
+              this.mWindow
+                .loadURL(`file://${getVortexPath("base")}/index.html`)
+                .catch((err: unknown) => {
+                  log("error", "failed to load index.html", err);
+                });
             } else {
               process.exit();
             }
@@ -273,7 +275,7 @@ class MainWindow {
           resolve = undefined!;
         }
       });
-      ipcMain.on("webview-dom-ready", (evt, id) => {
+      ipcMain.on("webview-dom-ready", (evt, id: number) => {
         const contents = webContents.fromId(id);
         contents?.setWindowOpenHandler(({ url, disposition }) => {
           evt.sender.send("webview-open-url", id, url, disposition);
@@ -293,9 +295,11 @@ class MainWindow {
   public show(maximized: boolean, startMinimized?: boolean) {
     this.mShown = true;
     if (this.mWindow) {
-      this.mWindow.show();
-      if (maximized) {
-        this.mWindow.maximize();
+      if (process.env.VORTEX_E2E_HEADLESS !== "1") {
+        this.mWindow.show();
+        if (maximized) {
+          this.mWindow.maximize();
+        }
       }
 
       if (startMinimized === true) {
