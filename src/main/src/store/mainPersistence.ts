@@ -32,6 +32,7 @@ import { parseAllQueries } from "./queryParser";
 import ReduxPersistorIPC from "./ReduxPersistorIPC";
 import SubPersistor from "./SubPersistor";
 import { Database } from "./Database";
+import { getVortexPath } from "../getVortexPath";
 
 let mainPersistor: ReduxPersistorIPC | undefined;
 let levelPersist: LevelPersist | undefined;
@@ -99,7 +100,7 @@ async function initQuerySystem(levelPersistor: LevelPersist): Promise<void> {
   const queryConnection = await singleton.createConnection();
 
   // Parse all SQL query files
-  const queriesDir = path.resolve(__dirname, "..", "..", "queries");
+  const queriesDir = path.join(getVortexPath("base"), "queries");
   let queries: ParsedQuery[];
   try {
     queries = parseAllQueries(queriesDir);
