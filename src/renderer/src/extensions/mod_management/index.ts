@@ -2306,7 +2306,7 @@ function init(context: IExtensionContext): boolean {
     "Mods",
     LazyComponent(() => require("./views/Settings")),
     () => ({ activators: getAllActivators() }),
-    undefined,
+    () => activeGameId(context.api.getState()) !== undefined,
     75,
   );
   context.registerSettings(
