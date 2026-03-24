@@ -1,26 +1,38 @@
 /**
  * Build-time script to generate TypeScript types from SQL query definitions.
  *
- * Usage: ts-node scripts/generate-query-types.ts
+ * Run after adding or modifying .sql files in src/queries/ so that the
+ * generated TypeScript interfaces stay in sync with the SQL schema.
  *
+ * Usage (from repo root):
+ *   pnpm run generate:query-types
+ *
+ * What it does:
  * 1. Creates a temporary DuckDB instance + loads level_pivot
  * 2. ATTACHes a temp empty LevelDB (for schema-only operation)
  * 3. Runs all `setup` queries (pivot table definitions)
  * 4. Runs all `view` queries (creates views)
  * 5. For each `select` query: prepares the statement, reads column metadata
  * 6. Maps DuckDB types to TypeScript types
- * 7. Writes output to src/main/store/generated/queryTypes.ts
+ * 7. Writes output to src/main/src/store/generated/queryTypes.ts
  */
 
 import * as fs from "node:fs";
+import { createRequire } from "node:module";
 import * as os from "node:os";
 import * as path from "node:path";
+
+// Resolve @duckdb/node-api from the @vortex/main workspace where it is declared
+// as a dependency, since this script lives at the repo root.
+const mainRequire = createRequire(
+  path.resolve(__dirname, "..", "src", "main", "package.json"),
+);
 
 import type { DuckDBConnection, DuckDBInstance, DuckDBType } from "@duckdb/node-api";
 
 // Import the parser from source
-import { parseAllQueries } from "../src/main/store/queryParser";
-import type { ParsedQuery, ParsedQueryParam } from "../src/main/store/queryParser";
+import { parseAllQueries } from "../src/main/src/store/queryParser";
+import type { ParsedQuery } from "../src/main/src/store/queryParser";
 
 const QUERIES_DIR = path.resolve(__dirname, "..", "src", "queries");
 const OUTPUT_FILE = path.resolve(
@@ -28,6 +40,7 @@ const OUTPUT_FILE = path.resolve(
   "..",
   "src",
   "main",
+  "src",
   "store",
   "generated",
   "queryTypes.ts",
@@ -137,22 +150,20 @@ async function main(): Promise<void> {
   );
 
   // Create temporary DuckDB instance for schema introspection
-  const { DuckDBInstance: DuckDBInstanceCtor } = require("@duckdb/node-api");
+  const { DuckDBInstance: DuckDBInstanceCtor } = mainRequire("@duckdb/node-api");
   const instance: DuckDBInstance = await DuckDBInstanceCtor.create(":memory:", {
     allow_unsigned_extensions: "true",
   });
   const connection: DuckDBConnection = await instance.connect();
 
+  // Create a temp LevelDB for schema-only operation (hoisted for cleanup after shutdown)
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "vortex-gen-"));
+
   try {
     // Install and load level_pivot
     console.log("Installing level_pivot...");
-    await connection.run(
-      "INSTALL level_pivot FROM 'https://halgari.github.io/duckdb-level-pivot/current_release'",
-    );
+    await connection.run("INSTALL level_pivot FROM community");
     await connection.run("LOAD level_pivot");
-
-    // Create a temp LevelDB for schema-only operation
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "vortex-gen-"));
     const tmpDbPath = path.join(tmpDir, "gen.db");
     await connection.run(
       `ATTACH '${tmpDbPath.replace(/'/g, "''")}' AS db (TYPE level_pivot, CREATE_IF_MISSING true)`,
@@ -231,12 +242,15 @@ async function main(): Promise<void> {
     fs.writeFileSync(OUTPUT_FILE, output, "utf-8");
     console.log(`Written to ${OUTPUT_FILE}`);
 
-    // Cleanup temp files
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+    // Detach before closing so the temp LevelDB files are released
+    await connection.run("DETACH db");
   } finally {
     connection.closeSync();
     instance.closeSync();
   }
+
+  // Cleanup temp files after DuckDB is fully shut down
+  fs.rmSync(tmpDir, { recursive: true, force: true });
 }
 
 function generateTypeScript(

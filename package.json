@@ -38,7 +38,8 @@
     "format:check": "pnpm oxfmt --check",
     "e2e": "pnpm -F @vortex/e2e run test",
     "e2e:headed": "pnpm -F @vortex/e2e run test:headed",
-    "e2e:debug": "pnpm -F @vortex/e2e run test:debug"
+    "e2e:debug": "pnpm -F @vortex/e2e run test:debug",
+    "generate:query-types": "npx tsx scripts/generate-query-types.ts"
   },
   "devDependencies": {
     "@eslint-react/eslint-plugin": "catalog:",

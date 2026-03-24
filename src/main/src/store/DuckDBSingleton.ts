@@ -48,9 +48,7 @@ class DuckDBSingleton {
       const connection = await this.#mDuckDB.connect();
       try {
         log("debug", "duckdb-singleton: installing level_pivot");
-        await connection.run(
-          "INSTALL level_pivot FROM 'https://halgari.github.io/duckdb-level-pivot/current_release'",
-        );
+        await connection.run("INSTALL level_pivot FROM community");
         log("debug", "duckdb-singleton: loading level_pivot");
         await connection.run("LOAD level_pivot");
       } finally {

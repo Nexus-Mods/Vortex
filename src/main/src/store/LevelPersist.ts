@@ -78,29 +78,27 @@ class LevelPersist implements IPersistor {
     return this.#mConnection;
   }
 
-  public close = this.#restackingFunc(async (): Promise<void> => {
+  public async close(): Promise<void> {
     await DuckDBSingleton.getInstance().detachDatabase(this.#mAlias);
-  });
+  }
 
   public setResetCallback(_cb: () => PromiseLike<void>): void {
     // Not implemented for DuckDB backend — DuckDB handles durability internally
   }
 
-  public getItem = this.#restackingFunc(
-    async (key: string[]): Promise<string> => {
-      const reader = await this.#mConnection.runAndReadAll(
-        `SELECT value FROM ${this.#mAlias}.kv WHERE key = $1`,
-        [key.join(SEPARATOR)],
-      );
-      const rows = reader.getRows();
-      if (rows.length === 0) {
-        const err = new Error(`Key not found: ${key.join(SEPARATOR)}`);
-        err.name = "NotFoundError";
-        throw err;
-      }
-      return rows[0][0] as string;
-    },
-  );
+  public async getItem(key: string[]): Promise<string> {
+    const reader = await this.#mConnection.runAndReadAll(
+      `SELECT value FROM ${this.#mAlias}.kv WHERE key = $1`,
+      [key.join(SEPARATOR)],
+    );
+    const rows = reader.getRows();
+    if (rows.length === 0) {
+      const err = new Error(`Key not found: ${key.join(SEPARATOR)}`);
+      err.name = "NotFoundError";
+      throw err;
+    }
+    return rows[0][0] as string;
+  }
 
   public async getAllKeys(): Promise<string[][]> {
     const reader = await this.#mConnection.runAndReadAll(
@@ -148,24 +146,20 @@ class LevelPersist implements IPersistor {
     })) as Array<{ key: string[]; value: string }>;
   }
 
-  public setItem = this.#restackingFunc(
-    async (statePath: string[], newState: string): Promise<void> => {
-      await this.#mConnection.run(
-        `INSERT INTO ${this.#mAlias}.kv VALUES ($1, $2)
+  public async setItem(statePath: string[], newState: string): Promise<void> {
+    await this.#mConnection.run(
+      `INSERT INTO ${this.#mAlias}.kv VALUES ($1, $2)
          ON CONFLICT (key) DO UPDATE SET value = excluded.value`,
-        [statePath.join(SEPARATOR), newState],
-      );
-    },
-  );
+      [statePath.join(SEPARATOR), newState],
+    );
+  }
 
-  public removeItem = this.#restackingFunc(
-    async (statePath: string[]): Promise<void> => {
-      await this.#mConnection.run(
-        `DELETE FROM ${this.#mAlias}.kv WHERE key = $1`,
-        [statePath.join(SEPARATOR)],
-      );
-    },
-  );
+  public async removeItem(statePath: string[]): Promise<void> {
+    await this.#mConnection.run(
+      `DELETE FROM ${this.#mAlias}.kv WHERE key = $1`,
+      [statePath.join(SEPARATOR)],
+    );
+  }
 
   /**
    * Begin a transaction on this connection.
@@ -204,20 +198,6 @@ class LevelPersist implements IPersistor {
       table: row[1] as string,
       type: row[2] as string,
     }));
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  #restackingFunc<T extends (...args: any[]) => Promise<any>>(
-    cb: T,
-  ): (...args: Parameters<T>) => ReturnType<T> {
-    return ((...args: Parameters<T>): ReturnType<T> => {
-      const stackErr = new Error();
-      return cb(...args).catch((unknownErr: unknown) => {
-        const err = unknownToError(unknownErr);
-        err.stack = stackErr.stack;
-        throw err;
-      }) as ReturnType<T>;
-    }) as (...args: Parameters<T>) => ReturnType<T>;
   }
 }
 
