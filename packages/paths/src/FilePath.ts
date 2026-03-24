@@ -11,11 +11,15 @@
  * ```
  */
 
-import type { IResolverBase } from './IResolver';
-import type { Anchor, RelativePath, ResolvedPath } from './types';
+import type { IResolverBase } from "./IResolver";
+import type { Anchor, RelativePath, ResolvedPath } from "./types";
 
-import { forPlatform } from './pathUtils';
-import { fnv1a, RelativePath as RelativePathNS, Anchor as AnchorNS } from './types';
+import { forPlatform } from "./pathUtils";
+import {
+  fnv1a,
+  RelativePath as RelativePathNS,
+  Anchor as AnchorNS,
+} from "./types";
 
 /**
  * FilePath combines a RelativePath, an Anchor, and a IResolver
@@ -39,7 +43,7 @@ export class FilePath {
     // Validate that the resolver can handle this anchor
     if (!resolver.canResolve(anchor)) {
       throw new Error(
-        `Resolver "${resolver.name}" cannot handle anchor: ${AnchorNS.name(anchor)}`
+        `Resolver "${resolver.name}" cannot handle anchor: ${AnchorNS.name(anchor)}`,
       );
     }
   }
@@ -205,7 +209,7 @@ export class FilePath {
    */
   toString(): string {
     const anchorName = AnchorNS.name(this.anchor);
-    const relativePath = this.relative || '(root)';
+    const relativePath = this.relative || "(root)";
     return `FilePath[${anchorName}]/${relativePath} (${this.resolver.name})`;
   }
 
@@ -258,7 +262,9 @@ export class FilePath {
     const resolverCmp = this.resolver.name.localeCompare(other.resolver.name);
     if (resolverCmp !== 0) return resolverCmp;
 
-    const anchorCmp = AnchorNS.name(this.anchor).localeCompare(AnchorNS.name(other.anchor));
+    const anchorCmp = AnchorNS.name(this.anchor).localeCompare(
+      AnchorNS.name(other.anchor),
+    );
     if (anchorCmp !== 0) return anchorCmp;
 
     return RelativePathNS.compare(this.relative, other.relative);
@@ -286,7 +292,9 @@ export class FilePath {
    * const reconstructed = parent.join(relative);
    * ```
    */
-  async relativeTo(basePath: string | ResolvedPath): Promise<RelativePath | null> {
+  async relativeTo(
+    basePath: string | ResolvedPath,
+  ): Promise<RelativePath | null> {
     // Resolve this FilePath to get the child OS path
     const childPath = await this.resolve();
 
@@ -312,9 +320,11 @@ export class FilePath {
 
     // Extract relative path
     const relative = pathMod.relative(resolvedBase, resolvedChild);
-    const normalized = relative.replace(/\\/g, '/'); // Forward slashes
+    const normalized = relative.replace(/\\/g, "/"); // Forward slashes
 
-    return normalized === '' ? RelativePathNS.EMPTY : RelativePathNS.make(normalized);
+    return normalized === ""
+      ? RelativePathNS.EMPTY
+      : RelativePathNS.make(normalized);
   }
 
   /**
@@ -333,7 +343,10 @@ export class FilePath {
    */
   withBase(newBase: FilePath): FilePath {
     // Combine new base's relative path with this path's relative path
-    const combinedRelative = RelativePathNS.join(newBase.relative, this.relative);
+    const combinedRelative = RelativePathNS.join(
+      newBase.relative,
+      this.relative,
+    );
 
     return new FilePath(combinedRelative, newBase.anchor, newBase.resolver);
   }
@@ -359,8 +372,9 @@ export class FilePath {
     const resolvedChild = pathMod.normalize(childPath as string);
     const parentNorm = fs.normalizePath(resolvedParent);
     const childNorm = fs.normalizePath(resolvedChild);
-    const parentWithSep = parentNorm.endsWith(fs.sep) ? parentNorm : parentNorm + fs.sep;
+    const parentWithSep = parentNorm.endsWith(fs.sep)
+      ? parentNorm
+      : parentNorm + fs.sep;
     return childNorm.startsWith(parentWithSep) || childNorm === parentNorm;
   }
-
 }

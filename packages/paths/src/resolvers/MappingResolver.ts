@@ -15,13 +15,13 @@
  * the mapping strategy explicit.
  */
 
-import type { FilePath } from '../FilePath';
-import type { IFilesystem } from '../IFilesystem';
-import type { IResolverBase } from '../IResolver';
-import type { Anchor, ResolvedPath } from '../types';
+import type { FilePath } from "../FilePath";
+import type { IFilesystem } from "../IFilesystem";
+import type { IResolverBase } from "../IResolver";
+import type { Anchor, ResolvedPath } from "../types";
 
-import { Anchor as AnchorNS, ResolvedPath as ResolvedPathNS } from '../types';
-import { BaseResolver } from './BaseResolver';
+import { Anchor as AnchorNS, ResolvedPath as ResolvedPathNS } from "../types";
+import { BaseResolver } from "./BaseResolver";
 
 /**
  * Strategy interface for mapping anchors to paths
@@ -70,9 +70,9 @@ export type MappingStrategy<ValidAnchors extends string> = {
  * }
  * ```
  */
-export abstract class MappingResolver<ValidAnchors extends string>
-  extends BaseResolver<ValidAnchors> {
-
+export abstract class MappingResolver<
+  ValidAnchors extends string,
+> extends BaseResolver<ValidAnchors> {
   constructor(name: string, parent?: IResolverBase, filesystem?: IFilesystem) {
     super(name, parent, filesystem);
   }
@@ -149,7 +149,7 @@ export abstract class MappingResolver<ValidAnchors extends string>
  */
 export function fromRecord<K extends string, V extends ResolvedPath | string>(
   record: Record<K, V>,
-  transform?: (value: V) => Promise<ResolvedPath> | ResolvedPath
+  transform?: (value: V) => Promise<ResolvedPath> | ResolvedPath,
 ): MappingStrategy<K> {
   return {
     canResolve: (name) => name in record,
@@ -162,7 +162,7 @@ export function fromRecord<K extends string, V extends ResolvedPath | string>(
       if (transform) {
         return transform(value);
       }
-      return typeof value === 'string' ? ResolvedPathNS.make(value) : value;
+      return typeof value === "string" ? ResolvedPathNS.make(value) : value;
     },
   };
 }
@@ -187,7 +187,7 @@ export function fromRecord<K extends string, V extends ResolvedPath | string>(
  * ```
  */
 export function fromMap<K extends string>(
-  map: Map<K, FilePath>
+  map: Map<K, FilePath>,
 ): MappingStrategy<K> {
   return {
     canResolve: (name) => map.has(name),
@@ -233,7 +233,7 @@ export function fromMap<K extends string>(
  */
 export function fromFunction<K extends string>(
   supportedAnchors: readonly K[],
-  resolveFn: (anchorName: K) => Promise<ResolvedPath> | ResolvedPath
+  resolveFn: (anchorName: K) => Promise<ResolvedPath> | ResolvedPath,
 ): MappingStrategy<K> {
   const anchorSet = new Set(supportedAnchors);
 

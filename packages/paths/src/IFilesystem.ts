@@ -5,15 +5,15 @@
  * This enables 100% cross-platform testing with mock implementations.
  */
 
-import type { ResolvedPath, RelativePath } from './types';
+import type { ResolvedPath, RelativePath } from "./types";
 
 /**
  * File type flags (bitfield)
  * Can be combined for entries that are multiple types (e.g., symlink to directory)
  */
 export enum FileType {
-  File = 1 << 0,        // 0b001 = 1
-  Directory = 1 << 1,   // 0b010 = 2
+  File = 1 << 0, // 0b001 = 1
+  Directory = 1 << 1, // 0b010 = 2
   SymbolicLink = 1 << 2, // 0b100 = 4
 }
 
@@ -112,7 +112,15 @@ export namespace FileEntry {
     mode: number,
     name?: RelativePath,
   ): FileEntry {
-    return { name, type: FileType.Directory, size: 0, mtime, birthtime, atime, mode };
+    return {
+      name,
+      type: FileType.Directory,
+      size: 0,
+      mtime,
+      birthtime,
+      atime,
+      mode,
+    };
   }
 
   /**
@@ -126,7 +134,15 @@ export namespace FileEntry {
     mode: number,
     name?: RelativePath,
   ): FileEntry {
-    return { name, type: FileType.SymbolicLink, size, mtime, birthtime, atime, mode };
+    return {
+      name,
+      type: FileType.SymbolicLink,
+      size,
+      mtime,
+      birthtime,
+      atime,
+      mode,
+    };
   }
 }
 
@@ -146,7 +162,7 @@ export interface IFilesystem {
   /**
    * Platform identifier
    */
-  readonly platform: 'windows' | 'unix';
+  readonly platform: "windows" | "unix";
 
   /**
    * Whether this filesystem is case-sensitive
@@ -179,7 +195,10 @@ export interface IFilesystem {
    * @returns File contents as string or Uint8Array (if encoding is null)
    * @throws Error if file doesn't exist or can't be read
    */
-  readFile(path: ResolvedPath, encoding?: string | null): Promise<string | Uint8Array>;
+  readFile(
+    path: ResolvedPath,
+    encoding?: string | null,
+  ): Promise<string | Uint8Array>;
 
   // ========================================================================
   // Write Operations
@@ -194,7 +213,11 @@ export interface IFilesystem {
    * @param encoding - Encoding (default: utf8)
    * @throws Error if write fails
    */
-  writeFile(path: ResolvedPath, data: string | Uint8Array, encoding?: string): Promise<void>;
+  writeFile(
+    path: ResolvedPath,
+    data: string | Uint8Array,
+    encoding?: string,
+  ): Promise<void>;
 
   /**
    * Append data to file
@@ -203,7 +226,11 @@ export interface IFilesystem {
    * @param data - Data to append
    * @param encoding - Encoding (default: utf8)
    */
-  appendFile(path: ResolvedPath, data: string | Uint8Array, encoding?: string): Promise<void>;
+  appendFile(
+    path: ResolvedPath,
+    data: string | Uint8Array,
+    encoding?: string,
+  ): Promise<void>;
 
   /**
    * Delete file
@@ -233,7 +260,10 @@ export interface IFilesystem {
    * @param options - Options (recursive: true to create parent directories)
    * @throws Error if directory already exists or can't be created
    */
-  mkdir(path: ResolvedPath, options?: { recursive?: boolean; mode?: number }): Promise<void>;
+  mkdir(
+    path: ResolvedPath,
+    options?: { recursive?: boolean; mode?: number },
+  ): Promise<void>;
 
   /**
    * Remove directory
@@ -285,7 +315,11 @@ export interface IFilesystem {
    * @param dest - Destination path
    * @param options - Copy options
    */
-  copy(src: ResolvedPath, dest: ResolvedPath, options?: { overwrite?: boolean; recursive?: boolean }): Promise<void>;
+  copy(
+    src: ResolvedPath,
+    dest: ResolvedPath,
+    options?: { overwrite?: boolean; recursive?: boolean },
+  ): Promise<void>;
 
   /**
    * Move/rename file or directory

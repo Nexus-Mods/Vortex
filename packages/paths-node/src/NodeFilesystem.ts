@@ -5,19 +5,23 @@
  * Used in production code for actual filesystem access.
  */
 
-import type { IFilesystem, FileEntry } from '@vortex/paths';
-import type { ResolvedPath } from '@vortex/paths';
+import type { IFilesystem, FileEntry } from "@vortex/paths";
+import type { ResolvedPath } from "@vortex/paths";
 
-import { FileType as FileTypeEnum, RelativePath as RelativePathNS } from '@vortex/paths';
-import * as fs from 'fs-extra';
-import * as path from 'path';
+import {
+  FileType as FileTypeEnum,
+  RelativePath as RelativePathNS,
+} from "@vortex/paths";
+import * as fs from "fs-extra";
+import * as path from "path";
 
 /**
  * Real filesystem implementation using Node.js fs
  */
 export class NodeFilesystem implements IFilesystem {
-  readonly platform = process.platform === 'win32' ? 'windows' as const : 'unix' as const;
-  readonly caseSensitive = process.platform !== 'win32';
+  readonly platform =
+    process.platform === "win32" ? ("windows" as const) : ("unix" as const);
+  readonly caseSensitive = process.platform !== "win32";
   readonly sep = path.sep;
 
   normalizePath(p: string): string {
@@ -29,9 +33,14 @@ export class NodeFilesystem implements IFilesystem {
   // Read Operations
   // ========================================================================
 
-  async readFile(filePath: ResolvedPath, encoding?: string | null): Promise<string | Uint8Array> {
+  async readFile(
+    filePath: ResolvedPath,
+    encoding?: string | null,
+  ): Promise<string | Uint8Array> {
     if (encoding) {
-      return fs.readFile(filePath as string, { encoding: encoding as BufferEncoding });
+      return fs.readFile(filePath as string, {
+        encoding: encoding as BufferEncoding,
+      });
     }
     return fs.readFile(filePath as string);
   }
@@ -40,13 +49,29 @@ export class NodeFilesystem implements IFilesystem {
   // Write Operations
   // ========================================================================
 
-  async writeFile(filePath: ResolvedPath, data: string | Uint8Array, encoding?: string): Promise<void> {
+  async writeFile(
+    filePath: ResolvedPath,
+    data: string | Uint8Array,
+    encoding?: string,
+  ): Promise<void> {
     await fs.ensureDir(path.dirname(filePath as string));
-    await fs.writeFile(filePath as string, data, encoding ? { encoding: encoding as BufferEncoding } : undefined);
+    await fs.writeFile(
+      filePath as string,
+      data,
+      encoding ? { encoding: encoding as BufferEncoding } : undefined,
+    );
   }
 
-  async appendFile(filePath: ResolvedPath, data: string | Uint8Array, encoding?: string): Promise<void> {
-    await fs.appendFile(filePath as string, data, encoding ? { encoding: encoding as BufferEncoding } : undefined);
+  async appendFile(
+    filePath: ResolvedPath,
+    data: string | Uint8Array,
+    encoding?: string,
+  ): Promise<void> {
+    await fs.appendFile(
+      filePath as string,
+      data,
+      encoding ? { encoding: encoding as BufferEncoding } : undefined,
+    );
   }
 
   async unlink(filePath: ResolvedPath): Promise<void> {
@@ -58,7 +83,9 @@ export class NodeFilesystem implements IFilesystem {
   // ========================================================================
 
   async readdir(dirPath: ResolvedPath): Promise<FileEntry[]> {
-    const entries = await fs.readdir(dirPath as string, { withFileTypes: true });
+    const entries = await fs.readdir(dirPath as string, {
+      withFileTypes: true,
+    });
     const results: FileEntry[] = [];
 
     for (const entry of entries) {
@@ -84,11 +111,17 @@ export class NodeFilesystem implements IFilesystem {
     return results;
   }
 
-  async mkdir(dirPath: ResolvedPath, options?: { recursive?: boolean; mode?: number }): Promise<void> {
+  async mkdir(
+    dirPath: ResolvedPath,
+    options?: { recursive?: boolean; mode?: number },
+  ): Promise<void> {
     await fs.mkdir(dirPath as string, options);
   }
 
-  async rmdir(dirPath: ResolvedPath, options?: { recursive?: boolean }): Promise<void> {
+  async rmdir(
+    dirPath: ResolvedPath,
+    options?: { recursive?: boolean },
+  ): Promise<void> {
     if (options?.recursive) {
       await fs.remove(dirPath as string);
     } else {
@@ -147,7 +180,7 @@ export class NodeFilesystem implements IFilesystem {
   async copy(
     src: ResolvedPath,
     dest: ResolvedPath,
-    options?: { overwrite?: boolean; recursive?: boolean }
+    options?: { overwrite?: boolean; recursive?: boolean },
   ): Promise<void> {
     await fs.copy(src as string, dest as string, {
       overwrite: options?.overwrite ?? true,

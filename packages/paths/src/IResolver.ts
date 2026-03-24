@@ -13,9 +13,9 @@
  *   type-safe anchor name checking at compile time
  */
 
-import type { FilePath } from './FilePath';
-import type { IFilesystem } from './IFilesystem';
-import type { Anchor, RelativePath, ResolvedPath } from './types';
+import type { FilePath } from "./FilePath";
+import type { IFilesystem } from "./IFilesystem";
+import type { Anchor, RelativePath, ResolvedPath } from "./types";
 
 /**
  * Non-generic resolver interface for resolver chain plumbing
@@ -138,7 +138,9 @@ export interface IResolverBase {
  * }
  * ```
  */
-export interface IResolver<ValidAnchors extends string = string> extends IResolverBase {
+export interface IResolver<
+  ValidAnchors extends string = string,
+> extends IResolverBase {
   /**
    * Type-safe convenience method for creating FilePath objects
    *
@@ -157,8 +159,5 @@ export interface IResolver<ValidAnchors extends string = string> extends IResolv
    * resolver.PathFor('drive_c');         // ✗ TypeScript error!
    * ```
    */
-  PathFor<A extends ValidAnchors>(
-    anchorName: A,
-    relative?: string
-  ): FilePath;
+  PathFor<A extends ValidAnchors>(anchorName: A, relative?: string): FilePath;
 }

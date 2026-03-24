@@ -16,27 +16,82 @@
  * ```
  */
 
-import type { IFilesystem } from '../IFilesystem';
-import type { IResolverBase } from '../IResolver';
-import type { RelativePath, ResolvedPath } from '../types';
+import type { IFilesystem } from "../IFilesystem";
+import type { IResolverBase } from "../IResolver";
+import type { RelativePath, ResolvedPath } from "../types";
 
-import { win32 } from '../pathUtils';
-import { RelativePath as RelativePathNS, ResolvedPath as ResolvedPathNS } from '../types';
-import { MappingResolver, fromFunction, type MappingStrategy } from './MappingResolver';
+import { win32 } from "../pathUtils";
+import {
+  RelativePath as RelativePathNS,
+  ResolvedPath as ResolvedPathNS,
+} from "../types";
+import {
+  MappingResolver,
+  fromFunction,
+  type MappingStrategy,
+} from "./MappingResolver";
 
 /**
  * All valid Windows drive letters (lowercase)
  */
 export type WindowsDrive =
-  | 'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'g' | 'h' | 'i' | 'j' | 'k' | 'l' | 'm'
-  | 'n' | 'o' | 'p' | 'q' | 'r' | 's' | 't' | 'u' | 'v' | 'w' | 'x' | 'y' | 'z';
+  | "a"
+  | "b"
+  | "c"
+  | "d"
+  | "e"
+  | "f"
+  | "g"
+  | "h"
+  | "i"
+  | "j"
+  | "k"
+  | "l"
+  | "m"
+  | "n"
+  | "o"
+  | "p"
+  | "q"
+  | "r"
+  | "s"
+  | "t"
+  | "u"
+  | "v"
+  | "w"
+  | "x"
+  | "y"
+  | "z";
 
 /**
  * Array of all valid drive letters for iteration
  */
 const DRIVE_LETTERS: readonly WindowsDrive[] = [
-  'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
-  'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+  "a",
+  "b",
+  "c",
+  "d",
+  "e",
+  "f",
+  "g",
+  "h",
+  "i",
+  "j",
+  "k",
+  "l",
+  "m",
+  "n",
+  "o",
+  "p",
+  "q",
+  "r",
+  "s",
+  "t",
+  "u",
+  "v",
+  "w",
+  "x",
+  "y",
+  "z",
 ];
 
 /**
@@ -49,7 +104,7 @@ const DRIVE_LETTERS: readonly WindowsDrive[] = [
  */
 export class WindowsResolver extends MappingResolver<WindowsDrive> {
   constructor(parent?: IResolverBase, filesystem?: IFilesystem) {
-    super('windows', parent, filesystem);
+    super("windows", parent, filesystem);
   }
 
   // ========================================================================
@@ -57,14 +112,11 @@ export class WindowsResolver extends MappingResolver<WindowsDrive> {
   // ========================================================================
 
   protected getStrategy(): MappingStrategy<WindowsDrive> {
-    return fromFunction(
-      DRIVE_LETTERS,
-      (letter) => {
-        // Convert to uppercase and create drive path (e.g., 'c' -> 'C:\')
-        const drivePath = `${letter.toUpperCase()}:\\`;
-        return ResolvedPathNS.make(drivePath);
-      }
-    );
+    return fromFunction(DRIVE_LETTERS, (letter) => {
+      // Convert to uppercase and create drive path (e.g., 'c' -> 'C:\')
+      const drivePath = `${letter.toUpperCase()}:\\`;
+      return ResolvedPathNS.make(drivePath);
+    });
   }
 
   // ========================================================================
@@ -75,7 +127,10 @@ export class WindowsResolver extends MappingResolver<WindowsDrive> {
    * Override to use Windows path joining semantics
    * This ensures correct path joining even on non-Windows platforms
    */
-  protected joinPaths(base: ResolvedPath, relative: RelativePath): ResolvedPath {
+  protected joinPaths(
+    base: ResolvedPath,
+    relative: RelativePath,
+  ): ResolvedPath {
     if (relative === RelativePathNS.EMPTY) {
       return base;
     }
@@ -89,7 +144,7 @@ export class WindowsResolver extends MappingResolver<WindowsDrive> {
   // ========================================================================
 
   protected toOSPath(intermediatePath: ResolvedPath): ResolvedPath {
-    return intermediatePath;  // Windows paths are already valid OS paths
+    return intermediatePath; // Windows paths are already valid OS paths
   }
 
   // ========================================================================

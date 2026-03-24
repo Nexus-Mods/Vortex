@@ -18,7 +18,13 @@ export interface PathModule {
   join(...segments: string[]): string;
   normalize(p: string): string;
   isAbsolute(p: string): boolean;
-  parse(p: string): { root: string; dir: string; base: string; ext: string; name: string };
+  parse(p: string): {
+    root: string;
+    dir: string;
+    base: string;
+    ext: string;
+    name: string;
+  };
   relative(from: string, to: string): string;
   resolve(base: string, ...segments: string[]): string;
 }
@@ -32,48 +38,48 @@ function posixIsAbsolute(p: string): boolean {
 }
 
 function posixNormalize(p: string): string {
-  if (p.length === 0) return '.';
+  if (p.length === 0) return ".";
 
   const isAbs = posixIsAbsolute(p);
   const trailingSep = p.charCodeAt(p.length - 1) === 0x2f;
 
-  const parts = p.split('/');
+  const parts = p.split("/");
   const normalized: string[] = [];
 
   for (const part of parts) {
-    if (part === '' || part === '.') continue;
-    if (part === '..') {
-      if (normalized.length > 0 && normalized[normalized.length - 1] !== '..') {
+    if (part === "" || part === ".") continue;
+    if (part === "..") {
+      if (normalized.length > 0 && normalized[normalized.length - 1] !== "..") {
         normalized.pop();
       } else if (!isAbs) {
-        normalized.push('..');
+        normalized.push("..");
       }
     } else {
       normalized.push(part);
     }
   }
 
-  let result = normalized.join('/');
+  let result = normalized.join("/");
   if (isAbs) {
-    result = '/' + result;
+    result = "/" + result;
   }
   if (result.length === 0) {
-    result = isAbs ? '/' : '.';
-  } else if (trailingSep && result !== '/') {
-    result += '/';
+    result = isAbs ? "/" : ".";
+  } else if (trailingSep && result !== "/") {
+    result += "/";
   }
   return result;
 }
 
 function posixJoin(...segments: string[]): string {
-  if (segments.length === 0) return '.';
-  const joined = segments.filter(s => s.length > 0).join('/');
-  if (joined.length === 0) return '.';
+  if (segments.length === 0) return ".";
+  const joined = segments.filter((s) => s.length > 0).join("/");
+  if (joined.length === 0) return ".";
   return posixNormalize(joined);
 }
 
 function posixDirname(p: string): string {
-  if (p.length === 0) return '.';
+  if (p.length === 0) return ".";
   const isAbs = posixIsAbsolute(p);
   // Remove trailing slashes
   let end = p.length - 1;
@@ -84,7 +90,7 @@ function posixDirname(p: string): string {
   while (i > 0 && p.charCodeAt(i) !== 0x2f) i--;
 
   if (i === 0) {
-    return isAbs ? '/' : '.';
+    return isAbs ? "/" : ".";
   }
 
   // Remove trailing slashes from result
@@ -94,7 +100,7 @@ function posixDirname(p: string): string {
 }
 
 function posixBasename(p: string, ext?: string): string {
-  if (p.length === 0) return '';
+  if (p.length === 0) return "";
 
   // Remove trailing slashes
   let end = p.length - 1;
@@ -115,21 +121,27 @@ function posixBasename(p: string, ext?: string): string {
 function posixExtname(p: string): string {
   // Get the basename first (strip dirs)
   const base = posixBasename(p);
-  if (base.length === 0) return '';
+  if (base.length === 0) return "";
 
-  const dotIdx = base.lastIndexOf('.');
+  const dotIdx = base.lastIndexOf(".");
   // No dot, or dot is the first character (hidden files like .gitignore)
-  if (dotIdx <= 0) return '';
+  if (dotIdx <= 0) return "";
   return base.slice(dotIdx);
 }
 
-function posixParse(p: string): { root: string; dir: string; base: string; ext: string; name: string } {
-  const root = posixIsAbsolute(p) ? '/' : '';
+function posixParse(p: string): {
+  root: string;
+  dir: string;
+  base: string;
+  ext: string;
+  name: string;
+} {
+  const root = posixIsAbsolute(p) ? "/" : "";
   const dir = posixDirname(p);
   const base = posixBasename(p);
   const ext = posixExtname(p);
   const name = ext.length > 0 ? base.slice(0, base.length - ext.length) : base;
-  return { root, dir: dir === '.' && root === '' ? '' : dir, base, ext, name };
+  return { root, dir: dir === "." && root === "" ? "" : dir, base, ext, name };
 }
 
 function posixResolve(base: string, ...segments: string[]): string {
@@ -138,7 +150,7 @@ function posixResolve(base: string, ...segments: string[]): string {
     if (posixIsAbsolute(seg)) {
       resolved = seg;
     } else {
-      resolved = resolved + '/' + seg;
+      resolved = resolved + "/" + seg;
     }
   }
   return posixNormalize(resolved);
@@ -148,10 +160,10 @@ function posixRelative(from: string, to: string): string {
   const fromNorm = posixNormalize(from);
   const toNorm = posixNormalize(to);
 
-  if (fromNorm === toNorm) return '';
+  if (fromNorm === toNorm) return "";
 
-  const fromParts = fromNorm === '/' ? [''] : fromNorm.split('/');
-  const toParts = toNorm === '/' ? [''] : toNorm.split('/');
+  const fromParts = fromNorm === "/" ? [""] : fromNorm.split("/");
+  const toParts = toNorm === "/" ? [""] : toNorm.split("/");
 
   // Find common prefix length
   let commonLen = 0;
@@ -165,14 +177,14 @@ function posixRelative(from: string, to: string): string {
   const downs = toParts.slice(commonLen);
 
   const parts: string[] = [];
-  for (let i = 0; i < ups; i++) parts.push('..');
+  for (let i = 0; i < ups; i++) parts.push("..");
   parts.push(...downs);
 
-  return parts.join('/');
+  return parts.join("/");
 }
 
 export const posix: PathModule = {
-  sep: '/',
+  sep: "/",
   dirname: posixDirname,
   basename: posixBasename,
   extname: posixExtname,
@@ -209,7 +221,12 @@ function win32IsAbsolute(p: string): boolean {
     return p.length > 1 && isWin32Sep(p.charCodeAt(1));
   }
   // Drive letter: C:\ or C:/
-  if (p.length >= 3 && isDriveLetter(p.charCodeAt(0)) && p.charCodeAt(1) === 0x3a /* ':' */ && isWin32Sep(p.charCodeAt(2))) {
+  if (
+    p.length >= 3 &&
+    isDriveLetter(p.charCodeAt(0)) &&
+    p.charCodeAt(1) === 0x3a /* ':' */ &&
+    isWin32Sep(p.charCodeAt(2))
+  ) {
     return true;
   }
   return false;
@@ -220,13 +237,22 @@ function win32IsAbsolute(p: string): boolean {
  * E.g., "C:\foo" → "C:\", "\\server\share" → "\\server\share\"
  */
 function win32Root(p: string): string {
-  if (p.length === 0) return '';
+  if (p.length === 0) return "";
   // Drive root: C:\ or C:/
-  if (p.length >= 3 && isDriveLetter(p.charCodeAt(0)) && p.charCodeAt(1) === 0x3a && isWin32Sep(p.charCodeAt(2))) {
-    return p.slice(0, 3).replace(/\//g, '\\');
+  if (
+    p.length >= 3 &&
+    isDriveLetter(p.charCodeAt(0)) &&
+    p.charCodeAt(1) === 0x3a &&
+    isWin32Sep(p.charCodeAt(2))
+  ) {
+    return p.slice(0, 3).replace(/\//g, "\\");
   }
   // UNC path: \\server\share
-  if (p.length >= 2 && isWin32Sep(p.charCodeAt(0)) && isWin32Sep(p.charCodeAt(1))) {
+  if (
+    p.length >= 2 &&
+    isWin32Sep(p.charCodeAt(0)) &&
+    isWin32Sep(p.charCodeAt(1))
+  ) {
     // Find \\server\share
     let j = 2;
     while (j < p.length && !isWin32Sep(p.charCodeAt(j))) j++; // skip server
@@ -234,9 +260,9 @@ function win32Root(p: string): string {
       j++; // skip separator
       while (j < p.length && !isWin32Sep(p.charCodeAt(j))) j++; // skip share
     }
-    return p.slice(0, j).replace(/\//g, '\\') + '\\';
+    return p.slice(0, j).replace(/\//g, "\\") + "\\";
   }
-  return '';
+  return "";
 }
 
 /**
@@ -246,12 +272,12 @@ function win32Split(p: string): { root: string; parts: string[] } {
   const root = win32Root(p);
   const rest = p.slice(root.length);
   // Split on both separators
-  const parts = rest.split(/[/\\]/).filter(s => s.length > 0);
+  const parts = rest.split(/[/\\]/).filter((s) => s.length > 0);
   return { root, parts };
 }
 
 function win32Normalize(p: string): string {
-  if (p.length === 0) return '.';
+  if (p.length === 0) return ".";
 
   const { root, parts } = win32Split(p);
   const isAbs = root.length > 0;
@@ -259,36 +285,36 @@ function win32Normalize(p: string): string {
 
   const normalized: string[] = [];
   for (const part of parts) {
-    if (part === '.') continue;
-    if (part === '..') {
-      if (normalized.length > 0 && normalized[normalized.length - 1] !== '..') {
+    if (part === ".") continue;
+    if (part === "..") {
+      if (normalized.length > 0 && normalized[normalized.length - 1] !== "..") {
         normalized.pop();
       } else if (!isAbs) {
-        normalized.push('..');
+        normalized.push("..");
       }
     } else {
       normalized.push(part);
     }
   }
 
-  let result = root + normalized.join('\\');
+  let result = root + normalized.join("\\");
   if (result.length === 0) {
-    result = '.';
-  } else if (trailingSep && !result.endsWith('\\')) {
-    result += '\\';
+    result = ".";
+  } else if (trailingSep && !result.endsWith("\\")) {
+    result += "\\";
   }
   return result;
 }
 
 function win32Join(...segments: string[]): string {
-  if (segments.length === 0) return '.';
-  const joined = segments.filter(s => s.length > 0).join('\\');
-  if (joined.length === 0) return '.';
+  if (segments.length === 0) return ".";
+  const joined = segments.filter((s) => s.length > 0).join("\\");
+  if (joined.length === 0) return ".";
   return win32Normalize(joined);
 }
 
 function win32Dirname(p: string): string {
-  if (p.length === 0) return '.';
+  if (p.length === 0) return ".";
 
   const { root } = win32Split(p);
 
@@ -303,9 +329,9 @@ function win32Dirname(p: string): string {
   if (i <= root.length) {
     // No separator found after root
     if (root.length > 0) {
-      return root.endsWith('\\') ? root : root + '\\';
+      return root.endsWith("\\") ? root : root + "\\";
     }
-    return '.';
+    return ".";
   }
 
   // Remove trailing separators from result
@@ -313,12 +339,12 @@ function win32Dirname(p: string): string {
 
   let dir = p.slice(0, i);
   // Normalize separators
-  dir = dir.replace(/\//g, '\\');
+  dir = dir.replace(/\//g, "\\");
   return dir;
 }
 
 function win32Basename(p: string, ext?: string): string {
-  if (p.length === 0) return '';
+  if (p.length === 0) return "";
 
   // Remove trailing separators
   let end = p.length - 1;
@@ -326,7 +352,12 @@ function win32Basename(p: string, ext?: string): string {
 
   // Find last separator
   let start = end;
-  while (start > 0 && !isWin32Sep(p.charCodeAt(start - 1)) && p.charCodeAt(start - 1) !== 0x3a) start--;
+  while (
+    start > 0 &&
+    !isWin32Sep(p.charCodeAt(start - 1)) &&
+    p.charCodeAt(start - 1) !== 0x3a
+  )
+    start--;
 
   let base = p.slice(start, end + 1);
 
@@ -338,20 +369,26 @@ function win32Basename(p: string, ext?: string): string {
 
 function win32Extname(p: string): string {
   const base = win32Basename(p);
-  if (base.length === 0) return '';
+  if (base.length === 0) return "";
 
-  const dotIdx = base.lastIndexOf('.');
-  if (dotIdx <= 0) return '';
+  const dotIdx = base.lastIndexOf(".");
+  if (dotIdx <= 0) return "";
   return base.slice(dotIdx);
 }
 
-function win32Parse(p: string): { root: string; dir: string; base: string; ext: string; name: string } {
+function win32Parse(p: string): {
+  root: string;
+  dir: string;
+  base: string;
+  ext: string;
+  name: string;
+} {
   const root = win32Root(p);
   const dir = win32Dirname(p);
   const base = win32Basename(p);
   const ext = win32Extname(p);
   const name = ext.length > 0 ? base.slice(0, base.length - ext.length) : base;
-  return { root, dir: dir === '.' ? '' : dir, base, ext, name };
+  return { root, dir: dir === "." ? "" : dir, base, ext, name };
 }
 
 function win32Resolve(base: string, ...segments: string[]): string {
@@ -360,7 +397,7 @@ function win32Resolve(base: string, ...segments: string[]): string {
     if (win32IsAbsolute(seg)) {
       resolved = seg;
     } else {
-      resolved = resolved + '\\' + seg;
+      resolved = resolved + "\\" + seg;
     }
   }
   return win32Normalize(resolved);
@@ -370,7 +407,7 @@ function win32Relative(from: string, to: string): string {
   const fromNorm = win32Normalize(from);
   const toNorm = win32Normalize(to);
 
-  if (fromNorm.toLowerCase() === toNorm.toLowerCase()) return '';
+  if (fromNorm.toLowerCase() === toNorm.toLowerCase()) return "";
 
   const { root: fromRoot, parts: fromParts } = win32Split(fromNorm);
   const { root: toRoot, parts: toParts } = win32Split(toNorm);
@@ -392,14 +429,14 @@ function win32Relative(from: string, to: string): string {
   const downs = toParts.slice(commonLen);
 
   const parts: string[] = [];
-  for (let i = 0; i < ups; i++) parts.push('..');
+  for (let i = 0; i < ups; i++) parts.push("..");
   parts.push(...downs);
 
-  return parts.join('\\');
+  return parts.join("\\");
 }
 
 export const win32: PathModule = {
-  sep: '\\',
+  sep: "\\",
   dirname: win32Dirname,
   basename: win32Basename,
   extname: win32Extname,
@@ -427,6 +464,6 @@ export function detectPathModule(p: string): PathModule {
 /**
  * Return the path module for a given platform identifier.
  */
-export function forPlatform(platform: 'windows' | 'unix'): PathModule {
-  return platform === 'windows' ? win32 : posix;
+export function forPlatform(platform: "windows" | "unix"): PathModule {
+  return platform === "windows" ? win32 : posix;
 }

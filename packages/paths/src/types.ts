@@ -8,9 +8,9 @@
  * - Anchor: Named resolution starting points (interned Symbols)
  */
 
-import { z } from 'zod';
+import { z } from "zod";
 
-import { posix, win32, detectPathModule } from './pathUtils';
+import { posix, win32, detectPathModule } from "./pathUtils";
 
 // ============================================================================
 // Zod Schemas for Runtime Validation
@@ -24,16 +24,17 @@ import { posix, win32, detectPathModule } from './pathUtils';
  * - Rejects parent directory references (..)
  * - Rejects absolute paths and drive letters
  */
-export const RelativePathSchema = z.string()
-  .transform(s => s.replace(/\\/g, '/'))  // Normalize to forward slashes
-  .transform(s => s.replace(/^\/+/, ''))   // Remove leading slashes
-  .transform(s => s.replace(/\/+$/, ''))   // Remove trailing slashes
-  .transform(s => s.replace(/\/+/g, '/'))  // Collapse multiple slashes
-  .refine(s => !s.startsWith('..'), {
-    message: 'Relative paths cannot start with ..',
+export const RelativePathSchema = z
+  .string()
+  .transform((s) => s.replace(/\\/g, "/")) // Normalize to forward slashes
+  .transform((s) => s.replace(/^\/+/, "")) // Remove leading slashes
+  .transform((s) => s.replace(/\/+$/, "")) // Remove trailing slashes
+  .transform((s) => s.replace(/\/+/g, "/")) // Collapse multiple slashes
+  .refine((s) => !s.startsWith(".."), {
+    message: "Relative paths cannot start with ..",
   })
-  .refine(s => !/^[a-zA-Z]:/.test(s), {
-    message: 'Relative paths cannot contain drive letters',
+  .refine((s) => !/^[a-zA-Z]:/.test(s), {
+    message: "Relative paths cannot contain drive letters",
   });
 
 /**
@@ -41,10 +42,10 @@ export const RelativePathSchema = z.string()
  * - Must be an absolute path (Unix or Windows format)
  * - Accepts both Unix-style (/...) and Windows-style (C:\...) absolute paths
  */
-export const ResolvedPathSchema = z.string()
-  .refine(s => {
+export const ResolvedPathSchema = z.string().refine(
+  (s) => {
     // Accept Unix absolute paths: start with /
-    if (s.startsWith('/')) {
+    if (s.startsWith("/")) {
       return true;
     }
     // Accept Windows absolute paths: drive letter followed by :\
@@ -53,9 +54,12 @@ export const ResolvedPathSchema = z.string()
     }
     // Check both platform modules
     return posix.isAbsolute(s) || win32.isAbsolute(s);
-  }, {
-    message: 'Resolved paths must be absolute (Unix: /path or Windows: C:\\path)',
-  });
+  },
+  {
+    message:
+      "Resolved paths must be absolute (Unix: /path or Windows: C:\\path)",
+  },
+);
 
 /**
  * Zod schema for Extension validation
@@ -63,14 +67,15 @@ export const ResolvedPathSchema = z.string()
  * - Cannot contain path separators
  * - Normalized to lowercase
  */
-export const ExtensionSchema = z.string()
-  .refine(s => s.startsWith('.'), {
-    message: 'Extensions must start with .',
+export const ExtensionSchema = z
+  .string()
+  .refine((s) => s.startsWith("."), {
+    message: "Extensions must start with .",
   })
-  .refine(s => !s.includes('/') && !s.includes('\\'), {
-    message: 'Extensions cannot contain path separators',
+  .refine((s) => !s.includes("/") && !s.includes("\\"), {
+    message: "Extensions cannot contain path separators",
   })
-  .transform(s => s.toLowerCase());
+  .transform((s) => s.toLowerCase());
 
 // ============================================================================
 // RelativePath: Sanitized relative paths (input to resolvers)
@@ -87,7 +92,9 @@ declare const RELATIVE_PATH_BRAND: unique symbol;
  *
  * Examples: "mods/skyrim/data", "downloads", "temp/cache"
  */
-export type RelativePath = string & { readonly [RELATIVE_PATH_BRAND]: typeof RELATIVE_PATH_BRAND };
+export type RelativePath = string & {
+  readonly [RELATIVE_PATH_BRAND]: typeof RELATIVE_PATH_BRAND;
+};
 
 // Namespace provides static factory methods (e.g. .make(), .join()) as a companion
 // to the branded type, which is the idiomatic TS pattern for attaching utilities to a type.
@@ -102,7 +109,9 @@ export namespace RelativePath {
   export function make(input: string): RelativePath {
     const result = RelativePathSchema.safeParse(input);
     if (!result.success) {
-      const errors = result.error.issues?.map(e => e.message).join(', ') || result.error.message;
+      const errors =
+        result.error.issues?.map((e) => e.message).join(", ") ||
+        result.error.message;
       throw new Error(`Invalid RelativePath: ${errors}`);
     }
     return result.data as RelativePath;
@@ -119,7 +128,7 @@ export namespace RelativePath {
   /**
    * Empty relative path (root of anchor)
    */
-  export const EMPTY: RelativePath = '' as RelativePath;
+  export const EMPTY: RelativePath = "" as RelativePath;
 
   /**
    * Join path segments into a single RelativePath
@@ -137,11 +146,14 @@ export namespace RelativePath {
    * RelativePath.join(RelativePath.make('mods'), 'skyrim\\data', 'meshes')
    * // => 'mods/skyrim/data/meshes'
    */
-  export function join(base: RelativePath, ...segments: string[]): RelativePath {
+  export function join(
+    base: RelativePath,
+    ...segments: string[]
+  ): RelativePath {
     const combined = [base as string, ...segments]
-      .filter(s => s.length > 0)
-      .join('/');
-    return combined === '' ? EMPTY : make(combined);
+      .filter((s) => s.length > 0)
+      .join("/");
+    return combined === "" ? EMPTY : make(combined);
   }
 
   /**
@@ -153,7 +165,7 @@ export namespace RelativePath {
    */
   export function dirname(relative: RelativePath): RelativePath {
     const dir = posix.dirname(relative as string);
-    if (dir === '.' || dir === '') {
+    if (dir === "." || dir === "") {
       return EMPTY;
     }
     return make(dir);
@@ -181,18 +193,18 @@ export namespace RelativePath {
    * Count path segments. Empty = 0, "mods/skyrim/data" = 3.
    */
   export function depth(relative: RelativePath): number {
-    if (relative === '' || relative === EMPTY) return 0;
-    return (relative as string).split('/').length;
+    if (relative === "" || relative === EMPTY) return 0;
+    return (relative as string).split("/").length;
   }
 
   /**
    * Strict containment check (not equal). Everything is "in" EMPTY.
    */
   export function isIn(child: RelativePath, parent: RelativePath): boolean {
-    if (parent === EMPTY || parent === '') {
-      return child !== EMPTY && child !== '';
+    if (parent === EMPTY || parent === "") {
+      return child !== EMPTY && child !== "";
     }
-    return (child as string).startsWith((parent as string) + '/');
+    return (child as string).startsWith((parent as string) + "/");
   }
 
   /**
@@ -232,7 +244,9 @@ declare const RESOLVED_PATH_BRAND: unique symbol;
  * Examples (Windows): "C:\\Users\\name\\AppData\\Roaming\\Vortex\\mods"
  * Examples (Unix): "/home/user/.local/share/Vortex/mods"
  */
-export type ResolvedPath = string & { readonly [RESOLVED_PATH_BRAND]: typeof RESOLVED_PATH_BRAND };
+export type ResolvedPath = string & {
+  readonly [RESOLVED_PATH_BRAND]: typeof RESOLVED_PATH_BRAND;
+};
 
 // Namespace provides static factory methods (e.g. .make(), .join()) as a companion
 // to the branded type, which is the idiomatic TS pattern for attaching utilities to a type.
@@ -247,7 +261,9 @@ export namespace ResolvedPath {
   export function make(osPath: string): ResolvedPath {
     const result = ResolvedPathSchema.safeParse(osPath);
     if (!result.success) {
-      const errors = result.error.issues?.map(e => e.message).join(', ') || result.error.message;
+      const errors =
+        result.error.issues?.map((e) => e.message).join(", ") ||
+        result.error.message;
       throw new Error(`Invalid ResolvedPath: ${errors}`);
     }
     return result.data as ResolvedPath;
@@ -266,11 +282,11 @@ export namespace ResolvedPath {
    * @returns Object with root, dir, base, ext, name properties
    */
   export function parse(resolved: ResolvedPath): {
-    root: string;      // 'C:\' or '/'
-    dir: string;       // Directory part
-    base: string;      // Filename with extension
-    ext: string;       // Extension (with dot)
-    name: string;      // Filename without extension
+    root: string; // 'C:\' or '/'
+    dir: string; // Directory part
+    base: string; // Filename with extension
+    ext: string; // Extension (with dot)
+    name: string; // Filename without extension
   } {
     const pathMod = detectPathModule(resolved as string);
     return pathMod.parse(resolved as string);
@@ -284,7 +300,10 @@ export namespace ResolvedPath {
    * ResolvedPath.join(base, 'mods', 'skyrim')
    * // => 'C:\\Vortex\\mods\\skyrim' (Windows)
    */
-  export function join(base: ResolvedPath, ...segments: string[]): ResolvedPath {
+  export function join(
+    base: ResolvedPath,
+    ...segments: string[]
+  ): ResolvedPath {
     const pathMod = detectPathModule(base as string);
     const joined = pathMod.join(base as string, ...segments);
     return make(joined);
@@ -363,7 +382,9 @@ declare const EXTENSION_BRAND: unique symbol;
  *
  * Examples: ".esp", ".dll", ".json"
  */
-export type Extension = string & { readonly [EXTENSION_BRAND]: typeof EXTENSION_BRAND };
+export type Extension = string & {
+  readonly [EXTENSION_BRAND]: typeof EXTENSION_BRAND;
+};
 
 // Namespace provides static factory methods (e.g. .make(), .fromPath()) as a companion
 // to the branded type, which is the idiomatic TS pattern for attaching utilities to a type.
@@ -377,7 +398,9 @@ export namespace Extension {
   export function make(input: string): Extension {
     const result = ExtensionSchema.safeParse(input);
     if (!result.success) {
-      const errors = result.error.issues?.map(e => e.message).join(', ') || result.error.message;
+      const errors =
+        result.error.issues?.map((e) => e.message).join(", ") ||
+        result.error.message;
       throw new Error(`Invalid Extension: ${errors}`);
     }
     return result.data as Extension;
@@ -394,7 +417,7 @@ export namespace Extension {
   export function fromPath(filePath: string): Extension | undefined {
     const pathMod = detectPathModule(filePath);
     const ext = pathMod.extname(filePath);
-    if (ext === '') {
+    if (ext === "") {
       return undefined;
     }
     return make(ext);
@@ -421,14 +444,14 @@ export namespace Extension {
   }
 
   // Common extensions
-  export const ESP = make('.esp');
-  export const ESM = make('.esm');
-  export const DLL = make('.dll');
-  export const EXE = make('.exe');
-  export const JSON = make('.json');
-  export const ZIP = make('.zip');
-  export const RAR = make('.rar');
-  export const SEVENZIP = make('.7z');
+  export const ESP = make(".esp");
+  export const ESM = make(".esm");
+  export const DLL = make(".dll");
+  export const EXE = make(".exe");
+  export const JSON = make(".json");
+  export const ZIP = make(".zip");
+  export const RAR = make(".rar");
+  export const SEVENZIP = make(".7z");
 }
 
 // ============================================================================
@@ -454,7 +477,7 @@ export function fnv1a(str: string): number {
 // Anchor: Named resolution starting points (interned Symbols)
 // ============================================================================
 
-const ANCHOR_PREFIX = 'anchor:';
+const ANCHOR_PREFIX = "anchor:";
 
 declare const ANCHOR_BRAND: unique symbol;
 
@@ -492,7 +515,7 @@ export namespace Anchor {
   export function name(anchor: Anchor): string {
     const description = Symbol.keyFor(anchor as symbol);
     if (!description || !description.startsWith(ANCHOR_PREFIX)) {
-      throw new Error('Invalid anchor symbol');
+      throw new Error("Invalid anchor symbol");
     }
     return description.substring(ANCHOR_PREFIX.length);
   }
@@ -508,7 +531,7 @@ export namespace Anchor {
    * Check if a symbol is a valid anchor
    */
   export function isAnchor(value: unknown): value is Anchor {
-    if (typeof value !== 'symbol') {
+    if (typeof value !== "symbol") {
       return false;
     }
     const description = Symbol.keyFor(value);

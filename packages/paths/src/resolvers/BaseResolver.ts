@@ -7,13 +7,17 @@
  * - Common resolution logic
  */
 
-import type { IFilesystem } from '../IFilesystem';
-import type { IResolver, IResolverBase } from '../IResolver';
-import type { Anchor, RelativePath, ResolvedPath } from '../types';
+import type { IFilesystem } from "../IFilesystem";
+import type { IResolver, IResolverBase } from "../IResolver";
+import type { Anchor, RelativePath, ResolvedPath } from "../types";
 
-import { FilePath } from '../FilePath';
-import { forPlatform, type PathModule } from '../pathUtils';
-import { RelativePath as RelativePathNS, Anchor as AnchorNS, ResolvedPath as ResolvedPathNS } from '../types';
+import { FilePath } from "../FilePath";
+import { forPlatform, type PathModule } from "../pathUtils";
+import {
+  RelativePath as RelativePathNS,
+  Anchor as AnchorNS,
+  ResolvedPath as ResolvedPathNS,
+} from "../types";
 
 /**
  * Abstract base resolver with type-safe anchor support
@@ -34,7 +38,9 @@ import { RelativePath as RelativePathNS, Anchor as AnchorNS, ResolvedPath as Res
  *
  * @template ValidAnchors - Union of string literals for valid anchor names
  */
-export abstract class BaseResolver<ValidAnchors extends string = string> implements IResolver<ValidAnchors> {
+export abstract class BaseResolver<
+  ValidAnchors extends string = string,
+> implements IResolver<ValidAnchors> {
   constructor(
     public readonly name: string,
     public readonly parent?: IResolverBase,
@@ -59,7 +65,7 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
     }
     throw new Error(
       `Resolver "${this.name}" has no filesystem. ` +
-      `Resolver chains must include an IFilesystem (either directly or via a parent resolver).`
+        `Resolver chains must include an IFilesystem (either directly or via a parent resolver).`,
     );
   }
 
@@ -81,7 +87,7 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
     if (!this.canResolve(anchor)) {
       throw new Error(
         `Resolver "${this.name}" cannot resolve anchor: ${anchorName}. ` +
-        `Supported anchors: [${this.supportedAnchors().map(AnchorNS.name).join(', ')}]`
+          `Supported anchors: [${this.supportedAnchors().map(AnchorNS.name).join(", ")}]`,
       );
     }
 
@@ -105,7 +111,7 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
     }
     throw new Error(
       `Resolver "${this.name}" cannot create OS paths. ` +
-      `Resolver chains must terminate with a platform resolver (UnixResolver or WindowsResolver).`
+        `Resolver chains must terminate with a platform resolver (UnixResolver or WindowsResolver).`,
     );
   }
 
@@ -136,7 +142,10 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
   /**
    * Join base path with relative path (OS-specific)
    */
-  protected joinPaths(base: ResolvedPath, relative: RelativePath): ResolvedPath {
+  protected joinPaths(
+    base: ResolvedPath,
+    relative: RelativePath,
+  ): ResolvedPath {
     if (relative === RelativePathNS.EMPTY) {
       return base;
     }
@@ -147,7 +156,7 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
       const fs = this.getFilesystem();
       pathMod = forPlatform(fs.platform);
     } catch {
-      pathMod = forPlatform('unix');
+      pathMod = forPlatform("unix");
     }
     const joined = pathMod.join(base as string, relative as string);
     return ResolvedPathNS.make(joined);
@@ -181,10 +190,11 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
    */
   PathFor<A extends ValidAnchors>(
     anchorName: A,
-    relative: string = ''
+    relative: string = "",
   ): FilePath {
     const anchor = AnchorNS.make(anchorName);
-    const relativePath = relative === '' ? RelativePathNS.EMPTY : RelativePathNS.make(relative);
+    const relativePath =
+      relative === "" ? RelativePathNS.EMPTY : RelativePathNS.make(relative);
 
     // FilePath constructor will validate that this resolver can handle the anchor
     return new FilePath(relativePath, anchor, this);
@@ -228,7 +238,7 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
         } catch (_err) {
           // Anchor may not be resolvable — skip it silently
         }
-      })
+      }),
     );
 
     return basePaths;
@@ -269,7 +279,11 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
     const normalizedPath = this.normalizePath(resolvedPath);
 
     // Find longest matching base path (most specific wins)
-    let bestMatch: { anchor: Anchor; basePath: ResolvedPath; relative: RelativePath } | null = null;
+    let bestMatch: {
+      anchor: Anchor;
+      basePath: ResolvedPath;
+      relative: RelativePath;
+    } | null = null;
 
     for (const [anchor, basePath] of basePaths) {
       const normalizedBase = this.normalizePath(basePath);
@@ -279,10 +293,16 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
 
       if (isUnder) {
         // Pass original (non-case-folded) paths to preserve case in the relative portion
-        const relative = this.extractRelative(resolvedPath as string, basePath as string);
+        const relative = this.extractRelative(
+          resolvedPath as string,
+          basePath as string,
+        );
 
         // Keep the longest matching base (most specific)
-        if (!bestMatch || normalizedBase.length > this.normalizePath(bestMatch.basePath).length) {
+        if (
+          !bestMatch ||
+          normalizedBase.length > this.normalizePath(bestMatch.basePath).length
+        ) {
           bestMatch = { anchor, basePath, relative };
         }
       }
@@ -315,14 +335,27 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
   /**
    * Check if path is under base path
    */
-  private isUnder(childPath: string, basePath: string, preNormalized = false): boolean {
+  private isUnder(
+    childPath: string,
+    basePath: string,
+    preNormalized = false,
+  ): boolean {
     const fs = this.getFilesystem();
-    const normalizedChild = preNormalized ? childPath : fs.normalizePath(childPath);
-    const normalizedBase = preNormalized ? basePath : fs.normalizePath(basePath);
+    const normalizedChild = preNormalized
+      ? childPath
+      : fs.normalizePath(childPath);
+    const normalizedBase = preNormalized
+      ? basePath
+      : fs.normalizePath(basePath);
 
     // Ensure base ends with separator for proper prefix matching
-    const baseWithSep = normalizedBase.endsWith(fs.sep) ? normalizedBase : normalizedBase + fs.sep;
-    return normalizedChild.startsWith(baseWithSep) || normalizedChild === normalizedBase;
+    const baseWithSep = normalizedBase.endsWith(fs.sep)
+      ? normalizedBase
+      : normalizedBase + fs.sep;
+    return (
+      normalizedChild.startsWith(baseWithSep) ||
+      normalizedChild === normalizedBase
+    );
   }
 
   /**
@@ -343,12 +376,16 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
     }
 
     // Strip base prefix (plus separator) from full path
-    const prefixLen = normBase.endsWith(sep) ? normBase.length : normBase.length + 1;
+    const prefixLen = normBase.endsWith(sep)
+      ? normBase.length
+      : normBase.length + 1;
     const relative = normFull.substring(prefixLen);
 
     // Convert to forward slashes (RelativePath convention)
-    const normalized = relative.replace(/\\/g, '/');
+    const normalized = relative.replace(/\\/g, "/");
 
-    return normalized === '' ? RelativePathNS.EMPTY : RelativePathNS.make(normalized);
+    return normalized === ""
+      ? RelativePathNS.EMPTY
+      : RelativePathNS.make(normalized);
   }
 }

@@ -15,17 +15,24 @@
  * ```
  */
 
-import type { IFilesystem } from '../IFilesystem';
-import type { IResolverBase } from '../IResolver';
-import type { RelativePath, ResolvedPath } from '../types';
+import type { IFilesystem } from "../IFilesystem";
+import type { IResolverBase } from "../IResolver";
+import type { RelativePath, ResolvedPath } from "../types";
 
-import { RelativePath as RelativePathNS, ResolvedPath as ResolvedPathNS } from '../types';
-import { MappingResolver, fromFunction, type MappingStrategy } from './MappingResolver';
+import {
+  RelativePath as RelativePathNS,
+  ResolvedPath as ResolvedPathNS,
+} from "../types";
+import {
+  MappingResolver,
+  fromFunction,
+  type MappingStrategy,
+} from "./MappingResolver";
 
 /**
  * Valid Unix anchor (single 'root' anchor)
  */
-export type UnixAnchor = 'root';
+export type UnixAnchor = "root";
 
 /**
  * Unix resolver for filesystem root
@@ -37,7 +44,7 @@ export type UnixAnchor = 'root';
  */
 export class UnixResolver extends MappingResolver<UnixAnchor> {
   constructor(parent?: IResolverBase, filesystem?: IFilesystem) {
-    super('unix', parent, filesystem);
+    super("unix", parent, filesystem);
   }
 
   // ========================================================================
@@ -45,10 +52,7 @@ export class UnixResolver extends MappingResolver<UnixAnchor> {
   // ========================================================================
 
   protected getStrategy(): MappingStrategy<UnixAnchor> {
-    return fromFunction(
-      ['root'] as const,
-      () => ResolvedPathNS.make('/')
-    );
+    return fromFunction(["root"] as const, () => ResolvedPathNS.make("/"));
   }
 
   // ========================================================================
@@ -59,14 +63,17 @@ export class UnixResolver extends MappingResolver<UnixAnchor> {
    * Override to use POSIX path joining semantics
    * This ensures correct path joining even on non-Unix platforms (e.g., Windows)
    */
-  protected joinPaths(base: ResolvedPath, relative: RelativePath): ResolvedPath {
+  protected joinPaths(
+    base: ResolvedPath,
+    relative: RelativePath,
+  ): ResolvedPath {
     if (relative === RelativePathNS.EMPTY) {
       return base;
     }
     // RelativePath is pre-normalized (no backslashes, no leading/trailing slashes),
     // so string concatenation is sufficient and correct on all platforms
     const baseStr = base as string;
-    const sep = baseStr.endsWith('/') ? '' : '/';
+    const sep = baseStr.endsWith("/") ? "" : "/";
     return ResolvedPathNS.make(`${baseStr}${sep}${relative as string}`);
   }
 
@@ -75,7 +82,7 @@ export class UnixResolver extends MappingResolver<UnixAnchor> {
   // ========================================================================
 
   protected toOSPath(intermediatePath: ResolvedPath): ResolvedPath {
-    return intermediatePath;  // Unix paths are already valid OS paths
+    return intermediatePath; // Unix paths are already valid OS paths
   }
 
   // ========================================================================
