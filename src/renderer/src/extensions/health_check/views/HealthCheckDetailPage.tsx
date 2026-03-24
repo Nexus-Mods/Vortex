@@ -306,6 +306,7 @@ function HealthCheckDetailPage({
                 key={`${mod.modId}`}
                 mod={mod}
                 modFiles={modFiles}
+                showPremiumBadge={showPremiumAd}
                 onConfirmInstall={handleConfirmInstall}
                 onShowVortexModal={
                   !showPremiumAd ? handleDownload : () => setShowPremiumModal(true)
