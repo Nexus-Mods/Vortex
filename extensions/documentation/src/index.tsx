@@ -11,19 +11,19 @@ import DocumentationView from "./views/DocumentationView";
 import { types, util } from "vortex-api";
 
 const WIKI_TOPICS = {
-  ["adding-games"]: "users/ui/games#finding-a-game",
-  ["creating-themes"]: "developer/creating-a-theme",
-  ["deployment-methods"]: "users/deployment-methods",
-  ["downloading"]: "users/download-from-nexusmods",
-  ["external-changes"]: "users/External-Changes",
-  ["keyboard-shortcuts"]: "users/keyboard-shortcuts",
-  ["file-conflicts"]: "users/managing-file-conflicts",
-  ["load-order-about"]: "users/vortex-approach-to-load-order",
-  ["load-order"]: "users/managing-your-load-order",
-  ["profiles"]: "users/setting-up-profiles",
+  ["adding-games"]: "MODDINGWIKI-Users-UI-Games-section",
+  ["creating-themes"]: "MODDINGWIKI-Developers-General-Creating-a-theme",
+  ["deployment-methods"]: "MODDINGWIKI-Users-General-Deployment-Methods",
+  ["downloading"]: "MODDINGWIKI-Users-General-Downloading-from-Nexus-Mods",
+  ["external-changes"]: "MODDINGWIKI-Users-General-Managing-External-Changes",
+  ["keyboard-shortcuts"]: "MODDINGWIKI-Users-General-Managing-Keyboard-Shortcuts",
+  ["file-conflicts"]: "MODDINGWIKI-Users-General-Managing-File-Conflicts",
+  ["load-order-about"]: "MODDINGWIKI-Users-General-The-Vortex-Approach-to-Load-Order",
+  ["load-order"]: "MODDINGWIKI-Users-General-Managing-your-Load-Order",
+  ["profiles"]: "MODDINGWIKI-Users-General-Setting-up-Profiles",
 };
 
-const WIKI_URL = "https://modding.wiki/en/vortex";
+const WIKI_URL = "https://github.com/Nexus-Mods/Vortex/wiki";
 
 function generateUrl(wikiId: string) {
   const topicId = WIKI_TOPICS[wikiId] || undefined;
@@ -115,13 +115,20 @@ export default function init(context: types.IExtensionContext) {
       }
     });
 
-    context.api.events.on("open-knowledge-base", (wikiId: string) => {
-      context.api.events.emit("show-main-page", "Knowledge Base");
-      const url = generateUrl(wikiId);
-      if (url !== undefined) {
-        setTimeout(() => {
-          context.api.events.emit("navigate-knowledgebase", url);
-        }, 2000);
+    context.api.events.on("open-knowledge-base", (wikiId?: string) => {
+      const state = context.api.store.getState();
+      const isModernLayout = state.settings?.window?.useModernLayout;
+      if (isModernLayout) {
+        const url = generateUrl(wikiId) ?? WIKI_URL;
+        util.opn(url).catch(() => null);
+      } else {
+        context.api.events.emit("show-main-page", "Knowledge base");
+        const url = generateUrl(wikiId);
+        if (url !== undefined) {
+          setTimeout(() => {
+            context.api.events.emit("navigate-knowledgebase", url);
+          }, 2000);
+        }
       }
     });
   });

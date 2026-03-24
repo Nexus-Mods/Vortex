@@ -27,7 +27,7 @@ export const HelpSection: FC = () => {
   const { t } = useTranslation();
 
   const handleHelpCentre = useCallback(() => {
-    api.events.emit("show-main-page", "Knowledge Base");
+    api.events.emit("open-knowledge-base");
   }, [api]);
 
   const handleDiagnosticFiles = useCallback(() => {
