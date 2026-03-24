@@ -139,9 +139,6 @@ export interface MainChannels {
   // Persistence: Send hydration data to renderer on startup
   "persist:hydrate": (hive: PersistedHive, data: Serializable) => void;
 
-  // App initialization: Main sends all startup metadata to renderer in one message
-  "app:init": (metadata: AppInitMetadata) => void;
-
   // Extensions: Response from main process after initializing an extension
   "extensions:init-main-response": (response: {
     extensionName: string;
@@ -207,6 +204,7 @@ export interface InvokeChannels {
   ) => Promise<void>;
   "app:exit": (exitCode?: number) => Promise<void>;
   "app:getName": () => Promise<string>;
+  "app:getInitMetadata": () => Promise<AppInitMetadata>;
 
   // App path channels
   "app:getPath": (name: keyof VortexPaths) => Promise<string>;
