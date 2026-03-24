@@ -86,7 +86,13 @@ const MenuContent: FC = () => {
                 iconPath={page.mdi ?? getIconPath(page.icon)}
                 isActive={mainPage === page.id}
                 key={page.id}
-                onClick={() => dispatch(setOpenMainPage(page.id, false))}
+                onClick={() => {
+                  if (mainPage === page.id) {
+                    page.onReset?.();
+                  } else {
+                    dispatch(setOpenMainPage(page.id, false));
+                  }
+                }}
               >
                 {t(page.title, { ns: page.namespace })}
               </MenuButton>
