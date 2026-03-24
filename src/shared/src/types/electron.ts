@@ -151,9 +151,12 @@ export interface WebPreferences {
   enableDeprecatedPaste?: boolean;
 }
 
-export interface BrowserViewConstructorOptions {
+export interface WebContentsViewConstructorOptions {
   webPreferences?: WebPreferences;
 }
+
+/** @deprecated Use WebContentsViewConstructorOptions instead. Kept for backwards compatibility. */
+export type BrowserViewConstructorOptions = WebContentsViewConstructorOptions;
 
 export interface JumpListItem {
   args?: string;

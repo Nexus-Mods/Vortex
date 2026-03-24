@@ -1,0 +1,18 @@
+{
+  "$schema": "https://www.schemastore.org/package.json",
+  "name": "@vortex/e2e",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "catalog:",
+    "playwright": "catalog:",
+    "electron": "catalog:"
+  }
+}

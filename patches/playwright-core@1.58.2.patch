@@ -1,0 +1,27 @@
+diff --git a/lib/server/electron/electron.js b/lib/server/electron/electron.js
+index 795b1799c506267e99727bb925f811dc01fb48e5..79aed107473dab5b579bd5430816c52e876bcab0 100644
+--- a/lib/server/electron/electron.js
++++ b/lib/server/electron/electron.js
+@@ -129,7 +129,7 @@ class Electron extends import_instrumentation.SdkObject {
+   }
+   async launch(progress, options) {
+     let app = void 0;
+-    let electronArguments = ["--inspect=0", "--remote-debugging-port=0", ...options.args || []];
++    let electronArguments = ["--inspect=0", ...options.args || []];
+     if (import_os.default.platform() === "linux") {
+       const runningAsRoot = process.geteuid && process.geteuid() === 0;
+       if (runningAsRoot && electronArguments.indexOf("--no-sandbox") === -1)
+diff --git a/lib/server/electron/loader.js b/lib/server/electron/loader.js
+index b6e97080b1a6a75c038db2e74e3d2a1a8468c4f6..d5a5e2a61312840ca94daac3e971c011bd29aa5c 100644
+--- a/lib/server/electron/loader.js
++++ b/lib/server/electron/loader.js
+@@ -1,7 +1,8 @@
+ "use strict";
+ const { app } = require("electron");
+ const { chromiumSwitches } = require("../chromium/chromiumSwitches");
+-process.argv.splice(1, process.argv.indexOf("--remote-debugging-port=0"));
++process.argv.splice(1, process.argv.indexOf("--inspect=0"));
++app.commandLine.appendSwitch("remote-debugging-port", "0");
+ for (const arg of chromiumSwitches()) {
+   const match = arg.match(/--([^=]*)=?(.*)/);
+   app.commandLine.appendSwitch(match[1], match[2]);

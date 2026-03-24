@@ -1,0 +1,103 @@
+name: E2E Tests
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+          - os: ubuntu-latest
+
+    runs-on: ${{ matrix.os }}
+    # E2E aren't stable yet. Windows takes too long to execute, Linux is experimental
+    continue-on-error: true
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: "recursive"
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install volta, Node.js and Yarn
+        uses: volta-cli/action@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          cache: true
+
+      - name: Configure node-gyp for VS 2022
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          echo "npm_config_msvs_version=2022" >> $env:GITHUB_ENV
+          echo "GYP_MSVS_VERSION=2022" >> $env:GITHUB_ENV
+
+      # NOTE(erri120): fontconfig required by font-scanner required by theme-switcher
+      - name: Install fontconfig
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libfontconfig1-dev
+
+      - name: Build FOMOD
+        run: pnpm run build:fomod
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build
+        run: pnpm run build:all
+
+      - name: Install Playwright
+        run: pnpm -F @vortex/e2e exec playwright install chromium
+
+      # Fix chrome-sandbox permissions for Electron on Linux
+      # The SUID sandbox requires the binary to be owned by root with mode 4755
+      - name: Fix Chrome sandbox permissions
+        if: runner.os == 'Linux'
+        run: |
+          SANDBOX_PATH=$(find node_modules -name chrome-sandbox -type f 2>/dev/null | head -1)
+          if [ -n "$SANDBOX_PATH" ]; then
+            sudo chown root:root "$SANDBOX_PATH"
+            sudo chmod 4755 "$SANDBOX_PATH"
+          fi
+
+      - name: Run E2E tests (Windows)
+        if: runner.os == 'Windows'
+        timeout-minutes: 30
+        continue-on-error: true
+        run: pnpm e2e
+
+      - name: Run E2E tests (Linux)
+        if: runner.os == 'Linux'
+        timeout-minutes: 30
+        continue-on-error: true
+        run: xvfb-run pnpm e2e
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-report-${{ matrix.os }}
+          retention-days: 14
+          path: packages/e2e/playwright-report/
+
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results-${{ matrix.os }}
+          retention-days: 7
+          path: packages/e2e/test-results/

@@ -35,7 +35,10 @@
     "test:watch": "pnpm vitest",
     "api": "pnpm -F @vortex/renderer run api:build && pnpm -F @vortex/renderer run api:docs && pnpm -F vortex-api run typecheck",
     "format": "pnpm oxfmt",
-    "format:check": "pnpm oxfmt --check"
+    "format:check": "pnpm oxfmt --check",
+    "e2e": "pnpm -F @vortex/e2e run test",
+    "e2e:headed": "pnpm -F @vortex/e2e run test:headed",
+    "e2e:debug": "pnpm -F @vortex/e2e run test:debug"
   },
   "devDependencies": {
     "@eslint-react/eslint-plugin": "catalog:",

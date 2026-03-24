@@ -17,13 +17,13 @@ import type {
 
 import {
   app,
-  BrowserView,
   BrowserWindow,
   clipboard,
   contentTracing,
   dialog,
   Menu,
   powerSaveBlocker,
+  WebContentsView,
 } from "electron";
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -235,7 +235,7 @@ export function init() {
   });
 
   // ============================================================================
-  // BrowserView handlers
+  // WebContentsView handlers (migrated from BrowserView, removed in Electron 39)
   // ============================================================================
 
   betterIpcMain.handle(
@@ -253,7 +253,7 @@ export function init() {
         extraWebViews[contentsId] = {};
       }
 
-      const view = new BrowserView({
+      const view = new WebContentsView({
         webPreferences: {
           nodeIntegration: false,
           contextIsolation: true,
@@ -262,12 +262,13 @@ export function init() {
           webSecurity: false,
         },
       });
+      view.setBackgroundColor("#00000000");
 
       const viewId = `${contentsId}_${Object.keys(extraWebViews[contentsId]).length}`;
       extraWebViews[contentsId][viewId] = view;
 
       await view.webContents.loadURL(src);
-      window.addBrowserView(view);
+      window?.contentView.addChildView(view);
 
       return viewId;
     },
@@ -279,7 +280,7 @@ export function init() {
       event: IpcMainInvokeEvent,
       src: string,
       forwardEvents: string[],
-      options: Electron.BrowserViewConstructorOptions | undefined,
+      options: Electron.WebContentsViewConstructorOptions | undefined,
     ) => {
       const window = BrowserWindow.fromWebContents(event.sender);
       const contentsId = event.sender.id;
@@ -289,7 +290,7 @@ export function init() {
       }
 
       const typedOptions = options ?? {};
-      const viewOptions: Electron.BrowserViewConstructorOptions = {
+      const viewOptions: Electron.WebContentsViewConstructorOptions = {
         ...typedOptions,
         webPreferences: {
           nodeIntegration: false,
@@ -300,19 +301,25 @@ export function init() {
         },
       };
 
-      const view = new BrowserView(viewOptions);
+      const view = new WebContentsView(viewOptions);
+      view.setBackgroundColor("#00000000");
+
       const viewId = `${contentsId}_${Object.keys(extraWebViews[contentsId]).length}`;
       extraWebViews[contentsId][viewId] = view;
 
-      view.setAutoResize({
-        horizontal: true,
-        vertical: true,
-      });
+      // Manual auto-resize: update view bounds when window resizes
+      const updateBounds = () => {
+        if (window && !window.isDestroyed()) {
+          const bounds = window.getContentBounds();
+          view.setBounds({ x: 0, y: 0, width: bounds.width, height: bounds.height });
+        }
+      };
+      window?.on("resize", updateBounds);
 
-      window.addBrowserView(view);
+      window?.contentView.addChildView(view);
       await view.webContents.loadURL(src);
 
-      // Forward events from BrowserView to renderer
+      // Forward events from WebContentsView to renderer
       forwardEvents.forEach((eventId) => {
         view.webContents.on(
           eventId as Parameters<typeof view.webContents.on>[0],
@@ -336,7 +343,7 @@ export function init() {
       const contentsId = event.sender.id;
       if (extraWebViews[contentsId]?.[viewId] !== undefined) {
         const window = BrowserWindow.fromWebContents(event.sender);
-        window?.removeBrowserView(extraWebViews[contentsId][viewId]);
+        window?.contentView.removeChildView(extraWebViews[contentsId][viewId]);
         delete extraWebViews[contentsId][viewId];
       }
     },
@@ -444,8 +451,10 @@ export function init() {
   betterIpcMain.handle(
     "window:show",
     (_event: IpcMainInvokeEvent, windowId: number) => {
-      const window = BrowserWindow.fromId(windowId);
-      window?.show();
+      if (process.env.VORTEX_E2E_HEADLESS !== "1") {
+        const window = BrowserWindow.fromId(windowId);
+        window?.show();
+      }
     },
   );
 
