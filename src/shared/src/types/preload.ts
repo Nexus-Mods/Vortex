@@ -121,11 +121,8 @@ export interface App {
   /** Relaunches the application with the given arguments */
   relaunch(args?: string[]): void;
 
-  /**
-   * Register a callback for app initialization metadata from main.
-   * Called once during startup with all app metadata.
-   */
-  onInit(callback: (metadata: AppInitMetadata) => void): void;
+  /** Request app initialization metadata from main (request/response) */
+  getInitMetadata(): Promise<AppInitMetadata>;
 
   /** Set as default protocol client */
   setProtocolClient(protocol: string, udPath: string): Promise<void>;

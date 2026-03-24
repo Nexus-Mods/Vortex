@@ -200,10 +200,6 @@ class Application {
     }
 
     log("debug", "window created");
-
-    // Send app initialization metadata to renderer
-    // Renderer will dispatch Redux actions based on this
-    webContents.send("app:init", this.mAppMetadata);
   }
 
   private async startSplash(): Promise<SplashScreen> {
@@ -844,6 +840,10 @@ class Application {
     this.mAppMetadata = {
       commandLine: this.mArgs as unknown as Record<string, unknown>,
     };
+
+    // Register handler so renderer can request metadata via invoke (avoids
+    // race conditions with the fire-and-forget app:init send pattern)
+    ipcMain.handle("app:getInitMetadata", () => this.mAppMetadata);
 
     // 1. Create LevelPersist for the base path
     const levelPersistor = await LevelPersist.create(

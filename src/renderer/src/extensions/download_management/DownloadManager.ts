@@ -774,6 +774,7 @@ class DownloadWorker {
       this.mURLResolve = undefined;
     }
     this.mOnAbort?.();
+    clearTimeout(this.mStallTimer);
     if (this.mEnded) {
       return false;
     }

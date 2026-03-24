@@ -211,6 +211,7 @@ export interface InvokeChannels {
   ) => Promise<void>;
   "app:exit": (exitCode?: number) => Promise<void>;
   "app:getName": () => Promise<string>;
+  "app:getInitMetadata": () => Promise<AppInitMetadata>;
 
   // App path channels
   "app:getPath": (name: keyof VortexPaths) => Promise<string>;

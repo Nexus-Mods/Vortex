@@ -10,7 +10,9 @@ import React, {
   useReducer,
   type ValidationMap,
 } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+
+import type { IState } from "../types/IState";
 
 import type { IComponentContext } from "../types/IComponentContext";
 
@@ -18,6 +20,12 @@ import { setOpenMainPage } from "../actions/session";
 import { useExtensionContext } from "../ExtensionProvider";
 import { useMenuLayerContext } from "./MenuLayerContext";
 import { useWindowContext } from "./WindowContext";
+
+// In modern layout, some pages move to a different location (e.g. Mods settings
+// moves from global settings to the per-game preferences page)
+const PAGE_REDIRECTS_MODERN: Record<string, string> = {
+  application_settings: "game_settings",
+};
 
 const defaultValue: IComponentContext = {
   api: undefined,
@@ -39,11 +47,17 @@ export const MainProvider: FC<IMainProviderProps> = ({ children }) => {
   const { menuLayerElement } = useMenuLayerContext();
   const { getModifiers } = useWindowContext();
   const [, forceUpdate] = useReducer((x: number) => x + 1, 0);
+  const useModernLayout = useSelector(
+    (state: IState) => state.settings.window.useModernLayout,
+  );
 
   // Set up event listeners for api events
   useEffect(() => {
     const showMainPageHandler = (pageId: string) => {
-      dispatch(setOpenMainPage(pageId, false));
+      const resolvedId = useModernLayout
+        ? (PAGE_REDIRECTS_MODERN[pageId] ?? pageId)
+        : pageId;
+      dispatch(setOpenMainPage(resolvedId, false));
     };
 
     const refreshMainPageHandler = () => {
@@ -57,7 +71,7 @@ export const MainProvider: FC<IMainProviderProps> = ({ children }) => {
       api.events.removeListener("show-main-page", showMainPageHandler);
       api.events.removeListener("refresh-main-page", refreshMainPageHandler);
     };
-  }, [api, dispatch]);
+  }, [api, dispatch, useModernLayout]);
 
   const contextValue = useMemo(
     () => ({

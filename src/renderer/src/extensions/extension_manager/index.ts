@@ -326,6 +326,20 @@ function genUpdateInstalledExtensions(api: IExtensionApi) {
         if (!initial && !_.isEqual(state.session.extensions.installed, ext)) {
           if (!localState.reloadNecessary) {
             localState.reloadNecessary = true;
+
+            // Identify newly installed game extensions so we can pass --game
+            // on restart, allowing the profile manager to offer to manage it
+            const oldInstalled = state.session.extensions.installed;
+            const newGameExt = Object.entries(ext).find(
+              ([id, info]) =>
+                oldInstalled[id] === undefined &&
+                info.name?.startsWith("Game:"),
+            );
+            const relaunchArgs =
+              newGameExt !== undefined
+                ? ["--game", newGameExt[1].name]
+                : undefined;
+
             api.sendNotification({
               id: "extension-updates",
               type: "success",
@@ -334,7 +348,7 @@ function genUpdateInstalledExtensions(api: IExtensionApi) {
                 {
                   title: "Restart now",
                   action: () => {
-                    relaunch();
+                    relaunch(relaunchArgs);
                   },
                 },
               ],

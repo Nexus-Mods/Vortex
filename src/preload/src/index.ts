@@ -102,8 +102,8 @@ try {
     },
     app: {
       relaunch: (args) => betterIpcRenderer.send("app:relaunch", args),
-      onInit: (callback: (metadata: AppInitMetadata) => void) =>
-        betterIpcRenderer.on("app:init", (_, metadata) => callback(metadata)),
+      getInitMetadata: (): Promise<AppInitMetadata> =>
+        betterIpcRenderer.invoke("app:getInitMetadata"),
       setProtocolClient: (protocol: string, udPath: string) =>
         betterIpcRenderer.invoke("app:setProtocolClient", protocol, udPath),
       isProtocolClient: (protocol: string, udPath: string) =>
