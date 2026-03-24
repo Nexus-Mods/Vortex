@@ -1,11 +1,13 @@
-import { vi } from 'vitest';
+import { vi } from "vitest";
 
 export const readFileAsyncMock = vi.fn();
 export const extractFullMock = vi.fn();
 export const walkMock = vi.fn();
-export const SevenZipMock = vi.fn(class SevenZipMock {
-  public extractFull = extractFullMock;
-});
+export const SevenZipMock = vi.fn(
+  class SevenZipMock {
+    public extractFull = extractFullMock;
+  },
+);
 
 export const fs = {
   readFileAsync: readFileAsyncMock,
@@ -16,7 +18,7 @@ export const log = vi.fn();
 export class DataInvalid extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'DataInvalid';
+    this.name = "DataInvalid";
   }
 }
 

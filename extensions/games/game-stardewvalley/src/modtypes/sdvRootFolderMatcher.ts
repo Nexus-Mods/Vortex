@@ -1,12 +1,12 @@
 /**
  * Detects installed mods that should use the `sdvrootfolder` mod type.
  */
-import Bluebird from 'bluebird';
-import path from 'path';
+import Bluebird from "bluebird";
+import path from "path";
 
-import type { types } from 'vortex-api';
+import type { types } from "vortex-api";
 
-import { MOD_MANIFEST, MODS_REL_PATH } from '../common';
+import { MOD_MANIFEST, MODS_REL_PATH } from "../common";
 
 /**
  * Mod-type matcher for automatic `sdvrootfolder` classification.
@@ -15,16 +15,21 @@ import { MOD_MANIFEST, MODS_REL_PATH } from '../common';
  * still handling mixed archives that also include regular SMAPI content.
  */
 export function isSdvRootFolderModType(instructions: types.IInstruction[]) {
-  const copyInstructions = instructions.filter(instr => instr.type === 'copy');
+  const copyInstructions = instructions.filter(
+    (instr) => instr.type === "copy",
+  );
 
-  const hasManifest = copyInstructions.some(instr =>
-    instr.destination?.endsWith(MOD_MANIFEST) === true);
-  const hasModsFolder = copyInstructions.some(instr =>
-    instr.destination?.startsWith(MODS_REL_PATH + path.sep) === true);
-  const hasContentFolder = copyInstructions.some(instr =>
-    instr.destination?.startsWith('Content' + path.sep) === true);
+  const hasManifest = copyInstructions.some(
+    (instr) => instr.destination?.endsWith(MOD_MANIFEST) === true,
+  );
+  const hasModsFolder = copyInstructions.some(
+    (instr) => instr.destination?.startsWith(MODS_REL_PATH + path.sep) === true,
+  );
+  const hasContentFolder = copyInstructions.some(
+    (instr) => instr.destination?.startsWith("Content" + path.sep) === true,
+  );
 
-  return (hasManifest)
+  return hasManifest
     ? Bluebird.resolve(hasContentFolder && hasModsFolder)
     : Bluebird.resolve(hasContentFolder);
 }

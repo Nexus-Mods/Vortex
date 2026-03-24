@@ -1,15 +1,15 @@
 /**
  * Caches parsed manifests for currently active Stardew Valley mods.
  */
-import type { ISDVModManifest } from '../types';
-import turbowalk from 'turbowalk';
-import { log, selectors, util } from 'vortex-api';
-import type { types } from 'vortex-api';
-import { GAME_ID, MOD_MANIFEST } from '../common';
-import { selectSdvMods } from '../state/selectors';
-import { parseManifest } from './parseManifest';
+import type { ISDVModManifest } from "../types";
+import turbowalk from "turbowalk";
+import { log, selectors, util } from "vortex-api";
+import type { types } from "vortex-api";
+import { GAME_ID, MOD_MANIFEST } from "../common";
+import { selectSdvMods } from "../state/selectors";
+import { parseManifest } from "./parseManifest";
 
-import path from 'path';
+import path from "path";
 
 /**
  * Caches parsed manifests for currently active/installed Stardew mods.
@@ -48,8 +48,9 @@ export default class ModManifestCache {
     const staging = selectors.installPathForGame(state, GAME_ID);
     const profileId = selectors.lastActiveProfileForGame(state, GAME_ID);
     const profile = selectors.profileById(state, profileId);
-    const isInstalled = (mod: types.IMod) => mod?.state === 'installed';
-    const isActive = (modId: string) => util.getSafe(profile, ['modState', modId, 'enabled'], false);
+    const isInstalled = (mod: types.IMod) => mod?.state === "installed";
+    const isActive = (modId: string) =>
+      util.getSafe(profile, ["modState", modId, "enabled"], false);
     const mods: { [modId: string]: types.IMod } = selectSdvMods(state);
     const manifests = await Object.values(mods).reduce(async (accumP, iter) => {
       const accum = await accumP;
@@ -57,31 +58,44 @@ export default class ModManifestCache {
         return Promise.resolve(accum);
       }
       const modPath = path.join(staging, iter.installationPath);
-      return turbowalk(modPath, async entries => {
-      for (const entry of entries) {
-        if (path.basename(entry.filePath) === MOD_MANIFEST) {
-          let manifest;
-          try {
-            manifest = await parseManifest(entry.filePath);
-          } catch (err) {
-            const message = err instanceof Error ? err.message : String(err);
-            log('error', 'failed to parse manifest', { error: message, manifest: entry.filePath });
-            continue;
+      return turbowalk(
+        modPath,
+        async (entries) => {
+          for (const entry of entries) {
+            if (path.basename(entry.filePath) === MOD_MANIFEST) {
+              let manifest;
+              try {
+                manifest = await parseManifest(entry.filePath);
+              } catch (err) {
+                const message =
+                  err instanceof Error ? err.message : String(err);
+                log("error", "failed to parse manifest", {
+                  error: message,
+                  manifest: entry.filePath,
+                });
+                continue;
+              }
+              const list = accum[iter.id] ?? [];
+              list.push(manifest);
+              accum[iter.id] = list;
+            }
           }
-          const list = accum[iter.id] ?? [];
-          list.push(manifest);
-          accum[iter.id] = list;
-        }
-      }
-      }, { skipHidden: false, recurse: true, skipInaccessible: true, skipLinks: true})
-      .then(() => Promise.resolve(accum))
-      .catch(err => {
-        if (err['code'] === 'ENOENT') {
-          return Promise.resolve([]);
-        } else {
-          return Promise.reject(err);
-        }
-      });
+        },
+        {
+          skipHidden: false,
+          recurse: true,
+          skipInaccessible: true,
+          skipLinks: true,
+        },
+      )
+        .then(() => Promise.resolve(accum))
+        .catch((err) => {
+          if (err["code"] === "ENOENT") {
+            return Promise.resolve([]);
+          } else {
+            return Promise.reject(err);
+          }
+        });
     }, {});
     this.mManifests = manifests;
     return Promise.resolve();

@@ -6,25 +6,31 @@
  * - runtime handlers for Vortex events,
  * - and settings-driven revert behavior.
  */
-import { selectors } from 'vortex-api';
-import type { types } from 'vortex-api';
+import { selectors } from "vortex-api";
+import type { types } from "vortex-api";
 
-import { GAME_ID } from '../common';
-import type { IFileEntry } from '../types';
-import { onAddedFilesImpl } from './ingest';
-import { onSyncModConfigurations } from './sync';
-import { onRevertFilesImpl, onWillEnableModsImpl } from './transitions';
+import { GAME_ID } from "../common";
+import type { IFileEntry } from "../types";
+import { onAddedFilesImpl } from "./ingest";
+import { onSyncModConfigurations } from "./sync";
+import { onRevertFilesImpl, onWillEnableModsImpl } from "./transitions";
 
 /** Registers the manual "Sync Mod Configurations" action in the mods view. */
 export function registerConfigMod(context: types.IExtensionContext): void {
-  context.registerAction('mod-icons', 999, 'swap', {}, 'Sync Mod Configurations',
+  context.registerAction(
+    "mod-icons",
+    999,
+    "swap",
+    {},
+    "Sync Mod Configurations",
     () => {
       void onSyncModConfigurations(context.api);
     },
     () => {
       const state = context.api.getState();
       return selectors.activeGameId(state) === GAME_ID;
-    });
+    },
+  );
 }
 
 /** Handles enable/disable transitions to keep synced config files consistent. */
@@ -39,7 +45,10 @@ export async function onWillEnableMods(
 }
 
 /** Restores tracked config files from the synthetic config mod to owning mods. */
-export async function onRevertFiles(api: types.IExtensionApi, profileId: string): Promise<void> {
+export async function onRevertFiles(
+  api: types.IExtensionApi,
+  profileId: string,
+): Promise<void> {
   return onRevertFilesImpl(api, profileId);
 }
 

@@ -1,24 +1,27 @@
 /**
  * Boots and wires the Stardew Valley extension feature modules.
  */
-import { log, util } from 'vortex-api';
-import type { types } from 'vortex-api';
+import { log, util } from "vortex-api";
+import type { types } from "vortex-api";
 
 // Core identifiers and shared state wiring.
-import { GAME_ID } from './common';
-import sdvReducers from './state/reducers';
+import { GAME_ID } from "./common";
+import sdvReducers from "./state/reducers";
 
 // Feature modules registered during startup.
-import { registerConfigMod } from './configMod';
-import StardewValleyGame from './game/StardewValleyGame';
-import { createManifestAttributeExtractor } from './manifests/createManifestAttributeExtractor';
-import ModManifestCache from './manifests/ModManifestCache';
-import { registerInstallers } from './registration/registerInstallers';
-import { registerModTypes } from './registration/registerModTypes';
-import { registerTests } from './registration/registerTests';
-import { registerUi } from './registration/registerUi';
-import { registerRuntimeEvents } from './runtime/registerRuntimeEvents';
-import { selectDiscoveredToolPath, selectSdvDiscoveryPath } from './state/selectors';
+import { registerConfigMod } from "./configMod";
+import StardewValleyGame from "./game/StardewValleyGame";
+import { createManifestAttributeExtractor } from "./manifests/createManifestAttributeExtractor";
+import ModManifestCache from "./manifests/ModManifestCache";
+import { registerInstallers } from "./registration/registerInstallers";
+import { registerModTypes } from "./registration/registerModTypes";
+import { registerTests } from "./registration/registerTests";
+import { registerUi } from "./registration/registerUi";
+import { registerRuntimeEvents } from "./runtime/registerRuntimeEvents";
+import {
+  selectDiscoveredToolPath,
+  selectSdvDiscoveryPath,
+} from "./state/selectors";
 
 /** Registers all Stardew Valley game, installer, runtime, and UI integrations. */
 export default function init(context: types.IExtensionContext): void {
@@ -30,8 +33,8 @@ export default function init(context: types.IExtensionContext): void {
     const state = context.api.getState();
     const gameInstallPath = selectSdvDiscoveryPath(state);
     if (gameInstallPath === undefined) {
-      log('error', 'stardewvalley was not discovered');
-      throw new Error('Stardew Valley was not discovered');
+      log("error", "stardewvalley was not discovered");
+      throw new Error("Stardew Valley was not discovered");
     }
 
     return gameInstallPath;
@@ -45,7 +48,7 @@ export default function init(context: types.IExtensionContext): void {
 
   // Register the game definition and SDV-specific reducer state.
   context.registerGame(new StardewValleyGame(context));
-  context.registerReducer(['settings', 'SDV'], sdvReducers);
+  context.registerReducer(["settings", "SDV"], sdvReducers);
 
   // Register user-facing UI (settings, actions, table columns).
   registerUi(context);
@@ -55,7 +58,10 @@ export default function init(context: types.IExtensionContext): void {
   registerConfigMod(context);
 
   // Register metadata extraction from manifest.json during install.
-  context.registerAttributeExtractor(25, createManifestAttributeExtractor(context));
+  context.registerAttributeExtractor(
+    25,
+    createManifestAttributeExtractor(context),
+  );
 
   // Register diagnostics and runtime event hooks.
   registerTests(context, modManifestCache);

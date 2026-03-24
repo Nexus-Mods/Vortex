@@ -6,29 +6,29 @@
  * - import them into the synthetic staging mod,
  * - run purge/deploy transitions so Vortex deployment state stays consistent.
  */
-import path from 'path';
+import path from "path";
 
-import { fs, log, selectors, util } from 'vortex-api';
-import type { types } from 'vortex-api';
-import type { IEntry } from 'turbowalk';
+import { fs, log, selectors, util } from "vortex-api";
+import type { types } from "vortex-api";
+import type { IEntry } from "turbowalk";
 
-import { setMergeConfigs } from '../state/actions';
+import { setMergeConfigs } from "../state/actions";
 import {
   GAME_ID,
   MOD_CONFIG,
   MODS_REL_PATH,
   NOTIF_ACTIVITY_CONFIG_MOD,
-} from '../common';
-import { findSMAPITool, getSMAPIMods } from '../smapi/selectors';
-import { selectMergeConfigsEnabled } from '../state/selectors';
-import type { IFileEntry } from '../types';
-import { walkPath } from './filesystem';
+} from "../common";
+import { findSMAPITool, getSMAPIMods } from "../smapi/selectors";
+import { selectMergeConfigsEnabled } from "../state/selectors";
+import type { IFileEntry } from "../types";
+import { walkPath } from "./filesystem";
 import {
   extractConfigModAttributes,
   initializeConfigMod,
   setConfigModAttribute,
-} from './lifecycle';
-import { isSmapiInternalPath, shouldSuppressSync } from './policy';
+} from "./lifecycle";
+import { isSmapiInternalPath, shouldSuppressSync } from "./policy";
 
 /**
  * Synchronizes detected mod `config.json` files into the synthetic config mod.
@@ -42,10 +42,11 @@ export async function onSyncModConfigurations(
   profileId?: string,
 ): Promise<void> {
   const state = api.getState();
-  const profile = profileId !== undefined
-    ? selectors.profileById(state, profileId)
-    : selectors.activeProfile(state);
-  if ((profile?.gameId !== GAME_ID) || shouldSuppressSync(api)) {
+  const profile =
+    profileId !== undefined
+      ? selectors.profileById(state, profileId)
+      : selectors.activeProfile(state);
+  if (profile?.gameId !== GAME_ID || shouldSuppressSync(api)) {
     return;
   }
 
@@ -56,26 +57,29 @@ export async function onSyncModConfigurations(
 
   const mergeConfigs = selectMergeConfigsEnabled(state, profile.id);
   if (!mergeConfigs) {
-    if (silent || (api.showDialog === undefined)) {
+    if (silent || api.showDialog === undefined) {
       return;
     }
 
-    const result = await api.showDialog('info', 'Mod Configuration Sync', {
-      bbcode: 'Many Stardew Valley mods generate their own configuration files during game play. By default the generated files are, '
-        + 'ingested by their respective mods.[br][/br][br][/br]'
-        + 'Unfortunately the mod configuration files are lost when updating or removing a mod.[br][/br][br][/br] This button allows you to '
-        + 'Import all of your active mod\'s configuration files into a single mod which will remain unaffected by mod updates.[br][/br][br][/br]'
-        + 'Would you like to enable this functionality? (SMAPI must be installed)',
-    }, [
-      { label: 'Close' },
-      { label: 'Enable' },
-    ]);
+    const result = await api.showDialog(
+      "info",
+      "Mod Configuration Sync",
+      {
+        bbcode:
+          "Many Stardew Valley mods generate their own configuration files during game play. By default the generated files are, " +
+          "ingested by their respective mods.[br][/br][br][/br]" +
+          "Unfortunately the mod configuration files are lost when updating or removing a mod.[br][/br][br][/br] This button allows you to " +
+          "Import all of your active mod's configuration files into a single mod which will remain unaffected by mod updates.[br][/br][br][/br]" +
+          "Would you like to enable this functionality? (SMAPI must be installed)",
+      },
+      [{ label: "Close" }, { label: "Enable" }],
+    );
 
-    if (result.action === 'Close') {
+    if (result.action === "Close") {
       return;
     }
 
-    if (result.action === 'Enable') {
+    if (result.action === "Enable") {
       api.store?.dispatch(setMergeConfigs(profile.id, true));
     }
   }
@@ -87,18 +91,19 @@ export async function onSyncModConfigurations(
     }
 
     // Purge first so moved files are not left in a deployed/linked state.
-    await emitLifecycleEvent(api, 'purge-mods');
+    await emitLifecycleEvent(api, "purge-mods");
 
     const installPath = selectors.installPathForGame(api.getState(), GAME_ID);
     const resolveCandidateName = (file: IEntry): string => {
       const relPath = path.relative(installPath, file.filePath);
       const segments = relPath.split(path.sep);
-      return segments[0] ?? '';
+      return segments[0] ?? "";
     };
     const files = await walkPath(installPath);
-    const smapiModIds = getSMAPIMods(api).map(mod => mod.id);
-    const isSMAPI = (file: IEntry) => isSmapiInternalPath(file.filePath)
-      || smapiModIds.some(modId => file.filePath.includes(modId));
+    const smapiModIds = getSMAPIMods(api).map((mod) => mod.id);
+    const isSMAPI = (file: IEntry) =>
+      isSmapiInternalPath(file.filePath) ||
+      smapiModIds.some((modId) => file.filePath.includes(modId));
     const filtered = files.reduce((accum: IFileEntry[], file: IEntry) => {
       if (isSMAPI(file)) {
         return accum;
@@ -114,11 +119,13 @@ export async function onSyncModConfigurations(
 
       // In the install tree, the first path segment is the owning mod id.
       const candidateName = resolveCandidateName(file);
-      if (candidateName === '') {
+      if (candidateName === "") {
         return accum;
       }
 
-      if (!util.getSafe(profile, ['modState', candidateName, 'enabled'], false)) {
+      if (
+        !util.getSafe(profile, ["modState", candidateName, "enabled"], false)
+      ) {
         return accum;
       }
 
@@ -127,9 +134,9 @@ export async function onSyncModConfigurations(
     }, []);
 
     await addModConfig(api, filtered, profile.id, installPath);
-    await emitLifecycleEvent(api, 'deploy-mods');
+    await emitLifecycleEvent(api, "deploy-mods");
   } catch (err) {
-    api.showErrorNotification?.('Failed to sync mod configurations', err);
+    api.showErrorNotification?.("Failed to sync mod configurations", err);
   }
 }
 
@@ -148,8 +155,9 @@ export async function addModConfig(
   const state = api.getState();
   const discovery = selectors.discoveryByGame(state, GAME_ID);
   const isInstallPath = modsPath !== undefined;
-  const resolvedModsPath = modsPath
-    ?? ((discovery?.path !== undefined)
+  const resolvedModsPath =
+    modsPath ??
+    (discovery?.path !== undefined
       ? path.join(discovery.path, MODS_REL_PATH)
       : undefined);
   if (resolvedModsPath === undefined) {
@@ -160,18 +168,21 @@ export async function addModConfig(
     return;
   }
 
-  const configModAttributes = extractConfigModAttributes(state, configMod.mod.id);
+  const configModAttributes = extractConfigModAttributes(
+    state,
+    configMod.mod.id,
+  );
   const nextAttributes = Array.from(new Set(configModAttributes));
   for (const file of files) {
     const primaryCandidate = file.candidates[0];
-    if ((primaryCandidate === undefined) || isSmapiInternalPath(file.filePath)) {
+    if (primaryCandidate === undefined || isSmapiInternalPath(file.filePath)) {
       continue;
     }
 
     api.sendNotification?.({
-      type: 'activity',
+      type: "activity",
       id: NOTIF_ACTIVITY_CONFIG_MOD,
-      title: 'Importing config files...',
+      title: "Importing config files...",
       message: primaryCandidate,
     });
 
@@ -183,11 +194,14 @@ export async function addModConfig(
       const installRelPath = path.relative(resolvedModsPath, file.filePath);
       const segments = installRelPath.split(path.sep);
       // When scanning the install path, drop the leading mod-id segment.
-      const relPath = isInstallPath ? segments.slice(1).join(path.sep) : installRelPath;
+      const relPath = isInstallPath
+        ? segments.slice(1).join(path.sep)
+        : installRelPath;
       const targetPath = path.join(configMod.configModPath, relPath);
-      const targetDir = path.extname(targetPath) !== '' ? path.dirname(targetPath) : targetPath;
+      const targetDir =
+        path.extname(targetPath) !== "" ? path.dirname(targetPath) : targetPath;
       await fs.ensureDirWritableAsync(targetDir);
-      log('debug', 'importing config file from', {
+      log("debug", "importing config file from", {
         source: file.filePath,
         destination: targetPath,
         modId: primaryCandidate,
@@ -195,18 +209,25 @@ export async function addModConfig(
       await fs.copyAsync(file.filePath, targetPath, { overwrite: true });
       await fs.removeAsync(file.filePath);
     } catch (err) {
-      api.showErrorNotification?.('Failed to write mod config', err);
+      api.showErrorNotification?.("Failed to write mod config", err);
     }
   }
 
   api.dismissNotification?.(NOTIF_ACTIVITY_CONFIG_MOD);
-  setConfigModAttribute(api, configMod.mod.id, Array.from(new Set(nextAttributes)));
+  setConfigModAttribute(
+    api,
+    configMod.mod.id,
+    Array.from(new Set(nextAttributes)),
+  );
 }
 
-function emitLifecycleEvent(api: types.IExtensionApi, eventType: DeployLifecycleEvent): Promise<void> {
+function emitLifecycleEvent(
+  api: types.IExtensionApi,
+  eventType: DeployLifecycleEvent,
+): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     const cb = (err: any) => (err !== null ? reject(err) : resolve());
-    if (eventType === 'purge-mods') {
+    if (eventType === "purge-mods") {
       // `purge-mods` accepts an extra boolean argument in the Vortex event API.
       api.events.emit(eventType, false, cb);
       return;
@@ -216,4 +237,4 @@ function emitLifecycleEvent(api: types.IExtensionApi, eventType: DeployLifecycle
   });
 }
 
-type DeployLifecycleEvent = 'purge-mods' | 'deploy-mods';
+type DeployLifecycleEvent = "purge-mods" | "deploy-mods";

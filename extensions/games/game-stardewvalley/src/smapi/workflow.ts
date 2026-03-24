@@ -1,14 +1,14 @@
 /**
  * User-facing SMAPI provisioning workflow.
  */
-import type { types } from 'vortex-api';
+import type { types } from "vortex-api";
 
-import { util } from 'vortex-api';
+import { util } from "vortex-api";
 
-import { SMAPI_URL } from '../common';
-import { downloadSMAPI } from './download';
-import { installDownloadedSMAPI, enableSMAPIMod } from './install';
-import { deploySMAPI } from './lifecycle';
+import { SMAPI_URL } from "../common";
+import { downloadSMAPI } from "./download";
+import { installDownloadedSMAPI, enableSMAPIMod } from "./install";
+import { deploySMAPI } from "./lifecycle";
 
 /**
  * Downloads, installs, enables, and deploys SMAPI from Nexus.
@@ -19,12 +19,15 @@ import { deploySMAPI } from './lifecycle';
  * rendered as an update flow.
  * @returns Resolves after provisioning and deployment complete.
  */
-export async function downloadAndInstallSMAPI(api: types.IExtensionApi, update?: boolean): Promise<void> {
-  api.dismissNotification?.('smapi-missing');
+export async function downloadAndInstallSMAPI(
+  api: types.IExtensionApi,
+  update?: boolean,
+): Promise<void> {
+  api.dismissNotification?.("smapi-missing");
   api.sendNotification?.({
-    id: 'smapi-installing',
-    message: update ? 'Updating SMAPI' : 'Installing SMAPI',
-    type: 'activity',
+    id: "smapi-installing",
+    message: update ? "Updating SMAPI" : "Installing SMAPI",
+    type: "activity",
     noDismiss: true,
     allowSuppress: false,
   });
@@ -36,9 +39,9 @@ export async function downloadAndInstallSMAPI(api: types.IExtensionApi, update?:
 
     await deploySMAPI(api);
   } catch (err) {
-    api.showErrorNotification?.('Failed to download/install SMAPI', err);
+    api.showErrorNotification?.("Failed to download/install SMAPI", err);
     util.opn(SMAPI_URL).catch(() => null);
   } finally {
-    api.dismissNotification?.('smapi-installing');
+    api.dismissNotification?.("smapi-installing");
   }
 }

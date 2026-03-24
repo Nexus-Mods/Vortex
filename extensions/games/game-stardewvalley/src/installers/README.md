@@ -30,9 +30,9 @@ If none match, Vortex falls back to generic handling.
 ## Common contributor tasks
 
 - Add support for new archive shape:
-  - update `archiveClassifier.ts`,
-  - then update the relevant installer module.
+    - update `archiveClassifier.ts`,
+    - then update the relevant installer module.
 - Change dependency-rule behaviour:
-  - edit `stardewValleyInstaller.ts`.
+    - edit `stardewValleyInstaller.ts`.
 - Change SMAPI package handling:
-  - edit `smapi/index.ts` and/or platform files under `smapi/`.
+    - edit `smapi/index.ts` and/or platform files under `smapi/`.

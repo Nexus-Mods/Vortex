@@ -1,17 +1,17 @@
 /**
  * Implements Vortex game integration for Stardew Valley.
  */
-import path from 'path';
+import path from "path";
 
-import { fs, util } from 'vortex-api';
-import type { types } from 'vortex-api';
+import { fs, util } from "vortex-api";
+import type { types } from "vortex-api";
 
-import { GAME_ID, MODS_REL_PATH } from '../common';
-import { toBlue } from '../helpers';
-import { SMAPI_EXE } from '../installers/smapi';
-import { deploySMAPI } from '../smapi/lifecycle';
-import { findSMAPIMod } from '../smapi/selectors';
-import { downloadAndInstallSMAPI } from '../smapi/workflow';
+import { GAME_ID, MODS_REL_PATH } from "../common";
+import { toBlue } from "../helpers";
+import { SMAPI_EXE } from "../installers/smapi";
+import { deploySMAPI } from "../smapi/lifecycle";
+import { findSMAPIMod } from "../smapi/selectors";
+import { downloadAndInstallSMAPI } from "../smapi/workflow";
 
 /**
  * Vortex `IGame` implementation for Stardew Valley.
@@ -28,20 +28,20 @@ import { downloadAndInstallSMAPI } from '../smapi/workflow';
 export default class StardewValleyGame implements types.IGame {
   public context: types.IExtensionContext;
   public id: string = GAME_ID;
-  public name: string = 'Stardew Valley';
-  public logo: string = 'assets/gameart.jpg';
+  public name: string = "Stardew Valley";
+  public logo: string = "assets/gameart.jpg";
   public requiredFiles: string[];
   public environment: { [key: string]: string } = {
-    SteamAPPId: '413150',
+    SteamAPPId: "413150",
   };
   public details: { [key: string]: any } = {
     steamAppId: 413150,
   };
   public supportedTools: any[] = [
     {
-      id: 'smapi',
-      name: 'SMAPI',
-      logo: 'assets/smapi.png',
+      id: "smapi",
+      name: "SMAPI",
+      logo: "assets/smapi.png",
       executable: () => SMAPI_EXE,
       requiredFiles: [SMAPI_EXE],
       shell: true,
@@ -64,23 +64,23 @@ export default class StardewValleyGame implements types.IGame {
    */
   constructor(context: types.IExtensionContext) {
     this.context = context;
-    this.requiredFiles = process.platform == 'win32'
-      ? ['Stardew Valley.exe']
-      : ['StardewValley'];
+    this.requiredFiles =
+      process.platform == "win32" ? ["Stardew Valley.exe"] : ["StardewValley"];
 
     this.defaultPaths = [
       // Linux
-      process.env.HOME + '/GOG Games/Stardew Valley/game',
-      process.env.HOME + '/.local/share/Steam/steamapps/common/Stardew Valley',
+      process.env.HOME + "/GOG Games/Stardew Valley/game",
+      process.env.HOME + "/.local/share/Steam/steamapps/common/Stardew Valley",
 
       // Mac
-      '/Applications/Stardew Valley.app/Contents/MacOS',
-      process.env.HOME + '/Library/Application Support/Steam/steamapps/common/Stardew Valley/Contents/MacOS',
+      "/Applications/Stardew Valley.app/Contents/MacOS",
+      process.env.HOME +
+        "/Library/Application Support/Steam/steamapps/common/Stardew Valley/Contents/MacOS",
 
       // Windows
-      'C:\\Program Files (x86)\\GalaxyClient\\Games\\Stardew Valley',
-      'C:\\Program Files (x86)\\GOG Galaxy\\Games\\Stardew Valley',
-      'C:\\Program Files (x86)\\Steam\\steamapps\\common\\Stardew Valley',
+      "C:\\Program Files (x86)\\GalaxyClient\\Games\\Stardew Valley",
+      "C:\\Program Files (x86)\\GOG Galaxy\\Games\\Stardew Valley",
+      "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Stardew Valley",
     ];
   }
 
@@ -90,9 +90,9 @@ export default class StardewValleyGame implements types.IGame {
   public queryPath = toBlue<string>(async () => {
     // First try querying the known game stores, by their known IDs
     const game = await util.GameStoreHelper.findByAppId([
-      '413150',
-      '1453375253',
-      'ConcernedApe.StardewValleyPC',
+      "413150",
+      "1453375253",
+      "ConcernedApe.StardewValleyPC",
     ]).catch(() => undefined);
 
     if (game !== undefined) {
@@ -106,13 +106,11 @@ export default class StardewValleyGame implements types.IGame {
       }
     }
 
-    throw new Error('Stardew Valley install path not found');
+    throw new Error("Stardew Valley install path not found");
   });
 
   public executable() {
-    return process.platform == 'win32'
-      ? 'Stardew Valley.exe'
-      : 'StardewValley';
+    return process.platform == "win32" ? "Stardew Valley.exe" : "StardewValley";
   }
 
   public queryModPath() {
@@ -124,7 +122,7 @@ export default class StardewValleyGame implements types.IGame {
    * Ensures the Mods folder is writable and, if SMAPI is missing from the
    * game install folder, shows an install/deploy recommendation.
    */
-  public setup = toBlue(async discovery => {
+  public setup = toBlue(async (discovery) => {
     try {
       await fs.ensureDirWritableAsync(path.join(discovery.path, MODS_REL_PATH));
     } catch (err) {
@@ -143,18 +141,19 @@ export default class StardewValleyGame implements types.IGame {
    */
   private recommendSmapi() {
     const smapiMod = findSMAPIMod(this.context.api);
-    const title = smapiMod ? 'SMAPI is not deployed' : 'SMAPI is not installed';
-    const actionTitle = smapiMod ? 'Deploy' : 'Get SMAPI';
-    const action = () => (smapiMod
-      ? deploySMAPI(this.context.api)
-      : downloadAndInstallSMAPI(this.context.api))
-      .then(() => this.context.api.dismissNotification?.('smapi-missing'));
+    const title = smapiMod ? "SMAPI is not deployed" : "SMAPI is not installed";
+    const actionTitle = smapiMod ? "Deploy" : "Get SMAPI";
+    const action = () =>
+      (smapiMod
+        ? deploySMAPI(this.context.api)
+        : downloadAndInstallSMAPI(this.context.api)
+      ).then(() => this.context.api.dismissNotification?.("smapi-missing"));
 
     this.context.api.sendNotification?.({
-      id: 'smapi-missing',
-      type: 'warning',
+      id: "smapi-missing",
+      type: "warning",
       title,
-      message: 'SMAPI is required to mod Stardew Valley.',
+      message: "SMAPI is required to mod Stardew Valley.",
       actions: [
         {
           title: actionTitle,

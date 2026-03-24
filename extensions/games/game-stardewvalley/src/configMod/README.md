@@ -30,48 +30,48 @@ staging copy of the synthetic mod, then lets deploy put them back into the game.
 ## File map (what each file does)
 
 - `index.ts`
-  - Public entry points used by the rest of the extension.
-  - Registers the "Sync Mod Configurations" toolbar action.
-  - Exposes handlers for runtime events (`added-files`, `will-enable-mods`) and
-    settings-driven revert behavior.
+    - Public entry points used by the rest of the extension.
+    - Registers the "Sync Mod Configurations" toolbar action.
+    - Exposes handlers for runtime events (`added-files`, `will-enable-mods`) and
+      settings-driven revert behavior.
 
 - `sync.ts`
-  - Manual and automatic sync logic.
-  - Scans the game mod install path for `config.json` files.
-  - Imports eligible configs into the synthetic config mod.
+    - Manual and automatic sync logic.
+    - Scans the game mod install path for `config.json` files.
+    - Imports eligible configs into the synthetic config mod.
 
 - `ingest.ts`
-  - Handles Vortex `added-files` events.
-  - Routes new files into either:
-    - config-mod import path (for `config.json`), or
-    - normal file re-ingestion path (for all other files).
+    - Handles Vortex `added-files` events.
+    - Routes new files into either:
+        - config-mod import path (for `config.json`), or
+        - normal file re-ingestion path (for all other files).
 
 - `transitions.ts`
-  - Handles Vortex `will-enable-mods` transitions.
-  - When disabling/removing tracked mods, restores `config.json` back to the
-    original mod before removing it from the synthetic config mod.
+    - Handles Vortex `will-enable-mods` transitions.
+    - When disabling/removing tracked mods, restores `config.json` back to the
+      original mod before removing it from the synthetic config mod.
 
 - `filesystem.ts`
-  - Shared recursive directory walk/delete helpers for sync and transitions.
-  - Keeps filesystem-specific behavior separate from feature orchestration.
+    - Shared recursive directory walk/delete helpers for sync and transitions.
+    - Keeps filesystem-specific behavior separate from feature orchestration.
 
 - `lifecycle.ts`
-  - Finds or creates the synthetic config mod.
-  - Resolves where that mod lives on disk.
-  - Stores and updates the list of mod ids tracked in synthetic-mod attributes.
+    - Finds or creates the synthetic config mod.
+    - Resolves where that mod lives on disk.
+    - Stores and updates the list of mod ids tracked in synthetic-mod attributes.
 
 - `policy.ts`
-  - Safety checks and filtering rules.
-  - Example: never import SMAPI internal files into the config mod.
-  - Example: reject unsafe automatic ownership assumptions for root-style mods.
+    - Safety checks and filtering rules.
+    - Example: never import SMAPI internal files into the config mod.
+    - Example: reject unsafe automatic ownership assumptions for root-style mods.
 
 ## Data written by this feature
 
 - Settings toggle:
-  - `settings.SDV.mergeConfigs[profileId]`
+    - `settings.SDV.mergeConfigs[profileId]`
 - Synthetic mod tracking attribute:
-  - `persistent.mods.stardewvalley[configModId].attributes.configMod`
-  - Value is an array of mod ids that currently own imported config files.
+    - `persistent.mods.stardewvalley[configModId].attributes.configMod`
+    - Value is an array of mod ids that currently own imported config files.
 
 ## Typical flow: manual sync button
 

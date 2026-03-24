@@ -12,5 +12,5 @@ export {
   SMAPI_EXE,
   testSMAPI,
   windowsSMAPIPlatform,
-} from './smapi';
-export type { ISMAPIPlatformVariant } from './smapi';
+} from "./smapi";
+export type { ISMAPIPlatformVariant } from "./smapi";

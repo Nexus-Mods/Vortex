@@ -5,25 +5,21 @@
  * from the synthetic config mod back to the original mod folders, then updates
  * tracking metadata so ownership remains accurate.
  */
-import path from 'path';
+import path from "path";
 
-import { fs, selectors } from 'vortex-api';
-import type { types } from 'vortex-api';
-import type { IEntry } from 'turbowalk';
+import { fs, selectors } from "vortex-api";
+import type { types } from "vortex-api";
+import type { IEntry } from "turbowalk";
 
-import {
-  GAME_ID,
-  MOD_CONFIG,
-  MOD_MANIFEST,
-} from '../common';
-import { selectSdvMods } from '../state/selectors';
+import { GAME_ID, MOD_CONFIG, MOD_MANIFEST } from "../common";
+import { selectSdvMods } from "../state/selectors";
 import {
   extractConfigModAttributes,
   initializeConfigMod,
   removeConfigModAttributes,
-} from './lifecycle';
-import { deleteFolder, walkPath } from './filesystem';
-import { onSyncModConfigurations } from './sync';
+} from "./lifecycle";
+import { deleteFolder, walkPath } from "./filesystem";
+import { onSyncModConfigurations } from "./sync";
 
 /**
  * Handles SDV `will-enable-mods` transitions to keep config ownership in sync.
@@ -65,7 +61,7 @@ export async function onWillEnableModsImpl(
   }
 
   const attributes = extractConfigModAttributes(state, configMod.mod.id);
-  const relevantModIds = modIds.filter(id => attributes.includes(id));
+  const relevantModIds = modIds.filter((id) => attributes.includes(id));
   if (relevantModIds.length === 0) {
     return;
   }
@@ -84,20 +80,31 @@ export async function onWillEnableModsImpl(
       skipHidden: true,
       skipInaccessible: true,
     });
-    const manifestFile = files.find(file => path.basename(file.filePath) === MOD_MANIFEST);
+    const manifestFile = files.find(
+      (file) => path.basename(file.filePath) === MOD_MANIFEST,
+    );
     if (manifestFile === undefined) {
       continue;
     }
 
     const relPath = path.relative(modPath, path.dirname(manifestFile.filePath));
-    const modConfigFilePath = path.join(configMod.configModPath, relPath, MOD_CONFIG);
-    await fs.copyAsync(modConfigFilePath, path.join(modPath, relPath, MOD_CONFIG), { overwrite: true })
+    const modConfigFilePath = path.join(
+      configMod.configModPath,
+      relPath,
+      MOD_CONFIG,
+    );
+    await fs
+      .copyAsync(modConfigFilePath, path.join(modPath, relPath, MOD_CONFIG), {
+        overwrite: true,
+      })
       .catch(() => null);
 
     try {
-      await applyToConfigMod(api, profileId, () => deleteFolder(path.dirname(modConfigFilePath)));
+      await applyToConfigMod(api, profileId, () =>
+        deleteFolder(path.dirname(modConfigFilePath)),
+      );
     } catch (err) {
-      api.showErrorNotification?.('Failed to write mod config', err);
+      api.showErrorNotification?.("Failed to write mod config", err);
       return;
     }
   }
@@ -106,7 +113,10 @@ export async function onWillEnableModsImpl(
 }
 
 /** Restores all tracked config files from the synthetic config mod to their mods. */
-export async function onRevertFilesImpl(api: types.IExtensionApi, profileId: string): Promise<void> {
+export async function onRevertFilesImpl(
+  api: types.IExtensionApi,
+  profileId: string,
+): Promise<void> {
   const state = api.getState();
   const profile = selectors.profileById(state, profileId);
   if (profile?.gameId !== GAME_ID) {
@@ -138,10 +148,20 @@ async function applyToConfigMod(
     }
 
     // Re-deploy around edits so deployment metadata stays consistent.
-    await api.emitAndAwait('deploy-single-mod', GAME_ID, configMod.mod.id, false);
+    await api.emitAndAwait(
+      "deploy-single-mod",
+      GAME_ID,
+      configMod.mod.id,
+      false,
+    );
     await cb();
-    await api.emitAndAwait('deploy-single-mod', GAME_ID, configMod.mod.id, true);
+    await api.emitAndAwait(
+      "deploy-single-mod",
+      GAME_ID,
+      configMod.mod.id,
+      true,
+    );
   } catch (err) {
-    api.showErrorNotification?.('Failed to write mod config', err);
+    api.showErrorNotification?.("Failed to write mod config", err);
   }
 }

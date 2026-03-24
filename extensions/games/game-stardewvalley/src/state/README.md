@@ -24,11 +24,11 @@ Redux is a shared app data store.
 ## What is in this folder
 
 - `actions.ts`
-  - Defines action creators for `settings.SDV` updates.
+    - Defines action creators for `settings.SDV` updates.
 - `reducers.ts`
-  - Handles those actions and writes to `settings.SDV`.
+    - Handles those actions and writes to `settings.SDV`.
 - `selectors.ts`
-  - Reads nested values safely from Redux state.
+    - Reads nested values safely from Redux state.
 
 ## Real flow in this extension
 
@@ -45,8 +45,8 @@ Example: user enables "Manage SDV mod configuration files"
 
 ```ts
 export const setExampleFlag = createAction(
-  'SET_SDV_EXAMPLE_FLAG',
-  (enabled: boolean) => enabled,
+    "SET_SDV_EXAMPLE_FLAG",
+    (enabled: boolean) => enabled,
 );
 ```
 
@@ -71,7 +71,7 @@ defaults: {
 
 ```ts
 export function selectExampleFlag(state: types.IState): boolean {
-  return util.getSafe(state, ['settings', 'SDV', 'exampleFlag'], false);
+    return util.getSafe(state, ["settings", "SDV", "exampleFlag"], false);
 }
 ```
 
@@ -94,8 +94,8 @@ That is the full Redux cycle: dispatch -> reducer updates -> selector reads.
 ## Quick troubleshooting
 
 - Setting does not change:
-  - Check action name and reducer handler match.
+    - Check action name and reducer handler match.
 - Value is always `undefined`:
-  - Check selector path and reducer path are identical.
+    - Check selector path and reducer path are identical.
 - UI does not update:
-  - Confirm UI reads the Redux value (not local variable only).
+    - Confirm UI reads the Redux value (not local variable only).

@@ -6,18 +6,18 @@
  * - linux.ts
  * - macos.ts (stubbed darwin variant)
  */
-import Bluebird from 'bluebird';
-import path from 'path';
-import { fs, log, util } from 'vortex-api';
-import type { types } from 'vortex-api';
+import Bluebird from "bluebird";
+import path from "path";
+import { fs, log, util } from "vortex-api";
+import type { types } from "vortex-api";
 
-import { _SMAPI_BUNDLED_MODS, getBundledMods } from '../../common';
-import type { IInstallerTestResult } from '../../types';
-import { classifyArchive, makeInstallerTestResult } from '../archiveClassifier';
-import { linuxSMAPIPlatform } from './linux';
-import { macosSMAPIPlatform } from './macos';
-import type { ISMAPIPlatformVariant } from './types';
-import { windowsSMAPIPlatform } from './windows';
+import { _SMAPI_BUNDLED_MODS, getBundledMods } from "../../common";
+import type { IInstallerTestResult } from "../../types";
+import { classifyArchive, makeInstallerTestResult } from "../archiveClassifier";
+import { linuxSMAPIPlatform } from "./linux";
+import { macosSMAPIPlatform } from "./macos";
+import type { ISMAPIPlatformVariant } from "./types";
+import { windowsSMAPIPlatform } from "./windows";
 
 /**
  * Resolve which SMAPI platform variant to use for installer behaviour.
@@ -26,16 +26,20 @@ import { windowsSMAPIPlatform } from './windows';
  * This is mainly exposed to keep tests deterministic without mocking
  * `process.platform`.
  */
-export function resolveSMAPIPlatform(nodePlatform: NodeJS.Platform = process.platform): ISMAPIPlatformVariant {
+export function resolveSMAPIPlatform(
+  nodePlatform: NodeJS.Platform = process.platform,
+): ISMAPIPlatformVariant {
   switch (nodePlatform) {
-    case 'win32':
+    case "win32":
       return windowsSMAPIPlatform;
-    case 'linux':
+    case "linux":
       return linuxSMAPIPlatform;
-    case 'darwin':
+    case "darwin":
       return macosSMAPIPlatform;
     default:
-      throw new Error(`Unsupported platform for SMAPI installer: ${nodePlatform}`);
+      throw new Error(
+        `Unsupported platform for SMAPI installer: ${nodePlatform}`,
+      );
   }
 }
 
@@ -51,20 +55,29 @@ export const SMAPI_EXE = resolveSMAPIPlatform().executableName;
  * The explicit parameter is primarily for tests so platform behaviour can be
  * validated independently.
  */
-export function isSMAPIModType(instructions: types.IInstruction[],
-                               platform: ISMAPIPlatformVariant = resolveSMAPIPlatform()): Bluebird<boolean> {
+export function isSMAPIModType(
+  instructions: types.IInstruction[],
+  platform: ISMAPIPlatformVariant = resolveSMAPIPlatform(),
+): Bluebird<boolean> {
   const expectedExecutable = platform.executableName.toLowerCase();
-  const smapiData = instructions.find(inst => (inst.type === 'copy')
-    && (typeof inst.source === 'string')
-    && (archiveFileName(inst.source).toLowerCase() === expectedExecutable));
+  const smapiData = instructions.find(
+    (inst) =>
+      inst.type === "copy" &&
+      typeof inst.source === "string" &&
+      archiveFileName(inst.source).toLowerCase() === expectedExecutable,
+  );
 
   return Bluebird.resolve(smapiData !== undefined);
 }
 
 /** Tests whether an archive contains the SMAPI installer payload. */
-export function testSMAPI(files: string[], gameId: string): Bluebird<IInstallerTestResult> {
+export function testSMAPI(
+  files: string[],
+  gameId: string,
+): Bluebird<IInstallerTestResult> {
   const archiveInfo = classifyArchive(files, gameId);
-  const supported = archiveInfo.isGameArchive && archiveInfo.hasSmapiInstallerDll;
+  const supported =
+    archiveInfo.isGameArchive && archiveInfo.hasSmapiInstallerDll;
   return Bluebird.resolve(makeInstallerTestResult(supported));
 }
 
@@ -75,29 +88,47 @@ export function testSMAPI(files: string[], gameId: string): Bluebird<IInstallerT
  * This is mainly intended for tests, where platform-specific install behaviour
  * should be exercised without changing host platform state.
  */
-export async function installSMAPI(getGameInstallPath: () => string,
-                                   files: string[],
-                                   destinationPath: string,
-                                   platform: ISMAPIPlatformVariant = resolveSMAPIPlatform()): Promise<types.IInstallResult> {
+export async function installSMAPI(
+  getGameInstallPath: () => string,
+  files: string[],
+  destinationPath: string,
+  platform: ISMAPIPlatformVariant = resolveSMAPIPlatform(),
+): Promise<types.IInstallResult> {
   if (!platform.implemented) {
-    return Promise.reject(new util.DataInvalid(platform.unsupportedReason
-      ?? 'SMAPI automatic installation is not implemented for this platform.'));
+    return Promise.reject(
+      new util.DataInvalid(
+        platform.unsupportedReason ??
+          "SMAPI automatic installation is not implemented for this platform.",
+      ),
+    );
   }
 
-  const platformDataFiles = new Set(platform.dataFiles.map(fileName => fileName.toLowerCase()));
-  const dataFile = files.find(file => isCorrectPlatformPath(file, platform.archiveFolder)
-    && platformDataFiles.has(archiveFileName(file).toLowerCase()));
+  const platformDataFiles = new Set(
+    platform.dataFiles.map((fileName) => fileName.toLowerCase()),
+  );
+  const dataFile = files.find(
+    (file) =>
+      isCorrectPlatformPath(file, platform.archiveFolder) &&
+      platformDataFiles.has(archiveFileName(file).toLowerCase()),
+  );
 
   if (dataFile === undefined) {
-    return Promise.reject(new util.DataInvalid('Failed to find the SMAPI data files - download appears '
-      + 'to be corrupted; please re-download SMAPI and try again'));
+    return Promise.reject(
+      new util.DataInvalid(
+        "Failed to find the SMAPI data files - download appears " +
+          "to be corrupted; please re-download SMAPI and try again",
+      ),
+    );
   }
 
-  let data = '';
+  let data = "";
   try {
-    data = await fs.readFileAsync(path.join(getGameInstallPath(), 'Stardew Valley.deps.json'), { encoding: 'utf8' });
+    data = await fs.readFileAsync(
+      path.join(getGameInstallPath(), "Stardew Valley.deps.json"),
+      { encoding: "utf8" },
+    );
   } catch (err) {
-    log('error', 'failed to parse SDV dependencies', err);
+    log("error", "failed to parse SDV dependencies", err);
   }
 
   // File list provided by Vortex is outdated after extraction.
@@ -107,15 +138,21 @@ export async function installSMAPI(getGameInstallPath: () => string,
   await szip.extractFull(path.join(destinationPath, dataFile), destinationPath);
 
   await util.walk(destinationPath, (iter, stats) => {
-    const relPath = normalizePathSeparators(path.relative(destinationPath, iter));
+    const relPath = normalizePathSeparators(
+      path.relative(destinationPath, iter),
+    );
 
     // Filter out files from the original install as they're no longer required.
-    if (!files.includes(relPath) && stats.isFile() && !files.includes(relPath + '/')) {
+    if (
+      !files.includes(relPath) &&
+      stats.isFile() &&
+      !files.includes(relPath + "/")
+    ) {
       updatedFiles.push(relPath);
     }
 
-    const segments = splitArchivePath(relPath).map(seg => seg.toLowerCase());
-    const modsFolderIdx = segments.indexOf('mods');
+    const segments = splitArchivePath(relPath).map((seg) => seg.toLowerCase());
+    const modsFolderIdx = segments.indexOf("mods");
     if (modsFolderIdx !== -1) {
       const bundledMod = segments[modsFolderIdx + 1];
       if (bundledMod !== undefined) {
@@ -127,31 +164,37 @@ export async function installSMAPI(getGameInstallPath: () => string,
   });
 
   const expectedExecutable = platform.executableName.toLowerCase();
-  const smapiExe = updatedFiles.find(file => archiveFileName(file).toLowerCase() === expectedExecutable);
+  const smapiExe = updatedFiles.find(
+    (file) => archiveFileName(file).toLowerCase() === expectedExecutable,
+  );
   if (smapiExe === undefined) {
-    return Promise.reject(new util.DataInvalid(`Failed to extract ${platform.executableName} - download appears `
-      + 'to be corrupted; please re-download SMAPI and try again'));
+    return Promise.reject(
+      new util.DataInvalid(
+        `Failed to extract ${platform.executableName} - download appears ` +
+          "to be corrupted; please re-download SMAPI and try again",
+      ),
+    );
   }
 
   const smapiExeBaseName = archiveFileName(smapiExe);
   const idx = smapiExe.indexOf(smapiExeBaseName);
 
-  const instructions: types.IInstruction[] = updatedFiles.map(file => ({
-    type: 'copy',
+  const instructions: types.IInstruction[] = updatedFiles.map((file) => ({
+    type: "copy",
     source: file,
     destination: file.substr(idx),
   }));
 
   instructions.push({
-    type: 'attribute',
-    key: 'smapiBundledMods',
+    type: "attribute",
+    key: "smapiBundledMods",
     value: getBundledMods(),
   });
 
   instructions.push({
-    type: 'generatefile',
+    type: "generatefile",
     data,
-    destination: 'StardewModdingAPI.deps.json',
+    destination: "StardewModdingAPI.deps.json",
   });
 
   return Promise.resolve({ instructions });
@@ -166,13 +209,12 @@ export async function installSMAPI(getGameInstallPath: () => string,
  */
 function splitArchivePath(filePath: string): string[] {
   return normalizePathSeparators(filePath)
-    .split('/')
-    .filter(segment => segment.length > 0);
+    .split("/")
+    .filter((segment) => segment.length > 0);
 }
 
 function normalizePathSeparators(filePath: string): string {
-  return filePath
-    .replace(/\\/g, '/');
+  return filePath.replace(/\\/g, "/");
 }
 
 /**
@@ -195,14 +237,13 @@ function archiveFileName(filePath: string): string {
  * - `internal/windows/install.dat`, `windows` -> `true`
  * - `internal/linux/install.dat`, `windows` -> `false`
  */
-function isCorrectPlatformPath(filePath: string, platformFolder: string): boolean {
-  const segments = splitArchivePath(filePath).map(seg => seg.toLowerCase());
+function isCorrectPlatformPath(
+  filePath: string,
+  platformFolder: string,
+): boolean {
+  const segments = splitArchivePath(filePath).map((seg) => seg.toLowerCase());
   return segments.includes(platformFolder.toLowerCase());
 }
 
-export {
-  windowsSMAPIPlatform,
-  linuxSMAPIPlatform,
-  macosSMAPIPlatform,
-};
-export type { ISMAPIPlatformVariant } from './types';
+export { windowsSMAPIPlatform, linuxSMAPIPlatform, macosSMAPIPlatform };
+export type { ISMAPIPlatformVariant } from "./types";
