@@ -17,6 +17,13 @@ import type {
   TraceCategoriesAndOptions,
 } from "./electron";
 import type {
+  ISerializedDiscovery,
+  ISerializedGameMeta,
+  ISerializedInstallResult,
+  ISerializedInstallerMeta,
+  ISupportedResult,
+} from "./gameAdaptor";
+import type {
   DiffOperation,
   AppInitMetadata,
   Serializable,
@@ -88,6 +95,12 @@ export interface Api {
 
   /** Telemetry APIs - span export from renderer to main */
   telemetry: TelemetryApi;
+
+  /** Game adaptor APIs - interact with games registered in the main process */
+  gameAdaptors: GameAdaptorsApi;
+
+  /** Installer adaptor APIs - interact with installers registered in the main process */
+  installerAdaptors: InstallerAdaptorsApi;
 }
 
 export interface Example {
@@ -403,4 +416,26 @@ export interface UpdaterApi {
 export interface TelemetryApi {
   /** Forward a completed span to main process for buffering and OTLP export */
   forwardSpan(span: SerializedSpan): void;
+}
+
+/** API for interacting with games registered in the main process via the adaptor system */
+export interface GameAdaptorsApi {
+  /** List all games registered via the main-process adaptor system */
+  list(): Promise<ISerializedGameMeta[]>;
+  /** Run queryPath for the given game. Returns the discovered path or null if not found. */
+  queryPath(gameId: string): Promise<string | null>;
+  /** Run pre-activation setup for the given game. */
+  setup(gameId: string, discovery: ISerializedDiscovery): Promise<void>;
+  /** Resolve the game version. */
+  getGameVersion(gameId: string, gamePath: string, exePath: string): Promise<string>;
+}
+
+/** API for interacting with installers registered in the main process via the adaptor system */
+export interface InstallerAdaptorsApi {
+  /** List all installers registered via the main-process adaptor system */
+  list(): Promise<ISerializedInstallerMeta[]>;
+  /** Test whether the installer supports the given archive file list. */
+  testSupported(id: string, files: string[], gameId: string): Promise<ISupportedResult>;
+  /** Run the installer and return serialized installation instructions. */
+  install(id: string, files: string[], tempPath: string, gameId: string): Promise<ISerializedInstallResult>;
 }

@@ -270,6 +270,40 @@ try {
       forwardSpan: (span) =>
         betterIpcRenderer.send("telemetry:forward-span", span),
     },
+
+    gameAdaptors: {
+      list: () => betterIpcRenderer.invoke("game-adaptor:list"),
+      queryPath: (gameId) =>
+        betterIpcRenderer.invoke("game-adaptor:queryPath", gameId),
+      setup: (gameId, discovery) =>
+        betterIpcRenderer.invoke("game-adaptor:setup", gameId, discovery),
+      getGameVersion: (gameId, gamePath, exePath) =>
+        betterIpcRenderer.invoke(
+          "game-adaptor:getGameVersion",
+          gameId,
+          gamePath,
+          exePath,
+        ),
+    },
+
+    installerAdaptors: {
+      list: () => betterIpcRenderer.invoke("installer-adaptor:list"),
+      testSupported: (id, files, gameId) =>
+        betterIpcRenderer.invoke(
+          "installer-adaptor:testSupported",
+          id,
+          files,
+          gameId,
+        ),
+      install: (id, files, tempPath, gameId) =>
+        betterIpcRenderer.invoke(
+          "installer-adaptor:install",
+          id,
+          files,
+          tempPath,
+          gameId,
+        ),
+    },
   });
 } catch (err) {
   console.error("failed to run preload code", err);

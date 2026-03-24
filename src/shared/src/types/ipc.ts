@@ -19,6 +19,13 @@ import type {
   TraceConfig,
   TraceCategoriesAndOptions,
 } from "./electron";
+import type {
+  ISerializedDiscovery,
+  ISerializedGameMeta,
+  ISerializedInstallResult,
+  ISerializedInstallerMeta,
+  ISupportedResult,
+} from "./gameAdaptor";
 import type { Level } from "./logging";
 import type { PersistedHive, PersistedState } from "./state";
 
@@ -316,6 +323,27 @@ export interface InvokeChannels {
 
   // Compile stylesheets
   "styles:compile": (filePaths: string[]) => Promise<string>;
+
+  // Game adaptors: list all games registered in main process
+  "game-adaptor:list": () => Promise<ISerializedGameMeta[]>;
+  // Game adaptors: call queryPath for a specific game
+  "game-adaptor:queryPath": (gameId: string) => Promise<string | null>;
+  // Game adaptors: call setup for a specific game
+  "game-adaptor:setup": (gameId: string, discovery: ISerializedDiscovery) => Promise<void>;
+  // Game adaptors: call getGameVersion for a specific game
+  "game-adaptor:getGameVersion": (gameId: string, gamePath: string, exePath: string) => Promise<string>;
+
+  // Installer adaptors: list all installers registered in main process
+  "installer-adaptor:list": () => Promise<ISerializedInstallerMeta[]>;
+  // Installer adaptors: test whether an installer supports an archive
+  "installer-adaptor:testSupported": (id: string, files: string[], gameId: string) => Promise<ISupportedResult>;
+  // Installer adaptors: run the installer and return instructions
+  "installer-adaptor:install": (
+    id: string,
+    files: string[],
+    tempPath: string,
+    gameId: string,
+  ) => Promise<ISerializedInstallResult>;
 }
 
 /** Represents all IPC-safe typed arrays */

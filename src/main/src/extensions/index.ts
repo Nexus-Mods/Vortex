@@ -7,6 +7,7 @@
 
 import { betterIpcMain } from "../ipc";
 import { log } from "../logging";
+import { initGameAdaptorIPC } from "../games";
 import { initNexusIntegration } from "./nexusIntegration";
 import { initUpdater } from "./updater";
 
@@ -17,6 +18,9 @@ let initialized = false;
  * Should be called once during application startup.
  */
 export function setupMainExtensions(): void {
+  // Game adaptor IPC handlers are always-on (not gated by the renderer init message).
+  initGameAdaptorIPC();
+
   betterIpcMain.on(
     "extensions:init-all-main",
     (_event, installType: string) => {
