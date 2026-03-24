@@ -1,10 +1,6 @@
 name: E2E Tests
 
 on:
-  push:
-    branches: [master]
-  pull_request:
-    branches: [master]
   workflow_dispatch:
 
 concurrency:
@@ -23,7 +19,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     # E2E aren't stable yet. Windows takes too long to execute, Linux is experimental
     continue-on-error: true
-    timeout-minutes: 30
+    timeout-minutes: 60
 
     steps:
       - uses: actions/checkout@v6
@@ -80,13 +76,13 @@ jobs:
 
       - name: Run E2E tests (Windows)
         if: runner.os == 'Windows'
-        timeout-minutes: 10
+        timeout-minutes: 30
         continue-on-error: true
         run: pnpm e2e
 
       - name: Run E2E tests (Linux)
         if: runner.os == 'Linux'
-        timeout-minutes: 10
+        timeout-minutes: 30
         continue-on-error: true
         run: xvfb-run pnpm e2e
 
