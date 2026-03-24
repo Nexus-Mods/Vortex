@@ -1,13 +1,17 @@
+/**
+ * Test data for the SMAPI installer.
+ *
+ * These lists match the files in the main archive and in each platform's
+ * `install.dat` file. The helpers turn those lists into the shapes the tests
+ * need.
+ */
 import path from "path";
 
 /**
- * SMAPI installer archive fixtures captured from SMAPI 4.5.1.
+ * Files in the main SMAPI 4.5.1 installer archive.
  *
- * Source sample:
- * `/home/sewer/Downloads/temp/SMAPI 4.5.1 installer`
- *
- * `*InstallDatEntries` are full `unzip -Z1` listings of platform install.dat
- * payloads, including directory entries.
+ * The sample was captured from
+ * `/home/sewer/Downloads/temp/SMAPI 4.5.1 installer`.
  */
 export const smapiInstallerArchiveEntries: string[] = [
   "README.txt",
@@ -22,6 +26,9 @@ export const smapiInstallerArchiveEntries: string[] = [
   "internal/macOS/SMAPI.Installer.dll",
 ];
 
+/**
+ * Files in the Windows `install.dat` payload.
+ */
 export const windowsInstallDatEntries: string[] = [
   "Mods/",
   "Mods/ConsoleCommands/",
@@ -76,6 +83,9 @@ export const windowsInstallDatEntries: string[] = [
   "steam_appid.txt",
 ];
 
+/**
+ * Files in the Linux `install.dat` payload.
+ */
 export const linuxInstallDatEntries: string[] = [
   "Mods/",
   "Mods/ConsoleCommands/",
@@ -129,6 +139,9 @@ export const linuxInstallDatEntries: string[] = [
   "unix-launcher.sh",
 ];
 
+/**
+ * Files in the macOS `install.dat` payload.
+ */
 export const macosInstallDatEntries: string[] = [
   "Mods/",
   "Mods/ConsoleCommands/",
@@ -182,6 +195,12 @@ export const macosInstallDatEntries: string[] = [
   "unix-launcher.sh",
 ];
 
+/**
+ * Removes directory entries from an archive listing.
+ *
+ * @param entries Archive listing that may include paths ending with `/`.
+ * @returns Only the file paths.
+ */
 export function archiveFileEntries(entries: string[]): string[] {
   return entries.filter((entry) => !entry.endsWith("/"));
 }
@@ -191,6 +210,17 @@ type IWalkCallback = (
   stats: { isFile: () => boolean },
 ) => Promise<void>;
 
+/**
+ * Calls a `util.walk`-style callback for each archive entry.
+ *
+ * @param destinationPath Root path used to build each full entry path.
+ * @param archiveEntries Archive listing with `/`-separated relative paths.
+ * @param callback Async callback that receives the full path and a small stats
+ * object.
+ * @returns A promise that resolves after every entry has been passed to
+ * `callback`.
+ * @throws Re-throws any error from `callback`.
+ */
 export async function walkArchiveEntries(
   destinationPath: string,
   archiveEntries: string[],

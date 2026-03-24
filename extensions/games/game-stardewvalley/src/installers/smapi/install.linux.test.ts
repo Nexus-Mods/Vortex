@@ -1,31 +1,31 @@
-import { beforeEach, describe, expect, test, vi } from "vitest";
+/**
+ * Tests the Linux SMAPI install path with real `install.dat` listings.
+ */
+import { beforeEach, describe, expect, test } from "vitest";
+
 import {
-  installSMAPI,
-  linuxSMAPIPlatform,
-} from "../../../src/installers/smapi";
+  SevenZipMock,
+  extractFullMock,
+  resetVortexApiMocks,
+  walkMock,
+} from "./fixtures/vortexApi.mock";
+import { installSMAPI, linuxSMAPIPlatform } from "./index";
 import {
   archiveFileEntries,
+  linuxInstallDatEntries,
   smapiInstallerArchiveEntries,
   walkArchiveEntries,
-  linuxInstallDatEntries,
 } from "./fixtures/archiveListings";
-import {
-  extractFullMock,
-  readFileAsyncMock,
-  SevenZipMock,
-  walkMock,
-} from "../../../__mocks__/vortex-api";
+
+const normalizePathSeparators = (input: string) => input.replace(/\\/g, "/");
 
 describe("installers/smapi installSMAPI (linux)", () => {
-  const normalizePathSeparators = (input: string) => input.replace(/\\/g, "/");
-
   beforeEach(() => {
-    vi.clearAllMocks();
-    readFileAsyncMock.mockResolvedValue('{"deps":true}');
-    extractFullMock.mockResolvedValue(undefined);
+    resetVortexApiMocks();
   });
 
   test("uses real linux install.dat listing and extracts the Linux executable", async () => {
+    // Arrange: use the real installer file list.
     const files = smapiInstallerArchiveEntries;
 
     walkMock.mockImplementation(
@@ -33,6 +33,7 @@ describe("installers/smapi installSMAPI (linux)", () => {
         _destination: string,
         cb: (iter: string, stats: { isFile: () => boolean }) => Promise<void>,
       ) => {
+        // Arrange: replay the staged archive contents.
         await walkArchiveEntries(
           "/staging",
           [...files, ...linuxInstallDatEntries],
@@ -41,21 +42,25 @@ describe("installers/smapi installSMAPI (linux)", () => {
       },
     );
 
+    // Act: run the Linux install flow.
     const result = await installSMAPI(
       () => "/game",
       files,
       "/staging",
       linuxSMAPIPlatform,
     );
+    const [extractSource, extractDestination] =
+      extractFullMock.mock.lastCall ?? [];
     const copyInstructions = result.instructions.filter(
       (instr) => instr.type === "copy",
     );
 
+    // Assert: extract the Linux payload and emit the right files.
     expect(SevenZipMock).toHaveBeenCalledTimes(1);
-    expect(normalizePathSeparators(extractFullMock.mock.calls[0][0])).toBe(
+    expect(normalizePathSeparators(extractSource as string)).toBe(
       "/staging/internal/linux/install.dat",
     );
-    expect(extractFullMock.mock.calls[0][1]).toBe("/staging");
+    expect(extractDestination).toBe("/staging");
     expect(copyInstructions).toHaveLength(
       archiveFileEntries(linuxInstallDatEntries).length,
     );
@@ -84,10 +89,12 @@ describe("installers/smapi installSMAPI (linux)", () => {
   });
 
   test("fails when platform data archive is missing", async () => {
+    // Arrange: remove the Linux archive payload.
     const files = smapiInstallerArchiveEntries.filter(
       (file) => file !== "internal/linux/install.dat",
     );
 
+    // Act + assert: fail with the missing-data error.
     await expect(
       installSMAPI(() => "/game", files, "/staging", linuxSMAPIPlatform),
     ).rejects.toThrow("Failed to find the SMAPI data files");

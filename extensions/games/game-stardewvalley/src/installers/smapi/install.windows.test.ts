@@ -1,33 +1,32 @@
-import { beforeEach, describe, expect, test, vi } from "vitest";
+/**
+ * Tests the Windows SMAPI install path with real `install.dat` listings.
+ */
+import { beforeEach, describe, expect, test } from "vitest";
+
 import {
-  installSMAPI,
-  windowsSMAPIPlatform,
-} from "../../../src/installers/smapi";
+  SevenZipMock,
+  extractFullMock,
+  readFileAsyncMock,
+  resetVortexApiMocks,
+  walkMock,
+} from "./fixtures/vortexApi.mock";
+import { installSMAPI, windowsSMAPIPlatform } from "./index";
 import {
   archiveFileEntries,
   smapiInstallerArchiveEntries,
   walkArchiveEntries,
   windowsInstallDatEntries,
 } from "./fixtures/archiveListings";
-import {
-  extractFullMock,
-  fs,
-  readFileAsyncMock,
-  SevenZipMock,
-  util,
-  walkMock,
-} from "../../../__mocks__/vortex-api";
+
+const normalizePathSeparators = (input: string) => input.replace(/\\/g, "/");
 
 describe("installers/smapi installSMAPI (windows)", () => {
-  const normalizePathSeparators = (input: string) => input.replace(/\\/g, "/");
-
   beforeEach(() => {
-    vi.clearAllMocks();
-    readFileAsyncMock.mockResolvedValue('{"deps":true}');
-    extractFullMock.mockResolvedValue(undefined);
+    resetVortexApiMocks();
   });
 
   test("uses real windows install.dat listing and extracts the Windows executable", async () => {
+    // Arrange: use the real installer file list.
     const files = smapiInstallerArchiveEntries;
     const destinationPath = "/staging";
 
@@ -36,6 +35,7 @@ describe("installers/smapi installSMAPI (windows)", () => {
         _destination: string,
         cb: (iter: string, stats: { isFile: () => boolean }) => Promise<void>,
       ) => {
+        // Arrange: replay the staged archive contents.
         await walkArchiveEntries(
           destinationPath,
           [...files, ...windowsInstallDatEntries],
@@ -44,21 +44,27 @@ describe("installers/smapi installSMAPI (windows)", () => {
       },
     );
 
+    // Act: run the Windows install flow.
     const result = await installSMAPI(
       () => "/game",
       files,
       destinationPath,
       windowsSMAPIPlatform,
     );
+    const [extractSource, extractDestination] =
+      extractFullMock.mock.lastCall ?? [];
+    const [depsFilePath, depsReadOptions] =
+      readFileAsyncMock.mock.lastCall ?? [];
     const copyInstructions = result.instructions.filter(
       (instr) => instr.type === "copy",
     );
 
+    // Assert: extract the Windows payload and emit the right files.
     expect(SevenZipMock).toHaveBeenCalledTimes(1);
-    expect(normalizePathSeparators(extractFullMock.mock.calls[0][0])).toBe(
+    expect(normalizePathSeparators(extractSource as string)).toBe(
       "/staging/internal/windows/install.dat",
     );
-    expect(extractFullMock.mock.calls[0][1]).toBe("/staging");
+    expect(extractDestination).toBe("/staging");
     expect(copyInstructions).toHaveLength(
       archiveFileEntries(windowsInstallDatEntries).length,
     );
@@ -86,14 +92,15 @@ describe("installers/smapi installSMAPI (windows)", () => {
           instr.destination === "StardewModdingAPI.deps.json",
       ),
     ).toBe(true);
-    expect(normalizePathSeparators(fs.readFileAsync.mock.calls[0][0])).toBe(
+    expect(normalizePathSeparators(depsFilePath as string)).toBe(
       "/game/Stardew Valley.deps.json",
     );
-    expect(fs.readFileAsync.mock.calls[0][1]).toEqual({ encoding: "utf8" });
-    expect(util.walk).toHaveBeenCalledTimes(1);
+    expect(depsReadOptions).toEqual({ encoding: "utf8" });
+    expect(walkMock).toHaveBeenCalledTimes(1);
   });
 
   test("fails when windows executable is missing from extracted payload", async () => {
+    // Arrange: drop the main executable from the payload.
     const files = smapiInstallerArchiveEntries;
     const entriesWithoutExe = windowsInstallDatEntries.filter(
       (entry) => entry !== "StardewModdingAPI.exe",
@@ -104,10 +111,12 @@ describe("installers/smapi installSMAPI (windows)", () => {
         _destination: string,
         cb: (iter: string, stats: { isFile: () => boolean }) => Promise<void>,
       ) => {
+        // Arrange: replay the broken extracted payload.
         await walkArchiveEntries("/staging", entriesWithoutExe, cb);
       },
     );
 
+    // Act + assert: fail when the exe is missing.
     await expect(
       installSMAPI(() => "/game", files, "/staging", windowsSMAPIPlatform),
     ).rejects.toThrow("Failed to extract StardewModdingAPI.exe");
