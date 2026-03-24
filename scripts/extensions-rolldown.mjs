@@ -13,7 +13,11 @@ const packageJsonPath = path.resolve(
   "package.json",
 );
 
-/** @returns {<string[]} */
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** @returns {(string | RegExp)[]} */
 export function getExternals() {
   const rawPackageJson = readFileSync(packageJsonPath, "utf8");
   const packageJson = JSON.parse(rawPackageJson);
@@ -21,7 +25,7 @@ export function getExternals() {
   const injectedExternals = ["electron", "vortex-api"];
 
   /** @type {string[]} */
-  const external = [
+  const externalIds = [
     ...new Set([
       ...builtinModules.filter((m) => !m.startsWith("_")),
       ...Object.keys(packageJson.dependencies),
@@ -29,7 +33,7 @@ export function getExternals() {
     ]),
   ];
 
-  return external;
+  return externalIds.map((id) => new RegExp(`^${escapeRegExp(id)}(?:$|/)`));
 }
 
 /**
