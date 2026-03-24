@@ -419,7 +419,7 @@ function mapStateToProps(
     userInfo,
     nextProfileId: state.settings.profiles.nextProfileId,
     collectionsInstallWhileDownloading,
-    useModernLayout: state.settings.window.useModernLayout ?? false,
+    useModernLayout: state.settings.window.useModernLayout ?? true,
   };
 }
 
