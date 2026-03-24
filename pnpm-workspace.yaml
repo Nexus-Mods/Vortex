@@ -8,7 +8,6 @@ packages:
   - ./src/renderer
   - ./extensions/*
   - ./extensions/games/*
-  - ./packages/*
 
 allowBuilds:
   "@parcel/watcher": true
