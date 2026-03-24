@@ -19,7 +19,7 @@ import {
   MODS_REL_PATH,
   NOTIF_ACTIVITY_CONFIG_MOD,
 } from '../common';
-import { findSMAPITool, getSMAPIMods } from '../smapi';
+import { findSMAPITool, getSMAPIMods } from '../smapi/selectors';
 import { selectMergeConfigsEnabled } from '../state/selectors';
 import type { IFileEntry } from '../types';
 import { walkPath } from './filesystem';

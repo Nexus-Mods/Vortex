@@ -9,7 +9,9 @@ import type { types } from 'vortex-api';
 import { GAME_ID, MODS_REL_PATH } from '../common';
 import { toBlue } from '../helpers';
 import { SMAPI_EXE } from '../installers/smapi';
-import { deploySMAPI, downloadAndInstallSMAPI, findSMAPIMod } from '../smapi';
+import { deploySMAPI } from '../smapi/lifecycle';
+import { findSMAPIMod } from '../smapi/selectors';
+import { downloadAndInstallSMAPI } from '../smapi/workflow';
 
 /**
  * Vortex `IGame` implementation for Stardew Valley.

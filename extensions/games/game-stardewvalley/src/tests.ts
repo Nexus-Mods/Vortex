@@ -9,7 +9,8 @@ import { selectors } from 'vortex-api';
 import type ModManifestCache from './manifests/ModManifestCache';
 
 import { GAME_ID } from './common';
-import { downloadAndInstallSMAPI, findSMAPIMod } from './smapi';
+import { findSMAPIMod } from './smapi/selectors';
+import { downloadAndInstallSMAPI } from './smapi/workflow';
 
 /** Verifies whether active mods require a newer SMAPI version. */
 export async function testSMAPIOutdated(api: types.IExtensionApi,

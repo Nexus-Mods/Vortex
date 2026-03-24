@@ -12,7 +12,8 @@ import { updateConflictInfo } from '../compatibility/updateConflictInfo';
 import { GAME_ID } from '../common';
 import { errorMessage } from '../helpers';
 import { onAddedFiles, onWillEnableMods } from '../configMod';
-import { findSMAPIMod, SMAPIProxy } from '../smapi';
+import { SMAPIProxy } from '../smapi/proxy';
+import { findSMAPIMod } from '../smapi/selectors';
 
 /**
  * Registers long-lived runtime handlers that should run once the extension is
