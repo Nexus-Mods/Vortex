@@ -66,7 +66,7 @@ import * as fs from "../../util/fs";
 import getNormalizeFunc from "../../util/getNormalizeFunc";
 import getVortexPath from "../../util/getVortexPath";
 import { laterT, type TFunction } from "../../util/i18n";
-import { log } from "../../util/log";
+import { log } from "../../logging";
 import { showError } from "../../util/message";
 import onceCB from "../../util/onceCB";
 import {
@@ -1182,42 +1182,42 @@ function genValidActivatorCheck(api: IExtensionApi) {
           short: "Mods can't be deployed.",
         },
         severity: "error",
-        automaticFix: () =>
-          new Promise<void>((fixResolve, fixReject) => {
-            api.store.dispatch(
-              setDeploymentProblem(
-                reasons
-                  .map((reason) => {
-                    let message: string;
-                    if (_.isFunction(reason.description)) {
-                      message = reason.description(api.translate);
-                    } else {
-                      log(
-                        "error",
-                        "deployment unavailable with no description",
-                        {
-                          gameId,
-                          reason: JSON.stringify(reason),
-                        },
-                      );
-                      message =
-                        "<Missing description, please report this and include a log file>";
-                    }
-                    return {
-                      activator: reason.activator,
-                      message,
-                      solution:
-                        reason.solution !== undefined
-                          ? reason.solution(api.translate)
-                          : undefined,
-                      order: reason.order || 1000,
-                      hasAutomaticFix: reason.fixCallback !== undefined,
-                    };
-                  })
-                  .sort((lhs, rhs) => lhs.order - rhs.order),
-              ),
-            );
-          }),
+        automaticFix: (): Promise<void> => {
+          api.store.dispatch(
+            setDeploymentProblem(
+              reasons
+                .map((reason) => {
+                  let message: string;
+                  if (_.isFunction(reason.description)) {
+                    message = reason.description(api.translate);
+                  } else {
+                    log(
+                      "error",
+                      "deployment unavailable with no description",
+                      {
+                        gameId,
+                        reason: JSON.stringify(reason),
+                      },
+                    );
+                    message =
+                      "<Missing description, please report this and include a log file>";
+                  }
+                  return {
+                    activator: reason.activator,
+                    message,
+                    solution:
+                      reason.solution !== undefined
+                        ? reason.solution(api.translate)
+                        : undefined,
+                    order: reason.order || 1000,
+                    hasAutomaticFix: reason.fixCallback !== undefined,
+                  };
+                })
+                .sort((lhs, rhs) => lhs.order - rhs.order),
+            ),
+          );
+          return Promise.resolve();
+        },
       });
     });
 }
