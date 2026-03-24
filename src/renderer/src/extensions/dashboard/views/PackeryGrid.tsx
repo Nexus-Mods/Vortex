@@ -187,6 +187,13 @@ class Packery extends React.Component<IProps, {}> {
     if (this.mRefreshTimer !== undefined) {
       clearTimeout(this.mRefreshTimer);
     }
+    // Cancel pending layout — the refresh will schedule its own layout
+    // after reloading items. Running layout before reload causes Packery
+    // to position items based on a stale item list, leading to overlap.
+    if (this.mLayoutTimer !== undefined) {
+      clearTimeout(this.mLayoutTimer);
+      this.mLayoutTimer = undefined;
+    }
     this.mRefreshTimer = setTimeout(() => {
       this.mRefreshTimer = undefined;
       if (this.mPackery !== undefined) {
