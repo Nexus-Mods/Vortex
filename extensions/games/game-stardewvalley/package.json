@@ -18,6 +18,7 @@
     "game": "Stardew Valley"
   },
   "dependencies": {
+    "@vortex/shared": "workspace:*",
     "react": "catalog:",
     "react-bootstrap": "catalog:",
     "react-i18next": "catalog:",
@@ -35,7 +36,6 @@
     "@types/react-redux": "catalog:",
     "@types/relaxed-json": "catalog:",
     "@types/semver": "catalog:",
-    "@vortex/shared": "workspace:*",
     "copyfiles": "catalog:",
     "electron": "catalog:",
     "modmeta-db": "catalog:",

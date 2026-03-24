@@ -2256,9 +2256,9 @@ importers:
 
   extensions/games/game-stardewvalley:
     dependencies:
-      bluebird:
-        specifier: 'catalog:'
-        version: 3.7.2
+      '@vortex/shared':
+        specifier: workspace:*
+        version: link:../../../src/shared
       react:
         specifier: 'catalog:'
         version: 16.14.0
@@ -2287,9 +2287,6 @@ importers:
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4192c0c9f34306c2167e258dd4fef773af406161
-      '@types/bluebird':
-        specifier: 'catalog:'
-        version: 3.5.20
       '@types/node':
         specifier: 'catalog:'
         version: 22.19.11
@@ -2308,9 +2305,6 @@ importers:
       '@types/semver':
         specifier: 'catalog:'
         version: 7.7.1
-      '@vortex/shared':
-        specifier: workspace:*
-        version: link:../../../src/shared
       copyfiles:
         specifier: 'catalog:'
         version: 2.4.1
