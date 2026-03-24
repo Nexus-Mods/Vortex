@@ -9,12 +9,9 @@ import path from 'node:path';
 import fs from 'node:fs';
 import os from 'node:os';
 import { createRequire } from 'node:module';
-import { fileURLToPath } from 'node:url';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /** Package root (packages/e2e/) — used for resolving node_modules. */
-const PACKAGE_ROOT = path.resolve(__dirname, '..');
+const PACKAGE_ROOT = path.resolve(import.meta.dirname, '..');
 
 /** Repo root directory. */
 const REPO_ROOT = path.resolve(PACKAGE_ROOT, '..', '..');
