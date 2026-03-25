@@ -234,6 +234,8 @@ export class FilePath {
    */
   hashCode(): number {
     const anchorName = AnchorNS.name(this.anchor);
+    // Note(sewer): JS doesn't expose object addresses for ordering/hash, so unlike
+    // equals() this uses resolver.name; rare same-name resolvers may compare equal.
     return fnv1a(`${this.resolver.name}:${anchorName}:${this.relative}`);
   }
 
