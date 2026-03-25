@@ -15,7 +15,10 @@ function createCategoryDetailPath(
     return null;
   }
 
-  if (!hideTopLevel || categories[category].parentCategory !== undefined) {
+  const isTopLevel = categories[category].parentCategory === undefined;
+  // Only hide the top-level category name if it's not the leaf category
+  // (i.e., there are child categories in the path below it)
+  if (!hideTopLevel || !isTopLevel || categoryPath === "") {
     categoryPath =
       categoryPath === ""
         ? categories[category].name

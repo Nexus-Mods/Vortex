@@ -73,6 +73,9 @@ class CategoryFilterComponent extends React.Component<IProps, IComponentState> {
     Object.keys(mods || {}).forEach((modId) => {
       const mod = mods[modId];
       let category = getSafe(mod.attributes, ["category"], undefined);
+      if (typeof category === "string") {
+        category = category.split(",")[0];
+      }
       const visited = [];
 
       while (category !== undefined && !visited.includes(category)) {
@@ -238,7 +241,7 @@ class CategoryFilter implements ITableFilter {
 
     const filtList = new Set<string>(filter.filter((f) => !f.startsWith("*")));
     const allCategories = truthy(value)
-      ? this.categoryChain(value.toString(), state)
+      ? this.categoryChain(value.toString().split(",")[0], state)
       : [UNASSIGNED_ID];
 
     if (allCategories.find((cat) => filtList.has(cat)) !== undefined) {
@@ -251,7 +254,8 @@ class CategoryFilter implements ITableFilter {
       .map((f) => f.slice(1).toLowerCase());
     if (patterns.length > 0 && value !== undefined) {
       const gameId = activeGameId(state);
-      const catName = state.persistent.categories[gameId]?.[value];
+      const primaryValue = value.toString().split(",")[0];
+      const catName = state.persistent.categories[gameId]?.[primaryValue];
       if (
         catName?.name != null &&
         patterns.find((pat) => catName.name.toLowerCase().includes(pat)) !==

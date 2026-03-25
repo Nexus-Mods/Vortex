@@ -166,8 +166,15 @@ function init(context: IExtensionContext): boolean {
         });
       },
     },
+    externalData: (onChanged: () => void) => {
+      context.api.onStateChange(
+        ["settings", "interface", "hideTopLevelCategory"],
+        () => { onChanged(); },
+      );
+    },
     placement: "detail",
     isToggleable: false,
+    isVolatile: true,
     isSortable: true,
   });
 
