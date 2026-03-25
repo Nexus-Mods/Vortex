@@ -1,3 +1,7 @@
+/**
+ * Tests the `NodeFilesystem` wrapper without touching the real filesystem.
+ */
+
 import { Buffer } from "node:buffer";
 import { normalize, sep } from "node:path";
 
@@ -23,7 +27,16 @@ type MockStat = {
   mode: number;
 };
 
+/**
+ * In Vitest, `vi.mock()` gets moved to the top of the file and runs before the
+ * rest of this code. `vi.hoisted(...)` makes sure this object is created early
+ * enough too, so the fake `fs-extra` module and the tests can share the same spies.
+ *
+ * Each `vi.fn()` here is just a stub by default: it records calls, but does
+ * nothing until a test gives it a return value or implementation.
+ */
 const fsExtraMocks = vi.hoisted(() => ({
+  // File content operations.
   appendFile:
     vi.fn<
       (
@@ -40,6 +53,7 @@ const fsExtraMocks = vi.hoisted(() => ({
     ) => Promise<void>
   >(),
   ensureDir: vi.fn<(dirPath: string) => Promise<void>>(),
+  // Metadata lookups. `stat` follows symlinks, `lstat` does not.
   lstat: vi.fn<(filePath: string) => Promise<MockStat>>(),
   mkdir:
     vi.fn<
@@ -56,6 +70,7 @@ const fsExtraMocks = vi.hoisted(() => ({
         options?: { encoding: BufferEncoding },
       ) => Promise<string | Buffer>
     >(),
+  // Directory listing returns mocked dirents, then the tests pair them with `stat`.
   readdir:
     vi.fn<
       (
@@ -78,12 +93,16 @@ const fsExtraMocks = vi.hoisted(() => ({
     >(),
 }));
 
+// Replace `fs-extra` with our shared stubs for every test in this file.
 vi.mock("fs-extra", () => {
   return fsExtraMocks;
 });
 
 import { NodeFilesystem } from "./NodeFilesystem";
 
+/**
+ * Builds the small `fs.Stats` shape these tests care about.
+ */
 function makeMockStat(
   opts: Partial<{
     isFile: boolean;
@@ -101,6 +120,7 @@ function makeMockStat(
     isDirectory: vi.fn(() => opts.isDirectory ?? false),
     isSymbolicLink: vi.fn(() => opts.isSymbolicLink ?? false),
     size: opts.size ?? 0,
+    // Fixed dates keep metadata assertions predictable.
     mtime: opts.mtime ?? new Date("2025-01-01"),
     birthtime: opts.birthtime ?? new Date("2025-01-01"),
     atime: opts.atime ?? new Date("2025-01-01"),
@@ -108,6 +128,9 @@ function makeMockStat(
   };
 }
 
+/**
+ * Builds the small `Dirent` shape used by the `readdir` tests.
+ */
 function makeMockDirent(
   name: string,
   type: "file" | "dir" | "link",
@@ -154,6 +177,8 @@ describe("NodeFilesystem", () => {
     test("lowercases on case-insensitive platforms", () => {
       const normalizedPath = normalize("/Foo/Bar");
       const path = nodeFs.normalizePath("/Foo/Bar");
+
+      // Keep this portable across Windows and Unix.
       if (nodeFs.caseSensitive) {
         expect(path).toBe(normalizedPath);
       } else {
@@ -202,6 +227,7 @@ describe("NodeFilesystem", () => {
         "utf8",
       );
 
+      // `writeFile` makes sure the parent folder exists first.
       expect(fsExtraMocks.ensureDir).toHaveBeenCalledWith("/test/dir");
       expect(fsExtraMocks.writeFile).toHaveBeenCalledWith(
         "/test/dir/file.txt",
@@ -260,6 +286,7 @@ describe("NodeFilesystem", () => {
       ];
       fsExtraMocks.readdir.mockResolvedValue(dirEntries);
 
+      // `readdir` provides names and coarse types, while `stat` fills in metadata.
       const fileStat = makeMockStat({ isFile: true, size: 100 });
       const dirStat = makeMockStat({ isDirectory: true, size: 0 });
       fsExtraMocks.stat
@@ -311,6 +338,7 @@ describe("NodeFilesystem", () => {
 
       await nodeFs.rmdir(ResolvedPath.make("/test/dir"), { recursive: true });
 
+      // Recursive deletes go through `remove`, not `rmdir`.
       expect(fsExtraMocks.remove).toHaveBeenCalledWith("/test/dir");
     });
 
@@ -374,6 +402,7 @@ describe("NodeFilesystem", () => {
 
       const entry = await nodeFs.stat(ResolvedPath.make("/test/link"));
 
+      // `stat` can report both the file bit and the symlink bit together.
       expect(FileEntry.isFile(entry)).toBe(true);
       expect(FileEntry.isSymbolicLink(entry)).toBe(true);
       expect(entry.type & FileType.SymbolicLink).not.toBe(0);
@@ -391,6 +420,7 @@ describe("NodeFilesystem", () => {
 
       const entry = await nodeFs.lstat(ResolvedPath.make("/test/link"));
 
+      // `lstat` should describe the link itself, not the target.
       expect(FileEntry.isSymbolicLink(entry)).toBe(true);
       expect(FileEntry.isFile(entry)).toBe(false);
       expect(fsExtraMocks.lstat).toHaveBeenCalledWith("/test/link");
