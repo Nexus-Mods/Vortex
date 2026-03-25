@@ -1,6 +1,6 @@
 import type { TFunction } from "i18next";
 import * as React from "react";
-import { types, util } from "vortex-api";
+import { types } from "vortex-api";
 
 export interface ICollectionReleaseStatusProps {
   t: TFunction;
@@ -18,15 +18,10 @@ function CollectionReleaseStatus(props: ICollectionReleaseStatusProps) {
         <div className="collection-status incomplete">{t("Incomplete")}</div>
       );
     } else if (
-      util.getSafe(collection.attributes, ["collectionId"], undefined) !==
-        undefined &&
-      util.getSafe(collection.attributes, ["editable"], false)
+      collection.attributes?.collectionId &&
+      collection.attributes?.editable
     ) {
-      const revisionStatus = util.getSafe(
-        collection.attributes,
-        ["revisionStatus"],
-        undefined,
-      );
+      const revisionStatus = collection.attributes?.revisionStatus;
       const isPublished = revisionStatus === "published";
       return isPublished ? (
         <div className="collection-status published">{t("Published")}</div>
