@@ -30,8 +30,8 @@ export const RelativePathSchema = z
   .transform((s) => s.replace(/^\/+/, "")) // Remove leading slashes
   .transform((s) => s.replace(/\/+$/, "")) // Remove trailing slashes
   .transform((s) => s.replace(/\/+/g, "/")) // Collapse multiple slashes
-  .refine((s) => !s.startsWith(".."), {
-    message: "Relative paths cannot start with ..",
+  .refine((s) => s.split("/").every((segment) => segment !== ".."), {
+    message: "Relative paths cannot contain .. segments",
   })
   .refine((s) => !/^[a-zA-Z]:/.test(s), {
     message: "Relative paths cannot contain drive letters",

@@ -20,6 +20,7 @@ describe("RelativePath", () => {
   describe("validation", () => {
     test.each([
       ["../etc/passwd", "starts with .."],
+      ["mods/../../etc", "contains parent directory segments"],
       ["C:/Windows", "drive letter"],
       ["C:\\Windows", "drive letter"],
       ["D:\\Games", "drive letter"],
