@@ -510,6 +510,9 @@ catalogs:
     loot:
       specifier: git+https://github.com/Nexus-Mods/node-loot#04a77fcae028b0838b5e0c53cfcdc65898c49727
       version: 6.2.1
+    lottie-react:
+      specifier: ^2.4.1
+      version: 2.4.1
     lru-cache:
       specifier: ^11.2.6
       version: 11.2.6
@@ -4007,6 +4010,9 @@ importers:
       lodash:
         specifier: 'catalog:'
         version: 4.17.23
+      lottie-react:
+        specifier: 'catalog:'
+        version: 2.4.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
       memoize-one:
         specifier: 'catalog:'
         version: 5.2.1
@@ -4681,6 +4687,9 @@ importers:
       lodash:
         specifier: 'catalog:'
         version: 4.17.23
+      lottie-react:
+        specifier: 'catalog:'
+        version: 2.4.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
       memoize-one:
         specifier: 'catalog:'
         version: 5.2.1
@@ -10743,6 +10752,15 @@ packages:
   loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/04a77fcae028b0838b5e0c53cfcdc65898c49727:
     resolution: {tarball: https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/04a77fcae028b0838b5e0c53cfcdc65898c49727}
     version: 6.2.1
+
+  lottie-react@2.4.1:
+    resolution: {integrity: sha512-LQrH7jlkigIIv++wIyrOYFLHSKQpEY4zehPicL9bQsrt1rnoKRYCYgpCUe5maqylNtacy58/sQDZTkwMcTRxZw==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+      react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
+  lottie-web@5.13.0:
+    resolution: {integrity: sha512-+gfBXl6sxXMPe8tKQm7qzLnUy5DUPJPKIyRHwtpCpyUEYjHYRJC/5gjUvdkuO2c3JllrPtHXH5UJJK8LRYl5yQ==}
 
   lowercase-keys@2.0.0:
     resolution: {integrity: sha512-tqNXrS78oMOE73NMxK4EMLQsQowWf8jKooH9g7xPavRT706R6bkQJ6DY2Te7QukaZsulxa30wQ7bk0pm4XiHmA==}
@@ -20487,6 +20505,14 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
     optional: true
+
+  lottie-react@2.4.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0):
+    dependencies:
+      lottie-web: 5.13.0
+      react: 16.14.0
+      react-dom: 16.14.0(react@16.14.0)
+
+  lottie-web@5.13.0: {}
 
   lowercase-keys@2.0.0: {}
 

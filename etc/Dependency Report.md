@@ -63,6 +63,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | leveldown | 5.6.0 |
 | levelup | 4.4.0 |
 | lodash | 4.17.23 |
+| lottie-react | 2.4.1 |
 | memoize-one | 5.2.1 |
 | minimatch | 3.1.3 |
 | mixpanel-browser | 2.74.0 |

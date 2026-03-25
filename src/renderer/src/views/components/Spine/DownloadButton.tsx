@@ -1,14 +1,14 @@
-import { mdiDownload } from "@mdi/js";
-import React, { type FC } from "react";
+import React, { useEffect, useRef, useState, type FC } from "react";
 import { useSelector } from "react-redux";
 
 import type { DownloadState } from "../../../extensions/download_management/types/IDownload";
 import type { IState } from "../../../types/IState";
 
-import { Icon } from "../../../ui/components/icon/Icon";
 import { Typography } from "../../../ui/components/typography/Typography";
 import { joinClasses } from "../../../ui/utils/joinClasses";
 import { useSpineContext } from "./SpineContext";
+
+import Lottie, { type LottieRef } from "lottie-react";
 
 const ACTIVE_DOWNLOAD_STATES: DownloadState[] = [
   "init",
@@ -129,6 +129,21 @@ const ProgressRing: FC<{
   );
 };
 
+const DOWNLOAD_ANIMATION_PATH = "assets/animations/download-pictogram.json";
+
+function useAnimationData(path: string): unknown | null {
+  const [data, setData] = useState<unknown | null>(null);
+
+  useEffect(() => {
+    fetch(path)
+      .then((res) => res.json())
+      .then(setData)
+      .catch(() => {});
+  }, [path]);
+
+  return data;
+}
+
 export const DownloadButton: FC = () => {
   const { selection, selectDownloads } = useSpineContext();
 
@@ -139,6 +154,9 @@ export const DownloadButton: FC = () => {
 
   // TODO: Add mechanism to toggle between speed and time display
   const isTime = false;
+
+  const animationData = useAnimationData(DOWNLOAD_ANIMATION_PATH);
+  const lottieRef: LottieRef = useRef(null);
 
   return (
     <button
@@ -156,6 +174,9 @@ export const DownloadButton: FC = () => {
       )}
       title="Downloads"
       onClick={() => selectDownloads()}
+      onMouseEnter={() => {
+        lottieRef.current?.goToAndPlay(0, true);
+      }}
     >
       {isPaused || isDownloading ? (
         <>
@@ -180,9 +201,15 @@ export const DownloadButton: FC = () => {
             progress={progress}
           />
         </>
-      ) : (
-        <Icon className="transition-colors" path={mdiDownload} size="lg" />
-      )}
+      ) : animationData != null ? (
+        <Lottie
+          animationData={animationData}
+          autoplay={false}
+          className="size-8"
+          loop={false}
+          lottieRef={lottieRef}
+        />
+      ) : null}
     </button>
   );
 };

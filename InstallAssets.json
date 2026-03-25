@@ -53,6 +53,11 @@
       "target": ["out", "dist"]
     },
     {
+      "srcPath": "assets/animations/",
+      "outPath": "",
+      "target": ["out", "dist"]
+    },
+    {
       "srcPath": "assets/fonts/*",
       "outPath": "",
       "target": ["out", "dist"]
