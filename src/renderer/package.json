@@ -22,6 +22,7 @@
     "@babel/register": "catalog:",
     "@electron/remote": "catalog:",
     "@headlessui/react": "catalog:",
+    "@jest/globals": "catalog:",
     "@mdi/js": "catalog:",
     "@microsoft/api-extractor": "catalog:",
     "@msgpack/msgpack": "catalog:",

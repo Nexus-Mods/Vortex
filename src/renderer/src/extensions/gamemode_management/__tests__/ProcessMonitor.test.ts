@@ -1,3 +1,4 @@
+import { expect, it, jest } from "@jest/globals";
 import * as path from "path";
 import ProcessMonitor from "../util/ProcessMonitor";
 import type { IProcessInfo, IProcessProvider } from "../util/processProvider";
@@ -83,7 +84,7 @@ const createMonitor = (state: IState, processes: IProcessInfo[]) => {
     getState: jest.fn(() => state),
   };
   const processProvider: IProcessProvider = {
-    list: jest.fn().mockResolvedValue(processes),
+    list: jest.fn(async () => processes),
   };
   const monitor = new ProcessMonitor(
     { store } as unknown as IExtensionApi,

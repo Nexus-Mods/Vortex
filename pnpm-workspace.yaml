@@ -45,6 +45,7 @@ catalog:
   "@eslint/js": 9.39.1
   "@headlessui/react": ^1.7.19
   "@iarna/toml": ^2.2.5
+  "@jest/globals": ^29.7.0
   "@mdi/js": 7.4.47
   "@microsoft/api-extractor": ^7.57.6
   "@msgpack/msgpack": ^2.7.0
