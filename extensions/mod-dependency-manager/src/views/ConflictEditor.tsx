@@ -183,6 +183,7 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
   private getModEntriesMemo = memoizeOne(this.getModEntries);
   private getFilteredEntriesMemo = memoizeOne(this.getFilteredEntries);
   private mRef = React.createRef<HTMLDivElement>();
+  private mBaselineRules: { [modId: string]: { [refId: string]: IRuleSpec } } = {};
 
   constructor(props: IProps) {
     super(props);
@@ -310,7 +311,34 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
   }
 
   private refreshRules = (props: IProps) => {
+    const currentRules = this.state.rules;
+    const baselineRules = this.mBaselineRules;
     this.nextState.rules = (props.modIds || []).reduce(
+      (
+        prev: { [modId: string]: { [refId: string]: IRuleSpec } },
+        modId: string,
+      ) => {
+        const persisted = getRuleSpec(modId, props.mods, props.conflicts?.[modId]);
+        if (currentRules[modId] !== undefined && baselineRules[modId] !== undefined) {
+          // preserve local edits: if the user changed a rule from its baseline,
+          // keep the user's version
+          const merged: { [refId: string]: IRuleSpec } = {};
+          for (const refId of Object.keys(persisted)) {
+            const baseline = baselineRules[modId]?.[refId];
+            const local = currentRules[modId]?.[refId];
+            const wasEdited = local !== undefined && baseline !== undefined
+              && (local.type !== baseline.type || local.version !== baseline.version);
+            merged[refId] = wasEdited ? local : persisted[refId];
+          }
+          prev[modId] = merged;
+        } else {
+          prev[modId] = persisted;
+        }
+        return prev;
+      },
+      {},
+    );
+    this.mBaselineRules = (props.modIds || []).reduce(
       (
         prev: { [modId: string]: { [refId: string]: IRuleSpec } },
         modId: string,
