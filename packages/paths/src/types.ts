@@ -72,6 +72,9 @@ export const ExtensionSchema = z
   .refine((s) => s.startsWith("."), {
     message: "Extensions must start with .",
   })
+  // Note(sewer): Technically \ is valid inside an extension on Unix,
+  // but we'll disallow it for consistency. No sane game or mod file
+  // is expected to have one, realistically speaking.
   .refine((s) => !s.includes("/") && !s.includes("\\"), {
     message: "Extensions cannot contain path separators",
   })
