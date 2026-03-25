@@ -64,6 +64,7 @@ class LevelPersist implements IPersistor {
 
   #mConnection: DuckDBConnection;
   #mAlias: string;
+  #mInTransaction: boolean = false;
 
   constructor(connection: DuckDBConnection, alias: string) {
     this.#mConnection = connection;
@@ -147,11 +148,35 @@ class LevelPersist implements IPersistor {
   }
 
   public async setItem(statePath: string[], newState: string): Promise<void> {
-    await this.#mConnection.run(
-      `INSERT INTO ${this.#mAlias}.kv VALUES ($1, $2)
-         ON CONFLICT (key) DO UPDATE SET value = excluded.value`,
-      [statePath.join(SEPARATOR), newState],
-    );
+    const key = statePath.join(SEPARATOR);
+    // level_pivot tables don't support UNIQUE indexes, so ON CONFLICT
+    // upserts aren't possible. Try UPDATE first; INSERT only if the key
+    // didn't exist. Wrap in a transaction when called outside of one to
+    // ensure atomicity.
+    const ownTransaction = !this.#mInTransaction;
+    if (ownTransaction) {
+      await this.beginTransaction();
+    }
+    try {
+      const result = await this.#mConnection.runAndReadAll(
+        `UPDATE ${this.#mAlias}.kv SET value = $2 WHERE key = $1 RETURNING key`,
+        [key, newState],
+      );
+      if (result.getRows().length === 0) {
+        await this.#mConnection.run(
+          `INSERT INTO ${this.#mAlias}.kv VALUES ($1, $2)`,
+          [key, newState],
+        );
+      }
+      if (ownTransaction) {
+        await this.commitTransaction();
+      }
+    } catch (err) {
+      if (ownTransaction) {
+        await this.rollbackTransaction();
+      }
+      throw err;
+    }
   }
 
   public async removeItem(statePath: string[]): Promise<void> {
@@ -166,6 +191,7 @@ class LevelPersist implements IPersistor {
    */
   public async beginTransaction(): Promise<void> {
     await this.#mConnection.run("BEGIN TRANSACTION");
+    this.#mInTransaction = true;
   }
 
   /**
@@ -173,6 +199,7 @@ class LevelPersist implements IPersistor {
    */
   public async commitTransaction(): Promise<void> {
     await this.#mConnection.run("COMMIT");
+    this.#mInTransaction = false;
   }
 
   /**
@@ -180,6 +207,7 @@ class LevelPersist implements IPersistor {
    */
   public async rollbackTransaction(): Promise<void> {
     await this.#mConnection.run("ROLLBACK");
+    this.#mInTransaction = false;
   }
 
   /**

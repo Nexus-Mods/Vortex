@@ -9,7 +9,7 @@ export type ModsPivotRow = {
   name: string;
   version: string;
   state: string;
-}
+};
 
 /** Row type for the 'profiles_pivot' pivot table */
 export type ProfilesPivotRow = {
@@ -17,7 +17,7 @@ export type ProfilesPivotRow = {
   name: string;
   gameId: string;
   lastActivated: bigint;
-}
+};
 
 /** Parameters for the 'recently_managed_games' query */
 export interface RecentlyManagedGamesParams {

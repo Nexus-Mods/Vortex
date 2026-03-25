@@ -282,7 +282,7 @@ function generateTypeScript(
     for (const col of columns) {
       lines.push(`  ${col.name}: ${col.tsType};`);
     }
-    lines.push("}");
+    lines.push("};");
     lines.push("");
   }
 
