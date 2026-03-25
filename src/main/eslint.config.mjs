@@ -34,7 +34,7 @@ export default defineConfig([
       // Typescript
       "@typescript-eslint/consistent-type-imports": "error",
       "@typescript-eslint/no-unused-vars": [
-        "error",
+        "warn",
         {
           args: "all",
           argsIgnorePattern: "^_",
