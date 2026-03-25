@@ -70,7 +70,7 @@ export const GameButton: FC<GameButtonProps> = ({
     <button
       className={joinClasses(
         "group relative size-12 shrink-0 overflow-hidden rounded-lg",
-        { "outline-2 outline-offset-2 outline-neutral-strong focus-within:outline-info-subdued": isActive },
+        { "outline-2 outline-offset-2 outline-neutral-strong focus-visible:outline-info-subdued": isActive },
       )}
       title={title}
       {...props}
@@ -98,7 +98,7 @@ export const GameButton: FC<GameButtonProps> = ({
         className={joinClasses(
           "absolute inset-0 z-1 rounded-lg transition-colors",
           {
-            "border border-stroke-weak group-hover:border-2 group-hover:border-neutral-strong":
+            "border border-stroke-weak group-hover:border-2 group-hover:border-neutral-strong group-hover:bg-translucent-200":
               !isActive,
           },
         )}
