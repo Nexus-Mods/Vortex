@@ -110,6 +110,7 @@ import {
   ensureLoggedIn,
   getCollectionInfo,
   getInfo,
+  getInfoGraphQL,
   nexusGames,
   nexusGamesProm,
   oauthCallback,
@@ -1745,6 +1746,7 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
   function premiumUserDownload(
     input: string,
     url: NXMUrl,
+    directDownloadEnabled: boolean = false,
   ): PromiseBB<IResolvedURL> {
     const state = api.getState();
     const games = knownGames(state);
@@ -1774,6 +1776,9 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
       });
     }
 
+    const downloadKey = directDownloadEnabled ? undefined : url.key;
+    const downloadExpires = directDownloadEnabled ? undefined : url.expires;
+
     return PromiseBB.resolve()
       .then(() =>
         url.type === "mod"
@@ -1781,8 +1786,8 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
               .getDownloadURLs(
                 url.modId,
                 url.fileId,
-                url.key,
-                url.expires,
+                downloadKey,
+                downloadExpires,
                 pageId,
               )
               .then((res: IDownloadURL[]) => {
@@ -1908,18 +1913,27 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
       url.gameId !== SITE_ID &&
       url.key === undefined
     ) {
-      log("info", "free user stuff", {
-        input: input,
-        url: JSON.stringify(url),
-        name: name,
-        friendlyName: friendlyName,
-      });
-      return freeUserDownload(input, url, name, friendlyName);
+
+      const games = knownGames(state);
+      const gameId = convertNXMIdReverse(games, url.gameId);
+      const pageId = nexusGameId(gameById(state, gameId), url.gameId);
+
+      return getInfoGraphQL(nexus, pageId, url.modId, url.fileId)
+        .then(({ modInfo, fileInfo }) => {
+          if (modInfo["direct_download_enabled"]) {
+            return premiumUserDownload(input, url, true);
+          } else {
+            return freeUserDownload(input, url, name, friendlyName);
+          }
+        })
+        .catch((err) => {
+          // If we can't query mod info, fall back to free user flow
+          log("warn", "failed to query mod info for direct download check", {
+            error: err.message,
+          });
+          return freeUserDownload(input, url, name, friendlyName);
+        });
     } else {
-      log("info", "premium user stuff", {
-        input: input,
-        url: JSON.stringify(url),
-      });
       return premiumUserDownload(input, url);
     }
   };
