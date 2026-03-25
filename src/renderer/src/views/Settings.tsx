@@ -157,10 +157,14 @@ export const Settings: React.FC = () => {
     [],
   );
 
-  // Filter out tabs that have no visible elements
-  const visibleTabs = combined.filter((tabPage) =>
-    tabPage.elements.some((ele) => ele.visible === undefined || ele.visible()),
-  );
+  // Filter out tabs that have no visible elements and sort by priority
+  const visibleTabs = combined
+    .filter((tabPage) =>
+      tabPage.elements.some(
+        (ele) => ele.visible === undefined || ele.visible(),
+      ),
+    )
+    .sort(sortByPriority);
 
   const page =
     visibleTabs.find((iter) => iter.title === settingsPage) !== undefined
@@ -171,7 +175,7 @@ export const Settings: React.FC = () => {
     <MainPage>
       <MainPage.Body>
         <Tabs activeKey={page} id="settings-tab" onSelect={setCurrentPage}>
-          {visibleTabs.sort(sortByPriority).map(renderTab)}
+          {visibleTabs.map(renderTab)}
         </Tabs>
       </MainPage.Body>
     </MainPage>
