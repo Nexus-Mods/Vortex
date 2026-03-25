@@ -3,7 +3,7 @@
  */
 
 import { Buffer } from "node:buffer";
-import { normalize, sep } from "node:path";
+import { sep } from "node:path";
 
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import type { IFilesystem } from "@vortex/paths";
@@ -169,21 +169,21 @@ describe("NodeFilesystem", () => {
   });
 
   describe("normalizePath", () => {
-    test("normalizes path using path.normalize", () => {
-      const result = nodeFs.normalizePath("/foo//bar/./baz");
-      expect(result).toBe(normalize("/foo//bar/./baz"));
+    test("uses Windows or Unix separators when normalizing", () => {
+      const input =
+        nodeFs.platform === "windows" ? "c:/foo//bar/./baz" : "/foo//bar/./baz";
+      const expected =
+        nodeFs.platform === "windows" ? "c:\\foo\\bar\\baz" : "/foo/bar/baz";
+
+      expect(nodeFs.normalizePath(input)).toBe(expected);
     });
 
-    test("lowercases on case-insensitive platforms", () => {
-      const normalizedPath = normalize("/Foo/Bar");
-      const path = nodeFs.normalizePath("/Foo/Bar");
+    test("lowercases on Windows but preserves case on Unix", () => {
+      const input = nodeFs.platform === "windows" ? "C:/Foo/Bar" : "/Foo/Bar";
+      const expected =
+        nodeFs.platform === "windows" ? "c:\\foo\\bar" : "/Foo/Bar";
 
-      // Keep this portable across Windows and Unix.
-      if (nodeFs.caseSensitive) {
-        expect(path).toBe(normalizedPath);
-      } else {
-        expect(path).toBe(normalizedPath.toLowerCase());
-      }
+      expect(nodeFs.normalizePath(input)).toBe(expected);
     });
   });
 
