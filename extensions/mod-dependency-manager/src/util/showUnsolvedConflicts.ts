@@ -28,20 +28,19 @@ function showUnsolvedConflictsDialog(api: types.IExtensionApi,
   let modsToShow = Object.keys(conflicts);
 
   if (!showAll) {
-    const encountered = new Set<string>();
-    const mapEnc = (lhs: string, rhs: string) => [lhs, rhs].sort().join(':');
-    modsToShow = modsToShow.filter(modId => conflicts[modId].find(conflict => {
-      if (conflict.otherMod === undefined) {
-        return false;
-      }
-      const encKey = mapEnc(modId, conflict.otherMod.id);
-      if (encountered.has(encKey)) {
-        return false;
-      }
-      encountered.add(encKey);
-      return !isConflictResolved(mods, modId, conflict.otherMod)
-        && findRuleBiDir(modRules, mods[modId], conflict.otherMod) === undefined;
-    }) !== undefined);
+    modsToShow = modsToShow.filter(
+      (modId) =>
+        conflicts[modId].find((conflict) => {
+          if (conflict.otherMod === undefined) {
+            return false;
+          }
+          return (
+            !isConflictResolved(mods, modId, conflict.otherMod) &&
+            findRuleBiDir(modRules, mods[modId], conflict.otherMod) ===
+              undefined
+          );
+        }) !== undefined,
+    );
   }
 
   if (modsToShow.length > 0 || showAll) {

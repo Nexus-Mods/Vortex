@@ -41,7 +41,6 @@ interface IConnectedProps {
 interface IActionProps {
   onClose: () => void;
   onAddRule: (gameId: string, modId: string, rule: any) => void;
-  onRemoveRule: (gameId: string, modId: string, rule: any) => void;
   onOverrideDialog: (gameId: string, modId: string) => void;
   onBatchDispatch: (actions: Redux.Action[]) => void;
 }
@@ -749,43 +748,38 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private unlock = (evt: React.MouseEvent<HTMLDivElement>) => {
-    const { t, gameId, mods, onRemoveRule } = this.props;
-    const modId = evt.currentTarget.getAttribute('data-modid');
-    const rule = JSON.parse(evt.currentTarget.getAttribute('data-rule'));
-    // rule is the "reverse" rule, we need the original.
+  private unlock = (evt: React.MouseEvent<any>) => {
+    const { t } = this.props;
+    const modId = evt.currentTarget.getAttribute("data-modid");
+    const rule = JSON.parse(evt.currentTarget.getAttribute("data-rule"));
+    const refId = rule.reference.id;
 
-    const reverseType = rule.type === 'before' ? 'after' : 'before';
-
-    const findRule = iter =>
-      (iter.type === reverseType)
-      && util.testModReference(mods[modId], iter.reference);
-
-    const refMod: types.IMod = Object.keys(mods).map(iter => mods[iter])
-      .find(iter => util.testModReference(iter, rule.reference)
-                 && iter.rules !== undefined
-                 && (iter.rules.find(findRule) !== undefined));
-
-    if (refMod === undefined) {
-      // paranoia check, this should not be possible. The only way it could happen if, due to a
-      // failed update we have the "reverse" rule but the original is gone.
-      return;
-    }
-
-    const originalRule = refMod.rules.find(findRule);
-
-    this.context.api.showDialog('question', t('Confirm'), {
-      text: t('This will remove the existing rule so you can set a new one on this mod.'),
-    }, [
-        { label: 'Cancel' },
-        { label: 'Remove Rule', default: true, action: () => {
-          onRemoveRule(gameId, refMod.id, {
-            type: originalRule.type,
-            reference: originalRule.reference,
-          });
-        } },
-    ]);
-  }
+    this.context.api.showDialog(
+      "question",
+      t("Confirm"),
+      {
+        text: t(
+          "This will remove the existing rule so you can set a new one on this mod.",
+        ),
+      },
+      [
+        { label: "Cancel" },
+        {
+          label: "Remove Rule",
+          default: true,
+          action: () => {
+            this.nextState.rules[refId] = {
+              ...this.nextState.rules[refId],
+              [modId]: {
+                type: undefined,
+                version: "any",
+              },
+            };
+          },
+        },
+      ],
+    );
+  };
 
   private close = () => {
     const { onClose } = this.props;
@@ -891,8 +885,6 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
     onClose: () => dispatch(setConflictDialog(undefined, undefined, undefined)),
     onAddRule: (gameId, modId, rule) =>
       dispatch(vortexActions.addModRule(gameId, modId, rule)),
-    onRemoveRule: (gameId, modId, rule) =>
-      dispatch(vortexActions.removeModRule(gameId, modId, rule)),
     onOverrideDialog: (gameId: string, modId: string) =>
       dispatch(setFileOverrideDialog(gameId, modId)),
     onBatchDispatch: (actions: Redux.Action[]) =>
