@@ -5,25 +5,26 @@
  * platform behavior (case-sensitive, path separators, etc.).
  */
 
-import { forPlatform, type PathModule } from '../../src/pathUtils';
-import type { IFilesystem, FileEntry } from '../../src/IFilesystem';
-import type { ResolvedPath } from '../../src/types';
+import { Buffer } from "node:buffer";
 
-import { FileType as FileTypeEnum } from '../../src/IFilesystem';
-import { RelativePath as RelativePathNS } from '../../src/types';
+import { forPlatform, type PathModule } from "../pathUtils";
+import type { IFilesystem, FileEntry } from "../IFilesystem";
+import type { ResolvedPath } from "../types";
+
+import { FileType as FileTypeEnum } from "../IFilesystem";
+import { RelativePath as RelativePathNS } from "../types";
 
 /**
  * In-memory entry
  */
 interface Entry {
-  type: 'file' | 'directory';
+  type: "file" | "directory";
   content?: Buffer;
   mtime: Date;
   birthtime: Date;
   atime: Date;
   mode: number;
 }
-
 
 /**
  * In-memory filesystem for testing
@@ -35,17 +36,17 @@ export class MockFilesystem implements IFilesystem {
   private readonly pathMod: PathModule;
 
   constructor(
-    public readonly platform: 'windows' | 'unix' = 'unix',
-    public readonly caseSensitive: boolean = platform !== 'windows',
+    public readonly platform: "windows" | "unix" = "unix",
+    public readonly caseSensitive: boolean = platform !== "windows",
   ) {
     // Set separator for this platform
-    this.sep = this.platform === 'windows' ? '\\' : '/';
+    this.sep = this.platform === "windows" ? "\\" : "/";
     this.pathMod = forPlatform(this.platform);
 
     // Create root directory
-    const root = this.platform === 'windows' ? 'C:\\' : '/';
+    const root = this.platform === "windows" ? "C:\\" : "/";
     this.entries.set(this.normalizePath(root), {
-      type: 'directory',
+      type: "directory",
       mode: 0o755,
       mtime: new Date(),
       birthtime: new Date(),
@@ -94,7 +95,7 @@ export class MockFilesystem implements IFilesystem {
     if (!entry) {
       throw new Error(`ENOENT: no such file or directory: ${p}`);
     }
-    if (entry.type !== 'file') {
+    if (entry.type !== "file") {
       throw new Error(`EISDIR: illegal operation on a directory: ${p}`);
     }
     return entry;
@@ -105,7 +106,7 @@ export class MockFilesystem implements IFilesystem {
     if (!entry) {
       throw new Error(`ENOENT: no such file or directory: ${p}`);
     }
-    if (entry.type !== 'directory') {
+    if (entry.type !== "directory") {
       throw new Error(`ENOTDIR: not a directory: ${p}`);
     }
     return entry;
@@ -116,7 +117,7 @@ export class MockFilesystem implements IFilesystem {
    */
   private ensureParentDir(p: ResolvedPath): void {
     const parent = this.getParentPath(p as string);
-    if (parent === p as string) {
+    if (parent === (p as string)) {
       return; // Root
     }
     if (!this.entries.has(this.normalizePath(parent))) {
@@ -128,7 +129,10 @@ export class MockFilesystem implements IFilesystem {
   // Read Operations
   // ========================================================================
 
-  async readFile(path: ResolvedPath, encoding: string | null = 'utf8'): Promise<string | Uint8Array> {
+  async readFile(
+    path: ResolvedPath,
+    encoding: string | null = "utf8",
+  ): Promise<string | Uint8Array> {
     const entry = this.getFileEntry(path);
     entry.atime = new Date();
     if (encoding) {
@@ -141,10 +145,17 @@ export class MockFilesystem implements IFilesystem {
   // Write Operations
   // ========================================================================
 
-  async writeFile(path: ResolvedPath, data: string | Uint8Array, encoding: string = 'utf8'): Promise<void> {
+  async writeFile(
+    path: ResolvedPath,
+    data: string | Uint8Array,
+    encoding: string = "utf8",
+  ): Promise<void> {
     // Ensure parent directory exists (create if needed)
     const parent = this.getParentPath(path as string);
-    if (parent !== path as string && !this.entries.has(this.normalizePath(parent))) {
+    if (
+      parent !== (path as string) &&
+      !this.entries.has(this.normalizePath(parent))
+    ) {
       await this.mkdir(parent as ResolvedPath, { recursive: true });
     }
 
@@ -156,12 +167,12 @@ export class MockFilesystem implements IFilesystem {
     const now = new Date();
 
     const existingEntry = this.getEntry(path);
-    if (existingEntry && existingEntry.type === 'directory') {
+    if (existingEntry && existingEntry.type === "directory") {
       throw new Error(`EISDIR: illegal operation on a directory: ${path}`);
     }
 
     this.setEntry(path, {
-      type: 'file',
+      type: "file",
       content: buffer,
       mode: existingEntry?.mode ?? 0o644,
       mtime: now,
@@ -170,7 +181,11 @@ export class MockFilesystem implements IFilesystem {
     });
   }
 
-  async appendFile(path: ResolvedPath, data: string | Uint8Array, encoding: string = 'utf8'): Promise<void> {
+  async appendFile(
+    path: ResolvedPath,
+    data: string | Uint8Array,
+    encoding: string = "utf8",
+  ): Promise<void> {
     const buffer = Buffer.isBuffer(data)
       ? data
       : data instanceof Uint8Array
@@ -205,7 +220,9 @@ export class MockFilesystem implements IFilesystem {
     dirEntry.atime = new Date();
 
     const normalizedPath = this.normalizePath(path as string);
-    const prefix = normalizedPath.endsWith(this.sep) ? normalizedPath : normalizedPath + this.sep;
+    const prefix = normalizedPath.endsWith(this.sep)
+      ? normalizedPath
+      : normalizedPath + this.sep;
 
     const children: Array<{ name: string; entry: Entry }> = [];
 
@@ -214,7 +231,7 @@ export class MockFilesystem implements IFilesystem {
         const relativePath = entryPath.substring(prefix.length);
         const segments = relativePath.split(this.sep);
 
-        if (segments.length === 1 && segments[0] !== '') {
+        if (segments.length === 1 && segments[0] !== "") {
           // Direct child (and not empty string)
           children.push({ name: segments[0], entry });
         }
@@ -223,7 +240,7 @@ export class MockFilesystem implements IFilesystem {
 
     return children.map(({ name, entry }) => ({
       name: RelativePathNS.unsafe(name),
-      type: entry.type === 'file' ? FileTypeEnum.File : FileTypeEnum.Directory,
+      type: entry.type === "file" ? FileTypeEnum.File : FileTypeEnum.Directory,
       size: entry.content?.length ?? 0,
       mtime: entry.mtime,
       birthtime: entry.birthtime,
@@ -232,10 +249,13 @@ export class MockFilesystem implements IFilesystem {
     }));
   }
 
-  async mkdir(path: ResolvedPath, options?: { recursive?: boolean; mode?: number }): Promise<void> {
+  async mkdir(
+    path: ResolvedPath,
+    options?: { recursive?: boolean; mode?: number },
+  ): Promise<void> {
     if (this.entries.has(this.normalizePath(path as string))) {
       const entry = this.getEntry(path);
-      if (entry?.type === 'directory') {
+      if (entry?.type === "directory") {
         if (!options?.recursive) {
           throw new Error(`EEXIST: file already exists: ${path}`);
         }
@@ -247,7 +267,10 @@ export class MockFilesystem implements IFilesystem {
 
     if (options?.recursive) {
       const parent = this.getParentPath(path as string);
-      if (parent !== path as string && !this.entries.has(this.normalizePath(parent))) {
+      if (
+        parent !== (path as string) &&
+        !this.entries.has(this.normalizePath(parent))
+      ) {
         await this.mkdir(parent as ResolvedPath, options);
       }
     } else {
@@ -256,7 +279,7 @@ export class MockFilesystem implements IFilesystem {
 
     const now = new Date();
     this.setEntry(path, {
-      type: 'directory',
+      type: "directory",
       mode: options?.mode ?? 0o755,
       mtime: now,
       birthtime: now,
@@ -264,7 +287,10 @@ export class MockFilesystem implements IFilesystem {
     });
   }
 
-  async rmdir(path: ResolvedPath, options?: { recursive?: boolean }): Promise<void> {
+  async rmdir(
+    path: ResolvedPath,
+    options?: { recursive?: boolean },
+  ): Promise<void> {
     const _entry = this.getDirectoryEntry(path);
 
     // Check if directory is empty (unless recursive)
@@ -278,7 +304,9 @@ export class MockFilesystem implements IFilesystem {
     // Delete recursively if needed
     if (options?.recursive) {
       const normalizedPath = this.normalizePath(path as string);
-      const prefix = normalizedPath.endsWith(this.sep) ? normalizedPath : normalizedPath + this.sep;
+      const prefix = normalizedPath.endsWith(this.sep)
+        ? normalizedPath
+        : normalizedPath + this.sep;
 
       const toDelete: string[] = [];
       for (const entryPath of this.entries.keys()) {
@@ -310,7 +338,7 @@ export class MockFilesystem implements IFilesystem {
     }
 
     return {
-      type: entry.type === 'file' ? FileTypeEnum.File : FileTypeEnum.Directory,
+      type: entry.type === "file" ? FileTypeEnum.File : FileTypeEnum.Directory,
       size: entry.content?.length ?? 0,
       mtime: entry.mtime,
       birthtime: entry.birthtime,
@@ -326,7 +354,7 @@ export class MockFilesystem implements IFilesystem {
     }
 
     return {
-      type: entry.type === 'file' ? FileTypeEnum.File : FileTypeEnum.Directory,
+      type: entry.type === "file" ? FileTypeEnum.File : FileTypeEnum.Directory,
       size: entry.content?.length ?? 0,
       mtime: entry.mtime,
       birthtime: entry.birthtime,
@@ -342,18 +370,21 @@ export class MockFilesystem implements IFilesystem {
   async copy(
     src: ResolvedPath,
     dest: ResolvedPath,
-    options?: { overwrite?: boolean; recursive?: boolean }
+    options?: { overwrite?: boolean; recursive?: boolean },
   ): Promise<void> {
     const srcEntry = this.getEntry(src);
     if (!srcEntry) {
       throw new Error(`ENOENT: no such file or directory: ${src}`);
     }
 
-    if (!options?.overwrite && this.entries.has(this.normalizePath(dest as string))) {
+    if (
+      !options?.overwrite &&
+      this.entries.has(this.normalizePath(dest as string))
+    ) {
       throw new Error(`EEXIST: file already exists: ${dest}`);
     }
 
-    if (srcEntry.type === 'file') {
+    if (srcEntry.type === "file") {
       await this.writeFile(dest, srcEntry.content ?? Buffer.alloc(0));
     } else {
       // Directory copy
@@ -365,8 +396,14 @@ export class MockFilesystem implements IFilesystem {
 
       const children = await this.readdir(src);
       for (const child of children) {
-        const childSrc = this.pathMod.join(src as string, child.name as string) as unknown as ResolvedPath;
-        const childDest = this.pathMod.join(dest as string, child.name as string) as unknown as ResolvedPath;
+        const childSrc = this.pathMod.join(
+          src as string,
+          child.name as string,
+        ) as unknown as ResolvedPath;
+        const childDest = this.pathMod.join(
+          dest as string,
+          child.name as string,
+        ) as unknown as ResolvedPath;
         await this.copy(childSrc, childDest, options);
       }
     }
@@ -395,9 +432,9 @@ export class MockFilesystem implements IFilesystem {
   clear(): void {
     this.entries.clear();
     // Recreate root
-    const root = this.platform === 'windows' ? 'C:\\' : '/';
+    const root = this.platform === "windows" ? "C:\\" : "/";
     this.entries.set(this.normalizePath(root), {
-      type: 'directory',
+      type: "directory",
       mode: 0o755,
       mtime: new Date(),
       birthtime: new Date(),

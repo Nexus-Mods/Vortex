@@ -7,7 +7,7 @@
  * - Root at /
  */
 
-import { MockFilesystem } from './MockFilesystem';
+import { MockFilesystem } from "./MockFilesystem";
 
 /**
  * Mock filesystem with Unix behavior
@@ -15,6 +15,6 @@ import { MockFilesystem } from './MockFilesystem';
  */
 export class MockUnixFilesystem extends MockFilesystem {
   constructor() {
-    super('unix', true);
+    super("unix", true);
   }
 }

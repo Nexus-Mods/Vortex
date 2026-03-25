@@ -9,7 +9,7 @@
     "allowJs": false,
     "composite": true,
     "noEmit": true,
-    "types": [],
+    "types": ["node"],
     "lib": ["ESNext"]
   }
 }

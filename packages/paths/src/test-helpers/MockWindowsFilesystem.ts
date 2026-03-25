@@ -7,7 +7,7 @@
  * - Drive letters (C:\, D:\)
  */
 
-import { MockFilesystem } from './MockFilesystem';
+import { MockFilesystem } from "./MockFilesystem";
 
 /**
  * Mock filesystem with Windows behavior
@@ -15,6 +15,6 @@ import { MockFilesystem } from './MockFilesystem';
  */
 export class MockWindowsFilesystem extends MockFilesystem {
   constructor() {
-    super('windows', false);
+    super("windows", false);
   }
 }

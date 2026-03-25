@@ -6,7 +6,8 @@
   "type": "commonjs",
   "scripts": {
     "build": "pnpm tsc -p tsconfig.build.json",
-    "typecheck": "pnpm tsc --noEmit -p tsconfig.json"
+    "typecheck": "pnpm tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --config vitest.config.ts"
   },
   "main": "./out/index.js",
   "types": "./out/index.d.ts",
@@ -21,6 +22,7 @@
     "fs-extra": "^11.2.0"
   },
   "devDependencies": {
-    "@types/fs-extra": "^11.0.4"
+    "@types/fs-extra": "^11.0.4",
+    "vitest": "catalog:"
   }
 }
