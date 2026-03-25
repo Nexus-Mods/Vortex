@@ -6,8 +6,6 @@
     "target": "es2022",
     "module": "node16",
     "moduleResolution": "node16",
-    "outDir": "./out",
-    "declaration": true,
     "composite": true,
     "noEmit": true,
     "types": ["node"]
