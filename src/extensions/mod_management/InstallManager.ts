@@ -1312,6 +1312,7 @@ class InstallManager {
             }
           };
           let existingMod: IMod;
+          let installingFileId: number;
           // Start the installation process - the promise will resolve when callback is called
           const installationPromise = withContext("Installing", baseName, () =>
             (forceGameId !== undefined
@@ -1590,6 +1591,7 @@ class InstallManager {
               })
               .then((modInfo) => {
                 const fileId = modInfo.fileId ?? modInfo.revisionId;
+                installingFileId = fileId;
                 const isCollection = modInfo.revisionId !== undefined;
 
                 existingMod =
@@ -1657,13 +1659,16 @@ class InstallManager {
               .then(() => {
                 // If no choices were provided (e.g. manual reinstall), preserve the
                 // existing mod's installerChoices so the user doesn't have to redo them.
-                if (
-                  existingMod !== undefined &&
-                  fullInfo.choices === undefined
-                ) {
-                  const prevChoices = existingMod.attributes?.installerChoices;
-                  if (prevChoices !== undefined) {
-                    fullInfo.choices = prevChoices;
+                // Only do this when the fileId matches, meaning it's the exact same
+                // version being reinstalled — a different version (upgrade/downgrade)
+                // may have different installer steps.
+                if (fullInfo.choices === undefined) {
+                  const prevFileId = fullInfo.previous?.fileId;
+                  if (prevFileId !== undefined && prevFileId === installingFileId) {
+                    const prevChoices = fullInfo.previous?.installerChoices;
+                    if (prevChoices !== undefined) {
+                      fullInfo.choices = prevChoices;
+                    }
                   }
                 }
 
