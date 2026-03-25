@@ -139,6 +139,13 @@ export interface MainChannels {
   // Persistence: Send hydration data to renderer on startup
   "persist:hydrate": (hive: PersistedHive, data: Serializable) => void;
 
+  // Persistence: Push state changes from main process to renderer (no feedback loop —
+  // renderer applies via __persist_push which is excluded from persistDiffMiddleware)
+  "persist:push": (hive: PersistedHive, operations: DiffOperation[]) => void;
+
+  // App initialization: Main sends all startup metadata to renderer in one message
+  "app:init": (metadata: AppInitMetadata) => void;
+
   // Extensions: Response from main process after initializing an extension
   "extensions:init-main-response": (response: {
     extensionName: string;

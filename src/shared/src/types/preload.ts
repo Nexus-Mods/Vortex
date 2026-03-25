@@ -356,6 +356,14 @@ export interface PersistApi {
    * Used for incremental hydration updates after initial load.
    */
   onHydrate(callback: (hive: PersistedHive, data: Serializable) => void): void;
+
+  /**
+   * Register a callback for when main pushes state changes to the renderer.
+   * Used when main-process code writes to LevelDB directly (not via renderer diffs).
+   * The renderer applies these via __persist_push, which is excluded from
+   * persistDiffMiddleware to prevent feedback loops.
+   */
+  onPush(callback: (hive: PersistedHive, operations: DiffOperation[]) => void): void;
 }
 
 /** API for requesting extension main process initialization */

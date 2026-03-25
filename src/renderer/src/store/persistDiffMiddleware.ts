@@ -188,8 +188,13 @@ export function createPersistDiffMiddleware(
 
       // Allow hydration to update previous state even if the persist API isn't
       // available yet, since they won't trigger diffs until after hydration completes.
-      if (action.type === "__hydrate" || action.type === "__hydrate_replace") {
-        // Update previous state without computing diff
+      if (
+        action.type === "__hydrate" ||
+        action.type === "__hydrate_replace" ||
+        action.type === "__persist_push"
+      ) {
+        // Update previous state without computing diff.
+        // __persist_push originates from main — sending it back would create a loop.
         previousState = store.getState();
         return result;
       }

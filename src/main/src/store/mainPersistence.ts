@@ -12,19 +12,42 @@
  * 3. Persists diffs to LevelDB
  * 4. Provides hydration data to renderer
  */
-import type { Serializable } from "@vortex/shared/ipc";
+import type { DiffOperation, Serializable } from "@vortex/shared/ipc";
+import type { PersistedHive } from "@vortex/shared/state";
 
 import { getErrorMessageOrDefault } from "@vortex/shared";
+import { BrowserWindow } from "electron";
+import * as path from "node:path";
 
 import type LevelPersist from "./LevelPersist";
 
 import { log } from "../logging";
+import DuckDBSingleton from "./DuckDBSingleton";
+import QueryInvalidator from "./QueryInvalidator";
+import QueryRegistry from "./QueryRegistry";
+import QueryWatcher from "./QueryWatcher";
 import { setupPersistenceIPC } from "./persistenceIPC";
+import type { ParsedQuery } from "./queryParser";
+import { parseAllQueries } from "./queryParser";
 import ReduxPersistorIPC from "./ReduxPersistorIPC";
 import SubPersistor from "./SubPersistor";
+import { Database } from "./Database";
+import { getVortexPath } from "../getVortexPath";
+import { betterIpcMain } from "../ipc";
 
 let mainPersistor: ReduxPersistorIPC | undefined;
 let levelPersist: LevelPersist | undefined;
+let queryRegistry: QueryRegistry | undefined;
+let queryInvalidator: QueryInvalidator | undefined;
+let database: Database | undefined;
+
+/**
+ * Get the Database instance for typed model access.
+ * Available after the query system initializes (async).
+ */
+export function getDatabase(): Database | undefined {
+  return database;
+}
 
 /**
  * Initialize the main process persistence system.
@@ -53,7 +76,66 @@ export function initMainPersistence(
   // Set up IPC handlers to receive diffs from renderer
   setupPersistenceIPC(mainPersistor);
 
+  // Set up the query system (async, non-blocking)
+  initQuerySystem(levelPersistor).catch((err) => {
+    log("warn", "Failed to initialize query system", {
+      error: getErrorMessageOrDefault(err),
+    });
+  });
+
   return mainPersistor;
+}
+
+/**
+ * Initialize the reactive query system.
+ * Creates QueryRegistry, QueryInvalidator, and sets up IPC handlers.
+ */
+async function initQuerySystem(levelPersistor: LevelPersist): Promise<void> {
+  const singleton = DuckDBSingleton.getInstance();
+  if (!singleton.isInitialized) {
+    log("warn", "DuckDBSingleton not initialized, skipping query system");
+    return;
+  }
+
+  // Create a dedicated connection for query execution
+  const queryConnection = await singleton.createConnection();
+
+  // Parse all SQL query files
+  const queriesDir = path.join(getVortexPath("base"), "queries");
+  let queries: ParsedQuery[];
+  try {
+    queries = parseAllQueries(queriesDir);
+  } catch (err) {
+    log("warn", "No query files found or parse error", {
+      dir: queriesDir,
+      error: getErrorMessageOrDefault(err),
+    });
+    return;
+  }
+
+  if (queries.length === 0) {
+    log("debug", "No queries found, skipping query system initialization");
+    return;
+  }
+
+  // Initialize registry
+  queryRegistry = new QueryRegistry(queryConnection);
+  await queryRegistry.initialize(queries);
+
+  // Create invalidator and wire to persistor
+  queryInvalidator = new QueryInvalidator(queryRegistry);
+  mainPersistor?.setQueryInvalidator(levelPersistor, queryInvalidator);
+
+  // Create Database instance for typed model access
+  database = new Database(levelPersistor, queryInvalidator);
+
+  // Create watcher and wire to invalidator
+  const queryWatcher = new QueryWatcher(queryRegistry);
+  queryInvalidator.setWatcher(queryWatcher);
+
+  log("info", "Query system initialized", {
+    queryCount: queryRegistry.getQueryNames().length,
+  });
 }
 
 /**
@@ -83,6 +165,37 @@ export function registerHive(
  */
 export function getMainPersistor(): ReduxPersistorIPC | undefined {
   return mainPersistor;
+}
+
+/**
+ * Write diff operations to LevelDB and push the changes to all renderer windows.
+ *
+ * Use this (instead of writing to LevelPersist directly) whenever main-process code
+ * needs to update Redux-persisted state. The renderer applies the operations via
+ * __persist_push, which is excluded from persistDiffMiddleware so there is no
+ * feedback loop.
+ *
+ * @param hive - The persisted hive to update (e.g. "settings", "persistent")
+ * @param operations - Diff operations to apply
+ */
+export async function pushStateToRenderer(
+  hive: PersistedHive,
+  operations: DiffOperation[],
+): Promise<void> {
+  if (mainPersistor === undefined || levelPersist === undefined) {
+    log("warn", "pushStateToRenderer called before persistence is initialized");
+    return;
+  }
+
+  mainPersistor.applyDiffOperations(hive, operations);
+  // Wait for the queue to drain so the data is on disk before notifying the renderer
+  await mainPersistor.finalizeWrite();
+
+  for (const win of BrowserWindow.getAllWindows()) {
+    if (!win.isDestroyed()) {
+      betterIpcMain.send(win.webContents, "persist:push", hive, operations);
+    }
+  }
 }
 
 /**

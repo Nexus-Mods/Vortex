@@ -47,8 +47,11 @@ export async function fetchHydrationState(): Promise<Partial<IState>> {
 }
 
 /**
- * Set up listener for incremental hydration updates from main process.
- * Used when main process needs to send additional hydration data after initial load.
+ * Set up listeners for state updates pushed from the main process:
+ * - persist:hydrate — incremental hydration of a full hive after initial load
+ * - persist:push — surgical diff operations from direct main-process LevelDB writes
+ *
+ * __persist_push is excluded from persistDiffMiddleware to prevent feedback loops.
  *
  * @param dispatch - Redux store dispatch function
  */
@@ -66,6 +69,14 @@ export function setupHydrationListener(
     dispatch({
       type: "__hydrate",
       payload: { [hive]: data },
+    });
+  });
+
+  window.api.persist.onPush((hive, operations) => {
+    log("debug", "Received state push from main", { hive, count: operations.length });
+    dispatch({
+      type: "__persist_push",
+      payload: { hive, operations },
     });
   });
 }
