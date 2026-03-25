@@ -37,12 +37,11 @@ export class NodeFilesystem implements IFilesystem {
     filePath: ResolvedPath,
     encoding?: string | null,
   ): Promise<string | Uint8Array> {
-    if (encoding) {
-      return fs.readFile(filePath as string, {
-        encoding: encoding as BufferEncoding,
-      });
-    }
-    return fs.readFile(filePath as string);
+    return encoding === null
+      ? fs.readFile(filePath as string)
+      : fs.readFile(filePath as string, {
+          encoding: (encoding ?? "utf8") as BufferEncoding,
+        });
   }
 
   // ========================================================================

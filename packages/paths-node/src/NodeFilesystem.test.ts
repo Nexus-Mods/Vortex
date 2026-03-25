@@ -3,11 +3,11 @@
  */
 
 import { Buffer } from "node:buffer";
-import { sep } from "node:path";
+import { join, sep } from "node:path";
 
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import type { IFilesystem } from "@vortex/paths";
-import { FileEntry, FileType, ResolvedPath, RelativePath } from "@vortex/paths";
+import { FileEntry, ResolvedPath, RelativePath } from "@vortex/paths";
 
 type MockDirent = {
   name: string;
@@ -202,7 +202,20 @@ describe("NodeFilesystem", () => {
       });
     });
 
-    test("reads file without encoding returns buffer", async () => {
+    test("defaults to utf8 when encoding is omitted", async () => {
+      fsExtraMocks.readFile.mockResolvedValue("default content");
+
+      const result = await nodeFs.readFile(
+        ResolvedPath.make("/test/default.txt"),
+      );
+
+      expect(result).toBe("default content");
+      expect(fsExtraMocks.readFile).toHaveBeenCalledWith("/test/default.txt", {
+        encoding: "utf8",
+      });
+    });
+
+    test("reads file with null encoding returns binary data", async () => {
       const buffer = Buffer.from("binary data");
       fsExtraMocks.readFile.mockResolvedValue(buffer);
 
@@ -211,7 +224,8 @@ describe("NodeFilesystem", () => {
         null,
       );
 
-      expect(result).toBe(buffer);
+      expect(result).toBeInstanceOf(Uint8Array);
+      expect(Buffer.from(result)).toEqual(buffer);
       expect(fsExtraMocks.readFile).toHaveBeenCalledWith("/test/file.bin");
     });
   });
@@ -229,6 +243,9 @@ describe("NodeFilesystem", () => {
 
       // `writeFile` makes sure the parent folder exists first.
       expect(fsExtraMocks.ensureDir).toHaveBeenCalledWith("/test/dir");
+      expect(fsExtraMocks.ensureDir.mock.invocationCallOrder[0]).toBeLessThan(
+        fsExtraMocks.writeFile.mock.invocationCallOrder[0],
+      );
       expect(fsExtraMocks.writeFile).toHaveBeenCalledWith(
         "/test/dir/file.txt",
         "content",
@@ -247,6 +264,17 @@ describe("NodeFilesystem", () => {
         "content",
         undefined,
       );
+    });
+
+    test("does not write when ensuring the parent dir fails", async () => {
+      const err = new Error("ensureDir failed");
+      fsExtraMocks.ensureDir.mockRejectedValue(err);
+
+      await expect(
+        nodeFs.writeFile(ResolvedPath.make("/test/dir/file.txt"), "content"),
+      ).rejects.toThrow("ensureDir failed");
+
+      expect(fsExtraMocks.writeFile).not.toHaveBeenCalled();
     });
   });
 
@@ -287,8 +315,22 @@ describe("NodeFilesystem", () => {
       fsExtraMocks.readdir.mockResolvedValue(dirEntries);
 
       // `readdir` provides names and coarse types, while `stat` fills in metadata.
-      const fileStat = makeMockStat({ isFile: true, size: 100 });
-      const dirStat = makeMockStat({ isDirectory: true, size: 0 });
+      const fileMtime = new Date("2025-02-01T10:00:00.000Z");
+      const fileBirthtime = new Date("2025-01-15T10:00:00.000Z");
+      const fileAtime = new Date("2025-02-02T10:00:00.000Z");
+      const fileStat = makeMockStat({
+        isFile: true,
+        size: 100,
+        mtime: fileMtime,
+        birthtime: fileBirthtime,
+        atime: fileAtime,
+        mode: 0o640,
+      });
+      const dirStat = makeMockStat({
+        isDirectory: true,
+        size: 0,
+        mode: 0o755,
+      });
       fsExtraMocks.stat
         .mockResolvedValueOnce(fileStat)
         .mockResolvedValueOnce(dirStat);
@@ -296,23 +338,45 @@ describe("NodeFilesystem", () => {
       const results = await nodeFs.readdir(ResolvedPath.make("/test/dir"));
 
       expect(results).toHaveLength(2);
-      expect(results[0].name).toBe(RelativePath.make("file.txt"));
+      expect(results[0]).toMatchObject({
+        name: RelativePath.make("file.txt"),
+        size: 100,
+        mtime: fileMtime,
+        birthtime: fileBirthtime,
+        atime: fileAtime,
+        mode: 0o640,
+      });
+      expect(results[1]).toMatchObject({
+        name: RelativePath.make("subdir"),
+        size: 0,
+        mode: 0o755,
+      });
       expect(FileEntry.isFile(results[0])).toBe(true);
-      expect(results[1].name).toBe(RelativePath.make("subdir"));
       expect(FileEntry.isDirectory(results[1])).toBe(true);
+      expect(fsExtraMocks.readdir).toHaveBeenCalledWith("/test/dir", {
+        withFileTypes: true,
+      });
+      expect(fsExtraMocks.stat.mock.calls).toEqual([
+        [join("/test/dir", "file.txt")],
+        [join("/test/dir", "subdir")],
+      ]);
     });
 
     test("handles symbolic links", async () => {
       const dirEntries = [makeMockDirent("link", "link")];
       fsExtraMocks.readdir.mockResolvedValue(dirEntries);
 
-      const linkStat = makeMockStat({ isSymbolicLink: true, size: 50 });
-      fsExtraMocks.stat.mockResolvedValue(linkStat);
+      // `stat` follows the link target, while `Dirent` preserves the link bit.
+      fsExtraMocks.stat.mockResolvedValue(
+        makeMockStat({ isFile: true, size: 50 }),
+      );
 
       const results = await nodeFs.readdir(ResolvedPath.make("/test/dir"));
 
       expect(results).toHaveLength(1);
       expect(FileEntry.isSymbolicLink(results[0])).toBe(true);
+      expect(FileEntry.isFile(results[0])).toBe(false);
+      expect(results[0].size).toBe(50);
     });
   });
 
@@ -372,14 +436,32 @@ describe("NodeFilesystem", () => {
 
   describe("stat", () => {
     test("returns file entry for regular file", async () => {
-      const fileStat = makeMockStat({ isFile: true, size: 1024, mode: 0o644 });
+      const mtime = new Date("2025-03-01T10:00:00.000Z");
+      const birthtime = new Date("2025-02-01T10:00:00.000Z");
+      const atime = new Date("2025-03-02T10:00:00.000Z");
+      const fileStat = makeMockStat({
+        isFile: true,
+        size: 1024,
+        mode: 0o644,
+        mtime,
+        birthtime,
+        atime,
+      });
       fsExtraMocks.stat.mockResolvedValue(fileStat);
 
       const entry = await nodeFs.stat(ResolvedPath.make("/test/file.txt"));
 
       expect(FileEntry.isFile(entry)).toBe(true);
       expect(FileEntry.isDirectory(entry)).toBe(false);
-      expect(entry.size).toBe(1024);
+      expect(entry).toMatchObject({
+        size: 1024,
+        mtime,
+        birthtime,
+        atime,
+        mode: 0o644,
+      });
+      expect(entry.name).toBeUndefined();
+      expect(fsExtraMocks.stat).toHaveBeenCalledWith("/test/file.txt");
     });
 
     test("returns file entry for directory", async () => {
@@ -391,71 +473,55 @@ describe("NodeFilesystem", () => {
       expect(FileEntry.isDirectory(entry)).toBe(true);
       expect(FileEntry.isFile(entry)).toBe(false);
     });
-
-    test("sets correct type flags for symlink", async () => {
-      const linkStat = makeMockStat({
-        isFile: true,
-        isSymbolicLink: true,
-        size: 50,
-      });
-      fsExtraMocks.stat.mockResolvedValue(linkStat);
-
-      const entry = await nodeFs.stat(ResolvedPath.make("/test/link"));
-
-      // `stat` can report both the file bit and the symlink bit together.
-      expect(FileEntry.isFile(entry)).toBe(true);
-      expect(FileEntry.isSymbolicLink(entry)).toBe(true);
-      expect(entry.type & FileType.SymbolicLink).not.toBe(0);
-    });
   });
 
   describe("lstat", () => {
-    test("returns entry without following symlinks", async () => {
+    test("stat follows the target while lstat reports the link", async () => {
+      fsExtraMocks.stat.mockResolvedValue(
+        makeMockStat({ isFile: true, size: 50 }),
+      );
       const linkStat = makeMockStat({
         isSymbolicLink: true,
         isFile: false,
-        size: 50,
+        size: 12,
+        mode: 0o777,
       });
       fsExtraMocks.lstat.mockResolvedValue(linkStat);
 
+      const followedEntry = await nodeFs.stat(ResolvedPath.make("/test/link"));
       const entry = await nodeFs.lstat(ResolvedPath.make("/test/link"));
+
+      expect(FileEntry.isFile(followedEntry)).toBe(true);
+      expect(FileEntry.isSymbolicLink(followedEntry)).toBe(false);
 
       // `lstat` should describe the link itself, not the target.
       expect(FileEntry.isSymbolicLink(entry)).toBe(true);
       expect(FileEntry.isFile(entry)).toBe(false);
+      expect(entry.size).toBe(12);
+      expect(entry.mode).toBe(0o777);
+      expect(entry.name).toBeUndefined();
       expect(fsExtraMocks.lstat).toHaveBeenCalledWith("/test/link");
     });
   });
 
   describe("copy", () => {
-    test("copies file with overwrite option", async () => {
+    test.each([
+      [{ overwrite: true }, { overwrite: true }],
+      [{ overwrite: false }, { overwrite: false }],
+      [undefined, { overwrite: true }],
+    ])("passes copy options %j", async (options, expected) => {
       fsExtraMocks.copy.mockResolvedValue(undefined);
 
       await nodeFs.copy(
         ResolvedPath.make("/test/src.txt"),
         ResolvedPath.make("/test/dest.txt"),
-        { overwrite: true },
+        options,
       );
 
       expect(fsExtraMocks.copy).toHaveBeenCalledWith(
         "/test/src.txt",
         "/test/dest.txt",
-        { overwrite: true },
-      );
-    });
-
-    test("defaults overwrite to true", async () => {
-      fsExtraMocks.copy.mockResolvedValue(undefined);
-
-      await nodeFs.copy(
-        ResolvedPath.make("/test/src.txt"),
-        ResolvedPath.make("/test/dest.txt"),
-      );
-
-      expect(fsExtraMocks.copy).toHaveBeenCalledWith(
-        "/test/src.txt",
-        "/test/dest.txt",
-        { overwrite: true },
+        expected,
       );
     });
   });
