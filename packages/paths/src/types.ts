@@ -26,7 +26,7 @@ import { posix, win32, detectPathModule } from "./pathUtils";
  */
 export const RelativePathSchema = z
   .string()
-  .transform((s) => s.replace(/\\/g, "/")) // Normalize to forward slashes
+  .transform((s) => s.replaceAll("\\", "/")) // Normalize to forward slashes
   .transform((s) => s.replace(/^\/+/, "")) // Remove leading slashes
   .transform((s) => s.replace(/\/+$/, "")) // Remove trailing slashes
   .transform((s) => s.replace(/\/+/g, "/")) // Collapse multiple slashes
