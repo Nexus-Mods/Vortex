@@ -22,7 +22,7 @@ import { posix, win32, detectPathModule } from "./pathUtils";
  * - Removes leading/trailing slashes
  * - Collapses multiple slashes
  * - Rejects parent directory references (..)
- * - Rejects absolute paths and drive letters
+ * - Rejects drive letters
  */
 export const RelativePathSchema = z
   .string()
@@ -89,9 +89,9 @@ declare const RELATIVE_PATH_BRAND: unique symbol;
 /**
  * RelativePath is a branded string type representing a sanitized relative path
  * - Always uses forward slashes
- * - No leading or trailing slashes
+ * - Leading and trailing slashes are stripped during normalization
  * - No parent directory references (..)
- * - No absolute paths or drive letters
+ * - No drive letters
  *
  * Examples: "mods/skyrim/data", "downloads", "temp/cache"
  */

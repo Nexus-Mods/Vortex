@@ -55,16 +55,16 @@ const game = Anchor.make('game');
 
 ### RelativePath
 
-Always uses forward slashes, never has a leading slash, and is validated to be
-safe (no `..` to escape directories).
+Normalizes path-like input into a safe relative path: backslashes become forward
+slashes, leading/trailing slashes are stripped, and `..` segments are rejected.
 
 ```typescript
 import { RelativePath } from '@vortex/paths';
 
 const path = RelativePath.make('mods/skyrim/data');
 // ✓ Valid: 'mods/skyrim/data'
-// ✗ Invalid: '/mods/skyrim' (leading slash)
-// ✗ Invalid: 'mods\\skyrim' (backslashes)
+// ✓ Normalized: '/mods/skyrim' -> 'mods/skyrim'
+// ✓ Normalized: 'mods\\skyrim' -> 'mods/skyrim'
 // ✗ Invalid: 'mods/../../etc' (tries to escape)
 ```
 
