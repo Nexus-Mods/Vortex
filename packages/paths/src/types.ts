@@ -365,8 +365,7 @@ export namespace ResolvedPath {
    */
   export function relative(from: ResolvedPath, to: ResolvedPath): string {
     const fromStr = from as string;
-    // Use win32 for Windows-style paths, posix for Unix-style paths
-    const pathMod = /^[a-zA-Z]:\\/.test(fromStr) ? win32 : posix;
+    const pathMod = detectPathModule(fromStr);
     return pathMod.relative(fromStr, to as string);
   }
 }

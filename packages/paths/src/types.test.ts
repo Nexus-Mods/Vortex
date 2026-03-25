@@ -214,12 +214,14 @@ describe("RelativePath", () => {
 
 describe("ResolvedPath", () => {
   describe("validation", () => {
-    test.each([["/absolute/unix/path"], ["/"], ["/home/user/documents"]])(
-      "accepts absolute Unix path: %s",
-      (input) => {
-        expect(() => ResolvedPath.make(input)).not.toThrow();
-      },
-    );
+    test.each([
+      ["/absolute/unix/path"],
+      ["/"],
+      ["/home/user/documents"],
+      ["\\\\server\\share\\mods\\file.txt"],
+    ])("accepts absolute path: %s", (input) => {
+      expect(() => ResolvedPath.make(input)).not.toThrow();
+    });
 
     test.each([["relative/path"], ["../parent"], [""]])(
       "rejects relative path: %s",
@@ -236,6 +238,17 @@ describe("ResolvedPath", () => {
 
       expect(parsed.root).toBe("/");
       expect(parsed.dir).toBe("/home/user/mods");
+      expect(parsed.base).toBe("data.esp");
+      expect(parsed.ext).toBe(".esp");
+      expect(parsed.name).toBe("data");
+    });
+
+    test("parses UNC path", () => {
+      const path = ResolvedPath.make("\\\\server\\share\\mods\\data.esp");
+      const parsed = ResolvedPath.parse(path);
+
+      expect(parsed.root).toBe("\\\\server\\share\\");
+      expect(parsed.dir).toBe("\\\\server\\share\\mods");
       expect(parsed.base).toBe("data.esp");
       expect(parsed.ext).toBe(".esp");
       expect(parsed.name).toBe("data");
@@ -270,6 +283,31 @@ describe("ResolvedPath", () => {
       const relative = ResolvedPath.relative(from, to);
 
       expect(relative).toBe("../downloads");
+    });
+
+    test("handles UNC dirname and basename", () => {
+      const path = ResolvedPath.make("\\\\server\\share\\mods\\data.esp");
+
+      expect(ResolvedPath.dirname(path)).toBe("\\\\server\\share\\mods");
+      expect(ResolvedPath.basename(path)).toBe("data.esp");
+      expect(ResolvedPath.basename(path, ".esp")).toBe("data");
+    });
+
+    test("normalizes UNC path", () => {
+      const path = ResolvedPath.make(
+        "\\\\server\\share\\mods\\..\\downloads\\file.txt",
+      );
+
+      expect(ResolvedPath.normalize(path)).toBe(
+        "\\\\server\\share\\downloads\\file.txt",
+      );
+    });
+
+    test("computes relative path for UNC paths", () => {
+      const from = ResolvedPath.make("\\\\server\\share\\mods");
+      const to = ResolvedPath.make("\\\\server\\share\\mods\\file.txt");
+
+      expect(ResolvedPath.relative(from, to)).toBe("file.txt");
     });
   });
 });

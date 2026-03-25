@@ -453,10 +453,18 @@ export const win32: PathModule = {
 // ============================================================================
 
 /**
- * Detect whether a path is Windows-style (drive letter) or POSIX-style
- * and return the appropriate path module.
+ * Detect which path module should handle an already-resolved path string.
+ *
+ * Windows paths are recognized in two forms:
+ * - UNC roots: `\\server\share\...` or `//server/share/...`
+ * - Drive roots: `C:\...` or `C:/...`
+ *
+ * Everything else falls back to POSIX handling.
  */
 export function detectPathModule(p: string): PathModule {
+  // UNC shares are absolute Windows paths even without a drive letter.
+  if (/^(?:\\\\|\/\/)/.test(p)) return win32;
+  // Standard Windows drive-rooted path.
   if (/^[a-zA-Z]:[/\\]/.test(p)) return win32;
   return posix;
 }
