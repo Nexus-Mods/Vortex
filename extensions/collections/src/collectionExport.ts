@@ -375,6 +375,14 @@ export async function doExportToAPI(
           ((revisionNumber ?? 0) + 1).toString(),
         ),
       );
+      api.store.dispatch(
+        actions.setModAttribute(
+          gameId,
+          modId,
+          "revisionStatus",
+          result.revision?.revisionStatus,
+        ),
+      );
 
       if (userInfo?.userId) {
         const eventName = isNewUpload

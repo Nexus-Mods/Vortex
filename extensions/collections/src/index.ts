@@ -683,6 +683,7 @@ async function updateMeta(api: types.IExtensionApi, collectionId?: string) {
               permissions: info.collection.permissions,
               collectionSlug: info.collection.slug,
               revisionNumber: info.revisionNumber,
+              revisionStatus: info.revisionStatus,
               author: info.collection.user?.name,
               uploader: info.collection.user?.name,
               uploaderAvatar: info.collection.user?.avatar,

@@ -22,8 +22,16 @@ function CollectionReleaseStatus(props: ICollectionReleaseStatusProps) {
         undefined &&
       util.getSafe(collection.attributes, ["editable"], false)
     ) {
-      return (
+      const revisionStatus = util.getSafe(
+        collection.attributes,
+        ["revisionStatus"],
+        undefined,
+      );
+      const isPublished = revisionStatus === "published";
+      return isPublished ? (
         <div className="collection-status published">{t("Published")}</div>
+      ) : (
+        <div className="collection-status draft">{t("Draft")}</div>
       );
     } else if (enabled) {
       return <div className="collection-status enabled">{t("Enabled")}</div>;
