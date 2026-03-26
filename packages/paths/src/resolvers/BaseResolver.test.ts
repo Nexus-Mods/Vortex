@@ -1,5 +1,3 @@
-import { platform } from "node:process";
-
 import { describe, test, expect, beforeEach } from "vitest";
 
 import { MockFilesystem } from "../test-helpers/MockFilesystem";
@@ -72,117 +70,100 @@ class UnixTestResolver extends BaseResolver<"home" | "var"> {
 
 describe("Path Normalization and Cross-Platform Handling", () => {
   describe("FilePath.relativeTo - Path Normalization", () => {
-    // Note: relativeTo() uses path.resolve() which is host-OS specific.
-    // Windows-literal path tests only work on Windows hosts.
-    const isWindows = platform === "win32";
+    describe("Windows path handling", () => {
+      let resolver: WindowsTestResolver;
 
-    (isWindows ? describe : describe.skip)(
-      "Windows path handling (host-OS only)",
-      () => {
-        let resolver: WindowsTestResolver;
+      beforeEach(() => {
+        resolver = new WindowsTestResolver();
+      });
 
-        beforeEach(() => {
-          resolver = new WindowsTestResolver();
-        });
+      test("should handle basePath with . segments correctly", async () => {
+        const child = resolver.PathFor(
+          "userData",
+          "mods/SkyUI/interface/skyui.swf",
+        );
+        // basePath with . segment — pathMod.normalize() normalizes it
+        const basePath =
+          "C:\\Users\\TestUser\\AppData\\Roaming\\Vortex\\mods\\.";
 
-        test("should handle basePath with . segments correctly", async () => {
-          const child = resolver.PathFor(
-            "userData",
-            "mods/SkyUI/interface/skyui.swf",
-          );
-          // basePath with . segment — pathMod.resolve() normalizes it
-          const basePath =
-            "C:\\Users\\TestUser\\AppData\\Roaming\\Vortex\\mods\\.";
+        const relative = await child.relativeTo(basePath);
 
-          const relative = await child.relativeTo(basePath);
+        expect(relative).toBe("SkyUI/interface/skyui.swf");
+      });
 
-          expect(relative).not.toBeNull();
-          expect(
-            (relative as string).split("/").filter((s) => s === "."),
-          ).toHaveLength(0);
-        });
+      test("should handle basePath with .. segments correctly", async () => {
+        const child = resolver.PathFor(
+          "userData",
+          "mods/SkyUI/interface/skyui.swf",
+        );
+        // basePath with .. segment — normalizes to the mods dir
+        const basePath =
+          "C:\\Users\\TestUser\\AppData\\Roaming\\Vortex\\mods\\SkyUI\\..";
 
-        test("should handle basePath with .. segments correctly", async () => {
-          const child = resolver.PathFor(
-            "userData",
-            "mods/SkyUI/interface/skyui.swf",
-          );
-          // basePath with .. segment — resolves to the mods dir
-          const basePath =
-            "C:\\Users\\TestUser\\AppData\\Roaming\\Vortex\\mods\\SkyUI\\..";
+        const relative = await child.relativeTo(basePath);
 
-          const relative = await child.relativeTo(basePath);
+        expect(relative).toBe("SkyUI/interface/skyui.swf");
+      });
 
-          expect(relative).not.toBeNull();
-          expect(relative as string).not.toContain("..");
-        });
+      test("should handle mixed separators in basePath correctly", async () => {
+        const child = resolver.PathFor(
+          "userData",
+          "mods/SkyUI/interface/skyui.swf",
+        );
+        const basePath = "C:\\Users\\TestUser\\AppData\\Roaming\\Vortex/mods";
 
-        test("should handle mixed separators in basePath correctly", async () => {
-          const child = resolver.PathFor(
-            "userData",
-            "mods/SkyUI/interface/skyui.swf",
-          );
-          const basePath = "C:\\Users\\TestUser\\AppData\\Roaming\\Vortex/mods";
+        const relative = await child.relativeTo(basePath);
 
-          const relative = await child.relativeTo(basePath);
+        expect(relative).toBe("SkyUI/interface/skyui.swf");
+      });
 
-          expect(relative).not.toBeNull();
-          expect(relative as string).toContain("/");
-        });
+      test("should extract correct relative path", async () => {
+        const child = resolver.PathFor(
+          "userData",
+          "mods/SkyUI/interface/skyui.swf",
+        );
+        const parentPath = await resolver.PathFor("userData", "mods").resolve();
 
-        test("should extract correct relative path", async () => {
-          const child = resolver.PathFor(
-            "userData",
-            "mods/SkyUI/interface/skyui.swf",
-          );
-          const parentPath = await resolver
-            .PathFor("userData", "mods")
-            .resolve();
+        const relative = await child.relativeTo(parentPath);
 
-          const relative = await child.relativeTo(parentPath);
+        expect(relative).not.toBeNull();
+        expect(relative as string).toBe("SkyUI/interface/skyui.swf");
+      });
 
-          expect(relative).not.toBeNull();
-          expect(relative as string).toBe("SkyUI/interface/skyui.swf");
-        });
+      test("should handle case-insensitive comparisons correctly", async () => {
+        const child = resolver.PathFor(
+          "userData",
+          "mods/skyui/interface/skyui.swf",
+        );
+        const basePath =
+          "c:\\users\\testuser\\appdata\\roaming\\vortex\\mods";
 
-        test("should handle case-insensitive comparisons correctly", async () => {
-          const child = resolver.PathFor(
-            "userData",
-            "mods/skyui/interface/skyui.swf",
-          );
-          const basePath =
-            "c:\\users\\testuser\\appdata\\roaming\\vortex\\mods";
+        const relative = await child.relativeTo(basePath);
 
-          const relative = await child.relativeTo(basePath);
+        expect(relative).not.toBeNull();
+        expect(relative as string).toBe("skyui/interface/skyui.swf");
+      });
 
-          expect(relative).not.toBeNull();
-          expect(relative as string).toBe("skyui/interface/skyui.swf");
-        });
+      test("should handle case-insensitive exact match", async () => {
+        const child = resolver.PathFor("userData", "mods");
+        const basePath =
+          "c:\\users\\testuser\\appdata\\roaming\\vortex\\mods";
 
-        test("should handle case-insensitive exact match", async () => {
-          const child = resolver.PathFor("userData", "mods");
-          const basePath =
-            "C:\\Users\\TestUser\\AppData\\Roaming\\Vortex\\mods";
+        const relative = await child.relativeTo(basePath);
 
-          const relative = await child.relativeTo(basePath);
+        expect(relative).toBe("");
+      });
 
-          expect(relative).not.toBeNull();
-          expect(relative).toBe("");
-        });
+      test("should handle case-insensitive partial match", async () => {
+        const child = resolver.PathFor("userData", "mods/SKYUI");
+        const basePath =
+          "c:\\users\\testuser\\appdata\\roaming\\vortex\\mods";
 
-        test("should handle case-insensitive partial match", async () => {
-          const child = resolver.PathFor("userData", "mods/SKYUI");
-          const parentPath = await resolver
-            .PathFor("userData", "mods")
-            .resolve();
+        const relative = await child.relativeTo(basePath);
 
-          const relative = await child.relativeTo(parentPath);
-
-          expect(relative).not.toBeNull();
-          expect(relative as string).toBe("SKYUI");
-        });
-      },
-    );
+        expect(relative as string).toBe("SKYUI");
+      });
+    });
 
     describe("Unix path handling", () => {
       let resolver: UnixTestResolver;
@@ -196,16 +177,12 @@ describe("Path Normalization and Cross-Platform Handling", () => {
           "home",
           "mods/SkyUI/interface/skyui.swf",
         );
-        // basePath with . segment — pathMod.resolve() normalizes it
+        // basePath with . segment — pathMod.normalize() normalizes it
         const basePath = "/home/user/mods/.";
 
         const relative = await child.relativeTo(basePath);
 
-        expect(relative).not.toBeNull();
-        // The . segment should be resolved away (check as path segment, not substring — file extensions contain .)
-        expect(
-          (relative as string).split("/").filter((s) => s === "."),
-        ).toHaveLength(0);
+        expect(relative).toBe("SkyUI/interface/skyui.swf");
       });
 
       test("should handle basePath with .. segments", async () => {
@@ -213,13 +190,12 @@ describe("Path Normalization and Cross-Platform Handling", () => {
           "home",
           "mods/SkyUI/interface/skyui.swf",
         );
-        // basePath with .. segment — resolves to /home/user/mods
+        // basePath with .. segment — normalizes to /home/user/mods
         const basePath = "/home/user/mods/SkyUI/..";
 
         const relative = await child.relativeTo(basePath);
 
-        expect(relative).not.toBeNull();
-        expect(relative as string).not.toContain("..");
+        expect(relative).toBe("SkyUI/interface/skyui.swf");
       });
 
       test("should handle case-sensitive comparisons correctly", async () => {
@@ -289,16 +265,25 @@ describe("Path Normalization and Cross-Platform Handling", () => {
         expect(relative).toBeNull();
       });
 
+      test("should return null for prefix-sibling paths", async () => {
+        const child = resolver.PathFor("home", "mods-extra/file.txt");
+        const basePath = await resolver.PathFor("home", "mods").resolve();
+
+        const relative = await child.relativeTo(basePath);
+
+        expect(relative).toBeNull();
+      });
+
       test("should handle paths with multiple consecutive separators", async () => {
         const child = resolver.PathFor(
           "home",
           "mods/SkyUI/interface/skyui.swf",
         );
-        const basePath = "/home/user/mods";
+        const basePath = "/home//user//mods///";
 
         const relative = await child.relativeTo(basePath);
 
-        expect(relative).not.toBeNull();
+        expect(relative).toBe("SkyUI/interface/skyui.swf");
       });
     });
   });
@@ -442,13 +427,20 @@ describe("Path Normalization and Cross-Platform Handling", () => {
       expect(result.relative as string).toBe("");
     });
 
-    test("should pick the most specific anchor when multiple match", async () => {
+    test("should reverse-resolve paths under temp anchor", async () => {
       const osPath = ResolvedPath.make("C:\\Temp\\subdir\\file.txt");
       const result = await resolver.tryReverse(osPath);
 
       expect(result).not.toBeNull();
       expect(Anchor.name(result.anchor)).toBe("temp");
       expect(result.relative as string).toBe("subdir/file.txt");
+    });
+
+    test("should not match prefix-sibling temp paths", async () => {
+      const osPath = ResolvedPath.make("C:\\Temporary\\file.txt");
+      const result = await resolver.tryReverse(osPath);
+
+      expect(result).toBeNull();
     });
 
     test("should return null for paths under no anchor", async () => {
