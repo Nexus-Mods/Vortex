@@ -102,6 +102,17 @@ describe("FilePath", () => {
       const resolved = await filePath.resolve();
       expect(resolved).toBe("/mock/test/mods/skyrim");
     });
+
+    test("passes anchor and relative to resolver", async () => {
+      const relative = RelativePath.make("mods/skyrim");
+      const filePath = new FilePath(relative, anchor, resolver);
+      const spy = vi.spyOn(resolver, "resolve");
+
+      await filePath.resolve();
+
+      expect(spy).toHaveBeenCalledWith(anchor, relative);
+      expect(spy).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe("builder methods", () => {
@@ -226,6 +237,15 @@ describe("FilePath", () => {
 
       expect(path1.equals(path2)).toBe(true);
       expect(path1.equals(path3)).toBe(false);
+    });
+
+    test("equals distinguishes same-name resolver instances", () => {
+      const resolver1 = new MockResolver("same");
+      const resolver2 = new MockResolver("same");
+      const path1 = new FilePath(RelativePath.make("mods"), anchor, resolver1);
+      const path2 = new FilePath(RelativePath.make("mods"), anchor, resolver2);
+
+      expect(path1.equals(path2)).toBe(false);
     });
 
     test("hashCode generates consistent numeric hash", () => {
