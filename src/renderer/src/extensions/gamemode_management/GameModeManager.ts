@@ -274,13 +274,29 @@ class GameModeManager {
    * @memberOf GameModeManager
    */
   public startQuickDiscovery(games?: IGame[]) {
-    return this.reloadStoreGames()
-      .then(() =>
+    // Trigger main-process store scanning, then fetch results
+    const triggerMainDiscovery = async () => {
+      try {
+        await (window as any).api.discovery.start();
+        return await (window as any).api.discovery.getStoreGames();
+      } catch (err) {
+        log("warn", "main-process discovery failed, falling back to legacy", {
+          error: String(err),
+        });
+        // Fallback to legacy renderer-side scanning
+        await this.reloadStoreGames();
+        return undefined;
+      }
+    };
+
+    return PromiseBB.resolve(triggerMainDiscovery())
+      .then((storeGames) =>
         quickDiscovery(
           games ?? this.mKnownGames,
           this.mStore.getState().settings.gameMode.discovered,
           this.onDiscoveredGame,
           this.onDiscoveredTool,
+          storeGames,
         ),
       )
       .then((result) => {

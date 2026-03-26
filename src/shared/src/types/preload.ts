@@ -88,6 +88,9 @@ export interface Api {
 
   /** Telemetry APIs - span export from renderer to main */
   telemetry: TelemetryApi;
+
+  /** Game Discovery APIs - trigger scans and receive store game data */
+  discovery: DiscoveryApi;
 }
 
 export interface Example {
@@ -408,4 +411,30 @@ export interface UpdaterApi {
 export interface TelemetryApi {
   /** Forward a completed span to main process for buffering and OTLP export */
   forwardSpan(span: SerializedSpan): void;
+}
+
+/** Store game entry as returned from main-process discovery */
+export interface IStoreGameRow {
+  store_type: string;
+  store_id: string;
+  install_path: string;
+  name: string | null;
+  store_metadata: string | null;
+}
+
+/** API for game discovery — triggering scans and receiving store data */
+export interface DiscoveryApi {
+  /** Trigger a discovery scan in the main process */
+  start(): Promise<void>;
+
+  /** Get the current store_games data */
+  getStoreGames(): Promise<IStoreGameRow[]>;
+
+  /** Look up a game by registry key (format: "HIVE:Path:Key") */
+  registryLookup(
+    query: string,
+  ): Promise<{ storeId: string; installPath: string; name?: string } | undefined>;
+
+  /** Listen for store_games updates pushed from main process */
+  onStoreGamesUpdated(callback: (games: IStoreGameRow[]) => void): void;
 }

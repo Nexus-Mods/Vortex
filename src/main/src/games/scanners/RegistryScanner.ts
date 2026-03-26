@@ -1,0 +1,65 @@
+import * as path from "node:path";
+
+import * as winapi from "winapi-bindings";
+
+import { log } from "../../logging";
+
+import type { IStoreGameEntry, IStoreScanner } from "../IStoreScanner";
+
+export class RegistryScanner implements IStoreScanner {
+  public readonly storeType = "registry";
+
+  public async isAvailable(): Promise<boolean> {
+    return process.platform === "win32";
+  }
+
+  public async scan(): Promise<IStoreGameEntry[]> {
+    // Registry scanner doesn't enumerate a catalog
+    return [];
+  }
+
+  /**
+   * Look up a game installation path from a registry key.
+   * Format: "HKEY_LOCAL_MACHINE:Software\\Path:KeyName"
+   */
+  public async lookup(query: string): Promise<IStoreGameEntry | undefined> {
+    if (process.platform !== "win32") {
+      return undefined;
+    }
+
+    const parts = query.split(":", 3);
+    if (parts.length !== 3) {
+      return undefined;
+    }
+
+    const validHives = [
+      "HKEY_CLASSES_ROOT",
+      "HKEY_CURRENT_CONFIG",
+      "HKEY_CURRENT_USER",
+      "HKEY_LOCAL_MACHINE",
+      "HKEY_USERS",
+    ];
+    if (!validHives.includes(parts[0])) {
+      return undefined;
+    }
+
+    try {
+      const result = winapi.RegGetValue(
+        parts[0] as any,
+        parts[1],
+        parts[2],
+      );
+      if (!result || result.type !== "REG_SZ") {
+        return undefined;
+      }
+
+      return {
+        storeId: query,
+        installPath: result.value as string,
+        name: path.basename(result.value as string),
+      };
+    } catch {
+      return undefined;
+    }
+  }
+}

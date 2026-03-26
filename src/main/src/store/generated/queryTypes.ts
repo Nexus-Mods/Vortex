@@ -3,6 +3,15 @@
 import type { Table } from "../Table";
 import type { Database } from "../Database";
 
+/** Row type for the 'store_games' pivot table */
+export type StoreGamesRow = {
+  store_type: string;
+  store_id: string;
+  install_path: string;
+  name: string;
+  store_metadata: string;
+};
+
 /** Row type for the 'mods_pivot' pivot table */
 export type ModsPivotRow = {
   mod_id: string;
@@ -29,28 +38,46 @@ export interface RecentlyManagedGamesRow {
   game_id: string;
 }
 
+/** Parameters for the 'all_store_games' query (no parameters) */
+export type AllStoreGamesParams = Record<string, never>;
+
+/** Result row for the 'all_store_games' query */
+export interface AllStoreGamesRow {
+  store_type: string;
+  store_id: string;
+  install_path: string;
+  name: string;
+  store_metadata: string;
+}
+
 /** Typed model accessors — generated from SQL definitions */
 export interface Models {
+  storeGames: Table<StoreGamesRow>;
   mods: Table<ModsPivotRow>;
   profiles: Table<ProfilesPivotRow>;
+  allStoreGames: View<AllStoreGamesRow>;
 }
 
 /** Create typed model accessors from a Database instance */
 export function createModels(db: Database): Models {
   return {
+    storeGames: db.createTable("store_games"),
     mods: db.createTable("mods_pivot"),
     profiles: db.createTable("profiles_pivot"),
+    allStoreGames: db.createView("all_store_games"),
   } as Models;
 }
 
 /** Maps query names to their parameter types */
 export interface QueryParamsMap {
   "recently_managed_games": RecentlyManagedGamesParams;
+  "all_store_games": AllStoreGamesParams;
 }
 
 /** Maps query names to their result row types */
 export interface QueryResultMap {
   "recently_managed_games": RecentlyManagedGamesRow;
+  "all_store_games": AllStoreGamesRow;
 }
 
 /** All valid query names */
