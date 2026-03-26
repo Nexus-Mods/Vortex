@@ -151,14 +151,17 @@ export function fromRecord<K extends string, V extends ResolvedPath | string>(
   record: Record<K, V>,
   transform?: (value: V) => Promise<ResolvedPath> | ResolvedPath,
 ): MappingStrategy<K> {
+  const hasOwn = (name: K): boolean =>
+    Object.prototype.hasOwnProperty.call(record, name);
+
   return {
-    canResolve: (name) => name in record,
+    canResolve: (name) => hasOwn(name),
     supportedAnchors: () => Object.keys(record) as K[],
     resolve: async (name) => {
-      const value = record[name];
-      if (!value) {
+      if (!hasOwn(name)) {
         throw new Error(`Unknown anchor: ${name}`);
       }
+      const value = record[name];
       if (transform) {
         return transform(value);
       }

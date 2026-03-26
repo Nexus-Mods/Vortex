@@ -1,14 +1,10 @@
-import { platform } from "node:process";
-
+import type { IFilesystem } from "../IFilesystem";
 import type { IResolverBase } from "../IResolver";
 
-import { MockFilesystem } from "../test-helpers/MockFilesystem";
 import { MockUnixFilesystem } from "../test-helpers/MockUnixFilesystem";
 import { MockWindowsFilesystem } from "../test-helpers/MockWindowsFilesystem";
-import { Anchor, RelativePath, ResolvedPath } from "../types";
+import { Anchor, ResolvedPath } from "../types";
 import { fromRecord, MappingResolver } from "./MappingResolver";
-import { UnixResolver } from "./UnixResolver";
-import { WindowsResolver } from "./WindowsResolver";
 
 import { describe, it, expect, beforeEach } from "vitest";
 
@@ -17,27 +13,20 @@ import { describe, it, expect, beforeEach } from "vitest";
 // ============================================================================
 
 class TestResolver extends MappingResolver<"test1" | "test2" | "nested"> {
-  constructor(parent?: IResolverBase) {
-    super(
-      "test",
-      parent,
-      new MockFilesystem(
-        platform === "win32" ? "windows" : "unix",
-        platform !== "win32",
-      ),
-    );
+  constructor(
+    filesystem: IFilesystem = new MockUnixFilesystem(),
+    parent?: IResolverBase,
+  ) {
+    super("test", parent, filesystem);
   }
 
   protected getStrategy() {
+    const platform = this.getFilesystem().platform;
     return fromRecord({
-      test1: ResolvedPath.make(
-        platform === "win32" ? "C:\\test\\base1" : "/test/base1",
-      ),
-      test2: ResolvedPath.make(
-        platform === "win32" ? "C:\\test\\base2" : "/test/base2",
-      ),
+      test1: ResolvedPath.make(makeAbsolutePath(platform, "test", "base1")),
+      test2: ResolvedPath.make(makeAbsolutePath(platform, "test", "base2")),
       nested: ResolvedPath.make(
-        platform === "win32" ? "C:\\test\\base1\\nested" : "/test/base1/nested",
+        makeAbsolutePath(platform, "test", "base1", "nested"),
       ),
     });
   }
@@ -52,16 +41,37 @@ class TestResolver extends MappingResolver<"test1" | "test2" | "nested"> {
 // Helper Functions
 // ============================================================================
 
-const isWindows = platform === "win32";
-
-function makeAbsolutePath(...segments: string[]): string {
+function makeAbsolutePath(
+  platform: IFilesystem["platform"],
+  ...segments: string[]
+): string {
   const joined = segments.join("/");
-  return isWindows ? `C:\\${joined.replace(/\//g, "\\")}` : `/${joined}`;
+  return platform === "windows"
+    ? `C:\\${joined.replace(/\//g, "\\")}`
+    : `/${joined}`;
 }
 
 // ============================================================================
 // Tests
 // ============================================================================
+
+describe("MappingResolver", () => {
+  it("fromRecord only resolves declared keys", async () => {
+    const strategy = fromRecord(
+      {
+        empty: "",
+      },
+      (value) => ResolvedPath.make(value === "" ? "/empty" : `/${value}`),
+    );
+
+    expect(strategy.canResolve("empty")).toBe(true);
+    expect(strategy.canResolve("toString" as never)).toBe(false);
+    await expect(strategy.resolve("empty")).resolves.toBe("/empty");
+    await expect(strategy.resolve("toString" as never)).rejects.toThrow(
+      /Unknown anchor/,
+    );
+  });
+});
 
 describe("Reverse Resolution", () => {
   describe("BaseResolver.tryReverse", () => {
@@ -84,7 +94,7 @@ describe("Reverse Resolution", () => {
     });
 
     it("should return null for paths not under any anchor", async () => {
-      const osPath = ResolvedPath.make(makeAbsolutePath("other", "path"));
+      const osPath = ResolvedPath.make(makeAbsolutePath("unix", "other", "path"));
       const result = await resolver.tryReverse(osPath);
 
       expect(result).toBeNull();
@@ -112,22 +122,6 @@ describe("Reverse Resolution", () => {
       expect(Anchor.name(result.anchor)).toBe("test1");
       expect(result.relative).toBe("");
     });
-
-    if (isWindows) {
-      it("should be case-insensitive on Windows", async () => {
-        const filePath = resolver.PathFor("test1", "mods/skyui");
-        const osPath = await filePath.resolve();
-        // Convert to lowercase to test case-insensitivity
-        const lowercasePath = ResolvedPath.make(
-          (osPath as string).toLowerCase(),
-        );
-
-        const result = await resolver.tryReverse(lowercasePath);
-
-        expect(result).not.toBeNull();
-        expect(Anchor.name(result.anchor)).toBe("test1");
-      });
-    }
 
     it("should cache base paths for performance", async () => {
       const filePath = resolver.PathFor("test1", "mods");
@@ -193,7 +187,7 @@ describe("Reverse Resolution", () => {
 
     beforeEach(() => {
       parentResolver = new TestResolver();
-      childResolver = new TestResolver(parentResolver);
+      childResolver = new TestResolver(new MockUnixFilesystem(), parentResolver);
 
       // Give them different names
       (parentResolver as any).name = "parent";
@@ -214,7 +208,9 @@ describe("Reverse Resolution", () => {
     it("should return null when path is not under own anchors (no parent delegation)", async () => {
       // Create a path that parent can handle but child shares the same anchors
       // so use a completely unrelated path
-      const osPath = ResolvedPath.make(makeAbsolutePath("unmatched", "path"));
+      const osPath = ResolvedPath.make(
+        makeAbsolutePath("unix", "unmatched", "path"),
+      );
 
       const result = await childResolver.tryReverse(osPath);
 
@@ -222,7 +218,9 @@ describe("Reverse Resolution", () => {
     });
 
     it("should return null for unresolvable paths", async () => {
-      const osPath = ResolvedPath.make(makeAbsolutePath("unmatched", "path"));
+      const osPath = ResolvedPath.make(
+        makeAbsolutePath("unix", "unmatched", "path"),
+      );
       const result = await childResolver.tryReverse(osPath);
 
       expect(result).toBeNull();
@@ -249,7 +247,7 @@ describe("Reverse Resolution", () => {
     });
 
     it("should return null when no match", async () => {
-      const osPath = ResolvedPath.make(makeAbsolutePath("unmatched"));
+      const osPath = ResolvedPath.make(makeAbsolutePath("unix", "unmatched"));
       const result = await resolver.tryReverse(osPath);
 
       expect(result).toBeNull();
@@ -293,20 +291,6 @@ describe("Reverse Resolution", () => {
       expect(relative).not.toBeNull();
       expect(relative).toBe("");
     });
-
-    if (isWindows) {
-      it("should be case-insensitive on Windows", async () => {
-        const parent = resolver.PathFor("test1", "mods");
-        const child = resolver.PathFor("test1", "mods/skyui/file.txt");
-        const parentPath = await parent.resolve();
-        // Convert to lowercase
-        const lowercasePath = (parentPath as string).toLowerCase();
-
-        const relative = await child.relativeTo(lowercasePath);
-
-        expect(relative).not.toBeNull();
-      });
-    }
 
     it("should allow reconstructing child FilePath", async () => {
       const parent = resolver.PathFor("test1", "mods");
@@ -525,30 +509,29 @@ describe("Reverse Resolution", () => {
     });
   });
 
-  describe("Cross-platform compatibility", () => {
-    it("should handle platform-specific paths correctly", async () => {
-      if (isWindows) {
-        const resolver = new WindowsResolver(
-          undefined,
-          new MockWindowsFilesystem(),
-        );
-        const testPath = resolver.PathFor("c", "test/file.txt");
-        const osPath = await testPath.resolve();
+  describe("Deterministic platform behavior", () => {
+    it("should be case-insensitive for Windows-backed reverse resolution", async () => {
+      const resolver = new TestResolver(new MockWindowsFilesystem());
+      const filePath = resolver.PathFor("test1", "mods/skyui");
+      const osPath = await filePath.resolve();
 
-        const result = await resolver.tryReverse(osPath);
-        // Windows resolver should handle C: drive
-        expect(result).not.toBeNull();
-        expect(result ? Anchor.name(result.anchor) : null).toBe("c");
-      } else {
-        const resolver = new UnixResolver(undefined, new MockUnixFilesystem());
-        const testPath = resolver.PathFor("root", "test/file.txt");
-        const osPath = await testPath.resolve();
+      const result = await resolver.tryReverse(
+        ResolvedPath.make((osPath as string).toLowerCase()),
+      );
 
-        const result = await resolver.tryReverse(osPath);
-        // Unix resolver should handle root
-        expect(result).not.toBeNull();
-        expect(result ? Anchor.name(result.anchor) : null).toBe("root");
-      }
+      expect(result).not.toBeNull();
+      expect(Anchor.name(result.anchor)).toBe("test1");
+    });
+
+    it("should be case-insensitive for Windows-backed relativeTo", async () => {
+      const resolver = new TestResolver(new MockWindowsFilesystem());
+      const parent = resolver.PathFor("test1", "mods");
+      const child = resolver.PathFor("test1", "mods/skyui/file.txt");
+      const parentPath = await parent.resolve();
+
+      const relative = await child.relativeTo((parentPath as string).toLowerCase());
+
+      expect(relative).not.toBeNull();
     });
   });
 });
