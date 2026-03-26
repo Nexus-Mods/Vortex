@@ -3,16 +3,19 @@
  * The install flows stay in separate files so it is easy to see which platform
  * failed.
  */
+import path from "path";
 import { describe, expect, test } from "vitest";
 
 // Arrange: load the mock before the module under test.
 import "./fixtures/vortexApi.mock";
 
+import { GAME_ID } from "../../common";
 import {
   isSMAPIModType,
   linuxSMAPIPlatform,
   macosSMAPIPlatform,
   resolveSMAPIPlatform,
+  testSMAPI,
   windowsSMAPIPlatform,
 } from "./index";
 import { types } from "vortex-api";
@@ -46,12 +49,39 @@ describe("installers/smapi platform resolution", () => {
   });
 
   test("throws for unknown platforms", () => {
-    // Arrange: cast a fake platform value.
-
     // Act + assert: reject unsupported platforms.
     expect(() => resolveSMAPIPlatform("plan9" as NodeJS.Platform)).toThrow(
       "Unsupported platform for SMAPI installer",
     );
+  });
+});
+
+describe("installers/smapi matcher smoke", () => {
+  test("claims native nested SMAPI installer archives for Stardew Valley", async () => {
+    await expect(
+      testSMAPI(
+        [nativePath("internal", "windows", "SMAPI.Installer.dll")],
+        GAME_ID,
+      ),
+    ).resolves.toEqual({ supported: true, requiredFiles: [] });
+  });
+
+  test("keeps the current host-sensitive backslash-only matcher behavior", async () => {
+    await expect(
+      testSMAPI(["internal\\windows\\SMAPI.Installer.dll"], GAME_ID),
+    ).resolves.toEqual({
+      supported: path.sep === "\\",
+      requiredFiles: [],
+    });
+  });
+
+  test("does not claim archives for the wrong game", async () => {
+    await expect(
+      testSMAPI(
+        [nativePath("internal", "windows", "SMAPI.Installer.dll")],
+        "skyrim",
+      ),
+    ).resolves.toEqual({ supported: false, requiredFiles: [] });
   });
 });
 
@@ -92,3 +122,7 @@ describe("installers/smapi isSMAPIModType", () => {
     ).resolves.toBe(false);
   });
 });
+
+function nativePath(...segments: string[]): string {
+  return segments.join(path.sep);
+}
