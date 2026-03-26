@@ -14,7 +14,6 @@
   },
   "scripts": {
     "preinstall": "npx only-allow pnpm",
-    "build:fomod": "node ./preinstall.js",
     "start": "pnpm -F @vortex/main run start",
     "build": "pnpm run typecheck && pnpm --filter \"@vortex/*\" -r run build",
     "build:all": "pnpm run build && pnpm run build:extensions && pnpm run build:assets",

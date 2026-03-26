@@ -1,5 +1,5 @@
-import type { ConnectionStrategy, TimeoutOptions } from "fomod-installer-ipc";
-import { BaseIPCConnection } from "fomod-installer-ipc";
+import type { ConnectionStrategy, TimeoutOptions } from "@nexusmods/fomod-installer-ipc";
+import { BaseIPCConnection } from "@nexusmods/fomod-installer-ipc";
 import type { ISupportedResult } from "../../mod_management/types/TestSupported";
 import type { IInstallResult } from "../../mod_management/types/IInstallResult";
 import { statAsync } from "../../../util/fs";
@@ -88,7 +88,7 @@ export class VortexIPCConnection extends BaseIPCConnection {
       path.join(
         getVortexPath("package_unpacked"),
         "node_modules",
-        "fomod-installer-ipc",
+        "@nexusmods/fomod-installer-ipc",
         "dist",
         exeName,
       ),

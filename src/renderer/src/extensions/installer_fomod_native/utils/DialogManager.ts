@@ -17,7 +17,7 @@ import type {
   IInstallStep,
 } from "../../installer_fomod_shared/types/interface";
 
-import type * as fomodT from "fomod-installer-native";
+import type * as fomodT from "@nexusmods/fomod-installer-native";
 import { getErrorMessageOrDefault } from "@vortex/shared";
 
 /**

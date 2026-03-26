@@ -12,7 +12,7 @@
 ### Initial Setup
 
 - `volta install node@22 yarn@v1` - toolchain setup
-- `pnpm run build:fomod && pnpm install` - Setup dependencies
+- `pnpm install` - Setup dependencies
 
 ### Development Iteration
 

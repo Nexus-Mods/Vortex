@@ -56,16 +56,12 @@
       "envFile": "${workspaceFolder}/.env",
       "console": "integratedTerminal",
       "sourceMaps": true,
-      "outFiles": ["${workspaceFolder}/src/main/out/**/*.js"],
+      "outFiles": ["${workspaceFolder}/src/main/out/**/*.{js,cjs}"],
       "resolveSourceMapLocations": [
         "${workspaceFolder}/**",
         "!**/node_modules/**"
       ],
-      "sourceMapPathOverrides": {
-        "webpack://@vortex/main/./*": "${workspaceFolder}/src/main/*",
-        "webpack://@vortex/main/*": "${workspaceFolder}/src/main/*"
-      },
-      "autoAttachChildProcesses": true,
+      "autoAttachChildProcesses": false,
       "timeout": 60000,
       "skipFiles": ["<node_internals>/**", "${workspaceFolder}/node_modules/**"]
     },
@@ -87,15 +83,11 @@
       "envFile": "${workspaceFolder}/.env",
       "console": "integratedTerminal",
       "sourceMaps": true,
-      "outFiles": ["${workspaceFolder}/src/main/out/**/*.js"],
+      "outFiles": ["${workspaceFolder}/src/main/out/**/*.{js,cjs}"],
       "resolveSourceMapLocations": [
         "${workspaceFolder}/**",
         "!**/node_modules/**"
       ],
-      "sourceMapPathOverrides": {
-        "webpack://@vortex/main/./*": "${workspaceFolder}/src/main/*",
-        "webpack://@vortex/main/*": "${workspaceFolder}/src/main/*"
-      },
       "timeout": 60000,
       "skipFiles": ["<node_internals>/**", "${workspaceFolder}/node_modules/**"]
     },
@@ -118,16 +110,12 @@
       "envFile": "${workspaceFolder}/.env",
       "console": "internalConsole",
       "sourceMaps": true,
-      "outFiles": ["${workspaceFolder}/src/main/out/**/*.js"],
-      "sourceMapPathOverrides": {
-        "webpack://@vortex/main/./*": "${workspaceFolder}/src/main/*",
-        "webpack://@vortex/main/*": "${workspaceFolder}/src/main/*"
-      },
+      "outFiles": ["${workspaceFolder}/src/main/out/**/*.{js,cjs}"],
       "skipFiles": [
         "<node_internals>/**",
         "${workspaceFolder}/node_modules/**"
       ],
-      "autoAttachChildProcesses": true,
+      "autoAttachChildProcesses": false,
       "timeout": 60000
     },
     {
@@ -138,7 +126,7 @@
       "timeout": 60000,
       "webRoot": "${workspaceFolder}",
       "sourceMaps": true,
-      "outFiles": ["${workspaceFolder}/src/main/out/**/*.js"],
+      "outFiles": ["${workspaceFolder}/src/main/out/**/*.{js,cjs}"],
       "sourceMapPathOverrides": {
         "webpack://@vortex/renderer/./*": "${workspaceFolder}/src/renderer/*",
         "webpack://@vortex/renderer/*": "${workspaceFolder}/src/renderer/*"
@@ -163,7 +151,7 @@
       "env": { "NODE_ENV": "development" },
       "console": "integratedTerminal",
       "sourceMaps": true,
-      "outFiles": ["${workspaceRoot}/src/main/out/**/*.js"],
+      "outFiles": ["${workspaceRoot}/src/main/out/**/*.{js,cjs}"],
       "timeout": 60000,
       "skipFiles": ["<node_internals>/**", "${workspaceFolder}/node_modules/**"]
     },

@@ -4,7 +4,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import type { FileHandle } from "node:fs/promises";
 import { open, readdir } from "node:fs/promises";
 import lazyRequire from "../../../util/lazyRequire";
-import type * as fomodT from "fomod-installer-native";
+import type * as fomodT from "@nexusmods/fomod-installer-native";
 
 export class VortexModInstallerFileSystem {
   private fomod: typeof fomodT;
@@ -12,7 +12,7 @@ export class VortexModInstallerFileSystem {
 
   public constructor() {
     this.fomod = lazyRequire<typeof fomodT>(() =>
-      require("fomod-installer-native"),
+      require("@nexusmods/fomod-installer-native"),
     );
     this.mFileSystem = new this.fomod.NativeFileSystem(
       this.readFileContent,

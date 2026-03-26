@@ -8,10 +8,13 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 
 | Package | Version |
 | ------- | ------- |
+| @duckdb/node-api | 1.5.1-r.1 |
 | @electron/remote | 2.1.3 |
 | @headlessui/react | 1.7.19 |
 | @mdi/js | 7.4.47 |
 | @msgpack/msgpack | 2.8.0 |
+| @nexusmods/fomod-installer-ipc | 0.11.1 |
+| @nexusmods/fomod-installer-native | 0.11.1 |
 | @nexusmods/nexus-api | 1.5.2 |
 | @opentelemetry/api | 1.9.0 |
 | @opentelemetry/context-async-hooks | 2.5.1 |
@@ -42,11 +45,8 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | electron-context-menu | 3.6.1 |
 | electron-redux | 1.4.9-sync |
 | electron-updater | 4.6.5 |
-| encoding-down | 6.3.0 |
 | exe-version | 2.3.0 |
 | feedparser | 2.2.10 |
-| fomod-installer-ipc | file:extensions/fomod-installer/src/ModInstaller.IPC.TypeScript |
-| fomod-installer-native | file:extensions/fomod-installer/src/ModInstaller.Native.TypeScript |
 | fs-extra | 9.1.0 |
 | fuzzball | 1.4.0 |
 | glob | 11.1.0 |
@@ -60,8 +60,6 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | is-admin | 3.0.0 |
 | json-socket | 0.3.0 |
 | jsonwebtoken | 9.0.3 |
-| leveldown | 5.6.0 |
-| levelup | 4.4.0 |
 | lodash | 4.17.23 |
 | memoize-one | 5.2.1 |
 | minimatch | 3.1.3 |

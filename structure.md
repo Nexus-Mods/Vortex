@@ -1,19 +1,19 @@
 # Project structure
 
 - **/**: project root (workspace config, build scripts, docs)
-  - **src/main/**: Electron main process source (`main.ts`) and packaging config
-  - **src/renderer/**: Electron renderer source (`renderer.tsx`) and UI logic
-  - **src/preload/**: Electron preload scripts (`index.ts`)
-  - **src/shared/**: code shared across processes
-  - **src/extensions/**: embedded extensions (statically loaded)
-  - **extensions/**: bundled extensions (built separately, shipped with app)
-  - **__mocks__/**: mocks for unit tests
-  - **__tests__/**: root integration/cross-cutting tests
-  - **.vscode/**: VS Code launch/tasks/settings config
-  - **dist/**: packaged installer/output artifacts
-  - **src/main/out/**: development runtime output (`pnpm run build`)
-  - **src/main/dist/**: production staging output (`pnpm run dist` + assets/subprojects)
-  - **typings.custom/**: custom TypeScript declaration files
+    - **src/main/**: Electron main process source (`main.ts`) and packaging config
+    - **src/renderer/**: Electron renderer source (`renderer.tsx`) and UI logic
+    - **src/preload/**: Electron preload scripts (`index.ts`)
+    - **src/shared/**: code shared across processes
+    - **src/extensions/**: embedded extensions (statically loaded)
+    - **extensions/**: bundled extensions (built separately, shipped with app)
+    - **__mocks__/**: mocks for unit tests
+    - **__tests__/**: root integration/cross-cutting tests
+    - **.vscode/**: VS Code launch/tasks/settings config
+    - **dist/**: packaged installer/output artifacts
+    - **src/main/out/**: development runtime output (`pnpm run build`)
+    - **src/main/dist/**: production staging output (`pnpm run dist` + assets/subprojects)
+    - **typings.custom/**: custom TypeScript declaration files
 
 # Configuration files
 
@@ -42,7 +42,7 @@
 
 # Common root commands
 
-- `pnpm run build:fomod && pnpm install`: setup dependencies
+- `pnpm install`: setup dependencies
 - `pnpm run build`: development build (`src/main/out`)
 - `pnpm run assets:out`: copy/build runtime assets for development
 - `pnpm run subprojects:out`: build bundled extensions for development

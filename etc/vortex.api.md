@@ -4159,7 +4159,7 @@ type LockedState = true | false | "true" | "false" | "always" | "never";
 
 // Warning: (ae-forgotten-export) The symbol "Level" needs to be exported by the entry point api.d.ts
 //
-// @public @deprecated (undocumented)
+// @public (undocumented)
 export function log(level: Level, message: string, metadata?: unknown): void;
 
 // @public (undocumented)

@@ -51,6 +51,12 @@ catalogs:
     '@msgpack/msgpack':
       specifier: ^2.7.0
       version: 2.8.0
+    '@nexusmods/fomod-installer-ipc':
+      specifier: ^0.11.1
+      version: 0.11.1
+    '@nexusmods/fomod-installer-native':
+      specifier: ^0.11.1
+      version: 0.11.1
     '@nexusmods/nexus-api':
       specifier: git+https://github.com/Nexus-Mods/node-nexus-api#4192c0c9f34306c2167e258dd4fef773af406161
       version: 1.5.2
@@ -3959,6 +3965,12 @@ importers:
       '@msgpack/msgpack':
         specifier: 'catalog:'
         version: 2.8.0
+      '@nexusmods/fomod-installer-ipc':
+        specifier: 'catalog:'
+        version: 0.11.1
+      '@nexusmods/fomod-installer-native':
+        specifier: 'catalog:'
+        version: 0.11.1
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4192c0c9f34306c2167e258dd4fef773af406161
@@ -4055,12 +4067,6 @@ importers:
       feedparser:
         specifier: 'catalog:'
         version: 2.2.10
-      fomod-installer-ipc:
-        specifier: file:../../extensions/fomod-installer/src/ModInstaller.IPC.TypeScript
-        version: file:extensions/fomod-installer/src/ModInstaller.IPC.TypeScript
-      fomod-installer-native:
-        specifier: file:../../extensions/fomod-installer/src/ModInstaller.Native.TypeScript
-        version: file:extensions/fomod-installer/src/ModInstaller.Native.TypeScript
       fs-extra:
         specifier: 'catalog:'
         version: 9.1.0
@@ -4438,6 +4444,12 @@ importers:
       '@msgpack/msgpack':
         specifier: 'catalog:'
         version: 2.8.0
+      '@nexusmods/fomod-installer-ipc':
+        specifier: 'catalog:'
+        version: 0.11.1
+      '@nexusmods/fomod-installer-native':
+        specifier: 'catalog:'
+        version: 0.11.1
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4192c0c9f34306c2167e258dd4fef773af406161
@@ -4702,12 +4714,6 @@ importers:
       feedparser:
         specifier: 'catalog:'
         version: 2.2.10
-      fomod-installer-ipc:
-        specifier: file:../../extensions/fomod-installer/src/ModInstaller.IPC.TypeScript
-        version: file:extensions/fomod-installer/src/ModInstaller.IPC.TypeScript
-      fomod-installer-native:
-        specifier: file:../../extensions/fomod-installer/src/ModInstaller.Native.TypeScript
-        version: file:extensions/fomod-installer/src/ModInstaller.Native.TypeScript
       fs-extra:
         specifier: 'catalog:'
         version: 9.1.0
@@ -6166,6 +6172,14 @@ packages:
 
   '@napi-rs/wasm-runtime@1.1.1':
     resolution: {integrity: sha512-p64ah1M1ld8xjWv3qbvFwHiFVWrq1yFvV4f7w+mzaqiR4IlSgkqhcRdHwsGgomwzBH51sRY4NEowLxnaBjcW/A==}
+
+  '@nexusmods/fomod-installer-ipc@0.11.1':
+    resolution: {integrity: sha512-FTZbqaWW1VCnctUBZqjr8XgvCr6fpigzRqj1NSNw2kylUJcnNkS+iao7r0wGoFWfuAImc15fVvZ8KNhe+QGqQA==}
+    engines: {node: '>=22'}
+
+  '@nexusmods/fomod-installer-native@0.11.1':
+    resolution: {integrity: sha512-gDUhcU/7/BEoFaNlVHyvM8wK6qg4LO6zWb2OSwpXfTR7IvUKdooTJ7yDOid+7F1Ozq/iC431oA8NnqyAFrbyqA==}
+    engines: {node: '>=22'}
 
   '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4192c0c9f34306c2167e258dd4fef773af406161':
     resolution: {tarball: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4192c0c9f34306c2167e258dd4fef773af406161}
@@ -9534,14 +9548,6 @@ packages:
 
   flux-standard-action@2.1.2:
     resolution: {integrity: sha512-7vdgawlphCjzaMLdpZv8hlGC/FJCXu6sqE3Wuqe3HLZ22KcDiO4IFplxLDePDhEt6hgCrugt45RoUObuzZP6Kg==}
-
-  fomod-installer-ipc@file:extensions/fomod-installer/src/ModInstaller.IPC.TypeScript:
-    resolution: {directory: extensions/fomod-installer/src/ModInstaller.IPC.TypeScript, type: directory}
-    engines: {node: '>=22'}
-
-  fomod-installer-native@file:extensions/fomod-installer/src/ModInstaller.Native.TypeScript:
-    resolution: {directory: extensions/fomod-installer/src/ModInstaller.Native.TypeScript, type: directory}
-    engines: {node: '>=22'}
 
   font-scanner@0.2.1:
     resolution: {integrity: sha512-YP+EZZ0hjOdJABdDzMdv1nKMhueZQJUQU86lka4HIVesPDVxW5hd9Gz9zGgwDE0G/UjRwmhlBB3FxYtPgkh/cg==}
@@ -15027,6 +15033,10 @@ snapshots:
       '@tybys/wasm-util': 0.10.1
     optional: true
 
+  '@nexusmods/fomod-installer-ipc@0.11.1': {}
+
+  '@nexusmods/fomod-installer-native@0.11.1': {}
+
   '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4192c0c9f34306c2167e258dd4fef773af406161':
     dependencies:
       form-data: 4.0.5
@@ -18973,10 +18983,6 @@ snapshots:
     dependencies:
       lodash.isplainobject: 4.0.6
       lodash.isstring: 4.0.1
-
-  fomod-installer-ipc@file:extensions/fomod-installer/src/ModInstaller.IPC.TypeScript: {}
-
-  fomod-installer-native@file:extensions/fomod-installer/src/ModInstaller.Native.TypeScript: {}
 
   font-scanner@0.2.1:
     dependencies:
