@@ -2,11 +2,14 @@ import { randomBytes } from "node:crypto";
 import { readFile, mkdtemp, rm } from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+
+import type { Chunk } from "./chunking";
 
 import {
   Downloader,
   type DownloaderOptions,
+  type Resolver,
   defaultOptions,
 } from "./downloader";
 import {
@@ -14,6 +17,7 @@ import {
   type RequestHandler,
   withTestServer,
   serveFile,
+  serveRoutes,
 } from "./test-server";
 
 const LARGE_FILE = randomBytes(20 * 1024 * 1024);
@@ -34,6 +38,11 @@ function makeDownloader(
   return new Downloader({ ...defaultOptions(), ...overrides });
 }
 
+/** Trivial resolver: resource is already a URL, no transformation needed */
+function urlResolver(): Resolver<URL> {
+  return (url) => Promise.resolve(url);
+}
+
 async function download(
   server: TestServer,
   destDir: string,
@@ -41,7 +50,7 @@ async function download(
   filename = "output",
 ): Promise<Buffer> {
   const dest = path.join(destDir, filename);
-  await downloader.download(server.url, (url) => Promise.resolve(url), dest);
+  await downloader.download(server.url, urlResolver(), dest);
   return readFile(dest);
 }
 
@@ -96,7 +105,6 @@ describe("Downloader", () => {
 
   it("falls back to single download when content-length is absent, even with accept-ranges", async () => {
     const handler: RequestHandler = ({ req, res }) => {
-      // Omit content-length entirely; advertise range support
       if (req.method === "HEAD") {
         res.writeHead(200, { "accept-ranges": "bytes" });
         res.end();
@@ -104,7 +112,6 @@ describe("Downloader", () => {
         res.writeHead(200);
         res.end(LARGE_FILE);
       }
-
       return Promise.resolve();
     };
 
@@ -112,7 +119,6 @@ describe("Downloader", () => {
       await withTmpDir(async (dir) => {
         const result = await download(server, dir);
         expect(Buffer.compare(LARGE_FILE, result)).toBe(0);
-        // Only one GET should have been issued (no Range header)
         const gets = server.requests.filter((r) => r.method === "GET");
         expect(gets).toHaveLength(1);
         expect(gets[0].range).toBeNull();
@@ -121,9 +127,6 @@ describe("Downloader", () => {
   });
 
   it("falls back to single download when content-length is zero, even with accept-ranges", async () => {
-    // A content-length of 0 parses without error but must not trigger chunking,
-    // since size 0 < minFileSizeForChunking. Non-numeric values are rejected by
-    // the HTTP parser before got sees them and can't be tested at this level.
     const handler: RequestHandler = ({ req, res }) => {
       if (req.method === "HEAD") {
         res.writeHead(200, { "accept-ranges": "bytes", "content-length": "0" });
@@ -132,7 +135,6 @@ describe("Downloader", () => {
         res.writeHead(200);
         res.end(LARGE_FILE);
       }
-
       return Promise.resolve();
     };
 
@@ -195,9 +197,85 @@ describe("Downloader", () => {
         ),
       );
 
-      // With concurrency 1 and equal delay, downloads must have run one at a time;
-      // the completion order should match the submission order.
       expect(completionOrder).toEqual([0, 1, 2]);
+    });
+  });
+
+  describe("resolver", () => {
+    it("calls the resolver once per download", async () => {
+      await withTestServer(
+        serveFile({ body: SMALL_FILE, acceptRanges: false }),
+        async (server) => {
+          await withTmpDir(async (dir) => {
+            const resolver = vi.fn(urlResolver());
+            const dest = path.join(dir, "output");
+            await makeDownloader().download(server.url, resolver, dest);
+            expect(resolver).toHaveBeenCalledTimes(1);
+            expect(resolver).toHaveBeenCalledWith(server.url);
+          });
+        },
+      );
+    });
+
+    it("uses probeUrl as the fallback for chunk requests when chunkUrl is not provided", async () => {
+      await withTestServer(
+        serveFile({ body: LARGE_FILE, acceptRanges: true }),
+        async (server) => {
+          await withTmpDir(async (dir) => {
+            // Resolver returns only probeUrl — no chunkUrl
+            const resolver: Resolver<URL> = (url) =>
+              Promise.resolve({ probeUrl: url });
+
+            const dest = path.join(dir, "output");
+            await makeDownloader().download(server.url, resolver, dest);
+
+            const result = await readFile(dest);
+            expect(Buffer.compare(LARGE_FILE, result)).toBe(0);
+
+            // All chunk GETs should have hit the same URL (the probeUrl)
+            const gets = server.requests.filter((r) => r.method === "GET");
+            expect(gets.length).toBeGreaterThan(1);
+            expect(gets.every((r) => r.url === "/")).toBe(true);
+          });
+        },
+      );
+    });
+
+    it("uses chunkUrl for each chunk when provided, leaving the probe on probeUrl", async () => {
+      await withTestServer(
+        serveRoutes({
+          "/probe": serveFile({ body: LARGE_FILE, acceptRanges: true }),
+          "/chunk": serveFile({ body: LARGE_FILE, acceptRanges: true }),
+        }),
+        async (server) => {
+          await withTmpDir(async (dir) => {
+            const chunkUrl = vi.fn((_chunk: Chunk) =>
+              Promise.resolve(server.urlFor("/chunk")),
+            );
+            const resolver: Resolver<URL> = () =>
+              Promise.resolve({
+                probeUrl: server.urlFor("/probe"),
+                chunkUrl,
+              });
+
+            const dest = path.join(dir, "output");
+            await makeDownloader().download(server.url, resolver, dest);
+
+            const result = await readFile(dest);
+            expect(Buffer.compare(LARGE_FILE, result)).toBe(0);
+
+            // chunkUrl should have been called once per chunk
+            const { chunksPerFile } = defaultOptions();
+            expect(chunkUrl).toHaveBeenCalledTimes(chunksPerFile);
+
+            // Probe HEAD went to /probe, all GETs went to /chunk
+            const heads = server.requests.filter((r) => r.method === "HEAD");
+            const gets = server.requests.filter((r) => r.method === "GET");
+            expect(heads.every((r) => r.url === "/probe")).toBe(true);
+            expect(gets.every((r) => r.url === "/chunk")).toBe(true);
+          });
+        },
+      );
     });
   });
 });
