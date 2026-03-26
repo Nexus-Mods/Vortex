@@ -166,6 +166,17 @@ export interface MainChannels {
 
   // Menu click events (main -> renderer)
   "menu:click": (menuItemId: string) => void;
+
+  // Game Discovery: Push store_games data to renderer
+  "discovery:store-games-updated": (
+    games: Array<{
+      store_type: string;
+      store_id: string;
+      install_path: string;
+      name: string | null;
+      store_metadata: string | null;
+    }>,
+  ) => void;
 }
 
 /** Type containing all known channels for synchronous IPC operations (used primarily by preload scripts) */
@@ -321,6 +332,30 @@ export interface InvokeChannels {
 
   // Compile stylesheets
   "styles:compile": (filePaths: string[]) => Promise<string>;
+
+  // Game Discovery: Trigger store scanners in main process
+  "discovery:start": () => Promise<void>;
+
+  // Game Discovery: Get current store_games data
+  "discovery:get-store-games": () => Promise<
+    Array<{
+      store_type: string;
+      store_id: string;
+      install_path: string;
+      name: string | null;
+      store_metadata: string | null;
+    }>
+  >;
+
+  // Game Discovery: Look up a game by registry key
+  "discovery:registry-lookup": (query: string) => Promise<
+    | {
+        storeId: string;
+        installPath: string;
+        name?: string;
+      }
+    | undefined
+  >;
 }
 
 /** Represents all IPC-safe typed arrays */

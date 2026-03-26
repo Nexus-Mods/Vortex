@@ -159,11 +159,83 @@ function updateManuallyConfigured(
   }
 }
 
+function matchStoreGames(
+  queryArgs: { [storeId: string]: Array<{ id?: string; name?: string; prefer?: number }> },
+  storeGames: IStoreGameRow[],
+): IGameStoreEntry[] {
+  const results: IGameStoreEntry[] = [];
+  for (const [storeId, queries] of Object.entries(queryArgs)) {
+    if (storeId === "registry") {
+      // Registry lookups are handled via IPC, skip in local matching
+      continue;
+    }
+    for (const query of queries) {
+      const match = storeGames.find((sg) => {
+        if (sg.store_type !== storeId) return false;
+        if (query.id !== undefined) return sg.store_id === query.id;
+        if (query.name !== undefined) {
+          const re = new RegExp("^" + query.name + "$");
+          return sg.name !== null && re.test(sg.name);
+        }
+        return false;
+      });
+      if (match) {
+        results.push({
+          appid: match.store_id,
+          gamePath: match.install_path,
+          name: match.name ?? "",
+          gameStoreId: match.store_type,
+          priority: query.prefer ?? 100,
+        });
+      }
+    }
+  }
+  return results;
+}
+
+async function queryRegistryArgs(
+  queryArgs: { [storeId: string]: Array<{ id?: string }> },
+): Promise<IGameStoreEntry[]> {
+  const registryQueries = queryArgs["registry"];
+  if (!registryQueries) return [];
+
+  const results: IGameStoreEntry[] = [];
+  for (const query of registryQueries) {
+    if (!query.id) continue;
+    try {
+      const result = await (window as any).api.discovery.registryLookup(query.id);
+      if (result) {
+        results.push({
+          appid: query.id,
+          gamePath: result.installPath,
+          name: result.name ?? "",
+          gameStoreId: "registry",
+          priority: 100,
+        });
+      }
+    } catch {
+      // Registry lookup failed, skip
+    }
+  }
+  return results;
+}
+
 function queryByArgs(
   discoveredGames: { [id: string]: IDiscoveryResult },
   game: IGame,
+  storeGames?: IStoreGameRow[],
 ): Bluebird<IGameStoreEntry> {
-  return GameStoreHelper.find(game.queryArgs)
+  // If we have main-process store data, use local matching
+  const findResults = storeGames !== undefined
+    ? Bluebird.resolve(matchStoreGames(game.queryArgs, storeGames))
+        .then((localResults) =>
+          // Also query registry via IPC (async)
+          Bluebird.resolve(queryRegistryArgs(game.queryArgs))
+            .then((regResults) => [...localResults, ...regResults])
+        )
+    : GameStoreHelper.find(game.queryArgs);
+
+  return findResults
     .then((results) =>
       Bluebird.all<IGameStoreEntry>(
         results.map((res) =>
@@ -318,11 +390,20 @@ function handleDiscoveredGame(
  * @param {DiscoveredCB} onDiscoveredGame
  * @return the list of gameIds that were discovered
  */
+export interface IStoreGameRow {
+  store_type: string;
+  store_id: string;
+  install_path: string;
+  name: string | null;
+  store_metadata: string | null;
+}
+
 export function quickDiscovery(
   knownGames: IGame[],
   discoveredGames: { [id: string]: IDiscoveryResult },
   onDiscoveredGame: DiscoveredCB,
   onDiscoveredTool: DiscoveredToolCB,
+  storeGames?: IStoreGameRow[],
 ): Bluebird<string[]> {
   return Bluebird.all(
     knownGames.map((game) =>
@@ -340,7 +421,7 @@ export function quickDiscovery(
           let prom: Bluebird<string>;
 
           if (game.queryArgs !== undefined) {
-            prom = queryByArgs(discoveredGames, game).then((result) => {
+            prom = queryByArgs(discoveredGames, game, storeGames).then((result) => {
               if (result !== undefined) {
                 return handleDiscoveredGame(
                   game,

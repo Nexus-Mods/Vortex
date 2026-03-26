@@ -188,9 +188,17 @@ async function main(): Promise<void> {
 
     for (const q of setupQueries) {
       console.log(`  Describing table: ${q.name}`);
-      const descResult = await connection.runAndReadAll(
-        `DESCRIBE db.${q.name}`,
-      );
+      let descResult;
+      try {
+        descResult = await connection.runAndReadAll(
+          `DESCRIBE db.${q.name}`,
+        );
+      } catch {
+        // Table may be in the default memory database (non-pivot tables)
+        descResult = await connection.runAndReadAll(
+          `DESCRIBE memory.${q.name}`,
+        );
+      }
       const descRows = descResult.getRowObjectsJson() as Array<{
         column_name: string;
         column_type: string;

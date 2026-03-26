@@ -71,6 +71,19 @@ try {
         betterIpcRenderer.send("extensions:init-all-main", installType),
     },
 
+    discovery: {
+      start: () => betterIpcRenderer.invoke("discovery:start"),
+      getStoreGames: () =>
+        betterIpcRenderer.invoke("discovery:get-store-games"),
+      registryLookup: (query: string) =>
+        betterIpcRenderer.invoke("discovery:registry-lookup", query),
+      onStoreGamesUpdated: (callback) =>
+        betterIpcRenderer.on(
+          "discovery:store-games-updated",
+          (_, games) => callback(games),
+        ),
+    },
+
     updater: {
       getStatus: () => betterIpcRenderer.invoke("updater:get-status"),
       setChannel: (channel: string, manual: boolean) =>
