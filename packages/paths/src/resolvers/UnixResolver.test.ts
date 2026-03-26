@@ -132,6 +132,12 @@ describe("UnixResolver", () => {
       const sameAnchor = rootHome.withAnchor(Anchor.make("root"));
       expect(await sameAnchor.resolve()).toBe("/home");
     });
+
+    test("relativeTo accepts / as basePath", async () => {
+      const file = resolver.PathFor("root", "home/user/file.txt");
+
+      await expect(file.relativeTo("/")).resolves.toBe("home/user/file.txt");
+    });
   });
 
   describe("edge cases", () => {

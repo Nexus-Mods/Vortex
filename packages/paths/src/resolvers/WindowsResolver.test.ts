@@ -130,6 +130,14 @@ describe("WindowsResolver", () => {
       expect(cResolved).toMatch(/^C:\\Games$/);
       expect(dResolved).toMatch(/^D:\\Games$/);
     });
+
+    test("relativeTo accepts C:\\ as basePath", async () => {
+      const file = resolver.PathFor("c", "Games/Skyrim/skyrim.exe");
+
+      await expect(file.relativeTo("C:\\")).resolves.toBe(
+        "Games/Skyrim/skyrim.exe",
+      );
+    });
   });
 
   describe("edge cases", () => {
