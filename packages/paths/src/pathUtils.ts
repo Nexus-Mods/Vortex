@@ -156,14 +156,20 @@ function posixResolve(base: string, ...segments: string[]): string {
   return posixNormalize(resolved);
 }
 
+function posixTrimTrailingSep(p: string): string {
+  return p.length > 1 && p.charCodeAt(p.length - 1) === 0x2f // '/'
+    ? p.slice(0, -1)
+    : p;
+}
+
 function posixRelative(from: string, to: string): string {
-  const fromNorm = posixNormalize(from);
-  const toNorm = posixNormalize(to);
+  const fromCanon = posixTrimTrailingSep(posixNormalize(from));
+  const toCanon = posixTrimTrailingSep(posixNormalize(to));
 
-  if (fromNorm === toNorm) return "";
+  if (fromCanon === toCanon) return "";
 
-  const fromParts = fromNorm === "/" ? [""] : fromNorm.split("/");
-  const toParts = toNorm === "/" ? [""] : toNorm.split("/");
+  const fromParts = fromCanon === "/" ? [""] : fromCanon.split("/");
+  const toParts = toCanon === "/" ? [""] : toCanon.split("/");
 
   // Find common prefix length
   let commonLen = 0;

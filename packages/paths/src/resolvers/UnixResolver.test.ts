@@ -138,6 +138,12 @@ describe("UnixResolver", () => {
 
       await expect(file.relativeTo("/")).resolves.toBe("home/user/file.txt");
     });
+
+    test("relativeTo with trailing / on a non-root base path", async () => {
+      const file = resolver.PathFor("root", "home/user/file.txt");
+
+      await expect(file.relativeTo("/home/user/")).resolves.toBe("file.txt");
+    });
   });
 
   describe("edge cases", () => {

@@ -138,6 +138,14 @@ describe("WindowsResolver", () => {
         "Games/Skyrim/skyrim.exe",
       );
     });
+
+    test("relativeTo with trailing \\ on a non-root base path", async () => {
+      const file = resolver.PathFor("c", "Games/Skyrim/skyrim.exe");
+
+      await expect(file.relativeTo("C:\\Games\\")).resolves.toBe(
+        "Skyrim/skyrim.exe",
+      );
+    });
   });
 
   describe("edge cases", () => {
