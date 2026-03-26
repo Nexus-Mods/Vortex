@@ -129,6 +129,7 @@ catalog:
   "@typescript-eslint/utils": 8.47.0
   "@vitejs/plugin-react": ^6.0.1
   "@vitest/coverage-v8": ^4.1.0
+  "@vitest/ui": 4.1.0
   "@welldone-software/why-did-you-render": ^10.0.1
   ba2tk: git+https://github.com/Nexus-Mods/node-ba2tk#762d8de841ca1c770a0925311fd626d71de67971
   babel-jest: ^29.7.0
@@ -185,6 +186,7 @@ catalog:
   gamebryo-savegame: git+https://github.com/Nexus-Mods/node-gamebryo-savegames#f060df62b04aa53e0d2fa7e6de0c9df423bbd44c
   glob: ^11.0.3
   globals: ^17.3.0
+  got: ^14.6.6
   graphlib: ^2.1.7
   happy-dom: ^20.8.3
   i18next: ^19.0.1
@@ -203,6 +205,7 @@ catalog:
   jsonwebtoken: ^9.0.0
   leveldown: ^5.6.0
   levelup: ^4.4.0
+  limiter: ^3.0.0
   lodash: ^4.17.21
   loot: git+https://github.com/Nexus-Mods/node-loot#04a77fcae028b0838b5e0c53cfcdc65898c49727
   lru-cache: ^11.2.6
@@ -219,6 +222,7 @@ catalog:
   numeral: ^2.0.6
   oxfmt: ^0.41.0
   p-limit: ^7.3.0
+  p-queue: ^9.1.0
   packery: ^2.1.2
   permissions: git+https://github.com/Nexus-Mods/node-permissions#7c1b6f1d6437f2238be51316de823b0fbd63e4c0
   playwright: ^1.58.2
@@ -294,6 +298,8 @@ catalog:
 
 catalogMode: strict
 cleanupUnusedCatalogs: true
+
+dedupePeers: true
 
 engineStrict: true
 failIfNoMatch: true

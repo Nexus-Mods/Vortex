@@ -1,14 +1,16 @@
-import Toggle from "../../../controls/Toggle";
-import { Button } from "../../../controls/TooltipControls";
-import { ComponentEx } from "../../../controls/ComponentEx";
-import { getSafe, setSafe } from "../../../util/storeHelper";
+import update from "immutability-helper";
+import * as React from "react";
+import { FormControl, ListGroupItem, Panel } from "react-bootstrap";
 
 import type { IProfile } from "../types/IProfile";
 import type { IProfileFeature } from "../types/IProfileFeature";
 
-import update from "immutability-helper";
-import * as React from "react";
-import { FormControl, ListGroupItem, Panel } from "react-bootstrap";
+import { ComponentEx } from "../../../controls/ComponentEx";
+import Toggle from "../../../controls/Toggle";
+import { Button } from "../../../controls/TooltipControls";
+import { getSafe, setSafe } from "../../../util/storeHelper";
+
+const MIN_PROFILE_NAME_LENGTH = 3;
 
 export interface IEditState {
   edit: IProfile;
@@ -68,14 +70,15 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
   public render(): JSX.Element {
     const { t, onCancelEdit, profile, profileId } = this.props;
     const { edit, features } = this.state;
+    const nameValid = edit.name.trim().length >= MIN_PROFILE_NAME_LENGTH;
     const inputControl = (
       <FormControl
-        autoFocus
+        autoFocus={true}
+        style={{ flexGrow: 1 }}
         type="text"
         value={edit.name}
         onChange={this.changeEditName}
         onKeyPress={this.handleKeypress}
-        style={{ flexGrow: 1 }}
       />
     );
 
@@ -85,17 +88,21 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
           {profile === undefined
             ? t("Create a new profile")
             : t("Edit profile")}
+
           <ListGroupItem key={profileId}>
             <div className="inline-form">
               {inputControl}
+
               <Button
                 bsStyle="primary"
+                disabled={!nameValid}
                 id="__accept"
-                tooltip={t("Accept")}
+                tooltip={nameValid ? t("Accept") : t("Profile name must be at least {{num}} characters", { num: MIN_PROFILE_NAME_LENGTH })}
                 onClick={this.saveEdit}
               >
                 {t("Save")}
               </Button>
+
               <Button
                 bsStyle="secondary"
                 id="__cancel"
@@ -105,6 +112,7 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
                 {t("Cancel")}
               </Button>
             </div>
+
             <div>{features.map(this.renderFeature)}</div>
           </ListGroupItem>
         </Panel.Body>
@@ -120,8 +128,8 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
         <Toggle
           checked={getSafe(edit, ["features", feature.id], false)}
           dataId={feature.id}
-          onToggle={this.toggleCheckbox}
           key={feature.id}
+          onToggle={this.toggleCheckbox}
         >
           {t(feature.description)}
         </Toggle>
@@ -129,12 +137,12 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
     } else if (feature.type === "text") {
       return (
         <FormControl
-          key={feature.id}
           componentClass="textarea"
-          value={getSafe(edit, ["features", feature.id], undefined) ?? ""}
           data-id={feature.id}
-          onChange={this.assignString}
+          key={feature.id}
           placeholder={t(feature.description)}
+          value={getSafe(edit, ["features", feature.id], undefined) ?? ""}
+          onChange={this.assignString}
         />
       );
     }
@@ -153,7 +161,9 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
   private handleKeypress = (evt: React.KeyboardEvent<any>) => {
     if (evt.key === "Enter") {
       evt.preventDefault();
-      this.saveEdit();
+      if (this.state.edit.name.trim().length >= MIN_PROFILE_NAME_LENGTH) {
+        this.saveEdit();
+      }
     }
   };
 
