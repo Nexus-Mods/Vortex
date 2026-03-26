@@ -2,10 +2,18 @@
  * Detects and installs manifest-based Stardew Valley mod archives.
  */
 import path from "path";
+import { RelativePath } from "@vortex/paths";
 import { log } from "vortex-api";
 import type { types } from "vortex-api";
 
 import { MOD_MANIFEST } from "../common";
+import type { IArchiveEntryPath } from "./archivePath";
+import {
+  getArchiveExtension,
+  isArchiveDirectoryEntry,
+  toArchiveEntries,
+  toLowerCaseSegments,
+} from "./archivePath";
 import { classifyArchive, makeInstallerTestResult } from "./archiveClassifier";
 import { parseManifest } from "../manifests/parseManifest";
 import type {
@@ -35,38 +43,45 @@ export async function installStardewValley(
 ): Promise<types.IInstallResult> {
   // The archive may contain multiple manifest files which would
   //  imply that we're installing multiple mods.
-  const manifestFiles = files.filter(isValidManifest);
+  const archiveEntries = toArchiveEntries(files);
+  const manifestFiles = archiveEntries.filter((entry) =>
+    isValidManifest(entry.relative),
+  );
 
   interface IModInfo {
     manifest: ISDVModManifest;
-    rootFolder: string;
+    rootFolder: RelativePath;
     manifestIndex: number;
-    modFiles: string[];
+    modFiles: IArchiveEntryPath[];
   }
 
   let parseError: unknown;
 
   const scannedMods = await Promise.all(
-    manifestFiles.map(async (manifestFile) => {
-      const rootFolder = path.dirname(manifestFile);
-      const rootSegments = rootFolder.toLowerCase().split(path.sep);
-      const manifestIndex = manifestFile.toLowerCase().indexOf(MOD_MANIFEST);
-      const filterFunc = (file: string) => {
+    manifestFiles.map(async ({ relative: manifestFile }) => {
+      const manifestPath = RelativePath.toString(manifestFile);
+      const rootFolder = RelativePath.dirname(manifestFile);
+      const rootSegments = toLowerCaseSegments(rootFolder);
+      const manifestIndex = manifestPath.toLowerCase().indexOf(MOD_MANIFEST);
+      const filterFunc = (file: IArchiveEntryPath) => {
         const isFile =
-          !file.endsWith(path.sep) && path.extname(path.basename(file)) !== "";
-        const fileSegments = file.toLowerCase().split(path.sep);
+          !isArchiveDirectoryEntry(file.original) &&
+          getArchiveExtension(file.relative) !== "";
+        if (rootFolder === RelativePath.EMPTY) {
+          return false;
+        }
+        const fileSegments = toLowerCaseSegments(file.relative);
         const isInRootFolder =
-          rootSegments.length > 0
-            ? fileSegments?.[rootSegments.length - 1] ===
-              rootSegments[rootSegments.length - 1]
-            : true;
+          rootSegments.length > 0 &&
+          fileSegments[rootSegments.length - 1] ===
+            rootSegments[rootSegments.length - 1];
         return isInRootFolder && isFile;
       };
       try {
         const manifest: ISDVModManifest = await parseManifest(
-          path.join(destinationPath, manifestFile),
+          path.join(destinationPath, manifestPath),
         );
-        const modFiles = files.filter(filterFunc);
+        const modFiles = archiveEntries.filter(filterFunc);
         return {
           manifest,
           rootFolder,
@@ -77,7 +92,7 @@ export async function installStardewValley(
         const parsedErr = err instanceof Error ? err : new Error(String(err));
         // just a warning at this point as this may not be the main manifest for the mod
         log("warn", "Failed to parse manifest", {
-          manifestFile,
+          manifestFile: manifestPath,
           error: parsedErr.message,
         });
         parseError = parsedErr;
@@ -104,10 +119,11 @@ export async function installStardewValley(
     mods.map((mod) => {
       // TODO: we might get here with a mod that has a manifest.json file but wasn't intended for Stardew Valley, all
       //  thunderstore mods will contain a manifest.json file
+      const rootFolderPath = RelativePath.toString(mod.rootFolder);
       const modName =
-        mod.rootFolder !== "."
-          ? mod.rootFolder
-          : (mod.manifest.Name ?? mod.rootFolder);
+        rootFolderPath !== ""
+          ? rootFolderPath
+          : (mod.manifest.Name ?? rootFolderPath);
 
       if (modName === undefined) {
         return [];
@@ -116,11 +132,12 @@ export async function installStardewValley(
       const instructions: types.IInstruction[] = [];
 
       for (const file of mod.modFiles) {
-        const destination = path.join(modName, file.substr(mod.manifestIndex));
+        const source = RelativePath.toString(file.relative);
+        const destination = path.join(modName, source.slice(mod.manifestIndex));
         instructions.push({
           type: "copy",
-          source: file,
-          destination: destination,
+          source,
+          destination,
         });
       }
 
@@ -175,9 +192,11 @@ export async function installStardewValley(
   return { instructions };
 }
 
-function isValidManifest(filePath: string): boolean {
-  const segments = filePath.toLowerCase().split(path.sep);
-  const isManifestFile = segments[segments.length - 1] === MOD_MANIFEST;
-  const isLocale = segments.includes("locale");
+function isValidManifest(filePath: RelativePath): boolean {
+  const isManifestFile =
+    RelativePath.basename(filePath).toLowerCase() === MOD_MANIFEST;
+  const isLocale = toLowerCaseSegments(RelativePath.dirname(filePath)).includes(
+    "locale",
+  );
   return isManifestFile && !isLocale;
 }

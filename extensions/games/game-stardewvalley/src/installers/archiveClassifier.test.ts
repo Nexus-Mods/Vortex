@@ -20,10 +20,10 @@ describe("installers/archiveClassifier", () => {
     ).toBe(true);
   });
 
-  test("keeps the current host-sensitive backslash Content behavior", () => {
+  test("detects backslash Content directory entries", () => {
     expect(
       classifyArchive(["SomePack\\Content\\"], GAME_ID).hasContentFolder,
-    ).toBe(path.sep === "\\");
+    ).toBe(true);
   });
 
   test("detects native manifests and preserves case-insensitive matching", () => {
@@ -33,10 +33,10 @@ describe("installers/archiveClassifier", () => {
     ).toBe(true);
   });
 
-  test("keeps the current host-sensitive backslash manifest behavior", () => {
+  test("detects backslash manifests", () => {
     expect(
       classifyArchive(["SomePack\\manifest.json"], GAME_ID).hasManifest,
-    ).toBe(path.sep === "\\");
+    ).toBe(true);
   });
 
   test("detects native SMAPI installer DLLs and preserves case-insensitive matching", () => {
@@ -48,11 +48,11 @@ describe("installers/archiveClassifier", () => {
     ).toBe(true);
   });
 
-  test("keeps the current host-sensitive backslash SMAPI DLL behavior", () => {
+  test("detects backslash SMAPI installer DLLs", () => {
     expect(
       classifyArchive(["internal\\windows\\SMAPI.Installer.dll"], GAME_ID)
         .hasSmapiInstallerDll,
-    ).toBe(path.sep === "\\");
+    ).toBe(true);
   });
 
   test("returns the shared installer payload shape", () => {

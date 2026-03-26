@@ -26,14 +26,14 @@ describe("installers/rootFolderInstaller", () => {
     });
   });
 
-  test("keeps the current host-sensitive backslash matcher behavior", async () => {
+  test("claims backslash root-folder archives", async () => {
     await expect(
       testRootFolder(
         ["SomePack\\Content\\", "SomePack\\Content\\Data.xnb"],
         GAME_ID,
       ),
     ).resolves.toEqual({
-      supported: path.sep === "\\",
+      supported: true,
       requiredFiles: [],
     });
   });
@@ -92,33 +92,30 @@ describe("installers/rootFolderInstaller", () => {
     });
   });
 
-  test("keeps the current host-sensitive backslash install behavior", async () => {
+  test("installs backslash root-folder archives with the same payload", async () => {
     const result = await installRootFolder(
       nativeRootFolderArchive.map((file) => file.replaceAll(path.sep, "\\")),
       "/staging",
     );
 
     expect(normalizeInstallResult(result)).toEqual({
-      instructions:
-        path.sep === "\\"
-          ? [
-              {
-                type: "copy",
-                source: "SomePack/Content/Data.xnb",
-                destination: "Content/Data.xnb",
-              },
-              {
-                type: "copy",
-                source: "SomePack/Mods/Helper/manifest.json",
-                destination: "Mods/Helper/manifest.json",
-              },
-              {
-                type: "copy",
-                source: "SomePack/README.TXT",
-                destination: "README.TXT",
-              },
-            ]
-          : [],
+      instructions: [
+        {
+          type: "copy",
+          source: "SomePack/Content/Data.xnb",
+          destination: "Content/Data.xnb",
+        },
+        {
+          type: "copy",
+          source: "SomePack/Mods/Helper/manifest.json",
+          destination: "Mods/Helper/manifest.json",
+        },
+        {
+          type: "copy",
+          source: "SomePack/README.TXT",
+          destination: "README.TXT",
+        },
+      ],
     });
   });
 });

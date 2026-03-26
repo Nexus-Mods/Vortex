@@ -66,11 +66,11 @@ describe("installers/smapi matcher smoke", () => {
     ).resolves.toEqual({ supported: true, requiredFiles: [] });
   });
 
-  test("keeps the current host-sensitive backslash-only matcher behavior", async () => {
+  test("claims backslash-only installer entries", async () => {
     await expect(
       testSMAPI(["internal\\windows\\SMAPI.Installer.dll"], GAME_ID),
     ).resolves.toEqual({
-      supported: path.sep === "\\",
+      supported: true,
       requiredFiles: [],
     });
   });

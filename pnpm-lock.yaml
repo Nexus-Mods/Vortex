@@ -1498,6 +1498,9 @@ importers:
 
   extensions/games/game-stardewvalley:
     dependencies:
+      '@vortex/paths':
+        specifier: workspace:*
+        version: link:../../../packages/paths
       '@vortex/shared':
         specifier: workspace:*
         version: link:../../../src/shared

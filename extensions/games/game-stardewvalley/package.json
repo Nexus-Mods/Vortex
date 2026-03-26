@@ -18,6 +18,7 @@
     "game": "Stardew Valley"
   },
   "dependencies": {
+    "@vortex/paths": "workspace:*",
     "@vortex/shared": "workspace:*",
     "react": "catalog:",
     "react-bootstrap": "catalog:",
