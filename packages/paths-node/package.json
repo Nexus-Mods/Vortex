@@ -19,10 +19,11 @@
   },
   "dependencies": {
     "@vortex/paths": "workspace:*",
-    "fs-extra": "^11.2.0"
+    "fs-extra": "catalog:"
   },
   "devDependencies": {
-    "@types/fs-extra": "^11.0.4",
+    "@types/fs-extra": "catalog:",
+    "@types/node": "catalog:",
     "vitest": "catalog:"
   }
 }

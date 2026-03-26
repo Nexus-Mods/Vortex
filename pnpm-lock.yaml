@@ -3816,12 +3816,15 @@ importers:
         specifier: ^3.24.2
         version: 3.25.76
     devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 22.19.11
       typescript:
-        specifier: ^5.8.3
+        specifier: 'catalog:'
         version: 5.9.3
       vitest:
         specifier: 'catalog:'
-        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@25.5.0)(happy-dom@20.8.3)(jsdom@20.0.3)(vite@8.0.0(@types/node@25.5.0)(esbuild@0.27.4)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.0))
+        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@22.19.11)(happy-dom@20.8.3)(jsdom@20.0.3)(vite@8.0.0(@types/node@22.19.11)(esbuild@0.27.4)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.0))
 
   packages/paths-node:
     dependencies:
@@ -3829,15 +3832,18 @@ importers:
         specifier: workspace:*
         version: link:../paths
       fs-extra:
-        specifier: ^11.2.0
-        version: 11.3.3
+        specifier: 'catalog:'
+        version: 9.1.0
     devDependencies:
       '@types/fs-extra':
-        specifier: ^11.0.4
+        specifier: 'catalog:'
         version: 11.0.4
+      '@types/node':
+        specifier: 'catalog:'
+        version: 22.19.11
       vitest:
         specifier: 'catalog:'
-        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@25.5.0)(happy-dom@20.8.3)(jsdom@20.0.3)(vite@8.0.0(@types/node@25.5.0)(esbuild@0.27.4)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.0))
+        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@22.19.11)(happy-dom@20.8.3)(jsdom@20.0.3)(vite@8.0.0(@types/node@22.19.11)(esbuild@0.27.4)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.0))
 
   packages/vortex-api:
     dependencies:
@@ -16393,14 +16399,6 @@ snapshots:
     optionalDependencies:
       vite: 8.0.0(@types/node@22.19.11)(esbuild@0.27.4)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.0)
 
-  '@vitest/mocker@4.1.0(vite@8.0.0(@types/node@25.5.0)(esbuild@0.27.4)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.0))':
-    dependencies:
-      '@vitest/spy': 4.1.0
-      estree-walker: 3.0.3
-      magic-string: 0.30.21
-    optionalDependencies:
-      vite: 8.0.0(@types/node@25.5.0)(esbuild@0.27.4)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.0)
-
   '@vitest/pretty-format@4.1.0':
     dependencies:
       tinyrainbow: 3.1.0
@@ -23218,36 +23216,6 @@ snapshots:
     optionalDependencies:
       '@opentelemetry/api': 1.9.0
       '@types/node': 22.19.11
-      happy-dom: 20.8.3
-      jsdom: 20.0.3
-    transitivePeerDependencies:
-      - msw
-
-  vitest@4.1.0(@opentelemetry/api@1.9.0)(@types/node@25.5.0)(happy-dom@20.8.3)(jsdom@20.0.3)(vite@8.0.0(@types/node@25.5.0)(esbuild@0.27.4)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.0)):
-    dependencies:
-      '@vitest/expect': 4.1.0
-      '@vitest/mocker': 4.1.0(vite@8.0.0(@types/node@25.5.0)(esbuild@0.27.4)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.0))
-      '@vitest/pretty-format': 4.1.0
-      '@vitest/runner': 4.1.0
-      '@vitest/snapshot': 4.1.0
-      '@vitest/spy': 4.1.0
-      '@vitest/utils': 4.1.0
-      es-module-lexer: 2.0.0
-      expect-type: 1.3.0
-      magic-string: 0.30.21
-      obug: 2.1.1
-      pathe: 2.0.3
-      picomatch: 4.0.3
-      std-env: 4.0.0
-      tinybench: 2.9.0
-      tinyexec: 1.0.4
-      tinyglobby: 0.2.15
-      tinyrainbow: 3.1.0
-      vite: 8.0.0(@types/node@25.5.0)(esbuild@0.27.4)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.0)
-      why-is-node-running: 2.3.0
-    optionalDependencies:
-      '@opentelemetry/api': 1.9.0
-      '@types/node': 25.5.0
       happy-dom: 20.8.3
       jsdom: 20.0.3
     transitivePeerDependencies:
