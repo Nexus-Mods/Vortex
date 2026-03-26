@@ -41,7 +41,7 @@ async function download(
   filename = "output",
 ): Promise<Buffer> {
   const dest = path.join(destDir, filename);
-  await downloader.download(server.url, dest);
+  await downloader.download(server.url, (url) => Promise.resolve(url), dest);
   return readFile(dest);
 }
 

@@ -1,9 +1,8 @@
-import type { URL } from "node:url";
-
 import got from "got";
 import { createWriteStream } from "node:fs";
 import { type FileHandle, open } from "node:fs/promises";
 import { pipeline } from "node:stream/promises";
+import { URL } from "node:url";
 import PQueue from "p-queue";
 
 import { type Chunk, createChunks } from "./chunking";
@@ -29,6 +28,32 @@ export function defaultOptions(): DownloaderOptions {
   };
 }
 
+export type Resolver<T> = (resource: T) => Promise<ResolvedResource>;
+
+export type ResolvedResource =
+  | URL
+  | { probeUrl: URL; chunkUrl?: (chunk: Chunk) => Promise<URL> };
+
+type NormalizedResource = {
+  probeUrl: URL;
+  chunkUrl: (chunk: Chunk) => Promise<URL>;
+};
+
+function normalize(resource: ResolvedResource): NormalizedResource {
+  if (resource instanceof URL) {
+    return {
+      probeUrl: resource,
+      chunkUrl: () => Promise.resolve(resource),
+    };
+  }
+
+  const { probeUrl, chunkUrl } = resource;
+  return {
+    probeUrl,
+    chunkUrl: chunkUrl ?? (() => Promise.resolve(probeUrl)),
+  };
+}
+
 export class Downloader {
   readonly #downloadQueue: PQueue;
   readonly #chunkQueue: PQueue;
@@ -46,13 +71,14 @@ export class Downloader {
     });
   }
 
-  download(url: URL, dest: string): Promise<void> {
+  download<T>(resource: T, resolver: Resolver<T>, dest: string): Promise<void> {
     return this.#downloadQueue.add(async () => {
-      const probe = await this.#probe(url);
+      const resolved = normalize(await resolver(resource));
+      const probe = await this.#probe(resolved.probeUrl);
 
       return probe.chunkable
-        ? this.#downloadChunked(url, dest, probe)
-        : this.#downloadSingle(url, dest, probe);
+        ? this.#downloadChunked(resolved, dest, probe)
+        : this.#downloadSingle(resolved.probeUrl, dest);
     });
   }
 
@@ -70,14 +96,14 @@ export class Downloader {
     return { size, chunkable };
   }
 
-  async #downloadSingle(url: URL, dest: string, _probeResult: ProbeResult) {
+  async #downloadSingle(url: URL, dest: string) {
     return this.#chunkQueue.add(() =>
       pipeline(got.stream(url), createWriteStream(dest)),
     );
   }
 
   async #downloadChunked(
-    url: URL,
+    resource: NormalizedResource,
     dest: string,
     probeResult: ProbeResult,
   ): Promise<void> {
@@ -85,12 +111,13 @@ export class Downloader {
     const chunks = createChunks(size, this.#options.chunksPerFile);
 
     const fd = await open(dest, "w");
-    await fd.truncate(size);
 
     try {
+      await fd.truncate(size);
+
       await Promise.all(
         chunks.map((chunk) =>
-          this.#chunkQueue.add(() => this.#downloadChunk(url, chunk, fd)),
+          this.#chunkQueue.add(() => this.#downloadChunk(resource, chunk, fd)),
         ),
       );
     } finally {
@@ -98,7 +125,13 @@ export class Downloader {
     }
   }
 
-  async #downloadChunk(url: URL, chunk: Chunk, fd: FileHandle): Promise<void> {
+  async #downloadChunk(
+    resource: NormalizedResource,
+    chunk: Chunk,
+    fd: FileHandle,
+  ): Promise<void> {
+    const url = await resource.chunkUrl(chunk);
+
     const stream = got.stream(url, {
       headers: {
         Range: `bytes=${chunk.start}-${chunk.end}`,
