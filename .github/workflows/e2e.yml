@@ -35,7 +35,7 @@ jobs:
         uses: volta-cli/action@v4
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v5
         with:
           cache: true
 
@@ -85,7 +85,7 @@ jobs:
 
       - name: Upload test report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: e2e-report-${{ matrix.os }}
           retention-days: 14
@@ -93,7 +93,7 @@ jobs:
 
       - name: Upload test results
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: e2e-results-${{ matrix.os }}
           retention-days: 7

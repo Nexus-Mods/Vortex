@@ -95,7 +95,7 @@ jobs:
         run: dotnet --info
 
       - name: Setup Python 3.11
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
@@ -121,10 +121,10 @@ jobs:
           echo "Using Node.js version: $nodeVersion"
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v5
 
       - name: Use Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ steps.node-version.outputs.NODE_VERSION }}
           cache: "pnpm"
@@ -167,7 +167,7 @@ jobs:
           Write-Output "✅ Package validation successful - installer and metadata files created"
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2.2.2
+        uses: softprops/action-gh-release@v2.6.1
         if: ${{ inputs.release == true }}
         with:
           files: |
@@ -181,7 +181,7 @@ jobs:
           tag_name: ${{ steps.setOutputs.outputs.tagVersion }}
 
       - name: Create GitHub Release on Vortex-Staging
-        uses: softprops/action-gh-release@v2.2.2
+        uses: softprops/action-gh-release@v2.6.1
         if: ${{ inputs.staging-release == true }}
         with:
           files: |
@@ -197,7 +197,7 @@ jobs:
           repository: "Nexus-Mods/Vortex-Staging"
 
       - name: Create Unpacked Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: ${{ inputs.create-artifacts == true }}
         with:
           name: ${{ steps.setOutputs.outputs.artifactNameUnpacked }}
@@ -205,12 +205,11 @@ jobs:
           if-no-files-found: error
 
       - name: Create Installer Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: ${{ inputs.create-artifacts == true }}
         with:
           name: ${{ steps.setOutputs.outputs.artifactNameInstaller }}
           path: |
-            ./dist/vortex-setup-*.*.*.exe 
+            ./dist/vortex-setup-*.*.*.exe
             ./dist/latest.yml
-
           if-no-files-found: error
