@@ -12,7 +12,11 @@ import type { IResolver, IResolverBase } from "../IResolver";
 import type { Anchor, RelativePath, ResolvedPath } from "../types";
 
 import { FilePath } from "../FilePath";
-import { forPlatform, type PathModule } from "../pathUtils";
+import {
+  forPlatform,
+  trimTrailingSeparator,
+  type PathModule,
+} from "../pathUtils";
 import {
   RelativePath as RelativePathNS,
   Anchor as AnchorNS,
@@ -341,6 +345,7 @@ export abstract class BaseResolver<
     preNormalized = false,
   ): boolean {
     const fs = this.getFilesystem();
+    const sepCode = fs.sep.charCodeAt(0);
     const normalizedChild = preNormalized
       ? childPath
       : fs.normalizePath(childPath);
@@ -348,13 +353,16 @@ export abstract class BaseResolver<
       ? basePath
       : fs.normalizePath(basePath);
 
+    const comparableChild = trimTrailingSeparator(normalizedChild, sepCode);
+    const comparableBase = trimTrailingSeparator(normalizedBase, sepCode);
+
     // Ensure base ends with separator for proper prefix matching
-    const baseWithSep = normalizedBase.endsWith(fs.sep)
-      ? normalizedBase
-      : normalizedBase + fs.sep;
+    const baseWithSep = comparableBase.charCodeAt(comparableBase.length - 1) === sepCode
+      ? comparableBase
+      : comparableBase + fs.sep;
     return (
-      normalizedChild.startsWith(baseWithSep) ||
-      normalizedChild === normalizedBase
+      comparableChild.startsWith(baseWithSep) ||
+      comparableChild === comparableBase
     );
   }
 

@@ -376,4 +376,30 @@ describe("FilePath", () => {
       expect(path1.compare(path2)).toBe(0);
     });
   });
+
+  describe("OS path comparisons", () => {
+    test("relativeTo treats trailing-separator resolved Unix paths as exact matches", async () => {
+      const path = resolver.PathFor("test");
+
+      await expect(path.relativeTo("/mock/test")).resolves.toBe("");
+    });
+
+    test("relativeTo accepts trailing-separator Unix base paths", async () => {
+      const path = resolver.PathFor("test", "child");
+
+      await expect(path.relativeTo("/mock/test/")).resolves.toBe("child");
+    });
+
+    test("isAncestorOf treats trailing-separator resolved Unix paths as exact matches", async () => {
+      const path = resolver.PathFor("test");
+
+      await expect(path.isAncestorOf("/mock/test")).resolves.toBe(true);
+    });
+
+    test("isAncestorOf accepts trailing-separator Unix child paths", async () => {
+      const path = resolver.PathFor("test", "child");
+
+      await expect(path.isAncestorOf("/mock/test/child/")).resolves.toBe(true);
+    });
+  });
 });

@@ -14,12 +14,8 @@
 import type { IResolverBase } from "./IResolver";
 import type { Anchor, RelativePath, ResolvedPath } from "./types";
 
-import { forPlatform } from "./pathUtils";
-import {
-  fnv1a,
-  RelativePath as RelativePathNS,
-  Anchor as AnchorNS,
-} from "./types";
+import { forPlatform, trimTrailingSeparator } from "./pathUtils";
+import { fnv1a, RelativePath as RelativePathNS, Anchor as AnchorNS } from "./types";
 
 /**
  * FilePath combines a RelativePath, an Anchor, and a IResolver
@@ -303,16 +299,16 @@ export class FilePath {
     // Use platform-appropriate path module for correct behavior on any host
     const fs = this.resolver.getFilesystem();
     const pathMod = forPlatform(fs.platform);
+    const sepCode = fs.sep.charCodeAt(0);
 
     // Normalize for comparison - resolve() properly handles . and .. segments
     const resolvedBase = pathMod.normalize(basePath as string);
     const resolvedChild = pathMod.normalize(childPath as string);
 
     // Check if child is under base (case-insensitive on Windows)
-    const baseNorm = fs.normalizePath(resolvedBase);
-    const childNorm = fs.normalizePath(resolvedChild);
-
-    const baseWithSep = baseNorm.endsWith(fs.sep)
+    const baseNorm = trimTrailingSeparator(fs.normalizePath(resolvedBase), sepCode);
+    const childNorm = trimTrailingSeparator(fs.normalizePath(resolvedChild), sepCode);
+    const baseWithSep = baseNorm.charCodeAt(baseNorm.length - 1) === sepCode
       ? baseNorm
       : baseNorm + fs.sep;
 
@@ -370,11 +366,18 @@ export class FilePath {
     const parentPath = await this.resolve();
     const fs = this.resolver.getFilesystem();
     const pathMod = forPlatform(fs.platform);
+    const sepCode = fs.sep.charCodeAt(0);
     const resolvedParent = pathMod.normalize(parentPath as string);
     const resolvedChild = pathMod.normalize(childPath as string);
-    const parentNorm = fs.normalizePath(resolvedParent);
-    const childNorm = fs.normalizePath(resolvedChild);
-    const parentWithSep = parentNorm.endsWith(fs.sep)
+    const parentNorm = trimTrailingSeparator(
+      fs.normalizePath(resolvedParent),
+      sepCode,
+    );
+    const childNorm = trimTrailingSeparator(
+      fs.normalizePath(resolvedChild),
+      sepCode,
+    );
+    const parentWithSep = parentNorm.charCodeAt(parentNorm.length - 1) === sepCode
       ? parentNorm
       : parentNorm + fs.sep;
     return childNorm.startsWith(parentWithSep) || childNorm === parentNorm;

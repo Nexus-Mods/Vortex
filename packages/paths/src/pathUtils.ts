@@ -29,6 +29,16 @@ export interface PathModule {
   resolve(base: string, ...segments: string[]): string;
 }
 
+/**
+ * Trim one trailing separator from a normalized path.
+ * Keeps bare roots like `/` intact.
+ */
+export function trimTrailingSeparator(path: string, sepCode: number): string {
+  return path.length > 1 && path.charCodeAt(path.length - 1) === sepCode
+    ? path.slice(0, -1)
+    : path;
+}
+
 // ============================================================================
 // POSIX implementation
 // ============================================================================

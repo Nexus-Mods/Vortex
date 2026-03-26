@@ -68,6 +68,31 @@ class UnixTestResolver extends BaseResolver<"home" | "var"> {
   }
 }
 
+class TrailingBaseResolver extends BaseResolver<"mods"> {
+  constructor() {
+    super("trailing-base-test", undefined, new MockFilesystem("unix", true));
+  }
+
+  canResolve(anchor: Anchor): boolean {
+    return Anchor.name(anchor) === "mods";
+  }
+
+  supportedAnchors(): Anchor[] {
+    return [Anchor.make("mods")];
+  }
+
+  protected async resolveAnchor(anchor: Anchor): Promise<ResolvedPath> {
+    if (Anchor.name(anchor) === "mods") {
+      return ResolvedPath.make("/home/user/mods/");
+    }
+    throw new Error(`Unknown anchor: ${Anchor.name(anchor)}`);
+  }
+
+  protected toOSPath(intermediatePath: ResolvedPath): ResolvedPath {
+    return intermediatePath;
+  }
+}
+
 describe("Path Normalization and Cross-Platform Handling", () => {
   describe("FilePath.relativeTo - Path Normalization", () => {
     describe("Windows path handling", () => {
@@ -448,6 +473,31 @@ describe("Path Normalization and Cross-Platform Handling", () => {
       const result = await resolver.tryReverse(osPath);
 
       expect(result).toBeNull();
+    });
+  });
+
+  describe("Reverse resolution with trailing-separator bases", () => {
+    test("should reverse-resolve an exact match when the anchor base keeps a trailing separator", async () => {
+      const resolver = new TrailingBaseResolver();
+      const result = await resolver.tryReverse(ResolvedPath.make("/home/user/mods"));
+
+      expect(result).not.toBeNull();
+      expect(Anchor.name(result.anchor)).toBe("mods");
+      expect(result.relative).toBe("");
+    });
+
+    test("should treat trailing-separator base paths as exact matches in relativeTo", async () => {
+      const resolver = new TrailingBaseResolver();
+      const path = resolver.PathFor("mods");
+
+      await expect(path.relativeTo("/home/user/mods")).resolves.toBe("");
+    });
+
+    test("should treat trailing-separator parent paths as exact matches in isAncestorOf", async () => {
+      const resolver = new TrailingBaseResolver();
+      const path = resolver.PathFor("mods");
+
+      await expect(path.isAncestorOf("/home/user/mods")).resolves.toBe(true);
     });
   });
 });
