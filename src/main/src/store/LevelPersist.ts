@@ -150,19 +150,28 @@ class LevelPersist implements IPersistor {
   public async setItem(statePath: string[], newState: string): Promise<void> {
     const key = statePath.join(SEPARATOR);
     // level_pivot tables don't support UNIQUE indexes, so ON CONFLICT
-    // upserts aren't possible. Try UPDATE first; INSERT only if the key
-    // didn't exist. Wrap in a transaction when called outside of one to
-    // ensure atomicity.
+    // upserts aren't possible.  UPDATE … RETURNING is also unreliable: the
+    // raw kv table (NULL prefix) shares LevelDB key space with pivot tables
+    // (mods_pivot, profiles_pivot), and level_pivot's internal metadata
+    // entries leak through DuckDB's virtual-table UPDATE replacement scan
+    // but not through SELECT.  RETURNING therefore always reports 1 row
+    // "updated" regardless of whether the target key exists.  Use SELECT
+    // to check existence, then UPDATE or INSERT accordingly.
     const ownTransaction = !this.#mInTransaction;
     if (ownTransaction) {
       await this.beginTransaction();
     }
     try {
-      const result = await this.#mConnection.runAndReadAll(
-        `UPDATE ${this.#mAlias}.kv SET value = $2 WHERE key = $1 RETURNING key`,
-        [key, newState],
+      const exists = await this.#mConnection.runAndReadAll(
+        `SELECT 1 FROM ${this.#mAlias}.kv WHERE key = $1`,
+        [key],
       );
-      if (result.getRows().length === 0) {
+      if (exists.getRows().length > 0) {
+        await this.#mConnection.run(
+          `UPDATE ${this.#mAlias}.kv SET value = $2 WHERE key = $1`,
+          [key, newState],
+        );
+      } else {
         await this.#mConnection.run(
           `INSERT INTO ${this.#mAlias}.kv VALUES ($1, $2)`,
           [key, newState],
