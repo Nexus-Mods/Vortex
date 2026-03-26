@@ -34,6 +34,7 @@ import SubPersistor from "./SubPersistor";
 import { Database } from "./Database";
 import { getVortexPath } from "../getVortexPath";
 import { betterIpcMain } from "../ipc";
+import { initDiscovery } from "../games/initDiscovery";
 
 let mainPersistor: ReduxPersistorIPC | undefined;
 let levelPersist: LevelPersist | undefined;
@@ -135,6 +136,13 @@ async function initQuerySystem(levelPersistor: LevelPersist): Promise<void> {
 
   log("info", "Query system initialized", {
     queryCount: queryRegistry.getQueryNames().length,
+  });
+
+  // Initialize game discovery system (non-blocking)
+  initDiscovery(queryRegistry, queryInvalidator, queryWatcher).catch((err) => {
+    log("warn", "Failed to initialize game discovery", {
+      error: getErrorMessageOrDefault(err),
+    });
   });
 }
 
