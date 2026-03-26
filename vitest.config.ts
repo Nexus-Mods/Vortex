@@ -11,6 +11,8 @@ export default defineConfig({
       "./src/main",
       "./src/renderer",
       "./src/shared",
+      "./packages/paths",
+      "./packages/paths-node",
       "./extensions/games/game-stardewvalley",
     ],
     reporters: [

@@ -52,7 +52,8 @@ Electron-based mod manager with Redux state management.
 - `src/controls/` - Reusable React components
 - `src/views/` - Main UI views
 - `src/util/` - Utility helpers
-- `src/types/` - TypeScript definitions
+- `src/types/` and `src/shared/types/` - TypeScript definitions
+- `src/shared/` - Shared modules (path system, shared utilities)
 - `src/main/dist/` - Production build staging
 - `src/main/out/` - Development build output
 

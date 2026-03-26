@@ -1,0 +1,13 @@
+{
+  "$schema": "https://www.schemastore.org/tsconfig.json",
+  "extends": "../../tsconfig.base.json",
+  "include": ["src/**/*"],
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "node16",
+    "moduleResolution": "node16",
+    "composite": true,
+    "noEmit": true,
+    "types": ["node"]
+  }
+}

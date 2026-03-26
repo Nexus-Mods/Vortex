@@ -18,6 +18,8 @@ import { unknownToError } from "@vortex/shared";
 
 import { terminate } from "../errorHandling";
 import { log } from "../logging";
+import type LevelPersist from "./LevelPersist";
+import type QueryInvalidator from "./QueryInvalidator";
 
 /**
  * Helper to insert a value at a leaf position in a nested object.
@@ -73,9 +75,22 @@ class ReduxPersistorIPC {
   private mPersistors: { [hive: string]: IPersistor } = {};
   private mUpdateQueue: Promise<void> = Promise.resolve();
   private mPersistorFactory: PersistorFactory | undefined;
+  #mLevelPersist: LevelPersist | undefined;
+  #mInvalidator: QueryInvalidator | undefined;
 
   constructor() {
     // No store dependency - we receive diffs via IPC
+  }
+
+  /**
+   * Set the LevelPersist instance and QueryInvalidator for dirty table tracking.
+   */
+  public setQueryInvalidator(
+    levelPersist: LevelPersist,
+    invalidator: QueryInvalidator,
+  ): void {
+    this.#mLevelPersist = levelPersist;
+    this.#mInvalidator = invalidator;
   }
 
   /**
@@ -180,18 +195,49 @@ class ReduxPersistorIPC {
     persistor: IPersistor,
     operations: DiffOperation[],
   ): Promise<void> {
+    const levelPersist = this.#mLevelPersist;
+    const invalidator = this.#mInvalidator;
+    const useTransaction =
+      levelPersist !== undefined && invalidator !== undefined;
+
     try {
+      if (useTransaction) {
+        await levelPersist.beginTransaction();
+      }
+
       // Process operations sequentially to maintain order
       for (const op of operations) {
         await this.applyOperation(persistor, op);
       }
+
+      if (useTransaction) {
+        // Check dirty tables BEFORE commit (while transaction is active)
+        const dirtyTables = await levelPersist.getDirtyTables();
+        await levelPersist.commitTransaction();
+
+        // Notify after commit
+        if (dirtyTables.length > 0) {
+          invalidator.notifyDirtyTables(dirtyTables);
+        }
+      }
     } catch (unknownError) {
+      if (useTransaction) {
+        try {
+          await levelPersist.rollbackTransaction();
+        } catch (rollbackErr) {
+          log("warn", "Failed to rollback transaction", {
+            error: unknownToError(rollbackErr).message,
+          });
+        }
+      }
+
       const err = unknownToError(unknownError);
 
-      // Handle disk full error
+      // Handle disk full error (covers LevelDB and DuckDB/OS-level patterns)
+      const diskFullPattern = /IO error: .*Append: cannot write|no space left on device|disk full|not enough space/i;
       if (
-        err.message.match(/IO error: .*Append: cannot write/) !== null ||
-        err.stack?.match(/IO error: .*Append: cannot write/) !== null
+        diskFullPattern.test(err.message) ||
+        (err.stack !== undefined && diskFullPattern.test(err.stack))
       ) {
         terminate(
           new Error(

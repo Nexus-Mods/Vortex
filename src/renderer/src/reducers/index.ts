@@ -180,6 +180,56 @@ export enum Decision {
 
 let backupTime: number;
 
+/**
+ * Apply a list of DiffOperations from a main-process push to a reducer's state slice.
+ *
+ * Each reducer only owns part of the state tree. `statePath` (e.g. ".settings.window")
+ * tells us which slice this is. We:
+ *   1. Verify the hive matches (first path segment after root dot).
+ *   2. Compute the sub-path for this reducer (e.g. ["window"]).
+ *   3. For each operation whose path starts with that sub-path, strip the prefix
+ *      and apply it to the local state using setSafe / deleteOrNop.
+ */
+function pushRed(state: any, payload: any, statePath: string): any {
+  if (!payload || typeof payload.hive !== "string" || !Array.isArray(payload.operations)) {
+    return state;
+  }
+
+  const pathArray: string[] = statePath.split(".").slice(1);
+  // The first segment is the hive name (e.g. "settings")
+  if (pathArray[0] !== payload.hive) {
+    return state;
+  }
+
+  // Everything after the hive name is this reducer's sub-path within the hive
+  const subPath: string[] = pathArray.slice(1);
+
+  let result = state;
+  for (const op of payload.operations) {
+    if (!Array.isArray(op.path)) {
+      continue;
+    }
+    // Only handle operations that fall within this reducer's subtree
+    if (subPath.length > 0) {
+      if (op.path.length < subPath.length) {
+        continue;
+      }
+      const matches = subPath.every((seg: string, i: number) => op.path[i] === seg);
+      if (!matches) {
+        continue;
+      }
+    }
+    // Path relative to this reducer's root
+    const relativePath: string[] = op.path.slice(subPath.length);
+    if (op.type === "set") {
+      result = setSafe(result, relativePath, op.value);
+    } else if (op.type === "remove") {
+      result = deleteOrNop(result, relativePath);
+    }
+  }
+  return result;
+}
+
 function hydrateRed(
   state: any,
   payload: any,
@@ -261,6 +311,8 @@ function deriveReducer(
           hydrateRed(state, payload, ele, statePath, false, querySanitize),
         ["__hydrate_replace"]: (state, payload) =>
           hydrateRed(state, payload, ele, statePath, true, querySanitize),
+        ["__persist_push"]: (state, payload) =>
+          pushRed(state, payload, statePath),
       };
     }
     return createReducer(red, ele.defaults);

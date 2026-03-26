@@ -12,7 +12,7 @@ const config = {
     "^../util/ComponentEx$": "<rootDir>/src/__mocks__/ComponentEx.js",
     "^@/(.*)$": "<rootDir>/src/$1",
   },
-  testRegex: "(/src/__tests__/.*)\\.(js|jsx|ts|tsx)$",
+  testRegex: "(/__tests__/.*\\.(test|spec))\\.(js|jsx|ts|tsx)$",
   testPathIgnorePatterns: ["/node_modules/", "/dist/", "/out/"],
   modulePathIgnorePatterns: [
     "<rootDir>/out/",

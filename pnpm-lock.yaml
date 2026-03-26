@@ -24,6 +24,9 @@ catalogs:
     '@babel/register':
       specifier: 7.16.8
       version: 7.16.8
+    '@duckdb/node-api':
+      specifier: 1.5.1-r.1
+      version: 1.5.1-r.1
     '@electron/remote':
       specifier: ^2.0.12
       version: 2.1.3
@@ -3810,6 +3813,41 @@ importers:
         specifier: 'catalog:'
         version: 1.58.2
 
+  packages/paths:
+    dependencies:
+      zod:
+        specifier: ^3.24.2
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 22.19.11
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@22.19.11)(happy-dom@20.8.3)(jsdom@20.0.3)(vite@8.0.0(@types/node@22.19.11)(esbuild@0.27.4)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.0))
+
+  packages/paths-node:
+    dependencies:
+      '@vortex/paths':
+        specifier: workspace:*
+        version: link:../paths
+      fs-extra:
+        specifier: 'catalog:'
+        version: 9.1.0
+    devDependencies:
+      '@types/fs-extra':
+        specifier: 'catalog:'
+        version: 11.0.4
+      '@types/node':
+        specifier: 'catalog:'
+        version: 22.19.11
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@22.19.11)(happy-dom@20.8.3)(jsdom@20.0.3)(vite@8.0.0(@types/node@22.19.11)(esbuild@0.27.4)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.0))
+
   packages/vortex-api:
     dependencies:
       '@types/bluebird':
@@ -3906,6 +3944,9 @@ importers:
 
   src/main:
     dependencies:
+      '@duckdb/node-api':
+        specifier: 'catalog:'
+        version: 1.5.1-r.1
       '@electron/remote':
         specifier: 'catalog:'
         version: 2.1.3(electron@39.8.0)
@@ -4008,9 +4049,6 @@ importers:
       electron-updater:
         specifier: 'catalog:'
         version: 4.6.5
-      encoding-down:
-        specifier: 'catalog:'
-        version: 6.3.0
       exe-version:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-exe-version/tar.gz/eded60fc0a0f3c234e1d586d2eb9952401945406
@@ -4062,12 +4100,6 @@ importers:
       jsonwebtoken:
         specifier: 'catalog:'
         version: 9.0.3
-      leveldown:
-        specifier: 'catalog:'
-        version: 5.6.0
-      levelup:
-        specifier: 'catalog:'
-        version: 4.4.0
       lodash:
         specifier: 'catalog:'
         version: 4.17.23
@@ -4264,9 +4296,6 @@ importers:
       '@types/draggabilly':
         specifier: 'catalog:'
         version: 2.1.3
-      '@types/encoding-down':
-        specifier: 'catalog:'
-        version: 5.0.5
       '@types/feedparser':
         specifier: 'catalog:'
         version: 2.2.8
@@ -4282,12 +4311,6 @@ importers:
       '@types/jsonwebtoken':
         specifier: 'catalog:'
         version: 9.0.10
-      '@types/leveldown':
-        specifier: 'catalog:'
-        version: 4.0.6
-      '@types/levelup':
-        specifier: 'catalog:'
-        version: 5.1.5
       '@types/lodash':
         specifier: 'catalog:'
         version: 4.17.24
@@ -5625,6 +5648,42 @@ packages:
   '@discoveryjs/json-ext@0.5.7':
     resolution: {integrity: sha512-dBVuXR082gk3jsFp7Rd/JI4kytwGHecnCoTtXFb7DB6CNHp4rg5k1bhg0nWdLGLnOV71lmDzGQaLMy8iPLY0pw==}
     engines: {node: '>=10.0.0'}
+
+  '@duckdb/node-api@1.5.1-r.1':
+    resolution: {integrity: sha512-8U8p44ZL4rJtUrgVaSLm2hOMk3XTwEgs5eJoxYiR6iQXKVEr8vi6z3Vrxhb61g9sgsEZIAmckD7e3zZ1lmPHYA==}
+
+  '@duckdb/node-bindings-darwin-arm64@1.5.1-r.1':
+    resolution: {integrity: sha512-vm0Q/P8/OB/ZDITNTUe80emlg0b7/EcqTPBRu4GmULbt/fFDtkEAjDHDblKZL1yazf7X6JFEabHBGuWL5jmjEw==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@duckdb/node-bindings-darwin-x64@1.5.1-r.1':
+    resolution: {integrity: sha512-GOKWYbOP1v5jppGjlCaQzvyzVnY8/dGd7UJcnT213uiSMq/mtQk2yvzZCPhq7UdxmqR0TSd+TKttpozd8ANyOQ==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@duckdb/node-bindings-linux-arm64@1.5.1-r.1':
+    resolution: {integrity: sha512-b0tHCtC+GZnD6gJA+ldUwy8FhnugR1Uq0/LjLiusOQOoK5pRXyfiQjgIe/SiKSeE5iEr+FWUXEprSD81HOaaQg==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@duckdb/node-bindings-linux-x64@1.5.1-r.1':
+    resolution: {integrity: sha512-AczM4qyMuMXHIa7w1YacIu6FFPpwzUsQSkPUFKsAJzyuRcxAlGEwt+2GnVZSACGQFpKbL9nAkuu3Icq6ttxwag==}
+    cpu: [x64]
+    os: [linux]
+
+  '@duckdb/node-bindings-win32-arm64@1.5.1-r.1':
+    resolution: {integrity: sha512-SrgAiFttkfFXCCAMrmMBWtnBMtEjVaC38XtG6zEdbvmp2RTEPo/dFcvRP75vS/Hm5Iq8Tgiuoq4tIdovwEw5yg==}
+    cpu: [arm64]
+    os: [win32]
+
+  '@duckdb/node-bindings-win32-x64@1.5.1-r.1':
+    resolution: {integrity: sha512-JkL9xvXx9i8ceU1fGJsb9gqgRn30RFi0HyfpuESK2AZInKx5mJn8fvYcj4AQg/Ip9SZ1S4a2Jh5DOFY81koubw==}
+    cpu: [x64]
+    os: [win32]
+
+  '@duckdb/node-bindings@1.5.1-r.1':
+    resolution: {integrity: sha512-3vmIlY/ACTLutlMup4F+D2Gzo+kiUoMaIL4TvM4x34cMqnKfsZ+4lMjqfSKYmdcgNGXYXwPwIYaJlvMRhU3Tbg==}
 
   '@electron/asar@3.4.1':
     resolution: {integrity: sha512-i4/rNPRS84t0vSRa2HorerGRXWyF4vThfHesw0dmcWHp+cspK743UanA0suA5Q5y8kzY2y6YKrvbIUn69BCAiA==}
@@ -13354,6 +13413,9 @@ packages:
     resolution: {integrity: sha512-9qv4rlDiopXg4E69k+vMHjNN63YFMe9sZMrdlvKnCjlCRWeCBswPPMPUfx+ipsAWq1LXHe70RcbaHdJJpS6hyQ==}
     engines: {node: '>= 10'}
 
+  zod@3.25.76:
+    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
+
   zod@4.3.6:
     resolution: {integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==}
 
@@ -14210,6 +14272,37 @@ snapshots:
       ajv-keywords: 3.5.2(ajv@6.14.0)
 
   '@discoveryjs/json-ext@0.5.7': {}
+
+  '@duckdb/node-api@1.5.1-r.1':
+    dependencies:
+      '@duckdb/node-bindings': 1.5.1-r.1
+
+  '@duckdb/node-bindings-darwin-arm64@1.5.1-r.1':
+    optional: true
+
+  '@duckdb/node-bindings-darwin-x64@1.5.1-r.1':
+    optional: true
+
+  '@duckdb/node-bindings-linux-arm64@1.5.1-r.1':
+    optional: true
+
+  '@duckdb/node-bindings-linux-x64@1.5.1-r.1':
+    optional: true
+
+  '@duckdb/node-bindings-win32-arm64@1.5.1-r.1':
+    optional: true
+
+  '@duckdb/node-bindings-win32-x64@1.5.1-r.1':
+    optional: true
+
+  '@duckdb/node-bindings@1.5.1-r.1':
+    optionalDependencies:
+      '@duckdb/node-bindings-darwin-arm64': 1.5.1-r.1
+      '@duckdb/node-bindings-darwin-x64': 1.5.1-r.1
+      '@duckdb/node-bindings-linux-arm64': 1.5.1-r.1
+      '@duckdb/node-bindings-linux-x64': 1.5.1-r.1
+      '@duckdb/node-bindings-win32-arm64': 1.5.1-r.1
+      '@duckdb/node-bindings-win32-x64': 1.5.1-r.1
 
   '@electron/asar@3.4.1':
     dependencies:
@@ -23503,5 +23596,7 @@ snapshots:
       archiver-utils: 3.0.4
       compress-commons: 4.1.2
       readable-stream: 3.6.2
+
+  zod@3.25.76: {}
 
   zod@4.3.6: {}

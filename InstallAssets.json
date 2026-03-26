@@ -27,6 +27,12 @@
       "skipPaths": 3
     },
     {
+      "srcPath": "src/queries",
+      "outPath": "",
+      "target": ["out", "dist"],
+      "skipPaths": 1
+    },
+    {
       "srcPath": "src/renderer/src/splash.html",
       "outPath": "",
       "target": ["out", "dist"],
