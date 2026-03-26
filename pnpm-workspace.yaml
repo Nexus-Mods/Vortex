@@ -129,7 +129,7 @@ catalog:
   "@typescript-eslint/utils": 8.47.0
   "@vitejs/plugin-react": ^6.0.1
   "@vitest/coverage-v8": ^4.1.0
-  '@vitest/ui': 4.1.0
+  "@vitest/ui": 4.1.0
   "@welldone-software/why-did-you-render": ^10.0.1
   ba2tk: git+https://github.com/Nexus-Mods/node-ba2tk#762d8de841ca1c770a0925311fd626d71de67971
   babel-jest: ^29.7.0
@@ -298,6 +298,8 @@ catalog:
 
 catalogMode: strict
 cleanupUnusedCatalogs: true
+
+dedupePeers: true
 
 engineStrict: true
 failIfNoMatch: true

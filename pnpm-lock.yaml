@@ -2,6 +2,7 @@ lockfileVersion: '9.0'
 
 settings:
   autoInstallPeers: true
+  dedupePeers: true
   excludeLinksFromLockfile: false
 
 catalogs:
@@ -800,7 +801,7 @@ importers:
     devDependencies:
       '@eslint-react/eslint-plugin':
         specifier: 'catalog:'
-        version: 2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+        version: 2.3.7(eslint@9.39.1)(typescript@5.9.3)
       '@eslint/js':
         specifier: 'catalog:'
         version: 9.39.1
@@ -809,7 +810,7 @@ importers:
         version: 7.57.6(@types/node@22.19.11)
       '@stylistic/eslint-plugin':
         specifier: 'catalog:'
-        version: 5.9.0(eslint@9.39.1(jiti@2.6.1))
+        version: 5.9.0(eslint@9.39.1)
       '@tailwindcss/cli':
         specifier: 'catalog:'
         version: 4.1.17
@@ -827,7 +828,7 @@ importers:
         version: 3.0.4(esbuild@0.27.4)(webpack-cli@5.1.4)
       '@typescript-eslint/utils':
         specifier: 'catalog:'
-        version: 8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+        version: 8.47.0(eslint@9.39.1)(typescript@5.9.3)
       '@vitest/coverage-v8':
         specifier: 'catalog:'
         version: 4.1.0(vitest@4.1.0)
@@ -845,19 +846,19 @@ importers:
         version: 9.39.1(jiti@2.6.1)
       eslint-config-prettier:
         specifier: 'catalog:'
-        version: 10.1.8(eslint@9.39.1(jiti@2.6.1))
+        version: 10.1.8(eslint@9.39.1)
       eslint-import-resolver-typescript:
         specifier: 'catalog:'
-        version: 4.4.4(eslint-plugin-import@2.32.0)(eslint@9.39.1(jiti@2.6.1))
+        version: 4.4.4(eslint-plugin-import@2.32.0)(eslint@9.39.1)
       eslint-plugin-better-tailwindcss:
         specifier: 'catalog:'
-        version: 4.3.0(eslint@9.39.1(jiti@2.6.1))(tailwindcss@4.1.17)(typescript@5.9.3)
+        version: 4.3.0(eslint@9.39.1)(tailwindcss@4.1.17)(typescript@5.9.3)
       eslint-plugin-import:
         specifier: 'catalog:'
-        version: 2.32.0(@typescript-eslint/parser@8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-typescript@4.4.4)(eslint@9.39.1(jiti@2.6.1))
+        version: 2.32.0(@typescript-eslint/parser@8.47.0)(eslint-import-resolver-typescript@4.4.4)(eslint@9.39.1)
       eslint-plugin-perfectionist:
         specifier: 'catalog:'
-        version: 5.6.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+        version: 5.6.0(eslint@9.39.1)(typescript@5.9.3)
       fork-ts-checker-webpack-plugin:
         specifier: 'catalog:'
         version: 9.1.0(typescript@5.9.3)(webpack@5.105.2)
@@ -908,13 +909,13 @@ importers:
         version: 5.9.3
       typescript-eslint:
         specifier: 'catalog:'
-        version: 8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+        version: 8.47.0(eslint@9.39.1)(typescript@5.9.3)
       vite:
         specifier: 'catalog:'
         version: 8.0.0(@types/node@22.19.11)(esbuild@0.27.4)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.0)
       vitest:
         specifier: 'catalog:'
-        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@22.19.11)(@vitest/ui@4.1.0)(happy-dom@20.8.3)(jsdom@20.0.3)(vite@8.0.0(@types/node@22.19.11)(esbuild@0.27.4)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.0))
+        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@22.19.11)(@vitest/ui@4.1.0)(happy-dom@20.8.3)(jsdom@20.0.3)(vite@8.0.0)
       webpack:
         specifier: 'catalog:'
         version: 5.105.2(esbuild@0.27.4)(webpack-cli@5.1.4)
@@ -956,13 +957,13 @@ importers:
         version: 4.17.23
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0)(react@16.14.0)
       react-markdown:
         specifier: 'catalog:'
         version: 6.0.2(@types/react@16.14.66)(react@16.14.0)
       react-redux:
         specifier: 'catalog:'
-        version: 7.2.9(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 7.2.9(react-dom@16.14.0)(react@16.14.0)
       redux:
         specifier: 'catalog:'
         version: 4.2.1
@@ -1043,22 +1044,22 @@ importers:
         version: 16.14.0
       react-bootstrap:
         specifier: 'catalog:'
-        version: 0.33.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 0.33.1(react-dom@16.14.0)(react@16.14.0)
       react-dom:
         specifier: 'catalog:'
         version: 16.14.0(react@16.14.0)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0)(react@16.14.0)
       react-markdown:
         specifier: 'catalog:'
         version: 6.0.2(@types/react@16.14.66)(react@16.14.0)
       react-redux:
         specifier: 'catalog:'
-        version: 7.2.9(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 7.2.9(react-dom@16.14.0)(react@16.14.0)
       react-select:
         specifier: 'catalog:'
-        version: 1.3.0(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 1.3.0(react-dom@16.14.0)(react@16.14.0)
       redux:
         specifier: 'catalog:'
         version: 4.2.1
@@ -1082,7 +1083,7 @@ importers:
         version: 0.1.0
       ts-jest:
         specifier: 'catalog:'
-        version: 29.4.6(@babel/core@7.29.0)(@jest/transform@30.2.0)(@jest/types@30.2.0)(babel-jest@30.2.0(@babel/core@7.29.0))(esbuild@0.27.4)(jest-util@30.2.0)(jest@29.7.0(@types/node@22.19.11))(typescript@5.9.3)
+        version: 29.4.6(@babel/core@7.29.0)(@jest/transform@30.2.0)(@jest/types@30.2.0)(babel-jest@30.2.0)(esbuild@0.27.4)(jest-util@30.2.0)(jest@29.7.0)(typescript@5.9.3)
       ts-v-gen:
         specifier: 'catalog:'
         version: 1.0.3
@@ -1157,13 +1158,13 @@ importers:
         version: 4.17.23
       react-bootstrap:
         specifier: 'catalog:'
-        version: 0.33.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 0.33.1(react-dom@16.14.0)(react@16.14.0)
       react-dom:
         specifier: 'catalog:'
         version: 16.14.0(react@16.14.0)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0)(react@16.14.0)
       redux:
         specifier: 'catalog:'
         version: 4.2.1
@@ -1199,7 +1200,7 @@ importers:
         version: 5.2.1
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0)(react@16.14.0)
       redux:
         specifier: 'catalog:'
         version: 4.2.1
@@ -1253,10 +1254,10 @@ importers:
         version: 1.4.0
       react-bootstrap:
         specifier: 'catalog:'
-        version: 0.33.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 0.33.1(react-dom@16.14.0)(react@16.14.0)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0)(react@16.14.0)
       redux:
         specifier: 'catalog:'
         version: 4.2.1
@@ -1325,10 +1326,10 @@ importers:
         version: 16.14.0(react@16.14.0)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0)(react@16.14.0)
       react-redux:
         specifier: 'catalog:'
-        version: 7.2.9(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 7.2.9(react-dom@16.14.0)(react@16.14.0)
       redux:
         specifier: 'catalog:'
         version: 4.2.1
@@ -1373,7 +1374,7 @@ importers:
         version: 2.4.1
       react-bootstrap:
         specifier: 'catalog:'
-        version: 0.33.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 0.33.1(react-dom@16.14.0)(react@16.14.0)
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -1424,13 +1425,13 @@ importers:
         version: 16.14.0
       react-bootstrap:
         specifier: 'catalog:'
-        version: 0.33.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 0.33.1(react-dom@16.14.0)(react@16.14.0)
       react-dom:
         specifier: 'catalog:'
         version: 16.14.0(react@16.14.0)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0)(react@16.14.0)
       redux:
         specifier: 'catalog:'
         version: 4.2.1
@@ -1544,7 +1545,7 @@ importers:
         version: 0.5.7
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0)(react@16.14.0)
       redux:
         specifier: 'catalog:'
         version: 4.2.1
@@ -1640,7 +1641,7 @@ importers:
         version: 16.14.0
       react-dnd:
         specifier: 'catalog:'
-        version: 14.0.5(@types/hoist-non-react-statics@3.3.7(@types/react@16.14.66))(@types/node@25.5.0)(@types/react@16.14.66)(react@16.14.0)
+        version: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@25.5.0)(@types/react@16.14.66)(react@16.14.0)
       react-dnd-html5-backend:
         specifier: 'catalog:'
         version: 14.1.0
@@ -1649,13 +1650,13 @@ importers:
         version: 16.14.0(react@16.14.0)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0)(react@16.14.0)
       react-markdown:
         specifier: 'catalog:'
         version: 6.0.2(@types/react@16.14.66)(react@16.14.0)
       react-select:
         specifier: 'catalog:'
-        version: 1.3.0(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 1.3.0(react-dom@16.14.0)(react@16.14.0)
       redux:
         specifier: 'catalog:'
         version: 4.2.1
@@ -1731,13 +1732,13 @@ importers:
         version: 16.14.0(react@16.14.0)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0)(react@16.14.0)
       react-redux:
         specifier: 'catalog:'
-        version: 7.2.9(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 7.2.9(react-dom@16.14.0)(react@16.14.0)
       react-select:
         specifier: 'catalog:'
-        version: 1.3.0(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 1.3.0(react-dom@16.14.0)(react@16.14.0)
       redux:
         specifier: 'catalog:'
         version: 4.2.1
@@ -1783,13 +1784,13 @@ importers:
         version: 16.14.0
       react-bootstrap:
         specifier: 'catalog:'
-        version: 0.33.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 0.33.1(react-dom@16.14.0)(react@16.14.0)
       react-dom:
         specifier: 'catalog:'
         version: 16.14.0(react@16.14.0)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0)(react@16.14.0)
       redux:
         specifier: 'catalog:'
         version: 4.2.1
@@ -1822,13 +1823,13 @@ importers:
         version: 16.14.0
       react-bootstrap:
         specifier: 'catalog:'
-        version: 0.33.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 0.33.1(react-dom@16.14.0)(react@16.14.0)
       react-dom:
         specifier: 'catalog:'
         version: 16.14.0(react@16.14.0)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0)(react@16.14.0)
       vortex-api:
         specifier: workspace:*
         version: link:../../packages/vortex-api
@@ -2174,13 +2175,13 @@ importers:
         version: 16.14.0
       react-dnd:
         specifier: 'catalog:'
-        version: 14.0.5(@types/hoist-non-react-statics@3.3.7(@types/react@16.14.66))(@types/node@22.19.11)(@types/react@16.14.66)(react@16.14.0)
+        version: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@22.19.11)(@types/react@16.14.66)(react@16.14.0)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0)(react@16.14.0)
       react-redux:
         specifier: 'catalog:'
-        version: 7.2.9(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 7.2.9(react-dom@16.14.0)(react@16.14.0)
       redux-act:
         specifier: 'catalog:'
         version: 1.8.0
@@ -2282,13 +2283,13 @@ importers:
         version: 16.14.0
       react-bootstrap:
         specifier: 'catalog:'
-        version: 0.33.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 0.33.1(react-dom@16.14.0)(react@16.14.0)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0)(react@16.14.0)
       react-redux:
         specifier: 'catalog:'
-        version: 7.2.9(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 7.2.9(react-dom@16.14.0)(react@16.14.0)
       redux-act:
         specifier: 'catalog:'
         version: 1.8.0
@@ -2337,7 +2338,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: 'catalog:'
-        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@22.19.11)(@vitest/ui@4.1.0)(happy-dom@20.8.3)(jsdom@20.0.3)(vite@8.0.0(@types/node@22.19.11)(esbuild@0.27.4)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.0))
+        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@22.19.11)(@vitest/ui@4.1.0)(happy-dom@20.8.3)(jsdom@20.0.3)(vite@8.0.0)
       vortex-api:
         specifier: workspace:*
         version: link:../../../packages/vortex-api
@@ -2614,7 +2615,7 @@ importers:
         version: 16.14.0
       react-bootstrap:
         specifier: 'catalog:'
-        version: 0.33.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 0.33.1(react-dom@16.14.0)(react@16.14.0)
       react-dom:
         specifier: 'catalog:'
         version: 16.14.0(react@16.14.0)
@@ -2662,13 +2663,13 @@ importers:
         version: 4.17.23
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0)(react@16.14.0)
       react-markdown:
         specifier: 'catalog:'
         version: 6.0.2(@types/react@16.14.66)(react@16.14.0)
       react-redux:
         specifier: 'catalog:'
-        version: 7.2.9(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 7.2.9(react-dom@16.14.0)(react@16.14.0)
       redux-act:
         specifier: 'catalog:'
         version: 1.8.0
@@ -2707,13 +2708,13 @@ importers:
         version: 16.14.0
       react-bootstrap:
         specifier: 'catalog:'
-        version: 0.33.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 0.33.1(react-dom@16.14.0)(react@16.14.0)
       react-dom:
         specifier: 'catalog:'
         version: 16.14.0(react@16.14.0)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0)(react@16.14.0)
       redux:
         specifier: 'catalog:'
         version: 4.2.1
@@ -2770,7 +2771,7 @@ importers:
         version: 16.14.0
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0)(react@16.14.0)
       redux-act:
         specifier: 'catalog:'
         version: 1.8.0
@@ -2827,13 +2828,13 @@ importers:
         version: 16.14.0
       react-bootstrap:
         specifier: 'catalog:'
-        version: 0.33.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 0.33.1(react-dom@16.14.0)(react@16.14.0)
       react-dom:
         specifier: 'catalog:'
         version: 16.14.0(react@16.14.0)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0)(react@16.14.0)
       redux:
         specifier: 'catalog:'
         version: 4.2.1
@@ -2890,7 +2891,7 @@ importers:
         version: 16.14.0
       react-bootstrap:
         specifier: 'catalog:'
-        version: 0.33.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 0.33.1(react-dom@16.14.0)(react@16.14.0)
       redux:
         specifier: 'catalog:'
         version: 4.2.1
@@ -2926,7 +2927,7 @@ importers:
         version: 2.0.61
       '@types/react-sortable-tree':
         specifier: 'catalog:'
-        version: 0.3.23(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 0.3.23(react-dom@16.14.0)(react@16.14.0)
       '@types/semver':
         specifier: 'catalog:'
         version: 7.7.1
@@ -2971,10 +2972,10 @@ importers:
         version: 16.14.0
       react-bootstrap:
         specifier: 'catalog:'
-        version: 0.33.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 0.33.1(react-dom@16.14.0)(react@16.14.0)
       react-dnd:
         specifier: 'catalog:'
-        version: 14.0.5(@types/hoist-non-react-statics@3.3.7(@types/react@16.14.66))(@types/node@25.5.0)(@types/react@16.14.66)(react@16.14.0)
+        version: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@25.5.0)(@types/react@16.14.66)(react@16.14.0)
       react-dnd-html5-backend:
         specifier: 'catalog:'
         version: 14.1.0
@@ -2983,19 +2984,19 @@ importers:
         version: 16.14.0(react@16.14.0)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0)(react@16.14.0)
       react-redux:
         specifier: 'catalog:'
-        version: 7.2.9(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 7.2.9(react-dom@16.14.0)(react@16.14.0)
       react-select:
         specifier: 'catalog:'
-        version: 1.3.0(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 1.3.0(react-dom@16.14.0)(react@16.14.0)
       react-sortable-tree:
         specifier: 'catalog:'
-        version: 2.8.0(react-dnd@14.0.5(@types/hoist-non-react-statics@3.3.7(@types/react@16.14.66))(@types/node@25.5.0)(@types/react@16.14.66)(react@16.14.0))(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 2.8.0(react-dnd@14.0.5)(react-dom@16.14.0)(react@16.14.0)
       react-sortable-tree-theme-file-explorer:
         specifier: 'catalog:'
-        version: 2.0.0(react-dom@16.14.0(react@16.14.0))(react-sortable-tree@2.8.0(react-dnd@14.0.5(@types/hoist-non-react-statics@3.3.7(@types/react@16.14.66))(@types/node@25.5.0)(@types/react@16.14.66)(react@16.14.0))(react-dom@16.14.0(react@16.14.0))(react@16.14.0))(react@16.14.0)
+        version: 2.0.0(react-dom@16.14.0)(react-sortable-tree@2.8.0)(react@16.14.0)
       redux:
         specifier: 'catalog:'
         version: 4.2.1
@@ -3040,13 +3041,13 @@ importers:
         version: 2.4.1
       react-bootstrap:
         specifier: 'catalog:'
-        version: 0.33.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 0.33.1(react-dom@16.14.0)(react@16.14.0)
       react-dom:
         specifier: 'catalog:'
         version: 16.14.0(react@16.14.0)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0)(react@16.14.0)
       redux-act:
         specifier: 'catalog:'
         version: 1.8.0
@@ -3116,7 +3117,7 @@ importers:
         version: 16.14.0
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0)(react@16.14.0)
       semver:
         specifier: 'catalog:'
         version: 7.7.4
@@ -3252,7 +3253,7 @@ importers:
         version: 16.14.0
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0)(react@16.14.0)
       redux:
         specifier: 'catalog:'
         version: 4.2.1
@@ -3306,10 +3307,10 @@ importers:
         version: 3.1.1
       react-dnd:
         specifier: 'catalog:'
-        version: 14.0.5(@types/hoist-non-react-statics@3.3.7(@types/react@16.14.66))(@types/node@25.5.0)(@types/react@16.14.66)(react@16.14.0)
+        version: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@25.5.0)(@types/react@16.14.66)(react@16.14.0)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0)(react@16.14.0)
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -3345,7 +3346,7 @@ importers:
         version: 16.14.0
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0)(react@16.14.0)
       shortid:
         specifier: 'catalog:'
         version: 2.2.17
@@ -3429,13 +3430,13 @@ importers:
         version: 16.14.0
       react-bootstrap:
         specifier: 'catalog:'
-        version: 0.33.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 0.33.1(react-dom@16.14.0)(react@16.14.0)
       react-dom:
         specifier: 'catalog:'
         version: 16.14.0(react@16.14.0)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0)(react@16.14.0)
       redux:
         specifier: 'catalog:'
         version: 4.2.1
@@ -3519,7 +3520,7 @@ importers:
         version: 16.14.0
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0)(react@16.14.0)
       vortex-api:
         specifier: workspace:*
         version: link:../../packages/vortex-api
@@ -3558,7 +3559,7 @@ importers:
         version: 16.14.0
       react-bootstrap:
         specifier: 'catalog:'
-        version: 0.33.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 0.33.1(react-dom@16.14.0)(react@16.14.0)
       turbowalk:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
@@ -3610,7 +3611,7 @@ importers:
         version: 16.14.0
       react-bootstrap:
         specifier: 'catalog:'
-        version: 0.33.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 0.33.1(react-dom@16.14.0)(react@16.14.0)
       redux:
         specifier: 'catalog:'
         version: 4.2.1
@@ -3652,13 +3653,13 @@ importers:
         version: 16.14.0
       react-bootstrap:
         specifier: 'catalog:'
-        version: 0.33.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 0.33.1(react-dom@16.14.0)(react@16.14.0)
       react-dom:
         specifier: 'catalog:'
         version: 16.14.0(react@16.14.0)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0)(react@16.14.0)
       redux-act:
         specifier: 'catalog:'
         version: 1.8.0
@@ -3697,7 +3698,7 @@ importers:
         version: 19.9.2
       react-bootstrap:
         specifier: 'catalog:'
-        version: 0.33.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 0.33.1(react-dom@16.14.0)(react@16.14.0)
       turbowalk:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
@@ -3754,7 +3755,7 @@ importers:
         version: 16.14.0
       react-bootstrap:
         specifier: 'catalog:'
-        version: 0.33.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 0.33.1(react-dom@16.14.0)(react@16.14.0)
       react-color:
         specifier: 'catalog:'
         version: 2.19.3(react@16.14.0)
@@ -3763,7 +3764,7 @@ importers:
         version: 16.14.0(react@16.14.0)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0)(react@16.14.0)
       redux:
         specifier: 'catalog:'
         version: 4.2.1
@@ -3799,10 +3800,10 @@ importers:
         version: 5.2.1
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0)(react@16.14.0)
       react-redux:
         specifier: 'catalog:'
-        version: 7.2.9(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 7.2.9(react-dom@16.14.0)(react@16.14.0)
       redux:
         specifier: 'catalog:'
         version: 4.2.1
@@ -3842,7 +3843,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: 'catalog:'
-        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@22.19.11)(@vitest/ui@4.1.0)(happy-dom@20.8.3)(jsdom@20.0.3)(vite@8.0.0(@types/node@22.19.11)(esbuild@0.27.4)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.0))
+        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@22.19.11)(@vitest/ui@4.1.0)(happy-dom@20.8.3)(jsdom@20.0.3)(vite@8.0.0)
 
   packages/paths-node:
     dependencies:
@@ -3861,7 +3862,7 @@ importers:
         version: 22.19.11
       vitest:
         specifier: 'catalog:'
-        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@22.19.11)(@vitest/ui@4.1.0)(happy-dom@20.8.3)(jsdom@20.0.3)(vite@8.0.0(@types/node@22.19.11)(esbuild@0.27.4)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.0))
+        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@22.19.11)(@vitest/ui@4.1.0)(happy-dom@20.8.3)(jsdom@20.0.3)(vite@8.0.0)
 
   packages/vortex-api:
     dependencies:
@@ -3882,19 +3883,19 @@ importers:
         version: 3.1.3
       react-bootstrap:
         specifier: 'catalog:'
-        version: 0.33.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 0.33.1(react-dom@16.14.0)(react@16.14.0)
       react-dom:
         specifier: 'catalog:'
         version: 16.14.0(react@16.14.0)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0)(react@16.14.0)
       react-redux:
         specifier: 'catalog:'
-        version: 7.2.9(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 7.2.9(react-dom@16.14.0)(react@16.14.0)
       react-select:
         specifier: 'catalog:'
-        version: 1.3.0(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 1.3.0(react-dom@16.14.0)(react@16.14.0)
       redux-act:
         specifier: 'catalog:'
         version: 1.8.0
@@ -3967,7 +3968,7 @@ importers:
         version: 2.1.3(electron@39.8.0)
       '@headlessui/react':
         specifier: 'catalog:'
-        version: 1.7.19(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 1.7.19(react-dom@16.14.0)(react@16.14.0)
       '@mdi/js':
         specifier: 'catalog:'
         version: 7.4.47
@@ -4168,19 +4169,19 @@ importers:
         version: 4.0.1(reselect@4.1.8)
       re-resizable:
         specifier: 'catalog:'
-        version: 6.11.2(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 6.11.2(react-dom@16.14.0)(react@16.14.0)
       react:
         specifier: 'catalog:'
         version: 16.14.0
       react-bootstrap:
         specifier: 'catalog:'
-        version: 0.33.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 0.33.1(react-dom@16.14.0)(react@16.14.0)
       react-datepicker:
         specifier: 'catalog:'
-        version: 3.8.0(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 3.8.0(react-dom@16.14.0)(react@16.14.0)
       react-dnd:
         specifier: 'catalog:'
-        version: 14.0.5(@types/hoist-non-react-statics@3.3.7(@types/react@16.14.66))(@types/node@22.19.11)(@types/react@16.14.66)(react@16.14.0)
+        version: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@22.19.11)(@types/react@16.14.66)(react@16.14.0)
       react-dnd-html5-backend:
         specifier: 'catalog:'
         version: 14.1.0
@@ -4189,31 +4190,31 @@ importers:
         version: 16.14.0(react@16.14.0)
       react-hot-toast:
         specifier: 'catalog:'
-        version: 2.6.0(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 2.6.0(react-dom@16.14.0)(react@16.14.0)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0)(react@16.14.0)
       react-markdown:
         specifier: 'catalog:'
         version: 6.0.2(@types/react@16.14.66)(react@16.14.0)
       react-overlays:
         specifier: 'catalog:'
-        version: 1.2.0(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 1.2.0(react-dom@16.14.0)(react@16.14.0)
       react-redux:
         specifier: 'catalog:'
-        version: 7.2.9(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 7.2.9(react-dom@16.14.0)(react@16.14.0)
       react-resize-detector:
         specifier: 'catalog:'
-        version: 4.2.3(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 4.2.3(react-dom@16.14.0)(react@16.14.0)
       react-select:
         specifier: 'catalog:'
-        version: 1.3.0(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 1.3.0(react-dom@16.14.0)(react@16.14.0)
       react-sortable-tree:
         specifier: 'catalog:'
-        version: 2.8.0(react-dnd@14.0.5(@types/hoist-non-react-statics@3.3.7(@types/react@16.14.66))(@types/node@22.19.11)(@types/react@16.14.66)(react@16.14.0))(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 2.8.0(react-dnd@14.0.5)(react-dom@16.14.0)(react@16.14.0)
       recharts:
         specifier: 'catalog:'
-        version: 1.8.6(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 1.8.6(react-dom@16.14.0)(react@16.14.0)
       redux:
         specifier: 'catalog:'
         version: 4.2.1
@@ -4364,7 +4365,7 @@ importers:
         version: 7.1.34
       '@types/react-sortable-tree':
         specifier: 'catalog:'
-        version: 0.3.23(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 0.3.23(react-dom@16.14.0)(react@16.14.0)
       '@types/relaxed-json':
         specifier: 'catalog:'
         version: 1.0.4
@@ -4452,7 +4453,7 @@ importers:
         version: 2.1.3(electron@39.8.0)
       '@headlessui/react':
         specifier: 'catalog:'
-        version: 1.7.19(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 1.7.19(react-dom@16.14.0)(react@16.14.0)
       '@mdi/js':
         specifier: 'catalog:'
         version: 7.4.47
@@ -4491,7 +4492,7 @@ importers:
         version: 6.9.1
       '@testing-library/react':
         specifier: 'catalog:'
-        version: 12.1.5(@types/react@16.14.66)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 12.1.5(@types/react@16.14.66)(react-dom@16.14.0)(react@16.14.0)
       '@testing-library/user-event':
         specifier: 'catalog:'
         version: 14.6.1(@testing-library/dom@10.4.1)
@@ -4584,7 +4585,7 @@ importers:
         version: 1.3.6
       '@types/react-sortable-tree':
         specifier: 'catalog:'
-        version: 0.3.23(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 0.3.23(react-dom@16.14.0)(react@16.14.0)
       '@types/react-test-renderer':
         specifier: 'catalog:'
         version: 16.9.12
@@ -4635,7 +4636,7 @@ importers:
         version: 0.4.14
       '@vitejs/plugin-react':
         specifier: 'catalog:'
-        version: 6.0.1(vite@8.0.0(@types/node@25.5.0)(esbuild@0.27.4)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.0))
+        version: 6.0.1(vite@8.0.0)
       '@vortex/shared':
         specifier: workspace:*
         version: link:../shared
@@ -4719,7 +4720,7 @@ importers:
         version: 3.11.0
       enzyme-adapter-react-16:
         specifier: 'catalog:'
-        version: 1.15.8(enzyme@3.11.0)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 1.15.8(enzyme@3.11.0)(react-dom@16.14.0)(react@16.14.0)
       exe-version:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-exe-version/tar.gz/eded60fc0a0f3c234e1d586d2eb9952401945406
@@ -4833,19 +4834,19 @@ importers:
         version: 4.0.1(reselect@4.1.8)
       re-resizable:
         specifier: 'catalog:'
-        version: 6.11.2(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 6.11.2(react-dom@16.14.0)(react@16.14.0)
       react:
         specifier: 'catalog:'
         version: 16.14.0
       react-bootstrap:
         specifier: 'catalog:'
-        version: 0.33.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 0.33.1(react-dom@16.14.0)(react@16.14.0)
       react-datepicker:
         specifier: 'catalog:'
-        version: 3.8.0(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 3.8.0(react-dom@16.14.0)(react@16.14.0)
       react-dnd:
         specifier: 'catalog:'
-        version: 14.0.5(@types/hoist-non-react-statics@3.3.7(@types/react@16.14.66))(@types/node@25.5.0)(@types/react@16.14.66)(react@16.14.0)
+        version: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@25.5.0)(@types/react@16.14.66)(react@16.14.0)
       react-dnd-html5-backend:
         specifier: 'catalog:'
         version: 14.1.0
@@ -4854,34 +4855,34 @@ importers:
         version: 16.14.0(react@16.14.0)
       react-hot-toast:
         specifier: 'catalog:'
-        version: 2.6.0(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 2.6.0(react-dom@16.14.0)(react@16.14.0)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0)(react@16.14.0)
       react-markdown:
         specifier: 'catalog:'
         version: 6.0.2(@types/react@16.14.66)(react@16.14.0)
       react-overlays:
         specifier: 'catalog:'
-        version: 1.2.0(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 1.2.0(react-dom@16.14.0)(react@16.14.0)
       react-redux:
         specifier: 'catalog:'
-        version: 7.2.9(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 7.2.9(react-dom@16.14.0)(react@16.14.0)
       react-resize-detector:
         specifier: 'catalog:'
-        version: 4.2.3(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 4.2.3(react-dom@16.14.0)(react@16.14.0)
       react-select:
         specifier: 'catalog:'
-        version: 1.3.0(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 1.3.0(react-dom@16.14.0)(react@16.14.0)
       react-shallow-testutils:
         specifier: 'catalog:'
-        version: 3.0.1(react-test-renderer@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 3.0.1(react-test-renderer@16.14.0)(react@16.14.0)
       react-sortable-tree:
         specifier: 'catalog:'
-        version: 2.8.0(react-dnd@14.0.5(@types/hoist-non-react-statics@3.3.7(@types/react@16.14.66))(@types/node@25.5.0)(@types/react@16.14.66)(react@16.14.0))(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 2.8.0(react-dnd@14.0.5)(react-dom@16.14.0)(react@16.14.0)
       recharts:
         specifier: 'catalog:'
-        version: 1.8.6(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 1.8.6(react-dom@16.14.0)(react@16.14.0)
       redux:
         specifier: 'catalog:'
         version: 4.2.1
@@ -4935,7 +4936,7 @@ importers:
         version: 0.1.0
       ts-jest:
         specifier: 'catalog:'
-        version: 29.4.6(@babel/core@7.29.0)(@jest/transform@30.2.0)(@jest/types@30.2.0)(babel-jest@29.7.0(@babel/core@7.29.0))(esbuild@0.27.4)(jest-util@30.2.0)(jest@29.7.0(@types/node@25.5.0)(babel-plugin-macros@3.1.0))(typescript@5.9.3)
+        version: 29.4.6(@babel/core@7.29.0)(@jest/transform@30.2.0)(@jest/types@30.2.0)(babel-jest@29.7.0)(esbuild@0.27.4)(jest-util@30.2.0)(jest@29.7.0)(typescript@5.9.3)
       turbowalk:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
@@ -14588,34 +14589,34 @@ snapshots:
   '@esbuild/win32-x64@0.27.4':
     optional: true
 
-  '@eslint-community/eslint-utils@4.9.1(eslint@9.39.1(jiti@2.6.1))':
+  '@eslint-community/eslint-utils@4.9.1(eslint@9.39.1)':
     dependencies:
       eslint: 9.39.1(jiti@2.6.1)
       eslint-visitor-keys: 3.4.3
 
   '@eslint-community/regexpp@4.12.2': {}
 
-  '@eslint-react/ast@2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)':
+  '@eslint-react/ast@2.3.7(eslint@9.39.1)(typescript@5.9.3)':
     dependencies:
       '@eslint-react/eff': 2.3.7
       '@typescript-eslint/types': 8.56.0
       '@typescript-eslint/typescript-estree': 8.56.0(typescript@5.9.3)
-      '@typescript-eslint/utils': 8.56.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.56.0(eslint@9.39.1)(typescript@5.9.3)
       string-ts: 2.3.1
     transitivePeerDependencies:
       - eslint
       - supports-color
       - typescript
 
-  '@eslint-react/core@2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)':
+  '@eslint-react/core@2.3.7(eslint@9.39.1)(typescript@5.9.3)':
     dependencies:
-      '@eslint-react/ast': 2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@eslint-react/ast': 2.3.7(eslint@9.39.1)(typescript@5.9.3)
       '@eslint-react/eff': 2.3.7
-      '@eslint-react/shared': 2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
-      '@eslint-react/var': 2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@eslint-react/shared': 2.3.7(eslint@9.39.1)(typescript@5.9.3)
+      '@eslint-react/var': 2.3.7(eslint@9.39.1)(typescript@5.9.3)
       '@typescript-eslint/scope-manager': 8.56.0
       '@typescript-eslint/types': 8.56.0
-      '@typescript-eslint/utils': 8.56.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.56.0(eslint@9.39.1)(typescript@5.9.3)
       birecord: 0.1.1
       ts-pattern: 5.9.0
     transitivePeerDependencies:
@@ -14625,29 +14626,29 @@ snapshots:
 
   '@eslint-react/eff@2.3.7': {}
 
-  '@eslint-react/eslint-plugin@2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)':
+  '@eslint-react/eslint-plugin@2.3.7(eslint@9.39.1)(typescript@5.9.3)':
     dependencies:
       '@eslint-react/eff': 2.3.7
-      '@eslint-react/shared': 2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@eslint-react/shared': 2.3.7(eslint@9.39.1)(typescript@5.9.3)
       '@typescript-eslint/scope-manager': 8.56.0
-      '@typescript-eslint/type-utils': 8.56.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/type-utils': 8.56.0(eslint@9.39.1)(typescript@5.9.3)
       '@typescript-eslint/types': 8.56.0
-      '@typescript-eslint/utils': 8.56.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.56.0(eslint@9.39.1)(typescript@5.9.3)
       eslint: 9.39.1(jiti@2.6.1)
-      eslint-plugin-react-dom: 2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
-      eslint-plugin-react-hooks-extra: 2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
-      eslint-plugin-react-naming-convention: 2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
-      eslint-plugin-react-web-api: 2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
-      eslint-plugin-react-x: 2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      eslint-plugin-react-dom: 2.3.7(eslint@9.39.1)(typescript@5.9.3)
+      eslint-plugin-react-hooks-extra: 2.3.7(eslint@9.39.1)(typescript@5.9.3)
+      eslint-plugin-react-naming-convention: 2.3.7(eslint@9.39.1)(typescript@5.9.3)
+      eslint-plugin-react-web-api: 2.3.7(eslint@9.39.1)(typescript@5.9.3)
+      eslint-plugin-react-x: 2.3.7(eslint@9.39.1)(typescript@5.9.3)
       ts-api-utils: 2.4.0(typescript@5.9.3)
       typescript: 5.9.3
     transitivePeerDependencies:
       - supports-color
 
-  '@eslint-react/shared@2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)':
+  '@eslint-react/shared@2.3.7(eslint@9.39.1)(typescript@5.9.3)':
     dependencies:
       '@eslint-react/eff': 2.3.7
-      '@typescript-eslint/utils': 8.56.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.56.0(eslint@9.39.1)(typescript@5.9.3)
       ts-pattern: 5.9.0
       zod: 4.3.6
     transitivePeerDependencies:
@@ -14655,13 +14656,13 @@ snapshots:
       - supports-color
       - typescript
 
-  '@eslint-react/var@2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)':
+  '@eslint-react/var@2.3.7(eslint@9.39.1)(typescript@5.9.3)':
     dependencies:
-      '@eslint-react/ast': 2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@eslint-react/ast': 2.3.7(eslint@9.39.1)(typescript@5.9.3)
       '@eslint-react/eff': 2.3.7
       '@typescript-eslint/scope-manager': 8.56.0
       '@typescript-eslint/types': 8.56.0
-      '@typescript-eslint/utils': 8.56.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.56.0(eslint@9.39.1)(typescript@5.9.3)
       ts-pattern: 5.9.0
     transitivePeerDependencies:
       - eslint
@@ -14714,9 +14715,9 @@ snapshots:
 
   '@gar/promisify@1.1.3': {}
 
-  '@headlessui/react@1.7.19(react-dom@16.14.0(react@16.14.0))(react@16.14.0)':
+  '@headlessui/react@1.7.19(react-dom@16.14.0)(react@16.14.0)':
     dependencies:
-      '@tanstack/react-virtual': 3.13.18(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+      '@tanstack/react-virtual': 3.13.18(react-dom@16.14.0)(react@16.14.0)
       client-only: 0.0.1
       react: 16.14.0
       react-dom: 16.14.0(react@16.14.0)
@@ -15644,9 +15645,9 @@ snapshots:
 
   '@standard-schema/spec@1.1.0': {}
 
-  '@stylistic/eslint-plugin@5.9.0(eslint@9.39.1(jiti@2.6.1))':
+  '@stylistic/eslint-plugin@5.9.0(eslint@9.39.1)':
     dependencies:
-      '@eslint-community/eslint-utils': 4.9.1(eslint@9.39.1(jiti@2.6.1))
+      '@eslint-community/eslint-utils': 4.9.1(eslint@9.39.1)
       '@typescript-eslint/types': 8.56.0
       eslint: 9.39.1(jiti@2.6.1)
       eslint-visitor-keys: 4.2.1
@@ -15729,7 +15730,7 @@ snapshots:
       '@tailwindcss/oxide-win32-arm64-msvc': 4.1.17
       '@tailwindcss/oxide-win32-x64-msvc': 4.1.17
 
-  '@tanstack/react-virtual@3.13.18(react-dom@16.14.0(react@16.14.0))(react@16.14.0)':
+  '@tanstack/react-virtual@3.13.18(react-dom@16.14.0)(react@16.14.0)':
     dependencies:
       '@tanstack/virtual-core': 3.13.18
       react: 16.14.0
@@ -15768,7 +15769,7 @@ snapshots:
       picocolors: 1.1.1
       redent: 3.0.0
 
-  '@testing-library/react@12.1.5(@types/react@16.14.66)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)':
+  '@testing-library/react@12.1.5(@types/react@16.14.66)(react-dom@16.14.0)(react@16.14.0)':
     dependencies:
       '@babel/runtime': 7.28.6
       '@testing-library/dom': 8.20.1
@@ -16205,11 +16206,11 @@ snapshots:
     dependencies:
       '@types/react': 16.14.66
 
-  '@types/react-sortable-tree@0.3.23(react-dom@16.14.0(react@16.14.0))(react@16.14.0)':
+  '@types/react-sortable-tree@0.3.23(react-dom@16.14.0)(react@16.14.0)':
     dependencies:
       '@types/react': 16.14.66
       '@types/react-virtualized': 9.22.3
-      react-dnd: 11.1.3(@types/react@16.14.66)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+      react-dnd: 11.1.3(@types/react@16.14.66)(react-dom@16.14.0)(react@16.14.0)
     transitivePeerDependencies:
       - react
       - react-dom
@@ -16337,13 +16338,13 @@ snapshots:
       '@types/node': 25.5.0
     optional: true
 
-  '@typescript-eslint/eslint-plugin@8.47.0(@typescript-eslint/parser@8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)':
+  '@typescript-eslint/eslint-plugin@8.47.0(@typescript-eslint/parser@8.47.0)(eslint@9.39.1)(typescript@5.9.3)':
     dependencies:
       '@eslint-community/regexpp': 4.12.2
-      '@typescript-eslint/parser': 8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/parser': 8.47.0(eslint@9.39.1)(typescript@5.9.3)
       '@typescript-eslint/scope-manager': 8.47.0
-      '@typescript-eslint/type-utils': 8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
-      '@typescript-eslint/utils': 8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/type-utils': 8.47.0(eslint@9.39.1)(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.47.0(eslint@9.39.1)(typescript@5.9.3)
       '@typescript-eslint/visitor-keys': 8.47.0
       eslint: 9.39.1(jiti@2.6.1)
       graphemer: 1.4.0
@@ -16354,7 +16355,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/parser@8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)':
+  '@typescript-eslint/parser@8.47.0(eslint@9.39.1)(typescript@5.9.3)':
     dependencies:
       '@typescript-eslint/scope-manager': 8.47.0
       '@typescript-eslint/types': 8.47.0
@@ -16402,11 +16403,11 @@ snapshots:
     dependencies:
       typescript: 5.9.3
 
-  '@typescript-eslint/type-utils@8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)':
+  '@typescript-eslint/type-utils@8.47.0(eslint@9.39.1)(typescript@5.9.3)':
     dependencies:
       '@typescript-eslint/types': 8.47.0
       '@typescript-eslint/typescript-estree': 8.47.0(typescript@5.9.3)
-      '@typescript-eslint/utils': 8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.47.0(eslint@9.39.1)(typescript@5.9.3)
       debug: 4.4.3
       eslint: 9.39.1(jiti@2.6.1)
       ts-api-utils: 2.4.0(typescript@5.9.3)
@@ -16414,11 +16415,11 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/type-utils@8.56.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)':
+  '@typescript-eslint/type-utils@8.56.0(eslint@9.39.1)(typescript@5.9.3)':
     dependencies:
       '@typescript-eslint/types': 8.56.0
       '@typescript-eslint/typescript-estree': 8.56.0(typescript@5.9.3)
-      '@typescript-eslint/utils': 8.56.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.56.0(eslint@9.39.1)(typescript@5.9.3)
       debug: 4.4.3
       eslint: 9.39.1(jiti@2.6.1)
       ts-api-utils: 2.4.0(typescript@5.9.3)
@@ -16461,9 +16462,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/utils@8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)':
+  '@typescript-eslint/utils@8.47.0(eslint@9.39.1)(typescript@5.9.3)':
     dependencies:
-      '@eslint-community/eslint-utils': 4.9.1(eslint@9.39.1(jiti@2.6.1))
+      '@eslint-community/eslint-utils': 4.9.1(eslint@9.39.1)
       '@typescript-eslint/scope-manager': 8.47.0
       '@typescript-eslint/types': 8.47.0
       '@typescript-eslint/typescript-estree': 8.47.0(typescript@5.9.3)
@@ -16472,9 +16473,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/utils@8.56.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)':
+  '@typescript-eslint/utils@8.56.0(eslint@9.39.1)(typescript@5.9.3)':
     dependencies:
-      '@eslint-community/eslint-utils': 4.9.1(eslint@9.39.1(jiti@2.6.1))
+      '@eslint-community/eslint-utils': 4.9.1(eslint@9.39.1)
       '@typescript-eslint/scope-manager': 8.56.0
       '@typescript-eslint/types': 8.56.0
       '@typescript-eslint/typescript-estree': 8.56.0(typescript@5.9.3)
@@ -16555,11 +16556,11 @@ snapshots:
   '@unrs/resolver-binding-win32-x64-msvc@1.11.1':
     optional: true
 
-  '@valibot/to-json-schema@1.5.0(valibot@1.2.0(typescript@5.9.3))':
+  '@valibot/to-json-schema@1.5.0(valibot@1.2.0)':
     dependencies:
       valibot: 1.2.0(typescript@5.9.3)
 
-  '@vitejs/plugin-react@6.0.1(vite@8.0.0(@types/node@25.5.0)(esbuild@0.27.4)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.0))':
+  '@vitejs/plugin-react@6.0.1(vite@8.0.0)':
     dependencies:
       '@rolldown/pluginutils': 1.0.0-rc.7
       vite: 8.0.0(@types/node@25.5.0)(esbuild@0.27.4)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.0)
@@ -16576,7 +16577,7 @@ snapshots:
       obug: 2.1.1
       std-env: 4.0.0
       tinyrainbow: 3.1.0
-      vitest: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@22.19.11)(@vitest/ui@4.1.0)(happy-dom@20.8.3)(jsdom@20.0.3)(vite@8.0.0(@types/node@22.19.11)(esbuild@0.27.4)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.0))
+      vitest: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@22.19.11)(@vitest/ui@4.1.0)(happy-dom@20.8.3)(jsdom@20.0.3)(vite@8.0.0)
 
   '@vitest/expect@4.1.0':
     dependencies:
@@ -16587,7 +16588,7 @@ snapshots:
       chai: 6.2.2
       tinyrainbow: 3.1.0
 
-  '@vitest/mocker@4.1.0(vite@8.0.0(@types/node@22.19.11)(esbuild@0.27.4)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.0))':
+  '@vitest/mocker@4.1.0(vite@8.0.0)':
     dependencies:
       '@vitest/spy': 4.1.0
       estree-walker: 3.0.3
@@ -16622,7 +16623,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 3.1.0
-      vitest: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@22.19.11)(@vitest/ui@4.1.0)(happy-dom@20.8.3)(jsdom@20.0.3)(vite@8.0.0(@types/node@22.19.11)(esbuild@0.27.4)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.0))
+      vitest: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@22.19.11)(@vitest/ui@4.1.0)(happy-dom@20.8.3)(jsdom@20.0.3)(vite@8.0.0)
 
   '@vitest/utils@4.1.0':
     dependencies:
@@ -18420,7 +18421,7 @@ snapshots:
 
   envinfo@7.21.0: {}
 
-  enzyme-adapter-react-16@1.15.8(enzyme@3.11.0)(react-dom@16.14.0(react@16.14.0))(react@16.14.0):
+  enzyme-adapter-react-16@1.15.8(enzyme@3.11.0)(react-dom@16.14.0)(react@16.14.0):
     dependencies:
       enzyme: 3.11.0
       enzyme-adapter-utils: 1.14.2(react@16.14.0)
@@ -18639,7 +18640,7 @@ snapshots:
     optionalDependencies:
       source-map: 0.6.1
 
-  eslint-config-prettier@10.1.8(eslint@9.39.1(jiti@2.6.1)):
+  eslint-config-prettier@10.1.8(eslint@9.39.1):
     dependencies:
       eslint: 9.39.1(jiti@2.6.1)
 
@@ -18658,7 +18659,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-import-resolver-typescript@4.4.4(eslint-plugin-import@2.32.0)(eslint@9.39.1(jiti@2.6.1)):
+  eslint-import-resolver-typescript@4.4.4(eslint-plugin-import@2.32.0)(eslint@9.39.1):
     dependencies:
       debug: 4.4.3
       eslint: 9.39.1(jiti@2.6.1)
@@ -18669,25 +18670,25 @@ snapshots:
       tinyglobby: 0.2.15
       unrs-resolver: 1.11.1
     optionalDependencies:
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-typescript@4.4.4)(eslint@9.39.1(jiti@2.6.1))
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.47.0)(eslint-import-resolver-typescript@4.4.4)(eslint@9.39.1)
     transitivePeerDependencies:
       - supports-color
 
-  eslint-module-utils@2.12.1(@typescript-eslint/parser@8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@4.4.4)(eslint@9.39.1(jiti@2.6.1)):
+  eslint-module-utils@2.12.1(@typescript-eslint/parser@8.47.0)(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@4.4.4)(eslint@9.39.1):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
-      '@typescript-eslint/parser': 8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/parser': 8.47.0(eslint@9.39.1)(typescript@5.9.3)
       eslint: 9.39.1(jiti@2.6.1)
       eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 4.4.4(eslint-plugin-import@2.32.0)(eslint@9.39.1(jiti@2.6.1))
+      eslint-import-resolver-typescript: 4.4.4(eslint-plugin-import@2.32.0)(eslint@9.39.1)
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-better-tailwindcss@4.3.0(eslint@9.39.1(jiti@2.6.1))(tailwindcss@4.1.17)(typescript@5.9.3):
+  eslint-plugin-better-tailwindcss@4.3.0(eslint@9.39.1)(tailwindcss@4.1.17)(typescript@5.9.3):
     dependencies:
       '@eslint/css-tree': 3.6.9
-      '@valibot/to-json-schema': 1.5.0(valibot@1.2.0(typescript@5.9.3))
+      '@valibot/to-json-schema': 1.5.0(valibot@1.2.0)
       enhanced-resolve: 5.19.0
       jiti: 2.6.1
       synckit: 0.11.12
@@ -18700,7 +18701,7 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-typescript@4.4.4)(eslint@9.39.1(jiti@2.6.1)):
+  eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.47.0)(eslint-import-resolver-typescript@4.4.4)(eslint@9.39.1):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.9
@@ -18711,7 +18712,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 9.39.1(jiti@2.6.1)
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.12.1(@typescript-eslint/parser@8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@4.4.4)(eslint@9.39.1(jiti@2.6.1))
+      eslint-module-utils: 2.12.1(@typescript-eslint/parser@8.47.0)(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@4.4.4)(eslint@9.39.1)
       hasown: 2.0.2
       is-core-module: 2.16.1
       is-glob: 4.0.3
@@ -18723,31 +18724,31 @@ snapshots:
       string.prototype.trimend: 1.0.9
       tsconfig-paths: 3.15.0
     optionalDependencies:
-      '@typescript-eslint/parser': 8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/parser': 8.47.0(eslint@9.39.1)(typescript@5.9.3)
     transitivePeerDependencies:
       - eslint-import-resolver-typescript
       - eslint-import-resolver-webpack
       - supports-color
 
-  eslint-plugin-perfectionist@5.6.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3):
+  eslint-plugin-perfectionist@5.6.0(eslint@9.39.1)(typescript@5.9.3):
     dependencies:
-      '@typescript-eslint/utils': 8.56.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.56.0(eslint@9.39.1)(typescript@5.9.3)
       eslint: 9.39.1(jiti@2.6.1)
       natural-orderby: 5.0.0
     transitivePeerDependencies:
       - supports-color
       - typescript
 
-  eslint-plugin-react-dom@2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3):
+  eslint-plugin-react-dom@2.3.7(eslint@9.39.1)(typescript@5.9.3):
     dependencies:
-      '@eslint-react/ast': 2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
-      '@eslint-react/core': 2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@eslint-react/ast': 2.3.7(eslint@9.39.1)(typescript@5.9.3)
+      '@eslint-react/core': 2.3.7(eslint@9.39.1)(typescript@5.9.3)
       '@eslint-react/eff': 2.3.7
-      '@eslint-react/shared': 2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
-      '@eslint-react/var': 2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@eslint-react/shared': 2.3.7(eslint@9.39.1)(typescript@5.9.3)
+      '@eslint-react/var': 2.3.7(eslint@9.39.1)(typescript@5.9.3)
       '@typescript-eslint/scope-manager': 8.56.0
       '@typescript-eslint/types': 8.56.0
-      '@typescript-eslint/utils': 8.56.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.56.0(eslint@9.39.1)(typescript@5.9.3)
       compare-versions: 6.1.1
       eslint: 9.39.1(jiti@2.6.1)
       string-ts: 2.3.1
@@ -18756,17 +18757,17 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-react-hooks-extra@2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3):
+  eslint-plugin-react-hooks-extra@2.3.7(eslint@9.39.1)(typescript@5.9.3):
     dependencies:
-      '@eslint-react/ast': 2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
-      '@eslint-react/core': 2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@eslint-react/ast': 2.3.7(eslint@9.39.1)(typescript@5.9.3)
+      '@eslint-react/core': 2.3.7(eslint@9.39.1)(typescript@5.9.3)
       '@eslint-react/eff': 2.3.7
-      '@eslint-react/shared': 2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
-      '@eslint-react/var': 2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@eslint-react/shared': 2.3.7(eslint@9.39.1)(typescript@5.9.3)
+      '@eslint-react/var': 2.3.7(eslint@9.39.1)(typescript@5.9.3)
       '@typescript-eslint/scope-manager': 8.56.0
-      '@typescript-eslint/type-utils': 8.56.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/type-utils': 8.56.0(eslint@9.39.1)(typescript@5.9.3)
       '@typescript-eslint/types': 8.56.0
-      '@typescript-eslint/utils': 8.56.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.56.0(eslint@9.39.1)(typescript@5.9.3)
       eslint: 9.39.1(jiti@2.6.1)
       string-ts: 2.3.1
       ts-pattern: 5.9.0
@@ -18774,17 +18775,17 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-react-naming-convention@2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3):
+  eslint-plugin-react-naming-convention@2.3.7(eslint@9.39.1)(typescript@5.9.3):
     dependencies:
-      '@eslint-react/ast': 2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
-      '@eslint-react/core': 2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@eslint-react/ast': 2.3.7(eslint@9.39.1)(typescript@5.9.3)
+      '@eslint-react/core': 2.3.7(eslint@9.39.1)(typescript@5.9.3)
       '@eslint-react/eff': 2.3.7
-      '@eslint-react/shared': 2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
-      '@eslint-react/var': 2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@eslint-react/shared': 2.3.7(eslint@9.39.1)(typescript@5.9.3)
+      '@eslint-react/var': 2.3.7(eslint@9.39.1)(typescript@5.9.3)
       '@typescript-eslint/scope-manager': 8.56.0
-      '@typescript-eslint/type-utils': 8.56.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/type-utils': 8.56.0(eslint@9.39.1)(typescript@5.9.3)
       '@typescript-eslint/types': 8.56.0
-      '@typescript-eslint/utils': 8.56.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.56.0(eslint@9.39.1)(typescript@5.9.3)
       eslint: 9.39.1(jiti@2.6.1)
       string-ts: 2.3.1
       ts-pattern: 5.9.0
@@ -18792,16 +18793,16 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-react-web-api@2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3):
+  eslint-plugin-react-web-api@2.3.7(eslint@9.39.1)(typescript@5.9.3):
     dependencies:
-      '@eslint-react/ast': 2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
-      '@eslint-react/core': 2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@eslint-react/ast': 2.3.7(eslint@9.39.1)(typescript@5.9.3)
+      '@eslint-react/core': 2.3.7(eslint@9.39.1)(typescript@5.9.3)
       '@eslint-react/eff': 2.3.7
-      '@eslint-react/shared': 2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
-      '@eslint-react/var': 2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@eslint-react/shared': 2.3.7(eslint@9.39.1)(typescript@5.9.3)
+      '@eslint-react/var': 2.3.7(eslint@9.39.1)(typescript@5.9.3)
       '@typescript-eslint/scope-manager': 8.56.0
       '@typescript-eslint/types': 8.56.0
-      '@typescript-eslint/utils': 8.56.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.56.0(eslint@9.39.1)(typescript@5.9.3)
       eslint: 9.39.1(jiti@2.6.1)
       string-ts: 2.3.1
       ts-pattern: 5.9.0
@@ -18809,20 +18810,20 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-react-x@2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3):
+  eslint-plugin-react-x@2.3.7(eslint@9.39.1)(typescript@5.9.3):
     dependencies:
-      '@eslint-react/ast': 2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
-      '@eslint-react/core': 2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@eslint-react/ast': 2.3.7(eslint@9.39.1)(typescript@5.9.3)
+      '@eslint-react/core': 2.3.7(eslint@9.39.1)(typescript@5.9.3)
       '@eslint-react/eff': 2.3.7
-      '@eslint-react/shared': 2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
-      '@eslint-react/var': 2.3.7(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@eslint-react/shared': 2.3.7(eslint@9.39.1)(typescript@5.9.3)
+      '@eslint-react/var': 2.3.7(eslint@9.39.1)(typescript@5.9.3)
       '@typescript-eslint/scope-manager': 8.56.0
-      '@typescript-eslint/type-utils': 8.56.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/type-utils': 8.56.0(eslint@9.39.1)(typescript@5.9.3)
       '@typescript-eslint/types': 8.56.0
-      '@typescript-eslint/utils': 8.56.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.56.0(eslint@9.39.1)(typescript@5.9.3)
       compare-versions: 6.1.1
       eslint: 9.39.1(jiti@2.6.1)
-      is-immutable-type: 5.0.1(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      is-immutable-type: 5.0.1(eslint@9.39.1)(typescript@5.9.3)
       string-ts: 2.3.1
       ts-api-utils: 2.4.0(typescript@5.9.3)
       ts-pattern: 5.9.0
@@ -18848,7 +18849,7 @@ snapshots:
 
   eslint@9.39.1(jiti@2.6.1):
     dependencies:
-      '@eslint-community/eslint-utils': 4.9.1(eslint@9.39.1(jiti@2.6.1))
+      '@eslint-community/eslint-utils': 4.9.1(eslint@9.39.1)
       '@eslint-community/regexpp': 4.12.2
       '@eslint/config-array': 0.21.1
       '@eslint/config-helpers': 0.4.2
@@ -19206,7 +19207,7 @@ snapshots:
 
   fresh@0.5.2: {}
 
-  frontend-collective-react-dnd-scrollzone@1.0.2(react-dnd@14.0.5(@types/hoist-non-react-statics@3.3.7(@types/react@16.14.66))(@types/node@22.19.11)(@types/react@16.14.66)(react@16.14.0)):
+  frontend-collective-react-dnd-scrollzone@1.0.2(react-dnd@14.0.5):
     dependencies:
       hoist-non-react-statics: 3.3.2
       lodash.throttle: 4.1.1
@@ -19214,18 +19215,7 @@ snapshots:
       raf: 3.4.1
       react: 16.14.0
       react-display-name: 0.2.5
-      react-dnd: 14.0.5(@types/hoist-non-react-statics@3.3.7(@types/react@16.14.66))(@types/node@22.19.11)(@types/react@16.14.66)(react@16.14.0)
-      react-dom: 16.14.0(react@16.14.0)
-
-  frontend-collective-react-dnd-scrollzone@1.0.2(react-dnd@14.0.5(@types/hoist-non-react-statics@3.3.7(@types/react@16.14.66))(@types/node@25.5.0)(@types/react@16.14.66)(react@16.14.0)):
-    dependencies:
-      hoist-non-react-statics: 3.3.2
-      lodash.throttle: 4.1.1
-      prop-types: 15.8.1
-      raf: 3.4.1
-      react: 16.14.0
-      react-display-name: 0.2.5
-      react-dnd: 14.0.5(@types/hoist-non-react-statics@3.3.7(@types/react@16.14.66))(@types/node@25.5.0)(@types/react@16.14.66)(react@16.14.0)
+      react-dnd: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@25.5.0)(@types/react@16.14.66)(react@16.14.0)
       react-dom: 16.14.0(react@16.14.0)
 
   fs-constants@1.0.0: {}
@@ -19844,9 +19834,9 @@ snapshots:
 
   is-hexadecimal@1.0.4: {}
 
-  is-immutable-type@5.0.1(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3):
+  is-immutable-type@5.0.1(eslint@9.39.1)(typescript@5.9.3):
     dependencies:
-      '@typescript-eslint/type-utils': 8.56.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/type-utils': 8.56.0(eslint@9.39.1)(typescript@5.9.3)
       eslint: 9.39.1(jiti@2.6.1)
       ts-api-utils: 2.4.0(typescript@5.9.3)
       ts-declaration-location: 1.0.7(typescript@5.9.3)
@@ -21763,12 +21753,12 @@ snapshots:
     dependencies:
       reselect: 4.1.8
 
-  re-resizable@6.11.2(react-dom@16.14.0(react@16.14.0))(react@16.14.0):
+  re-resizable@6.11.2(react-dom@16.14.0)(react@16.14.0):
     dependencies:
       react: 16.14.0
       react-dom: 16.14.0(react@16.14.0)
 
-  react-bootstrap@0.33.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0):
+  react-bootstrap@0.33.1(react-dom@16.14.0)(react@16.14.0):
     dependencies:
       '@babel/runtime-corejs2': 7.28.6
       classnames: 2.5.1
@@ -21779,9 +21769,9 @@ snapshots:
       prop-types-extra: 1.1.1(react@16.14.0)
       react: 16.14.0
       react-dom: 16.14.0(react@16.14.0)
-      react-overlays: 0.9.3(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+      react-overlays: 0.9.3(react-dom@16.14.0)(react@16.14.0)
       react-prop-types: 0.4.0(react@16.14.0)
-      react-transition-group: 2.9.0(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+      react-transition-group: 2.9.0(react-dom@16.14.0)(react@16.14.0)
       uncontrollable: 7.2.1(react@16.14.0)
       warning: 3.0.0
 
@@ -21800,14 +21790,14 @@ snapshots:
     dependencies:
       react: 16.14.0
 
-  react-datepicker@3.8.0(react-dom@16.14.0(react@16.14.0))(react@16.14.0):
+  react-datepicker@3.8.0(react-dom@16.14.0)(react@16.14.0):
     dependencies:
       classnames: 2.5.1
       date-fns: 2.30.0
       prop-types: 15.8.1
       react: 16.14.0
       react-dom: 16.14.0(react@16.14.0)
-      react-onclickoutside: 6.13.2(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+      react-onclickoutside: 6.13.2(react-dom@16.14.0)(react@16.14.0)
       react-popper: 1.3.11(react@16.14.0)
 
   react-display-name@0.2.5: {}
@@ -21832,7 +21822,7 @@ snapshots:
       raf: 3.4.1
       react-display-name: 0.2.5
 
-  react-dnd@11.1.3(@types/react@16.14.66)(react-dom@16.14.0(react@16.14.0))(react@16.14.0):
+  react-dnd@11.1.3(@types/react@16.14.66)(react-dom@16.14.0)(react@16.14.0):
     dependencies:
       '@react-dnd/shallowequal': 2.0.0
       '@types/hoist-non-react-statics': 3.3.7(@types/react@16.14.66)
@@ -21843,7 +21833,7 @@ snapshots:
     transitivePeerDependencies:
       - '@types/react'
 
-  react-dnd@14.0.5(@types/hoist-non-react-statics@3.3.7(@types/react@16.14.66))(@types/node@22.19.11)(@types/react@16.14.66)(react@16.14.0):
+  react-dnd@14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@22.19.11)(@types/react@16.14.66)(react@16.14.0):
     dependencies:
       '@react-dnd/invariant': 2.0.0
       '@react-dnd/shallowequal': 2.0.0
@@ -21856,7 +21846,7 @@ snapshots:
       '@types/node': 22.19.11
       '@types/react': 16.14.66
 
-  react-dnd@14.0.5(@types/hoist-non-react-statics@3.3.7(@types/react@16.14.66))(@types/node@25.5.0)(@types/react@16.14.66)(react@16.14.0):
+  react-dnd@14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@25.5.0)(@types/react@16.14.66)(react@16.14.0):
     dependencies:
       '@react-dnd/invariant': 2.0.0
       '@react-dnd/shallowequal': 2.0.0
@@ -21887,14 +21877,14 @@ snapshots:
       react: 16.14.0
       scheduler: 0.19.1
 
-  react-hot-toast@2.6.0(react-dom@16.14.0(react@16.14.0))(react@16.14.0):
+  react-hot-toast@2.6.0(react-dom@16.14.0)(react@16.14.0):
     dependencies:
       csstype: 3.2.3
       goober: 2.1.18(csstype@3.2.3)
       react: 16.14.0
       react-dom: 16.14.0(react@16.14.0)
 
-  react-i18next@11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0):
+  react-i18next@11.18.6(i18next@19.9.2)(react-dom@16.14.0)(react@16.14.0):
     dependencies:
       '@babel/runtime': 7.28.6
       html-parse-stringify: 3.0.1
@@ -21936,12 +21926,12 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  react-onclickoutside@6.13.2(react-dom@16.14.0(react@16.14.0))(react@16.14.0):
+  react-onclickoutside@6.13.2(react-dom@16.14.0)(react@16.14.0):
     dependencies:
       react: 16.14.0
       react-dom: 16.14.0(react@16.14.0)
 
-  react-overlays@0.9.3(react-dom@16.14.0(react@16.14.0))(react@16.14.0):
+  react-overlays@0.9.3(react-dom@16.14.0)(react@16.14.0):
     dependencies:
       classnames: 2.5.1
       dom-helpers: 3.4.0
@@ -21949,10 +21939,10 @@ snapshots:
       prop-types-extra: 1.1.1(react@16.14.0)
       react: 16.14.0
       react-dom: 16.14.0(react@16.14.0)
-      react-transition-group: 2.9.0(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+      react-transition-group: 2.9.0(react-dom@16.14.0)(react@16.14.0)
       warning: 3.0.0
 
-  react-overlays@1.2.0(react-dom@16.14.0(react@16.14.0))(react@16.14.0):
+  react-overlays@1.2.0(react-dom@16.14.0)(react@16.14.0):
     dependencies:
       classnames: 2.5.1
       dom-helpers: 3.4.0
@@ -21981,7 +21971,7 @@ snapshots:
       react: 16.14.0
       warning: 3.0.0
 
-  react-redux@7.2.9(react-dom@16.14.0(react@16.14.0))(react@16.14.0):
+  react-redux@7.2.9(react-dom@16.14.0)(react@16.14.0):
     dependencies:
       '@babel/runtime': 7.28.6
       '@types/react-redux': 7.1.34
@@ -22001,7 +21991,7 @@ snapshots:
       react: 16.14.0
       resize-observer-polyfill: 1.5.1
 
-  react-resize-detector@4.2.3(react-dom@16.14.0(react@16.14.0))(react@16.14.0):
+  react-resize-detector@4.2.3(react-dom@16.14.0)(react@16.14.0):
     dependencies:
       lodash: 4.17.23
       lodash-es: 4.17.23
@@ -22011,7 +22001,7 @@ snapshots:
       react-dom: 16.14.0(react@16.14.0)
       resize-observer-polyfill: 1.5.1
 
-  react-select@1.3.0(react-dom@16.14.0(react@16.14.0))(react@16.14.0):
+  react-select@1.3.0(react-dom@16.14.0)(react@16.14.0):
     dependencies:
       classnames: 2.5.1
       prop-types: 15.8.1
@@ -22019,21 +22009,21 @@ snapshots:
       react-dom: 16.14.0(react@16.14.0)
       react-input-autosize: 2.2.2(react@16.14.0)
 
-  react-shallow-testutils@3.0.1(react-test-renderer@16.14.0(react@16.14.0))(react@16.14.0):
+  react-shallow-testutils@3.0.1(react-test-renderer@16.14.0)(react@16.14.0):
     dependencies:
       react: 16.14.0
       react-test-renderer: 16.14.0(react@16.14.0)
 
-  react-smooth@1.0.6(react-dom@16.14.0(react@16.14.0))(react@16.14.0):
+  react-smooth@1.0.6(react-dom@16.14.0)(react@16.14.0):
     dependencies:
       lodash: 4.17.23
       prop-types: 15.8.1
       raf: 3.4.1
       react: 16.14.0
       react-dom: 16.14.0(react@16.14.0)
-      react-transition-group: 2.9.0(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+      react-transition-group: 2.9.0(react-dom@16.14.0)(react@16.14.0)
 
-  react-sortable-tree-theme-file-explorer@2.0.0(react-dom@16.14.0(react@16.14.0))(react-sortable-tree@2.8.0(react-dnd@14.0.5(@types/hoist-non-react-statics@3.3.7(@types/react@16.14.66))(@types/node@25.5.0)(@types/react@16.14.66)(react@16.14.0))(react-dom@16.14.0(react@16.14.0))(react@16.14.0))(react@16.14.0):
+  react-sortable-tree-theme-file-explorer@2.0.0(react-dom@16.14.0)(react-sortable-tree@2.8.0)(react@16.14.0):
     dependencies:
       lodash.isequal: 4.5.0
       prop-types: 15.8.1
@@ -22042,32 +22032,20 @@ snapshots:
       react-dnd-html5-backend: 2.5.4
       react-dnd-scrollzone: 4.0.0
       react-dom: 16.14.0(react@16.14.0)
-      react-sortable-tree: 2.8.0(react-dnd@14.0.5(@types/hoist-non-react-statics@3.3.7(@types/react@16.14.66))(@types/node@25.5.0)(@types/react@16.14.66)(react@16.14.0))(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
-      react-virtualized: 9.22.6(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+      react-sortable-tree: 2.8.0(react-dnd@14.0.5)(react-dom@16.14.0)(react@16.14.0)
+      react-virtualized: 9.22.6(react-dom@16.14.0)(react@16.14.0)
 
-  react-sortable-tree@2.8.0(react-dnd@14.0.5(@types/hoist-non-react-statics@3.3.7(@types/react@16.14.66))(@types/node@22.19.11)(@types/react@16.14.66)(react@16.14.0))(react-dom@16.14.0(react@16.14.0))(react@16.14.0):
+  react-sortable-tree@2.8.0(react-dnd@14.0.5)(react-dom@16.14.0)(react@16.14.0):
     dependencies:
-      frontend-collective-react-dnd-scrollzone: 1.0.2(react-dnd@14.0.5(@types/hoist-non-react-statics@3.3.7(@types/react@16.14.66))(@types/node@22.19.11)(@types/react@16.14.66)(react@16.14.0))
+      frontend-collective-react-dnd-scrollzone: 1.0.2(react-dnd@14.0.5)
       lodash.isequal: 4.5.0
       prop-types: 15.8.1
       react: 16.14.0
-      react-dnd: 14.0.5(@types/hoist-non-react-statics@3.3.7(@types/react@16.14.66))(@types/node@22.19.11)(@types/react@16.14.66)(react@16.14.0)
+      react-dnd: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@25.5.0)(@types/react@16.14.66)(react@16.14.0)
       react-dnd-html5-backend: 11.1.3
       react-dom: 16.14.0(react@16.14.0)
       react-lifecycles-compat: 3.0.4
-      react-virtualized: 9.22.6(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
-
-  react-sortable-tree@2.8.0(react-dnd@14.0.5(@types/hoist-non-react-statics@3.3.7(@types/react@16.14.66))(@types/node@25.5.0)(@types/react@16.14.66)(react@16.14.0))(react-dom@16.14.0(react@16.14.0))(react@16.14.0):
-    dependencies:
-      frontend-collective-react-dnd-scrollzone: 1.0.2(react-dnd@14.0.5(@types/hoist-non-react-statics@3.3.7(@types/react@16.14.66))(@types/node@25.5.0)(@types/react@16.14.66)(react@16.14.0))
-      lodash.isequal: 4.5.0
-      prop-types: 15.8.1
-      react: 16.14.0
-      react-dnd: 14.0.5(@types/hoist-non-react-statics@3.3.7(@types/react@16.14.66))(@types/node@25.5.0)(@types/react@16.14.66)(react@16.14.0)
-      react-dnd-html5-backend: 11.1.3
-      react-dom: 16.14.0(react@16.14.0)
-      react-lifecycles-compat: 3.0.4
-      react-virtualized: 9.22.6(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+      react-virtualized: 9.22.6(react-dom@16.14.0)(react@16.14.0)
 
   react-test-renderer@16.14.0(react@16.14.0):
     dependencies:
@@ -22077,7 +22055,7 @@ snapshots:
       react-is: 16.13.1
       scheduler: 0.19.1
 
-  react-transition-group@2.9.0(react-dom@16.14.0(react@16.14.0))(react@16.14.0):
+  react-transition-group@2.9.0(react-dom@16.14.0)(react@16.14.0):
     dependencies:
       dom-helpers: 3.4.0
       loose-envify: 1.4.0
@@ -22086,7 +22064,7 @@ snapshots:
       react-dom: 16.14.0(react@16.14.0)
       react-lifecycles-compat: 3.0.4
 
-  react-virtualized@9.22.6(react-dom@16.14.0(react@16.14.0))(react@16.14.0):
+  react-virtualized@9.22.6(react-dom@16.14.0)(react@16.14.0):
     dependencies:
       '@babel/runtime': 7.28.6
       clsx: 1.2.1
@@ -22150,7 +22128,7 @@ snapshots:
     dependencies:
       decimal.js-light: 2.5.1
 
-  recharts@1.8.6(react-dom@16.14.0(react@16.14.0))(react@16.14.0):
+  recharts@1.8.6(react-dom@16.14.0)(react@16.14.0):
     dependencies:
       classnames: 2.5.1
       core-js: 3.48.0
@@ -22162,7 +22140,7 @@ snapshots:
       react: 16.14.0
       react-dom: 16.14.0(react@16.14.0)
       react-resize-detector: 2.3.0(react@16.14.0)
-      react-smooth: 1.0.6(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+      react-smooth: 1.0.6(react-dom@16.14.0)(react@16.14.0)
       recharts-scale: 0.4.5
       reduce-css-calc: 1.3.0
 
@@ -23026,7 +23004,7 @@ snapshots:
       picomatch: 4.0.3
       typescript: 5.9.3
 
-  ts-jest@29.4.6(@babel/core@7.29.0)(@jest/transform@30.2.0)(@jest/types@30.2.0)(babel-jest@29.7.0(@babel/core@7.29.0))(esbuild@0.27.4)(jest-util@30.2.0)(jest@29.7.0(@types/node@25.5.0)(babel-plugin-macros@3.1.0))(typescript@5.9.3):
+  ts-jest@29.4.6(@babel/core@7.29.0)(@jest/transform@30.2.0)(@jest/types@30.2.0)(babel-jest@29.7.0)(esbuild@0.27.4)(jest-util@30.2.0)(jest@29.7.0)(typescript@5.9.3):
     dependencies:
       bs-logger: 0.2.6
       fast-json-stable-stringify: 2.1.0
@@ -23047,7 +23025,7 @@ snapshots:
       esbuild: 0.27.4
       jest-util: 30.2.0
 
-  ts-jest@29.4.6(@babel/core@7.29.0)(@jest/transform@30.2.0)(@jest/types@30.2.0)(babel-jest@30.2.0(@babel/core@7.29.0))(esbuild@0.27.4)(jest-util@30.2.0)(jest@29.7.0(@types/node@22.19.11))(typescript@5.9.3):
+  ts-jest@29.4.6(@babel/core@7.29.0)(@jest/transform@30.2.0)(@jest/types@30.2.0)(babel-jest@30.2.0)(esbuild@0.27.4)(jest-util@30.2.0)(jest@29.7.0)(typescript@5.9.3):
     dependencies:
       bs-logger: 0.2.6
       fast-json-stable-stringify: 2.1.0
@@ -23220,12 +23198,12 @@ snapshots:
     dependencies:
       is-typedarray: 1.0.0
 
-  typescript-eslint@8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3):
+  typescript-eslint@8.47.0(eslint@9.39.1)(typescript@5.9.3):
     dependencies:
-      '@typescript-eslint/eslint-plugin': 8.47.0(@typescript-eslint/parser@8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
-      '@typescript-eslint/parser': 8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/eslint-plugin': 8.47.0(@typescript-eslint/parser@8.47.0)(eslint@9.39.1)(typescript@5.9.3)
+      '@typescript-eslint/parser': 8.47.0(eslint@9.39.1)(typescript@5.9.3)
       '@typescript-eslint/typescript-estree': 8.47.0(typescript@5.9.3)
-      '@typescript-eslint/utils': 8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.47.0(eslint@9.39.1)(typescript@5.9.3)
       eslint: 9.39.1(jiti@2.6.1)
       typescript: 5.9.3
     transitivePeerDependencies:
@@ -23486,10 +23464,10 @@ snapshots:
       sass: 1.97.3
       terser: 5.46.0
 
-  vitest@4.1.0(@opentelemetry/api@1.9.0)(@types/node@22.19.11)(@vitest/ui@4.1.0)(happy-dom@20.8.3)(jsdom@20.0.3)(vite@8.0.0(@types/node@22.19.11)(esbuild@0.27.4)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.0)):
+  vitest@4.1.0(@opentelemetry/api@1.9.0)(@types/node@22.19.11)(@vitest/ui@4.1.0)(happy-dom@20.8.3)(jsdom@20.0.3)(vite@8.0.0):
     dependencies:
       '@vitest/expect': 4.1.0
-      '@vitest/mocker': 4.1.0(vite@8.0.0(@types/node@22.19.11)(esbuild@0.27.4)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.0))
+      '@vitest/mocker': 4.1.0(vite@8.0.0)
       '@vitest/pretty-format': 4.1.0
       '@vitest/runner': 4.1.0
       '@vitest/snapshot': 4.1.0
