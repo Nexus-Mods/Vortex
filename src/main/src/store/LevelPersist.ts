@@ -150,13 +150,12 @@ class LevelPersist implements IPersistor {
   public async setItem(statePath: string[], newState: string): Promise<void> {
     const key = statePath.join(SEPARATOR);
     // level_pivot tables don't support UNIQUE indexes, so ON CONFLICT
-    // upserts aren't possible.  UPDATE … RETURNING is also unreliable: the
-    // raw kv table (NULL prefix) shares LevelDB key space with pivot tables
-    // (mods_pivot, profiles_pivot), and level_pivot's internal metadata
-    // entries leak through DuckDB's virtual-table UPDATE replacement scan
-    // but not through SELECT.  RETURNING therefore always reports 1 row
-    // "updated" regardless of whether the target key exists.  Use SELECT
-    // to check existence, then UPDATE or INSERT accordingly.
+    // upserts aren't possible.  UPDATE … RETURNING is also unreliable:
+    // level_pivot's EmitRowCount unconditionally emits a single-row chunk
+    // (the "rows affected" count), which DuckDB's RETURNING pipeline
+    // surfaces as the query result — so RETURNING always reports 1 row
+    // regardless of whether any row was matched.  Use SELECT to check
+    // existence, then UPDATE or INSERT accordingly.
     const ownTransaction = !this.#mInTransaction;
     if (ownTransaction) {
       await this.beginTransaction();
