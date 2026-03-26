@@ -2,12 +2,12 @@
   // Linux Dev Container to build Vortex.
   // Usage is discouraged for peformance and ease of development reasons, prefer building directly on host.
   // Clone the repo on host machine, start the container using VSCode Restart in Container command.
-  // Inside the container run `pnpm run build:fomod && pnpm install` (dependency setup), then `pnpm run build`.
+  // Inside the container run `pnpm install` (dependency setup), then `pnpm run build`.
   // Install Yarn classic explicitly; Volta defaults `yarn` installs to v4 which breaks subproject builds.
   "name": "Vortex Linux Build",
   "build": {
     "dockerfile": "../../docker/linux/Dockerfile.devcontainer",
-    "context": "../.."
+    "context": "../..",
   },
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
   "workspaceFolder": "/workspace",
@@ -17,11 +17,9 @@
   "containerEnv": {
     "ELECTRON_DISABLE_GPU": "true",
     "DISPLAY": "${localEnv:DISPLAY}",
-    "NO_PARALLEL": "true"
+    "NO_PARALLEL": "true",
   },
-  "runArgs": [
-    "--init"
-  ],
+  "runArgs": ["--init"],
   "forwardPorts": [],
-  "portsAttributes": {}
+  "portsAttributes": {},
 }

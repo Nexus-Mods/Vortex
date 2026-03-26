@@ -1,5 +1,5 @@
 import path from "path";
-import { SecurityLevel } from "fomod-installer-ipc";
+import { SecurityLevel } from "@nexusmods/fomod-installer-ipc";
 import { CSharpDelegates } from "./delegates/CSharpDelegates";
 import { VortexIPCConnection } from "./utils/VortexIPCConnection";
 import { createConnectionStrategies } from "./utils/connectionStrategy";

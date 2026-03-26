@@ -4,7 +4,7 @@ import { log } from "../../../util/log";
 import { DialogManager } from "./DialogManager";
 import { SharedDelegates } from "../../installer_fomod_shared/delegates/SharedDelegates";
 
-import type * as fomodT from "fomod-installer-native";
+import type * as fomodT from "@nexusmods/fomod-installer-native";
 
 export class VortexModInstaller {
   public static async create(
@@ -45,7 +45,7 @@ export class VortexModInstaller {
     unattended: boolean = false,
   ) {
     this.fomod = lazyRequire<typeof fomodT>(() =>
-      require("fomod-installer-native"),
+      require("@nexusmods/fomod-installer-native"),
     );
     this.mModInstaller = new this.fomod.NativeModInstaller(
       this.pluginsGetAllAsync,

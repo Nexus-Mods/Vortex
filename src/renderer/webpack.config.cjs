@@ -84,9 +84,6 @@ const config = {
         nodeExternals({
             allowlist: [/@vortex\/shared/],
         }),
-        // Explicitly exclude local file: dependencies that must remain external
-        "fomod-installer-ipc",
-        "fomod-installer-native",
     ],
 };
 
