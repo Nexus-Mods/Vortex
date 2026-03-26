@@ -104,7 +104,8 @@ function posixBasename(p: string, ext?: string): string {
 
   // Remove trailing slashes
   let end = p.length - 1;
-  while (end > 0 && p.charCodeAt(end) === 0x2f) end--;
+  while (end >= 0 && p.charCodeAt(end) === 0x2f) end--;
+  if (end < 0) return "";
 
   // Find last separator
   let start = end;
@@ -118,15 +119,17 @@ function posixBasename(p: string, ext?: string): string {
   return base;
 }
 
-function posixExtname(p: string): string {
-  // Get the basename first (strip dirs)
-  const base = posixBasename(p);
+function extnameFromBase(base: string): string {
   if (base.length === 0) return "";
 
   const dotIdx = base.lastIndexOf(".");
   // No dot, or dot is the first character (hidden files like .gitignore)
   if (dotIdx <= 0) return "";
   return base.slice(dotIdx);
+}
+
+function posixExtname(p: string): string {
+  return extnameFromBase(posixBasename(p));
 }
 
 function posixParse(p: string): {
@@ -139,7 +142,7 @@ function posixParse(p: string): {
   const root = posixIsAbsolute(p) ? "/" : "";
   const dir = posixDirname(p);
   const base = posixBasename(p);
-  const ext = posixExtname(p);
+  const ext = extnameFromBase(base);
   const name = ext.length > 0 ? base.slice(0, base.length - ext.length) : base;
   return { root, dir: dir === "." && root === "" ? "" : dir, base, ext, name };
 }
@@ -220,6 +223,32 @@ function isWin32Sep(code: number): boolean {
   return code === 0x2f || code === 0x5c; // '/' or '\'
 }
 
+// Slice a win32 path prefix and normalize any '/' separators to '\'.
+function win32NormalizeSlice(p: string, start: number, end: number): string {
+  const slash = p.indexOf("/", start);
+  if (slash === -1) return p.slice(start, end);
+  if (slash >= end) return p.slice(start, end);
+
+  let result = p.slice(start, slash) + "\\";
+  for (let i = slash + 1; i < end; i++) {
+    result += p.charCodeAt(i) === 0x2f ? "\\" : p[i];
+  }
+  return result;
+}
+
+// Check whether a path matches an already-normalized win32 prefix.
+function win32MatchesNormalized(p: string, normalized: string): boolean {
+  if (p.length !== normalized.length) return false;
+  for (let i = 0; i < p.length; i++) {
+    const left = p.charCodeAt(i);
+    const right = normalized.charCodeAt(i);
+    if (left === right) continue;
+    if (isWin32Sep(left) && right === 0x5c) continue;
+    return false;
+  }
+  return true;
+}
+
 function win32IsAbsolute(p: string): boolean {
   if (p.length === 0) return false;
   // UNC path: \\server or //server
@@ -240,34 +269,47 @@ function win32IsAbsolute(p: string): boolean {
 
 /**
  * Extract the root portion of a Windows path.
- * E.g., "C:\foo" → "C:\", "\\server\share" → "\\server\share\"
+ * E.g., "C:\foo" → "C:\", "\\server\share\dir" → "\\server\share\"
  */
 function win32Root(p: string): string {
   if (p.length === 0) return "";
-  // Drive root: C:\ or C:/
-  if (
-    p.length >= 3 &&
-    isDriveLetter(p.charCodeAt(0)) &&
-    p.charCodeAt(1) === 0x3a &&
-    isWin32Sep(p.charCodeAt(2))
-  ) {
-    return p.slice(0, 3).replace(/\//g, "\\");
-  }
+
   // UNC path: \\server\share
   if (
     p.length >= 2 &&
     isWin32Sep(p.charCodeAt(0)) &&
     isWin32Sep(p.charCodeAt(1))
   ) {
-    // Find \\server\share
     let j = 2;
     while (j < p.length && !isWin32Sep(p.charCodeAt(j))) j++; // skip server
-    if (j < p.length) {
-      j++; // skip separator
-      while (j < p.length && !isWin32Sep(p.charCodeAt(j))) j++; // skip share
-    }
-    return p.slice(0, j).replace(/\//g, "\\") + "\\";
+    if (j === p.length) return "\\\\";
+
+    j++; // skip separator between server and share
+    const shareStart = j;
+    while (j < p.length && !isWin32Sep(p.charCodeAt(j))) j++; // skip share
+    if (j === shareStart) return "\\\\";
+
+    const end = j < p.length ? j + 1 : j;
+    return win32NormalizeSlice(p, 0, end);
   }
+
+  // Root-relative path: \foo or /foo
+  if (isWin32Sep(p.charCodeAt(0))) {
+    return p.charCodeAt(0) === 0x2f ? "/" : "\\";
+  }
+
+  // Drive root: C:\ or C:/, or drive-relative root: C:
+  if (
+    p.length >= 2 &&
+    isDriveLetter(p.charCodeAt(0)) &&
+    p.charCodeAt(1) === 0x3a
+  ) {
+    if (p.length >= 3 && isWin32Sep(p.charCodeAt(2))) {
+      return p.charCodeAt(2) === 0x2f ? p.slice(0, 2) + "\\" : p.slice(0, 3);
+    }
+    return p.slice(0, 2);
+  }
+
   return "";
 }
 
@@ -276,9 +318,18 @@ function win32Root(p: string): string {
  */
 function win32Split(p: string): { root: string; parts: string[] } {
   const root = win32Root(p);
-  const rest = p.slice(root.length);
-  // Split on both separators
-  const parts = rest.split(/[/\\]/).filter((s) => s.length > 0);
+  const parts: string[] = [];
+
+  let start = root.length;
+  while (start < p.length && isWin32Sep(p.charCodeAt(start))) start++;
+
+  for (let i = start; i <= p.length; i++) {
+    if (i === p.length || isWin32Sep(p.charCodeAt(i))) {
+      if (i > start) parts.push(p.slice(start, i));
+      start = i + 1;
+    }
+  }
+
   return { root, parts };
 }
 
@@ -319,10 +370,8 @@ function win32Join(...segments: string[]): string {
   return win32Normalize(joined);
 }
 
-function win32Dirname(p: string): string {
+function win32DirnameWithRoot(p: string, root: string): string {
   if (p.length === 0) return ".";
-
-  const { root } = win32Split(p);
 
   // Remove trailing separators
   let end = p.length - 1;
@@ -335,7 +384,7 @@ function win32Dirname(p: string): string {
   if (i <= root.length) {
     // No separator found after root
     if (root.length > 0) {
-      return root.endsWith("\\") ? root : root + "\\";
+      return root;
     }
     return ".";
   }
@@ -343,10 +392,11 @@ function win32Dirname(p: string): string {
   // Remove trailing separators from result
   while (i > root.length && isWin32Sep(p.charCodeAt(i - 1))) i--;
 
-  let dir = p.slice(0, i);
-  // Normalize separators
-  dir = dir.replace(/\//g, "\\");
-  return dir;
+  return win32NormalizeSlice(p, 0, i);
+}
+
+function win32Dirname(p: string): string {
+  return win32DirnameWithRoot(p, win32Root(p));
 }
 
 function win32Basename(p: string, ext?: string): string {
@@ -354,7 +404,17 @@ function win32Basename(p: string, ext?: string): string {
 
   // Remove trailing separators
   let end = p.length - 1;
-  while (end > 0 && isWin32Sep(p.charCodeAt(end))) end--;
+  while (end >= 0 && isWin32Sep(p.charCodeAt(end))) end--;
+  if (end < 0) return "";
+
+  // Drive root or drive-relative root: C:\, C:/, C:
+  if (
+    end === 1 &&
+    isDriveLetter(p.charCodeAt(0)) &&
+    p.charCodeAt(1) === 0x3a
+  ) {
+    return "";
+  }
 
   // Find last separator
   let start = end;
@@ -374,12 +434,7 @@ function win32Basename(p: string, ext?: string): string {
 }
 
 function win32Extname(p: string): string {
-  const base = win32Basename(p);
-  if (base.length === 0) return "";
-
-  const dotIdx = base.lastIndexOf(".");
-  if (dotIdx <= 0) return "";
-  return base.slice(dotIdx);
+  return extnameFromBase(win32Basename(p));
 }
 
 function win32Parse(p: string): {
@@ -390,9 +445,13 @@ function win32Parse(p: string): {
   name: string;
 } {
   const root = win32Root(p);
-  const dir = win32Dirname(p);
+  if (root.length > 0 && win32MatchesNormalized(p, root)) {
+    return { root, dir: root, base: "", ext: "", name: "" };
+  }
+
+  const dir = win32DirnameWithRoot(p, root);
   const base = win32Basename(p);
-  const ext = win32Extname(p);
+  const ext = extnameFromBase(base);
   const name = ext.length > 0 ? base.slice(0, base.length - ext.length) : base;
   return { root, dir: dir === "." ? "" : dir, base, ext, name };
 }
@@ -468,10 +527,24 @@ export const win32: PathModule = {
  * Everything else falls back to POSIX handling.
  */
 export function detectPathModule(p: string): PathModule {
-  // UNC shares are absolute Windows paths even without a drive letter.
-  if (/^(?:\\\\|\/\/)/.test(p)) return win32;
-  // Standard Windows drive-rooted path.
-  if (/^[a-zA-Z]:[/\\]/.test(p)) return win32;
+  if (p.length >= 2) {
+    const first = p.charCodeAt(0);
+    const second = p.charCodeAt(1);
+
+    // UNC shares are absolute Windows paths even without a drive letter.
+    if (isWin32Sep(first) && isWin32Sep(second)) return win32;
+
+    // Standard Windows drive-rooted path.
+    if (
+      p.length >= 3 &&
+      isDriveLetter(first) &&
+      second === 0x3a &&
+      isWin32Sep(p.charCodeAt(2))
+    ) {
+      return win32;
+    }
+  }
+
   return posix;
 }
 
