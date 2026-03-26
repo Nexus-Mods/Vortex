@@ -153,14 +153,19 @@ describe("Integration Tests", () => {
     });
 
     test("ResolvedPath preserves OS separators", () => {
-      // Unix path
+      // Use exact paths here so separator or join regressions fail loudly.
+      // `toContain()` would let broken path formatting slip through.
       const unixPath = ResolvedPath.make("/home/user/mods");
-      expect(unixPath).toContain("/");
+      expect(unixPath).toBe("/home/user/mods");
+      expect(ResolvedPath.join(unixPath, "skyrim", "data")).toBe(
+        "/home/user/mods/skyrim/data",
+      );
 
-      // Can join with platform-specific separators
-      const joined = ResolvedPath.join(unixPath, "skyrim", "data");
-      expect(joined).toContain("skyrim");
-      expect(joined).toContain("data");
+      const windowsPath = ResolvedPath.make("C:\\Users\\user\\mods");
+      expect(windowsPath).toBe("C:\\Users\\user\\mods");
+      expect(ResolvedPath.join(windowsPath, "skyrim", "data")).toBe(
+        "C:\\Users\\user\\mods\\skyrim\\data",
+      );
     });
   });
 
