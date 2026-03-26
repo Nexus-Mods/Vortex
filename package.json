@@ -53,6 +53,7 @@
     "@types/webpack-node-externals": "catalog:",
     "@typescript-eslint/utils": "catalog:",
     "@vitest/coverage-v8": "catalog:",
+    "@vitest/ui": "catalog:",
     "copyfiles": "catalog:",
     "cross-env": "catalog:",
     "eslint": "catalog:",
