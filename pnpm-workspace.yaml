@@ -2,12 +2,12 @@
 
 packages:
   - ./src/shared
+  - ./packages/*
   - ./src/preload
   - ./src/main
   - ./src/renderer
   - ./extensions/*
   - ./extensions/games/*
-  - ./packages/*
 
 allowBuilds:
   "@parcel/watcher": true
