@@ -10,6 +10,7 @@ packages:
   - ./extensions/games/*
 
 allowBuilds:
+  '@nexusmods/fomod-installer-native': true
   "@parcel/watcher": true
   ba2tk: true
   bsatk: true
@@ -48,6 +49,8 @@ catalog:
   "@mdi/js": 7.4.47
   "@microsoft/api-extractor": ^7.57.6
   "@msgpack/msgpack": ^2.7.0
+  "@nexusmods/fomod-installer-ipc": ^0.12.0
+  "@nexusmods/fomod-installer-native": ^0.12.0
   "@nexusmods/nexus-api": git+https://github.com/Nexus-Mods/node-nexus-api#4192c0c9f34306c2167e258dd4fef773af406161
   "@opentelemetry/api": ^1.9.0
   "@opentelemetry/context-async-hooks": ^2.5.1
@@ -176,8 +179,6 @@ catalog:
   eslint-plugin-import: ^2.32.0
   eslint-plugin-perfectionist: ^5.4.0
   esptk: git+https://github.com/Nexus-Mods/node-esptk#6b8900658d66438fe92ac55bc182a45404e8bf3f
-  "@nexusmods/fomod-installer-ipc": ^0.11.1
-  "@nexusmods/fomod-installer-native": ^0.11.1
   exe-version: git+https://github.com/Nexus-Mods/node-exe-version#eded60fc0a0f3c234e1d586d2eb9952401945406
   feedparser: ^2.2.9
   font-scanner: ^0.2.1
