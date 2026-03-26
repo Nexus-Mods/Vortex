@@ -5,6 +5,10 @@
  * platform behavior (case-sensitive, path separators, etc.).
  */
 
+// Note(sewer): Few small bugs in this file. But not blocking for current tests.
+// Left my review notes directly in here, so human or LLM can resolve if they
+// ever become blocking.
+
 import { Buffer } from "node:buffer";
 
 import { forPlatform, type PathModule } from "../pathUtils";
@@ -63,6 +67,9 @@ export class MockFilesystem implements IFilesystem {
    * Uses platform-appropriate path module so Windows mocks work on Linux hosts
    */
   normalizePath(p: string): string {
+    // Note(sewer): normalizePath() can preserve trailing separators, so /dir
+    // and /dir/ may become distinct keys. Not needed for current tests,
+    // so not blocking. But leaving this comment for awareness.
     const normalized = this.pathMod.normalize(p);
     return this.caseSensitive ? normalized : normalized.toLowerCase();
   }
@@ -116,6 +123,10 @@ export class MockFilesystem implements IFilesystem {
    * Ensure parent directory exists
    */
   private ensureParentDir(p: ResolvedPath): void {
+    // Note(sewer): ensureParentDir() only checks parent existence, not that
+    // the parent is a directory, so writes/mkdir can nest under files.
+    // Current tests do not hit that case, so not blocking. Leaving as review note
+    // for awareness.
     const parent = this.getParentPath(p as string);
     if (parent === (p as string)) {
       return; // Root
@@ -216,6 +227,8 @@ export class MockFilesystem implements IFilesystem {
   // ========================================================================
 
   async readdir(path: ResolvedPath): Promise<FileEntry[]> {
+    // Note(sewer): On Windows mocks, readdir() returns normalized names rather
+    // than original casing. Be aware.
     const dirEntry = this.getDirectoryEntry(path);
     dirEntry.atime = new Date();
 
@@ -392,6 +405,9 @@ export class MockFilesystem implements IFilesystem {
         throw new Error(`EISDIR: illegal operation on a directory: ${src}`);
       }
 
+      // Note(sewer): `copy()` can recurse indefinitely when copying into a
+      // descendant, since dest is created before enumeration.
+      // Not blocking for current tests; but a bug, leaving for awareness.
       await this.mkdir(dest, { recursive: true });
 
       const children = await this.readdir(src);
@@ -410,6 +426,8 @@ export class MockFilesystem implements IFilesystem {
   }
 
   async rename(src: ResolvedPath, dest: ResolvedPath): Promise<void> {
+    // Note(sewer): Directory rename only moves the top-level entry; children
+    // stay under the old prefix. Not blocking for current tests; just FYI.
     const entry = this.getEntry(src);
     if (!entry) {
       throw new Error(`ENOENT: no such file or directory: ${src}`);
