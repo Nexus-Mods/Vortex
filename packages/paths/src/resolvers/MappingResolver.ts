@@ -85,16 +85,16 @@ export abstract class MappingResolver<
    */
   protected abstract getStrategy(): MappingStrategy<ValidAnchors>;
 
-  private strategyCache?: MappingStrategy<ValidAnchors>;
+  #strategyCache?: MappingStrategy<ValidAnchors>;
 
   /**
    * Get cached strategy (creates on first access)
    */
-  private get strategy(): MappingStrategy<ValidAnchors> {
-    if (!this.strategyCache) {
-      this.strategyCache = this.getStrategy();
+  get #strategy(): MappingStrategy<ValidAnchors> {
+    if (!this.#strategyCache) {
+      this.#strategyCache = this.getStrategy();
     }
-    return this.strategyCache;
+    return this.#strategyCache;
   }
 
   // ========================================================================
@@ -103,16 +103,16 @@ export abstract class MappingResolver<
 
   canResolve(anchor: Anchor): boolean {
     const name = AnchorNS.name(anchor) as ValidAnchors;
-    return this.strategy.canResolve(name);
+    return this.#strategy.canResolve(name);
   }
 
   supportedAnchors(): Anchor[] {
-    return this.strategy.supportedAnchors().map(AnchorNS.make);
+    return this.#strategy.supportedAnchors().map(AnchorNS.make);
   }
 
   protected async resolveAnchor(anchor: Anchor): Promise<ResolvedPath> {
     const name = AnchorNS.name(anchor) as ValidAnchors;
-    return this.strategy.resolve(name);
+    return this.#strategy.resolve(name);
   }
 }
 

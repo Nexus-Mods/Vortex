@@ -35,21 +35,20 @@ interface Entry {
  * Configurable platform behavior (Windows vs Unix)
  */
 export class MockFilesystem implements IFilesystem {
-  private entries = new Map<string, Entry>();
+  #entries = new Map<string, Entry>();
   public readonly sep: string;
-  private readonly pathMod: PathModule;
+  readonly #pathMod: PathModule;
 
   constructor(
     public readonly platform: "windows" | "unix" = "unix",
     public readonly caseSensitive: boolean = platform !== "windows",
   ) {
-    // Set separator for this platform
     this.sep = this.platform === "windows" ? "\\" : "/";
-    this.pathMod = forPlatform(this.platform);
+    this.#pathMod = forPlatform(this.platform);
 
     // Create root directory
     const root = this.platform === "windows" ? "C:\\" : "/";
-    this.entries.set(this.normalizePath(root), {
+    this.#entries.set(this.normalizePath(root), {
       type: "directory",
       mode: 0o755,
       mtime: new Date(),
@@ -70,35 +69,35 @@ export class MockFilesystem implements IFilesystem {
     // Note(sewer): normalizePath() can preserve trailing separators, so /dir
     // and /dir/ may become distinct keys. Not needed for current tests,
     // so not blocking. But leaving this comment for awareness.
-    const normalized = this.pathMod.normalize(p);
+    const normalized = this.#pathMod.normalize(p);
     return this.caseSensitive ? normalized : normalized.toLowerCase();
   }
 
   /**
    * Get parent directory path
    */
-  private getParentPath(p: string): string {
-    return this.pathMod.dirname(p);
+  #getParentPath(p: string): string {
+    return this.#pathMod.dirname(p);
   }
 
   // ========================================================================
   // Entry Management
   // ========================================================================
 
-  private getEntry(p: ResolvedPath): Entry | undefined {
-    return this.entries.get(this.normalizePath(p as string));
+  #getEntry(p: ResolvedPath): Entry | undefined {
+    return this.#entries.get(this.normalizePath(p as string));
   }
 
-  private setEntry(p: ResolvedPath, entry: Entry): void {
-    this.entries.set(this.normalizePath(p as string), entry);
+  #setEntry(p: ResolvedPath, entry: Entry): void {
+    this.#entries.set(this.normalizePath(p as string), entry);
   }
 
-  private deleteEntry(p: ResolvedPath): void {
-    this.entries.delete(this.normalizePath(p as string));
+  #deleteEntry(p: ResolvedPath): void {
+    this.#entries.delete(this.normalizePath(p as string));
   }
 
-  private getFileEntry(p: ResolvedPath): Entry {
-    const entry = this.getEntry(p);
+  #getFileEntry(p: ResolvedPath): Entry {
+    const entry = this.#getEntry(p);
     if (!entry) {
       throw new Error(`ENOENT: no such file or directory: ${p}`);
     }
@@ -108,8 +107,8 @@ export class MockFilesystem implements IFilesystem {
     return entry;
   }
 
-  private getDirectoryEntry(p: ResolvedPath): Entry {
-    const entry = this.getEntry(p);
+  #getDirectoryEntry(p: ResolvedPath): Entry {
+    const entry = this.#getEntry(p);
     if (!entry) {
       throw new Error(`ENOENT: no such file or directory: ${p}`);
     }
@@ -122,16 +121,16 @@ export class MockFilesystem implements IFilesystem {
   /**
    * Ensure parent directory exists
    */
-  private ensureParentDir(p: ResolvedPath): void {
+  #ensureParentDir(p: ResolvedPath): void {
     // Note(sewer): ensureParentDir() only checks parent existence, not that
     // the parent is a directory, so writes/mkdir can nest under files.
     // Current tests do not hit that case, so not blocking. Leaving as review note
     // for awareness.
-    const parent = this.getParentPath(p as string);
+    const parent = this.#getParentPath(p as string);
     if (parent === (p as string)) {
       return; // Root
     }
-    if (!this.entries.has(this.normalizePath(parent))) {
+    if (!this.#entries.has(this.normalizePath(parent))) {
       throw new Error(`ENOENT: parent directory does not exist: ${parent}`);
     }
   }
@@ -144,7 +143,7 @@ export class MockFilesystem implements IFilesystem {
     path: ResolvedPath,
     encoding: string | null = "utf8",
   ): Promise<string | Uint8Array> {
-    const entry = this.getFileEntry(path);
+    const entry = this.#getFileEntry(path);
     entry.atime = new Date();
     if (encoding) {
       return entry.content!.toString(encoding as BufferEncoding);
@@ -162,10 +161,10 @@ export class MockFilesystem implements IFilesystem {
     encoding: string = "utf8",
   ): Promise<void> {
     // Ensure parent directory exists (create if needed)
-    const parent = this.getParentPath(path as string);
+    const parent = this.#getParentPath(path as string);
     if (
       parent !== (path as string) &&
-      !this.entries.has(this.normalizePath(parent))
+      !this.#entries.has(this.normalizePath(parent))
     ) {
       await this.mkdir(parent as ResolvedPath, { recursive: true });
     }
@@ -177,12 +176,12 @@ export class MockFilesystem implements IFilesystem {
         : Buffer.from(data, encoding as BufferEncoding);
     const now = new Date();
 
-    const existingEntry = this.getEntry(path);
+    const existingEntry = this.#getEntry(path);
     if (existingEntry && existingEntry.type === "directory") {
       throw new Error(`EISDIR: illegal operation on a directory: ${path}`);
     }
 
-    this.setEntry(path, {
+    this.#setEntry(path, {
       type: "file",
       content: buffer,
       mode: existingEntry?.mode ?? 0o644,
@@ -203,8 +202,8 @@ export class MockFilesystem implements IFilesystem {
         ? Buffer.from(data)
         : Buffer.from(data, encoding as BufferEncoding);
 
-    if (this.entries.has(this.normalizePath(path as string))) {
-      const existing = this.getFileEntry(path);
+    if (this.#entries.has(this.normalizePath(path as string))) {
+      const existing = this.#getFileEntry(path);
       if (existing.content) {
         existing.content = Buffer.concat([existing.content, buffer]);
       } else {
@@ -218,8 +217,8 @@ export class MockFilesystem implements IFilesystem {
   }
 
   async unlink(path: ResolvedPath): Promise<void> {
-    const _entry = this.getFileEntry(path);
-    this.deleteEntry(path);
+    const _entry = this.#getFileEntry(path);
+    this.#deleteEntry(path);
   }
 
   // ========================================================================
@@ -229,7 +228,7 @@ export class MockFilesystem implements IFilesystem {
   async readdir(path: ResolvedPath): Promise<FileEntry[]> {
     // Note(sewer): On Windows mocks, readdir() returns normalized names rather
     // than original casing. Be aware.
-    const dirEntry = this.getDirectoryEntry(path);
+    const dirEntry = this.#getDirectoryEntry(path);
     dirEntry.atime = new Date();
 
     const normalizedPath = this.normalizePath(path as string);
@@ -239,7 +238,7 @@ export class MockFilesystem implements IFilesystem {
 
     const children: Array<{ name: string; entry: Entry }> = [];
 
-    for (const [entryPath, entry] of this.entries.entries()) {
+    for (const [entryPath, entry] of this.#entries.entries()) {
       if (entryPath.startsWith(prefix) && entryPath !== normalizedPath) {
         const relativePath = entryPath.substring(prefix.length);
         const segments = relativePath.split(this.sep);
@@ -266,8 +265,8 @@ export class MockFilesystem implements IFilesystem {
     path: ResolvedPath,
     options?: { recursive?: boolean; mode?: number },
   ): Promise<void> {
-    if (this.entries.has(this.normalizePath(path as string))) {
-      const entry = this.getEntry(path);
+    if (this.#entries.has(this.normalizePath(path as string))) {
+      const entry = this.#getEntry(path);
       if (entry?.type === "directory") {
         if (!options?.recursive) {
           throw new Error(`EEXIST: file already exists: ${path}`);
@@ -279,19 +278,19 @@ export class MockFilesystem implements IFilesystem {
     }
 
     if (options?.recursive) {
-      const parent = this.getParentPath(path as string);
+      const parent = this.#getParentPath(path as string);
       if (
         parent !== (path as string) &&
-        !this.entries.has(this.normalizePath(parent))
+        !this.#entries.has(this.normalizePath(parent))
       ) {
         await this.mkdir(parent as ResolvedPath, options);
       }
     } else {
-      this.ensureParentDir(path);
+      this.#ensureParentDir(path);
     }
 
     const now = new Date();
-    this.setEntry(path, {
+    this.#setEntry(path, {
       type: "directory",
       mode: options?.mode ?? 0o755,
       mtime: now,
@@ -304,7 +303,7 @@ export class MockFilesystem implements IFilesystem {
     path: ResolvedPath,
     options?: { recursive?: boolean },
   ): Promise<void> {
-    const _entry = this.getDirectoryEntry(path);
+    const _entry = this.#getDirectoryEntry(path);
 
     // Check if directory is empty (unless recursive)
     if (!options?.recursive) {
@@ -322,17 +321,17 @@ export class MockFilesystem implements IFilesystem {
         : normalizedPath + this.sep;
 
       const toDelete: string[] = [];
-      for (const entryPath of this.entries.keys()) {
+      for (const entryPath of this.#entries.keys()) {
         if (entryPath.startsWith(prefix) || entryPath === normalizedPath) {
           toDelete.push(entryPath);
         }
       }
 
       for (const entryPath of toDelete) {
-        this.entries.delete(entryPath);
+        this.#entries.delete(entryPath);
       }
     } else {
-      this.deleteEntry(path);
+      this.#deleteEntry(path);
     }
   }
 
@@ -341,11 +340,11 @@ export class MockFilesystem implements IFilesystem {
   // ========================================================================
 
   async exists(path: ResolvedPath): Promise<boolean> {
-    return this.entries.has(this.normalizePath(path as string));
+    return this.#entries.has(this.normalizePath(path as string));
   }
 
   async stat(path: ResolvedPath): Promise<FileEntry> {
-    const entry = this.getEntry(path);
+    const entry = this.#getEntry(path);
     if (!entry) {
       throw new Error(`ENOENT: no such file or directory: ${path}`);
     }
@@ -361,7 +360,7 @@ export class MockFilesystem implements IFilesystem {
   }
 
   async lstat(path: ResolvedPath): Promise<FileEntry> {
-    const entry = this.getEntry(path);
+    const entry = this.#getEntry(path);
     if (!entry) {
       throw new Error(`ENOENT: no such file or directory: ${path}`);
     }
@@ -385,14 +384,14 @@ export class MockFilesystem implements IFilesystem {
     dest: ResolvedPath,
     options?: { overwrite?: boolean; recursive?: boolean },
   ): Promise<void> {
-    const srcEntry = this.getEntry(src);
+    const srcEntry = this.#getEntry(src);
     if (!srcEntry) {
       throw new Error(`ENOENT: no such file or directory: ${src}`);
     }
 
     if (
       !options?.overwrite &&
-      this.entries.has(this.normalizePath(dest as string))
+      this.#entries.has(this.normalizePath(dest as string))
     ) {
       throw new Error(`EEXIST: file already exists: ${dest}`);
     }
@@ -412,11 +411,11 @@ export class MockFilesystem implements IFilesystem {
 
       const children = await this.readdir(src);
       for (const child of children) {
-        const childSrc = this.pathMod.join(
+        const childSrc = this.#pathMod.join(
           src as string,
           child.name as string,
         ) as unknown as ResolvedPath;
-        const childDest = this.pathMod.join(
+        const childDest = this.#pathMod.join(
           dest as string,
           child.name as string,
         ) as unknown as ResolvedPath;
@@ -428,16 +427,16 @@ export class MockFilesystem implements IFilesystem {
   async rename(src: ResolvedPath, dest: ResolvedPath): Promise<void> {
     // Note(sewer): Directory rename only moves the top-level entry; children
     // stay under the old prefix. Not blocking for current tests; just FYI.
-    const entry = this.getEntry(src);
+    const entry = this.#getEntry(src);
     if (!entry) {
       throw new Error(`ENOENT: no such file or directory: ${src}`);
     }
 
     // Remove old entry
-    this.deleteEntry(src);
+    this.#deleteEntry(src);
 
     // Add new entry
-    this.setEntry(dest, entry);
+    this.#setEntry(dest, entry);
   }
 
   // ========================================================================
@@ -448,10 +447,10 @@ export class MockFilesystem implements IFilesystem {
    * Clear all entries (for testing)
    */
   clear(): void {
-    this.entries.clear();
+    this.#entries.clear();
     // Recreate root
     const root = this.platform === "windows" ? "C:\\" : "/";
-    this.entries.set(this.normalizePath(root), {
+    this.#entries.set(this.normalizePath(root), {
       type: "directory",
       mode: 0o755,
       mtime: new Date(),
@@ -464,6 +463,6 @@ export class MockFilesystem implements IFilesystem {
    * Get all paths in the filesystem (for debugging)
    */
   getAllPaths(): string[] {
-    return Array.from(this.entries.keys());
+    return Array.from(this.#entries.keys());
   }
 }

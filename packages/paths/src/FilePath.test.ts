@@ -9,7 +9,7 @@ import { MockFilesystem } from "./test-helpers/MockFilesystem";
 
 // Mock resolver for testing
 class MockResolver implements IResolverBase {
-  private readonly fs: IFilesystem = new MockFilesystem("unix", true);
+  readonly #fs: IFilesystem = new MockFilesystem("unix", true);
 
   constructor(
     public readonly name: string = "mock",
@@ -35,7 +35,7 @@ class MockResolver implements IResolverBase {
   }
 
   getFilesystem(): IFilesystem {
-    return this.fs;
+    return this.#fs;
   }
 
   PathFor(anchorName: string, relative: string = ""): FilePath {

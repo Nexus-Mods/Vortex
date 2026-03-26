@@ -45,11 +45,15 @@ import {
 export abstract class BaseResolver<
   ValidAnchors extends string = string,
 > implements IResolver<ValidAnchors> {
+  #filesystem?: IFilesystem;
+
   constructor(
     public readonly name: string,
     public readonly parent?: IResolverBase,
-    private readonly filesystem?: IFilesystem,
-  ) {}
+    filesystem?: IFilesystem,
+  ) {
+    this.#filesystem = filesystem;
+  }
 
   // ========================================================================
   // Filesystem Access
@@ -61,8 +65,8 @@ export abstract class BaseResolver<
    * Throws if no filesystem is found in the chain.
    */
   getFilesystem(): IFilesystem {
-    if (this.filesystem) {
-      return this.filesystem;
+    if (this.#filesystem) {
+      return this.#filesystem;
     }
     if (this.parent) {
       return this.parent.getFilesystem();
@@ -212,16 +216,16 @@ export abstract class BaseResolver<
    * Cache of base paths (anchor → resolved path)
    * Populated on first reverse resolution to avoid repeated async calls
    */
-  private basePathCache?: Promise<Map<Anchor, ResolvedPath>>;
+  #basePathCache?: Promise<Map<Anchor, ResolvedPath>>;
 
   /**
    * Get all base paths for this resolver (with caching)
    */
   async getBasePaths(): Promise<Map<Anchor, ResolvedPath>> {
-    if (this.basePathCache === undefined) {
-      this.basePathCache = this.computeBasePaths();
+    if (this.#basePathCache === undefined) {
+      this.#basePathCache = this.computeBasePaths();
     }
-    return this.basePathCache;
+    return this.#basePathCache;
   }
 
   /**
@@ -280,7 +284,7 @@ export abstract class BaseResolver<
     const basePaths = await this.getBasePaths();
 
     // Normalize path for comparison (handle case sensitivity, separators)
-    const normalizedPath = this.normalizePath(resolvedPath);
+    const normalizedPath = this.#normalizePath(resolvedPath);
 
     // Find longest matching base path (most specific wins)
     let bestMatch: {
@@ -290,14 +294,14 @@ export abstract class BaseResolver<
     } | null = null;
 
     for (const [anchor, basePath] of basePaths) {
-      const normalizedBase = this.normalizePath(basePath);
+      const normalizedBase = this.#normalizePath(basePath);
 
       // Check if path starts with this base (already normalized above)
-      const isUnder = this.isUnder(normalizedPath, normalizedBase, true);
+      const isUnder = this.#isUnder(normalizedPath, normalizedBase, true);
 
       if (isUnder) {
         // Pass original (non-case-folded) paths to preserve case in the relative portion
-        const relative = this.extractRelative(
+        const relative = this.#extractRelative(
           resolvedPath as string,
           basePath as string,
         );
@@ -305,7 +309,7 @@ export abstract class BaseResolver<
         // Keep the longest matching base (most specific)
         if (
           !bestMatch ||
-          normalizedBase.length > this.normalizePath(bestMatch.basePath).length
+          normalizedBase.length > this.#normalizePath(bestMatch.basePath).length
         ) {
           bestMatch = { anchor, basePath, relative };
         }
@@ -322,7 +326,7 @@ export abstract class BaseResolver<
    * Call this when resolver configuration changes (e.g., game paths updated)
    */
   clearBasePathCache(): void {
-    this.basePathCache = undefined;
+    this.#basePathCache = undefined;
   }
 
   // ========================================================================
@@ -332,14 +336,14 @@ export abstract class BaseResolver<
   /**
    * Normalize path for comparison using the filesystem's normalization
    */
-  private normalizePath(p: ResolvedPath): string {
+  #normalizePath(p: ResolvedPath): string {
     return this.getFilesystem().normalizePath(p as string);
   }
 
   /**
    * Check if path is under base path
    */
-  private isUnder(
+  #isUnder(
     childPath: string,
     basePath: string,
     preNormalized = false,
@@ -370,7 +374,7 @@ export abstract class BaseResolver<
    * Extract relative path from full path given base.
    * Uses structural normalization (not case-folding) to preserve original case.
    */
-  private extractRelative(fullPath: string, basePath: string): RelativePath {
+  #extractRelative(fullPath: string, basePath: string): RelativePath {
     const fs = this.getFilesystem();
     const pathMod = forPlatform(fs.platform);
     const sep = fs.sep;
