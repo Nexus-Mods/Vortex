@@ -75,34 +75,22 @@ export const useTools = (
     [isToolRunning, primaryStarter?.exePath],
   );
 
-  // Filter visible tools (valid, not hidden, includes game starter)
+  // Show pinned tools (not hidden), matching the Tools page pinned section.
+  // Excludes the launcher (shown in Play button). Capped at MAX_VISIBLE_TOOLS for the sidebar.
   const visibleTools = useMemo(() => {
-    const result: IStarterInfo[] = [];
-
-    // Only show the game starter as a separate tool button when
-    // the primary tool is a different tool (otherwise the Play button
-    // already launches the game starter, making a separate button redundant)
-    if (
-      gameStarter &&
-      isToolValid(gameStarter) &&
-      primaryToolId !== undefined
-    ) {
-      result.push(gameStarter);
-    }
-
-    // Add tools that are valid and not hidden
-    const visibleToolsList = tools.filter(
-      (starter) =>
-        isToolValid(starter) &&
-        (starter.isGame ||
-          discoveredTools[starter.id] === undefined ||
-          discoveredTools[starter.id].hidden !== true),
+    const nonLauncher = tools.filter(
+      (starter) => starter.id !== primaryToolId,
     );
 
-    result.push(...visibleToolsList);
+    const pinned = nonLauncher.filter(
+      (starter) =>
+        starter.isGame ||
+        discoveredTools[starter.id] === undefined ||
+        discoveredTools[starter.id].hidden !== true,
+    );
 
-    return result.slice(0, MAX_VISIBLE_TOOLS);
-  }, [gameStarter, tools, discoveredTools, isToolValid, primaryToolId]);
+    return pinned.slice(0, MAX_VISIBLE_TOOLS);
+  }, [tools, discoveredTools, primaryToolId]);
 
   const startTool = useCallback(
     (info: IStarterInfo) => {

@@ -57,6 +57,19 @@ export const setToolVisible = createAction(
 );
 
 /**
+ * pin or unpin a tool shortcut. Unlike setToolVisible, this always toggles the
+ * hidden flag and never deletes the tool entry (even for custom tools).
+ */
+export const setToolPinned = createAction(
+  "SET_TOOL_PINNED",
+  (gameId: string, toolId: string, pinned: boolean) => ({
+    gameId,
+    toolId,
+    pinned,
+  }),
+);
+
+/**
  * change parameters for a game (i.e. call arguments, environment, ...)
  */
 export const setGameParameters = createAction(
