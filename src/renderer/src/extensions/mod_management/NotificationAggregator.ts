@@ -1,7 +1,4 @@
-import {
-  getErrorMessageOrDefault,
-  unknownToError,
-} from "@vortex/shared";
+import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import { createHash } from "crypto";
 
 import type {
@@ -13,9 +10,13 @@ import type { INotificationAction } from "../../types/INotification";
 import { log } from "../../util/log";
 
 // In test environment, use synchronous execution to avoid timing issues with Jest fake timers
-// Check for jest global or NODE_ENV to detect test environment reliably
+// Check for a Jest global or NODE_ENV to detect test environment reliably
+const hasJestGlobal = (): boolean =>
+  typeof (globalThis as typeof globalThis & { jest?: unknown }).jest !==
+  "undefined";
+
 const isTestEnvironment = (): boolean =>
-  typeof jest !== "undefined" || process?.env?.NODE_ENV === "test";
+  hasJestGlobal() || process?.env?.NODE_ENV === "test";
 
 const setImmediatePolyfill = (fn: () => void): void => {
   if (isTestEnvironment()) {

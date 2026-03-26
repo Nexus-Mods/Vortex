@@ -42,6 +42,9 @@ catalogs:
     '@iarna/toml':
       specifier: ^2.2.5
       version: 2.2.5
+    '@jest/globals':
+      specifier: ^29.7.0
+      version: 29.7.0
     '@mdi/js':
       specifier: 7.4.47
       version: 7.4.47
@@ -4429,6 +4432,9 @@ importers:
       '@headlessui/react':
         specifier: 'catalog:'
         version: 1.7.19(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+      '@jest/globals':
+        specifier: 'catalog:'
+        version: 29.7.0
       '@mdi/js':
         specifier: 'catalog:'
         version: 7.4.47
