@@ -1,5 +1,5 @@
 /**
- * Smoke-tests legacy SMAPI archive detection for Step 1.
+ * Smoke-tests SMAPI archive detection.
  * Platform install flows stay in the sibling smoke files.
  */
 import path from "path";
@@ -99,11 +99,11 @@ describe("installers/smapi matcher smoke", () => {
     ).resolves.toEqual({ supported: true, requiredFiles: [] });
   });
 
-  test("keeps the current host-sensitive backslash-only matcher behavior", async () => {
+  test("claims backslash-only installer entries", async () => {
     await expect(
       testSMAPI(["internal\\windows\\SMAPI.Installer.dll"], GAME_ID),
     ).resolves.toEqual({
-      supported: path.sep === "\\",
+      supported: true,
       requiredFiles: [],
     });
   });

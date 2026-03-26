@@ -1,10 +1,16 @@
 /**
  * Classifies Stardew Valley archives for installer matcher decisions.
  */
-import path from "path";
+import { RelativePath } from "@vortex/paths";
 
 import { GAME_ID, MOD_MANIFEST } from "../common";
 import type { IArchiveClassifierResult, IInstallerTestResult } from "../types";
+import {
+  type IArchiveEntryPath,
+  isArchiveDirectoryEntry,
+  toArchiveEntries,
+  toLowerCaseSegments,
+} from "./archivePath";
 
 /**
  * Classifies an archive based on markers used by Stardew Valley installers.
@@ -12,7 +18,8 @@ import type { IArchiveClassifierResult, IInstallerTestResult } from "../types";
  * Installer `test` functions call this once and then combine the returned
  * booleans for their specific matching rules.
  *
- * @param files Archive entries using platform-native path separators.
+ * @param files Archive entries as logical relative paths; either slash style is
+ * accepted and normalized before classifier checks run.
  * @param gameId Vortex game id that requested installer detection.
  * @returns Structured flags describing archive shape and target game match.
  */
@@ -20,11 +27,13 @@ export function classifyArchive(
   files: string[],
   gameId: string,
 ): IArchiveClassifierResult {
+  const archiveEntries = toArchiveEntries(files);
+
   return {
     isGameArchive: gameId === GAME_ID,
-    hasManifest: hasManifest(files),
-    hasContentFolder: hasContentFolder(files),
-    hasSmapiInstallerDll: hasSmapiInstallerDll(files),
+    hasManifest: hasManifest(archiveEntries),
+    hasContentFolder: hasContentFolder(archiveEntries),
+    hasSmapiInstallerDll: hasSmapiInstallerDll(archiveEntries),
   };
 }
 
@@ -47,35 +56,37 @@ export function makeInstallerTestResult(
   };
 }
 
-function withFakePrefix(filePath: string): string {
-  return path.join("fakeDir", filePath);
-}
-
-function hasContentFolder(files: string[]): boolean {
-  return files
-    .filter((file) => file.endsWith(path.sep))
-    .map(withFakePrefix)
-    .some((file) => file.endsWith(PTRN_CONTENT));
+function hasContentFolder(files: IArchiveEntryPath[]): boolean {
+  return files.some(
+    (file) =>
+      isArchiveDirectoryEntry(file.original) &&
+      RelativePath.basename(file.relative) === CONTENT_FOLDER_NAME,
+  );
 }
 
 function hasManifest(
-  files: string[],
+  files: IArchiveEntryPath[],
   manifestFileName: string = MOD_MANIFEST,
 ): boolean {
   const manifestName = manifestFileName.toLowerCase();
-  return files.some((filePath) => {
-    const segments = filePath.toLowerCase().split(path.sep);
-    const isManifestFile = segments[segments.length - 1] === manifestName;
-    const isLocale = segments.includes("locale");
+  return files.some((file) => {
+    const isManifestFile =
+      RelativePath.basename(file.relative).toLowerCase() === manifestName;
+    const isLocale = toLowerCaseSegments(
+      RelativePath.dirname(file.relative),
+    ).includes(LOCALE_SEGMENT);
     return isManifestFile && !isLocale;
   });
 }
 
-function hasSmapiInstallerDll(files: string[]): boolean {
+function hasSmapiInstallerDll(files: IArchiveEntryPath[]): boolean {
   return files.some(
-    (file) => path.basename(file).toLowerCase() === SMAPI_INSTALLER_DLL,
+    (file) =>
+      RelativePath.basename(file.relative).toLowerCase() ===
+      SMAPI_INSTALLER_DLL,
   );
 }
 
-const PTRN_CONTENT = path.sep + "Content" + path.sep;
+const CONTENT_FOLDER_NAME = "Content";
+const LOCALE_SEGMENT = "locale";
 const SMAPI_INSTALLER_DLL = "smapi.installer.dll";

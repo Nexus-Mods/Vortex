@@ -51,7 +51,7 @@ describe("installers/stardewValleyInstaller", () => {
     {
       label: "backslash-only manifest",
       files: ["Animals\\manifest.json"],
-      supported: path.sep === "\\",
+      supported: true,
     },
   ])("claims archives for $label", async ({ files, supported }) => {
     await expect(testSupported(files, GAME_ID)).resolves.toEqual({
@@ -60,53 +60,70 @@ describe("installers/stardewValleyInstaller", () => {
     });
   });
 
-  test("ignores locale manifests and installs the current payload", async () => {
-    stardewInstallerMocks.parseManifest.mockResolvedValue(
-      makeManifest("Animals"),
-    );
-
-    const result = await installStardewValley(
-      createApi() as any,
-      [
+  test.each([
+    {
+      label: "native manifest archive",
+      files: [
         nativePath("Animals", "manifest.json"),
         nativePath("Animals", "Animals.dll"),
         nativePath("Animals", "locale", "manifest.json"),
         nativePath("Animals", "locale", "strings.json"),
       ],
-      "/staging",
-    );
-
-    expect(stardewInstallerMocks.parseManifest).toHaveBeenCalledTimes(1);
-    expect(
-      normalizeFilesystemPath(
-        stardewInstallerMocks.parseManifest.mock.calls[0]?.[0] as string,
-      ),
-    ).toBe("/staging/Animals/manifest.json");
-    expect(normalizeInstallResult(result)).toEqual({
-      instructions: [
-        {
-          type: "copy",
-          source: "Animals/manifest.json",
-          destination: "Animals/manifest.json",
-        },
-        {
-          type: "copy",
-          source: "Animals/Animals.dll",
-          destination: "Animals/Animals.dll",
-        },
-        {
-          type: "copy",
-          source: "Animals/locale/manifest.json",
-          destination: "Animals/locale/manifest.json",
-        },
-        {
-          type: "copy",
-          source: "Animals/locale/strings.json",
-          destination: "Animals/locale/strings.json",
-        },
+    },
+    {
+      label: "backslash manifest archive",
+      files: [
+        "Animals\\manifest.json",
+        "Animals\\Animals.dll",
+        "Animals\\locale\\manifest.json",
+        "Animals\\locale\\strings.json",
       ],
-    });
-  });
+    },
+  ])(
+    "ignores locale manifests and installs the current payload for $label",
+    async ({ files }) => {
+      stardewInstallerMocks.parseManifest.mockResolvedValue(
+        makeManifest("Animals"),
+      );
+
+      const result = await installStardewValley(
+        createApi() as any,
+        files,
+        "/staging",
+      );
+
+      expect(stardewInstallerMocks.parseManifest).toHaveBeenCalledTimes(1);
+      expect(
+        normalizeFilesystemPath(
+          stardewInstallerMocks.parseManifest.mock.calls[0]?.[0] as string,
+        ),
+      ).toBe("/staging/Animals/manifest.json");
+      expect(normalizeInstallResult(result)).toEqual({
+        instructions: [
+          {
+            type: "copy",
+            source: "Animals/manifest.json",
+            destination: "Animals/manifest.json",
+          },
+          {
+            type: "copy",
+            source: "Animals/Animals.dll",
+            destination: "Animals/Animals.dll",
+          },
+          {
+            type: "copy",
+            source: "Animals/locale/manifest.json",
+            destination: "Animals/locale/manifest.json",
+          },
+          {
+            type: "copy",
+            source: "Animals/locale/strings.json",
+            destination: "Animals/locale/strings.json",
+          },
+        ],
+      });
+    },
+  );
 
   test("warns for an invalid sibling manifest but still installs the valid one", async () => {
     const api = createApi();

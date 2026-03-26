@@ -1,11 +1,16 @@
 /**
  * Installs Stardew archives that deploy directly into the game root.
  */
-import path from "path";
+import { RelativePath } from "@vortex/paths";
 
 import type { types } from "vortex-api";
 
 import type { IInstallerTestResult } from "../types";
+import {
+  getArchiveExtension,
+  isArchiveDirectoryEntry,
+  toArchiveEntries,
+} from "./archivePath";
 import { classifyArchive, makeInstallerTestResult } from "./archiveClassifier";
 
 /** Tests whether an archive should be handled as a root-folder install. */
@@ -24,34 +29,49 @@ export function installRootFolder(
   files: string[],
   destinationPath: string,
 ): PromiseLike<types.IInstallResult> {
+  const archiveEntries = toArchiveEntries(files);
+
   // Deploy "Content/" and sibling folders into the game root.
   //  i.e. SomeMod.7z
   //  Will be deployed     => ../SomeMod/Content/
   //  Will be deployed     => ../SomeMod/Mods/
   //  Will NOT be deployed => ../Readme.doc
-  const contentFile = files.find((file) =>
-    path.join("fakeDir", file).endsWith(PTRN_CONTENT),
+  const contentDir = archiveEntries.find(
+    (entry) =>
+      isArchiveDirectoryEntry(entry.original) &&
+      RelativePath.basename(entry.relative) === CONTENT_FOLDER_NAME,
   );
-  if (contentFile === undefined) {
+
+  if (contentDir === undefined) {
     return Promise.resolve<types.IInstallResult>({ instructions: [] });
   }
-  const idx = contentFile.indexOf(PTRN_CONTENT) + 1;
-  const rootDir = path.basename(contentFile.substring(0, idx));
-  const filtered = files.filter(
-    (file) =>
-      !file.endsWith(path.sep) &&
-      file.indexOf(rootDir) !== -1 &&
-      path.extname(file) !== ".txt",
+
+  const contentPath = RelativePath.toString(contentDir.relative);
+  const rootDir = RelativePath.basename(
+    RelativePath.dirname(contentDir.relative),
   );
-  const instructions: types.IInstruction[] = filtered.map((file) => {
-    return {
-      type: "copy",
-      source: file,
-      destination: file.substr(idx),
-    };
-  });
+  const rootPrefixLength = contentPath.length - CONTENT_FOLDER_NAME.length;
+  const instructions: types.IInstruction[] = archiveEntries
+    .filter((entry) => !isArchiveDirectoryEntry(entry.original))
+    .filter((entry) => {
+      const source = RelativePath.toString(entry.relative);
+      return source.indexOf(rootDir) !== -1;
+    })
+    .filter(
+      (entry) =>
+        getArchiveExtension(entry.relative) !== LOWERCASE_TEXT_EXTENSION,
+    )
+    .map((entry) => {
+      const source = RelativePath.toString(entry.relative);
+      return {
+        type: "copy",
+        source,
+        destination: source.slice(rootPrefixLength),
+      };
+    });
 
   return Promise.resolve<types.IInstallResult>({ instructions });
 }
 
-const PTRN_CONTENT = path.sep + "Content" + path.sep;
+const CONTENT_FOLDER_NAME = "Content";
+const LOWERCASE_TEXT_EXTENSION = ".txt";
