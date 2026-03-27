@@ -119,6 +119,7 @@ import { fetchHydrationState } from "./store/hydration";
 import { persistDiffMiddleware } from "./store/persistDiffMiddleware";
 import { reduxLogger } from "./store/reduxLogger";
 import { reduxSanity, type StateError } from "./store/reduxSanity";
+import { computeStateDiff } from "./store/stateDiff";
 import StyleManager from "./StyleManager";
 import { createRendererTelemetryProvider } from "./telemetry/setup";
 import { GameEntryNotFound } from "./types/IGameStore";
@@ -545,7 +546,7 @@ async function init(): Promise<ExtensionManager | null> {
     return null;
   }
 
-  const extReducers = extensions.getReducers() as IExtensionReducer[];
+  const extReducers = extensions.getReducers();
 
   const reportReducerError = (err) =>
     extensions
@@ -588,6 +589,22 @@ async function init(): Promise<ExtensionManager | null> {
       type: "__hydrate",
       payload: { [hive]: sanitizedState[hive] },
     });
+  }
+
+  // Persist sanitization repairs so they don't recur on next startup.
+  // __hydrate actions skip the persist middleware, so repairs made by
+  // sanitizeHydrationState would otherwise be lost between sessions.
+  if (sanitizedState !== hydratedState && window.api?.persist) {
+    for (const hive of Object.keys(sanitizedState)) {
+      const oldHive = hydratedState[hive];
+      const newHive = sanitizedState[hive];
+      if (oldHive !== newHive) {
+        const ops = computeStateDiff(oldHive, newHive);
+        if (ops.length > 0) {
+          window.api.persist.sendDiff(hive as any, ops);
+        }
+      }
+    }
   }
 
   // Set up window event handlers from main process
