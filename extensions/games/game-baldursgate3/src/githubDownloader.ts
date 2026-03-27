@@ -179,7 +179,7 @@ async function startDownload(api: types.IExtensionApi, downloadLink: string) {
         api.store.dispatch(actions.setModEnabled(profileId, modId, true));
         return Promise.resolve();
       });
-    }, 'ask');
+    }, 'ask', { allowInstall: false });
 }
 
 async function resolveDownloadLink(currentReleases: any[]) {
