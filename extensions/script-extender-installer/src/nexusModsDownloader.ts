@@ -28,7 +28,7 @@ export async function downloadScriptExtender(
 
   try {
     // If yes, start installing.
-    const modId = await startDownload(api, gameSupport, gameId, versionBasic);
+    const modId = await startDownload(api, gameSupport, gameId, versionBasic, gameStore);
     // Force-deploy the xSE files
     if (modId) await api.emitAndAwait("deploy-single-mod", gameId, modId, true);
     // Refresh the tools dashlet
@@ -52,11 +52,26 @@ export async function downloadScriptExtender(
   }
 }
 
+/**
+ * Maps a Vortex store ID to the name used in Nexus Mods file descriptions.
+ */
+function descriptionStoreName(storeId: string): string | undefined {
+  switch (storeId) {
+    case "steam":
+      return "Steam";
+    case "gog":
+      return "GOG";
+    default:
+      return undefined;
+  }
+}
+
 async function startDownload(
   api: types.IExtensionApi,
   gameSupport: IGameSupport,
   gameId: string,
   gameVersion?: string,
+  gameStore?: string,
 ) {
   if (!gameSupport.nexusMods)
     return Promise.reject(
@@ -107,7 +122,17 @@ async function startDownload(
           f.description.includes(gameVersion)) ||
         (!f.description && f.is_primary),
     );
-    // We found more than one relevant file!
+    // If we matched multiple files by version, try to narrow down by store.
+    const storeLabel = descriptionStoreName(gameStore);
+    if (modFiles.length > 1 && storeLabel !== undefined) {
+      const storeMatches = modFiles.filter(
+        (f) => !!f.description && f.description.includes(storeLabel),
+      );
+      if (storeMatches.length > 0) {
+        modFiles = storeMatches;
+      }
+    }
+    // Sort remaining candidates by most recent upload.
     if (modFiles.length > 1) {
       modFiles.sort((a, b) => b.uploaded_timestamp - a.uploaded_timestamp);
     }
