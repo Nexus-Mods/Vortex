@@ -6,7 +6,7 @@ export type ResolvedResource =
   | URL
   | { probeUrl: URL; chunkUrl?: (chunk: Chunk) => Promise<URL> };
 
-export const basicResoler: Resolver<URL> = (url) => Promise.resolve(url);
+export const urlResolver: Resolver<URL> = (url) => Promise.resolve(url);
 
 export type NormalizedResource = {
   probeUrl: URL;

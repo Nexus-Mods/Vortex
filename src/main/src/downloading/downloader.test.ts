@@ -4,14 +4,15 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { describe, it, expect, vi } from "vitest";
 
-import type { Chunk } from "./chunking";
+import { staticChunker, type Chunk } from "./chunking";
+import type { Resolver } from "./resolver";
 
 import {
   Downloader,
   type DownloaderOptions,
-  type Resolver,
   defaultOptions,
 } from "./downloader";
+import { urlResolver } from "./resolver";
 import {
   type TestServer,
   type RequestHandler,
@@ -38,11 +39,6 @@ function makeDownloader(
   return new Downloader({ ...defaultOptions(), ...overrides });
 }
 
-/** Trivial resolver: resource is already a URL, no transformation needed */
-function urlResolver(): Resolver<URL> {
-  return (url) => Promise.resolve(url);
-}
-
 async function download(
   server: TestServer,
   destDir: string,
@@ -50,7 +46,7 @@ async function download(
   filename = "output",
 ): Promise<Buffer> {
   const dest = path.join(destDir, filename);
-  await downloader.download(server.url, urlResolver(), dest);
+  await downloader.download(server.url, dest, urlResolver);
   return readFile(dest);
 }
 
@@ -207,9 +203,9 @@ describe("Downloader", () => {
         serveFile({ body: SMALL_FILE, acceptRanges: false }),
         async (server) => {
           await withTmpDir(async (dir) => {
-            const resolver = vi.fn(urlResolver());
+            const resolver = vi.fn(urlResolver);
             const dest = path.join(dir, "output");
-            await makeDownloader().download(server.url, resolver, dest);
+            await makeDownloader().download(server.url, dest, resolver);
             expect(resolver).toHaveBeenCalledTimes(1);
             expect(resolver).toHaveBeenCalledWith(server.url);
           });
@@ -227,7 +223,7 @@ describe("Downloader", () => {
               Promise.resolve({ probeUrl: url });
 
             const dest = path.join(dir, "output");
-            await makeDownloader().download(server.url, resolver, dest);
+            await makeDownloader().download(server.url, dest, resolver);
 
             const result = await readFile(dest);
             expect(Buffer.compare(LARGE_FILE, result)).toBe(0);
@@ -258,14 +254,21 @@ describe("Downloader", () => {
                 chunkUrl,
               });
 
+            const chunksPerFile = 4;
+            const chunker = staticChunker(4);
+
             const dest = path.join(dir, "output");
-            await makeDownloader().download(server.url, resolver, dest);
+            await makeDownloader().download(
+              server.url,
+              dest,
+              resolver,
+              chunker,
+            );
 
             const result = await readFile(dest);
             expect(Buffer.compare(LARGE_FILE, result)).toBe(0);
 
             // chunkUrl should have been called once per chunk
-            const { chunksPerFile } = defaultOptions();
             expect(chunkUrl).toHaveBeenCalledTimes(chunksPerFile);
 
             // Probe HEAD went to /probe, all GETs went to /chunk

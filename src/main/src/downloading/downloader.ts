@@ -5,9 +5,10 @@ import { pipeline } from "node:stream/promises";
 import { type URL } from "node:url";
 import PQueue from "p-queue";
 
+import type { Chunk, Chunker } from "./chunking";
 import type { Resolver, NormalizedResource } from "./resolver";
 
-import { type Chunk, createChunks } from "./chunking";
+import { staticChunker } from "./chunking";
 import { normalize } from "./resolver";
 
 export type DownloaderOptions = {
@@ -15,8 +16,6 @@ export type DownloaderOptions = {
   downloadConcurrency: number;
   /** Maximum simultaneous chunk connections across all downloads */
   chunkConcurrency: number;
-  /** Number of chunks to split a file into when the server supports ranges */
-  chunksPerFile: number;
   /** Minimum file size in bytes before chunking is attempted */
   minFileSizeForChunking: number;
 };
@@ -26,7 +25,6 @@ export function defaultOptions(): DownloaderOptions {
   return {
     downloadConcurrency: 3,
     chunkConcurrency: 6,
-    chunksPerFile: 4,
     minFileSizeForChunking: 10 * 1024 * 1024,
   };
 }
@@ -48,14 +46,22 @@ export class Downloader {
     });
   }
 
-  download<T>(resource: T, resolver: Resolver<T>, dest: string): Promise<void> {
+  download<T>(
+    resource: T,
+    dest: string,
+    resolver: Resolver<T>,
+    chunker: Chunker<T> = staticChunker(4),
+  ): Promise<void> {
     return this.#downloadQueue.add(async () => {
       const resolved = normalize(await resolver(resource));
       const probe = await this.#probe(resolved.probeUrl);
 
-      return probe.chunkable
-        ? this.#downloadChunked(resolved, dest, probe)
-        : this.#downloadSingle(resolved.probeUrl, dest);
+      if (!probe.chunkable) {
+        return this.#downloadSingle(resolved.probeUrl, dest);
+      }
+
+      const chunks = chunker(probe.size, resource);
+      return this.#downloadChunked(resolved, dest, probe, chunks);
     });
   }
 
@@ -83,14 +89,12 @@ export class Downloader {
     resource: NormalizedResource,
     dest: string,
     probeResult: ProbeResult,
+    chunks: Chunk[],
   ): Promise<void> {
-    const { size } = probeResult;
-    const chunks = createChunks(size, this.#options.chunksPerFile);
-
     const fd = await open(dest, "w");
 
     try {
-      await fd.truncate(size);
+      await fd.truncate(probeResult.size);
 
       await Promise.all(
         chunks.map((chunk) =>
