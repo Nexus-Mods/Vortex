@@ -856,13 +856,65 @@ class Application {
       this.mLevelPersistors.push(levelPersistor);
 
       // 2. Read user settings to check multi-user mode
-      const subPersistor = new SubPersistor(levelPersistor, "user");
+      const baseSubPersistor = new SubPersistor(levelPersistor, "user");
       let multiUser = false;
       try {
-        const multiUserStr = await subPersistor.getItem(["multiUser"]);
+        const multiUserStr = await baseSubPersistor.getItem(["multiUser"]);
         multiUser = multiUserStr ? Boolean(JSON.parse(multiUserStr)) : false;
       } catch {
         multiUser = false;
+      }
+
+      // 2b. If the per-user DB says multiUser is enabled, verify against
+      //     the shared DB before committing to shared mode.
+      //
+      //     The multiUser flag is read from the per-user DB at startup but
+      //     written to whichever DB is active.  When the user toggles back
+      //     to "per-user" while running in shared mode, only the shared DB
+      //     receives the update.  We peek at the shared DB here — before
+      //     any side-effects — so we can honour that change immediately
+      //     without needing a second restart.
+      //
+      //     If the shared DB doesn't have the key yet (first launch in
+      //     shared mode), we seed it with `true` so the settings UI
+      //     dropdown renders the correct value after hydration.
+      let seedMultiUser = false;
+      if (multiUser) {
+        const sharedPath = this.multiUserPath();
+        const sharedStatePath = path.join(sharedPath, currentStatePath);
+        try {
+          const tempPersistor = await LevelPersist.create(
+            sharedStatePath, undefined, false);
+          try {
+            const sharedSub = new SubPersistor(tempPersistor, "user");
+            const val = await sharedSub.getItem(["multiUser"]);
+            if (!Boolean(JSON.parse(val))) {
+              // User toggled back to per-user while in shared mode
+              log("info",
+                "shared database has multiUser disabled, reverting to per-user");
+              multiUser = false;
+              await baseSubPersistor.setItem(
+                ["multiUser"], JSON.stringify(false));
+              // Remove the stale flag from the shared DB so it doesn't
+              // block future switches back to shared mode
+              await sharedSub.removeItem(["multiUser"]);
+            }
+          } catch (err: unknown) {
+            // Key not found — first launch in shared mode.
+            // We'll seed the value after the shared DB is set up as the
+            // active persistor so hydration picks it up.
+            if (unknownToError(err).name === "NotFoundError") {
+              seedMultiUser = true;
+            }
+          } finally {
+            // Always close the temporary connection — the main code path
+            // will create its own LevelPersist if we stay in shared mode
+            await tempPersistor.close();
+          }
+        } catch {
+          // Shared DB doesn't exist yet — will be created below
+          seedMultiUser = true;
+        }
       }
 
       // 3. Determine data path
@@ -912,6 +964,13 @@ class Application {
         );
         this.mLevelPersistors.push(newLevelPersistor);
         finalPersistor = newLevelPersistor;
+
+        // Seed the multiUser flag into the shared DB so the settings
+        // dropdown renders correctly after hydration
+        if (seedMultiUser) {
+          const sharedSub = new SubPersistor(newLevelPersistor, "user");
+          await sharedSub.setItem(["multiUser"], JSON.stringify(true));
+        }
       }
 
       // 5. Restore or merge state backup if requested
