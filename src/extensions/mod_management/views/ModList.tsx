@@ -49,10 +49,11 @@ import { IProfileMod } from "../../profile_management/types/IProfile";
 
 import { removeMod, setModAttribute } from "../actions/mods";
 import { setShowModDropzone } from "../actions/settings";
-import { IInstallOptions } from "../types/IInstallOptions";
-import { IMod } from "../types/IMod";
-import { IModProps } from "../types/IModProps";
-import { IModSource } from "../types/IModSource";
+import type { IInstallOptions } from "../types/IInstallOptions";
+import type { IMod } from "../types/IMod";
+import type { IModProps } from "../types/IModProps";
+import type { IModSource } from "../types/IModSource";
+import { knownArchiveExt } from "../../../util/archives";
 import combineMods from "../util/combine";
 import filterModInfo from "../util/filterModInfo";
 import groupMods from "../util/modGrouping";
@@ -128,6 +129,7 @@ class VersionOption extends React.PureComponent<IVersionOptionProps, {}> {
 interface IBaseProps {
   globalOverlay: JSX.Element;
   modSources: IModSource[];
+  onDropNonArchiveFiles: (filePaths: string[]) => void;
 }
 
 interface IConnectedProps extends IModProps {
@@ -1810,18 +1812,35 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   };
 
   private dropMod = (type: DropType, values: string[]) => {
-    const { autoInstall } = this.props;
-    this.context.api.events.emit(
-      "import-downloads",
-      values,
-      (dlIds: string[]) => {
-        if (autoInstall) {
-          dlIds.forEach((dlId) => {
-            this.context.api.events.emit("start-install-download", dlId);
-          });
-        }
-      },
-    );
+    const { autoInstall, onDropNonArchiveFiles } = this.props;
+
+    const archives: string[] = [];
+    const nonArchives: string[] = [];
+    for (const filePath of values) {
+      if (knownArchiveExt(filePath)) {
+        archives.push(filePath);
+      } else {
+        nonArchives.push(filePath);
+      }
+    }
+
+    if (archives.length > 0) {
+      this.context.api.events.emit(
+        "import-downloads",
+        archives,
+        (dlIds: string[]) => {
+          if (autoInstall) {
+            dlIds.forEach((dlId) => {
+              this.context.api.events.emit("start-install-download", dlId);
+            });
+          }
+        },
+      );
+    }
+
+    if (nonArchives.length > 0) {
+      onDropNonArchiveFiles(nonArchives);
+    }
   };
 
   private conditionNotInstalled = (instanceId: string | string[]) => {
