@@ -1,8 +1,13 @@
 import { describe, it, expect } from "vitest";
 
-import { createChunks } from "./chunking";
+import { staticChunker } from "./chunking";
 
-describe("createChunks", () => {
+function createChunks(size: number, numChunks: number) {
+  const chunker = staticChunker(numChunks);
+  return chunker(size);
+}
+
+describe("staticChunker", () => {
   describe("chunk count", () => {
     it("returns the requested number of chunks", () => {
       expect(createChunks(100, 4)).toHaveLength(4);
