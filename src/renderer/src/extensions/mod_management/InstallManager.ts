@@ -120,7 +120,7 @@ import {
   withTrackedActivity,
 } from "../../util/errorHandling";
 import * as fs from "../../util/fs";
-import { log } from "../../util/log";
+import { log } from "../../logging";
 import { prettifyNodeErrorMessage } from "../../util/message";
 import {
   activeGameId,
@@ -313,6 +313,23 @@ class InstructionGroups {
   public error: IInstruction[] = [];
   public rule: IInstruction[] = [];
   public enableallplugins: IInstruction[] = [];
+}
+
+async function buildFileList(basePath: string): Promise<string[]> {
+  const fileList: string[] = [];
+  await walk(basePath, (iterPath, stats) => {
+    const relPath = path.normalize(path.relative(basePath, iterPath));
+    if (stats.isFile()) {
+      fileList.push(relPath);
+    } else {
+      // unfortunately we also have to pass directories because
+      // some mods contain empty directories to control stop-folder
+      // management...
+      fileList.push(relPath + path.sep);
+    }
+    return Promise.resolve();
+  });
+  return fileList;
 }
 
 export const INI_TWEAKS_PATH = "Ini Tweaks";
@@ -1127,19 +1144,8 @@ class InstallManager {
           return Promise.resolve();
         }
       })
-      .then(() =>
-        walk(tempPath, (iterPath, stats) => {
-          if (stats.isFile()) {
-            fileList.push(path.relative(tempPath, iterPath));
-          } else {
-            // unfortunately we also have to pass directories because
-            // some mods contain empty directories to control stop-folder
-            // management...
-            fileList.push(path.relative(tempPath, iterPath) + path.sep);
-          }
-          return Promise.resolve();
-        }),
-      )
+      .then(() => buildFileList(tempPath))
+      .then((result) => { fileList.push(...result); })
       .then(() => {
         if (truthy(extractList) && extractList.length > 0) {
           return makeListInstaller(extractList, tempPath);
@@ -4011,21 +4017,8 @@ class InstallManager {
           await this.queryContinue(api, errors, archivePath);
         }
       })
-      .then(async () => {
-        await walk(
-          tempPath,
-          async (iterPath, stats) => {
-            if (stats.isFile()) {
-              fileList.push(path.relative(tempPath, iterPath));
-            } else {
-              // unfortunately we also have to pass directories because
-              // some mods contain empty directories to control stop-folder
-              // management...
-              fileList.push(path.relative(tempPath, iterPath) + path.sep);
-            }
-          },
-        );
-      })
+      .then(() => buildFileList(tempPath))
+      .then((result) => { fileList.push(...result); })
       .then(async () => {
         const hasFomodSegment = (file: string) => {
           const segments = file.toLowerCase().split(path.sep);
@@ -7768,11 +7761,21 @@ class InstallManager {
       }
     };
 
+    const folderCopies: string[] = [];
     for (const copy of sorted) {
+      if (copy.source.endsWith("/") || copy.source.endsWith("\\")) {
+        folderCopies.push(copy.source);
+        continue;
+      }
       const src = path.join(tempPath, copy.source);
       const dst = path.join(destinationPath, copy.destination);
       dirs.add(path.dirname(dst));
       jobs.push({ src, dst, rel: copy.destination });
+    }
+    if (folderCopies.length > 0) {
+      log("warn", "installer generated copy instructions for directories, these will be skipped", {
+        directories: folderCopies,
+      });
     }
 
     const cpuCount = os && os.cpus ? Math.max(1, os.cpus().length) : 1;
