@@ -960,6 +960,26 @@ class InstallManager {
   }
 
   /**
+   * Returns a promise that resolves once there are no active or pending
+   * installations. Resolves immediately if already idle.
+   */
+  public waitForIdle(): Promise<void> {
+    if (this.getActiveInstallationCount() === 0) {
+      return Promise.resolve();
+    }
+    return new Promise<void>((resolve) => {
+      const check = () => {
+        if (this.getActiveInstallationCount() === 0) {
+          resolve();
+        } else {
+          setTimeout(check, 500);
+        }
+      };
+      setTimeout(check, 500);
+    });
+  }
+
+  /**
    * Debug method: Get details about active installations
    */
   public debugActiveInstalls(): any[] {
