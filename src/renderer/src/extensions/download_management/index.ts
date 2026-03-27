@@ -80,22 +80,7 @@ let updateDebouncer: Debouncer;
 
 const protocolHandlers: IProtocolHandlers = {};
 
-const archiveExtLookup = new Set<string>([
-  ".zip",
-  ".z01",
-  ".7z",
-  ".rar",
-  ".r00",
-  ".001",
-  ".bz2",
-  ".bzip2",
-  ".gz",
-  ".gzip",
-  ".xz",
-  ".z",
-  ".fomod",
-  ".dazip",
-]);
+import { knownArchiveExt } from "../../util/archives";
 
 const addLocalInProgress = new Set<string>();
 
@@ -107,13 +92,6 @@ function withAddInProgress(
   return PromiseBB.resolve(cb()).finally(() => {
     addLocalInProgress.delete(fileName);
   });
-}
-
-function knownArchiveExt(filePath: string): boolean {
-  if (!truthy(filePath)) {
-    return false;
-  }
-  return archiveExtLookup.has(path.extname(filePath).toLowerCase());
 }
 
 function refreshDownloads(
