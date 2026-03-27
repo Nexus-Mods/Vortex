@@ -2,10 +2,13 @@ import got from "got";
 import { createWriteStream } from "node:fs";
 import { type FileHandle, open } from "node:fs/promises";
 import { pipeline } from "node:stream/promises";
-import { URL } from "node:url";
+import { type URL } from "node:url";
 import PQueue from "p-queue";
 
+import type { Resolver, NormalizedResource } from "./resolver";
+
 import { type Chunk, createChunks } from "./chunking";
+import { normalize } from "./resolver";
 
 export type DownloaderOptions = {
   /** Maximum simultaneous file downloads */
@@ -25,32 +28,6 @@ export function defaultOptions(): DownloaderOptions {
     chunkConcurrency: 6,
     chunksPerFile: 4,
     minFileSizeForChunking: 10 * 1024 * 1024,
-  };
-}
-
-export type Resolver<T> = (resource: T) => Promise<ResolvedResource>;
-
-export type ResolvedResource =
-  | URL
-  | { probeUrl: URL; chunkUrl?: (chunk: Chunk) => Promise<URL> };
-
-type NormalizedResource = {
-  probeUrl: URL;
-  chunkUrl: (chunk: Chunk) => Promise<URL>;
-};
-
-function normalize(resource: ResolvedResource): NormalizedResource {
-  if (resource instanceof URL) {
-    return {
-      probeUrl: resource,
-      chunkUrl: () => Promise.resolve(resource),
-    };
-  }
-
-  const { probeUrl, chunkUrl } = resource;
-  return {
-    probeUrl,
-    chunkUrl: chunkUrl ?? (() => Promise.resolve(probeUrl)),
   };
 }
 
