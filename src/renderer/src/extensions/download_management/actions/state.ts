@@ -1,7 +1,8 @@
 import { createAction } from "redux-act";
+
 import type { IChunk } from "../types/IChunk";
 
-import { log } from "../../../util/log";
+import { log } from "../../../logging";
 
 export interface IDictionary {
   [key: string]: any;
