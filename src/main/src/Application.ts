@@ -888,7 +888,7 @@ class Application {
           try {
             const sharedSub = new SubPersistor(tempPersistor, "user");
             const val = await sharedSub.getItem(["multiUser"]);
-            if (!Boolean(JSON.parse(val))) {
+            if (!JSON.parse(val)) {
               // User toggled back to per-user while in shared mode
               log("info",
                 "shared database has multiUser disabled, reverting to per-user");
