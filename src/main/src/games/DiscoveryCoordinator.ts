@@ -6,6 +6,31 @@ import type { IStoreScanner, IStoreGameEntry } from "./IStoreScanner";
 
 const DEBOUNCE_MS = 5_000;
 
+type SettledResult<T> =
+  | { status: "fulfilled"; value: T }
+  | { status: "rejected"; reason: unknown };
+
+/**
+ * A Promise.allSettled-compatible helper that works even when the global
+ * Promise has been patched (e.g. by turbowalk's bluebird integration).
+ *
+ * turbowalk replaces global Promise with bluebird, and bluebird's allSettled
+ * returns bluebird inspection objects rather than plain {status, value} objects.
+ * This helper builds plain result objects by wrapping each promise individually.
+ */
+async function safeAllSettled<T>(
+  promises: Array<Promise<T>>,
+): Promise<Array<SettledResult<T>>> {
+  return Promise.all(
+    promises.map((p) =>
+      p.then(
+        (value: T): SettledResult<T> => ({ status: "fulfilled", value }),
+        (reason: unknown): SettledResult<T> => ({ status: "rejected", reason }),
+      ),
+    ),
+  );
+}
+
 /**
  * Row shape for the store_games DuckDB table.
  */
@@ -61,7 +86,7 @@ export class DiscoveryCoordinator {
     this.#lastRunTime = now;
 
     try {
-      const results = await Promise.allSettled(
+      const results = await safeAllSettled(
         this.#scanners.map(async (scanner) => {
           if (await scanner.isAvailable()) {
             const games = await scanner.scan();
@@ -121,7 +146,11 @@ export class DiscoveryCoordinator {
       const metadata = game.metadata ? JSON.stringify(game.metadata) : "";
       await this.#connection.run(
         `INSERT INTO store_games (store_type, store_id, install_path, name, store_metadata)
-         VALUES ('${esc(storeType)}', '${esc(game.storeId)}', '${esc(game.installPath)}', '${esc(name)}', '${esc(metadata)}')`,
+         VALUES ('${esc(storeType)}', '${esc(game.storeId)}', '${esc(game.installPath)}', '${esc(name)}', '${esc(metadata)}')
+         ON CONFLICT (store_type, store_id) DO UPDATE SET
+           install_path = EXCLUDED.install_path,
+           name = EXCLUDED.name,
+           store_metadata = EXCLUDED.store_metadata`,
       );
     }
 
