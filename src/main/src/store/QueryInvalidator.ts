@@ -12,6 +12,7 @@ import type QueryWatcher from "./QueryWatcher";
 class QueryInvalidator {
   #mRegistry: QueryRegistry;
   #mWatcher: QueryWatcher | undefined;
+  #mBroadcast: ((queryNames: string[]) => void) | undefined;
   #mPendingTables: Set<string> = new Set();
   #mDebounceTimer: ReturnType<typeof setTimeout> | undefined;
   #mDebounceMs: number;
@@ -26,6 +27,13 @@ class QueryInvalidator {
    */
   public setWatcher(watcher: QueryWatcher): void {
     this.#mWatcher = watcher;
+  }
+
+  /**
+   * Set a broadcast callback to notify renderer windows of dirty queries.
+   */
+  public setBroadcast(callback: (queryNames: string[]) => void): void {
+    this.#mBroadcast = callback;
   }
 
   /**
@@ -77,6 +85,9 @@ class QueryInvalidator {
     this.#mWatcher?.onQueriesInvalidated(affectedQueries).catch((err) => {
       log("warn", "QueryWatcher notification failed", err);
     });
+
+    // Broadcast dirty query names to renderer windows
+    this.#mBroadcast?.(affectedQueries);
   }
 }
 
