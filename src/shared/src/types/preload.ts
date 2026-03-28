@@ -89,7 +89,10 @@ export interface Api {
   /** Telemetry APIs - span export from renderer to main */
   telemetry: TelemetryApi;
 
-  /** Game Discovery APIs - trigger scans and receive store game data */
+  /** Generic query API - execute named queries and receive dirty notifications */
+  query: QueryApi;
+
+  /** Game Discovery APIs - trigger scans and registry lookups */
   discovery: DiscoveryApi;
 }
 
@@ -413,6 +416,18 @@ export interface TelemetryApi {
   forwardSpan(span: SerializedSpan): void;
 }
 
+/** Generic query API — execute named DuckDB queries and receive dirty notifications */
+export interface QueryApi {
+  /** Execute a named query with optional parameters */
+  execute(
+    queryName: string,
+    params?: Record<string, unknown>,
+  ): Promise<Record<string, Serializable>[]>;
+
+  /** Listen for dirty query notifications. Returns unsubscribe function. */
+  onDirty(callback: (queryNames: string[]) => void): () => void;
+}
+
 /** Store game entry as returned from main-process discovery */
 export interface IStoreGameRow {
   store_type: string;
@@ -422,19 +437,13 @@ export interface IStoreGameRow {
   store_metadata: string | null;
 }
 
-/** API for game discovery — triggering scans and receiving store data */
+/** API for game discovery — triggering scans and registry lookups */
 export interface DiscoveryApi {
   /** Trigger a discovery scan in the main process */
   start(): Promise<void>;
-
-  /** Get the current store_games data */
-  getStoreGames(): Promise<IStoreGameRow[]>;
 
   /** Look up a game by registry key (format: "HIVE:Path:Key") */
   registryLookup(
     query: string,
   ): Promise<{ storeId: string; installPath: string; name?: string } | undefined>;
-
-  /** Listen for store_games updates pushed from main process */
-  onStoreGamesUpdated(callback: (games: IStoreGameRow[]) => void): void;
 }
