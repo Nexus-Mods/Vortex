@@ -71,17 +71,23 @@ try {
         betterIpcRenderer.send("extensions:init-all-main", installType),
     },
 
+    query: {
+      execute: (queryName: string, params: Record<string, unknown> = {}) =>
+        betterIpcRenderer.invoke("query:execute", queryName, params),
+      onDirty: (callback: (queryNames: string[]) => void) => {
+        const listener = (
+          _: Electron.IpcRendererEvent,
+          queryNames: string[],
+        ) => callback(queryNames);
+        ipcRenderer.on("query:dirty", listener);
+        return () => ipcRenderer.removeListener("query:dirty", listener);
+      },
+    },
+
     discovery: {
       start: () => betterIpcRenderer.invoke("discovery:start"),
-      getStoreGames: () =>
-        betterIpcRenderer.invoke("discovery:get-store-games"),
       registryLookup: (query: string) =>
         betterIpcRenderer.invoke("discovery:registry-lookup", query),
-      onStoreGamesUpdated: (callback) =>
-        betterIpcRenderer.on(
-          "discovery:store-games-updated",
-          (_, games) => callback(games),
-        ),
     },
 
     updater: {

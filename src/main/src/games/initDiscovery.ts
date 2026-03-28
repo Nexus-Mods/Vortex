@@ -1,11 +1,6 @@
-import { BrowserWindow } from "electron";
-
 import { log } from "../logging";
-import { betterIpcMain } from "../ipc";
 import DuckDBSingleton from "../store/DuckDBSingleton";
 import type QueryInvalidator from "../store/QueryInvalidator";
-import type QueryRegistry from "../store/QueryRegistry";
-import type QueryWatcher from "../store/QueryWatcher";
 
 import { DiscoveryCoordinator } from "./DiscoveryCoordinator";
 import { setupDiscoveryIPC } from "./discoveryIPC";
@@ -21,13 +16,11 @@ import { XboxScanner } from "./scanners/XboxScanner";
  * Initialize the game discovery system.
  *
  * Creates all store scanners, the DiscoveryCoordinator, wires up IPC
- * handlers, sets up a DuckDB query watcher to push store_games data
- * to the renderer, and runs an initial discovery.
+ * handlers, and runs an initial discovery. Store game data is exposed
+ * to the renderer via the generic query IPC system (query:execute / query:dirty).
  */
 export async function initDiscovery(
-  queryRegistry: QueryRegistry | undefined,
   queryInvalidator: QueryInvalidator | undefined,
-  queryWatcher: QueryWatcher | undefined,
 ): Promise<void> {
   if (queryInvalidator === undefined) {
     log("warn", "discovery: query invalidator not available, skipping init");
@@ -63,30 +56,7 @@ export async function initDiscovery(
   );
 
   // Set up IPC handlers
-  setupDiscoveryIPC(coordinator, registryScanner, queryRegistry);
-
-  // Set up query watcher to push store_games to renderer
-  if (queryWatcher !== undefined) {
-    queryWatcher.watch("all_store_games", {}, (diff) => {
-      // Push the full current result set to all renderer windows
-      for (const win of BrowserWindow.getAllWindows()) {
-        if (!win.isDestroyed()) {
-          betterIpcMain.send(
-            win.webContents,
-            "discovery:store-games-updated",
-            diff.current as Array<{
-              store_type: string;
-              store_id: string;
-              install_path: string;
-              name: string | null;
-              store_metadata: string | null;
-            }>,
-          );
-        }
-      }
-    });
-    log("info", "discovery: query watcher set up for store_games");
-  }
+  setupDiscoveryIPC(coordinator, registryScanner);
 
   // Run initial discovery (non-blocking)
   coordinator.runDiscovery().catch((err) => {
