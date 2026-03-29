@@ -3,8 +3,7 @@ import { describe, it, expect } from "vitest";
 import { staticChunker } from "./chunking";
 
 function createChunks(size: number, numChunks: number) {
-  const chunker = staticChunker(numChunks);
-  return chunker(size);
+  return staticChunker(numChunks, 1)(size);
 }
 
 describe("staticChunker", () => {
@@ -73,11 +72,37 @@ describe("staticChunker", () => {
     });
   });
 
+  describe("minimum file size gate", () => {
+    it("returns empty when size is below minFileSize", () => {
+      const chunker = staticChunker(4, 1024);
+      expect(chunker(512)).toHaveLength(0);
+    });
+
+    it("returns empty when size equals minFileSize minus one", () => {
+      const chunker = staticChunker(4, 1024);
+      expect(chunker(1023)).toHaveLength(0);
+    });
+
+    it("returns chunks when size equals minFileSize", () => {
+      const chunker = staticChunker(4, 1024);
+      expect(chunker(1024)).toHaveLength(4);
+    });
+
+    it("returns chunks when size exceeds minFileSize", () => {
+      const chunker = staticChunker(4, 1024);
+      expect(chunker(2048)).toHaveLength(4);
+    });
+  });
+
   describe("edge cases", () => {
     it("handles a single byte file", () => {
       const chunks = createChunks(1, 1);
       expect(chunks[0].start).toBe(0);
       expect(chunks[0].end).toBe(0);
+    });
+
+    it("throws when numChunks exceeds file size", () => {
+      expect(() => createChunks(3, 4)).toThrow();
     });
 
     it("handles a file that divides evenly into chunks", () => {

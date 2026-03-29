@@ -4,9 +4,9 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { describe, it, expect, vi } from "vitest";
 
-import { staticChunker, type Chunk } from "./chunking";
 import type { Resolver } from "./resolver";
 
+import { staticChunker, type Chunk } from "./chunking";
 import {
   Downloader,
   type DownloaderOptions,
@@ -255,7 +255,7 @@ describe("Downloader", () => {
               });
 
             const chunksPerFile = 4;
-            const chunker = staticChunker(4);
+            const chunker = staticChunker(chunksPerFile);
 
             const dest = path.join(dir, "output");
             await makeDownloader().download(
