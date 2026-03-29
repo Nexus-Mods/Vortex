@@ -16,8 +16,6 @@ export type DownloaderOptions = {
   downloadConcurrency: number;
   /** Maximum simultaneous chunk connections across all downloads */
   chunkConcurrency: number;
-  /** Minimum file size in bytes before chunking is attempted */
-  minFileSizeForChunking: number;
 };
 
 /** Creates instance of the options with default values */
@@ -25,7 +23,6 @@ export function defaultOptions(): DownloaderOptions {
   return {
     downloadConcurrency: 3,
     chunkConcurrency: 6,
-    minFileSizeForChunking: 10 * 1024 * 1024,
   };
 }
 
@@ -50,17 +47,18 @@ export class Downloader {
     resource: T,
     dest: string,
     resolver: Resolver<T>,
-    chunker: Chunker<T> = staticChunker(4),
+    chunker: Chunker<T> = staticChunker(),
   ): Promise<void> {
     return this.#downloadQueue.add(async () => {
       const resolved = normalize(await resolver(resource));
       const probe = await this.#probe(resolved.probeUrl);
 
-      if (!probe.chunkable) {
+      const chunks = probe.acceptsRanges ? chunker(probe.size, resource) : [];
+
+      if (chunks.length === 0) {
         return this.#downloadSingle(resolved.probeUrl, dest);
       }
 
-      const chunks = chunker(probe.size, resource);
       return this.#downloadChunked(resolved, dest, probe, chunks);
     });
   }
@@ -73,10 +71,7 @@ export class Downloader {
     size = isNaN(size) ? 0 : size;
 
     const acceptsRanges = response.headers["accept-ranges"] === "bytes";
-    const chunkable =
-      acceptsRanges && size >= this.#options.minFileSizeForChunking;
-
-    return { size, chunkable };
+    return { size, acceptsRanges };
   }
 
   async #downloadSingle(url: URL, dest: string) {
@@ -133,5 +128,5 @@ export class Downloader {
 
 type ProbeResult = {
   size: number;
-  chunkable: boolean;
+  acceptsRanges: boolean;
 };
