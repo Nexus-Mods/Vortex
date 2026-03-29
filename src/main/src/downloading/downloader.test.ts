@@ -438,13 +438,13 @@ describe("Downloader", () => {
           const chunkUrlFn = vi.fn((_chunk: Chunk) =>
             Promise.resolve(chunkUrl),
           );
-          const resolver: Resolver<URL> = () =>
+          const resolver: Resolver<never> = () =>
             Promise.resolve({ probeUrl, chunkUrl: chunkUrlFn });
 
           const chunksPerFile = 4;
           const dest = path.join(dir, "output");
           await makeDownloader().download(
-            server.url,
+            null,
             dest,
             resolver,
             staticChunker(chunksPerFile),
@@ -485,12 +485,12 @@ describe("Downloader", () => {
             const i = Math.floor(chunk.start / chunkSize);
             return Promise.resolve(chunkRoutes[i].url);
           });
-          const resolver: Resolver<URL> = () =>
+          const resolver: Resolver<never> = () =>
             Promise.resolve({ probeUrl, chunkUrl: chunkUrlFn });
 
           const dest = path.join(dir, "output");
           await makeDownloader().download(
-            server.url,
+            null,
             dest,
             resolver,
             staticChunker(chunksPerFile),
