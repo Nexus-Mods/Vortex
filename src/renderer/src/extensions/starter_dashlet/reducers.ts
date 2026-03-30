@@ -14,6 +14,10 @@ const reducer: IReducerSpec = {
       const { gameId, toolId, valid } = payload;
       return setSafe(state, ["tools", "valid", gameId, toolId], valid);
     },
+    [actions.setToolPinned as any]: (state, payload) => {
+      const { gameId, toolId, pinned } = payload;
+      return setSafe(state, ["tools", "pinned", gameId, toolId], pinned);
+    },
   },
   defaults: {},
 };

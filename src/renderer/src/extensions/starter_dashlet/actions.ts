@@ -18,3 +18,12 @@ export const setToolValid = createAction(
     valid,
   }),
 );
+
+export const setToolPinned = createAction(
+  "SET_TOOL_PINNED",
+  (gameId: string, toolId: string, pinned: boolean) => ({
+    gameId,
+    toolId,
+    pinned,
+  }),
+);

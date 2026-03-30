@@ -66,6 +66,9 @@ export const useToolsData = () => {
   const primaryTool = useSelector((s: any) =>
     getSafe(s, ["settings", "interface", "primaryTool", gameMode], undefined),
   );
+  const pinnedToolsMap = useSelector((s: any) =>
+    getSafe(s, ["settings", "interface", "tools", "pinned", gameMode], emptyObj),
+  );
   const toolsRunning = useSelector((s: any) => s.session.base.toolsRunning);
   const mods = useSelector((s: any) =>
     getSafe(s, ["persistent", "mods", gameMode], emptyObj),
@@ -119,7 +122,7 @@ export const useToolsData = () => {
     deploymentCounter,
   ]);
 
-  // ── Derived: pinned / unpinned / launcher split ─────────────────────────
+  // ── Derived: hidden / pinned / unpinned / launcher split ─────────────────
 
   const isToolHidden = useCallback(
     (starter: IStarterInfo) =>
@@ -127,28 +130,36 @@ export const useToolsData = () => {
     [discoveredTools],
   );
 
-  const { launcherTool, otherPinnedTools, unpinnedTools } = useMemo(() => {
-    const launcher = tools.find((s) => s.id === primaryTool);
-    const nonLauncher = tools.filter((s) => s.id !== primaryTool);
+  const isToolPinned = useCallback(
+    (starter: IStarterInfo) =>
+      pinnedToolsMap[starter.id] === true,
+    [pinnedToolsMap],
+  );
 
-    // Pinned = not explicitly hidden. Unpinned = explicitly hidden.
-    // Tools without a hidden flag default to pinned.
-    const pinned = nonLauncher.filter(
+  const { launcherTool, otherPinnedTools, unpinnedTools } = useMemo(() => {
+    // Hidden tools (removed in classic UI) are excluded entirely
+    const visible = tools.filter(
       (s) =>
         s.isGame ||
         discoveredTools[s.id] === undefined ||
         !isToolHidden(s),
     );
-    const unpinned = nonLauncher.filter(
-      (s) => !s.isGame && isToolHidden(s),
-    );
+
+    const launcher = visible.find((s) => s.id === primaryTool);
+    const nonLauncher = visible.filter((s) => s.id !== primaryTool);
+
+    // Tools with explicit pinned=true go to pinned section.
+    // Tools with no pinned state (undefined) go to unpinned (default).
+    // Tools with explicit pinned=false go to unpinned.
+    const pinned = nonLauncher.filter((s) => isToolPinned(s));
+    const unpinned = nonLauncher.filter((s) => !isToolPinned(s));
 
     return {
       launcherTool: launcher,
       otherPinnedTools: pinned,
       unpinnedTools: unpinned,
     };
-  }, [tools, primaryTool, discoveredTools, isToolHidden]);
+  }, [tools, primaryTool, discoveredTools, pinnedToolsMap, isToolHidden, isToolPinned]);
 
   const pinnedCount = otherPinnedTools.length;
   const maxPinnedReached = pinnedCount >= MAX_PINNED_TOOLS;

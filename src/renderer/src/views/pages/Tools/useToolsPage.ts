@@ -8,10 +8,11 @@ import type { IGameStored } from "../../../types/IState";
 import { showError } from "../../../util/message";
 import StarterInfo from "../../../util/StarterInfo";
 import { MainContext } from "../../MainWindow";
-import { setToolPinned } from "../../../extensions/gamemode_management/actions/settings";
+import { setToolVisible } from "../../../extensions/gamemode_management/actions/settings";
 import {
   setPrimaryTool,
   setToolOrder,
+  setToolPinned,
 } from "../../../extensions/starter_dashlet/actions";
 import { useToolsData } from "./useToolsData";
 
@@ -113,12 +114,24 @@ export const useToolsPage = () => {
     [reduxDispatch, primaryTool],
   );
 
+  const removeTool = useCallback(
+    (starter: StarterInfo) => {
+      context.api.events.emit(
+        "analytics-track-click-event",
+        "Tools",
+        "Removed tool",
+      );
+      reduxDispatch(setToolVisible(gameMode, starter.id, false));
+    },
+    [reduxDispatch, gameMode],
+  );
+
   const togglePin = useCallback(
     (starter: IStarterInfo) => {
-      const isHidden = discoveredTools[starter.id]?.hidden === true;
-      reduxDispatch(setToolPinned(gameMode, starter.id, isHidden));
+      const currentlyPinned = data.otherPinnedTools.some((s) => s.id === starter.id);
+      reduxDispatch(setToolPinned(gameMode, starter.id, !currentlyPinned));
     },
-    [reduxDispatch, gameMode, discoveredTools],
+    [reduxDispatch, gameMode, data.otherPinnedTools],
   );
 
   // ── Reordering ────────────────────────────────────────────────────────
@@ -179,6 +192,7 @@ export const useToolsPage = () => {
     counter,
     addNewTool,
     editTool,
+    removeTool,
     startTool,
     setToolPrimary,
     togglePin,

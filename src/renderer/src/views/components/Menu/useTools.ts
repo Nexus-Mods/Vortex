@@ -46,6 +46,7 @@ export const useTools = (
     discoveredTools,
     discoveryPath,
     primaryToolId,
+    pinnedToolsMap,
   } = useToolsData();
 
   // Get all starters for validation
@@ -75,22 +76,24 @@ export const useTools = (
     [isToolRunning, primaryStarter?.exePath],
   );
 
-  // Show pinned tools (not hidden), matching the Tools page pinned section.
+  // Show pinned tools matching the Tools page pinned section.
+  // Hidden tools (removed in classic) are excluded. Only explicitly pinned tools show.
   // Excludes the launcher (shown in Play button). Capped at MAX_VISIBLE_TOOLS for the sidebar.
   const visibleTools = useMemo(() => {
     const nonLauncher = tools.filter(
       (starter) => starter.id !== primaryToolId,
     );
 
+    // Exclude hidden tools, then only show explicitly pinned ones
     const pinned = nonLauncher.filter(
       (starter) =>
-        starter.isGame ||
-        discoveredTools[starter.id] === undefined ||
-        discoveredTools[starter.id].hidden !== true,
+        (discoveredTools[starter.id] === undefined ||
+          discoveredTools[starter.id].hidden !== true) &&
+        pinnedToolsMap[starter.id] === true,
     );
 
     return pinned.slice(0, MAX_VISIBLE_TOOLS);
-  }, [tools, discoveredTools, primaryToolId]);
+  }, [tools, discoveredTools, primaryToolId, pinnedToolsMap]);
 
   const startTool = useCallback(
     (info: IStarterInfo) => {

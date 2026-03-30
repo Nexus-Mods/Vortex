@@ -124,12 +124,6 @@ export const settingsReducer: IReducerSpec<ISettingsGameMode> = {
             ["discovered", payload.gameId, "tools", payload.toolId, "hidden"],
             !payload.visible,
           ),
-    [actions.setToolPinned as any]: (state, payload) =>
-      setSafe(
-        state,
-        ["discovered", payload.gameId, "tools", payload.toolId, "hidden"],
-        !payload.pinned,
-      ),
     [actions.setGameParameters as any]: (state, payload) =>
       state.discovered[payload.gameId] === undefined
         ? state

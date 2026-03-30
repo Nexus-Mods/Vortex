@@ -1,15 +1,18 @@
+import { Menu } from "@headlessui/react";
 import {
   mdiArrowDown,
   mdiArrowUp,
+  mdiDelete,
+  mdiDotsVertical,
   mdiPencil,
   mdiPin,
   mdiPinOff,
   mdiPlay,
-  mdiRocket,
-  mdiRocketOutline,
+  mdiFlash,
+  mdiFlashOff,
   mdiWrench,
 } from "@mdi/js";
-import React, { FC } from "react";
+import React, { type FC } from "react";
 import { Image } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { pathToFileURL } from "url";
@@ -17,6 +20,9 @@ import { pathToFileURL } from "url";
 import type { IStarterInfo } from "../../../util/StarterInfo";
 
 import { Button } from "../../../ui/components/button/Button";
+import { Dropdown } from "../../../ui/components/dropdown/Dropdown";
+import { DropdownItem } from "../../../ui/components/dropdown/DropdownItem";
+import { DropdownItems } from "../../../ui/components/dropdown/DropdownItems";
 import { Icon } from "../../../ui/components/icon/Icon";
 import { Typography } from "../../../ui/components/typography/Typography";
 import StarterInfo from "../../../util/StarterInfo";
@@ -35,6 +41,7 @@ export interface ToolRowProps {
   pinDisabledReason?: string;
   onRun: (starter: StarterInfo) => void;
   onEdit: (starter: StarterInfo) => void;
+  onRemove: (starter: StarterInfo) => void;
   onSetPrimary: (starter: StarterInfo) => void;
   onTogglePin: (starter: IStarterInfo) => void;
   onMoveUp?: (starter: IStarterInfo) => void;
@@ -55,11 +62,12 @@ export const ToolRow: FC<ToolRowProps> = ({
   pinDisabledReason,
   onRun,
   onEdit,
+  onRemove,
   onSetPrimary,
   onTogglePin,
   onMoveUp,
   onMoveDown,
-}: ToolRowProps) => {
+}) => {
   const { t } = useTranslation();
   const starterInfo = starter as StarterInfo;
 
@@ -111,6 +119,8 @@ export const ToolRow: FC<ToolRowProps> = ({
               disabled={isLast}
               onClick={() => onMoveDown?.(starter)}
             />
+
+            <div className="mx-0.5 h-4 w-px bg-stroke-weak" />
           </>
         )}
 
@@ -131,26 +141,45 @@ export const ToolRow: FC<ToolRowProps> = ({
           />
         )}
 
-        <Button
-          buttonType="tertiary"
-          leftIconPath={isPrimary ? mdiRocketOutline : mdiRocket}
-          size="xs"
-          title={
-            isPrimary
-              ? t("Remove default launcher")
-              : t("Set as default launcher — replaces the current one")
-          }
-          disabled={!isPrimary && !isValid}
-          onClick={() => onSetPrimary(starterInfo)}
-        />
+        <Dropdown>
+          <Menu.Button
+            as={Button}
+            buttonType="tertiary"
+            leftIconPath={mdiDotsVertical}
+            size="xs"
+          />
 
-        <Button
-          buttonType="tertiary"
-          leftIconPath={mdiPencil}
-          size="xs"
-          title={t("Edit tool")}
-          onClick={() => onEdit(starterInfo)}
-        />
+          <DropdownItems>
+            <DropdownItem
+              leftIconPath={mdiPencil}
+              onClick={() => onEdit(starterInfo)}
+            >
+              {t("Edit")}
+            </DropdownItem>
+
+            <DropdownItem
+              leftIconPath={isPrimary ? mdiFlashOff : mdiFlash}
+              disabled={!isPrimary && !isValid}
+              onClick={() => onSetPrimary(starterInfo)}
+            >
+              {isPrimary
+                ? t("Remove default launcher")
+                : t("Set as default launcher")}
+            </DropdownItem>
+
+            {!starter.isGame && (
+              <DropdownItem
+                className="nxm-dropdown-item-danger"
+                leftIconPath={mdiDelete}
+                onClick={() => onRemove(starterInfo)}
+              >
+                {t("Delete")}
+              </DropdownItem>
+            )}
+          </DropdownItems>
+        </Dropdown>
+
+        <div className="mx-0.5 h-4 w-px bg-stroke-weak" />
 
         <Button
           buttonType="secondary"

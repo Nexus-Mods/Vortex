@@ -1,4 +1,4 @@
-import { mdiPin, mdiPlus, mdiRocket, mdiWrench } from "@mdi/js";
+import { mdiPin, mdiPlus, mdiFlash, mdiWrench } from "@mdi/js";
 import React, { FC } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -27,6 +27,7 @@ export const ToolsPage: FC = () => {
     MAX_PINNED_TOOLS,
     addNewTool,
     editTool,
+    removeTool,
     startTool,
     setToolPrimary,
     togglePin,
@@ -34,11 +35,6 @@ export const ToolsPage: FC = () => {
     moveToolDown,
     closeEditDialog,
   } = useToolsPage();
-
-  const pinDisabledReason = t("Max pinned tools reached ({{count}}/{{max}})", {
-    count: pinnedCount,
-    max: MAX_PINNED_TOOLS,
-  });
 
   if (gameMode === undefined) {
     return (
@@ -84,6 +80,8 @@ export const ToolsPage: FC = () => {
               </div>
             </div>
 
+            <hr className="border-stroke-weak" />
+
             {/* Edit dialog */}
             {toolBeingEdited !== undefined && (
               <ToolEditDialog
@@ -92,88 +90,95 @@ export const ToolsPage: FC = () => {
               />
             )}
 
-            {/* Default launcher section */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-x-2">
-                <Icon
-                  className="shrink-0 text-translucent-moderate"
-                  path={mdiRocket}
-                  size="sm"
-                />
-                <Typography appearance="moderate" typographyType="body-sm">
-                  {t("Default launcher")}
-                </Typography>
-              </div>
+            {/* Default launcher & pinned tools - only shown when tools exist */}
+            {(launcherTool || otherPinnedTools.length > 0 || unpinnedTools.length > 0) && (
+              <>
+                {/* Default launcher section */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-x-2">
+                    <Icon
+                      className="shrink-0 text-translucent-moderate"
+                      path={mdiFlash}
+                      size="sm"
+                    />
+                    <Typography appearance="moderate" typographyType="body-sm">
+                      {t("Default launcher")}
+                    </Typography>
+                  </div>
 
-              {launcherTool ? (
-                <ToolRow
-                  starter={launcherTool}
-                  counter={counter}
-                  isValid={isToolValid(launcherTool)}
-                  isPrimary={true}
-                  isPinned={true}
-                  isRunning={isToolRunning(launcherTool)}
-                  onRun={startTool}
-                  onEdit={editTool}
-                  onSetPrimary={setToolPrimary}
-                  onTogglePin={togglePin}
-                />
-              ) : (
-                <Typography appearance="subdued" typographyType="body-sm">
-                  {t(
-                    "Runs instead of the game when you hit Play. Set default launcher with the 🚀 button on the tool.",
-                  )}
-                </Typography>
-              )}
-            </div>
-
-            {/* Pinned tools section */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-x-2">
-                <Icon
-                  className="shrink-0 text-translucent-moderate"
-                  path={mdiPin}
-                  size="sm"
-                />
-                <Typography appearance="moderate" typographyType="body-sm">
-                  {t("Pinned tools {{count}}/{{max}}", {
-                    count: pinnedCount,
-                    max: MAX_PINNED_TOOLS,
-                  })}
-                </Typography>
-              </div>
-
-              {otherPinnedTools.length > 0 ? (
-                <div className="space-y-1">
-                  {otherPinnedTools.map((starter, idx) => (
+                  {launcherTool ? (
                     <ToolRow
-                      key={starter.id}
-                      starter={starter}
+                      starter={launcherTool}
                       counter={counter}
-                      isValid={isToolValid(starter)}
-                      isPrimary={false}
+                      isValid={isToolValid(launcherTool)}
+                      isPrimary={true}
                       isPinned={true}
-                      isRunning={isToolRunning(starter)}
-                      showReorder={true}
-                      isFirst={idx === 0}
-                      isLast={idx === otherPinnedTools.length - 1}
+                      isRunning={isToolRunning(launcherTool)}
                       onRun={startTool}
                       onEdit={editTool}
+                      onRemove={removeTool}
                       onSetPrimary={setToolPrimary}
                       onTogglePin={togglePin}
-                      onMoveUp={moveToolUp}
-                      onMoveDown={moveToolDown}
                     />
-                  ))}
-                </div>
-              ) : (
-                <Typography appearance="subdued" typographyType="body-sm">
-                  {t(
-                    "Pin shortcuts to your most used tools using the 📌 button on the tool.",
+                  ) : (
+                    <Typography appearance="subdued" typographyType="body-sm">
+                      {t(
+                        "Runs instead of the game when you hit Play. Set default launcher with the ⚡ button on the tool.",
+                      )}
+                    </Typography>
                   )}
-                </Typography>
-              )}
-            </div>
+                </div>
+
+                {/* Pinned tools section */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-x-2">
+                    <Icon
+                      className="shrink-0 text-translucent-moderate"
+                      path={mdiPin}
+                      size="sm"
+                    />
+                    <Typography appearance="moderate" typographyType="body-sm">
+                      {t("Pinned tools {{count}}/{{max}}", {
+                        count: pinnedCount,
+                        max: MAX_PINNED_TOOLS,
+                      })}
+                    </Typography>
+                  </div>
+
+                  {otherPinnedTools.length > 0 ? (
+                    <div className="space-y-1">
+                      {otherPinnedTools.map((starter, idx) => (
+                        <ToolRow
+                          key={starter.id}
+                          starter={starter}
+                          counter={counter}
+                          isValid={isToolValid(starter)}
+                          isPrimary={false}
+                          isPinned={true}
+                          isRunning={isToolRunning(starter)}
+                          showReorder={true}
+                          isFirst={idx === 0}
+                          isLast={idx === otherPinnedTools.length - 1}
+                          onRun={startTool}
+                          onEdit={editTool}
+                          onRemove={removeTool}
+                          onSetPrimary={setToolPrimary}
+                          onTogglePin={togglePin}
+                          onMoveUp={moveToolUp}
+                          onMoveDown={moveToolDown}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <Typography appearance="subdued" typographyType="body-sm">
+                      {t(
+                        "Pin shortcuts to your most used tools using the 📌 button on the tool.",
+                      )}
+                    </Typography>
+                  )}
+                </div>
+              </>
+            )}
 
             {/* Tools section */}
             <div className="space-y-2">
@@ -212,9 +217,13 @@ export const ToolsPage: FC = () => {
                       isPinned={false}
                       isRunning={isToolRunning(starter)}
                       pinDisabled={maxPinnedReached}
-                      pinDisabledReason={pinDisabledReason}
+                      pinDisabledReason={t(
+                        "Max pinned tools reached ({{count}}/{{max}})",
+                        { count: pinnedCount, max: MAX_PINNED_TOOLS },
+                      )}
                       onRun={startTool}
                       onEdit={editTool}
+                      onRemove={removeTool}
                       onSetPrimary={setToolPrimary}
                       onTogglePin={togglePin}
                     />
