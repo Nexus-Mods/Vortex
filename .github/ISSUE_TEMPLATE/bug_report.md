@@ -7,6 +7,8 @@ assignees: ''
 
 ---
 
+> **Important:** Tickets that do not provide sufficient information may be closed without further notice. Context is everything when diagnosing bugs — do not assume that a screenshot alone is enough for us to identify the problem. Logs and reproduction are extremely important and, unless the issue is immediately obvious, we cannot assist without them. Please attach all `.log` files from `%appdata%/vortex`.
+
 **Your Nexus Mods username**
 Will help us debug your issue.
 
@@ -23,12 +25,16 @@ Steps to reproduce the behavior:
 **Expected behavior**
 A clear and concise description of what you expected to happen.
 
+**Logs**
+Please attach all `.log` files from `%appdata%/vortex`. Without logs, we are unlikely to be able to help.
+
 **Screenshots**
 If applicable, add screenshots to help explain your problem.
 
-**Platform (please complete the following information):**
- - OS: [e.g. Windows 10]
- - Vortex Version [e.g. 0.16.12]
+**Setup (please complete the following information):**
+ - OS: [e.g. Windows 11]
+ - Vortex Version: [e.g. 1.16.7]
+ - Game: [e.g. Skyrim]
 
 **Additional context**
 Add any other context about the problem here.
