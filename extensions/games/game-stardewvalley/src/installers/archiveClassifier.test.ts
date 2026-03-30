@@ -33,6 +33,13 @@ describe("installers/archiveClassifier", () => {
     ).toBe(true);
   });
 
+  test("ignores locale manifests case-insensitively", () => {
+    expect(
+      classifyArchive([nativePath("SomePack", "Locale", "manifest.json")], GAME_ID)
+        .hasManifest,
+    ).toBe(false);
+  });
+
   test("detects backslash manifests", () => {
     expect(
       classifyArchive(["SomePack\\manifest.json"], GAME_ID).hasManifest,

@@ -79,6 +79,15 @@ describe("installers/stardewValleyInstaller", () => {
         "Animals\\locale\\strings.json",
       ],
     },
+    {
+      label: "mixed-separator manifest archive",
+      files: [
+        "Animals\\manifest.json",
+        "Animals/Animals.dll",
+        "Animals\\locale/manifest.json",
+        "Animals/locale\\strings.json",
+      ],
+    },
   ])(
     "ignores locale manifests and installs the current payload for $label",
     async ({ files }) => {
