@@ -16,7 +16,7 @@ import {
 import { currentStatePath } from "@vortex/shared/state";
 import crashDump from "crash-dump";
 import { app, dialog, ipcMain, protocol, shell } from "electron";
-import contextMenu from "electron-context-menu";
+import type contextMenuType from "electron-context-menu";
 import isAdmin from "is-admin";
 import * as _ from "lodash";
 import { mkdirSync, statSync } from "node:fs";
@@ -170,6 +170,15 @@ class Application {
   }
 
   private setupContextMenu() {
+    if (process.platform === "linux") {
+      // electron-context-menu requires('electron') at module load time,
+      // which resolves to the npm package (a string) via pnpm symlinks on
+      // Linux instead of the Electron built-in API, causing a crash.
+      // Context menus are not needed for Phase 1 boot on Linux.
+      return;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const contextMenu = require("electron-context-menu") as typeof contextMenuType;
     contextMenu({
       showCopyImage: false,
       showLookUpSelection: false,
