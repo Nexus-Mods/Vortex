@@ -24,36 +24,44 @@ interface StoreGameRow {
   store_metadata: string | null;
 }
 
-function formatTable(rows: StoreGameRow[]): string {
+export function formatTable(rows: StoreGameRow[]): string {
   if (rows.length === 0) {
     return "No games found.";
   }
 
   // Calculate column widths
-  const headers = { store: "STORE", name: "NAME", path: "INSTALL PATH" };
+  const headers = {
+    store: "STORE",
+    id: "ID",
+    name: "NAME",
+    path: "INSTALL PATH",
+  };
   let storeW = headers.store.length;
+  let idW = headers.id.length;
   let nameW = headers.name.length;
 
   for (const row of rows) {
     storeW = Math.max(storeW, row.store_type.length);
+    idW = Math.max(idW, row.store_id.length);
     nameW = Math.max(nameW, (row.name ?? "").length);
   }
 
   const lines: string[] = [];
   lines.push(
-    `${headers.store.padEnd(storeW)}  ${headers.name.padEnd(nameW)}  ${headers.path}`,
+    `${headers.store.padEnd(storeW)}  ${headers.id.padEnd(idW)}  ${headers.name.padEnd(nameW)}  ${headers.path}`,
   );
 
   for (const row of rows) {
     const store = row.store_type.padEnd(storeW);
+    const id = row.store_id.padEnd(idW);
     const name = (row.name ?? "").padEnd(nameW);
-    lines.push(`${store}  ${name}  ${row.install_path}`);
+    lines.push(`${store}  ${id}  ${name}  ${row.install_path}`);
   }
 
   return lines.join("\n");
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   log("info", "cli: initializing DuckDB");
   const singleton = DuckDBSingleton.getInstance();
   await singleton.initialize();
@@ -105,7 +113,9 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((err) => {
-  process.stderr.write(`Fatal error: ${err}\n`);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((err) => {
+    process.stderr.write(`Fatal error: ${err}\n`);
+    process.exit(1);
+  });
+}
