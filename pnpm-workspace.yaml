@@ -315,3 +315,4 @@ overrides:
   node-addon-api: 8.5.0
 patchedDependencies:
   playwright-core@1.58.2: patches/playwright-core@1.58.2.patch
+  loot@6.2.1: patches/loot@6.2.1.patch

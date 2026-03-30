@@ -30,9 +30,20 @@ const LIBLOOT_VERSION = "0.29.1";
 
 // Locate the loot npm package dynamically using require.resolve so we are
 // independent of the pnpm store content-hash path.
+//
+// NOTE: pnpm uses strict isolation — loot is only in the node_modules of the
+// workspace package that declares it (gamebryo-plugin-management), not in the
+// root node_modules. We must search workspace subdirectories explicitly.
 let lootApiDir;
 try {
-  const lootPkgPath = require.resolve("loot/package.json");
+  const projectRoot = path.resolve(__dirname, "..");
+  const searchPaths = [
+    // Primary: gamebryo-plugin-management is the workspace package that depends on loot
+    path.join(projectRoot, "extensions", "gamebryo-plugin-management", "node_modules"),
+    // Fallback: root node_modules (in case hoisting is enabled in future)
+    path.join(projectRoot, "node_modules"),
+  ];
+  const lootPkgPath = require.resolve("loot/package.json", { paths: searchPaths });
   lootApiDir = path.join(path.dirname(lootPkgPath), "loot_api");
 } catch (e) {
   // loot is an optional dependency; if it is not installed, skip gracefully.
@@ -42,10 +53,12 @@ try {
   process.exit(0);
 }
 
-// If liblibloot.so already exists (e.g. re-running postinstall), skip the build.
+// If libloot.so.0 already exists (e.g. re-running postinstall), skip the build.
+// libloot.so.0 is the versioned shared library; liblibloot.so is a symlink to it.
+const soDestVersioned = path.join(lootApiDir, "libloot.so.0");
 const soDestPath = path.join(lootApiDir, "liblibloot.so");
-if (fs.existsSync(soDestPath)) {
-  console.log("postinstall-libloot: liblibloot.so already present, skipping build");
+if (fs.existsSync(soDestVersioned)) {
+  console.log("postinstall-libloot: libloot.so.0 already present, skipping build");
   process.exit(0);
 }
 
@@ -88,19 +101,50 @@ try {
   execSync(`cmake --build ${buildDir} --parallel`, { stdio: "inherit" });
 
   // With Unix Makefiles + Release build type, cmake places the output directly
-  // at <buildDir>/liblibloot.so (no Release/ subdirectory on Linux).
-  const soSrcPath = path.join(buildDir, "liblibloot.so");
+  // at <buildDir>/libloot.so (no Release/ subdirectory on Linux).
+  //
+  // cmake naming: The cmake target sets PREFIX="" to suppress the auto "lib"
+  // prefix (the name "libloot" already starts with "lib"). cmake produces:
+  //   libloot.so           → symlink to libloot.so.0 (unversioned)
+  //   libloot.so.0         → actual shared library (versioned, SONAME)
+  //   libloot.so.0.29.1    → the real binary
+  //
+  // The SONAME embedded in libloot.so.0 is "libloot.so.0".
+  //
+  // We need two files in loot_api/:
+  //   libloot.so.0   — the actual .so; the dynamic linker searches for this
+  //                    SONAME at runtime via RUNPATH=$ORIGIN/../loot_api
+  //   liblibloot.so  — symlink to libloot.so.0; the linker uses this at
+  //                    build time when binding.gyp specifies -llibloot
+  //                    (on Linux, -l<name> searches for lib<name>.so)
+  const soVersionedSrc = path.join(buildDir, "libloot.so.0");
+  const soUnversionedSrc = path.join(buildDir, "libloot.so");
+
+  // Prefer the versioned .so (actual binary); fall back to the unversioned one
+  const soSrcPath = fs.existsSync(soVersionedSrc)
+    ? soVersionedSrc
+    : soUnversionedSrc;
 
   if (!fs.existsSync(soSrcPath)) {
     throw new Error(
-      `Expected liblibloot.so at ${soSrcPath} after build, but file not found. ` +
+      `Expected libloot.so.0 or libloot.so at ${buildDir} after build, but neither found. ` +
         `Check cmake output above for errors.`,
     );
   }
 
-  // Copy to the loot_api directory alongside the existing Windows DLL
-  fs.copyFileSync(soSrcPath, soDestPath);
-  console.log(`postinstall-libloot: liblibloot.so installed to ${soDestPath}`);
+  // Copy the versioned .so (libloot.so.0) — this is what the dynamic linker
+  // searches for at runtime when it resolves the SONAME.
+  const soVersionedDest = path.join(lootApiDir, "libloot.so.0");
+  fs.copyFileSync(soSrcPath, soVersionedDest);
+  console.log(`postinstall-libloot: libloot.so.0 installed to ${soVersionedDest}`);
+
+  // Create liblibloot.so as a symlink → libloot.so.0. The linker looks for
+  // liblibloot.so when given -llibloot (prepends "lib", appends ".so").
+  if (fs.existsSync(soDestPath)) {
+    fs.unlinkSync(soDestPath);
+  }
+  fs.symlinkSync("libloot.so.0", soDestPath);
+  console.log(`postinstall-libloot: liblibloot.so symlink created → libloot.so.0`);
 } catch (err) {
   console.error("postinstall-libloot: build failed:", err.message || err);
   console.warn(
