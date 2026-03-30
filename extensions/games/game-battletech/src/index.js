@@ -9,7 +9,7 @@ const GAME_ID = 'battletech';
 const APPID = 637090;
 
 function findGame() {
-  return util.steam.findByAppId(APPID.toString())
+  return util.GameStoreHelper.findByAppId(APPID.toString(), 'steam')
       .then(game => game.gamePath);
 }
 

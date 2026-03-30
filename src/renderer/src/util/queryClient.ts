@@ -10,6 +10,10 @@ interface QueryEntry {
   stale: boolean;
 }
 
+interface EnsureQueryOptions {
+  force?: boolean;
+}
+
 function toQueryError(err: unknown): Error {
   if (err instanceof Error) {
     return err;
@@ -59,13 +63,14 @@ export class QueryClient {
   public ensureQueryData<TResult>(
     queryName: string,
     params: QueryParams = {},
+    options: EnsureQueryOptions = {},
   ): Promise<TResult> {
     const entry = this.#getOrCreateEntry(queryName, params);
     if (entry.inFlightPromise !== undefined) {
       return entry.inFlightPromise as Promise<TResult>;
     }
 
-    if (!entry.stale && entry.data !== undefined) {
+    if (!options.force && !entry.stale && entry.data !== undefined) {
       return Promise.resolve(entry.data as TResult);
     }
 

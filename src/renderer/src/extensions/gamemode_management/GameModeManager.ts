@@ -12,11 +12,10 @@ import {
   SetupError,
   UserCanceled,
 } from "../../util/CustomErrors";
-import EpicGamesLauncher from "../../util/EpicGamesLauncher";
 import * as fs from "../../util/fs";
+import GameStoreHelper from "../../util/GameStoreHelper";
 import { log } from "../../util/log";
 import { activeProfile, discoveryByGame } from "../../util/selectors";
-import Steam from "../../util/Steam";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, truthy } from "../../util/util";
 
@@ -79,14 +78,13 @@ class GameModeManager {
     api: IExtensionApi,
     extensionGames: IGame[],
     gameStubs: IGameStub[],
-    gameStoreExtensions: IGameStore[],
     onGameModeActivated: (mode: string) => void,
   ) {
     this.mApi = api;
     this.mStore = null;
     this.mKnownGames = extensionGames;
     this.mGameStubs = gameStubs;
-    this.mKnownGameStores = [Steam, EpicGamesLauncher, ...gameStoreExtensions];
+    this.mKnownGameStores = GameStoreHelper.storeIds();
     this.mActiveSearch = null;
     this.mOnGameModeActivated = onGameModeActivated;
   }

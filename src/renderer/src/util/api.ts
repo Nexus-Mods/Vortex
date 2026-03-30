@@ -74,7 +74,6 @@ import {
   UserCanceled,
 } from "./CustomErrors";
 import Debouncer from "./Debouncer";
-import epicGamesLauncher from "./EpicGamesLauncher";
 import {
   getVisibleWindow,
   terminate,
@@ -111,8 +110,6 @@ import { getReduxLog } from "../store/reduxLogger";
 import ReduxProp from "../ReduxProp";
 import relativeTime, { userFriendlyTime } from "./relativeTime";
 import StarterInfo from "./StarterInfo";
-import steam, { GameNotFound } from "./Steam";
-export type { ISteamEntry } from "./Steam.ts";
 import {
   batchDispatch,
   bytesToString,
@@ -184,13 +181,11 @@ export {
   deepMerge,
   delay,
   deriveModInstallName as deriveInstallName,
-  epicGamesLauncher,
   // extend is renderer-only, available via renderer/controls/ComponentEx
   extractExeIcon,
   fileMD5,
   findDownloadByRef,
   findModByRef,
-  GameNotFound,
   GameStoreHelper,
   generateCollectionSessionId,
   getActivator,
@@ -258,7 +253,6 @@ export {
   SevenZip,
   sortMods,
   StarterInfo,
-  steam,
   terminate,
   testModReference,
   testRefByIdentifiers,

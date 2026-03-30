@@ -279,6 +279,7 @@ function generateTypeScript(
   );
   lines.push("");
   lines.push('import type { Table } from "../Table";');
+  lines.push('import type { View } from "../View";');
   lines.push('import type { Database } from "../Database";');
   lines.push("");
 
@@ -314,11 +315,11 @@ function generateTypeScript(
     lines.push("");
 
     lines.push(`/** Result row for the '${query.name}' query */`);
-    lines.push(`export interface ${pascal}Row {`);
+    lines.push(`export type ${pascal}Row = {`);
     for (const col of columns) {
       lines.push(`  ${col.name}: ${col.tsType};`);
     }
-    lines.push("}");
+    lines.push("};");
     lines.push("");
   }
 

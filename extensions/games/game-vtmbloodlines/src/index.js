@@ -25,7 +25,7 @@ function requiresLauncher(gamePath) {
   // VtM Bloodlines does not seem to have any steam specific files within
   //  the game's discovery path... Attempt to launch via Steam if
   //  we're able to retrieve the game's information via the Steam wrapper
-  return util.steam.findByAppId(STEAM_ID.toString())
+  return util.GameStoreHelper.findByAppId(STEAM_ID.toString(), 'steam')
     .then(game => Promise.resolve({ launcher: 'steam' }))
     .catch(err => Promise.resolve(undefined));
 }

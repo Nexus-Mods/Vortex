@@ -4,7 +4,7 @@ const { fs, log, util } = require('vortex-api');
 const MS_ID = 'Chucklefish.StarboundWindows10Edition';
 
 function findGame() {
-  return util.steam.findByName('Starbound')
+  return util.GameStoreHelper.findByName('Starbound', 'steam')
       .catch(() => util.GameStoreHelper.findByAppId([MS_ID], 'xbox'))
       .then(game => game.gamePath);
 }

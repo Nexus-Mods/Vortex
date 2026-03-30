@@ -19,7 +19,7 @@ let _STEAM_USER_ID = '';
 let _STEAM_ENTRY;
 
 function findGame() {
-  return util.steam.findByAppId(STEAM_ID.toString())
+  return util.GameStoreHelper.findByAppId(STEAM_ID.toString(), 'steam')
     .then(game => {
       _STEAM_ENTRY = game;
       return Promise.resolve(game.gamePath);

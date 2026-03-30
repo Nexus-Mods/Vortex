@@ -14,7 +14,7 @@ const ROM_CONTENTS = [
 ];
 
 function findGame() {
-  return util.steam.findByName('Dragon\'s Dogma: Dark Arisen')
+  return util.GameStoreHelper.findByName('Dragon\'s Dogma: Dark Arisen', 'steam')
     .then(game => game.gamePath);
 }
 

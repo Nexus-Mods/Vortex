@@ -17,8 +17,8 @@ function findGame() {
     }
     return Promise.resolve(instPath.value);
   } catch (err) {
-    return util.steam.findByName('The Witcher: Enhanced Edition Director\'s Cut')
-      .catch(() => util.steam.findByAppId('20900'))
+    return util.GameStoreHelper.findByName('The Witcher: Enhanced Edition Director\'s Cut', 'steam')
+      .catch(() => util.GameStoreHelper.findByAppId('20900', 'steam'))
       .then(game => game.gamePath);
   }
 }

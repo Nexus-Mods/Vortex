@@ -8,7 +8,7 @@ const ELEX_ID = 'elex';
 const MOD_FILE_EXT = ".pak";
 
 function findGame() {
-  return util.steam.findByAppId('411300')
+  return util.GameStoreHelper.findByAppId('411300', 'steam')
       .then(game => game.gamePath);
 }
 
