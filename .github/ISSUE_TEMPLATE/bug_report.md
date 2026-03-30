@@ -7,7 +7,7 @@ assignees: ''
 
 ---
 
-> **Important:** Tickets that do not provide sufficient information may be closed without further notice. Context is everything when diagnosing bugs — do not assume that a screenshot alone is enough for us to identify the problem. Logs and reproduction are extremely important and, unless the issue is immediately obvious, we cannot assist without them. Please attach all `.log` files from `%appdata%/vortex`.
+> **Important:** Tickets that do not provide sufficient information may be closed without further notice. Context is everything when diagnosing bugs — do not assume that a screenshot alone is enough for us to identify the problem. Logs and reproduction steps are extremely important and, unless the issue is immediately obvious, we cannot assist without them. Please attach all `.log` files from `%appdata%/vortex`.
 
 **Your Nexus Mods username**
 Will help us debug your issue.
