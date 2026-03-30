@@ -20,8 +20,7 @@ import { isErrorWithSystemCode, unknownToError } from "@vortex/shared";
 
 export const STAGING_DIR_TAG = "__vortex_staging_folder";
 
-function writeStagingTag(api: IExtensionApi, tagPath: string, gameId: string)
-{
+function writeStagingTag(api: IExtensionApi, tagPath: string, gameId: string) {
   const state: IState = api.store.getState();
   const data = {
     instance: state.app.instanceId,
@@ -33,15 +32,12 @@ function writeStagingTag(api: IExtensionApi, tagPath: string, gameId: string)
 async function validateStagingTag(
   api: IExtensionApi,
   tagPath: string,
-): Promise<void>
-{
-  try
-  {
+): Promise<void> {
+  try {
     const data = await fs.readFileAsync(tagPath, { encoding: "utf8" });
     const state: IState = api.store.getState();
     const tag = JSON.parse(data);
-    if (tag.instance !== state.app.instanceId)
-    {
+    if (tag.instance !== state.app.instanceId) {
       const result = await api.showDialog(
         "question",
         "Confirm",
@@ -53,15 +49,12 @@ async function validateStagingTag(
         },
         [{ label: "Cancel" }, { label: "Continue" }],
       );
-      if (result.action === "Cancel")
-      {
+      if (result.action === "Cancel") {
         return Promise.reject(new UserCanceled());
       }
     }
-  } catch (err)
-  {
-    if (err instanceof UserCanceled)
-    {
+  } catch (err) {
+    if (err instanceof UserCanceled) {
       return Promise.reject(err);
     }
     const result = await api.showDialog(
@@ -74,8 +67,7 @@ async function validateStagingTag(
       },
       [{ label: "Cancel" }, { label: "I'm sure" }],
     );
-    if (result.action === "Cancel")
-    {
+    if (result.action === "Cancel") {
       return Promise.reject(new UserCanceled());
     }
   }
@@ -86,10 +78,8 @@ async function queryStagingFolderInvalid(
   err: Error,
   dirExists: boolean,
   instPath: string,
-): Promise<IDialogResult>
-{
-  if (dirExists)
-  {
+): Promise<IDialogResult> {
+  if (dirExists) {
     // dir exists but not tagged
     return api.showDialog(
       "error",
@@ -138,59 +128,48 @@ async function ensureStagingDirectoryImpl(
   api: IExtensionApi,
   instPath?: string,
   gameId?: string,
-): Promise<string>
-{
+): Promise<string> {
   const state = api.getState();
-  if (gameId === undefined)
-  {
+  if (gameId === undefined) {
     gameId = activeGameId(state);
   }
 
-  if (instPath === undefined)
-  {
+  if (instPath === undefined) {
     // no staging folder set yet
-    if (state.settings.mods.installPathMode === "suggested")
-    {
+    if (state.settings.mods.installPathMode === "suggested") {
       instPath = resolveInstallPath(
         await suggestStagingPath(api, gameId),
         gameId,
       );
       api.store.dispatch(setInstallPath(gameId, instPath));
-    } else
-    {
+    } else {
       instPath = installPathForGame(state, gameId);
     }
   }
 
   let partitionExists = true;
-  try
-  {
+  try {
     fs.getVolumePath(instPath);
-  } catch (err)
-  {
+  } catch (err) {
     // On Windows, error number 2 (0x2) translates to ERROR_FILE_NOT_FOUND.
     //  the only way for this error to be reported at this point is when
     //  the destination path is pointing towards a non-existing partition.
     // If it's a non-existing partition, we want the reinitialization dialog
     //  to appear so that the user can re-configure his game's staging folder.
-    if (isErrorWithSystemCode(err) && err.systemCode === 2)
-    {
+    if (isErrorWithSystemCode(err) && err.systemCode === 2) {
       partitionExists = false;
     }
   }
   let dirExists = false;
 
-  try
-  {
+  try {
     await fs.statAsync(instPath);
     dirExists = true;
     // staging dir exists, does the tag exist?
     await fs.statAsync(path.join(instPath, STAGING_DIR_TAG));
-  } catch (unknownError)
-  {
+  } catch (unknownError) {
     const mods = getSafe(state, ["persistent", "mods", gameId], undefined);
-    if (partitionExists === true && dirExists === false && mods === undefined)
-    {
+    if (partitionExists === true && dirExists === false && mods === undefined) {
       // If the mods state branch for this game is undefined - this must be the
       //  first time we manage this game - just create the staging path.
       //
@@ -199,8 +178,7 @@ async function ensureStagingDirectoryImpl(
       // first time but we probably still don't want to report an error if we have
       // no meta information about any mods anyway
       await fs.ensureDirWritableAsync(instPath, () => Promise.resolve());
-    } else
-    {
+    } else {
       const err = unknownToError(unknownError);
       const dialogResult = await queryStagingFolderInvalid(
         api,
@@ -208,34 +186,27 @@ async function ensureStagingDirectoryImpl(
         dirExists,
         instPath,
       );
-      if (dialogResult.action === "Quit Vortex")
-      {
+      if (dialogResult.action === "Quit Vortex") {
         getApplication().quit(0);
         throw new UserCanceled();
-      } else if (dialogResult.action === "Reinitialize")
-      {
+      } else if (dialogResult.action === "Reinitialize") {
         const id = shortid();
         api.sendNotification({
           id,
           type: "activity",
           message: "Purging mods",
         });
-        try
-        {
+        try {
           await fallbackPurge(api, gameId);
           await fs.ensureDirWritableAsync(instPath, () => Promise.resolve());
-        } catch (purgeErr)
-        {
-          if (!partitionExists)
-          {
+        } catch (purgeErr) {
+          if (!partitionExists) {
             // Can't purge a non-existing partition!
             throw new ProcessCanceled("Invalid/Missing partition");
           }
-          if (purgeErr instanceof ProcessCanceled)
-          {
+          if (purgeErr instanceof ProcessCanceled) {
             log("warn", "Mods not purged", purgeErr.message);
-          } else
-          {
+          } else {
             api.showDialog(
               "error",
               "Mod Staging Folder missing!",
@@ -252,32 +223,27 @@ async function ensureStagingDirectoryImpl(
           throw new ProcessCanceled("Not purged");
         }
         api.dismissNotification(id);
-      } else if (dialogResult.action === "Ignore")
-      {
+      } else if (dialogResult.action === "Ignore") {
         // nop
-      } else
-      {
+      } else {
         // Browse...
         const selectedPath = await api.selectDir({
           defaultPath: instPath,
           title: api.translate("Select staging folder"),
         });
 
-        if (!truthy(selectedPath))
-        {
+        if (!truthy(selectedPath)) {
           return ensureStagingDirectoryImpl(api, instPath, gameId);
         }
 
-        try
-        {
+        try {
           await validateStagingTag(
             api,
             path.join(selectedPath, STAGING_DIR_TAG),
           );
           instPath = selectedPath;
           api.store.dispatch(setInstallPath(gameId, instPath));
-        } catch (validateErr)
-        {
+        } catch (validateErr) {
           await ensureStagingDirectory(api, instPath, gameId);
         }
       }
@@ -292,7 +258,6 @@ export function ensureStagingDirectory(
   api: IExtensionApi,
   instPath?: string,
   gameId?: string,
-): Promise<string>
-{
+): Promise<string> {
   return Promise.resolve(ensureStagingDirectoryImpl(api, instPath, gameId));
 }

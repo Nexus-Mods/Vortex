@@ -10,8 +10,7 @@ import local from "../../util/local";
 import { log } from "../../util/log";
 import { wrapExtCBAsync } from "../../util/util";
 import GameVersionManager from "./GameVersionManager";
-import
-{
+import {
   getExecGameVersion,
   getExtGameVersion,
   testExecProvider,
@@ -28,8 +27,7 @@ const $ = local<{
 
 const gameVersionProviders: IGameVersionProvider[] = [];
 
-function init(context: IExtensionContext): boolean
-{
+function init(context: IExtensionContext): boolean {
   context.registerGameVersionProvider = ((
     id: string,
     priority: number,
@@ -37,16 +35,14 @@ function init(context: IExtensionContext): boolean
     getGameVersion: GameVersionProviderFunc,
     options?: IGameVersionProviderOptions,
     extPath?: any,
-  ) =>
-  {
+  ) => {
     const errors = isVersionProvider({
       id,
       priority,
       supported,
       getGameVersion,
     });
-    if (errors !== null)
-    {
+    if (errors !== null) {
       context.api.showErrorNotification(
         "Invalid game version provider",
         errors,
