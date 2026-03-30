@@ -85,7 +85,7 @@ import {
 } from "./types/IDeploymentMethod";
 import { IFileMerge } from "./types/IFileMerge";
 import { IInstallOptions } from "./types/IInstallOptions";
-import { IMod, IModReference } from "./types/IMod";
+import { IMod, IModReference, InstallType } from "./types/IMod";
 import { InstallFunc } from "./types/InstallFunc";
 import { IRemoveModOptions } from "./types/IRemoveModOptions";
 import { IResolvedMerger } from "./types/IResolvedMerger";
@@ -683,7 +683,7 @@ function deployableModTypes(modPaths: { [typeId: string]: string }) {
   return Object.keys(modPaths).filter((typeId) => truthy(modPaths[typeId]));
 }
 
-function genUpdateModDeployment() {
+function genUpdateModDeployment(installManager: InstallManager) {
   return (
     api: IExtensionApi,
     manual: boolean,
@@ -706,11 +706,9 @@ function genUpdateModDeployment() {
       }
       api.store.dispatch(updateNotification(notification.id, percent, text));
     };
-    const state = api.store.getState();
+    const state: IState = api.store.getState();
     let profile: IProfile =
-      profileId !== undefined
-        ? getSafe(state, ["persistent", "profiles", profileId], undefined)
-        : activeProfile(state);
+      state.persistent.profiles?.[profileId] ?? activeProfile(state);
 
     if (
       Object.keys(getSafe(state, ["session", "base", "toolsRunning"], {}))
@@ -733,11 +731,7 @@ function genUpdateModDeployment() {
       return Bluebird.resolve();
     }
     const gameId = profile.gameId;
-    const gameDiscovery = getSafe(
-      state,
-      ["settings", "gameMode", "discovered", gameId],
-      undefined,
-    );
+    const gameDiscovery = state.settings.gameMode.discovered?.[gameId];
     const game = getGame(gameId);
     if (game === undefined || gameDiscovery?.path === undefined) {
       const err = new Error("Game no longer available");
@@ -819,100 +813,106 @@ function genUpdateModDeployment() {
             method: activator.name,
           });
 
-          let mergeResult: { [modType: string]: IMergeResultByType };
-          const lastDeployment: { [typeId: string]: IDeployedFile[] } = {};
-          const mods = state.persistent.mods[profile.gameId] || {};
-          notification.message = t("Deploying mods");
-          api.sendNotification(notification);
-          api.store.dispatch(startActivity("mods", "deployment"));
-          progress(t("Loading deployment manifest"), 0);
+          return Bluebird.resolve(installManager.waitForIdle()).then(() => {
+            let mergeResult: { [modType: string]: IMergeResultByType };
+            const lastDeployment: { [typeId: string]: IDeployedFile[] } = {};
+            const mods = state.persistent.mods[profile.gameId] || {};
+            notification.message = t("Deploying mods");
+            api.sendNotification(notification);
+            api.store.dispatch(startActivity("mods", "deployment"));
+            progress(t("Loading deployment manifest"), 0);
 
-          return Bluebird.each(deployableModTypes(modPaths), (typeId) =>
-            loadActivation(
-              api,
-              gameId,
-              typeId,
-              modPaths[typeId],
-              stagingPath,
-              activator,
-            ).then((deployedFiles) => (lastDeployment[typeId] = deployedFiles)),
-          )
-            .tap(() => progress(t("Running pre-deployment events"), 2))
-            .then(() =>
-              api.emitAndAwait(
-                "will-deploy",
-                profile.id,
-                lastDeployment,
-                deployOptions,
-              ),
-            )
-            .then(() => {
-              // need to update the profile so that if a will-deploy handler disables a mod, that
-              // actually has an affect on this deployment
-              const updatedState = api.getState();
-              const updatedProfile =
-                updatedState.persistent.profiles[profile.id];
-              if (updatedProfile !== undefined) {
-                profile = updatedProfile;
-              } else {
-                // I don't think this can happen
-                log("warn", "profile no longer found?", profileId);
-              }
-            })
-            .tap(() => progress(t("Checking for external changes"), 5))
-            .then(() =>
-              dealWithExternalChanges(
+            return Bluebird.each(deployableModTypes(modPaths), (typeId) =>
+              loadActivation(
                 api,
+                gameId,
+                typeId,
+                modPaths[typeId],
+                stagingPath,
                 activator,
-                profileId,
-                stagingPath,
-                modPaths,
-                lastDeployment,
+              ).then(
+                (deployedFiles) => (lastDeployment[typeId] = deployedFiles),
               ),
             )
-            .tap(() => progress(t("Checking for mod incompatibilities"), 25))
-            .then(() => checkIncompatibilities(api, profile, mods))
-            .tap(() => progress(t("Sorting mods"), 30))
-            .then(() =>
-              doSortMods(api, profile, mods).then((sortedModListIn: IMod[]) => {
-                sortedModList = sortedModListIn;
-              }),
-            )
-            .tap(() => progress(t("Merging mods"), 35))
-            .then(() =>
-              doMergeMods(
-                api,
-                game,
-                gameDiscovery,
-                stagingPath,
-                sortedModList,
-                modPaths,
-                lastDeployment,
-              ).then((mergeResultIn) => (mergeResult = mergeResultIn)),
-            )
-            .tap(() => progress(t("Starting deployment"), 35))
-            .then(() => {
-              const deployProgress = (name, percent) =>
-                progress(t("Deploying: ") + name, 50 + percent / 2);
-
-              const undiscovered = Object.keys(modPaths).filter(
-                (typeId) => !truthy(modPaths[typeId]),
-              );
-              return validateDeploymentTarget(api, undiscovered).then(() =>
-                deployAllModTypes(
+              .tap(() => progress(t("Running pre-deployment events"), 2))
+              .then(() =>
+                api.emitAndAwait(
+                  "will-deploy",
+                  profile.id,
+                  lastDeployment,
+                  deployOptions,
+                ),
+              )
+              .then(() => {
+                // need to update the profile so that if a will-deploy handler disables a mod, that
+                // actually has an affect on this deployment
+                const updatedState = api.getState();
+                const updatedProfile =
+                  updatedState.persistent.profiles[profile.id];
+                if (updatedProfile !== undefined) {
+                  profile = updatedProfile;
+                } else {
+                  // I don't think this can happen
+                  log("warn", "profile no longer found?", profileId);
+                }
+              })
+              .tap(() => progress(t("Checking for external changes"), 5))
+              .then(() =>
+                dealWithExternalChanges(
                   api,
                   activator,
-                  profile,
-                  sortedModList,
+                  profileId,
                   stagingPath,
-                  mergeResult,
                   modPaths,
                   lastDeployment,
-                  newDeployment,
-                  deployProgress,
                 ),
-              );
-            });
+              )
+              .tap(() => progress(t("Checking for mod incompatibilities"), 25))
+              .then(() => checkIncompatibilities(api, profile, mods))
+              .tap(() => progress(t("Sorting mods"), 30))
+              .then(() =>
+                doSortMods(api, profile, mods).then(
+                  (sortedModListIn: IMod[]) => {
+                    sortedModList = sortedModListIn;
+                  },
+                ),
+              )
+              .tap(() => progress(t("Merging mods"), 35))
+              .then(() =>
+                doMergeMods(
+                  api,
+                  game,
+                  gameDiscovery,
+                  stagingPath,
+                  sortedModList,
+                  modPaths,
+                  lastDeployment,
+                ).then((mergeResultIn) => (mergeResult = mergeResultIn)),
+              )
+              .tap(() => progress(t("Starting deployment"), 35))
+              .then(() => {
+                const deployProgress = (name, percent) =>
+                  progress(t("Deploying: ") + name, 50 + percent / 2);
+
+                const undiscovered = Object.keys(modPaths).filter(
+                  (typeId) => !truthy(modPaths[typeId]),
+                );
+                return validateDeploymentTarget(api, undiscovered).then(() =>
+                  deployAllModTypes(
+                    api,
+                    activator,
+                    profile,
+                    sortedModList,
+                    stagingPath,
+                    mergeResult,
+                    modPaths,
+                    lastDeployment,
+                    newDeployment,
+                    deployProgress,
+                  ),
+                );
+              });
+          });
         })
           // at this point the deployment lock gets released so another deployment
           // can be started during post-deployment
@@ -1237,8 +1237,22 @@ function attributeExtractor(input: any) {
   });
 }
 
+function deriveInstallType(input: any): InstallType {
+  if (input.previous === undefined) {
+    return "fresh";
+  }
+  const isNexus = input.previous.source === "nexus";
+  if (isNexus) {
+    return input.previous.fileId === input.download?.modInfo?.nexus?.ids?.fileId
+      ? "reinstall" : "update";
+  }
+  return input.previous.fileMD5 === input.download?.fileMD5
+    ? "reinstall" : "update";
+}
+
 function upgradeExtractor(input: any) {
   return Bluebird.resolve({
+    installType: deriveInstallType(input),
     category: getSafe(input.previous, ["category"], undefined),
     customFileName: getSafe(input.previous, ["customFileName"], undefined),
     variant: getSafe(input.previous, ["variant"], undefined),
@@ -1510,7 +1524,7 @@ function onNeedToDeploy(api: IExtensionApi, current: any) {
 }
 
 function once(api: IExtensionApi) {
-  const store: Redux.Store<any> = api.store;
+  const store: Redux.Store<IState> = api.store;
 
   if (installManager === undefined) {
     installManager = new InstallManager(api, (gameId: string) =>
@@ -1526,7 +1540,7 @@ function once(api: IExtensionApi) {
     });
   }
 
-  const updateModDeployment = genUpdateModDeployment();
+  const updateModDeployment = genUpdateModDeployment(installManager);
   const deploymentTimer = new Debouncer(
     (
       manual: boolean,

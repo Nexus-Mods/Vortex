@@ -8,6 +8,8 @@ export type ModState =
   | "installing"
   | "installed";
 
+export type InstallType = "fresh" | "reinstall" | "update";
+
 /**
  * Attributes specific to Nexus Mods Collections (when IMod.type === "collection")
  */
@@ -74,6 +76,7 @@ export interface ICommonModAttributes {
 
   // Installation tracking
   installTime?: string;
+  installType?: InstallType;
   installedAsDependency?: boolean;
   referenceTag?: string;
 
