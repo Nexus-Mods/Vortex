@@ -165,10 +165,6 @@ function matchStoreGames(
 ): IGameStoreEntry[] {
   const results: IGameStoreEntry[] = [];
   for (const [storeId, queries] of Object.entries(queryArgs)) {
-    if (storeId === "registry") {
-      // Registry lookups are handled via IPC, skip in local matching
-      continue;
-    }
     for (const query of queries) {
       const match = storeGames.find((sg) => {
         if (sg.store_type !== storeId) return false;
@@ -193,33 +189,6 @@ function matchStoreGames(
   return results;
 }
 
-async function queryRegistryArgs(
-  queryArgs: { [storeId: string]: Array<{ id?: string }> },
-): Promise<IGameStoreEntry[]> {
-  const registryQueries = queryArgs["registry"];
-  if (!registryQueries) return [];
-
-  const results: IGameStoreEntry[] = [];
-  for (const query of registryQueries) {
-    if (!query.id) continue;
-    try {
-      const result = await (window as any).api.discovery.registryLookup(query.id);
-      if (result) {
-        results.push({
-          appid: query.id,
-          gamePath: result.installPath,
-          name: result.name ?? "",
-          gameStoreId: "registry",
-          priority: 100,
-        });
-      }
-    } catch {
-      // Registry lookup failed, skip
-    }
-  }
-  return results;
-}
-
 function queryByArgs(
   discoveredGames: { [id: string]: IDiscoveryResult },
   game: IGame,
@@ -228,11 +197,6 @@ function queryByArgs(
   // If we have main-process store data, use local matching
   const findResults = storeGames !== undefined
     ? Bluebird.resolve(matchStoreGames(game.queryArgs, storeGames))
-        .then((localResults) =>
-          // Also query registry via IPC (async)
-          Bluebird.resolve(queryRegistryArgs(game.queryArgs))
-            .then((regResults) => [...localResults, ...regResults])
-        )
     : GameStoreHelper.find(game.queryArgs);
 
   return findResults

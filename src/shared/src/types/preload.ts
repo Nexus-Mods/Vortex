@@ -437,13 +437,8 @@ export interface IStoreGameRow {
   store_metadata: string | null;
 }
 
-/** API for game discovery — triggering scans and registry lookups */
+/** API for game discovery commands */
 export interface DiscoveryApi {
   /** Trigger a discovery scan in the main process */
   start(): Promise<void>;
-
-  /** Look up a game by registry key (format: "HIVE:Path:Key") */
-  registryLookup(
-    query: string,
-  ): Promise<{ storeId: string; installPath: string; name?: string } | undefined>;
 }
