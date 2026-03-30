@@ -38,3 +38,5 @@ If applicable, add screenshots to help explain your problem.
 
 **Additional context**
 Add any other context about the problem here.
+
+> **Note:** If your issue is specific to a community extension or a game supported by a community extension, please report it on the extension's page on Nexus Mods instead. This tracker is for Vortex core and officially supported functionality only.
