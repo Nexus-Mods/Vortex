@@ -21,9 +21,15 @@ export type RecordedRequest = {
   range: { start: number; end: number } | null;
 };
 
+export type RouteHandle = {
+  url: URL;
+  deregister: () => void;
+};
+
 export type TestServer = {
   url: URL;
   urlFor: (path: string) => URL;
+  route: (handler: RequestHandler) => RouteHandle;
   setHandler: (handler: RequestHandler) => void;
   requests: RecordedRequest[];
   close: () => Promise<void>;
@@ -34,18 +40,24 @@ export async function createTestServer(
 ): Promise<TestServer> {
   let handler = initialHandler;
   const requests: RecordedRequest[] = [];
+  const routes = new Map<string, RequestHandler>();
+  let routeCounter = 0;
 
   const server = http.createServer((req, res) => {
     const range = parseRange(req.headers["range"]);
+    const pathname = req.url ?? "/";
 
     requests.push({
       method: req.method ?? "GET",
-      url: req.url ?? "/",
+      url: pathname,
       headers: req.headers,
       range,
     });
 
-    handler({ req, res, range }).catch((err) => {
+    const routeHandler = routes.get(pathname);
+    const dispatch = routeHandler ?? handler;
+
+    dispatch({ req, res, range }).catch((err) => {
       if (!res.headersSent) {
         res.writeHead(500);
         if (err instanceof Error) {
@@ -62,6 +74,14 @@ export async function createTestServer(
   return {
     url,
     urlFor: (p) => new URL(p, url),
+    route(routeHandler) {
+      const path = `/_route/${++routeCounter}`;
+      routes.set(path, routeHandler);
+      return {
+        url: new URL(path, url),
+        deregister: () => routes.delete(path),
+      };
+    },
     requests,
     setHandler: (h) => (handler = h),
     close: () => close(server),
@@ -133,6 +153,25 @@ export function serveRoutes(
       return Promise.resolve();
     }
     return handler(ctx);
+  };
+}
+
+/**
+ * Serves a buffer in small chunks with a delay between each, allowing tests
+ * to reliably observe partial progress mid-download.
+ */
+export function serveFileSlowly(
+  body: Buffer,
+  chunkSize: number,
+  delayMs: number,
+): RequestHandler {
+  return async ({ res }) => {
+    res.writeHead(200, { "content-length": body.length });
+    for (let offset = 0; offset < body.length; offset += chunkSize) {
+      res.write(body.subarray(offset, offset + chunkSize));
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+    res.end();
   };
 }
 

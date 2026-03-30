@@ -15,8 +15,8 @@ export type DownloadProgress = {
 export type ProgressCallback = (progress: DownloadProgress) => void;
 
 export class ProgressReporter {
-  #chunkProgress: ChunkProgress[];
-  #totalBytes: number | null;
+  #chunkProgress: ChunkProgress[] = [];
+  #totalBytes: number | null = null;
 
   get chunkProgress(): ChunkProgress[] {
     return this.#chunkProgress;
