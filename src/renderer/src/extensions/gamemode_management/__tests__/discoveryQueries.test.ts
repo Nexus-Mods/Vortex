@@ -26,6 +26,8 @@ describe("discoveryQueries", () => {
       },
     ]);
 
-    expect(ensureQueryData).toHaveBeenCalledWith("all_store_games", {});
+    expect(ensureQueryData).toHaveBeenCalledWith("all_store_games", {}, {
+      force: true,
+    });
   });
 });

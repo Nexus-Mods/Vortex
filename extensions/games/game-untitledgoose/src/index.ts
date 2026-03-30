@@ -21,15 +21,16 @@ function ensureBIXConfig(discovery: types.IDiscoveryResult): Bluebird<void> {
     });
 }
 
-function requiresLauncher() {
-  return util.epicGamesLauncher.isGameInstalled(EPIC_APP_ID)
-    .then(epic => epic
+function requiresLauncher(_gamePath: string, store?: string) {
+  return Bluebird.resolve(
+    store === 'epic'
       ? { launcher: 'epic', addInfo: EPIC_APP_ID }
-      : undefined);
+      : undefined,
+  );
 }
 
 function findGame() {
-  return util.epicGamesLauncher.findByAppId(EPIC_APP_ID)
+  return util.GameStoreHelper.findByAppId(EPIC_APP_ID, 'epic')
     .then(epicEntry => epicEntry.gamePath);
 }
 

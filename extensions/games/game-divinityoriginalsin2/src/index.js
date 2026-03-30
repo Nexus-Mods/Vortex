@@ -27,7 +27,7 @@ function findGame() {
     }
     return Promise.resolve(instPath.value);
   } catch (err) {
-    return util.steam.findByName('Divinity: Original Sin 2')
+    return util.GameStoreHelper.findByName('Divinity: Original Sin 2', 'steam')
       .then(game => game.gamePath);
   }
 }

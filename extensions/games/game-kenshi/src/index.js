@@ -14,7 +14,7 @@ const VERSION_FILE = 'currentVersion.txt';
 const MOD_FILE_EXT = '.mod';
 
 function findGame() {
-  return util.steam.findByAppId('233860')
+  return util.GameStoreHelper.findByAppId('233860', 'steam')
       .then(game => game.gamePath);
 }
 let tools = [

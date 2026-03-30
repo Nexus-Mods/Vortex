@@ -22,7 +22,7 @@ class DarkSouls {
   }
 
   queryPath() {
-    return util.steam.findByAppId('211420')
+    return util.GameStoreHelper.findByAppId('211420', 'steam')
         .then(game => game.gamePath);
   }
 

@@ -39,7 +39,6 @@ describe("GameModeManager", () => {
       {} as never,
       [],
       [],
-      [],
       jest.fn(),
     ) as any;
 

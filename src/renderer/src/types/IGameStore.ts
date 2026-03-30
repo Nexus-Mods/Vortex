@@ -177,7 +177,7 @@ export interface IGameStore {
   /**
    * Generally the game store helper should be able to launch games directly.
    *  This functor allows game stores to define their own custom start up logic
-   *  if needed. e.g. gamestore-xbox
+   *  if needed. e.g. xbox launcher handling
    */
   launchGameStore?: (
     api: IExtensionApi,

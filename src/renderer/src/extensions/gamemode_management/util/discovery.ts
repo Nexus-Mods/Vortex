@@ -194,10 +194,25 @@ function queryByArgs(
   game: IGame,
   storeGames?: IStoreGameRow[],
 ): Bluebird<IGameStoreEntry> {
-  // If we have main-process store data, use local matching
-  const findResults = storeGames !== undefined
-    ? Bluebird.resolve(matchStoreGames(game.queryArgs, storeGames))
-    : GameStoreHelper.find(game.queryArgs);
+  const findResults =
+    storeGames !== undefined
+      ? Bluebird.all([
+          Bluebird.resolve(matchStoreGames(game.queryArgs, storeGames)),
+          game.queryArgs.registry !== undefined
+            ? GameStoreHelper.find({ registry: game.queryArgs.registry })
+            : Bluebird.resolve([]),
+        ]).then(([matchedStoreGames, registryMatches]) => [
+          ...matchedStoreGames,
+          ...registryMatches.filter(
+            (entry) =>
+              !matchedStoreGames.some(
+                (matched) =>
+                  matched.gameStoreId === entry.gameStoreId &&
+                  matched.appid === entry.appid,
+              ),
+          ),
+        ])
+      : GameStoreHelper.find(game.queryArgs);
 
   return findResults
     .then((results) =>

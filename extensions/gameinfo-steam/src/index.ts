@@ -37,14 +37,11 @@ function findLocalInfo(
     .getNormalizeFunc(game.path)
     .then((normalizeFunc) => {
       normalize = normalizeFunc;
-      return util.steam.allGames();
+      return util.GameStoreHelper.findByPath(game.path, "steam");
     })
-    .then((entries: types.IGameStoreEntry[]) => {
+    .then((steamGame: types.IGameStoreEntry) => {
       const searchPath = normalize(game.path);
-      const steamGame = entries.find(
-        (entry) => normalize(entry.gamePath) === searchPath,
-      );
-      if (steamGame === undefined) {
+      if (normalize(steamGame.gamePath) !== searchPath) {
         if (
           game.details !== undefined &&
           game.details["steamAppId"] !== undefined

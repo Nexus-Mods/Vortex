@@ -69,4 +69,23 @@ describe("QueryClient", () => {
     ]);
     expect(client.peekQueryData("all_store_games", {})).toEqual([{ id: "1" }]);
   });
+
+  it("bypasses a fresh cache when force refresh is requested", async () => {
+    const execute = vi
+      .fn()
+      .mockResolvedValueOnce([{ id: "1" }])
+      .mockResolvedValueOnce([{ id: "2" }]);
+    const onDirty: (listener: (queryNames: string[]) => void) => () => void =
+      vi.fn().mockReturnValue(() => undefined);
+    const client = new QueryClient({ execute, onDirty });
+
+    await expect(client.ensureQueryData("all_store_games", {})).resolves.toEqual([
+      { id: "1" },
+    ]);
+    await expect(
+      client.ensureQueryData("all_store_games", {}, { force: true }),
+    ).resolves.toEqual([{ id: "2" }]);
+
+    expect(execute).toHaveBeenCalledTimes(2);
+  });
 });

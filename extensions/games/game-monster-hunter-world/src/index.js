@@ -36,7 +36,7 @@ function findGame() {
     }
     return Promise.resolve(instPath.value);
   } catch (err) {
-    return util.steam.findByName('MONSTER HUNTER: WORLD')
+    return util.GameStoreHelper.findByName('MONSTER HUNTER: WORLD', 'steam')
       .then(game => game.gamePath);
   }
 }

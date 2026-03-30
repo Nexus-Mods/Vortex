@@ -7,7 +7,7 @@ const executable =  process.platform == 'linux'
     : 'grimrock.exe';
 
 function findGame() {
-  return util.steam.findByName('Legend of Grimrock')
+  return util.GameStoreHelper.findByName('Legend of Grimrock', 'steam')
       .then(game => game.gamePath);
 }
 
