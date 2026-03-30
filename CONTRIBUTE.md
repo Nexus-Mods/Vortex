@@ -37,6 +37,12 @@ Starting with Python 3.12 you also need to install the `setuptools` packages. Ve
 
 1. `pnpm run package:nosign`
 
+## FAQ
+
+### When will my changes be added to the stable release?
+
+Please see [docs/branching-and-release-strategy.md](https://github.com/Nexus-Mods/Vortex/blob/master/docs/branching-and-release-strategy.md) for more information
+
 ## Further Reading
 
 - [Debugging](./docs/DEBUGGING-GUIDE.md)
