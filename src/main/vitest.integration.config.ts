@@ -2,9 +2,10 @@ import { defineConfig, type ViteUserConfig } from "vitest/config";
 
 const config: ViteUserConfig = defineConfig({
   test: {
-    name: "@vortex/main",
+    name: "@vortex/main (integration)",
     environment: "node",
-    include: ["src/**/*.test.ts"],
+    include: ["src/**/*.test.integration.ts"],
+    testTimeout: 10_000,
   },
 });
 
