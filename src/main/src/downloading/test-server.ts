@@ -23,6 +23,7 @@ export type RecordedRequest = {
 
 export type TestServer = {
   url: URL;
+  urlFor: (path: string) => URL;
   setHandler: (handler: RequestHandler) => void;
   requests: RecordedRequest[];
   close: () => Promise<void>;
@@ -60,6 +61,7 @@ export async function createTestServer(
 
   return {
     url,
+    urlFor: (p) => new URL(p, url),
     requests,
     setHandler: (h) => (handler = h),
     close: () => close(server),
@@ -112,6 +114,25 @@ export function serveFile(opts: ServeFileOptions): RequestHandler {
       });
       res.end(body);
     }
+  };
+}
+
+/**
+ * Routes requests to different handlers based on URL path. Useful for testing
+ * resolvers that return different URLs for probe vs chunk requests.
+ */
+export function serveRoutes(
+  routes: Record<string, RequestHandler>,
+): RequestHandler {
+  return (ctx) => {
+    const pathname = ctx.req.url ?? "/";
+    const handler = routes[pathname];
+    if (!handler) {
+      ctx.res.writeHead(404);
+      ctx.res.end();
+      return Promise.resolve();
+    }
+    return handler(ctx);
   };
 }
 

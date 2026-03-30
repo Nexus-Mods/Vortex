@@ -1,6 +1,6 @@
 import { Popover } from "@headlessui/react";
 import { mdiBell, mdiBellOutline } from "@mdi/js";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
 import { useExtensionContext } from "../../../../ExtensionProvider";
@@ -23,6 +23,10 @@ const NotificationsContent: React.FC<{ popoverOpen: boolean }> = ({
   const api = extensions.getApi();
 
   const notifications = useSelector(notificationsSelector);
+  const visibleCount = useMemo(
+    () => notifications.filter((n) => n.type !== "silent").length,
+    [notifications],
+  );
   const buttonRef = useRef<HTMLButtonElement>(null);
   const prevIdsRef = useRef(new Set(notifications.map((n) => n.id)));
 
@@ -48,10 +52,13 @@ const NotificationsContent: React.FC<{ popoverOpen: boolean }> = ({
     }
   }, [popoverOpen, expand]);
 
-  // Auto-open popover when new notifications arrive
+  // Auto-open popover when new notifications arrive.
+  // Silent notifications should never open the tray.
   useEffect(() => {
     const currentIds = new Set(notifications.map((n) => n.id));
-    const hasNew = notifications.some((n) => !prevIdsRef.current.has(n.id));
+    const hasNew = notifications.some(
+      (n) => !prevIdsRef.current.has(n.id) && n.type !== "silent",
+    );
     prevIdsRef.current = currentIds;
 
     if (hasNew && !popoverOpen && buttonRef.current) {
@@ -65,9 +72,9 @@ const NotificationsContent: React.FC<{ popoverOpen: boolean }> = ({
     <>
       <Popover.Button
         as={IconButton}
-        disabled={notifications.length === 0}
-        iconPath={notifications.length > 0 ? mdiBell : mdiBellOutline}
-        itemCount={notifications.length}
+        disabled={visibleCount === 0}
+        iconPath={visibleCount > 0 ? mdiBell : mdiBellOutline}
+        itemCount={visibleCount}
         ref={buttonRef}
         title="Notifications"
         onClick={() => {
