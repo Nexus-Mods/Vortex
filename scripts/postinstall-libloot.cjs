@@ -26,6 +26,14 @@ if (process.platform !== "linux") {
   process.exit(0);
 }
 
+// Ensure cargo is in PATH — rustup installs to ~/.cargo/bin which isn't
+// automatically on PATH in non-interactive shells (CI uses an explicit
+// install step; local dev uses rustup's shell init which isn't sourced here).
+const cargoBin = path.join(os.homedir(), ".cargo", "bin");
+if (fs.existsSync(cargoBin) && !(process.env.PATH || "").includes(cargoBin)) {
+  process.env.PATH = `${cargoBin}:${process.env.PATH || ""}`;
+}
+
 const LIBLOOT_VERSION = "0.29.1";
 
 // Locate the loot npm package dynamically using require.resolve so we are
