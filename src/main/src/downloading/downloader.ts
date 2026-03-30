@@ -1,22 +1,21 @@
-import type { URL } from "node:url";
-
 import got from "got";
 import { createWriteStream } from "node:fs";
 import { type FileHandle, open } from "node:fs/promises";
 import { pipeline } from "node:stream/promises";
+import { type URL } from "node:url";
 import PQueue from "p-queue";
 
-import { type Chunk, createChunks } from "./chunking";
+import type { Chunk, Chunker } from "./chunking";
+import type { Resolver, NormalizedResource } from "./resolver";
+
+import { staticChunker } from "./chunking";
+import { normalize } from "./resolver";
 
 export type DownloaderOptions = {
   /** Maximum simultaneous file downloads */
   downloadConcurrency: number;
   /** Maximum simultaneous chunk connections across all downloads */
   chunkConcurrency: number;
-  /** Number of chunks to split a file into when the server supports ranges */
-  chunksPerFile: number;
-  /** Minimum file size in bytes before chunking is attempted */
-  minFileSizeForChunking: number;
 };
 
 /** Creates instance of the options with default values */
@@ -24,8 +23,6 @@ export function defaultOptions(): DownloaderOptions {
   return {
     downloadConcurrency: 3,
     chunkConcurrency: 6,
-    chunksPerFile: 4,
-    minFileSizeForChunking: 10 * 1024 * 1024,
   };
 }
 
@@ -46,13 +43,23 @@ export class Downloader {
     });
   }
 
-  download(url: URL, dest: string): Promise<void> {
+  download<T>(
+    resource: T,
+    dest: string,
+    resolver: Resolver<T>,
+    chunker: Chunker<T> = staticChunker(),
+  ): Promise<void> {
     return this.#downloadQueue.add(async () => {
-      const probe = await this.#probe(url);
+      const resolved = normalize(await resolver(resource));
+      const probe = await this.#probe(resolved.probeUrl);
 
-      return probe.chunkable
-        ? this.#downloadChunked(url, dest, probe)
-        : this.#downloadSingle(url, dest, probe);
+      const chunks = probe.acceptsRanges ? chunker(probe.size, resource) : [];
+
+      if (chunks.length === 0) {
+        return this.#downloadSingle(resolved.probeUrl, dest);
+      }
+
+      return this.#downloadChunked(resolved, dest, probe, chunks);
     });
   }
 
@@ -64,33 +71,29 @@ export class Downloader {
     size = isNaN(size) ? 0 : size;
 
     const acceptsRanges = response.headers["accept-ranges"] === "bytes";
-    const chunkable =
-      acceptsRanges && size >= this.#options.minFileSizeForChunking;
-
-    return { size, chunkable };
+    return { size, acceptsRanges };
   }
 
-  async #downloadSingle(url: URL, dest: string, _probeResult: ProbeResult) {
+  async #downloadSingle(url: URL, dest: string) {
     return this.#chunkQueue.add(() =>
       pipeline(got.stream(url), createWriteStream(dest)),
     );
   }
 
   async #downloadChunked(
-    url: URL,
+    resource: NormalizedResource,
     dest: string,
     probeResult: ProbeResult,
+    chunks: Chunk[],
   ): Promise<void> {
-    const { size } = probeResult;
-    const chunks = createChunks(size, this.#options.chunksPerFile);
-
     const fd = await open(dest, "w");
-    await fd.truncate(size);
 
     try {
+      await fd.truncate(probeResult.size);
+
       await Promise.all(
         chunks.map((chunk) =>
-          this.#chunkQueue.add(() => this.#downloadChunk(url, chunk, fd)),
+          this.#chunkQueue.add(() => this.#downloadChunk(resource, chunk, fd)),
         ),
       );
     } finally {
@@ -98,7 +101,13 @@ export class Downloader {
     }
   }
 
-  async #downloadChunk(url: URL, chunk: Chunk, fd: FileHandle): Promise<void> {
+  async #downloadChunk(
+    resource: NormalizedResource,
+    chunk: Chunk,
+    fd: FileHandle,
+  ): Promise<void> {
+    const url = await resource.chunkUrl(chunk);
+
     const stream = got.stream(url, {
       headers: {
         Range: `bytes=${chunk.start}-${chunk.end}`,
@@ -119,5 +128,5 @@ export class Downloader {
 
 type ProbeResult = {
   size: number;
-  chunkable: boolean;
+  acceptsRanges: boolean;
 };
