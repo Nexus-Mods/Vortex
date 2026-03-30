@@ -14,7 +14,6 @@ import {
 } from "../../util/CustomErrors";
 import EpicGamesLauncher from "../../util/EpicGamesLauncher";
 import * as fs from "../../util/fs";
-import GameStoreHelper from "../../util/GameStoreHelper";
 import { log } from "../../util/log";
 import { activeProfile, discoveryByGame } from "../../util/selectors";
 import Steam from "../../util/Steam";
@@ -49,6 +48,10 @@ import {
   quickDiscoveryTools,
   searchDiscovery,
 } from "./util/discovery";
+import {
+  loadStoreGames,
+  subscribeToStoreGamesDirty,
+} from "./util/discoveryQueries";
 import { getGame } from "./util/getGame";
 
 import PromiseBB from "bluebird";
@@ -74,6 +77,7 @@ class GameModeManager {
   private mKnownGameStores: IGameStore[];
   private mActiveSearch: PromiseBB<void>;
   private mOnGameModeActivated: (mode: string) => void;
+  private mStoreGamesUnsubscribe: (() => void) | undefined;
 
   constructor(
     api: IExtensionApi,
@@ -89,6 +93,7 @@ class GameModeManager {
     this.mKnownGameStores = [Steam, EpicGamesLauncher, ...gameStoreExtensions];
     this.mActiveSearch = null;
     this.mOnGameModeActivated = onGameModeActivated;
+    this.mStoreGamesUnsubscribe = undefined;
   }
 
   /**
@@ -105,6 +110,18 @@ class GameModeManager {
       .map(this.storeGame)
       .filter(this.isValidGame);
     store.dispatch(setKnownGames(gamesStored));
+    if (this.mStoreGamesUnsubscribe === undefined) {
+      this.mStoreGamesUnsubscribe = subscribeToStoreGamesDirty(
+        window.api.query,
+        () => {
+          this.refreshQuickDiscoveryFromQuery().catch((err) => {
+            log("warn", "failed to refresh discovery from query", {
+              error: String(err),
+            });
+          });
+        },
+      );
+    }
     // we used to activate the game mode right here but there is another
     // call to do this in the "once" CB of gamemode_management so it's
     // redundant and the other call handles errors properly while this one
@@ -274,31 +291,9 @@ class GameModeManager {
    * @memberOf GameModeManager
    */
   public startQuickDiscovery(games?: IGame[]) {
-    // Trigger main-process store scanning, then fetch results
-    const triggerMainDiscovery = async () => {
-      try {
-        await (window as any).api.discovery.start();
-        return await (window as any).api.discovery.getStoreGames();
-      } catch (err) {
-        log("warn", "main-process discovery failed, falling back to legacy", {
-          error: String(err),
-        });
-        // Fallback to legacy renderer-side scanning
-        await this.reloadStoreGames();
-        return undefined;
-      }
-    };
-
-    return PromiseBB.resolve(triggerMainDiscovery())
-      .then((storeGames) =>
-        quickDiscovery(
-          games ?? this.mKnownGames,
-          this.mStore.getState().settings.gameMode.discovered,
-          this.onDiscoveredGame,
-          this.onDiscoveredTool,
-          storeGames,
-        ),
-      )
+    return PromiseBB.resolve(window.api.discovery.start())
+      .then(() => loadStoreGames(window.api.query))
+      .then((storeGames) => this.runQuickDiscovery(games, storeGames))
       .then((result) => {
         this.postDiscovery();
         return result;
@@ -477,8 +472,32 @@ class GameModeManager {
     );
   }
 
-  private reloadStoreGames() {
-    return GameStoreHelper.reloadGames(this.mApi);
+  private refreshQuickDiscoveryFromQuery(): PromiseBB<string[]> {
+    return PromiseBB.resolve(loadStoreGames(window.api.query))
+      .then((storeGames) => this.runQuickDiscovery(undefined, storeGames))
+      .then((result) => {
+        this.postDiscovery();
+        return result;
+      });
+  }
+
+  private runQuickDiscovery(
+    games: IGame[] | undefined,
+    storeGames: Array<{
+      store_type: string;
+      store_id: string;
+      install_path: string;
+      name: string | null;
+      store_metadata: string | null;
+    }>,
+  ): PromiseBB<string[]> {
+    return quickDiscovery(
+      games ?? this.mKnownGames,
+      this.mStore.getState().settings.gameMode.discovered,
+      this.onDiscoveredGame,
+      this.onDiscoveredTool,
+      storeGames,
+    );
   }
 
   private isValidGame(game: IGameStored): boolean {

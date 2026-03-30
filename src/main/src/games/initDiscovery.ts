@@ -1,9 +1,10 @@
-import { log } from "../logging";
-import DuckDBSingleton from "../store/DuckDBSingleton";
 import type QueryInvalidator from "../store/QueryInvalidator";
 
+import { getMainCommands } from "../commands/mainCommands";
+import { log } from "../logging";
+import DuckDBSingleton from "../store/DuckDBSingleton";
+import { setupDiscoveryCommands } from "./discoveryCommands";
 import { DiscoveryCoordinator } from "./DiscoveryCoordinator";
-import { setupDiscoveryIPC } from "./discoveryIPC";
 import { EpicScanner } from "./scanners/EpicScanner";
 import { GOGScanner } from "./scanners/GOGScanner";
 import { OriginScanner } from "./scanners/OriginScanner";
@@ -55,12 +56,14 @@ export async function initDiscovery(
     queryInvalidator,
   );
 
-  // Set up IPC handlers
-  setupDiscoveryIPC(coordinator, registryScanner);
+  // Set up command handlers
+  setupDiscoveryCommands(getMainCommands(), coordinator);
 
   // Run initial discovery (non-blocking)
   coordinator.runDiscovery().catch((err) => {
-    log("warn", "discovery: initial scan failed", { error: String(err) });
+    log("warn", "discovery: initial scan failed", {
+      error: err instanceof Error ? err.message : "Unknown discovery error",
+    });
   });
 
   log("info", "discovery: system initialized");

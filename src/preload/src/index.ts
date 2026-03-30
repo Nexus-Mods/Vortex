@@ -85,9 +85,7 @@ try {
     },
 
     discovery: {
-      start: () => betterIpcRenderer.invoke("discovery:start"),
-      registryLookup: (query: string) =>
-        betterIpcRenderer.invoke("discovery:registry-lookup", query),
+      start: () => executeCommand("discovery.start"),
     },
 
     updater: {
@@ -318,6 +316,13 @@ function rendererInvoke<C extends keyof InvokeChannels>(
   ...args: SerializableArgs<Parameters<InvokeChannels[C]>>
 ): Promise<AssertSerializable<Awaited<ReturnType<InvokeChannels[C]>>>> {
   return ipcRenderer.invoke(channel, ...args);
+}
+
+function executeCommand(
+  commandName: string,
+  payload?: Record<string, unknown>,
+): Promise<void> {
+  return betterIpcRenderer.invoke("command:execute", commandName, payload);
 }
 
 function rendererSend<C extends keyof RendererChannels>(

@@ -325,24 +325,19 @@ export interface InvokeChannels {
   // Compile stylesheets
   "styles:compile": (filePaths: string[]) => Promise<string>;
 
+  // Generic command execution. Commands return no data on success.
+  "command:execute": (
+    commandName: string,
+    payload?: Record<string, unknown>,
+  ) => Promise<void>;
+
   // Query system: Execute any named DuckDB query
   "query:execute": (
     queryName: string,
     params: Record<string, unknown>,
   ) => Promise<Record<string, Serializable>[]>;
 
-  // Game Discovery: Trigger store scanners in main process
-  "discovery:start": () => Promise<void>;
-
-  // Game Discovery: Look up a game by registry key
-  "discovery:registry-lookup": (query: string) => Promise<
-    | {
-        storeId: string;
-        installPath: string;
-        name?: string;
-      }
-    | undefined
-  >;
+  // Game Discovery commands are routed through command:execute
 }
 
 /** Represents all IPC-safe typed arrays */
