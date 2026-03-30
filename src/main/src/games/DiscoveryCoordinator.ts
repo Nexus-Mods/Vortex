@@ -115,14 +115,13 @@ export class DiscoveryCoordinator {
     storeType: string,
     games: IStoreGameEntry[],
   ): Promise<void> {
-    const esc = (s: string | undefined | null) => (s ?? "").replace(/'/g, "''");
-
     // Delete previous entries for this store type
     await this.#connection.run(
-      `DELETE FROM store_games WHERE store_type = '${esc(storeType)}'`,
+      "DELETE FROM store_games WHERE store_type = ?",
+      [storeType],
     );
 
-    // Insert new entries using string interpolation (all values are strings)
+    // Insert new entries with bound parameters.
     for (const game of games) {
       if (!game.storeId || !game.installPath) {
         log("debug", "discovery: skipping entry with missing data", {
@@ -136,11 +135,12 @@ export class DiscoveryCoordinator {
       const metadata = game.metadata ? JSON.stringify(game.metadata) : "";
       await this.#connection.run(
         `INSERT INTO store_games (store_type, store_id, install_path, name, store_metadata)
-         VALUES ('${esc(storeType)}', '${esc(game.storeId)}', '${esc(game.installPath)}', '${esc(name)}', '${esc(metadata)}')
+         VALUES (?, ?, ?, ?, ?)
          ON CONFLICT (store_type, store_id) DO UPDATE SET
            install_path = EXCLUDED.install_path,
            name = EXCLUDED.name,
            store_metadata = EXCLUDED.store_metadata`,
+        [storeType, game.storeId, game.installPath, name, metadata],
       );
     }
 
