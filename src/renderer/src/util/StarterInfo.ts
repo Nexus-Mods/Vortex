@@ -1,5 +1,5 @@
 import { getErrorCode, unknownToError } from "@vortex/shared";
-import { ApplicationData } from "@vortex/shared";
+import { ApplicationData } from "../applicationData";
 import PromiseBB from "bluebird";
 import * as fs from "fs";
 import * as path from "path";
@@ -18,12 +18,12 @@ import { log } from "../logging";
 import { GameEntryNotFound, GameStoreNotFound } from "../types/IGameStore";
 import { getApplication } from "./application";
 import
-  {
-    MissingDependency,
-    MissingInterpreter,
-    ProcessCanceled,
-    UserCanceled,
-  } from "./CustomErrors";
+{
+  MissingDependency,
+  MissingInterpreter,
+  ProcessCanceled,
+  UserCanceled,
+} from "./CustomErrors";
 import GameStoreHelper from "./GameStoreHelper";
 import getVortexPath from "./getVortexPath";
 import { isWindowsExecutable } from "./linux/proton";

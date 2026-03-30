@@ -87,6 +87,7 @@ import * as reduxAct from 'redux-act';
 import type { SelectCallback } from 'react-bootstrap';
 import * as semver from 'semver';
 import SevenZip from 'node-7z';
+import { statfsSync } from 'original-fs';
 import { Stats } from 'fs';
 import { statSync } from 'original-fs';
 import { symlinkSync } from 'original-fs';
@@ -1114,6 +1115,7 @@ declare namespace fs {
         withTmpDirImpl,
         encodingFromBOM,
         readFileBOM,
+        getVolumePath,
         constants,
         Stats,
         WriteStream,
@@ -1128,6 +1130,7 @@ declare namespace fs {
         readdirSync,
         readFileSync,
         statSync,
+        statfsSync,
         symlinkSync,
         watch,
         writeFileSync,
@@ -1474,6 +1477,9 @@ function getText(group: TextGroup, textId: string, t: TFunction): string;
 
 // @public (undocumented)
 function getVisibleWindow(win?: BrowserWindow | null): BrowserWindow | null;
+
+// @public (undocumented)
+function getVolumePath(filePath: string): string;
 
 // Warning: (ae-forgotten-export) The symbol "AppPath" needs to be exported by the entry point api.d.ts
 //

@@ -16,6 +16,7 @@ import { suggestStagingPath } from "../gamemode_management/util/discovery";
 import { setInstallPath } from "./actions/settings";
 import { fallbackPurge } from "./util/activationStore";
 import { resolveInstallPath } from "./util/getInstallPath";
+import { isErrorWithSystemCode, unknownToError } from "@vortex/shared";
 
 export const STAGING_DIR_TAG = "__vortex_staging_folder";
 
