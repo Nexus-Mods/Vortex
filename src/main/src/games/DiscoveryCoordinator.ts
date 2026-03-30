@@ -4,8 +4,6 @@ import { log } from "../logging";
 import type QueryInvalidator from "../store/QueryInvalidator";
 import type { IStoreScanner, IStoreGameEntry } from "./IStoreScanner";
 
-const DEBOUNCE_MS = 5_000;
-
 type SettledResult<T> =
   | { status: "fulfilled"; value: T }
   | { status: "rejected"; reason: unknown };
@@ -53,7 +51,6 @@ export class DiscoveryCoordinator {
   readonly #scanners: IStoreScanner[];
   readonly #connection: DuckDBConnection;
   readonly #invalidator: QueryInvalidator;
-  #lastRunTime: number = 0;
   #running: boolean = false;
 
   constructor(
@@ -68,22 +65,15 @@ export class DiscoveryCoordinator {
 
   /**
    * Run all store scanners and write results to DuckDB.
-   * Debounces rapid calls (5s cooldown).
+   * Only one scan runs at a time; overlapping calls are ignored.
    */
   public async runDiscovery(): Promise<void> {
-    const now = Date.now();
-    if (now - this.#lastRunTime < DEBOUNCE_MS) {
-      log("debug", "discovery: skipping (debounce)");
-      return;
-    }
-
     if (this.#running) {
       log("debug", "discovery: skipping (already running)");
       return;
     }
 
     this.#running = true;
-    this.#lastRunTime = now;
 
     try {
       const results = await safeAllSettled(
