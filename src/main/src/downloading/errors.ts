@@ -1,36 +1,49 @@
 import { TimeoutError, HTTPError, RequestError } from "got";
 
-export type DownloadErrorCode =
-  | "network-error"
-  | "network-timeout"
-  | "network-bad-status"
-  | "fs-error"
-  | "resolver-error";
+export type DownloadErrorPayload =
+  | { code: "network-error"; url: URL }
+  | { code: "network-timeout"; url: URL }
+  | { code: "network-bad-status"; url: URL; statusCode: number }
+  | { code: "fs-error"; path: string }
+  | { code: "resolver-error" };
 
 export class DownloadError extends Error {
-  #code: DownloadErrorCode;
+  readonly payload: DownloadErrorPayload;
 
-  constructor(code: DownloadErrorCode, message: string, cause?: unknown) {
+  constructor(payload: DownloadErrorPayload, message: string, cause?: unknown) {
     super(message, { cause });
     this.name = "DownloadError";
-    this.#code = code;
+    this.payload = payload;
   }
 
-  public get code(): DownloadErrorCode {
-    return this.#code;
+  public get code(): DownloadErrorPayload["code"] {
+    return this.payload.code;
   }
 }
 
-export function toNetworkError(err: unknown): DownloadError {
+export function toNetworkError(url: URL, err: unknown): DownloadError {
+  if (err instanceof DownloadError) return err;
   if (err instanceof TimeoutError)
-    return new DownloadError("network-timeout", "Request timed out", err);
+    return new DownloadError(
+      { code: "network-timeout", url },
+      "Request timed out",
+      err,
+    );
   if (err instanceof HTTPError)
     return new DownloadError(
-      "network-bad-status",
+      { code: "network-bad-status", url, statusCode: err.response.statusCode },
       `Server returned ${err.response.statusCode}`,
       err,
     );
   if (err instanceof RequestError)
-    return new DownloadError("network-error", "Network request failed", err);
-  return new DownloadError("network-error", "Unknown network error", err);
+    return new DownloadError(
+      { code: "network-error", url },
+      "Network request failed",
+      err,
+    );
+  return new DownloadError(
+    { code: "network-error", url },
+    "Unknown network error",
+    err,
+  );
 }

@@ -1,6 +1,6 @@
 import got from "got";
 import { type WriteStream } from "node:fs";
-import { type FileHandle, open } from "node:fs/promises";
+import { type FileHandle as NodeFileHandle, open } from "node:fs/promises";
 import { pipeline } from "node:stream/promises";
 import { type URL } from "node:url";
 import PQueue from "p-queue";
@@ -67,14 +67,18 @@ export class Downloader {
       try {
         resolved = normalize(await resolver(resource));
       } catch (err) {
-        throw new DownloadError("resolver-error", "Resolver failed", err);
+        throw new DownloadError(
+          { code: "resolver-error" },
+          "Resolver failed",
+          err,
+        );
       }
 
       let probe: ProbeResult;
       try {
         probe = await this.#probe(resolved.probeUrl);
       } catch (err) {
-        throw toNetworkError(err);
+        throw toNetworkError(resolved.probeUrl, err);
       }
 
       const chunks = probe.acceptsRanges
@@ -83,14 +87,15 @@ export class Downloader {
 
       progressReporter.init(chunks, probe.size > 0 ? probe.size : null);
 
-      let fd: FileHandle;
+      let handle: FileHandle;
 
       try {
-        fd = await open(dest, "w");
+        const fd = await open(dest, "w");
+        handle = { fd, path: dest };
       } catch (err) {
         throw new DownloadError(
-          "fs-error",
-          "Failed to open destination file",
+          { code: "fs-error", path: dest },
+          `Failed to open ${dest}`,
           err,
         );
       }
@@ -99,29 +104,29 @@ export class Downloader {
         if (chunks.length === 0) {
           await this.#downloadSingle(
             got.stream(resolved.probeUrl),
-            fd,
+            handle,
             progressReporter.chunkProgress[0],
           );
         } else {
           try {
-            await fd.truncate(probe.size);
+            await handle.fd.truncate(probe.size);
           } catch (err) {
             throw new DownloadError(
-              "fs-error",
-              "Failed to truncate destination file",
+              { code: "fs-error", path: dest },
+              `Failed to truncate ${dest}`,
               err,
             );
           }
 
           await this.#downloadChunked(
             resolved,
-            fd,
+            handle,
             chunks,
             progressReporter.chunkProgress,
           );
         }
       } finally {
-        await fd.close();
+        await handle.fd.close();
       }
     });
 
@@ -144,15 +149,19 @@ export class Downloader {
 
   async #downloadSingle(
     stream: ReturnType<typeof got.stream>,
-    fd: FileHandle,
+    handle: FileHandle,
     progress: ChunkProgress,
   ): Promise<void> {
     let fileStream: WriteStream;
 
     try {
-      fileStream = fd.createWriteStream({ autoClose: false });
+      fileStream = handle.fd.createWriteStream({ autoClose: false });
     } catch (err) {
-      throw new DownloadError("fs-error", "Failed to create write stream", err);
+      throw new DownloadError(
+        { code: "fs-error", path: handle.path },
+        `Failed to create write stream for ${handle.path}`,
+        err,
+      );
     }
 
     try {
@@ -162,7 +171,7 @@ export class Downloader {
 
       await pipeline(stream, fileStream);
     } catch (err) {
-      throw toNetworkError(err);
+      throw toNetworkError(stream.requestUrl, err);
     } finally {
       fileStream.destroy();
     }
@@ -170,7 +179,7 @@ export class Downloader {
 
   async #downloadChunked(
     resource: NormalizedResource,
-    fd: FileHandle,
+    handle: FileHandle,
     chunks: Chunk[],
     chunkProgress: ChunkProgress[],
   ): Promise<void> {
@@ -184,7 +193,7 @@ export class Downloader {
 
           const result = await this.#downloadStream(
             stream,
-            fd,
+            handle,
             chunkProgress[chunk.index],
             chunk.start,
           );
@@ -197,7 +206,7 @@ export class Downloader {
 
   async #downloadStream(
     stream: ReturnType<typeof got.stream>,
-    fd: FileHandle,
+    handle: FileHandle,
     progress: ChunkProgress,
     writePosition = 0,
   ): Promise<void> {
@@ -205,11 +214,11 @@ export class Downloader {
       for await (const data of stream) {
         const buffer = data as Buffer;
         try {
-          await fd.write(buffer, 0, buffer.length, writePosition);
+          await handle.fd.write(buffer, 0, buffer.length, writePosition);
         } catch (err) {
           throw new DownloadError(
-            "fs-error",
-            "Failed to write to destination file",
+            { code: "fs-error", path: handle.path },
+            `Failed to write to ${handle.path}`,
             err,
           );
         }
@@ -218,7 +227,7 @@ export class Downloader {
       }
     } catch (err) {
       if (err instanceof DownloadError) throw err;
-      throw toNetworkError(err);
+      throw toNetworkError(stream.requestUrl, err);
     }
   }
 }
@@ -227,3 +236,5 @@ type ProbeResult = {
   size: number;
   acceptsRanges: boolean;
 };
+
+type FileHandle = { fd: NodeFileHandle; path: string };
