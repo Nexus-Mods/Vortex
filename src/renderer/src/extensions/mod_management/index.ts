@@ -52,6 +52,7 @@ import {
   stopActivity,
 } from "../../actions/session";
 import LazyComponent from "../../controls/LazyComponent";
+import { log } from "../../logging";
 import ReduxProp from "../../ReduxProp";
 import { nxmMod } from "../../ui/icon-paths";
 import { opn } from "../../util/api";
@@ -66,7 +67,6 @@ import * as fs from "../../util/fs";
 import getNormalizeFunc from "../../util/getNormalizeFunc";
 import getVortexPath from "../../util/getVortexPath";
 import { laterT, type TFunction } from "../../util/i18n";
-import { log } from "../../logging";
 import { showError } from "../../util/message";
 import onceCB from "../../util/onceCB";
 import {
@@ -680,7 +680,7 @@ function deployableModTypes(modPaths: { [typeId: string]: string }) {
   return Object.keys(modPaths).filter((typeId) => truthy(modPaths[typeId]));
 }
 
-function genUpdateModDeployment() {
+function genUpdateModDeployment(installManager: InstallManager) {
   return (
     api: IExtensionApi,
     manual: boolean,
@@ -703,11 +703,8 @@ function genUpdateModDeployment() {
       }
       api.store.dispatch(updateNotification(notification.id, percent, text));
     };
-    const state = api.store.getState();
-    let profile: IProfile =
-      profileId !== undefined
-        ? getSafe(state, ["persistent", "profiles", profileId], undefined)
-        : activeProfile(state);
+    const state: IState = api.store.getState();
+    let profile: IProfile = state.persistent.profiles?.[profileId] ?? activeProfile(state);
 
     if (
       Object.keys(getSafe(state, ["session", "base", "toolsRunning"], {}))
@@ -730,11 +727,7 @@ function genUpdateModDeployment() {
       return Promise.resolve();
     }
     const gameId = profile.gameId;
-    const gameDiscovery = getSafe(
-      state,
-      ["settings", "gameMode", "discovered", gameId],
-      undefined,
-    );
+    const gameDiscovery = state.settings.gameMode.discovered?.[gameId];
     const game = getGame(gameId);
     if (game === undefined || gameDiscovery?.path === undefined) {
       const err = new Error("Game no longer available");
@@ -829,9 +822,19 @@ function genUpdateModDeployment() {
               method: activator.name,
             });
 
+            // Wait for active mod installations to complete before deploying.
+            // This prevents the external changes dialog from appearing during
+            // batch updates/reinstalls where detected changes are expected.
+            let hadActiveInstalls = false;
+            if (installManager.getActiveInstallationCount() > 0) {
+              hadActiveInstalls = true;
+              log("debug", "waiting for active installations before deploying");
+              await installManager.waitForIdle();
+            }
+
             let mergeResult: { [modType: string]: IMergeResultByType };
             const lastDeployment: { [typeId: string]: IDeployedFile[] } = {};
-            const mods = state.persistent.mods[profile.gameId] || {};
+            const mods: Record<string, IMod> = state.persistent.mods?.[profile?.gameId];
             notification.message = t("Deploying mods");
             api.sendNotification(notification);
             api.store.dispatch(startActivity("mods", "deployment"));
@@ -878,6 +881,7 @@ function genUpdateModDeployment() {
               stagingPath,
               modPaths,
               lastDeployment,
+              hadActiveInstalls,
             );
 
             progress(t("Checking for mod incompatibilities"), 25);
@@ -1503,7 +1507,7 @@ function onNeedToDeploy(api: IExtensionApi, current: any) {
 }
 
 function once(api: IExtensionApi) {
-  const store: Redux.Store<any> = api.store;
+  const store: Redux.Store<IState> = api.store;
 
   if (installManager === undefined) {
     installManager = new InstallManager(api, (gameId: string) =>
@@ -1519,7 +1523,7 @@ function once(api: IExtensionApi) {
     });
   }
 
-  const updateModDeployment = genUpdateModDeployment();
+  const updateModDeployment = genUpdateModDeployment(installManager);
   const deploymentTimer = new Debouncer(
     (
       manual: boolean,
