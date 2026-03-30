@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 
-import { staticChunker } from "./chunking";
+import { type Chunk, staticChunker } from "./chunking";
 
-function createChunks(size: number, numChunks: number) {
+function createChunks(size: number, numChunks: number): Chunk[] {
   return staticChunker(numChunks, 1)(size);
 }
 

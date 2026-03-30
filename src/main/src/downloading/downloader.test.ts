@@ -1,8 +1,8 @@
 import { randomBytes } from "node:crypto";
-import { readFile, mkdtemp, rm } from "node:fs/promises";
+import { readFile, mkdir, mkdtemp, rm } from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
 
 import type { Resolver } from "./resolver";
 
@@ -16,21 +16,37 @@ import { urlResolver } from "./resolver";
 import {
   type TestServer,
   type RequestHandler,
-  withTestServer,
+  createTestServer,
   serveFile,
-  serveRoutes,
 } from "./test-server";
 
 const LARGE_FILE = randomBytes(20 * 1024 * 1024);
 const SMALL_FILE = randomBytes(1024);
 
+let server: TestServer;
+let tmpDir: string;
+
+beforeAll(async () => {
+  [server, tmpDir] = await Promise.all([
+    createTestServer(({ res }) => {
+      res.writeHead(404);
+      res.end();
+      return Promise.resolve();
+    }),
+    mkdtemp(path.join(os.tmpdir(), "downloader-test-")),
+  ]);
+});
+
+afterAll(() =>
+  Promise.all([server.close(), rm(tmpDir, { recursive: true, force: true })]),
+);
+
+let dirCounter = 0;
+
 async function withTmpDir(fn: (dir: string) => Promise<void>): Promise<void> {
-  const dir = await mkdtemp(path.join(os.tmpdir(), "downloader-test-"));
-  try {
-    await fn(dir);
-  } finally {
-    await rm(dir, { recursive: true, force: true });
-  }
+  const dir = path.join(tmpDir, String(++dirCounter));
+  await mkdir(dir);
+  return fn(dir);
 }
 
 function makeDownloader(
@@ -40,63 +56,71 @@ function makeDownloader(
 }
 
 async function download(
-  server: TestServer,
+  url: URL,
   destDir: string,
   downloader = makeDownloader(),
   filename = "output",
 ): Promise<Buffer> {
   const dest = path.join(destDir, filename);
-  await downloader.download(server.url, dest, urlResolver);
+  await downloader.download(url, dest, urlResolver).promise;
   return readFile(dest);
 }
 
 describe("Downloader", () => {
   it("produces a byte-perfect file for a small file without range support", async () => {
-    await withTestServer(
+    const { url, deregister } = server.route(
       serveFile({ body: SMALL_FILE, acceptRanges: false }),
-      async (server) => {
-        await withTmpDir(async (dir) => {
-          const result = await download(server, dir);
-          expect(Buffer.compare(SMALL_FILE, result)).toBe(0);
-        });
-      },
     );
+    try {
+      await withTmpDir(async (dir) => {
+        const result = await download(url, dir);
+        expect(Buffer.compare(SMALL_FILE, result)).toBe(0);
+      });
+    } finally {
+      deregister();
+    }
   });
 
   it("produces a byte-perfect file for a small file with range support", async () => {
-    await withTestServer(
+    const { url, deregister } = server.route(
       serveFile({ body: SMALL_FILE, acceptRanges: true }),
-      async (server) => {
-        await withTmpDir(async (dir) => {
-          const result = await download(server, dir);
-          expect(Buffer.compare(SMALL_FILE, result)).toBe(0);
-        });
-      },
     );
+    try {
+      await withTmpDir(async (dir) => {
+        const result = await download(url, dir);
+        expect(Buffer.compare(SMALL_FILE, result)).toBe(0);
+      });
+    } finally {
+      deregister();
+    }
   });
 
   it("produces a byte-perfect file for a large file without range support", async () => {
-    await withTestServer(
+    const { url, deregister } = server.route(
       serveFile({ body: LARGE_FILE, acceptRanges: false }),
-      async (server) => {
-        await withTmpDir(async (dir) => {
-          const result = await download(server, dir);
-          expect(Buffer.compare(LARGE_FILE, result)).toBe(0);
-        });
-      },
     );
+    try {
+      await withTmpDir(async (dir) => {
+        const result = await download(url, dir);
+        expect(Buffer.compare(LARGE_FILE, result)).toBe(0);
+      });
+    } finally {
+      deregister();
+    }
   });
 
   it("produces a byte-perfect file for a large file with range support", async () => {
-    await withTestServer(
+    const { url, deregister } = server.route(
       serveFile({ body: LARGE_FILE, acceptRanges: true }),
-      async (server) => {
-        await withTmpDir(async (dir) => {
-          const result = await download(server, dir);
-          expect(Buffer.compare(LARGE_FILE, result)).toBe(0);
-        });
-      },
     );
+    try {
+      await withTmpDir(async (dir) => {
+        const result = await download(url, dir);
+        expect(Buffer.compare(LARGE_FILE, result)).toBe(0);
+      });
+    } finally {
+      deregister();
+    }
   });
 
   it("falls back to single download when content-length is absent, even with accept-ranges", async () => {
@@ -111,15 +135,20 @@ describe("Downloader", () => {
       return Promise.resolve();
     };
 
-    await withTestServer(handler, async (server) => {
+    const { url, deregister } = server.route(handler);
+    try {
       await withTmpDir(async (dir) => {
-        const result = await download(server, dir);
+        const result = await download(url, dir);
         expect(Buffer.compare(LARGE_FILE, result)).toBe(0);
-        const gets = server.requests.filter((r) => r.method === "GET");
+        const gets = server.requests.filter(
+          (r) => r.method === "GET" && r.url === url.pathname,
+        );
         expect(gets).toHaveLength(1);
         expect(gets[0].range).toBeNull();
       });
-    });
+    } finally {
+      deregister();
+    }
   });
 
   it("falls back to single download when content-length is zero, even with accept-ranges", async () => {
@@ -134,151 +163,354 @@ describe("Downloader", () => {
       return Promise.resolve();
     };
 
-    await withTestServer(handler, async (server) => {
+    const { url, deregister } = server.route(handler);
+    try {
       await withTmpDir(async (dir) => {
-        const result = await download(server, dir);
+        const result = await download(url, dir);
         expect(Buffer.compare(LARGE_FILE, result)).toBe(0);
-        const gets = server.requests.filter((r) => r.method === "GET");
+        const gets = server.requests.filter(
+          (r) => r.method === "GET" && r.url === url.pathname,
+        );
         expect(gets).toHaveLength(1);
         expect(gets[0].range).toBeNull();
       });
-    });
+    } finally {
+      deregister();
+    }
   });
 
   it("downloads multiple files concurrently and all are byte-perfect", async () => {
     const files = Array.from({ length: 6 }, () =>
       randomBytes(20 * 1024 * 1024),
     );
+    const routes = files.map((file) =>
+      server.route(serveFile({ body: file, acceptRanges: true })),
+    );
 
-    await withTmpDir(async (dir) => {
-      const downloader = makeDownloader({
-        downloadConcurrency: 3,
-        chunkConcurrency: 6,
-      });
+    try {
+      await withTmpDir(async (dir) => {
+        const downloader = makeDownloader({
+          downloadConcurrency: 3,
+          chunkConcurrency: 6,
+        });
 
-      await Promise.all(
-        files.map((file, i) =>
-          withTestServer(
-            serveFile({ body: file, acceptRanges: true }),
-            async (server) => {
-              await download(server, dir, downloader, `file-${i}`);
-            },
+        await Promise.all(
+          routes.map(({ url }, i) =>
+            download(url, dir, downloader, `file-${i}`),
           ),
-        ),
-      );
+        );
 
-      for (const [i, file] of files.entries()) {
-        const result = await readFile(path.join(dir, `file-${i}`));
-        expect(Buffer.compare(file, result)).toBe(0);
-      }
-    });
+        for (const [i, file] of files.entries()) {
+          const result = await readFile(path.join(dir, `file-${i}`));
+          expect(Buffer.compare(file, result)).toBe(0);
+        }
+      });
+    } finally {
+      routes.forEach(({ deregister }) => deregister());
+    }
   });
 
   it("respects downloadConcurrency: 1 and serializes downloads", async () => {
     const completionOrder: number[] = [];
     const files = [randomBytes(1024), randomBytes(1024), randomBytes(1024)];
+    const routes = files.map((file) =>
+      server.route(serveFile({ body: file, acceptRanges: false, delayMs: 30 })),
+    );
 
-    await withTmpDir(async (dir) => {
-      const downloader = makeDownloader({ downloadConcurrency: 1 });
+    try {
+      await withTmpDir(async (dir) => {
+        const downloader = makeDownloader({ downloadConcurrency: 1 });
 
-      await Promise.all(
-        files.map((file, i) =>
-          withTestServer(
-            serveFile({ body: file, acceptRanges: false, delayMs: 30 }),
-            async (server) => {
-              await download(server, dir, downloader, `file-${i}`);
-              completionOrder.push(i);
-            },
+        await Promise.all(
+          routes.map(({ url }, i) =>
+            download(url, dir, downloader, `file-${i}`).then(() =>
+              completionOrder.push(i),
+            ),
           ),
-        ),
-      );
+        );
 
-      expect(completionOrder).toEqual([0, 1, 2]);
+        expect(completionOrder).toEqual([0, 1, 2]);
+      });
+    } finally {
+      routes.forEach(({ deregister }) => deregister());
+    }
+  });
+
+  describe("progress", () => {
+    it("reports zero progress before the download starts", async () => {
+      const { url, deregister } = server.route(
+        serveFile({ body: LARGE_FILE, acceptRanges: true }),
+      );
+      try {
+        await withTmpDir(async (dir) => {
+          const handle = makeDownloader().download(
+            url,
+            path.join(dir, "output"),
+            urlResolver,
+          );
+          const progress = handle.getProgress();
+          expect(progress.bytesReceived).toBe(0);
+          await handle.promise;
+        });
+      } finally {
+        deregister();
+      }
+    });
+
+    it("reports correct totalBytes for a single download with content-length", async () => {
+      const { url, deregister } = server.route(
+        serveFile({ body: LARGE_FILE, acceptRanges: false }),
+      );
+      try {
+        await withTmpDir(async (dir) => {
+          const handle = makeDownloader().download(
+            url,
+            path.join(dir, "output"),
+            urlResolver,
+          );
+          await handle.promise;
+          expect(handle.getProgress().totalBytes).toBe(LARGE_FILE.length);
+        });
+      } finally {
+        deregister();
+      }
+    });
+
+    it("reports null totalBytes for a single download without content-length", async () => {
+      const handler: RequestHandler = ({ req, res }) => {
+        if (req.method === "HEAD") {
+          res.writeHead(200);
+          res.end();
+        } else {
+          res.writeHead(200);
+          res.end(LARGE_FILE);
+        }
+        return Promise.resolve();
+      };
+
+      const { url, deregister } = server.route(handler);
+      try {
+        await withTmpDir(async (dir) => {
+          const handle = makeDownloader().download(
+            url,
+            path.join(dir, "output"),
+            urlResolver,
+          );
+          await handle.promise;
+          expect(handle.getProgress().totalBytes).toBeNull();
+        });
+      } finally {
+        deregister();
+      }
+    });
+
+    it("reports bytesReceived equal to file size on completion for a single download", async () => {
+      const { url, deregister } = server.route(
+        serveFile({ body: LARGE_FILE, acceptRanges: false }),
+      );
+      try {
+        await withTmpDir(async (dir) => {
+          const handle = makeDownloader().download(
+            url,
+            path.join(dir, "output"),
+            urlResolver,
+          );
+          await handle.promise;
+          expect(handle.getProgress().bytesReceived).toBe(LARGE_FILE.length);
+        });
+      } finally {
+        deregister();
+      }
+    });
+
+    it("reports bytesReceived equal to file size on completion for a chunked download", async () => {
+      const { url, deregister } = server.route(
+        serveFile({ body: LARGE_FILE, acceptRanges: true }),
+      );
+      try {
+        await withTmpDir(async (dir) => {
+          const handle = makeDownloader().download(
+            url,
+            path.join(dir, "output"),
+            urlResolver,
+          );
+          await handle.promise;
+          expect(handle.getProgress().bytesReceived).toBe(LARGE_FILE.length);
+        });
+      } finally {
+        deregister();
+      }
+    });
+
+    it("reports one chunk per chunksPerFile for a chunked download", async () => {
+      const chunksPerFile = 4;
+      const { url, deregister } = server.route(
+        serveFile({ body: LARGE_FILE, acceptRanges: true }),
+      );
+      try {
+        await withTmpDir(async (dir) => {
+          const handle = makeDownloader().download(
+            url,
+            path.join(dir, "output"),
+            urlResolver,
+            staticChunker(chunksPerFile),
+          );
+          await handle.promise;
+          expect(handle.getProgress().chunks).toHaveLength(chunksPerFile);
+        });
+      } finally {
+        deregister();
+      }
+    });
+
+    it("reports a single chunk for a single download", async () => {
+      const { url, deregister } = server.route(
+        serveFile({ body: LARGE_FILE, acceptRanges: false }),
+      );
+      try {
+        await withTmpDir(async (dir) => {
+          const handle = makeDownloader().download(
+            url,
+            path.join(dir, "output"),
+            urlResolver,
+          );
+          await handle.promise;
+          expect(handle.getProgress().chunks).toHaveLength(1);
+        });
+      } finally {
+        deregister();
+      }
     });
   });
 
   describe("resolver", () => {
     it("calls the resolver once per download", async () => {
-      await withTestServer(
+      const { url, deregister } = server.route(
         serveFile({ body: SMALL_FILE, acceptRanges: false }),
-        async (server) => {
-          await withTmpDir(async (dir) => {
-            const resolver = vi.fn(urlResolver);
-            const dest = path.join(dir, "output");
-            await makeDownloader().download(server.url, dest, resolver);
-            expect(resolver).toHaveBeenCalledTimes(1);
-            expect(resolver).toHaveBeenCalledWith(server.url);
-          });
-        },
       );
+      try {
+        await withTmpDir(async (dir) => {
+          const resolver = vi.fn(urlResolver);
+          const dest = path.join(dir, "output");
+          await makeDownloader().download(url, dest, resolver).promise;
+          expect(resolver).toHaveBeenCalledTimes(1);
+          expect(resolver).toHaveBeenCalledWith(url);
+        });
+      } finally {
+        deregister();
+      }
     });
 
     it("uses probeUrl as the fallback for chunk requests when chunkUrl is not provided", async () => {
-      await withTestServer(
+      const { url, deregister } = server.route(
         serveFile({ body: LARGE_FILE, acceptRanges: true }),
-        async (server) => {
-          await withTmpDir(async (dir) => {
-            // Resolver returns only probeUrl — no chunkUrl
-            const resolver: Resolver<URL> = (url) =>
-              Promise.resolve({ probeUrl: url });
-
-            const dest = path.join(dir, "output");
-            await makeDownloader().download(server.url, dest, resolver);
-
-            const result = await readFile(dest);
-            expect(Buffer.compare(LARGE_FILE, result)).toBe(0);
-
-            // All chunk GETs should have hit the same URL (the probeUrl)
-            const gets = server.requests.filter((r) => r.method === "GET");
-            expect(gets.length).toBeGreaterThan(1);
-            expect(gets.every((r) => r.url === "/")).toBe(true);
-          });
-        },
       );
+      try {
+        await withTmpDir(async (dir) => {
+          const resolver: Resolver<URL> = (u) =>
+            Promise.resolve({ probeUrl: u });
+          const dest = path.join(dir, "output");
+          await makeDownloader().download(url, dest, resolver).promise;
+
+          const result = await readFile(dest);
+          expect(Buffer.compare(LARGE_FILE, result)).toBe(0);
+
+          const gets = server.requests.filter(
+            (r) => r.method === "GET" && r.url === url.pathname,
+          );
+          expect(gets.length).toBeGreaterThan(1);
+        });
+      } finally {
+        deregister();
+      }
     });
 
     it("uses chunkUrl for each chunk when provided, leaving the probe on probeUrl", async () => {
-      await withTestServer(
-        serveRoutes({
-          "/probe": serveFile({ body: LARGE_FILE, acceptRanges: true }),
-          "/chunk": serveFile({ body: LARGE_FILE, acceptRanges: true }),
-        }),
-        async (server) => {
-          await withTmpDir(async (dir) => {
-            const chunkUrl = vi.fn((_chunk: Chunk) =>
-              Promise.resolve(server.urlFor("/chunk")),
-            );
-            const resolver: Resolver<URL> = () =>
-              Promise.resolve({
-                probeUrl: server.urlFor("/probe"),
-                chunkUrl,
-              });
-
-            const chunksPerFile = 4;
-            const chunker = staticChunker(chunksPerFile);
-
-            const dest = path.join(dir, "output");
-            await makeDownloader().download(
-              server.url,
-              dest,
-              resolver,
-              chunker,
-            );
-
-            const result = await readFile(dest);
-            expect(Buffer.compare(LARGE_FILE, result)).toBe(0);
-
-            // chunkUrl should have been called once per chunk
-            expect(chunkUrl).toHaveBeenCalledTimes(chunksPerFile);
-
-            // Probe HEAD went to /probe, all GETs went to /chunk
-            const heads = server.requests.filter((r) => r.method === "HEAD");
-            const gets = server.requests.filter((r) => r.method === "GET");
-            expect(heads.every((r) => r.url === "/probe")).toBe(true);
-            expect(gets.every((r) => r.url === "/chunk")).toBe(true);
-          });
-        },
+      const { url: probeUrl, deregister: deregisterProbe } = server.route(
+        serveFile({ body: LARGE_FILE, acceptRanges: true }),
       );
+      const { url: chunkUrl, deregister: deregisterChunk } = server.route(
+        serveFile({ body: LARGE_FILE, acceptRanges: true }),
+      );
+
+      try {
+        await withTmpDir(async (dir) => {
+          const chunkUrlFn = vi.fn((_chunk: Chunk) =>
+            Promise.resolve(chunkUrl),
+          );
+          const resolver: Resolver<URL> = () =>
+            Promise.resolve({ probeUrl, chunkUrl: chunkUrlFn });
+
+          const chunksPerFile = 4;
+          const dest = path.join(dir, "output");
+          await makeDownloader().download(
+            server.url,
+            dest,
+            resolver,
+            staticChunker(chunksPerFile),
+          ).promise;
+
+          const result = await readFile(dest);
+          expect(Buffer.compare(LARGE_FILE, result)).toBe(0);
+          expect(chunkUrlFn).toHaveBeenCalledTimes(chunksPerFile);
+
+          const heads = server.requests.filter(
+            (r) => r.method === "HEAD" && r.url === probeUrl.pathname,
+          );
+          const gets = server.requests.filter(
+            (r) => r.method === "GET" && r.url === chunkUrl.pathname,
+          );
+          expect(heads).toHaveLength(1);
+          expect(gets).toHaveLength(chunksPerFile);
+        });
+      } finally {
+        deregisterProbe();
+        deregisterChunk();
+      }
+    });
+
+    it("routes each chunk to a different endpoint", async () => {
+      const chunksPerFile = 4;
+      const chunkSize = Math.ceil(LARGE_FILE.length / chunksPerFile);
+      const { url: probeUrl, deregister: deregisterProbe } = server.route(
+        serveFile({ body: LARGE_FILE, acceptRanges: true }),
+      );
+      const chunkRoutes = Array.from({ length: chunksPerFile }, () =>
+        server.route(serveFile({ body: LARGE_FILE, acceptRanges: true })),
+      );
+
+      try {
+        await withTmpDir(async (dir) => {
+          const chunkUrlFn = vi.fn((chunk: Chunk) => {
+            const i = Math.floor(chunk.start / chunkSize);
+            return Promise.resolve(chunkRoutes[i].url);
+          });
+          const resolver: Resolver<URL> = () =>
+            Promise.resolve({ probeUrl, chunkUrl: chunkUrlFn });
+
+          const dest = path.join(dir, "output");
+          await makeDownloader().download(
+            server.url,
+            dest,
+            resolver,
+            staticChunker(chunksPerFile),
+          ).promise;
+
+          const result = await readFile(dest);
+          expect(Buffer.compare(LARGE_FILE, result)).toBe(0);
+
+          for (const { url } of chunkRoutes) {
+            const requests = server.requests.filter(
+              (r) => r.method === "GET" && r.url === url.pathname,
+            );
+            expect(requests).toHaveLength(1);
+            expect(requests[0].range).not.toBeNull();
+          }
+        });
+      } finally {
+        deregisterProbe();
+        chunkRoutes.forEach(({ deregister }) => deregister());
+      }
     });
   });
 });
