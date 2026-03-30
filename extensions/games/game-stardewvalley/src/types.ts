@@ -48,7 +48,6 @@ export interface IInstallerTestResult {
 
 /** Archive shape flags used by installer matcher logic. */
 export interface IArchiveClassifierResult {
-  isGameArchive: boolean;
   hasManifest: boolean;
   hasContentFolder: boolean;
   hasSmapiInstallerDll: boolean;

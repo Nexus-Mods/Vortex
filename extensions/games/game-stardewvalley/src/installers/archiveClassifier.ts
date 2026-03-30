@@ -3,7 +3,7 @@
  */
 import { RelativePath } from "@vortex/paths";
 
-import { GAME_ID, MOD_MANIFEST } from "../common";
+import { MOD_MANIFEST } from "../common";
 import type { IArchiveClassifierResult, IInstallerTestResult } from "../types";
 import {
   type IArchiveEntryPath,
@@ -20,17 +20,12 @@ import {
  *
  * @param files Archive entries as logical relative paths; either slash style is
  * accepted and normalized before classifier checks run.
- * @param gameId Vortex game id that requested installer detection.
- * @returns Structured flags describing archive shape and target game match.
+ * @returns Structured flags describing archive shape.
  */
-export function classifyArchive(
-  files: string[],
-  gameId: string,
-): IArchiveClassifierResult {
+export function classifyArchive(files: string[]): IArchiveClassifierResult {
   const archiveEntries = toArchiveEntries(files);
 
   return {
-    isGameArchive: gameId === GAME_ID,
     hasManifest: hasManifest(archiveEntries),
     hasContentFolder: hasContentFolder(archiveEntries),
     hasSmapiInstallerDll: hasSmapiInstallerDll(archiveEntries),

@@ -10,7 +10,7 @@ import path from "path";
 import { fs, log, util } from "vortex-api";
 import type { types } from "vortex-api";
 
-import { _SMAPI_BUNDLED_MODS, getBundledMods } from "../../common";
+import { GAME_ID, _SMAPI_BUNDLED_MODS, getBundledMods } from "../../common";
 import type { IInstallerTestResult } from "../../types";
 import { classifyArchive, makeInstallerTestResult } from "../archiveClassifier";
 import { linuxSMAPIPlatform } from "./linux";
@@ -74,9 +74,8 @@ export function testSMAPI(
   files: string[],
   gameId: string,
 ): PromiseLike<IInstallerTestResult> {
-  const archiveInfo = classifyArchive(files, gameId);
-  const supported =
-    archiveInfo.isGameArchive && archiveInfo.hasSmapiInstallerDll;
+  const archiveInfo = classifyArchive(files);
+  const supported = gameId === GAME_ID && archiveInfo.hasSmapiInstallerDll;
   return Promise.resolve(makeInstallerTestResult(supported));
 }
 

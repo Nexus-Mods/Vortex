@@ -5,6 +5,7 @@ import { RelativePath } from "@vortex/paths";
 
 import type { types } from "vortex-api";
 
+import { GAME_ID } from "../common";
 import type { IInstallerTestResult } from "../types";
 import {
   getArchiveExtension,
@@ -18,8 +19,8 @@ export function testRootFolder(
   files: string[],
   gameId: string,
 ): PromiseLike<IInstallerTestResult> {
-  const archiveInfo = classifyArchive(files, gameId);
-  const supported = archiveInfo.isGameArchive && archiveInfo.hasContentFolder;
+  const archiveInfo = classifyArchive(files);
+  const supported = gameId === GAME_ID && archiveInfo.hasContentFolder;
 
   return Promise.resolve(makeInstallerTestResult(supported));
 }

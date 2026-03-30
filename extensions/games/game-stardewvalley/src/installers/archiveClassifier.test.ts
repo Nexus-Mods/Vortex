@@ -4,60 +4,50 @@
 import path from "path";
 import { describe, expect, test } from "vitest";
 
-import { GAME_ID } from "../common";
 import { classifyArchive, makeInstallerTestResult } from "./archiveClassifier";
 
 describe("installers/archiveClassifier", () => {
-  test("marks only Stardew Valley archives as game archives", () => {
-    expect(classifyArchive([], GAME_ID).isGameArchive).toBe(true);
-    expect(classifyArchive([], "skyrim").isGameArchive).toBe(false);
-  });
-
   test("detects native Content directory entries", () => {
     expect(
-      classifyArchive([nativeDirectory("SomePack", "Content")], GAME_ID)
+      classifyArchive([nativeDirectory("SomePack", "Content")])
         .hasContentFolder,
     ).toBe(true);
   });
 
   test("detects backslash Content directory entries", () => {
-    expect(
-      classifyArchive(["SomePack\\Content\\"], GAME_ID).hasContentFolder,
-    ).toBe(true);
+    expect(classifyArchive(["SomePack\\Content\\"]).hasContentFolder).toBe(
+      true,
+    );
   });
 
   test("detects native manifests and preserves case-insensitive matching", () => {
     expect(
-      classifyArchive([nativePath("SomePack", "Manifest.JSON")], GAME_ID)
-        .hasManifest,
+      classifyArchive([nativePath("SomePack", "Manifest.JSON")]).hasManifest,
     ).toBe(true);
   });
 
   test("ignores locale manifests case-insensitively", () => {
     expect(
-      classifyArchive([nativePath("SomePack", "Locale", "manifest.json")], GAME_ID)
+      classifyArchive([nativePath("SomePack", "Locale", "manifest.json")])
         .hasManifest,
     ).toBe(false);
   });
 
   test("detects backslash manifests", () => {
-    expect(
-      classifyArchive(["SomePack\\manifest.json"], GAME_ID).hasManifest,
-    ).toBe(true);
+    expect(classifyArchive(["SomePack\\manifest.json"]).hasManifest).toBe(true);
   });
 
   test("detects native SMAPI installer DLLs and preserves case-insensitive matching", () => {
     expect(
-      classifyArchive(
-        [nativePath("internal", "windows", "SMAPI.Installer.DLL")],
-        GAME_ID,
-      ).hasSmapiInstallerDll,
+      classifyArchive([
+        nativePath("internal", "windows", "SMAPI.Installer.DLL"),
+      ]).hasSmapiInstallerDll,
     ).toBe(true);
   });
 
   test("detects backslash SMAPI installer DLLs", () => {
     expect(
-      classifyArchive(["internal\\windows\\SMAPI.Installer.dll"], GAME_ID)
+      classifyArchive(["internal\\windows\\SMAPI.Installer.dll"])
         .hasSmapiInstallerDll,
     ).toBe(true);
   });

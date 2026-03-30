@@ -60,6 +60,15 @@ describe("installers/stardewValleyInstaller", () => {
     });
   });
 
+  test("does not claim manifest archives for the wrong game", async () => {
+    await expect(
+      testSupported([nativePath("Animals", "manifest.json")], "skyrim"),
+    ).resolves.toEqual({
+      supported: false,
+      requiredFiles: [],
+    });
+  });
+
   test.each([
     {
       label: "native manifest archive",
