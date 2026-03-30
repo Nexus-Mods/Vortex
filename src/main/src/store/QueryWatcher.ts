@@ -4,7 +4,7 @@ import type QueryRegistry from "./QueryRegistry";
 
 interface WatchEntry {
   queryName: string;
-  params: Record<string, unknown>;
+  params: Record<string, Serializable>;
   callback: (diff: WatchDiff) => void;
   previous: Record<string, Serializable>[] | undefined;
 }
@@ -38,7 +38,7 @@ class QueryWatcher {
    */
   public watch(
     queryName: string,
-    params: Record<string, unknown>,
+    params: Record<string, Serializable>,
     callback: (diff: WatchDiff) => void,
   ): () => void {
     const id = this.#mNextId++;

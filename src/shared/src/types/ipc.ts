@@ -329,13 +329,13 @@ export interface InvokeChannels {
   // Generic command execution. Commands return no data on success.
   "command:execute": (
     commandName: string,
-    payload?: Record<string, unknown>,
+    payload?: Record<string, Serializable>,
   ) => Promise<void>;
 
   // Query system: Execute any named DuckDB query
   "query:execute": (
     queryName: string,
-    params: Record<string, unknown>,
+    params: Record<string, Serializable>,
   ) => Promise<Record<string, Serializable>[]>;
 
   // Game Discovery commands are routed through command:execute
