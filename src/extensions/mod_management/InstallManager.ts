@@ -1664,7 +1664,10 @@ class InstallManager {
                 // may have different installer steps.
                 if (fullInfo.choices === undefined) {
                   const prevFileId = fullInfo.previous?.fileId;
-                  if (prevFileId !== undefined && prevFileId === installingFileId) {
+                  if (
+                    prevFileId !== undefined &&
+                    prevFileId === installingFileId
+                  ) {
                     const prevChoices = fullInfo.previous?.installerChoices;
                     if (prevChoices !== undefined) {
                       fullInfo.choices = prevChoices;

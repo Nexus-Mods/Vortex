@@ -670,15 +670,43 @@ export class DownloadObserver {
           } else {
             // This is a bundled mod - bye!
           }
+          /**
+           * Community extensions have been using the "start-download" event
+           * with a callback to trigger installation after the download finishes.
+           *
+           * That's fine as long as you don't have installation automation enabled,
+           * but if it's enabled, it can cause the installation to be triggered twice
+           * because the observer will also trigger installation when it sees the download finish.
+           *
+           * Unfortunately this won't catch instances where the callback triggers installation
+           * with a delay (e.g. after some post-processing) but it's the best we can do
+           * without a major refactor of how downloads are handled and how extensions trigger installations.
+           *
+           * Regardless - this is a hack!
+           */
+          let installTriggeredByCallback = false;
+          const onInstallFromCallback = (dlId: string) => {
+            if (dlId === id) {
+              installTriggeredByCallback = true;
+            }
+          };
+          this.mApi.events.on("start-install-download", onInstallFromCallback);
+          try {
+            callback?.(null, id);
+          } finally {
+            this.mApi.events.removeListener(
+              "start-install-download",
+              onInstallFromCallback,
+            );
+          }
           if (
-            (state.settings.automation?.install && allowInstall === true) ||
-            allowInstall === "force" ||
-            download.modInfo?.["startedAsUpdate"] === true
+            !installTriggeredByCallback &&
+            ((state.settings.automation?.install && allowInstall === true) ||
+              allowInstall === "force" ||
+              download.modInfo?.["startedAsUpdate"] === true)
           ) {
             this.mApi.events.emit("start-install-download", id);
           }
-
-          callback?.(null, id);
         })
         .catch((err) => callback?.(err, id))
         .finally(() => onceFinished());

@@ -169,7 +169,9 @@ function init(context: IExtensionContext): boolean {
     externalData: (onChanged: () => void) => {
       context.api.onStateChange(
         ["settings", "interface", "hideTopLevelCategory"],
-        () => { onChanged(); },
+        () => {
+          onChanged();
+        },
       );
     },
     placement: "detail",
