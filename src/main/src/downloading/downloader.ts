@@ -72,10 +72,12 @@ export class Downloader {
       progressReporter.init(chunks, probe.size > 0 ? probe.size : null);
 
       if (chunks.length === 0) {
-        return this.#downloadStream(
-          got.stream(resolved.probeUrl),
-          dest,
-          progressReporter.chunkProgress[0],
+        return this.#chunkQueue.add(() =>
+          this.#downloadStream(
+            got.stream(resolved.probeUrl),
+            dest,
+            progressReporter.chunkProgress[0],
+          ),
         );
       }
 
@@ -125,12 +127,14 @@ export class Downloader {
               headers: { Range: `bytes=${chunk.start}-${chunk.end}` },
             });
 
-            return this.#downloadStream(
+            const result = await this.#downloadStream(
               stream,
               fd,
               chunkProgress[chunk.index],
               chunk.start,
             );
+
+            return result;
           }),
         ),
       );
@@ -145,22 +149,20 @@ export class Downloader {
     progress: ChunkProgress,
     writePosition = 0,
   ): Promise<void> {
-    return this.#chunkQueue.add(async () => {
-      if (typeof dest === "string") {
-        const fileStream = createWriteStream(dest);
-        stream.on("data", (data: Buffer) => {
-          progress.bytesReceived += data.length;
-        });
-        return pipeline(stream, fileStream);
-      }
+    if (typeof dest === "string") {
+      const fileStream = createWriteStream(dest);
+      stream.on("data", (data: Buffer) => {
+        progress.bytesReceived += data.length;
+      });
+      return pipeline(stream, fileStream);
+    }
 
-      for await (const data of stream) {
-        const buffer = data as Buffer;
-        await dest.write(buffer, 0, buffer.length, writePosition);
-        writePosition += buffer.length;
-        progress.bytesReceived += buffer.length;
-      }
-    });
+    for await (const data of stream) {
+      const buffer = data as Buffer;
+      await dest.write(buffer, 0, buffer.length, writePosition);
+      writePosition += buffer.length;
+      progress.bytesReceived += buffer.length;
+    }
   }
 }
 
