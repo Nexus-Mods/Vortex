@@ -53,7 +53,9 @@ export class Downloader {
       const resolved = normalize(await resolver(resource));
       const probe = await this.#probe(resolved.probeUrl);
 
-      const chunks = probe.acceptsRanges ? chunker(probe.size, resource) : [];
+      const chunks = probe.acceptsRanges
+        ? await Promise.resolve(chunker(probe.size, resource))
+        : [];
 
       if (chunks.length === 0) {
         return this.#downloadSingle(resolved.probeUrl, dest);
