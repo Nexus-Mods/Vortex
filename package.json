@@ -14,6 +14,7 @@
   },
   "scripts": {
     "preinstall": "npx only-allow pnpm",
+    "postinstall": "node scripts/postinstall-libloot.cjs",
     "start": "pnpm -F @vortex/main run start",
     "build": "pnpm run typecheck && pnpm --filter \"@vortex/*\" -r run build",
     "build:all": "pnpm run build && pnpm run build:extensions && pnpm run build:assets",
@@ -42,6 +43,7 @@
     "generate:query-types": "npx tsx scripts/generate-query-types.ts"
   },
   "devDependencies": {
+    "@electron/rebuild": "catalog:",
     "@eslint-react/eslint-plugin": "catalog:",
     "@eslint/js": "catalog:",
     "@microsoft/api-extractor": "catalog:",
