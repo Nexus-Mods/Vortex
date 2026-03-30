@@ -1,53 +1,58 @@
 /**
- * Tests the shared SMAPI helpers.
- * The install flows stay in separate files so it is easy to see which platform
- * failed.
+ * Smoke-tests legacy SMAPI archive detection for Step 1.
+ * Platform install flows stay in the sibling smoke files.
  */
+import path from "path";
 import { describe, expect, test } from "vitest";
 
 // Arrange: load the mock before the module under test.
 import "./fixtures/vortexApi.mock";
 
+import { GAME_ID } from "../../common";
 import {
   isSMAPIModType,
   linuxSMAPIPlatform,
   macosSMAPIPlatform,
   resolveSMAPIPlatform,
+  testSMAPI,
   windowsSMAPIPlatform,
 } from "./index";
 
 describe("installers/smapi platform resolution", () => {
-  test("returns windows variant for win32", () => {
-    // Act: resolve the platform.
-    const resolved = resolveSMAPIPlatform("win32");
+  test.each([
+    {
+      label: "Windows",
+      nodePlatform: "win32" as NodeJS.Platform,
+      expectedPlatform: windowsSMAPIPlatform,
+      executableName: "StardewModdingAPI.exe",
+      implemented: true,
+    },
+    {
+      label: "Linux",
+      nodePlatform: "linux" as NodeJS.Platform,
+      expectedPlatform: linuxSMAPIPlatform,
+      executableName: "StardewModdingAPI",
+      implemented: true,
+    },
+    {
+      label: "macOS",
+      nodePlatform: "darwin" as NodeJS.Platform,
+      expectedPlatform: macosSMAPIPlatform,
+      executableName: "StardewModdingAPI",
+      implemented: false,
+    },
+  ])(
+    "returns the $label variant for $nodePlatform",
+    ({ nodePlatform, expectedPlatform, executableName, implemented }) => {
+      const resolved = resolveSMAPIPlatform(nodePlatform);
 
-    // Assert: use the Windows settings.
-    expect(resolved).toBe(windowsSMAPIPlatform);
-    expect(resolved.executableName).toBe("StardewModdingAPI.exe");
-  });
-
-  test("returns linux variant for linux", () => {
-    // Act: resolve the platform.
-    const resolved = resolveSMAPIPlatform("linux");
-
-    // Assert: use the Linux settings.
-    expect(resolved).toBe(linuxSMAPIPlatform);
-    expect(resolved.executableName).toBe("StardewModdingAPI");
-  });
-
-  test("returns macOS stub variant for darwin", () => {
-    // Act: resolve the platform.
-    const resolved = resolveSMAPIPlatform("darwin");
-
-    // Assert: use the macOS stub.
-    expect(resolved).toBe(macosSMAPIPlatform);
-    expect(resolved.implemented).toBe(false);
-  });
+      expect(resolved).toBe(expectedPlatform);
+      expect(resolved.executableName).toBe(executableName);
+      expect(resolved.implemented).toBe(implemented);
+    },
+  );
 
   test("throws for unknown platforms", () => {
-    // Arrange: cast a fake platform value.
-
-    // Act + assert: reject unsupported platforms.
     expect(() => resolveSMAPIPlatform("plan9" as NodeJS.Platform)).toThrow(
       "Unsupported platform for SMAPI installer",
     );
@@ -55,37 +60,64 @@ describe("installers/smapi platform resolution", () => {
 });
 
 describe("installers/smapi isSMAPIModType", () => {
-  test("matches windows executable instructions from extracted install.dat payload", async () => {
-    // Arrange: include the Windows executable.
-    const instructions = [
-      { type: "copy", source: "StardewModdingAPI.exe" },
-    ] as any;
-
-    // Act + assert: match it as SMAPI.
-    await expect(
-      isSMAPIModType(instructions, windowsSMAPIPlatform),
-    ).resolves.toBe(true);
-  });
-
-  test("matches linux executable instructions from extracted install.dat payload", async () => {
-    // Arrange: include the Linux executable.
-    const instructions = [{ type: "copy", source: "StardewModdingAPI" }] as any;
-
-    // Act + assert: match it as SMAPI.
-    await expect(
-      isSMAPIModType(instructions, linuxSMAPIPlatform),
-    ).resolves.toBe(true);
-  });
+  test.each([
+    {
+      label: "Windows",
+      instructions: [{ type: "copy", source: "StardewModdingAPI.exe" }] as any,
+      platform: windowsSMAPIPlatform,
+    },
+    {
+      label: "Linux",
+      instructions: [{ type: "copy", source: "StardewModdingAPI" }] as any,
+      platform: linuxSMAPIPlatform,
+    },
+  ])(
+    "matches the $label executable from extracted install.dat payload",
+    async ({ instructions, platform }) => {
+      await expect(isSMAPIModType(instructions, platform)).resolves.toBe(true);
+    },
+  );
 
   test("does not match instructions for a different platform executable", async () => {
-    // Arrange: use a Windows path for a Linux check.
     const instructions = [
       { type: "copy", source: "internal/windows/StardewModdingAPI.exe" },
     ] as any;
 
-    // Act + assert: do not match the wrong platform.
     await expect(
       isSMAPIModType(instructions, linuxSMAPIPlatform),
     ).resolves.toBe(false);
   });
 });
+
+describe("installers/smapi matcher smoke", () => {
+  test("claims native nested SMAPI installer archives for Stardew Valley", async () => {
+    await expect(
+      testSMAPI(
+        [nativePath("internal", "windows", "SMAPI.Installer.dll")],
+        GAME_ID,
+      ),
+    ).resolves.toEqual({ supported: true, requiredFiles: [] });
+  });
+
+  test("keeps the current host-sensitive backslash-only matcher behavior", async () => {
+    await expect(
+      testSMAPI(["internal\\windows\\SMAPI.Installer.dll"], GAME_ID),
+    ).resolves.toEqual({
+      supported: path.sep === "\\",
+      requiredFiles: [],
+    });
+  });
+
+  test("does not claim archives for the wrong game", async () => {
+    await expect(
+      testSMAPI(
+        [nativePath("internal", "windows", "SMAPI.Installer.dll")],
+        "skyrim",
+      ),
+    ).resolves.toEqual({ supported: false, requiredFiles: [] });
+  });
+});
+
+function nativePath(...segments: string[]): string {
+  return segments.join(path.sep);
+}
