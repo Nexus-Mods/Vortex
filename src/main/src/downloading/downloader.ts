@@ -241,6 +241,8 @@ export class Downloader {
 function createHeaders(etag: string | null, chunk: Chunk | null): Headers {
   const range = chunk ? `bytes=${chunk.start}-${chunk.end}` : undefined;
 
+  // Weak ETags MUST NOT be used with preconditions. The "W/" prefix is case sensitive.
+  // https://www.rfc-editor.org/rfc/rfc9110#name-etag
   const isStrongETag = etag !== null && !etag.startsWith("W/");
   const ifMatch = isStrongETag ? etag : undefined;
 
