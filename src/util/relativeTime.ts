@@ -37,6 +37,8 @@ function relativeTime(date: Date, t: TFunction): string {
     deltaSec = 0;
   }
 
+  const days = Math.round(deltaSec / SEC_PER_DAY);
+
   if (deltaSec < SEC_PER_MIN) {
     return t("seconds ago");
   } else if (deltaSec < SEC_PER_HOUR) {
@@ -45,9 +47,8 @@ function relativeTime(date: Date, t: TFunction): string {
   } else if (deltaSec < SEC_PER_DAY) {
     const count = Math.floor(deltaSec / SEC_PER_HOUR);
     return t("{{ count }} hour ago", { count });
-  } else if (deltaSec < SEC_PER_WEEK) {
-    const count = Math.floor(deltaSec / SEC_PER_DAY);
-    return t("{{ count }} day ago", { count });
+  } else if (days < 7) {
+    return t("{{ count }} day ago", { count: days });
   } else if (deltaSec < SEC_PER_MONTH) {
     const count = Math.floor(deltaSec / SEC_PER_WEEK);
     return t("{{ count }} week ago", { count });
