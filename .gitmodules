@@ -1,4 +1,0 @@
-[submodule "extensions/fomod-installer"]
-	path = extensions/fomod-installer
-	url = https://github.com/Nexus-Mods/fomod-installer
-	branch = 18465-native-port

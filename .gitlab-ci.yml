@@ -37,7 +37,6 @@ workflow:
   stage: build
   interruptible: true
   script:
-    - pnpm run build:fomod
     - pnpm install
     - pnpm run build:all
     - pnpm run lint:ci

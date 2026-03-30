@@ -4,8 +4,8 @@ import { get } from "https";
 import * as url from "url";
 
 export interface IEnclosure {
-  length: string;
-  type: string;
+  length?: string;
+  type?: string;
   url: string;
 }
 

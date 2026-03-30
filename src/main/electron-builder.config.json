@@ -61,8 +61,8 @@
     "node_modules/7z-bin",
     "node_modules/bootstrap-sass/assets/stylesheets",
     "node_modules/react-select/scss",
-    "node_modules/fomod-installer-native/dist/*.dll",
-    "node_modules/fomod-installer-ipc/dist/*.exe",
+    "node_modules/@nexusmods/fomod-installer-native/dist/*.dll",
+    "node_modules/@nexusmods/fomod-installer-ipc/dist/*.exe",
     "assets/*.exe",
     "assets/css/**",
     "**/*.node"

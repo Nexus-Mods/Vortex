@@ -4,27 +4,27 @@
     {
       "label": "setup:deps",
       "type": "shell",
-      "command": "pnpm run build:fomod && pnpm install"
+      "command": "pnpm install",
     },
     {
       "label": "build",
       "type": "shell",
       "command": "pnpm",
       "args": ["run", "build"],
-      "group": "build"
+      "group": "build",
     },
     {
       "label": "start",
       "type": "shell",
       "command": "pnpm",
-      "args": ["run", "start"]
+      "args": ["run", "start"],
     },
     {
       "label": "test",
       "type": "shell",
       "command": "pnpm",
       "args": ["run", "test"],
-      "group": "test"
+      "group": "test",
     },
     {
       "label": "lint",
@@ -32,8 +32,8 @@
       "command": "pnpm",
       "args": ["run", "lint"],
       "problemMatcher": {
-        "base": "$eslint-stylish"
-      }
-    }
-  ]
+        "base": "$eslint-stylish",
+      },
+    },
+  ],
 }

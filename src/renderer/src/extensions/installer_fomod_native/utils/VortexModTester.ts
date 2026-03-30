@@ -1,14 +1,14 @@
 import type { ISupportedResult } from "../../../types/api";
 import lazyRequire from "../../../util/lazyRequire";
 
-import type * as fomodT from "fomod-installer-native";
+import type * as fomodT from "@nexusmods/fomod-installer-native";
 
 export class VortexModTester {
   private fomod: typeof fomodT;
 
   public constructor() {
     this.fomod = lazyRequire<typeof fomodT>(() =>
-      require("fomod-installer-native"),
+      require("@nexusmods/fomod-installer-native"),
     );
   }
   /**

@@ -1,11 +1,11 @@
-import type { ConnectionStrategy } from "fomod-installer-ipc";
+import type { ConnectionStrategy } from "@nexusmods/fomod-installer-ipc";
 import {
   NamedPipeTransport,
   RegularProcessLauncher,
   SandboxProcessLauncher,
   SecurityLevel,
   TCPTransport,
-} from "fomod-installer-ipc";
+} from "@nexusmods/fomod-installer-ipc";
 
 /**
  * Helper function to create connection strategies from launcher options

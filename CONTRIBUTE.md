@@ -22,21 +22,20 @@ Starting with Python 3.12 you also need to install the `setuptools` packages. Ve
 
 ## Setup
 
-1) Clone the repository
-2) `volta install node@22`
-3) `npm install --global corepack@latest`
-4) `corepack install`
-5) `pnpm run build:fomod`
-6) `pnpm install`
+1. Clone the repository
+2. `volta install node@22`
+3. `npm install --global corepack@latest`
+4. `corepack install`
+5. `pnpm install`
 
 ## Developing
 
-1) `pnpm run build:all`
-2) `pnpm run start`
+1. `pnpm run build:all`
+2. `pnpm run start`
 
 ## Packaging
 
-1) `pnpm run package:nosign`
+1. `pnpm run package:nosign`
 
 ## Further Reading
 

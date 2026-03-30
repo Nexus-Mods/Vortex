@@ -1,36 +1,36 @@
-name: Package 
- 
-on: 
-  workflow_dispatch: 
-    inputs: 
-        version: 
-          description: "The version to release (eg: 'v1.0.0')" 
-          required: true 
-          type: string 
-        create-artifacts: 
-          description: "Create artifacts?" 
-          required: true 
-          type: boolean 
-          default: true 
-        use-codesigning: 
-            description: "Use codesigning?" 
-            required: false 
-            type: boolean 
-            default: true
-        release: 
-          description: "Create a draft release?" 
-          required: false 
-          type: boolean 
-          default: true
-        staging-release: 
-          description: "Create a draft staging release?" 
-          required: false 
-          type: boolean 
-          default: true
- 
-jobs:       
-  build: 
-    runs-on: windows-latest 
+name: Package
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "The version to release (eg: 'v1.0.0')"
+        required: true
+        type: string
+      create-artifacts:
+        description: "Create artifacts?"
+        required: true
+        type: boolean
+        default: true
+      use-codesigning:
+        description: "Use codesigning?"
+        required: false
+        type: boolean
+        default: true
+      release:
+        description: "Create a draft release?"
+        required: false
+        type: boolean
+        default: true
+      staging-release:
+        description: "Create a draft staging release?"
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  build:
+    runs-on: windows-latest
     env:
       NO_PARALLEL: true
       ES_USERNAME: ${{ secrets.ES_USERNAME }}
@@ -38,22 +38,22 @@ jobs:
       ES_CREDENTIAL_ID: ${{ secrets.ES_CREDENTIAL_ID }}
       ES_TOTP_SECRET: ${{ secrets.ES_TOTP_SECRET }}
       NEXUS_API_KEY: ${{ secrets.NEXUS_API_KEY }}
-      ACTIONS_ALLOW_UNSECURE_COMMANDS: true # Allows AddPAth and SetEnv commands 
+      ACTIONS_ALLOW_UNSECURE_COMMANDS: true # Allows AddPAth and SetEnv commands
       CERT_PATH: Release
       VORTEX_BUILD_CONFIG: Release # Could just use CERT_PATH but this is more explicit
       DEBUG: electron-builder # gives electron more verbose logs
-      
-    steps: 
-      - name: Show Inputs 
-        run: echo "${{ toJSON(github.event.inputs) }}" 
-      
-      - name: Set Outputs 
-        id: setOutputs 
-        shell: pwsh 
-        env: 
-          InputVersion: ${{ inputs.version }} 
-          GITHUB_RUN_NUMBER: ${{ github.run_number }}  
-        run: | 
+
+    steps:
+      - name: Show Inputs
+        run: echo "${{ toJSON(github.event.inputs) }}"
+
+      - name: Set Outputs
+        id: setOutputs
+        shell: pwsh
+        env:
+          InputVersion: ${{ inputs.version }}
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}
+        run: |
           $semverRegex = '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$'
           $tagVersion = If ($env:InputVersion.StartsWith('v')) {$env:InputVersion} Else {"v" + $env:InputVersion} 
           $rawVersion = If ($env:InputVersion.StartsWith('v')) {$env:InputVersion.Substring(1)} Else {$env:InputVersion} 
@@ -67,29 +67,29 @@ jobs:
           echo "artifactNameUnpacked=vortex-setup-$rawVersion-unpacked" >> $env:GITHUB_OUTPUT 
           echo "artifactNameInstaller=vortex-setup-$rawVersion-installer" >> $env:GITHUB_OUTPUT
           echo "VORTEX_VERSION=$rawVersion" >> $env:GITHUB_ENV
-      
-      - name: Get current time 
-        uses: josStorer/get-current-time@v2 
-        id: current-time 
-        with: 
-          format: 'YYYY-MM-DD HHmm' 
-      
-      - name: Use current time 
-        env: 
-          TIME: "${{ steps.current-time.outputs.time }}" 
-          R_TIME: "${{ steps.current-time.outputs.readableTime }}" 
-          F_TIME: "${{ steps.current-time.outputs.formattedTime }}" 
-          YEAR: "${{ steps.current-time.outputs.year }}" 
-          DAY: "${{ steps.current-time.outputs.day }}" 
-        run: echo $TIME $R_TIME $F_TIME $YEAR $DAY 
- 
-      - uses: actions/checkout@v5
+
+      - name: Get current time
+        uses: josStorer/get-current-time@v2
+        id: current-time
+        with:
+          format: "YYYY-MM-DD HHmm"
+
+      - name: Use current time
+        env:
+          TIME: "${{ steps.current-time.outputs.time }}"
+          R_TIME: "${{ steps.current-time.outputs.readableTime }}"
+          F_TIME: "${{ steps.current-time.outputs.formattedTime }}"
+          YEAR: "${{ steps.current-time.outputs.year }}"
+          DAY: "${{ steps.current-time.outputs.day }}"
+        run: echo $TIME $R_TIME $F_TIME $YEAR $DAY
+
+      - uses: actions/checkout@v6
         with:
           submodules: "recursive"
 
       - uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: "9.0.x"
 
       - name: Print dotnet info
         run: dotnet --info
@@ -97,7 +97,7 @@ jobs:
       - name: Setup Python 3.11
         uses: actions/setup-python@v6
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Download Runtime Dependencies
         shell: pwsh
@@ -137,9 +137,6 @@ jobs:
           echo "npm_config_msvs_version=2022" >> $env:GITHUB_ENV
           echo "GYP_MSVS_VERSION=2022" >> $env:GITHUB_ENV
 
-      - name: Build FOMOD
-        run: pnpm run build:fomod
-
       - name: Install dependencies
         run: pnpm install
 
@@ -169,51 +166,50 @@ jobs:
 
           Write-Output "✅ Package validation successful - installer and metadata files created"
 
-      - name: Create GitHub Release 
-        uses: softprops/action-gh-release@v2.6.1 
-        if: ${{ inputs.release == true }} 
-        with: 
-          files: | 
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2.6.1
+        if: ${{ inputs.release == true }}
+        with:
+          files: |
             ./dist/vortex-setup-*.*.*.exe 
             ./dist/latest.yml 
             ./dist/alpha.yml 
-            ./dist/beta.yml 
-          prerelease: true 
-          draft: true 
-          name: ${{ steps.setOutputs.outputs.rawVersion }} 
-          tag_name: ${{ steps.setOutputs.outputs.tagVersion }} 
+            ./dist/beta.yml
+          prerelease: true
+          draft: true
+          name: ${{ steps.setOutputs.outputs.rawVersion }}
+          tag_name: ${{ steps.setOutputs.outputs.tagVersion }}
 
-      - name: Create GitHub Release on Vortex-Staging 
-        uses: softprops/action-gh-release@v2.6.1 
-        if: ${{ inputs.staging-release == true }} 
-        with: 
-          files: | 
+      - name: Create GitHub Release on Vortex-Staging
+        uses: softprops/action-gh-release@v2.6.1
+        if: ${{ inputs.staging-release == true }}
+        with:
+          files: |
             ./dist/vortex-setup-*.*.*.exe 
             ./dist/latest.yml 
             ./dist/alpha.yml 
-            ./dist/beta.yml 
-          prerelease: true 
-          draft: true 
-          name: ${{ steps.setOutputs.outputs.rawVersion }} 
+            ./dist/beta.yml
+          prerelease: true
+          draft: true
+          name: ${{ steps.setOutputs.outputs.rawVersion }}
           tag_name: ${{ steps.setOutputs.outputs.tagVersion }}
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           repository: "Nexus-Mods/Vortex-Staging"
- 
-      - name: Create Unpacked Artifact 
-        uses: actions/upload-artifact@v7 
-        if: ${{ inputs.create-artifacts == true }} 
-        with: 
-          name: ${{ steps.setOutputs.outputs.artifactNameUnpacked }} 
-          path: ./dist/win-unpacked 
-          if-no-files-found: error 
- 
-      - name: Create Installer Artifact 
-        uses: actions/upload-artifact@v7 
-        if: ${{ inputs.create-artifacts == true }} 
-        with: 
-          name: ${{ steps.setOutputs.outputs.artifactNameInstaller }} 
-          path: | 
-            ./dist/vortex-setup-*.*.*.exe 
-            ./dist/latest.yml 
 
-          if-no-files-found: error 
+      - name: Create Unpacked Artifact
+        uses: actions/upload-artifact@v7
+        if: ${{ inputs.create-artifacts == true }}
+        with:
+          name: ${{ steps.setOutputs.outputs.artifactNameUnpacked }}
+          path: ./dist/win-unpacked
+          if-no-files-found: error
+
+      - name: Create Installer Artifact
+        uses: actions/upload-artifact@v7
+        if: ${{ inputs.create-artifacts == true }}
+        with:
+          name: ${{ steps.setOutputs.outputs.artifactNameInstaller }}
+          path: |
+            ./dist/vortex-setup-*.*.*.exe
+            ./dist/latest.yml
+          if-no-files-found: error

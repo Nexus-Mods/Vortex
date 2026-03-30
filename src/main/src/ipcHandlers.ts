@@ -41,33 +41,39 @@ export interface GlobalWithRedux {
 }
 
 export function init() {
-  const vortexPaths: VortexPaths = {
-    base: getVortexPath("base"),
-    assets: getVortexPath("assets"),
-    assets_unpacked: getVortexPath("assets_unpacked"),
-    modules: getVortexPath("modules"),
-    modules_unpacked: getVortexPath("modules_unpacked"),
-    bundledPlugins: getVortexPath("bundledPlugins"),
-    locales: getVortexPath("locales"),
-    package: getVortexPath("package"),
-    package_unpacked: getVortexPath("package_unpacked"),
-    application: getVortexPath("application"),
-    userData: getVortexPath("userData"),
-    appData: getVortexPath("appData"),
-    localAppData: getVortexPath("localAppData"),
-    temp: getVortexPath("temp"),
-    home: getVortexPath("home"),
-    documents: getVortexPath("documents"),
-    exe: getVortexPath("exe"),
-    desktop: getVortexPath("desktop"),
-  };
+  // Build paths lazily so that paths overridden later (e.g. "temp" in
+  // Application constructor) are resolved at call time, not at init time.
+  function resolveVortexPaths(): VortexPaths {
+    const paths: VortexPaths = {
+      base: getVortexPath("base"),
+      assets: getVortexPath("assets"),
+      assets_unpacked: getVortexPath("assets_unpacked"),
+      modules: getVortexPath("modules"),
+      modules_unpacked: getVortexPath("modules_unpacked"),
+      bundledPlugins: getVortexPath("bundledPlugins"),
+      locales: getVortexPath("locales"),
+      package: getVortexPath("package"),
+      package_unpacked: getVortexPath("package_unpacked"),
+      application: getVortexPath("application"),
+      userData: getVortexPath("userData"),
+      appData: getVortexPath("appData"),
+      localAppData: getVortexPath("localAppData"),
+      temp: getVortexPath("temp"),
+      home: getVortexPath("home"),
+      documents: getVortexPath("documents"),
+      exe: getVortexPath("exe"),
+      desktop: getVortexPath("desktop"),
+    };
 
-  // Normalize all paths to use consistent separators. This is necessary
-  // because the scoped package name "@vortex/main" contains a forward slash
-  // which Electron preserves in app.getPath("userData"), producing mixed
-  // separators that break symlink detection (readlink returns OS-normalized paths).
-  for (const [key, value] of Object.entries(vortexPaths)) {
-    vortexPaths[key] = path.normalize(value);
+    // Normalize all paths to use consistent separators. This is necessary
+    // because the scoped package name "@vortex/main" contains a forward slash
+    // which Electron preserves in app.getPath("userData"), producing mixed
+    // separators that break symlink detection (readlink returns OS-normalized paths).
+    for (const [key, value] of Object.entries(paths)) {
+      paths[key] = path.normalize(value);
+    }
+
+    return paths;
   }
 
   // ============================================================================
@@ -231,7 +237,7 @@ export function init() {
   });
 
   betterIpcMain.handle("app:getVortexPaths", () => {
-    return vortexPaths;
+    return resolveVortexPaths();
   });
 
   // ============================================================================

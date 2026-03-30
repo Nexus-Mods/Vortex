@@ -2,7 +2,7 @@ import lazyRequire from "../../../util/lazyRequire";
 import type { LogLevel } from "../../../util/log";
 import { log } from "../../../util/log";
 
-import type * as fomodT from "fomod-installer-native";
+import type * as fomodT from "@nexusmods/fomod-installer-native";
 
 const getLogLevel = (level: number): LogLevel => {
   switch (level) {
@@ -28,7 +28,7 @@ export class VortexModInstallerLogger {
 
   public constructor() {
     this.fomod = lazyRequire<typeof fomodT>(() =>
-      require("fomod-installer-native"),
+      require("@nexusmods/fomod-installer-native"),
     );
     this.mLogger = new this.fomod.NativeLogger(this.log);
   }
