@@ -421,7 +421,7 @@ export interface QueryApi {
   /** Execute a named query with optional parameters */
   execute(
     queryName: string,
-    params?: Record<string, unknown>,
+    params?: Record<string, Serializable>,
   ): Promise<Record<string, Serializable>[]>;
 
   /** Listen for dirty query notifications. Returns unsubscribe function. */

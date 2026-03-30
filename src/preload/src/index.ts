@@ -23,6 +23,12 @@ const betterIpcRenderer = {
   off: rendererOff,
 };
 
+type QueryExecuteParams =
+  SerializableArgs<Parameters<InvokeChannels["query:execute"]>>[1];
+type CommandExecutePayload =
+  SerializableArgs<Parameters<InvokeChannels["command:execute"]>>[1];
+const EMPTY_QUERY_PARAMS = {} as QueryExecuteParams;
+
 try {
   expose("versions", {
     chromium: process.versions.chrome,
@@ -72,7 +78,10 @@ try {
     },
 
     query: {
-      execute: (queryName: string, params: Record<string, unknown> = {}) =>
+      execute: (
+        queryName: string,
+        params: QueryExecuteParams = EMPTY_QUERY_PARAMS,
+      ) =>
         betterIpcRenderer.invoke("query:execute", queryName, params),
       onDirty: (callback: (queryNames: string[]) => void) => {
         const listener = (
@@ -320,7 +329,7 @@ function rendererInvoke<C extends keyof InvokeChannels>(
 
 function executeCommand(
   commandName: string,
-  payload?: Record<string, unknown>,
+  payload?: CommandExecutePayload,
 ): Promise<void> {
   return betterIpcRenderer.invoke("command:execute", commandName, payload);
 }

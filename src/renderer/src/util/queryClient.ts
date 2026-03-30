@@ -1,6 +1,7 @@
+import type { Serializable } from "@vortex/shared/ipc";
 import type { QueryApi } from "@vortex/shared/preload";
 
-type QueryParams = Record<string, unknown>;
+type QueryParams = Record<string, Serializable>;
 
 interface QueryEntry {
   data?: unknown;

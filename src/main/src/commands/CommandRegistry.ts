@@ -1,4 +1,6 @@
-export type CommandPayload = Record<string, unknown> | undefined;
+import type { Serializable } from "@vortex/shared/ipc";
+
+export type CommandPayload = Record<string, Serializable> | undefined;
 
 export type CommandHandler<TPayload extends CommandPayload = CommandPayload> = (
   payload: TPayload,
@@ -20,7 +22,7 @@ export class CommandRegistry {
 
   public async execute(
     name: string,
-    payload?: Record<string, unknown>,
+    payload?: Record<string, Serializable>,
   ): Promise<void> {
     const handler = this.#mHandlers.get(name);
     if (handler === undefined) {
