@@ -1,6 +1,7 @@
 /**
- * Smoke-tests SMAPI archive detection.
- * Platform install flows stay in the sibling smoke files.
+ * Verifies the public SMAPI helpers exposed from `smapi/index.ts`.
+ * Basic archive-detection checks stay here, while platform-specific install flows
+ * live in the sibling test files.
  */
 import path from "path";
 import { describe, expect, test } from "vitest";
@@ -18,6 +19,7 @@ import {
   windowsSMAPIPlatform,
 } from "./index";
 
+// Detects correct platform variants for SMAPI.
 describe("installers/smapi platform resolution", () => {
   test.each([
     {
@@ -59,6 +61,8 @@ describe("installers/smapi platform resolution", () => {
   });
 });
 
+// Check that each platform is recognised correctly when the install instructions
+// include the executable name that SMAPI expects for that platform.
 describe("installers/smapi isSMAPIModType", () => {
   test.each([
     {
@@ -78,6 +82,7 @@ describe("installers/smapi isSMAPIModType", () => {
     },
   );
 
+  // Do not treat a Windows executable as a Linux SMAPI install.
   test("does not match instructions for a different platform executable", async () => {
     const instructions = [
       { type: "copy", source: "internal/windows/StardewModdingAPI.exe" },
@@ -89,7 +94,7 @@ describe("installers/smapi isSMAPIModType", () => {
   });
 });
 
-describe("installers/smapi matcher smoke", () => {
+describe("installers/smapi archive detection", () => {
   test("claims native nested SMAPI installer archives for Stardew Valley", async () => {
     await expect(
       testSMAPI(
@@ -119,5 +124,6 @@ describe("installers/smapi matcher smoke", () => {
 });
 
 function nativePath(...segments: string[]): string {
+  // Use host-native separators when the test is checking the native-path code path.
   return segments.join(path.sep);
 }
