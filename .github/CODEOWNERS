@@ -1,2 +1,5 @@
 # All pull requests require approval from the Vortex developers team
 * @Nexus-Mods/vortex-developers
+
+# Playwright e2e tests can be reviewed by the QA team
+/packages/e2e/ @Nexus-Mods/vortex-qa
