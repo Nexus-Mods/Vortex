@@ -66,6 +66,9 @@
     "node_modules/@nexusmods/fomod-installer-native/dist/*.dll",
     "node_modules/@nexusmods/fomod-installer-ipc/dist/*.exe",
     "assets/*.exe",
+    "node_modules/@nexusmods/fomod-installer-native/prebuilds/linux-x64/ModInstaller.Native.so",
+    "node_modules/@nexusmods/fomod-installer-ipc/dist/ModInstallerIPC",
+    "assets/dotnetprobe",
     "assets/css/**",
     "**/*.node",
     "duckdb-extensions"
