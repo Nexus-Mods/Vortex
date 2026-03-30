@@ -12,12 +12,14 @@ import {
   type DownloaderOptions,
   defaultOptions,
 } from "./downloader";
+import { DownloadError } from "./errors";
 import { urlResolver } from "./resolver";
 import {
   type TestServer,
   type RequestHandler,
   createTestServer,
   serveFile,
+  serveStatus,
 } from "./test-server";
 
 const LARGE_FILE = randomBytes(20 * 1024 * 1024);
@@ -381,6 +383,30 @@ describe("Downloader", () => {
         deregister();
       }
     });
+  });
+
+  describe("errors", () => {
+    it.each([403, 404, 410])(
+      "rejects with a DownloadError for HTTP %i",
+      async (statusCode) => {
+        const { url, deregister } = server.route(serveStatus(statusCode));
+        try {
+          await withTmpDir(async (dir) => {
+            const handle = makeDownloader().download(
+              url,
+              path.join(dir, "output"),
+              urlResolver,
+            );
+            await expect(handle.promise).rejects.toThrow(DownloadError);
+            await expect(handle.promise).rejects.toMatchObject({
+              payload: { code: "network-bad-status", statusCode, url },
+            });
+          });
+        } finally {
+          deregister();
+        }
+      },
+    );
   });
 
   describe("resolver", () => {
