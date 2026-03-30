@@ -13,6 +13,7 @@ import * as _ from 'lodash';
 import * as path from 'path';
 import * as React from 'react';
 import { fs, selectors, types, util } from 'vortex-api';
+import { getProductVersionLocalized } from 'exe-version';
 
 import { GAME_ID, IGNORE_PATTERNS,
   MOD_TYPE_BG3SE, MOD_TYPE_LOOSE, MOD_TYPE_LSLIB, MOD_TYPE_REPLACER,
@@ -214,6 +215,10 @@ async function onGameModeActivated(api: types.IExtensionApi, gameId: string) {
   }
 }
 
+async function getGameVersion(gamePath: string) {
+  return Promise.resolve(getProductVersionLocalized(path.join(gamePath, 'bin', 'bg3.exe')));
+}
+
 function main(context: types.IExtensionContext) {
   context.registerReducer(['settings', 'baldursgate3'], reducer);
 
@@ -237,6 +242,7 @@ function main(context: types.IExtensionContext) {
     logo: 'gameart.jpg',
     executable: () => 'bin/bg3_dx11.exe',
     setup: discovery => prepareForModding(context.api, discovery) as any,
+    getGameVersion,
     requiredFiles: [
       'bin/bg3_dx11.exe',
     ],
