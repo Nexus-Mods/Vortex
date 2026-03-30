@@ -12,7 +12,6 @@ jest.mock("../util/discovery", () => ({
 
 jest.mock("../util/discoveryQueries", () => ({
   loadStoreGames: jest.fn(),
-  subscribeToStoreGamesDirty: jest.fn(() => jest.fn()),
 }));
 
 describe("GameModeManager", () => {
@@ -55,7 +54,7 @@ describe("GameModeManager", () => {
     await expect(manager.startQuickDiscovery()).resolves.toEqual(["skyrimse"]);
 
     expect(start).toHaveBeenCalledTimes(1);
-    expect(loadStoreGames).toHaveBeenCalledWith((window as any).api.query);
+    expect(loadStoreGames).toHaveBeenCalledWith();
     expect(quickDiscovery).toHaveBeenCalledWith(
       [],
       {},

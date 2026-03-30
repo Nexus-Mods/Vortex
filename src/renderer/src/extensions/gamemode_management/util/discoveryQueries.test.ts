@@ -1,11 +1,8 @@
-import {
-  loadStoreGames,
-  subscribeToStoreGamesDirty,
-} from "../util/discoveryQueries";
+import { loadStoreGames } from "../util/discoveryQueries";
 
 describe("discoveryQueries", () => {
-  it("loads store games from the generic query api", async () => {
-    const execute = jest.fn().mockResolvedValue([
+  it("loads store games from the query client", async () => {
+    const ensureQueryData = jest.fn().mockResolvedValue([
       {
         store_type: "steam",
         store_id: "489830",
@@ -17,8 +14,7 @@ describe("discoveryQueries", () => {
 
     await expect(
       loadStoreGames({
-        execute,
-        onDirty: jest.fn(),
+        ensureQueryData,
       }),
     ).resolves.toEqual([
       {
@@ -30,32 +26,6 @@ describe("discoveryQueries", () => {
       },
     ]);
 
-    expect(execute).toHaveBeenCalledWith("all_store_games", {});
-  });
-
-  it("only forwards dirty notifications for the store games query", () => {
-    const unsubscribe = jest.fn();
-    const callback = jest.fn();
-    let listener: ((queryNames: string[]) => void) | undefined;
-
-    const stop = subscribeToStoreGamesDirty(
-      {
-        execute: jest.fn(),
-        onDirty: jest.fn((cb) => {
-          listener = cb;
-          return unsubscribe;
-        }),
-      },
-      callback,
-    );
-
-    listener?.(["recently_managed_games"]);
-    expect(callback).not.toHaveBeenCalled();
-
-    listener?.(["all_store_games"]);
-    expect(callback).toHaveBeenCalledTimes(1);
-
-    stop();
-    expect(unsubscribe).toHaveBeenCalledTimes(1);
+    expect(ensureQueryData).toHaveBeenCalledWith("all_store_games", {});
   });
 });

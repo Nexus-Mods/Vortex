@@ -1,26 +1,18 @@
 import type { IStoreGameRow } from "./discovery";
 
-export interface QueryApiLike {
-  execute(
+import { getQueryClient } from "../../../util/queryClient";
+
+export interface QueryClientLike {
+  ensureQueryData<TResult>(
     queryName: string,
     params?: Record<string, unknown>,
-  ): Promise<IStoreGameRow[]>;
-  onDirty(callback: (queryNames: string[]) => void): () => void;
+  ): Promise<TResult>;
 }
 
 const STORE_GAMES_QUERY = "all_store_games";
 
-export function loadStoreGames(queryApi: QueryApiLike): Promise<IStoreGameRow[]> {
-  return queryApi.execute(STORE_GAMES_QUERY, {});
-}
-
-export function subscribeToStoreGamesDirty(
-  queryApi: QueryApiLike,
-  callback: () => void,
-): () => void {
-  return queryApi.onDirty((queryNames) => {
-    if (queryNames.includes(STORE_GAMES_QUERY)) {
-      callback();
-    }
-  });
+export function loadStoreGames(
+  queryClient: QueryClientLike = getQueryClient(),
+): Promise<IStoreGameRow[]> {
+  return queryClient.ensureQueryData<IStoreGameRow[]>(STORE_GAMES_QUERY, {});
 }

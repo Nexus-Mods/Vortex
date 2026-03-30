@@ -48,10 +48,7 @@ import {
   quickDiscoveryTools,
   searchDiscovery,
 } from "./util/discovery";
-import {
-  loadStoreGames,
-  subscribeToStoreGamesDirty,
-} from "./util/discoveryQueries";
+import { loadStoreGames } from "./util/discoveryQueries";
 import { getGame } from "./util/getGame";
 
 import PromiseBB from "bluebird";
@@ -77,7 +74,6 @@ class GameModeManager {
   private mKnownGameStores: IGameStore[];
   private mActiveSearch: PromiseBB<void>;
   private mOnGameModeActivated: (mode: string) => void;
-  private mStoreGamesUnsubscribe: (() => void) | undefined;
 
   constructor(
     api: IExtensionApi,
@@ -93,7 +89,6 @@ class GameModeManager {
     this.mKnownGameStores = [Steam, EpicGamesLauncher, ...gameStoreExtensions];
     this.mActiveSearch = null;
     this.mOnGameModeActivated = onGameModeActivated;
-    this.mStoreGamesUnsubscribe = undefined;
   }
 
   /**
@@ -110,18 +105,6 @@ class GameModeManager {
       .map(this.storeGame)
       .filter(this.isValidGame);
     store.dispatch(setKnownGames(gamesStored));
-    if (this.mStoreGamesUnsubscribe === undefined) {
-      this.mStoreGamesUnsubscribe = subscribeToStoreGamesDirty(
-        window.api.query,
-        () => {
-          this.refreshQuickDiscoveryFromQuery().catch((err) => {
-            log("warn", "failed to refresh discovery from query", {
-              error: String(err),
-            });
-          });
-        },
-      );
-    }
     // we used to activate the game mode right here but there is another
     // call to do this in the "once" CB of gamemode_management so it's
     // redundant and the other call handles errors properly while this one
@@ -292,7 +275,7 @@ class GameModeManager {
    */
   public startQuickDiscovery(games?: IGame[]) {
     return PromiseBB.resolve(window.api.discovery.start())
-      .then(() => loadStoreGames(window.api.query))
+      .then(() => loadStoreGames())
       .then((storeGames) => this.runQuickDiscovery(games, storeGames))
       .then((result) => {
         this.postDiscovery();
@@ -470,15 +453,6 @@ class GameModeManager {
           );
         }),
     );
-  }
-
-  private refreshQuickDiscoveryFromQuery(): PromiseBB<string[]> {
-    return PromiseBB.resolve(loadStoreGames(window.api.query))
-      .then((storeGames) => this.runQuickDiscovery(undefined, storeGames))
-      .then((result) => {
-        this.postDiscovery();
-        return result;
-      });
   }
 
   private runQuickDiscovery(
