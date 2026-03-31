@@ -62,81 +62,80 @@ export class Downloader {
   ): DownloadHandle {
     const progressReporter = new ProgressReporter();
 
-    const promise = this.#downloadQueue.add(async (): Promise<void> => {
-      let resolved: NormalizedResource;
-      try {
-        resolved = normalize(await resolver(resource));
-      } catch (err) {
-        throw new DownloadError(
-          { code: "resolver-error" },
-          "Resolver failed",
-          err,
-        );
-      }
-
-      let probe: ProbeResult;
-      try {
-        probe = await this.#probe(resolved.probeUrl);
-      } catch (err) {
-        throw toNetworkError(resolved.probeUrl, err);
-      }
-
-      const chunks = probe.acceptsRanges
-        ? await Promise.resolve(chunker(probe.size, resource))
-        : [];
-
-      progressReporter.init(chunks, probe.size > 0 ? probe.size : null);
-
-      let handle: FileHandle;
-
-      try {
-        const fd = await open(dest, "w");
-        handle = { fd, path: dest };
-      } catch (err) {
-        throw new DownloadError(
-          { code: "fs-error", path: dest },
-          `Failed to open ${dest}`,
-          err,
-        );
-      }
-
-      try {
-        if (chunks.length === 0) {
-          await this.#downloadSingle(
-            got.stream(resolved.probeUrl, {
-              headers: createHeaders(probe.etag, null),
-            }),
-            handle,
-            progressReporter.chunkProgress[0],
-          );
-        } else {
-          try {
-            await handle.fd.truncate(probe.size);
-          } catch (err) {
-            throw new DownloadError(
-              { code: "fs-error", path: dest },
-              `Failed to truncate ${dest}`,
-              err,
-            );
-          }
-
-          await this.#downloadChunked(
-            resolved,
-            handle,
-            probe,
-            chunks,
-            progressReporter.chunkProgress,
-          );
-        }
-      } finally {
-        await handle.fd.close();
-      }
-    });
+    const promise = this.#downloadQueue.add(() =>
+      this.#downloadInner(resource, dest, resolver, chunker, progressReporter),
+    );
 
     return {
       promise,
       getProgress: () => progressReporter.getProgress(),
     };
+  }
+
+  async #downloadInner<T>(
+    resource: T,
+    dest: string,
+    resolver: Resolver<T>,
+    chunker: Chunker<T>,
+    progressReporter: ProgressReporter,
+  ): Promise<void> {
+    let resolved: NormalizedResource;
+    try {
+      resolved = normalize(await resolver(resource));
+    } catch (err) {
+      throw new DownloadError(
+        { code: "resolver-error" },
+        "Resolver failed",
+        err,
+      );
+    }
+
+    let probe: ProbeResult;
+    try {
+      probe = await this.#probe(resolved.probeUrl);
+    } catch (err) {
+      throw toNetworkError(resolved.probeUrl, err);
+    }
+
+    const chunks = probe.acceptsRanges
+      ? await Promise.resolve(chunker(probe.size, resource))
+      : [];
+
+    progressReporter.init(chunks, probe.size > 0 ? probe.size : null);
+
+    let handle: FileHandle;
+
+    try {
+      const fd = await open(dest, "w");
+      handle = { fd, path: dest };
+    } catch (err) {
+      throw new DownloadError(
+        { code: "fs-error", path: dest },
+        `Failed to open ${dest}`,
+        err,
+      );
+    }
+
+    try {
+      if (chunks.length === 0) {
+        await this.#downloadSingle(
+          resolved,
+          probe,
+          handle,
+          progressReporter.chunkProgress[0],
+        );
+      } else {
+        await this.#downloadChunked(
+          resolved,
+          probe,
+          handle,
+          chunks,
+          progressReporter.chunkProgress,
+        );
+      }
+    } finally {
+      await handle.fd.close();
+    }
   }
 
   async #probe(url: URL): Promise<ProbeResult> {
@@ -153,10 +152,15 @@ export class Downloader {
   }
 
   async #downloadSingle(
-    stream: ReturnType<typeof got.stream>,
+    resource: NormalizedResource,
+    probe: ProbeResult,
     handle: FileHandle,
     progress: ChunkProgress,
   ): Promise<void> {
+    const stream = got.stream(resource.probeUrl, {
+      headers: createHeaders(probe.etag, null),
+    });
+
     let fileStream: WriteStream;
 
     try {
@@ -184,34 +188,49 @@ export class Downloader {
 
   async #downloadChunked(
     resource: NormalizedResource,
-    handle: FileHandle,
     probe: ProbeResult,
+    handle: FileHandle,
     chunks: Chunk[],
     chunkProgress: ChunkProgress[],
   ): Promise<void> {
-    await this.#chunkQueue.addAll(
-      chunks.map((chunk) => async () => {
-        const url = await resource.chunkUrl(chunk);
-        const stream = got.stream(url, {
-          headers: createHeaders(probe.etag, chunk),
-        });
+    try {
+      await handle.fd.truncate(probe.size);
+    } catch (err) {
+      throw new DownloadError(
+        { code: "fs-error", path: handle.path },
+        `Failed to truncate ${handle.path}`,
+        err,
+      );
+    }
 
-        await this.#downloadStream(
-          stream,
-          handle,
-          chunkProgress[chunk.index],
-          chunk.start,
-        );
-      }),
+    await this.#chunkQueue.addAll(
+      chunks.map(
+        (chunk) => async () =>
+          this.#downloadChunk(
+            chunk,
+            resource,
+            probe,
+            handle,
+            chunkProgress[chunk.index],
+            chunk.start,
+          ),
+      ),
     );
   }
 
-  async #downloadStream(
-    stream: ReturnType<typeof got.stream>,
+  async #downloadChunk(
+    chunk: Chunk,
+    resource: NormalizedResource,
+    probe: ProbeResult,
     handle: FileHandle,
     progress: ChunkProgress,
     writePosition = 0,
   ): Promise<void> {
+    const url = await resource.chunkUrl(chunk);
+    const stream = got.stream(url, {
+      headers: createHeaders(probe.etag, chunk),
+    });
+
     try {
       for await (const data of stream) {
         const buffer = data as Buffer;
