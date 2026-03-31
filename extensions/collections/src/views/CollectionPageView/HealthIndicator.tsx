@@ -84,7 +84,7 @@ function HealthIndicator(props: IHealthIndicatorProps) {
     <FlexLayout type="column" className="collection-health-indicator">
       <div className="collection-health-header">
         <div className="collection-health-header-title">
-          <Icon name="revision" />
+          <Icon set="collections" name="revision" />
           {t("Revision {{number}}", { replace: { number: revisionNumber } })}
         </div>
         <div className="collection-health-header-gameversion">

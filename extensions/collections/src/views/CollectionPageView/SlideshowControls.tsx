@@ -60,6 +60,7 @@ function SlideshowControls(props: ISlideshowControlsProps) {
     <div className="slideshow-controls">
       <tooltip.IconButton
         icon="collection-previous"
+        set="collections"
         tooltip={t("Show previous mod")}
         disabled={idx === 0}
         onClick={prev}
@@ -69,6 +70,7 @@ function SlideshowControls(props: ISlideshowControlsProps) {
       })}
       <tooltip.IconButton
         icon="collection-next"
+        set="collections"
         tooltip={t("Show next mod")}
         disabled={idx === numItems - 1}
         onClick={next}

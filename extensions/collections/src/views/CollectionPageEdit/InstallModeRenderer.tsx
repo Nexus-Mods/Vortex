@@ -52,6 +52,7 @@ class InstallModeRenderer extends ComponentEx<IProps, {}> {
       <FlexLayout.Fixed style={{ marginLeft: "5px", marginTop: "3px" }}>
         <tooltip.Icon
           name="options"
+          set="collections"
           tooltip={t("This mod has installer options")}
         />
       </FlexLayout.Fixed>
