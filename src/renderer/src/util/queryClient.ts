@@ -5,7 +5,7 @@ type QueryParams = Record<string, Serializable>;
 
 interface QueryEntry {
   data?: unknown;
-  error?: Error;
+  error?: QueryError;
   inFlightPromise?: Promise<unknown>;
   queryName: string;
   stale: boolean;
@@ -15,16 +15,32 @@ interface EnsureQueryOptions {
   force?: boolean;
 }
 
-function toQueryError(err: unknown): Error {
-  if (err instanceof Error) {
+export class QueryError extends Error {
+  public readonly queryName: string;
+
+  constructor(message: string, queryName: string) {
+    super(message);
+    this.name = "QueryError";
+    this.queryName = queryName;
+  }
+}
+
+function toQueryError(err: unknown, queryName: string): QueryError {
+  if (err instanceof QueryError) {
     return err;
   }
 
-  if (typeof err === "string") {
-    return new Error(err);
+  if (err instanceof Error) {
+    const qe = new QueryError(err.message, queryName);
+    qe.stack = err.stack;
+    return qe;
   }
 
-  return new Error("Query execution failed");
+  if (typeof err === "string") {
+    return new QueryError(err, queryName);
+  }
+
+  return new QueryError("Query execution failed", queryName);
 }
 
 function stableSerialize(value: unknown): string {
@@ -84,7 +100,7 @@ export class QueryClient {
         return result as TResult;
       })
       .catch((err: unknown) => {
-        entry.error = toQueryError(err);
+        entry.error = toQueryError(err, queryName);
         entry.stale = true;
         if (entry.data !== undefined) {
           return entry.data as TResult;

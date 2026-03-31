@@ -428,15 +428,6 @@ export interface QueryApi {
   onDirty(callback: (queryNames: string[]) => void): () => void;
 }
 
-/** Store game entry as returned from main-process discovery */
-export interface IStoreGameRow {
-  store_type: string;
-  store_id: string;
-  install_path: string;
-  name: string | null;
-  store_metadata: string | null;
-}
-
 /** API for game discovery commands */
 export interface DiscoveryApi {
   /** Trigger a discovery scan in the main process */
