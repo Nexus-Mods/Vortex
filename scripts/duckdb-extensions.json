@@ -1,0 +1,11 @@
+{
+  "platforms": ["windows_amd64", "linux_amd64"],
+  "outputDir": "src/main/build/duckdb-extensions",
+  "extensions": [
+    {
+      "name": "level_pivot",
+      "type": "http",
+      "repository": "https://halgari.github.io/duckdb-level-pivot/current_release"
+    }
+  ]
+}
