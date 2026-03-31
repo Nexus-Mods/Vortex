@@ -2,9 +2,9 @@ name: "PR Maintenance"
 
 on:
   push:
-    branches: [master]
+    branches: [master, v2*]
   pull_request_target:
-    branches: [master]
+    branches: [master, v2*]
     types: [synchronize]
   workflow_dispatch:
   schedule:
