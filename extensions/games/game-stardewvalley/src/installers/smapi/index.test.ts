@@ -15,6 +15,7 @@ import {
   resolveSMAPIPlatform,
   windowsSMAPIPlatform,
 } from "./index";
+import { types } from "vortex-api";
 
 describe("installers/smapi platform resolution", () => {
   test("returns windows variant for win32", () => {
@@ -57,9 +58,9 @@ describe("installers/smapi platform resolution", () => {
 describe("installers/smapi isSMAPIModType", () => {
   test("matches windows executable instructions from extracted install.dat payload", async () => {
     // Arrange: include the Windows executable.
-    const instructions = [
+    const instructions: types.IInstruction[] = [
       { type: "copy", source: "StardewModdingAPI.exe" },
-    ] as any;
+    ];
 
     // Act + assert: match it as SMAPI.
     await expect(
@@ -69,7 +70,9 @@ describe("installers/smapi isSMAPIModType", () => {
 
   test("matches linux executable instructions from extracted install.dat payload", async () => {
     // Arrange: include the Linux executable.
-    const instructions = [{ type: "copy", source: "StardewModdingAPI" }] as any;
+    const instructions: types.IInstruction[] = [
+      { type: "copy", source: "StardewModdingAPI" },
+    ];
 
     // Act + assert: match it as SMAPI.
     await expect(
@@ -79,9 +82,9 @@ describe("installers/smapi isSMAPIModType", () => {
 
   test("does not match instructions for a different platform executable", async () => {
     // Arrange: use a Windows path for a Linux check.
-    const instructions = [
+    const instructions: types.IInstruction[] = [
       { type: "copy", source: "internal/windows/StardewModdingAPI.exe" },
-    ] as any;
+    ];
 
     // Act + assert: do not match the wrong platform.
     await expect(

@@ -15,6 +15,9 @@ export default defineConfig({
       "./packages/paths",
       "./packages/paths-node",
       "./extensions/games/game-stardewvalley",
+      "./extensions/feedback",
+      "./extensions/gamebryo-savegame-management",
+      "./extensions/nmm-import-tool",
     ],
     reporters: [
       "default",

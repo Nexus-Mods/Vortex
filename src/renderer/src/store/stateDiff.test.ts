@@ -21,8 +21,7 @@ describe("computeStateDiff", () => {
     const ops = computeStateDiff(oldState, newState);
     const installTimeOp = ops.find(
       (op) =>
-        op.path.join(".") ===
-        "mods.skyrim.testMod.attributes.installTime",
+        op.path.join(".") === "mods.skyrim.testMod.attributes.installTime",
     );
     expect(installTimeOp).toBeDefined();
     expect(installTimeOp.type).toBe("set");
@@ -46,8 +45,7 @@ describe("computeStateDiff", () => {
     const ops = computeStateDiff(oldState, newState);
     const installTimeOp = ops.find(
       (op) =>
-        op.path.join(".") ===
-        "mods.skyrim.testMod.attributes.installTime",
+        op.path.join(".") === "mods.skyrim.testMod.attributes.installTime",
     );
     expect(installTimeOp).toBeDefined();
     expect(installTimeOp.type).toBe("remove");
@@ -113,8 +111,7 @@ describe("computeStateDiff", () => {
     const addOps = computeStateDiff(oldState, withInvalidDate);
     const setOp = addOps.find(
       (op) =>
-        op.path.join(".") ===
-        "mods.skyrim.testMod.attributes.installTime",
+        op.path.join(".") === "mods.skyrim.testMod.attributes.installTime",
     );
     expect(setOp).toBeDefined();
     expect(setOp.type).toBe("set");
@@ -122,8 +119,7 @@ describe("computeStateDiff", () => {
     const removeOps = computeStateDiff(withInvalidDate, oldState);
     const removeOp = removeOps.find(
       (op) =>
-        op.path.join(".") ===
-        "mods.skyrim.testMod.attributes.installTime",
+        op.path.join(".") === "mods.skyrim.testMod.attributes.installTime",
     );
     expect(removeOp).toBeDefined();
     expect(removeOp.type).toBe("remove");
@@ -138,8 +134,11 @@ describe("computeStateDiff", () => {
       attributes: { installTime: new Date("2026-03-17T16:11:55.000Z") },
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- intentionally mismatched types to simulate real-world usage
-    const ops = computeStateDiff(oldState as any, newState as any);
+    // intentionally mismatched types to simulate real-world usage (string -> Date)
+    const ops = computeStateDiff(
+      oldState,
+      newState as unknown as typeof oldState,
+    );
     expect(ops).toHaveLength(1);
     expect(ops[0].type).toBe("set");
     expect(ops[0].path).toEqual(["attributes", "installTime"]);

@@ -16,8 +16,9 @@ class TestResolver extends MappingResolver<"test1" | "test2" | "nested"> {
   constructor(
     filesystem: IFilesystem = new MockUnixFilesystem(),
     parent?: IResolverBase,
+    name: string = "test",
   ) {
-    super("test", parent, filesystem);
+    super(name, parent, filesystem);
   }
 
   protected getStrategy() {
@@ -65,9 +66,9 @@ describe("MappingResolver", () => {
     );
 
     expect(strategy.canResolve("empty")).toBe(true);
-    expect(strategy.canResolve("toString" as never)).toBe(false);
+    expect(strategy.canResolve("toString" as unknown as "empty")).toBe(false);
     await expect(strategy.resolve("empty")).resolves.toBe("/empty");
-    await expect(strategy.resolve("toString" as never)).rejects.toThrow(
+    await expect(strategy.resolve("toString" as unknown as "empty")).rejects.toThrow(
       /Unknown anchor/,
     );
   });
@@ -90,11 +91,13 @@ describe("Reverse Resolution", () => {
 
       expect(result).not.toBeNull();
       expect(Anchor.name(result.anchor)).toBe("test1");
-      expect(result.relative as string).toBe("mods/SkyUI");
+      expect(result.relative).toBe("mods/SkyUI");
     });
 
     it("should return null for paths not under any anchor", async () => {
-      const osPath = ResolvedPath.make(makeAbsolutePath("unix", "other", "path"));
+      const osPath = ResolvedPath.make(
+        makeAbsolutePath("unix", "other", "path"),
+      );
       const result = await resolver.tryReverse(osPath);
 
       expect(result).toBeNull();
@@ -109,7 +112,7 @@ describe("Reverse Resolution", () => {
 
       expect(result).not.toBeNull();
       expect(Anchor.name(result.anchor)).toBe("nested");
-      expect(result.relative as string).toBe("subdir");
+      expect(result.relative).toBe("subdir");
     });
 
     it("should handle exact anchor path (empty relative)", async () => {
@@ -186,12 +189,16 @@ describe("Reverse Resolution", () => {
     let childResolver: TestResolver;
 
     beforeEach(() => {
-      parentResolver = new TestResolver();
-      childResolver = new TestResolver(new MockUnixFilesystem(), parentResolver);
-
-      // Give them different names
-      (parentResolver as any).name = "parent";
-      (childResolver as any).name = "child";
+      parentResolver = new TestResolver(
+        new MockUnixFilesystem(),
+        undefined,
+        "parent",
+      );
+      childResolver = new TestResolver(
+        new MockUnixFilesystem(),
+        parentResolver,
+        "child",
+      );
     });
 
     it("should resolve paths under its own anchors", async () => {
@@ -202,7 +209,7 @@ describe("Reverse Resolution", () => {
 
       expect(result).not.toBeNull();
       expect(Anchor.name(result.anchor)).toBe("test1");
-      expect(result.relative as string).toBe("mods/SkyUI");
+      expect(result.relative).toBe("mods/SkyUI");
     });
 
     it("should return null when path is not under own anchors (no parent delegation)", async () => {
@@ -269,7 +276,7 @@ describe("Reverse Resolution", () => {
       const relative = await child.relativeTo(parentPath);
 
       expect(relative).not.toBeNull();
-      expect(relative as string).toBe("SkyUI/interface/skyui.swf");
+      expect(relative).toBe("SkyUI/interface/skyui.swf");
     });
 
     it("should return null for non-child paths", async () => {
@@ -300,7 +307,7 @@ describe("Reverse Resolution", () => {
       const relative = await child.relativeTo(parentPath);
       expect(relative).not.toBeNull();
 
-      const reconstructed = parent.join(relative as string);
+      const reconstructed = parent.join(relative);
       const resolvedChild = await reconstructed.resolve();
       const childPath = await child.resolve();
 
@@ -322,9 +329,7 @@ describe("Reverse Resolution", () => {
       const moved = original.withBase(newBase);
 
       expect(Anchor.name(moved.anchor)).toBe("test2");
-      expect(moved.relative as string).toBe(
-        "backups/skyrim/Data/Meshes/armor.nif",
-      );
+      expect(moved.relative).toBe("backups/skyrim/Data/Meshes/armor.nif");
       expect(moved.resolver).toBe(resolver);
     });
 
@@ -334,7 +339,7 @@ describe("Reverse Resolution", () => {
 
       const moved = original.withBase(newBase);
 
-      expect(moved.relative as string).toBe("mods/skyrim.esp");
+      expect(moved.relative).toBe("mods/skyrim.esp");
     });
 
     it("should work with empty original relative", () => {
@@ -343,12 +348,15 @@ describe("Reverse Resolution", () => {
 
       const moved = original.withBase(newBase);
 
-      expect(moved.relative as string).toBe("backup");
+      expect(moved.relative).toBe("backup");
     });
 
     it("should preserve resolver from new base", () => {
-      const resolver2 = new TestResolver();
-      (resolver2 as any).name = "test-different";
+      const resolver2 = new TestResolver(
+        new MockUnixFilesystem(),
+        undefined,
+        "test-different",
+      );
 
       const original = resolver.PathFor("test1", "file.txt");
       const newBase = resolver2.PathFor("test1", "backup");
@@ -421,7 +429,7 @@ describe("Reverse Resolution", () => {
       const filePath = resolver.PathFor("test1", "mods/skyrim");
       const relative = filePath.relative;
 
-      expect(relative as string).toBe("mods/skyrim");
+      expect(relative).toBe("mods/skyrim");
     });
   });
 
@@ -470,11 +478,11 @@ describe("Reverse Resolution", () => {
       const resolved = await backedUp.resolve();
 
       // Check that the path contains the expected structure
-      expect(resolved as string).toContain("backups");
-      expect(resolved as string).toContain("2024-01-15");
-      expect(resolved as string).toContain("Data");
-      expect(resolved as string).toContain("Meshes");
-      expect(resolved as string).toContain("armor.nif");
+      expect(resolved).toContain("backups");
+      expect(resolved).toContain("2024-01-15");
+      expect(resolved).toContain("Data");
+      expect(resolved).toContain("Meshes");
+      expect(resolved).toContain("armor.nif");
     });
 
     it("should handle file discovery scenario", async () => {
@@ -516,7 +524,7 @@ describe("Reverse Resolution", () => {
       const osPath = await filePath.resolve();
 
       const result = await resolver.tryReverse(
-        ResolvedPath.make((osPath as string).toLowerCase()),
+        ResolvedPath.make(osPath.toLowerCase()),
       );
 
       expect(result).not.toBeNull();
@@ -529,7 +537,7 @@ describe("Reverse Resolution", () => {
       const child = resolver.PathFor("test1", "mods/skyui/file.txt");
       const parentPath = await parent.resolve();
 
-      const relative = await child.relativeTo((parentPath as string).toLowerCase());
+      const relative = await child.relativeTo(parentPath.toLowerCase());
 
       expect(relative).not.toBeNull();
     });

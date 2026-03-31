@@ -33,8 +33,8 @@ describe("relativeTime", () => {
   });
 
   it("returns a time value (week test)", function () {
-    const now = new Date();
-    now.setHours(now.getHours() - 168);
+    // Use a fixed millisecond offset to avoid DST boundary issues
+    const now = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000);
     const result = relativeTime(now, t);
     expect(result).toEqual("{{ count }} week ago");
   });

@@ -10,13 +10,21 @@ type TestRow = {
   value: number;
 };
 
-function createMockConnection(rows: TestRow[] = []) {
-  return {
+type MockConnection = {
+  runAndReadAll: ReturnType<typeof vi.fn>;
+  run: ReturnType<typeof vi.fn>;
+};
+
+function createMockConnection(
+  rows: TestRow[] = [],
+): MockConnection & DuckDBConnection {
+  const mock: MockConnection = {
     runAndReadAll: vi.fn().mockResolvedValue({
       getRowObjectsJson: () => rows,
     }),
     run: vi.fn().mockResolvedValue(undefined),
   };
+  return mock as unknown as MockConnection & DuckDBConnection;
 }
 
 describe("Table", () => {
@@ -25,7 +33,7 @@ describe("Table", () => {
       const rows = [{ id: "1", name: "a", value: 10 }];
       const conn = createMockConnection(rows);
       const table = new Table<TestRow>(
-        conn as unknown as DuckDBConnection,
+        conn,
         "test_table",
       );
 
@@ -39,7 +47,7 @@ describe("Table", () => {
     it("inserts a single row", async () => {
       const conn = createMockConnection();
       const table = new Table<TestRow>(
-        conn as unknown as DuckDBConnection,
+        conn,
         "test_table",
       );
 
@@ -56,7 +64,7 @@ describe("Table", () => {
     it("inserts multiple rows", async () => {
       const conn = createMockConnection();
       const table = new Table<TestRow>(
-        conn as unknown as DuckDBConnection,
+        conn,
         "test_table",
       );
 
@@ -73,7 +81,7 @@ describe("Table", () => {
     it("updates matching rows", async () => {
       const conn = createMockConnection();
       const table = new Table<TestRow>(
-        conn as unknown as DuckDBConnection,
+        conn,
         "test_table",
       );
 
@@ -88,7 +96,7 @@ describe("Table", () => {
     it("is a no-op when set is empty", async () => {
       const conn = createMockConnection();
       const table = new Table<TestRow>(
-        conn as unknown as DuckDBConnection,
+        conn,
         "test_table",
       );
 
@@ -102,7 +110,7 @@ describe("Table", () => {
     it("deletes matching rows", async () => {
       const conn = createMockConnection();
       const table = new Table<TestRow>(
-        conn as unknown as DuckDBConnection,
+        conn,
         "test_table",
       );
 
@@ -117,7 +125,7 @@ describe("Table", () => {
     it("throws on empty filter to prevent full-table delete", async () => {
       const conn = createMockConnection();
       const table = new Table<TestRow>(
-        conn as unknown as DuckDBConnection,
+        conn,
         "test_table",
       );
 

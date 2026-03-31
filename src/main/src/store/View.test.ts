@@ -10,11 +10,19 @@ type TestRow = {
   value: number;
 };
 
-function createMockConnection(rows: TestRow[] = []) {
-  const runAndReadAll = vi.fn().mockResolvedValue({
-    getRowObjectsJson: () => rows,
-  });
-  return { runAndReadAll };
+type MockConnection = {
+  runAndReadAll: ReturnType<typeof vi.fn>;
+};
+
+function createMockConnection(
+  rows: TestRow[] = [],
+): MockConnection & DuckDBConnection {
+  const mock: MockConnection = {
+    runAndReadAll: vi.fn().mockResolvedValue({
+      getRowObjectsJson: () => rows,
+    }),
+  };
+  return mock as unknown as MockConnection & DuckDBConnection;
 }
 
 describe("View", () => {
@@ -26,7 +34,7 @@ describe("View", () => {
       ];
       const conn = createMockConnection(rows);
       const view = new View<TestRow>(
-        conn as unknown as DuckDBConnection,
+        conn,
         "test_table",
       );
 
@@ -41,7 +49,7 @@ describe("View", () => {
     it("returns empty array for empty table", async () => {
       const conn = createMockConnection([]);
       const view = new View<TestRow>(
-        conn as unknown as DuckDBConnection,
+        conn,
         "test_table",
       );
 
@@ -56,7 +64,7 @@ describe("View", () => {
       const rows = [{ id: "1", name: "a", value: 10 }];
       const conn = createMockConnection(rows);
       const view = new View<TestRow>(
-        conn as unknown as DuckDBConnection,
+        conn,
         "test_table",
       );
 
@@ -72,7 +80,7 @@ describe("View", () => {
     it("filters by multiple columns with AND", async () => {
       const conn = createMockConnection([]);
       const view = new View<TestRow>(
-        conn as unknown as DuckDBConnection,
+        conn,
         "test_table",
       );
 
@@ -87,7 +95,7 @@ describe("View", () => {
     it("returns all rows when no filter keys provided", async () => {
       const conn = createMockConnection([{ id: "1", name: "a", value: 10 }]);
       const view = new View<TestRow>(
-        conn as unknown as DuckDBConnection,
+        conn,
         "test_table",
       );
 
@@ -104,7 +112,7 @@ describe("View", () => {
       const row = { id: "1", name: "a", value: 10 };
       const conn = createMockConnection([row]);
       const view = new View<TestRow>(
-        conn as unknown as DuckDBConnection,
+        conn,
         "test_table",
       );
 
@@ -120,7 +128,7 @@ describe("View", () => {
     it("returns null when no match", async () => {
       const conn = createMockConnection([]);
       const view = new View<TestRow>(
-        conn as unknown as DuckDBConnection,
+        conn,
         "test_table",
       );
 
@@ -138,7 +146,7 @@ describe("View", () => {
       ];
       const conn = createMockConnection(rows);
       const view = new View<TestRow>(
-        conn as unknown as DuckDBConnection,
+        conn,
         "test_table",
       );
 
