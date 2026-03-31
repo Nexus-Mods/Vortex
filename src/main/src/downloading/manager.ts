@@ -14,6 +14,9 @@ export type DownloadHandle = {
 
   /** Returns the current download progress. */
   getProgress: () => DownloadProgress;
+
+  /** Cancels the download. */
+  cancel: () => void;
 };
 
 export class DownloadManager {
@@ -43,13 +46,23 @@ export class DownloadManager {
   ): DownloadHandle {
     const progressReporter = new ProgressReporter();
 
+    const abortController = new AbortController();
+
     const promise = this.#downloadQueue.add(() =>
-      download(resource, dest, resolver, chunker, progressReporter),
+      download(
+        resource,
+        dest,
+        resolver,
+        chunker,
+        progressReporter,
+        abortController.signal,
+      ),
     );
 
     return {
       promise,
       getProgress: () => progressReporter.getProgress(),
+      cancel: () => abortController.abort(),
     };
   }
 }
