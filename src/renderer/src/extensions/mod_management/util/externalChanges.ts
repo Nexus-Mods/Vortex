@@ -201,22 +201,8 @@ export function changeToEntry(
 }
 
 function defaultInternalAction(typeId: string, input: IFileChange): IFileEntry {
-  // Internal changes are from mod updates/reinstalls — always drop the old
+  // Internal changes are from mod updates/reinstalls/merges — always drop the old
   // deployed file so deployment recreates it from the updated staging files.
-  const action: FileAction = {
-    refchange: "drop",
-    valchange: "nop",
-    deleted: "restore",
-    srcdeleted: "drop",
-  }[input.changeType] as FileAction;
-
-  return {
-    ...changeToEntry(typeId, input),
-    action,
-  };
-}
-
-function defaultMergedAction(typeId: string, input: IFileChange): IFileEntry {
   const action: FileAction = {
     refchange: "drop",
     valchange: "nop",
@@ -317,7 +303,7 @@ export function dealWithExternalChanges(
 
         if (merged.length > 0) {
           merged.forEach((change) =>
-            automaticActions.push(defaultMergedAction(typeId, change)),
+            automaticActions.push(defaultInternalAction(typeId, change)),
           );
         }
 
