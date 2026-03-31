@@ -1,4 +1,5 @@
 import * as fs from "node:fs/promises";
+import { statSync } from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 
@@ -200,8 +201,7 @@ function isValidSteamPath(steamPath: string): boolean {
     "libraryfolders.vdf",
   );
   try {
-    // eslint-disable-next-line no-restricted-imports
-    require("node:fs").statSync(libraryFoldersPath);
+    statSync(libraryFoldersPath);
     return true;
   } catch {
     return false;
