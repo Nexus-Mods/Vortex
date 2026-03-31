@@ -66,7 +66,7 @@ function readRegistryKey(hive, key, name) {
 
 function findGame(kotorGame) {
   const { gogId, steamId } = kotorGame;
-  return util.GameStoreHelper.findByAppId(steamId, 'steam')
+  return util.steam.findByAppId(steamId)
     .then(game => game.gamePath)
     .catch(() => readRegistryKey('HKEY_LOCAL_MACHINE',
       `SOFTWARE\\WOW6432Node\\GOG.com\\Games\\${gogId}`,

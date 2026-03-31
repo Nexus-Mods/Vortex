@@ -36,7 +36,7 @@ function findUnityModManager() {
 }
 
 function findGame() {
-  return util.GameStoreHelper.findByAppId(STEAM_ID.toString(), 'steam')
+  return util.steam.findByAppId(STEAM_ID.toString())
     .then(game => game.gamePath)
     .catch(() => readRegistryKey('HKEY_LOCAL_MACHINE',
       `SOFTWARE\\WOW6432Node\\GOG.com\\Games\\${GOG_ID}`,

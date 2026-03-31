@@ -16,7 +16,7 @@ const ROOT_FOLDER_FILES = [
 ];
 
 function findGame() {
-  return util.GameStoreHelper.findByAppId('294100', 'steam')
+  return util.steam.findByAppId('294100')
       .then(game => game.gamePath);
 }
 

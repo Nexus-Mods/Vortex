@@ -8,7 +8,7 @@ const extension =  process.platform == 'linux'
     : '_x64.exe';
 
 function findGame() {
-  return util.GameStoreHelper.findByAppId('220200', 'steam')
+  return util.steam.findByAppId('220200')
       .then(game => game.gamePath);
 }
 

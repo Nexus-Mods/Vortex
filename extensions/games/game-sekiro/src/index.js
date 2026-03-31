@@ -8,7 +8,7 @@ const DINPUT = 'dinput8.dll';
 const PARTS_DCX_EXT = '.partsbnd.dcx';
 
 function findGame() {
-  return util.GameStoreHelper.findByAppId(STEAM_ID.toString(), 'steam')
+  return util.steam.findByAppId(STEAM_ID.toString())
     .then(game => game.gamePath);
 }
 

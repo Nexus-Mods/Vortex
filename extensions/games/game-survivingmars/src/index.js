@@ -27,8 +27,8 @@ function findGame() {
     }
     return Promise.resolve(instPath.value);
   } catch (err) {
-    return util.GameStoreHelper.findByAppId('464920', 'steam')
-      .catch(() => util.GameStoreHelper.findByAppId('Ovenbird', 'epic'))
+    return util.steam.findByAppId('464920')
+      .catch(() => util.epicGamesLauncher.findByAppId('Ovenbird'))
       .then(game => game.gamePath);
   }
 }

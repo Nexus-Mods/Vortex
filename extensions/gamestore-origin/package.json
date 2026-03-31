@@ -1,0 +1,29 @@
+{
+  "name": "gamestore-origin",
+  "version": "0.1.0",
+  "description": "Discovery and game launch support for the Origin/EA game store",
+  "scripts": {
+    "_build": "node build.mjs && pnpm extractInfo",
+    "build": "pnpm run _build && node ../copy-extension.mjs out",
+    "dist": "pnpm run _build && node ../copy-extension.mjs dist",
+    "typecheck": "pnpm tsc"
+  },
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "type": "commonjs",
+  "private": true,
+  "config": {
+    "extensionName": "Game Store: Origin/EA"
+  },
+  "devDependencies": {
+    "@types/bluebird": "catalog:",
+    "@types/libxmljs": "catalog:",
+    "bluebird": "catalog:",
+    "copyfiles": "catalog:",
+    "turbowalk": "catalog:",
+    "typescript": "catalog:",
+    "vortex-api": "workspace:*",
+    "winapi-bindings": "catalog:",
+    "xml2js": "catalog:"
+  }
+}

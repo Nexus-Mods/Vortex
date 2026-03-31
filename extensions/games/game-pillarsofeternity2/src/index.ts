@@ -59,7 +59,7 @@ function genAttributeExtractor(api: types.IExtensionApi) {
 function findGame(): Promise<string> {
   return util.GameStoreHelper.findByAppId([STEAM_ID, MS_ID])
     .catch((err) =>
-      util.GameStoreHelper.findByName("Pillars of Eternity II: Deadfire", "steam"),
+      (util.steam as any).findByName("Pillars of Eternity II: Deadfire"),
     )
     .then((game) => game.gamePath);
 }

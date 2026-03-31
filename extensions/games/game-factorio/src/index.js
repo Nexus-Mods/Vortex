@@ -4,7 +4,7 @@ const path = require('path');
 const { fs, log, util } = require('vortex-api');
 
 function findGame() {
-  return util.GameStoreHelper.findByName('Factorio', 'steam')
+  return util.steam.findByName('Factorio')
       .then(game => game.gamePath);
 }
 

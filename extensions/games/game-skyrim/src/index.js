@@ -14,7 +14,7 @@ function findGame() {
     }
     return Promise.resolve(instPath.value);
   } catch (err) {
-    return util.GameStoreHelper.findByName('The Elder Scrolls V: Skyrim', 'steam')
+    return util.steam.findByName('The Elder Scrolls V: Skyrim')
       .then(game => game.gamePath);
   }
 }

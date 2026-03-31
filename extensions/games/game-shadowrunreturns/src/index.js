@@ -2,7 +2,7 @@ const path = require('path');
 const { fs, util } = require('vortex-api');
 
 function findGame() {
-  return util.GameStoreHelper.findByName('Shadowrun Returns', 'steam')
+  return util.steam.findByName('Shadowrun Returns')
     .then(game => game.gamePath);
 }
 
