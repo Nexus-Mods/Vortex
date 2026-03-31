@@ -934,41 +934,7 @@ class InstallManager {
    * Get count of active installations
    */
   public getActiveInstallationCount(): number {
-    const state = this.mApi.getState();
-    const currentGameId = activeGameId(state);
-    let count = 0;
-    for (const install of this.mActiveInstalls.values()) {
-      const gameId = install.gameId || currentGameId;
-      const mods = state.persistent.mods[gameId] ?? {};
-      if (mods[install.modId]?.type !== "collection") {
-        count++;
-      }
-    }
-    return count;
-  }
-
-  /**
-   * Returns a promise that resolves once there are no active or pending
-   * installations. Resolves immediately if already idle.
-   */
-  public waitForIdle(): Promise<void> {
-    const shouldResolve = () =>
-      this.getActiveInstallationCount() === 0 ||
-      getCollectionActiveSession(this.mApi.getState()) !== undefined;
-
-    if (shouldResolve()) {
-      return Promise.resolve();
-    }
-    return new Promise<void>((resolve) => {
-      const check = () => {
-        if (shouldResolve()) {
-          resolve();
-        } else {
-          setTimeout(check, 500);
-        }
-      };
-      setTimeout(check, 500);
-    });
+    return this.mActiveInstalls.size;
   }
 
   /**
