@@ -130,9 +130,6 @@ catalogs:
     '@types/draggabilly':
       specifier: 2.1.3
       version: 2.1.3
-    '@types/encoding-down':
-      specifier: ~5.0.5
-      version: 5.0.5
     '@types/enzyme':
       specifier: ~3.10.19
       version: 3.10.19
@@ -166,12 +163,6 @@ catalogs:
     '@types/jsonwebtoken':
       specifier: ~9.0.10
       version: 9.0.10
-    '@types/leveldown':
-      specifier: ~4.0.6
-      version: 4.0.6
-    '@types/levelup':
-      specifier: ~5.1.5
-      version: 5.1.5
     '@types/libxmljs':
       specifier: ^0.18.4
       version: 0.18.13
@@ -406,9 +397,6 @@ catalogs:
     electron-updater:
       specifier: ^4.2.0
       version: 4.6.5
-    encoding-down:
-      specifier: ^6.3.0
-      version: 6.3.0
     enzyme:
       specifier: ^3.10.0
       version: 3.11.0
@@ -514,12 +502,6 @@ catalogs:
     jsonwebtoken:
       specifier: ^9.0.0
       version: 9.0.3
-    leveldown:
-      specifier: ^5.6.0
-      version: 5.6.0
-    levelup:
-      specifier: ^4.4.0
-      version: 4.4.0
     limiter:
       specifier: ^3.0.0
       version: 3.0.0
@@ -4535,9 +4517,6 @@ importers:
       '@types/draggabilly':
         specifier: 'catalog:'
         version: 2.1.3
-      '@types/encoding-down':
-        specifier: 'catalog:'
-        version: 5.0.5
       '@types/enzyme':
         specifier: 'catalog:'
         version: 3.10.19
@@ -4556,12 +4535,6 @@ importers:
       '@types/json-socket':
         specifier: 'catalog:'
         version: 0.1.21
-      '@types/leveldown':
-        specifier: 'catalog:'
-        version: 4.0.6
-      '@types/levelup':
-        specifier: 'catalog:'
-        version: 5.1.5
       '@types/lodash':
         specifier: 'catalog:'
         version: 4.17.24
@@ -4724,9 +4697,6 @@ importers:
       electron-updater:
         specifier: 'catalog:'
         version: 4.6.5
-      encoding-down:
-        specifier: 'catalog:'
-        version: 6.3.0
       enzyme:
         specifier: 'catalog:'
         version: 3.11.0
@@ -4790,12 +4760,6 @@ importers:
       jsonwebtoken:
         specifier: 'catalog:'
         version: 9.0.3
-      leveldown:
-        specifier: 'catalog:'
-        version: 5.6.0
-      levelup:
-        specifier: 'catalog:'
-        version: 4.4.0
       lodash:
         specifier: 'catalog:'
         version: 4.17.23
@@ -7002,9 +6966,6 @@ packages:
   '@tybys/wasm-util@0.10.1':
     resolution: {integrity: sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg==}
 
-  '@types/abstract-leveldown@7.2.5':
-    resolution: {integrity: sha512-/2B0nQF4UdupuxeKTJA2+Rj1D+uDemo6P4kMwKCpbfpnzeVaWSELTsAw4Lxn3VJD6APtRrZOCuYo+4nHUQfTfg==}
-
   '@types/argparse@1.0.38':
     resolution: {integrity: sha512-ebDJ9b0e702Yr7pWgB0jzm+CX4Srzz8RcXtLJDJB+BSccqMa36uyH/zUsSYao5+BD1ytv3k3rPYCq4mAE1hsXA==}
 
@@ -7167,9 +7128,6 @@ packages:
   '@types/draggabilly@2.1.3':
     resolution: {integrity: sha512-cMscIZh3/Re/4APHOuod1PwfGeKXW5LID4VFD/By8lWNWR1s+zqRaXT5WDShDX3zKJHF33iabKgzCTAfgGcm5g==}
 
-  '@types/encoding-down@5.0.5':
-    resolution: {integrity: sha512-HXlcVUJm2ITDgH34S1BjLMJhpfkXvEOEv+HS9KZweRl0LKlWNzVwFAj+N6pGExsRGsofhgqZP4ArQZJlWvBFDQ==}
-
   '@types/enzyme-adapter-react-16@1.0.9':
     resolution: {integrity: sha512-z24MMxGtUL8HhXdye3tWzjp+19QTsABqLaX2oOZpxMPHRJgLfahQmOeTTrEBQd9ogW20+UmPBXD9j+XOasFHvw==}
 
@@ -7275,18 +7233,6 @@ packages:
 
   '@types/keyv@3.1.4':
     resolution: {integrity: sha512-BQ5aZNSCpj7D6K2ksrRCTmKRLEpnPvWDiLPfoGyhZ++8YtiK9d/3DBKPJgry359X/P1PfruyYwvnvwFjuEiEIg==}
-
-  '@types/level-codec@9.0.4':
-    resolution: {integrity: sha512-N6v5EhpvF00Wv+1ixzqca9YD2wdK76JceSnUoiKfQh/vex+VFG852wzqohnlYf67nzKQoXeRzYd8W57fIkYCvg==}
-
-  '@types/level-errors@3.0.2':
-    resolution: {integrity: sha512-gyZHbcQ2X5hNXf/9KS2qGEmgDe9EN2WDM3rJ5Ele467C0nA1sLhtmv1bZiPMDYfAYCfPWft0uQIaTvXbASSTRA==}
-
-  '@types/leveldown@4.0.6':
-    resolution: {integrity: sha512-AQ3vqW1j5aQ3U6A22e/k1WrZHHIewvGrBmq4zRxS9fRDpqTe3HoD+F11nEV+8zStfEbGHzzvk8dHF/4JEXmZnQ==}
-
-  '@types/levelup@5.1.5':
-    resolution: {integrity: sha512-Sm0jSj+LoncQ8BuZZJBjYitY5r9/V/Xd//vRjfgbQLWcQg2/iCm0HQqIOZ1KBE7QdNyAqMIG97mE3+t1GR0TIw==}
 
   '@types/libxmljs@0.18.13':
     resolution: {integrity: sha512-0hBHqUYsKdEe15ZKDF/iihdhCLpaYYJ8jhEZMQoivGMkYUfUOXlKStjzs1NyV8kOyFCWZtFcddmjR07dM9FYug==}
@@ -15664,8 +15610,6 @@ snapshots:
       tslib: 2.8.1
     optional: true
 
-  '@types/abstract-leveldown@7.2.5': {}
-
   '@types/argparse@1.0.38': {}
 
   '@types/aria-query@5.0.4': {}
@@ -15858,11 +15802,6 @@ snapshots:
 
   '@types/draggabilly@2.1.3': {}
 
-  '@types/encoding-down@5.0.5':
-    dependencies:
-      '@types/abstract-leveldown': 7.2.5
-      '@types/level-codec': 9.0.4
-
   '@types/enzyme-adapter-react-16@1.0.9':
     dependencies:
       '@types/enzyme': 3.10.19
@@ -15980,21 +15919,6 @@ snapshots:
   '@types/keyv@3.1.4':
     dependencies:
       '@types/node': 22.19.15
-
-  '@types/level-codec@9.0.4': {}
-
-  '@types/level-errors@3.0.2': {}
-
-  '@types/leveldown@4.0.6':
-    dependencies:
-      '@types/abstract-leveldown': 7.2.5
-      '@types/node': 25.5.0
-
-  '@types/levelup@5.1.5':
-    dependencies:
-      '@types/abstract-leveldown': 7.2.5
-      '@types/level-errors': 3.0.2
-      '@types/node': 25.5.0
 
   '@types/libxmljs@0.18.13':
     dependencies:
