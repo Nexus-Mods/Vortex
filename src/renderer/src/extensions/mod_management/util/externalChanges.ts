@@ -201,22 +201,8 @@ export function changeToEntry(
 }
 
 function defaultInternalAction(typeId: string, input: IFileChange): IFileEntry {
-  // Internal changes are from mod updates/reinstalls — always drop the old
+  // Internal changes are from mod updates/reinstalls/merges — always drop the old
   // deployed file so deployment recreates it from the updated staging files.
-  const action: FileAction = {
-    refchange: "drop",
-    valchange: "nop",
-    deleted: "restore",
-    srcdeleted: "drop",
-  }[input.changeType] as FileAction;
-
-  return {
-    ...changeToEntry(typeId, input),
-    action,
-  };
-}
-
-function defaultMergedAction(typeId: string, input: IFileChange): IFileEntry {
   const action: FileAction = {
     refchange: "drop",
     valchange: "nop",
@@ -278,7 +264,7 @@ export function dealWithExternalChanges(
   stagingPath: string,
   modPaths: { [typeId: string]: string },
   lastDeployment: { [typeId: string]: IDeployedFile[] },
-  autoResolveAll?: boolean,
+  recentInstalls?: Set<string>,
 ) {
   return checkForExternalChanges(
     api,
@@ -292,7 +278,6 @@ export function dealWithExternalChanges(
       const automaticActions: IFileEntry[] = [];
       const isInstallingCollection =
         getCollectionActiveSession(api.store.getState()) !== undefined;
-      const shouldAutoResolve = isInstallingCollection || autoResolveAll;
       const userChanges = Object.keys(changes).reduce((prev, typeId) => {
         const { merged, rest, autoResolved } = changes[typeId].reduce(
           (prevInner, change) => {
@@ -303,7 +288,8 @@ export function dealWithExternalChanges(
               prevInner.merged.push(change);
               return prevInner;
             }
-            if (shouldAutoResolve) {
+            if (isInstallingCollection
+                || recentInstalls?.has(change.source)) {
               prevInner.autoResolved.push(change);
               return prevInner;
             }
@@ -317,7 +303,7 @@ export function dealWithExternalChanges(
 
         if (merged.length > 0) {
           merged.forEach((change) =>
-            automaticActions.push(defaultMergedAction(typeId, change)),
+            automaticActions.push(defaultInternalAction(typeId, change)),
           );
         }
 
