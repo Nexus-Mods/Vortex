@@ -303,7 +303,7 @@ function HealthCheckDetailPage({
               </div>
 
               <ModRequirement
-                key={`${mod.modId}`}
+                key={mod.uid || `${mod.modId}`}
                 mod={mod}
                 modFiles={modFiles}
                 showPremiumBadge={showPremiumAd}

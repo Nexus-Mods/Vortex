@@ -105,10 +105,18 @@ const getOrLoadIconSet = (set: string): Promise<Set<string>> => {
 
 const checkMissingIcon = (set: string, name: string): void => {
   if (!debugMissingIcons || debugReported.has(name)) return;
+  const prefixed = "icon-" + name;
   void getOrLoadIconSet(set).then((symbols) => {
-    if (symbols !== null && !symbols.has("icon-" + name)) {
-      console.trace("icon missing", name);
-      debugReported.add(name);
+    if (symbols !== null && !symbols.has(prefixed)) {
+      // Icon not in requested set — check all loaded sets before reporting
+      const promises = getIconSetPromises();
+      void Promise.all(Array.from(promises.values())).then((allSets) => {
+        const found = allSets.some((s) => s !== null && s.has(prefixed));
+        if (!found) {
+          console.trace("icon missing", name);
+        }
+        debugReported.add(name);
+      });
     }
   });
 };

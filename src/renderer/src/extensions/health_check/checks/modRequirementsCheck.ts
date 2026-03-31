@@ -5,6 +5,8 @@
 
 import type { IModRequirements } from "@nexusmods/nexus-api";
 
+import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IHealthCheckResult } from "../../../types/IHealthCheck";
 import type { IMod } from "../../mod_management/types/IMod";
@@ -12,6 +14,7 @@ import type {
   IModRequirementsCheckMetadata,
   IModMissingRequirements,
   IModRequirementsCheckParams,
+  IModRequirementExt,
 } from "../types";
 
 import { setModAttribute } from "../../../actions";
@@ -24,7 +27,6 @@ import {
 import { log } from "../../../util/log";
 import { getSafe } from "../../../util/storeHelper";
 import { batchDispatch } from "../../../util/util";
-import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import { isLoggedIn } from "../../nexus_integration/selectors";
 import { numericGameIdToDomainName } from "../../nexus_integration/util";
 import { makeModUID } from "../../nexus_integration/util/UIDs";
@@ -318,8 +320,38 @@ export async function checkModRequirements(
 
       // Check Nexus mod requirements
       if (requirements.nexusRequirements?.nodes) {
+        const requiredBy: IModRequirementExt["requiredBy"] = {
+          modId,
+          modName: getModName(),
+          modUrl: requiringModNexusDomain
+            ? `https://www.nexusmods.com/${requiringModNexusDomain}/mods/${modId}`
+            : undefined,
+        };
+
         for (const req of requirements.nexusRequirements.nodes) {
+          // External requirements (e.g. tools from GitHub) don't have valid
+          // Nexus mod IDs — report them as missing but skip the API lookup
+          if (req.externalRequirement) {
+            getModEntry().missingMods.push({
+              ...req,
+              modId: 0,
+              gameId,
+              uid: `external-${req.id}`,
+              requiredBy,
+              modUrl: req.url,
+            });
+            continue;
+          }
+
           const requiredModId = parseInt(req.modId, 10);
+          if (isNaN(requiredModId) || requiredModId <= 0) {
+            continue;
+          }
+
+          if (installedModIds.has(requiredModId)) {
+            continue;
+          }
+
           const requiredGameId = req.gameId
             ? parseInt(req.gameId, 10)
             : undefined;
@@ -327,50 +359,38 @@ export async function checkModRequirements(
             requiredGameId != null
               ? numericGameIdToDomainName(requiredGameId)
               : gameId;
-          // Fallback for gameId if domain name not found (to satisfy type contract)
           const gameIdForStorage = domainName ?? gameId;
 
-          if (!installedModIds.has(requiredModId)) {
-            // Only show items for mods with exactly one main file
-            try {
-              const mainFiles = await getModFilesWithCache(
-                api,
-                gameIdForStorage,
-                requiredModId,
-              );
-              if (mainFiles.length !== 1) {
-                continue;
-              }
-            } catch {
-              // If we can't fetch files, skip this requirement
+          // Only show items for mods with exactly one main file
+          try {
+            const mainFiles = await getModFilesWithCache(
+              api,
+              gameIdForStorage,
+              requiredModId,
+            );
+            if (mainFiles.length !== 1) {
               continue;
             }
-
-            getModEntry().missingMods.push({
-              ...req,
-              modId: requiredModId,
-              gameId: gameIdForStorage,
-              uid: makeModUID({
-                modId: req.modId,
-                fileId: "0",
-                gameId: gameIdForStorage,
-              }),
-              requiredBy: {
-                modId,
-                modName: getModName(),
-                // The nexus mods URL of the mod that requires this dependency
-                modUrl: requiringModNexusDomain
-                  ? `https://www.nexusmods.com/${requiringModNexusDomain}/mods/${modId}`
-                  : undefined,
-              },
-              // The URL of the required dependency mod
-              modUrl:
-                (req.url && req.url.trim()) ||
-                (domainName
-                  ? `https://www.nexusmods.com/${domainName}/mods/${requiredModId}`
-                  : undefined),
-            });
+          } catch {
+            continue;
           }
+
+          getModEntry().missingMods.push({
+            ...req,
+            modId: requiredModId,
+            gameId: gameIdForStorage,
+            uid: makeModUID({
+              modId: req.modId,
+              fileId: "0",
+              gameId: gameIdForStorage,
+            }),
+            requiredBy,
+            modUrl:
+              (req.url && req.url.trim()) ||
+              (domainName
+                ? `https://www.nexusmods.com/${domainName}/mods/${requiredModId}`
+                : undefined),
+          });
         }
       }
 

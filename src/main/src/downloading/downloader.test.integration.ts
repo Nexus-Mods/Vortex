@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { readFile, mkdir, mkdtemp, rm } from "node:fs/promises";
+import { readFile, mkdtemp, mkdir, rm } from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
@@ -12,12 +12,14 @@ import {
   type DownloaderOptions,
   defaultOptions,
 } from "./downloader";
+import { DownloadError } from "./errors";
 import { urlResolver } from "./resolver";
 import {
   type TestServer,
   type RequestHandler,
   createTestServer,
   serveFile,
+  serveStatus,
 } from "./test-server";
 
 const LARGE_FILE = randomBytes(20 * 1024 * 1024);
@@ -383,6 +385,138 @@ describe("Downloader", () => {
     });
   });
 
+  describe("etag", () => {
+    it("sends If-Match on chunk requests when probe returns a strong etag", async () => {
+      const etag = '"abc123"';
+      const { url, deregister } = server.route(
+        serveFile({ body: LARGE_FILE, acceptRanges: true, etag }),
+      );
+      try {
+        await withTmpDir(async (dir) => {
+          await makeDownloader().download(
+            url,
+            path.join(dir, "output"),
+            urlResolver,
+          ).promise;
+          const gets = server.requests.filter(
+            (r) => r.method === "GET" && r.url === url.pathname,
+          );
+          expect(gets.length).toBeGreaterThan(0);
+          expect(gets.every((r) => r.headers["if-match"] === etag)).toBe(true);
+        });
+      } finally {
+        deregister();
+      }
+    });
+
+    it("does not send If-Match on chunk requests when probe returns a weak etag", async () => {
+      const etag = 'W/"abc123"';
+      const { url, deregister } = server.route(
+        serveFile({ body: LARGE_FILE, acceptRanges: true, etag }),
+      );
+      try {
+        await withTmpDir(async (dir) => {
+          await makeDownloader().download(
+            url,
+            path.join(dir, "output"),
+            urlResolver,
+          ).promise;
+          const gets = server.requests.filter(
+            (r) => r.method === "GET" && r.url === url.pathname,
+          );
+          expect(gets.length).toBeGreaterThan(0);
+          expect(gets.every((r) => !r.headers["if-match"])).toBe(true);
+        });
+      } finally {
+        deregister();
+      }
+    });
+
+    it("does not send If-Match when probe returns no etag", async () => {
+      const { url, deregister } = server.route(
+        serveFile({ body: LARGE_FILE, acceptRanges: true }),
+      );
+      try {
+        await withTmpDir(async (dir) => {
+          await makeDownloader().download(
+            url,
+            path.join(dir, "output"),
+            urlResolver,
+          ).promise;
+          const gets = server.requests.filter(
+            (r) => r.method === "GET" && r.url === url.pathname,
+          );
+          expect(gets.length).toBeGreaterThan(0);
+          expect(gets.every((r) => !r.headers["if-match"])).toBe(true);
+        });
+      } finally {
+        deregister();
+      }
+    });
+
+    it("rejects with precondition-failed when resource changes mid-download", async () => {
+      // Serve the HEAD with one etag but reject If-Match on GET to simulate
+      // the resource changing between probe and chunk requests
+      const etag = '"original"';
+      const handler: RequestHandler = ({ req, res, range }) => {
+        if (req.method === "HEAD") {
+          res.writeHead(200, {
+            "accept-ranges": "bytes",
+            "content-length": LARGE_FILE.length,
+            etag,
+          });
+          res.end();
+          return Promise.resolve();
+        }
+        // Simulate resource change: always reject If-Match
+        res.writeHead(412);
+        res.end();
+        return Promise.resolve();
+      };
+
+      const { url, deregister } = server.route(handler);
+      try {
+        await withTmpDir(async (dir) => {
+          const handle = makeDownloader().download(
+            url,
+            path.join(dir, "output"),
+            urlResolver,
+          );
+          await expect(handle.promise).rejects.toThrow(DownloadError);
+          await expect(handle.promise).rejects.toMatchObject({
+            payload: { code: "precondition-failed", url },
+          });
+        });
+      } finally {
+        deregister();
+      }
+    });
+  });
+
+  describe("errors", () => {
+    it.each([403, 404, 410])(
+      "rejects with a DownloadError for HTTP %i",
+      async (statusCode) => {
+        const { url, deregister } = server.route(serveStatus(statusCode));
+        try {
+          await withTmpDir(async (dir) => {
+            const handle = makeDownloader().download(
+              url,
+              path.join(dir, "output"),
+              urlResolver,
+            );
+            await expect(handle.promise).rejects.toThrow(DownloadError);
+            await expect(handle.promise).rejects.toMatchObject({
+              payload: { code: "network-bad-status", statusCode, url },
+            });
+          });
+        } finally {
+          deregister();
+        }
+      },
+    );
+  });
+
   describe("resolver", () => {
     it("calls the resolver once per download", async () => {
       const { url, deregister } = server.route(
@@ -438,13 +572,13 @@ describe("Downloader", () => {
           const chunkUrlFn = vi.fn((_chunk: Chunk) =>
             Promise.resolve(chunkUrl),
           );
-          const resolver: Resolver<URL> = () =>
+          const resolver: Resolver<never> = () =>
             Promise.resolve({ probeUrl, chunkUrl: chunkUrlFn });
 
           const chunksPerFile = 4;
           const dest = path.join(dir, "output");
           await makeDownloader().download(
-            server.url,
+            null,
             dest,
             resolver,
             staticChunker(chunksPerFile),
@@ -485,12 +619,12 @@ describe("Downloader", () => {
             const i = Math.floor(chunk.start / chunkSize);
             return Promise.resolve(chunkRoutes[i].url);
           });
-          const resolver: Resolver<URL> = () =>
+          const resolver: Resolver<never> = () =>
             Promise.resolve({ probeUrl, chunkUrl: chunkUrlFn });
 
           const dest = path.join(dir, "output");
           await makeDownloader().download(
-            server.url,
+            null,
             dest,
             resolver,
             staticChunker(chunksPerFile),

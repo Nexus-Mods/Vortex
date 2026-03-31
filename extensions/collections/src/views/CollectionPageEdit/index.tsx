@@ -204,6 +204,7 @@ class CollectionEdit extends ComponentEx<
             </tooltip.IconButton>
             <tooltip.IconButton
               icon="collection-export"
+              set="collections"
               tooltip={uploadDisabled ?? t("Upload to Nexus Mods")}
               onClick={this.upload}
               disabled={uploadDisabled !== undefined}

@@ -12,6 +12,7 @@ export type ServeFileOptions = {
   body: Buffer;
   acceptRanges: boolean;
   delayMs?: number;
+  etag?: string;
 };
 
 export type RecordedRequest = {
@@ -106,17 +107,29 @@ export async function withTestServer(
 
 /** Serves a buffer, optionally supporting range requests */
 export function serveFile(opts: ServeFileOptions): RequestHandler {
-  const { body, acceptRanges, delayMs = 0 } = opts;
+  const { body, acceptRanges, delayMs = 0, etag } = opts;
 
-  return async ({ res, range }) => {
+  return async ({ req, res, range }) => {
     if (delayMs > 0) {
       await new Promise((r) => setTimeout(r, delayMs));
+    }
+
+    // Enforce If-Match if the request includes it and we have an etag
+    const ifMatch = req.headers["if-match"];
+    if (ifMatch && etag && ifMatch !== etag) {
+      res.writeHead(412);
+      res.end();
+      return;
     }
 
     const headers: http.OutgoingHttpHeaders = {};
 
     if (acceptRanges) {
       headers["accept-ranges"] = "bytes";
+    }
+
+    if (etag) {
+      headers["etag"] = etag;
     }
 
     if (range && acceptRanges) {
