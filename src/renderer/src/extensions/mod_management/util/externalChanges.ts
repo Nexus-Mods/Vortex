@@ -278,7 +278,7 @@ export function dealWithExternalChanges(
   stagingPath: string,
   modPaths: { [typeId: string]: string },
   lastDeployment: { [typeId: string]: IDeployedFile[] },
-  autoResolveAll?: boolean,
+  recentInstalls?: Set<string>,
 ) {
   return checkForExternalChanges(
     api,
@@ -292,7 +292,6 @@ export function dealWithExternalChanges(
       const automaticActions: IFileEntry[] = [];
       const isInstallingCollection =
         getCollectionActiveSession(api.store.getState()) !== undefined;
-      const shouldAutoResolve = isInstallingCollection || autoResolveAll;
       const userChanges = Object.keys(changes).reduce((prev, typeId) => {
         const { merged, rest, autoResolved } = changes[typeId].reduce(
           (prevInner, change) => {
@@ -303,7 +302,8 @@ export function dealWithExternalChanges(
               prevInner.merged.push(change);
               return prevInner;
             }
-            if (shouldAutoResolve) {
+            if (isInstallingCollection
+                || recentInstalls?.has(change.source)) {
               prevInner.autoResolved.push(change);
               return prevInner;
             }
