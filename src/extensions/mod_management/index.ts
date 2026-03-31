@@ -2241,9 +2241,10 @@ function init(context: IExtensionContext): boolean {
       type: "",
       installationPath: modId,
       attributes: {
-        name: filePaths.length === 1
-          ? path.basename(filePaths[0], path.extname(filePaths[0]))
-          : "New Mod",
+        name:
+          filePaths.length === 1
+            ? path.basename(filePaths[0], path.extname(filePaths[0]))
+            : "New Mod",
         installTime: new Date(),
       },
     };

@@ -74,7 +74,6 @@ export interface ICommonModAttributes {
 
   // Installation tracking
   installTime?: string | Date;
-  installType?: InstallType;
   installedAsDependency?: boolean;
   referenceTag?: string;
 
