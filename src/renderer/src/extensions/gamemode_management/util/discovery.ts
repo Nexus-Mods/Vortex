@@ -189,64 +189,61 @@ function matchStoreGames(
   return results;
 }
 
-function queryByArgs(
+async function queryByArgs(
   discoveredGames: { [id: string]: IDiscoveryResult },
   game: IGame,
   storeGames?: IStoreGameRow[],
-): Bluebird<IGameStoreEntry> {
-  const findResults =
-    storeGames !== undefined
-      ? Bluebird.all([
-          Bluebird.resolve(matchStoreGames(game.queryArgs, storeGames)),
-          game.queryArgs.registry !== undefined
-            ? GameStoreHelper.find({ registry: game.queryArgs.registry })
-            : Bluebird.resolve([]),
-        ]).then(([matchedStoreGames, registryMatches]) => [
-          ...matchedStoreGames,
-          ...registryMatches.filter(
-            (entry) =>
-              !matchedStoreGames.some(
-                (matched) =>
-                  matched.gameStoreId === entry.gameStoreId &&
-                  matched.appid === entry.appid,
-              ),
-          ),
-        ])
-      : GameStoreHelper.find(game.queryArgs);
+): Promise<IGameStoreEntry> {
+  let findResults: IGameStoreEntry[];
 
-  return findResults
-    .then((results) =>
-      Bluebird.all<IGameStoreEntry>(
-        results.map((res) =>
-          fs
-            .statAsync(res.gamePath)
-            .then(() => res)
-            .catch(() => undefined),
-        ),
+  if (storeGames !== undefined) {
+    const matchedStoreGames = matchStoreGames(game.queryArgs, storeGames);
+    const registryMatches =
+      game.queryArgs.registry !== undefined
+        ? await GameStoreHelper.find({ registry: game.queryArgs.registry })
+        : [];
+    findResults = [
+      ...matchedStoreGames,
+      ...registryMatches.filter(
+        (entry) =>
+          !matchedStoreGames.some(
+            (matched) =>
+              matched.gameStoreId === entry.gameStoreId &&
+              matched.appid === entry.appid,
+          ),
+      ),
+    ];
+  } else {
+    findResults = await GameStoreHelper.find(game.queryArgs);
+  }
+
+  const verified = (
+    await Promise.all(
+      findResults.map((res) =>
+        fs
+          .statAsync(res.gamePath)
+          .then(() => res)
+          .catch(() => undefined),
       ),
     )
-    .then((results) => results.filter((res) => res !== undefined))
-    .then((results) => {
-      if (results.length === 0) {
-        return Bluebird.resolve(undefined);
-      }
-      const discoveredStore = discoveredGames[game.id]?.store;
-      const prio = (entry: IGameStoreEntry) => {
-        if (
-          discoveredStore !== undefined &&
-          entry.gameStoreId === discoveredStore
-        ) {
-          return 0;
-        } else {
-          return entry.priority ?? 100;
-        }
-      };
+  ).filter((res) => res !== undefined);
 
-      results = results.sort(
-        (lhs: IGameStoreEntry, rhs: IGameStoreEntry) => prio(lhs) - prio(rhs),
-      );
-      return Bluebird.resolve(results[0]);
-    });
+  if (verified.length === 0) {
+    return undefined;
+  }
+
+  const discoveredStore = discoveredGames[game.id]?.store;
+  const prio = (entry: IGameStoreEntry) => {
+    if (discoveredStore !== undefined && entry.gameStoreId === discoveredStore) {
+      return 0;
+    } else {
+      return entry.priority ?? 100;
+    }
+  };
+
+  return verified.sort(
+    (lhs: IGameStoreEntry, rhs: IGameStoreEntry) => prio(lhs) - prio(rhs),
+  )[0];
 }
 
 function queryByCB(game: IGame): Bluebird<Partial<IGameStoreEntry>> {
