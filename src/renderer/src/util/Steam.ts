@@ -21,7 +21,10 @@ import type { IExtensionApi } from "../types/IExtensionContext";
 import { GameEntryNotFound } from "../types/IGameStore";
 import getVortexPath from "./getVortexPath";
 import { getErrorMessageOrDefault } from "@vortex/shared";
-import { findLinuxSteamPath } from "./linux/steamPaths";
+import {
+  findAllLinuxSteamPaths,
+  findLinuxSteamPath,
+} from "./linux/steamPaths";
 import {
   getProtonInfo,
   buildProtonEnvironment,
@@ -250,7 +253,13 @@ class Steam implements IGameStore {
         return PromiseBB.resolve([]);
       }
 
-      const steamPaths: string[] = [basePath];
+      const steamPaths: string[] =
+        process.platform === "linux" ? findAllLinuxSteamPaths() : [basePath];
+
+      if (steamPaths.length === 0) {
+        return PromiseBB.resolve([]);
+      }
+
       return fs
         .readFileAsync(path.resolve(basePath, "config", "libraryfolders.vdf"))
         .then((data: Buffer) => {
@@ -415,6 +424,14 @@ class Steam implements IGameStore {
             [],
           ),
         )
+        .then((games: ISteamEntry[]) => {
+          const seen = new Set<string>();
+          return games.filter((entry) => {
+            if (seen.has(entry.appid)) return false;
+            seen.add(entry.appid);
+            return true;
+          });
+        })
         .tap(() => {
           log("info", "done reading steam libraries");
         }),

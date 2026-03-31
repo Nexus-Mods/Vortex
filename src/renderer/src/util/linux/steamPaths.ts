@@ -54,3 +54,11 @@ export function findLinuxSteamPath(): string | undefined {
   }
   return undefined;
 }
+
+/**
+ * Find ALL valid Steam installation paths on Linux.
+ * Returns every valid root (native, Flatpak, Snap, etc.)
+ */
+export function findAllLinuxSteamPaths(): string[] {
+  return getLinuxSteamPaths().filter(isValidSteamPath);
+}
