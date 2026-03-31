@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { readFile, mkdir, mkdtemp, rm } from "node:fs/promises";
+import { readFile, mkdtemp, mkdir, rm } from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
@@ -378,6 +378,114 @@ describe("Downloader", () => {
           );
           await handle.promise;
           expect(handle.getProgress().chunks).toHaveLength(1);
+        });
+      } finally {
+        deregister();
+      }
+    });
+  });
+
+  describe("etag", () => {
+    it("sends If-Match on chunk requests when probe returns a strong etag", async () => {
+      const etag = '"abc123"';
+      const { url, deregister } = server.route(
+        serveFile({ body: LARGE_FILE, acceptRanges: true, etag }),
+      );
+      try {
+        await withTmpDir(async (dir) => {
+          await makeDownloader().download(
+            url,
+            path.join(dir, "output"),
+            urlResolver,
+          ).promise;
+          const gets = server.requests.filter(
+            (r) => r.method === "GET" && r.url === url.pathname,
+          );
+          expect(gets.length).toBeGreaterThan(0);
+          expect(gets.every((r) => r.headers["if-match"] === etag)).toBe(true);
+        });
+      } finally {
+        deregister();
+      }
+    });
+
+    it("does not send If-Match on chunk requests when probe returns a weak etag", async () => {
+      const etag = 'W/"abc123"';
+      const { url, deregister } = server.route(
+        serveFile({ body: LARGE_FILE, acceptRanges: true, etag }),
+      );
+      try {
+        await withTmpDir(async (dir) => {
+          await makeDownloader().download(
+            url,
+            path.join(dir, "output"),
+            urlResolver,
+          ).promise;
+          const gets = server.requests.filter(
+            (r) => r.method === "GET" && r.url === url.pathname,
+          );
+          expect(gets.length).toBeGreaterThan(0);
+          expect(gets.every((r) => !r.headers["if-match"])).toBe(true);
+        });
+      } finally {
+        deregister();
+      }
+    });
+
+    it("does not send If-Match when probe returns no etag", async () => {
+      const { url, deregister } = server.route(
+        serveFile({ body: LARGE_FILE, acceptRanges: true }),
+      );
+      try {
+        await withTmpDir(async (dir) => {
+          await makeDownloader().download(
+            url,
+            path.join(dir, "output"),
+            urlResolver,
+          ).promise;
+          const gets = server.requests.filter(
+            (r) => r.method === "GET" && r.url === url.pathname,
+          );
+          expect(gets.length).toBeGreaterThan(0);
+          expect(gets.every((r) => !r.headers["if-match"])).toBe(true);
+        });
+      } finally {
+        deregister();
+      }
+    });
+
+    it("rejects with precondition-failed when resource changes mid-download", async () => {
+      // Serve the HEAD with one etag but reject If-Match on GET to simulate
+      // the resource changing between probe and chunk requests
+      const etag = '"original"';
+      const handler: RequestHandler = ({ req, res, range }) => {
+        if (req.method === "HEAD") {
+          res.writeHead(200, {
+            "accept-ranges": "bytes",
+            "content-length": LARGE_FILE.length,
+            etag,
+          });
+          res.end();
+          return Promise.resolve();
+        }
+        // Simulate resource change: always reject If-Match
+        res.writeHead(412);
+        res.end();
+        return Promise.resolve();
+      };
+
+      const { url, deregister } = server.route(handler);
+      try {
+        await withTmpDir(async (dir) => {
+          const handle = makeDownloader().download(
+            url,
+            path.join(dir, "output"),
+            urlResolver,
+          );
+          await expect(handle.promise).rejects.toThrow(DownloadError);
+          await expect(handle.promise).rejects.toMatchObject({
+            payload: { code: "precondition-failed", url },
+          });
         });
       } finally {
         deregister();

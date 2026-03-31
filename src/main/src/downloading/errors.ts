@@ -4,6 +4,7 @@ export type DownloadErrorPayload =
   | { code: "network-error"; url: URL }
   | { code: "network-timeout"; url: URL }
   | { code: "network-bad-status"; url: URL; statusCode: number }
+  | { code: "precondition-failed"; url: URL }
   | { code: "fs-error"; path: string }
   | { code: "resolver-error" };
 
@@ -29,12 +30,21 @@ export function toNetworkError(url: URL, err: unknown): DownloadError {
       "Request timed out",
       err,
     );
-  if (err instanceof HTTPError)
+  if (err instanceof HTTPError) {
+    if (err.response.statusCode === 412) {
+      return new DownloadError(
+        { code: "precondition-failed", url },
+        `Server returned 412 Precondition Failed due to a resource change`,
+        err,
+      );
+    }
+
     return new DownloadError(
       { code: "network-bad-status", url, statusCode: err.response.statusCode },
       `Server returned ${err.response.statusCode}`,
       err,
     );
+  }
   if (err instanceof RequestError)
     return new DownloadError(
       { code: "network-error", url },

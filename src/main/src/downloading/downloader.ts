@@ -1,4 +1,4 @@
-import got from "got";
+import got, { type Headers } from "got";
 import { type WriteStream } from "node:fs";
 import { type FileHandle as NodeFileHandle, open } from "node:fs/promises";
 import { pipeline } from "node:stream/promises";
@@ -103,7 +103,9 @@ export class Downloader {
       try {
         if (chunks.length === 0) {
           await this.#downloadSingle(
-            got.stream(resolved.probeUrl),
+            got.stream(resolved.probeUrl, {
+              headers: createHeaders(probe.etag, null),
+            }),
             handle,
             progressReporter.chunkProgress[0],
           );
@@ -121,6 +123,7 @@ export class Downloader {
           await this.#downloadChunked(
             resolved,
             handle,
+            probe,
             chunks,
             progressReporter.chunkProgress,
           );
@@ -144,7 +147,9 @@ export class Downloader {
     size = isNaN(size) ? 0 : size;
 
     const acceptsRanges = response.headers["accept-ranges"] === "bytes";
-    return { size, acceptsRanges };
+    const etag = response.headers.etag ?? null;
+
+    return { size, acceptsRanges, etag };
   }
 
   async #downloadSingle(
@@ -180,6 +185,7 @@ export class Downloader {
   async #downloadChunked(
     resource: NormalizedResource,
     handle: FileHandle,
+    probe: ProbeResult,
     chunks: Chunk[],
     chunkProgress: ChunkProgress[],
   ): Promise<void> {
@@ -188,7 +194,7 @@ export class Downloader {
         this.#chunkQueue.add(async () => {
           const url = await resource.chunkUrl(chunk);
           const stream = got.stream(url, {
-            headers: { Range: `bytes=${chunk.start}-${chunk.end}` },
+            headers: createHeaders(probe.etag, chunk),
           });
 
           const result = await this.#downloadStream(
@@ -232,9 +238,24 @@ export class Downloader {
   }
 }
 
+function createHeaders(etag: string | null, chunk: Chunk | null): Headers {
+  const range = chunk ? `bytes=${chunk.start}-${chunk.end}` : undefined;
+
+  // Weak ETags MUST NOT be used with preconditions. The "W/" prefix is case sensitive.
+  // https://www.rfc-editor.org/rfc/rfc9110#name-etag
+  const isStrongETag = etag !== null && !etag.startsWith("W/");
+  const ifMatch = isStrongETag ? etag : undefined;
+
+  return {
+    Range: range,
+    "If-Match": ifMatch,
+  };
+}
+
 type ProbeResult = {
   size: number;
   acceptsRanges: boolean;
+  etag: string | null;
 };
 
 type FileHandle = { fd: NodeFileHandle; path: string };
