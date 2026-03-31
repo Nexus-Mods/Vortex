@@ -48,7 +48,7 @@ Adding a new extension = one new object in the `extensions` array.
 
 Run with `npx tsx`. Does the following:
 
-1. **Detect DuckDB version** — reads `node_modules/@duckdb/node-api/package.json`, strips the `-r.X` suffix from the version field (e.g. `1.5.1-r.1` → `v1.5.1`)
+1. **Detect DuckDB version** — reads `node_modules/@duckdb/node-api/package.json`, strips the `-r.X` suffix from the version field (e.g. `1.5.1-r.1` → `v1.5.1`). The script asserts the version matches `/^\d+\.\d+\.\d+-r\.\d+$/` before stripping to catch unexpected formats early.
 2. **Construct download URL per extension × platform:**
    - `http`: `{repository}/{version}/{platform}/{name}.duckdb_extension`
    - `community`: `https://community-extensions.duckdb.org/v1/{version}/{platform}/{name}.duckdb_extension`
@@ -75,16 +75,25 @@ await DuckDBInstance.create(":memory:", {
 await connection.run("LOAD level_pivot");
 ```
 
-The `extensionDir` path is resolved in `Application.ts` (Electron main process) and threaded through `mainPersistence` → `LevelPersist` → `singleton.initialize()`:
+> **Validation required before merge:** Confirm that setting `extension_directory` and calling `LOAD` (without `INSTALL`) correctly resolves a custom-repository extension from disk against `@duckdb/node-api` `1.5.1-r.1`. DuckDB's standard `{extension_directory}/{version}/{platform}/` lookup is well-documented for core extensions; behaviour for custom-repository extensions should be verified empirically.
 
+**Threading the path:** `extensionDir` is resolved in `Application.setupPersistence()` (the Electron main process, which has access to `process.resourcesPath` and `app`) and passed directly to `LevelPersist.create()`, which forwards it to `singleton.initialize()`:
+
+```
+Application.setupPersistence() → LevelPersist.create(extensionDir) → singleton.initialize(extensionDir)
+```
+
+`mainPersistence.ts` is not in this chain — `initMainPersistence()` receives a completed `LevelPersist` instance after `initialize()` has already been called.
+
+Path values:
 - **Production:** `path.join(process.resourcesPath, 'duckdb-extensions')`
-- **Development:** `path.join(app.getAppPath(), '../../src/main/build/duckdb-extensions')`
+- **Development:** `path.join(app.getAppPath(), 'build/duckdb-extensions')` — `app.getAppPath()` in dev mode returns `src/main/`, so this resolves to `src/main/build/duckdb-extensions/`
 
-The existing idempotency guard (`if (this.#mInitialized) return`) means the path is only used on the first call.
+**Important:** `setupPersistence()` calls `LevelPersist.create()` in multiple code paths. The singleton's idempotency guard (`if (this.#mInitialized) return`) means only the first call's `extensionDir` takes effect — subsequent calls ignore it. All call sites in `setupPersistence()` must pass the same resolved path.
 
 ### 4. Packaging — `electron-builder.config.json`
 
-One new entry in `extraResources` (path relative to `src/main/`):
+One new entry in `extraResources` (path relative to `src/main/`, where the config lives):
 
 ```json
 { "from": "./build/duckdb-extensions", "to": "duckdb-extensions" }
@@ -99,12 +108,19 @@ New root-level npm script:
 "duckdb:extensions": "npx tsx scripts/download-duckdb-extensions.ts"
 ```
 
-Hooked into both build pipelines so extensions are always present before packaging or dev startup:
+**Production packaging** — append to the root `dist:all` script so extensions are downloaded before electron-builder runs:
+```
+"dist:all": "pnpm run dist && pnpm run dist:extensions && pnpm run dist:assets && pnpm run duckdb:extensions"
+```
 
-- **`dist:all`** — append `&& pnpm run duckdb:extensions` (runs before electron-builder)
-- **`build:assets`** — append `&& pnpm run duckdb:extensions` (dev builds)
+Since `package` and `package:nosign` both invoke `dist:all` first, extensions are guaranteed to be present when electron-builder reads `extraResources`.
 
-Since `package` and `package:nosign` both invoke `dist:all` first, the extensions are guaranteed to be downloaded before electron-builder reads `extraResources`.
+**Dev setup** — the download script only needs to run once for development (the output directory persists between dev builds). Add it to the root `build:assets` script so it runs automatically on first asset build:
+```
+"build:assets": "<existing> && pnpm run duckdb:extensions"
+```
+
+The download script is idempotent so re-running on subsequent `build:assets` invocations is harmless — it skips files that already exist.
 
 ## File changes summary
 
@@ -113,9 +129,8 @@ Since `package` and `package:nosign` both invoke `dist:all` first, the extension
 | `scripts/duckdb-extensions.json` | New — extension config |
 | `scripts/download-duckdb-extensions.ts` | New — download script |
 | `src/main/src/store/DuckDBSingleton.ts` | Add `extensionDir` param to `initialize()`, replace FORCE INSTALL with LOAD |
-| `src/main/src/store/LevelPersist.ts` | Thread `extensionDir` through to `initialize()` |
-| `src/main/src/store/mainPersistence.ts` | Thread `extensionDir` down from caller |
-| `src/main/src/Application.ts` | Resolve `extensionDir` path, pass to persistence layer |
+| `src/main/src/store/LevelPersist.ts` | Accept and forward `extensionDir` to `singleton.initialize()` |
+| `src/main/src/Application.ts` | Resolve `extensionDir` path, pass to all `LevelPersist.create()` call sites in `setupPersistence()` |
 | `src/main/electron-builder.config.json` | Add `extraResources` entry for `duckdb-extensions` |
 | `package.json` | Add `duckdb:extensions` script; update `dist:all` and `build:assets` |
 | `.gitignore` | Add `src/main/build/duckdb-extensions/` |
