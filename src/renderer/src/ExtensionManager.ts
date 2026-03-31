@@ -20,6 +20,8 @@ import JsonSocket from "json-socket";
 import * as _ from "lodash";
 import * as net from "net";
 import * as path from "path";
+
+import { getIPCPath } from "./util/ipc";
 import { toast } from "react-hot-toast";
 import * as semver from "semver";
 import { generate as shortid } from "shortid";
@@ -2896,7 +2898,7 @@ class ExtensionManager {
             finish(err);
           });
       })
-      .listen(path.join("\\\\?\\pipe", ipcPath));
+      .listen(getIPCPath(ipcPath));
   }
 
   private idify(name: string, pathName: string) {
