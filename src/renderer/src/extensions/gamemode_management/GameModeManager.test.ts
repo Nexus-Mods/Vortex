@@ -1,22 +1,39 @@
-import GameModeManager from "../GameModeManager";
-import { loadStoreGames } from "../util/discoveryQueries";
-import { quickDiscovery } from "../util/discovery";
+import { describe, expect, it, vi } from "vitest";
 
-jest.mock("../util/discovery", () => ({
-  assertToolDir: jest.fn(),
-  discoverRelativeTools: jest.fn(),
-  quickDiscovery: jest.fn(),
-  quickDiscoveryTools: jest.fn(),
-  searchDiscovery: jest.fn(),
+vi.mock("../../util/fs", () => ({
+  statAsync: vi.fn(),
+  mkdirsAsync: vi.fn(),
+  ensureDirAsync: vi.fn(),
+  readFileAsync: vi.fn(),
+  writeFileAsync: vi.fn(),
 }));
 
-jest.mock("../util/discoveryQueries", () => ({
-  loadStoreGames: jest.fn(),
+vi.mock("../../util/GameStoreHelper", () => ({
+  default: {
+    storeIds: vi.fn(() => []),
+    findByPath: vi.fn(),
+  },
 }));
+
+vi.mock("./util/discovery", () => ({
+  assertToolDir: vi.fn(),
+  discoverRelativeTools: vi.fn(),
+  quickDiscovery: vi.fn(),
+  quickDiscoveryTools: vi.fn(),
+  searchDiscovery: vi.fn(),
+}));
+
+vi.mock("./util/discoveryQueries", () => ({
+  loadStoreGames: vi.fn(),
+}));
+
+import GameModeManager from "./GameModeManager";
+import { loadStoreGames } from "./util/discoveryQueries";
+import { quickDiscovery } from "./util/discovery";
 
 describe("GameModeManager", () => {
   it("loads store games through the query helper during quick discovery", async () => {
-    const start = jest.fn().mockResolvedValue(undefined);
+    const start = vi.fn().mockResolvedValue(undefined);
     const storeGames = [
       {
         store_type: "steam",
@@ -32,19 +49,19 @@ describe("GameModeManager", () => {
       query: {},
     };
 
-    (loadStoreGames as jest.Mock).mockResolvedValue(storeGames);
-    (quickDiscovery as jest.Mock).mockResolvedValue(["skyrimse"]);
+    vi.mocked(loadStoreGames).mockResolvedValue(storeGames);
+    vi.mocked(quickDiscovery).mockResolvedValue(["skyrimse"]);
 
     const manager = new GameModeManager(
       {} as never,
       [],
       [],
-      jest.fn(),
+      vi.fn(),
     ) as any;
 
     manager.mStore = {
-      dispatch: jest.fn(),
-      getState: jest.fn(() => ({
+      dispatch: vi.fn(),
+      getState: vi.fn(() => ({
         session: { discovery: { running: false } },
         settings: { gameMode: { discovered: {} } },
       })),
