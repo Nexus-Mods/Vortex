@@ -27,7 +27,7 @@ describe("buildExtensionUrl", () => {
       platform: "windows_amd64",
     });
     expect(url).toBe(
-      "https://halgari.github.io/duckdb-level-pivot/current_release/v1.5.1/windows_amd64/level_pivot.duckdb_extension"
+      "https://halgari.github.io/duckdb-level-pivot/current_release/v1.5.1/windows_amd64/level_pivot.duckdb_extension.gz"
     );
   });
 
@@ -39,7 +39,7 @@ describe("buildExtensionUrl", () => {
       platform: "linux_amd64",
     });
     expect(url).toBe(
-      "https://community-extensions.duckdb.org/v1/v1.5.1/linux_amd64/delta.duckdb_extension"
+      "https://community-extensions.duckdb.org/v1/v1.5.1/linux_amd64/delta.duckdb_extension.gz"
     );
   });
 

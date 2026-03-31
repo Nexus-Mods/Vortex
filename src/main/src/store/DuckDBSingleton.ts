@@ -26,10 +26,15 @@ class DuckDBSingleton {
   }
 
   /**
-   * Initialize the shared DuckDB instance, installing and loading level_pivot.
+   * Initialize the shared DuckDB instance, loading level_pivot from the
+   * pre-downloaded extension cache directory.
    * Safe to call multiple times -- only initializes once.
+   *
+   * @param extensionDir - Path to the duckdb-extensions folder produced by the
+   *   download script (e.g. `<appBase>/duckdb-extensions`). DuckDB looks for
+   *   extensions under `{extensionDir}/{version}/{platform}/`.
    */
-  public initialize(): Promise<void> {
+  public initialize(extensionDir: string): Promise<void> {
     if (this.#mInitialized) {
       return Promise.resolve();
     }
@@ -40,15 +45,14 @@ class DuckDBSingleton {
     }
 
     this.#mInitPromise = (async () => {
-      log("debug", "duckdb-singleton: creating shared instance");
+      log("debug", "duckdb-singleton: creating shared instance", { extensionDir });
       this.#mDuckDB = await DuckDBInstance.create(":memory:", {
         allow_unsigned_extensions: "true",
+        extension_directory: extensionDir,
       });
 
       const connection = await this.#mDuckDB.connect();
       try {
-        log("debug", "duckdb-singleton: installing level_pivot");
-        await connection.run("FORCE INSTALL level_pivot FROM 'https://halgari.github.io/duckdb-level-pivot/current_release'");
         log("debug", "duckdb-singleton: loading level_pivot");
         await connection.run("LOAD level_pivot");
       } finally {
