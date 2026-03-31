@@ -2,6 +2,8 @@ import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/
 import * as fs from "fs";
 import * as path from "path";
 import * as tmp from "tmp";
+
+import { getIPCPath } from "./ipc";
 import * as winapi from "winapi-bindings";
 
 import { getRealNodeModulePaths } from "./webpack-hacks";
@@ -51,7 +53,7 @@ function elevatedMain(
   const path = __non_webpack_require__("path");
 
   client = new JsonSocket(new net.Socket());
-  client.connect(path.join("\\\\?\\pipe", ipcPath));
+  client.connect(ipcPath);
 
   client
     .on("connect", () => {
@@ -129,7 +131,7 @@ export function runElevated(
         const __non_webpack_require__ = require;\n
         const __webpack_require__ = require;\n
         let moduleRoot = ${JSON.stringify(modulePaths)};\n
-        let ipcPath = '${ipcPath}';\n
+        let ipcPath = '${getIPCPath(ipcPath)}';\n
       `;
 
         if (args !== undefined) {
