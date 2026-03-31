@@ -24,18 +24,40 @@ import getVortexPath from "../../util/getVortexPath";
 import { installPathForGame } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { objDiff, setdefault } from "../../util/util";
+import steam from "../../util/Steam";
+import type { ISteamEntry } from "../../util/Steam";
 import { INI_TWEAKS_PATH } from "../mod_management/InstallManager";
 import { NEXUS_DOMAIN } from "../nexus_integration/constants";
 import { activeGameId } from "../profile_management/selectors";
 import { iniFiles, iniFormat } from "./gameSupport";
 import renderINITweaks from "./TweakList";
 
-function ensureIniBackups(
+async function getSteamEntry(
+  discovery: IDiscoveryResult,
+): Promise<ISteamEntry | undefined> {
+  if (process.platform !== "linux" || discovery?.store !== "steam") {
+    return undefined;
+  }
+  try {
+    const entries = await steam.allGames();
+    return entries.find(
+      (e) =>
+        e.gamePath !== undefined &&
+        discovery.path !== undefined &&
+        e.gamePath.toLowerCase() === discovery.path.toLowerCase(),
+    );
+  } catch {
+    return undefined;
+  }
+}
+
+async function ensureIniBackups(
   t: TFunction,
   gameMode: string,
   discovery: IDiscoveryResult,
-): PromiseBB<void> {
-  return PromiseBB.map(iniFiles(gameMode, discovery), (file) => {
+): Promise<void> {
+  const steamEntry = await getSteamEntry(discovery);
+  return PromiseBB.map(await iniFiles(gameMode, discovery, steamEntry), (file) => {
     const backupFile = file + ".base";
     const bakedFile = file + ".baked";
     return PromiseBB.map([backupFile, bakedFile], (copy) =>
@@ -90,11 +112,11 @@ function applyDelta(data: any, delta: any) {
 /**
  * updates the .base ini file to reflect changes the user made manually
  */
-function discoverSettingsChanges(
+async function discoverSettingsChanges(
   api: IExtensionApi,
   gameMode: string,
   discovery: IDiscoveryResult,
-): PromiseBB<void> {
+): Promise<void> {
   const format = iniFormat(gameMode);
   if (format === undefined) {
     return PromiseBB.resolve();
@@ -109,7 +131,8 @@ function discoverSettingsChanges(
 
   const t: TFunction = api.translate;
 
-  return PromiseBB.map(iniFiles(gameMode, discovery), (iniFileName) => {
+  const steamEntry = await getSteamEntry(discovery);
+  return PromiseBB.map(await iniFiles(gameMode, discovery, steamEntry), (iniFileName) => {
     let newContent: any;
     let oldContent: any;
     return parser
@@ -170,14 +193,14 @@ type ApplySettings = (
   parser: IniFile<any>,
 ) => PromiseBB<void>;
 
-function bakeSettings(
+async function bakeSettings(
   t: TFunction,
   gameMode: string,
   discovery: IDiscoveryResult,
   mods: IMod[],
   state: IState,
   onApplySettings: ApplySettings,
-): PromiseBB<void> {
+): Promise<void> {
   const modsPath = installPathForGame(state, gameMode);
   const format = iniFormat(gameMode);
   if (format === undefined) {
@@ -191,7 +214,8 @@ function bakeSettings(
 
   const enabledTweaks: { [baseFile: string]: string[] } = {};
 
-  const baseFiles = iniFiles(gameMode, discovery)
+  const steamEntry = await getSteamEntry(discovery);
+  const baseFiles = (await iniFiles(gameMode, discovery, steamEntry))
     // got an error report that I can only explain by baseFiles containing undefined
     // but I don't see how that could happen.
     .filter((name) => name !== undefined);
@@ -308,12 +332,13 @@ function bakeSettings(
     .then(() => undefined);
 }
 
-function purgeChanges(
+async function purgeChanges(
   t: TFunction,
   gameMode: string,
   discovery: IDiscoveryResult,
 ) {
-  return PromiseBB.map(iniFiles(gameMode, discovery), (iniFileName) =>
+  const steamEntry = await getSteamEntry(discovery);
+  return PromiseBB.map(await iniFiles(gameMode, discovery, steamEntry), (iniFileName) =>
     fs
       .copyAsync(iniFileName + ".base", iniFileName + ".baked", {
         noSelfCopy: true,
@@ -408,10 +433,12 @@ function main(context: IExtensionContext) {
 
     context.api.events.on("gamemode-activated", (gameMode: string) => {
       const state: IState = context.api.store.getState();
-      ensureIniBackups(
-        context.api.translate,
-        gameMode,
-        state.settings.gameMode.discovered[gameMode],
+      PromiseBB.resolve(
+        ensureIniBackups(
+          context.api.translate,
+          gameMode,
+          state.settings.gameMode.discovered[gameMode],
+        ),
       )
         .catch(UserCanceled, () => {
           log(
@@ -422,7 +449,7 @@ function main(context: IExtensionContext) {
             },
           );
         })
-        .catch((err) => {
+        .catch((err: any) => {
           deactivated = true;
           if (
             err.code === "EINVAL" &&
@@ -476,7 +503,9 @@ function main(context: IExtensionContext) {
         ): PromiseBB<void> =>
           context.api.emitAndAwait("apply-settings", profile, fileName, parser);
 
-        return discoverSettingsChanges(context.api, profile.gameId, discovery)
+        return PromiseBB.resolve(
+          discoverSettingsChanges(context.api, profile.gameId, discovery),
+        )
           .then(() =>
             bakeSettings(
               context.api.translate,
@@ -491,7 +520,7 @@ function main(context: IExtensionContext) {
             // nop
             log("info", "user canceled baking game settings");
           })
-          .catch((err) => {
+          .catch((err: any) => {
             const nonReportable = [362, 1359, "EBUSY"];
             const allowReport = !(
               err.stack.includes("not enough space on the disk") ||
@@ -517,7 +546,9 @@ function main(context: IExtensionContext) {
       const gameMode = activeGameId(state);
       const discovery: IDiscoveryResult =
         state.settings.gameMode.discovered[gameMode];
-      discoverSettingsChanges(context.api, gameMode, discovery)
+      PromiseBB.resolve(
+        discoverSettingsChanges(context.api, gameMode, discovery),
+      )
         .then(() => purgeChanges(context.api.translate, gameMode, discovery))
         .catch(UserCanceled, () => {
           context.api.showErrorNotification(
@@ -526,7 +557,7 @@ function main(context: IExtensionContext) {
             { allowReport: false },
           );
         })
-        .catch((err) => {
+        .catch((err: any) => {
           context.api.showErrorNotification("Failed to purge ini edits", err, {
             allowReport: (err).code !== "ENOENT",
           });

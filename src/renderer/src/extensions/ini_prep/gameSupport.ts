@@ -4,6 +4,8 @@ import * as path from "path";
 import format from "string-template";
 import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
 import { makeOverlayableDictionary } from "../../util/util";
+import { getMyGamesPath } from "../../util/linux/proton";
+import type { ISteamEntry } from "../../util/Steam";
 
 interface IGameSupport {
   iniFiles: string[];
@@ -206,8 +208,22 @@ const gameSupport = makeOverlayableDictionary<string, IGameSupport>(
   (gameId: string, store: string) => store,
 );
 
-export function iniFiles(gameMode: string, discovery: IDiscoveryResult) {
-  const mygames = path.join(getVortexPath("documents"), "My Games");
+export async function iniFiles(
+  gameMode: string,
+  discovery: IDiscoveryResult,
+  steamEntry?: ISteamEntry,
+): Promise<string[]> {
+  let mygames: string;
+
+  if (
+    process.platform === "linux" &&
+    steamEntry?.usesProton &&
+    steamEntry?.compatDataPath
+  ) {
+    mygames = getMyGamesPath(steamEntry.compatDataPath);
+  } else {
+    mygames = path.join(getVortexPath("documents"), "My Games");
+  }
 
   let store = discovery?.store;
 
