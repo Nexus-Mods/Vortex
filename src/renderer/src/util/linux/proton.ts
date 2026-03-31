@@ -10,6 +10,28 @@ export interface IProtonInfo {
 }
 
 /**
+ * Canonical Wine prefix username. Steam/Proton always uses "steamuser"
+ * regardless of the Linux system username. Never use os.userInfo().username.
+ */
+export const PROTON_USERNAME = "steamuser";
+
+/**
+ * Get the "My Games" path inside a Proton Wine prefix.
+ * Returns: compatDataPath/pfx/drive_c/users/steamuser/Documents/My Games
+ */
+export function getMyGamesPath(compatDataPath: string): string {
+  return path.join(
+    compatDataPath,
+    "pfx",
+    "drive_c",
+    "users",
+    PROTON_USERNAME,
+    "Documents",
+    "My Games",
+  );
+}
+
+/**
  * Check if a game uses Proton by looking for its compatdata folder
  */
 export async function detectProtonUsage(

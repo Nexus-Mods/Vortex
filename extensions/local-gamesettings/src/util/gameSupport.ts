@@ -147,6 +147,33 @@ export function gameSupported(gameMode: string): boolean {
 }
 
 export function mygamesPath(gameMode: string): string {
+  if (process.platform === "linux") {
+    const discovery = discoveryForGame(gameMode);
+    if (discovery?.store === "steam" && discovery?.path !== undefined) {
+      const game = util.getGame(gameMode);
+      const steamAppId = game?.details?.["steamAppId"];
+      if (steamAppId !== undefined) {
+        // Derive steamapps path from game installation path.
+        // Steam games are always under ${steamapps}/common/${gameName}.
+        const steamAppsPath = path.dirname(path.dirname(discovery.path));
+        const wineDocuments = path.join(
+          steamAppsPath,
+          "compatdata",
+          steamAppId.toString(),
+          "pfx",
+          "drive_c",
+          "users",
+          "steamuser",
+          "Documents",
+        );
+        return path.join(
+          wineDocuments,
+          "My Games",
+          gameSupport.get(gameMode, "mygamesPath"),
+        );
+      }
+    }
+  }
   return path.join(
     util.getVortexPath("documents"),
     "My Games",
