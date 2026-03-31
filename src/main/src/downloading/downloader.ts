@@ -189,24 +189,20 @@ export class Downloader {
     chunks: Chunk[],
     chunkProgress: ChunkProgress[],
   ): Promise<void> {
-    await Promise.all(
-      chunks.map((chunk) =>
-        this.#chunkQueue.add(async () => {
-          const url = await resource.chunkUrl(chunk);
-          const stream = got.stream(url, {
-            headers: createHeaders(probe.etag, chunk),
-          });
+    await this.#chunkQueue.addAll(
+      chunks.map((chunk) => async () => {
+        const url = await resource.chunkUrl(chunk);
+        const stream = got.stream(url, {
+          headers: createHeaders(probe.etag, chunk),
+        });
 
-          const result = await this.#downloadStream(
-            stream,
-            handle,
-            chunkProgress[chunk.index],
-            chunk.start,
-          );
-
-          return result;
-        }),
-      ),
+        await this.#downloadStream(
+          stream,
+          handle,
+          chunkProgress[chunk.index],
+          chunk.start,
+        );
+      }),
     );
   }
 
