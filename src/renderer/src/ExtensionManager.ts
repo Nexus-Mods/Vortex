@@ -3098,6 +3098,20 @@ class ExtensionManager {
    * This loads external extensions from disc synchronously
    */
   private prepareExtensions(): IRegisteredExtension[] {
+    const safeStaticExtension = (name: string, loader: () => unknown) => () => {
+      try {
+        return loader();
+      } catch (err) {
+        log("warn", "skipping unavailable built-in extension", {
+          name,
+          err: err instanceof Error ? err.message : String(err),
+        });
+        return {
+          default: () => undefined,
+        };
+      }
+    };
+
     const staticExtensions: Record<string, () => unknown> = {
       about_dialog: () => require("./extensions/about_dialog/index.ts"),
       analytics: () => require("./extensions/analytics/index.ts"),
@@ -3137,18 +3151,27 @@ class ExtensionManager {
         require("./extensions/history_management/index.ts"),
       ini_prep: () => require("./extensions/ini_prep/index.ts"),
       installer_dotnet: () => require("./extensions/installer_dotnet/index.ts"),
-      installer_fomod_ipc: () =>
-        require("./extensions/installer_fomod_ipc/index.ts"),
-      installer_fomod_native: () =>
-        require("./extensions/installer_fomod_native/index.ts"),
-      installer_fomod_shared: () =>
-        require("./extensions/installer_fomod_shared/index.ts"),
-      installer_nested_fomod: () =>
-        require("./extensions/installer_nested_fomod/index.ts"),
+      installer_fomod_ipc: safeStaticExtension(
+        "installer_fomod_ipc",
+        () => require("./extensions/installer_fomod_ipc/index.ts"),
+      ),
+      installer_fomod_native: safeStaticExtension(
+        "installer_fomod_native",
+        () => require("./extensions/installer_fomod_native/index.ts"),
+      ),
+      installer_fomod_shared: safeStaticExtension(
+        "installer_fomod_shared",
+        () => require("./extensions/installer_fomod_shared/index.ts"),
+      ),
+      installer_nested_fomod: safeStaticExtension(
+        "installer_nested_fomod",
+        () => require("./extensions/installer_nested_fomod/index.ts"),
+      ),
       instructions_overlay: () =>
         require("./extensions/instructions_overlay/index.ts"),
       mod_load_order: () => require("./extensions/mod_load_order/index.ts"),
       mod_management: () => require("./extensions/mod_management/index.ts"),
+      internal_games: () => require("./extensions/internal_games/index.ts"),
       mod_spotlights_dashlet: () =>
         require("./extensions/mod_spotlights_dashlet/index.ts"),
       move_activator: () => require("./extensions/move_activator/index.ts"),

@@ -1,5 +1,15 @@
 import type { SerializedSpan } from "../telemetry/types";
 import type {
+  DiagnosticResult,
+  InstallPlan,
+  InstallerMatch,
+  InternalGameInstallRequest,
+  InternalGameManifest,
+  InternalGameRuntimeSnapshot,
+  LoadOrderSnapshot,
+  ToolLaunchPlan,
+} from "../games/internalGames";
+import type {
   BrowserViewConstructorOptions,
   Cookie,
   CookiesGetFilter,
@@ -50,6 +60,9 @@ export interface Api {
 
   /** Extensions API - for requesting main process initialization */
   extensions: ExtensionsApi;
+
+  /** Internal game platform APIs */
+  games: GamesApi;
 
   /** Updater API - for querying update status from main process */
   updater: UpdaterApi;
@@ -373,6 +386,46 @@ export interface ExtensionsApi {
    * Should be called once after ExtensionManager is initialized.
    */
   initializeAllMain(installType: string): void;
+}
+
+export interface GamesApi {
+  listInternal(): Promise<InternalGameManifest[]>;
+  getManifest(gameId: string): Promise<InternalGameManifest | null>;
+  discover(gameId: string): Promise<{ path?: string; store?: string } | null>;
+  runSetup(
+    gameId: string,
+    runtime: InternalGameRuntimeSnapshot,
+  ): Promise<DiagnosticResult[]>;
+  classifyInstall(
+    gameId: string,
+    request: InternalGameInstallRequest,
+    runtime: InternalGameRuntimeSnapshot,
+  ): Promise<InstallerMatch>;
+  buildInstallPlan(
+    gameId: string,
+    request: InternalGameInstallRequest,
+    runtime: InternalGameRuntimeSnapshot,
+  ): Promise<InstallPlan>;
+  compileLoadOrder(
+    gameId: string,
+    runtime: InternalGameRuntimeSnapshot,
+  ): Promise<LoadOrderSnapshot>;
+  applyLoadOrder(
+    gameId: string,
+    runtime: InternalGameRuntimeSnapshot,
+    loadOrder: LoadOrderSnapshot,
+  ): Promise<DiagnosticResult[]>;
+  getToolLaunchPlan(
+    gameId: string,
+    toolId: string,
+    runtime: InternalGameRuntimeSnapshot,
+    executable: string,
+    args: string[],
+  ): Promise<ToolLaunchPlan>;
+  getDiagnostics(
+    gameId: string,
+    runtime: InternalGameRuntimeSnapshot,
+  ): Promise<DiagnosticResult[]>;
 }
 
 /** API for querying update status from main process */
