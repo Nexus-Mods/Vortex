@@ -819,100 +819,119 @@ function genUpdateModDeployment() {
             method: activator.name,
           });
 
-          let mergeResult: { [modType: string]: IMergeResultByType };
-          const lastDeployment: { [typeId: string]: IDeployedFile[] } = {};
-          const mods = state.persistent.mods[profile.gameId] || {};
-          notification.message = t("Deploying mods");
-          api.sendNotification(notification);
-          api.store.dispatch(startActivity("mods", "deployment"));
-          progress(t("Loading deployment manifest"), 0);
+          // Wait for active mod installations to complete before deploying
+          // so we don't deploy half-installed mods.
+          const waitForInstalls =
+            installManager.getActiveInstallationCount() > 0
+              ? Bluebird.resolve(installManager.waitForIdle())
+              : Bluebird.resolve();
 
-          return Bluebird.each(deployableModTypes(modPaths), (typeId) =>
-            loadActivation(
-              api,
-              gameId,
-              typeId,
-              modPaths[typeId],
-              stagingPath,
-              activator,
-            ).then((deployedFiles) => (lastDeployment[typeId] = deployedFiles)),
-          )
-            .tap(() => progress(t("Running pre-deployment events"), 2))
-            .then(() =>
-              api.emitAndAwait(
-                "will-deploy",
-                profile.id,
-                lastDeployment,
-                deployOptions,
-              ),
-            )
-            .then(() => {
-              // need to update the profile so that if a will-deploy handler disables a mod, that
-              // actually has an affect on this deployment
-              const updatedState = api.getState();
-              const updatedProfile =
-                updatedState.persistent.profiles[profile.id];
-              if (updatedProfile !== undefined) {
-                profile = updatedProfile;
-              } else {
-                // I don't think this can happen
-                log("warn", "profile no longer found?", profileId);
-              }
-            })
-            .tap(() => progress(t("Checking for external changes"), 5))
-            .then(() =>
-              dealWithExternalChanges(
+          return waitForInstalls.then(() => {
+            // Consume the set of mod IDs that finished installing since the
+            // last deployment. Their external changes (refchange / srcdeleted)
+            // are expected and will be auto-resolved per-mod.
+            const recentInstalls = installManager.consumeRecentInstalls();
+
+            let mergeResult: { [modType: string]: IMergeResultByType };
+            const lastDeployment: { [typeId: string]: IDeployedFile[] } = {};
+            const mods = state.persistent.mods[profile.gameId] || {};
+            notification.message = t("Deploying mods");
+            api.sendNotification(notification);
+            api.store.dispatch(startActivity("mods", "deployment"));
+            progress(t("Loading deployment manifest"), 0);
+
+            return Bluebird.each(deployableModTypes(modPaths), (typeId) =>
+              loadActivation(
                 api,
+                gameId,
+                typeId,
+                modPaths[typeId],
+                stagingPath,
                 activator,
-                profileId,
-                stagingPath,
-                modPaths,
-                lastDeployment,
+              ).then(
+                (deployedFiles) => (lastDeployment[typeId] = deployedFiles),
               ),
             )
-            .tap(() => progress(t("Checking for mod incompatibilities"), 25))
-            .then(() => checkIncompatibilities(api, profile, mods))
-            .tap(() => progress(t("Sorting mods"), 30))
-            .then(() =>
-              doSortMods(api, profile, mods).then((sortedModListIn: IMod[]) => {
-                sortedModList = sortedModListIn;
-              }),
-            )
-            .tap(() => progress(t("Merging mods"), 35))
-            .then(() =>
-              doMergeMods(
-                api,
-                game,
-                gameDiscovery,
-                stagingPath,
-                sortedModList,
-                modPaths,
-                lastDeployment,
-              ).then((mergeResultIn) => (mergeResult = mergeResultIn)),
-            )
-            .tap(() => progress(t("Starting deployment"), 35))
-            .then(() => {
-              const deployProgress = (name, percent) =>
-                progress(t("Deploying: ") + name, 50 + percent / 2);
-
-              const undiscovered = Object.keys(modPaths).filter(
-                (typeId) => !truthy(modPaths[typeId]),
-              );
-              return validateDeploymentTarget(api, undiscovered).then(() =>
-                deployAllModTypes(
+              .tap(() => progress(t("Running pre-deployment events"), 2))
+              .then(() =>
+                api.emitAndAwait(
+                  "will-deploy",
+                  profile.id,
+                  lastDeployment,
+                  deployOptions,
+                ),
+              )
+              .then(() => {
+                // need to update the profile so that if a will-deploy handler disables a mod, that
+                // actually has an affect on this deployment
+                const updatedState = api.getState();
+                const updatedProfile =
+                  updatedState.persistent.profiles[profile.id];
+                if (updatedProfile !== undefined) {
+                  profile = updatedProfile;
+                } else {
+                  // I don't think this can happen
+                  log("warn", "profile no longer found?", profileId);
+                }
+              })
+              .tap(() => progress(t("Checking for external changes"), 5))
+              .then(() =>
+                dealWithExternalChanges(
                   api,
                   activator,
-                  profile,
-                  sortedModList,
+                  profileId,
                   stagingPath,
-                  mergeResult,
                   modPaths,
                   lastDeployment,
-                  newDeployment,
-                  deployProgress,
+                  recentInstalls,
                 ),
-              );
-            });
+              )
+              .tap(() => progress(t("Checking for mod incompatibilities"), 25))
+              .then(() => checkIncompatibilities(api, profile, mods))
+              .tap(() => progress(t("Sorting mods"), 30))
+              .then(() =>
+                doSortMods(api, profile, mods).then(
+                  (sortedModListIn: IMod[]) => {
+                    sortedModList = sortedModListIn;
+                  },
+                ),
+              )
+              .tap(() => progress(t("Merging mods"), 35))
+              .then(() =>
+                doMergeMods(
+                  api,
+                  game,
+                  gameDiscovery,
+                  stagingPath,
+                  sortedModList,
+                  modPaths,
+                  lastDeployment,
+                ).then((mergeResultIn) => (mergeResult = mergeResultIn)),
+              )
+              .tap(() => progress(t("Starting deployment"), 35))
+              .then(() => {
+                const deployProgress = (name, percent) =>
+                  progress(t("Deploying: ") + name, 50 + percent / 2);
+
+                const undiscovered = Object.keys(modPaths).filter(
+                  (typeId) => !truthy(modPaths[typeId]),
+                );
+                return validateDeploymentTarget(api, undiscovered).then(() =>
+                  deployAllModTypes(
+                    api,
+                    activator,
+                    profile,
+                    sortedModList,
+                    stagingPath,
+                    mergeResult,
+                    modPaths,
+                    lastDeployment,
+                    newDeployment,
+                    deployProgress,
+                  ),
+                );
+              });
+          });
         })
           // at this point the deployment lock gets released so another deployment
           // can be started during post-deployment

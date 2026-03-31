@@ -203,24 +203,9 @@ export function changeToEntry(
   };
 }
 
-function defaultCollectionAction(
-  typeId: string,
-  input: IFileChange,
-): IFileEntry {
-  const action: FileAction = {
-    refchange: "newest",
-    valchange: "nop",
-    deleted: "restore",
-    srcdeleted: "drop",
-  }[input.changeType] as FileAction;
-
-  return {
-    ...changeToEntry(typeId, input),
-    action,
-  };
-}
-
-function defaultMergedAction(typeId: string, input: IFileChange): IFileEntry {
+function defaultInternalAction(typeId: string, input: IFileChange): IFileEntry {
+  // Internal changes are from mod updates/reinstalls/merges — always drop the old
+  // deployed file so deployment recreates it from the updated staging files.
   const action: FileAction = {
     refchange: "drop",
     valchange: "nop",
@@ -284,6 +269,7 @@ export function dealWithExternalChanges(
   stagingPath: string,
   modPaths: { [typeId: string]: string },
   lastDeployment: { [typeId: string]: IDeployedFile[] },
+  recentInstalls?: Set<string>,
 ) {
   return checkForExternalChanges(
     api,
@@ -298,7 +284,7 @@ export function dealWithExternalChanges(
       const isInstallingCollection =
         getCollectionActiveSession(api.store.getState()) !== undefined;
       const userChanges = Object.keys(changes).reduce((prev, typeId) => {
-        const { merged, rest, collection } = changes[typeId].reduce(
+        const { merged, rest, autoResolved } = changes[typeId].reduce(
           (prevInner, change) => {
             const isMerged = path
               .basename(change.source)
@@ -307,8 +293,8 @@ export function dealWithExternalChanges(
               prevInner.merged.push(change);
               return prevInner;
             }
-            if (isInstallingCollection) {
-              prevInner.collection.push(change);
+            if (isInstallingCollection || recentInstalls?.has(change.source)) {
+              prevInner.autoResolved.push(change);
               return prevInner;
             }
 
@@ -316,18 +302,18 @@ export function dealWithExternalChanges(
 
             return prevInner;
           },
-          { merged: [], rest: [], collection: [] },
+          { merged: [], rest: [], autoResolved: [] },
         );
 
         if (merged.length > 0) {
           merged.forEach((change) =>
-            automaticActions.push(defaultMergedAction(typeId, change)),
+            automaticActions.push(defaultInternalAction(typeId, change)),
           );
         }
 
-        if (isInstallingCollection && collection.length > 0) {
-          collection.forEach((change) =>
-            automaticActions.push(defaultCollectionAction(typeId, change)),
+        if (autoResolved.length > 0) {
+          autoResolved.forEach((change) =>
+            automaticActions.push(defaultInternalAction(typeId, change)),
           );
         }
 
