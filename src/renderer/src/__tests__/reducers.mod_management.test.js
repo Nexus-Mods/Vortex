@@ -1,3 +1,4 @@
+import { describe, it, expect } from "vitest";
 import { settingsReducer } from '../extensions/mod_management/reducers/settings';
 import { modsReducer } from '../extensions/mod_management/reducers/mods';
 

@@ -1,9 +1,10 @@
+import { describe, it, expect, vi } from 'vitest';
 import { parseModEntries } from '../../../../extensions/nmm-import-tool/src/util/nmmVirtualConfigParser';
 import { ParseError } from '../../../../extensions/nmm-import-tool/src/types/nmmEntries';
 
 import { Readable } from 'stream';
 
-jest.mock('vortex-api', () => ({
+vi.mock('vortex-api', () => ({
   fs: {
     statAsync: () => {
       return Promise.resolve({});
@@ -14,7 +15,7 @@ jest.mock('vortex-api', () => ({
   },
 }));
 
-jest.mock('modmeta-db', () => ({
+vi.mock('modmeta-db', () => ({
   genHash: () => Promise.resolve({ md5sum: 'fake hash' }),
 }));
 

@@ -1,10 +1,12 @@
 /**
  * Mock for src/util/fs.ts
- * Uses jest.requireActual to load the real fs.ts but wraps problematic methods
+ * Uses vi.importActual to load the real fs.ts but wraps problematic methods
  */
 
+const { vi } = require('vitest');
+
 // Mock original-fs to prevent electron dependency issues
-jest.mock('__mocks__/original-fs', () => {
+vi.mock('__mocks__/original-fs', () => {
   const fs = require('fs');
   return {
     ...fs,
@@ -35,7 +37,7 @@ jest.mock('__mocks__/original-fs', () => {
   };
 }, { virtual: true });
 
-const actualFs = jest.requireActual('../util/fs');
+const actualFs = vi.importActual('../util/fs');
 
 // Provide a mock for readFileBOM that works with the test's fs-extra mock
 const readFileBOM = (filePath, fallbackEncoding = 'utf8') => {

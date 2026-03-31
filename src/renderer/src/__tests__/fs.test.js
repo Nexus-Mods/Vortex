@@ -1,10 +1,31 @@
+import { describe, it, expect, vi } from 'vitest';
+
 let mockData;
 
-jest.mock('fs-extra', () => ({
-  readFile: (dat) => {
-    return Promise.resolve(mockData);
-  },
-}));
+vi.mock('fs-extra', async (importOriginal) => {
+  const actual = await importOriginal();
+  // fs-extra is CJS, so named exports may be on the default export
+  const base = actual.default ?? actual;
+  return {
+    ...base,
+    default: {
+      ...base,
+      readFile: (...args) => {
+        if (args.length <= 1 || typeof args[args.length - 1] !== 'function') {
+          return Promise.resolve(mockData);
+        }
+        // callback style
+        args[args.length - 1](null, mockData);
+      },
+    },
+    readFile: (...args) => {
+      if (args.length <= 1 || typeof args[args.length - 1] !== 'function') {
+        return Promise.resolve(mockData);
+      }
+      args[args.length - 1](null, mockData);
+    },
+  };
+});
 
 import * as fs from '../util/fs';
 

@@ -1,3 +1,4 @@
+import { describe, it, expect } from "vitest";
 import reducer from '../extensions/starter_dashlet/reducers';
 
 describe('setPrimaryTool', () => {

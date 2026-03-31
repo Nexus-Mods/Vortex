@@ -1,3 +1,4 @@
+import { describe, it, expect } from "vitest";
 import * as actions from '../extensions/profile_management/actions/profiles';
 
 describe('setModEnabled', () => {

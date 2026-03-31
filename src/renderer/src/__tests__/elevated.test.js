@@ -1,10 +1,43 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+const { winapiState } = vi.hoisted(() => {
+  const winapiState = { error: undefined };
+  return { winapiState };
+});
+
+vi.mock('winapi-bindings', () => ({
+  ShellExecuteEx: () => {
+    if (winapiState.error === undefined) {
+      return;
+    } else {
+      throw new Error(winapiState.error);
+    }
+  },
+  RegGetValue: () => ({
+    type: 'REG_SZ',
+    value: 'foobar',
+  }),
+  GetVolumePathName: (input) => {
+    const path = require('path');
+    const res = path.dirname(input);
+    if (res === '/missing') {
+      let err = new Error('fake error');
+      err.code = 'ENOTFOUND';
+      err.systemCode = 2;
+      throw err;
+    }
+    return res;
+  },
+  __setError: (err) => { winapiState.error = err; },
+}));
+
 // In webpack, __non_webpack_require__ is the real Node.js require.
 // In Jest (no webpack), we alias it to the normal require.
 globalThis.__non_webpack_require__ = require;
 
 let mockTmpFileCalls = 0;
 let mockTmpFileReportError = undefined;
-jest.mock('tmp', () => ({
+vi.mock('tmp', () => ({
   file: (opts, callback) => {
     if (mockTmpFileReportError) {
       return callback(new Error(mockTmpFileReportError));
@@ -17,7 +50,7 @@ jest.mock('tmp', () => ({
 let mockWrites = [];
 let mockWriteReportError = undefined;
 
-jest.mock('fs', () => ({
+vi.mock('fs', () => ({
     write: (fd, data, callback) => {
       if (mockWriteReportError) {
         callback(new Error(mockWriteReportError));
@@ -37,6 +70,7 @@ jest.mock('fs', () => ({
 
 
 import { runElevated } from '../util/elevated';
+import * as winapiBindings from 'winapi-bindings';
 
 function dummy() {
   console.log('DUMMY FUNCTION');
@@ -49,6 +83,7 @@ describe('runElevated', () => {
     mockTmpFileReportError = undefined;
     mockWrites = [];
     mockWriteReportError = undefined;
+    winapiState.error = undefined;
   });
 
   it('creates a temporary file', () => {
@@ -85,7 +120,7 @@ describe('runElevated', () => {
     mockTmpFileReportError = 'i haz error';
     return runElevated('ipcPath', dummy)
     .then(() => {
-      fail('expected error');
+      expect.fail('expected error');
     })
     .catch((err) => {
       expect(err.message).toBe('i haz error');
@@ -96,7 +131,7 @@ describe('runElevated', () => {
     mockWriteReportError = 'i haz error';
     return runElevated('ipcPath', dummy)
     .then(() => {
-      fail('expected error');
+      expect.fail('expected error');
     })
     .catch((err) => {
       expect(err.message).toBe('i haz error');
@@ -104,10 +139,10 @@ describe('runElevated', () => {
   });
 
   it('handles library errors', () => {
-    require('winapi-bindings').__setError('i haz error');
+    winapiBindings.__setError('i haz error');
     return runElevated('ipcPath', dummy)
     .then(() => {
-      fail('expected error');
+      expect.fail('expected error');
     })
     .catch((err) => {
       expect(err.message).toBe('i haz error');

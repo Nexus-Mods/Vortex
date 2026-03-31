@@ -1,3 +1,5 @@
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+
 const bsdiff = require('bsdiff-node');
 const fs = require('fs');
 const path = require('path');

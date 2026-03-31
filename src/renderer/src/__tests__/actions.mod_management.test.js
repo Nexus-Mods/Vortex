@@ -1,3 +1,4 @@
+import { describe, it, expect } from "vitest";
 import * as settingsActions from '../extensions/mod_management/actions/settings';
 import * as modsActions from '../extensions/mod_management/actions/mods';
 

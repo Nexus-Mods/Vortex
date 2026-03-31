@@ -1,22 +1,24 @@
+import { describe, it, expect, vi, beforeEach, afterEach, test } from 'vitest';
 import { NotificationAggregator } from '../extensions/mod_management/NotificationAggregator';
 
 // Mock API for testing
 const mockApi = {
-  showErrorNotification: jest.fn(),
-  sendNotification: jest.fn(),
+  showErrorNotification: vi.fn(),
+  sendNotification: vi.fn(),
 };
 
 describe('NotificationAggregator', () => {
   let aggregator: NotificationAggregator;
 
   beforeEach(() => {
+    (window as any).api = { log: vi.fn() };
     aggregator = new NotificationAggregator(mockApi as any);
-    jest.clearAllMocks();
-    jest.useFakeTimers();
+    vi.clearAllMocks();
+    vi.useFakeTimers();
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   test('should show notifications immediately when aggregation is not active', async () => {
@@ -30,7 +32,7 @@ describe('NotificationAggregator', () => {
     );
 
     // Run any pending timers/setImmediate
-    jest.runAllTimers();
+    vi.runAllTimers();
 
     expect(mockApi.showErrorNotification).toHaveBeenCalledWith('Test Error', 'Test message', {
       message: 'TestMod',
@@ -99,7 +101,7 @@ describe('NotificationAggregator', () => {
     aggregator.addNotification('test-session', 'error', 'Test Error', 'Test message', 'TestMod');
 
     // Advance timers past the timeout to trigger the auto-flush
-    jest.advanceTimersByTime(150);
+    vi.advanceTimersByTime(150);
 
     // Stop the aggregation (which flushes remaining notifications)
     await aggregator.stopAggregation('test-session');

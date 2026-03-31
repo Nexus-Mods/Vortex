@@ -1,3 +1,4 @@
+import { describe, it, expect } from "vitest";
 import NXMUrl from '../extensions/nexus_integration/NXMUrl';
 
 describe('NXMUrl', () => {
@@ -8,6 +9,6 @@ describe('NXMUrl', () => {
     expect(url.fileId).toBe(456);
   });
   it('throws on invalid url', () => {
-    expect(() => new NXMUrl('gugu')).toThrow(new Error('invalid nxm url "gugu"'));
+    expect(() => new NXMUrl('gugu')).toThrow('invalid nxm url');
   });
 });

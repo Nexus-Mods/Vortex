@@ -19,12 +19,13 @@
  * robustness testing for invalid inputs and edge cases.
  */
 
+import { describe, it, expect, vi } from 'vitest';
 import { testModReference, isFuzzyVersion, sanitizeExpression, coerceToSemver } from '../extensions/mod_management/util/testModReference';
 import { IMod, IModReference } from '../extensions/mod_management/types/IMod';
 
 // Mock the log function to avoid console output during tests
-jest.mock('../util/log', () => ({
-  log: jest.fn(),
+vi.mock('../util/log', () => ({
+  log: vi.fn(),
 }));
 
 describe('testModReference', () => {

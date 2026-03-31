@@ -11,7 +11,8 @@
   },
   "exports": {
     ".": {
-      "types": "./lib/api.d.ts"
+      "types": "./lib/api.d.ts",
+      "default": "./lib/api.js"
     }
   },
   "files": [

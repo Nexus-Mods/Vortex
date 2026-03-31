@@ -1,8 +1,9 @@
+import { describe, it, expect, vi } from 'vitest';
 import * as util from '../util/util';
 
 // for the tests regarding invalid filename detection/sanitation we need a consistent
 // platform and windows is just way more "interesting" in this regard
-jest.mock('process', () => ({
+vi.mock('process', () => ({
   platform: 'win32',
 }));
 

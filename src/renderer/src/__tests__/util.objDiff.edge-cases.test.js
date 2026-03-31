@@ -1,3 +1,4 @@
+import { describe, it, expect } from "vitest";
 import * as util from '../util/util';
 
 describe('objDiff edge cases that could cause TypeError', () => {

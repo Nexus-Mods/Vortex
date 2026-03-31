@@ -1,11 +1,12 @@
+import { describe, it, expect, vi } from 'vitest';
 import { stateReducer } from '../extensions/download_management/reducers/state';
 import * as _ from 'lodash';
 
-jest.mock('../util/errorHandling', () => ({
-  terminate: jest.fn(),
+vi.mock('../util/errorHandling', () => ({
+  terminate: vi.fn(),
 }));
 
-const { terminate } = require('../util/errorHandling');
+import { terminate } from '../util/errorHandling';
 
 describe('addLocalDownload', () => {
   it('adds the download', () => {

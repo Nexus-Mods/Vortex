@@ -1,3 +1,5 @@
-const ext = jest.genMockFromModule("../log");
+import { vi } from "vitest";
 
-module.exports = ext;
+const log = vi.fn();
+export default log;
+export { log };

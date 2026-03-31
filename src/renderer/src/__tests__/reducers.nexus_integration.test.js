@@ -1,3 +1,4 @@
+import { describe, it, expect } from "vitest";
 import { accountReducer } from '../extensions/nexus_integration/reducers/account';
 
 describe('setUserAPIKey', () => {

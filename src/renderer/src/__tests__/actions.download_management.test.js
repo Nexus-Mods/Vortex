@@ -1,3 +1,4 @@
+import { describe, it, expect } from "vitest";
 import * as actions from '../extensions/download_management/actions/state';
 
 describe('addLocalDownload', () => {

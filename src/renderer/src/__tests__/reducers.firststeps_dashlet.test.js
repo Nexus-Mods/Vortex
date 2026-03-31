@@ -1,3 +1,4 @@
+import { describe, it, expect } from "vitest";
 import settingsReducer from '../extensions/firststeps_dashlet/reducers';
 
 describe('dismissStep', () => {

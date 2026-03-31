@@ -1,16 +1,18 @@
-// Mock for cheerio to avoid ES module issues in Jest
+// Mock for cheerio to avoid ES module issues in vitest
+const { vi } = require('vitest');
+
 module.exports = {
-  load: jest.fn(() => ({
-    find: jest.fn(() => ({
-      each: jest.fn(),
-      text: jest.fn(),
-      attr: jest.fn(),
+  load: vi.fn(() => ({
+    find: vi.fn(() => ({
+      each: vi.fn(),
+      text: vi.fn(),
+      attr: vi.fn(),
       length: 0
     })),
-    text: jest.fn(),
-    html: jest.fn(),
-    attr: jest.fn()
+    text: vi.fn(),
+    html: vi.fn(),
+    attr: vi.fn()
   })),
-  contains: jest.fn(),
-  merge: jest.fn()
+  contains: vi.fn(),
+  merge: vi.fn()
 };

@@ -1,3 +1,4 @@
+import { describe, it, expect } from "vitest";
 import * as sessionActions from '../../../../extensions/gamebryo-savegame-management/src/actions/session';
 
 describe('setSavegames', () => {

@@ -1,3 +1,4 @@
+import { describe, it, expect } from "vitest";
 import * as actions from '../extensions/settings_metaserver/actions';
 
 describe('addMetaserver', () => {

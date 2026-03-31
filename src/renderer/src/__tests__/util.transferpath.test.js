@@ -1,18 +1,70 @@
-import { testPathTransfer, transferPath } from '../util/transferPath';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as path from 'path';
-const walk = require('turbowalk');
-const du = require('diskusage');
-import * as fs from '../util/fs';
 
-require("@babel/register");
-require("@babel/polyfill");
+vi.mock('turbowalk', () => {
+  let handlers = {};
+  return {
+    __esModule: true,
+    default: (walkPath, cb) => {
+      return new Promise((resolve, reject) => {
+        if (handlers[walkPath] !== undefined) {
+          handlers[walkPath]((err, files) => {
+            if (err !== null) {
+              reject(err);
+            } else {
+              cb(files);
+              resolve();
+            }
+          });
+        } else {
+          cb([]);
+          resolve();
+        }
+      });
+    },
+    __setPathHandler: (walkPath, handler) => {
+      handlers[walkPath] = handler;
+    },
+  };
+});
+
+vi.mock('diskusage', () => {
+  let checkResult = { '': { free: 42 } };
+  return {
+    check: (checkPath) => checkResult[checkPath] || checkResult[''],
+    __setCheckResult: (checkPath, res) => { checkResult[checkPath] = res; },
+  };
+});
+
+vi.mock('winapi-bindings', () => {
+  const path = require('path');
+  return {
+    GetVolumePathName: (input) => {
+      const res = path.dirname(input);
+      if (res === '/missing') {
+        let err = new Error('fake error');
+        err.code = 'ENOTFOUND';
+        err.systemCode = 2;
+        throw err;
+      }
+      return res;
+    },
+    ShellExecuteEx: () => {},
+    RegGetValue: () => ({ type: 'REG_SZ', value: 'foobar' }),
+  };
+});
+
+import { testPathTransfer, transferPath } from '../util/transferPath';
+import * as walk from 'turbowalk';
+import * as du from 'diskusage';
+import * as fs from '../util/fs';
 
 const MB = 1024 * 1024;
 
 const baseA = path.sep + 'drivea';
 const baseB = path.sep + 'driveb';
 
-jest.mock('../util/fs', () => {
+vi.mock('../util/fs', () => {
   const path = require('path');
   let fakeFS = {};
   const Promise = require('bluebird');
@@ -84,15 +136,15 @@ jest.mock('../util/fs', () => {
         size: 0,
       });
     },
-    ensureDirWritableAsync: jest.fn((dirPath) => {
+    ensureDirWritableAsync: vi.fn((dirPath) => {
       insert(dirPath, { });
       return Promise.resolve();
     }),
-    mkdirsAsync: jest.fn(dirPath => {
+    mkdirsAsync: vi.fn(dirPath => {
       insert(dirPath, { });
       return Promise.resolve();
     }),
-    copyAsync: jest.fn((source, dest) => {
+    copyAsync: vi.fn((source, dest) => {
       const info = get(source);
       if (info.fail !== undefined) {
         return Promise.reject(info.fail);
@@ -100,7 +152,7 @@ jest.mock('../util/fs', () => {
       insert(dest, { ...info, type: 'copied' });
       return Promise.resolve();
     }),
-    linkAsync: jest.fn((source, dest) => {
+    linkAsync: vi.fn((source, dest) => {
       const info = get(source);
       if (info.fail !== undefined) {
         return Promise.reject(info.fail);
@@ -108,7 +160,7 @@ jest.mock('../util/fs', () => {
       insert(dest, { ...info, type: 'linked' });
       return Promise.resolve();
     }),
-    rmdirAsync: jest.fn((dirPath) => {
+    rmdirAsync: vi.fn((dirPath) => {
       let info = get(dirPath);
       if (Object.keys(info).length > 0) {
         let error = new Error('not empty');
@@ -119,11 +171,11 @@ jest.mock('../util/fs', () => {
       del(dirPath);
       return Promise.resolve();
     }),
-    removeAsync: jest.fn((filePath) => {
+    removeAsync: vi.fn((filePath) => {
       del(filePath)
       return Promise.resolve();
     }),
-    ensureDirAsync: jest.fn((dirPath) => {
+    ensureDirAsync: vi.fn((dirPath) => {
       insert(dirPath, { });
       return Promise.resolve();
     }),

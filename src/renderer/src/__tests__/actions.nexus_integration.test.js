@@ -1,3 +1,4 @@
+import { describe, it, expect } from "vitest";
 import * as actions from '../extensions/nexus_integration/actions/account';
 
 describe('setUserAPIKey', () => {

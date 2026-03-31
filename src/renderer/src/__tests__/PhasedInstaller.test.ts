@@ -1,17 +1,17 @@
-import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
+import { describe, it, expect, vi, beforeEach, afterEach, type Mocked } from 'vitest';
 import InstallManager from '../extensions/mod_management/InstallManager';
 import { IExtensionApi, IState } from '../types/api';
 import { IDependency } from '../extensions/mod_management/types/IDependency';
 import { IModRule } from '../extensions/mod_management/types/IMod';
 
 // Mock dependencies
-jest.mock('../extensions/mod_management/util/dependencies');
-jest.mock('../util/api');
-jest.mock('../util/log');
+vi.mock('../extensions/mod_management/util/dependencies');
+vi.mock('../util/api');
+vi.mock('../util/log');
 
 describe('Phased Installer', () => {
   let installManager: any;
-  let mockApi: jest.Mocked<IExtensionApi>;
+  let mockApi: Mocked<IExtensionApi>;
   let mockState: Partial<IState>;
 
   beforeEach(() => {
@@ -42,24 +42,24 @@ describe('Phased Installer', () => {
     };
 
     mockApi = {
-      getState: jest.fn(() => mockState as IState),
+      getState: vi.fn(() => mockState as IState),
       store: {
-        dispatch: jest.fn(),
-        getState: jest.fn(() => mockState as IState)
+        dispatch: vi.fn(),
+        getState: vi.fn(() => mockState as IState)
       },
       events: {
-        emit: jest.fn(),
-        on: jest.fn(),
-        once: jest.fn(),
-        removeListener: jest.fn()
+        emit: vi.fn(),
+        on: vi.fn(),
+        once: vi.fn(),
+        removeListener: vi.fn()
       },
-      onAsync: jest.fn(),
-      onStateChange: jest.fn(),
-      sendNotification: jest.fn(),
-      dismissNotification: jest.fn(),
-      showErrorNotification: jest.fn(),
-      translate: jest.fn((key) => key),
-      registerInstaller: jest.fn()
+      onAsync: vi.fn(),
+      onStateChange: vi.fn(),
+      sendNotification: vi.fn(),
+      dismissNotification: vi.fn(),
+      showErrorNotification: vi.fn(),
+      translate: vi.fn((key) => key),
+      registerInstaller: vi.fn()
     } as any;
 
     // Create InstallManager instance with private access
@@ -67,15 +67,15 @@ describe('Phased Installer', () => {
     installManager = new InstallManagerClass(
       mockApi,
       'testGameId',
-      jest.fn(), // getStagingPath
-      jest.fn(), // getInstallPath
-      jest.fn(), // getGameVersion
-      jest.fn()  // getDownloadPath
+      vi.fn(), // getStagingPath
+      vi.fn(), // getInstallPath
+      vi.fn(), // getGameVersion
+      vi.fn()  // getDownloadPath
     );
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('Phase State Management', () => {
@@ -447,8 +447,8 @@ describe('Phased Installer', () => {
       installManager.ensurePhaseState(sourceModId);
       const state = installManager.mInstallPhaseState.get(sourceModId);
 
-      const tasks1 = [jest.fn(), jest.fn()];
-      const tasks2 = [jest.fn()];
+      const tasks1 = [vi.fn(), vi.fn()];
+      const tasks2 = [vi.fn()];
 
       state.pendingByPhase.set(1, tasks1);
       state.pendingByPhase.set(2, tasks2);

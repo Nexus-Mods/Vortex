@@ -1,3 +1,4 @@
+import { describe, it, expect } from "vitest";
 import { profilesReducer } from '../extensions/profile_management/reducers/profiles';
 
 import * as _ from 'lodash';

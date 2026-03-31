@@ -1,3 +1,4 @@
+import { describe, it, expect } from "vitest";
 import { installerUIReducer } from '../extensions/installer_fomod_shared/reducers/installerUI';
 
 describe('startDialog', () => {

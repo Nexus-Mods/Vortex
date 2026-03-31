@@ -1,25 +1,26 @@
 'use strict';
 
+const { vi } = require('vitest');
 const os = require('os');
 
 const dialog = {
-  showMessageBoxSync: jest.fn(),
-  showMessageBox: jest.fn(),
-  showErrorBox: jest.fn(),
-  getWindow: jest.fn(() => null),
+  showMessageBoxSync: vi.fn(),
+  showMessageBox: vi.fn(),
+  showErrorBox: vi.fn(),
+  getWindow: vi.fn(() => null),
 };
 
 const app = {
-  exit: jest.fn(),
-  getAppPath: jest.fn(() => os.tmpdir()),
-  getPath: jest.fn(() => os.tmpdir()),
-  getName: jest.fn(() => 'Vortex'),
-  getVersion: jest.fn(() => '1.0.0-test'),
+  exit: vi.fn(),
+  getAppPath: vi.fn(() => os.tmpdir()),
+  getPath: vi.fn(() => os.tmpdir()),
+  getName: vi.fn(() => 'Vortex'),
+  getVersion: vi.fn(() => '1.0.0-test'),
 };
 
 module.exports = {
-  require: jest.fn(),
-  match: jest.fn(),
+  require: vi.fn(),
+  match: vi.fn(),
   app,
   dialog
 };

@@ -69,7 +69,7 @@ function genMd5Hash(filePath, progressFunc) {
 }
 
 // Helper to create mock API methods that extensions commonly use
-// Note: These are plain functions, not jest mocks. Tests should wrap them with jest.fn() if needed.
+// Note: These are plain functions, not vi mocks. Tests should wrap them with vi.fn() if needed.
 const createMockApiMethods = () => ({
   setStylesheet: (id, stylesheetPath) => {
     // Mock stylesheet registration - does nothing in tests

@@ -1,3 +1,5 @@
+const { vi } = require('vitest');
+
 module.exports = {
-  getCurrentWindow: jest.fn(() => null),
+  getCurrentWindow: vi.fn(() => null),
 };

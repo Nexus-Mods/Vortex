@@ -1,4 +1,5 @@
-const mockModule = jest.genMockFromModule('../src/util/ComponentEx');
+const { vi } = require('vitest');
+const mockModule = vi.importMock('../src/util/ComponentEx');
 
 // Override connect, translate and extend since Jest mocks don't work as HOCs
 module.exports = {

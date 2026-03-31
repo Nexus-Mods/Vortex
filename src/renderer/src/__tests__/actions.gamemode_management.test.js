@@ -1,3 +1,4 @@
+import { describe, it, expect } from "vitest";
 import * as discoveryActions from '../extensions/gamemode_management/actions/discovery';
 import * as actions from '../extensions/gamemode_management/actions/settings';
 

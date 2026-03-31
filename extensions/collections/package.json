@@ -15,7 +15,6 @@
   "devDependencies": {
     "7z-bin": "catalog:",
     "@nexusmods/nexus-api": "catalog:",
-    "@types/jest": "catalog:",
     "@types/lodash": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",

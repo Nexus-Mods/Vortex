@@ -1,11 +1,13 @@
 // Mock for cheerio/lib/utils
+const { vi } = require('vitest');
+
 module.exports = {
-  isTag: jest.fn(),
-  isHtml: jest.fn(),
-  isCheerio: jest.fn(),
-  camelCase: jest.fn(),
-  cssCase: jest.fn(),
-  domEach: jest.fn(),
-  cloneDom: jest.fn(),
-  isSubset: jest.fn()
+  isTag: vi.fn(),
+  isHtml: vi.fn(),
+  isCheerio: vi.fn(),
+  camelCase: vi.fn(),
+  cssCase: vi.fn(),
+  domEach: vi.fn(),
+  cloneDom: vi.fn(),
+  isSubset: vi.fn()
 };

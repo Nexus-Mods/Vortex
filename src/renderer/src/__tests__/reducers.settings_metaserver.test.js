@@ -1,3 +1,4 @@
+import { describe, it, expect } from "vitest";
 import settingsReducer from '../extensions/settings_metaserver/reducers';
 
 describe('addMetaserver', () => {

@@ -1,3 +1,4 @@
+import { it, expect, vi } from "vitest";
 import * as path from "path";
 import ProcessMonitor from "../util/ProcessMonitor";
 import type { IProcessInfo, IProcessProvider } from "../util/processProvider";
@@ -79,11 +80,11 @@ const buildState = (
 
 const createMonitor = (state: IState, processes: IProcessInfo[]) => {
   const store = {
-    dispatch: jest.fn(),
-    getState: jest.fn(() => state),
+    dispatch: vi.fn(),
+    getState: vi.fn(() => state),
   };
   const processProvider: IProcessProvider = {
-    list: jest.fn().mockResolvedValue(processes),
+    list: vi.fn().mockResolvedValue(processes),
   };
   const monitor = new ProcessMonitor(
     { store } as unknown as IExtensionApi,

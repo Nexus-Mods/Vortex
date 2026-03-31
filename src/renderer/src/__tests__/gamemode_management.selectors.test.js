@@ -1,3 +1,4 @@
+import { describe, it, expect } from "vitest";
 import { currentGameDiscovery, gameName, knownGames } from '../extensions/gamemode_management/selectors';
 
 describe('knownGames', () => {

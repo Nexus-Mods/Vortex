@@ -1,54 +1,84 @@
-jest.mock('../ExtensionProvider');
-jest.mock('react-i18next', () => ({
+import { vi, it, expect } from "vitest";
+
+vi.mock('../ExtensionProvider');
+vi.mock('../views/layout', () => ({
+  ClassicLayout: () => null,
+  ModernLayout: () => null,
+}));
+vi.mock('../contexts', () => ({
+  MainProvider: ({ children }) => children,
+  MenuLayerProvider: ({ children }) => children,
+  PagesProvider: ({ children }) => children,
+  WindowProvider: ({ children }) => children,
+}));
+vi.mock('../util/MutexContext', () => ({
+  MutexProvider: ({ children }) => children,
+}));
+vi.mock('react-i18next', () => ({
   withTranslation: () => (component) => component,
   translate: () => (component) => component,
   useTranslation: () => ({ t: (key) => key }),
 }));
-jest.mock('react-redux', () => ({
-  ...jest.requireActual('react-redux'),
-  useDispatch: () => jest.fn(),
-  useSelector: (selector) => {
-    const mockState = {
-      session: {
-        base: {
-          mainPage: '',
-          secondaryPage: '',
-          visibleDialog: undefined,
-          uiBlockers: {},
+vi.mock('react-redux', async () => {
+  const actual = await vi.importActual('react-redux');
+  return {
+    ...actual,
+    useDispatch: () => vi.fn(),
+    useSelector: (selector) => {
+      const mockState = {
+        session: {
+          base: {
+            mainPage: '',
+            secondaryPage: '',
+            visibleDialog: undefined,
+            uiBlockers: {},
+          },
+          notifications: {
+            dialogs: [],
+            notifications: [],
+            global_notifications: [],
+          },
         },
-      },
-      settings: {
-        profiles: {
-          activeProfileId: '',
-          nextProfileId: '',
+        persistent: {
+          profiles: {},
+          mods: {},
+          categories: {},
+          gameMode: { discovered: {} },
         },
-        window: {
-          customTitlebar: false,
-          tabsMinimized: false,
+        settings: {
+          profiles: {
+            activeProfileId: '',
+            nextProfileId: '',
+          },
+          window: {
+            customTitlebar: false,
+            tabsMinimized: false,
+          },
+          automation: {},
+          interface: {
+            language: 'en',
+          },
         },
-      },
-      app: {
-        appVersion: '1.0.0',
-      },
-    };
-    return selector(mockState);
-  },
-}));
+        app: {
+          appVersion: '1.0.0',
+        },
+      };
+      try {
+        return selector(mockState);
+      } catch {
+        return undefined;
+      }
+    },
+  };
+});
 
 import { AppLayout } from '../views/AppLayout';
 import React from 'react';
-import { shallow } from 'enzyme';
-import { findAll } from 'react-shallow-testutils';
-
-import { Modal } from 'react-bootstrap';
-
-function renderMainWindow() {
-  return shallow(<AppLayout objects={[]} />);
-}
+import { render } from '@testing-library/react';
 
 it('has no modals', () => {
-  let win = renderMainWindow();
-  let modals = findAll(win, (ele) => (ele !== null) && (ele.type === Modal));
+  const { container } = render(<AppLayout objects={[]} />);
+  const modals = container.querySelectorAll('.modal');
 
   // expecting no modals at the top level
   expect(modals.length).toBe(0);

@@ -2,10 +2,12 @@
  * Mock for storeHelper utility functions used in tests
  */
 
+const { vi } = require('vitest');
+
 // Import actual utility functions from the real storeHelper for proper behavior
 let actualStoreHelper;
 try {
-  actualStoreHelper = jest.requireActual('../util/storeHelper');
+  actualStoreHelper = vi.importActual('../util/storeHelper');
 } catch (error) {
   // If we can't load the actual module due to circular dependencies, 
   // provide basic fallback implementations

@@ -1,3 +1,4 @@
+import { describe, it, expect } from "vitest";
 import { categoryReducer } from '../extensions/category_management/reducers/category';
 
 describe('loadCategories', () => {

@@ -1,12 +1,15 @@
-jest.mock('vortex-api', () => {
-  const storeHelper = require('../util/storeHelper');
-  return {
-    util: {
-      setSafe: storeHelper.setSafe,
-      deleteOrNop: storeHelper.deleteOrNop,
-    },
-  };
+import { describe, it, expect, vi } from 'vitest';
+
+const { setSafe, deleteOrNop } = await vi.hoisted(async () => {
+  return await import('../util/storeHelper');
 });
+
+vi.mock('vortex-api', () => ({
+  util: {
+    setSafe,
+    deleteOrNop,
+  },
+}));
 
 import { sessionReducer } from '../../../../extensions/gamebryo-savegame-management/src/reducers/session';
 
