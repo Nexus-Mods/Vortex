@@ -5,7 +5,10 @@ import type { DuckDBConnection } from "@duckdb/node-api";
 import { unknownToError } from "@vortex/shared";
 import { DataInvalid } from "@vortex/shared/errors";
 
+import * as path from "node:path";
+
 import { log } from "../logging";
+import { getVortexPath } from "../getVortexPath";
 import DuckDBSingleton from "./DuckDBSingleton";
 
 const SEPARATOR: string = "###";
@@ -35,7 +38,8 @@ class LevelPersist implements IPersistor {
     }
     try {
       const singleton = DuckDBSingleton.getInstance();
-      await singleton.initialize();
+      const extensionDir = path.join(getVortexPath("base"), "duckdb-extensions");
+      await singleton.initialize(extensionDir);
 
       const alias = singleton.nextAlias();
       const connection = await singleton.attachDatabase(persistPath, alias);

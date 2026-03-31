@@ -1898,12 +1898,6 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/vortex-api
 
-  extensions/games/game-cyberpunk2077:
-    devDependencies:
-      vortex-api:
-        specifier: workspace:*
-        version: link:../../../packages/vortex-api
-
   extensions/games/game-daggerfallunity:
     devDependencies:
       vortex-api:
