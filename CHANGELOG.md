@@ -5,6 +5,59 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0-alpha.3] - 2026-03-31
+
+_Internal alpha release for testing — not for public distribution._
+
+### Added
+
+- Replaced LevelDB with DuckDB as persistence backend ([#20402](https://github.com/Nexus-Mods/Vortex/pull/20402))
+- Type-safe path system with resolver pipeline ([#21839](https://github.com/Nexus-Mods/Vortex/pull/21839))
+- Ability to filter mods by version ([#21835](https://github.com/Nexus-Mods/Vortex/pull/21835))
+- Collection column sorting and grouping ([#21802](https://github.com/Nexus-Mods/Vortex/pull/21802))
+- Handling for `direct_download_enabled` flag ([#19233](https://github.com/Nexus-Mods/Vortex/pull/19233))
+- Playwright end-to-end test infrastructure ([#21810](https://github.com/Nexus-Mods/Vortex/pull/21810))
+- Login status check on browse collections page ([#21831](https://github.com/Nexus-Mods/Vortex/pull/21831))
+
+### Changed
+
+- FOMOD installer is now sourced from NPM ([#21904](https://github.com/Nexus-Mods/Vortex/pull/21904))
+- Updated libloot to 0.29.1 ([#21718](https://github.com/Nexus-Mods/Vortex/pull/21718))
+- Game settings improvements ([#21716](https://github.com/Nexus-Mods/Vortex/pull/21716))
+- Spine and Menu UI improvements ([#21833](https://github.com/Nexus-Mods/Vortex/pull/21833))
+- Updated game button hover state ([#21868](https://github.com/Nexus-Mods/Vortex/pull/21868))
+- Mod settings are now game-specific in new UI ([#21840](https://github.com/Nexus-Mods/Vortex/pull/21840))
+- Cleaned up Stardew Valley support and added Linux SMAPI installation support ([#21673](https://github.com/Nexus-Mods/Vortex/pull/21673))
+- Improved Script Extender filtering to resolve by game store ([#21866](https://github.com/Nexus-Mods/Vortex/pull/21866))
+- Improved unresolved conflicts dialog with de-duplication and better persistence for local changes ([#21871](https://github.com/Nexus-Mods/Vortex/pull/21871))
+- Generated vortex-api dts rollup file ([#21703](https://github.com/Nexus-Mods/Vortex/pull/21703))
+- Enforced minimum 3 characters when creating new profiles ([#21867](https://github.com/Nexus-Mods/Vortex/pull/21867))
+
+### Fixed
+
+- ECD raised intermittently when updating/reinstalling mods ([#21863](https://github.com/Nexus-Mods/Vortex/pull/21863))
+- Race condition causing lslib to attempt installation twice in quick succession ([#21929](https://github.com/Nexus-Mods/Vortex/pull/21929))
+- Silent notifications opening tray and inflating badge count ([#21930](https://github.com/Nexus-Mods/Vortex/pull/21930))
+- Inability to switch back from shared to per-user mod staging ([#21933](https://github.com/Nexus-Mods/Vortex/pull/21933))
+- State sanitization repairs not persisted to disk ([#21936](https://github.com/Nexus-Mods/Vortex/pull/21936))
+- Drag-drop support for non-archives on mods page not working ([#21932](https://github.com/Nexus-Mods/Vortex/pull/21932))
+- Data not persisting due to UPDATE...RETURNING existence check omitting INSERT ([#21888](https://github.com/Nexus-Mods/Vortex/pull/21888))
+- `getVortexPath("temp")` cached to Electron temp path ([#21902](https://github.com/Nexus-Mods/Vortex/pull/21902))
+- Installer choices not preserved as expected ([#21869](https://github.com/Nexus-Mods/Vortex/pull/21869))
+- Deployment methods modal rendering issue on subsequent clicks ([#21841](https://github.com/Nexus-Mods/Vortex/pull/21841))
+- Stall timer not cleared on download cancellation ([#21836](https://github.com/Nexus-Mods/Vortex/pull/21836))
+- App metadata initialization issues and CLI args not persisting ([#21712](https://github.com/Nexus-Mods/Vortex/pull/21712))
+- Profile page issues in new UI ([#21830](https://github.com/Nexus-Mods/Vortex/pull/21830))
+- `onReset` page callback not called in new UI ([#21834](https://github.com/Nexus-Mods/Vortex/pull/21834))
+- Premium badge shown on "Install in app" button when user is premium ([#21832](https://github.com/Nexus-Mods/Vortex/pull/21832))
+- Dashboard/packery overlap issue ([#21827](https://github.com/Nexus-Mods/Vortex/pull/21827))
+- "Help centre" button not working ([#21829](https://github.com/Nexus-Mods/Vortex/pull/21829))
+- Default/user-created theme mismatch ([#21713](https://github.com/Nexus-Mods/Vortex/pull/21713))
+- Workshop collections incorrectly tagged as "published" ([#21859](https://github.com/Nexus-Mods/Vortex/pull/21859))
+- Several issues with category management UI elements ([#21860](https://github.com/Nexus-Mods/Vortex/pull/21860))
+- Settings tabs sort order ([#21862](https://github.com/Nexus-Mods/Vortex/pull/21862))
+- Wiki link for creating a game extension ([#21934](https://github.com/Nexus-Mods/Vortex/pull/21934))
+
 ## [2.0.0-alpha.2] - 2026-03-19
 
 _Internal alpha release for testing — not for public distribution._
@@ -73,6 +126,22 @@ _Internal alpha release for testing — not for public distribution._
 - Notification aggregator and group rendering protective code  
 - Main process exception handling  
 - State backup import fixes
+
+## [1.16.8] - 2026-03-31
+
+### Changed
+
+- Updated libloot to 0.29.1
+- Restored drag-drop support for non-archive files on the mods page
+- Baldur's Gate 3 specific fixes (lslib installer and minor tweaks)
+
+### Fixed
+
+- External changes dialog incorrectly appearing after batch mod reinstallations and updates
+- Load order export failing silently when permission elevation was required
+- Installer choices still not being preserved during mod reinstalls
+- Category column not updating and category filter excluding too many results ([#19423](https://github.com/Nexus-Mods/Vortex/issues/19423), [#21456](https://github.com/Nexus-Mods/Vortex/issues/21456), [#20735](https://github.com/Nexus-Mods/Vortex/issues/20735), [#21820](https://github.com/Nexus-Mods/Vortex/issues/21820))
+- Duplicate entries and rule changes being dropped when unlocking conflict rules
 
 ## [1.16.7] - 2026-03-17
 
@@ -1564,8 +1633,10 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[2.0.0-alpha.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.0.0-alpha.3
 [2.0.0-alpha.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.0.0-alpha.2
 [2.0.0-alpha.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.0.0-alpha.1
+[1.16.8]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.8
 [1.16.7]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.7
 [1.16.6]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.6
 [1.16.5]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.5
