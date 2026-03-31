@@ -319,7 +319,29 @@ export async function checkModRequirements(
       // Check Nexus mod requirements
       if (requirements.nexusRequirements?.nodes) {
         for (const req of requirements.nexusRequirements.nodes) {
+          // External requirements (e.g. tools from GitHub) don't have valid Nexus mod IDs
+          // so skip the API lookup but still report them as missing
+          if (req.externalRequirement) {
+            getModEntry().missingMods.push({
+              ...req,
+              modId: 0,
+              gameId,
+              uid: `external-${req.id}`,
+              requiredBy: {
+                modId,
+                modName: getModName(),
+                modUrl: requiringModNexusDomain
+                  ? `https://www.nexusmods.com/${requiringModNexusDomain}/mods/${modId}`
+                  : undefined,
+              },
+              modUrl: req.url,
+            });
+            continue;
+          }
           const requiredModId = parseInt(req.modId, 10);
+          if (isNaN(requiredModId) || requiredModId <= 0) {
+            continue;
+          }
           const requiredGameId = req.gameId
             ? parseInt(req.gameId, 10)
             : undefined;
