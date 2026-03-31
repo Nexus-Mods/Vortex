@@ -7,6 +7,7 @@
 
 import { betterIpcMain } from "../ipc";
 import { log } from "../logging";
+import { setupInternalGames } from "../games/platform";
 import { initNexusIntegration } from "./nexusIntegration";
 import { initUpdater } from "./updater";
 
@@ -17,6 +18,8 @@ let initialized = false;
  * Should be called once during application startup.
  */
 export function setupMainExtensions(): void {
+  setupInternalGames();
+
   betterIpcMain.on(
     "extensions:init-all-main",
     (_event, installType: string) => {

@@ -4,6 +4,18 @@
 
 import type { SerializedSpan } from "../telemetry/types";
 import type {
+  DiagnosticResult,
+  InstallPlan,
+  InstallerMatch,
+  InternalGameDiscoveryResult,
+  InternalGameInstallRequest,
+  InternalGameInstruction,
+  InternalGameManifest,
+  InternalGameRuntimeSnapshot,
+  LoadOrderSnapshot,
+  ToolLaunchPlan,
+} from "../games/internalGames";
+import type {
   BrowserViewConstructorOptions,
   Cookie,
   CookiesGetFilter,
@@ -21,6 +33,23 @@ import type {
 } from "./electron";
 import type { Level } from "./logging";
 import type { PersistedHive, PersistedState } from "./state";
+
+export type {
+  DiagnosticResult,
+  InstallPlan,
+  InstallerMatch,
+  InternalGameDiscoveryResult,
+  InternalGameInstallFile,
+  InternalGameInstallRequest,
+  InternalGameInstruction,
+  InternalGameLoadOrderEntry,
+  InternalGameManifest,
+  InternalGameMod,
+  InternalGameRuntimeSnapshot,
+  InternalRunOptions,
+  LoadOrderSnapshot,
+  ToolLaunchPlan,
+} from "../games/internalGames";
 
 // NOTE(erri120): You should use unique channel names to prevent overlap. You can prefix
 // channel names with an "area" like "example:" to somewhat categorize them and reduce the possibility of overlap.
@@ -243,6 +272,45 @@ export interface InvokeChannels {
 
   // Session cookies
   "session:getCookies": (filter: CookiesGetFilter) => Promise<Cookie[]>;
+
+  // Internal game platform
+  "games:listInternal": () => Promise<InternalGameManifest[]>;
+  "games:getManifest": (gameId: string) => Promise<InternalGameManifest | null>;
+  "games:discover": (gameId: string) => Promise<InternalGameDiscoveryResult | null>;
+  "games:runSetup": (
+    gameId: string,
+    runtime: InternalGameRuntimeSnapshot,
+  ) => Promise<DiagnosticResult[]>;
+  "games:classifyInstall": (
+    gameId: string,
+    request: InternalGameInstallRequest,
+    runtime: InternalGameRuntimeSnapshot,
+  ) => Promise<InstallerMatch>;
+  "games:buildInstallPlan": (
+    gameId: string,
+    request: InternalGameInstallRequest,
+    runtime: InternalGameRuntimeSnapshot,
+  ) => Promise<InstallPlan>;
+  "games:compileLoadOrder": (
+    gameId: string,
+    runtime: InternalGameRuntimeSnapshot,
+  ) => Promise<LoadOrderSnapshot>;
+  "games:applyLoadOrder": (
+    gameId: string,
+    runtime: InternalGameRuntimeSnapshot,
+    loadOrder: LoadOrderSnapshot,
+  ) => Promise<DiagnosticResult[]>;
+  "games:getToolLaunchPlan": (
+    gameId: string,
+    toolId: string,
+    runtime: InternalGameRuntimeSnapshot,
+    executable: string,
+    args: string[],
+  ) => Promise<ToolLaunchPlan>;
+  "games:getDiagnostics": (
+    gameId: string,
+    runtime: InternalGameRuntimeSnapshot,
+  ) => Promise<DiagnosticResult[]>;
 
   // Window operations
   "window:getId": () => Promise<number>;

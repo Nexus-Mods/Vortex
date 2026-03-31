@@ -801,18 +801,30 @@ function init(context: IExtensionContext): boolean {
   context.registerGame = ((game: IGame, extensionPath: string) => {
     try {
       game.extensionPath = extensionPath;
-      const gameExtInfo = JSON.parse(
-        fs.readFileSync(path.join(extensionPath, "info.json"), {
-          encoding: "utf8",
-        }),
-      );
-      game.contributed =
-        gameExtInfo.author === COMPANY_ID ||
-          gameExtInfo.author === NEXUSMODS_EXT_ID
-          ? undefined
-          : gameExtInfo.author;
-      game.final = semver.gte(gameExtInfo.version, "1.0.0");
-      game.version = gameExtInfo.version;
+      try {
+        const gameExtInfo = JSON.parse(
+          fs.readFileSync(path.join(extensionPath, "info.json"), {
+            encoding: "utf8",
+          }),
+        );
+        game.contributed =
+          gameExtInfo.author === COMPANY_ID ||
+            gameExtInfo.author === NEXUSMODS_EXT_ID
+            ? undefined
+            : gameExtInfo.author;
+        game.final = semver.gte(gameExtInfo.version, "1.0.0");
+        game.version = gameExtInfo.version;
+      } catch (err) {
+        if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
+          throw err;
+        }
+
+        // Internal built-in games are bundled into the renderer and may not
+        // have a physical extension directory with metadata on disk.
+        game.contributed = undefined;
+        game.final = true;
+        game.version = context.api.store.getState().app?.appVersion ?? "0.0.0";
+      }
       $.extensionGames.push(game);
     } catch (err) {
       context.api.showErrorNotification("Game Extension not loaded", err, {

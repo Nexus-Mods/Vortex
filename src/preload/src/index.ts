@@ -71,6 +71,50 @@ try {
         betterIpcRenderer.send("extensions:init-all-main", installType),
     },
 
+    games: {
+      listInternal: () => betterIpcRenderer.invoke("games:listInternal"),
+      getManifest: (gameId: string) =>
+        betterIpcRenderer.invoke("games:getManifest", gameId),
+      discover: (gameId: string) =>
+        betterIpcRenderer.invoke("games:discover", gameId),
+      runSetup: (gameId, runtime) =>
+        betterIpcRenderer.invoke("games:runSetup", gameId, runtime),
+      classifyInstall: (gameId, request, runtime) =>
+        betterIpcRenderer.invoke(
+          "games:classifyInstall",
+          gameId,
+          request,
+          runtime,
+        ),
+      buildInstallPlan: (gameId, request, runtime) =>
+        betterIpcRenderer.invoke(
+          "games:buildInstallPlan",
+          gameId,
+          request,
+          runtime,
+        ),
+      compileLoadOrder: (gameId, runtime) =>
+        betterIpcRenderer.invoke("games:compileLoadOrder", gameId, runtime),
+      applyLoadOrder: (gameId, runtime, loadOrder) =>
+        betterIpcRenderer.invoke(
+          "games:applyLoadOrder",
+          gameId,
+          runtime,
+          loadOrder,
+        ),
+      getToolLaunchPlan: (gameId, toolId, runtime, executable, args) =>
+        betterIpcRenderer.invoke(
+          "games:getToolLaunchPlan",
+          gameId,
+          toolId,
+          runtime,
+          executable,
+          args,
+        ),
+      getDiagnostics: (gameId, runtime) =>
+        betterIpcRenderer.invoke("games:getDiagnostics", gameId, runtime),
+    },
+
     updater: {
       getStatus: () => betterIpcRenderer.invoke("updater:get-status"),
       setChannel: (channel: string, manual: boolean) =>
