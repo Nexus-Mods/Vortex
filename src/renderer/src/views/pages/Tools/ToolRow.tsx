@@ -85,7 +85,7 @@ export const ToolRow: FC<ToolRowProps> = ({
     <div className="hover-overlay-weak flex w-full items-center gap-x-3 rounded-sm bg-surface-mid px-4 py-3 shadow-xs">
       <div className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-xs">
         {iconSrc ? (
-          <Image src={iconSrc} className="size-full object-contain" />
+          <Image className="size-full object-contain" src={iconSrc} />
         ) : (
           <Icon className="text-translucent-moderate" path={mdiWrench} />
         )}
@@ -93,6 +93,7 @@ export const ToolRow: FC<ToolRowProps> = ({
 
       <div className="grow space-y-0.5">
         <Typography>{starterInfo.name}</Typography>
+
         {isRunning && (
           <Typography appearance="subdued" typographyType="body-sm">
             {t("Running...")}
@@ -105,18 +106,19 @@ export const ToolRow: FC<ToolRowProps> = ({
           <>
             <Button
               buttonType="tertiary"
+              disabled={isFirst}
               leftIconPath={mdiArrowUp}
               size="xs"
               title={isFirst ? t("Already at the top") : t("Move up")}
-              disabled={isFirst}
               onClick={() => onMoveUp?.(starter)}
             />
+
             <Button
               buttonType="tertiary"
+              disabled={isLast}
               leftIconPath={mdiArrowDown}
               size="xs"
               title={isLast ? t("Already at the bottom") : t("Move down")}
-              disabled={isLast}
               onClick={() => onMoveDown?.(starter)}
             />
 
@@ -127,6 +129,7 @@ export const ToolRow: FC<ToolRowProps> = ({
         {!starter.isGame && (
           <Button
             buttonType="tertiary"
+            disabled={!isPinned && pinDisabled}
             leftIconPath={isPinned ? mdiPinOff : mdiPin}
             size="xs"
             title={
@@ -136,7 +139,6 @@ export const ToolRow: FC<ToolRowProps> = ({
                   ? t("Unpin tool")
                   : t("Pin tool")
             }
-            disabled={!isPinned && pinDisabled}
             onClick={() => onTogglePin(starter)}
           />
         )}
@@ -158,8 +160,8 @@ export const ToolRow: FC<ToolRowProps> = ({
             </DropdownItem>
 
             <DropdownItem
-              leftIconPath={isPrimary ? mdiFlashOff : mdiFlash}
               disabled={!isPrimary && !isValid}
+              leftIconPath={isPrimary ? mdiFlashOff : mdiFlash}
               onClick={() => onSetPrimary(starterInfo)}
             >
               {isPrimary
@@ -183,11 +185,11 @@ export const ToolRow: FC<ToolRowProps> = ({
 
         <Button
           buttonType="secondary"
+          disabled={!isValid}
           filled="strong"
           leftIconPath={mdiPlay}
           size="sm"
           title={t("Launch tool")}
-          disabled={!isValid}
           onClick={() => onRun(starterInfo)}
         />
       </div>

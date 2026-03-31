@@ -1,7 +1,7 @@
 import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 
+import type { IDiscoveredTool, IToolStored } from "../../../types/api";
 import type { IDiscoveryResult, IGameStored } from "../../../types/IState";
-import type { IToolStored } from "../../../types/api";
 
 import { log } from "../../../util/log";
 import StarterInfo from "../../../util/StarterInfo";
@@ -33,7 +33,7 @@ export const generateGameStarter = (
 export const generateToolStarters = (
   knownGames: IGameStored[],
   discoveredGames: Record<string, IDiscoveryResult>,
-  discoveredTools: Record<string, any>,
+  discoveredTools: Record<string, IDiscoveredTool>,
   toolsOrder: string[],
   gameMode: string,
   gameStarterId: string,
@@ -45,7 +45,7 @@ export const generateToolStarters = (
     return [];
   }
 
-  const knownTools: IToolStored[] = getSafe(game, ["supportedTools"], []);
+  const knownTools = getSafe(game, ["supportedTools"], Array<IToolStored>());
   const gameId = discoveredGame.id || game.id;
   const preConfTools = new Set<string>(knownTools.map((tool) => tool.id));
 

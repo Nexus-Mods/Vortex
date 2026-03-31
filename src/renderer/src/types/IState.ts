@@ -1,22 +1,23 @@
+import type { IParameters } from "@vortex/shared/cli";
+
 import type { ICategoryDictionary } from "../extensions/category_management/types/ICategoryDictionary";
 import type { ICollectionInstallState } from "../extensions/collections_integration/types";
 import type { IDownload } from "../extensions/download_management/types/IDownload";
 import type { IDiscoveryResult } from "../extensions/gamemode_management/types/IDiscoveryResult";
 import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
+import type { IHealthCheckPersistentState } from "../extensions/health_check/reducers/persistent";
+import type { IHealthCheckSessionState } from "../extensions/health_check/reducers/session";
 import type {
   IHistoryPersistent,
   IHistoryState,
 } from "../extensions/history_management/reducers";
 import type { IMod } from "../extensions/mod_management/types/IMod";
 import type { IProfile } from "../extensions/profile_management/types/IProfile";
-import type { IParameters } from "@vortex/shared/cli";
 import type { IAvailableExtension, IExtension } from "./extensions";
 import type { IAttributeState } from "./IAttributeState";
 import type { IDialog } from "./IDialog";
 import type { INotification } from "./INotification";
 import type { VortexInstallType } from "./VortexInstallType";
-import type { IHealthCheckSessionState } from "../extensions/health_check/reducers/session";
-import type { IHealthCheckPersistentState } from "../extensions/health_check/reducers/persistent";
 
 // re-export these to keep the imports from extensions local
 export type { IDownload, IDiscoveryResult, IGameStored, IMod, IProfile };
@@ -174,6 +175,7 @@ export interface ISettingsInterface {
   tools?: {
     addToolsToTitleBar: boolean;
     order?: { [gameId: string]: string[] };
+    pinned?: { [gameId: string]: string[] };
   };
   primaryTool?: { [gameId: string]: string };
 }
@@ -363,7 +365,10 @@ export interface IState {
     downloads: IStateDownloads;
     categories: { [gameId: string]: ICategoryDictionary };
     gameMode: IStateGameMode;
-    deployment: { needToDeploy: { [gameId: string]: boolean } };
+    deployment: {
+      needToDeploy: { [gameId: string]: boolean };
+      deploymentCounter: { [gameId: string]: number };
+    };
     transactions: IStateTransactions;
     history: IHistoryPersistent;
     healthCheck: IHealthCheckPersistentState;

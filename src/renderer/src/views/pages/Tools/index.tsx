@@ -1,12 +1,12 @@
 import { mdiPin, mdiPlus, mdiFlash, mdiWrench } from "@mdi/js";
-import React, { FC } from "react";
+import React, { type FC } from "react";
 import { useTranslation } from "react-i18next";
 
+import EmptyPlaceholder from "../../../controls/EmptyPlaceholder";
+import ToolEditDialog from "../../../extensions/starter_dashlet/ToolEditDialog";
 import { Button } from "../../../ui/components/button/Button";
 import { Icon } from "../../../ui/components/icon/Icon";
 import { Typography } from "../../../ui/components/typography/Typography";
-import EmptyPlaceholder from "../../../controls/EmptyPlaceholder";
-import ToolEditDialog from "../../../extensions/starter_dashlet/ToolEditDialog";
 import MainPage from "../../MainPage";
 import { ToolRow } from "./ToolRow";
 import { useToolsPage } from "./useToolsPage";
@@ -91,7 +91,9 @@ export const ToolsPage: FC = () => {
             )}
 
             {/* Default launcher & pinned tools - only shown when tools exist */}
-            {(launcherTool || otherPinnedTools.length > 0 || unpinnedTools.length > 0) && (
+            {(launcherTool ||
+              otherPinnedTools.length > 0 ||
+              unpinnedTools.length > 0) && (
               <>
                 {/* Default launcher section */}
                 <div className="space-y-2">
@@ -101,6 +103,7 @@ export const ToolsPage: FC = () => {
                       path={mdiFlash}
                       size="sm"
                     />
+
                     <Typography appearance="moderate" typographyType="body-sm">
                       {t("Default launcher")}
                     </Typography>
@@ -108,15 +111,15 @@ export const ToolsPage: FC = () => {
 
                   {launcherTool ? (
                     <ToolRow
-                      starter={launcherTool}
                       counter={counter}
-                      isValid={isToolValid(launcherTool)}
-                      isPrimary={true}
                       isPinned={true}
+                      isPrimary={true}
                       isRunning={isToolRunning(launcherTool)}
-                      onRun={startTool}
+                      isValid={isToolValid(launcherTool)}
+                      starter={launcherTool}
                       onEdit={editTool}
                       onRemove={removeTool}
+                      onRun={startTool}
                       onSetPrimary={setToolPrimary}
                       onTogglePin={togglePin}
                     />
@@ -137,6 +140,7 @@ export const ToolsPage: FC = () => {
                       path={mdiPin}
                       size="sm"
                     />
+
                     <Typography appearance="moderate" typographyType="body-sm">
                       {t("Pinned tools {{count}}/{{max}}", {
                         count: pinnedCount,
@@ -149,23 +153,23 @@ export const ToolsPage: FC = () => {
                     <div className="space-y-1">
                       {otherPinnedTools.map((starter, idx) => (
                         <ToolRow
-                          key={starter.id}
-                          starter={starter}
                           counter={counter}
-                          isValid={isToolValid(starter)}
-                          isPrimary={false}
-                          isPinned={true}
-                          isRunning={isToolRunning(starter)}
-                          showReorder={true}
                           isFirst={idx === 0}
                           isLast={idx === otherPinnedTools.length - 1}
-                          onRun={startTool}
+                          isPinned={true}
+                          isPrimary={false}
+                          isRunning={isToolRunning(starter)}
+                          isValid={isToolValid(starter)}
+                          key={starter.id}
+                          showReorder={true}
+                          starter={starter}
                           onEdit={editTool}
+                          onMoveDown={moveToolDown}
+                          onMoveUp={moveToolUp}
                           onRemove={removeTool}
+                          onRun={startTool}
                           onSetPrimary={setToolPrimary}
                           onTogglePin={togglePin}
-                          onMoveUp={moveToolUp}
-                          onMoveDown={moveToolDown}
                         />
                       ))}
                     </div>
@@ -188,9 +192,10 @@ export const ToolsPage: FC = () => {
                   path={mdiWrench}
                   size="sm"
                 />
+
                 <Typography
-                  className="grow"
                   appearance="moderate"
+                  className="grow"
                   typographyType="body-sm"
                 >
                   {t("Tools")}
@@ -209,21 +214,21 @@ export const ToolsPage: FC = () => {
                 <div className="space-y-1">
                   {unpinnedTools.map((starter) => (
                     <ToolRow
-                      key={starter.id}
-                      starter={starter}
                       counter={counter}
-                      isValid={isToolValid(starter)}
-                      isPrimary={false}
                       isPinned={false}
+                      isPrimary={false}
                       isRunning={isToolRunning(starter)}
+                      isValid={isToolValid(starter)}
+                      key={starter.id}
                       pinDisabled={maxPinnedReached}
                       pinDisabledReason={t(
                         "Max pinned tools reached ({{count}}/{{max}})",
                         { count: pinnedCount, max: MAX_PINNED_TOOLS },
                       )}
-                      onRun={startTool}
+                      starter={starter}
                       onEdit={editTool}
                       onRemove={removeTool}
+                      onRun={startTool}
                       onSetPrimary={setToolPrimary}
                       onTogglePin={togglePin}
                     />

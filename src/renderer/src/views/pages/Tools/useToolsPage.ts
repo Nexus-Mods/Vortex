@@ -2,18 +2,18 @@ import { useCallback, useContext, useState } from "react";
 import { useDispatch } from "react-redux";
 import { generate as shortid } from "shortid";
 
-import type { IStarterInfo } from "../../../util/StarterInfo";
 import type { IGameStored } from "../../../types/IState";
+import type { IStarterInfo } from "../../../util/StarterInfo";
 
-import { showError } from "../../../util/message";
-import StarterInfo from "../../../util/StarterInfo";
-import { MainContext } from "../../MainWindow";
 import { setToolVisible } from "../../../extensions/gamemode_management/actions/settings";
 import {
   setPrimaryTool,
   setToolOrder,
   setToolPinned,
 } from "../../../extensions/starter_dashlet/actions";
+import { showError } from "../../../util/message";
+import StarterInfo from "../../../util/StarterInfo";
+import { MainContext } from "../../MainWindow";
 import { useToolsData } from "./useToolsData";
 
 function swapInOrder(ids: string[], fromIdx: number, toIdx: number): string[] {
@@ -38,7 +38,8 @@ export const useToolsPage = () => {
   } = data;
 
   // ── Edit dialog state ─────────────────────────────────────────────────
-  const [toolBeingEdited, setToolBeingEdited] = useState<StarterInfo>(undefined);
+  const [toolBeingEdited, setToolBeingEdited] =
+    useState<StarterInfo>(undefined);
   const [counter, setCounter] = useState(1);
 
   const closeEditDialog = useCallback(() => {
@@ -71,7 +72,7 @@ export const useToolsPage = () => {
   // ── Tool actions ──────────────────────────────────────────────────────
 
   const onShowError = useCallback(
-    (message: string, details?: any, allowReport?: boolean) =>
+    (message: string, details?: unknown, allowReport?: boolean) =>
       showError(reduxDispatch, message, details, { allowReport }),
     [reduxDispatch],
   );
@@ -128,7 +129,9 @@ export const useToolsPage = () => {
 
   const togglePin = useCallback(
     (starter: IStarterInfo) => {
-      const currentlyPinned = data.otherPinnedTools.some((s) => s.id === starter.id);
+      const currentlyPinned = data.otherPinnedTools.some(
+        (s) => s.id === starter.id,
+      );
       reduxDispatch(setToolPinned(gameMode, starter.id, !currentlyPinned));
     },
     [reduxDispatch, gameMode, data.otherPinnedTools],
@@ -157,9 +160,7 @@ export const useToolsPage = () => {
     return tools
       .filter(
         (s) =>
-          s.isGame ||
-          discoveredTools[s.id] === undefined ||
-          !isToolHidden(s),
+          s.isGame || discoveredTools[s.id] === undefined || !isToolHidden(s),
       )
       .map((s) => s.id);
   }, [tools, discoveredTools, isToolHidden]);
