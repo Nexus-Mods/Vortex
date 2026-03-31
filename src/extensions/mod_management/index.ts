@@ -2208,6 +2208,67 @@ function init(context: IExtensionContext): boolean {
     (activity: string[]) => activity !== undefined && activity.length > 0,
   );
 
+  const onDropNonArchiveFiles = async (filePaths: string[]) => {
+    const api = context.api;
+    const state: IState = api.getState();
+    const gameMode = activeGameId(state);
+    if (gameMode === undefined) {
+      return;
+    }
+
+    const fileNames = filePaths.map((fp) => path.basename(fp)).join("\n");
+
+    const result = await api.showDialog(
+      "question",
+      "Not an archive",
+      {
+        text:
+          "The following files are not archives and can't be installed directly. " +
+          "Would you like to create a mod containing these files instead?",
+        message: fileNames,
+      },
+      [{ label: "Cancel" }, { label: "Create Mod" }],
+    );
+
+    if (result.action !== "Create Mod") {
+      return;
+    }
+
+    const modId = shortid();
+    const mod: IMod = {
+      id: modId,
+      state: "installed",
+      type: "",
+      installationPath: modId,
+      attributes: {
+        name: filePaths.length === 1
+          ? path.basename(filePaths[0], path.extname(filePaths[0]))
+          : "New Mod",
+        installTime: new Date(),
+      },
+    };
+
+    const modInstallPath = installPathForGame(state, gameMode);
+    const modPath = path.join(modInstallPath, modId);
+
+    api.events.emit("create-mod", gameMode, mod, async (err: Error) => {
+      if (err !== null) {
+        api.showErrorNotification("Failed to create mod", err);
+        return;
+      }
+      try {
+        for (const filePath of filePaths) {
+          await fs.copyAsync(
+            filePath,
+            path.join(modPath, path.basename(filePath)),
+          );
+        }
+      } catch (copyErr) {
+        api.showErrorNotification("Failed to copy files to mod", copyErr);
+      }
+    });
+  };
+
   context.registerMainPage(
     "mods",
     "Mods",
@@ -2218,7 +2279,10 @@ function init(context: IExtensionContext): boolean {
       visible: () => activeGameId(context.api.store.getState()) !== undefined,
       activity: modsActivity,
       priority: 50,
-      props: () => ({ modSources: getModSources() }),
+      props: () => ({
+        modSources: getModSources(),
+        onDropNonArchiveFiles,
+      }),
     },
   );
 

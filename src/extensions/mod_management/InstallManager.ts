@@ -324,22 +324,6 @@ export const INSTALL_ACTION = "Update current profile";
 export const REPLACE_ACTION = "Update all profiles";
 export const VARIANT_ACTION = "Add Variant";
 
-const archiveExtLookup = new Set<string>([
-  ".zip",
-  ".z01",
-  ".7z",
-  ".rar",
-  ".r00",
-  ".001",
-  ".bz2",
-  ".bzip2",
-  ".gz",
-  ".gzip",
-  ".xz",
-  ".z",
-  ".lzh",
-]);
-
 // file types supported by 7z but we don't want to extract
 // I was tempted to put .exe in here but there may actually be cases where the
 // exe is a self-extracting archive and we would be able to handle it

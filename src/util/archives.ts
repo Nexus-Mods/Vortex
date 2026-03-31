@@ -1,6 +1,45 @@
-import { IArchiveHandler } from "../types/IExtensionContext";
+import type PromiseBB from "bluebird";
 
-import Promise from "bluebird";
+import * as path from "path";
+
+import type { IArchiveHandler } from "../types/IExtensionContext";
+
+const archiveExtLookup = new Set<string>([
+  // Standard archive formats
+  ".zip",
+  ".7z",
+  ".rar",
+  ".tar",
+  ".gz",
+  ".gzip",
+  ".tgz",
+  ".bz2",
+  ".bzip2",
+  ".tbz2",
+  ".xz",
+  ".txz",
+  ".lzma",
+  ".lzh",
+  ".z",
+  ".zst",
+  ".zstd",
+  ".cab",
+  ".arj",
+  // Split archive parts
+  ".z01",
+  ".r00",
+  ".001",
+  // Mod-specific archive formats
+  ".fomod",
+  ".dazip",
+]);
+
+export function knownArchiveExt(filePath: string): boolean {
+  if (filePath == null || filePath.length === 0) {
+    return false;
+  }
+  return archiveExtLookup.has(path.extname(filePath).toLowerCase());
+}
 
 /**
  * wrapper around an format-specific archive handler
@@ -18,8 +57,10 @@ export class Archive {
   /**
    * list files at the specified path
    */
-  public get readDir(): (archivePath: string) => Promise<string[]> {
-    return this.mHandler.readDir !== undefined
+  public get readDir():
+    | ((archivePath: string) => PromiseBB<string[]>)
+    | undefined {
+    return this.mHandler.readDir
       ? (archivePath: string) => this.mHandler.readDir(archivePath)
       : undefined;
   }
@@ -27,8 +68,10 @@ export class Archive {
   /**
    * read a file at the specified path via a stream
    */
-  public get readFile(): (filePath: string) => NodeJS.ReadableStream {
-    return this.mHandler.readFile !== undefined
+  public get readFile():
+    | ((filePath: string) => NodeJS.ReadableStream)
+    | undefined {
+    return this.mHandler.readFile
       ? (filePath: string) => this.mHandler.readFile(filePath)
       : undefined;
   }
@@ -36,11 +79,10 @@ export class Archive {
   /**
    * extract a single file
    */
-  public get extractFile(): (
-    filePath: string,
-    outputPath: string,
-  ) => Promise<void> {
-    return this.mHandler.extractFile !== undefined
+  public get extractFile():
+    | ((filePath: string, outputPath: string) => PromiseBB<void>)
+    | undefined {
+    return this.mHandler.extractFile
       ? (filePath: string, outputPath: string) =>
           this.mHandler.extractFile(filePath, outputPath)
       : undefined;
@@ -49,8 +91,10 @@ export class Archive {
   /**
    * extract the entire archive
    */
-  public get extractAll(): (outputPath: string) => Promise<void> {
-    return this.mHandler.extractAll !== undefined
+  public get extractAll():
+    | ((outputPath: string) => PromiseBB<void>)
+    | undefined {
+    return this.mHandler.extractAll
       ? (outputPath: string) => this.mHandler.extractAll(outputPath)
       : undefined;
   }
@@ -58,8 +102,8 @@ export class Archive {
   /**
    * create this archive from the files in sourcePath
    */
-  public get create(): (sourcePath: string) => Promise<void> {
-    return this.mHandler.create !== undefined
+  public get create(): ((sourcePath: string) => PromiseBB<void>) | undefined {
+    return this.mHandler.create
       ? (sourcePath: string) => this.mHandler.create(sourcePath)
       : undefined;
   }
@@ -67,19 +111,16 @@ export class Archive {
   /**
    * add a single file to the archive
    */
-  public get addFile(): (
-    filePath: string,
-    sourcePath: string,
-  ) => Promise<void> {
-    return this.mHandler.addFile !== undefined
+  public get addFile():
+    | ((filePath: string, sourcePath: string) => PromiseBB<void>)
+    | undefined {
+    return this.mHandler.addFile
       ? (filePath: string, sourcePath: string) =>
           this.mHandler.addFile(filePath, sourcePath)
       : undefined;
   }
 
-  public get write(): () => Promise<void> {
-    return this.mHandler.write !== undefined
-      ? () => this.mHandler.write()
-      : undefined;
+  public get write(): (() => PromiseBB<void>) | undefined {
+    return this.mHandler.write ? () => this.mHandler.write() : undefined;
   }
 }
