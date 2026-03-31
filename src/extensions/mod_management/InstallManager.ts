@@ -150,7 +150,13 @@ import {
   IInstruction,
   InstructionType,
 } from "./types/IInstallResult";
-import { IFileListItem, IMod, IModReference, IModRule } from "./types/IMod";
+import {
+  IFileListItem,
+  IMod,
+  IModAttributes,
+  IModReference,
+  IModRule,
+} from "./types/IMod";
 import { IModInstaller, ISupportedInstaller } from "./types/IModInstaller";
 import { IInstallationDetails, InstallFunc } from "./types/InstallFunc";
 import {
@@ -288,7 +294,7 @@ interface IReplaceChoice {
   id: string;
   variant: string;
   enable: boolean;
-  attributes: { [key: string]: any };
+  attributes: IModAttributes;
   rules: IRule[];
   replaceChoice: ReplaceChoice;
 }
@@ -548,6 +554,11 @@ class InstallManager {
   // Tracks the currently active installations - can be used with debug functions
   //  to inspect the state of ongoing installations
   private mActiveInstalls: Map<string, IActiveInstallation> = new Map();
+
+  // Mod IDs that completed installation since the last deployment.
+  // Consumed (and cleared) by the deployment flow to auto-resolve expected
+  // external changes caused by reinstalls/updates.
+  private mRecentlyInstalledMods: Set<string> = new Set();
 
   // Tracks retry counts for failed dependency installations
   private mDependencyRetryCount: Map<string, number> = new Map();
@@ -956,19 +967,22 @@ class InstallManager {
   }
 
   /**
-   * Debug method: Get details about active installations
+   * Record that a mod was recently installed/reinstalled. The deployment flow
+   * uses this to auto-resolve expected external changes for these mods.
    */
-  public debugActiveInstalls(): any[] {
-    const now = Date.now();
-    return Array.from(this.mActiveInstalls.entries()).map(([key, install]) => ({
-      installId: key,
-      modId: install.modId,
-      gameId: install.gameId,
-      baseName: install.baseName,
-      durationMs: now - install.startTime,
-      durationMinutes:
-        Math.round(((now - install.startTime) / 60000) * 100) / 100,
-    }));
+  public markRecentInstall(modId: string): void {
+    this.mRecentlyInstalledMods.add(modId);
+  }
+
+  /**
+   * Returns the set of mod IDs that completed installation since the last
+   * deployment and clears the internal tracking. Intended to be called once
+   * per deployment cycle.
+   */
+  public consumeRecentInstalls(): Set<string> {
+    const result = new Set(this.mRecentlyInstalledMods);
+    this.mRecentlyInstalledMods.clear();
+    return result;
   }
 
   /**
@@ -1248,6 +1262,9 @@ class InstallManager {
             modId: id,
             duration: Date.now() - activeInstall.startTime,
           });
+          if (id) {
+            this.markRecentInstall(id);
+          }
         }
       }
 

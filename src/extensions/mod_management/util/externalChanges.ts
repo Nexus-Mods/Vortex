@@ -204,22 +204,8 @@ export function changeToEntry(
 }
 
 function defaultInternalAction(typeId: string, input: IFileChange): IFileEntry {
-  // Internal changes are from mod updates/reinstalls — always drop the old
+  // Internal changes are from mod updates/reinstalls/merges — always drop the old
   // deployed file so deployment recreates it from the updated staging files.
-  const action: FileAction = {
-    refchange: "drop",
-    valchange: "nop",
-    deleted: "restore",
-    srcdeleted: "drop",
-  }[input.changeType] as FileAction;
-
-  return {
-    ...changeToEntry(typeId, input),
-    action,
-  };
-}
-
-function defaultMergedAction(typeId: string, input: IFileChange): IFileEntry {
   const action: FileAction = {
     refchange: "drop",
     valchange: "nop",
@@ -283,7 +269,7 @@ export function dealWithExternalChanges(
   stagingPath: string,
   modPaths: { [typeId: string]: string },
   lastDeployment: { [typeId: string]: IDeployedFile[] },
-  autoResolveAll?: boolean,
+  recentInstalls?: Set<string>,
 ) {
   return checkForExternalChanges(
     api,
@@ -295,15 +281,8 @@ export function dealWithExternalChanges(
   )
     .then((changes: { [typeId: string]: IFileChange[] }) => {
       const automaticActions: IFileEntry[] = [];
-      const state = api.store.getState();
       const isInstallingCollection =
-        getCollectionActiveSession(state) !== undefined;
-      const shouldAutoResolve = isInstallingCollection || autoResolveAll;
-      const profile =
-        profileId !== undefined
-          ? profileById(state, profileId)
-          : activeProfile(state);
-      const mods = state.persistent.mods[profile?.gameId] ?? {};
+        getCollectionActiveSession(api.store.getState()) !== undefined;
       const userChanges = Object.keys(changes).reduce((prev, typeId) => {
         const { merged, rest, autoResolved } = changes[typeId].reduce(
           (prevInner, change) => {
@@ -314,15 +293,7 @@ export function dealWithExternalChanges(
               prevInner.merged.push(change);
               return prevInner;
             }
-            if (shouldAutoResolve) {
-              prevInner.autoResolved.push(change);
-              return prevInner;
-            }
-
-            // Auto-resolve changes for mods that were reinstalled or updated
-            // by Vortex — these are expected staging changes, not external.
-            const installType = mods[change.source]?.attributes?.installType;
-            if (installType === "reinstall" || installType === "update") {
+            if (isInstallingCollection || recentInstalls?.has(change.source)) {
               prevInner.autoResolved.push(change);
               return prevInner;
             }
@@ -336,7 +307,7 @@ export function dealWithExternalChanges(
 
         if (merged.length > 0) {
           merged.forEach((change) =>
-            automaticActions.push(defaultMergedAction(typeId, change)),
+            automaticActions.push(defaultInternalAction(typeId, change)),
           );
         }
 

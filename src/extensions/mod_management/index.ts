@@ -85,7 +85,7 @@ import {
 } from "./types/IDeploymentMethod";
 import { IFileMerge } from "./types/IFileMerge";
 import { IInstallOptions } from "./types/IInstallOptions";
-import { IMod, IModReference, InstallType } from "./types/IMod";
+import { IMod, IModReference } from "./types/IMod";
 import { InstallFunc } from "./types/InstallFunc";
 import { IRemoveModOptions } from "./types/IRemoveModOptions";
 import { IResolvedMerger } from "./types/IResolvedMerger";
@@ -683,7 +683,7 @@ function deployableModTypes(modPaths: { [typeId: string]: string }) {
   return Object.keys(modPaths).filter((typeId) => truthy(modPaths[typeId]));
 }
 
-function genUpdateModDeployment(installManager: InstallManager) {
+function genUpdateModDeployment() {
   return (
     api: IExtensionApi,
     manual: boolean,
@@ -706,9 +706,11 @@ function genUpdateModDeployment(installManager: InstallManager) {
       }
       api.store.dispatch(updateNotification(notification.id, percent, text));
     };
-    const state: IState = api.store.getState();
+    const state = api.store.getState();
     let profile: IProfile =
-      state.persistent.profiles?.[profileId] ?? activeProfile(state);
+      profileId !== undefined
+        ? getSafe(state, ["persistent", "profiles", profileId], undefined)
+        : activeProfile(state);
 
     if (
       Object.keys(getSafe(state, ["session", "base", "toolsRunning"], {}))
@@ -731,7 +733,11 @@ function genUpdateModDeployment(installManager: InstallManager) {
       return Bluebird.resolve();
     }
     const gameId = profile.gameId;
-    const gameDiscovery = state.settings.gameMode.discovered?.[gameId];
+    const gameDiscovery = getSafe(
+      state,
+      ["settings", "gameMode", "discovered", gameId],
+      undefined,
+    );
     const game = getGame(gameId);
     if (game === undefined || gameDiscovery?.path === undefined) {
       const err = new Error("Game no longer available");
@@ -813,7 +819,19 @@ function genUpdateModDeployment(installManager: InstallManager) {
             method: activator.name,
           });
 
-          return Bluebird.resolve(installManager.waitForIdle()).then(() => {
+          // Wait for active mod installations to complete before deploying
+          // so we don't deploy half-installed mods.
+          const waitForInstalls =
+            installManager.getActiveInstallationCount() > 0
+              ? Bluebird.resolve(installManager.waitForIdle())
+              : Bluebird.resolve();
+
+          return waitForInstalls.then(() => {
+            // Consume the set of mod IDs that finished installing since the
+            // last deployment. Their external changes (refchange / srcdeleted)
+            // are expected and will be auto-resolved per-mod.
+            const recentInstalls = installManager.consumeRecentInstalls();
+
             let mergeResult: { [modType: string]: IMergeResultByType };
             const lastDeployment: { [typeId: string]: IDeployedFile[] } = {};
             const mods = state.persistent.mods[profile.gameId] || {};
@@ -865,6 +883,7 @@ function genUpdateModDeployment(installManager: InstallManager) {
                   stagingPath,
                   modPaths,
                   lastDeployment,
+                  recentInstalls,
                 ),
               )
               .tap(() => progress(t("Checking for mod incompatibilities"), 25))
@@ -1237,22 +1256,8 @@ function attributeExtractor(input: any) {
   });
 }
 
-function deriveInstallType(input: any): InstallType {
-  if (input.previous === undefined) {
-    return "fresh";
-  }
-  const isNexus = input.previous.source === "nexus";
-  if (isNexus) {
-    return input.previous.fileId === input.download?.modInfo?.nexus?.ids?.fileId
-      ? "reinstall" : "update";
-  }
-  return input.previous.fileMD5 === input.download?.fileMD5
-    ? "reinstall" : "update";
-}
-
 function upgradeExtractor(input: any) {
   return Bluebird.resolve({
-    installType: deriveInstallType(input),
     category: getSafe(input.previous, ["category"], undefined),
     customFileName: getSafe(input.previous, ["customFileName"], undefined),
     variant: getSafe(input.previous, ["variant"], undefined),
@@ -1524,7 +1529,7 @@ function onNeedToDeploy(api: IExtensionApi, current: any) {
 }
 
 function once(api: IExtensionApi) {
-  const store: Redux.Store<IState> = api.store;
+  const store: Redux.Store<any> = api.store;
 
   if (installManager === undefined) {
     installManager = new InstallManager(api, (gameId: string) =>
@@ -1540,7 +1545,7 @@ function once(api: IExtensionApi) {
     });
   }
 
-  const updateModDeployment = genUpdateModDeployment(installManager);
+  const updateModDeployment = genUpdateModDeployment();
   const deploymentTimer = new Debouncer(
     (
       manual: boolean,
