@@ -252,6 +252,7 @@ async function main(): Promise<void> {
           ),
           ELECTRON_LOCALES: path.resolve(app.getAppPath(), "..", "locales"),
           ELECTRON_BASE: app.getAppPath(),
+          ELECTRON_BASE_UNPACKED: app.getAppPath() + ".unpacked",
           ELECTRON_APPLICATION: path.resolve(app.getAppPath(), ".."),
           ELECTRON_PACKAGE: app.getAppPath(),
           ELECTRON_PACKAGE_UNPACKED: path.join(
