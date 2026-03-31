@@ -31,9 +31,16 @@ export const useNotificationItems = ({
   return useMemo(() => {
     const collapsed: { [groupId: string]: number } = {};
 
+    const seenIds = new Set<string>();
     const items = filtered
       .slice()
       .reduce((previous: INotification[], notification: INotification) => {
+        if (notification.id !== undefined && seenIds.has(notification.id)) {
+          return previous;
+        }
+        if (notification.id !== undefined) {
+          seenIds.add(notification.id);
+        }
         if (notification.group !== undefined && notification.group !== expand) {
           if (collapsed[notification.group] === undefined) {
             previous.push(notification);
