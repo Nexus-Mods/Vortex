@@ -53,6 +53,7 @@ import {
   nexusGameId,
 } from "../extensions/nexus_integration/util/convertGameId";
 import GameStoreHelper from "./GameStoreHelper";
+import { epicGamesLauncher, GameNotFound, steam } from "./gameStoreCompat";
 import { getApplication } from "./application";
 import { Archive } from "./archives";
 import bbcodeToReact, {
@@ -186,7 +187,10 @@ export {
   fileMD5,
   findDownloadByRef,
   findModByRef,
+  epicGamesLauncher,
+  GameNotFound,
   GameStoreHelper,
+  steam,
   generateCollectionSessionId,
   getActivator,
   getApplication,
