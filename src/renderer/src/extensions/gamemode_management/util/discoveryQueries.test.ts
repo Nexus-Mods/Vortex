@@ -1,8 +1,10 @@
-import { loadStoreGames } from "../util/discoveryQueries";
+import { describe, expect, it, vi } from "vitest";
+
+import { loadStoreGames } from "./discoveryQueries";
 
 describe("discoveryQueries", () => {
   it("loads store games from the query client", async () => {
-    const ensureQueryData = jest.fn().mockResolvedValue([
+    const ensureQueryData = vi.fn().mockResolvedValue([
       {
         store_type: "steam",
         store_id: "489830",
