@@ -388,6 +388,7 @@ class Steam implements IGameStore {
                     basePath,
                     steamAppsPath,
                     entry.appid,
+                    entry.manifestData?.["AppState"]?.["oslist"],
                   );
                   entry.usesProton = protonInfo.usesProton;
                   entry.compatDataPath = protonInfo.compatDataPath;
