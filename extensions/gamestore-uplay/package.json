@@ -1,0 +1,27 @@
+{
+  "name": "gamestore-uplay",
+  "version": "0.0.4",
+  "description": "Provides discovery and launch support for Uplay games",
+  "scripts": {
+    "_build": "node build.mjs && pnpm extractInfo",
+    "build": "pnpm run _build && node ../copy-extension.mjs out",
+    "dist": "pnpm run _build && node ../copy-extension.mjs dist",
+    "typecheck": "pnpm tsc"
+  },
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "type": "commonjs",
+  "private": true,
+  "config": {
+    "extensionName": "Game Store: Uplay"
+  },
+  "devDependencies": {
+    "@types/bluebird": "catalog:",
+    "@types/node": "catalog:",
+    "bluebird": "catalog:",
+    "copyfiles": "catalog:",
+    "typescript": "catalog:",
+    "vortex-api": "workspace:*",
+    "winapi-bindings": "catalog:"
+  }
+}

@@ -36,7 +36,7 @@ function findGame() {
     }
     return Promise.resolve(instPath.value);
   } catch (err) {
-    return util.GameStoreHelper.findByAppId(STEAM_ID.toString(), 'steam')
+    return util.steam.findByAppId(STEAM_ID.toString())
       .then(game => game.gamePath);
   }
 }

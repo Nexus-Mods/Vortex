@@ -21,7 +21,7 @@ let tools = [
 ]
 
 function findGame() {
-  return util.GameStoreHelper.findByAppId('253230', 'steam')
+  return util.steam.findByAppId('253230')
       .then(game => game.gamePath);
 }
 

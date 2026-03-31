@@ -19,7 +19,7 @@ function findGame() {
     }
     return Promise.resolve(path.join(instPath.value, 'Launcher'));
   } catch (err) {
-    return util.GameStoreHelper.findByName('The Elder Scrolls Online', 'steam')
+    return util.steam.findByName('The Elder Scrolls Online')
       .then(game => game.gamePath);
   }
 }
