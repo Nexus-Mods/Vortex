@@ -53,11 +53,11 @@ export const Header: FC = () => {
 
   return (
     <div
-      className="flex h-11 items-center justify-between pl-4.5"
+      className="flex h-11 items-center justify-between overflow-hidden pl-4.5"
       style={{ WebkitAppRegion: "drag" }}
     >
       <div
-        className="flex items-center gap-x-1"
+        className="flex min-w-0 flex-1 items-center gap-x-1 overflow-hidden"
         style={{ WebkitAppRegion: "no-drag" }}
       >
         <IconButton
@@ -69,18 +69,18 @@ export const Header: FC = () => {
 
         <Typography
           appearance="none"
-          className="flex items-center gap-x-2 truncate font-semibold"
+          className="flex min-w-0 items-center gap-x-2 truncate font-semibold"
         >
-          <span className="text-neutral-strong">{title}</span>
+          <span className="shrink-0 text-neutral-strong">{title}</span>
 
           {profileName && (
-            <span className="text-neutral-subdued">{profileName}</span>
+            <span className="min-w-0 max-w-[33%] truncate text-neutral-subdued">{profileName}</span>
           )}
         </Typography>
       </div>
 
       <div
-        className="flex items-center gap-x-4"
+        className="flex shrink-0 items-center gap-x-4"
         style={{ WebkitAppRegion: "no-drag" }}
       >
         <PremiumIndicator />

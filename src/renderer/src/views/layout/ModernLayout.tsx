@@ -20,7 +20,7 @@ export const ModernLayout: FC = () => {
       <LayoutContainer className="flex h-full bg-surface-base">
         <Spine />
 
-        <div className="flex grow flex-col">
+        <div className="flex min-w-0 grow flex-col">
           <Header />
 
           <div className="flex min-h-0 grow">
