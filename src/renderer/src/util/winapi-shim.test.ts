@@ -17,7 +17,7 @@ import {
 } from "./winapi-shim";
 
 describe("GetDiskFreeSpaceEx", () => {
-  it("returns total, free, freeToCaller as positive numbers for /tmp", () => {
+  it.skipIf(process.platform !== "linux")("returns total, free, freeToCaller as positive numbers for /tmp", () => {
     const result = GetDiskFreeSpaceEx("/tmp");
     expect(result).toHaveProperty("total");
     expect(result).toHaveProperty("free");
@@ -47,7 +47,7 @@ describe("GetVolumePathName", () => {
     expect(result.length).toBeGreaterThan(0);
   });
 
-  it("returns '/' as fallback for nonexistent path (ENOENT)", () => {
+  it.skipIf(process.platform !== "linux")("returns '/' as fallback for nonexistent path (ENOENT)", () => {
     const result = GetVolumePathName("/nonexistent/path/abc123xyz987");
     expect(result).toBe("/");
   });
