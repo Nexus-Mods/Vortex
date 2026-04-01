@@ -175,6 +175,7 @@ export interface ISettingsInterface {
   tools?: {
     addToolsToTitleBar: boolean;
     order?: { [gameId: string]: string[] };
+    pinned?: { [gameId: string]: string[] };
   };
   primaryTool?: { [gameId: string]: string };
 }
@@ -364,7 +365,10 @@ export interface IState {
     downloads: IStateDownloads;
     categories: { [gameId: string]: ICategoryDictionary };
     gameMode: IStateGameMode;
-    deployment: { needToDeploy: { [gameId: string]: boolean } };
+    deployment: {
+      needToDeploy: { [gameId: string]: boolean };
+      deploymentCounter: { [gameId: string]: number };
+    };
     transactions: IStateTransactions;
     history: IHistoryPersistent;
     healthCheck: IHealthCheckPersistentState;

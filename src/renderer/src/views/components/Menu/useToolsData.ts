@@ -21,6 +21,7 @@ export interface UseToolsDataResult {
   discoveredTools: { [key: string]: IDiscoveredTool };
   discoveryPath: string | undefined;
   primaryToolId: string | undefined;
+  pinnedToolsMap: { [key: string]: boolean };
 }
 
 /**
@@ -46,6 +47,11 @@ export const useToolsData = (): UseToolsDataResult => {
   const primaryToolId = useSelector(
     (state: IState) =>
       state.settings?.interface?.primaryTool?.[gameId ?? ""] ?? undefined,
+  );
+  const pinnedToolsMap = useSelector(
+    (state: IState) =>
+      (state.settings?.interface as any)?.tools?.pinned?.[gameId ?? ""] ?? {},
+    shallowEqual,
   );
 
   const gameStarter = useMemo((): StarterInfo | undefined => {
@@ -138,5 +144,6 @@ export const useToolsData = (): UseToolsDataResult => {
     discoveredTools,
     discoveryPath: gameDiscovery?.path,
     primaryToolId,
+    pinnedToolsMap,
   };
 };

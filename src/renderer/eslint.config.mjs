@@ -44,6 +44,7 @@ export default defineConfig([
       globals: { ...globals.node, ...globals.browser },
       parserOptions: {
         projectService: true,
+        tsconfigRootDir: import.meta.dirname,
       },
     },
     plugins: {

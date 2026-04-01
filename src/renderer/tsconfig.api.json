@@ -4,7 +4,7 @@
   "include": [
     "src/api.ts",
     "src/preload.ts",
-    "../../typings.custom/index.d.ts"
+    "src/typings.custom/*.d.ts"
   ],
   "compilerOptions": {
     "target": "esnext",
@@ -16,6 +16,10 @@
     "outDir": "lib",
     "rootDir": "src",
     "removeComments": false,
-    "lib": ["ESNext", "DOM", "DOM.Iterable"]
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
   }
 }
