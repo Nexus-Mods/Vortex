@@ -222,10 +222,18 @@ class Application {
             this.mDeinitCrashDump();
           }
           if (process.platform !== "darwin") {
+            // All windows are already destroyed at this point (via the
+            // destroy() workaround in MainWindow), so app.quit() won't
+            // attempt to close any windows — it just fires the before-quit
+            // / will-quit lifecycle events (needed by the autoupdater) and
+            // then exits cleanly.
             app.quit();
           }
         })
-        .catch((err: unknown) => log("error", "error finalizing write", err));
+        .catch((err: unknown) => {
+          log("error", "error finalizing write", unknownToError(err));
+          app.exit(1);
+        });
     });
 
     app.on("activate", () => {
@@ -233,7 +241,7 @@ class Application {
         this.mMainWindow
           .create()
           .catch((err: unknown) =>
-            log("error", "failed to create main window", err),
+            log("error", "failed to create main window", unknownToError(err)),
           );
       }
     });
@@ -241,7 +249,7 @@ class Application {
     app.on("second-instance", (_event: Event, secondaryArgv: string[]) => {
       log("debug", "getting arguments from second instance", secondaryArgv);
       this.applyArguments(parseCommandline(secondaryArgv, true)).catch(
-        (err: unknown) => log("error", "error applying arguments", err),
+        (err: unknown) => log("error", "error applying arguments", unknownToError(err)),
       );
     });
 
@@ -266,7 +274,7 @@ class Application {
       protocol.registerHttpProtocol("nxm", (request) => {
         const cfgFile: IParameters = { download: request.url };
         this.applyArguments(cfgFile).catch((err: unknown) =>
-          log("error", "error applying arguments", err),
+          log("error", "error applying arguments", unknownToError(err)),
         );
       });
 
@@ -295,7 +303,7 @@ class Application {
     app
       .whenReady()
       .then(onReady)
-      .catch((err: unknown) => log("error", "error starting application", err));
+      .catch((err: unknown) => log("error", "error starting application", unknownToError(err)));
 
     app.on(
       "web-contents-created",
