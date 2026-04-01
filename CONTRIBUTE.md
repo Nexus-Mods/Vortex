@@ -38,9 +38,7 @@ Starting with Python 3.12 you also need to install the `setuptools` packages. Ve
 ### VS Code
 
 - **F5** - Debug both main and renderer processes
-- **Build first** - Always run `pnpm run build` before debugging
-- Main process breakpoints: main entry and app directory
-- Renderer breakpoints: renderer entry and views directory
+- **Build first** - Always run `pnpm run build:all` before debugging
 
 See [docs/DEBUGGING-GUIDE.md](./docs/DEBUGGING-GUIDE.md) for detailed debugging instructions.
 
