@@ -14,10 +14,10 @@ export default defineConfig({
       "./src/shared",
       "./packages/paths",
       "./packages/paths-node",
-      "./extensions/games/game-stardewvalley",
       "./extensions/feedback",
       "./extensions/gamebryo-savegame-management",
       "./extensions/nmm-import-tool",
+      "./extensions/games/game-stardewvalley",
     ],
     reporters: [
       "default",

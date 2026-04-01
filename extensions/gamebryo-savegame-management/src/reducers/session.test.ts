@@ -102,7 +102,7 @@ describe("clearSavegames", () => {
         savegame2: { id: "", savegameBind: null, attributes: {} },
       },
     };
-    let result = sessionReducer.reducers.CLEAR_SAVEGAMES(input);
+    let result = sessionReducer.reducers.CLEAR_SAVEGAMES(input, undefined);
     expect(result).toEqual({ saves: {} });
   });
 });

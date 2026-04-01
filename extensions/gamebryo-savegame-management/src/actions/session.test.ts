@@ -1,13 +1,22 @@
 import { describe, it, expect } from "vitest";
+
+import type { ISavegame } from "../types/ISavegame";
+
 import * as sessionActions from "./session";
 
 describe("setSavegames", () => {
   it("creates the correct action", () => {
-    expect(sessionActions.setSavegames("savegame1", false)).toEqual({
+    const savegame: ISavegame = {
+      id: "savegame1",
+      filePath: "/saves/save1.ess",
+      fileSize: 1024,
+      attributes: {},
+    };
+    expect(sessionActions.setSavegames([savegame], false)).toEqual({
       error: false,
       type: "SET_SAVEGAMES",
       payload: {
-        savegames: "savegame1",
+        savegames: [savegame],
         truncated: false,
       },
     });
@@ -16,10 +25,16 @@ describe("setSavegames", () => {
 
 describe("updateSavegame", () => {
   it("creates the correct action", () => {
-    expect(sessionActions.updateSavegame("savegame1", "new value")).toEqual({
+    const savegame: ISavegame = {
+      id: "savegame1",
+      filePath: "/saves/save1.ess",
+      fileSize: 2048,
+      attributes: { level: 10 },
+    };
+    expect(sessionActions.updateSavegame("savegame1", savegame)).toEqual({
       error: false,
       type: "UPDATE_SAVEGAME",
-      payload: { id: "savegame1", saveGame: "new value" },
+      payload: { id: "savegame1", saveGame: savegame },
     });
   });
 });
