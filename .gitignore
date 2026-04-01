@@ -39,6 +39,9 @@ yarn-error.log
 api/lib/
 # we need to include the installer image
 build/
+# Linux packaging assets (source files, not build output)
+!build/linux/
+!build/linux/**
 bld/
 
 # DuckDB extension build output
