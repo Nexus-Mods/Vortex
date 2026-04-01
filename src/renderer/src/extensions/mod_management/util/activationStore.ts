@@ -290,7 +290,22 @@ function getManifestImpl(
       const errObj = unknownToError(err);
       const code = getErrorCode(err);
       if (code === "ENOENT") {
-        return emptyManifest(instanceId);
+        // Primary manifest missing — check backup files before giving up.
+        // This handles Wine/Proton-era deployments where the primary JSON was
+        // never written to the game directory but the msgpack backup exists in
+        // the staging folder.
+        return readManifestFileBinary(backup2Path)
+          .catch((inner: unknown) => {
+            if (getErrorCode(inner) === "ENOENT") {
+              return readManifestFile(backupPath).catch((backupErr: unknown) => {
+                if (getErrorCode(backupErr) === "ENOENT") {
+                  return emptyManifest(instanceId);
+                }
+                throw backupErr;
+              });
+            }
+            throw inner;
+          });
       }
       if (code === "EPERM") {
         errObj.message =
