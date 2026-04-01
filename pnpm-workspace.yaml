@@ -314,6 +314,7 @@ overrides:
   "@types/react-dom": "16"
   node-addon-api: 8.5.0
 patchedDependencies:
+  exe-version@2.3.0: patches/exe-version@2.3.0.patch
   gamebryo-savegame@2.1.2: patches/gamebryo-savegame@2.1.2.patch
   loot@6.2.1: patches/loot@6.2.1.patch
   playwright-core@1.58.2: patches/playwright-core@1.58.2.patch

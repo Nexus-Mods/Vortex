@@ -1,0 +1,22 @@
+diff --git a/index.js b/index.js
+index 775653087f23c879afb99627b4fb675520c063b7..4caffc43325bb024fb83a87eb257bc1912bab01b 100644
+--- a/index.js
++++ b/index.js
+@@ -7,7 +7,7 @@ function getFileVersion(filePath) {
+   }
+   // not implemented on MacOS and Linux. On MacOS we could use the bundle version
+   // from the plist file. On Linux? Hmm
+-  return '';
++  return '0.0.0';
+ }
+ 
+ function getProductVersion(filePath) {
+@@ -15,7 +15,7 @@ function getProductVersion(filePath) {
+     const v = winapi.GetFileVersionInfo(filePath).productVersion;
+     return `${v[0]}.${v[1]}.${v[2]}.${v[3]}`;
+   }
+-  return '';
++  return '0.0.0';
+ }
+ 
+ function getFileVersionLocalized(filePath) {

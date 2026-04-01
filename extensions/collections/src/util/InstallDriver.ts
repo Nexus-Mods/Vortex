@@ -1059,6 +1059,7 @@ class InstallDriver {
     const gvMatch = (gv) => gv.reference === gameVersion;
     const revGameVersions = this.mRevisionInfo?.gameVersions ?? [];
     if (
+      gameVersion !== undefined && gameVersion !== '' &&
       (revGameVersions.length ?? 0 !== 0) &&
       revGameVersions.find(gvMatch) === undefined
     ) {
