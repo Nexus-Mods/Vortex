@@ -15,6 +15,9 @@ export default defineConfig({
       "./src/shared",
       "./packages/paths",
       "./packages/paths-node",
+      "./extensions/feedback",
+      "./extensions/gamebryo-savegame-management",
+      "./extensions/nmm-import-tool",
       "./extensions/games/game-stardewvalley",
     ],
     reporters: [

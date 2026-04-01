@@ -152,7 +152,7 @@ describe("Path Normalization and Cross-Platform Handling", () => {
         const relative = await child.relativeTo(parentPath);
 
         expect(relative).not.toBeNull();
-        expect(relative as string).toBe("SkyUI/interface/skyui.swf");
+        expect(relative).toBe("SkyUI/interface/skyui.swf");
       });
 
       test("should handle case-insensitive comparisons correctly", async () => {
@@ -160,19 +160,17 @@ describe("Path Normalization and Cross-Platform Handling", () => {
           "userData",
           "mods/skyui/interface/skyui.swf",
         );
-        const basePath =
-          "c:\\users\\testuser\\appdata\\roaming\\vortex\\mods";
+        const basePath = "c:\\users\\testuser\\appdata\\roaming\\vortex\\mods";
 
         const relative = await child.relativeTo(basePath);
 
         expect(relative).not.toBeNull();
-        expect(relative as string).toBe("skyui/interface/skyui.swf");
+        expect(relative).toBe("skyui/interface/skyui.swf");
       });
 
       test("should handle case-insensitive exact match", async () => {
         const child = resolver.PathFor("userData", "mods");
-        const basePath =
-          "c:\\users\\testuser\\appdata\\roaming\\vortex\\mods";
+        const basePath = "c:\\users\\testuser\\appdata\\roaming\\vortex\\mods";
 
         const relative = await child.relativeTo(basePath);
 
@@ -181,12 +179,11 @@ describe("Path Normalization and Cross-Platform Handling", () => {
 
       test("should handle case-insensitive partial match", async () => {
         const child = resolver.PathFor("userData", "mods/SKYUI");
-        const basePath =
-          "c:\\users\\testuser\\appdata\\roaming\\vortex\\mods";
+        const basePath = "c:\\users\\testuser\\appdata\\roaming\\vortex\\mods";
 
         const relative = await child.relativeTo(basePath);
 
-        expect(relative as string).toBe("SKYUI");
+        expect(relative).toBe("SKYUI");
       });
     });
 
@@ -233,7 +230,7 @@ describe("Path Normalization and Cross-Platform Handling", () => {
         const relative = await child.relativeTo(parentPath);
 
         expect(relative).not.toBeNull();
-        expect(relative as string).toBe("SkyUI/interface/skyui.swf");
+        expect(relative).toBe("SkyUI/interface/skyui.swf");
       });
 
       test("should return null for case mismatch on Unix", async () => {
@@ -278,7 +275,7 @@ describe("Path Normalization and Cross-Platform Handling", () => {
         const relative = await child.relativeTo(basePath);
 
         expect(relative).not.toBeNull();
-        expect(relative as string).toBe("SkyUI/interface/mcguffins/skyui.swf");
+        expect(relative).toBe("SkyUI/interface/mcguffins/skyui.swf");
       });
 
       test("should return null for non-child paths", async () => {
@@ -326,9 +323,7 @@ describe("Path Normalization and Cross-Platform Handling", () => {
       const osPath = await filePath.resolve();
 
       // Convert to lowercase
-      const lowercasePath = ResolvedPath.unsafe(
-        (osPath as string).toLowerCase(),
-      );
+      const lowercasePath = ResolvedPath.unsafe(osPath.toLowerCase());
 
       const result = await resolver.tryReverse(lowercasePath);
 
@@ -351,7 +346,7 @@ describe("Path Normalization and Cross-Platform Handling", () => {
       const osPath = await filePath.resolve();
 
       // Mix case in the path
-      const mixedPath = (osPath as string)
+      const mixedPath = osPath
         .split("\\")
         .map((part, i) =>
           i % 2 === 0 ? part.toLowerCase() : part.toUpperCase(),
@@ -384,7 +379,7 @@ describe("Path Normalization and Cross-Platform Handling", () => {
       expect(relative).not.toBeNull();
 
       // Verify the relative path doesn't contain ..
-      const relativeStr = relative as string;
+      const relativeStr = relative;
       expect(relativeStr).not.toContain("..");
 
       // Verify it's a valid RelativePath
@@ -403,11 +398,9 @@ describe("Path Normalization and Cross-Platform Handling", () => {
 
       expect(relative).not.toBeNull();
 
-      const relativeStr = relative as string;
-
       // Should use forward slashes
-      expect(relativeStr).not.toContain("\\");
-      expect(relativeStr).toContain("/");
+      expect(relative).not.toContain("\\");
+      expect(relative).toContain("/");
     });
 
     test("should handle root-level paths correctly", async () => {
@@ -417,7 +410,7 @@ describe("Path Normalization and Cross-Platform Handling", () => {
       const relative = await child.relativeTo(basePath);
 
       expect(relative).not.toBeNull();
-      expect(relative as string).toBe("mods/SkyUI");
+      expect(relative).toBe("mods/SkyUI");
     });
   });
 
@@ -438,7 +431,7 @@ describe("Path Normalization and Cross-Platform Handling", () => {
       expect(Anchor.name(result.anchor)).toBe("userData");
       // Case-insensitive comparison is used only for containment checks;
       // the extracted relative path preserves the original case from the input
-      expect(result.relative as string).toBe("mods/SkyUI");
+      expect(result.relative).toBe("mods/SkyUI");
     });
 
     test("should reverse-resolve an exact base path match", async () => {
@@ -449,7 +442,7 @@ describe("Path Normalization and Cross-Platform Handling", () => {
 
       expect(result).not.toBeNull();
       expect(Anchor.name(result.anchor)).toBe("userData");
-      expect(result.relative as string).toBe("");
+      expect(result.relative).toBe("");
     });
 
     test("should reverse-resolve paths under temp anchor", async () => {
@@ -458,7 +451,7 @@ describe("Path Normalization and Cross-Platform Handling", () => {
 
       expect(result).not.toBeNull();
       expect(Anchor.name(result.anchor)).toBe("temp");
-      expect(result.relative as string).toBe("subdir/file.txt");
+      expect(result.relative).toBe("subdir/file.txt");
     });
 
     test("should not match prefix-sibling temp paths", async () => {
@@ -479,7 +472,9 @@ describe("Path Normalization and Cross-Platform Handling", () => {
   describe("Reverse resolution with trailing-separator bases", () => {
     test("should reverse-resolve an exact match when the anchor base keeps a trailing separator", async () => {
       const resolver = new TrailingBaseResolver();
-      const result = await resolver.tryReverse(ResolvedPath.make("/home/user/mods"));
+      const result = await resolver.tryReverse(
+        ResolvedPath.make("/home/user/mods"),
+      );
 
       expect(result).not.toBeNull();
       expect(Anchor.name(result.anchor)).toBe("mods");

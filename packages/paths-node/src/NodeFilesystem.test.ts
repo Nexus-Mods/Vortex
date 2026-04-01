@@ -154,7 +154,7 @@ describe("NodeFilesystem", () => {
   describe("platform detection", () => {
     test("detects platform from process.platform", () => {
       const expectedPlatform =
-        process.platform === "win32" ? ("windows" as const) : ("unix" as const);
+        process.platform === "win32" ? "windows" : "unix";
       expect(nodeFs.platform).toBe(expectedPlatform);
     });
 
