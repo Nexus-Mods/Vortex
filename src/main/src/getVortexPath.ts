@@ -22,6 +22,7 @@ const electronAppInfoEnv: { [key: string]: string | undefined } =
         bundledPlugins: process.env.ELECTRON_BUNDLEDPLUGINS,
         locales: process.env.ELECTRON_LOCALES,
         base: process.env.ELECTRON_BASE,
+        base_unpacked: process.env.ELECTRON_BASE_UNPACKED,
         application: process.env.ELECTRON_APPLICATION,
         package: process.env.ELECTRON_PACKAGE,
         package_unpacked: process.env.ELECTRON_PACKAGE_UNPACKED,
@@ -165,6 +166,8 @@ export function getVortexPath(id: keyof VortexPaths): string {
       return cachedAppPath("desktop");
     case "base":
       return basePath;
+    case "base_unpacked":
+      return isAsar ? basePath + ".unpacked" : basePath;
     case "application":
       return applicationPath;
     case "package":

@@ -9,6 +9,7 @@ export default defineConfig({
   test: {
     projects: [
       "./src/main",
+      "./scripts",
       "./src/main/vitest.integration.config.ts",
       "./src/renderer",
       "./src/shared",

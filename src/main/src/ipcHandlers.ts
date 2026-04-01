@@ -46,6 +46,7 @@ export function init() {
   function resolveVortexPaths(): VortexPaths {
     const paths: VortexPaths = {
       base: getVortexPath("base"),
+      base_unpacked: getVortexPath("base_unpacked"),
       assets: getVortexPath("assets"),
       assets_unpacked: getVortexPath("assets_unpacked"),
       modules: getVortexPath("modules"),
