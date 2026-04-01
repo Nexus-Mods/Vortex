@@ -9,6 +9,14 @@ interface IGameSupport {
   saveFiles: (input: string) => string[];
 }
 
+// Local interface for Steam entry fields we need (ISteamEntry extends IGameStoreEntry
+// but is not exported by vortex-api; bundled extensions cannot import from renderer src)
+interface ILocalSteamEntry {
+  gamePath?: string;
+  usesProton?: boolean;
+  compatDataPath?: string;
+}
+
 function scriptExtenderFiles(input: string, seext: string): string[] {
   const ext = path.extname(input);
   return [path.basename(input, ext) + "." + seext];
@@ -163,7 +171,60 @@ export function gameSupported(gameMode: string): boolean {
   return gameSupport[gameMode] !== undefined;
 }
 
-export function mygamesPath(gameMode: string): string {
+/**
+ * Get the Steam store entry for a discovered game, if it uses Proton on Linux.
+ * Mirrors the getSteamEntry pattern from ini_prep/index.ts.
+ * Returns undefined when: not Linux, not a Steam game, or lookup fails.
+ */
+async function getSteamEntry(
+  discovery: types.IDiscoveryResult,
+): Promise<ILocalSteamEntry | undefined> {
+  if (process.platform !== "linux" || discovery?.store !== "steam") {
+    return undefined;
+  }
+  try {
+    const steamStore = util.GameStoreHelper.getGameStore("steam");
+    if (steamStore === undefined) {
+      return undefined;
+    }
+    const entries: ILocalSteamEntry[] = await steamStore.allGames();
+    return entries.find(
+      (e) =>
+        e.gamePath !== undefined &&
+        discovery.path !== undefined &&
+        e.gamePath.toLowerCase() === discovery.path.toLowerCase(),
+    );
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Returns the My Games path for the given game mode.
+ * On Linux with Proton games, returns the Wine prefix path inside compatdata.
+ * On Windows and non-Proton Linux, returns the Documents/My Games path.
+ */
+export async function mygamesPath(gameMode: string): Promise<string> {
+  if (process.platform === "linux") {
+    const discovery = discoveryForGame(gameMode);
+    if (discovery !== undefined) {
+      const steamEntry = await getSteamEntry(discovery);
+      if (steamEntry?.usesProton && steamEntry?.compatDataPath) {
+        // Inline getMyGamesPath from src/renderer/src/util/linux/proton.ts
+        // (bundled extensions cannot import from renderer src/)
+        return path.join(
+          steamEntry.compatDataPath,
+          "pfx",
+          "drive_c",
+          "users",
+          "steamuser",
+          "Documents",
+          "My Games",
+          gameSupport.get(gameMode, "mygamesPath"),
+        );
+      }
+    }
+  }
   return path.join(
     util.getVortexPath("documents"),
     "My Games",
@@ -171,16 +232,21 @@ export function mygamesPath(gameMode: string): string {
   );
 }
 
-export function iniPath(gameMode: string): string {
-  return path.join(mygamesPath(gameMode), gameSupport.get(gameMode, "iniName"));
+export async function iniPath(gameMode: string): Promise<string> {
+  return path.join(
+    await mygamesPath(gameMode),
+    gameSupport.get(gameMode, "iniName"),
+  );
 }
 
-export function prefIniPath(gameMode: string): string {
+export async function prefIniPath(
+  gameMode: string,
+): Promise<string | undefined> {
   const prefIniName = gameSupport.get(gameMode, "prefIniName");
   if (prefIniName === undefined) {
     return undefined;
   }
-  return path.join(mygamesPath(gameMode), prefIniName);
+  return path.join(await mygamesPath(gameMode), prefIniName);
 }
 
 export function saveFiles(gameMode: string, savePath: string): string[] {

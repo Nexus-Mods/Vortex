@@ -61,6 +61,12 @@ const config = {
         private: false,
       },
     ],
+    extraFiles: [
+      {
+        from: "../../build/linux/io.nexusmods.vortex.policy",
+        to: "/usr/share/polkit-1/actions/io.nexusmods.vortex.policy",
+      },
+    ],
   },
   deb: {
     depends: ["xdg-utils", "libasound2"],
