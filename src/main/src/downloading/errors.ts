@@ -6,6 +6,7 @@ export type DownloadErrorPayload =
   | { code: "network-timeout"; url: URL }
   | { code: "network-bad-status"; url: URL; statusCode: number }
   | { code: "precondition-failed"; url: URL }
+  | { code: "protocol-violation"; url: URL }
   | { code: "fs-error"; path: string }
   | { code: "resolver-error" };
 

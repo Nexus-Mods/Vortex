@@ -1,9 +1,8 @@
-import type { Chunk } from "./chunking";
+import type { ByteRange, Chunk } from "./chunking";
 
 export type ChunkProgress = {
   chunkIndex: number;
-  chunkStart: number;
-  chunkEnd: number;
+  chunkRange: ByteRange;
   bytesReceived: number;
   bytesWritten: number;
 };
@@ -39,8 +38,7 @@ export class ProgressReporter {
       this.#chunkProgress = [
         {
           chunkIndex: 0,
-          chunkStart: 0,
-          chunkEnd: this.#totalBytes,
+          chunkRange: { start: 0, end: this.#totalBytes },
           bytesReceived: 0,
           bytesWritten: 0,
         },
@@ -48,8 +46,7 @@ export class ProgressReporter {
     } else {
       this.#chunkProgress = chunks.map<ChunkProgress>((chunk) => ({
         chunkIndex: chunk.index,
-        chunkStart: chunk.start,
-        chunkEnd: chunk.end,
+        chunkRange: chunk.range,
         bytesReceived: 0,
         bytesWritten: 0,
       }));

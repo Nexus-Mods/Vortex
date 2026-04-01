@@ -1,6 +1,6 @@
 import PQueue from "p-queue";
 
-import type { Chunker } from "./chunking";
+import type { Chunker, ByteRange } from "./chunking";
 import type { DownloadProgress } from "./progress";
 import type { Resolver } from "./resolver";
 
@@ -21,11 +21,6 @@ export type DownloadHandle<T = unknown> = {
 
   /** Pauses the download. */
   pause: () => Promise<DownloadCheckpoint<T>>;
-};
-
-export type ByteRange = {
-  start: number;
-  end: number;
 };
 
 export type DownloadCheckpoint<T = unknown> = {
@@ -84,10 +79,7 @@ export class DownloadManager {
       let completedRanges: ByteRange[] = [];
 
       if (progress.isChunked) {
-        completedRanges = progress.chunks.map<ByteRange>((c) => ({
-          start: c.chunkStart,
-          end: c.chunkEnd,
-        }));
+        completedRanges = progress.chunks.map((c) => c.chunkRange);
       } else if (progress.bytesWritten > 0) {
         completedRanges = [
           {

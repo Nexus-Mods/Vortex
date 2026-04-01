@@ -5,7 +5,7 @@ import type { Chunk } from "./chunking";
 import { ProgressReporter } from "./progress";
 
 function makeChunk(index: number, start: number, end: number): Chunk {
-  return { index, start, end };
+  return { index, range: { start, end } };
 }
 
 describe("ProgressReporter", () => {
@@ -45,17 +45,17 @@ describe("ProgressReporter", () => {
 
       it("sets synthetic chunk start to 0", () => {
         reporter.init([], 1024);
-        expect(reporter.chunkProgress[0].chunkStart).toBe(0);
+        expect(reporter.chunkProgress[0].chunkRange.start).toBe(0);
       });
 
       it("sets synthetic chunk chunkEnd to totalBytes", () => {
         reporter.init([], 1024);
-        expect(reporter.chunkProgress[0].chunkEnd).toBe(1024);
+        expect(reporter.chunkProgress[0].chunkRange.end).toBe(1024);
       });
 
       it("sets synthetic chunk chunkEnd to null when totalBytes is null", () => {
         reporter.init([], null);
-        expect(reporter.chunkProgress[0].chunkEnd).toBeNull();
+        expect(reporter.chunkProgress[0].chunkRange.end).toBeNull();
       });
 
       it("initialises synthetic chunk bytesReceived to zero", () => {
@@ -84,10 +84,10 @@ describe("ProgressReporter", () => {
 
       it("copies chunkStart and chunkEnd from the chunk byte range", () => {
         reporter.init(chunks, 1000);
-        expect(reporter.chunkProgress[0].chunkStart).toBe(0);
-        expect(reporter.chunkProgress[0].chunkEnd).toBe(499);
-        expect(reporter.chunkProgress[1].chunkStart).toBe(500);
-        expect(reporter.chunkProgress[1].chunkEnd).toBe(999);
+        expect(reporter.chunkProgress[0].chunkRange.start).toBe(0);
+        expect(reporter.chunkProgress[0].chunkRange.end).toBe(499);
+        expect(reporter.chunkProgress[1].chunkRange.start).toBe(500);
+        expect(reporter.chunkProgress[1].chunkRange.end).toBe(999);
       });
 
       it("initialises each chunk bytesReceived to zero", () => {
@@ -168,7 +168,7 @@ describe("ProgressReporter", () => {
       expect(progress.bytesWritten).toBe(0);
       expect(progress.totalBytes).toBe(1000);
       expect(reporter.chunkProgress).toHaveLength(1);
-      expect(reporter.chunkProgress[0].chunkEnd).toBe(999);
+      expect(reporter.chunkProgress[0].chunkRange.end).toBe(999);
     });
   });
 });

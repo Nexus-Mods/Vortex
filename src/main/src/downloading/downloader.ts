@@ -191,7 +191,6 @@ async function downloadChunked(
           probe,
           handle,
           chunkProgress[chunk.index],
-          chunk.start,
           abortSignal,
         ),
     ),
@@ -204,7 +203,6 @@ async function downloadChunk(
   probe: ProbeResult,
   handle: FileHandle,
   progress: ChunkProgress,
-  writePosition: number,
   abortSignal: AbortSignal,
 ): Promise<void> {
   abortSignal.throwIfAborted();
@@ -215,10 +213,20 @@ async function downloadChunk(
     headers: createHeaders(probe.etag, chunk),
   });
 
+  let writePosition = chunk.range.start;
+
   try {
     for await (const data of stream) {
       const buffer = data as Buffer;
       progress.bytesReceived += buffer.length;
+
+      const remaining = chunk.range.end - writePosition + 1;
+      if (buffer.length > remaining) {
+        throw new DownloadError(
+          { code: "protocol-violation", url: url },
+          `Server sent ${buffer.length} bytes but only ${remaining} were expected for chunk ${chunk.index} (bytes ${chunk.range.start}-${chunk.range.end}); response exceeds requested range`,
+        );
+      }
 
       let bytesWritten = 0;
 
@@ -249,7 +257,9 @@ async function downloadChunk(
 }
 
 function createHeaders(etag: string | null, chunk: Chunk | null): Headers {
-  const range = chunk ? `bytes=${chunk.start}-${chunk.end}` : undefined;
+  const range = chunk
+    ? `bytes=${chunk.range.start}-${chunk.range.end}`
+    : undefined;
 
   // Weak ETags MUST NOT be used with preconditions. The "W/" prefix is case sensitive.
   // https://www.rfc-editor.org/rfc/rfc9110#name-etag
