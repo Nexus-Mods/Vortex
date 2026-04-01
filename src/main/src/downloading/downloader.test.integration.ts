@@ -16,6 +16,7 @@ import {
   type RequestHandler,
   createTestServer,
   serveFile,
+  serveFileSlowly,
   serveStatus,
 } from "./test-server";
 
@@ -567,7 +568,7 @@ describe("download", () => {
 
     it("rejects with code 'cancellation' when cancelled during a single (non-chunked) download", async () => {
       const { url, deregister } = server.route(
-        serveFile({ body: LARGE_FILE, acceptRanges: false, delayForGET: 200 }),
+        serveFileSlowly(LARGE_FILE, 64 * 1024, 10),
       );
       try {
         await withTmpDir(async (dir) => {

@@ -156,6 +156,31 @@ export function serveFile(opts: ServeFileOptions): RequestHandler {
 }
 
 /**
+ * Serves a buffer in small chunks with a delay between each, allowing tests
+ * to reliably observe partial progress mid-download.
+ */
+export function serveFileSlowly(
+  body: Buffer,
+  chunkSize: number,
+  delayMs: number,
+): RequestHandler {
+  return async ({ req, res }) => {
+    if (req.method === "HEAD") {
+      res.writeHead(200, { "content-length": body.length });
+      res.end();
+      return Promise.resolve();
+    }
+
+    res.writeHead(200, { "content-length": body.length });
+    for (let offset = 0; offset < body.length; offset += chunkSize) {
+      res.write(body.subarray(offset, offset + chunkSize));
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+    res.end();
+  };
+}
+
+/**
  * Routes requests to different handlers based on URL path. Useful for testing
  * resolvers that return different URLs for probe vs chunk requests.
  */
