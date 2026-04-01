@@ -9,7 +9,7 @@ import type { Chunk, Chunker } from "./chunking";
 import type { ChunkProgress, ProgressReporter } from "./progress";
 import type { Resolver, NormalizedResource } from "./resolver";
 
-import { toNetworkError, DownloadError } from "./errors";
+import { isCancellation, toNetworkError, DownloadError } from "./errors";
 import { normalize } from "./resolver";
 
 /** @internal */
@@ -33,6 +33,14 @@ export async function download<T>(
   try {
     probe = await probeUrl(resolved.probeUrl, abortSignal);
   } catch (err) {
+    if (isCancellation(err)) {
+      throw new DownloadError(
+        { code: "cancellation" },
+        "Download cancelled",
+        err,
+      );
+    }
+
     throw toNetworkError(resolved.probeUrl, err);
   }
 
@@ -77,6 +85,16 @@ export async function download<T>(
         abortSignal,
       );
     }
+  } catch (err) {
+    if (isCancellation(err)) {
+      throw new DownloadError(
+        { code: "cancellation" },
+        "Download cancelled",
+        err,
+      );
+    }
+
+    throw err;
   } finally {
     await handle.fd.close();
   }
@@ -131,6 +149,7 @@ async function downloadSingle(
 
     await pipeline(stream, fileStream);
   } catch (err) {
+    if (isCancellation(err)) throw err;
     throw toNetworkError(stream.requestUrl, err);
   } finally {
     fileStream.destroy();
@@ -205,7 +224,7 @@ async function downloadChunk(
       progress.bytesReceived += buffer.length;
     }
   } catch (err) {
-    if (err instanceof DownloadError) throw err;
+    if (err instanceof DownloadError || isCancellation(err)) throw err;
     throw toNetworkError(stream.requestUrl, err);
   }
 }

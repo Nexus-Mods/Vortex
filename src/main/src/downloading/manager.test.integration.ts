@@ -59,7 +59,7 @@ describe("DownloadManager", () => {
     const completionOrder: number[] = [];
     const files = [randomBytes(1024), randomBytes(1024), randomBytes(1024)];
     const routes = files.map((file) =>
-      server.route(serveFile({ body: file, acceptRanges: false, delayMs: 30 })),
+      server.route(serveFile({ body: file, acceptRanges: false })),
     );
 
     try {
@@ -153,7 +153,7 @@ describe("DownloadManager", () => {
 
   it("reflects numPending and numRunning correctly", async () => {
     const { url, deregister } = server.route(
-      serveFile({ body: LARGE_FILE, acceptRanges: true, delayMs: 100 }),
+      serveFile({ body: LARGE_FILE, acceptRanges: true, delayForHEAD: 100 }),
     );
     try {
       await withTmpDir(async (dir) => {
@@ -162,7 +162,6 @@ describe("DownloadManager", () => {
         const h1 = manager.download(url, path.join(dir, "file-1"), urlResolver);
         const h2 = manager.download(url, path.join(dir, "file-2"), urlResolver);
 
-        await new Promise((r) => setTimeout(r, 20));
         expect(manager.numRunning).toBe(1);
         expect(manager.numPending).toBe(1);
 

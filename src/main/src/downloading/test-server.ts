@@ -11,7 +11,8 @@ export type RequestHandler = (ctx: RequestContext) => Promise<void>;
 export type ServeFileOptions = {
   body: Buffer;
   acceptRanges: boolean;
-  delayMs?: number;
+  delayForGET?: number;
+  delayForHEAD?: number;
   etag?: string;
 };
 
@@ -107,11 +108,15 @@ export async function withTestServer(
 
 /** Serves a buffer, optionally supporting range requests */
 export function serveFile(opts: ServeFileOptions): RequestHandler {
-  const { body, acceptRanges, delayMs = 0, etag } = opts;
+  const { body, acceptRanges, delayForGET = 0, delayForHEAD = 0, etag } = opts;
 
   return async ({ req, res, range }) => {
-    if (delayMs > 0) {
-      await new Promise((r) => setTimeout(r, delayMs));
+    if (req.method === "GET" && delayForGET > 0) {
+      await new Promise((r) => setTimeout(r, delayForGET));
+    }
+
+    if (req.method === "HEAD" && delayForHEAD > 0) {
+      await new Promise((r) => setTimeout(r, delayForHEAD));
     }
 
     // Enforce If-Match if the request includes it and we have an etag
@@ -166,25 +171,6 @@ export function serveRoutes(
       return Promise.resolve();
     }
     return handler(ctx);
-  };
-}
-
-/**
- * Serves a buffer in small chunks with a delay between each, allowing tests
- * to reliably observe partial progress mid-download.
- */
-export function serveFileSlowly(
-  body: Buffer,
-  chunkSize: number,
-  delayMs: number,
-): RequestHandler {
-  return async ({ res }) => {
-    res.writeHead(200, { "content-length": body.length });
-    for (let offset = 0; offset < body.length; offset += chunkSize) {
-      res.write(body.subarray(offset, offset + chunkSize));
-      await new Promise((r) => setTimeout(r, delayMs));
-    }
-    res.end();
   };
 }
 

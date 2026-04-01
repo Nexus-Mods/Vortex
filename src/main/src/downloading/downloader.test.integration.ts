@@ -8,6 +8,7 @@ import type { Resolver } from "./resolver";
 
 import { staticChunker, type Chunk } from "./chunking";
 import { download } from "./downloader";
+import { DownloadError } from "./errors";
 import { ProgressReporter } from "./progress";
 import { urlResolver } from "./resolver";
 import {
@@ -51,16 +52,42 @@ function makeProgressReporter() {
   return new ProgressReporter();
 }
 
-async function runDownload(
+async function completeDownload(
   url: URL,
   destDir: string,
-  filename = "output",
-  resolver = urlResolver,
-  chunker = staticChunker(),
+  opts?: Partial<ReturnType<typeof defaultOptions>>,
 ): Promise<Buffer> {
-  const dest = path.join(destDir, filename);
-  await download(url, dest, resolver, chunker, makeProgressReporter());
+  const { promise, dest } = runDownload(url, destDir, opts);
+  await promise;
   return readFile(dest);
+}
+
+const defaultOptions = () => ({
+  filename: "output",
+  resolver: urlResolver,
+  chunker: staticChunker(),
+  progressReporter: makeProgressReporter(),
+  abortController: new AbortController(),
+});
+
+function runDownload(
+  url: URL,
+  destDir: string,
+  opts?: Partial<ReturnType<typeof defaultOptions>>,
+): { promise: Promise<void>; dest: string } {
+  const options = { ...defaultOptions(), ...opts };
+
+  const dest = path.join(destDir, options.filename);
+  const promise = download(
+    url,
+    dest,
+    options.resolver,
+    options.chunker,
+    options.progressReporter,
+    options.abortController.signal,
+  );
+
+  return { promise, dest };
 }
 
 describe("download", () => {
@@ -70,7 +97,7 @@ describe("download", () => {
     );
     try {
       await withTmpDir(async (dir) => {
-        const result = await runDownload(url, dir);
+        const result = await completeDownload(url, dir);
         expect(Buffer.compare(SMALL_FILE, result)).toBe(0);
       });
     } finally {
@@ -84,7 +111,7 @@ describe("download", () => {
     );
     try {
       await withTmpDir(async (dir) => {
-        const result = await runDownload(url, dir);
+        const result = await completeDownload(url, dir);
         expect(Buffer.compare(SMALL_FILE, result)).toBe(0);
       });
     } finally {
@@ -98,7 +125,7 @@ describe("download", () => {
     );
     try {
       await withTmpDir(async (dir) => {
-        const result = await runDownload(url, dir);
+        const result = await completeDownload(url, dir);
         expect(Buffer.compare(LARGE_FILE, result)).toBe(0);
       });
     } finally {
@@ -112,7 +139,7 @@ describe("download", () => {
     );
     try {
       await withTmpDir(async (dir) => {
-        const result = await runDownload(url, dir);
+        const result = await completeDownload(url, dir);
         expect(Buffer.compare(LARGE_FILE, result)).toBe(0);
       });
     } finally {
@@ -135,7 +162,7 @@ describe("download", () => {
     const { url, deregister } = server.route(handler);
     try {
       await withTmpDir(async (dir) => {
-        const result = await runDownload(url, dir);
+        const result = await completeDownload(url, dir);
         expect(Buffer.compare(LARGE_FILE, result)).toBe(0);
         const gets = server.requests.filter(
           (r) => r.method === "GET" && r.url === url.pathname,
@@ -163,7 +190,7 @@ describe("download", () => {
     const { url, deregister } = server.route(handler);
     try {
       await withTmpDir(async (dir) => {
-        const result = await runDownload(url, dir);
+        const result = await completeDownload(url, dir);
         expect(Buffer.compare(LARGE_FILE, result)).toBe(0);
         const gets = server.requests.filter(
           (r) => r.method === "GET" && r.url === url.pathname,
@@ -183,15 +210,11 @@ describe("download", () => {
       );
       try {
         await withTmpDir(async (dir) => {
-          const dest = path.join(dir, "output");
           const progressReporter = makeProgressReporter();
-          await download(
-            url,
-            dest,
-            urlResolver,
-            staticChunker(),
+          await completeDownload(url, dir, {
             progressReporter,
-          );
+          });
+
           expect(progressReporter.getProgress().totalBytes).toBe(
             LARGE_FILE.length,
           );
@@ -216,15 +239,11 @@ describe("download", () => {
       const { url, deregister } = server.route(handler);
       try {
         await withTmpDir(async (dir) => {
-          const dest = path.join(dir, "output");
           const progressReporter = makeProgressReporter();
-          await download(
-            url,
-            dest,
-            urlResolver,
-            staticChunker(),
+          await completeDownload(url, dir, {
             progressReporter,
-          );
+          });
+
           expect(progressReporter.getProgress().totalBytes).toBeNull();
         });
       } finally {
@@ -238,15 +257,11 @@ describe("download", () => {
       );
       try {
         await withTmpDir(async (dir) => {
-          const dest = path.join(dir, "output");
           const progressReporter = makeProgressReporter();
-          await download(
-            url,
-            dest,
-            urlResolver,
-            staticChunker(),
+          await completeDownload(url, dir, {
             progressReporter,
-          );
+          });
+
           expect(progressReporter.getProgress().bytesReceived).toBe(
             LARGE_FILE.length,
           );
@@ -262,15 +277,11 @@ describe("download", () => {
       );
       try {
         await withTmpDir(async (dir) => {
-          const dest = path.join(dir, "output");
           const progressReporter = makeProgressReporter();
-          await download(
-            url,
-            dest,
-            urlResolver,
-            staticChunker(),
+          await completeDownload(url, dir, {
             progressReporter,
-          );
+          });
+
           expect(progressReporter.getProgress().bytesReceived).toBe(
             LARGE_FILE.length,
           );
@@ -287,15 +298,11 @@ describe("download", () => {
       );
       try {
         await withTmpDir(async (dir) => {
-          const dest = path.join(dir, "output");
           const progressReporter = makeProgressReporter();
-          await download(
-            url,
-            dest,
-            urlResolver,
-            staticChunker(chunksPerFile),
+          await completeDownload(url, dir, {
             progressReporter,
-          );
+          });
+
           expect(progressReporter.getProgress().chunks).toHaveLength(
             chunksPerFile,
           );
@@ -311,15 +318,11 @@ describe("download", () => {
       );
       try {
         await withTmpDir(async (dir) => {
-          const dest = path.join(dir, "output");
           const progressReporter = makeProgressReporter();
-          await download(
-            url,
-            dest,
-            urlResolver,
-            staticChunker(),
+          await completeDownload(url, dir, {
             progressReporter,
-          );
+          });
+
           expect(progressReporter.getProgress().chunks).toHaveLength(1);
         });
       } finally {
@@ -336,7 +339,7 @@ describe("download", () => {
       );
       try {
         await withTmpDir(async (dir) => {
-          await runDownload(url, dir);
+          await completeDownload(url, dir);
           const gets = server.requests.filter(
             (r) => r.method === "GET" && r.url === url.pathname,
           );
@@ -355,7 +358,7 @@ describe("download", () => {
       );
       try {
         await withTmpDir(async (dir) => {
-          await runDownload(url, dir);
+          await completeDownload(url, dir);
           const gets = server.requests.filter(
             (r) => r.method === "GET" && r.url === url.pathname,
           );
@@ -373,7 +376,7 @@ describe("download", () => {
       );
       try {
         await withTmpDir(async (dir) => {
-          await runDownload(url, dir);
+          await completeDownload(url, dir);
           const gets = server.requests.filter(
             (r) => r.method === "GET" && r.url === url.pathname,
           );
@@ -405,16 +408,7 @@ describe("download", () => {
       const { url, deregister } = server.route(handler);
       try {
         await withTmpDir(async (dir) => {
-          const dest = path.join(dir, "output");
-          await expect(
-            download(
-              url,
-              dest,
-              urlResolver,
-              staticChunker(),
-              makeProgressReporter(),
-            ),
-          ).rejects.toMatchObject({
+          await expect(runDownload(url, dir).promise).rejects.toMatchObject({
             payload: { code: "precondition-failed", url },
           });
         });
@@ -432,15 +426,7 @@ describe("download", () => {
         try {
           await withTmpDir(async (dir) => {
             const dest = path.join(dir, "output");
-            await expect(
-              download(
-                url,
-                dest,
-                urlResolver,
-                staticChunker(),
-                makeProgressReporter(),
-              ),
-            ).rejects.toMatchObject({
+            await expect(runDownload(url, dest).promise).rejects.toMatchObject({
               payload: { code: "network-bad-status", statusCode, url },
             });
           });
@@ -459,14 +445,8 @@ describe("download", () => {
       try {
         await withTmpDir(async (dir) => {
           const resolver = vi.fn(urlResolver);
-          const dest = path.join(dir, "output");
-          await download(
-            url,
-            dest,
-            resolver,
-            staticChunker(),
-            makeProgressReporter(),
-          );
+          await completeDownload(url, dir, { resolver });
+
           expect(resolver).toHaveBeenCalledTimes(1);
           expect(resolver).toHaveBeenCalledWith(url);
         });
@@ -483,17 +463,7 @@ describe("download", () => {
         await withTmpDir(async (dir) => {
           const resolver: Resolver<URL> = (u) =>
             Promise.resolve({ probeUrl: u });
-          const dest = path.join(dir, "output");
-          await download(
-            url,
-            dest,
-            resolver,
-            staticChunker(),
-            makeProgressReporter(),
-          );
-
-          const result = await readFile(dest);
-          expect(Buffer.compare(LARGE_FILE, result)).toBe(0);
+          await completeDownload(url, dir, { resolver });
 
           const gets = server.requests.filter(
             (r) => r.method === "GET" && r.url === url.pathname,
@@ -522,17 +492,7 @@ describe("download", () => {
             Promise.resolve({ probeUrl, chunkUrl: chunkUrlFn });
 
           const chunksPerFile = 4;
-          const dest = path.join(dir, "output");
-          await download(
-            null,
-            dest,
-            resolver,
-            staticChunker(chunksPerFile),
-            makeProgressReporter(),
-          );
-
-          const result = await readFile(dest);
-          expect(Buffer.compare(LARGE_FILE, result)).toBe(0);
+          await completeDownload(null, dir, { resolver });
           expect(chunkUrlFn).toHaveBeenCalledTimes(chunksPerFile);
 
           const heads = server.requests.filter(
@@ -552,6 +512,7 @@ describe("download", () => {
 
     it("routes each chunk to a different endpoint", async () => {
       const chunksPerFile = 4;
+      const chunker = staticChunker(chunksPerFile);
       const chunkSize = Math.ceil(LARGE_FILE.length / chunksPerFile);
       const { url: probeUrl, deregister: deregisterProbe } = server.route(
         serveFile({ body: LARGE_FILE, acceptRanges: true }),
@@ -569,17 +530,7 @@ describe("download", () => {
           const resolver: Resolver<never> = () =>
             Promise.resolve({ probeUrl, chunkUrl: chunkUrlFn });
 
-          const dest = path.join(dir, "output");
-          await download(
-            null,
-            dest,
-            resolver,
-            staticChunker(chunksPerFile),
-            makeProgressReporter(),
-          );
-
-          const result = await readFile(dest);
-          expect(Buffer.compare(LARGE_FILE, result)).toBe(0);
+          await completeDownload(null, dir, { resolver, chunker });
 
           for (const { url } of chunkRoutes) {
             const requests = server.requests.filter(
@@ -592,6 +543,80 @@ describe("download", () => {
       } finally {
         deregisterProbe();
         chunkRoutes.forEach(({ deregister }) => deregister());
+      }
+    });
+  });
+
+  describe("cancellation", () => {
+    it("rejects with code 'cancellation' when cancelled before the probe", async () => {
+      const { url, deregister } = server.route(
+        serveFile({ body: LARGE_FILE, acceptRanges: true, delayForHEAD: 200 }),
+      );
+      try {
+        await withTmpDir(async (dir) => {
+          const abortController = new AbortController();
+          abortController.abort();
+          await expect(
+            runDownload(url, dir, { abortController }).promise,
+          ).rejects.toMatchObject({ payload: { code: "cancellation" } });
+        });
+      } finally {
+        deregister();
+      }
+    });
+
+    it("rejects with code 'cancellation' when cancelled during a single (non-chunked) download", async () => {
+      const { url, deregister } = server.route(
+        serveFile({ body: LARGE_FILE, acceptRanges: false, delayForGET: 200 }),
+      );
+      try {
+        await withTmpDir(async (dir) => {
+          const abortController = new AbortController();
+          const { promise } = runDownload(url, dir, { abortController });
+          abortController.abort();
+          await expect(promise).rejects.toMatchObject({
+            payload: { code: "cancellation" },
+          });
+        });
+      } finally {
+        deregister();
+      }
+    });
+
+    it("rejects with code 'cancellation' when cancelled during a chunked download", async () => {
+      const { url, deregister } = server.route(
+        serveFile({ body: LARGE_FILE, acceptRanges: true, delayForGET: 200 }),
+      );
+      try {
+        await withTmpDir(async (dir) => {
+          const abortController = new AbortController();
+          const { promise } = runDownload(url, dir, { abortController });
+          abortController.abort();
+          await expect(promise).rejects.toMatchObject({
+            payload: { code: "cancellation" },
+          });
+        });
+      } finally {
+        deregister();
+      }
+    });
+
+    it("rejects with a DownloadError, not a raw DOMException or AbortError", async () => {
+      const { url, deregister } = server.route(
+        serveFile({ body: LARGE_FILE, acceptRanges: true, delayForHEAD: 200 }),
+      );
+      try {
+        await withTmpDir(async (dir) => {
+          const abortController = new AbortController();
+          abortController.abort();
+          const err = await runDownload(url, dir, {
+            abortController,
+          }).promise.catch((e) => e);
+          expect(err).toBeInstanceOf(DownloadError);
+          expect((err as DownloadError).code).toBe("cancellation");
+        });
+      } finally {
+        deregister();
       }
     });
   });
