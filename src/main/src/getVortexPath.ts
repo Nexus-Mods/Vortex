@@ -92,7 +92,7 @@ function getLocalesPath(): string {
  */
 function getPackagePath(unpacked: boolean): string {
   if (isDevelopment) {
-    return applicationPath;
+    return basePath;
   }
 
   let res = basePath;
