@@ -259,6 +259,9 @@ export function runElevated(
                 }
                 // code 0 or null: normal exit; IPC handles results
               });
+              proc.on("error", (spawnErr: Error) => {
+                reject(spawnErr);
+              });
             }
             return resolve(tmpPath);
           }
