@@ -73,6 +73,12 @@ nul
 # Serena (AI agent) memory files
 .serena
 
+# Sewer's LLM artifacts
+PROMPT-*.md
+
+# Sewer's local reviews
+.vscode/local-reviews/
+
 # playright stuff
 playwright/playwright-report/
 playwright/run-*
