@@ -25,7 +25,7 @@ describe("NotificationAggregator", () => {
     vi.useRealTimers();
   });
 
-  test("should show notifications immediately when aggregation is not active", () => {
+  test("should show notifications immediately when aggregation is not active", async () => {
     aggregator.addNotification(
       "test-session",
       "error",
@@ -36,7 +36,7 @@ describe("NotificationAggregator", () => {
     );
 
     // Run any pending timers/setImmediate
-    vi.runAllTimers();
+    await vi.runAllTimersAsync();
 
     expect(mockApi.showErrorNotification).toHaveBeenCalledWith(
       "Test Error",
@@ -52,7 +52,6 @@ describe("NotificationAggregator", () => {
   test("should aggregate similar notifications", async () => {
     aggregator.startAggregation("test-session", 0);
 
-    // Add multiple similar notifications
     aggregator.addNotification(
       "test-session",
       "error",
@@ -75,10 +74,10 @@ describe("NotificationAggregator", () => {
       "Mod3",
     );
 
-    // Flush aggregation and wait for completion
-    await aggregator.flushAggregation("test-session");
+    const flushPromise = aggregator.flushAggregation("test-session");
+    await vi.runAllTimersAsync();
+    await flushPromise;
 
-    expect(mockApi.showErrorNotification).toHaveBeenCalledTimes(1);
     expect(mockApi.showErrorNotification).toHaveBeenCalledTimes(1);
     const [title, message, options] = mockApi.showErrorNotification.mock
       .calls[0] as [string, string, { allowReport: unknown; id: string }];
@@ -91,7 +90,6 @@ describe("NotificationAggregator", () => {
   test("should handle different error types separately", async () => {
     aggregator.startAggregation("test-session", 0);
 
-    // Use different titles to ensure they are grouped separately
     aggregator.addNotification(
       "test-session",
       "error",
@@ -107,7 +105,9 @@ describe("NotificationAggregator", () => {
       "Mod2",
     );
 
-    await aggregator.flushAggregation("test-session");
+    const flushPromise = aggregator.flushAggregation("test-session");
+    await vi.runAllTimersAsync();
+    await flushPromise;
 
     expect(mockApi.showErrorNotification).toHaveBeenCalledTimes(2);
   });
@@ -115,7 +115,6 @@ describe("NotificationAggregator", () => {
   test("should handle many dependencies by truncating the list", async () => {
     aggregator.startAggregation("test-session", 0);
 
-    // Add more than 5 dependencies
     for (let i = 1; i <= 7; i++) {
       aggregator.addNotification(
         "test-session",
@@ -126,7 +125,9 @@ describe("NotificationAggregator", () => {
       );
     }
 
-    await aggregator.flushAggregation("test-session");
+    const flushPromise = aggregator.flushAggregation("test-session");
+    await vi.runAllTimersAsync();
+    await flushPromise;
 
     expect(mockApi.showErrorNotification).toHaveBeenCalledTimes(1);
     const [title, message, options] = mockApi.showErrorNotification.mock
@@ -140,7 +141,7 @@ describe("NotificationAggregator", () => {
   });
 
   test("should auto-flush on timeout", async () => {
-    aggregator.startAggregation("test-session", 100); // 100ms timeout
+    aggregator.startAggregation("test-session", 100);
 
     aggregator.addNotification(
       "test-session",
@@ -151,10 +152,12 @@ describe("NotificationAggregator", () => {
     );
 
     // Advance timers past the timeout to trigger the auto-flush
-    vi.advanceTimersByTime(150);
+    await vi.advanceTimersByTimeAsync(150);
 
     // Stop the aggregation (which flushes remaining notifications)
-    await aggregator.stopAggregation("test-session");
+    const stopPromise = aggregator.stopAggregation("test-session");
+    await vi.runAllTimersAsync();
+    await stopPromise;
 
     expect(mockApi.showErrorNotification).toHaveBeenCalledTimes(1);
   });
@@ -169,7 +172,9 @@ describe("NotificationAggregator", () => {
       "TestMod",
     );
 
-    await aggregator.stopAggregation("test-session");
+    const stopPromise = aggregator.stopAggregation("test-session");
+    await vi.runAllTimersAsync();
+    await stopPromise;
 
     expect(mockApi.showErrorNotification).toHaveBeenCalledTimes(1);
     expect(aggregator.isAggregating("test-session")).toBe(false);
