@@ -9,7 +9,7 @@ import type { Chunk, Chunker } from "./chunking";
 import type { ChunkProgress, ProgressReporter } from "./progress";
 import type { Resolver, NormalizedResource } from "./resolver";
 
-import { toNetworkError, DownloadError } from "./errors";
+import { isCancellation, toNetworkError, DownloadError } from "./errors";
 import { normalize } from "./resolver";
 
 /** @internal */
@@ -19,8 +19,13 @@ export async function download<T>(
   resolver: Resolver<T>,
   chunker: Chunker<T>,
   progressReporter: ProgressReporter,
+  abortSignal: AbortSignal,
   chunkConcurrency: number = 4,
 ): Promise<void> {
+  if (abortSignal.aborted) {
+    throw new DownloadError({ code: "cancellation" }, "Download cancelled");
+  }
+
   let resolved: NormalizedResource;
   try {
     resolved = normalize(await resolver(resource));
@@ -30,8 +35,16 @@ export async function download<T>(
 
   let probe: ProbeResult;
   try {
-    probe = await probeUrl(resolved.probeUrl);
+    probe = await probeUrl(resolved.probeUrl, abortSignal);
   } catch (err) {
+    if (isCancellation(err)) {
+      throw new DownloadError(
+        { code: "cancellation" },
+        "Download cancelled",
+        err,
+      );
+    }
+
     throw toNetworkError(resolved.probeUrl, err);
   }
 
@@ -61,6 +74,7 @@ export async function download<T>(
         probe,
         handle,
         progressReporter.chunkProgress[0],
+        abortSignal,
       );
     } else {
       const chunkQueue = new PQueue({ concurrency: chunkConcurrency });
@@ -72,15 +86,31 @@ export async function download<T>(
         chunkQueue,
         chunks,
         progressReporter.chunkProgress,
+        abortSignal,
       );
     }
+  } catch (err) {
+    if (isCancellation(err)) {
+      throw new DownloadError(
+        { code: "cancellation" },
+        "Download cancelled",
+        err,
+      );
+    }
+
+    throw err;
   } finally {
     await handle.fd.close();
   }
 }
 
-async function probeUrl(url: URL): Promise<ProbeResult> {
-  const response = await got.head(url);
+async function probeUrl(
+  url: URL,
+  abortSignal: AbortSignal,
+): Promise<ProbeResult> {
+  const response = await got.head(url, {
+    signal: abortSignal,
+  });
 
   const contentLength = response.headers["content-length"];
   let size = contentLength ? parseInt(contentLength, 10) : 0;
@@ -97,8 +127,10 @@ async function downloadSingle(
   probe: ProbeResult,
   handle: FileHandle,
   progress: ChunkProgress,
+  abortSignal: AbortSignal,
 ): Promise<void> {
   const stream = got.stream(resource.probeUrl, {
+    signal: abortSignal,
     headers: createHeaders(probe.etag, null),
   });
 
@@ -121,6 +153,7 @@ async function downloadSingle(
 
     await pipeline(stream, fileStream);
   } catch (err) {
+    if (isCancellation(err)) throw err;
     throw toNetworkError(stream.requestUrl, err);
   } finally {
     fileStream.destroy();
@@ -134,6 +167,7 @@ async function downloadChunked(
   chunkQueue: PQueue,
   chunks: Chunk[],
   chunkProgress: ChunkProgress[],
+  abortSignal: AbortSignal,
 ): Promise<void> {
   try {
     await handle.fd.truncate(probe.size);
@@ -155,6 +189,7 @@ async function downloadChunked(
           handle,
           chunkProgress[chunk.index],
           chunk.start,
+          abortSignal,
         ),
     ),
   );
@@ -166,10 +201,14 @@ async function downloadChunk(
   probe: ProbeResult,
   handle: FileHandle,
   progress: ChunkProgress,
-  writePosition = 0,
+  writePosition: number,
+  abortSignal: AbortSignal,
 ): Promise<void> {
+  abortSignal.throwIfAborted();
+
   const url = await resource.chunkUrl(chunk);
   const stream = got.stream(url, {
+    signal: abortSignal,
     headers: createHeaders(probe.etag, chunk),
   });
 
@@ -189,7 +228,7 @@ async function downloadChunk(
       progress.bytesReceived += buffer.length;
     }
   } catch (err) {
-    if (err instanceof DownloadError) throw err;
+    if (err instanceof DownloadError || isCancellation(err)) throw err;
     throw toNetworkError(stream.requestUrl, err);
   }
 }

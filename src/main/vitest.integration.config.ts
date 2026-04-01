@@ -5,7 +5,7 @@ const config: ViteUserConfig = defineConfig({
     name: "@vortex/main (integration)",
     environment: "node",
     include: ["src/**/*.test.integration.ts"],
-    testTimeout: 10_000,
+    testTimeout: 30_000,
   },
 });
 

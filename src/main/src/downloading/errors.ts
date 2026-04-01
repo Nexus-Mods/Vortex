@@ -1,6 +1,7 @@
-import { TimeoutError, HTTPError, RequestError } from "got";
+import { TimeoutError, HTTPError, RequestError, AbortError } from "got";
 
 export type DownloadErrorPayload =
+  | { code: "cancellation" }
   | { code: "network-error"; url: URL }
   | { code: "network-timeout"; url: URL }
   | { code: "network-bad-status"; url: URL; statusCode: number }
@@ -20,6 +21,15 @@ export class DownloadError extends Error {
   public get code(): DownloadErrorPayload["code"] {
     return this.payload.code;
   }
+}
+
+export function isCancellation(err: unknown): boolean {
+  // NOTE(erri120): The `got` package throws a custom `AbortError` class on cancellation
+  if (err instanceof AbortError) return true;
+
+  // NOTE(erri120): The `p-queue` package and anything else using `AbortController`
+  // throw a `DOMException` with `name = "AbortError` instead.
+  return err instanceof DOMException && err.name === "AbortError";
 }
 
 export function toNetworkError(url: URL, err: unknown): DownloadError {
