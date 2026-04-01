@@ -93,6 +93,24 @@ describe("resolvePathCase", () => {
     expect(result).toBe(path.join("/nonexistent", "data", "file.esp"));
   });
 
+  it("Test 6: resolves filename segment to existing case on disk", async () => {
+    setPlatform("linux");
+    const mockReaddir = vi.mocked(fs.readdirAsync);
+    mockReaddir.mockImplementation((dirPath: string) => {
+      if (dirPath === "/game") {
+        return Promise.resolve(["Data"]) as any;
+      }
+      if (dirPath === path.join("/game", "Data")) {
+        return Promise.resolve(["myplugin.esp", "other.esp"]) as any;
+      }
+      return Promise.reject(Object.assign(new Error("ENOENT"), { code: "ENOENT" }));
+    });
+
+    // Caller passes 'MyPlugin.ESP' but file on disk is 'myplugin.esp'
+    const result = await resolvePathCase("/game", "Data/MyPlugin.ESP");
+    expect(result).toBe(path.join("/game", "Data", "myplugin.esp"));
+  });
+
   it("Test 5: when readdirAsync throws, preserves remaining segments as-is", async () => {
     setPlatform("linux");
     const mockReaddir = vi.mocked(fs.readdirAsync);

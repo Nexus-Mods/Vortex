@@ -41,33 +41,34 @@ export async function resolvePathCase(
     return rootDir;
   }
 
-  // The last segment is a filename — only resolve directory segments.
-  const dirSegments = segments.slice(0, -1);
-  const filename = segments[segments.length - 1];
+  // Resolve every segment (including the filename) against the actual entries
+  // on disk.  This ensures that removeDeployedFile can unlink a file even when
+  // the deployment record stores a different case than what is on disk.
+  // If no match is found for a segment (new file/dir), the original is kept so
+  // that ensureDir / link operations can create it with the intended casing.
+  let currentPath = rootDir;
 
-  let currentDir = rootDir;
-
-  for (const segment of dirSegments) {
+  for (const segment of segments) {
     let entries: string[];
     try {
-      if (dirCache !== undefined && dirCache.has(currentDir)) {
-        entries = dirCache.get(currentDir)!;
+      if (dirCache !== undefined && dirCache.has(currentPath)) {
+        entries = dirCache.get(currentPath)!;
       } else {
-        entries = await fs.readdirAsync(currentDir);
+        entries = await fs.readdirAsync(currentPath);
         if (dirCache !== undefined) {
-          dirCache.set(currentDir, entries);
+          dirCache.set(currentPath, entries);
         }
       }
 
       const lower = segment.toLowerCase();
       const match = entries.find((e) => e.toLowerCase() === lower);
-      currentDir = path.join(currentDir, match !== undefined ? match : segment);
+      currentPath = path.join(currentPath, match !== undefined ? match : segment);
     } catch {
       // Directory doesn't exist yet or readdir failed — preserve original
-      // segment so ensureDir can create it later.
-      currentDir = path.join(currentDir, segment);
+      // segment so ensureDir / link operations can create it later.
+      currentPath = path.join(currentPath, segment);
     }
   }
 
-  return path.join(currentDir, filename);
+  return currentPath;
 }
