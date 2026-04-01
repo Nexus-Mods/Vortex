@@ -22,6 +22,10 @@ export async function download<T>(
   abortSignal: AbortSignal,
   chunkConcurrency: number = 4,
 ): Promise<void> {
+  if (abortSignal.aborted) {
+    throw new DownloadError({ code: "cancellation" }, "Download cancelled");
+  }
+
   let resolved: NormalizedResource;
   try {
     resolved = normalize(await resolver(resource));
