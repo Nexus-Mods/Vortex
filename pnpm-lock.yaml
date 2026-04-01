@@ -4077,6 +4077,9 @@ importers:
       electron-updater:
         specifier: 'catalog:'
         version: 4.6.5
+      encoding-down:
+        specifier: 'catalog:'
+        version: 6.3.0
       exe-version:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-exe-version/tar.gz/eded60fc0a0f3c234e1d586d2eb9952401945406
@@ -4125,6 +4128,12 @@ importers:
       jsonwebtoken:
         specifier: 'catalog:'
         version: 9.0.3
+      leveldown:
+        specifier: 'catalog:'
+        version: 5.6.0
+      levelup:
+        specifier: 'catalog:'
+        version: 4.4.0
       limiter:
         specifier: 'catalog:'
         version: 3.0.0
