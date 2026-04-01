@@ -9,6 +9,7 @@ export default defineConfig({
   test: {
     projects: [
       "./src/main",
+      "./scripts",
       "./src/renderer",
       "./src/shared",
       "./packages/paths",
