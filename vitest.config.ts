@@ -10,7 +10,6 @@ export default defineConfig({
     projects: [
       "./src/main",
       "./scripts",
-      "./src/main/vitest.integration.config.ts",
       "./src/renderer",
       "./src/shared",
       "./packages/paths",
