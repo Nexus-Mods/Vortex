@@ -3,5 +3,9 @@
   "extends": "../tsconfig.extensions.json",
   "include": [
     "src"
+  ],
+  "exclude": [
+    "src/**/*.test.ts",
+    "__mocks__"
   ]
 }

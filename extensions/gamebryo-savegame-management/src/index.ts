@@ -160,13 +160,16 @@ function genUpdateSavegameHandler(api: types.IExtensionApi) {
   };
 }
 
-function getSavesPath(profile: types.IProfile) {
+async function getSavesPath(profile: types.IProfile): Promise<string> {
   const savePath = profileSavePath(profile);
 
-  return path.join(mygamesPath(profile.gameId), savePath);
+  return path.join(await mygamesPath(profile.gameId), savePath);
 }
 
-function openSavegamesDirectory(api: types.IExtensionApi, profileId?: string) {
+async function openSavegamesDirectory(
+  api: types.IExtensionApi,
+  profileId?: string,
+) {
   const state: types.IState = api.store.getState();
   if (profileId === undefined) {
     profileId = selectors.activeProfile(state).id;
@@ -178,8 +181,8 @@ function openSavegamesDirectory(api: types.IExtensionApi, profileId?: string) {
     false,
   );
   const profileSavesPath = hasLocalSaves
-    ? path.join(mygamesPath(profile.gameId), "Saves", profile.id)
-    : path.join(mygamesPath(profile.gameId), "Saves");
+    ? path.join(await mygamesPath(profile.gameId), "Saves", profile.id)
+    : path.join(await mygamesPath(profile.gameId), "Saves");
   fs.ensureDirAsync(profileSavesPath)
     .then(() => util.opn(profileSavesPath))
     .catch((err) =>
@@ -212,9 +215,10 @@ function updateSavegames(api: types.IExtensionApi, update: util.Debouncer) {
     return Promise.resolve();
   }
 
-  const savesPath = getSavesPath(profile);
-
-  update.schedule(undefined, profile.id, savesPath);
+  (async () => {
+    const savesPath = await getSavesPath(profile);
+    update.schedule(undefined, profile.id, savesPath);
+  })();
 }
 
 function onProfileChange(
@@ -263,9 +267,11 @@ function onProfilesModified(
   if (localSavesBefore !== localSavesAfter) {
     store.dispatch(clearSavegames());
     const savePath = profileSavePath(prof);
-    const savesPath = path.join(mygamesPath(prof.gameId), savePath);
-    store.dispatch(setSavegamePath(savePath));
-    update.schedule(undefined, prof.id, savesPath);
+    (async () => {
+      const savesPath = path.join(await mygamesPath(prof.gameId), savePath);
+      store.dispatch(setSavegamePath(savePath));
+      update.schedule(undefined, prof.id, savesPath);
+    })();
   }
 }
 
@@ -296,19 +302,22 @@ function once(context: types.IExtensionContext, update: util.Debouncer) {
 
   context.api.onAsync(
     "apply-settings",
-    (prof: types.IProfile, filePath: string, ini: IniFile<any>) => {
+    async (prof: types.IProfile, filePath: string, ini: IniFile<any>) => {
       log("debug", "apply savegame settings", {
         gameId: prof.gameId,
         filePath,
       });
       if (
         gameSupported(prof.gameId) &&
-        filePath.toLowerCase() === iniPath(prof.gameId).toLowerCase()
+        filePath.toLowerCase() === (await iniPath(prof.gameId)).toLowerCase()
       ) {
         applySaveSettings(context.api, prof, ini);
         store.dispatch(clearSavegames());
         const savePath = profileSavePath(prof);
-        const savesPath = path.join(mygamesPath(prof.gameId), savePath);
+        const savesPath = path.join(
+          await mygamesPath(prof.gameId),
+          savePath,
+        );
         update.schedule(undefined, prof.id, savesPath);
       }
       return Promise.resolve(undefined);
@@ -317,13 +326,16 @@ function once(context: types.IExtensionContext, update: util.Debouncer) {
 
   context.api.onAsync(
     "did-remove-profile",
-    (res: undefined, profile: types.IProfile) => {
+    async (res: undefined, profile: types.IProfile) => {
       if (
         gameSupported(profile.gameId) &&
         (profile.features?.["local_saves"] ?? false)
       ) {
         const savePath = profileSavePath(profile);
-        const savesPath = path.join(mygamesPath(profile.gameId), savePath);
+        const savesPath = path.join(
+          await mygamesPath(profile.gameId),
+          savePath,
+        );
         context.api
           .showDialog(
             "question",
@@ -391,7 +403,7 @@ function once(context: types.IExtensionContext, update: util.Debouncer) {
   }
 }
 
-function onLoadSaves(
+async function onLoadSaves(
   api: types.IExtensionApi,
   profileId: string,
 ): Promise<ISavegame[]> {
@@ -403,7 +415,7 @@ function onLoadSaves(
     return Promise.resolve([]);
   }
 
-  const gameProfiles = mygamesPath(currentProfile.gameId);
+  const gameProfiles = await mygamesPath(currentProfile.gameId);
   const profilePath =
     profileId !== "__global"
       ? profileSavePath(profiles[profileId])
@@ -499,7 +511,7 @@ function onRestorePlugins(api: types.IExtensionApi, savegame: ISavegame) {
     });
 }
 
-function onRemoveSavegames(
+async function onRemoveSavegames(
   api: types.IExtensionApi,
   profileId: string,
   savegameIds: string[],
@@ -529,7 +541,7 @@ function onRemoveSavegames(
     }
   }
 
-  const gameProfiles = mygamesPath(currentProfile.gameId);
+  const gameProfiles = await mygamesPath(currentProfile.gameId);
   const profilePath =
     profileId !== "__global"
       ? profileSavePath(profiles[profileId || currentProfile.id])
@@ -575,7 +587,7 @@ function onRemoveSavegames(
     });
 }
 
-function onTransferSavegames(
+async function onTransferSavegames(
   api: types.IExtensionApi,
   profileId: string,
   fileNames: string[],
@@ -602,14 +614,14 @@ function onTransferSavegames(
   }
 
   const sourceSavePath = path.resolve(
-    mygamesPath(gameId),
+    await mygamesPath(gameId),
     profileId !== "__global"
       ? profileSavePath(profiles[profileId])
       : profileSavePath(currentProfile, true),
   );
 
   const destSavePath = path.resolve(
-    mygamesPath(gameId),
+    await mygamesPath(gameId),
     profileSavePath(currentProfile),
   );
 
@@ -695,13 +707,17 @@ function init(context: IExtensionContextExt): boolean {
     "Refresh",
     () => {
       const profile = selectors.activeProfile(context.api.store.getState());
-      update.runNow(undefined, profile.id, getSavesPath(profile));
+      getSavesPath(profile).then((savesPath) => {
+        update.runNow(undefined, profile.id, savesPath);
+      });
     },
   );
 
   const onRefresh = () => {
     const profile = selectors.activeProfile(context.api.store.getState());
-    update.schedule(undefined, profile.id, getSavesPath(profile));
+    getSavesPath(profile).then((savesPath) => {
+      update.schedule(undefined, profile.id, savesPath);
+    });
   };
   const onLoadSavesProp = (profileId: string) =>
     onLoadSaves(context.api, profileId);
