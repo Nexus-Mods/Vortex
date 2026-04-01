@@ -54,6 +54,21 @@ export function applicationsDirectory(): string {
 }
 
 /**
+ * Refresh the KDE Plasma service cache after desktop entry changes.
+ * On non-KDE desktops, kbuildsycoca6 will not be available (ENOENT) and is silently skipped.
+ */
+function refreshKdeDesktopDatabase(): void {
+  const command = "kbuildsycoca6";
+  const args = ["--noincremental"];
+  const result = runCommand(command, args);
+  if (result.error?.code === "ENOENT") {
+    log("debug", "kbuildsycoca6 not available (not KDE)", { command });
+    return;
+  }
+  logCommandFailure(command, args, result);
+}
+
+/**
  * Refresh the Linux desktop MIME cache after desktop entry changes.
  */
 export function refreshDesktopDatabase(applicationsDir: string): void {
@@ -62,6 +77,7 @@ export function refreshDesktopDatabase(applicationsDir: string): void {
   const args = [applicationsDir];
   const result = runCommand(command, args);
   logCommandFailure(command, args, result);
+  refreshKdeDesktopDatabase();
 }
 
 /**

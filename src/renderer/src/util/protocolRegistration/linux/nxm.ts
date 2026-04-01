@@ -134,7 +134,7 @@ function escapeShellScriptArgument(input: string): string {
  */
 function generateWrapperScript(
   executablePath: string,
-  appPath: string,
+  appPath?: string,
 ): string {
   // Persist GTK/Electron environment variables used to run Vortex.
   // This is needed for Nix, such that you can launch the desktop entry outside
@@ -174,11 +174,20 @@ function generateWrapperScript(
     // Only pass --download when a parameter %u is provided (nxm:// links from browser).
     // This matches Windows behaviour, which includes --download on all protocol handler calls,
     // but does not on non-handler calls (e.g., when starting from the start menu).
-    `if [ -n "$1" ]; then\n` +
-    `  exec "${escapeShellScriptArgument(executablePath)}" "${escapeShellScriptArgument(appPath)}" --download "$@"\n` +
-    `else\n` +
-    `  exec "${escapeShellScriptArgument(executablePath)}" "${escapeShellScriptArgument(appPath)}"\n` +
-    `fi\n`
+    // AppImage builds are self-contained: no appPath positional argument needed.
+    (() => {
+      const escapedExec = escapeShellScriptArgument(executablePath);
+      const appPathArg = appPath
+        ? ` "${escapeShellScriptArgument(appPath)}"`
+        : "";
+      return (
+        `if [ -n "$1" ]; then\n` +
+        `  exec "${escapedExec}"${appPathArg} --download "$@"\n` +
+        `else\n` +
+        `  exec "${escapedExec}"${appPathArg}\n` +
+        `fi\n`
+      );
+    })()
   );
 }
 
