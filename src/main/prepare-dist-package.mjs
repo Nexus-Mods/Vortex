@@ -178,8 +178,18 @@ async function createMinimalPackageJson(workspacePackageMap, catalog) {
   };
 
   if (mainPkg.dependencies && Object.keys(mainPkg.dependencies).length > 0) {
+    const deps = { ...mainPkg.dependencies };
+
+    // On Linux, winapi-bindings is replaced at bundle time by a JS shim
+    // (see build.mjs linuxAlias). The native .node binary is not needed at
+    // runtime and causes an EEXIST conflict in electron-builder packaging
+    // when combined with the asarUnpack "**/*.node" pattern.
+    if (process.platform === "linux") {
+      delete deps["winapi-bindings"];
+    }
+
     minimal.dependencies = rewriteFileDependencies(
-      mainPkg.dependencies,
+      deps,
       workspacePackageMap,
       catalog,
     );
