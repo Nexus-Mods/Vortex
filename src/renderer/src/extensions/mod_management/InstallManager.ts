@@ -7797,14 +7797,16 @@ class InstallManager {
 
     const folderCopies: string[] = [];
     for (const copy of sorted) {
-      if (copy.source.endsWith("/") || copy.source.endsWith("\\")) {
-        folderCopies.push(copy.source);
+      const source = copy.source.replaceAll("\\", "/");
+      const destination = copy.destination.replaceAll("\\", "/");
+      if (source.endsWith("/")) {
+        folderCopies.push(source);
         continue;
       }
-      const src = path.join(tempPath, copy.source);
-      const dst = path.join(destinationPath, copy.destination);
+      const src = path.join(tempPath, source);
+      const dst = path.join(destinationPath, destination);
       dirs.add(path.dirname(dst));
-      jobs.push({ src, dst, rel: copy.destination });
+      jobs.push({ src, dst, rel: destination });
     }
     if (folderCopies.length > 0) {
       log("warn", "installer generated copy instructions for directories, these will be skipped", {
