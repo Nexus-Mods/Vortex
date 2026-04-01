@@ -1,12 +1,27 @@
 import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import { spawn } from "child_process";
+import type { ChildProcess } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
 import * as tmp from "tmp";
 
 import { getIPCPath } from "./ipc";
 import * as winapi from "winapi-bindings";
+import { UserCanceled } from "./CustomErrors";
 
 import { getRealNodeModulePaths } from "./webpack-hacks";
+
+type SpawnerFn = (cmd: string, args: string[]) => ChildProcess;
+let _spawner: SpawnerFn = spawn;
+
+/** @internal Override the spawn function for testing. Do not call in production. */
+export function _setSpawner(fn: SpawnerFn): void {
+  _spawner = fn;
+}
+
+function getSpawner(): SpawnerFn {
+  return _spawner;
+}
 
 declare const __non_webpack_require__: NodeJS.Require;
 
@@ -169,6 +184,25 @@ export function runElevated(
             if (errCode !== "EBADF") {
               return reject(err);
             }
+          }
+
+          if (process.platform === "linux") {
+            const proc = getSpawner()("pkexec", [
+              process.execPath,
+              "--run",
+              tmpPath,
+            ]);
+            proc.on("close", (code: number | null) => {
+              if (code === 126) {
+                reject(new UserCanceled());
+              } else if (code !== null && code !== 0) {
+                reject(
+                  new Error(`pkexec exited with code ${code}`),
+                );
+              }
+              // code 0 or null: normal exit; IPC handles results
+            });
+            return resolve(tmpPath);
           }
 
           try {
