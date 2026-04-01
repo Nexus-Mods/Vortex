@@ -1,7 +1,7 @@
 import type { IParameters, ISetItem } from "@vortex/shared/cli";
 
 import program from "commander";
-import { app } from "electron";
+import { app, BrowserWindow } from "electron";
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
@@ -290,5 +290,11 @@ export function parseCommandline(
 
 export function relaunch(args?: string[]) {
   app.relaunch({ args: [...filterArgs(process.argv), ...(args || [])] });
-  app.quit();
+  // Don't call app.quit() — it sets internal quitting state before closing
+  // windows, which causes an access violation in Electron's native
+  // destruction path. Instead, close all windows normally; the
+  // window-all-closed handler will call app.quit() after cleanup.
+  for (const win of BrowserWindow.getAllWindows()) {
+    win.close();
+  }
 }
