@@ -44,21 +44,22 @@ export function testPathTransfer(
   source: string,
   destination: string,
 ): PromiseBB<void> {
-  if (process.platform !== "win32") {
-    return PromiseBB.reject(new UnsupportedOperatingSystem());
-  }
-
   let destinationRoot: string;
-  try {
-    destinationRoot = winapi.GetVolumePathName(destination);
-  } catch (err) {
-    if (isErrorWithSystemCode(err)) {
-      if (err.systemCode === 2) {
-        return PromiseBB.reject(new NotFound(destination));
+  if (process.platform === "win32") {
+    try {
+      destinationRoot = winapi.GetVolumePathName(destination);
+    } catch (err) {
+      if (isErrorWithSystemCode(err)) {
+        if (err.systemCode === 2) {
+          return PromiseBB.reject(new NotFound(destination));
+        }
       }
+      return PromiseBB.reject(err);
     }
-
-    return PromiseBB.reject(err);
+  } else {
+    // On Linux/macOS, diskusage.check() accepts any path on the filesystem —
+    // no need to resolve the volume root separately.
+    destinationRoot = destination;
   }
 
   const isOnSameVolume = (): PromiseBB<boolean> => {
