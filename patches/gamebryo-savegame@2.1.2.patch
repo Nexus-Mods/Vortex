@@ -15,6 +15,17 @@ index 6b79e54dfa285ce8d860804e38b5f01d732d0dc4..55b0408280f67d11ff5abb9cf2b21190
                  }]
              ]
          }
+diff --git a/src/fmt/format.h b/src/fmt/format.h
+index 7cdac979a80d422c8b89d13f99debfeed6ff5cae..fc6859cb5b37963b940dfc83ed794dad39e460b8 100644
+--- a/src/fmt/format.h
++++ b/src/fmt/format.h
+@@ -1851,6 +1851,7 @@ void fmt::internal::ArgFormatterBase<Impl, Char>::visit_char(int value) {
+     Char fill = internal::CharTraits<Char>::cast(spec_.fill());
+     CharPtr out = CharPtr();
++#undef CHAR_WIDTH
+     const unsigned CHAR_WIDTH = 1;
+     if (spec_.width_ > CHAR_WIDTH) {
+       out = writer_.grow_buffer(spec_.width_);
 diff --git a/src/gamebryosavegame.cpp b/src/gamebryosavegame.cpp
 index 367bed1b1c3cdf685ca6feb8fbb6a62bd3a0a05b..9837beae759b2dd3d3374db3bf9c31e0c4a32429 100644
 --- a/src/gamebryosavegame.cpp
