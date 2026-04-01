@@ -1,35 +1,25 @@
 # Testing Guide
 
-## Structure
+Use `pnpm run test -- <path>` to run a specific test file or directory.
 
-- `__tests__/` - Root-level integration and cross-cutting tests
-- `src/**/__tests__/` - Unit tests colocated with source code
-- Jest with TypeScript support
+Tests are colocated as `src/**/*.test.ts`.
 
-## Import Path Rules
+If an extension test imports `vortex-api`, add a local `vitest.config.ts` alias to `__mocks__/vortex-api.ts`, and mock only the exports the test uses.
 
-**Root-level tests** (`__tests__/*.test.ts`):
+```ts
+// vitest.config.ts
+import * as path from "node:path";
 
-```typescript
-import InstallManager from "../src/extensions/mod_management/InstallManager";
-jest.mock("../src/extensions/mod_management/util/dependencies");
+resolve: {
+  alias: {
+    "vortex-api": path.resolve(import.meta.dirname, "__mocks__/vortex-api.ts"),
+  },
+}
+
+// __mocks__/vortex-api.ts
+import { vi } from "vitest";
+
+export const fs = {};
+export const util = {};
+export const log = vi.fn();
 ```
-
-**Module-specific tests** (`src/extensions/mod_management/__tests__/*.test.ts`):
-
-```typescript
-import InstallManager from "../InstallManager";
-jest.mock("../util/dependencies");
-```
-
-## Common Issues
-
-- **"Cannot find module"**: Check `jest.mock()` paths match file location relative to test
-- **Import vs mock paths**: Both must be updated when moving test files
-- **Missing mock parameters**: Update mock calls when method signatures change
-
-## Running Tests
-
-- `pnpm run test` - All tests
-- `pnpm run test -- <path>` - Specific file or directory
-- `pnpm run test -- --watch` - Watch mode
