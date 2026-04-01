@@ -61,7 +61,7 @@ describe("installers/smapi installSMAPI (windows)", () => {
 
     // Assert: extract the Windows payload and emit the right files.
     expect(SevenZipMock).toHaveBeenCalledTimes(1);
-    expect(normalizePathSeparators(extractSource as string)).toBe(
+    expect(normalizePathSeparators(extractSource)).toBe(
       "/staging/internal/windows/install.dat",
     );
     expect(extractDestination).toBe("/staging");
@@ -92,7 +92,7 @@ describe("installers/smapi installSMAPI (windows)", () => {
           instr.destination === "StardewModdingAPI.deps.json",
       ),
     ).toBe(true);
-    expect(normalizePathSeparators(depsFilePath as string)).toBe(
+    expect(normalizePathSeparators(depsFilePath)).toBe(
       "/game/Stardew Valley.deps.json",
     );
     expect(depsReadOptions).toEqual({ encoding: "utf8" });

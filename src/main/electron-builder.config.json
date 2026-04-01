@@ -65,7 +65,8 @@
     "node_modules/@nexusmods/fomod-installer-ipc/dist/*.exe",
     "assets/*.exe",
     "assets/css/**",
-    "**/*.node"
+    "**/*.node",
+    "duckdb-extensions"
   ],
   "buildDependenciesFromSource": false,
   "npmRebuild": false

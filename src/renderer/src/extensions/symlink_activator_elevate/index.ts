@@ -641,11 +641,21 @@ class DeploymentMethod extends LinkingDeployment {
     });
   }
 
+  private hasActiveCollectionSession(): boolean {
+      const state = this.api.store.getState() as IState;
+      return state.session?.collections?.activeSession != null;
+  }
+
   private finish() {
     log("debug", "finished");
     if (this.mQuitTimer !== undefined) {
       clearTimeout(this.mQuitTimer);
     }
+
+    // During collection installation, keep the elevated process alive longer to avoid
+    // repeated UAC prompts between deployment phases.
+    const timeoutMs = this.hasActiveCollectionSession() ? 5 * 60 * 1000 : 5000;
+
     this.mQuitTimer = setTimeout(() => {
       log("debug", "closing symlink process");
       this.emit("quit", {});
@@ -653,7 +663,7 @@ class DeploymentMethod extends LinkingDeployment {
 
       this.mElevatedClient = null;
       this.mQuitTimer = undefined;
-    }, 5000);
+    }, timeoutMs);
 
     if (this.mTmpFilePath !== undefined) {
       try {

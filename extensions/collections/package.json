@@ -15,7 +15,6 @@
   "devDependencies": {
     "7z-bin": "catalog:",
     "@nexusmods/nexus-api": "catalog:",
-    "@types/jest": "catalog:",
     "@types/lodash": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
@@ -28,7 +27,6 @@
     "copyfiles": "catalog:",
     "crc-32": "catalog:",
     "i18next": "catalog:",
-    "jest": "catalog:",
     "lodash": "catalog:",
     "memoize-one": "catalog:",
     "modmeta-db": "catalog:",
@@ -47,7 +45,6 @@
     "semver": "catalog:",
     "shortid": "catalog:",
     "tmp": "catalog:",
-    "ts-jest": "catalog:",
     "ts-v-gen": "catalog:",
     "turbowalk": "catalog:",
     "typescript": "catalog:",

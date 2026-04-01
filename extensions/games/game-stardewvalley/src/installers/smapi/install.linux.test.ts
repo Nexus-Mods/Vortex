@@ -57,7 +57,7 @@ describe("installers/smapi installSMAPI (linux)", () => {
 
     // Assert: extract the Linux payload and emit the right files.
     expect(SevenZipMock).toHaveBeenCalledTimes(1);
-    expect(normalizePathSeparators(extractSource as string)).toBe(
+    expect(normalizePathSeparators(extractSource)).toBe(
       "/staging/internal/linux/install.dat",
     );
     expect(extractDestination).toBe("/staging");

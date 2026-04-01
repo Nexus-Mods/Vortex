@@ -822,15 +822,17 @@ function genUpdateModDeployment(installManager: InstallManager) {
               method: activator.name,
             });
 
-            // Wait for active mod installations to complete before deploying.
-            // This prevents the external changes dialog from appearing during
-            // batch updates/reinstalls where detected changes are expected.
-            let hadActiveInstalls = false;
+            // Wait for active mod installations to complete before deploying
+            // so we don't deploy half-installed mods.
             if (installManager.getActiveInstallationCount() > 0) {
-              hadActiveInstalls = true;
               log("debug", "waiting for active installations before deploying");
               await installManager.waitForIdle();
             }
+
+            // Consume the set of mod IDs that finished installing since the
+            // last deployment. Their external changes (refchange / srcdeleted)
+            // are expected and will be auto-resolved per-mod.
+            const recentInstalls = installManager.consumeRecentInstalls();
 
             let mergeResult: { [modType: string]: IMergeResultByType };
             const lastDeployment: { [typeId: string]: IDeployedFile[] } = {};
@@ -881,7 +883,7 @@ function genUpdateModDeployment(installManager: InstallManager) {
               stagingPath,
               modPaths,
               lastDeployment,
-              hadActiveInstalls,
+              recentInstalls,
             );
 
             progress(t("Checking for mod incompatibilities"), 25);

@@ -70,12 +70,14 @@
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "electron",
-      "runtimeArgs": ["--inspect-brk=9229", "--remote-debugging-port=9222"],
       "args": ["."],
+      "runtimeArgs": ["--inspect=9229", "--remote-debugging-port=9222"],
       // NixOS: VS Code's default NODE_OPTIONS injection doesn't work with system Electron.
-      // Use --inspect-brk with attachSimplePort to bypass the bootloader and attach directly.
+      // Use attachSimplePort to bypass the bootloader and attach directly.
+      // `--inspect-brk` made the combined main+renderer session hang intermittently, so this
+      // uses `--inspect` instead. Startup is a bit slower, but it is reliable.
       "attachSimplePort": 9229,
-      "cwd": "${workspaceRoot}",
+      "cwd": "${workspaceRoot}/src/main",
       "env": {
         "NODE_ENV": "development",
         "START_DEVTOOLS": "true"
@@ -95,8 +97,7 @@
       "name": "Debug Main Process (Staging)",
       "type": "node",
       "request": "launch",
-      "program": "${workspaceFolder}/out/main.js",
-      "cwd": "${workspaceRoot}",
+      "cwd": "${workspaceRoot}/src/main",
       "runtimeExecutable": "${workspaceRoot}/src/main/node_modules/.bin/electron",
       "windows": {
         "runtimeExecutable": "${workspaceRoot}/src/main/node_modules/.bin/electron.cmd"

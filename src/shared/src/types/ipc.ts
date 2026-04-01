@@ -67,6 +67,7 @@ export interface UpdateStatus {
 /** Vortex application paths */
 export type VortexPaths = {
   base: string;
+  base_unpacked: string;
   assets: string;
   assets_unpacked: string;
   modules: string;

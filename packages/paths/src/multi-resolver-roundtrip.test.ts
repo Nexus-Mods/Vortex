@@ -58,7 +58,7 @@ describe("Multi-Resolver Roundtrip", () => {
       const filePath = appResolver.PathFor("userData", "mods/skyrim");
       const resolved = await filePath.resolve();
 
-      expect(normalizePath(resolved as string)).toBe(
+      expect(normalizePath(resolved)).toBe(
         "/home/user/.vortex/userData/mods/skyrim",
       );
     });
@@ -87,9 +87,7 @@ describe("Multi-Resolver Roundtrip", () => {
       expect(reversed.relative).toBe("mods/skyrim/data.esp");
 
       const resolved2 = await reversed.resolve();
-      expect(normalizePath(resolved2 as string)).toBe(
-        normalizePath(resolved1 as string),
-      );
+      expect(normalizePath(resolved2)).toBe(normalizePath(resolved1));
     });
 
     it("should return null for paths outside own anchors", async () => {
@@ -118,9 +116,7 @@ describe("Multi-Resolver Roundtrip", () => {
 
       // Resolve through app resolver
       const appResolved = await appResult.resolve();
-      expect(normalizePath(appResolved as string)).toBe(
-        normalizePath(originalResolved as string),
-      );
+      expect(normalizePath(appResolved)).toBe(normalizePath(originalResolved));
 
       // Convert back to Unix
       const unixFirst = new UnixResolver(appResolver);
@@ -130,8 +126,8 @@ describe("Multi-Resolver Roundtrip", () => {
       expect(Anchor.name(unixResult.anchor)).toBe("root");
 
       const finalResolved = await unixResult.resolve();
-      expect(normalizePath(finalResolved as string)).toBe(
-        normalizePath(originalResolved as string),
+      expect(normalizePath(finalResolved)).toBe(
+        normalizePath(originalResolved),
       );
     });
 
@@ -147,17 +143,13 @@ describe("Multi-Resolver Roundtrip", () => {
       const unixResult = await unixFirst.tryReverse(step1);
       expect(unixResult).not.toBeNull();
       const step2 = await unixResult.resolve();
-      expect(normalizePath(step2 as string)).toBe(
-        normalizePath(step1 as string),
-      );
+      expect(normalizePath(step2)).toBe(normalizePath(step1));
 
       // Convert back to App
       const appResult = await appResolver.tryReverse(step2);
       expect(appResult).not.toBeNull();
       const step3 = await appResult.resolve();
-      expect(normalizePath(step3 as string)).toBe(
-        normalizePath(step1 as string),
-      );
+      expect(normalizePath(step3)).toBe(normalizePath(step1));
 
       expect(Anchor.name(appResult.anchor)).toBe("userData");
       expect(appResult.relative).toBe("mods/skyrim/meshes/armor/plate.nif");
@@ -233,9 +225,7 @@ describe("Multi-Resolver Roundtrip", () => {
       expect(result.relative).toBe("backups/2024/mods/skyrim/mesh.nif");
 
       const finalResolved = await result.resolve();
-      expect(normalizePath(finalResolved as string)).toBe(
-        normalizePath(resolved as string),
-      );
+      expect(normalizePath(finalResolved)).toBe(normalizePath(resolved));
     });
 
     it("should handle withBase() across resolver boundaries", async () => {

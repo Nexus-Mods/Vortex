@@ -118,7 +118,7 @@ function RemoteTile(props: IRemoteTileProps) {
               })}
             </div>
             <div className={classes.join(" ")}>
-              <Icon name="health" />
+              <Icon set="collections" name="health" />
               {t("{{rating}}%", {
                 replace: { rating: revision.rating.average },
               })}

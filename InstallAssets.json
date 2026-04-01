@@ -2,6 +2,12 @@
   "spawn": [],
   "copy": [
     {
+      "srcPath": "src/main/build/duckdb-extensions/**/*.duckdb_extension",
+      "outPath": "duckdb-extensions",
+      "skipPaths": 4,
+      "target": ["out", "dist"]
+    },
+    {
       "srcPath": "./LICENSE.md",
       "outPath": "",
       "skipPaths": 0,

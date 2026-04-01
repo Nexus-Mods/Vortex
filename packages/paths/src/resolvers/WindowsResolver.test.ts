@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from "vitest";
 
-import { WindowsResolver } from "./WindowsResolver";
+import { WindowsResolver, type WindowsDrive } from "./WindowsResolver";
 import { Anchor } from "../types";
 import { MockWindowsFilesystem } from "../test-helpers/MockWindowsFilesystem";
 
@@ -60,9 +60,7 @@ describe("WindowsResolver", () => {
       ["e", "E:\\"],
       ["z", "Z:\\"],
     ])("resolves %s anchor to %s", async (anchorName, expected) => {
-      // Cast to `any` to intentionally bypass type safety and test error handling with invalid inputs.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const filePath = resolver.PathFor(anchorName as any);
+      const filePath = resolver.PathFor(anchorName as unknown as WindowsDrive);
       const resolved = await filePath.resolve();
       expect(resolved).toBe(expected);
     });
@@ -84,9 +82,11 @@ describe("WindowsResolver", () => {
       const invalidAnchor = Anchor.make("invalidDrive");
 
       await expect(
-        // Cast to `any` to intentionally bypass type safety and test error handling with invalid inputs.
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-        (resolver as any).resolveAnchor(invalidAnchor),
+        (
+          resolver as unknown as {
+            resolveAnchor: (anchor: typeof invalidAnchor) => Promise<unknown>;
+          }
+        ).resolveAnchor(invalidAnchor),
       ).rejects.toThrow(/Unknown anchor/);
     });
   });

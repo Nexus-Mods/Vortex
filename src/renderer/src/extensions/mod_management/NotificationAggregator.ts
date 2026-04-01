@@ -12,15 +12,8 @@ import type { INotificationAction } from "../../types/INotification";
 
 import { log } from "../../util/log";
 
-// In test environment, use synchronous execution to avoid timing issues with Jest fake timers
-// Check for jest global or NODE_ENV to detect test environment reliably
-const isTestEnvironment = (): boolean =>
-  typeof jest !== "undefined" || process?.env?.NODE_ENV === "test";
-
 const setImmediatePolyfill = (fn: () => void): void => {
-  if (isTestEnvironment()) {
-    fn(); // Synchronous in tests
-  } else if (typeof setImmediate !== "undefined") {
+  if (typeof setImmediate !== "undefined") {
     setImmediate(fn);
   } else {
     setTimeout(fn, 0);
@@ -244,10 +237,7 @@ export class NotificationAggregator {
   ): Promise<void> {
     try {
       // Process aggregation in next tick to prevent blocking
-      // Skip the delay in test environment for predictable timing
-      if (!isTestEnvironment()) {
-        await new Promise<void>((resolve) => setImmediatePolyfill(resolve));
-      }
+      await new Promise<void>((resolve) => setImmediatePolyfill(resolve));
 
       // Circuit breaker: For very large batches, show a simple summary instead of processing all
       if (notifications.length > 500) {
@@ -293,8 +283,8 @@ export class NotificationAggregator {
       for (let i = 0; i < aggregated.length; i++) {
         this.showAggregatedNotification(aggregated[i]);
 
-        // Add small delay between notifications to prevent UI blocking (skip in tests)
-        if (i < aggregated.length - 1 && !isTestEnvironment()) {
+        // Add small delay between notifications to prevent UI blocking
+        if (i < aggregated.length - 1) {
           await new Promise<void>((resolve) => setTimeout(resolve, 1));
         }
       }

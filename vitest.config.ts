@@ -9,10 +9,15 @@ export default defineConfig({
   test: {
     projects: [
       "./src/main",
+      "./scripts",
+      "./src/main/vitest.integration.config.ts",
       "./src/renderer",
       "./src/shared",
       "./packages/paths",
       "./packages/paths-node",
+      "./extensions/feedback",
+      "./extensions/gamebryo-savegame-management",
+      "./extensions/nmm-import-tool",
       "./extensions/games/game-stardewvalley",
     ],
     reporters: [

@@ -12,6 +12,10 @@ import { defineConfig } from "eslint/config";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 
+import noBluebirdPromiseAliasRule from "../../eslint-rules/no-bluebird-promise-alias.mjs";
+import noBluebirdResolveWithPromiseLike from "../../eslint-rules/no-bluebird-resolve-promiselike.mjs";
+import noRestrictedImportsRule from "../../eslint-rules/no-restricted-imports.mjs";
+
 export default defineConfig([
   {
     ignores: [
@@ -47,6 +51,14 @@ export default defineConfig([
       perfectionist,
       "@stylistic": stylistic,
       import: importPlugin,
+      vortex: {
+        rules: {
+          "no-bluebird-promise-alias": noBluebirdPromiseAliasRule,
+          "no-bluebird-resolve-promiselike": noBluebirdResolveWithPromiseLike,
+          "no-restricted-imports-errors": noRestrictedImportsRule,
+          "no-restricted-imports-warnings": noRestrictedImportsRule,
+        },
+      },
     },
     settings: {
       "react-x": {
@@ -105,6 +117,21 @@ export default defineConfig([
           destructuredArrayIgnorePattern: "^_",
           varsIgnorePattern: "^_",
           ignoreRestSiblings: true,
+        },
+      ],
+
+      // Vortex custom rules
+      "vortex/no-bluebird-promise-alias": "error",
+      "vortex/no-bluebird-resolve-promiselike": "warn", // TODO: change to error
+      "vortex/no-restricted-imports-warnings": [
+        "warn",
+        {
+          restrictions: [
+            {
+              name: "bluebird",
+              message: "Please avoid using Bluebird. Use ES6 promises instead",
+            },
+          ],
         },
       ],
 
