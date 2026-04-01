@@ -11,6 +11,7 @@ import { Button } from "../../../controls/TooltipControls";
 import { getSafe, setSafe } from "../../../util/storeHelper";
 
 const MIN_PROFILE_NAME_LENGTH = 3;
+const MAX_PROFILE_NAME_LENGTH = 64;
 
 export interface IEditState {
   edit: IProfile;
@@ -77,6 +78,7 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
         style={{ flexGrow: 1 }}
         type="text"
         value={edit.name}
+        maxLength={MAX_PROFILE_NAME_LENGTH}
         onChange={this.changeEditName}
         onKeyPress={this.handleKeypress}
       />
