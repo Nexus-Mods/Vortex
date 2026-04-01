@@ -16,7 +16,6 @@ import type {
   IExtensionContext,
 } from "../../types/IExtensionContext";
 import type { IGame } from "../../types/IGame";
-import type { IGameStore } from "../../types/IGameStore";
 import type { NotificationDismiss } from '../../types/INotification';
 import type { IProfile, IRunningTool, IState } from "../../types/IState";
 import type { IEditChoice, ITableAttribute } from "../../types/ITableAttribute";
@@ -71,7 +70,7 @@ import {
   gameById,
 } from "./selectors";
 import getDriveList from "./util/getDriveList";
-import { getGame, getGameStore, getGameStores } from "./util/getGame";
+import { getGame, getGameStores } from "./util/getGame";
 import {
   getModType,
   getModTypeExtensions,
@@ -85,8 +84,6 @@ import ModTypeWidget from "./views/ModTypeWidget";
 import PathSelectionDialog from "./views/PathSelection";
 import ProgressFooter from "./views/ProgressFooter";
 import RecentlyManagedDashlet from "./views/RecentlyManagedDashlet";
-
-const gameStoreLaunchers: IGameStore[] = [];
 
 const $ = local<{
   gameModeManager: GameModeManager;
@@ -766,36 +763,6 @@ function init(context: IExtensionContext): boolean {
 
   context.registerTableAttribute("mods", genModTypeAttribute(context.api));
 
-  context.registerGameStore = ((gameStore: IGameStore) => {
-    if (gameStore === undefined) {
-      context.api.showErrorNotification(
-        "Invalid game store extension not loaded",
-        undefined,
-        {
-          allowReport: false,
-          message: "A game store extension failed to initialize",
-        },
-      );
-      return;
-    }
-
-    try {
-      if (gameStore.name === undefined) {
-        gameStore.name = gameStore.id;
-      }
-      gameStoreLaunchers.push(gameStore);
-    } catch (err) {
-      context.api.showErrorNotification(
-        "Game store launcher extension not loaded",
-        err,
-        {
-          allowReport: false,
-          message: gameStore.id,
-        },
-      );
-    }
-  }) as any;
-
   // TODO: hack, we need the extension path to get at the assets but this parameter
   //   is only added internally and not part of the public api
   context.registerGame = ((game: IGame, extensionPath: string) => {
@@ -865,7 +832,8 @@ function init(context: IExtensionContext): boolean {
         store: {
           title: "Game Store",
           value:
-            getGameStore(game.store)?.name ?? context.api.translate("Unknown"),
+            GameStoreHelper.getStoreName(game.store) ??
+            context.api.translate("Unknown"),
           type: "string",
         },
       }),
@@ -1020,7 +988,6 @@ function init(context: IExtensionContext): boolean {
       context.api,
       $.extensionGames,
       $.extensionStubs,
-      gameStoreLaunchers,
       (gameMode: string) => {
         log("debug", "gamemode activated", gameMode);
         events.emit("gamemode-activated", gameMode);

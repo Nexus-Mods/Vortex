@@ -100,7 +100,7 @@ class QueryRegistry {
    */
   public async executeQuery(
     name: string,
-    params?: Record<string, unknown>,
+    params?: Record<string, Serializable>,
   ): Promise<Record<string, Serializable>[]> {
     const query = this.#mQueries.get(name);
     if (query === undefined) {
@@ -109,7 +109,7 @@ class QueryRegistry {
 
     // Build parameter bindings using named parameters
     // Note: DuckDB node-api expects keys WITHOUT the $ prefix
-    let values: Record<string, unknown> | undefined;
+    let values: Record<string, Serializable> | undefined;
     if (params !== undefined && query.params.length > 0) {
       values = {};
       for (const paramDef of query.params) {

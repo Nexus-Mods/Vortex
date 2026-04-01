@@ -9,7 +9,7 @@ import type { IToolStored } from "../extensions/gamemode_management/types/IToolS
 import type { IDiscoveredTool } from "../types/IDiscoveredTool";
 import type { IExtensionApi } from "../types/IExtensionContext";
 import type { IGame } from "../types/IGame";
-import type { Steam, ISteamEntry } from "./Steam";
+import type { ISteamEntry } from "./Steam";
 
 import { setToolRunning, setToolStopped } from "../actions";
 import { ApplicationData } from "../applicationData";
@@ -27,6 +27,7 @@ import GameStoreHelper from "./GameStoreHelper";
 import getVortexPath from "./getVortexPath";
 import { isWindowsExecutable } from "./linux/proton";
 import { getSafe } from "./storeHelper";
+import steam from "./Steam";
 
 async function hideWindow(): Promise<void> {
   await window.api.window.hide(ApplicationData.instance.windowId);
@@ -90,17 +91,10 @@ async function shouldRunWithProton(
   }
 
   try {
-    const steamStore = GameStoreHelper.getGameStore("steam") as Steam;
-    const games = await steamStore.allGames();
-
-    // Find the game entry that matches this executable's location
-    return games.find(
-      (g) =>
-        info.workingDirectory
-          ?.toLowerCase()
-          .startsWith(g.gamePath.toLowerCase()) ||
-        info.exePath.toLowerCase().startsWith(g.gamePath.toLowerCase()),
-    );
+    return (await GameStoreHelper.findByPath(
+      info.workingDirectory || info.exePath,
+      "steam",
+    )) as ISteamEntry;
   } catch (err: any) {
     log("debug", "Could not check for Proton execution", {
       error: err?.message,
@@ -301,8 +295,7 @@ class StarterInfo implements IStarterInfo {
         }
       };
 
-      const steamStore = GameStoreHelper.getGameStore("steam") as Steam;
-      return steamStore.runToolWithProton(
+      return steam.runToolWithProton(
         api,
         info.exePath,
         info.commandLine,
@@ -414,17 +407,9 @@ class StarterInfo implements IStarterInfo {
     api: IExtensionApi,
     addInfo: any,
   ): PromiseBB<void> {
-    let gameLauncher;
-    try {
-      gameLauncher = GameStoreHelper.getGameStore(launcher);
-    } catch (err) {
-      return PromiseBB.reject(err);
-    }
     const infoObj =
       addInfo !== undefined ? addInfo : path.dirname(info.exePath);
-    return gameLauncher !== undefined
-      ? gameLauncher.launchGame(infoObj, api)
-      : PromiseBB.reject(new Error(`unsupported launcher ${launcher}`));
+    return GameStoreHelper.launchGame(api, launcher, infoObj);
   }
 
   private static gameIcon(gameId: string, extensionPath: string, logo: string) {

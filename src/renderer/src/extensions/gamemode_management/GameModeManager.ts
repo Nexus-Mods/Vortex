@@ -12,12 +12,10 @@ import {
   SetupError,
   UserCanceled,
 } from "../../util/CustomErrors";
-import EpicGamesLauncher from "../../util/EpicGamesLauncher";
 import * as fs from "../../util/fs";
 import GameStoreHelper from "../../util/GameStoreHelper";
 import { log } from "../../util/log";
 import { activeProfile, discoveryByGame } from "../../util/selectors";
-import Steam from "../../util/Steam";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, truthy } from "../../util/util";
 
@@ -49,6 +47,7 @@ import {
   quickDiscoveryTools,
   searchDiscovery,
 } from "./util/discovery";
+import { loadStoreGames } from "./util/discoveryQueries";
 import { getGame } from "./util/getGame";
 
 import PromiseBB from "bluebird";
@@ -79,14 +78,13 @@ class GameModeManager {
     api: IExtensionApi,
     extensionGames: IGame[],
     gameStubs: IGameStub[],
-    gameStoreExtensions: IGameStore[],
     onGameModeActivated: (mode: string) => void,
   ) {
     this.mApi = api;
     this.mStore = null;
     this.mKnownGames = extensionGames;
     this.mGameStubs = gameStubs;
-    this.mKnownGameStores = [Steam, EpicGamesLauncher, ...gameStoreExtensions];
+    this.mKnownGameStores = GameStoreHelper.storeIds();
     this.mActiveSearch = null;
     this.mOnGameModeActivated = onGameModeActivated;
   }
@@ -274,15 +272,9 @@ class GameModeManager {
    * @memberOf GameModeManager
    */
   public startQuickDiscovery(games?: IGame[]) {
-    return this.reloadStoreGames()
-      .then(() =>
-        quickDiscovery(
-          games ?? this.mKnownGames,
-          this.mStore.getState().settings.gameMode.discovered,
-          this.onDiscoveredGame,
-          this.onDiscoveredTool,
-        ),
-      )
+    return PromiseBB.resolve(window.api.discovery.start())
+      .then(() => loadStoreGames())
+      .then((storeGames) => this.runQuickDiscovery(games, storeGames))
       .then((result) => {
         this.postDiscovery();
         return result;
@@ -461,8 +453,23 @@ class GameModeManager {
     );
   }
 
-  private reloadStoreGames() {
-    return GameStoreHelper.reloadGames(this.mApi);
+  private runQuickDiscovery(
+    games: IGame[] | undefined,
+    storeGames: Array<{
+      store_type: string;
+      store_id: string;
+      install_path: string;
+      name: string | null;
+      store_metadata: string | null;
+    }>,
+  ): PromiseBB<string[]> {
+    return quickDiscovery(
+      games ?? this.mKnownGames,
+      this.mStore.getState().settings.gameMode.discovered,
+      this.onDiscoveredGame,
+      this.onDiscoveredTool,
+      storeGames,
+    );
   }
 
   private isValidGame(game: IGameStored): boolean {
