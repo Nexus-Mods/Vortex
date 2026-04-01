@@ -11,8 +11,8 @@ packages:
   - ./extensions/games/*
 
 allowBuilds:
-  '@nexusmods/fomod-installer-native': true
   "@electron/rebuild": true
+  '@nexusmods/fomod-installer-native': true
   "@parcel/watcher": true
   ba2tk: true
   bsatk: true
@@ -314,5 +314,6 @@ overrides:
   "@types/react-dom": "16"
   node-addon-api: 8.5.0
 patchedDependencies:
-  playwright-core@1.58.2: patches/playwright-core@1.58.2.patch
+  gamebryo-savegame@2.1.2: patches/gamebryo-savegame@2.1.2.patch
   loot@6.2.1: patches/loot@6.2.1.patch
+  playwright-core@1.58.2: patches/playwright-core@1.58.2.patch
