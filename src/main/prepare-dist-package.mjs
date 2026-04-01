@@ -169,7 +169,9 @@ async function createMinimalPackageJson(workspacePackageMap, catalog) {
     version: process.env.VORTEX_VERSION || "1.0.0",
     main: mainPkg.main.replace(/^out\//, ""),
     author: "Black Tree Gaming Ltd.",
-    description: "Vortex",
+    description:
+      "The elegant, powerful, and open-source mod manager from Nexus Mods",
+    homepage: "https://www.nexusmods.com/site/mods/1",
     license: "GPL-3.0",
     type: mainPkg.type,
     packageManager: rootPkg.packageManager,
