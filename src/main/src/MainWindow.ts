@@ -407,13 +407,18 @@ class MainWindow {
       return;
     }
 
-    this.mWindow.on("close", () => {
+    this.mWindow.on("close", (event) => {
       if (this.mWindow === null) {
         return;
       }
-      // Forward close event to renderer
+      // Work around Electron >=39.6.1 crash on Windows where the normal
+      // WM_CLOSE destruction path triggers an access violation inside
+      // electron.exe (STATUS_FATAL_USER_CALLBACK_EXCEPTION / 0xC000041D).
+      // See: https://github.com/electron/electron/issues/50040
+      event.preventDefault();
       this.mWindow.webContents.send("window:event:close");
       closeAllViews(this.mWindow);
+      this.mWindow.destroy();
     });
     this.mWindow.on("closed", () => {
       this.mWindow = null;
