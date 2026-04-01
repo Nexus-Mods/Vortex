@@ -239,7 +239,7 @@ export interface IRegisterProtocol {
     protocol: string,
     def: boolean,
     callback: (url: string, install: boolean) => void,
-  );
+  ): Promise<boolean>;
 }
 
 export interface IRegisterRepositoryLookup {

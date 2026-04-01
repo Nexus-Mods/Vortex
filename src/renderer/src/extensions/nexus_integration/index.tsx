@@ -1216,13 +1216,13 @@ function extendAPI(api: IExtensionApi, nexus: NexusT): INexusAPIExtension {
 }
 
 function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
-  const registerFunc = (def?: boolean) => {
+  const registerFunc = async (def?: boolean) => {
     if (def === undefined) {
       api.store.dispatch(setAssociatedWithNXMURLs(true));
     }
 
     // main entry point for nxm protocol links to be handled
-    if (api.registerProtocol("nxm", def !== false, makeNXMLinkCallback(api))) {
+    if (await api.registerProtocol("nxm", def !== false, makeNXMLinkCallback(api))) {
       api.sendNotification({
         type: "info",
         message: "Vortex will now handle Nexus Download links",
