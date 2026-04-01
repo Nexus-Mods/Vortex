@@ -357,9 +357,36 @@ export function initGameSupport(api: types.IExtensionApi): Promise<void> {
 export function appDataPath(gameMode: string): string {
   const dataPath = gameSupport.get(gameMode, "appDataPath");
 
-  return process.env.LOCALAPPDATA !== undefined
-    ? path.join(process.env.LOCALAPPDATA, dataPath)
-    : path.resolve(util.getVortexPath("appData"), "..", "Local", dataPath);
+  if (process.env.LOCALAPPDATA !== undefined) {
+    return path.join(process.env.LOCALAPPDATA, dataPath);
+  }
+
+  if (process.platform === "linux") {
+    const discovery = discoveryForGame(gameMode);
+    if (discovery?.store === "steam" && discovery?.path !== undefined) {
+      const game = util.getGame(gameMode);
+      const steamAppId = game?.details?.["steamAppId"];
+      if (steamAppId !== undefined) {
+        // Derive steamapps path from game installation path.
+        // Steam games are always under ${steamapps}/common/${gameName}.
+        const steamAppsPath = path.dirname(path.dirname(discovery.path));
+        const wineLocalAppData = path.join(
+          steamAppsPath,
+          "compatdata",
+          steamAppId.toString(),
+          "pfx",
+          "drive_c",
+          "users",
+          "steamuser",
+          "AppData",
+          "Local",
+        );
+        return path.join(wineLocalAppData, dataPath);
+      }
+    }
+  }
+
+  return path.resolve(util.getVortexPath("appData"), "..", "Local", dataPath);
 }
 
 export function gameDataPath(gameMode: string): string {

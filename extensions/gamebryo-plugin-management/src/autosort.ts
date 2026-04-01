@@ -535,9 +535,12 @@ class LootInterface {
       await loot.loadPluginsAsync(
         plugins
           .filter(
-            (id) => pluginList[id] !== undefined && pluginList[id].deployed,
+            (id) =>
+              pluginList[id] !== undefined &&
+              pluginList[id].deployed &&
+              path.extname(pluginList[id].filePath).toLowerCase() !== GHOST_EXT,
           )
-          .map((name) => name.toLowerCase()),
+          .map((id) => path.basename(pluginList[id].filePath)),
         false,
       );
       pluginsLoaded = true;
@@ -919,6 +922,14 @@ class LootInterface {
           expectSuccess: true,
           env: {
             ELECTRON_RUN_AS_NODE: "1",
+            ...(process.platform === "linux"
+              ? {
+                  LD_PRELOAD: path.join(
+                    path.dirname(modulePath),
+                    "libloot_wstring_stub.so",
+                  ),
+                }
+              : {}),
           },
         })
         .catch((err: Error) => {

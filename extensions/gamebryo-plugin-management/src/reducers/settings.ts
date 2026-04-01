@@ -22,6 +22,6 @@ export const settingsReducer: types.IReducerSpec = {
   },
   defaults: {
     autoSort: true,
-    autoEnable: false,
+    autoEnable: true,
   },
 };
