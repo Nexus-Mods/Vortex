@@ -1,6 +1,4 @@
-import type { BrowserWindow } from "electron";
-
-import { app, Menu, Tray } from "electron";
+import { BrowserWindow, Menu, Tray } from "electron";
 import path from "node:path";
 
 import { getVortexPath } from "./getVortexPath";
@@ -80,7 +78,11 @@ class TrayIcon {
     this.mTrayIcon.setContextMenu(
       Menu.buildFromTemplate([
         { label: "Start Game", click: () => this.startGame() },
-        { label: "Quit", click: () => app.quit() },
+        { label: "Quit", click: () => {
+          for (const win of BrowserWindow.getAllWindows()) {
+            win.close();
+          }
+        } },
       ]),
     );
 
