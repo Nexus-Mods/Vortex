@@ -128,6 +128,7 @@ class Application {
   private mFirstStart: boolean = false;
   private mStartupLogPath: string;
   private mDeinitCrashDump: () => void;
+  private mPendingDownload: string | undefined;
 
   constructor(args: IParameters) {
     this.mArgs = args;
@@ -456,6 +457,9 @@ class Application {
     log("info", "Vortex Version", app.getVersion());
     log("info", "Parameters", process.argv.join(" "));
 
+    // Buffer cold-start NXM URL for application after UI is ready (PROT-01)
+    this.mPendingDownload = args.download;
+
     this.testUserEnvironment();
     await this.validateFiles();
 
@@ -526,6 +530,15 @@ class Application {
 
     log("debug", "waiting for user interface");
     await this.awaitMainWindowReady();
+
+    // Apply buffered cold-start NXM URL now that renderer is ready (PROT-01)
+    if (this.mPendingDownload !== undefined) {
+      const pendingUrl = this.mPendingDownload;
+      this.mPendingDownload = undefined;
+      await this.applyArguments({ download: pendingUrl } as IParameters).catch(
+        (err: unknown) => log("warn", "failed to apply pending download", err),
+      );
+    }
 
     log("debug", "setting up tray icon");
     this.createTray();
