@@ -156,6 +156,8 @@ async function downloadSingle(
     if (isCancellation(err)) throw err;
     throw toNetworkError(stream.requestUrl, err);
   } finally {
+    progress.bytesReceived = fileStream.bytesWritten;
+    progress.bytesWritten = fileStream.bytesWritten;
     fileStream.destroy();
   }
 }
@@ -215,17 +217,29 @@ async function downloadChunk(
   try {
     for await (const data of stream) {
       const buffer = data as Buffer;
+      progress.bytesReceived += buffer.length;
+
+      let bytesWritten = 0;
+
       try {
-        await handle.fd.write(buffer, 0, buffer.length, writePosition);
+        const result = await handle.fd.write(
+          buffer,
+          0,
+          buffer.length,
+          writePosition,
+        );
+
+        bytesWritten += result.bytesWritten;
+        writePosition += result.bytesWritten;
       } catch (err) {
         throw new DownloadError(
           { code: "fs-error", path: handle.path },
           `Failed to write to ${handle.path}`,
           err,
         );
+      } finally {
+        progress.bytesWritten += bytesWritten;
       }
-      writePosition += buffer.length;
-      progress.bytesReceived += buffer.length;
     }
   } catch (err) {
     if (err instanceof DownloadError || isCancellation(err)) throw err;

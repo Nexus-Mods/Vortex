@@ -35,7 +35,7 @@ describe("ProgressReporter", () => {
 
       it("sets synthetic chunk totalBytes from the provided totalBytes", () => {
         reporter.init([], 1024);
-        expect(reporter.chunkProgress[0].totalBytes).toBe(1024);
+        expect(reporter.chunkProgress[0].chunkEnd).toBe(1023);
       });
 
       it("initialises synthetic chunk bytesReceived to zero", () => {
@@ -59,8 +59,10 @@ describe("ProgressReporter", () => {
 
       it("derives totalBytes for each chunk from its byte range", () => {
         reporter.init(chunks, 1000);
-        expect(reporter.chunkProgress[0].totalBytes).toBe(500);
-        expect(reporter.chunkProgress[1].totalBytes).toBe(500);
+        expect(reporter.chunkProgress[0].chunkStart).toBe(0);
+        expect(reporter.chunkProgress[0].chunkEnd).toBe(499);
+        expect(reporter.chunkProgress[1].chunkStart).toBe(500);
+        expect(reporter.chunkProgress[1].chunkEnd).toBe(999);
       });
 
       it("initialises each chunk bytesReceived to zero", () => {
