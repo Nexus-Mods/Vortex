@@ -301,7 +301,8 @@ declare namespace actions {
         setUpdateChannel,
         setPrimaryTool,
         setToolOrder,
-        setToolValid
+        setToolValid,
+        setToolPinned
     }
 }
 export { actions }
@@ -5362,6 +5363,13 @@ exclusive: boolean;
 }, {}>;
 
 // @public (undocumented)
+const setToolPinned: ComplexActionCreator3<string, string, boolean, {
+gameId: string;
+toolId: string;
+pinned: boolean;
+}, {}>;
+
+// @public (undocumented)
 const setToolRunning: ComplexActionCreator3<string, number, boolean, {
 exePath: string;
 started: number;
@@ -6217,10 +6225,10 @@ export class VisibilityProxy extends React_2.PureComponent<any, {}> {
 function walk(target: string, callback: (iterPath: string, stats: fs.Stats) => PromiseLike<any>, options?: IWalkOptions): Promise<void>;
 
 // Warning: (ae-forgotten-export) The symbol "IWebviewProps" needs to be exported by the entry point api.d.ts
-// Warning: (ae-forgotten-export) The symbol "IWebView_2" needs to be exported by the entry point api.d.ts
+// Warning: (ae-forgotten-export) The symbol "IWebView" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
-export class Webview extends React_2.Component<IWebviewProps & IWebView_2, {}> {
+export class Webview extends React_2.Component<IWebviewProps & IWebView, {}> {
     // (undocumented)
     componentDidMount(): void;
     // (undocumented)

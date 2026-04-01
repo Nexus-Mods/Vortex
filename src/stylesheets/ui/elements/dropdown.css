@@ -126,5 +126,14 @@
             width: calc(var(--spacing) * 4);
             height: calc(var(--spacing) * 4);
         }
+
+        &.nxm-dropdown-item-danger {
+            color: var(--color-danger-moderate);
+
+            &:enabled:hover,
+            &.nxm-dropdown-item-active {
+                color: var(--color-danger-strong);
+            }
+        }
     }
 }

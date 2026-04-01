@@ -46,6 +46,7 @@ export const useTools = (
     discoveredTools,
     discoveryPath,
     primaryToolId,
+    pinnedToolsMap,
   } = useToolsData();
 
   // Get all starters for validation
@@ -75,34 +76,24 @@ export const useTools = (
     [isToolRunning, primaryStarter?.exePath],
   );
 
-  // Filter visible tools (valid, not hidden, includes game starter)
+  // Show pinned tools matching the Tools page pinned section.
+  // Hidden tools (removed in classic) are excluded. Only explicitly pinned tools show.
+  // Excludes the launcher (shown in Play button). Capped at MAX_VISIBLE_TOOLS for the sidebar.
   const visibleTools = useMemo(() => {
-    const result: IStarterInfo[] = [];
-
-    // Only show the game starter as a separate tool button when
-    // the primary tool is a different tool (otherwise the Play button
-    // already launches the game starter, making a separate button redundant)
-    if (
-      gameStarter &&
-      isToolValid(gameStarter) &&
-      primaryToolId !== undefined
-    ) {
-      result.push(gameStarter);
-    }
-
-    // Add tools that are valid and not hidden
-    const visibleToolsList = tools.filter(
-      (starter) =>
-        isToolValid(starter) &&
-        (starter.isGame ||
-          discoveredTools[starter.id] === undefined ||
-          discoveredTools[starter.id].hidden !== true),
+    const nonLauncher = tools.filter(
+      (starter) => starter.id !== primaryToolId,
     );
 
-    result.push(...visibleToolsList);
+    // Exclude hidden tools, then only show explicitly pinned ones
+    const pinned = nonLauncher.filter(
+      (starter) =>
+        (discoveredTools[starter.id] === undefined ||
+          discoveredTools[starter.id].hidden !== true) &&
+        pinnedToolsMap[starter.id] === true,
+    );
 
-    return result.slice(0, MAX_VISIBLE_TOOLS);
-  }, [gameStarter, tools, discoveredTools, isToolValid, primaryToolId]);
+    return pinned.slice(0, MAX_VISIBLE_TOOLS);
+  }, [tools, discoveredTools, primaryToolId, pinnedToolsMap]);
 
   const startTool = useCallback(
     (info: IStarterInfo) => {

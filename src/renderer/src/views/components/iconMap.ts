@@ -14,6 +14,7 @@ import {
   mdiTune,
   mdiViewDashboard,
   mdiWeb,
+  mdiWrench,
 } from "@mdi/js";
 
 // Map legacy icon names to MDI paths
@@ -31,6 +32,7 @@ const iconMap: Record<string, string> = {
   feedback: mdiCommentTextOutline,
   nexus: mdiWeb,
   palette: mdiPalette,
+  tools: mdiWrench,
   tune: mdiTune,
 };
 

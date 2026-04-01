@@ -166,12 +166,6 @@ catalogs:
     '@types/jsonwebtoken':
       specifier: ~9.0.10
       version: 9.0.10
-    '@types/leveldown':
-      specifier: ~4.0.6
-      version: 4.0.6
-    '@types/levelup':
-      specifier: ~5.1.5
-      version: 5.1.5
     '@types/libxmljs':
       specifier: ^0.18.4
       version: 0.18.13
@@ -4565,12 +4559,6 @@ importers:
       '@types/json-socket':
         specifier: 'catalog:'
         version: 0.1.21
-      '@types/leveldown':
-        specifier: 'catalog:'
-        version: 4.0.6
-      '@types/levelup':
-        specifier: 'catalog:'
-        version: 5.1.5
       '@types/lodash':
         specifier: 'catalog:'
         version: 4.17.24
@@ -4799,12 +4787,6 @@ importers:
       jsonwebtoken:
         specifier: 'catalog:'
         version: 9.0.3
-      leveldown:
-        specifier: 'catalog:'
-        version: 5.6.0
-      levelup:
-        specifier: 'catalog:'
-        version: 4.4.0
       lodash:
         specifier: 'catalog:'
         version: 4.17.23
@@ -7287,15 +7269,6 @@ packages:
 
   '@types/level-codec@9.0.4':
     resolution: {integrity: sha512-N6v5EhpvF00Wv+1ixzqca9YD2wdK76JceSnUoiKfQh/vex+VFG852wzqohnlYf67nzKQoXeRzYd8W57fIkYCvg==}
-
-  '@types/level-errors@3.0.2':
-    resolution: {integrity: sha512-gyZHbcQ2X5hNXf/9KS2qGEmgDe9EN2WDM3rJ5Ele467C0nA1sLhtmv1bZiPMDYfAYCfPWft0uQIaTvXbASSTRA==}
-
-  '@types/leveldown@4.0.6':
-    resolution: {integrity: sha512-AQ3vqW1j5aQ3U6A22e/k1WrZHHIewvGrBmq4zRxS9fRDpqTe3HoD+F11nEV+8zStfEbGHzzvk8dHF/4JEXmZnQ==}
-
-  '@types/levelup@5.1.5':
-    resolution: {integrity: sha512-Sm0jSj+LoncQ8BuZZJBjYitY5r9/V/Xd//vRjfgbQLWcQg2/iCm0HQqIOZ1KBE7QdNyAqMIG97mE3+t1GR0TIw==}
 
   '@types/libxmljs@0.18.13':
     resolution: {integrity: sha512-0hBHqUYsKdEe15ZKDF/iihdhCLpaYYJ8jhEZMQoivGMkYUfUOXlKStjzs1NyV8kOyFCWZtFcddmjR07dM9FYug==}
@@ -15991,19 +15964,6 @@ snapshots:
       '@types/node': 22.19.15
 
   '@types/level-codec@9.0.4': {}
-
-  '@types/level-errors@3.0.2': {}
-
-  '@types/leveldown@4.0.6':
-    dependencies:
-      '@types/abstract-leveldown': 7.2.5
-      '@types/node': 25.5.0
-
-  '@types/levelup@5.1.5':
-    dependencies:
-      '@types/abstract-leveldown': 7.2.5
-      '@types/level-errors': 3.0.2
-      '@types/node': 25.5.0
 
   '@types/libxmljs@0.18.13':
     dependencies:
