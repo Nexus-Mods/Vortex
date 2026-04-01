@@ -1,22 +1,21 @@
-# Development Guide
+# Agent Instructions
 
-## Essential Commands
+Prefix with `pnpm run`:
 
-- `pnpm run build:all` - Build everything
-- `pnpm run start` - Start in development mode
-- `pnpm run test` - Run tests
-- `pnpm run lint` - Run ESLint
-- `pnpm run format` - Run formatter
+- `build:all` - Build everything
+- `start` - Dev mode
+- `test` - Run tests
+- `lint` - ESLint
+- `format` - Formatter
 
-**After code changes:** Run `build`, `test`, `lint`, and `format` on affected package.
+After changes: run `build`, `test`, `lint`, `format` on affected package.
 
 ## Key Directories
 
 - `src/main/src/` - Main Electron process
 - `src/renderer/src/` - Renderer (actions/, reducers/, controls/, views/, util/, types/)
 - `src/shared/src/` - Shared modules, types, API
-- `extensions/games/` - Game extensions (87 games)
-- `src/main/out/` - Development build output
+- `extensions/games/` - Game extensions
 
 ## Conditional Context
 
