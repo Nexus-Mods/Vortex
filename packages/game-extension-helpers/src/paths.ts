@@ -45,7 +45,7 @@ export function isDirectoryPath(path: string): boolean {
  * - `paths`: Raw path strings.
  *
  * ## Returns
- * - Normalized [RelativePath][] values in first-seen order.
+ * - Normalized [RelativePath][] values in input order.
  *
  * ## Errors
  * - Invalid path strings are skipped.
