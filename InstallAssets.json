@@ -45,6 +45,12 @@
       "skipPaths": 3
     },
     {
+      "srcPath": "src/renderer/src/extensions/cyberpunk2077/info.json",
+      "outPath": "extensions/cyberpunk2077",
+      "target": ["out", "dist"],
+      "skipPaths": 5
+    },
+    {
       "srcPath": "locales/*/*",
       "outPath": "",
       "target": ["out"]
@@ -77,6 +83,22 @@
     {
       "srcPath": "assets/dotnetprobe",
       "outPath": "",
+      "target": ["out", "dist"]
+    },
+    {
+      "srcPath": "assets/cp77-archive-helper.exe",
+      "outPath": "",
+      "target": ["out", "dist"]
+    },
+    {
+      "srcPath": "assets/cp77-archive-helper",
+      "outPath": "",
+      "target": ["out", "dist"]
+    },
+    {
+      "srcPath": "assets/cp77-archive-helper/**",
+      "outPath": "",
+      "skipPaths": 1,
       "target": ["out", "dist"]
     },
     {

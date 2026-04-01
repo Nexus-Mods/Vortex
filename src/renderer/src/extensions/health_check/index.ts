@@ -36,6 +36,10 @@ let registry: HealthCheckRegistry | null = null;
 let legacyAdapter: LegacyTestAdapter | null = null;
 let healthCheckApi: IHealthCheckApi | null = null;
 
+export function getHealthCheckApi(): IHealthCheckApi | null {
+  return healthCheckApi;
+}
+
 function init(context: IExtensionContext): boolean {
   // Register session reducer for health check state (registered in both main and renderer)
   context.registerReducer(["session", "healthCheck"], sessionReducer);
@@ -143,3 +147,35 @@ function init(context: IExtensionContext): boolean {
 }
 
 export default init;
+
+export {
+  buildCyberpunkHealthCheckResult,
+  buildCyberpunkRequirementGroups,
+  makeCyberpunkRequirementUid,
+  isFixableCyberpunkDiagnostic,
+  registerCyberpunkDiagnosticsCheck,
+  toCyberpunkDiagnosticsList,
+  toCyberpunkRequirementsList,
+  toCyberpunkRequirement,
+} from "./cyberpunk";
+
+export { CYBERPUNK_DIAGNOSTICS_CHECK_ID } from "./types";
+
+export {
+  cyberpunkDiagnostics,
+  cyberpunkDiagnosticsCheckResult,
+  cyberpunkInformationalDiagnostics,
+  cyberpunkInstallableRequirements,
+  cyberpunkModRequirementsCheckResult,
+} from "./selectors";
+
+export type {
+  ICyberpunkCanonicalDependency,
+  ICyberpunkDiagnosticPayload,
+  ICyberpunkDiagnosticsProvider,
+  ICyberpunkDiagnosticsRegistration,
+  ICyberpunkDiagnosticsResultMetadata,
+  ICyberpunkRequiringMod,
+  CyberpunkDiagnosticFixType,
+  CyberpunkDiagnosticKind,
+} from "./cyberpunk";

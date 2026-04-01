@@ -19,8 +19,18 @@ import type {
 import type {
   DiffOperation,
   AppInitMetadata,
+  DiagnosticResult,
+  InstallPlan,
+  InstallerMatch,
+  InternalGameArchiveInspectionResult,
+  InternalGameConflict,
+  InternalGameDiscoveryResult,
+  InternalGameManifest,
+  InternalGameRuntimeSnapshot,
+  LoadOrderSnapshot,
   Serializable,
   UpdateStatus,
+  ToolLaunchPlan,
   VortexPaths,
 } from "./ipc";
 import type { Level } from "./logging";
@@ -50,6 +60,9 @@ export interface Api {
 
   /** Extensions API - for requesting main process initialization */
   extensions: ExtensionsApi;
+
+  /** Game-specific main-process APIs */
+  games: GamesApi;
 
   /** Updater API - for querying update status from main process */
   updater: UpdaterApi;
@@ -373,6 +386,51 @@ export interface ExtensionsApi {
    * Should be called once after ExtensionManager is initialized.
    */
   initializeAllMain(installType: string): void;
+}
+
+export interface GamesApi {
+  cyberpunk: CyberpunkGamesApi;
+}
+
+export interface CyberpunkGamesApi {
+  getManifest(): Promise<InternalGameManifest>;
+  discover(): Promise<InternalGameDiscoveryResult | null>;
+  runSetup(runtime: InternalGameRuntimeSnapshot): Promise<DiagnosticResult[]>;
+  classifyInstall(
+    request: {
+      files: { path: string; isDirectory?: boolean }[];
+      stagingPath: string;
+      archivePath?: string;
+    },
+    runtime: InternalGameRuntimeSnapshot,
+  ): Promise<InstallerMatch>;
+  buildInstallPlan(
+    request: {
+      files: { path: string; isDirectory?: boolean }[];
+      stagingPath: string;
+      archivePath?: string;
+    },
+    runtime: InternalGameRuntimeSnapshot,
+  ): Promise<InstallPlan>;
+  compileLoadOrder(runtime: InternalGameRuntimeSnapshot): Promise<LoadOrderSnapshot>;
+  applyLoadOrder(
+    runtime: InternalGameRuntimeSnapshot,
+    loadOrder: LoadOrderSnapshot,
+  ): Promise<DiagnosticResult[]>;
+  inspectArchive(
+    runtime: InternalGameRuntimeSnapshot,
+    modId?: string,
+  ): Promise<InternalGameArchiveInspectionResult>;
+  scanConflicts(
+    runtime: InternalGameRuntimeSnapshot,
+  ): Promise<InternalGameConflict[]>;
+  getDiagnostics(runtime: InternalGameRuntimeSnapshot): Promise<DiagnosticResult[]>;
+  getToolLaunchPlan(
+    toolId: string,
+    runtime: InternalGameRuntimeSnapshot,
+    executable: string,
+    args: string[],
+  ): Promise<ToolLaunchPlan>;
 }
 
 /** API for querying update status from main process */

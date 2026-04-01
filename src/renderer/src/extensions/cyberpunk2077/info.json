@@ -1,0 +1,7 @@
+{
+  "id": "cyberpunk2077",
+  "name": "Game: Cyberpunk 2077",
+  "author": "Black Tree Gaming Ltd.",
+  "version": "1.0.0",
+  "description": "Built-in Cyberpunk 2077 support backed by main-process services."
+}

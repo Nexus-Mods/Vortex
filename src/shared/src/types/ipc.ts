@@ -87,6 +87,212 @@ export type VortexPaths = {
   desktop: string;
 };
 
+export interface InternalGameToolManifest {
+  id: string;
+  name: string;
+  shortName: string;
+  executable: string;
+  requiredFiles: string[];
+  parameters: string[];
+  relative: boolean;
+  logo?: string;
+  shell?: boolean;
+  exclusive?: boolean;
+}
+
+export interface InternalGameManifest {
+  id: string;
+  name: string;
+  mergeMods: boolean;
+  queryModPath: string;
+  executable: string;
+  parameters: string[];
+  requiredFiles: string[];
+  logo?: string;
+  environment?: Record<string, string>;
+  details?: Record<string, string>;
+  compatible?: {
+    symlinks?: boolean;
+  };
+  supportedTools: InternalGameToolManifest[];
+  requiresLauncher?: {
+    launcher: string;
+    addInfo?: string;
+  } | null;
+}
+
+export interface InternalGameDiscoveryResult {
+  path?: string;
+  store?: string;
+  tools?: Record<string, { path: string }>;
+}
+
+export interface InternalGameMod {
+  id: string;
+  name: string;
+  enabled?: boolean;
+  type?: string;
+  fileId?: string;
+  modId?: string;
+  version?: string;
+  attributes?: Record<string, Serializable>;
+}
+
+export interface InternalGameLoadOrderEntry<T = Record<string, Serializable>> {
+  id: string;
+  name: string;
+  enabled?: boolean;
+  modId?: string;
+  data?: T;
+}
+
+export interface InternalGameRuntimeSnapshot {
+  gameId: string;
+  activeProfileId?: string;
+  discovery?: InternalGameDiscoveryResult;
+  features?: Record<string, boolean>;
+  mods?: InternalGameMod[];
+  loadOrder?: InternalGameLoadOrderEntry[];
+}
+
+export interface InternalGameInstallFile {
+  path: string;
+  isDirectory?: boolean;
+}
+
+export interface InternalGameInstallRequest {
+  files: InternalGameInstallFile[];
+  stagingPath: string;
+  archivePath?: string;
+}
+
+export interface InternalGameInstruction {
+  type:
+    | "copy"
+    | "mkdir"
+    | "submodule"
+    | "generatefile"
+    | "iniedit"
+    | "unsupported"
+    | "attribute"
+    | "setmodtype"
+    | "error"
+    | "rule";
+  path?: string;
+  source?: string;
+  destination?: string;
+  section?: string;
+  key?: string;
+  value?: Serializable;
+  submoduleType?: string;
+  data?: string;
+  rule?: Record<string, Serializable>;
+}
+
+export interface InstallerMatch {
+  id: string;
+  supported: boolean;
+  requiredFiles: string[];
+  message?: string;
+}
+
+export interface InternalGameArchiveEntry {
+  id: string;
+  modId?: string;
+  modName?: string;
+  archivePath?: string;
+  sourcePath?: string;
+  virtualPath: string;
+  hash: string;
+  mappedName?: string;
+  bucket: "archive" | "redmod";
+  extension?: string;
+  size?: number;
+  conflictState?: "winner" | "loser" | "none";
+}
+
+export interface InternalGameArchiveInspectionResult {
+  generatedAt: string;
+  entries: InternalGameArchiveEntry[];
+}
+
+export interface InternalGameConflict {
+  hash?: string;
+  mappedName?: string;
+  virtualPath: string;
+  winnerEntryId?: string;
+  winnerModId?: string;
+  bucket?: "archive" | "redmod";
+  loserEntryIds: string[];
+  loserModIds: string[];
+}
+
+export interface InstallPlan {
+  installerId: string;
+  instructions: InternalGameInstruction[];
+  warnings?: string[];
+  diagnostics?: DiagnosticResult[];
+}
+
+export interface LoadOrderSnapshot {
+  entries: InternalGameLoadOrderEntry[];
+  usageInstructions?: string;
+  persistedPath?: string;
+  validationMessages?: string[];
+}
+
+export interface InternalRunOptions {
+  cwd?: string;
+  shell?: boolean;
+  detach?: boolean;
+  expectSuccess?: boolean;
+}
+
+export interface ToolLaunchPlan {
+  handled: boolean;
+  executable?: string;
+  args?: string[];
+  options?: InternalRunOptions;
+}
+
+export interface DiagnosticResult {
+  id: string;
+  level: "info" | "warning" | "error";
+  title: string;
+  message: string;
+  kind?:
+    | "missing-dependency"
+    | "framework"
+    | "conflict"
+    | "parser"
+    | "deploy"
+    | "root-hygiene"
+    | "setup"
+    | "guidance";
+  actionLabel?: string;
+  actionUrl?: string;
+  fixType?: "none" | "nexus-dependency" | "guided" | "open-url";
+  canonicalDependencyGameId?: string;
+  canonicalDependencyModId?: number;
+  canonicalDependencyFileId?: number;
+  dependency?: {
+    gameId: string;
+    modId: number;
+    modName: string;
+    modUrl?: string;
+    fileId?: number;
+  };
+  requiredBy?: {
+    modId: number;
+    modName: string;
+    modUrl?: string;
+  };
+  requiredByModId?: string;
+  relatedModIds?: string[];
+  archiveEntryIds?: string[];
+  details?: string;
+}
+
 /** Type containing all known channels used by renderer processes to send messages to the main process */
 export interface RendererChannels {
   // NOTE(erri120): Parameters must be serializable and return values must be void.
@@ -322,6 +528,44 @@ export interface InvokeChannels {
 
   // Compile stylesheets
   "styles:compile": (filePaths: string[]) => Promise<string>;
+
+  // Cyberpunk main-process game support
+  "games:cyberpunk:getManifest": () => Promise<InternalGameManifest>;
+  "games:cyberpunk:discover": () => Promise<InternalGameDiscoveryResult | null>;
+  "games:cyberpunk:runSetup": (
+    runtime: InternalGameRuntimeSnapshot,
+  ) => Promise<DiagnosticResult[]>;
+  "games:cyberpunk:classifyInstall": (
+    request: InternalGameInstallRequest,
+    runtime: InternalGameRuntimeSnapshot,
+  ) => Promise<InstallerMatch>;
+  "games:cyberpunk:buildInstallPlan": (
+    request: InternalGameInstallRequest,
+    runtime: InternalGameRuntimeSnapshot,
+  ) => Promise<InstallPlan>;
+  "games:cyberpunk:compileLoadOrder": (
+    runtime: InternalGameRuntimeSnapshot,
+  ) => Promise<LoadOrderSnapshot>;
+  "games:cyberpunk:applyLoadOrder": (
+    runtime: InternalGameRuntimeSnapshot,
+    loadOrder: LoadOrderSnapshot,
+  ) => Promise<DiagnosticResult[]>;
+  "games:cyberpunk:inspectArchive": (
+    runtime: InternalGameRuntimeSnapshot,
+    modId?: string,
+  ) => Promise<InternalGameArchiveInspectionResult>;
+  "games:cyberpunk:scanConflicts": (
+    runtime: InternalGameRuntimeSnapshot,
+  ) => Promise<InternalGameConflict[]>;
+  "games:cyberpunk:getDiagnostics": (
+    runtime: InternalGameRuntimeSnapshot,
+  ) => Promise<DiagnosticResult[]>;
+  "games:cyberpunk:getToolLaunchPlan": (
+    toolId: string,
+    runtime: InternalGameRuntimeSnapshot,
+    executable: string,
+    args: string[],
+  ) => Promise<ToolLaunchPlan>;
 }
 
 /** Represents all IPC-safe typed arrays */

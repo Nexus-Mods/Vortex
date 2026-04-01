@@ -13,7 +13,12 @@ import type { ICustomCheckApi, ILegacyApi, IResultsApi } from "./api";
 /**
  * Known health check IDs
  */
-export type HealthCheckId = "check-nexus-mod-requirements";
+export const CYBERPUNK_DIAGNOSTICS_CHECK_ID =
+  "check-cyberpunk-diagnostics" as const;
+
+export type HealthCheckId =
+  | "check-nexus-mod-requirements"
+  | typeof CYBERPUNK_DIAGNOSTICS_CHECK_ID;
 
 /**
  * A subset of IModRequiring representing the mod that requires a missing mod.

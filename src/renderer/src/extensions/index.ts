@@ -48,3 +48,4 @@ import {} from "./onboarding_dashlet";
 import {} from "./mod_spotlights_dashlet";
 import {} from "./design_system_dev";
 import {} from "./browse_nexus";
+import {} from "./cyberpunk2077";

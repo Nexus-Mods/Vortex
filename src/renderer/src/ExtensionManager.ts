@@ -3109,6 +3109,7 @@ class ExtensionManager {
         require("./extensions/category_management/index.ts"),
       collections_integration: () =>
         require("./extensions/collections_integration/index.ts"),
+      cyberpunk2077: () => require("./extensions/cyberpunk2077/index.tsx"),
       dashboard: () => require("./extensions/dashboard/index.ts"),
       design_system_dev: () =>
         require("./extensions/design_system_dev/index.ts"),

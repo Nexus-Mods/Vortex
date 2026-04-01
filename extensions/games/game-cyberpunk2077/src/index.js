@@ -1,15 +1,8 @@
 function main(context) {
-  context.registerGameStub({
-    id: 'cyberpunk2077',
-    executable: null,
-    mergeMods: false,
-    name: 'Cyberpunk 2077',
-    queryModPath: () => '.',
-    requiredFiles: [],
-  }, {
-    name: 'Game: Cyberpunk 2077',
-    modId: 196,
-  });
+  // Built-in Cyberpunk support now owns the game registration and load-order UI.
+  // Keep this stub inert so older downloads do not double-register the game.
+  void context;
+  return true;
 }
 
 module.exports = {

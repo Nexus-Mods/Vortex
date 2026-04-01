@@ -2,12 +2,17 @@ import type { IHealthCheckResult } from "../../types/IHealthCheck";
 import type { IState } from "../../types/IState";
 import type { IHealthCheckPersistentState } from "./reducers/persistent";
 import type { IHealthCheckSessionState } from "./reducers/session";
-import type {
-  HealthCheckId,
-  IModMissingRequirements,
-  IModRequirementExt,
-  IModFileInfo,
+import {
+  CYBERPUNK_DIAGNOSTICS_CHECK_ID,
+  type HealthCheckId,
+  type IModFileInfo,
+  type IModMissingRequirements,
+  type IModRequirementExt,
 } from "./types";
+import {
+  isFixableCyberpunkDiagnostic,
+  type ICyberpunkDiagnosticPayload,
+} from "./cyberpunk";
 
 export type { HealthCheckId } from "./types";
 
@@ -49,22 +54,51 @@ export const modRequirementsCheckResult = (
 };
 
 /**
+ * Get the Cyberpunk diagnostics health check result
+ */
+export const cyberpunkDiagnosticsCheckResult = (
+  state: IState,
+): IHealthCheckResult | undefined =>
+  healthCheckResult(state, CYBERPUNK_DIAGNOSTICS_CHECK_ID);
+
+/**
+ * Get the Cyberpunk missing requirements from the dedicated diagnostics check
+ */
+export const cyberpunkModRequirementsCheckResult = (
+  state: IState,
+): Record<string, IModMissingRequirements> | undefined =>
+  cyberpunkDiagnosticsCheckResult(state)?.metadata?.modRequirements;
+
+/**
  * Get all missing mod requirements without filtering
  * Returns all requirements including hidden ones
  */
 export const allModRequirements = (state: IState): IModRequirementExt[] => {
-  const modRequirements = modRequirementsCheckResult(state);
-  if (!modRequirements) {
+  const modRequirements = [
+    modRequirementsCheckResult(state),
+    cyberpunkModRequirementsCheckResult(state),
+  ].filter(Boolean) as Record<string, IModMissingRequirements>[];
+
+  if (modRequirements.length === 0) {
     return [];
   }
 
-  const all = Object.values(modRequirements).flatMap((mod) => mod.missingMods);
+  const all = modRequirements.flatMap((group) =>
+    Object.values(group).flatMap((mod) => mod.missingMods),
+  );
 
   // Deduplicate: the same mod installed multiple times can produce identical
   // requirement entries. Use the same composite key the UI uses for rendering.
   const seen = new Set<string>();
   return all.filter((mod) => {
-    const key = `${mod.requiredBy.modId}-${mod.uid || `${mod.gameId}-${mod.modId || mod.modName}`}`;
+    const key = [
+      mod.requiredBy.modId,
+      mod.gameId,
+      mod.modId,
+      mod.modUrl,
+      mod.modName,
+      mod.externalRequirement ? "external" : "nexus",
+    ].join("|");
     if (seen.has(key)) {
       return false;
     }
@@ -78,17 +112,46 @@ export const allModRequirements = (state: IState): IModRequirementExt[] => {
  * Flattens the structure into a single array and filters out hidden requirements
  */
 export const modRequirementsArray = (state: IState): IModRequirementExt[] => {
-  const modRequirements = modRequirementsCheckResult(state);
-  if (!modRequirements) {
+  const modRequirements = allModRequirements(state);
+  if (modRequirements.length === 0) {
     return [];
   }
 
   const hidden = hiddenRequirements(state);
 
-  return Object.values(modRequirements).flatMap((mod) =>
-    mod.missingMods.filter((req) => !hidden[mod.nexusModId]?.includes(req.id)),
+  return modRequirements.filter(
+    (req) => !hidden[req.requiredBy.modId]?.includes(req.id),
   );
 };
+
+/**
+ * Get the raw Cyberpunk diagnostics emitted by the Cyberpunk diagnostics check
+ */
+export const cyberpunkDiagnostics = (
+  state: IState,
+): ICyberpunkDiagnosticPayload[] =>
+  (cyberpunkDiagnosticsCheckResult(state)?.metadata?.diagnostics ??
+    []) as ICyberpunkDiagnosticPayload[];
+
+/**
+ * Get the Cyberpunk diagnostics that can be installed in-app
+ */
+export const cyberpunkInstallableRequirements = (
+  state: IState,
+): IModRequirementExt[] =>
+  Object.values(cyberpunkModRequirementsCheckResult(state) ?? {}).flatMap(
+    (group) => group.missingMods,
+  );
+
+/**
+ * Get the Cyberpunk diagnostics that are not installable in-app
+ */
+export const cyberpunkInformationalDiagnostics = (
+  state: IState,
+): ICyberpunkDiagnosticPayload[] =>
+  cyberpunkDiagnostics(state).filter(
+    (diagnostic) => !isFixableCyberpunkDiagnostic(diagnostic),
+  );
 
 /**
  * Get the list of currently running check IDs

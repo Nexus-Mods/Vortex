@@ -7,6 +7,7 @@
 
 import { betterIpcMain } from "../ipc";
 import { log } from "../logging";
+import { initCyberpunk } from "./cyberpunk";
 import { initNexusIntegration } from "./nexusIntegration";
 import { initUpdater } from "./updater";
 
@@ -30,6 +31,7 @@ export function setupMainExtensions(): void {
       // Initialize extensions
       initUpdater(installType);
       initNexusIntegration();
+      initCyberpunk();
 
       initialized = true;
       log("info", "Main process extensions initialized");

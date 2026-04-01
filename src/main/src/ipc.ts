@@ -3,8 +3,6 @@ import type {
   MainChannels,
   InvokeChannels,
   SyncChannels,
-  SerializableArgs,
-  AssertSerializable,
 } from "@vortex/shared/ipc";
 
 import { ipcMain, type WebContents } from "electron";
@@ -19,6 +17,8 @@ export const betterIpcMain = {
 };
 
 export type LogOptions = boolean | { includeArgs: boolean };
+type IpcArgs<F> = F extends (...args: infer A) => unknown ? A : never;
+type IpcResult<F> = F extends (...args: any[]) => infer R ? Awaited<R> : never;
 
 function ipcLogger(
   options: LogOptions,
@@ -47,13 +47,13 @@ function mainOn<C extends keyof RendererChannels>(
   channel: C,
   listener: (
     event: Electron.IpcMainEvent,
-    ...args: SerializableArgs<Parameters<RendererChannels[C]>>
+    ...args: IpcArgs<RendererChannels[C]>
   ) => void,
   logOptions: LogOptions = false,
 ): void {
   ipcMain.on(
     channel,
-    (event, ...args: SerializableArgs<Parameters<RendererChannels[C]>>) => {
+    (event, ...args: IpcArgs<RendererChannels[C]>) => {
       ipcLogger(logOptions, channel, event, args);
       assertTrustedSender(event);
       listener(event, ...args);
@@ -65,15 +65,13 @@ function mainHandle<C extends keyof InvokeChannels>(
   channel: C,
   listener: (
     event: Electron.IpcMainInvokeEvent,
-    ...args: SerializableArgs<Parameters<InvokeChannels[C]>>
-  ) =>
-    | Promise<AssertSerializable<Awaited<ReturnType<InvokeChannels[C]>>>>
-    | AssertSerializable<Awaited<ReturnType<InvokeChannels[C]>>>,
+    ...args: IpcArgs<InvokeChannels[C]>
+  ) => Promise<IpcResult<InvokeChannels[C]>> | IpcResult<InvokeChannels[C]>,
   logOptions: LogOptions = false,
 ): void {
   ipcMain.handle(
     channel,
-    (event, ...args: SerializableArgs<Parameters<InvokeChannels[C]>>) => {
+    (event, ...args: IpcArgs<InvokeChannels[C]>) => {
       ipcLogger(logOptions, channel, event, args);
       assertTrustedSender(event);
       return listener(event, ...args);
@@ -85,12 +83,12 @@ function mainHandleSync<C extends keyof SyncChannels>(
   channel: C,
   listener: (
     event: Electron.IpcMainEvent,
-    ...args: SerializableArgs<Parameters<SyncChannels[C]>>
-  ) => AssertSerializable<ReturnType<SyncChannels[C]>>,
+    ...args: IpcArgs<SyncChannels[C]>
+  ) => ReturnType<SyncChannels[C]>,
 ): void {
   ipcMain.on(
     channel,
-    (event, ...args: SerializableArgs<Parameters<SyncChannels[C]>>) => {
+    (event, ...args: IpcArgs<SyncChannels[C]>) => {
       assertTrustedSender(event);
       event.returnValue = listener(event, ...args);
     },
@@ -100,7 +98,7 @@ function mainHandleSync<C extends keyof SyncChannels>(
 function mainSend<C extends keyof MainChannels>(
   webContents: WebContents,
   channel: C,
-  ...args: SerializableArgs<Parameters<MainChannels[C]>>
+  ...args: IpcArgs<MainChannels[C]>
 ): void {
   webContents.send(channel, ...args);
 }

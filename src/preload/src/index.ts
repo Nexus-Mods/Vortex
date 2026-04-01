@@ -71,6 +71,53 @@ try {
         betterIpcRenderer.send("extensions:init-all-main", installType),
     },
 
+    games: {
+      cyberpunk: {
+        getManifest: () => betterIpcRenderer.invoke("games:cyberpunk:getManifest"),
+        discover: () => betterIpcRenderer.invoke("games:cyberpunk:discover"),
+        runSetup: (runtime) =>
+          betterIpcRenderer.invoke("games:cyberpunk:runSetup", runtime),
+        classifyInstall: (request, runtime) =>
+          betterIpcRenderer.invoke(
+            "games:cyberpunk:classifyInstall",
+            request,
+            runtime,
+          ),
+        buildInstallPlan: (request, runtime) =>
+          betterIpcRenderer.invoke(
+            "games:cyberpunk:buildInstallPlan",
+            request,
+            runtime,
+          ),
+        compileLoadOrder: (runtime) =>
+          betterIpcRenderer.invoke("games:cyberpunk:compileLoadOrder", runtime),
+        applyLoadOrder: (runtime, loadOrder) =>
+          betterIpcRenderer.invoke(
+            "games:cyberpunk:applyLoadOrder",
+            runtime,
+            loadOrder,
+          ),
+        inspectArchive: (runtime, modId) =>
+          betterIpcRenderer.invoke(
+            "games:cyberpunk:inspectArchive",
+            runtime,
+            modId,
+          ),
+        scanConflicts: (runtime) =>
+          betterIpcRenderer.invoke("games:cyberpunk:scanConflicts", runtime),
+        getDiagnostics: (runtime) =>
+          betterIpcRenderer.invoke("games:cyberpunk:getDiagnostics", runtime),
+        getToolLaunchPlan: (toolId, runtime, executable, args) =>
+          betterIpcRenderer.invoke(
+            "games:cyberpunk:getToolLaunchPlan",
+            toolId,
+            runtime,
+            executable,
+            args,
+          ),
+      },
+    },
+
     updater: {
       getStatus: () => betterIpcRenderer.invoke("updater:get-status"),
       setChannel: (channel: string, manual: boolean) =>
