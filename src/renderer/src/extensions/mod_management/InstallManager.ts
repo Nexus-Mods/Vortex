@@ -1,3 +1,7 @@
+/**
+ * @see AGENTS-COLLECTIONS.md - For collections & phased installation documentation
+ */
+
 import type { IHashResult, ILookupResult, IRule } from "modmeta-db";
 import type * as Redux from "redux";
 
