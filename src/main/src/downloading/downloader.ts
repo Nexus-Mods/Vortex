@@ -153,6 +153,7 @@ async function downloadSingle(
 
     await pipeline(stream, fileStream);
   } catch (err) {
+    // NOTE(erri120): cancellation errors are handled by consumers
     if (isCancellation(err)) throw err;
     throw toNetworkError(stream.requestUrl, err);
   } finally {

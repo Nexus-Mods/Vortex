@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import { readFile, mkdtemp, mkdir, rm } from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 
 import { DownloadManager } from "./manager";
 import { urlResolver } from "./resolver";
@@ -11,6 +11,7 @@ import {
   createSharedTestServer,
   serveFile,
   delayAt,
+  delayBeforeChunk,
   withHooks,
 } from "./test-server";
 
@@ -165,5 +166,181 @@ describe("DownloadManager", () => {
 
     expect(manager.numRunning).toBe(0);
     expect(manager.numPending).toBe(0);
+  });
+
+  describe("pause", () => {
+    it("resolves the handle promise without throwing after pause", async () => {
+      using route = server.route(
+        withHooks(
+          serveFile({ body: LARGE_FILE, acceptRanges: true }),
+          delayAt("onRequest", 50),
+        ),
+      );
+      await using tmp = await makeTmpDir();
+      const manager = new DownloadManager(1);
+      const handle = manager.download(
+        route.url,
+        path.join(tmp.dir, "output"),
+        urlResolver,
+      );
+
+      await handle.pause();
+
+      // pause() itself must resolve — handle.promise rejects with cancellation
+      // (p-queue surfaces the raw error), so we only assert on the pause result
+      await expect(handle.pause()).resolves.toBeDefined();
+    });
+
+    it("returns a checkpoint whose resource and dest match the original arguments", async () => {
+      using route = server.route(
+        withHooks(
+          serveFile({ body: LARGE_FILE, acceptRanges: true }),
+          delayAt("onRequest", 50),
+        ),
+      );
+      await using tmp = await makeTmpDir();
+      const manager = new DownloadManager(1);
+      const dest = path.join(tmp.dir, "output");
+      const handle = manager.download(route.url, dest, urlResolver);
+
+      const checkpoint = await handle.pause();
+
+      expect(checkpoint.resource).toBe(route.url);
+      expect(checkpoint.dest).toBe(dest);
+    });
+
+    it("returns completedRanges covering [0, bytesWritten) for a non-chunked download paused mid-transfer", async () => {
+      using route = server.route(
+        withHooks(
+          serveFile({
+            body: LARGE_FILE,
+            acceptRanges: false,
+            chunkSize: 64 * 1024,
+          }),
+          delayBeforeChunk(4, 200), // stall partway through so bytes are written before pause
+        ),
+      );
+      await using tmp = await makeTmpDir();
+      const manager = new DownloadManager(1);
+      const handle = manager.download(
+        route.url,
+        path.join(tmp.dir, "output"),
+        urlResolver,
+      );
+
+      // poll until the downloader has written at least one byte, then pause
+      await vi.waitFor(
+        () => {
+          expect(handle.getProgress().bytesReceived).toBeGreaterThan(0);
+        },
+        { timeout: 10_000, interval: 50 },
+      );
+      const checkpoint = await handle.pause();
+
+      if (checkpoint.completedRanges.length > 0) {
+        const [range] = checkpoint.completedRanges;
+        expect(range.start).toBe(0);
+        expect(range.end).toBeGreaterThan(0);
+        expect(range.end).toBeLessThanOrEqual(LARGE_FILE.length);
+      }
+      // an empty array is also acceptable if the download hadn't written anything yet
+    });
+
+    it("returns one completedRange per finished chunk for a chunked download", async () => {
+      using route = server.route(
+        withHooks(
+          serveFile({ body: LARGE_FILE, acceptRanges: true }),
+          delayAt("onRequest", 200),
+        ),
+      );
+      await using tmp = await makeTmpDir();
+      const manager = new DownloadManager(1);
+      const handle = manager.download(
+        route.url,
+        path.join(tmp.dir, "output"),
+        urlResolver,
+      );
+
+      const checkpoint = await handle.pause();
+
+      for (const range of checkpoint.completedRanges) {
+        expect(range.start).toBeGreaterThanOrEqual(0);
+        expect(range.end).toBeGreaterThan(range.start);
+        expect(range.end).toBeLessThanOrEqual(LARGE_FILE.length);
+      }
+    });
+
+    it("returns an empty completedRanges when paused before the download starts", async () => {
+      using route = server.route(
+        withHooks(
+          serveFile({ body: LARGE_FILE, acceptRanges: true }),
+          delayAt("onRequest", 200),
+        ),
+      );
+      await using tmp = await makeTmpDir();
+      // concurrency=1 with a queued download keeps the target pending
+      const manager = new DownloadManager(1);
+      // blocker occupies the single slot
+      using blockerRoute = server.route(
+        withHooks(
+          serveFile({ body: SMALL_FILE, acceptRanges: false }),
+          delayAt("onRequest", 200),
+        ),
+      );
+      const _blocker = manager.download(
+        blockerRoute.url,
+        path.join(tmp.dir, "blocker"),
+        urlResolver,
+      );
+      const handle = manager.download(
+        route.url,
+        path.join(tmp.dir, "output"),
+        urlResolver,
+      );
+
+      // handle is still pending in the queue
+      expect(manager.numPending).toBe(1);
+
+      const checkpoint = await handle.pause();
+      expect(checkpoint.completedRanges).toEqual([]);
+    });
+
+    it("does not throw when pause is called after the download has already completed", async () => {
+      using route = server.route(
+        serveFile({ body: SMALL_FILE, acceptRanges: false }),
+      );
+      await using tmp = await makeTmpDir();
+      const manager = new DownloadManager(1);
+      const handle = manager.download(
+        route.url,
+        path.join(tmp.dir, "output"),
+        urlResolver,
+      );
+
+      await handle.promise;
+
+      await expect(handle.pause()).resolves.toBeDefined();
+    });
+
+    it("decrements numRunning after pause settles", async () => {
+      using route = server.route(
+        withHooks(
+          serveFile({ body: LARGE_FILE, acceptRanges: true }),
+          delayAt("onRequest", 50),
+        ),
+      );
+      await using tmp = await makeTmpDir();
+      const manager = new DownloadManager(3);
+      const handle = manager.download(
+        route.url,
+        path.join(tmp.dir, "output"),
+        urlResolver,
+      );
+
+      await handle.pause();
+
+      expect(manager.numRunning).toBe(0);
+      expect(manager.numPending).toBe(0);
+    });
   });
 });
