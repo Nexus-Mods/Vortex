@@ -593,14 +593,20 @@ class Application {
      *
      */
 
-    try {
-      await stat(
-        path.join(getVortexPath("application"), "Uninstall Vortex.exe"),
-      );
-      // Collect metadata - renderer will dispatch the action
-      this.mAppMetadata.installType = "regular";
-    } catch {
-      this.mAppMetadata.installType = "managed";
+    if (process.platform === "linux") {
+      // AppImage sets APPIMAGE env var; treat as "regular" (auto-updater enabled)
+      // Other installs (dev, zip, deb) are "managed" (no auto-updater)
+      this.mAppMetadata.installType = process.env.APPIMAGE ? "regular" : "managed";
+    } else {
+      try {
+        await stat(
+          path.join(getVortexPath("application"), "Uninstall Vortex.exe"),
+        );
+        // Collect metadata - renderer will dispatch the action
+        this.mAppMetadata.installType = "regular";
+      } catch {
+        this.mAppMetadata.installType = "managed";
+      }
     }
   }
 
