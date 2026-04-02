@@ -1,38 +1,35 @@
-import type { IDiscoveredTool } from "../../../types/IDiscoveredTool";
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import type { IGame } from "../../../types/IGame";
 import {
   getErrorCode,
   getErrorMessageOrDefault,
   unknownToError,
 } from "@vortex/shared";
-import { GameEntryNotFound } from "../../../types/IGameStore";
+import Bluebird from "bluebird";
+import * as fsExtra from "fs-extra";
+import * as path from "path";
+import turbowalk from "turbowalk";
+
+import type { IDiscoveredTool } from "../../../types/IDiscoveredTool";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IGame } from "../../../types/IGame";
 import type { IGameStoreEntry } from "../../../types/IGameStoreEntry";
 import type { ITool } from "../../../types/ITool";
+import type { Normalize } from "../../../util/getNormalizeFunc";
+import type { IDiscoveryResult } from "../types/IDiscoveryResult";
+import type { IToolStored } from "../types/IToolStored";
+
+import { GameEntryNotFound } from "../../../types/IGameStore";
 import { ProcessCanceled, SetupError } from "../../../util/CustomErrors";
 import extractExeIcon from "../../../util/exeIcon";
 import * as fs from "../../../util/fs";
 import GameStoreHelper from "../../../util/GameStoreHelper";
-import type { Normalize } from "../../../util/getNormalizeFunc";
 import getNormalizeFunc from "../../../util/getNormalizeFunc";
 import getVortexPath from "../../../util/getVortexPath";
 import { log } from "../../../util/log";
 import StarterInfo from "../../../util/StarterInfo";
 import { getSafe } from "../../../util/storeHelper";
 import { truthy } from "../../../util/util";
-
 import { modPathsForGame } from "../../mod_management/selectors";
-
-import type { IDiscoveryResult } from "../types/IDiscoveryResult";
-import type { IToolStored } from "../types/IToolStored";
-
 import Progress from "./Progress";
-
-import Bluebird from "bluebird";
-import * as fsExtra from "fs-extra";
-import * as path from "path";
-import turbowalk from "turbowalk";
-import * as winapi from "winapi-bindings";
 
 export type DiscoveredCB = (gameId: string, result: IDiscoveryResult) => void;
 export type DiscoveredToolCB = (
@@ -854,7 +851,7 @@ export async function suggestStagingPath(
     suggestion = path.join("{USERDATA}", "{game}", "mods");
   } else {
     // different drives, suggest path on same drive
-    const volume = winapi.GetVolumePathName(modPaths[""]);
+    const volume = fs.getVolumePath(modPaths[""]);
     suggestion = path.join(
       volume,
       state.settings.mods.suggestInstallPathDirectory,
