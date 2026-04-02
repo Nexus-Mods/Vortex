@@ -80,6 +80,21 @@ export const ExtensionSchema = z
   })
   .transform((s) => s.toLowerCase());
 
+/**
+ * Zod schema for FileName validation
+ * - Cannot contain path separators (/ or \)
+ * - Cannot be empty
+ * - Preserves original case (no transform)
+ */
+export const FileNameSchema = z
+  .string()
+  .refine((s) => s.length > 0, {
+    message: "FileName cannot be empty",
+  })
+  .refine((s) => !s.includes("/") && !s.includes("\\"), {
+    message: "FileName cannot contain path separators",
+  });
+
 // ============================================================================
 // RelativePath: Sanitized relative paths (input to resolvers)
 // ============================================================================
@@ -230,6 +245,47 @@ export namespace RelativePath {
   export function hash(relative: RelativePath): number {
     return fnv1a(relative as string);
   }
+
+  /**
+   * Check if the basename of a relative path equals a filename (case-sensitive)
+   * Accepts either a FileName branded type or a plain string
+   *
+   * @example
+   * RelativePath.basenameEquals(
+   *   RelativePath.make('mods/skyrim/Data.ESP'),
+   *   'Data.ESP'
+   * ) // => true
+   *
+   * RelativePath.basenameEquals(
+   *   RelativePath.make('mods/skyrim/Data.ESP'),
+   *   'data.esp'
+   * ) // => false
+   *
+   * RelativePath.basenameEquals(
+   *   RelativePath.make('mods/skyrim/Data.ESP'),
+   *   FileName.make('Data.ESP')
+   * ) // => true
+   */
+  export function basenameEquals(
+    relative: RelativePath,
+    fileName: FileName | string,
+  ): boolean {
+    if (relative === EMPTY) {
+      return false;
+    }
+    const base = basename(relative);
+    const target =
+      typeof fileName === "string"
+        ? FileName.is(fileName)
+          ? FileName.unsafe(fileName)
+          : null
+        : fileName;
+    if (target === null) {
+      return false;
+    }
+    return FileName.equals(FileName.unsafe(base), target);
+  }
+
 }
 
 // ============================================================================
@@ -538,5 +594,164 @@ export namespace Anchor {
     }
     const description = Symbol.keyFor(value);
     return description !== undefined && description.startsWith(ANCHOR_PREFIX);
+  }
+}
+
+// ============================================================================
+// FileName: Filename only (basename, no path separators)
+// ============================================================================
+
+declare const FILE_NAME_BRAND: unique symbol;
+
+/**
+ * FileName is a branded string type representing a filename (basename only)
+ * - No path separators (/ or \)
+ * - Case-sensitive comparison by default (Ordinal)
+ * - Preserves original case in the branded value
+ *
+ * Examples: "data.esp", "config.json", "README.md"
+ */
+export type FileName = string & {
+  readonly [FILE_NAME_BRAND]: typeof FILE_NAME_BRAND;
+};
+
+// Namespace provides static factory methods (e.g. .make(), .equals()) as a companion
+// to the branded type, which is the idiomatic TS pattern for attaching utilities to a type.
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace FileName {
+  /**
+   * Smart constructor with Zod validation
+   * Validates that the input contains no path separators
+   *
+   * @throws Error if validation fails
+   */
+  export function make(input: string): FileName {
+    const result = FileNameSchema.safeParse(input);
+    if (!result.success) {
+      const errors =
+        result.error.issues?.map((e) => e.message).join(", ") ||
+        result.error.message;
+      throw new Error(`Invalid FileName: ${errors}`);
+    }
+    return result.data as FileName;
+  }
+
+  /**
+   * Skip validation (use only when input is already validated)
+   * Use with caution - no safety checks performed
+   */
+  export function unsafe(input: string): FileName {
+    return input as FileName;
+  }
+
+  /**
+   * Check if a value is a valid FileName string (no path separators)
+   */
+  export function is(value: string): boolean {
+    return FileNameSchema.safeParse(value).success;
+  }
+
+  /**
+   * Extract filename from a RelativePath
+   *
+   * @example
+   * FileName.fromRelativePath(RelativePath.make('mods/skyrim/data.esp'))
+   * // => FileName.make('data.esp')
+   */
+  export function fromRelativePath(relative: RelativePath): FileName {
+    if (relative === "" || relative === RelativePath.EMPTY) {
+      throw new Error("Cannot extract FileName from empty RelativePath");
+    }
+    const base = posix.basename(relative as string);
+    return unsafe(base);
+  }
+
+  /**
+   * Extract filename from a ResolvedPath
+   *
+   * @example
+   * FileName.fromResolvedPath(ResolvedPath.make('C:\\Vortex\\mods\\data.esp'))
+   * // => FileName.make('data.esp')
+   */
+  export function fromResolvedPath(resolved: ResolvedPath): FileName {
+    const pathMod = detectPathModule(resolved as string);
+    const base = pathMod.basename(resolved as string);
+    if (base === "") {
+      throw new Error(
+        `fromResolvedPath: cannot convert root-only path to FileName: ${resolved}`,
+      );
+    }
+    return unsafe(base);
+  }
+
+  /**
+   * Case-sensitive equality check (Ordinal)
+   * Uses strict equality (===)
+   *
+   * @example
+   * FileName.equals(FileName.make('Data.ESP'), FileName.make('Data.ESP')) // => true
+   * FileName.equals(FileName.make('Data.ESP'), FileName.make('data.esp')) // => false
+   */
+  export function equals(a: FileName, b: FileName): boolean {
+    return a === b;
+  }
+
+  /**
+   * Case-sensitive hash (Ordinal)
+   * FNV-1a hashing without normalization
+   *
+   * @example
+   * FileName.hash(FileName.make('Data.ESP')) // hash of "Data.ESP"
+   */
+  export function hash(fileName: FileName): number {
+    return fnv1a(fileName as string);
+  }
+
+  /**
+   * Extract extension from filename
+   * Returns lowercase Extension type, or undefined if no extension
+   *
+   * Edge case: files starting with dot (e.g., ".gitignore") have no extension
+   *
+   * @example
+   * FileName.extension(FileName.make('data.esp')) // => Extension.make('.esp')
+   * FileName.extension(FileName.make('.gitignore')) // => undefined
+   */
+  export function extension(fileName: FileName): Extension | undefined {
+    const name = fileName as string;
+    const lastDotIndex = name.lastIndexOf(".");
+    // No dot, or starts with dot (hidden file) = no extension
+    if (lastDotIndex <= 0) {
+      return undefined;
+    }
+    const ext = name.slice(lastDotIndex);
+    return Extension.make(ext);
+  }
+
+  /**
+   * Get stem (filename without extension)
+   * Preserves original case
+   *
+   * Edge case: files starting with dot return full name as stem
+   *
+   * @example
+   * FileName.stem(FileName.make('data.esp')) // => 'data'
+   * FileName.stem(FileName.make('.gitignore')) // => '.gitignore'
+   */
+  export function stem(fileName: FileName): string {
+    const name = fileName as string;
+    const lastDotIndex = name.lastIndexOf(".");
+    // No dot, or starts with dot = full name is stem
+    if (lastDotIndex <= 0) {
+      return name;
+    }
+    return name.slice(0, lastDotIndex);
+  }
+
+  /**
+   * Convert to string for debugging
+   */
+  export function toString(fileName: FileName): string {
+    return fileName as string;
   }
 }

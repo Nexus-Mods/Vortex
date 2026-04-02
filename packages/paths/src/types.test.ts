@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from "vitest";
 
-import { RelativePath, ResolvedPath, Extension, Anchor } from "./types";
+import { RelativePath, ResolvedPath, Extension, Anchor, FileName, fnv1a } from "./types";
 
 describe("RelativePath", () => {
   describe("normalization", () => {
@@ -210,6 +210,40 @@ describe("RelativePath", () => {
       expect(h).toBeGreaterThanOrEqual(0);
     });
   });
+
+  describe("basenameEquals", () => {
+    test("matching with string filename (case-sensitive)", () => {
+      const path = RelativePath.make("mods/skyrim/Data.ESP");
+      expect(RelativePath.basenameEquals(path, "Data.ESP")).toBe(true);
+      expect(RelativePath.basenameEquals(path, "data.esp")).toBe(false);
+    });
+
+    test("matching with FileName (case-sensitive)", () => {
+      const path = RelativePath.make("mods/skyrim/Data.ESP");
+      expect(RelativePath.basenameEquals(path, FileName.make("Data.ESP"))).toBe(
+        true,
+      );
+      expect(RelativePath.basenameEquals(path, FileName.make("data.esp"))).toBe(
+        false,
+      );
+    });
+
+    test("non-matching filename returns false", () => {
+      const path = RelativePath.make("mods/skyrim/data.esp");
+      expect(RelativePath.basenameEquals(path, "data.esm")).toBe(false);
+    });
+
+    test("returns false for EMPTY path", () => {
+      expect(RelativePath.basenameEquals(RelativePath.EMPTY, "file.txt")).toBe(false);
+    });
+
+    test("matching single segment path (case-sensitive)", () => {
+      const path = RelativePath.make("config.json");
+      expect(RelativePath.basenameEquals(path, "config.json")).toBe(true);
+      expect(RelativePath.basenameEquals(path, "CONFIG.JSON")).toBe(false);
+    });
+  });
+
 });
 
 describe("ResolvedPath", () => {
@@ -402,6 +436,209 @@ describe("Anchor", () => {
       expect(Anchor.isAnchor("string")).toBe(false);
       expect(Anchor.isAnchor(42)).toBe(false);
       expect(Anchor.isAnchor(null)).toBe(false);
+    });
+  });
+});
+
+describe("FileName", () => {
+  describe("make", () => {
+    test.each([
+      ["data.esp", "data.esp"],
+      ["README.md", "README.md"],
+      ["config.json", "config.json"],
+      ["file", "file"],
+      [".gitignore", ".gitignore"],
+      ["UPPERCASE.TXT", "UPPERCASE.TXT"],
+    ])("make(%s) preserves case as %s", (input, expected) => {
+      expect(FileName.make(input)).toBe(expected);
+    });
+  });
+
+  describe("validation", () => {
+    test.each([
+      ["path/file.txt", "contains forward slash"],
+      ["path\\file.txt", "contains backslash"],
+      ["mods/skyrim/data.esp", "contains path separators"],
+      ["", "empty string"],
+    ])("rejects invalid filename: %s (%s)", (input) => {
+      expect(() => FileName.make(input)).toThrow();
+    });
+  });
+
+  describe("unsafe", () => {
+    test("creates FileName without validation", () => {
+      const fn = FileName.unsafe("data.esp");
+      expect(fn).toBe("data.esp");
+    });
+
+    test("unsafe allows bypassing validation", () => {
+      const fn = FileName.unsafe("invalid/path.txt");
+      expect(fn).toBe("invalid/path.txt");
+    });
+  });
+
+  describe("is", () => {
+    test.each([
+      ["data.esp", true],
+      ["file.txt", true],
+      [".gitignore", true],
+      ["path/file.txt", false],
+      ["path\\file.txt", false],
+      ["", false],
+    ])("is(%s) returns %s", (input, expected) => {
+      expect(FileName.is(input)).toBe(expected);
+    });
+  });
+
+  describe("fromRelativePath", () => {
+    test.each([
+      ["mods/skyrim/data.esp", "data.esp"],
+      ["downloads/archive.zip", "archive.zip"],
+      ["single.txt", "single.txt"],
+      ["a/b/c/d/file.json", "file.json"],
+    ])("fromRelativePath(%s) extracts %s", (input, expected) => {
+      const rp = RelativePath.make(input);
+      expect(FileName.fromRelativePath(rp)).toBe(expected);
+    });
+  });
+
+  describe("fromResolvedPath", () => {
+    test.each([
+      ["/home/user/mods/data.esp", "data.esp"],
+      ["/usr/local/bin/app", "app"],
+      ["C:\\Users\\name\\mods\\file.txt", "file.txt"],
+      ["\\\\server\\share\\mods\\data.esp", "data.esp"],
+    ])("fromResolvedPath(%s) extracts %s", (input, expected) => {
+      const rp = ResolvedPath.make(input);
+      expect(FileName.fromResolvedPath(rp)).toBe(expected);
+    });
+  });
+
+  describe("equals", () => {
+    test.each([
+      ["data.esp", "data.esp", true],
+      ["Data.ESP", "Data.ESP", true],
+      ["Data.ESP", "data.esp", false],
+      ["DATA.ESP", "data.esp", false],
+      ["file.txt", "FILE.TXT", false],
+      ["data.esp", "data.esm", false],
+      ["file.txt", "file.zip", false],
+    ])("equals(%s, %s) returns %s (case-sensitive)", (a, b, expected) => {
+      const fn1 = FileName.make(a);
+      const fn2 = FileName.make(b);
+      expect(FileName.equals(fn1, fn2)).toBe(expected);
+    });
+
+    test("equals preserves original case in values", () => {
+      const a = FileName.make("Data.ESP");
+      const b = FileName.make("data.esp");
+      expect(a).toBe("Data.ESP");
+      expect(b).toBe("data.esp");
+      expect(FileName.equals(a, b)).toBe(false);
+    });
+  });
+
+  describe("hash", () => {
+    test("case-sensitive hash - different cases produce different hashes", () => {
+      const a = FileName.make("Data.ESP");
+      const b = FileName.make("data.esp");
+      const c = FileName.make("DATA.ESP");
+
+      expect(FileName.hash(a)).not.toBe(FileName.hash(b));
+      expect(FileName.hash(b)).not.toBe(FileName.hash(c));
+      expect(FileName.hash(a)).not.toBe(FileName.hash(c));
+    });
+
+    test("same case produces same hash", () => {
+      const a = FileName.make("data.esp");
+      const b = FileName.make("data.esp");
+
+      expect(FileName.hash(a)).toBe(FileName.hash(b));
+    });
+
+    test("different filenames produce different hashes", () => {
+      const a = FileName.make("data.esp");
+      const b = FileName.make("data.esm");
+
+      expect(FileName.hash(a)).not.toBe(FileName.hash(b));
+    });
+
+    test("returns unsigned 32-bit integer", () => {
+      const h = FileName.hash(FileName.make("test.txt"));
+      expect(h).toBeGreaterThanOrEqual(0);
+      expect(h).toBeLessThanOrEqual(0xffffffff);
+      expect(Number.isInteger(h)).toBe(true);
+    });
+
+    test("consistent hashing", () => {
+      const a = FileName.make("config.json");
+      const b = FileName.make("config.json");
+
+      expect(FileName.hash(a)).toBe(FileName.hash(b));
+    });
+
+    test("hash equals fnv1a of original filename", () => {
+      const fn = FileName.make("Data.ESP");
+      const expectedHash = fnv1a(fn as string);
+      expect(FileName.hash(fn)).toBe(expectedHash);
+    });
+  });
+
+  describe("extension", () => {
+    test.each([
+      ["data.esp", ".esp"],
+      ["file.TXT", ".txt"],
+      ["archive.tar.gz", ".gz"],
+      ["UPPERCASE.DLL", ".dll"],
+    ])("extension(%s) returns %s (lowercase)", (input, expected) => {
+      const ext = FileName.extension(FileName.make(input));
+      expect(ext).toBe(expected);
+    });
+
+    test.each([
+      ["noextension", undefined],
+      [".gitignore", undefined],
+      ["Makefile", undefined],
+    ])("extension(%s) returns %s (no extension)", (input, expected) => {
+      const ext = FileName.extension(FileName.make(input));
+      expect(ext).toBe(expected);
+    });
+
+    test("extension returns Extension type", () => {
+      const fn = FileName.make("data.esp");
+      const ext = FileName.extension(fn);
+      expect(ext).toBe(Extension.make(".esp"));
+    });
+  });
+
+  describe("stem", () => {
+    test.each([
+      ["data.esp", "data"],
+      ["config.json", "config"],
+      ["archive.tar.gz", "archive.tar"],
+      ["file.TXT", "file"],
+      ["noextension", "noextension"],
+      [".gitignore", ".gitignore"],
+      [".eslintrc.js", ".eslintrc"],
+    ])("stem(%s) returns %s", (input, expected) => {
+      expect(FileName.stem(FileName.make(input))).toBe(expected);
+    });
+
+    test("stem preserves original case", () => {
+      const fn = FileName.make("DataFile.ESP");
+      expect(FileName.stem(fn)).toBe("DataFile");
+    });
+  });
+
+  describe("toString", () => {
+    test("returns the filename string", () => {
+      const fn = FileName.make("data.esp");
+      expect(FileName.toString(fn)).toBe("data.esp");
+    });
+
+    test("preserves original case", () => {
+      const fn = FileName.make("Data.ESP");
+      expect(FileName.toString(fn)).toBe("Data.ESP");
     });
   });
 });
