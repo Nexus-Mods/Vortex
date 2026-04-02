@@ -94,8 +94,8 @@ describe("ProgressReporter", () => {
         [makeChunk(0, 0, 499), makeChunk(1, 500, 999)],
         1000,
       );
-      expect(chunkProgress[0].chunkRange).toEqual({ start: 0, end: 499 });
-      expect(chunkProgress[1].chunkRange).toEqual({ start: 500, end: 999 });
+      expect(chunkProgress.get(0).chunkRange).toEqual({ start: 0, end: 499 });
+      expect(chunkProgress.get(1).chunkRange).toEqual({ start: 500, end: 999 });
     });
 
     it("initialises each ChunkProgress bytesReceived and bytesWritten to zero", () => {
@@ -103,8 +103,12 @@ describe("ProgressReporter", () => {
         [makeChunk(0, 0, 499), makeChunk(1, 500, 999)],
         1000,
       );
-      expect(chunkProgress.every((c) => c.bytesReceived === 0)).toBe(true);
-      expect(chunkProgress.every((c) => c.bytesWritten === 0)).toBe(true);
+      expect(chunkProgress.values().every((c) => c.bytesReceived === 0)).toBe(
+        true,
+      );
+      expect(chunkProgress.values().every((c) => c.bytesWritten === 0)).toBe(
+        true,
+      );
     });
 
     it("returns an empty array when called with no chunks", () => {
@@ -129,8 +133,8 @@ describe("ProgressReporter", () => {
         [makeChunk(0, 0, 499), makeChunk(1, 500, 999)],
         1000,
       );
-      chunkProgress[0].bytesReceived = 200;
-      chunkProgress[1].bytesReceived = 350;
+      chunkProgress.get(0).bytesReceived = 200;
+      chunkProgress.get(1).bytesReceived = 350;
       expect(reporter.getProgress().bytesReceived).toBe(550);
     });
 
@@ -139,24 +143,24 @@ describe("ProgressReporter", () => {
         [makeChunk(0, 0, 499), makeChunk(1, 500, 999)],
         1000,
       );
-      chunkProgress[0].bytesWritten = 200;
-      chunkProgress[1].bytesWritten = 350;
+      chunkProgress.get(0).bytesWritten = 200;
+      chunkProgress.get(1).bytesWritten = 350;
       expect(reporter.getProgress().bytesWritten).toBe(550);
     });
 
     it("reflects incremental updates to chunk bytesReceived", () => {
       const chunkProgress = reporter.initChunked([makeChunk(0, 0, 999)], 1000);
-      chunkProgress[0].bytesReceived = 100;
+      chunkProgress.get(0).bytesReceived = 100;
       expect(reporter.getProgress().bytesReceived).toBe(100);
-      chunkProgress[0].bytesReceived = 600;
+      chunkProgress.get(0).bytesReceived = 600;
       expect(reporter.getProgress().bytesReceived).toBe(600);
     });
 
     it("reflects incremental updates to chunk bytesWritten", () => {
       const chunkProgress = reporter.initChunked([makeChunk(0, 0, 999)], 1000);
-      chunkProgress[0].bytesWritten = 100;
+      chunkProgress.get(0).bytesWritten = 100;
       expect(reporter.getProgress().bytesWritten).toBe(100);
-      chunkProgress[0].bytesWritten = 600;
+      chunkProgress.get(0).bytesWritten = 600;
       expect(reporter.getProgress().bytesWritten).toBe(600);
     });
 
@@ -165,7 +169,7 @@ describe("ProgressReporter", () => {
       const result = reporter.getProgress();
       expect(result.isChunked).toBe(true);
       if (result.isChunked) {
-        expect(result.chunks).toBe(chunkProgress);
+        expect(result.chunks).toStrictEqual(chunkProgress.values().toArray());
       }
     });
   });
@@ -200,7 +204,7 @@ describe("ProgressReporter", () => {
 
     it("old ChunkProgress array no longer affects getProgress after re-init via initChunked", () => {
       const old = reporter.initChunked([makeChunk(0, 0, 499)], 500);
-      old[0].bytesReceived = 500;
+      old.get(0).bytesReceived = 500;
       reporter.initChunked([makeChunk(0, 0, 999)], 1000);
       expect(reporter.getProgress().bytesReceived).toBe(0);
     });

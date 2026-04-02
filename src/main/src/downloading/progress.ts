@@ -19,24 +19,31 @@ export type ProgressCallback = (progress: DownloadProgress) => void;
 /** @internal */
 export class ProgressReporter {
   #isChunked: boolean = false;
-  #chunkProgress: ChunkProgress[] = [];
+  #chunkProgress: Map<number, ChunkProgress> = new Map();
   #progress: Progress = { bytesReceived: 0, bytesWritten: 0 };
 
   public size: number | null = null;
+  public etag: string | null = null;
 
   public get isChunked(): boolean {
     return this.#isChunked;
   }
 
-  public initChunked(chunks: Chunk[], size: number): ChunkProgress[] {
+  public initChunked(
+    chunks: Chunk[],
+    size: number,
+  ): Map<number, ChunkProgress> {
     this.size = size;
     this.#isChunked = true;
 
-    const chunkProgress = chunks.map<ChunkProgress>((c) => ({
-      chunkRange: c.range,
-      bytesReceived: 0,
-      bytesWritten: 0,
-    }));
+    const chunkProgress = new Map<number, ChunkProgress>();
+    for (const chunk of chunks) {
+      chunkProgress.set(chunk.index, {
+        chunkRange: chunk.range,
+        bytesReceived: 0,
+        bytesWritten: 0,
+      });
+    }
 
     this.#chunkProgress = chunkProgress;
     return chunkProgress;
@@ -60,15 +67,12 @@ export class ProgressReporter {
     let bytesWritten = 0;
 
     if (this.#isChunked) {
-      bytesReceived = this.#chunkProgress.reduce(
-        (sum, c) => sum + c.bytesReceived,
-        0,
-      );
-
-      bytesWritten = this.#chunkProgress.reduce(
-        (sum, c) => sum + c.bytesWritten,
-        0,
-      );
+      bytesReceived = this.#chunkProgress
+        .values()
+        .reduce((sum, c) => sum + c.bytesReceived, 0);
+      bytesWritten = this.#chunkProgress
+        .values()
+        .reduce((sum, c) => sum + c.bytesWritten, 0);
     } else {
       bytesReceived = this.#progress.bytesReceived;
       bytesWritten = this.#progress.bytesWritten;
@@ -84,7 +88,7 @@ export class ProgressReporter {
       return {
         ...progress,
         isChunked: true,
-        chunks: this.#chunkProgress,
+        chunks: this.#chunkProgress.values().toArray(),
       };
     }
 
