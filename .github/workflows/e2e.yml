@@ -32,7 +32,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install volta, Node.js and Yarn
-        uses: volta-cli/action@v4
+        uses: volta-cli/action@v5
 
       - name: Install pnpm
         uses: pnpm/action-setup@v5
