@@ -197,6 +197,8 @@ catalog:
   json-loader: ^0.5.7
   json-socket: git+https://github.com/foi/node-json-socket#d56c8e2938fa4284c4001b815d9b6e4a92b5c07b
   jsonwebtoken: ^9.0.0
+  leveldown: 5.6.0
+  levelup: 4.4.0
   limiter: ^3.0.0
   lodash: ^4.17.21
   loot: git+https://github.com/Nexus-Mods/node-loot#04a77fcae028b0838b5e0c53cfcdc65898c49727
