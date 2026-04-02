@@ -247,6 +247,88 @@ export namespace RelativePath {
   }
 
   /**
+   * Case-insensitive equality check (OrdinalIgnoreCase)
+   * Uses toLowerCase() for comparison, not locale-aware
+   *
+   * @example
+   * RelativePath.equalsIgnoreCase(
+   *   RelativePath.make('Mods/Skyrim'),
+   *   RelativePath.make('mods/skyrim')
+   * ) // => true
+   *
+   * @remarks
+   * Fails with German sharp-s (ß). See README for details.
+   */
+  export function equalsIgnoreCase(a: RelativePath, b: RelativePath): boolean {
+    return (a as string).toLowerCase() === (b as string).toLowerCase();
+  }
+
+  /**
+   * Case-insensitive locale-aware comparison for sorting
+   * Compares lowercase versions of the paths
+   *
+   * @example
+   * RelativePath.compareIgnoreCase(
+   *   RelativePath.make('mods/skyrim'),
+   *   RelativePath.make('Mods/Oblivion')
+   * ) // => negative (skyrim < Oblivion case-insensitively)
+   *
+   * @remarks
+   * Fails with German sharp-s (ß). See README for details.
+   */
+  export function compareIgnoreCase(a: RelativePath, b: RelativePath): number {
+    return (a as string)
+      .toLowerCase()
+      .localeCompare((b as string).toLowerCase());
+  }
+
+  /**
+   * Case-insensitive FNV-1a hash (unsigned 32-bit)
+   * Normalizes to lowercase before hashing for case-insensitive lookups
+   *
+   * @example
+   * RelativePath.hashIgnoreCase(RelativePath.make('Mods/Skyrim')) ===
+   * RelativePath.hashIgnoreCase(RelativePath.make('mods/skyrim'))
+   * // => true
+   *
+   * @remarks
+   * Fails with German sharp-s (ß). See README for details.
+   */
+  export function hashIgnoreCase(relative: RelativePath): number {
+    return fnv1a((relative as string).toLowerCase());
+  }
+
+  /**
+   * Case-insensitive containment check (not equal). Everything is "in" EMPTY.
+   * Returns false if child equals parent (case-insensitive).
+   *
+   * @example
+   * RelativePath.isInIgnoreCase(
+   *   RelativePath.make('Mods/Skyrim/Data'),
+   *   RelativePath.make('mods/skyrim')
+   * ) // => true
+   *
+   * RelativePath.isInIgnoreCase(
+   *   RelativePath.make('Mods/Skyrim'),
+   *   RelativePath.make('mods/skyrim')
+   * ) // => false (equal paths)
+   *
+   * @remarks
+   * Uses lowercase normalization. Fails with German sharp-s (ß). See README.
+   */
+  export function isInIgnoreCase(
+    child: RelativePath,
+    parent: RelativePath,
+  ): boolean {
+    if (equalsIgnoreCase(child, parent)) return false;
+    const childSegs = segmentsIgnoreCase(child);
+    const parentSegs = segmentsIgnoreCase(parent);
+    if (parentSegs.length === 0) return childSegs.length > 0;
+    if (childSegs.length <= parentSegs.length) return false;
+    return parentSegs.every((seg, i) => seg === childSegs[i]);
+  }
+
+  /**
    * Check if the basename of a relative path equals a filename (case-sensitive)
    * Accepts either a FileName branded type or a plain string
    *
@@ -286,6 +368,62 @@ export namespace RelativePath {
     return FileName.equals(FileName.unsafe(base), target);
   }
 
+  /**
+   * Check if the basename of a relative path equals a filename (case-insensitive)
+   * Accepts either a FileName branded type or a plain string
+   *
+   * @example
+   * RelativePath.basenameEqualsIgnoreCase(
+   *   RelativePath.make('mods/skyrim/Data.ESP'),
+   *   'data.esp'
+   * ) // => true
+   *
+   * RelativePath.basenameEqualsIgnoreCase(
+   *   RelativePath.make('mods/skyrim/Data.ESP'),
+   *   FileName.make('data.esp')
+   * ) // => true
+   *
+   * @remarks
+   * Uses lowercase normalization. Fails with German sharp-s (ß). See README.
+   */
+  export function basenameEqualsIgnoreCase(
+    relative: RelativePath,
+    fileName: FileName | string,
+  ): boolean {
+    if (relative === EMPTY) {
+      return false;
+    }
+    const base = basename(relative);
+    const target =
+      typeof fileName === "string"
+        ? FileName.is(fileName)
+          ? FileName.unsafe(fileName)
+          : null
+        : fileName;
+    if (target === null) {
+      return false;
+    }
+    return FileName.equalsIgnoreCase(FileName.unsafe(base), target);
+  }
+
+  /**
+   * Return lowercase-normalized path segments for case-insensitive comparison
+   * Returns empty array for EMPTY path
+   *
+   * @example
+   * RelativePath.segmentsIgnoreCase(RelativePath.make('Mods/Skyrim/Data'))
+   * // => ['mods', 'skyrim', 'data']
+   *
+   * RelativePath.segmentsIgnoreCase(RelativePath.EMPTY)
+   * // => []
+   *
+   * @remarks
+   * Fails with German sharp-s (ß). See README for details.
+   */
+  export function segmentsIgnoreCase(relative: RelativePath): string[] {
+    if (relative === EMPTY) return [];
+    return (relative as string).toLowerCase().split("/");
+  }
 }
 
 // ============================================================================
@@ -607,9 +745,14 @@ declare const FILE_NAME_BRAND: unique symbol;
  * FileName is a branded string type representing a filename (basename only)
  * - No path separators (/ or \)
  * - Case-sensitive comparison by default (Ordinal)
+ * - Use equalsIgnoreCase() / hashIgnoreCase() for case-insensitive operations
  * - Preserves original case in the branded value
  *
  * Examples: "data.esp", "config.json", "README.md"
+ *
+ * @remarks
+ * Case-insensitive operations use toLowerCase() normalization.
+ * Fails with German sharp-s (ß). See README for details.
  */
 export type FileName = string & {
   readonly [FILE_NAME_BRAND]: typeof FILE_NAME_BRAND;
@@ -697,6 +840,20 @@ export namespace FileName {
   }
 
   /**
+   * Case-insensitive equality check (OrdinalIgnoreCase)
+   * Uses toLowerCase() for comparison, not locale-aware
+   *
+   * @example
+   * FileName.equalsIgnoreCase(FileName.make('Data.ESP'), FileName.make('data.esp')) // => true
+   *
+   * @remarks
+   * Fails with German sharp-s (ß). See README for details.
+   */
+  export function equalsIgnoreCase(a: FileName, b: FileName): boolean {
+    return (a as string).toLowerCase() === (b as string).toLowerCase();
+  }
+
+  /**
    * Case-sensitive hash (Ordinal)
    * FNV-1a hashing without normalization
    *
@@ -705,6 +862,21 @@ export namespace FileName {
    */
   export function hash(fileName: FileName): number {
     return fnv1a(fileName as string);
+  }
+
+  /**
+   * Case-insensitive hash (OrdinalIgnoreCase)
+   * Normalizes to lowercase before FNV-1a hashing
+   *
+   * @example
+   * FileName.hashIgnoreCase(FileName.make('Data.ESP')) === FileName.hashIgnoreCase(FileName.make('data.esp'))
+   * // => true
+   *
+   * @remarks
+   * Fails with German sharp-s (ß). See README for details.
+   */
+  export function hashIgnoreCase(fileName: FileName): number {
+    return fnv1a((fileName as string).toLowerCase());
   }
 
   /**

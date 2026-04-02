@@ -211,6 +211,154 @@ describe("RelativePath", () => {
     });
   });
 
+  describe("equalsIgnoreCase", () => {
+    test("case variants match", () => {
+      const a = RelativePath.make("mods/skyrim");
+      const b = RelativePath.make("Mods/Skyrim");
+      const c = RelativePath.make("MODS/SKYRIM");
+      expect(RelativePath.equalsIgnoreCase(a, b)).toBe(true);
+      expect(RelativePath.equalsIgnoreCase(b, c)).toBe(true);
+      expect(RelativePath.equalsIgnoreCase(a, c)).toBe(true);
+    });
+
+    test("different paths don't match", () => {
+      const a = RelativePath.make("mods/skyrim");
+      const b = RelativePath.make("mods/oblivion");
+      expect(RelativePath.equalsIgnoreCase(a, b)).toBe(false);
+    });
+
+    test("EMPTY equals EMPTY case-insensitively", () => {
+      expect(
+        RelativePath.equalsIgnoreCase(RelativePath.EMPTY, RelativePath.EMPTY),
+      ).toBe(true);
+    });
+
+    test("preserves original case in values", () => {
+      const a = RelativePath.make("Mods/Skyrim");
+      const b = RelativePath.make("mods/skyrim");
+      expect(a).toBe("Mods/Skyrim");
+      expect(b).toBe("mods/skyrim");
+      expect(RelativePath.equalsIgnoreCase(a, b)).toBe(true);
+    });
+  });
+
+  describe("compareIgnoreCase", () => {
+    test("sorts case-insensitively", () => {
+      const a = RelativePath.make("alpha");
+      const b = RelativePath.make("BETA");
+      expect(RelativePath.compareIgnoreCase(a, b)).toBeLessThan(0);
+      expect(RelativePath.compareIgnoreCase(b, a)).toBeGreaterThan(0);
+    });
+
+    test("equal paths return 0", () => {
+      const a = RelativePath.make("mods/skyrim");
+      const b = RelativePath.make("Mods/Skyrim");
+      expect(RelativePath.compareIgnoreCase(a, b)).toBe(0);
+    });
+
+    test("case variants sort equally", () => {
+      const lower = RelativePath.make("mods/skyrim");
+      const upper = RelativePath.make("MODS/SKYRIM");
+      expect(RelativePath.compareIgnoreCase(lower, upper)).toBe(0);
+    });
+  });
+
+  describe("hashIgnoreCase", () => {
+    test("same hash for case variants", () => {
+      const a = RelativePath.make("mods/skyrim");
+      const b = RelativePath.make("Mods/Skyrim");
+      const c = RelativePath.make("MODS/SKYRIM");
+      expect(RelativePath.hashIgnoreCase(a)).toBe(
+        RelativePath.hashIgnoreCase(b),
+      );
+      expect(RelativePath.hashIgnoreCase(b)).toBe(
+        RelativePath.hashIgnoreCase(c),
+      );
+    });
+
+    test("different paths produce different hashes", () => {
+      const a = RelativePath.make("mods/skyrim");
+      const b = RelativePath.make("mods/oblivion");
+      expect(RelativePath.hashIgnoreCase(a)).not.toBe(
+        RelativePath.hashIgnoreCase(b),
+      );
+    });
+
+    test("returns unsigned 32-bit integer", () => {
+      const h = RelativePath.hashIgnoreCase(RelativePath.make("test"));
+      expect(h).toBeGreaterThanOrEqual(0);
+      expect(h).toBeLessThanOrEqual(0xffffffff);
+      expect(Number.isInteger(h)).toBe(true);
+    });
+
+    test("empty path has valid hash", () => {
+      const h = RelativePath.hashIgnoreCase(RelativePath.EMPTY);
+      expect(Number.isInteger(h)).toBe(true);
+    });
+
+    test("hash equals fnv1a of lowercase path", () => {
+      const rp = RelativePath.make("Mods/Skyrim");
+      const expectedHash = fnv1a((rp as string).toLowerCase());
+      expect(RelativePath.hashIgnoreCase(rp)).toBe(expectedHash);
+    });
+  });
+
+  describe("isInIgnoreCase", () => {
+    test("child is in parent case-insensitively", () => {
+      const parent = RelativePath.make("mods");
+      const child = RelativePath.make("Mods/Skyrim");
+      expect(RelativePath.isInIgnoreCase(child, parent)).toBe(true);
+    });
+
+    test("deeply nested child is in parent", () => {
+      const parent = RelativePath.make("MODS");
+      const child = RelativePath.make("mods/skyrim/data/meshes");
+      expect(RelativePath.isInIgnoreCase(child, parent)).toBe(true);
+    });
+
+    test("equal paths return false", () => {
+      const p = RelativePath.make("mods/skyrim");
+      const q = RelativePath.make("Mods/Skyrim");
+      expect(RelativePath.isInIgnoreCase(p, q)).toBe(false);
+    });
+
+    test("everything is in EMPTY", () => {
+      const child = RelativePath.make("Mods");
+      expect(RelativePath.isInIgnoreCase(child, RelativePath.EMPTY)).toBe(true);
+    });
+
+    test("EMPTY is not in EMPTY", () => {
+      expect(
+        RelativePath.isInIgnoreCase(RelativePath.EMPTY, RelativePath.EMPTY),
+      ).toBe(false);
+    });
+
+    test("EMPTY is not in non-empty parent", () => {
+      const parent = RelativePath.make("mods");
+      expect(RelativePath.isInIgnoreCase(RelativePath.EMPTY, parent)).toBe(
+        false,
+      );
+    });
+
+    test("parent is not in child", () => {
+      const parent = RelativePath.make("mods");
+      const child = RelativePath.make("mods/skyrim");
+      expect(RelativePath.isInIgnoreCase(parent, child)).toBe(false);
+    });
+
+    test("prefix-but-not-parent does not match", () => {
+      const parent = RelativePath.make("mods");
+      const notChild = RelativePath.make("mods-extra/skyrim");
+      expect(RelativePath.isInIgnoreCase(notChild, parent)).toBe(false);
+    });
+
+    test("case-insensitive segment matching", () => {
+      const parent = RelativePath.make("Mods/Skyrim");
+      const child = RelativePath.make("mods/SKYRIM/Data");
+      expect(RelativePath.isInIgnoreCase(child, parent)).toBe(true);
+    });
+  });
+
   describe("basenameEquals", () => {
     test("matching with string filename (case-sensitive)", () => {
       const path = RelativePath.make("mods/skyrim/Data.ESP");
@@ -244,6 +392,72 @@ describe("RelativePath", () => {
     });
   });
 
+  describe("basenameEqualsIgnoreCase", () => {
+    test("matching with string filename (case-insensitive)", () => {
+      const path = RelativePath.make("mods/skyrim/Data.ESP");
+      expect(RelativePath.basenameEqualsIgnoreCase(path, "data.esp")).toBe(true);
+    });
+
+    test("matching with FileName (case-insensitive)", () => {
+      const path = RelativePath.make("mods/skyrim/Data.ESP");
+      expect(RelativePath.basenameEqualsIgnoreCase(path, FileName.make("data.esp"))).toBe(
+        true,
+      );
+    });
+
+    test("case-insensitive matching", () => {
+      const path = RelativePath.make("mods/skyrim/DATA.ESP");
+      expect(RelativePath.basenameEqualsIgnoreCase(path, "Data.Esp")).toBe(true);
+    });
+
+    test("non-matching filename returns false", () => {
+      const path = RelativePath.make("mods/skyrim/data.esp");
+      expect(RelativePath.basenameEqualsIgnoreCase(path, "data.esm")).toBe(false);
+    });
+
+    test("matching single segment path (case-insensitive - lowercase path, uppercase target)", () => {
+      const path = RelativePath.make("config.json");
+      expect(RelativePath.basenameEqualsIgnoreCase(path, "CONFIG.JSON")).toBe(true);
+    });
+
+    test("matching single segment path (case-insensitive - uppercase path, lowercase target)", () => {
+      const pathUpper = RelativePath.make("CONFIG.JSON");
+      expect(RelativePath.basenameEqualsIgnoreCase(pathUpper, "config.json")).toBe(true);
+    });
+
+    test("returns false for EMPTY path", () => {
+      expect(RelativePath.basenameEqualsIgnoreCase(RelativePath.EMPTY, "file.txt")).toBe(false);
+    });
+  });
+
+  describe("segmentsIgnoreCase", () => {
+    test("basic path segments", () => {
+      const path = RelativePath.make("Mods/Skyrim/Data");
+      expect(RelativePath.segmentsIgnoreCase(path)).toEqual([
+        "mods",
+        "skyrim",
+        "data",
+      ]);
+    });
+
+    test("single segment returns array with one element", () => {
+      const path = RelativePath.make("Single");
+      expect(RelativePath.segmentsIgnoreCase(path)).toEqual(["single"]);
+    });
+
+    test("empty path returns empty array", () => {
+      expect(RelativePath.segmentsIgnoreCase(RelativePath.EMPTY)).toEqual([]);
+    });
+
+    test("normalizes to lowercase", () => {
+      const path = RelativePath.make("MODS/SKYRIM/DATA.ESP");
+      expect(RelativePath.segmentsIgnoreCase(path)).toEqual([
+        "mods",
+        "skyrim",
+        "data.esp",
+      ]);
+    });
+  });
 });
 
 describe("ResolvedPath", () => {
@@ -538,6 +752,29 @@ describe("FileName", () => {
     });
   });
 
+  describe("equalsIgnoreCase", () => {
+    test.each([
+      ["data.esp", "data.esp", true],
+      ["Data.ESP", "data.esp", true],
+      ["DATA.ESP", "data.esp", true],
+      ["file.txt", "FILE.TXT", true],
+      ["data.esp", "data.esm", false],
+      ["file.txt", "file.zip", false],
+    ])("equalsIgnoreCase(%s, %s) returns %s", (a, b, expected) => {
+      const fn1 = FileName.make(a);
+      const fn2 = FileName.make(b);
+      expect(FileName.equalsIgnoreCase(fn1, fn2)).toBe(expected);
+    });
+
+    test("equalsIgnoreCase preserves original case in values", () => {
+      const a = FileName.make("Data.ESP");
+      const b = FileName.make("data.esp");
+      expect(a).toBe("Data.ESP");
+      expect(b).toBe("data.esp");
+      expect(FileName.equalsIgnoreCase(a, b)).toBe(true);
+    });
+  });
+
   describe("hash", () => {
     test("case-sensitive hash - different cases produce different hashes", () => {
       const a = FileName.make("Data.ESP");
@@ -581,6 +818,55 @@ describe("FileName", () => {
       const fn = FileName.make("Data.ESP");
       const expectedHash = fnv1a(fn as string);
       expect(FileName.hash(fn)).toBe(expectedHash);
+    });
+  });
+
+  describe("hashIgnoreCase", () => {
+    test("case-insensitive hash equality", () => {
+      const a = FileName.make("Data.ESP");
+      const b = FileName.make("data.esp");
+      const c = FileName.make("DATA.ESP");
+
+      expect(FileName.hashIgnoreCase(a)).toBe(FileName.hashIgnoreCase(b));
+      expect(FileName.hashIgnoreCase(b)).toBe(FileName.hashIgnoreCase(c));
+    });
+
+    test("different filenames produce different hashes", () => {
+      const a = FileName.make("data.esp");
+      const b = FileName.make("data.esm");
+
+      expect(FileName.hashIgnoreCase(a)).not.toBe(FileName.hashIgnoreCase(b));
+    });
+
+    test("returns unsigned 32-bit integer", () => {
+      const h = FileName.hashIgnoreCase(FileName.make("test.txt"));
+      expect(h).toBeGreaterThanOrEqual(0);
+      expect(h).toBeLessThanOrEqual(0xffffffff);
+      expect(Number.isInteger(h)).toBe(true);
+    });
+
+    test("consistent hashing", () => {
+      const a = FileName.make("config.json");
+      const b = FileName.make("config.json");
+
+      expect(FileName.hashIgnoreCase(a)).toBe(FileName.hashIgnoreCase(b));
+    });
+
+    test("hashIgnoreCase equals fnv1a of lowercase filename", () => {
+      const fn = FileName.make("Data.ESP");
+      const expectedHash = fnv1a((fn as string).toLowerCase());
+      expect(FileName.hashIgnoreCase(fn)).toBe(expectedHash);
+    });
+
+    test("hashIgnoreCase lowercase normalization can be verified with fnv1a", () => {
+      const lower = FileName.make("data.esp");
+      const upper = FileName.make("DATA.ESP");
+
+      expect(FileName.hashIgnoreCase(lower)).toBe(fnv1a("data.esp"));
+      expect(FileName.hashIgnoreCase(upper)).toBe(fnv1a("data.esp"));
+
+      expect(FileName.hashIgnoreCase(lower)).toBe(fnv1a((lower as string).toLowerCase()));
+      expect(FileName.hashIgnoreCase(upper)).toBe(fnv1a((upper as string).toLowerCase()));
     });
   });
 
