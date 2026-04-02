@@ -416,7 +416,7 @@ Sometimes issues only occur in production builds. Here's how to debug them.
 ### Build Production (Unsigned)
 
 ```bash
-# Build without code signing (faster)
+# Creates installer without code signing (faster)
 pnpm run package:local
 ```
 
