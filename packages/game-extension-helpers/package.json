@@ -1,0 +1,36 @@
+{
+  "$schema": "https://www.schemastore.org/package.json",
+  "name": "@vortex/game-extension-helpers",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm tsdown",
+    "dist": "pnpm tsdown",
+    "typecheck": "pnpm tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --config vitest.config.ts"
+  },
+  "main": "./dist/paths.cjs",
+  "module": "./dist/paths.js",
+  "types": "./dist/paths.d.cts",
+  "exports": {
+    ".": {
+      "import": "./dist/paths.js",
+      "require": "./dist/paths.cjs"
+    },
+    "./package.json": "./package.json",
+    "./paths": {
+      "import": "./dist/paths.js",
+      "require": "./dist/paths.cjs",
+      "types": "./dist/paths.d.ts"
+    }
+  },
+  "dependencies": {
+    "@vortex/paths": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
