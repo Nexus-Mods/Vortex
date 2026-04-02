@@ -95,6 +95,15 @@ export const FileNameSchema = z
     message: "FileName cannot contain path separators",
   });
 
+function throwInvalidType(error: z.ZodError, typeName: string): never {
+  const errors = error.issues?.map((issue) => issue.message).join(", ");
+  throw new Error(`Invalid ${typeName}: ${errors || error.message}`);
+}
+
+function normalizeFileName(fileName: FileName | string): FileName | null {
+  return FileName.is(fileName) ? FileName.unsafe(fileName) : null;
+}
+
 // ============================================================================
 // RelativePath: Sanitized relative paths (input to resolvers)
 // ============================================================================
@@ -127,10 +136,7 @@ export namespace RelativePath {
   export function make(input: string): RelativePath {
     const result = RelativePathSchema.safeParse(input);
     if (!result.success) {
-      const errors =
-        result.error.issues?.map((e) => e.message).join(", ") ||
-        result.error.message;
-      throw new Error(`Invalid RelativePath: ${errors}`);
+      throwInvalidType(result.error, "RelativePath");
     }
     return result.data as RelativePath;
   }
@@ -356,12 +362,7 @@ export namespace RelativePath {
       return false;
     }
     const base = basename(relative);
-    const target =
-      typeof fileName === "string"
-        ? FileName.is(fileName)
-          ? FileName.unsafe(fileName)
-          : null
-        : fileName;
+    const target = normalizeFileName(fileName);
     if (target === null) {
       return false;
     }
@@ -394,12 +395,7 @@ export namespace RelativePath {
       return false;
     }
     const base = basename(relative);
-    const target =
-      typeof fileName === "string"
-        ? FileName.is(fileName)
-          ? FileName.unsafe(fileName)
-          : null
-        : fileName;
+    const target = normalizeFileName(fileName);
     if (target === null) {
       return false;
     }
@@ -458,10 +454,7 @@ export namespace ResolvedPath {
   export function make(osPath: string): ResolvedPath {
     const result = ResolvedPathSchema.safeParse(osPath);
     if (!result.success) {
-      const errors =
-        result.error.issues?.map((e) => e.message).join(", ") ||
-        result.error.message;
-      throw new Error(`Invalid ResolvedPath: ${errors}`);
+      throwInvalidType(result.error, "ResolvedPath");
     }
     return result.data as ResolvedPath;
   }
@@ -594,10 +587,7 @@ export namespace Extension {
   export function make(input: string): Extension {
     const result = ExtensionSchema.safeParse(input);
     if (!result.success) {
-      const errors =
-        result.error.issues?.map((e) => e.message).join(", ") ||
-        result.error.message;
-      throw new Error(`Invalid Extension: ${errors}`);
+      throwInvalidType(result.error, "Extension");
     }
     return result.data as Extension;
   }
@@ -771,13 +761,11 @@ export namespace FileName {
   export function make(input: string): FileName {
     const result = FileNameSchema.safeParse(input);
     if (!result.success) {
-      const errors =
-        result.error.issues?.map((e) => e.message).join(", ") ||
-        result.error.message;
-      throw new Error(`Invalid FileName: ${errors}`);
+      throwInvalidType(result.error, "FileName");
     }
     return result.data as FileName;
   }
+
 
   /**
    * Skip validation (use only when input is already validated)
