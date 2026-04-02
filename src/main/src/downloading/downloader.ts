@@ -7,12 +7,20 @@ import { pipeline } from "node:stream/promises";
 import { type URL } from "node:url";
 import PQueue from "p-queue";
 
-import type { Chunk, Chunker } from "./chunking";
+import type { ByteRange, Chunk, Chunker } from "./chunking";
 import type { ChunkProgress, Progress, ProgressReporter } from "./progress";
 import type { Resolver, NormalizedResource } from "./resolver";
 
 import { isCancellation, toNetworkError, DownloadError } from "./errors";
 import { normalize } from "./resolver";
+
+export const defaultChunkConcurrency = 4;
+
+/** @internal */
+export type Checkpoint = {
+  etag: string | null;
+  completedRanges: ByteRange[];
+};
 
 /** @internal */
 export async function download<T>(
@@ -22,7 +30,8 @@ export async function download<T>(
   chunker: Chunker<T>,
   progressReporter: ProgressReporter,
   abortSignal: AbortSignal,
-  chunkConcurrency: number = 4,
+  chunkConcurrency: number = defaultChunkConcurrency,
+  checkpoint: Checkpoint | null = null,
 ): Promise<void> {
   if (abortSignal.aborted) {
     throw new DownloadError({ code: "cancellation" }, "Download cancelled");
@@ -37,7 +46,11 @@ export async function download<T>(
 
   let probe: ProbeResult;
   try {
-    probe = await probeUrl(resolved.probeUrl, abortSignal);
+    probe = await probeUrl(
+      resolved.probeUrl,
+      abortSignal,
+      checkpoint?.etag ?? null,
+    );
   } catch (err) {
     if (isCancellation(err)) {
       throw new DownloadError(
@@ -50,6 +63,8 @@ export async function download<T>(
     throw toNetworkError(resolved.probeUrl, err);
   }
 
+  if (probe.etag) progressReporter.etag = probe.etag;
+
   const canChunk = probe.acceptsRanges && probe.size > 0;
   const chunks = canChunk
     ? await Promise.resolve(chunker(probe.size, resource))
@@ -57,10 +72,22 @@ export async function download<T>(
 
   const isChunked = chunks.length > 0;
 
+  const completedRanges = checkpoint?.completedRanges ?? [];
+  const pendingChunks = chunks.filter(
+    (chunk) =>
+      !completedRanges.some(
+        (r) => r.start <= chunk.range.start && r.end >= chunk.range.end,
+      ),
+  );
+
   let handle: FileHandle;
 
   try {
-    const fd = await open(dest, "w");
+    // https://nodejs.org/api/fs.html#file-system-flags
+    // 'w+': Open file for reading and writing. The file is created (if it does not exist) or truncated (if it exists).
+    // 'r+': Open file for reading and writing. An exception occurs if the file does not exist.
+    const flag = checkpoint === null ? "w+" : "r+";
+    const fd = await open(dest, flag);
     handle = { fd, path: dest };
   } catch (err) {
     throw new DownloadError(
@@ -70,17 +97,42 @@ export async function download<T>(
     );
   }
 
+  if (checkpoint === null && probe.size > 0) {
+    try {
+      await handle.fd.truncate(probe.size);
+    } catch (err) {
+      throw new DownloadError(
+        { code: "fs-error", path: handle.path },
+        `Failed to truncate ${handle.path}`,
+        err,
+      );
+    }
+  }
+
   try {
     if (isChunked) {
       const chunkQueue = new PQueue({ concurrency: chunkConcurrency });
       const chunkProgress = progressReporter.initChunked(chunks, probe.size);
+
+      // fast forward progress reporter to checkpoint
+      for (const chunk of chunks) {
+        const isComplete = completedRanges.some(
+          (r) => r.start <= chunk.range.start && r.end >= chunk.range.end,
+        );
+        if (isComplete) {
+          const progress = chunkProgress.get(chunk.index);
+          const size = chunk.range.end - chunk.range.start + 1;
+          progress.bytesReceived = size;
+          progress.bytesWritten = size;
+        }
+      }
 
       await downloadChunked(
         resolved,
         probe,
         handle,
         chunkQueue,
-        chunks,
+        pendingChunks,
         chunkProgress,
         abortSignal,
       );
@@ -107,9 +159,11 @@ export async function download<T>(
 async function probeUrl(
   url: URL,
   abortSignal: AbortSignal,
+  previousETag: string | null,
 ): Promise<ProbeResult> {
   const response = await got.head(url, {
     signal: abortSignal,
+    headers: createHeaders(previousETag, null),
   });
 
   const size = getSize(response.headers, "content-length");
@@ -172,19 +226,9 @@ async function downloadChunked(
   handle: FileHandle,
   chunkQueue: PQueue,
   chunks: Chunk[],
-  chunkProgress: ChunkProgress[],
+  chunkProgress: Map<number, ChunkProgress>,
   abortSignal: AbortSignal,
 ): Promise<void> {
-  try {
-    await handle.fd.truncate(probe.size);
-  } catch (err) {
-    throw new DownloadError(
-      { code: "fs-error", path: handle.path },
-      `Failed to truncate ${handle.path}`,
-      err,
-    );
-  }
-
   await chunkQueue.addAll(
     chunks.map(
       (chunk) => async () =>
@@ -193,7 +237,7 @@ async function downloadChunked(
           resource,
           probe,
           handle,
-          chunkProgress[chunk.index],
+          chunkProgress.get(chunk.index),
           abortSignal,
         ),
     ),

@@ -5,7 +5,7 @@ import type { DownloadProgress } from "./progress";
 import type { Resolver } from "./resolver";
 
 import { staticChunker } from "./chunking";
-import { download } from "./downloader";
+import { defaultChunkConcurrency, download } from "./downloader";
 import { DownloadError } from "./errors";
 import { ProgressReporter } from "./progress";
 
@@ -27,6 +27,7 @@ export type DownloadCheckpoint<T = unknown> = {
   resource: T;
   dest: string;
   completedRanges: ByteRange[];
+  etag: string | null;
 };
 
 export class DownloadManager {
@@ -48,11 +49,35 @@ export class DownloadManager {
     return this.#downloadQueue.runningTasks.length;
   }
 
+  resume<T>(
+    checkpoint: DownloadCheckpoint<T>,
+    resolver: Resolver<T>,
+    chunker: Chunker<T>,
+  ): DownloadHandle {
+    return this.#download(
+      checkpoint.resource,
+      checkpoint.dest,
+      resolver,
+      chunker,
+      checkpoint,
+    );
+  }
+
   download<T>(
     resource: T,
     dest: string,
     resolver: Resolver<T>,
     chunker: Chunker<T> = staticChunker(),
+  ): DownloadHandle<T> {
+    return this.#download(resource, dest, resolver, chunker, null);
+  }
+
+  #download<T>(
+    resource: T,
+    dest: string,
+    resolver: Resolver<T>,
+    chunker: Chunker<T>,
+    checkpoint: DownloadCheckpoint<T> | null,
   ): DownloadHandle<T> {
     const progressReporter = new ProgressReporter();
     const abortController = new AbortController();
@@ -65,6 +90,8 @@ export class DownloadManager {
         chunker,
         progressReporter,
         abortController.signal,
+        defaultChunkConcurrency,
+        checkpoint,
       ),
     );
 
@@ -93,6 +120,7 @@ export class DownloadManager {
         resource,
         dest,
         completedRanges,
+        etag: progressReporter.etag,
       };
     };
 
