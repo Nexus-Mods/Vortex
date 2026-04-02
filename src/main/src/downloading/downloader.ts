@@ -1,3 +1,5 @@
+import type { IncomingHttpHeaders } from "node:http";
+
 import got, { type Headers } from "got";
 import { type WriteStream } from "node:fs";
 import { type FileHandle as NodeFileHandle, open } from "node:fs/promises";
@@ -6,7 +8,7 @@ import { type URL } from "node:url";
 import PQueue from "p-queue";
 
 import type { Chunk, Chunker } from "./chunking";
-import type { ChunkProgress, ProgressReporter } from "./progress";
+import type { ChunkProgress, Progress, ProgressReporter } from "./progress";
 import type { Resolver, NormalizedResource } from "./resolver";
 
 import { isCancellation, toNetworkError, DownloadError } from "./errors";
@@ -48,11 +50,12 @@ export async function download<T>(
     throw toNetworkError(resolved.probeUrl, err);
   }
 
-  const chunks = probe.acceptsRanges
+  const canChunk = probe.acceptsRanges && probe.size > 0;
+  const chunks = canChunk
     ? await Promise.resolve(chunker(probe.size, resource))
     : [];
 
-  progressReporter.init(chunks, probe.size > 0 ? probe.size : null);
+  const isChunked = chunks.length > 0;
 
   let handle: FileHandle;
 
@@ -68,16 +71,9 @@ export async function download<T>(
   }
 
   try {
-    if (chunks.length === 0) {
-      await downloadSingle(
-        resolved,
-        probe,
-        handle,
-        progressReporter.chunkProgress[0],
-        abortSignal,
-      );
-    } else {
+    if (isChunked) {
       const chunkQueue = new PQueue({ concurrency: chunkConcurrency });
+      const chunkProgress = progressReporter.initChunked(chunks, probe.size);
 
       await downloadChunked(
         resolved,
@@ -85,9 +81,13 @@ export async function download<T>(
         handle,
         chunkQueue,
         chunks,
-        progressReporter.chunkProgress,
+        chunkProgress,
         abortSignal,
       );
+    } else {
+      const progress = progressReporter.init(probe.size);
+
+      await downloadSingle(resolved, probe, handle, progress, abortSignal);
     }
   } catch (err) {
     if (isCancellation(err)) {
@@ -112,11 +112,14 @@ async function probeUrl(
     signal: abortSignal,
   });
 
-  const contentLength = response.headers["content-length"];
-  let size = contentLength ? parseInt(contentLength, 10) : 0;
-  size = isNaN(size) ? 0 : size;
+  const size = getSize(response.headers, "content-length");
 
+  // https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Accept-Ranges
+  // NOTE(erri120): only valid range units are "bytes" and "none"
+  // https://www.iana.org/assignments/http-parameters/http-parameters.xhtml#range-units
   const acceptsRanges = response.headers["accept-ranges"] === "bytes";
+
+  // https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/ETag
   const etag = response.headers.etag ?? null;
 
   return { size, acceptsRanges, etag };
@@ -126,7 +129,7 @@ async function downloadSingle(
   resource: NormalizedResource,
   probe: ProbeResult,
   handle: FileHandle,
-  progress: ChunkProgress,
+  progress: Progress,
   abortSignal: AbortSignal,
 ): Promise<void> {
   const stream = got.stream(resource.probeUrl, {
@@ -272,8 +275,37 @@ function createHeaders(etag: string | null, chunk: Chunk | null): Headers {
   };
 }
 
+function getSize(
+  headers: IncomingHttpHeaders,
+  header: "content-length" | "content-range",
+): number | null {
+  const rawValue = headers[header];
+  if (!rawValue) return null;
+
+  let parsed: number | null;
+  if (header === "content-length") {
+    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Length
+    // Content-Length: <length>
+    parsed = parseInt(rawValue, 10);
+  } else if (header === "content-range") {
+    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Range
+    // Content-Range: <unit> <range>/<size>
+    // Content-Range: <unit> <range>/*
+    // Content-Range: <unit> */<size>
+    const slashIndex = rawValue.lastIndexOf("/");
+    if (slashIndex === -1) return null;
+
+    const size = rawValue.slice(slashIndex + 1);
+    if (size === "*") return null;
+
+    parsed = parseInt(size, 10);
+  }
+
+  return isNaN(parsed) ? null : parsed;
+}
+
 type ProbeResult = {
-  size: number;
+  size: number | null;
   acceptsRanges: boolean;
   etag: string | null;
 };

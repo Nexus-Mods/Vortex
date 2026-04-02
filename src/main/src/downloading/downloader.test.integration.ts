@@ -213,7 +213,7 @@ describe("download", () => {
       await using tmp = await makeTmpDir();
       const progressReporter = makeProgressReporter();
       await completeDownload(route.url, tmp.dir, { progressReporter });
-      expect(progressReporter.getProgress().totalBytes).toBe(LARGE_FILE.length);
+      expect(progressReporter.getProgress().size).toBe(LARGE_FILE.length);
     });
 
     it("reports null totalBytes for a single download without content-length", async () => {
@@ -232,7 +232,7 @@ describe("download", () => {
       await using tmp = await makeTmpDir();
       const progressReporter = makeProgressReporter();
       await completeDownload(route.url, tmp.dir, { progressReporter });
-      expect(progressReporter.getProgress().totalBytes).toBeNull();
+      expect(progressReporter.getProgress().size).toBeNull();
     });
 
     it("reports bytesReceived equal to file size on completion for a single download", async () => {
@@ -267,17 +267,12 @@ describe("download", () => {
       await using tmp = await makeTmpDir();
       const progressReporter = makeProgressReporter();
       await completeDownload(route.url, tmp.dir, { progressReporter });
-      expect(progressReporter.getProgress().chunks).toHaveLength(chunksPerFile);
-    });
 
-    it("reports a single chunk for a non-chunked download", async () => {
-      using route = server.route(
-        serveFile({ body: LARGE_FILE, acceptRanges: false }),
-      );
-      await using tmp = await makeTmpDir();
-      const progressReporter = makeProgressReporter();
-      await completeDownload(route.url, tmp.dir, { progressReporter });
-      expect(progressReporter.getProgress().chunks).toHaveLength(1);
+      const progress = progressReporter.getProgress();
+      expect(progress.isChunked).toBe(true);
+      if (progress.isChunked) {
+        expect(progress.chunks).toHaveLength(chunksPerFile);
+      }
     });
   });
 
