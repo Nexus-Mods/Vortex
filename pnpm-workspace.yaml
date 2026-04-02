@@ -24,6 +24,7 @@ allowBuilds:
   esptk: true
   font-scanner: true
   gamebryo-savegame: true
+  leveldown: true
   loot: true
   native-errors: true
   protobufjs: true
