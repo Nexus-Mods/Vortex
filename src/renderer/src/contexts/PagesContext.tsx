@@ -77,6 +77,9 @@ export const PagesProvider: FC<IPagesProviderProps> = ({ children }) => {
   const useModernLayout = useSelector(
     (state: IState) => state.settings.window.useModernLayout,
   );
+  const profilesVisible = useSelector(
+    (state: IState) => state.settings.interface.profilesVisible,
+  );
 
   const sortedPages = useMemo(
     () =>
@@ -116,7 +119,7 @@ export const PagesProvider: FC<IPagesProviderProps> = ({ children }) => {
         dispatch(setOpenMainPage(firstVisible.id, false));
       }
     }
-  }, [mainPage, sortedPages, activeProfileId, activeGameId, dispatch]);
+  }, [mainPage, sortedPages, activeProfileId, activeGameId, profilesVisible, dispatch]);
 
   const contextValue = useMemo(
     () => ({
