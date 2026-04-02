@@ -321,6 +321,39 @@ class InstructionGroups {
   public enableallplugins: IInstruction[] = [];
 }
 
+/**
+ * On Linux, p7zip extracts ZIP entries that use Windows-style backslash path
+ * separators (e.g. "Data\SKSE\Plugins\file.dll") as literal files whose name
+ * contains the backslash character, rather than creating a nested directory
+ * tree.  This function walks the extraction root and moves any such files into
+ * the correct directory structure so that the file list and FOMOD installer
+ * see the expected paths.
+ */
+async function normalizeBackslashPaths(basePath: string): Promise<void> {
+  if (process.platform === "win32") {
+    return;
+  }
+  const entries = await fs.readdirAsync(basePath);
+  for (const entry of entries) {
+    const fullPath = path.join(basePath, entry);
+    if (entry.includes("\\")) {
+      const normalizedRel = entry.replace(/\\/g, "/");
+      const destPath = path.join(basePath, normalizedRel);
+      await fs.ensureDirAsync(path.dirname(destPath));
+      await fs.renameAsync(fullPath, destPath);
+    } else {
+      try {
+        const stat = await fs.statAsync(fullPath);
+        if (stat.isDirectory()) {
+          await normalizeBackslashPaths(fullPath);
+        }
+      } catch {
+        // ignore stat errors for entries that disappear during iteration
+      }
+    }
+  }
+}
+
 async function buildFileList(basePath: string): Promise<string[]> {
   const fileList: string[] = [];
   await walk(basePath, (iterPath, stats) => {
@@ -1176,6 +1209,7 @@ class InstallManager {
           return Promise.resolve();
         }
       })
+      .then(() => normalizeBackslashPaths(tempPath))
       .then(() => buildFileList(tempPath))
       .then((result) => { fileList.push(...result); })
       .then(() => {
@@ -4052,6 +4086,7 @@ class InstallManager {
           await this.queryContinue(api, errors, archivePath);
         }
       })
+      .then(() => normalizeBackslashPaths(tempPath))
       .then(() => buildFileList(tempPath))
       .then((result) => { fileList.push(...result); })
       .then(async () => {
