@@ -42,6 +42,22 @@ Starting with Python 3.12 you also need to install the `setuptools` packages. Ve
 
 See [docs/DEBUGGING-GUIDE.md](./docs/DEBUGGING-GUIDE.md) for detailed debugging instructions.
 
+## Packaging
+
+### Local unsigned packages (Windows)
+
+To create a packaged installer for local testing without code signing:
+
+```
+pnpm run package:local
+```
+
+This downloads the required redistributables (VC++ and .NET Runtime) and creates an unsigned installer in the `dist/` directory.
+
+### Signed release builds
+
+Signed builds are created automatically via CI. Do not run `pnpm run package` locally.
+
 ## FAQ
 
 ### When will my changes be added to the stable release?

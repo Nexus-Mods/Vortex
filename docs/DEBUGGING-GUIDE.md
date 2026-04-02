@@ -416,11 +416,11 @@ Sometimes issues only occur in production builds. Here's how to debug them.
 ### Build Production (Unsigned)
 
 ```bash
-# Build without code signing (faster)
-pnpm run package:nosign
+# Creates installer without code signing (faster)
+pnpm run package:local
 ```
 
-This creates an installer in `dist/` directory.
+This downloads required redistributables and creates an unsigned installer in `dist/` directory.
 
 ### Enable Source Maps
 
