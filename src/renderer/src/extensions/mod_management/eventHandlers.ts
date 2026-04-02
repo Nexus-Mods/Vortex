@@ -67,6 +67,7 @@ import { ensureStagingDirectory } from "./stagingDirectory";
 import * as _ from "lodash";
 import type { RuleType } from "modmeta-db";
 import * as path from "path";
+import turbowalk from "turbowalk";
 import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 
 async function checkStagingGame(
@@ -670,6 +671,73 @@ export function onModsChanged(
   }
 }
 
+/**
+ * Walk each mod's staging directory and check whether its files are hardlinked
+ * into the game directory by comparing inodes. Returns a synthesised
+ * IDeployedFile[] that can be passed to activator.prepare() when the real
+ * deployment manifest is missing (loadActivation returned []).
+ */
+async function synthesiseActivationFromStaging(
+  mods: IMod[],
+  stagingPath: string,
+  deployPath: string,
+  subdir: (mod: IMod) => string,
+): Promise<IDeployedFile[]> {
+  const result: IDeployedFile[] = [];
+
+  for (const mod of mods) {
+    const modStagingPath = path.join(stagingPath, mod.installationPath);
+    try {
+      const entries: Array<{ filePath: string; mtime: number }> = [];
+      await turbowalk(
+        modStagingPath,
+        (batch) => {
+          for (const entry of batch) {
+            if (!entry.isDirectory) {
+              entries.push({ filePath: entry.filePath, mtime: entry.mtime });
+            }
+          }
+        },
+        { skipHidden: false },
+      );
+
+      const subdirValue = subdir(mod);
+      await Promise.all(
+        entries.map(async ({ filePath: stagingFilePath, mtime }) => {
+          const relPath = path.relative(modStagingPath, stagingFilePath);
+          const gameFilePath = path.join(deployPath, subdirValue, relPath);
+          const [gameStat, stagingStat] = await Promise.all([
+            fs.statAsync(gameFilePath).catch(() => null),
+            fs.statAsync(stagingFilePath).catch(() => null),
+          ]);
+          if (
+            gameStat !== null &&
+            stagingStat !== null &&
+            gameStat.ino === stagingStat.ino
+          ) {
+            result.push({
+              relPath,
+              source: mod.installationPath,
+              target: subdirValue || undefined,
+              time: mtime * 1000,
+            });
+          }
+        }),
+      );
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
+        throw err;
+      }
+      log("debug", "synthesiseActivationFromStaging: staging dir not found, skipping", {
+        mod: mod.id,
+        path: modStagingPath,
+      });
+    }
+  }
+
+  return result;
+}
+
 async function undeploy(
   api: IExtensionApi,
   activators: IDeploymentMethod[],
@@ -752,7 +820,28 @@ async function undeploy(
             stagingPath,
             activator,
           );
-          await activator.prepare(deployPath, false, lastActivation, normalize);
+
+          // Synthesise manifest from staging when the real manifest is missing,
+          // so that prepare() populates previousDeployment and deactivate()/
+          // finalize() can correctly diff and unlink the deployed files.
+          if (lastActivation.length === 0) {
+            const synthesised = await synthesiseActivationFromStaging(
+              byModTypes[typeId],
+              stagingPath,
+              deployPath,
+              subdir,
+            );
+            if (synthesised.length > 0) {
+              log("info", "synthesised deployment manifest from staging for undeploy", {
+                game: gameMode,
+                typeId,
+                fileCount: synthesised.length,
+              });
+            }
+            await activator.prepare(deployPath, false, synthesised, normalize);
+          } else {
+            await activator.prepare(deployPath, false, lastActivation, normalize);
+          }
           await Promise.all(
             byModTypes[typeId].map((mod) =>
               activator.deactivate(
