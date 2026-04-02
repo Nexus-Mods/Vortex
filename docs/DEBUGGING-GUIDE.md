@@ -417,10 +417,10 @@ Sometimes issues only occur in production builds. Here's how to debug them.
 
 ```bash
 # Build without code signing (faster)
-pnpm run package:nosign
+pnpm run package:local
 ```
 
-This creates an installer in `dist/` directory.
+This downloads required redistributables and creates an unsigned installer in `dist/` directory.
 
 ### Enable Source Maps
 
