@@ -11,7 +11,7 @@
       "srcPath": "./LICENSE.md",
       "outPath": "",
       "skipPaths": 0,
-      "target": ["dist"]
+      "target": ["out", "dist"]
     },
     {
       "srcPath": "src/stylesheets",
