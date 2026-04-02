@@ -1,3 +1,4 @@
+import * as path from "path";
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { mygamesPath, iniPath, initGameSupport } from "./gameSupport";
 import { mockAllGames, mockDiscoveryByGame } from "../../__mocks__/vortex-api";
@@ -57,7 +58,7 @@ describe("mygamesPath", () => {
     const result = await mygamesPath("skyrimse");
 
     expect(result).toBe(
-      "/steam/steamapps/compatdata/489830/pfx/drive_c/users/steamuser/Documents/My Games/Skyrim Special Edition",
+      path.join("/steam/steamapps/compatdata/489830", "pfx", "drive_c", "users", "steamuser", "Documents", "My Games", "Skyrim Special Edition"),
     );
   });
 
@@ -71,7 +72,7 @@ describe("mygamesPath", () => {
 
     const result = await mygamesPath("skyrimse");
 
-    expect(result).toContain("/home/testuser/Documents/My Games/");
+    expect(result).toContain(path.join("/home/testuser/Documents", "My Games"));
     expect(result).toContain("Skyrim Special Edition");
   });
 
@@ -93,7 +94,7 @@ describe("mygamesPath", () => {
 
     const result = await mygamesPath("skyrimse");
 
-    expect(result).toContain("/home/testuser/Documents/My Games/");
+    expect(result).toContain(path.join("/home/testuser/Documents", "My Games"));
     expect(result).toContain("Skyrim Special Edition");
   });
 
@@ -108,7 +109,7 @@ describe("mygamesPath", () => {
     const result = await mygamesPath("skyrimse");
 
     expect(mockAllGames).not.toHaveBeenCalled();
-    expect(result).toContain("/home/testuser/Documents/My Games/");
+    expect(result).toContain(path.join("/home/testuser/Documents", "My Games"));
   });
 });
 
@@ -132,7 +133,7 @@ describe("iniPath", () => {
     const result = await iniPath("skyrimse");
 
     expect(result).toBe(
-      "/steam/steamapps/compatdata/489830/pfx/drive_c/users/steamuser/Documents/My Games/Skyrim Special Edition/Skyrim.ini",
+      path.join("/steam/steamapps/compatdata/489830", "pfx", "drive_c", "users", "steamuser", "Documents", "My Games", "Skyrim Special Edition", "Skyrim.ini"),
     );
   });
 });
