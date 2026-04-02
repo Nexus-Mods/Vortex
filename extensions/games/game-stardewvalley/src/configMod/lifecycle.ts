@@ -5,7 +5,7 @@
  * "Stardew Valley Configuration (...)" mod and maintaining which mod ids
  * currently have config files tracked by that synthetic mod.
  */
-import path from "path";
+import { ResolvedPath } from "@vortex/paths";
 
 import { actions, selectors } from "vortex-api";
 import type { types } from "vortex-api";
@@ -82,7 +82,10 @@ export async function initializeConfigMod(
   try {
     const mod = await ensureConfigMod(api, profile);
     const installationPath = selectors.installPathForGame(state, GAME_ID);
-    const configModPath = path.join(installationPath, mod.installationPath);
+    const configModPath = ResolvedPath.join(
+      ResolvedPath.make(installationPath),
+      mod.installationPath,
+    );
     return {
       mod,
       configModPath,

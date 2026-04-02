@@ -5,7 +5,7 @@
  * each file should be merged into the synthetic config mod or routed back into
  * a regular mod staging folder.
  */
-import path from "path";
+import { ResolvedPath } from "@vortex/paths";
 
 import { fs, log, selectors, util } from "vortex-api";
 import type { types } from "vortex-api";
@@ -41,7 +41,10 @@ export async function onAddedFilesImpl(
       if (
         mergeConfigs &&
         !isSmapiInternalPath(file.filePath) &&
-        path.basename(file.filePath).toLowerCase() === MOD_CONFIG
+        ResolvedPath.basenameEqualsIgnoreCase(
+          ResolvedPath.make(file.filePath),
+          MOD_CONFIG,
+        )
       ) {
         accum.configs.push(file);
       } else {
@@ -120,10 +123,16 @@ async function addRegularFiles(
       continue;
     }
 
-    const relPath = path.relative(from, entry.filePath);
-    const targetPath = path.join(installPath, mod.id, relPath);
+    const targetPath = ResolvedPath.join(
+      ResolvedPath.make(installPath),
+      mod.id,
+      ResolvedPath.relative(
+        ResolvedPath.make(from),
+        ResolvedPath.make(entry.filePath),
+      ),
+    );
     try {
-      await fs.ensureDirWritableAsync(path.dirname(targetPath));
+      await fs.ensureDirWritableAsync(ResolvedPath.dirname(targetPath));
       await fs.copyAsync(entry.filePath, targetPath);
       await fs.removeAsync(entry.filePath);
     } catch (err) {

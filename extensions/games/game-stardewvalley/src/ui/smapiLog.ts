@@ -1,15 +1,15 @@
 /**
  * Displays and shares SMAPI logs through the Stardew Valley UI action.
  */
-import path from "path";
+import { ResolvedPath } from "@vortex/paths";
 
 import { fs, util } from "vortex-api";
 import type { types } from "vortex-api";
 
 /** Opens the latest available SMAPI log dialog or shows a missing-log notice. */
 export async function onShowSMAPILog(api: types.IExtensionApi) {
-  const basePath = path.join(
-    util.getVortexPath("appData"),
+  const basePath = ResolvedPath.join(
+    ResolvedPath.make(util.getVortexPath("appData")),
     "StardewValley",
     "ErrorLogs",
   );
@@ -33,10 +33,10 @@ const { clipboard } = require("electron");
 
 async function showSMAPILog(
   api: types.IExtensionApi,
-  basePath: string,
+  basePath: ResolvedPath,
   logFile: string,
 ) {
-  const logData = await fs.readFileAsync(path.join(basePath, logFile), {
+  const logData = await fs.readFileAsync(ResolvedPath.join(basePath, logFile), {
     encoding: "utf-8",
   });
   if (api.showDialog === undefined) {

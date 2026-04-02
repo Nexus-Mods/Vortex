@@ -1,7 +1,7 @@
 /**
  * Shared helpers for logical archive-entry paths.
  */
-import { RelativePath } from "@vortex/paths";
+import { RelativePath, posix } from "@vortex/paths";
 
 export interface IArchiveEntryPath {
   original: string;
@@ -19,17 +19,7 @@ export function isArchiveDirectoryEntry(filePath: string): boolean {
 }
 
 export function getArchiveExtension(relative: RelativePath): string {
-  const baseName = RelativePath.basename(relative);
-  const dotIndex = baseName.lastIndexOf(".");
-  return dotIndex <= 0 ? "" : baseName.slice(dotIndex);
-}
-
-export function toLowerCaseSegments(filePath: RelativePath): string[] {
-  if (filePath === RelativePath.EMPTY) {
-    return [];
-  }
-
-  return RelativePath.toString(filePath).toLowerCase().split("/");
+  return posix.extname(RelativePath.basename(relative));
 }
 
 function toArchiveEntryPath(filePath: string): IArchiveEntryPath | undefined {

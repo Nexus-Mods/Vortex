@@ -1,6 +1,7 @@
 /**
  * Caches parsed manifests for currently active Stardew Valley mods.
  */
+import { ResolvedPath } from "@vortex/paths";
 import type { ISDVModManifest } from "../types";
 import { log, selectors, util } from "vortex-api";
 import type { types } from "vortex-api";
@@ -8,8 +9,6 @@ import { GAME_ID, MOD_MANIFEST } from "../common";
 import { selectSdvMods } from "../state/selectors";
 import { getModManifests } from "./getModManifests";
 import { parseManifest } from "./parseManifest";
-
-import path from "path";
 
 /**
  * Caches parsed manifests for currently active/installed Stardew mods.
@@ -59,11 +58,19 @@ export default class ModManifestCache {
         continue;
       }
 
-      const modPath = path.join(staging, iter.installationPath);
+      const modPath = ResolvedPath.join(
+        ResolvedPath.make(staging),
+        iter.installationPath,
+      );
       const manifestFiles = await getModManifests(modPath);
 
       for (const manifestFile of manifestFiles) {
-        if (path.basename(manifestFile) !== MOD_MANIFEST) {
+        if (
+          !ResolvedPath.basenameEqualsIgnoreCase(
+            ResolvedPath.make(manifestFile),
+            MOD_MANIFEST,
+          )
+        ) {
           continue;
         }
 

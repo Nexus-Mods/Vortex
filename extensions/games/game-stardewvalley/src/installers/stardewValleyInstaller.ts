@@ -1,8 +1,7 @@
 /**
  * Detects and installs manifest-based Stardew Valley mod archives.
  */
-import path from "path";
-import { RelativePath } from "@vortex/paths";
+import { RelativePath, ResolvedPath, posix } from "@vortex/paths";
 import { log } from "vortex-api";
 import type { types } from "vortex-api";
 
@@ -12,7 +11,6 @@ import {
   getArchiveExtension,
   isArchiveDirectoryEntry,
   toArchiveEntries,
-  toLowerCaseSegments,
 } from "./archivePath";
 import { classifyArchive, makeInstallerTestResult } from "./archiveClassifier";
 import { parseManifest } from "../manifests/parseManifest";
@@ -61,7 +59,7 @@ export async function installStardewValley(
     manifestFiles.map(async ({ relative: manifestFile }) => {
       const manifestPath = RelativePath.toString(manifestFile);
       const rootFolder = RelativePath.dirname(manifestFile);
-      const rootSegments = toLowerCaseSegments(rootFolder);
+      const rootSegments = RelativePath.segmentsIgnoreCase(rootFolder);
       const manifestIndex = manifestPath.toLowerCase().indexOf(MOD_MANIFEST);
       const filterFunc = (file: IArchiveEntryPath) => {
         const isFile =
@@ -70,7 +68,7 @@ export async function installStardewValley(
         if (rootFolder === RelativePath.EMPTY) {
           return false;
         }
-        const fileSegments = toLowerCaseSegments(file.relative);
+        const fileSegments = RelativePath.segmentsIgnoreCase(file.relative);
         const isInRootFolder =
           rootSegments.length > 0 &&
           fileSegments[rootSegments.length - 1] ===
@@ -79,7 +77,7 @@ export async function installStardewValley(
       };
       try {
         const manifest: ISDVModManifest = await parseManifest(
-          path.join(destinationPath, manifestPath),
+          ResolvedPath.join(ResolvedPath.make(destinationPath), manifestPath),
         );
         const modFiles = archiveEntries.filter(filterFunc);
         return {
@@ -133,7 +131,10 @@ export async function installStardewValley(
 
       for (const file of mod.modFiles) {
         const source = RelativePath.toString(file.relative);
-        const destination = path.join(modName, source.slice(mod.manifestIndex));
+        const destination = posix.join(
+          modName,
+          source.slice(mod.manifestIndex),
+        );
         instructions.push({
           type: "copy",
           source,
@@ -193,10 +194,12 @@ export async function installStardewValley(
 }
 
 function isValidManifest(filePath: RelativePath): boolean {
-  const isManifestFile =
-    RelativePath.basename(filePath).toLowerCase() === MOD_MANIFEST;
-  const isLocale = toLowerCaseSegments(RelativePath.dirname(filePath)).includes(
-    "locale",
+  const isManifestFile = RelativePath.basenameEqualsIgnoreCase(
+    filePath,
+    MOD_MANIFEST,
   );
+  const isLocale = RelativePath.segmentsIgnoreCase(
+    RelativePath.dirname(filePath),
+  ).includes("locale");
   return isManifestFile && !isLocale;
 }

@@ -1,6 +1,13 @@
 import { describe, test, expect, beforeEach } from "vitest";
 
-import { RelativePath, ResolvedPath, Extension, Anchor, FileName, fnv1a } from "./types";
+import {
+  RelativePath,
+  ResolvedPath,
+  Extension,
+  Anchor,
+  FileName,
+  fnv1a,
+} from "./types";
 
 describe("RelativePath", () => {
   describe("normalization", () => {
@@ -87,6 +94,16 @@ describe("RelativePath", () => {
     test("basename with extension removal", () => {
       const path = RelativePath.make("mods/skyrim/data.esp");
       expect(RelativePath.basename(path, ".esp")).toBe("data");
+    });
+  });
+
+  describe("segments", () => {
+    test.each([
+      ["mods/skyrim/data.esp", ["mods", "skyrim", "data.esp"]],
+      ["single", ["single"]],
+      ["", []],
+    ])("segments(%s)", (input, expected) => {
+      expect(RelativePath.segments(RelativePath.make(input))).toEqual(expected);
     });
   });
 
@@ -382,7 +399,9 @@ describe("RelativePath", () => {
     });
 
     test("returns false for EMPTY path", () => {
-      expect(RelativePath.basenameEquals(RelativePath.EMPTY, "file.txt")).toBe(false);
+      expect(RelativePath.basenameEquals(RelativePath.EMPTY, "file.txt")).toBe(
+        false,
+      );
     });
 
     test("matching single segment path (case-sensitive)", () => {
@@ -395,38 +414,50 @@ describe("RelativePath", () => {
   describe("basenameEqualsIgnoreCase", () => {
     test("matching with string filename (case-insensitive)", () => {
       const path = RelativePath.make("mods/skyrim/Data.ESP");
-      expect(RelativePath.basenameEqualsIgnoreCase(path, "data.esp")).toBe(true);
-    });
-
-    test("matching with FileName (case-insensitive)", () => {
-      const path = RelativePath.make("mods/skyrim/Data.ESP");
-      expect(RelativePath.basenameEqualsIgnoreCase(path, FileName.make("data.esp"))).toBe(
+      expect(RelativePath.basenameEqualsIgnoreCase(path, "data.esp")).toBe(
         true,
       );
     });
 
+    test("matching with FileName (case-insensitive)", () => {
+      const path = RelativePath.make("mods/skyrim/Data.ESP");
+      expect(
+        RelativePath.basenameEqualsIgnoreCase(path, FileName.make("data.esp")),
+      ).toBe(true);
+    });
+
     test("case-insensitive matching", () => {
       const path = RelativePath.make("mods/skyrim/DATA.ESP");
-      expect(RelativePath.basenameEqualsIgnoreCase(path, "Data.Esp")).toBe(true);
+      expect(RelativePath.basenameEqualsIgnoreCase(path, "Data.Esp")).toBe(
+        true,
+      );
     });
 
     test("non-matching filename returns false", () => {
       const path = RelativePath.make("mods/skyrim/data.esp");
-      expect(RelativePath.basenameEqualsIgnoreCase(path, "data.esm")).toBe(false);
+      expect(RelativePath.basenameEqualsIgnoreCase(path, "data.esm")).toBe(
+        false,
+      );
     });
 
     test("matching single segment path (case-insensitive - lowercase path, uppercase target)", () => {
       const path = RelativePath.make("config.json");
-      expect(RelativePath.basenameEqualsIgnoreCase(path, "CONFIG.JSON")).toBe(true);
+      expect(RelativePath.basenameEqualsIgnoreCase(path, "CONFIG.JSON")).toBe(
+        true,
+      );
     });
 
     test("matching single segment path (case-insensitive - uppercase path, lowercase target)", () => {
       const pathUpper = RelativePath.make("CONFIG.JSON");
-      expect(RelativePath.basenameEqualsIgnoreCase(pathUpper, "config.json")).toBe(true);
+      expect(
+        RelativePath.basenameEqualsIgnoreCase(pathUpper, "config.json"),
+      ).toBe(true);
     });
 
     test("returns false for EMPTY path", () => {
-      expect(RelativePath.basenameEqualsIgnoreCase(RelativePath.EMPTY, "file.txt")).toBe(false);
+      expect(
+        RelativePath.basenameEqualsIgnoreCase(RelativePath.EMPTY, "file.txt"),
+      ).toBe(false);
     });
   });
 
@@ -525,6 +556,24 @@ describe("ResolvedPath", () => {
       expect(ResolvedPath.basename(path, ".esp")).toBe("data");
     });
 
+    test("basenameEquals", () => {
+      const path = ResolvedPath.make("/home/user/mods/Data.ESP");
+
+      expect(ResolvedPath.basenameEquals(path, "Data.ESP")).toBe(true);
+      expect(ResolvedPath.basenameEquals(path, "data.esp")).toBe(false);
+    });
+
+    test("basenameEqualsIgnoreCase", () => {
+      const path = ResolvedPath.make("/home/user/mods/Data.ESP");
+
+      expect(ResolvedPath.basenameEqualsIgnoreCase(path, "data.esp")).toBe(
+        true,
+      );
+      expect(ResolvedPath.basenameEqualsIgnoreCase(path, "data.esm")).toBe(
+        false,
+      );
+    });
+
     test("relative", () => {
       const from = ResolvedPath.make("/home/user/mods");
       const to = ResolvedPath.make("/home/user/downloads");
@@ -556,6 +605,59 @@ describe("ResolvedPath", () => {
       const to = ResolvedPath.make("\\\\server\\share\\mods\\file.txt");
 
       expect(ResolvedPath.relative(from, to)).toBe("file.txt");
+    });
+
+    test("segments preserves case while normalizing separators", () => {
+      const path = ResolvedPath.make(
+        "C:/Games/Steam/steamapps/common/Stardew Valley/Mods/ContentPatcher/manifest.json",
+      );
+
+      expect(ResolvedPath.segments(path)).toEqual([
+        "C:",
+        "Games",
+        "Steam",
+        "steamapps",
+        "common",
+        "Stardew Valley",
+        "Mods",
+        "ContentPatcher",
+        "manifest.json",
+      ]);
+    });
+
+    test("segmentsIgnoreCase lowercases normalized segments", () => {
+      const path = ResolvedPath.make(
+        "/home/user/Games/Steam/steamapps/common/Stardew Valley/Mods/ContentPatcher/config.json",
+      );
+
+      expect(ResolvedPath.segmentsIgnoreCase(path)).toEqual([
+        "home",
+        "user",
+        "games",
+        "steam",
+        "steamapps",
+        "common",
+        "stardew valley",
+        "mods",
+        "contentpatcher",
+        "config.json",
+      ]);
+    });
+
+    test("isIn detects nested paths but not equal paths", () => {
+      const parent = ResolvedPath.make(
+        "/home/user/Games/Steam/steamapps/common/Stardew Valley/Mods",
+      );
+      const child = ResolvedPath.make(
+        "/home/user/Games/Steam/steamapps/common/Stardew Valley/Mods/ContentPatcher/manifest.json",
+      );
+      const equal = ResolvedPath.make(
+        "/home/user/Games/Steam/steamapps/common/Stardew Valley/Mods",
+      );
+
+      expect(ResolvedPath.isIn(child, parent)).toBe(true);
+      expect(ResolvedPath.isIn(equal, parent)).toBe(false);
+      expect(ResolvedPath.isIn(parent, child)).toBe(false);
     });
   });
 });
@@ -865,8 +967,12 @@ describe("FileName", () => {
       expect(FileName.hashIgnoreCase(lower)).toBe(fnv1a("data.esp"));
       expect(FileName.hashIgnoreCase(upper)).toBe(fnv1a("data.esp"));
 
-      expect(FileName.hashIgnoreCase(lower)).toBe(fnv1a((lower as string).toLowerCase()));
-      expect(FileName.hashIgnoreCase(upper)).toBe(fnv1a((upper as string).toLowerCase()));
+      expect(FileName.hashIgnoreCase(lower)).toBe(
+        fnv1a((lower as string).toLowerCase()),
+      );
+      expect(FileName.hashIgnoreCase(upper)).toBe(
+        fnv1a((upper as string).toLowerCase()),
+      );
     });
   });
 

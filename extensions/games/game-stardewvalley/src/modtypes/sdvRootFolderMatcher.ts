@@ -1,11 +1,11 @@
 /**
  * Detects installed mods that should use the `sdvrootfolder` mod type.
  */
-import path from "path";
+import { RelativePath } from "@vortex/paths";
 
 import type { types } from "vortex-api";
 
-import { MOD_MANIFEST, MODS_REL_PATH } from "../common";
+import { MOD_MANIFEST } from "../common";
 
 /**
  * Mod-type matcher for automatic `sdvrootfolder` classification.
@@ -14,18 +14,29 @@ import { MOD_MANIFEST, MODS_REL_PATH } from "../common";
  * still handling mixed archives that also include regular SMAPI content.
  */
 export function isSdvRootFolderModType(instructions: types.IInstruction[]) {
-  const copyInstructions = instructions.filter(
-    (instr) => instr.type === "copy",
-  );
+  const destinations = instructions
+    .filter((instr) => instr.type === "copy")
+    .flatMap((instr) => {
+      if (instr.destination === undefined) {
+        return [];
+      }
 
-  const hasManifest = copyInstructions.some(
-    (instr) => instr.destination?.endsWith(MOD_MANIFEST) === true,
+      try {
+        return [RelativePath.make(instr.destination)];
+      } catch {
+        return [];
+      }
+    });
+
+  const hasManifest = destinations.some((destination) =>
+    RelativePath.basenameEqualsIgnoreCase(destination, MOD_MANIFEST),
   );
-  const hasModsFolder = copyInstructions.some(
-    (instr) => instr.destination?.startsWith(MODS_REL_PATH + path.sep) === true,
+  const hasModsFolder = destinations.some(
+    (destination) => RelativePath.segmentsIgnoreCase(destination)[0] === "mods",
   );
-  const hasContentFolder = copyInstructions.some(
-    (instr) => instr.destination?.startsWith("Content" + path.sep) === true,
+  const hasContentFolder = destinations.some(
+    (destination) =>
+      RelativePath.segmentsIgnoreCase(destination)[0] === "content",
   );
 
   return hasManifest

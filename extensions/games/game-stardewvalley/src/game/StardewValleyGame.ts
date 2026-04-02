@@ -1,7 +1,7 @@
 /**
  * Implements Vortex game integration for Stardew Valley.
  */
-import path from "path";
+import { ResolvedPath } from "@vortex/paths";
 
 import { fs, util } from "vortex-api";
 import type { types } from "vortex-api";
@@ -131,9 +131,13 @@ export default class StardewValleyGame implements types.IGame {
       throw new Error("Stardew Valley install path is not set");
     }
 
-    await fs.ensureDirWritableAsync(path.join(discovery.path, MODS_REL_PATH));
+    const discoveryPath = ResolvedPath.make(discovery.path);
 
-    const smapiPath = path.join(discovery.path, SMAPI_EXE);
+    await fs.ensureDirWritableAsync(
+      ResolvedPath.join(discoveryPath, MODS_REL_PATH),
+    );
+
+    const smapiPath = ResolvedPath.join(discoveryPath, SMAPI_EXE);
     const smapiFound = await this.getPathExistsAsync(smapiPath);
     if (!smapiFound) {
       this.recommendSmapi();

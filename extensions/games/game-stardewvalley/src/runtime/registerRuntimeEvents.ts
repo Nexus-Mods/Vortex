@@ -2,7 +2,7 @@
  * Registers runtime event handlers used by the Stardew Valley extension.
  */
 import type { IQuery, IServer } from "modmeta-db";
-import path from "path";
+import { ResolvedPath } from "@vortex/paths";
 import { getErrorMessageOrDefault } from "@vortex/shared";
 
 import { actions, log, selectors, util } from "vortex-api";
@@ -50,7 +50,7 @@ export function registerRuntimeEvents(context: types.IExtensionContext) {
 
     context.api.setStylesheet(
       "sdv",
-      path.join(__dirname, "ui", "sdvstyle.scss"),
+      ResolvedPath.join(ResolvedPath.make(__dirname), "ui", "sdvstyle.scss"),
     );
 
     context.api.addMetaServer("smapi.io", {

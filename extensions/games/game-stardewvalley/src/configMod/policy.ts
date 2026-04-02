@@ -4,7 +4,7 @@
  * Centralizing these checks avoids accidental file ownership mistakes,
  * especially around SMAPI internal files and risky root-folder candidates.
  */
-import path from "path";
+import { ResolvedPath } from "@vortex/paths";
 
 import { util } from "vortex-api";
 import type { types } from "vortex-api";
@@ -34,11 +34,9 @@ export function isSmapiInternalPath(filePath: string): boolean {
     "",
   );
   // Normalize separators and punctuation so smapi-internal/smapi_internal both match.
-  const segments = filePath
-    .toLowerCase()
-    .split(path.sep)
-    .filter((segment) => segment.length > 0)
-    .map((segment) => segment.replace(/[-_]/g, ""));
+  const segments = ResolvedPath.segmentsIgnoreCase(
+    ResolvedPath.make(filePath),
+  ).map((segment) => segment.replace(/[-_]/g, ""));
   return segments.some((segment) => segment === normalizedInternalDir);
 }
 
@@ -55,10 +53,9 @@ export function isModCandidateValid(
     return true;
   }
 
-  const segments = entry.filePath
-    .toLowerCase()
-    .split(path.sep)
-    .filter((segment) => segment.length > 0);
+  const segments = ResolvedPath.segmentsIgnoreCase(
+    ResolvedPath.make(entry.filePath),
+  );
   const modsSegIdx = segments.indexOf("mods");
   const modFolderName =
     modsSegIdx !== -1 && segments.length > modsSegIdx + 1

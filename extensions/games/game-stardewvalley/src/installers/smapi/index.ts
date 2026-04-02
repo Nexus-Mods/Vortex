@@ -6,7 +6,7 @@
  * - linux.ts
  * - macos.ts (stubbed darwin variant)
  */
-import path from "path";
+import { FileName, RelativePath, ResolvedPath } from "@vortex/paths";
 import { fs, log, util } from "vortex-api";
 import type { types } from "vortex-api";
 
@@ -58,12 +58,12 @@ export function isSMAPIModType(
   instructions: types.IInstruction[],
   platform: ISMAPIPlatformVariant = resolveSMAPIPlatform(),
 ): PromiseLike<boolean> {
-  const expectedExecutable = platform.executableName.toLowerCase();
+  const expectedExecutable = FileName.make(platform.executableName);
   const smapiData = instructions.find(
     (inst) =>
       inst.type === "copy" &&
       typeof inst.source === "string" &&
-      archiveFileName(inst.source).toLowerCase() === expectedExecutable,
+      archiveBaseNameEqualsIgnoreCase(inst.source, expectedExecutable),
   );
 
   return Promise.resolve(smapiData !== undefined);
@@ -100,13 +100,15 @@ export async function installSMAPI(
     );
   }
 
-  const platformDataFiles = new Set(
-    platform.dataFiles.map((fileName) => fileName.toLowerCase()),
+  const platformDataFiles = platform.dataFiles.map((fileName) =>
+    FileName.make(fileName),
   );
   const dataFile = files.find(
     (file) =>
       isCorrectPlatformPath(file, platform.archiveFolder) &&
-      platformDataFiles.has(archiveFileName(file).toLowerCase()),
+      platformDataFiles.some((fileName) =>
+        archiveBaseNameEqualsIgnoreCase(file, fileName),
+      ),
   );
 
   if (dataFile === undefined) {
@@ -117,9 +119,10 @@ export async function installSMAPI(
   }
 
   let data = "";
+  const gameInstallPath = ResolvedPath.make(getGameInstallPath());
   try {
     data = await fs.readFileAsync(
-      path.join(getGameInstallPath(), "Stardew Valley.deps.json"),
+      ResolvedPath.join(gameInstallPath, "Stardew Valley.deps.json"),
       { encoding: "utf8" },
     );
   } catch (err) {
@@ -128,14 +131,19 @@ export async function installSMAPI(
 
   // File list provided by Vortex is outdated after extraction.
   const updatedFiles: string[] = [];
+  const destinationRoot = ResolvedPath.make(destinationPath);
 
   const szip = new (util.SevenZip as any)();
-  await szip.extractFull(path.join(destinationPath, dataFile), destinationPath);
+  await szip.extractFull(
+    ResolvedPath.join(destinationRoot, dataFile),
+    destinationPath,
+  );
 
   await util.walk(destinationPath, (iter, stats) => {
-    const relPath = normalizePathSeparators(
-      path.relative(destinationPath, iter),
+    const relativePath = RelativePath.make(
+      ResolvedPath.relative(destinationRoot, ResolvedPath.make(iter)),
     );
+    const relPath = RelativePath.toString(relativePath);
 
     // Filter out files from the original install as they're no longer required.
     if (
@@ -146,7 +154,7 @@ export async function installSMAPI(
       updatedFiles.push(relPath);
     }
 
-    const segments = splitArchivePath(relPath).map((seg) => seg.toLowerCase());
+    const segments = RelativePath.segmentsIgnoreCase(relativePath);
     const modsFolderIdx = segments.indexOf("mods");
     if (modsFolderIdx !== -1) {
       const bundledMod = segments[modsFolderIdx + 1];
@@ -158,9 +166,9 @@ export async function installSMAPI(
     return Promise.resolve();
   });
 
-  const expectedExecutable = platform.executableName.toLowerCase();
-  const smapiExe = updatedFiles.find(
-    (file) => archiveFileName(file).toLowerCase() === expectedExecutable,
+  const expectedExecutable = FileName.make(platform.executableName);
+  const smapiExe = updatedFiles.find((file) =>
+    archiveBaseNameEqualsIgnoreCase(file, expectedExecutable),
   );
   if (smapiExe === undefined) {
     throw new util.DataInvalid(
@@ -194,33 +202,14 @@ export async function installSMAPI(
 }
 
 /**
- * Split a path from archive entries into normalised segments.
- *
- * Examples:
- * - `internal\\windows\\install.dat` -> [`internal`, `windows`, `install.dat`]
- * - `internal/linux/install.dat` -> [`internal`, `linux`, `install.dat`]
- */
-function splitArchivePath(filePath: string): string[] {
-  return normalizePathSeparators(filePath)
-    .split("/")
-    .filter((segment) => segment.length > 0);
-}
-
-function normalizePathSeparators(filePath: string): string {
-  return filePath.replace(/\\/g, "/");
-}
-
-/**
  * Return the final path segment for an archive entry.
  *
  * Examples:
  * - `internal/windows/StardewModdingAPI.exe` -> `StardewModdingAPI.exe`
  * - `internal\\linux\\install.dat` -> `install.dat`
  */
-function archiveFileName(filePath: string): string {
-  const segments = splitArchivePath(filePath);
-  const lastSegment = segments.pop();
-  return lastSegment ?? filePath;
+function archiveFileName(filePath: string): FileName {
+  return FileName.fromRelativePath(RelativePath.make(filePath));
 }
 
 /**
@@ -234,8 +223,18 @@ function isCorrectPlatformPath(
   filePath: string,
   platformFolder: string,
 ): boolean {
-  const segments = splitArchivePath(filePath).map((seg) => seg.toLowerCase());
+  const segments = RelativePath.segmentsIgnoreCase(RelativePath.make(filePath));
   return segments.includes(platformFolder.toLowerCase());
+}
+
+function archiveBaseNameEqualsIgnoreCase(
+  filePath: string,
+  fileName: FileName | string,
+): boolean {
+  return RelativePath.basenameEqualsIgnoreCase(
+    RelativePath.make(filePath),
+    fileName,
+  );
 }
 
 export { windowsSMAPIPlatform, linuxSMAPIPlatform, macosSMAPIPlatform };

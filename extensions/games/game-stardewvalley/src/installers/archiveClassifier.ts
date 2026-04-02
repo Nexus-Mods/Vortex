@@ -9,7 +9,6 @@ import {
   type IArchiveEntryPath,
   isArchiveDirectoryEntry,
   toArchiveEntries,
-  toLowerCaseSegments,
 } from "./archivePath";
 
 /**
@@ -60,7 +59,7 @@ function hasContentFolder(files: IArchiveEntryPath[]): boolean {
   return files.some(
     (file) =>
       isArchiveDirectoryEntry(file.original) &&
-      RelativePath.basename(file.relative) === CONTENT_FOLDER_NAME,
+      RelativePath.basenameEquals(file.relative, CONTENT_FOLDER_NAME),
   );
 }
 
@@ -68,11 +67,12 @@ function hasManifest(
   files: IArchiveEntryPath[],
   manifestFileName: string = MOD_MANIFEST,
 ): boolean {
-  const manifestName = manifestFileName.toLowerCase();
   return files.some((file) => {
-    const isManifestFile =
-      RelativePath.basename(file.relative).toLowerCase() === manifestName;
-    const isLocale = toLowerCaseSegments(
+    const isManifestFile = RelativePath.basenameEqualsIgnoreCase(
+      file.relative,
+      manifestFileName,
+    );
+    const isLocale = RelativePath.segmentsIgnoreCase(
       RelativePath.dirname(file.relative),
     ).includes(LOCALE_SEGMENT);
     return isManifestFile && !isLocale;
@@ -80,10 +80,8 @@ function hasManifest(
 }
 
 function hasSmapiInstallerDll(files: IArchiveEntryPath[]): boolean {
-  return files.some(
-    (file) =>
-      RelativePath.basename(file.relative).toLowerCase() ===
-      SMAPI_INSTALLER_DLL,
+  return files.some((file) =>
+    RelativePath.basenameEqualsIgnoreCase(file.relative, SMAPI_INSTALLER_DLL),
   );
 }
 

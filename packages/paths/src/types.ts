@@ -207,6 +207,15 @@ export namespace RelativePath {
   }
 
   /**
+   * Return normalized path segments preserving original case.
+   * Returns empty array for EMPTY path.
+   */
+  export function segments(relative: RelativePath): string[] {
+    if (relative === EMPTY) return [];
+    return (relative as string).split("/");
+  }
+
+  /**
    * Convert to string for debugging
    */
   export function toString(relative: RelativePath): string {
@@ -418,7 +427,7 @@ export namespace RelativePath {
    */
   export function segmentsIgnoreCase(relative: RelativePath): string[] {
     if (relative === EMPTY) return [];
-    return (relative as string).toLowerCase().split("/");
+    return segments(relative).map((segment) => segment.toLowerCase());
   }
 }
 
@@ -524,6 +533,65 @@ export namespace ResolvedPath {
   }
 
   /**
+   * Check if the basename of a resolved path equals a filename (case-sensitive)
+   * Accepts either a FileName branded type or a plain string.
+   */
+  export function basenameEquals(
+    resolved: ResolvedPath,
+    fileName: FileName | string,
+  ): boolean {
+    const base = basename(resolved);
+    if (base === "") {
+      return false;
+    }
+    const target = normalizeFileName(fileName);
+    if (target === null) {
+      return false;
+    }
+    return FileName.equals(FileName.unsafe(base), target);
+  }
+
+  /**
+   * Check if the basename of a resolved path equals a filename
+   * (case-insensitive)
+   * Accepts either a FileName branded type or a plain string.
+   */
+  export function basenameEqualsIgnoreCase(
+    resolved: ResolvedPath,
+    fileName: FileName | string,
+  ): boolean {
+    const base = basename(resolved);
+    if (base === "") {
+      return false;
+    }
+    const target = normalizeFileName(fileName);
+    if (target === null) {
+      return false;
+    }
+    return FileName.equalsIgnoreCase(FileName.unsafe(base), target);
+  }
+
+  /**
+   * Return normalized path segments preserving original case.
+   * Root separators are omitted; Windows drive letters remain as the first
+   * segment.
+   */
+  export function segments(resolved: ResolvedPath): string[] {
+    const pathMod = detectPathModule(resolved as string);
+    return pathMod
+      .normalize(resolved as string)
+      .split(/[\\/]+/)
+      .filter((segment) => segment.length > 0);
+  }
+
+  /**
+   * Return normalized path segments lowercased for comparison.
+   */
+  export function segmentsIgnoreCase(resolved: ResolvedPath): string[] {
+    return segments(resolved).map((segment) => segment.toLowerCase());
+  }
+
+  /**
    * Convert to string for use with Node.js APIs
    */
   export function toString(resolved: ResolvedPath): string {
@@ -554,6 +622,22 @@ export namespace ResolvedPath {
     const fromStr = from as string;
     const pathMod = detectPathModule(fromStr);
     return pathMod.relative(fromStr, to as string);
+  }
+
+  /**
+   * Strict containment check (not equal) using platform path semantics.
+   */
+  export function isIn(child: ResolvedPath, parent: ResolvedPath): boolean {
+    const parentStr = parent as string;
+    const pathMod = detectPathModule(parentStr);
+    const rel = pathMod.relative(parentStr, child as string);
+    return (
+      rel !== "" &&
+      rel !== "." &&
+      !pathMod.isAbsolute(rel) &&
+      rel !== ".." &&
+      !rel.startsWith(`..${pathMod.sep}`)
+    );
   }
 }
 
@@ -765,7 +849,6 @@ export namespace FileName {
     }
     return result.data as FileName;
   }
-
 
   /**
    * Skip validation (use only when input is already validated)

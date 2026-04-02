@@ -39,7 +39,7 @@ export function installRootFolder(
   const contentDir = archiveEntries.find(
     (entry) =>
       isArchiveDirectoryEntry(entry.original) &&
-      RelativePath.basename(entry.relative) === CONTENT_FOLDER_NAME,
+      RelativePath.basenameEquals(entry.relative, CONTENT_FOLDER_NAME),
   );
 
   if (contentDir === undefined) {

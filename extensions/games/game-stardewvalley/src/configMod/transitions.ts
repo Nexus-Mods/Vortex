@@ -5,7 +5,7 @@
  * from the synthetic config mod back to the original mod folders, then updates
  * tracking metadata so ownership remains accurate.
  */
-import path from "path";
+import { RelativePath, ResolvedPath } from "@vortex/paths";
 
 import { fs, selectors } from "vortex-api";
 import type { types } from "vortex-api";
@@ -67,6 +67,7 @@ export async function onWillEnableModsImpl(
   }
 
   const installPath = selectors.installPathForGame(state, GAME_ID);
+  const installPathResolved = ResolvedPath.make(installPath);
   const mods: { [modId: string]: types.IMod } = selectSdvMods(state);
   for (const modId of relevantModIds) {
     const mod = mods[modId];
@@ -74,34 +75,50 @@ export async function onWillEnableModsImpl(
       continue;
     }
 
-    const modPath = path.join(installPath, mod.installationPath);
+    const modPath = ResolvedPath.join(
+      installPathResolved,
+      mod.installationPath,
+    );
     const files: IEntry[] = await walkPath(modPath, {
       skipLinks: true,
       skipHidden: true,
       skipInaccessible: true,
     });
-    const manifestFile = files.find(
-      (file) => path.basename(file.filePath) === MOD_MANIFEST,
+    const manifestFile = files.find((file) =>
+      ResolvedPath.basenameEqualsIgnoreCase(
+        ResolvedPath.make(file.filePath),
+        MOD_MANIFEST,
+      ),
     );
     if (manifestFile === undefined) {
       continue;
     }
 
-    const relPath = path.relative(modPath, path.dirname(manifestFile.filePath));
-    const modConfigFilePath = path.join(
-      configMod.configModPath,
-      relPath,
+    const relPath = RelativePath.make(
+      ResolvedPath.relative(
+        modPath,
+        ResolvedPath.dirname(ResolvedPath.make(manifestFile.filePath)),
+      ),
+    );
+    const configModPath = ResolvedPath.make(configMod.configModPath);
+    const modConfigFilePath = ResolvedPath.join(
+      configModPath,
+      RelativePath.toString(relPath),
       MOD_CONFIG,
     );
     await fs
-      .copyAsync(modConfigFilePath, path.join(modPath, relPath, MOD_CONFIG), {
-        overwrite: true,
-      })
+      .copyAsync(
+        modConfigFilePath,
+        ResolvedPath.join(modPath, RelativePath.toString(relPath), MOD_CONFIG),
+        {
+          overwrite: true,
+        },
+      )
       .catch(() => null);
 
     try {
       await applyToConfigMod(api, profileId, () =>
-        deleteFolder(path.dirname(modConfigFilePath)),
+        deleteFolder(ResolvedPath.dirname(modConfigFilePath)),
       );
     } catch (err) {
       api.showErrorNotification?.("Failed to write mod config", err);

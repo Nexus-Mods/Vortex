@@ -1,7 +1,7 @@
 /**
  * Registers Stardew Valley mod type matchers and deployment roots.
  */
-import path from "path";
+import { ResolvedPath } from "@vortex/paths";
 
 import type { types } from "vortex-api";
 
@@ -51,7 +51,8 @@ export function registerModTypes(
     MOD_TYPE_CONFIG,
     MOD_TYPE_PRIORITY_CONFIG,
     (gameId) => gameId === GAME_ID,
-    () => path.join(getGameInstallPath(), MODS_REL_PATH),
+    () =>
+      ResolvedPath.join(ResolvedPath.make(getGameInstallPath()), MODS_REL_PATH),
     isConfigModTypeBoundary,
   );
 

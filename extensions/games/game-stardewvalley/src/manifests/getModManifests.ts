@@ -1,7 +1,7 @@
 /**
  * Scans installed mod content and returns discovered `manifest.json` paths.
  */
-import path from "path";
+import { ResolvedPath } from "@vortex/paths";
 
 import turbowalk from "turbowalk";
 
@@ -20,7 +20,12 @@ export function getModManifests(modPath?: string): PromiseLike<string[]> {
       modPath,
       (entries) => {
         for (const entry of entries) {
-          if (path.basename(entry.filePath) === MOD_MANIFEST) {
+          if (
+            ResolvedPath.basenameEqualsIgnoreCase(
+              ResolvedPath.make(entry.filePath),
+              MOD_MANIFEST,
+            )
+          ) {
             manifests.push(entry.filePath);
           }
         }

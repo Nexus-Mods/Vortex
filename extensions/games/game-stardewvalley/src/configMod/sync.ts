@@ -6,7 +6,7 @@
  * - import them into the synthetic staging mod,
  * - run purge/deploy transitions so Vortex deployment state stays consistent.
  */
-import path from "path";
+import { Extension, RelativePath, ResolvedPath } from "@vortex/paths";
 
 import { fs, log, selectors, util } from "vortex-api";
 import type { types } from "vortex-api";
@@ -94,9 +94,16 @@ export async function onSyncModConfigurations(
     await emitLifecycleEvent(api, "purge-mods");
 
     const installPath = selectors.installPathForGame(api.getState(), GAME_ID);
+    const installPathResolved = ResolvedPath.make(installPath);
+    const configModPathResolved = ResolvedPath.make(configMod.configModPath);
     const resolveCandidateName = (file: IEntry): string => {
-      const relPath = path.relative(installPath, file.filePath);
-      const segments = relPath.split(path.sep);
+      const relPath = RelativePath.make(
+        ResolvedPath.relative(
+          installPathResolved,
+          ResolvedPath.make(file.filePath),
+        ),
+      );
+      const segments = RelativePath.segments(relPath);
       return segments[0] ?? "";
     };
     const files = await walkPath(installPath);
@@ -109,11 +116,20 @@ export async function onSyncModConfigurations(
         return accum;
       }
 
-      if (path.basename(file.filePath).toLowerCase() !== MOD_CONFIG) {
+      if (
+        !ResolvedPath.basenameEqualsIgnoreCase(
+          ResolvedPath.make(file.filePath),
+          MOD_CONFIG,
+        )
+      ) {
         return accum;
       }
 
-      if (path.dirname(file.filePath).includes(configMod.configModPath)) {
+      const fileDir = ResolvedPath.dirname(ResolvedPath.make(file.filePath));
+      if (
+        ResolvedPath.relative(configModPathResolved, fileDir) === "" ||
+        ResolvedPath.isIn(fileDir, configModPathResolved)
+      ) {
         return accum;
       }
 
@@ -158,11 +174,14 @@ export async function addModConfig(
   const resolvedModsPath =
     modsPath ??
     (discovery?.path !== undefined
-      ? path.join(discovery.path, MODS_REL_PATH)
+      ? ResolvedPath.join(ResolvedPath.make(discovery.path), MODS_REL_PATH)
       : undefined);
   if (resolvedModsPath === undefined) {
     return;
   }
+
+  const resolvedModsPathValue = ResolvedPath.make(resolvedModsPath);
+  const configModPath = ResolvedPath.make(configMod.configModPath);
 
   if (findSMAPITool(api) === undefined) {
     return;
@@ -191,22 +210,29 @@ export async function addModConfig(
     }
 
     try {
-      const installRelPath = path.relative(resolvedModsPath, file.filePath);
-      const segments = installRelPath.split(path.sep);
+      const installRelPath = RelativePath.make(
+        ResolvedPath.relative(
+          resolvedModsPathValue,
+          ResolvedPath.make(file.filePath),
+        ),
+      );
+      const segments = RelativePath.segments(installRelPath);
       // When scanning the install path, drop the leading mod-id segment.
-      const relPath = isInstallPath
-        ? segments.slice(1).join(path.sep)
-        : installRelPath;
-      const targetPath = path.join(configMod.configModPath, relPath);
+      const relSegments = isInstallPath ? segments.slice(1) : segments;
+      const targetPath = ResolvedPath.join(configModPath, ...relSegments);
       const targetDir =
-        path.extname(targetPath) !== "" ? path.dirname(targetPath) : targetPath;
+        Extension.fromPath(targetPath) !== undefined
+          ? ResolvedPath.dirname(targetPath)
+          : targetPath;
       await fs.ensureDirWritableAsync(targetDir);
       log("debug", "importing config file from", {
         source: file.filePath,
         destination: targetPath,
         modId: primaryCandidate,
       });
-      await fs.copyAsync(file.filePath, targetPath, { overwrite: true });
+      await fs.copyAsync(file.filePath, targetPath, {
+        overwrite: true,
+      });
       await fs.removeAsync(file.filePath);
     } catch (err) {
       api.showErrorNotification?.("Failed to write mod config", err);
