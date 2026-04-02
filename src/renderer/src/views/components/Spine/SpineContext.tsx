@@ -28,6 +28,17 @@ import {
   profileById as profileByIdSelector,
 } from "../../../util/selectors";
 
+// gamebryo-plugin-management augments the settings slice with a `plugins`
+// entry. We don't import IStateWithGamebryo from the extension to avoid a
+// renderer→extension dependency, so we mirror the relevant shape locally.
+interface IStateWithPlugins extends IState {
+  settings: IState["settings"] & {
+    plugins?: {
+      pluginManagementEnabled?: { [profileId: string]: boolean };
+    };
+  };
+}
+
 export type SpineSelection =
   | { type: "home" }
   | { type: "game"; gameId: string }
@@ -52,6 +63,9 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
   const { mainPages } = usePagesContext();
   const dispatch = useDispatch();
 
+  const profilesVisible = useSelector(
+    (state: IState) => state.settings.interface.profilesVisible,
+  );
   const lastActiveProfile = useSelector(lastActiveProfilesSelector);
   const activeProfileId = useSelector(activeProfileIdSelector);
   const activeGameId = useSelector(activeGameIdSelector);
@@ -65,8 +79,8 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
   // restart. Typed as `any` because this path lives in the gamebryo-plugin-
   // management extension and isn't in core IState.
   const pluginManagementEnabled = useSelector(
-    (state: IState) =>
-      (state as any).settings?.plugins?.pluginManagementEnabled,
+    (state: IStateWithPlugins) =>
+      state.settings.plugins?.pluginManagementEnabled,
   );
 
   // Tracks the gameId that was active when the user navigated to home.
@@ -118,11 +132,7 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
           page.id !== "Downloads" &&
           isPageVisible(page),
       ),
-<<<<<<< HEAD
-    [mainPages, isPageVisible, activeGameId],
-=======
     [mainPages, isPageVisible, activeGameId, profilesVisible, pluginManagementEnabled],
->>>>>>> 7c9bbd005 (Merge pull request #22400 from Nexus-Mods/task/app-260/app-261/app-263)
   );
 
   const gamePages: IMainPage[] = useMemo(
@@ -133,11 +143,7 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
           page.id !== "game-downloads" &&
           isPageVisible(page),
       ),
-<<<<<<< HEAD
-    [mainPages, isPageVisible, activeGameId],
-=======
     [mainPages, isPageVisible, activeGameId, profilesVisible, pluginManagementEnabled],
->>>>>>> 7c9bbd005 (Merge pull request #22400 from Nexus-Mods/task/app-260/app-261/app-263)
   );
 
   const mainPage = useSelector(mainPageSelector);
