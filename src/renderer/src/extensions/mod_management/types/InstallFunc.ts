@@ -1,5 +1,4 @@
 import type { IInstallResult } from "./IInstallResult";
-
 import type { IModReference } from "./IMod";
 
 export type ProgressDelegate = (perc: number) => void;
@@ -13,6 +12,58 @@ export interface IInstallationDetails {
   isTrusted?: boolean;
 }
 
+/**
+ * Installation function signature for mod installers.
+ *
+ * ## Arguments
+ *
+ * @param files - Array of installer-relative paths containing 
+ *   **both files and directories**. 
+ *   
+ *   Directories are marked by trailing `/` or `\` separators.
+ * 
+ *   **Important:** ‼️ Use `splitPathsByKind()` from `@vortex/game-extension-helpers` 
+ *   to separate files and directories. A raw conversion/cast will strip separators,
+ *   making it impossible to distinguish files from directories.
+ * 
+ * @param destinationPath - Absolute path where mod files should be installed.
+ * @param gameId - Identifier for the target game.
+ * @param progressDelegate - Callback to report installation progress (0-100).
+ * @param choices - Optional user selections from installer prompts.
+ * @param unattended - Whether the installation runs without user interaction.
+ * @param archivePath - Optional path to the original archive file.
+ * @param options - Additional installation context and flags.
+ *
+ * ## Returns
+ *
+ * @returns Promise resolving to an {@link IInstallResult} with installation instructions.
+ *
+ * ## Examples
+ *
+ * Handling mixed files and directories with `splitPathsByKind()`:
+ *
+ * ```typescript
+ * import { splitPathsByKind } from "@vortex/game-extension-helpers";
+ *
+ * const install: InstallFunc = async (files, destinationPath, gameId) => {
+ *   // Separate files and directories before normalization
+ *   const { files: filePaths, directories } = splitPathsByKind(files);
+ *
+ *   // filePaths: ["Data/ModFile.esp", "Data/Textures/Diffuse.dds"]
+ *   // directories: ["Data/Textures", "Data/Meshes"]
+ * 
+ *   // Do some stuff here to figure out how to map, then map... like...
+ *
+ *   return {
+ *     instructions: filePaths.map(file => ({
+ *       type: "copy",
+ *       source: file,
+ *       destination: file,
+ *     })),
+ *   };
+ * };
+ * ```
+ */
 export type InstallFunc = (
   files: string[],
   destinationPath: string,
