@@ -345,3 +345,43 @@ import { posix, win32, forPlatform } from '@vortex/paths';
 posix.join('mods', 'skyrim');   // -> 'mods/skyrim'
 win32.join('mods', 'skyrim');   // -> 'mods\\skyrim'
 ```
+
+## Case-insensitive comparison
+
+Case-insensitive path and filename helpers use `toLowerCase()`.
+
+Known limitations:
+
+- **German sharp-s (ß)**: "naß.esp" does not match "nass.esp" or "naSS.esp"
+
+`toLowerCase()` is the current tradeoff because it is fast.
+German filenames with ß are rare in file names, especially in game modding.
+
+### Benchmarks
+
+**Equals comparison:**
+
+| Approach        | Trimmed Mean  | German `ß` | Turkish `i`/`ı` |
+| --------------- | ------------- | ---------- | --------------- |
+| `toLowerCase()` | 55.37 M ops/s | Fails      | Correct         |
+| `toUpperCase()` | 39.22 M ops/s | Correct    | Fails           |
+| `foldcase`      | 1.16 M ops/s  | Correct    | Correct         |
+
+**Hash operations:**
+
+| Approach        | Trimmed Mean  | German `ß` | Turkish `i`/`ı` |
+| --------------- | ------------- | ---------- | --------------- |
+| `toLowerCase()` | 35.95 M ops/s | Fails      | Correct         |
+| `toUpperCase()` | 30.34 M ops/s | Correct    | Fails           |
+| `foldcase`      | 2.16 M ops/s  | Correct    | Correct         |
+
+**Segments and split:**
+
+| Approach        | Trimmed Mean  | German `ß` | Turkish `i`/`ı` |
+| --------------- | ------------- | ---------- | --------------- |
+| `toLowerCase()` | 13.04 M ops/s | Fails      | Correct         |
+| `toUpperCase()` | 12.21 M ops/s | Correct    | Fails           |
+
+`foldcase` (from `@ar-nelson/foldcase`) is included for reference as an
+implementation that handles both German `ß` and Turkish `i`/`ı` correctly, but
+is ~30x slower than native methods.

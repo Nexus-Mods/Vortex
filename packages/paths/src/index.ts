@@ -34,6 +34,8 @@ export {
   ResolvedPathSchema,
   Extension,
   ExtensionSchema,
+  FileName,
+  FileNameSchema,
   Anchor,
   fnv1a,
 } from "./types";

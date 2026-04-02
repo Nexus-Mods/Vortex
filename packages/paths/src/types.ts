@@ -80,6 +80,30 @@ export const ExtensionSchema = z
   })
   .transform((s) => s.toLowerCase());
 
+/**
+ * Zod schema for FileName validation
+ * - Cannot contain path separators (/ or \)
+ * - Cannot be empty
+ * - Preserves original case (no transform)
+ */
+export const FileNameSchema = z
+  .string()
+  .refine((s) => s.length > 0, {
+    message: "FileName cannot be empty",
+  })
+  .refine((s) => !s.includes("/") && !s.includes("\\"), {
+    message: "FileName cannot contain path separators",
+  });
+
+function throwInvalidType(error: z.ZodError, typeName: string): never {
+  const errors = error.issues?.map((issue) => issue.message).join(", ");
+  throw new Error(`Invalid ${typeName}: ${errors || error.message}`);
+}
+
+function normalizeFileName(fileName: FileName | string): FileName | null {
+  return FileName.is(fileName) ? FileName.unsafe(fileName) : null;
+}
+
 // ============================================================================
 // RelativePath: Sanitized relative paths (input to resolvers)
 // ============================================================================
@@ -112,10 +136,7 @@ export namespace RelativePath {
   export function make(input: string): RelativePath {
     const result = RelativePathSchema.safeParse(input);
     if (!result.success) {
-      const errors =
-        result.error.issues?.map((e) => e.message).join(", ") ||
-        result.error.message;
-      throw new Error(`Invalid RelativePath: ${errors}`);
+      throwInvalidType(result.error, "RelativePath");
     }
     return result.data as RelativePath;
   }
@@ -230,6 +251,175 @@ export namespace RelativePath {
   export function hash(relative: RelativePath): number {
     return fnv1a(relative as string);
   }
+
+  /**
+   * Case-insensitive equality check (OrdinalIgnoreCase)
+   * Uses toLowerCase() for comparison, not locale-aware
+   *
+   * @example
+   * RelativePath.equalsIgnoreCase(
+   *   RelativePath.make('Mods/Skyrim'),
+   *   RelativePath.make('mods/skyrim')
+   * ) // => true
+   *
+   * @remarks
+   * Fails with German sharp-s (ß). See README for details.
+   */
+  export function equalsIgnoreCase(a: RelativePath, b: RelativePath): boolean {
+    return (a as string).toLowerCase() === (b as string).toLowerCase();
+  }
+
+  /**
+   * Case-insensitive locale-aware comparison for sorting
+   * Compares lowercase versions of the paths
+   *
+   * @example
+   * RelativePath.compareIgnoreCase(
+   *   RelativePath.make('mods/skyrim'),
+   *   RelativePath.make('Mods/Oblivion')
+   * ) // => negative (skyrim < Oblivion case-insensitively)
+   *
+   * @remarks
+   * Fails with German sharp-s (ß). See README for details.
+   */
+  export function compareIgnoreCase(a: RelativePath, b: RelativePath): number {
+    return (a as string)
+      .toLowerCase()
+      .localeCompare((b as string).toLowerCase());
+  }
+
+  /**
+   * Case-insensitive FNV-1a hash (unsigned 32-bit)
+   * Normalizes to lowercase before hashing for case-insensitive lookups
+   *
+   * @example
+   * RelativePath.hashIgnoreCase(RelativePath.make('Mods/Skyrim')) ===
+   * RelativePath.hashIgnoreCase(RelativePath.make('mods/skyrim'))
+   * // => true
+   *
+   * @remarks
+   * Fails with German sharp-s (ß). See README for details.
+   */
+  export function hashIgnoreCase(relative: RelativePath): number {
+    return fnv1a((relative as string).toLowerCase());
+  }
+
+  /**
+   * Case-insensitive containment check (not equal). Everything is "in" EMPTY.
+   * Returns false if child equals parent (case-insensitive).
+   *
+   * @example
+   * RelativePath.isInIgnoreCase(
+   *   RelativePath.make('Mods/Skyrim/Data'),
+   *   RelativePath.make('mods/skyrim')
+   * ) // => true
+   *
+   * RelativePath.isInIgnoreCase(
+   *   RelativePath.make('Mods/Skyrim'),
+   *   RelativePath.make('mods/skyrim')
+   * ) // => false (equal paths)
+   *
+   * @remarks
+   * Uses lowercase normalization. Fails with German sharp-s (ß). See README.
+   */
+  export function isInIgnoreCase(
+    child: RelativePath,
+    parent: RelativePath,
+  ): boolean {
+    if (equalsIgnoreCase(child, parent)) return false;
+    const childSegs = segmentsIgnoreCase(child);
+    const parentSegs = segmentsIgnoreCase(parent);
+    if (parentSegs.length === 0) return childSegs.length > 0;
+    if (childSegs.length <= parentSegs.length) return false;
+    return parentSegs.every((seg, i) => seg === childSegs[i]);
+  }
+
+  /**
+   * Check if the basename of a relative path equals a filename (case-sensitive)
+   * Accepts either a FileName branded type or a plain string
+   *
+   * @example
+   * RelativePath.basenameEquals(
+   *   RelativePath.make('mods/skyrim/Data.ESP'),
+   *   'Data.ESP'
+   * ) // => true
+   *
+   * RelativePath.basenameEquals(
+   *   RelativePath.make('mods/skyrim/Data.ESP'),
+   *   'data.esp'
+   * ) // => false
+   *
+   * RelativePath.basenameEquals(
+   *   RelativePath.make('mods/skyrim/Data.ESP'),
+   *   FileName.make('Data.ESP')
+   * ) // => true
+   */
+  export function basenameEquals(
+    relative: RelativePath,
+    fileName: FileName | string,
+  ): boolean {
+    if (relative === EMPTY) {
+      return false;
+    }
+    const base = basename(relative);
+    const target = normalizeFileName(fileName);
+    if (target === null) {
+      return false;
+    }
+    return FileName.equals(FileName.unsafe(base), target);
+  }
+
+  /**
+   * Check if the basename of a relative path equals a filename (case-insensitive)
+   * Accepts either a FileName branded type or a plain string
+   *
+   * @example
+   * RelativePath.basenameEqualsIgnoreCase(
+   *   RelativePath.make('mods/skyrim/Data.ESP'),
+   *   'data.esp'
+   * ) // => true
+   *
+   * RelativePath.basenameEqualsIgnoreCase(
+   *   RelativePath.make('mods/skyrim/Data.ESP'),
+   *   FileName.make('data.esp')
+   * ) // => true
+   *
+   * @remarks
+   * Uses lowercase normalization. Fails with German sharp-s (ß). See README.
+   */
+  export function basenameEqualsIgnoreCase(
+    relative: RelativePath,
+    fileName: FileName | string,
+  ): boolean {
+    if (relative === EMPTY) {
+      return false;
+    }
+    const base = basename(relative);
+    const target = normalizeFileName(fileName);
+    if (target === null) {
+      return false;
+    }
+    return FileName.equalsIgnoreCase(FileName.unsafe(base), target);
+  }
+
+  /**
+   * Return lowercase-normalized path segments for case-insensitive comparison
+   * Returns empty array for EMPTY path
+   *
+   * @example
+   * RelativePath.segmentsIgnoreCase(RelativePath.make('Mods/Skyrim/Data'))
+   * // => ['mods', 'skyrim', 'data']
+   *
+   * RelativePath.segmentsIgnoreCase(RelativePath.EMPTY)
+   * // => []
+   *
+   * @remarks
+   * Fails with German sharp-s (ß). See README for details.
+   */
+  export function segmentsIgnoreCase(relative: RelativePath): string[] {
+    if (relative === EMPTY) return [];
+    return (relative as string).toLowerCase().split("/");
+  }
 }
 
 // ============================================================================
@@ -264,10 +454,7 @@ export namespace ResolvedPath {
   export function make(osPath: string): ResolvedPath {
     const result = ResolvedPathSchema.safeParse(osPath);
     if (!result.success) {
-      const errors =
-        result.error.issues?.map((e) => e.message).join(", ") ||
-        result.error.message;
-      throw new Error(`Invalid ResolvedPath: ${errors}`);
+      throwInvalidType(result.error, "ResolvedPath");
     }
     return result.data as ResolvedPath;
   }
@@ -400,10 +587,7 @@ export namespace Extension {
   export function make(input: string): Extension {
     const result = ExtensionSchema.safeParse(input);
     if (!result.success) {
-      const errors =
-        result.error.issues?.map((e) => e.message).join(", ") ||
-        result.error.message;
-      throw new Error(`Invalid Extension: ${errors}`);
+      throwInvalidType(result.error, "Extension");
     }
     return result.data as Extension;
   }
@@ -538,5 +722,196 @@ export namespace Anchor {
     }
     const description = Symbol.keyFor(value);
     return description !== undefined && description.startsWith(ANCHOR_PREFIX);
+  }
+}
+
+// ============================================================================
+// FileName: Filename only (basename, no path separators)
+// ============================================================================
+
+declare const FILE_NAME_BRAND: unique symbol;
+
+/**
+ * FileName is a branded string type representing a filename (basename only)
+ * - No path separators (/ or \)
+ * - Case-sensitive comparison by default (Ordinal)
+ * - Use equalsIgnoreCase() / hashIgnoreCase() for case-insensitive operations
+ * - Preserves original case in the branded value
+ *
+ * Examples: "data.esp", "config.json", "README.md"
+ *
+ * @remarks
+ * Case-insensitive operations use toLowerCase() normalization.
+ * Fails with German sharp-s (ß). See README for details.
+ */
+export type FileName = string & {
+  readonly [FILE_NAME_BRAND]: typeof FILE_NAME_BRAND;
+};
+
+// Namespace provides static factory methods (e.g. .make(), .equals()) as a companion
+// to the branded type, which is the idiomatic TS pattern for attaching utilities to a type.
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace FileName {
+  /**
+   * Smart constructor with Zod validation
+   * Validates that the input contains no path separators
+   *
+   * @throws Error if validation fails
+   */
+  export function make(input: string): FileName {
+    const result = FileNameSchema.safeParse(input);
+    if (!result.success) {
+      throwInvalidType(result.error, "FileName");
+    }
+    return result.data as FileName;
+  }
+
+
+  /**
+   * Skip validation (use only when input is already validated)
+   * Use with caution - no safety checks performed
+   */
+  export function unsafe(input: string): FileName {
+    return input as FileName;
+  }
+
+  /**
+   * Check if a value is a valid FileName string (no path separators)
+   */
+  export function is(value: string): boolean {
+    return FileNameSchema.safeParse(value).success;
+  }
+
+  /**
+   * Extract filename from a RelativePath
+   *
+   * @example
+   * FileName.fromRelativePath(RelativePath.make('mods/skyrim/data.esp'))
+   * // => FileName.make('data.esp')
+   */
+  export function fromRelativePath(relative: RelativePath): FileName {
+    if (relative === "" || relative === RelativePath.EMPTY) {
+      throw new Error("Cannot extract FileName from empty RelativePath");
+    }
+    const base = posix.basename(relative as string);
+    return unsafe(base);
+  }
+
+  /**
+   * Extract filename from a ResolvedPath
+   *
+   * @example
+   * FileName.fromResolvedPath(ResolvedPath.make('C:\\Vortex\\mods\\data.esp'))
+   * // => FileName.make('data.esp')
+   */
+  export function fromResolvedPath(resolved: ResolvedPath): FileName {
+    const pathMod = detectPathModule(resolved as string);
+    const base = pathMod.basename(resolved as string);
+    if (base === "") {
+      throw new Error(
+        `fromResolvedPath: cannot convert root-only path to FileName: ${resolved}`,
+      );
+    }
+    return unsafe(base);
+  }
+
+  /**
+   * Case-sensitive equality check (Ordinal)
+   * Uses strict equality (===)
+   *
+   * @example
+   * FileName.equals(FileName.make('Data.ESP'), FileName.make('Data.ESP')) // => true
+   * FileName.equals(FileName.make('Data.ESP'), FileName.make('data.esp')) // => false
+   */
+  export function equals(a: FileName, b: FileName): boolean {
+    return a === b;
+  }
+
+  /**
+   * Case-insensitive equality check (OrdinalIgnoreCase)
+   * Uses toLowerCase() for comparison, not locale-aware
+   *
+   * @example
+   * FileName.equalsIgnoreCase(FileName.make('Data.ESP'), FileName.make('data.esp')) // => true
+   *
+   * @remarks
+   * Fails with German sharp-s (ß). See README for details.
+   */
+  export function equalsIgnoreCase(a: FileName, b: FileName): boolean {
+    return (a as string).toLowerCase() === (b as string).toLowerCase();
+  }
+
+  /**
+   * Case-sensitive hash (Ordinal)
+   * FNV-1a hashing without normalization
+   *
+   * @example
+   * FileName.hash(FileName.make('Data.ESP')) // hash of "Data.ESP"
+   */
+  export function hash(fileName: FileName): number {
+    return fnv1a(fileName as string);
+  }
+
+  /**
+   * Case-insensitive hash (OrdinalIgnoreCase)
+   * Normalizes to lowercase before FNV-1a hashing
+   *
+   * @example
+   * FileName.hashIgnoreCase(FileName.make('Data.ESP')) === FileName.hashIgnoreCase(FileName.make('data.esp'))
+   * // => true
+   *
+   * @remarks
+   * Fails with German sharp-s (ß). See README for details.
+   */
+  export function hashIgnoreCase(fileName: FileName): number {
+    return fnv1a((fileName as string).toLowerCase());
+  }
+
+  /**
+   * Extract extension from filename
+   * Returns lowercase Extension type, or undefined if no extension
+   *
+   * Edge case: files starting with dot (e.g., ".gitignore") have no extension
+   *
+   * @example
+   * FileName.extension(FileName.make('data.esp')) // => Extension.make('.esp')
+   * FileName.extension(FileName.make('.gitignore')) // => undefined
+   */
+  export function extension(fileName: FileName): Extension | undefined {
+    const name = fileName as string;
+    const lastDotIndex = name.lastIndexOf(".");
+    // No dot, or starts with dot (hidden file) = no extension
+    if (lastDotIndex <= 0) {
+      return undefined;
+    }
+    const ext = name.slice(lastDotIndex);
+    return Extension.make(ext);
+  }
+
+  /**
+   * Get stem (filename without extension)
+   * Preserves original case
+   *
+   * Edge case: files starting with dot return full name as stem
+   *
+   * @example
+   * FileName.stem(FileName.make('data.esp')) // => 'data'
+   * FileName.stem(FileName.make('.gitignore')) // => '.gitignore'
+   */
+  export function stem(fileName: FileName): string {
+    const name = fileName as string;
+    const lastDotIndex = name.lastIndexOf(".");
+    // No dot, or starts with dot = full name is stem
+    if (lastDotIndex <= 0) {
+      return name;
+    }
+    return name.slice(0, lastDotIndex);
+  }
+
+  /**
+   * Convert to string for debugging
+   */
+  export function toString(fileName: FileName): string {
+    return fileName as string;
   }
 }
