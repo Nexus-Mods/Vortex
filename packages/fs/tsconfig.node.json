@@ -1,9 +1,9 @@
 {
   "$schema": "https://www.schemastore.org/tsconfig.json",
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../tsconfig.strict.json",
   "include": [
-    "src/**/*",
-    "../../typings.custom/electron.d.ts",
+    "./src/node",
+    "./src/browser",
     "../../typings.custom/promise.d.ts",
   ],
   "compilerOptions": {
@@ -12,7 +12,10 @@
     "target": "esnext",
     "module": "esnext",
     "moduleResolution": "bundler",
-    "customConditions": ["node"],
+    "lib": ["ESNext"],
     "types": ["node"],
+    "allowJs": false,
+    "isolatedDeclarations": true,
+    "noUncheckedSideEffectImports": true,
   },
 }

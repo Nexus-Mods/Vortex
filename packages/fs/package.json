@@ -1,0 +1,34 @@
+{
+  "$schema": "https://www.schemastore.org/package.json",
+  "name": "@vortex/fs",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm tsdown && pnpm api-extractor run -l -c api-extractor.browser.json && pnpm api-extractor run -l -c api-extractor.node.json",
+    "dist": "pnpm run build",
+    "typecheck": "pnpm tsc -p ./tsconfig.browser.json && pnpm tsc -p ./tsconfig.node.json",
+    "lint": "pnpm eslint --concurrency auto .",
+    "lint:quiet": "pnpm eslint --concurrency auto --quiet ."
+  },
+  "exports": {
+    ".": {
+      "node": {
+        "types": "./dist/node/index.d.mts",
+        "import": "./dist/node/index.mjs",
+        "require": "./dist/node/index.cjs"
+      },
+      "browser": {
+        "types": "./dist/browser/index.d.ts",
+        "import": "./dist/browser/index.js"
+      },
+      "default": {
+        "types": "./dist/browser/index.d.ts",
+        "import": "./dist/browser/index.js"
+      }
+    }
+  },
+  "devDependencies": {
+    "@types/node": "catalog:"
+  }
+}
