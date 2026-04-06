@@ -1,33 +1,97 @@
 import type { Pattern } from "./matcher";
 import type { QualifiedPath, ResolvedPath } from "./paths";
 
-/** @public */
+/**
+ * Filesystem operations.
+ *
+ * @public */
 export interface FileSystem {
+  /**
+   * Copies a file or a directory.
+   *
+   * @param source - Source path to copy.
+   * @param target - Target path to copy to.
+   * @param options - Whether to overwrite the target path if it already exists. Otherwise throws.
+   *
+   * @throws {@link FileSystemError}
+   * */
   copy(
     source: QualifiedPath,
     target: QualifiedPath,
     options?: { overwrite: boolean },
   ): Promise<void>;
 
+  /**
+   * Moves a file or directory. The source path will be copied and
+   * removed if the source and target are on different devices.
+   *
+   * @param source - Source path to move.
+   * @param target - Target path to move to.
+   * @param options - Whether to overwrite the target path if it already exists. Otherwise throws.
+   *
+   * @throws {@link FileSystemError}
+   * */
   move(
     source: QualifiedPath,
     target: QualifiedPath,
     options?: { overwrite: boolean },
   ): Promise<void>;
 
+  /** Reads data from a file.
+   *
+   * @throws {@link FileSystemError}
+   * */
   readFile(path: QualifiedPath): Promise<Uint8Array>;
+
+  /**
+   * Writes data from a file.
+   *
+   * @throws {@link FileSystemError}
+   * */
   writeFile(path: QualifiedPath, contents: Uint8Array): Promise<void>;
 
+  /**
+   * Creates a directory and all parent directories.
+   *
+   * @throws {@link FileSystemError}
+   * */
   createDirectory(path: QualifiedPath): Promise<void>;
 
+  /**
+   * Deletes a file or an empty directory.
+   *
+   * @throws {@link FileSystemError}
+   * */
   delete(path: QualifiedPath): Promise<void>;
+
+  /**
+   * Deletes a file or a directory recursively.
+   *
+   * @throws {@link FileSystemError}
+   * */
   deleteRecursive(path: ResolvedPath): Promise<void>;
 
+  /**
+   * Returns the status of the entry.
+   *
+   * @param path - Path to query.
+   * @param options - Whether to parse sym links explicilty or silently follow them.
+   *
+   * @throws {@link FileSystemError}
+   * */
   stat(
     path: QualifiedPath,
     options?: { parseSymLink: boolean },
   ): Promise<StatResult>;
 
+  /**
+   * Returns an async iterator to enumerate the directory.
+   *
+   * @param path - Directory to enumerate.
+   * @param options - Configures the enumeration.
+   *
+   * @throws {@link FileSystemError}
+   * */
   enumerateDirectory(
     path: QualifiedPath,
     options?: {
@@ -39,6 +103,14 @@ export interface FileSystem {
     },
   ): Promise<AsyncIterator<ResolvedPath>>;
 
+  /**
+   * Returns an async iterator to enumerate the directory.
+   *
+   * @param path - Directory to enumerate.
+   * @param options - Configures the enumeration.
+   *
+   * @throws {@link FileSystemError}
+   * */
   enumerateDirectory(
     path: QualifiedPath,
     options: {
@@ -50,6 +122,14 @@ export interface FileSystem {
     },
   ): Promise<AsyncIterator<[QualifiedPath, Status]>>;
 
+  /**
+   * Returns an async iterator to enumerate the directory.
+   *
+   * @param path - Directory to enumerate.
+   * @param options - Configures the enumeration.
+   *
+   * @throws {@link FileSystemError}
+   * */
   enumerateDirectory(
     path: QualifiedPath,
     options?: {
@@ -62,19 +142,37 @@ export interface FileSystem {
   ): Promise<AsyncIterator<QualifiedPath | [QualifiedPath, Status]>>;
 }
 
-/** @public */
+/**
+ * Filesystem APIs extended with Web-safe methods and types.
+ * @public */
 export interface WebFileSystem extends FileSystem {
+  /**
+   * Creates a readable stream.
+   *
+   * @throws {@link FileSystemError}
+   * */
   createStream(
     path: QualifiedPath,
     mode: "r",
     options?: { start?: number; end?: number },
   ): Promise<ReadableStream>;
+
+  /**
+   * Creates a writable stream.
+   *
+   * @throws {@link FileSystemError}
+   * */
   createStream(
     path: QualifiedPath,
     mode: "w",
     options?: { start?: number },
   ): Promise<WritableStream>;
 
+  /**
+   * Creates a stream.
+   *
+   * @throws {@link FileSystemError}
+   * */
   createStream(
     path: QualifiedPath,
     mode: string,
@@ -175,9 +273,16 @@ export type Status = (FileStatus | DirectoryStatus) & SymLinkStatus;
 export type StatusTime = {
   // TODO: use Temporal API
 
+  /** Time in nanoseconds when entry data was last accessed. */
   readonly accessTime: bigint;
+
+  /** Time in nanoseconds when entry data was last modified. */
   readonly modifiedTime: bigint;
+
+  /** Time in nanoseconds when entry status was last changed. */
   readonly changeTime: bigint;
+
+  /** Time in nanoseconds when entry was created. */
   readonly creationTime: bigint;
 };
 
@@ -223,6 +328,13 @@ export type FileSystemErrorCode =
 /** @public */
 export class FileSystemError extends Error {
   readonly code: FileSystemErrorCode;
+
+  /**
+   * Whether the root error cause is transient. Example: too many open files.
+   *
+   * This property can be used for retry logic but it make assumptions about
+   * the retryablility of the operation that caused the error.
+   * */
   readonly isTransient: boolean;
 
   /**

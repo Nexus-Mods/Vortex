@@ -32,6 +32,7 @@
     }
   },
   "devDependencies": {
-    "@types/node": "catalog:"
+    "@types/node": "catalog:",
+    "vite-plugin-doctest": "catalog:"
   }
 }

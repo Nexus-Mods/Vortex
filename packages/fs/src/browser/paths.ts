@@ -4,21 +4,39 @@ import type { WindowsPathProvider } from "./paths.windows";
 /** @public */
 export type PathComponent = string;
 
-/** @public */
+/**
+ * Extension of a path without the period.
+ *
+ * @example `txt`
+ * @public */
 export type Extension = string;
 
-/** @public */
+/**
+ * Opaque platform native path.
+ *
+ * @public */
 export type ResolvedPath = string;
 
-/** @public */
+/**
+ * Resolves {@link QualifiedPath} to {@link ResolvedPath}.
+ *
+ * @public */
 export type PathResolver = {
+  /** Unique scheme to map {@link QualifiedPath} to this instance. Without the `://` at the end. */
   readonly scheme: string;
+
+  /** Parent resolver for chaining. */
   readonly parent: PathResolver | null;
 
+  /** Resolves {@link QualifiedPath} to {@link ResolvedPath}.
+   * @throws PathResolverError on failure.
+   * */
   resolve(path: QualifiedPath): Promise<ResolvedPath>;
 };
 
-/** @public */
+/**
+ * Thrown by {@link PathResolver} instances when failing to resolve a {@link QualifiedPath}.
+ * @public */
 export class PathResolverError extends Error {
   constructor(message: string, cause?: unknown) {
     super(message, { cause });
@@ -26,12 +44,21 @@ export class PathResolverError extends Error {
   }
 }
 
-/** @public */
+/**
+ * Creates {@link QualifiedPath} instances from a base.
+ *
+ * @public */
 export type PathProvider<TBase extends string> = PathResolver & {
+  /**
+   * Creates {@link QualifiedPath} instances from a base.
+   * @throws PathProviderError on invalid inputs.
+   * */
   fromBase(base: TBase): Promise<QualifiedPath>;
 };
 
-/** @public */
+/**
+ * Thrown by {@link PathProvider} instances when failing to create a {@link QualifiedPath}.
+ * @public */
 export class PathProviderError extends Error {
   constructor(message: string, cause?: unknown) {
     super(message, { cause });
@@ -39,23 +66,70 @@ export class PathProviderError extends Error {
   }
 }
 
-/** @public */
+/**
+ * Bases supported by all OS path providers.
+ * @public */
 export const OSPath = {
   home: "home",
   temp: "temp",
 } as const;
 
-/** @public */
+/**
+ * Bases supported by all OS path providers.
+ * @public */
 export type OSPathBase = (typeof OSPath)[keyof typeof OSPath];
 
-/** @public */
+/**
+ * Path providers for platform native paths.
+ * @public */
 export type OSPathProvider = LinuxPathProvider | WindowsPathProvider;
 
-/** @public */
+/**
+ * Represents a normalized fully qualified path.
+ * @public */
 export class QualifiedPath {
+  /** Raw string of the entire path.
+   *
+   * @example
+   *
+   * ```ts @import.meta.vitest
+   * const path = QualifiedPath.parse("foo://bar//baz//file.txt");
+   * assert(path.value === "foo://bar//baz//file.txt");
+   * ```
+   * */
   readonly value: string;
+
+  /** Scheme part without the `://`
+   *
+   * @example
+   *
+   * ```ts @import.meta.vitest
+   * const path = QualifiedPath.parse("foo://bar//baz//file.txt");
+   * assert(path.scheme === "foo");
+   * ```
+   * */
   readonly scheme: string;
+
+  /** Data part.
+   *
+   * @example
+   *
+   * ```ts @import.meta.vitest
+   * const path = QualifiedPath.parse("foo://bar//baz//file.txt");
+   * assert(path.data === "bar//baz");
+   * ```
+   * */
   readonly data: string;
+
+  /** Path part.
+   *
+   * @example
+   *
+   * ```ts @import.meta.vitest
+   * const path = QualifiedPath.parse("foo://bar//baz//user/file.txt");
+   * assert(path.path === "user/file.txt");
+   * ```
+   * */
   readonly path: string;
 
   private constructor(
@@ -87,6 +161,16 @@ export class QualifiedPath {
     return new QualifiedPath(value, scheme, data, path);
   }
 
+  /**
+   * Returns the slice after the last period.
+   *
+   * @example
+   *
+   * ```ts @import.meta.vitest
+   * const path = QualifiedPath.parse("foo://bar.baz.txt");
+   * assert(path.extension === "txt");
+   * ```
+   * */
   get extension(): Extension {
     const slash = this.path.lastIndexOf("/");
     const filename = this.path.slice(slash + 1);
@@ -94,16 +178,49 @@ export class QualifiedPath {
     return dot === -1 ? "" : filename.slice(dot + 1);
   }
 
+  /**
+   * Returns the slice of the last path component.
+   *
+   * @example
+   *
+   * ```ts @import.meta.vitest
+   * const path = QualifiedPath.parse("foo://bar//baz.txt");
+   * assert(path.basename === "baz.txt");
+   * ```
+   * */
   get basename(): string {
     const slash = this.path.lastIndexOf("/");
     return slash === -1 ? this.path : this.path.slice(slash + 1);
   }
 
+  /**
+   * Returns the slice of every component except the last.
+   *
+   * @example
+   *
+   * ```ts @import.meta.vitest
+   * const path = QualifiedPath.parse("foo://bar//a/b/c.txt");
+   * assert(path.dirname === "a/b");
+   * ```
+   * */
   get dirname(): string {
     const slash = this.path.lastIndexOf("/");
     return slash === -1 ? "" : this.path.slice(0, slash);
   }
 
+  /**
+   * Creates a new path without the last component. Returns the same instance if there is no path.
+   *
+   * @example
+   *
+   * ```ts @import.meta.vitest
+   * const path = QualifiedPath.parse("foo://bar//a/b/c.txt");
+   * assert(path.parent().value === "foo://bar//a/b");
+   *
+   * const topPath = QualifiedPath.parse("foo://");
+   * assert(topPath.parent().value === topPath.value);
+   * ```
+   * */
   parent(): QualifiedPath {
     if (this.path === "") return this;
 

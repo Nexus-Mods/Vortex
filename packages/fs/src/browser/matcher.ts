@@ -3,7 +3,24 @@ import type { ResolvedPath } from "./paths";
 /** @public */
 export type Pattern = string;
 
-/** @public */
+/**
+ * Returns whether the resolved path matches the pattern.
+ *
+ * @example
+ *
+ * ```ts @import.meta.vitest
+ * // matches everything
+ * assert(matches("/foo/bar/baz", "*"));
+ *
+ * // matches extensions
+ * assert(matches("/foo/bar/baz.txt", "*.txt"));
+ *
+ * // matches components
+ * const star = "*";
+ * assert(matches("/foo/bar/baz.txt", star + "/bar/*"));
+ * ```
+ *
+ * @public */
 export function matches(input: ResolvedPath, pattern: Pattern): boolean {
   if (pattern === "*") return true;
 
