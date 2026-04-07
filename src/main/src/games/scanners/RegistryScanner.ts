@@ -24,12 +24,12 @@ export class RegistryScanner implements IStoreScanner {
    */
   public lookup(query: string): Promise<IStoreGameEntry | undefined> {
     if (process.platform !== "win32") {
-      return undefined;
+      return Promise.resolve(undefined);
     }
 
     const parts = query.split(":", 3);
     if (parts.length !== 3) {
-      return undefined;
+      return Promise.resolve(undefined);
     }
 
     const validHives = [
@@ -40,7 +40,7 @@ export class RegistryScanner implements IStoreScanner {
       "HKEY_USERS",
     ];
     if (!validHives.includes(parts[0])) {
-      return undefined;
+      return Promise.resolve(undefined);
     }
 
     try {
@@ -50,16 +50,16 @@ export class RegistryScanner implements IStoreScanner {
         parts[2],
       );
       if (!result || result.type !== "REG_SZ") {
-        return undefined;
+        return Promise.resolve(undefined);
       }
 
-      return {
+      return Promise.resolve({
         storeId: query,
         installPath: result.value as string,
         name: path.basename(result.value as string),
-      };
+      });
     } catch {
-      return undefined;
+      return Promise.resolve(undefined);
     }
   }
 }
