@@ -771,22 +771,41 @@ class Application {
   ): Promise<void> {
     log("info", "importing state backup", { backupPath, replace });
 
-    const backupData = JSON.parse(
-      await readFile(backupPath, "utf-8"),
-    ) as Record<string, unknown>;
-
-    for (const [hive, hiveData] of Object.entries(backupData)) {
-      const sub = new SubPersistor(persistor, hive);
-
-      if (replace) {
-        const existingKeys = await sub.getAllKeys();
-        await Promise.all(existingKeys.map((key) => sub.removeItem(key)));
-      }
-
-      const leaves = this.flattenState(hiveData, []);
-      await Promise.all(
-        leaves.map(({ key, value }) => sub.setItem(key, JSON.stringify(value))),
+    let backupData: Record<string, unknown>;
+    try {
+      backupData = JSON.parse(
+        await readFile(backupPath, "utf-8"),
+      ) as Record<string, unknown>;
+    } catch (err) {
+      log("error", "failed to parse state backup", { backupPath, error: err });
+      throw new DataInvalid(
+        `The state backup file is invalid: ${getErrorMessageOrDefault(err)}`,
       );
+    }
+
+    // Wrap all operations in a single transaction to avoid concurrent
+    // BEGIN TRANSACTION calls from individual setItem/removeItem calls.
+    await persistor.beginTransaction();
+    try {
+      for (const [hive, hiveData] of Object.entries(backupData)) {
+        const sub = new SubPersistor(persistor, hive);
+
+        if (replace) {
+          const existingKeys = await sub.getAllKeys();
+          for (const key of existingKeys) {
+            await sub.removeItem(key);
+          }
+        }
+
+        const leaves = this.flattenState(hiveData, []);
+        for (const { key, value } of leaves) {
+          await sub.setItem(key, JSON.stringify(value));
+        }
+      }
+      await persistor.commitTransaction();
+    } catch (err) {
+      await persistor.rollbackTransaction();
+      throw err;
     }
 
     log("info", "state backup imported");
