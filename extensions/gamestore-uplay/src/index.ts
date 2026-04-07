@@ -178,7 +178,7 @@ function main(context: types.IExtensionContext) {
     process.platform === "win32" ? new UPlayLauncher() : undefined;
 
   if (instance !== undefined) {
-    context.registerGameStore(instance);
+    (context as any).registerGameStore?.(instance);
   }
 
   return true;

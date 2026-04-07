@@ -499,7 +499,7 @@ function main(context: types.IExtensionContext) {
     process.platform === "win32" ? new XboxLauncher(context.api) : undefined;
 
   if (instance !== undefined) {
-    context.registerGameStore(instance);
+    (context as any).registerGameStore?.(instance);
   }
 
   return true;
