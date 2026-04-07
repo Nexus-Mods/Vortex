@@ -1197,7 +1197,7 @@ function extendAPI(api: IExtensionApi, nexus: NexusT): INexusAPIExtension {
     nexusGetTrendingMods: eh.onGetTrendingMods(api, nexus),
     nexusEndorseMod: eh.onEndorseMod(api, nexus),
     nexusSubmitFeedback: eh.onSubmitFeedback(nexus),
-    nexusSubmitCollection: eh.onSubmitCollection(nexus),
+    nexusSubmitCollection: eh.onSubmitCollection(api, nexus),
     nexusModUpdate: eh.onModUpdate(api, nexus),
     nexusOpenCollectionPage: eh.onOpenCollectionPage(api),
     nexusOpenModPage: eh.onOpenModPage(api),
@@ -1376,7 +1376,7 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
   api.events.on("refresh-user-info", eh.onRefreshUserInfo(nexus, api));
   api.events.on("endorse-mod", eh.onEndorseMod(api, nexus));
   api.events.on("submit-feedback", eh.onSubmitFeedback(nexus));
-  api.events.on("submit-collection", eh.onSubmitCollection(nexus));
+  api.events.on("submit-collection", eh.onSubmitCollection(api, nexus));
   api.events.on("mods-update", eh.onModsUpdate(api, nexus));
   api.events.on("mod-update", eh.onModUpdate(api, nexus));
   api.events.on("open-collection-page", eh.onOpenCollectionPage(api));

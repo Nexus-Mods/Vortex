@@ -49,6 +49,7 @@ import type { IModFileContentSearchFilter } from '@nexusmods/nexus-api';
 import type { IModInfo } from 'modmeta-db';
 import type { IModInfo as IModInfo_2 } from '@nexusmods/nexus-api';
 import type { IModRequirements } from '@nexusmods/nexus-api';
+import type { IncomingHttpHeaders } from 'http';
 import type { IncomingMessage } from 'http';
 import type { IPreference } from '@nexusmods/nexus-api';
 import type { IPreferenceQuery } from '@nexusmods/nexus-api';
@@ -3509,6 +3510,9 @@ interface ISettingsInterface {
         order?: {
             [gameId: string]: string[];
         };
+        pinned?: {
+            [gameId: string]: string[];
+        };
     };
     // (undocumented)
     usage: {
@@ -3653,6 +3657,9 @@ interface IState {
         deployment: {
             needToDeploy: {
                 [gameId: string]: boolean;
+            };
+            deploymentCounter: {
+                [gameId: string]: number;
             };
         };
         transactions: IStateTransactions;
@@ -4046,6 +4053,16 @@ interface IUnavailableReason {
     fixCallback?: (api: IExtensionApi) => PromiseLike<void>;
     order?: number;
     solution?: (t: TFunction) => string;
+}
+
+// @public (undocumented)
+interface IUploadResult {
+    // (undocumented)
+    body: Buffer;
+    // (undocumented)
+    headers: IncomingHttpHeaders;
+    // (undocumented)
+    statusCode: number;
 }
 
 // @public
@@ -6014,6 +6031,9 @@ type UpdateType = "drag-n-drop" | "props-update" | "refresh";
 // @public (undocumented)
 function upload(targetUrl: string, dataStream: Readable, dataSize: number): Promise<Buffer>;
 
+// @public (undocumented)
+function uploadWithHeaders(targetUrl: string, dataStream: Readable, dataSize: number, extraHeaders?: Record<string, string>): Promise<IUploadResult>;
+
 // Warning: (ae-forgotten-export) The symbol "IUsageProps" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
@@ -6187,8 +6207,10 @@ declare namespace util {
         jsonRequest,
         request,
         upload,
+        uploadWithHeaders,
         IRequestOptions,
-        Method
+        Method,
+        IUploadResult
     }
 }
 export { util }
@@ -6293,10 +6315,10 @@ export class ZoomableImage extends React_2.Component<IZoomableImageProps, {
 //
 // lib/extensions/mod_management/selectors.d.ts:59:5 - (ae-forgotten-export) The symbol "INeedToDeployMap" needs to be exported by the entry point api.d.ts
 // lib/types/IDialog.d.ts:84:9 - (ae-forgotten-export) The symbol "IBBCodeContext" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:351:9 - (ae-forgotten-export) The symbol "IHistoryState" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:353:9 - (ae-forgotten-export) The symbol "IHealthCheckSessionState" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:382:9 - (ae-forgotten-export) The symbol "IHistoryPersistent" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:383:9 - (ae-forgotten-export) The symbol "IHealthCheckPersistentState" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:354:9 - (ae-forgotten-export) The symbol "IHistoryState" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:356:9 - (ae-forgotten-export) The symbol "IHealthCheckSessionState" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:388:9 - (ae-forgotten-export) The symbol "IHistoryPersistent" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:389:9 - (ae-forgotten-export) The symbol "IHealthCheckPersistentState" needs to be exported by the entry point api.d.ts
 // lib/views/MainPage.d.ts:12:5 - (ae-forgotten-export) The symbol "MainPageBody" needs to be exported by the entry point api.d.ts
 // lib/views/MainPage.d.ts:13:5 - (ae-forgotten-export) The symbol "MainPageHeader" needs to be exported by the entry point api.d.ts
 

@@ -11,6 +11,11 @@ export const NEXUS_BASE_URL =
   `https://${NEXUS_FLAMEWORK_SUBDOMAIN}.${NEXUS_DOMAIN}`;
 export const NEXUS_GAMES_URL =
   process.env["NEXUS_GAMES_URL"] || `https://${NEXUS_DOMAIN}/games`;
+export const NEXUS_V3_BASE_URL =
+  process.env["NEXUS_V3_BASE_URL"] ||
+  `https://${NEXUS_API_SUBDOMAIN}.${NEXUS_DOMAIN}/v3`;
+export const MULTIPART_THRESHOLD = 100 * 1024 * 1024; // 100 MiB
+
 export const NEXUS_PROTOCOL = "https:";
 export const PREMIUM_PATH = ["account", "billing", "premium"];
 export const FALLBACK_AVATAR = "assets/images/noavatar.png";

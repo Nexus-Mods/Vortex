@@ -14,6 +14,7 @@ import * as fs from "../../util/fs";
 import { log } from "../../util/log";
 import { calcDuration, showError } from "../../util/message";
 import { upload } from "../../util/network";
+import { submitCollectionV3 } from "./util_v3/submitCollectionV3";
 import opn from "../../util/opn";
 import {
   activeGameId,
@@ -1335,58 +1336,21 @@ export function onSubmitFeedback(nexus: Nexus) {
   };
 }
 
-function sendCollection(
-  nexus: Nexus,
-  collectionInfo: ICollectionManifest,
-  collectionId: number,
-  uuid: string,
-) {
-  if (collectionId === undefined) {
-    return nexus.createCollection(
-      {
-        adultContent: false,
-        collectionManifest: collectionInfo,
-        collectionSchemaId: 1,
-      },
-      uuid,
-    );
-  } else {
-    return nexus
-      .editCollection(collectionId as any, collectionInfo.info.name)
-      .then(() =>
-        nexus.createOrUpdateRevision(
-          {
-            adultContent: false,
-            collectionManifest: collectionInfo,
-            collectionSchemaId: 1,
-          },
-          uuid,
-          collectionId,
-        ),
-      );
-  }
-}
-
-export function onSubmitCollection(nexus: Nexus) {
+export function onSubmitCollection(api: IExtensionApi, nexus: Nexus) {
   return (
     collectionInfo: ICollectionManifest,
     assetFilePath: string,
     collectionId: number,
     callback: (err: Error, response?: any) => void,
   ) => {
-    nexus
-      .getRevisionUploadUrl()
-      .then(({ url, uuid }) => {
-        return fs
-          .statAsync(assetFilePath)
-          .then((stat) =>
-            upload(url, fs.createReadStream(assetFilePath), stat.size),
-          )
-          .then(() => uuid);
-      })
-      .then((uuid: string) =>
-        sendCollection(nexus, collectionInfo, collectionId, uuid),
-      )
+    const state = api.getState();
+    submitCollectionV3(
+      state,
+      nexus,
+      collectionInfo,
+      assetFilePath,
+      collectionId || undefined,
+    )
       .then((response) => callback(null, response))
       .catch((err) => callback(unknownToError(err)));
   };
