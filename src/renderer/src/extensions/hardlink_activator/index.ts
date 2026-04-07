@@ -1,9 +1,14 @@
 import type { TFunction } from "i18next";
 
-import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import {
+  getErrorCode,
+  getErrorMessageOrDefault,
+  unknownToError,
+} from "@vortex/shared";
 import PromiseBB from "bluebird";
 import * as path from "path";
 import turbowalk from "turbowalk";
+import type { IEntry } from "turbowalk";
 import * as util from "util";
 import * as winapi from "winapi-bindings";
 
@@ -12,7 +17,7 @@ import type {
   IExtensionContext,
 } from "../../types/IExtensionContext";
 import type { IGame } from "../../types/IGame";
-import type { IState } from '../../types/IState';
+import type { IState } from "../../types/IState";
 import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
 import type {
   IDeployedFile,
@@ -26,6 +31,26 @@ import * as fs from "../../util/fs";
 import { installPathForGame } from "../../util/selectors";
 import { getGame } from "../gamemode_management/util/getGame";
 import LinkingDeployment from "../mod_management/LinkingDeployment";
+
+/**
+ * On Linux, turbowalk's JS fallback does not provide linkCount or idStr.
+ * Enrich each entry with lstat data so inode-based purge works correctly.
+ */
+async function enrichLinuxEntries(entries: IEntry[]): Promise<void> {
+  if (process.platform !== "linux") return;
+  await Promise.all(
+    entries.map(async (entry) => {
+      if (entry.isDirectory) return;
+      try {
+        const stat = await fs.lstatAsync(entry.filePath);
+        entry.linkCount = stat.nlink;
+        entry.idStr = String(stat.ino);
+      } catch {
+        // File may have been removed between walk and stat -- skip.
+      }
+    }),
+  );
+}
 
 export class FileFound extends Error {
   constructor(name: string) {
@@ -253,12 +278,13 @@ class DeploymentMethod extends LinkingDeployment {
       this.mInstallationFiles = new Set<string>();
       installEntryProm = turbowalk(
         installationPath,
-        (entries) => {
+        async (entries) => {
           if (this.mInstallationFiles === undefined) {
             // don't know when this would be necessary but apparently
             // it is, see https://github.com/Nexus-Mods/Vortex/issues/3684
             return;
           }
+          await enrichLinuxEntries(entries);
           entries.forEach((entry) => {
             if (entry.linkCount > 1 && entry.idStr !== undefined) {
               this.mInstallationFiles.add(entry.idStr);
@@ -291,8 +317,9 @@ class DeploymentMethod extends LinkingDeployment {
       return turbowalk(
         dataPath,
         (entries) => {
-          queue = queue.then(() =>
-            PromiseBB.map(entries, (entry) => {
+          queue = queue.then(async () => {
+            await enrichLinuxEntries(entries);
+            return PromiseBB.map(entries, (entry) => {
               if (
                 entry.linkCount > 1 &&
                 entry.idStr !== undefined &&
@@ -310,8 +337,8 @@ class DeploymentMethod extends LinkingDeployment {
               } else {
                 return PromiseBB.resolve();
               }
-            }).then(() => undefined),
-          );
+            }).then(() => undefined);
+          });
         },
         { details: true, skipHidden: false },
       ).then(() => queue);
