@@ -7,7 +7,7 @@
  * @deprecated Use `util.GameStoreHelper` directly instead.
  */
 
-import { IGameStoreEntry } from "../types/IGameStoreEntry";
+import type { IGameStoreEntry } from "../types/IGameStoreEntry";
 import GameStoreHelper from "./GameStoreHelper";
 import steamInstance, { GameNotFound } from "./Steam";
 
