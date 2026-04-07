@@ -26,7 +26,7 @@
     "package": "pnpm run dist:all && pnpm -F @vortex/main run package",
     "package:nosign": "pnpm run dist:all && pnpm -F @vortex/main run package:nosign",
     "package:local": "pnpm -F @vortex/main run prepare:win && pnpm run package:nosign",
-    "typecheck": "pnpm -F @vortex/shared run build && pnpm -F @vortex/paths run build && pnpm -F @vortex/adaptor-api run build && pnpm --filter \"@vortex/*\" -r run typecheck",
+    "typecheck": "pnpm -F @vortex/shared run build && pnpm -F @vortex/paths run build && pnpm --filter \"@vortex/*\" -r run typecheck",
     "typecheck:extensions": "pnpm --filter \"./extensions/**\" run typecheck",
     "lint": "pnpm -r run lint",
     "lint:quiet": "pnpm -r run lint:quiet",

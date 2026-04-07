@@ -18,7 +18,6 @@
   },
   "dependencies": {
     "@vortex/adaptor-api": "workspace:*",
-    "@vortex/adaptor-host": "workspace:*",
     "@electron/remote": "catalog:",
     "@headlessui/react": "catalog:",
     "@mdi/js": "catalog:",
@@ -138,7 +137,6 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@vortex/adaptor-ping-test": "workspace:*",
     "@types/bbcode-to-react": "catalog:",
     "@types/big.js": "catalog:",
     "@types/content-disposition": "catalog:",

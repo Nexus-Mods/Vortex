@@ -3792,28 +3792,6 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 22.19.15
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
-      vitest:
-        specifier: 'catalog:'
-        version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.19.15)(@vitest/ui@4.1.0)(happy-dom@20.8.8)(jsdom@20.0.3)(vite@8.0.3)
-
-  packages/adaptor-host:
-    dependencies:
-      '@vortex/adaptor-api':
-        specifier: workspace:*
-        version: link:../adaptor-api
-    devDependencies:
-      '@types/node':
-        specifier: 'catalog:'
-        version: 22.19.15
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
-      vitest:
-        specifier: 'catalog:'
-        version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.19.15)(@vitest/ui@4.1.0)(happy-dom@20.8.8)(jsdom@20.0.3)(vite@8.0.3)
 
   packages/adaptors/ping-test:
     dependencies:
@@ -3824,15 +3802,6 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 22.19.15
-      '@vortex/adaptor-host':
-        specifier: workspace:*
-        version: link:../../adaptor-host
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
-      vitest:
-        specifier: 'catalog:'
-        version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.19.15)(@vitest/ui@4.1.0)(happy-dom@20.8.8)(jsdom@20.0.3)(vite@8.0.3)
 
   packages/e2e:
     devDependencies:
@@ -4031,9 +4000,6 @@ importers:
       '@vortex/adaptor-api':
         specifier: workspace:*
         version: link:../../packages/adaptor-api
-      '@vortex/adaptor-host':
-        specifier: workspace:*
-        version: link:../../packages/adaptor-host
       bbcode-to-react:
         specifier: 'catalog:'
         version: https://codeload.github.com/TanninOne/bbcode-to-react/tar.gz/c67356006470e5066ea447e04a3968dca367339d(react@16.14.0)
@@ -4431,9 +4397,6 @@ importers:
       '@types/xml2js':
         specifier: 'catalog:'
         version: 0.4.14
-      '@vortex/adaptor-ping-test':
-        specifier: workspace:*
-        version: link:../../packages/adaptors/ping-test
       '@vortex/shared':
         specifier: workspace:*
         version: link:../shared

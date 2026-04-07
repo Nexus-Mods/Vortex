@@ -27,9 +27,6 @@
     "@vortex/adaptor-api": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "catalog:",
-    "@vortex/adaptor-host": "workspace:*",
-    "typescript": "catalog:",
-    "vitest": "catalog:"
+    "@types/node": "catalog:"
   }
 }
