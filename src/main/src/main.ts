@@ -55,6 +55,7 @@ import {
   errorToReportableError,
   sendReportFile,
 } from "./errorReporting";
+import { initAdaptorHost } from "./adaptors";
 import { getVortexPath } from "./getVortexPath";
 import { init as initIpcHandlers } from "./ipcHandlers";
 import { log } from "./logging";
@@ -212,6 +213,11 @@ async function main(): Promise<void> {
   process.on("unhandledRejection", handleError);
 
   initIpcHandlers();
+  initAdaptorHost().catch((err: unknown) => {
+    log("warn", "Failed to initialize adaptor host", {
+      error: err instanceof Error ? err.message : String(err as string),
+    });
+  });
   initTelemetryIpcHandler();
   StylesheetCompiler.init();
 

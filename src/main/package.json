@@ -17,6 +17,8 @@
     "prepare:win": "curl -L \"https://aka.ms/vs/17/release/vc_redist.x64.exe\" -o \"./build/VC_redist.x64.exe\" --create-dirs && curl -L \"https://aka.ms/dotnet/9.0/windowsdesktop-runtime-win-x64.exe\" -o \"./build/windowsdesktop-runtime-win-x64.exe\" --create-dirs"
   },
   "dependencies": {
+    "@vortex/adaptor-api": "workspace:*",
+    "@vortex/adaptor-host": "workspace:*",
     "@electron/remote": "catalog:",
     "@headlessui/react": "catalog:",
     "@mdi/js": "catalog:",
@@ -136,6 +138,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@vortex/adaptor-ping-test": "workspace:*",
     "@types/bbcode-to-react": "catalog:",
     "@types/big.js": "catalog:",
     "@types/content-disposition": "catalog:",

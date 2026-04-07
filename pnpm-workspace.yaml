@@ -3,6 +3,7 @@
 packages:
   - ./src/shared
   - ./packages/*
+  - ./packages/adaptors/*
   - ./src/preload
   - ./src/main
   - ./src/renderer

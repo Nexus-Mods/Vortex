@@ -1,0 +1,45 @@
+{
+  "$schema": "https://www.schemastore.org/package.json",
+  "name": "@vortex/adaptor-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm tsdown",
+    "dist": "pnpm tsdown",
+    "typecheck": "pnpm tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --config vitest.config.ts"
+  },
+  "exports": {
+    "./branded": {
+      "import": "./dist/branded.js",
+      "require": "./dist/branded.cjs"
+    },
+    "./builder": {
+      "import": "./dist/builder.js",
+      "require": "./dist/builder.cjs"
+    },
+    "./contracts/ping": {
+      "import": "./dist/contracts/ping.js",
+      "require": "./dist/contracts/ping.cjs"
+    },
+    "./interfaces": {
+      "import": "./dist/interfaces.js",
+      "require": "./dist/interfaces.cjs"
+    },
+    "./plugin": {
+      "import": "./dist/plugin.js",
+      "require": "./dist/plugin.cjs"
+    },
+    "./runtime-container": {
+      "import": "./dist/runtime-container.js",
+      "require": "./dist/runtime-container.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

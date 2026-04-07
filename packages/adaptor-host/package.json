@@ -1,0 +1,45 @@
+{
+  "$schema": "https://www.schemastore.org/package.json",
+  "name": "@vortex/adaptor-host",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm tsdown",
+    "dist": "pnpm tsdown",
+    "typecheck": "pnpm tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --config vitest.config.ts"
+  },
+  "exports": {
+    "./bootstrap": "./dist/bootstrap.mjs",
+    "./loader": {
+      "import": "./dist/loader.mjs",
+      "require": "./dist/loader.cjs"
+    },
+    "./registry": {
+      "import": "./dist/registry.mjs",
+      "require": "./dist/registry.cjs"
+    },
+    "./testing/conformance": {
+      "import": "./dist/testing/conformance.mjs",
+      "require": "./dist/testing/conformance.cjs"
+    },
+    "./testing/harness": {
+      "import": "./dist/testing/harness.mjs",
+      "require": "./dist/testing/harness.cjs"
+    },
+    "./transport": {
+      "import": "./dist/transport.mjs",
+      "require": "./dist/transport.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "dependencies": {
+    "@vortex/adaptor-api": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

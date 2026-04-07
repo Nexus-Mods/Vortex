@@ -1,0 +1,35 @@
+{
+  "$schema": "https://www.schemastore.org/package.json",
+  "name": "@vortex/adaptor-ping-test",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm tsdown",
+    "dist": "pnpm tsdown",
+    "typecheck": "pnpm tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --config vitest.config.ts"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "vortex:requires": [
+    "vortex:host/ping"
+  ],
+  "dependencies": {
+    "@vortex/adaptor-api": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@vortex/adaptor-host": "workspace:*",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

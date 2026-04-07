@@ -9,6 +9,15 @@
       "path": "./packages/paths-node/tsconfig.json"
     },
     {
+      "path": "./packages/adaptor-api/tsconfig.json"
+    },
+    {
+      "path": "./packages/adaptor-host/tsconfig.json"
+    },
+    {
+      "path": "./packages/adaptors/ping-test/tsconfig.json"
+    },
+    {
       "path": "./src/shared/tsconfig.json"
     },
     {

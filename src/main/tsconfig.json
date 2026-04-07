@@ -13,5 +13,9 @@
     "module": "esnext",
     "moduleResolution": "bundler",
     "types": ["node"]
-  }
+  },
+  "references": [
+    { "path": "../../packages/adaptor-api/tsconfig.json" },
+    { "path": "../../packages/adaptor-host/tsconfig.json" }
+  ]
 }
