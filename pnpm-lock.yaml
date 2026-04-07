@@ -3800,14 +3800,10 @@ importers:
         version: 1.0.0-rc.9
 
   packages/adaptors/ping-test:
-    dependencies:
+    devDependencies:
       '@vortex/adaptor-api':
         specifier: workspace:*
         version: link:../../adaptor-api
-    devDependencies:
-      '@types/node':
-        specifier: 'catalog:'
-        version: 22.19.15
 
   packages/e2e:
     devDependencies:
