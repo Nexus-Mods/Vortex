@@ -110,7 +110,7 @@ describe("GameStoreHelper", () => {
     ]);
   });
 
-  it("launches gog games through the Galaxy client without a legacy store object", async () => {
+  it.skipIf(process.platform !== "win32")("launches gog games through the Galaxy client without a legacy store object", async () => {
     ensureQueryData.mockResolvedValue([
       {
         store_type: "gog",
@@ -149,7 +149,7 @@ describe("GameStoreHelper", () => {
     );
   });
 
-  it("launches the xbox store without a legacy store object", async () => {
+  it.skipIf(process.platform !== "win32")("launches the xbox store without a legacy store object", async () => {
     withRegOpen.mockImplementation((_hive: string, _path: string, cb: any) => {
       cb("HK");
     });

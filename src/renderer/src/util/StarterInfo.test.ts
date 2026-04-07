@@ -1,17 +1,17 @@
 import { describe, expect, it, vi } from "vitest";
 
-const launchGame = vi.fn();
+const launchGameStore = vi.fn();
 
 vi.mock("./GameStoreHelper", () => ({
   default: {
-    launchGame,
+    launchGameStore,
   },
 }));
 
 vi.mock("./fs", () => ({}));
 
 describe("StarterInfo", () => {
-  it("routes launcher starts through GameStoreHelper.launchGame", async () => {
+  it("routes launcher starts through GameStoreHelper.launchGameStore", async () => {
     const StarterInfo = (await import("./StarterInfo.js")).default as any;
     const api = {};
     const info = {
@@ -20,6 +20,6 @@ describe("StarterInfo", () => {
 
     StarterInfo.runThroughLauncher("gog", info, api, "1495134320");
 
-    expect(launchGame).toHaveBeenCalledWith(api, "gog", "1495134320");
+    expect(launchGameStore).toHaveBeenCalledWith(api, "gog", ["1495134320"]);
   });
 });

@@ -9,7 +9,15 @@
 
 import type { IGameStoreEntry } from "../types/IGameStoreEntry";
 import GameStoreHelper from "./GameStoreHelper";
-import { GameNotFound } from "./Steam";
+
+// GameNotFound is a simple Error subclass. We duplicate it here to avoid
+// importing ./Steam which eagerly creates the Steam singleton.
+class GameNotFound extends Error {
+  constructor(message?: string) {
+    super(message ?? "Game not found");
+    this.name = "GameNotFound";
+  }
+}
 
 /**
  * @deprecated Use `util.GameStoreHelper.findByName(name, 'steam')` or
