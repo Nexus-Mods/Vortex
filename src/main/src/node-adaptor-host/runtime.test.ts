@@ -38,8 +38,8 @@ describe("createMessageIdAllocator", () => {
 // --- createServiceProxy ---
 
 describe("createServiceProxy", () => {
-  it("is not thenable (can be safely awaited without dispatching)", async () => {
-    const send = async (msg: IMethodMessage) => msg.args;
+  it("is not thenable (can be safely awaited without dispatching)", () => {
+    const send = (msg: IMethodMessage) => Promise.resolve(msg.args);
     const proxy = createServiceProxy<{ foo(): Promise<string> }>(
       "test:svc",
       send,
@@ -49,9 +49,9 @@ describe("createServiceProxy", () => {
 
   it("dispatches method calls through send", async () => {
     const received: IMethodMessage[] = [];
-    const send = async (msg: IMethodMessage) => {
+    const send = (msg: IMethodMessage) => {
       received.push(msg);
-      return "result";
+      return Promise.resolve("result");
     };
     const proxy = createServiceProxy<{ foo(x: string): Promise<string> }>(
       "test:svc",

@@ -20,10 +20,11 @@ describe("adaptor host integration (Worker)", () => {
   beforeAll(async () => {
     host = createAdaptorHost(
       {
-        "vortex:host/ping": async (msg) => {
+        "vortex:host/ping": (msg) => {
           const payload = msg.payload as { method: string; args: unknown[] };
-          if (payload.method === "ping") return `pong: ${payload.args[0]}`;
-          return { status: "ok" };
+          if (payload.method === "ping")
+            return Promise.resolve(`pong: ${JSON.stringify(payload.args[0])}`);
+          return Promise.resolve({ status: "ok" });
         },
       },
       BOOTSTRAP_PATH,
@@ -52,7 +53,7 @@ describe("adaptor host integration (Worker)", () => {
     expect(result).toBe("echo: pong: hello");
   });
 
-  it("registers adaptor in name service and registry", async () => {
+  it("registers adaptor in name service and registry", () => {
     const resolved = host.nameService.resolve(
       uri("vortex:adaptor/ping-test/echo"),
     );

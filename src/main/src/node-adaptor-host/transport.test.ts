@@ -14,8 +14,8 @@ describe("createRpcTransport", () => {
   it("sends a call and receives a result", async () => {
     const { a, b } = makeChannel();
 
-    b.onCall(async (msg: IMethodMessage) => {
-      return `echo:${msg.method}`;
+    b.onCall((msg: IMethodMessage) => {
+      return Promise.resolve(`echo:${msg.method}`);
     });
 
     const result = await a.call({ uri: "test:svc", method: "ping", args: [] });
@@ -28,8 +28,8 @@ describe("createRpcTransport", () => {
   it("propagates errors from the remote side", async () => {
     const { a, b } = makeChannel();
 
-    b.onCall(async () => {
-      throw new Error("remote failure");
+    b.onCall(() => {
+      return Promise.reject(new Error("remote failure"));
     });
 
     await expect(
@@ -64,8 +64,8 @@ describe("createRpcTransport", () => {
   it("supports bidirectional calls", async () => {
     const { a, b } = makeChannel();
 
-    a.onCall(async (msg: IMethodMessage) => `from-a:${msg.method}`);
-    b.onCall(async (msg: IMethodMessage) => `from-b:${msg.method}`);
+    a.onCall((msg: IMethodMessage) => Promise.resolve(`from-a:${msg.method}`));
+    b.onCall((msg: IMethodMessage) => Promise.resolve(`from-b:${msg.method}`));
 
     const [resultFromA, resultFromB] = await Promise.all([
       // b calls a

@@ -1,4 +1,5 @@
 import type { IMethodMessage } from "@vortex/adaptor-api/interfaces";
+import { getErrorMessage } from "@vortex/shared";
 
 // --- Wire protocol types ---
 
@@ -35,10 +36,12 @@ export interface MessagePortLike {
   on?(event: "message", listener: (value: unknown) => void): void;
   off?(event: "message", listener: (value: unknown) => void): void;
   // Browser-style
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  addEventListener?(type: string, listener: any, ...rest: any[]): void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  removeEventListener?(type: string, listener: any, ...rest: any[]): void;
+  addEventListener?(type: string, listener: unknown, ...rest: unknown[]): void;
+  removeEventListener?(
+    type: string,
+    listener: unknown,
+    ...rest: unknown[]
+  ): void;
 }
 
 // --- IRpcTransport ---
@@ -106,7 +109,7 @@ export function createRpcTransport(port: MessagePortLike): IRpcTransport {
       callHandler(msg).then(
         (value) => respond({ type: "result", correlationId, value }),
         (err: unknown) => {
-          const message = err instanceof Error ? err.message : String(err);
+          const message = getErrorMessage(err);
           respond({ type: "error", correlationId, message });
         },
       );
@@ -136,7 +139,7 @@ export function createRpcTransport(port: MessagePortLike): IRpcTransport {
     // One-way signal: notify once() waiters
     const waiters = onceListeners.get(type as string);
     if (waiters && waiters.length > 0) {
-      const { resolve } = waiters.shift()!;
+      const { resolve } = waiters.shift();
       resolve(data);
     }
   }

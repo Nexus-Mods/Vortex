@@ -19,10 +19,11 @@ describe("TestHarness (Worker isolation)", () => {
     harness = await createTestHarness(
       BUNDLE_PATH,
       {
-        "vortex:host/ping": async (msg) => {
+        "vortex:host/ping": (msg) => {
           const payload = msg.payload as { method: string; args: unknown[] };
-          if (payload.method === "ping") return `pong: ${payload.args[0]}`;
-          return { status: "ok" };
+          if (payload.method === "ping")
+            return Promise.resolve(`pong: ${JSON.stringify(payload.args[0])}`);
+          return Promise.resolve({ status: "ok" });
         },
       },
       BOOTSTRAP_PATH,

@@ -37,7 +37,7 @@ export function createServiceProxy<T extends object>(
       }
       return async (...args: unknown[]) => send({ uri, method: prop, args });
     },
-  }) as T;
+  });
 }
 
 /**
@@ -48,11 +48,13 @@ export function createMethodDispatcher(
   uri: string,
   instance: Record<string, (...args: unknown[]) => unknown>,
 ): (msg: IMethodMessage) => Promise<unknown> {
-  return async (msg: IMethodMessage) => {
+  return (msg: IMethodMessage) => {
     const fn = instance[msg.method];
     if (typeof fn !== "function") {
       throw new Error(`No method "${msg.method}" on service ${uri}`);
     }
-    return fn.apply(instance, msg.args);
+
+    const res = fn.apply(instance, msg.args);
+    return Promise.resolve(res as unknown);
   };
 }

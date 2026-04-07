@@ -67,6 +67,7 @@ function sandboxRequire(specifier: string): unknown {
   if (specifier in esmModuleOverrides) return esmModuleOverrides[specifier];
   throw new Error(`Adaptor sandbox: module "${specifier}" is not allowed`);
 }
+
 // eslint-disable-next-line @typescript-eslint/no-implied-eval
 new Function("module", "exports", "require", bundle)(
   moduleObj,
@@ -121,7 +122,10 @@ transport.onCall(async (msg: IMethodMessage) => {
 });
 
 // Step 9: Listen for shutdown
-transport.once<{ type: "shutdown" }>("shutdown").then(() => {
-  transport.dispose();
-  process.exit(0);
-});
+transport
+  .once<{ type: "shutdown" }>("shutdown")
+  .then(() => {
+    transport.dispose();
+    process.exit(0);
+  })
+  .catch(() => {});
