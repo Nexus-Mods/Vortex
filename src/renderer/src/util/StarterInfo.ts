@@ -27,7 +27,8 @@ import GameStoreHelper from "./GameStoreHelper";
 import getVortexPath from "./getVortexPath";
 import { isWindowsExecutable } from "./linux/proton";
 import { getSafe } from "./storeHelper";
-import steam from "./Steam";
+// Lazy import to avoid initializing Steam singleton at module load time
+function getSteamInstance() { return require("./Steam").default; }
 
 async function hideWindow(): Promise<void> {
   await window.api.window.hide(ApplicationData.instance.windowId);
@@ -295,7 +296,7 @@ class StarterInfo implements IStarterInfo {
         }
       };
 
-      return steam.runToolWithProton(
+      return getSteamInstance().runToolWithProton(
         api,
         info.exePath,
         info.commandLine,

@@ -5,11 +5,14 @@ import type { IExtensionApi } from "../types/IExtensionContext";
 import type { IGameStore } from "../types/IGameStore";
 import type { IGameStoreEntry } from "../types/IGameStoreEntry";
 
-import epicGamesLauncher from "./EpicGamesLauncher";
 import { makeExeId } from "../reducers/session";
 import { GameEntryNotFound, GameStoreNotFound } from "../types/IGameStore";
 import { ProcessCanceled, UserCanceled } from "./CustomErrors";
-import steam from "./Steam";
+
+// Lazy imports to avoid initializing store singletons at module load time
+// (Steam/Epic constructors require applicationData to be initialized first)
+function getSteam() { return require("./Steam").default; }
+function getEpicGamesLauncher() { return require("./EpicGamesLauncher").default; }
 import * as fs from "./fs";
 import getNormalizeFunc from "./getNormalizeFunc";
 import { log } from "./log";
@@ -341,9 +344,9 @@ class GameStoreHelper {
   ): Promise<void> {
     switch (gameStoreId) {
       case "steam":
-        return steam.launchGame(appInfo, api);
+        return getSteam().launchGame(appInfo, api);
       case "epic":
-        return epicGamesLauncher.launchGame(appInfo, api);
+        return getEpicGamesLauncher().launchGame(appInfo, api);
       case "gog":
         return this.launchGOGGame(api, appInfo);
       case "origin":
@@ -424,9 +427,9 @@ class GameStoreHelper {
 
     switch (storeId) {
       case "steam":
-        return steam.getGameStorePath();
+        return getSteam().getGameStorePath();
       case "epic":
-        return epicGamesLauncher.getGameStorePath();
+        return getEpicGamesLauncher().getGameStorePath();
       case "gog":
         return this.normalizeExecutablePath(
           this.getRegistryString("HKEY_LOCAL_MACHINE", REG_GOG_CLIENT, "client"),
@@ -505,7 +508,7 @@ class GameStoreHelper {
   ): Promise<void> {
     switch (gameStoreId) {
       case "epic":
-        return epicGamesLauncher.launchGameStore(api, parameters);
+        return getEpicGamesLauncher().launchGameStore(api, parameters);
       case "xbox": {
         const execName =
           parameters !== undefined && parameters.length > 0
