@@ -1,5 +1,6 @@
 import type { VortexPaths } from "@vortex/shared/ipc";
 
+import { XDG } from "@vortex/fs";
 import { app, type App } from "electron";
 import * as os from "node:os";
 import * as path from "node:path";
@@ -128,7 +129,7 @@ function localAppData(): string {
     // On Linux these resolve to XDG_DATA_HOME. Proton-prefix resolution
     // for these games will be handled in Phase 2.
     return (
-      process.env.XDG_DATA_HOME ?? path.join(os.homedir(), ".local", "share")
+      process.env[XDG.data] ?? path.join(os.homedir(), ".local", "share")
     );
   }
   return (

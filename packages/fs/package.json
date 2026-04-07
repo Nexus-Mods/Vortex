@@ -15,9 +15,14 @@
     ".": {
       "node": {
         "development": "./src/node/lib.ts",
-        "types": "./dist/node/lib.d.mts",
-        "import": "./dist/node/lib.mjs",
-        "require": "./dist/node/lib.cjs"
+        "require": {
+          "types": "./dist/node/lib.d.cts",
+          "default": "./dist/node/lib.cjs"
+        },
+        "import": {
+          "types": "./dist/node/lib.d.mts",
+          "default": "./dist/node/lib.mjs"
+        }
       },
       "browser": {
         "development": "./src/browser/lib.ts",

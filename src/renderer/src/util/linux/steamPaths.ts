@@ -1,6 +1,7 @@
 import * as path from "path";
 import * as fs from "fs";
 import getVortexPath from "../getVortexPath";
+import { xdgDataHome } from "./xdg";
 
 /**
  * Default Steam installation paths for Linux systems
@@ -23,7 +24,8 @@ export function getLinuxSteamPaths(): string[] {
   }
 
   candidates.push(
-    path.join(home, ".local", "share", "Steam"), // XDG standard (native)
+    // XDG standard path: respects $XDG_DATA_HOME for XDG-compliant installs
+    path.join(xdgDataHome(), "Steam"),
     path.join(home, ".steam", "debian-installation"), // Debian/Ubuntu
     path.join(home, ".var", "app", "com.valvesoftware.Steam", "data", "Steam"), // Flatpak
     path.join(

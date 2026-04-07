@@ -29,9 +29,9 @@
  * @module Linux protocol registration helpers
  */
 import { spawnSync } from "child_process";
-import * as os from "os";
 import * as path from "path";
 
+import { xdgDataHome } from "../../linux/xdg";
 import { log } from "../../log";
 
 interface ICommandResult {
@@ -45,12 +45,7 @@ interface ICommandResult {
  * Resolve the writable Linux applications directory used for local desktop entries.
  */
 export function applicationsDirectory(): string {
-  const xdgDataHome = process.env.XDG_DATA_HOME;
-  const dataHome =
-    xdgDataHome != null && xdgDataHome.length > 0
-      ? xdgDataHome
-      : path.join(os.homedir(), ".local", "share");
-  return path.join(dataHome, "applications");
+  return path.join(xdgDataHome(), "applications");
 }
 
 /**
