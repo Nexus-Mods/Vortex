@@ -117,7 +117,12 @@ export class DownloadManager {
       let completedRanges: ByteRange[] = [];
 
       if (progress.isChunked) {
-        completedRanges = progress.chunks.map((c) => c.chunkRange);
+        completedRanges = progress.chunks
+          .filter((c) => {
+            const size = c.chunkRange.end - c.chunkRange.start + 1;
+            return c.bytesWritten >= size;
+          })
+          .map((c) => c.chunkRange);
       } else if (progress.bytesWritten > 0) {
         completedRanges = [
           {
