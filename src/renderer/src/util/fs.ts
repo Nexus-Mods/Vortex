@@ -663,9 +663,14 @@ export function ensureDirAsync(
   //  implementation directly as there's no way for us to reliably determine
   //  whether the parent folder was empty. We're going to create the
   //  directories ourselves.
-  return onDirCreatedCB
-    ? ensureDir(dirPath, onDirCreatedCB)
-    : ensureDirInt(dirPath, stackErr, NUM_RETRIES);
+  const resolvedPath = isWinePrefixPath(dirPath)
+    ? PromiseBB.resolve(resolveCaseIfWinePrefix(dirPath))
+    : PromiseBB.resolve(dirPath);
+  return resolvedPath.then((resolved) =>
+    onDirCreatedCB
+      ? ensureDir(resolved, onDirCreatedCB)
+      : ensureDirInt(resolved, stackErr, NUM_RETRIES),
+  );
 }
 
 function ensureDirInt(
@@ -780,13 +785,20 @@ export function copyAsync(
   },
 ): PromiseBB<void> {
   const stackErr = new Error();
-  // fs.copy in fs-extra has a bug where it doesn't correctly avoid copying files onto themselves
-  const check = options?.noSelfCopy
-    ? PromiseBB.resolve()
-    : selfCopyCheck(src, dest);
-  return check
-    .then(() => copyInt(src, dest, options || undefined, stackErr, NUM_RETRIES))
-    .catch((err) => PromiseBB.reject(restackErr(err, stackErr)));
+  const resolvedSrc = isWinePrefixPath(src)
+    ? PromiseBB.resolve(resolveCaseIfWinePrefix(src))
+    : PromiseBB.resolve(src);
+  return resolvedSrc.then((resolved) => {
+    // fs.copy in fs-extra has a bug where it doesn't correctly avoid copying files onto themselves
+    const check = options?.noSelfCopy
+      ? PromiseBB.resolve()
+      : selfCopyCheck(resolved, dest);
+    return check
+      .then(() =>
+        copyInt(resolved, dest, options || undefined, stackErr, NUM_RETRIES),
+      )
+      .catch((err) => PromiseBB.reject(restackErr(err, stackErr)));
+  });
 }
 
 type CopyOptionsEx = fs.CopyOptions & {
@@ -891,6 +903,11 @@ export function renameAsync(
   sourcePath: string,
   destinationPath: string,
 ): PromiseBB<void> {
+  if (isWinePrefixPath(sourcePath)) {
+    return PromiseBB.resolve(resolveCaseIfWinePrefix(sourcePath)).then(
+      (resolved) => renameInt(resolved, destinationPath, new Error(), NUM_RETRIES),
+    );
+  }
   return renameInt(sourcePath, destinationPath, new Error(), NUM_RETRIES);
 }
 
