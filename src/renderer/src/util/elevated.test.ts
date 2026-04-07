@@ -29,7 +29,8 @@ vi.mock("./webpack-hacks", () => ({
 
 import * as tmp from "tmp";
 import * as fs from "fs";
-import { runElevated, _setSpawner, isSteamOS, _resetSteamOSCache } from "./elevated";
+import type { INotification } from "../types/INotification";
+import { runElevated, _setSpawner, _setNotifier, isSteamOS, _resetSteamOSCache } from "./elevated";
 import { UserCanceled } from "./CustomErrors";
 
 const FAKE_TMP = "/tmp/fake-elevated.js";
@@ -181,6 +182,7 @@ describe("runElevated — SteamOS sudo -n fallback", () => {
 
   afterEach(() => {
     _resetSteamOSCache();
+    _setNotifier(undefined);
     Object.defineProperty(process, "platform", {
       value: originalPlatform,
       configurable: true,
@@ -401,5 +403,87 @@ describe("runElevated — Linux pkexec branch", () => {
     await runElevated("ipc-7", vi.fn());
 
     expect(called).toBe(true);
+  });
+});
+
+describe("runElevated — SteamOS notification on sudo -n failure", () => {
+  const originalPlatform = process.platform;
+  let capturedNotification: INotification | undefined;
+
+  beforeEach(() => {
+    _resetSteamOSCache();
+    capturedNotification = undefined;
+    _setNotifier((n) => { capturedNotification = n; });
+    vi.mocked(fs.readFileSync).mockImplementation((filePath: unknown) => {
+      if (filePath === "/etc/os-release") {
+        return "ID=steamos\nID_LIKE=arch\n";
+      }
+      throw new Error("unexpected readFileSync call");
+    });
+    Object.defineProperty(process, "platform", {
+      value: "linux",
+      configurable: true,
+    });
+  });
+
+  afterEach(() => {
+    _resetSteamOSCache();
+    _setNotifier(undefined);
+    Object.defineProperty(process, "platform", {
+      value: originalPlatform,
+      configurable: true,
+    });
+    vi.clearAllMocks();
+  });
+
+  it("fires notifier with error type and Game Mode message on sudo -n exit 1", async () => {
+    setupSyncMocks(FAKE_TMP);
+    _setSpawner(makeEarlyCloseSpawner(1));
+    await runElevated("ipc-notify-1", vi.fn()).catch(() => {});
+    expect(capturedNotification).toBeDefined();
+    expect(capturedNotification?.type).toBe("error");
+    expect(capturedNotification?.message).toContain("Game Mode");
+  });
+
+  it("fires notifier with error type on sudo ENOENT", async () => {
+    setupSyncMocks(FAKE_TMP);
+    const proc = {
+      on(event: string, handler: (...args: unknown[]) => void) {
+        if (event === "error") {
+          const spawnErr: NodeJS.ErrnoException = new Error("spawn sudo ENOENT");
+          spawnErr.code = "ENOENT";
+          handler(spawnErr);
+        }
+        return this;
+      },
+    } as unknown as ChildProcess;
+    _setSpawner(() => proc);
+    await runElevated("ipc-notify-2", vi.fn()).catch(() => {});
+    expect(capturedNotification).toBeDefined();
+    expect(capturedNotification?.type).toBe("error");
+    expect(capturedNotification?.message).toContain("Game Mode");
+  });
+
+  it("notifier receives title 'Elevation unavailable'", async () => {
+    setupSyncMocks(FAKE_TMP);
+    _setSpawner(makeEarlyCloseSpawner(1));
+    await runElevated("ipc-notify-3", vi.fn()).catch(() => {});
+    expect(capturedNotification?.title).toBe("Elevation unavailable");
+  });
+
+  it("still rejects with UserCanceled (D-05 regression guard)", async () => {
+    setupSyncMocks(FAKE_TMP);
+    _setSpawner(makeEarlyCloseSpawner(1));
+    const err = await runElevated("ipc-notify-4", vi.fn()).catch((e) => e);
+    expect(err).toBeInstanceOf(UserCanceled);
+  });
+
+  it("does not crash when _setNotifier is not registered", async () => {
+    _setNotifier(undefined);
+    setupSyncMocks(FAKE_TMP);
+    _setSpawner(makeEarlyCloseSpawner(1));
+    const err = await runElevated("ipc-notify-5", vi.fn()).catch((e) => e);
+    expect(err).toBeInstanceOf(UserCanceled);
+    expect(capturedNotification).toBeUndefined();
   });
 });

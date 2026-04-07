@@ -8,6 +8,7 @@ import * as tmp from "tmp";
 import { getIPCPath } from "./ipc";
 import * as winapi from "winapi-bindings";
 import { UserCanceled } from "./CustomErrors";
+import type { INotification } from "../types/INotification";
 
 import { getRealNodeModulePaths } from "./webpack-hacks";
 
@@ -21,6 +22,14 @@ export function _setSpawner(fn: SpawnerFn): void {
 
 function getSpawner(): SpawnerFn {
   return _spawner;
+}
+
+type NotifierFn = (notification: INotification) => void;
+let _notifier: NotifierFn | undefined;
+
+/** @internal Register a notification handler for elevation failures. Do not call in production test code. */
+export function _setNotifier(fn: NotifierFn | undefined): void {
+  _notifier = fn;
 }
 
 let _isSteamOS: boolean | undefined;
@@ -48,6 +57,19 @@ export function isSteamOS(): boolean {
 /** @internal Reset the cached SteamOS detection result. Do not call in production. */
 export function _resetSteamOSCache(): void {
   _isSteamOS = undefined;
+}
+
+function rejectWithSteamOSNotification(reject: (err: UserCanceled) => void): void {
+  const err = new UserCanceled();
+  (err as any).message =
+    "Elevation is not available in Steam Game Mode. " +
+    "Switch to Desktop Mode to perform this operation.";
+  _notifier?.({
+    type: "error",
+    title: "Elevation unavailable",
+    message: (err as any).message,
+  });
+  reject(err);
 }
 
 declare const __non_webpack_require__: NodeJS.Require;
@@ -226,21 +248,13 @@ export function runElevated(
               proc.on("close", (code: number | null) => {
                 if (code !== null && code !== 0) {
                   // sudo -n failed (password required or ENOENT)
-                  const err = new UserCanceled();
-                  (err as any).message =
-                    "Elevation is not available in Steam Game Mode. " +
-                    "Switch to Desktop Mode to perform this operation.";
-                  reject(err);
+                  rejectWithSteamOSNotification(reject);
                 }
                 // code 0 or null: normal exit; IPC handles results
               });
               proc.on("error", (_spawnErr: Error) => {
                 // sudo not found on PATH
-                const err = new UserCanceled();
-                (err as any).message =
-                  "Elevation is not available in Steam Game Mode. " +
-                  "Switch to Desktop Mode to perform this operation.";
-                reject(err);
+                rejectWithSteamOSNotification(reject);
               });
             } else {
               // Standard desktop Linux: use pkexec (unchanged from Phase 9)
