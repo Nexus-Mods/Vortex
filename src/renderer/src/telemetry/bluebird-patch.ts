@@ -31,11 +31,25 @@ export const patchBluebirdContext = (): void => {
     const ctx = context.active();
     const wrappedFulfilled =
       typeof onFulfilled === "function"
-        ? (...args: any[]) => context.with(ctx, () => onFulfilled(...args))
+        ? (...args: any[]) => {
+            // If the active context already matches what we captured at
+            // .then() call time, context.with() would be a no-op — skip it
+            // to avoid nesting AsyncLocalStorage.run() frames during
+            // bluebird's synchronous promise drain.
+            if (context.active() === ctx) {
+              return onFulfilled(...args);
+            }
+            return context.with(ctx, () => onFulfilled(...args));
+          }
         : onFulfilled;
     const wrappedRejected =
       typeof onRejected === "function"
-        ? (...args: any[]) => context.with(ctx, () => onRejected(...args))
+        ? (...args: any[]) => {
+            if (context.active() === ctx) {
+              return onRejected(...args);
+            }
+            return context.with(ctx, () => onRejected(...args));
+          }
         : onRejected;
     return originalThen.call(this, wrappedFulfilled, wrappedRejected);
   } as typeof originalThen;
