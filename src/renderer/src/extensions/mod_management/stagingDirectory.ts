@@ -7,7 +7,7 @@ import { getApplication } from "../../util/application";
 import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
 import lazyRequire from "../../util/lazyRequire";
-import { log } from "../../util/log";
+import { log } from "../../logging";
 import { activeGameId, installPathForGame } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { truthy } from "../../util/util";
@@ -203,29 +203,37 @@ async function ensureStagingDirectoryImpl(
         });
         try {
           await fallbackPurge(api, gameId);
-          await fs.ensureDirWritableAsync(instPath, () => Promise.resolve());
         } catch (purgeErr) {
           if (!partitionExists) {
             // Can't purge a non-existing partition!
             throw new ProcessCanceled("Invalid/Missing partition");
           }
+          const purgeError = unknownToError(purgeErr);
+
+          // purge failed but we still want to recreate the staging directory
+          // so the user can continue using Vortex
           if (purgeErr instanceof ProcessCanceled) {
-            log("warn", "Mods not purged", purgeErr.message);
+            log("warn", "Mods not purged", purgeError.message);
           } else {
-            api.showDialog(
-              "error",
-              "Mod Staging Folder missing!",
-              {
-                bbcode:
-                  "The staging folder could not be created. " +
-                  "You [b][color=red]have[/color][/b] to go to settings->mods and change it " +
-                  "to a valid directory [b][color=red]before doing anything else[/color][/b] " +
-                  "or you will get further error messages.",
-              },
-              [{ label: "Close" }],
-            );
+            log("warn", "Mods not purged during reinitialize", purgeError);
           }
-          throw new ProcessCanceled("Not purged");
+        }
+        try {
+          await fs.ensureDirWritableAsync(instPath);
+        } catch (dirErr) {
+          api.showDialog(
+            "error",
+            "Mod Staging Folder missing!",
+            {
+              bbcode:
+                "The staging folder could not be created. " +
+                "You [b][color=red]have[/color][/b] to go to settings->mods and change it " +
+                "to a valid directory [b][color=red]before doing anything else[/color][/b] " +
+                "or you will get further error messages.",
+            },
+            [{ label: "Close" }],
+          );
+          throw new ProcessCanceled("Staging folder could not be created");
         }
         api.dismissNotification(id);
       } else if (dialogResult.action === "Ignore") {
