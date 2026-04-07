@@ -1,5 +1,4 @@
-import type { IAdaptorManifest } from "@vortex/adaptor-api/interfaces";
-import type { PID, URI } from "@vortex/adaptor-api/branded";
+import type { IAdaptorManifest, PID, URI } from "@vortex/adaptor-api";
 
 // --- Name Service (URI → PID resolution) ---
 

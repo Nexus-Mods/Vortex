@@ -1,4 +1,5 @@
-import type { IMethodMessage } from "@vortex/adaptor-api/interfaces";
+import type { IMethodMessage } from "@vortex/adaptor-api";
+
 import { describe, expect, it } from "vitest";
 
 import {

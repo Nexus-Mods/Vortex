@@ -1,5 +1,6 @@
 import * as path from "node:path";
 import { describe, expect, it, afterAll } from "vitest";
+
 import { createTestHarness, type ITestHarness } from "./harness.js";
 
 const BUNDLE_PATH = path.resolve(
@@ -37,7 +38,7 @@ describe("TestHarness (Worker isolation)", () => {
     const result = await harness.call("vortex:adaptor/ping-test/echo", "echo", [
       "hello",
     ]);
-    expect(result).toBe("echo: pong: hello");
+    expect(result).toBe('echo: pong: "hello"');
   });
 
   afterAll(async () => {

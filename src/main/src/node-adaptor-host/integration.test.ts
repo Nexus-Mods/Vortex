@@ -1,7 +1,9 @@
+import { uri } from "@vortex/adaptor-api";
 import * as path from "node:path";
 import { describe, expect, it, beforeAll, afterAll } from "vitest";
-import { uri } from "@vortex/adaptor-api/branded";
+
 import type { IAdaptorHost, ILoadedAdaptor } from "./loader.js";
+
 import { createAdaptorHost } from "./loader.js";
 
 const BUNDLE_PATH = path.resolve(
@@ -50,7 +52,7 @@ describe("adaptor host integration (Worker)", () => {
     const result = await loaded.call("vortex:adaptor/ping-test/echo", "echo", [
       "hello",
     ]);
-    expect(result).toBe("echo: pong: hello");
+    expect(result).toBe('echo: pong: "hello"');
   });
 
   it("registers adaptor in name service and registry", () => {

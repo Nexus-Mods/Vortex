@@ -1,5 +1,4 @@
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Constructor = new (...args: any[]) => any;
+type Constructor = new (...args: unknown[]) => unknown;
 
 const PROVIDES_METADATA = new Map<Constructor, string>();
 

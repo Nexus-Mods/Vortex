@@ -21,7 +21,7 @@ export function vortexAdaptorPlugin(aliases: Record<string, string>): Plugin {
 
     load(id) {
       if (id === "\0virtual:services") {
-        const imports = `import { getContainer } from "@vortex/adaptor-api/runtime-container";\nconst __container = getContainer();\n`;
+        const imports = `import { getContainer } from "@vortex/adaptor-api";\nconst __container = getContainer();\n`;
         const exports = Object.entries(aliases)
           .map(
             ([name, uri]) =>

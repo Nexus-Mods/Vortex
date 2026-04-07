@@ -1,7 +1,7 @@
-import { describe, expect, it, beforeAll, afterAll } from "vitest";
+import type { IMessageHandler } from "@vortex/adaptor-api";
 
-import type { IMessageHandler } from "@vortex/adaptor-api/interfaces";
-import { adaptorName, semver, uri } from "@vortex/adaptor-api/branded";
+import { adaptorName, semver, uri } from "@vortex/adaptor-api";
+import { describe, expect, it, beforeAll, afterAll } from "vitest";
 
 import { createTestHarness, type ITestHarness } from "./harness.js";
 

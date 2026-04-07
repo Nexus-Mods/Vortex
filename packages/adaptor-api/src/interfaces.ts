@@ -1,10 +1,4 @@
-import type {
-  AdaptorName,
-  MessageId,
-  PID,
-  SemVer,
-  URI,
-} from "./types/branded.js";
+import type { AdaptorName, MessageId, PID, SemVer, URI } from "./types/branded";
 
 // --- Messages ---
 

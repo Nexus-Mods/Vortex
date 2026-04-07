@@ -1,17 +1,17 @@
-import * as fs from "node:fs";
-import * as path from "node:path";
-
 import type {
   IAdaptorManifest,
   IMessageHandler,
   IMethodMessage,
-} from "@vortex/adaptor-api/interfaces";
-import type { URI } from "@vortex/adaptor-api/branded";
-import { uri, messageId } from "@vortex/adaptor-api/branded";
+  URI,
+} from "@vortex/adaptor-api";
+
+import { uri } from "@vortex/adaptor-api";
+import * as fs from "node:fs";
+import * as path from "node:path";
 
 import { createMessageIdAllocator } from "../runtime.js";
-import { createRpcTransport, type IRpcTransport } from "../transport.js";
-import { createNodeWorker, type IWorkerHandle } from "../worker-factory.js";
+import { createRpcTransport } from "../transport.js";
+import { createNodeWorker } from "../worker-factory.js";
 
 /** Test harness backed by a real Worker thread. */
 export interface ITestHarness {

@@ -13,68 +13,48 @@
     "lint:quiet": "pnpm eslint --concurrency auto --quiet ."
   },
   "exports": {
-    "./branded": {
-      "development": "./src/types/branded.ts",
-      "import": "./dist/branded.js",
-      "require": "./dist/branded.cjs"
-    },
-    "./builder": {
-      "development": "./src/builder.ts",
-      "import": "./dist/builder.js",
-      "require": "./dist/builder.cjs"
+    ".": {
+      "development": "./src/lib.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     },
     "./contracts/ping": {
       "development": "./src/contracts/ping.ts",
       "import": "./dist/contracts/ping.js",
       "require": "./dist/contracts/ping.cjs"
     },
-    "./interfaces": {
-      "development": "./src/interfaces.ts",
-      "import": "./dist/interfaces.js",
-      "require": "./dist/interfaces.cjs"
-    },
     "./plugin": {
       "development": "./src/plugin.ts",
       "import": "./dist/plugin.js",
       "require": "./dist/plugin.cjs"
     },
-    "./runtime-container": {
-      "development": "./src/runtime-container.ts",
-      "import": "./dist/runtime-container.js",
-      "require": "./dist/runtime-container.cjs"
-    },
     "./package.json": "./package.json"
   },
+  "peerDependencies": {
+    "rolldown": "catalog:"
+  },
   "devDependencies": {
-    "@types/node": "catalog:"
+    "@types/node": "catalog:",
+    "rolldown": "catalog:"
   },
   "publishConfig": {
     "exports": {
-      "./branded": {
-        "import": "./dist/branded.js",
-        "require": "./dist/branded.cjs"
-      },
-      "./builder": {
-        "import": "./dist/builder.js",
-        "require": "./dist/builder.cjs"
+      ".": {
+        "import": "./dist/index.js",
+        "require": "./dist/index.cjs"
       },
       "./contracts/ping": {
         "import": "./dist/contracts/ping.js",
         "require": "./dist/contracts/ping.cjs"
       },
-      "./interfaces": {
-        "import": "./dist/interfaces.js",
-        "require": "./dist/interfaces.cjs"
-      },
       "./plugin": {
         "import": "./dist/plugin.js",
         "require": "./dist/plugin.cjs"
       },
-      "./runtime-container": {
-        "import": "./dist/runtime-container.js",
-        "require": "./dist/runtime-container.cjs"
-      },
       "./package.json": "./package.json"
     }
-  }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.cts"
 }

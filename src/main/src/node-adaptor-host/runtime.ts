@@ -1,6 +1,6 @@
-import type { IMethodMessage } from "@vortex/adaptor-api/interfaces";
-import type { MessageId, PID } from "@vortex/adaptor-api/branded";
-import { messageId, pid } from "@vortex/adaptor-api/branded";
+import type { IMethodMessage, MessageId, PID } from "@vortex/adaptor-api";
+
+import { messageId, pid } from "@vortex/adaptor-api";
 
 /**
  * Creates a closure-based PID allocator. Each call returns a unique PID.

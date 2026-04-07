@@ -9,7 +9,8 @@
     "allowJs": false,
     "composite": true,
     "experimentalDecorators": true,
-    "types": ["node"],
-    "lib": ["ESNext"]
-  }
+    "types": [],
+    "lib": ["ESNext"],
+    "customConditions": ["development"],
+  },
 }

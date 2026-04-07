@@ -1,13 +1,13 @@
-import * as fs from "node:fs/promises";
-import * as path from "node:path";
-
 import type {
   IAdaptorManifest,
   IMessageHandler,
   IMethodMessage,
-} from "@vortex/adaptor-api/interfaces";
-import type { PID } from "@vortex/adaptor-api/branded";
-import { uri, messageId } from "@vortex/adaptor-api/branded";
+  PID,
+} from "@vortex/adaptor-api";
+
+import { uri, messageId } from "@vortex/adaptor-api";
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
 
 import { AdaptorRegistry, NameService } from "./registry.js";
 import { createMessageIdAllocator, createPidAllocator } from "./runtime.js";

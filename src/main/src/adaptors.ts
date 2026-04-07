@@ -1,4 +1,4 @@
-import type { IMessageHandler } from "@vortex/adaptor-api/interfaces";
+import type { IMessageHandler } from "@vortex/adaptor-api";
 
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -8,7 +8,7 @@ import { log } from "./logging";
 import { createAdaptorHost } from "./node-adaptor-host/loader";
 
 // Infrastructure packages — not adaptors, don't try to load them
-const INFRA_PACKAGES = new Set(["adaptor-api", "adaptor-host"]);
+const INFRA_PACKAGES = new Set(["adaptor-api"]);
 
 // Host-provided services
 const HOST_SERVICES: Record<string, IMessageHandler> = {
@@ -28,7 +28,7 @@ const HOST_SERVICES: Record<string, IMessageHandler> = {
 
 /**
  * Scans node_modules/@vortex/ for adaptor packages (names starting with adaptor-).
- * Excludes infrastructure packages (adaptor-api, adaptor-host).
+ * Excludes infrastructure packages.
  */
 function discoverAdaptors(): string[] {
   const modulesPath = getVortexPath("modules");

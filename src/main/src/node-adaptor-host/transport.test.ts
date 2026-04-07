@@ -1,6 +1,8 @@
+import type { IMethodMessage } from "@vortex/adaptor-api";
+
 import { MessageChannel } from "node:worker_threads";
 import { describe, it, expect } from "vitest";
-import type { IMethodMessage } from "@vortex/adaptor-api/interfaces";
+
 import { createRpcTransport } from "./transport.js";
 
 function makeChannel() {

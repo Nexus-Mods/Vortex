@@ -1,4 +1,5 @@
-import type { IMethodMessage } from "@vortex/adaptor-api/interfaces";
+import type { IMethodMessage } from "@vortex/adaptor-api";
+
 import { getErrorMessage } from "@vortex/shared";
 
 // --- Wire protocol types ---

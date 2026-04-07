@@ -1,4 +1,4 @@
-import { provides } from "@vortex/adaptor-api/builder";
+import { provides } from "@vortex/adaptor-api";
 import type { IEchoService } from "@vortex/adaptor-api/contracts/ping";
 import { ping } from "virtual:services";
 

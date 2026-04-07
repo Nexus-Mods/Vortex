@@ -3792,6 +3792,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 22.19.15
+      rolldown:
+        specifier: 'catalog:'
+        version: 1.0.0-rc.9
 
   packages/adaptors/ping-test:
     dependencies:

@@ -1,5 +1,6 @@
-import type { IAdaptorManifest } from "@vortex/adaptor-api/interfaces";
-import { adaptorName, pid, semver, uri } from "@vortex/adaptor-api/branded";
+import type { IAdaptorManifest } from "@vortex/adaptor-api";
+
+import { adaptorName, pid, semver, uri } from "@vortex/adaptor-api";
 import { describe, expect, it } from "vitest";
 
 import { AdaptorRegistry, NameService } from "./registry.js";

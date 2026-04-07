@@ -1,32 +1,25 @@
-import { parentPort } from "node:worker_threads";
-import * as adaptorApiBuilder from "@vortex/adaptor-api/builder";
-import * as adaptorApiBranded from "@vortex/adaptor-api/branded";
-import * as adaptorApiRuntimeContainer from "@vortex/adaptor-api/runtime-container";
-import { getProvidedUri } from "@vortex/adaptor-api/builder";
+import type { IAdaptorManifest, IMethodMessage } from "@vortex/adaptor-api";
+
+import * as adaptorApi from "@vortex/adaptor-api";
 import {
+  getProvidedUri,
   uri as validateUri,
   adaptorName,
   semver,
-} from "@vortex/adaptor-api/branded";
-import type {
-  IAdaptorManifest,
-  IMethodMessage,
-} from "@vortex/adaptor-api/interfaces";
-import {
   activateContainer,
   createContainer,
   deactivateContainer,
-} from "@vortex/adaptor-api/runtime-container";
-import { createRpcTransport } from "./transport.js";
+} from "@vortex/adaptor-api";
+import { parentPort } from "node:worker_threads";
+
 import { createMethodDispatcher, createServiceProxy } from "./runtime.js";
+import { createRpcTransport } from "./transport.js";
 
 // Map of ESM modules to intercept in the CJS sandbox require.
 // This ensures the bundle shares the same module instances as the bootstrap
 // (avoiding ESM/CJS dual-package hazard for global state like the service container).
 const esmModuleOverrides: Record<string, unknown> = {
-  "@vortex/adaptor-api/builder": adaptorApiBuilder,
-  "@vortex/adaptor-api/branded": adaptorApiBranded,
-  "@vortex/adaptor-api/runtime-container": adaptorApiRuntimeContainer,
+  "@vortex/adaptor-api": adaptorApi,
 };
 
 if (parentPort == null) {
