@@ -69,7 +69,7 @@ export interface FileSystem {
    *
    * @throws {@link FileSystemError}
    * */
-  deleteRecursive(path: ResolvedPath): Promise<void>;
+  deleteRecursive(path: QualifiedPath): Promise<void>;
 
   /**
    * Returns the status of the entry.
@@ -101,7 +101,7 @@ export interface FileSystem {
       include?: Pattern;
       exclude?: Pattern;
     },
-  ): Promise<AsyncIterator<ResolvedPath>>;
+  ): Promise<AsyncIterator<QualifiedPath>>;
 
   /**
    * Returns an async iterator to enumerate the directory.

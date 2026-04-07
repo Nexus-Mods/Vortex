@@ -202,7 +202,7 @@ export class RealFileSystemBackend implements NodeFileSystemBackend {
         targetExists = true;
       } catch (err) {
         const { code } = parseNodeError(err);
-        targetExists = code === "not found";
+        targetExists = code !== "not found";
       }
 
       if (targetExists) {
