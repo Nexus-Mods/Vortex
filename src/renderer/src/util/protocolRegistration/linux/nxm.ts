@@ -12,6 +12,7 @@
  */
 
 import * as fs from "fs-extra";
+import * as os from "os";
 import * as path from "path";
 
 import { log } from "../../log";
@@ -39,6 +40,124 @@ export interface ILinuxNxmProtocolRegistrationOptions {
   setAsDefault: boolean;
   executablePath: string;
   appPath: string;
+}
+
+/**
+ * Discover all Firefox profile directories from both native and snap installations.
+ * Reads profiles.ini from ~/.mozilla/firefox and ~/snap/firefox/common/.mozilla/firefox,
+ * resolves each profile path, and returns those that exist on disk.
+ */
+export function findFirefoxProfileDirs(): string[] {
+  const iniPaths = [
+    path.join(os.homedir(), ".mozilla", "firefox", "profiles.ini"),
+    path.join(
+      os.homedir(),
+      "snap",
+      "firefox",
+      "common",
+      ".mozilla",
+      "firefox",
+      "profiles.ini",
+    ),
+  ];
+
+  const results: string[] = [];
+
+  for (const iniPath of iniPaths) {
+    try {
+      const content = fs.readFileSync(iniPath, { encoding: "utf8" });
+      const iniDir = path.dirname(iniPath);
+
+      // Parse [Profile...] sections
+      let inProfileSection = false;
+      let profilePath: string | null = null;
+      let isRelative = true;
+
+      for (const rawLine of content.split("\n")) {
+        const line = rawLine.trim();
+
+        if (line.startsWith("[Profile")) {
+          // Flush previous section if any
+          if (inProfileSection && profilePath !== null) {
+            const resolved = isRelative
+              ? path.join(iniDir, profilePath)
+              : profilePath;
+            if (fs.pathExistsSync(resolved)) {
+              results.push(resolved);
+            }
+          }
+          inProfileSection = true;
+          profilePath = null;
+          isRelative = true;
+        } else if (line.startsWith("[")) {
+          // A non-Profile section; flush and stop tracking
+          if (inProfileSection && profilePath !== null) {
+            const resolved = isRelative
+              ? path.join(iniDir, profilePath)
+              : profilePath;
+            if (fs.pathExistsSync(resolved)) {
+              results.push(resolved);
+            }
+          }
+          inProfileSection = false;
+          profilePath = null;
+          isRelative = true;
+        } else if (inProfileSection) {
+          if (line.startsWith("Path=")) {
+            profilePath = line.slice("Path=".length);
+          } else if (line.startsWith("IsRelative=")) {
+            isRelative = line.slice("IsRelative=".length) !== "0";
+          }
+        }
+      }
+
+      // Flush last section
+      if (inProfileSection && profilePath !== null) {
+        const resolved = isRelative
+          ? path.join(iniDir, profilePath)
+          : profilePath;
+        if (fs.pathExistsSync(resolved)) {
+          results.push(resolved);
+        }
+      }
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
+        log("warn", "failed to read firefox profiles.ini", {
+          iniPath,
+          error: (err as Error).message,
+        });
+      }
+      // ENOENT: Firefox not installed at this path — silently skip
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Append `network.protocol-handler.expose.nxm = false` to Firefox user.js
+ * if not already present. Returns true if the file was modified.
+ */
+export function ensureFirefoxNxmUserPref(profileDir: string): boolean {
+  const userJsPath = path.join(profileDir, "user.js");
+  let content = "";
+
+  try {
+    content = fs.readFileSync(userJsPath, { encoding: "utf8" });
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
+      throw err;
+    }
+  }
+
+  if (content.includes("network.protocol-handler.expose.nxm")) {
+    return false;
+  }
+
+  content +=
+    'user_pref("network.protocol-handler.expose.nxm", false);\n';
+  fs.outputFileSync(userJsPath, content, { encoding: "utf8" });
+  return true;
 }
 
 /**
@@ -75,6 +194,27 @@ export function registerLinuxNxmProtocolHandler(
   const previousHandler = getDefaultUrlSchemeHandler(NXM_PROTOCOL);
   const haveToRegister = previousHandler !== desktopId;
   setDefaultUrlSchemeHandler(NXM_PROTOCOL, desktopId);
+
+  const firefoxProfileDirs = findFirefoxProfileDirs();
+  let patchedCount = 0;
+  for (const profileDir of firefoxProfileDirs) {
+    try {
+      if (ensureFirefoxNxmUserPref(profileDir)) {
+        patchedCount++;
+      }
+    } catch (err) {
+      log("warn", "failed to patch firefox user.js", {
+        profileDir,
+        error: (err as Error).message,
+      });
+    }
+  }
+  if (firefoxProfileDirs.length > 0) {
+    log("info", "patched firefox user.js for nxm expose pref", {
+      patched: patchedCount,
+      total: firefoxProfileDirs.length,
+    });
+  }
 
   return haveToRegister;
 }
