@@ -231,4 +231,4 @@ A test only answers "can I handle this archive?" (`supported: true/false`).
 - SMAPI: <https://smapi.io/>
 - Stardew modding wiki index: <https://stardewvalleywiki.com/Modding:Index>
 - Vortex game extension guide:
-  <https://github.com/Nexus-Mods/Vortex/wiki/How-to-develop-a-game-extension>
+  <https://github.com/Nexus-Mods/Vortex/wiki/MODDINGWIKI-Developers-General-Creating-a-game-extension>
