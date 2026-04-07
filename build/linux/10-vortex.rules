@@ -1,0 +1,5 @@
+polkit.addRule(function(action, subject) {
+  if (action.id === "io.nexusmods.vortex.run-elevated" && subject.active) {
+    return polkit.Result.AUTH_ADMIN_KEEP;
+  }
+});
