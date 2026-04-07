@@ -5,21 +5,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "pnpm tsdown",
-    "dist": "pnpm tsdown",
+    "build": "node ./build.mjs",
+    "dist": "node ./build.mjs",
     "typecheck": "pnpm tsc --noEmit -p tsconfig.json",
     "test": "vitest run --config vitest.config.ts"
   },
   "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.cts",
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    },
-    "./package.json": "./package.json"
-  },
+  "module": "./dist/index.mjs",
   "vortex:requires": [
     "vortex:host/ping"
   ],
