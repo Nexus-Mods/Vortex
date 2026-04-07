@@ -127,7 +127,7 @@ function updateManuallyConfigured(
     discoveredGames[game.id]?.path !== undefined &&
     discoveredGames[game.id]?.store === undefined
   ) {
-    return GameStoreHelper.identifyStore(discoveredGames[game.id]?.path)
+    return Bluebird.resolve(GameStoreHelper.identifyStore(discoveredGames[game.id]?.path))
       .then((store) => {
         if (store !== undefined) {
           log("debug", "updating previously discovered game", {
@@ -397,7 +397,7 @@ export function quickDiscovery(
           let prom: Bluebird<string>;
 
           if (game.queryArgs !== undefined) {
-            prom = queryByArgs(discoveredGames, game, storeGames).then((result) => {
+            prom = Bluebird.resolve(queryByArgs(discoveredGames, game, storeGames)).then((result) => {
               if (result !== undefined) {
                 return handleDiscoveredGame(
                   game,

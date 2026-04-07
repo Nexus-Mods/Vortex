@@ -407,9 +407,11 @@ class StarterInfo implements IStarterInfo {
     api: IExtensionApi,
     addInfo: any,
   ): PromiseBB<void> {
-    const infoObj =
-      addInfo !== undefined ? addInfo : path.dirname(info.exePath);
-    return GameStoreHelper.launchGame(api, launcher, infoObj);
+    const parameters =
+      addInfo !== undefined
+        ? Array.isArray(addInfo) ? addInfo : [String(addInfo)]
+        : [path.dirname(info.exePath)];
+    return PromiseBB.resolve(GameStoreHelper.launchGameStore(api, launcher, parameters));
   }
 
   private static gameIcon(gameId: string, extensionPath: string, logo: string) {

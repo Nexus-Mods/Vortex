@@ -263,7 +263,7 @@ function manualGameStoreSelection(
   correctedGamePath: string,
 ): PromiseBB<{ store: string; corrected: string }> {
   const gameStores = getGameStores();
-  return GameStoreHelper.identifyStore(correctedGamePath).then((storeId) => {
+  return PromiseBB.resolve(GameStoreHelper.identifyStore(correctedGamePath)).then((storeId) => {
     const detectedStore = gameStores.find((store) => store.id === storeId);
     return api
       .showDialog(
