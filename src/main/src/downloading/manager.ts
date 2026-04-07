@@ -82,7 +82,7 @@ export class DownloadManager {
     const progressReporter = new ProgressReporter();
     const abortController = new AbortController();
 
-    const promise = this.#downloadQueue.add(() =>
+    const rawPromise = this.#downloadQueue.add(() =>
       download(
         resource,
         dest,
@@ -95,12 +95,23 @@ export class DownloadManager {
       ),
     );
 
+    // Swallow all rejections on one fork so that pause()/cancel() flows
+    // never surface as unhandled rejections.
+    const settled = rawPromise.catch(() => {});
+
+    // The consumer-facing promise. We silently swallow cancellation
+    // rejections so that tests (and callers) that only await pause()
+    // without also awaiting handle.promise don't trigger unhandled
+    // rejection warnings.  Non-cancellation errors still reject.
+    const promise = rawPromise.catch((err) => {
+      if (err instanceof DownloadError && err.code === "cancellation") return;
+      throw err;
+    });
+
     const pause = async (): Promise<DownloadCheckpoint<T>> => {
       abortController.abort();
-      await promise.catch((err) => {
-        if (err instanceof DownloadError && err.code === "cancellation") return;
-        throw err;
-      });
+      // Wait for the download to fully settle (settled never rejects).
+      await settled;
 
       const progress = progressReporter.getProgress();
       let completedRanges: ByteRange[] = [];

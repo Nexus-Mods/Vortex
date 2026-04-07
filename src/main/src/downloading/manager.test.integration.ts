@@ -1,11 +1,12 @@
 import { randomBytes } from "node:crypto";
-import { readFile, mkdtemp, mkdir, rm } from "node:fs/promises";
+import { readFile, mkdtemp, mkdir, rm, access } from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 
-import { DownloadManager } from "./manager";
+import { DownloadManager, type DownloadCheckpoint } from "./manager";
 import { urlResolver } from "./resolver";
+import { staticChunker } from "./chunking";
 import {
   type TestServer,
   createSharedTestServer,
@@ -166,6 +167,101 @@ describe("DownloadManager", () => {
 
     expect(manager.numRunning).toBe(0);
     expect(manager.numPending).toBe(0);
+  });
+
+  describe("resume", () => {
+    async function waitForFile(path: string, timeout = 10_000): Promise<void> {
+      const start = Date.now();
+      while (Date.now() - start < timeout) {
+        try {
+          await access(path);
+          return;
+        } catch {
+          await new Promise((r) => setTimeout(r, 50));
+        }
+      }
+      throw new Error(`Timeout waiting for file: ${path}`);
+    }
+
+    it("skips already-downloaded chunks on resume", async () => {
+      using route = server.route(
+        withHooks(
+          serveFile({ body: LARGE_FILE, acceptRanges: true }),
+          delayBeforeChunk(2, 300),
+        ),
+      );
+      await using tmp = await makeTmpDir();
+      const manager = new DownloadManager(1);
+      const dest = path.join(tmp.dir, "output");
+      const handle = manager.download(route.url, dest, urlResolver);
+
+      await vi.waitFor(
+        () => {
+          const progress = handle.getProgress();
+          return progress.isChunked && progress.chunks.length >= 2;
+        },
+        { timeout: 10_000, interval: 50 },
+      );
+
+      await waitForFile(dest);
+
+      const checkpoint = await handle.pause();
+
+      const resumed = manager.resume(checkpoint, urlResolver, staticChunker());
+      await resumed.promise;
+
+      const result = await readFile(dest);
+      expect(Buffer.compare(LARGE_FILE, result)).toBe(0);
+    });
+
+    it("throws when resuming with checkpoint for non-existent dest", async () => {
+      using route = server.route(
+        serveFile({ body: SMALL_FILE, acceptRanges: true }),
+      );
+      await using tmp = await makeTmpDir();
+      const manager = new DownloadManager(1);
+
+      const checkpoint = {
+        resource: route.url,
+        dest: path.join(tmp.dir, "does-not-exist"),
+        completedRanges: [],
+        etag: null,
+      } satisfies DownloadCheckpoint<URL>;
+
+      const resumed = manager.resume(checkpoint, urlResolver, staticChunker());
+      await expect(resumed.promise).rejects.toThrow();
+    });
+
+    it("decrements numRunning after resume settles on pause", async () => {
+      using route = server.route(
+        withHooks(
+          serveFile({ body: LARGE_FILE, acceptRanges: true }),
+          delayBeforeChunk(1, 300),
+        ),
+      );
+      await using tmp = await makeTmpDir();
+      const manager = new DownloadManager(1);
+      const dest = path.join(tmp.dir, "output");
+      const handle = manager.download(route.url, dest, urlResolver);
+
+      await vi.waitFor(
+        () => {
+          const progress = handle.getProgress();
+          return progress.isChunked && progress.chunks.length >= 1;
+        },
+        { timeout: 10_000, interval: 50 },
+      );
+
+      await waitForFile(dest);
+
+      const checkpoint = await handle.pause();
+
+      const resumed = manager.resume(checkpoint, urlResolver, staticChunker());
+      await resumed.pause();
+
+      expect(manager.numRunning).toBe(0);
+      expect(manager.numPending).toBe(0);
+    });
   });
 
   describe("pause", () => {

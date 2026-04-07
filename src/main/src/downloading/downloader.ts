@@ -179,6 +179,34 @@ async function probeUrl(
   return { size, acceptsRanges, etag };
 }
 
+/**
+ * Create a got stream with an immediate no-op error listener.
+ *
+ * got internally calls `this.destroy(new AbortError())` inside an
+ * `abort` event listener on the signal.  If the stream has no `error`
+ * listener at that moment Node promotes the error to an uncaught
+ * exception.  Attaching a no-op listener here prevents that;
+ * downstream consumers still receive the error
+ * through their own mechanisms.
+ */
+function createGotStream(
+  url: URL,
+  abortSignal: AbortSignal,
+  etag: string | null,
+  chunk: Chunk | null,
+) {
+  const stream = got.stream(url, {
+    signal: abortSignal,
+    headers: createHeaders(etag, chunk),
+  });
+
+  // Prevent uncaught-exception when abort destroys the stream before
+  // pipeline or for-await-of attaches its own error handler.
+  stream.on("error", () => {});
+
+  return stream;
+}
+
 async function downloadSingle(
   resource: NormalizedResource,
   probe: ProbeResult,
@@ -186,10 +214,12 @@ async function downloadSingle(
   progress: Progress,
   abortSignal: AbortSignal,
 ): Promise<void> {
-  const stream = got.stream(resource.probeUrl, {
-    signal: abortSignal,
-    headers: createHeaders(probe.etag, null),
-  });
+  const stream = createGotStream(
+    resource.probeUrl,
+    abortSignal,
+    probe.etag,
+    null,
+  );
 
   let fileStream: WriteStream;
 
@@ -255,10 +285,7 @@ async function downloadChunk(
   abortSignal.throwIfAborted();
 
   const url = await resource.chunkUrl(chunk);
-  const stream = got.stream(url, {
-    signal: abortSignal,
-    headers: createHeaders(probe.etag, chunk),
-  });
+  const stream = createGotStream(url, abortSignal, probe.etag, chunk);
 
   let writePosition = chunk.range.start;
 
