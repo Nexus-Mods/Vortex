@@ -31,6 +31,7 @@ const NXM_PROTOCOL = "nxm";
 const PACKAGE_DESKTOP_ID = "com.nexusmods.vortex.desktop";
 const DEV_DESKTOP_ID = "com.nexusmods.vortex.dev.desktop";
 const DEV_WRAPPER_FILE_NAME = "com.nexusmods.vortex.dev.sh";
+const APPIMAGE_WRAPPER_FILE_NAME = "com.nexusmods.vortex.sh";
 
 /**
  * Required registration inputs for Linux `nxm` routing.
@@ -135,6 +136,48 @@ export function findFirefoxProfileDirs(): string[] {
 }
 
 /**
+ * Remove the `nxm` scheme entry from Firefox's handlers.json if present.
+ *
+ * Firefox checks handlers.json before about:config prefs. An existing entry
+ * (even with no configured app) overrides `network.protocol-handler.expose.nxm`
+ * and prevents Firefox from routing nxm:// through xdg-desktop-portal.
+ * Removing the entry lets the user.js pref take effect.
+ *
+ * Returns true if handlers.json was modified.
+ */
+export function clearFirefoxNxmHandlersEntry(profileDir: string): boolean {
+  const handlersPath = path.join(profileDir, "handlers.json");
+
+  let raw: string;
+  try {
+    raw = fs.readFileSync(handlersPath, { encoding: "utf8" });
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+      return false;
+    }
+    throw err;
+  }
+
+  let data: Record<string, unknown>;
+  try {
+    data = JSON.parse(raw) as Record<string, unknown>;
+  } catch {
+    return false;
+  }
+
+  const schemes = data["schemes"] as Record<string, unknown> | undefined;
+  if (!schemes || !(NXM_PROTOCOL in schemes)) {
+    return false;
+  }
+
+  delete schemes[NXM_PROTOCOL];
+  fs.outputFileSync(handlersPath, JSON.stringify(data, null, 2), {
+    encoding: "utf8",
+  });
+  return true;
+}
+
+/**
  * Append `network.protocol-handler.expose.nxm = false` to Firefox user.js
  * if not already present. Returns true if the file was modified.
  */
@@ -183,6 +226,13 @@ export function registerLinuxNxmProtocolHandler(
     );
   }
 
+  if (desktopId === PACKAGE_DESKTOP_ID && process.env.APPIMAGE) {
+    didChangeDesktopFiles = ensureAppImageDesktopEntry(
+      applicationsDir,
+      process.env.APPIMAGE,
+    );
+  }
+
   if (didChangeDesktopFiles) {
     refreshDesktopDatabase(applicationsDir);
   }
@@ -197,21 +247,26 @@ export function registerLinuxNxmProtocolHandler(
 
   const firefoxProfileDirs = findFirefoxProfileDirs();
   let patchedCount = 0;
+  let clearedCount = 0;
   for (const profileDir of firefoxProfileDirs) {
     try {
+      if (clearFirefoxNxmHandlersEntry(profileDir)) {
+        clearedCount++;
+      }
       if (ensureFirefoxNxmUserPref(profileDir)) {
         patchedCount++;
       }
     } catch (err) {
-      log("warn", "failed to patch firefox user.js", {
+      log("warn", "failed to patch firefox profile for nxm", {
         profileDir,
         error: (err as Error).message,
       });
     }
   }
   if (firefoxProfileDirs.length > 0) {
-    log("info", "patched firefox user.js for nxm expose pref", {
-      patched: patchedCount,
+    log("info", "patched firefox profiles for nxm routing", {
+      userJsPatched: patchedCount,
+      handlersCleared: clearedCount,
       total: firefoxProfileDirs.length,
     });
   }
@@ -274,7 +329,7 @@ function escapeShellScriptArgument(input: string): string {
  */
 function generateWrapperScript(
   executablePath: string,
-  appPath: string,
+  appPath?: string,
 ): string {
   // Persist GTK/Electron environment variables used to run Vortex.
   // This is needed for Nix, such that you can launch the desktop entry outside
@@ -315,20 +370,23 @@ function generateWrapperScript(
     // Required in environments where Electron cannot use the sandbox (Docker, VMs,
     // restricted kernels). Without this, the child Electron process launched by the
     // wrapper script will crash before requestSingleInstanceLock() runs.
+    // Only pass --download when a parameter %u is provided (nxm:// links from browser).
+    // This matches Windows behaviour, which includes --download on all protocol handler calls,
+    // but does not on non-handler calls (e.g., when starting from the start menu).
+    // AppImage builds are self-contained: no appPath positional argument needed.
     (() => {
       const noSandboxFlag = process.argv.includes("--no-sandbox")
         ? " --no-sandbox"
         : "";
       const escapedExec = escapeShellScriptArgument(executablePath);
-      const escapedApp = escapeShellScriptArgument(appPath);
-      // Only pass --download when a parameter %u is provided (nxm:// links from browser).
-      // This matches Windows behaviour, which includes --download on all protocol handler calls,
-      // but does not on non-handler calls (e.g., when starting from the start menu).
+      const appPathArg = appPath
+        ? ` "${escapeShellScriptArgument(appPath)}"`
+        : "";
       return (
         `if [ -n "$1" ]; then\n` +
-        `  exec "${escapedExec}" "${escapedApp}"${noSandboxFlag} --download "$@"\n` +
+        `  exec "${escapedExec}"${appPathArg}${noSandboxFlag} --download "$@"\n` +
         `else\n` +
-        `  exec "${escapedExec}" "${escapedApp}"${noSandboxFlag}\n` +
+        `  exec "${escapedExec}"${appPathArg}${noSandboxFlag}\n` +
         `fi\n`
       );
     })()
@@ -396,6 +454,51 @@ function ensureDevDesktopEntry(
     "[Desktop Entry]\n" +
     "Type=Application\n" +
     "Name=Vortex (dev build)\n" +
+    "GenericName=Mod Manager\n" +
+    "Comment=Mod manager for PC games from Nexus Mods\n" +
+    "NoDisplay=true\n" +
+    `Exec=${escapedWrapperPathExec} %u\n` +
+    `TryExec=${escapedWrapperPathTryExec}\n` +
+    "Icon=com.nexusmods.vortex\n" +
+    "Terminal=false\n" +
+    "Categories=Game;Utility;\n" +
+    "MimeType=x-scheme-handler/nxm;\n" +
+    "StartupWMClass=Vortex\n" +
+    "StartupNotify=true\n" +
+    "Keywords=mod;mods;modding;nexus;games;skyrim;fallout;\n";
+
+  const desktopChanged = writeFileIfChanged(
+    desktopFilePath,
+    desktopFileContent,
+    0o755,
+  );
+
+  return wrapperChanged || desktopChanged;
+}
+
+function ensureAppImageDesktopEntry(
+  applicationsDir: string,
+  appImagePath: string,
+): boolean {
+  const wrapperPath = path.join(applicationsDir, APPIMAGE_WRAPPER_FILE_NAME);
+  const desktopFilePath = path.join(applicationsDir, PACKAGE_DESKTOP_ID);
+
+  warnIfApplicationsPathNeedsEscaping(applicationsDir);
+
+  const escapedWrapperPathExec = escapeDesktopExecFilePath(wrapperPath);
+  const escapedWrapperPathTryExec = escapeDesktopFilePath(wrapperPath);
+
+  // AppImage is self-contained -- no appPath needed (the AppImage is both the
+  // executable and the app bundle; Electron's appPath positional arg is not used).
+  const wrapperContent = generateWrapperScript(appImagePath);
+  const wrapperChanged = writeFileIfChanged(wrapperPath, wrapperContent, 0o755);
+
+  // The wrapper script adds --download conditionally when %u is provided.
+  // This matches Windows behaviour where --download is only passed for protocol URLs.
+  const desktopFileContent =
+    "[Desktop Entry]\n" +
+    "Type=Application\n" +
+    "Name=Vortex\n" +
     "GenericName=Mod Manager\n" +
     "Comment=Mod manager for PC games from Nexus Mods\n" +
     "NoDisplay=true\n" +
