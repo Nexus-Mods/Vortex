@@ -1,0 +1,38 @@
+{
+  "$schema": "https://www.schemastore.org/package.json",
+  "name": "@vortex/fs",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm tsdown && pnpm api-extractor run -l -c api-extractor.browser.json && pnpm api-extractor run -l -c api-extractor.node.json",
+    "dist": "pnpm run build",
+    "typecheck": "pnpm tsc -p ./tsconfig.browser.json && pnpm tsc -p ./tsconfig.node.json",
+    "lint": "pnpm eslint --concurrency auto .",
+    "lint:quiet": "pnpm eslint --concurrency auto --quiet ."
+  },
+  "exports": {
+    ".": {
+      "node": {
+        "development": "./src/node/lib.ts",
+        "types": "./dist/node/lib.d.mts",
+        "import": "./dist/node/lib.mjs",
+        "require": "./dist/node/lib.cjs"
+      },
+      "browser": {
+        "development": "./src/browser/lib.ts",
+        "types": "./dist/browser/lib.d.ts",
+        "import": "./dist/browser/lib.js"
+      },
+      "default": {
+        "development": "./src/browser/lib.ts",
+        "types": "./dist/browser/lib.d.ts",
+        "import": "./dist/browser/lib.js"
+      }
+    }
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "vite-plugin-doctest": "catalog:"
+  }
+}
