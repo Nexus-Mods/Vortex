@@ -3,6 +3,7 @@ import lazyRequire from "../../../util/lazyRequire";
 import { log } from "../../../util/log";
 import { DialogManager } from "./DialogManager";
 import { SharedDelegates } from "../../installer_fomod_shared/delegates/SharedDelegates";
+import type { IChoices } from "../../installer_fomod_shared/types/interface";
 
 import type * as fomodT from "@nexusmods/fomod-installer-native";
 
@@ -12,12 +13,14 @@ export class VortexModInstaller {
     instanceId: string,
     gameId: string,
     unattended: boolean = false,
+    attendedPresets?: IChoices,
   ): Promise<VortexModInstaller> {
     const delegates = new VortexModInstaller(
       api,
       instanceId,
       gameId,
       unattended,
+      attendedPresets,
     );
     await delegates.initialize();
     return delegates;
@@ -37,12 +40,17 @@ export class VortexModInstaller {
   // choices come from the input preset, not from Redux state. Skipping these
   // eliminates dozens of expensive main-thread TSFN callbacks per fomod mod.
   private mUnattended: boolean;
+  // Saved choices from a previous installation. When set (and not unattended),
+  // the dialog is shown but options matching these choices are pre-selected,
+  // allowing the user to review and modify them.
+  private mAttendedPresets: IChoices;
 
   private constructor(
     api: IExtensionApi,
     instanceId: string,
     gameId: string,
     unattended: boolean = false,
+    attendedPresets?: IChoices,
   ) {
     this.fomod = lazyRequire<typeof fomodT>(() =>
       require("@nexusmods/fomod-installer-native"),
@@ -61,6 +69,7 @@ export class VortexModInstaller {
     this.mInstanceId = instanceId;
     this.mGameId = gameId;
     this.mUnattended = unattended;
+    this.mAttendedPresets = attendedPresets;
   }
 
   private async initialize(): Promise<void> {
@@ -147,6 +156,7 @@ export class VortexModInstaller {
       this.mApi,
       this.mInstanceId,
       this.mScriptPath,
+      this.mAttendedPresets,
     );
     this.mDialogManager.enqueueDialog(
       moduleName,
