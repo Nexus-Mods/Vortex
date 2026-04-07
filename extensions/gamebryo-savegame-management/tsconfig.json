@@ -6,6 +6,7 @@
   ],
   "exclude": [
     "src/**/*.test.ts",
+    "src/**/*.test.tsx",
     "__mocks__"
   ]
 }

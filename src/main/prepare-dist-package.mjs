@@ -1,4 +1,4 @@
-import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { readFile, writeFile, mkdir, readdir } from "node:fs/promises";
 import { resolve, dirname, isAbsolute } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -137,6 +137,30 @@ async function buildWorkspacePackageMap(packagePaths) {
   const map = {};
 
   for (const pkgPath of packagePaths) {
+    if (pkgPath.endsWith("/*")) {
+      // Expand single-level glob by listing the directory
+      const dirPath = resolve(ROOT_DIR, pkgPath.slice(0, -2));
+      try {
+        const entries = await readdir(dirPath, { withFileTypes: true });
+        for (const entry of entries) {
+          if (!entry.isDirectory()) continue;
+          const pkgJsonPath = resolve(dirPath, entry.name, "package.json");
+          try {
+            const raw = await readFile(pkgJsonPath, "utf8");
+            const pkg = JSON.parse(raw);
+            if (pkg.name) {
+              map[pkg.name] = resolve(dirPath, entry.name);
+            }
+          } catch {
+            // Skip packages whose package.json cannot be read
+          }
+        }
+      } catch {
+        // Skip unreadable directories
+      }
+      continue;
+    }
+
     if (pkgPath.includes("*")) continue;
 
     const pkgDir = resolve(ROOT_DIR, pkgPath);
