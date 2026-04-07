@@ -88,8 +88,9 @@ export class DiscoveryCoordinator {
 
       for (const result of results) {
         if (result.status === "rejected") {
+          const reason = result.reason instanceof Error ? result.reason.message : String(result.reason as string);
           log("warn", "discovery: scanner failed", {
-            error: String(result.reason),
+            error: reason,
           });
           continue;
         }

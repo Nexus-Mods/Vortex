@@ -9,20 +9,20 @@ import type { IStoreGameEntry, IStoreScanner } from "../IStoreScanner";
 export class RegistryScanner implements IStoreScanner {
   public readonly storeType = "registry";
 
-  public async isAvailable(): Promise<boolean> {
-    return process.platform === "win32";
+  public isAvailable(): Promise<boolean> {
+    return Promise.resolve(process.platform === "win32");
   }
 
-  public async scan(): Promise<IStoreGameEntry[]> {
+  public scan(): Promise<IStoreGameEntry[]> {
     // Registry scanner doesn't enumerate a catalog
-    return [];
+    return Promise.resolve([] as IStoreGameEntry[]);
   }
 
   /**
    * Look up a game installation path from a registry key.
    * Format: "HKEY_LOCAL_MACHINE:Software\\Path:KeyName"
    */
-  public async lookup(query: string): Promise<IStoreGameEntry | undefined> {
+  public lookup(query: string): Promise<IStoreGameEntry | undefined> {
     if (process.platform !== "win32") {
       return undefined;
     }
@@ -45,7 +45,7 @@ export class RegistryScanner implements IStoreScanner {
 
     try {
       const result = winapi.RegGetValue(
-        parts[0] as any,
+        parts[0] as winapi.REGISTRY_HIVE,
         parts[1],
         parts[2],
       );

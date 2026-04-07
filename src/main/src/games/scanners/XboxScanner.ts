@@ -40,9 +40,9 @@ const APP_MANIFEST = "appxmanifest.xml";
 export class XboxScanner implements IStoreScanner {
   public readonly storeType = "xbox";
 
-  public async isAvailable(): Promise<boolean> {
-    if (process.platform !== "win32") return false;
-    return detectXboxInstalled();
+  public isAvailable(): Promise<boolean> {
+    if (process.platform !== "win32") return Promise.resolve(false);
+    return Promise.resolve(detectXboxInstalled());
   }
 
   public async scan(): Promise<IStoreGameEntry[]> {
@@ -51,16 +51,16 @@ export class XboxScanner implements IStoreScanner {
 
     try {
       const gamePathMap = await findInstalledGames();
-      return await this.#getGameEntries(gamePathMap);
-    } catch (err) {
-      log("warn", "xbox-scanner: failed", { error: String(err) });
+      return this.#getGameEntries(gamePathMap);
+    } catch (err: unknown) {
+      log("warn", "xbox-scanner: failed", { error: err instanceof Error ? err.message : String(err as string) });
       return [];
     }
   }
 
-  async #getGameEntries(
+  #getGameEntries(
     gamePathMap: Record<string, string>,
-  ): Promise<IStoreGameEntry[]> {
+  ): IStoreGameEntry[] {
     const mutableLinkMap = buildMutableLinkMap();
     const entries: IStoreGameEntry[] = [];
 
@@ -84,16 +84,16 @@ export class XboxScanner implements IStoreScanner {
               mutableLinkMap,
             );
             if (entry) entries.push(entry);
-          } catch (err) {
+          } catch (err: unknown) {
             log("debug", "xbox-scanner: failed to process key", {
               key,
-              error: String(err),
+              error: err instanceof Error ? err.message : String(err as string),
             });
           }
         }
       });
-    } catch (err) {
-      if ((err as any).code !== "ENOENT") {
+    } catch (err: unknown) {
+      if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
         throw err;
       }
     }
@@ -103,7 +103,7 @@ export class XboxScanner implements IStoreScanner {
   }
 
   #processKey(
-    hkey: unknown,
+    hkey: Buffer,
     key: string,
     gamePathMap: Record<string, string>,
     mutableLinkMap: Record<string, string>,
@@ -142,7 +142,7 @@ export class XboxScanner implements IStoreScanner {
     // Get game path
     let gamePath: string | undefined;
     try {
-      gamePath = winapi.RegGetValue(hkey as any, key, "PackageRootFolder")
+      gamePath = winapi.RegGetValue(hkey, key, "PackageRootFolder")
         .value as string;
     } catch {
       gamePath = gamePathMap[appid];
@@ -188,13 +188,13 @@ function detectXboxInstalled(): boolean {
 }
 
 function getKeyNames(
-  rootKey: string,
+  rootKey: winapi.REGISTRY_HIVE,
   keyPath: string,
   filterList?: string[],
 ): string[] {
   try {
     let result: string[] = [];
-    winapi.WithRegOpen(rootKey as any, keyPath, (hkey) => {
+    winapi.WithRegOpen(rootKey, keyPath, (hkey) => {
       const names = winapi.RegEnumKeys(hkey);
       result = filterList
         ? names
@@ -211,7 +211,7 @@ function getKeyNames(
   }
 }
 
-function getFirstKeyName(rootKey: string, keyPath: string): string | undefined {
+function getFirstKeyName(rootKey: winapi.REGISTRY_HIVE, keyPath: string): string | undefined {
   const names = getKeyNames(rootKey, keyPath);
   return names.length > 0 ? names[0] : undefined;
 }

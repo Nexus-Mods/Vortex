@@ -14,9 +14,9 @@ const ITEM_EXT = ".item";
 export class EpicScanner implements IStoreScanner {
   public readonly storeType = "epic";
 
-  public async isAvailable(): Promise<boolean> {
+  public isAvailable(): Promise<boolean> {
     if (process.platform !== "win32") {
-      return false;
+      return Promise.resolve(false);
     }
 
     try {
@@ -25,10 +25,11 @@ export class EpicScanner implements IStoreScanner {
         REG_EPIC_LAUNCHER,
         "AppDataPath",
       );
-      return true;
-    } catch (err) {
-      log("info", "Epic Games launcher not found", { error: String(err) });
-      return false;
+      return Promise.resolve(true);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err as string);
+      log("info", "Epic Games launcher not found", { error: message });
+      return Promise.resolve(false);
     }
   }
 
@@ -44,8 +45,9 @@ export class EpicScanner implements IStoreScanner {
         REG_EPIC_LAUNCHER,
         "AppDataPath",
       ).value as string;
-    } catch (err) {
-      log("info", "Epic: could not read data path", { error: String(err) });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err as string);
+      log("info", "Epic: could not read data path", { error: message });
       return [];
     }
 
@@ -96,10 +98,11 @@ export class EpicScanner implements IStoreScanner {
           installPath: gamePath,
           name,
         });
-      } catch (err) {
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err as string);
         log("error", "Epic: failed to parse manifest", {
           manifest,
-          error: String(err),
+          error: message,
         });
       }
     }

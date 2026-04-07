@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 
+import type { DuckDBConnection } from "@duckdb/node-api";
+
 import { DiscoveryCoordinator } from "./DiscoveryCoordinator";
 import type { IStoreGameEntry, IStoreScanner } from "./IStoreScanner";
+import type QueryInvalidator from "../store/QueryInvalidator";
 
 describe("DiscoveryCoordinator", () => {
   it("runs a second scan immediately after a completed scan", async () => {
@@ -25,13 +28,14 @@ describe("DiscoveryCoordinator", () => {
 
     const coordinator = new DiscoveryCoordinator(
       [scanner],
-      connection as any,
-      invalidator as any,
+      connection as unknown as DuckDBConnection,
+      invalidator as unknown as QueryInvalidator,
     );
 
     await coordinator.runDiscovery();
     await coordinator.runDiscovery();
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(scanner.scan).toHaveBeenCalledTimes(2);
   });
 
@@ -62,14 +66,15 @@ describe("DiscoveryCoordinator", () => {
 
     const coordinator = new DiscoveryCoordinator(
       [scanner],
-      connection as any,
-      invalidator as any,
+      connection as unknown as DuckDBConnection,
+      invalidator as unknown as QueryInvalidator,
     );
 
     const firstRun = coordinator.runDiscovery();
     await Promise.resolve();
 
     await coordinator.runDiscovery();
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(scanner.scan).toHaveBeenCalledTimes(1);
 
     resolveScan?.();
@@ -96,8 +101,8 @@ describe("DiscoveryCoordinator", () => {
 
     const coordinator = new DiscoveryCoordinator(
       [scanner],
-      connection as any,
-      invalidator as any,
+      connection as unknown as DuckDBConnection,
+      invalidator as unknown as QueryInvalidator,
     );
 
     await coordinator.runDiscovery();
@@ -131,8 +136,8 @@ describe("DiscoveryCoordinator", () => {
 
     const coordinator = new DiscoveryCoordinator(
       [scanner],
-      connection as any,
-      invalidator as any,
+      connection as unknown as DuckDBConnection,
+      invalidator as unknown as QueryInvalidator,
     );
 
     await coordinator.runDiscovery();

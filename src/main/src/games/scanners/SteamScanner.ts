@@ -35,10 +35,10 @@ export class SteamScanner implements IStoreScanner {
       try {
         const games = await this.#parseLibrary(basePath, libPath);
         entries.push(...games);
-      } catch (err) {
+      } catch (err: unknown) {
         log("warn", "steam-scanner: failed to read library", {
           path: libPath,
-          error: String(err),
+          error: err instanceof Error ? err.message : String(err as string),
         });
       }
     }
@@ -47,7 +47,7 @@ export class SteamScanner implements IStoreScanner {
     return entries;
   }
 
-  async #findBasePath(): Promise<string | undefined> {
+  #findBasePath(): Promise<string | undefined> {
     if (process.platform === "win32") {
       try {
         const result = winapi.RegGetValue(
@@ -55,14 +55,14 @@ export class SteamScanner implements IStoreScanner {
           "Software\\Valve\\Steam",
           "SteamPath",
         );
-        return result.value as string;
+        return Promise.resolve(result.value as string);
       } catch {
-        return undefined;
+        return Promise.resolve(undefined);
       }
     }
 
     // Linux: check known Steam installation paths
-    return findLinuxSteamPath();
+    return Promise.resolve(findLinuxSteamPath());
   }
 
   async #resolveLibraryPaths(basePath: string): Promise<string[]> {
@@ -72,7 +72,7 @@ export class SteamScanner implements IStoreScanner {
     try {
       const data = await fs.readFile(vdfPath, "utf8");
       const parsed = parse(data) as Record<string, unknown>;
-      const libObj = (parsed as any)?.libraryfolders ?? {};
+      const libObj = (parsed as Record<string, Record<string, { path?: string }>>).libraryfolders ?? {};
 
       let counter = Object.prototype.hasOwnProperty.call(libObj, "0") ? 0 : 1;
       while (Object.prototype.hasOwnProperty.call(libObj, `${counter}`)) {
@@ -82,9 +82,9 @@ export class SteamScanner implements IStoreScanner {
         }
         counter++;
       }
-    } catch (err) {
+    } catch (err: unknown) {
       log("warn", "steam-scanner: failed to read libraryfolders.vdf", {
-        error: String(err),
+        error: err instanceof Error ? err.message : String(err as string),
       });
     }
 
@@ -116,7 +116,7 @@ export class SteamScanner implements IStoreScanner {
           path.join(steamAppsPath, manifest),
           "utf8",
         );
-        const parsed = parse(data) as any;
+        const parsed = parse(data) as Record<string, Record<string, string>>;
         const appState = parsed?.AppState;
 
         if (!appState?.appid || !appState?.installdir) {
@@ -160,10 +160,10 @@ export class SteamScanner implements IStoreScanner {
           name: appState.name,
           metadata,
         });
-      } catch (err) {
+      } catch (err: unknown) {
         log("debug", "steam-scanner: failed to parse manifest", {
           manifest,
-          error: String(err),
+          error: err instanceof Error ? err.message : String(err as string),
         });
       }
     }
@@ -246,9 +246,13 @@ async function getConfiguredProtonName(
       path.join(steamPath, "config", "config.vdf"),
       "utf8",
     );
-    const config = parse(configData) as any;
-    return config?.InstallConfigStore?.Software?.Valve?.Steam
-      ?.CompatToolMapping?.[appId]?.name;
+    const config = parse(configData) as Record<string, unknown>;
+    const store = (config?.InstallConfigStore as Record<string, unknown> | undefined);
+    const software = (store?.Software as Record<string, unknown> | undefined);
+    const valve = (software?.Valve as Record<string, unknown> | undefined);
+    const steam = (valve?.Steam as Record<string, unknown> | undefined);
+    const mapping = (steam?.CompatToolMapping as Record<string, Record<string, string>> | undefined);
+    return mapping?.[appId]?.name;
   } catch {
     return undefined;
   }

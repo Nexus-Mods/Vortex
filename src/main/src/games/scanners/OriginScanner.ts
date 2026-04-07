@@ -17,9 +17,9 @@ const MANIFEST_EXT = ".mfst";
 export class OriginScanner implements IStoreScanner {
   public readonly storeType = "origin";
 
-  public async isAvailable(): Promise<boolean> {
+  public isAvailable(): Promise<boolean> {
     if (process.platform !== "win32") {
-      return false;
+      return Promise.resolve(false);
     }
 
     try {
@@ -28,10 +28,11 @@ export class OriginScanner implements IStoreScanner {
         "SOFTWARE\\WOW6432Node\\Origin",
         "ClientPath",
       );
-      return true;
-    } catch (err) {
-      log("info", "Origin client not found", { error: String(err) });
-      return false;
+      return Promise.resolve(true);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err as string);
+      log("info", "Origin client not found", { error: message });
+      return Promise.resolve(false);
     }
   }
 
@@ -48,12 +49,13 @@ export class OriginScanner implements IStoreScanner {
       await turbowalk(localData, (entries) => {
         allEntries.push(...entries);
       });
-    } catch (err) {
-      if (["ENOTFOUND", "ENOENT"].includes((err as NodeJS.ErrnoException).code)) {
+    } catch (err: unknown) {
+      if (["ENOTFOUND", "ENOENT"].includes((err as NodeJS.ErrnoException).code ?? "")) {
         return [];
       }
+      const errMsg = err instanceof Error ? err.message : String(err as string);
       log("error", "failed to read origin directory", {
-        error: String(err),
+        error: errMsg,
         code: (err as NodeJS.ErrnoException).code,
       });
       return [];
@@ -71,10 +73,11 @@ export class OriginScanner implements IStoreScanner {
         if (entry !== undefined) {
           results.push(entry);
         }
-      } catch (err) {
+      } catch (err: unknown) {
+        const errMsg = err instanceof Error ? err.message : String(err as string);
         log("error", "failed to process origin manifest", {
           file: manifest.filePath,
-          error: String(err),
+          error: errMsg,
         });
       }
     }
@@ -92,7 +95,7 @@ export class OriginScanner implements IStoreScanner {
       // Strip the leading '?'
       query = querystring.parse(data.substr(1));
     } catch (err) {
-      log("error", "failed to parse manifest file", { error: String(err) });
+      log("error", "failed to parse manifest file", { error: err instanceof Error ? err.message : String(err as string) });
       return undefined;
     }
 
@@ -128,23 +131,25 @@ export class OriginScanner implements IStoreScanner {
 
   private async getGameName(installerPath: string): Promise<string | undefined> {
     const installerData = await fs.readFile(installerPath, "utf-8");
-    let xmlDoc: any;
+    let xmlDoc: Record<string, unknown>;
     try {
-      xmlDoc = await parseStringPromise(installerData);
+      xmlDoc = await parseStringPromise(installerData) as Record<string, unknown>;
     } catch (err) {
-      log("error", "failed to parse installer XML", { error: String(err) });
+      log("error", "failed to parse installer XML", { error: err instanceof Error ? err.message : String(err as string) });
       return undefined;
     }
 
     // Try DiPManifest format first (most common for third-party games)
     try {
-      const titles = xmlDoc.DiPManifest?.gameTitles?.[0]?.gameTitle;
+      const dipManifest = xmlDoc.DiPManifest as Record<string, unknown> | undefined;
+      const gameTitles = dipManifest?.gameTitles as Array<Record<string, unknown>> | undefined;
+      const titles = gameTitles?.[0]?.gameTitle;
       if (Array.isArray(titles)) {
         const enTitle = titles.find(
-          (element: any) => element.$.locale === "en_US",
+          (element: Record<string, Record<string, string>>) => element.$.locale === "en_US",
         );
         if (enTitle?._) {
-          return enTitle._;
+          return enTitle._ as string;
         }
       }
     } catch {
@@ -153,13 +158,15 @@ export class OriginScanner implements IStoreScanner {
 
     // Try default format
     try {
-      const localeInfos = xmlDoc.game?.metadata?.localeInfo;
+      const game = xmlDoc.game as Record<string, unknown> | undefined;
+      const metadata = game?.metadata as Record<string, unknown> | undefined;
+      const localeInfos = metadata?.localeInfo;
       if (Array.isArray(localeInfos)) {
         const enInfo = localeInfos.find(
-          (element: any) => element.$.locale === "en_US",
+          (element: Record<string, Record<string, string>>) => element.$.locale === "en_US",
         );
         if (enInfo?.title) {
-          return enInfo.title;
+          return enInfo.title as string;
         }
       }
     } catch {

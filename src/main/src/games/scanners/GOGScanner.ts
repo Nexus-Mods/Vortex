@@ -10,17 +10,18 @@ const REG_GOG_GAMES = "SOFTWARE\\WOW6432Node\\GOG.com\\Games";
 export class GOGScanner implements IStoreScanner {
   public readonly storeType = "gog";
 
-  public async isAvailable(): Promise<boolean> {
+  public isAvailable(): Promise<boolean> {
     if (process.platform !== "win32") {
-      return false;
+      return Promise.resolve(false);
     }
 
     try {
       winapi.RegGetValue("HKEY_LOCAL_MACHINE", REG_GOG_CLIENT, "client");
-      return true;
-    } catch (err) {
-      log("info", "GOG client not found", { error: String(err) });
-      return false;
+      return Promise.resolve(true);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err as string);
+      log("info", "GOG client not found", { error: message });
+      return Promise.resolve(false);
     }
   }
 
@@ -30,12 +31,13 @@ export class GOGScanner implements IStoreScanner {
     }
 
     try {
-      return winapi.WithRegOpen(
+      let result: IStoreGameEntry[] = [];
+      winapi.WithRegOpen(
         "HKEY_LOCAL_MACHINE",
         REG_GOG_GAMES,
         (hkey) => {
           const keys = winapi.RegEnumKeys(hkey);
-          return keys
+          result = keys
             .map((key): IStoreGameEntry | undefined => {
               try {
                 return {
@@ -46,10 +48,11 @@ export class GOGScanner implements IStoreScanner {
                   name: winapi.RegGetValue(hkey, key.key, "startMenu")
                     .value as string,
                 };
-              } catch (err) {
+              } catch (err: unknown) {
+                const errMsg = err instanceof Error ? err.message : String(err as string);
                 log("error", "GOG: failed to read game entry", {
                   key: key.key,
-                  error: String(err),
+                  error: errMsg,
                 });
                 return undefined;
               }
@@ -57,6 +60,7 @@ export class GOGScanner implements IStoreScanner {
             .filter((entry): entry is IStoreGameEntry => entry !== undefined);
         },
       );
+      return result;
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code === "ENOENT") {
         return [];

@@ -13,17 +13,17 @@ const REG_UPLAY_NAME_LOCATION =
 export class UplayScanner implements IStoreScanner {
   public readonly storeType = "uplay";
 
-  public async isAvailable(): Promise<boolean> {
+  public isAvailable(): Promise<boolean> {
     if (process.platform !== "win32") {
-      return false;
+      return Promise.resolve(false);
     }
 
     try {
       winapi.RegGetValue("HKEY_LOCAL_MACHINE", REG_UPLAY_LAUNCHER, "InstallDir");
-      return true;
-    } catch (err) {
-      log("info", "Uplay launcher not found", { error: String(err) });
-      return false;
+      return Promise.resolve(true);
+    } catch (err: unknown) {
+      log("info", "Uplay launcher not found", { error: err instanceof Error ? err.message : String(err as string) });
+      return Promise.resolve(false);
     }
   }
 
@@ -33,21 +33,22 @@ export class UplayScanner implements IStoreScanner {
     }
 
     try {
-      return winapi.WithRegOpen(
+      let result: IStoreGameEntry[] = [];
+      winapi.WithRegOpen(
         "HKEY_LOCAL_MACHINE",
         REG_UPLAY_INSTALLS,
         (hkey) => {
           let keys: ReturnType<typeof winapi.RegEnumKeys>;
           try {
             keys = winapi.RegEnumKeys(hkey);
-          } catch (err) {
+          } catch (err: unknown) {
             log("error", "Uplay: registry enumeration failed", {
-              error: String(err),
+              error: err instanceof Error ? err.message : String(err as string),
             });
-            return [];
+            return;
           }
 
-          return keys
+          result = keys
             .map((key): IStoreGameEntry | undefined => {
               try {
                 const installPath = winapi.RegGetValue(
@@ -72,10 +73,10 @@ export class UplayScanner implements IStoreScanner {
                   installPath,
                   name,
                 };
-              } catch (err) {
+              } catch (err: unknown) {
                 log("info", "Uplay: failed to read game entry", {
                   key: key.key,
-                  error: String(err),
+                  error: err instanceof Error ? err.message : String(err as string),
                 });
                 return undefined;
               }
@@ -83,6 +84,7 @@ export class UplayScanner implements IStoreScanner {
             .filter((entry): entry is IStoreGameEntry => entry !== undefined);
         },
       );
+      return result;
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code === "ENOENT") {
         return [];
