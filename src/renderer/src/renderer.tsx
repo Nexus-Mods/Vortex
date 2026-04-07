@@ -125,6 +125,7 @@ import { createRendererTelemetryProvider } from "./telemetry/setup";
 import { GameEntryNotFound } from "./types/IGameStore";
 import { relaunch } from "./util/commandLine";
 import { ProcessCanceled, UserCanceled } from "./util/CustomErrors";
+import { _setNotifier } from "./util/elevated";
 import {
   recordErrorSpan,
   setOutdated,
@@ -627,6 +628,14 @@ async function init(): Promise<ExtensionManager | null> {
   }
 
   extensions.setStore(store);
+
+  // Wire elevation failure notifications so SteamOS Game Mode errors
+  // are visible to the user (ELEV-06). Must be after setStore() which
+  // initializes sendNotification on the api.
+  _setNotifier((notification) => {
+    extensions.getApi().sendNotification?.(notification);
+  });
+
   setOutdated(extensions.getApi());
   extensions.applyExtensionsOfExtensions();
   log("debug", "renderer connected to store");
