@@ -14,7 +14,7 @@ function resolveXDGBase(envName: string, fallbackRelative: string): string {
   if (envValue && envValue.length > 0) {
     return envValue;
   }
-  return path.join(os.homedir(), fallbackRelative);
+  return path.posix.join(os.homedir(), fallbackRelative);
 }
 
 /** Returns $XDG_DATA_HOME, defaulting to ~/.local/share */
