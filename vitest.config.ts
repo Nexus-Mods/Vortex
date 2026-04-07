@@ -16,7 +16,6 @@ export default defineConfig({
       "./packages/paths",
       "./packages/paths-node",
       "./packages/adaptor-api",
-      "./packages/adaptor-host",
       "./packages/adaptors/ping-test",
       "./extensions/feedback",
       "./extensions/gamebryo-savegame-management",
