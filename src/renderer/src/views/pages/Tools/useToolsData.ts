@@ -43,7 +43,8 @@ export const useToolsData = () => {
     (state: IState) => state.settings.gameMode.discovered,
   );
   const discoveredTools = useSelector(
-    (state: IState) => state.settings.gameMode.discovered?.[gameMode].tools,
+    (state: IState) =>
+      state.settings.gameMode.discovered?.[gameMode]?.tools ?? {},
   );
   const toolsOrder = useSelector(
     (state: IState) => state.settings.interface.tools.order?.[gameMode],
@@ -52,7 +53,8 @@ export const useToolsData = () => {
     (state: IState) => state.settings.interface.primaryTool?.[gameMode],
   );
   const pinnedToolsMap = useSelector(
-    (state: IState) => state.settings.interface.tools.pinned?.[gameMode],
+    (state: IState) =>
+      state.settings.interface.tools.pinned?.[gameMode] ?? {},
   );
   const toolsRunning = useSelector(
     (state: IState) => state.session.base.toolsRunning,
