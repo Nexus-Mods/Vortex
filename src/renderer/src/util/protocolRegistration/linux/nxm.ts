@@ -30,7 +30,6 @@ const NXM_PROTOCOL = "nxm";
 const PACKAGE_DESKTOP_ID = "com.nexusmods.vortex.desktop";
 const DEV_DESKTOP_ID = "com.nexusmods.vortex.dev.desktop";
 const DEV_WRAPPER_FILE_NAME = "com.nexusmods.vortex.dev.sh";
-const APPIMAGE_WRAPPER_FILE_NAME = "com.nexusmods.vortex.sh";
 
 /**
  * Required registration inputs for Linux `nxm` routing.
@@ -62,13 +61,6 @@ export function registerLinuxNxmProtocolHandler(
       applicationsDir,
       options.executablePath,
       options.appPath,
-    );
-  }
-
-  if (desktopId === PACKAGE_DESKTOP_ID && process.env.APPIMAGE) {
-    didChangeDesktopFiles = ensureAppImageDesktopEntry(
-      applicationsDir,
-      process.env.APPIMAGE,
     );
   }
 
@@ -142,7 +134,7 @@ function escapeShellScriptArgument(input: string): string {
  */
 function generateWrapperScript(
   executablePath: string,
-  appPath?: string,
+  appPath: string,
 ): string {
   // Persist GTK/Electron environment variables used to run Vortex.
   // This is needed for Nix, such that you can launch the desktop entry outside
@@ -179,20 +171,24 @@ function generateWrapperScript(
     "unset LD_LIBRARY_PATH\n" +
     "unset LD_PRELOAD\n" +
     (electronEnvExports ? electronEnvExports + "\n" : "") +
-    // Only pass --download when a parameter %u is provided (nxm:// links from browser).
-    // This matches Windows behaviour, which includes --download on all protocol handler calls,
-    // but does not on non-handler calls (e.g., when starting from the start menu).
-    // AppImage builds are self-contained: no appPath positional argument needed.
+    // Propagate --no-sandbox if the current process was launched with it.
+    // Required in environments where Electron cannot use the sandbox (Docker, VMs,
+    // restricted kernels). Without this, the child Electron process launched by the
+    // wrapper script will crash before requestSingleInstanceLock() runs.
     (() => {
-      const escapedExec = escapeShellScriptArgument(executablePath);
-      const appPathArg = appPath
-        ? ` "${escapeShellScriptArgument(appPath)}"`
+      const noSandboxFlag = process.argv.includes("--no-sandbox")
+        ? " --no-sandbox"
         : "";
+      const escapedExec = escapeShellScriptArgument(executablePath);
+      const escapedApp = escapeShellScriptArgument(appPath);
+      // Only pass --download when a parameter %u is provided (nxm:// links from browser).
+      // This matches Windows behaviour, which includes --download on all protocol handler calls,
+      // but does not on non-handler calls (e.g., when starting from the start menu).
       return (
         `if [ -n "$1" ]; then\n` +
-        `  exec "${escapedExec}"${appPathArg} --download "$@"\n` +
+        `  exec "${escapedExec}" "${escapedApp}"${noSandboxFlag} --download "$@"\n` +
         `else\n` +
-        `  exec "${escapedExec}"${appPathArg}\n` +
+        `  exec "${escapedExec}" "${escapedApp}"${noSandboxFlag}\n` +
         `fi\n`
       );
     })()
@@ -260,51 +256,6 @@ function ensureDevDesktopEntry(
     "[Desktop Entry]\n" +
     "Type=Application\n" +
     "Name=Vortex (dev build)\n" +
-    "GenericName=Mod Manager\n" +
-    "Comment=Mod manager for PC games from Nexus Mods\n" +
-    "NoDisplay=true\n" +
-    `Exec=${escapedWrapperPathExec} %u\n` +
-    `TryExec=${escapedWrapperPathTryExec}\n` +
-    "Icon=com.nexusmods.vortex\n" +
-    "Terminal=false\n" +
-    "Categories=Game;Utility;\n" +
-    "MimeType=x-scheme-handler/nxm;\n" +
-    "StartupWMClass=Vortex\n" +
-    "StartupNotify=true\n" +
-    "Keywords=mod;mods;modding;nexus;games;skyrim;fallout;\n";
-
-  const desktopChanged = writeFileIfChanged(
-    desktopFilePath,
-    desktopFileContent,
-    0o755,
-  );
-
-  return wrapperChanged || desktopChanged;
-}
-
-function ensureAppImageDesktopEntry(
-  applicationsDir: string,
-  appImagePath: string,
-): boolean {
-  const wrapperPath = path.join(applicationsDir, APPIMAGE_WRAPPER_FILE_NAME);
-  const desktopFilePath = path.join(applicationsDir, PACKAGE_DESKTOP_ID);
-
-  warnIfApplicationsPathNeedsEscaping(applicationsDir);
-
-  const escapedWrapperPathExec = escapeDesktopExecFilePath(wrapperPath);
-  const escapedWrapperPathTryExec = escapeDesktopFilePath(wrapperPath);
-
-  // AppImage is self-contained -- no appPath needed (the AppImage is both the
-  // executable and the app bundle; Electron's appPath positional arg is not used).
-  const wrapperContent = generateWrapperScript(appImagePath);
-  const wrapperChanged = writeFileIfChanged(wrapperPath, wrapperContent, 0o755);
-
-  // The wrapper script adds --download conditionally when %u is provided.
-  // This matches Windows behaviour where --download is only passed for protocol URLs.
-  const desktopFileContent =
-    "[Desktop Entry]\n" +
-    "Type=Application\n" +
-    "Name=Vortex\n" +
     "GenericName=Mod Manager\n" +
     "Comment=Mod manager for PC games from Nexus Mods\n" +
     "NoDisplay=true\n" +

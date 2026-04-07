@@ -49,7 +49,7 @@ function electronIsShitArgumentSort(argv: string[]): string[] {
   const firstArgumentIdx = argv.findIndex(
     (arg, idx) => idx > 1 && !arg.startsWith("-"),
   );
-  const switches = argv.slice(1, firstArgumentIdx - 1);
+  const switches = argv.slice(1, firstArgumentIdx);
   const args = argv.slice(firstArgumentIdx);
   let nextArg = 0;
 
