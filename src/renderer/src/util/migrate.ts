@@ -10,6 +10,7 @@ import {
   setForcedLogout,
   setDownloadPath,
   setInstallPath,
+  setProfilesVisible,
   setUseModernLayout,
   setUserAPIKey,
   setUserInfo,
@@ -28,6 +29,7 @@ import type * as Redux from "redux";
 import * as semver from "semver";
 import format from "string-template";
 import { getErrorCode } from "@vortex/shared";
+import { batchDispatch } from './util';
 
 interface IMigration {
   id: string;
@@ -248,7 +250,10 @@ function enableModernLayout_2_0(
   _window: BrowserWindow,
   store: Redux.Store<IState>,
 ): PromiseBB<void> {
-  store.dispatch(setUseModernLayout(true));
+  batchDispatch(store, [
+    setUseModernLayout(true),
+    setProfilesVisible(true),
+  ]);
   return PromiseBB.resolve();
 }
 

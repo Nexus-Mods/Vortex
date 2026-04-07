@@ -52,6 +52,9 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
   const { mainPages } = usePagesContext();
   const dispatch = useDispatch();
 
+  const profilesVisible = useSelector(
+    (state: IState) => state.settings.interface.profilesVisible,
+  );
   const lastActiveProfile = useSelector(lastActiveProfilesSelector);
   const activeProfileId = useSelector(activeProfileIdSelector);
   const activeGameId = useSelector(activeGameIdSelector);
@@ -103,7 +106,7 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
           page.id !== "Downloads" &&
           isPageVisible(page),
       ),
-    [mainPages, isPageVisible, activeGameId],
+    [mainPages, isPageVisible, activeGameId, profilesVisible],
   );
 
   const gamePages: IMainPage[] = useMemo(
@@ -114,7 +117,7 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
           page.id !== "game-downloads" &&
           isPageVisible(page),
       ),
-    [mainPages, isPageVisible, activeGameId],
+    [mainPages, isPageVisible, activeGameId, profilesVisible],
   );
 
   const mainPage = useSelector(mainPageSelector);
