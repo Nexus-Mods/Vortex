@@ -9,7 +9,7 @@
 
 import { IGameStoreEntry } from "../types/IGameStoreEntry";
 import GameStoreHelper from "./GameStoreHelper";
-import { GameNotFound } from "./Steam";
+import steamInstance, { GameNotFound } from "./Steam";
 
 /**
  * @deprecated Use `util.GameStoreHelper.findByName(name, 'steam')` or
@@ -21,6 +21,9 @@ const steam = {
   },
   findByAppId(appId: string | string[]): PromiseLike<IGameStoreEntry> {
     return GameStoreHelper.findByAppId(appId, "steam");
+  },
+  allGames(): PromiseLike<IGameStoreEntry[]> {
+    return steamInstance.allGames();
   },
 };
 
