@@ -274,6 +274,7 @@ catalog:
   universal-analytics: ^0.4.23
   uuid: ^3.3.3
   vite: ^8.0.0
+  vite-plugin-doctest: ^2.0.0
   vitest: ^4.1.0
   vortex-parse-ini: git+https://github.com/Nexus-Mods/vortex-parse-ini#2425af99d1cff2331ccf3aacfa892c314e99e18d
   vortexmt: git+https://github.com/Nexus-Mods/node-vortexmt#5251ea012ce856742aeaf73a583073497aff773a

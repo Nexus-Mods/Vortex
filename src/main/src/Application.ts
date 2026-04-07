@@ -121,7 +121,8 @@ class Application {
   private mBasePath: string;
   private mLevelPersistors: LevelPersist[] = [];
   private mArgs: IParameters;
-  private mMainWindow: MainWindow;
+  private mMainWindow: MainWindow | undefined;
+  private mMainWindowReady: Promise<Electron.WebContents | undefined> | undefined;
   private mTray: TrayIcon;
   private mAppMetadata: AppInitMetadata;
   private mFirstStart: boolean = false;
@@ -185,8 +186,7 @@ class Application {
     });
   }
 
-  private async startUi(): Promise<void> {
-    // Read window settings from persistence before creating window
+  private async initMainWindow(): Promise<void> {
     const windowSettings = await readPersistedValue<IWindow>("settings", [
       "window",
     ]);
@@ -194,12 +194,29 @@ class Application {
     this.mMainWindow = new MainWindow(this.mArgs.inspector, windowSettings);
     log("debug", "creating main window");
 
-    const webContents = await this.mMainWindow.create();
+    // Start window creation but don't wait for ready-to-show.
+    // The BrowserWindow is created synchronously inside create(),
+    // so getHandle() works immediately. The returned promise resolves
+    // once the window is ready to be shown.
+    this.mMainWindowReady = this.mMainWindow.create();
+  }
+
+  private async awaitMainWindowReady(): Promise<void> {
+    const webContents = await this.mMainWindowReady;
     if (!webContents) {
       throw new Error("no web contents from main window");
     }
+    log("debug", "window ready");
+  }
 
-    log("debug", "window created");
+  private showDialog(
+    options: Electron.MessageBoxOptions,
+  ): Promise<Electron.MessageBoxReturnValue> {
+    const parent = this.mMainWindow?.getHandle();
+    if (parent) {
+      return dialog.showMessageBox(parent, options);
+    }
+    return dialog.showMessageBox(options);
   }
 
   private async startSplash(): Promise<SplashScreen> {
@@ -371,20 +388,17 @@ class Application {
       } else if (err instanceof ProcessCanceled) {
         app.quit();
       } else if (err instanceof DocumentsPathMissing) {
-        const response = await dialog.showMessageBox(
-          this.mMainWindow.getHandle(),
-          {
-            type: "error",
-            buttons: ["Close", "More info"],
-            defaultId: 1,
-            title: "Error",
-            message: "Startup failed",
-            detail:
-              'Your "My Documents" folder is missing or is ' +
-              "misconfigured. Please ensure that the folder is properly " +
-              "configured and accessible, then try again.",
-          },
-        );
+        const response = await this.showDialog({
+          type: "error",
+          buttons: ["Close", "More info"],
+          defaultId: 1,
+          title: "Error",
+          message: "Startup failed",
+          detail:
+            'Your "My Documents" folder is missing or is ' +
+            "misconfigured. Please ensure that the folder is properly " +
+            "configured and accessible, then try again.",
+        });
 
         if (response.response === 1) {
           await shell.openExternal(
@@ -450,7 +464,7 @@ class Application {
       if (err instanceof DataInvalid) {
         log("error", "persistence data invalid", getErrorMessageOrDefault(err));
 
-        await dialog.showMessageBox(this.mMainWindow.getHandle(), {
+        await this.showDialog({
           type: "error",
           buttons: ["Continue"],
           title: "Error",
@@ -473,14 +487,20 @@ class Application {
       }
     }
 
-    log("debug", "checking admin rights");
-    await this.warnAdmin();
-
+    // Collect metadata before creating the main window — the renderer
+    // fetches it via getInitMetadata() early in its boot.
     log("debug", "checking how Vortex was installed");
     await this.identifyInstallType();
+    this.mAppMetadata.version = app.getVersion();
 
     log("debug", "checking if migration is required");
-    await this.checkUpgrade();
+    await this.migrateIfNecessary(this.mAppMetadata.version);
+
+    log("debug", "starting user interface");
+    await this.initMainWindow();
+
+    log("debug", "checking admin rights");
+    await this.warnAdmin();
 
     log("debug", "setting up error handlers");
     // Install error handler (no longer has access to store state)
@@ -494,8 +514,8 @@ class Application {
 
     this.setupContextMenu();
 
-    log("debug", "starting user interface");
-    await this.startUi();
+    log("debug", "waiting for user interface");
+    await this.awaitMainWindowReady();
 
     log("debug", "setting up tray icon");
     this.createTray();
@@ -595,7 +615,7 @@ class Application {
     }
 
     const uacEnabled = this.isUACEnabled();
-    const result = await dialog.showMessageBox(this.mMainWindow.getHandle(), {
+    const result = await this.showDialog({
       title: "Admin rights detected",
       message:
         `Vortex has detected that it is being run with administrator rights. It is strongly
@@ -618,13 +638,6 @@ class Application {
     }
   }
 
-  private async checkUpgrade(): Promise<void> {
-    const currentVersion = app.getVersion();
-    await this.migrateIfNecessary(currentVersion);
-    // Collect metadata - renderer will dispatch the action
-    this.mAppMetadata.version = currentVersion;
-  }
-
   private async migrateIfNecessary(currentVersion: string): Promise<void> {
     // Read appVersion from persistence since we don't have the store
     const lastVersionPersisted = await readPersistedValue<string>("app", [
@@ -638,7 +651,7 @@ class Application {
     }
 
     if (isMajorDowngrade(lastVersion, currentVersion)) {
-      const res = dialog.showMessageBoxSync(this.mMainWindow.getHandle(), {
+      const res = await this.showDialog({
         type: "warning",
         title: "Downgrade detected",
         message: `You're using a version of Vortex that is older than the version you ran previously.
@@ -648,7 +661,7 @@ class Application {
         noLink: true,
       });
 
-      if (res === 0) {
+      if (res.response === 0) {
         app.quit();
         throw new UserCanceled();
       }

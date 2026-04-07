@@ -1,0 +1,17 @@
+{
+  "$schema": "https://www.schemastore.org/tsconfig.json",
+  "extends": "../../tsconfig.strict.json",
+  "include": ["./src/browser", "../../typings.custom/promise.d.ts"],
+  "compilerOptions": {
+    "composite": true,
+    "noEmit": true,
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": ["ESNext", "DOM"],
+    "types": [],
+    "allowJs": false,
+    "isolatedDeclarations": true,
+    "noUncheckedSideEffectImports": true,
+  },
+}

@@ -718,6 +718,9 @@ catalogs:
     vite:
       specifier: ^8.0.0
       version: 8.0.3
+    vite-plugin-doctest:
+      specifier: ^2.0.0
+      version: 2.0.0
     vitest:
       specifier: ^4.1.0
       version: 4.1.2
@@ -3818,40 +3821,14 @@ importers:
         specifier: 'catalog:'
         version: 1.58.2
 
-  packages/paths:
-    dependencies:
-      zod:
-        specifier: ^3.24.2
-        version: 3.25.76
+  packages/fs:
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
         version: 22.19.15
-      typescript:
+      vite-plugin-doctest:
         specifier: 'catalog:'
-        version: 5.9.3
-      vitest:
-        specifier: 'catalog:'
-        version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.19.15)(@vitest/ui@4.1.0)(happy-dom@20.8.8)(jsdom@20.0.3)(vite@8.0.3)
-
-  packages/paths-node:
-    dependencies:
-      '@vortex/paths':
-        specifier: workspace:*
-        version: link:../paths
-      fs-extra:
-        specifier: 'catalog:'
-        version: 9.1.0
-    devDependencies:
-      '@types/fs-extra':
-        specifier: 'catalog:'
-        version: 11.0.4
-      '@types/node':
-        specifier: 'catalog:'
-        version: 22.19.15
-      vitest:
-        specifier: 'catalog:'
-        version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.19.15)(@vitest/ui@4.1.0)(happy-dom@20.8.8)(jsdom@20.0.3)(vite@8.0.3)
+        version: 2.0.0(typescript@5.9.3)(vite@8.0.3)(vitest@4.1.2)
 
   packages/vortex-api:
     dependencies:
@@ -4003,6 +3980,9 @@ importers:
       '@vortex/adaptor-api':
         specifier: workspace:*
         version: link:../../packages/adaptor-api
+      '@vortex/fs':
+        specifier: workspace:*
+        version: link:../../packages/fs
       bbcode-to-react:
         specifier: 'catalog:'
         version: https://codeload.github.com/TanninOne/bbcode-to-react/tar.gz/c67356006470e5066ea447e04a3968dca367339d(react@16.14.0)
@@ -12474,6 +12454,13 @@ packages:
   vfile@4.2.1:
     resolution: {integrity: sha512-O6AE4OskCG5S1emQ/4gl8zK586RqA3srz3nfK/Viy0UPToBc5Trp9BVFb1u0CjsKrAWwnpr4ifM/KBXPWwJbCA==}
 
+  vite-plugin-doctest@2.0.0:
+    resolution: {integrity: sha512-YHfRtwwTKAB+iG/oR9BvEnEfpHJFswiwizEeNV5ZlZjI3X3UrUdX8cRYhIfMwuJuOOLE25SX0SpUWEw5C3vEFw==}
+    peerDependencies:
+      typescript: '>=4.0.0'
+      vite: '>=6.0.0'
+      vitest: '>=4.0.0'
+
   vite@8.0.3:
     resolution: {integrity: sha512-B9ifbFudT1TFhfltfaIPgjo9Z3mDynBTJSUYxTjOQruf/zHH+ezCQKcoqO+h7a9Pw9Nm/OtlXAiGT1axBgwqrQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
@@ -12814,9 +12801,6 @@ packages:
   zip-stream@4.1.1:
     resolution: {integrity: sha512-9qv4rlDiopXg4E69k+vMHjNN63YFMe9sZMrdlvKnCjlCRWeCBswPPMPUfx+ipsAWq1LXHe70RcbaHdJJpS6hyQ==}
     engines: {node: '>= 10'}
-
-  zod@3.25.76:
-    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
   zod@4.3.6:
     resolution: {integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==}
@@ -13719,7 +13703,7 @@ snapshots:
       '@eslint-react/eff': 2.3.7
       '@typescript-eslint/types': 8.57.2
       '@typescript-eslint/typescript-estree': 8.57.2(typescript@5.9.3)
-      '@typescript-eslint/utils': 8.47.0(eslint@9.39.1)(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.57.2(eslint@9.39.1)(typescript@5.9.3)
       string-ts: 2.3.1
     transitivePeerDependencies:
       - eslint
@@ -13734,7 +13718,7 @@ snapshots:
       '@eslint-react/var': 2.3.7(eslint@9.39.1)(typescript@5.9.3)
       '@typescript-eslint/scope-manager': 8.57.2
       '@typescript-eslint/types': 8.57.2
-      '@typescript-eslint/utils': 8.47.0(eslint@9.39.1)(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.57.2(eslint@9.39.1)(typescript@5.9.3)
       birecord: 0.1.1
       ts-pattern: 5.9.0
     transitivePeerDependencies:
@@ -13751,7 +13735,7 @@ snapshots:
       '@typescript-eslint/scope-manager': 8.57.2
       '@typescript-eslint/type-utils': 8.57.2(eslint@9.39.1)(typescript@5.9.3)
       '@typescript-eslint/types': 8.57.2
-      '@typescript-eslint/utils': 8.47.0(eslint@9.39.1)(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.57.2(eslint@9.39.1)(typescript@5.9.3)
       eslint: 9.39.1(jiti@2.6.1)
       eslint-plugin-react-dom: 2.3.7(eslint@9.39.1)(typescript@5.9.3)
       eslint-plugin-react-hooks-extra: 2.3.7(eslint@9.39.1)(typescript@5.9.3)
@@ -13766,7 +13750,7 @@ snapshots:
   '@eslint-react/shared@2.3.7(eslint@9.39.1)(typescript@5.9.3)':
     dependencies:
       '@eslint-react/eff': 2.3.7
-      '@typescript-eslint/utils': 8.47.0(eslint@9.39.1)(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.57.2(eslint@9.39.1)(typescript@5.9.3)
       ts-pattern: 5.9.0
       zod: 4.3.6
     transitivePeerDependencies:
@@ -13780,7 +13764,7 @@ snapshots:
       '@eslint-react/eff': 2.3.7
       '@typescript-eslint/scope-manager': 8.57.2
       '@typescript-eslint/types': 8.57.2
-      '@typescript-eslint/utils': 8.47.0(eslint@9.39.1)(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.57.2(eslint@9.39.1)(typescript@5.9.3)
       ts-pattern: 5.9.0
     transitivePeerDependencies:
       - eslint
@@ -15279,8 +15263,8 @@ snapshots:
 
   '@typescript-eslint/project-service@8.47.0(typescript@5.9.3)':
     dependencies:
-      '@typescript-eslint/tsconfig-utils': 8.47.0(typescript@5.9.3)
-      '@typescript-eslint/types': 8.47.0
+      '@typescript-eslint/tsconfig-utils': 8.57.2(typescript@5.9.3)
+      '@typescript-eslint/types': 8.57.2
       debug: 4.4.3
       typescript: 5.9.3
     transitivePeerDependencies:
@@ -17466,7 +17450,7 @@ snapshots:
       '@eslint-react/var': 2.3.7(eslint@9.39.1)(typescript@5.9.3)
       '@typescript-eslint/scope-manager': 8.57.2
       '@typescript-eslint/types': 8.57.2
-      '@typescript-eslint/utils': 8.47.0(eslint@9.39.1)(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.57.2(eslint@9.39.1)(typescript@5.9.3)
       compare-versions: 6.1.1
       eslint: 9.39.1(jiti@2.6.1)
       string-ts: 2.3.1
@@ -17485,7 +17469,7 @@ snapshots:
       '@typescript-eslint/scope-manager': 8.57.2
       '@typescript-eslint/type-utils': 8.57.2(eslint@9.39.1)(typescript@5.9.3)
       '@typescript-eslint/types': 8.57.2
-      '@typescript-eslint/utils': 8.47.0(eslint@9.39.1)(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.57.2(eslint@9.39.1)(typescript@5.9.3)
       eslint: 9.39.1(jiti@2.6.1)
       string-ts: 2.3.1
       ts-pattern: 5.9.0
@@ -17503,7 +17487,7 @@ snapshots:
       '@typescript-eslint/scope-manager': 8.57.2
       '@typescript-eslint/type-utils': 8.57.2(eslint@9.39.1)(typescript@5.9.3)
       '@typescript-eslint/types': 8.57.2
-      '@typescript-eslint/utils': 8.47.0(eslint@9.39.1)(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.57.2(eslint@9.39.1)(typescript@5.9.3)
       eslint: 9.39.1(jiti@2.6.1)
       string-ts: 2.3.1
       ts-pattern: 5.9.0
@@ -17520,7 +17504,7 @@ snapshots:
       '@eslint-react/var': 2.3.7(eslint@9.39.1)(typescript@5.9.3)
       '@typescript-eslint/scope-manager': 8.57.2
       '@typescript-eslint/types': 8.57.2
-      '@typescript-eslint/utils': 8.47.0(eslint@9.39.1)(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.57.2(eslint@9.39.1)(typescript@5.9.3)
       eslint: 9.39.1(jiti@2.6.1)
       string-ts: 2.3.1
       ts-pattern: 5.9.0
@@ -17538,7 +17522,7 @@ snapshots:
       '@typescript-eslint/scope-manager': 8.57.2
       '@typescript-eslint/type-utils': 8.57.2(eslint@9.39.1)(typescript@5.9.3)
       '@typescript-eslint/types': 8.57.2
-      '@typescript-eslint/utils': 8.47.0(eslint@9.39.1)(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.57.2(eslint@9.39.1)(typescript@5.9.3)
       compare-versions: 6.1.1
       eslint: 9.39.1(jiti@2.6.1)
       is-immutable-type: 5.0.1(eslint@9.39.1)(typescript@5.9.3)
@@ -17732,8 +17716,7 @@ snapshots:
 
   extsprintf@1.3.0: {}
 
-  extsprintf@1.4.1:
-    optional: true
+  extsprintf@1.4.1: {}
 
   eyes@0.1.8: {}
 
@@ -21486,7 +21469,7 @@ snapshots:
     dependencies:
       assert-plus: 1.0.0
       core-util-is: 1.0.2
-      extsprintf: 1.3.0
+      extsprintf: 1.4.1
 
   verror@1.10.1:
     dependencies:
@@ -21506,6 +21489,12 @@ snapshots:
       is-buffer: 2.0.5
       unist-util-stringify-position: 2.0.3
       vfile-message: 2.0.4
+
+  vite-plugin-doctest@2.0.0(typescript@5.9.3)(vite@8.0.3)(vitest@4.1.2):
+    dependencies:
+      typescript: 5.9.3
+      vite: 8.0.3(@types/node@22.19.15)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.1)
+      vitest: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.19.15)(@vitest/ui@4.1.0)(happy-dom@20.8.8)(jsdom@20.0.3)(vite@8.0.3)
 
   vite@8.0.3(@types/node@22.19.15)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.1):
     dependencies:
@@ -21758,7 +21747,7 @@ snapshots:
 
   wide-align@1.1.5:
     dependencies:
-      string-width: 1.0.2
+      string-width: 4.2.3
 
   wildcard@2.0.1: {}
 
@@ -21874,7 +21863,5 @@ snapshots:
       archiver-utils: 3.0.4
       compress-commons: 4.1.2
       readable-stream: 3.6.2
-
-  zod@3.25.76: {}
 
   zod@4.3.6: {}
