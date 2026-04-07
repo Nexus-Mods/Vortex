@@ -1,10 +1,11 @@
 import type { IMessageHandler } from "@vortex/adaptor-api/interfaces";
-import { createAdaptorHost } from "@vortex/adaptor-host/loader";
+
 import * as fs from "node:fs";
 import * as path from "node:path";
 
 import { getVortexPath } from "./getVortexPath";
 import { log } from "./logging";
+import { createAdaptorHost } from "./node-adaptor-host/loader";
 
 // Infrastructure packages — not adaptors, don't try to load them
 const INFRA_PACKAGES = new Set(["adaptor-api", "adaptor-host"]);
@@ -19,7 +20,9 @@ const HOST_SERVICES: Record<string, IMessageHandler> = {
     if (payload.method === "health") {
       return Promise.resolve({ status: "ok" as const });
     }
-    return Promise.reject(new Error(`Unknown method on ping service: ${payload.method}`));
+    return Promise.reject(
+      new Error(`Unknown method on ping service: ${payload.method}`),
+    );
   },
 };
 
@@ -47,10 +50,15 @@ function discoverAdaptors(): string[] {
  * Resolves the bundle path for an adaptor package by reading its package.json
  * `main` field. Returns the absolute path to the built bundle.
  */
-function resolveAdaptorBundle(packageDir: string, pkgJson: { main?: string }): string {
+function resolveAdaptorBundle(
+  packageDir: string,
+  pkgJson: { main?: string },
+): string {
   const main = pkgJson.main;
   if (!main) {
-    throw new Error(`Adaptor package.json at ${packageDir} has no "main" field`);
+    throw new Error(
+      `Adaptor package.json at ${packageDir} has no "main" field`,
+    );
   }
   return path.resolve(packageDir, main);
 }
@@ -61,18 +69,9 @@ function resolveAdaptorBundle(packageDir: string, pkgJson: { main?: string }): s
  * Failures are caught and logged — a broken adaptor does not crash the app.
  */
 export async function initAdaptorHost(): Promise<void> {
-  const modulesPath = getVortexPath("modules");
-  const bootstrapPath = path.join(
-    modulesPath,
-    "@vortex",
-    "adaptor-host",
-    "dist",
-    "bootstrap.mjs",
-  );
-  const host = createAdaptorHost(
-    HOST_SERVICES,
-    bootstrapPath,
-    (level, msg) => log(level, msg),
+  const bootstrapPath = path.join(getVortexPath("base"), "bootstrap.mjs");
+  const host = createAdaptorHost(HOST_SERVICES, bootstrapPath, (level, msg) =>
+    log(level, msg),
   );
   let loadedCount = 0;
 
@@ -82,7 +81,7 @@ export async function initAdaptorHost(): Promise<void> {
     return;
   }
 
-  const scopeDir = path.join(modulesPath, "@vortex");
+  const scopeDir = path.join(getVortexPath("modules"), "@vortex");
 
   for (const name of adaptorNames) {
     const packageName = `@vortex/${name}`;

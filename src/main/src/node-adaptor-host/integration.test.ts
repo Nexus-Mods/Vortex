@@ -6,11 +6,11 @@ import { createAdaptorHost } from "./loader.js";
 
 const BUNDLE_PATH = path.resolve(
   import.meta.dirname,
-  "../../adaptors/ping-test/dist/index.cjs",
+  "../../../../packages/adaptors/ping-test/dist/index.cjs",
 );
 const BOOTSTRAP_PATH = path.resolve(
   import.meta.dirname,
-  "../dist/bootstrap.mjs",
+  "../../out/bootstrap.mjs",
 );
 
 describe("adaptor host integration (Worker)", () => {
@@ -46,11 +46,9 @@ describe("adaptor host integration (Worker)", () => {
   });
 
   it("dispatches method calls to the Worker", async () => {
-    const result = await loaded.call(
-      "vortex:adaptor/ping-test/echo",
-      "echo",
-      ["hello"],
-    );
+    const result = await loaded.call("vortex:adaptor/ping-test/echo", "echo", [
+      "hello",
+    ]);
     expect(result).toBe("echo: pong: hello");
   });
 

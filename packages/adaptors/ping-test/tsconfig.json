@@ -10,10 +10,6 @@
     "composite": true,
     "experimentalDecorators": true,
     "types": ["node"],
-    "lib": ["ESNext"]
+    "lib": ["ESNext"],
   },
-  "references": [
-    { "path": "../../adaptor-api/tsconfig.json" },
-    { "path": "../../adaptor-host/tsconfig.json" }
-  ]
 }

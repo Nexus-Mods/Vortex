@@ -4,7 +4,7 @@
   "include": [
     "src/**/*",
     "../../typings.custom/electron.d.ts",
-    "../../typings.custom/promise.d.ts"
+    "../../typings.custom/promise.d.ts",
   ],
   "compilerOptions": {
     "composite": true,
@@ -12,10 +12,6 @@
     "target": "esnext",
     "module": "esnext",
     "moduleResolution": "bundler",
-    "types": ["node"]
+    "types": ["node"],
   },
-  "references": [
-    { "path": "../../packages/adaptor-api/tsconfig.json" },
-    { "path": "../../packages/adaptor-host/tsconfig.json" }
-  ]
 }

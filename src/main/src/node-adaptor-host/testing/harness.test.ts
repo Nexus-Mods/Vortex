@@ -4,11 +4,12 @@ import { createTestHarness, type ITestHarness } from "./harness.js";
 
 const BUNDLE_PATH = path.resolve(
   import.meta.dirname,
-  "../../../adaptors/ping-test/dist/index.cjs",
+  "../../../../../packages/adaptors/ping-test/dist/index.cjs",
 );
+
 const BOOTSTRAP_PATH = path.resolve(
   import.meta.dirname,
-  "../../dist/bootstrap.mjs",
+  "../../../out/bootstrap.mjs",
 );
 
 describe("TestHarness (Worker isolation)", () => {
@@ -28,17 +29,13 @@ describe("TestHarness (Worker isolation)", () => {
     );
 
     expect(harness.manifest.provides).toHaveLength(1);
-    expect(harness.manifest.provides[0]).toBe(
-      "vortex:adaptor/ping-test/echo",
-    );
+    expect(harness.manifest.provides[0]).toBe("vortex:adaptor/ping-test/echo");
   });
 
   it("dispatches calls through the Worker", async () => {
-    const result = await harness.call(
-      "vortex:adaptor/ping-test/echo",
-      "echo",
-      ["hello"],
-    );
+    const result = await harness.call("vortex:adaptor/ping-test/echo", "echo", [
+      "hello",
+    ]);
     expect(result).toBe("echo: pong: hello");
   });
 
