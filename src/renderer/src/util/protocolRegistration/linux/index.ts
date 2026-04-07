@@ -12,6 +12,8 @@
  * future as we explore allowing generic tools/plugins to register themselves like
  * on Windows. [If that functionality is even used anywhere.]
  */
+import * as path from "path";
+
 import getVortexPath from "../../getVortexPath";
 import { log } from "../../log";
 import {
@@ -46,7 +48,14 @@ export function registerLinuxProtocolHandler(
   return registerLinuxNxmProtocolHandler({
     setAsDefault: options.setAsDefault,
     executablePath: process.execPath,
-    appPath: getVortexPath("package"),
+    // getVortexPath("package") returns src/main/out in dev (Electron 37+ sets
+    // getAppPath() to the out/ dir). That directory has no package.json, so a
+    // second Electron instance launched from the wrapper uses app name "Electron"
+    // and a different userData path, causing requestSingleInstanceLock() to
+    // succeed (no conflict) and the second-instance event to never fire.
+    // Using the parent directory ensures Electron finds package.json and uses
+    // the same app name (@vortex/main) and lock file as the running instance.
+    appPath: path.dirname(getVortexPath("package")),
   });
 }
 
