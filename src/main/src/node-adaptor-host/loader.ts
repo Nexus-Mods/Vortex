@@ -22,7 +22,10 @@ export interface ILoadedAdaptor {
 }
 
 /** Optional logger callback for adaptor host events. */
-export type AdaptorHostLogger = (level: "info" | "warn" | "error", message: string) => void;
+export type AdaptorHostLogger = (
+  level: "info" | "warn" | "error",
+  message: string,
+) => void;
 
 /**
  * Host-side orchestrator for loading and managing isolated adaptor Workers.
@@ -60,9 +63,11 @@ export function createAdaptorHost(
   );
   const workers = new Map<string, WorkerEntry>();
 
-  const log: AdaptorHostLogger = logger ?? ((level, msg) => {
-    if (level === "error" || level === "warn") console.error(msg);
-  });
+  const log: AdaptorHostLogger =
+    logger ??
+    ((level, msg) => {
+      if (level === "error" || level === "warn") console.error(msg);
+    });
 
   if (!bootstrapPath) {
     throw new Error("bootstrapPath is required");
@@ -82,12 +87,18 @@ export function createAdaptorHost(
 
     // Register crash/exit handlers immediately so errors during init aren't lost
     handle.worker.on("error", (err: Error) => {
-      log("error", `[adaptor-host] Worker ${config.name} (${adaptorPid}) error: ${err.message}`);
+      log(
+        "error",
+        `[adaptor-host] Worker ${config.name} (${adaptorPid}) error: ${err.message}`,
+      );
       cleanupWorker(adaptorPid);
     });
     handle.worker.on("exit", (code: number) => {
       if (code !== 0) {
-        log("error", `[adaptor-host] Worker ${config.name} (${adaptorPid}) exited with code ${code}`);
+        log(
+          "error",
+          `[adaptor-host] Worker ${config.name} (${adaptorPid}) exited with code ${code}`,
+        );
         cleanupWorker(adaptorPid);
       }
     });
@@ -105,11 +116,18 @@ export function createAdaptorHost(
       });
     });
 
-    const readyPromise = transport.once<{ type: "ready"; manifest: IAdaptorManifest }>("ready");
+    const readyPromise = transport.once<{
+      type: "ready";
+      manifest: IAdaptorManifest;
+    }>("ready");
     transport.send({
       type: "init",
       bundle,
-      config: { name: config.name, version: config.version, requires: config.requires },
+      config: {
+        name: config.name,
+        version: config.version,
+        requires: config.requires,
+      },
     });
 
     const { manifest } = await readyPromise;
@@ -123,7 +141,11 @@ export function createAdaptorHost(
     return {
       manifest,
       pid: adaptorPid,
-      call(serviceUri: string, method: string, args: unknown[]): Promise<unknown> {
+      call(
+        serviceUri: string,
+        method: string,
+        args: unknown[],
+      ): Promise<unknown> {
         return transport.call({ uri: serviceUri, method, args });
       },
     };
@@ -154,7 +176,10 @@ export function createAdaptorHost(
       }),
       new Promise<void>((resolve) =>
         setTimeout(() => {
-          entry.handle.terminate().then(() => resolve(), () => resolve());
+          entry.handle.terminate().then(
+            () => resolve(),
+            () => resolve(),
+          );
         }, 2000),
       ),
     ]);

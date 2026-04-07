@@ -1,4 +1,10 @@
-import type { AdaptorName, MessageId, PID, SemVer, URI } from "./types/branded.js";
+import type {
+  AdaptorName,
+  MessageId,
+  PID,
+  SemVer,
+  URI,
+} from "./types/branded.js";
 
 // --- Messages ---
 
@@ -108,7 +114,9 @@ export interface ServiceAliases {}
  * Looks up the service interface type for a given URI string.
  * @template K - A service URI string key.
  */
-export type ServiceFor<K extends string> = K extends keyof ServiceRegistry ? ServiceRegistry[K] : unknown;
+export type ServiceFor<K extends string> = K extends keyof ServiceRegistry
+  ? ServiceRegistry[K]
+  : unknown;
 
 // --- Method Message ---
 

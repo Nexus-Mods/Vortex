@@ -37,7 +37,9 @@ const URI_PATTERN = /^[a-zA-Z][a-zA-Z0-9+.-]*:.+$/;
  */
 export function uri(value: string): URI {
   if (!URI_PATTERN.test(value)) {
-    throw new Error(`Invalid URI: "${value}" — must match scheme:path (e.g. "vortex:host/ping")`);
+    throw new Error(
+      `Invalid URI: "${value}" — must match scheme:path (e.g. "vortex:host/ping")`,
+    );
   }
   return value as URI;
 }
@@ -50,7 +52,9 @@ const PID_PATTERN = /^pid:.+$/;
  */
 export function pid(value: string): PID {
   if (!PID_PATTERN.test(value)) {
-    throw new Error(`Invalid PID: "${value}" — must match "pid:<id>" (e.g. "pid:42")`);
+    throw new Error(
+      `Invalid PID: "${value}" — must match "pid:<id>" (e.g. "pid:42")`,
+    );
   }
   return value as PID;
 }
@@ -63,7 +67,9 @@ const MSG_ID_PATTERN = /^msg:.+$/;
  */
 export function messageId(value: string): MessageId {
   if (!MSG_ID_PATTERN.test(value)) {
-    throw new Error(`Invalid MessageId: "${value}" — must match "msg:<id>" (e.g. "msg:abc-123")`);
+    throw new Error(
+      `Invalid MessageId: "${value}" — must match "msg:<id>" (e.g. "msg:abc-123")`,
+    );
   }
   return value as MessageId;
 }
@@ -76,7 +82,9 @@ const SEMVER_PATTERN = /^\d+\.\d+\.\d+(-[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)*)?$/;
  */
 export function semver(value: string): SemVer {
   if (!SEMVER_PATTERN.test(value)) {
-    throw new Error(`Invalid SemVer: "${value}" — must match "x.y.z" (e.g. "1.0.0")`);
+    throw new Error(
+      `Invalid SemVer: "${value}" — must match "x.y.z" (e.g. "1.0.0")`,
+    );
   }
   return value as SemVer;
 }

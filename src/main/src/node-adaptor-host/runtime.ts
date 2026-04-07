@@ -1,6 +1,4 @@
-import type {
-  IMethodMessage,
-} from "@vortex/adaptor-api/interfaces";
+import type { IMethodMessage } from "@vortex/adaptor-api/interfaces";
 import type { MessageId, PID } from "@vortex/adaptor-api/branded";
 import { messageId, pid } from "@vortex/adaptor-api/branded";
 
@@ -28,14 +26,16 @@ export type SendFn = (msg: IMethodMessage) => Promise<unknown>;
  * IMethodMessage objects dispatched via the given send function.
  * Returns undefined for `then` so `await proxy` does not trigger thenable unwrapping.
  */
-export function createServiceProxy<T extends object>(uri: string, send: SendFn): T {
+export function createServiceProxy<T extends object>(
+  uri: string,
+  send: SendFn,
+): T {
   return new Proxy({} as T, {
     get(_target, prop) {
       if (typeof prop === "symbol" || prop === "then" || prop === "toJSON") {
         return undefined;
       }
-      return async (...args: unknown[]) =>
-        send({ uri, method: prop, args });
+      return async (...args: unknown[]) => send({ uri, method: prop, args });
     },
   }) as T;
 }
@@ -51,9 +51,7 @@ export function createMethodDispatcher(
   return async (msg: IMethodMessage) => {
     const fn = instance[msg.method];
     if (typeof fn !== "function") {
-      throw new Error(
-        `No method "${msg.method}" on service ${uri}`,
-      );
+      throw new Error(`No method "${msg.method}" on service ${uri}`);
     }
     return fn.apply(instance, msg.args);
   };

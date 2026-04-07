@@ -27,7 +27,8 @@ export async function createTestHarness(
   bootstrapPath?: string,
 ): Promise<ITestHarness> {
   const resolvedBootstrap =
-    bootstrapPath ?? path.resolve(import.meta.dirname, "../../dist/bootstrap.mjs");
+    bootstrapPath ??
+    path.resolve(import.meta.dirname, "../../dist/bootstrap.mjs");
 
   const handle = createNodeWorker(resolvedBootstrap);
   const transport = createRpcTransport(handle.worker);
@@ -50,7 +51,10 @@ export async function createTestHarness(
   });
 
   const bundle = fs.readFileSync(bundlePath, "utf-8");
-  const readyPromise = transport.once<{ type: "ready"; manifest: IAdaptorManifest }>("ready");
+  const readyPromise = transport.once<{
+    type: "ready";
+    manifest: IAdaptorManifest;
+  }>("ready");
   transport.send({
     type: "init",
     bundle,
@@ -65,7 +69,11 @@ export async function createTestHarness(
 
   return {
     manifest,
-    call(serviceUri: string, method: string, args: unknown[]): Promise<unknown> {
+    call(
+      serviceUri: string,
+      method: string,
+      args: unknown[],
+    ): Promise<unknown> {
       return transport.call({ uri: serviceUri, method, args });
     },
     registeredHandlers(): URI[] {

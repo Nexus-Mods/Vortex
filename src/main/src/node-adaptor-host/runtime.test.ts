@@ -40,7 +40,10 @@ describe("createMessageIdAllocator", () => {
 describe("createServiceProxy", () => {
   it("is not thenable (can be safely awaited without dispatching)", async () => {
     const send = async (msg: IMethodMessage) => msg.args;
-    const proxy = createServiceProxy<{ foo(): Promise<string> }>("test:svc", send);
+    const proxy = createServiceProxy<{ foo(): Promise<string> }>(
+      "test:svc",
+      send,
+    );
     expect((proxy as Record<string, unknown>)["then"]).toBeUndefined();
   });
 
@@ -50,10 +53,17 @@ describe("createServiceProxy", () => {
       received.push(msg);
       return "result";
     };
-    const proxy = createServiceProxy<{ foo(x: string): Promise<string> }>("test:svc", send);
+    const proxy = createServiceProxy<{ foo(x: string): Promise<string> }>(
+      "test:svc",
+      send,
+    );
     const result = await proxy.foo("bar");
     expect(result).toBe("result");
     expect(received).toHaveLength(1);
-    expect(received[0]).toEqual({ uri: "test:svc", method: "foo", args: ["bar"] });
+    expect(received[0]).toEqual({
+      uri: "test:svc",
+      method: "foo",
+      args: ["bar"],
+    });
   });
 });

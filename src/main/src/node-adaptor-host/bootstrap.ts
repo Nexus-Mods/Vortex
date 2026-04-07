@@ -3,9 +3,20 @@ import * as adaptorApiBuilder from "@vortex/adaptor-api/builder";
 import * as adaptorApiBranded from "@vortex/adaptor-api/branded";
 import * as adaptorApiRuntimeContainer from "@vortex/adaptor-api/runtime-container";
 import { getProvidedUri } from "@vortex/adaptor-api/builder";
-import { uri as validateUri, adaptorName, semver } from "@vortex/adaptor-api/branded";
-import type { IAdaptorManifest, IMethodMessage } from "@vortex/adaptor-api/interfaces";
-import { activateContainer, createContainer, deactivateContainer } from "@vortex/adaptor-api/runtime-container";
+import {
+  uri as validateUri,
+  adaptorName,
+  semver,
+} from "@vortex/adaptor-api/branded";
+import type {
+  IAdaptorManifest,
+  IMethodMessage,
+} from "@vortex/adaptor-api/interfaces";
+import {
+  activateContainer,
+  createContainer,
+  deactivateContainer,
+} from "@vortex/adaptor-api/runtime-container";
 import { createRpcTransport } from "./transport.js";
 import { createMethodDispatcher, createServiceProxy } from "./runtime.js";
 
@@ -41,7 +52,9 @@ const { bundle, config } = init;
 // Step 2: Create a service container with proxies for each required URI
 const container = createContainer();
 for (const requiresUri of config.requires) {
-  const proxy = createServiceProxy(requiresUri, (msg: IMethodMessage) => transport.call(msg));
+  const proxy = createServiceProxy(requiresUri, (msg: IMethodMessage) =>
+    transport.call(msg),
+  );
   container.set(requiresUri, proxy);
 }
 
@@ -55,13 +68,20 @@ function sandboxRequire(specifier: string): unknown {
   throw new Error(`Adaptor sandbox: module "${specifier}" is not allowed`);
 }
 // eslint-disable-next-line @typescript-eslint/no-implied-eval
-new Function("module", "exports", "require", bundle)(moduleObj, moduleObj.exports, sandboxRequire);
+new Function("module", "exports", "require", bundle)(
+  moduleObj,
+  moduleObj.exports,
+  sandboxRequire,
+);
 
 // Step 5: Deactivate the container
 deactivateContainer();
 
 // Step 6: Scan exports for @provides decorated classes
-const dispatchers = new Map<string, (msg: IMethodMessage) => Promise<unknown>>();
+const dispatchers = new Map<
+  string,
+  (msg: IMethodMessage) => Promise<unknown>
+>();
 const providedUris: string[] = [];
 
 for (const exportedValue of Object.values(moduleObj.exports)) {
@@ -71,7 +91,10 @@ for (const exportedValue of Object.values(moduleObj.exports)) {
   const providedUri = getProvidedUri(ctor);
   if (providedUri == null) continue;
 
-  const instance = new (ctor as new () => Record<string, (...args: unknown[]) => unknown>)();
+  const instance = new (ctor as new () => Record<
+    string,
+    (...args: unknown[]) => unknown
+  >)();
   const dispatcher = createMethodDispatcher(providedUri, instance);
   dispatchers.set(providedUri, dispatcher);
   providedUris.push(providedUri);

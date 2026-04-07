@@ -35,7 +35,9 @@ export function getContainer(): { resolve(uri: string): unknown } {
   return {
     resolve(uri: string): unknown {
       if (!activeContainer) {
-        throw new Error("Service container not initialized — services can only be used after activation");
+        throw new Error(
+          "Service container not initialized — services can only be used after activation",
+        );
       }
       const svc = activeContainer.get(uri);
       if (!svc) {

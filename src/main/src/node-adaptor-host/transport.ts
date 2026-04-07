@@ -69,10 +69,19 @@ export function createRpcTransport(port: MessagePortLike): IRpcTransport {
   let disposed = false;
 
   // Pending outbound calls waiting for a response
-  const pending = new Map<string, { resolve: (v: unknown) => void; reject: (e: unknown) => void }>();
+  const pending = new Map<
+    string,
+    { resolve: (v: unknown) => void; reject: (e: unknown) => void }
+  >();
 
   // once() listeners keyed by message type
-  const onceListeners = new Map<string, Array<{ resolve: (value: unknown) => void; reject: (reason: unknown) => void }>>();
+  const onceListeners = new Map<
+    string,
+    Array<{
+      resolve: (value: unknown) => void;
+      reject: (reason: unknown) => void;
+    }>
+  >();
 
   function handleMessage(data: unknown): void {
     if (typeof data !== "object" || data === null || !("type" in data)) return;
@@ -86,7 +95,11 @@ export function createRpcTransport(port: MessagePortLike): IRpcTransport {
       const respond = (response: RpcMessage) => port.postMessage(response);
 
       if (callHandler == null) {
-        respond({ type: "error", correlationId, message: "No call handler registered" });
+        respond({
+          type: "error",
+          correlationId,
+          message: "No call handler registered",
+        });
         return;
       }
 
@@ -157,7 +170,11 @@ export function createRpcTransport(port: MessagePortLike): IRpcTransport {
       const correlationId = `rpc:${++counter}`;
       return new Promise((resolve, reject) => {
         pending.set(correlationId, { resolve, reject });
-        port.postMessage({ type: "call", correlationId, msg } satisfies CallMessage);
+        port.postMessage({
+          type: "call",
+          correlationId,
+          msg,
+        } satisfies CallMessage);
       });
     },
 

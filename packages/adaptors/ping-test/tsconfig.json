@@ -10,6 +10,6 @@
     "composite": true,
     "experimentalDecorators": true,
     "types": ["node"],
-    "lib": ["ESNext"],
-  },
+    "lib": ["ESNext"]
+  }
 }

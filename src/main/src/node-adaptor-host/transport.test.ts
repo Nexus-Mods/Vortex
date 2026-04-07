@@ -32,9 +32,9 @@ describe("createRpcTransport", () => {
       throw new Error("remote failure");
     });
 
-    await expect(a.call({ uri: "test:svc", method: "fail", args: [] })).rejects.toThrow(
-      "remote failure",
-    );
+    await expect(
+      a.call({ uri: "test:svc", method: "fail", args: [] }),
+    ).rejects.toThrow("remote failure");
 
     a.dispose();
     b.dispose();

@@ -1,6 +1,9 @@
 import * as path from "node:path";
 import { describe, expect, it, afterAll } from "vitest";
-import { createTestHarness, type ITestHarness } from "@vortex/adaptor-host/testing/harness";
+import {
+  createTestHarness,
+  type ITestHarness,
+} from "@vortex/adaptor-host/testing/harness";
 
 const BUNDLE_PATH = path.resolve(import.meta.dirname, "../dist/index.cjs");
 const BOOTSTRAP_PATH = path.resolve(
@@ -27,20 +30,16 @@ describe("EchoService (Worker isolation)", () => {
   });
 
   it("echoes data through the ping service", async () => {
-    const result = await harness.call(
-      "vortex:adaptor/ping-test/echo",
-      "echo",
-      ["hello"],
-    );
+    const result = await harness.call("vortex:adaptor/ping-test/echo", "echo", [
+      "hello",
+    ]);
     expect(result).toBe("echo: pong: hello");
   });
 
   it("handles empty data", async () => {
-    const result = await harness.call(
-      "vortex:adaptor/ping-test/echo",
-      "echo",
-      [""],
-    );
+    const result = await harness.call("vortex:adaptor/ping-test/echo", "echo", [
+      "",
+    ]);
     expect(result).toBe("echo: pong: ");
   });
 

@@ -33,4 +33,3 @@ export function provides(uri: string) {
 export function getProvidedUri(target: Constructor): string | undefined {
   return PROVIDES_METADATA.get(target);
 }
-
