@@ -49,6 +49,7 @@ import lazyRequire from "./lazyRequire";
 import { log } from "./log";
 import { decodeSystemError } from "./nativeErrors";
 import { restackErr, truthy } from "./util";
+import { resolvePathCase } from "./resolvePathCase";
 
 const permission: typeof permissionT = lazyRequire(() =>
   require("permissions"),
@@ -77,10 +78,49 @@ export {
   readFileSync,
   statSync,
   symlinkSync,
-  watch,
   writeFileSync,
   writeSync,
 } from "original-fs";
+
+import {
+  readdirSync as readdirSyncOriginal,
+  watch as watchOriginal,
+} from "original-fs";
+
+/**
+ * Synchronous case-folding for watch paths on Wine prefixes.
+ * Uses readdirSync because fs.watch is synchronous.
+ * Per D-02/T-14-02: only fires for Wine prefix paths; errors caught and
+ * original path preserved so the watcher still starts.
+ */
+function resolvePathCaseSync(absPath: string): string {
+  if (!isWinePrefixPath(absPath)) {
+    return absPath;
+  }
+  const segments = absPath.split("/");
+  let current = "/";
+  for (let i = 1; i < segments.length; i++) {
+    if (segments[i] === "") continue;
+    try {
+      const entries = readdirSyncOriginal(current);
+      const lower = segments[i].toLowerCase();
+      const match = entries.find((e) => e.toLowerCase() === lower);
+      current = path.join(current, match !== undefined ? match : segments[i]);
+    } catch {
+      // Can't read directory — keep remaining segments as-is
+      current = path.join(current, ...segments.slice(i));
+      break;
+    }
+  }
+  return current;
+}
+
+export function watch(
+  filename: string,
+  ...args: any[]
+): ReturnType<typeof watchOriginal> {
+  return watchOriginal(resolvePathCaseSync(filename), ...(args as []));
+}
 
 export interface ILinkFileOptions {
   // Used to dictate whether error dialogs should
@@ -542,6 +582,32 @@ export function genFSWrapperAsync<T extends (...args) => any>(func: T) {
   return res;
 }
 
+/**
+ * Returns true if the path is inside a Wine/Proton prefix.
+ * O(1) string check per D-04.
+ */
+function isWinePrefixPath(filePath: string): boolean {
+  return (
+    process.platform === "linux" &&
+    filePath.includes("/compatdata/") &&
+    filePath.includes("/pfx/")
+  );
+}
+
+/**
+ * For Wine prefix paths on Linux, resolve on-disk casing of the leaf
+ * file/directory. No dirCache per D-09 — this is a safety net for
+ * scattered individual calls, not a bulk deployment loop.
+ */
+async function resolveCaseIfWinePrefix(absPath: string): Promise<string> {
+  if (!isWinePrefixPath(absPath)) {
+    return absPath;
+  }
+  const dir = path.dirname(absPath);
+  const base = path.basename(absPath);
+  return resolvePathCase(dir, base);
+}
+
 // tslint:disable:max-line-length
 const chmodAsync: (path: string, mode: string | number) => PromiseBB<void> =
   genFSWrapperAsync(fs.chmod);
@@ -569,12 +635,34 @@ const openAsync: (
 const readdirAsync: (path: string) => PromiseBB<string[]> = genFSWrapperAsync(
   fs.readdir,
 );
-const readFileAsync: (...args: any[]) => PromiseBB<any> = genFSWrapperAsync(
+const readFileAsyncRaw: (...args: any[]) => PromiseBB<any> = genFSWrapperAsync(
   fs.readFile,
 );
-const statAsync: (path: string) => PromiseBB<fs.Stats> = genFSWrapperAsync(
+const readFileAsync: (...args: any[]) => PromiseBB<any> = (...args: any[]) => {
+  const filePath = args[0];
+  if (typeof filePath === "string" && isWinePrefixPath(filePath)) {
+    return PromiseBB.resolve(resolveCaseIfWinePrefix(filePath)).then(
+      (resolved) => {
+        args[0] = resolved;
+        return readFileAsyncRaw(...args);
+      },
+    );
+  }
+  return readFileAsyncRaw(...args);
+};
+const statAsyncRaw: (path: string) => PromiseBB<fs.Stats> = genFSWrapperAsync(
   fs.stat,
 );
+const statAsync: (path: string) => PromiseBB<fs.Stats> = (
+  filePath: string,
+) => {
+  if (isWinePrefixPath(filePath)) {
+    return PromiseBB.resolve(resolveCaseIfWinePrefix(filePath)).then(
+      (resolved) => statAsyncRaw(resolved),
+    );
+  }
+  return statAsyncRaw(filePath);
+};
 const statSilentAsync: (path: string) => PromiseBB<fs.Stats> = (
   statPath: string,
 ) => PromiseBB.resolve(fs.stat(statPath));
@@ -600,11 +688,29 @@ const readAsync: <BufferT>(
 ) => PromiseBB<{ bytesRead: number; buffer: BufferT }> = genFSWrapperAsync(
   fs.read,
 ) as any;
-const writeFileAsync: (
+const writeFileAsyncRaw: (
   file: string,
   data: any,
   options?: fs.WriteFileOptions,
 ) => PromiseBB<void> = genFSWrapperAsync(fs.writeFile);
+const writeFileAsync: (
+  file: string,
+  data: any,
+  options?: fs.WriteFileOptions,
+) => PromiseBB<void> = (...args: any[]) => {
+  const filePath = args[0];
+  if (typeof filePath === "string" && isWinePrefixPath(filePath)) {
+    return PromiseBB.resolve(resolveCaseIfWinePrefix(filePath)).then(
+      (resolved) => {
+        args[0] = resolved;
+        return writeFileAsyncRaw(
+          ...(args as [string, any, fs.WriteFileOptions?]),
+        );
+      },
+    );
+  }
+  return writeFileAsyncRaw(...(args as [string, any, fs.WriteFileOptions?]));
+};
 const appendFileAsync: (
   file: string,
   data: any,
