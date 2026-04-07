@@ -276,19 +276,26 @@ class DeploymentMethod extends LinkingDeployment {
       installEntryProm = PromiseBB.resolve(this.mInstallationFiles);
     } else {
       this.mInstallationFiles = new Set<string>();
+      // turbowalk's Linux JS fallback (walk.js) calls the callback synchronously
+      // and ignores the return value, so async callbacks are silently dropped.
+      // Use the same synchronous-callback + promise-queue pattern as the game-dir
+      // scan below so enrichLinuxEntries is always awaited before entries are read.
+      let installQueue = PromiseBB.resolve();
       installEntryProm = turbowalk(
         installationPath,
-        async (entries) => {
+        (entries) => {
           if (this.mInstallationFiles === undefined) {
             // don't know when this would be necessary but apparently
             // it is, see https://github.com/Nexus-Mods/Vortex/issues/3684
             return;
           }
-          await enrichLinuxEntries(entries);
-          entries.forEach((entry) => {
-            if (entry.linkCount > 1 && entry.idStr !== undefined) {
-              this.mInstallationFiles.add(entry.idStr);
-            }
+          installQueue = installQueue.then(async () => {
+            await enrichLinuxEntries(entries);
+            entries.forEach((entry) => {
+              if (entry.linkCount > 1 && entry.idStr !== undefined) {
+                this.mInstallationFiles?.add(entry.idStr);
+              }
+            });
           });
         },
         {
@@ -301,6 +308,7 @@ class DeploymentMethod extends LinkingDeployment {
             ? PromiseBB.resolve()
             : PromiseBB.reject(err),
         )
+        .then(() => installQueue)
         .then(() => PromiseBB.resolve(this.mInstallationFiles));
     }
 
