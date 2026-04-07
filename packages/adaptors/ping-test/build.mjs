@@ -4,6 +4,7 @@ import { vortexAdaptorPlugin } from "@vortex/adaptor-api/plugin";
 const config = defineConfig({
   input: "./src/index.ts",
   platform: "neutral",
+  external: (id) => id.startsWith("@vortex/adaptor-api"),
   plugins: [
     vortexAdaptorPlugin({
       ping: "vortex:host/ping",
@@ -18,12 +19,5 @@ await bundle.write({
   format: "esm",
   cleanDir: true,
   entryFileNames: "[name].mjs",
-  sourcemap: true,
-});
-
-await bundle.write({
-  dir: "dist",
-  format: "cjs",
-  entryFileNames: "[name].cjs",
   sourcemap: true,
 });

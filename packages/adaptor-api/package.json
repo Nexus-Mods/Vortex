@@ -54,7 +54,7 @@
       "./package.json": "./package.json"
     }
   },
+  "types": "./dist/index.d.cts",
   "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.cts"
+  "module": "./dist/index.js"
 }

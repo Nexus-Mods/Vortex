@@ -10,7 +10,6 @@
     "typecheck": "pnpm tsc --noEmit -p tsconfig.json",
     "test": "vitest run --config vitest.config.ts"
   },
-  "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "vortex:requires": [
     "vortex:host/ping"

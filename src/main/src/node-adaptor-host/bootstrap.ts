@@ -1,3 +1,5 @@
+import vm from "node:vm";
+
 import type { IAdaptorManifest, IMethodMessage } from "@vortex/adaptor-api";
 
 import * as adaptorApi from "@vortex/adaptor-api";
@@ -15,15 +17,8 @@ import { parentPort } from "node:worker_threads";
 import { createMethodDispatcher, createServiceProxy } from "./runtime.js";
 import { createRpcTransport } from "./transport.js";
 
-// Map of ESM modules to intercept in the CJS sandbox require.
-// This ensures the bundle shares the same module instances as the bootstrap
-// (avoiding ESM/CJS dual-package hazard for global state like the service container).
-const esmModuleOverrides: Record<string, unknown> = {
-  "@vortex/adaptor-api": adaptorApi,
-};
-
 if (parentPort == null) {
-  throw new Error("bootstrap.ts must run inside a worker_threads Worker");
+  throw new Error("bootstrap must run inside a worker_threads Worker");
 }
 
 const transport = createRpcTransport(parentPort);
@@ -42,6 +37,10 @@ interface InitMessage {
 const init = await transport.once<InitMessage>("init");
 const { bundle, config } = init;
 
+const allowedModules: Record<string, unknown> = {
+  "@vortex/adaptor-api": adaptorApi,
+};
+
 // Step 2: Create a service container with proxies for each required URI
 const container = createContainer();
 for (const requiresUri of config.requires) {
@@ -54,19 +53,31 @@ for (const requiresUri of config.requires) {
 // Step 3: Activate the container so virtual:services imports resolve
 activateContainer(container);
 
-// Step 4: Eval the bundle as CommonJS
-const moduleObj: { exports: Record<string, unknown> } = { exports: {} };
-function sandboxRequire(specifier: string): unknown {
-  if (specifier in esmModuleOverrides) return esmModuleOverrides[specifier];
-  throw new Error(`Adaptor sandbox: module "${specifier}" is not allowed`);
-}
+// Step 4: Evaluate the bundle
+const context = vm.createContext();
+const bundleModule = new vm.SourceTextModule(bundle, { context });
 
-// eslint-disable-next-line @typescript-eslint/no-implied-eval
-new Function("module", "exports", "require", bundle)(
-  moduleObj,
-  moduleObj.exports,
-  sandboxRequire,
-);
+await bundleModule.link((specifier) => {
+  if (!(specifier in allowedModules)) {
+    throw new Error(`Adaptor sandbox: module "${specifier}" is not allowed`);
+  }
+
+  const exports = allowedModules[specifier];
+
+  const synth = new vm.SyntheticModule(
+    Object.keys(exports),
+    function () {
+      for (const [k, v] of Object.entries(exports)) {
+        this.setExport(k, v);
+      }
+    },
+    { context },
+  );
+
+  return synth;
+});
+
+await bundleModule.evaluate();
 
 // Step 5: Deactivate the container
 deactivateContainer();
@@ -78,7 +89,7 @@ const dispatchers = new Map<
 >();
 const providedUris: string[] = [];
 
-for (const exportedValue of Object.values(moduleObj.exports)) {
+for (const exportedValue of Object.values(bundleModule.namespace)) {
   if (typeof exportedValue !== "function") continue;
 
   const ctor = exportedValue as new (...args: unknown[]) => unknown;

@@ -7,7 +7,7 @@ export interface IWorkerHandle {
 
 export function createNodeWorker(scriptPath: string): IWorkerHandle {
   const w = new Worker(scriptPath, {
-    execArgv: [],
+    execArgv: ["--experimental-vm-modules"],
   });
   return {
     worker: w,

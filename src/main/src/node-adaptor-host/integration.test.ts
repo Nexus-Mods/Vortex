@@ -8,7 +8,7 @@ import { createAdaptorHost } from "./loader.js";
 
 const BUNDLE_PATH = path.resolve(
   import.meta.dirname,
-  "../../../../packages/adaptors/ping-test/dist/index.cjs",
+  "../../../../packages/adaptors/ping-test/dist/index.mjs",
 );
 const BOOTSTRAP_PATH = path.resolve(
   import.meta.dirname,

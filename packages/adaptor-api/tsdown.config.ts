@@ -6,7 +6,7 @@ export default defineConfig({
     plugin: "./src/plugin.ts",
     "contracts/ping": "./src/contracts/ping.ts",
   },
-  format: ["esm", "commonjs"],
+  format: ["esm", "cjs"],
   dts: {
     sourcemap: true,
   },
