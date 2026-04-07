@@ -3811,41 +3811,6 @@ importers:
         specifier: 'catalog:'
         version: 2.0.0(typescript@5.9.3)(vite@8.0.3)(vitest@4.1.2)
 
-  packages/paths:
-    dependencies:
-      zod:
-        specifier: 'catalog:'
-        version: 4.3.6
-    devDependencies:
-      '@types/node':
-        specifier: 'catalog:'
-        version: 22.19.15
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
-      vitest:
-        specifier: 'catalog:'
-        version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.19.15)(@vitest/ui@4.1.0)(happy-dom@20.8.8)(jsdom@20.0.3)(vite@8.0.3)
-
-  packages/paths-node:
-    dependencies:
-      '@vortex/paths':
-        specifier: workspace:*
-        version: link:../paths
-      fs-extra:
-        specifier: 'catalog:'
-        version: 9.1.0
-    devDependencies:
-      '@types/fs-extra':
-        specifier: 'catalog:'
-        version: 11.0.4
-      '@types/node':
-        specifier: 'catalog:'
-        version: 22.19.15
-      vitest:
-        specifier: 'catalog:'
-        version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.19.15)(@vitest/ui@4.1.0)(happy-dom@20.8.8)(jsdom@20.0.3)(vite@8.0.3)
-
   packages/vortex-api:
     dependencies:
       '@types/bluebird':
