@@ -16,6 +16,10 @@ async function fetchModFilesFromApi(
   gameId: string,
   modId: number,
 ): Promise<IModFileInfo[]> {
+  if (!Number.isInteger(modId) || modId <= 0 || !gameId) {
+    return [];
+  }
+
   const [modInfo, modFiles] = await Promise.all([
     api.ext.nexusGetModInfo?.(gameId, modId),
     api.ext.nexusGetModFiles?.(gameId, modId),
@@ -88,6 +92,15 @@ export async function onDownloadRequirement(
   mod: IModRequirementExt,
   file?: IModFileInfo,
 ): Promise<void> {
+  if (!Number.isInteger(mod.modId) || mod.modId <= 0) {
+    api.showErrorNotification(
+      `Cannot download requirement "${mod.modName}"`,
+      "This requirement does not have a valid Nexus Mods ID.",
+      { allowReport: false },
+    );
+    return;
+  }
+
   const getFileIds = async (): Promise<IModFileInfo[]> => {
     if (file !== undefined) {
       return [file];
