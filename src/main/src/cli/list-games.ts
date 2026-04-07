@@ -64,7 +64,8 @@ export function formatTable(rows: StoreGameRow[]): string {
 export async function main(): Promise<void> {
   log("info", "cli: initializing DuckDB");
   const singleton = DuckDBSingleton.getInstance();
-  await singleton.initialize();
+  const extensionDir = path.join(__dirname, "..", "..", "duckdb-extensions");
+  await singleton.initialize(extensionDir);
 
   try {
     const connection = await singleton.createConnection();
