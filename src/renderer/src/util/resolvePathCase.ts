@@ -1,6 +1,6 @@
 import * as path from "path";
 
-import * as fs from "../../../util/fs";
+import * as fs from "./fs";
 
 /**
  * Resolve each directory segment of `relPath` against the actual directory

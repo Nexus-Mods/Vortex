@@ -205,7 +205,7 @@ import testModReference, {
   referenceEqual,
   testRefByIdentifiers,
 } from "./util/testModReference";
-import { resolvePathCase } from "./util/resolvePathCase";
+import { resolvePathCase } from "../../util/resolvePathCase";
 
 // Interface for tracking active installation information
 interface IActiveInstallation {

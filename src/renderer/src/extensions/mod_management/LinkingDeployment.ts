@@ -24,7 +24,7 @@ import { getGame, UserCanceled } from "../../util/api";
 import * as fs from "../../util/fs";
 import { activeGameId } from "../../util/selectors";
 import { truthy } from "../../util/util";
-import { resolvePathCase } from "./util/resolvePathCase";
+import { resolvePathCase } from "../../util/resolvePathCase";
 
 export interface IDeployment {
   [relPath: string]: IDeployedFile;

@@ -3,11 +3,11 @@ import * as path from "path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the fs module before importing the module under test
-vi.mock("../../../util/fs", () => ({
+vi.mock("./fs", () => ({
   readdirAsync: vi.fn(),
 }));
 
-import * as fs from "../../../util/fs";
+import * as fs from "./fs";
 
 import { resolvePathCase } from "./resolvePathCase";
 

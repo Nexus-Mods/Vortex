@@ -16,6 +16,7 @@ import {
   modRuleId,
 } from "../extensions/collections_integration/util";
 import { readExtensibleDir } from "../extensions/extension_manager/util";
+import { resolvePathCase } from "./resolvePathCase";
 import {
   getGame,
   getGames,
@@ -241,6 +242,7 @@ export {
   ProcessCanceled,
   ReduxProp,
   readExtensibleDir,
+  resolvePathCase,
   relativeTime,
   removeMods,
   renderModName,
