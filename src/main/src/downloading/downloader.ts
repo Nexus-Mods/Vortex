@@ -1,8 +1,11 @@
+import type { RateLimiter } from "limiter";
 import type { IncomingHttpHeaders } from "node:http";
 
+import { unknownToError } from "@vortex/shared";
 import got, { type Headers } from "got";
 import { type WriteStream } from "node:fs";
 import { type FileHandle as NodeFileHandle, open } from "node:fs/promises";
+import { Transform, type TransformCallback } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { type URL } from "node:url";
 import PQueue from "p-queue";
@@ -32,6 +35,7 @@ export async function download<T>(
   abortSignal: AbortSignal,
   chunkConcurrency: number = defaultChunkConcurrency,
   checkpoint: Checkpoint | null = null,
+  rateLimiter: RateLimiter | null = null,
 ): Promise<void> {
   if (abortSignal.aborted) {
     throw new DownloadError({ code: "cancellation" }, "Download cancelled");
@@ -135,11 +139,19 @@ export async function download<T>(
         pendingChunks,
         chunkProgress,
         abortSignal,
+        rateLimiter,
       );
     } else {
       const progress = progressReporter.init(probe.size);
 
-      await downloadSingle(resolved, probe, handle, progress, abortSignal);
+      await downloadSingle(
+        resolved,
+        probe,
+        handle,
+        progress,
+        abortSignal,
+        rateLimiter,
+      );
     }
   } catch (err) {
     if (isCancellation(err)) {
@@ -200,11 +212,39 @@ function createGotStream(
     headers: createHeaders(etag, chunk),
   });
 
-  // Prevent uncaught-exception when abort destroys the stream before
-  // pipeline or for-await-of attaches its own error handler.
   stream.on("error", () => {});
 
   return stream;
+}
+
+async function consumeTokens(
+  limiter: RateLimiter,
+  bytes: number,
+  abortSignal: AbortSignal,
+): Promise<void> {
+  let remaining = bytes;
+  while (remaining > 0) {
+    abortSignal.throwIfAborted();
+    const toRemove = Math.min(remaining, limiter.tokenBucket.bucketSize);
+    const delay = limiter.removeTokens(toRemove);
+    if (delay instanceof Promise) {
+      await delay;
+    }
+    remaining -= toRemove;
+  }
+}
+
+function createThrottleTransform(
+  rateLimiter: RateLimiter,
+  abortSignal: AbortSignal,
+): Transform {
+  return new Transform({
+    transform(chunk: Buffer, _encoding: string, callback: TransformCallback) {
+      consumeTokens(rateLimiter, chunk.length, abortSignal)
+        .then(() => callback(null, chunk))
+        .catch((err) => callback(unknownToError(err)));
+    },
+  });
 }
 
 async function downloadSingle(
@@ -213,6 +253,7 @@ async function downloadSingle(
   handle: FileHandle,
   progress: Progress,
   abortSignal: AbortSignal,
+  rateLimiter: RateLimiter | null,
 ): Promise<void> {
   const stream = createGotStream(
     resource.probeUrl,
@@ -238,7 +279,13 @@ async function downloadSingle(
       progress.bytesReceived += data.length;
     });
 
-    await pipeline(stream, fileStream);
+    await (rateLimiter
+      ? pipeline(
+          stream,
+          createThrottleTransform(rateLimiter, abortSignal),
+          fileStream,
+        )
+      : pipeline(stream, fileStream));
   } catch (err) {
     // NOTE(erri120): cancellation errors are handled by consumers
     if (isCancellation(err)) throw err;
@@ -258,6 +305,7 @@ async function downloadChunked(
   chunks: Chunk[],
   chunkProgress: Map<number, ChunkProgress>,
   abortSignal: AbortSignal,
+  rateLimiter: RateLimiter | null,
 ): Promise<void> {
   await chunkQueue.addAll(
     chunks.map(
@@ -269,6 +317,7 @@ async function downloadChunked(
           handle,
           chunkProgress.get(chunk.index),
           abortSignal,
+          rateLimiter,
         ),
     ),
   );
@@ -281,6 +330,7 @@ async function downloadChunk(
   handle: FileHandle,
   progress: ChunkProgress,
   abortSignal: AbortSignal,
+  rateLimiter: RateLimiter | null,
 ): Promise<void> {
   abortSignal.throwIfAborted();
 
@@ -300,6 +350,10 @@ async function downloadChunk(
           { code: "protocol-violation", url: url },
           `Server sent ${buffer.length} bytes but only ${remaining} were expected for chunk ${chunk.index} (bytes ${chunk.range.start}-${chunk.range.end}); response exceeds requested range`,
         );
+      }
+
+      if (rateLimiter) {
+        await consumeTokens(rateLimiter, buffer.length, abortSignal);
       }
 
       let bytesWritten = 0;
