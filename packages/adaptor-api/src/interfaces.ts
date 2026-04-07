@@ -103,11 +103,13 @@ export interface IAdaptorManifest {
  * }
  * ```
  */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface ServiceRegistry {}
 
 /**
  * Maps friendly alias names to their full service URIs.
  */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface ServiceAliases {}
 
 /**

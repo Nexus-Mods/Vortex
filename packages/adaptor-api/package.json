@@ -7,8 +7,10 @@
   "scripts": {
     "build": "pnpm tsdown",
     "dist": "pnpm tsdown",
-    "typecheck": "pnpm tsc --noEmit -p tsconfig.json",
-    "test": "vitest run --config vitest.config.ts"
+    "typecheck": "pnpm tsc",
+    "test": "pnpm vitest run",
+    "lint": "pnpm eslint --concurrency auto .",
+    "lint:quiet": "pnpm eslint --concurrency auto --quiet ."
   },
   "exports": {
     "./branded": {
