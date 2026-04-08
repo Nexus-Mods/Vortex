@@ -1,3 +1,4 @@
+import { RateLimiter } from "limiter";
 import PQueue from "p-queue";
 
 import type { Chunker, ByteRange } from "./chunking";
@@ -32,11 +33,21 @@ export type DownloadCheckpoint<T = unknown> = {
 
 export class DownloadManager {
   readonly #downloadQueue: PQueue;
+  readonly #rateLimiter: RateLimiter | null;
 
-  constructor(initialConcurrency: number) {
+  constructor(initialConcurrency: number, bytesPerSecond?: number) {
     this.#downloadQueue = new PQueue({
       concurrency: initialConcurrency,
     });
+
+    if (bytesPerSecond && !isNaN(bytesPerSecond)) {
+      this.#rateLimiter = new RateLimiter({
+        tokensPerInterval: bytesPerSecond,
+        interval: "second",
+      });
+    } else {
+      this.#rateLimiter = null;
+    }
   }
 
   /** Number of pending downloads. */
@@ -92,6 +103,7 @@ export class DownloadManager {
         abortController.signal,
         defaultChunkConcurrency,
         checkpoint,
+        this.#rateLimiter,
       ),
     );
 
