@@ -283,6 +283,7 @@ export async function checkModRequirements(
       const modId = mod.attributes?.modId;
       if (!modId) continue;
       const gameId = mod.attributes.downloadGame;
+      if (!gameId) continue;
 
       // Get Nexus domain name for the requiring mod
       const game = getGame(gameId);
