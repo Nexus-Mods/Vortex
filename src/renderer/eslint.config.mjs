@@ -27,6 +27,13 @@ export default defineConfig([
     languageOptions: {
       // TODO: remove Node globals after disabling nodeIntegration
       globals: { ...globals.node, ...globals.browser },
+<<<<<<< HEAD
+=======
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+>>>>>>> 4a6585a85 (Merge pull request #22281 from Nexus-Mods/_v2.0-tools)
     },
     plugins: {
       "@stylistic": stylistic,

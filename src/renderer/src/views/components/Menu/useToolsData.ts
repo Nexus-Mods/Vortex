@@ -50,7 +50,11 @@ export const useToolsData = (): UseToolsDataResult => {
   );
   const pinnedToolsMap = useSelector(
     (state: IState) =>
+<<<<<<< HEAD
       (state.settings?.interface as any)?.tools?.pinned?.[gameId ?? ""] ?? {},
+=======
+      state.settings?.interface?.tools?.pinned?.[gameId ?? ""] ?? {},
+>>>>>>> 4a6585a85 (Merge pull request #22281 from Nexus-Mods/_v2.0-tools)
     shallowEqual,
   );
 

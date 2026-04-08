@@ -9,6 +9,16 @@ export default defineConfig([
     files: ["src/**/*.ts"],
     languageOptions: {
       globals: { ...globals.node },
+<<<<<<< HEAD
+=======
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    plugins: {
+      perfectionist,
+>>>>>>> 4a6585a85 (Merge pull request #22281 from Nexus-Mods/_v2.0-tools)
     },
     rules: {
       // TODO: to be removed after warnings have been fixed

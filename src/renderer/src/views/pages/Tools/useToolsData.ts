@@ -43,16 +43,27 @@ export const useToolsData = () => {
     (state: IState) => state.settings.gameMode.discovered,
   );
   const discoveredTools = useSelector(
+<<<<<<< HEAD
     (state: IState) => state.settings.gameMode.discovered?.[gameMode].tools,
   );
   const toolsOrder = useSelector(
     (state: IState) => state.settings.interface.tools.order?.[gameMode],
+=======
+    (state: IState) => state.settings.gameMode.discovered?.[gameMode]?.tools ?? {},
+  );
+  const toolsOrder = useSelector(
+    (state: IState) => state.settings.interface.tools?.order?.[gameMode] ?? [],
+>>>>>>> 4a6585a85 (Merge pull request #22281 from Nexus-Mods/_v2.0-tools)
   );
   const primaryTool = useSelector(
     (state: IState) => state.settings.interface.primaryTool?.[gameMode],
   );
   const pinnedToolsMap = useSelector(
+<<<<<<< HEAD
     (state: IState) => state.settings.interface.tools.pinned?.[gameMode],
+=======
+    (state: IState) => state.settings.interface.tools?.pinned?.[gameMode] ?? {},
+>>>>>>> 4a6585a85 (Merge pull request #22281 from Nexus-Mods/_v2.0-tools)
   );
   const toolsRunning = useSelector(
     (state: IState) => state.session.base.toolsRunning,
