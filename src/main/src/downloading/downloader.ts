@@ -147,12 +147,23 @@ export async function download<T>(
       let rangeChunk: Chunk | null = null;
 
       if (checkpoint !== null && completedRanges.length > 0) {
-        const sorted = completedRanges
-          .map((range) => range.end)
-          .sort((a, b) => a - b);
+        const sortedRanges = completedRanges.toSorted(
+          (a, b) => a.start - b.start,
+        );
 
-        // NOTE(erri120): Safest position to resume from
-        writePosition = sorted[0] + 1;
+        let currentEnd = -1;
+
+        for (const range of sortedRanges) {
+          if (range.start === currentEnd + 1) {
+            currentEnd = range.end;
+          } else if (range.start === 0) {
+            currentEnd = range.end;
+          } else {
+            break;
+          }
+        }
+
+        writePosition = currentEnd + 1;
 
         if (probe.size !== null) {
           expectedRemainingBytes = probe.size - writePosition;
