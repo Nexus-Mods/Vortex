@@ -1,54 +1,34 @@
-import * as path from "node:path";
-
 import eslintReact from "@eslint-react/eslint-plugin";
-import eslint from "@eslint/js";
 import stylistic from "@stylistic/eslint-plugin";
-import prettierConfig from "eslint-config-prettier";
-import betterTailwindcss from "eslint-plugin-better-tailwindcss";
-import perfectionist from "eslint-plugin-perfectionist";
-import importPlugin from "eslint-plugin-import";
 import { createTypeScriptImportResolver } from "eslint-import-resolver-typescript";
+import betterTailwindcss from "eslint-plugin-better-tailwindcss";
+import importPlugin from "eslint-plugin-import";
 import { defineConfig } from "eslint/config";
 import globals from "globals";
-import tseslint from "typescript-eslint";
+import * as path from "node:path";
 
 import noBluebirdPromiseAliasRule from "../../eslint-rules/no-bluebird-promise-alias.mjs";
 import noBluebirdResolveWithPromiseLike from "../../eslint-rules/no-bluebird-resolve-promiselike.mjs";
 import noRestrictedImportsRule from "../../eslint-rules/no-restricted-imports.mjs";
+import { baseConfig } from "../../eslint.config.base.mjs";
 
 export default defineConfig([
+  ...baseConfig(import.meta.dirname),
   {
-    ignores: [
-      "temp/**",
-      "lib/**",
-      "dist/**",
-      "node_modules/**",
-
-      // TODO: remove old Jest tests and replace with Vitests
-      "**/__tests__/**",
-      "**/__mocks__/**",
-    ],
+    ignores: ["temp/**", "lib/**", "dist/**", "node_modules/**"],
   },
 
   {
     files: ["src/**/*.{ts,tsx}"],
     extends: [
       betterTailwindcss.configs.recommended,
-      eslint.configs.recommended,
       eslintReact.configs["recommended-type-checked"],
-      prettierConfig,
-      tseslint.configs.recommendedTypeChecked,
     ],
     languageOptions: {
       // TODO: remove Node globals after disabling nodeIntegration
       globals: { ...globals.node, ...globals.browser },
-      parserOptions: {
-        projectService: true,
-        tsconfigRootDir: import.meta.dirname,
-      },
     },
     plugins: {
-      perfectionist,
       "@stylistic": stylistic,
       import: importPlugin,
       vortex: {
@@ -88,8 +68,6 @@ export default defineConfig([
       "better-tailwindcss/no-unknown-classes": "off",
 
       // Perfectionist
-      "perfectionist/sort-imports": "warn",
-      "perfectionist/sort-exports": "warn",
       "perfectionist/sort-jsx-props": [
         "warn",
         {
@@ -104,21 +82,6 @@ export default defineConfig([
       // Stylistic
       "@stylistic/jsx-newline": ["warn", { prevent: false }],
       "@stylistic/jsx-self-closing-comp": "warn",
-
-      // Typescript
-      "@typescript-eslint/consistent-type-imports": "error",
-      "@typescript-eslint/no-unused-vars": [
-        "warn",
-        {
-          args: "all",
-          argsIgnorePattern: "^_",
-          caughtErrors: "all",
-          caughtErrorsIgnorePattern: "^_",
-          destructuredArrayIgnorePattern: "^_",
-          varsIgnorePattern: "^_",
-          ignoreRestSiblings: true,
-        },
-      ],
 
       // Vortex custom rules
       "vortex/no-bluebird-promise-alias": "error",
@@ -178,24 +141,6 @@ export default defineConfig([
       "prefer-const": "warn",
       "prefer-rest-params": "warn",
       "prefer-spread": "warn",
-    },
-  },
-
-  {
-    files: ["*.mjs"],
-    extends: [
-      eslint.configs.recommended,
-      tseslint.configs.recommended,
-      prettierConfig,
-    ],
-    languageOptions: {
-      globals: { ...globals.node },
-    },
-    plugins: { perfectionist },
-    rules: {
-      // Perfectionist
-      "perfectionist/sort-imports": "warn",
-      "perfectionist/sort-exports": "warn",
     },
   },
 ]);
