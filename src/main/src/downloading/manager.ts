@@ -80,7 +80,7 @@ export class DownloadManager {
     resolver: Resolver<T>,
     chunker: Chunker<T> = staticChunker(),
   ): DownloadHandle<T> {
-    return this.#download(resource, dest, resolver, chunker, null);
+    return this.#download(resource, dest, resolver, chunker);
   }
 
   #download<T>(
@@ -88,7 +88,7 @@ export class DownloadManager {
     dest: string,
     resolver: Resolver<T>,
     chunker: Chunker<T>,
-    checkpoint: DownloadCheckpoint<T> | null,
+    checkpoint?: DownloadCheckpoint<T>,
   ): DownloadHandle<T> {
     const progressReporter = new ProgressReporter();
     const abortController = new AbortController();
@@ -97,13 +97,16 @@ export class DownloadManager {
       download(
         resource,
         dest,
-        resolver,
-        chunker,
-        progressReporter,
-        abortController.signal,
-        defaultChunkConcurrency,
-        checkpoint,
-        this.#rateLimiter,
+        {
+          resolver,
+          chunker,
+          rateLimiter: this.#rateLimiter,
+        },
+        {
+          progressReporter,
+          abortSignal: abortController.signal,
+          checkpoint,
+        },
       ),
     );
 
