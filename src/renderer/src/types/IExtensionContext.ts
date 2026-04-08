@@ -1233,13 +1233,6 @@ export interface IExtensionContext {
   registerGameStub: (game: IGame, ext: IExtensionDownloadInfo) => void;
 
   /**
-   * registers support for a game store.
-   *
-   * @param {IGameStore} gameStore
-   */
-  registerGameStore: (gameStore: IGameStore) => void;
-
-  /**
    * registers a provider for general information about a game
    * @param {string} id unique id identifying the provider
    * @param {number} priority if two providers provide the same info (same key) the one with the

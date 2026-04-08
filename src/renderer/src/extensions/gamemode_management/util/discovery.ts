@@ -127,7 +127,7 @@ function updateManuallyConfigured(
     discoveredGames[game.id]?.path !== undefined &&
     discoveredGames[game.id]?.store === undefined
   ) {
-    return GameStoreHelper.identifyStore(discoveredGames[game.id]?.path)
+    return Bluebird.resolve(GameStoreHelper.identifyStore(discoveredGames[game.id]?.path))
       .then((store) => {
         if (store !== undefined) {
           log("debug", "updating previously discovered game", {
@@ -159,43 +159,91 @@ function updateManuallyConfigured(
   }
 }
 
-function queryByArgs(
+function matchStoreGames(
+  queryArgs: { [storeId: string]: Array<{ id?: string; name?: string; prefer?: number }> },
+  storeGames: IStoreGameRow[],
+): IGameStoreEntry[] {
+  const results: IGameStoreEntry[] = [];
+  for (const [storeId, queries] of Object.entries(queryArgs)) {
+    for (const query of queries) {
+      const match = storeGames.find((sg) => {
+        if (sg.store_type !== storeId) return false;
+        if (query.id !== undefined) return sg.store_id === query.id;
+        if (query.name !== undefined) {
+          const re = new RegExp("^" + query.name + "$");
+          return sg.name !== null && re.test(sg.name);
+        }
+        return false;
+      });
+      if (match) {
+        results.push({
+          appid: match.store_id,
+          gamePath: match.install_path,
+          name: match.name ?? "",
+          gameStoreId: match.store_type,
+          priority: query.prefer ?? 100,
+        });
+      }
+    }
+  }
+  return results;
+}
+
+async function queryByArgs(
   discoveredGames: { [id: string]: IDiscoveryResult },
   game: IGame,
-): Bluebird<IGameStoreEntry> {
-  return GameStoreHelper.find(game.queryArgs)
-    .then((results) =>
-      Bluebird.all<IGameStoreEntry>(
-        results.map((res) =>
-          fs
-            .statAsync(res.gamePath)
-            .then(() => res)
-            .catch(() => undefined),
-        ),
+  storeGames?: IStoreGameRow[],
+): Promise<IGameStoreEntry> {
+  let findResults: IGameStoreEntry[];
+
+  if (storeGames !== undefined) {
+    const matchedStoreGames = matchStoreGames(game.queryArgs, storeGames);
+    const registryMatches =
+      game.queryArgs.registry !== undefined
+        ? await GameStoreHelper.find({ registry: game.queryArgs.registry })
+        : [];
+    findResults = [
+      ...matchedStoreGames,
+      ...registryMatches.filter(
+        (entry) =>
+          !matchedStoreGames.some(
+            (matched) =>
+              matched.gameStoreId === entry.gameStoreId &&
+              matched.appid === entry.appid,
+          ),
+      ),
+    ];
+  } else {
+    findResults = await GameStoreHelper.find(game.queryArgs);
+  }
+
+  const verified = (
+    await Promise.all(
+      findResults.map((res) =>
+        fs
+          .statAsync(res.gamePath)
+          .then(() => res)
+          .catch(() => undefined),
       ),
     )
-    .then((results) => results.filter((res) => res !== undefined))
-    .then((results) => {
-      if (results.length === 0) {
-        return Bluebird.resolve(undefined);
-      }
-      const discoveredStore = discoveredGames[game.id]?.store;
-      const prio = (entry: IGameStoreEntry) => {
-        if (
-          discoveredStore !== undefined &&
-          entry.gameStoreId === discoveredStore
-        ) {
-          return 0;
-        } else {
-          return entry.priority ?? 100;
-        }
-      };
+  ).filter((res) => res !== undefined);
 
-      results = results.sort(
-        (lhs: IGameStoreEntry, rhs: IGameStoreEntry) => prio(lhs) - prio(rhs),
-      );
-      return Bluebird.resolve(results[0]);
-    });
+  if (verified.length === 0) {
+    return undefined;
+  }
+
+  const discoveredStore = discoveredGames[game.id]?.store;
+  const prio = (entry: IGameStoreEntry) => {
+    if (discoveredStore !== undefined && entry.gameStoreId === discoveredStore) {
+      return 0;
+    } else {
+      return entry.priority ?? 100;
+    }
+  };
+
+  return verified.sort(
+    (lhs: IGameStoreEntry, rhs: IGameStoreEntry) => prio(lhs) - prio(rhs),
+  )[0];
 }
 
 function queryByCB(game: IGame): Bluebird<Partial<IGameStoreEntry>> {
@@ -318,11 +366,20 @@ function handleDiscoveredGame(
  * @param {DiscoveredCB} onDiscoveredGame
  * @return the list of gameIds that were discovered
  */
+export interface IStoreGameRow {
+  store_type: string;
+  store_id: string;
+  install_path: string;
+  name: string | null;
+  store_metadata: string | null;
+}
+
 export function quickDiscovery(
   knownGames: IGame[],
   discoveredGames: { [id: string]: IDiscoveryResult },
   onDiscoveredGame: DiscoveredCB,
   onDiscoveredTool: DiscoveredToolCB,
+  storeGames?: IStoreGameRow[],
 ): Bluebird<string[]> {
   return Bluebird.all(
     knownGames.map((game) =>
@@ -340,7 +397,7 @@ export function quickDiscovery(
           let prom: Bluebird<string>;
 
           if (game.queryArgs !== undefined) {
-            prom = queryByArgs(discoveredGames, game).then((result) => {
+            prom = Bluebird.resolve(queryByArgs(discoveredGames, game, storeGames)).then((result) => {
               if (result !== undefined) {
                 return handleDiscoveredGame(
                   game,

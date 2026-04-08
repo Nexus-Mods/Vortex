@@ -23,6 +23,12 @@ const betterIpcRenderer = {
   off: rendererOff,
 };
 
+type QueryExecuteParams =
+  SerializableArgs<Parameters<InvokeChannels["query:execute"]>>[1];
+type CommandExecutePayload =
+  SerializableArgs<Parameters<InvokeChannels["command:execute"]>>[1];
+const EMPTY_QUERY_PARAMS = {} as QueryExecuteParams;
+
 try {
   expose("versions", {
     chromium: process.versions.chrome,
@@ -69,6 +75,26 @@ try {
     extensions: {
       initializeAllMain: (installType: string) =>
         betterIpcRenderer.send("extensions:init-all-main", installType),
+    },
+
+    query: {
+      execute: (
+        queryName: string,
+        params: QueryExecuteParams = EMPTY_QUERY_PARAMS,
+      ) =>
+        betterIpcRenderer.invoke("query:execute", queryName, params),
+      onDirty: (callback: (queryNames: string[]) => void) => {
+        const listener = (
+          _: Electron.IpcRendererEvent,
+          queryNames: string[],
+        ) => callback(queryNames);
+        ipcRenderer.on("query:dirty", listener);
+        return () => ipcRenderer.removeListener("query:dirty", listener);
+      },
+    },
+
+    discovery: {
+      start: () => executeCommand("discovery.start"),
     },
 
     updater: {
@@ -299,6 +325,13 @@ function rendererInvoke<C extends keyof InvokeChannels>(
   ...args: SerializableArgs<Parameters<InvokeChannels[C]>>
 ): Promise<AssertSerializable<Awaited<ReturnType<InvokeChannels[C]>>>> {
   return ipcRenderer.invoke(channel, ...args);
+}
+
+function executeCommand(
+  commandName: string,
+  payload?: CommandExecutePayload,
+): Promise<void> {
+  return betterIpcRenderer.invoke("command:execute", commandName, payload);
 }
 
 function rendererSend<C extends keyof RendererChannels>(

@@ -53,6 +53,7 @@ import {
   nexusGameId,
 } from "../extensions/nexus_integration/util/convertGameId";
 import GameStoreHelper from "./GameStoreHelper";
+import { epicGamesLauncher, GameNotFound, steam } from "./gameStoreCompat";
 import { getApplication } from "./application";
 import { Archive } from "./archives";
 import bbcodeToReact, {
@@ -74,7 +75,6 @@ import {
   UserCanceled,
 } from "./CustomErrors";
 import Debouncer from "./Debouncer";
-import epicGamesLauncher from "./EpicGamesLauncher";
 import {
   getVisibleWindow,
   terminate,
@@ -111,8 +111,6 @@ import { getReduxLog } from "../store/reduxLogger";
 import ReduxProp from "../ReduxProp";
 import relativeTime, { userFriendlyTime } from "./relativeTime";
 import StarterInfo from "./StarterInfo";
-import steam, { GameNotFound } from "./Steam";
-export type { ISteamEntry } from "./Steam.ts";
 import {
   batchDispatch,
   bytesToString,
@@ -184,14 +182,15 @@ export {
   deepMerge,
   delay,
   deriveModInstallName as deriveInstallName,
-  epicGamesLauncher,
   // extend is renderer-only, available via renderer/controls/ComponentEx
   extractExeIcon,
   fileMD5,
   findDownloadByRef,
   findModByRef,
+  epicGamesLauncher,
   GameNotFound,
   GameStoreHelper,
+  steam,
   generateCollectionSessionId,
   getActivator,
   getApplication,
@@ -258,7 +257,6 @@ export {
   SevenZip,
   sortMods,
   StarterInfo,
-  steam,
   terminate,
   testModReference,
   testRefByIdentifiers,

@@ -188,9 +188,17 @@ async function main(): Promise<void> {
 
     for (const q of setupQueries) {
       console.log(`  Describing table: ${q.name}`);
-      const descResult = await connection.runAndReadAll(
-        `DESCRIBE db.${q.name}`,
-      );
+      let descResult;
+      try {
+        descResult = await connection.runAndReadAll(
+          `DESCRIBE db.${q.name}`,
+        );
+      } catch {
+        // Table may be in the default memory database (non-pivot tables)
+        descResult = await connection.runAndReadAll(
+          `DESCRIBE memory.${q.name}`,
+        );
+      }
       const descRows = descResult.getRowObjectsJson() as Array<{
         column_name: string;
         column_type: string;
@@ -271,6 +279,7 @@ function generateTypeScript(
   );
   lines.push("");
   lines.push('import type { Table } from "../Table";');
+  lines.push('import type { View } from "../View";');
   lines.push('import type { Database } from "../Database";');
   lines.push("");
 
@@ -306,11 +315,11 @@ function generateTypeScript(
     lines.push("");
 
     lines.push(`/** Result row for the '${query.name}' query */`);
-    lines.push(`export interface ${pascal}Row {`);
+    lines.push(`export type ${pascal}Row = {`);
     for (const col of columns) {
       lines.push(`  ${col.name}: ${col.tsType};`);
     }
-    lines.push("}");
+    lines.push("};");
     lines.push("");
   }
 

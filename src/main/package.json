@@ -14,7 +14,8 @@
     "lint:quiet": "pnpm eslint --concurrency auto --quiet .",
     "package": "node ./prepare-dist-package.mjs && pnpm install --dir=./dist && pnpm electron-builder --config ./electron-builder.config.json --config.win.forceCodeSigning=true --config.win.sign=./sign.cjs --publish never",
     "package:nosign": "node ./prepare-dist-package.mjs && pnpm install --dir=./dist && pnpm electron-builder --config ./electron-builder.config.json --publish never",
-    "prepare:win": "curl -L \"https://aka.ms/vs/17/release/vc_redist.x64.exe\" -o \"./build/VC_redist.x64.exe\" --create-dirs && curl -L \"https://aka.ms/dotnet/9.0/windowsdesktop-runtime-win-x64.exe\" -o \"./build/windowsdesktop-runtime-win-x64.exe\" --create-dirs"
+    "prepare:win": "curl -L \"https://aka.ms/vs/17/release/vc_redist.x64.exe\" -o \"./build/VC_redist.x64.exe\" --create-dirs && curl -L \"https://aka.ms/dotnet/9.0/windowsdesktop-runtime-win-x64.exe\" -o \"./build/windowsdesktop-runtime-win-x64.exe\" --create-dirs",
+    "cli:list-games": "node out/cli-list-games.cjs"
   },
   "dependencies": {
     "@duckdb/node-api": "catalog:",

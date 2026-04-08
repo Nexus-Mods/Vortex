@@ -88,6 +88,12 @@ export interface Api {
 
   /** Telemetry APIs - span export from renderer to main */
   telemetry: TelemetryApi;
+
+  /** Generic query API - execute named queries and receive dirty notifications */
+  query: QueryApi;
+
+  /** Game Discovery APIs - trigger scans and registry lookups */
+  discovery: DiscoveryApi;
 }
 
 export interface Example {
@@ -408,4 +414,22 @@ export interface UpdaterApi {
 export interface TelemetryApi {
   /** Forward a completed span to main process for buffering and OTLP export */
   forwardSpan(span: SerializedSpan): void;
+}
+
+/** Generic query API — execute named DuckDB queries and receive dirty notifications */
+export interface QueryApi {
+  /** Execute a named query with optional parameters */
+  execute(
+    queryName: string,
+    params?: Record<string, Serializable>,
+  ): Promise<Record<string, Serializable>[]>;
+
+  /** Listen for dirty query notifications. Returns unsubscribe function. */
+  onDirty(callback: (queryNames: string[]) => void): () => void;
+}
+
+/** API for game discovery commands */
+export interface DiscoveryApi {
+  /** Trigger a discovery scan in the main process */
+  start(): Promise<void>;
 }

@@ -167,6 +167,9 @@ export interface MainChannels {
 
   // Menu click events (main -> renderer)
   "menu:click": (menuItemId: string) => void;
+
+  // Query system: Broadcast dirty query names after invalidation
+  "query:dirty": (queryNames: string[]) => void;
 }
 
 /** Type containing all known channels for synchronous IPC operations (used primarily by preload scripts) */
@@ -322,6 +325,20 @@ export interface InvokeChannels {
 
   // Compile stylesheets
   "styles:compile": (filePaths: string[]) => Promise<string>;
+
+  // Generic command execution. Commands return no data on success.
+  "command:execute": (
+    commandName: string,
+    payload?: Record<string, Serializable>,
+  ) => Promise<void>;
+
+  // Query system: Execute any named DuckDB query
+  "query:execute": (
+    queryName: string,
+    params: Record<string, Serializable>,
+  ) => Promise<Record<string, Serializable>[]>;
+
+  // Game Discovery commands are routed through command:execute
 }
 
 /** Represents all IPC-safe typed arrays */

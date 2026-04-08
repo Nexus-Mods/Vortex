@@ -96,8 +96,8 @@ export default class StardewValleyGame implements types.IGame {
         "413150",
         "1453375253",
         "ConcernedApe.StardewValleyPC",
-      ]).catch(() => undefined),
-    );
+      ]),
+    ).catch(() => undefined);
 
     if (game !== undefined) {
       return game.gamePath;
