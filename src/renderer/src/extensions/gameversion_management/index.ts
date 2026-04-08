@@ -1,14 +1,15 @@
 import type { IExtensionContext } from "../../types/IExtensionContext";
-import local from "../../util/local";
-import { wrapExtCBAsync } from "../../util/util";
-
-import GameVersionManager from "./GameVersionManager";
 import type {
   GameVersionProviderFunc,
   GameVersionProviderTest,
   IGameVersionProvider,
   IGameVersionProviderOptions,
 } from "./types/IGameVersionProvider";
+
+import local from "../../util/local";
+import { log } from "../../util/log";
+import { wrapExtCBAsync } from "../../util/util";
+import GameVersionManager from "./GameVersionManager";
 import {
   getExecGameVersion,
   getExtGameVersion,
@@ -80,12 +81,10 @@ function init(context: IExtensionContext): boolean {
     () => Promise.resolve("0.0.0"),
   );
 
-  context.once(() => {
-    $.gameVersionManager = new GameVersionManager(
-      context.api,
-      gameVersionProviders,
-    );
-  });
+  $.gameVersionManager = new GameVersionManager(
+    context.api,
+    gameVersionProviders,
+  );
 
   return true;
 }

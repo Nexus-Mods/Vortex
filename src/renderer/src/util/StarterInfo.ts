@@ -1,4 +1,5 @@
 import { getErrorCode, unknownToError } from "@vortex/shared";
+import { ApplicationData } from "../applicationData";
 import PromiseBB from "bluebird";
 import * as fs from "fs";
 import * as path from "path";
@@ -12,7 +13,6 @@ import type { IGame } from "../types/IGame";
 import type { Steam, ISteamEntry } from "./Steam";
 
 import { setToolRunning, setToolStopped } from "../actions";
-import { ApplicationData } from "../applicationData";
 import { getGame } from "../extensions/gamemode_management/util/getGame";
 import { log } from "../logging";
 import { GameEntryNotFound, GameStoreNotFound } from "../types/IGameStore";
@@ -92,14 +92,14 @@ async function shouldRunWithProton(
   try {
     const steamStore = GameStoreHelper.getGameStore("steam") as Steam;
     const games = await steamStore.allGames();
-
     // Find the game entry that matches this executable's location
     return games.find(
       (g) =>
-        info.workingDirectory
+        info.environment.SteamAPPId === g.appid &&
+        (info.workingDirectory
           ?.toLowerCase()
           .startsWith(g.gamePath.toLowerCase()) ||
-        info.exePath.toLowerCase().startsWith(g.gamePath.toLowerCase()),
+          info.exePath.toLowerCase().startsWith(g.gamePath.toLowerCase())),
     );
   } catch (err: any) {
     log("debug", "Could not check for Proton execution", {

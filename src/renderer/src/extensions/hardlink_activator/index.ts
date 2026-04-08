@@ -1,18 +1,21 @@
 import type { TFunction } from "i18next";
 
-import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import {
+  getErrorCode,
+  getErrorMessageOrDefault,
+  unknownToError,
+} from "@vortex/shared";
 import PromiseBB from "bluebird";
 import * as path from "path";
 import turbowalk from "turbowalk";
 import * as util from "util";
-import * as winapi from "winapi-bindings";
 
 import type {
   IExtensionApi,
   IExtensionContext,
 } from "../../types/IExtensionContext";
 import type { IGame } from "../../types/IGame";
-import type { IState } from '../../types/IState';
+import type { IState } from "../../types/IState";
 import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
 import type {
   IDeployedFile,
@@ -132,7 +135,7 @@ class DeploymentMethod extends LinkingDeployment {
           solution: (t) => {
             let displayPath = modPaths[typeId];
             try {
-              displayPath = winapi.GetVolumePathName(modPaths[typeId]);
+              displayPath = fs.getVolumePath(modPaths[typeId]);
             } catch {
               log("warn", "Failed to resolve volume path", {
                 path: modPaths[typeId],
