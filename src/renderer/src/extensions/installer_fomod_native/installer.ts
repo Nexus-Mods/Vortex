@@ -53,11 +53,22 @@ export const install = async (
     // thread — converting/dispatching large installSteps arrays — for no
     // visible benefit since the dialog is never shown.
     const isUnattended = unattended === true && fomodChoices != null;
+
+    // When attended (manual reinstall) with saved choices, don't pass them to
+    // the C# engine — it would auto-advance through matching steps without
+    // showing the dialog. Instead, pass them as "attended presets" so the
+    // DialogManager can pre-select options in the UI while still showing the
+    // dialog for user modification.
+    const attendedPresets =
+      !isUnattended && fomodChoices != null ? fomodChoices : undefined;
+    const enginePreset = isUnattended ? fomodChoices : undefined;
+
     const modInstaller = await VortexModInstaller.create(
       api,
       instanceId,
       gameId,
       isUnattended,
+      attendedPresets,
     );
 
     const result = await modInstaller.installAsync(
@@ -65,7 +76,7 @@ export const install = async (
       stopPatterns,
       pluginPath,
       scriptPath,
-      fomodChoices,
+      enginePreset,
       validate,
     );
 
