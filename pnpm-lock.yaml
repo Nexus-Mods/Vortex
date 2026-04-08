@@ -53,11 +53,11 @@ catalogs:
       specifier: ^2.7.0
       version: 2.8.0
     '@nexusmods/fomod-installer-ipc':
-      specifier: ^0.12.0
-      version: 0.12.0
+      specifier: ^0.13.0
+      version: 0.13.0
     '@nexusmods/fomod-installer-native':
-      specifier: ^0.12.0
-      version: 0.12.0
+      specifier: ^0.13.0
+      version: 0.13.0
     '@nexusmods/nexus-api':
       specifier: git+https://github.com/Nexus-Mods/node-nexus-api#4192c0c9f34306c2167e258dd4fef773af406161
       version: 1.5.2
@@ -3939,10 +3939,10 @@ importers:
         version: 2.8.0
       '@nexusmods/fomod-installer-ipc':
         specifier: 'catalog:'
-        version: 0.12.0
+        version: 0.13.0
       '@nexusmods/fomod-installer-native':
         specifier: 'catalog:'
-        version: 0.12.0
+        version: 0.13.0
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4192c0c9f34306c2167e258dd4fef773af406161
@@ -4442,10 +4442,10 @@ importers:
         version: 2.8.0
       '@nexusmods/fomod-installer-ipc':
         specifier: 'catalog:'
-        version: 0.12.0
+        version: 0.13.0
       '@nexusmods/fomod-installer-native':
         specifier: 'catalog:'
-        version: 0.12.0
+        version: 0.13.0
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4192c0c9f34306c2167e258dd4fef773af406161
@@ -5817,12 +5817,12 @@ packages:
   '@napi-rs/wasm-runtime@1.1.1':
     resolution: {integrity: sha512-p64ah1M1ld8xjWv3qbvFwHiFVWrq1yFvV4f7w+mzaqiR4IlSgkqhcRdHwsGgomwzBH51sRY4NEowLxnaBjcW/A==}
 
-  '@nexusmods/fomod-installer-ipc@0.12.0':
-    resolution: {integrity: sha512-zMfV1ctfrklyQmUNjF/nLe9HHv+cTT8s4LBc3crh4u+w3/EWTYOBZcmmu19oWFeDkZwpwgS+Qf6WyCwiAe36Kw==}
+  '@nexusmods/fomod-installer-ipc@0.13.0':
+    resolution: {integrity: sha512-oWc2eCsu8FewYFq3w5gRFtiDZFbRPIWi1VgvqHJQhKN93WTmzVf0po7r3F/604SDTpNAuquHgFqWU8np7S83yA==}
     engines: {node: '>=22'}
 
-  '@nexusmods/fomod-installer-native@0.12.0':
-    resolution: {integrity: sha512-BrmUafwSm1U40h3oNjcFTVcJ/aJpv5grZP6oguW0+sqdXFjW/YzHyqHwbOI+5pGRna0D+syzCv73U8YOnhW62A==}
+  '@nexusmods/fomod-installer-native@0.13.0':
+    resolution: {integrity: sha512-jkoXlWllwWXiQKrN1tKvTl7e86yw8kis3dA8FdPvzlxuYY/MkMThMzlIe81zlh0fROBEvcxHTy9SUZVbST4UDQ==}
     engines: {node: '>=22'}
 
   '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4192c0c9f34306c2167e258dd4fef773af406161':
@@ -14019,9 +14019,9 @@ snapshots:
       '@tybys/wasm-util': 0.10.1
     optional: true
 
-  '@nexusmods/fomod-installer-ipc@0.12.0': {}
+  '@nexusmods/fomod-installer-ipc@0.13.0': {}
 
-  '@nexusmods/fomod-installer-native@0.12.0':
+  '@nexusmods/fomod-installer-native@0.13.0':
     dependencies:
       node-gyp-build: 4.8.4
 
