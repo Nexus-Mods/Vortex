@@ -301,7 +301,8 @@ declare namespace actions {
         setUpdateChannel,
         setPrimaryTool,
         setToolOrder,
-        setToolValid
+        setToolValid,
+        setToolPinned
     }
 }
 export { actions }
@@ -3508,6 +3509,11 @@ interface ISettingsInterface {
         order?: {
             [gameId: string]: string[];
         };
+        pinned?: {
+            [gameId: string]: {
+                [toolId: string]: boolean;
+            };
+        };
     };
     // (undocumented)
     usage: {
@@ -3652,6 +3658,9 @@ interface IState {
         deployment: {
             needToDeploy: {
                 [gameId: string]: boolean;
+            };
+            deploymentCounter: {
+                [gameId: string]: number;
             };
         };
         transactions: IStateTransactions;
@@ -5362,6 +5371,13 @@ exclusive: boolean;
 }, {}>;
 
 // @public (undocumented)
+const setToolPinned: ComplexActionCreator3<string, string, boolean, {
+gameId: string;
+toolId: string;
+pinned: boolean;
+}, {}>;
+
+// @public (undocumented)
 const setToolRunning: ComplexActionCreator3<string, number, boolean, {
 exePath: string;
 started: number;
@@ -6217,10 +6233,10 @@ export class VisibilityProxy extends React_2.PureComponent<any, {}> {
 function walk(target: string, callback: (iterPath: string, stats: fs.Stats) => PromiseLike<any>, options?: IWalkOptions): Promise<void>;
 
 // Warning: (ae-forgotten-export) The symbol "IWebviewProps" needs to be exported by the entry point api.d.ts
-// Warning: (ae-forgotten-export) The symbol "IWebView_2" needs to be exported by the entry point api.d.ts
+// Warning: (ae-forgotten-export) The symbol "IWebView" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
-export class Webview extends React_2.Component<IWebviewProps & IWebView_2, {}> {
+export class Webview extends React_2.Component<IWebviewProps & IWebView, {}> {
     // (undocumented)
     componentDidMount(): void;
     // (undocumented)
@@ -6285,10 +6301,10 @@ export class ZoomableImage extends React_2.Component<IZoomableImageProps, {
 //
 // lib/extensions/mod_management/selectors.d.ts:59:5 - (ae-forgotten-export) The symbol "INeedToDeployMap" needs to be exported by the entry point api.d.ts
 // lib/types/IDialog.d.ts:84:9 - (ae-forgotten-export) The symbol "IBBCodeContext" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:351:9 - (ae-forgotten-export) The symbol "IHistoryState" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:353:9 - (ae-forgotten-export) The symbol "IHealthCheckSessionState" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:382:9 - (ae-forgotten-export) The symbol "IHistoryPersistent" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:383:9 - (ae-forgotten-export) The symbol "IHealthCheckPersistentState" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:356:9 - (ae-forgotten-export) The symbol "IHistoryState" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:358:9 - (ae-forgotten-export) The symbol "IHealthCheckSessionState" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:390:9 - (ae-forgotten-export) The symbol "IHistoryPersistent" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:391:9 - (ae-forgotten-export) The symbol "IHealthCheckPersistentState" needs to be exported by the entry point api.d.ts
 // lib/views/MainPage.d.ts:12:5 - (ae-forgotten-export) The symbol "MainPageBody" needs to be exported by the entry point api.d.ts
 // lib/views/MainPage.d.ts:13:5 - (ae-forgotten-export) The symbol "MainPageHeader" needs to be exported by the entry point api.d.ts
 
