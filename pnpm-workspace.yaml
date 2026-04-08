@@ -185,7 +185,7 @@ catalog:
   gamebryo-savegame: git+https://github.com/Nexus-Mods/node-gamebryo-savegames#f060df62b04aa53e0d2fa7e6de0c9df423bbd44c
   glob: ^11.0.3
   globals: ^17.3.0
-  got: ^14.6.6
+  got: 15.0.0
   graphlib: ^2.1.7
   happy-dom: ^20.8.3
   i18next: ^19.0.1

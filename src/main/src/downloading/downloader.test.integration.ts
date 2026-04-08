@@ -173,6 +173,38 @@ describe("download", () => {
     expect(gets[0].range).toBeNull();
   });
 
+  it("rejects with protocol-violation when a chunk response exceeds the requested byte range", async () => {
+    const handler: RequestHandler = ({ req, res }) => {
+      if (req.method === "HEAD") {
+        res.writeHead(200, {
+          "accept-ranges": "bytes",
+          "content-length": String(LARGE_FILE.length),
+        });
+        res.end();
+        return Promise.resolve();
+      }
+
+      // Honour the range header for the Content-Range, but send the full file
+      // body — more bytes than the declared range covers.
+      const range = req.headers["range"] ?? "bytes=0-0";
+      res.writeHead(206, {
+        "content-range": `${range.replace("=", " ")}/${LARGE_FILE.length}`,
+        "content-length": String(LARGE_FILE.length),
+      });
+      res.end(LARGE_FILE);
+      return Promise.resolve();
+    };
+
+    using route = server.route(handler);
+    await using tmp = await makeTmpDir();
+
+    await expect(runDownload(route.url, tmp.dir).promise).rejects.toMatchObject(
+      {
+        payload: { code: "protocol-violation", url: route.url },
+      },
+    );
+  });
+
   describe("progress", () => {
     it("reports correct totalBytes for a single download with content-length", async () => {
       using route = server.route(
@@ -181,7 +213,7 @@ describe("download", () => {
       await using tmp = await makeTmpDir();
       const progressReporter = makeProgressReporter();
       await completeDownload(route.url, tmp.dir, { progressReporter });
-      expect(progressReporter.getProgress().totalBytes).toBe(LARGE_FILE.length);
+      expect(progressReporter.getProgress().size).toBe(LARGE_FILE.length);
     });
 
     it("reports null totalBytes for a single download without content-length", async () => {
@@ -200,7 +232,7 @@ describe("download", () => {
       await using tmp = await makeTmpDir();
       const progressReporter = makeProgressReporter();
       await completeDownload(route.url, tmp.dir, { progressReporter });
-      expect(progressReporter.getProgress().totalBytes).toBeNull();
+      expect(progressReporter.getProgress().size).toBeNull();
     });
 
     it("reports bytesReceived equal to file size on completion for a single download", async () => {
@@ -235,17 +267,12 @@ describe("download", () => {
       await using tmp = await makeTmpDir();
       const progressReporter = makeProgressReporter();
       await completeDownload(route.url, tmp.dir, { progressReporter });
-      expect(progressReporter.getProgress().chunks).toHaveLength(chunksPerFile);
-    });
 
-    it("reports a single chunk for a non-chunked download", async () => {
-      using route = server.route(
-        serveFile({ body: LARGE_FILE, acceptRanges: false }),
-      );
-      await using tmp = await makeTmpDir();
-      const progressReporter = makeProgressReporter();
-      await completeDownload(route.url, tmp.dir, { progressReporter });
-      expect(progressReporter.getProgress().chunks).toHaveLength(1);
+      const progress = progressReporter.getProgress();
+      expect(progress.isChunked).toBe(true);
+      if (progress.isChunked) {
+        expect(progress.chunks).toHaveLength(chunksPerFile);
+      }
     });
   });
 
@@ -390,7 +417,9 @@ describe("download", () => {
       try {
         await using tmp = await makeTmpDir();
         const chunkUrlFn = vi.fn((chunk: Chunk) =>
-          Promise.resolve(chunkRoutes[Math.floor(chunk.start / chunkSize)].url),
+          Promise.resolve(
+            chunkRoutes[Math.floor(chunk.range.start / chunkSize)].url,
+          ),
         );
         const resolver: Resolver<never> = () =>
           Promise.resolve({ probeUrl: probeRoute.url, chunkUrl: chunkUrlFn });
