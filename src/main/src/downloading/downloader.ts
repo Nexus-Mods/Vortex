@@ -91,7 +91,7 @@ export async function download<T>(
     // https://nodejs.org/api/fs.html#file-system-flags
     // 'w+': Open file for reading and writing. The file is created (if it does not exist) or truncated (if it exists).
     // 'r+': Open file for reading and writing. An exception occurs if the file does not exist.
-    const flag = options?.checkpoint ? "w+" : "r+";
+    const flag = options?.checkpoint ? "r+" : "w+";
     const fd = await open(dest, flag);
     handle = { fd, path: dest };
   } catch (err) {
@@ -121,7 +121,7 @@ export async function download<T>(
       });
 
       let chunkProgress: Map<number, ChunkProgress> | null = null;
-      if (options.progressReporter) {
+      if (options?.progressReporter) {
         chunkProgress = options.progressReporter.initChunked(
           chunks,
           probe.size,
@@ -197,7 +197,7 @@ export async function download<T>(
       const progress = options?.progressReporter?.init(probe.size);
 
       // Fast-forward progress to account for already-written bytes
-      if (writePosition > 0) {
+      if (writePosition > 0 && progress) {
         progress.bytesReceived = writePosition;
         progress.bytesWritten = writePosition;
       }
