@@ -935,9 +935,19 @@ class ExtensionManager {
     Object.keys(this.mExtensionState)
       .filter((extId) => this.mExtensionState[extId].remove)
       .forEach((extId) => {
-        log("info", "removing", path.join(extensionsPath, extId));
-        fs.removeSync(path.join(extensionsPath, extId));
-        this.mPendingRemoves.push(extId);
+        const extPath = path.join(extensionsPath, extId);
+        log("info", "removing", extPath);
+        try {
+          fs.removeSync(extPath);
+          this.mPendingRemoves.push(extId);
+        } catch (err) {
+          // On Windows the previous renderer process may not have fully released
+          // file handles yet despite waitForRendererExit in the main process.
+          // Log and continue — the remove flag stays in state so it retries on
+          // next startup.
+          log("warn", "failed to remove extension, will retry on next startup",
+            { extId, error: getErrorMessageOrDefault(err) });
+        }
       });
 
     // Dynamic require to prevent TypeScript from analyzing StyleManager during api build
