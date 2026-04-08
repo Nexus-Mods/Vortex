@@ -345,7 +345,15 @@ async function purgeChanges(
       })
       .then(() =>
         fs.copyAsync(iniFileName + ".base", iniFileName, { noSelfCopy: true }),
-      ),
+      )
+      .catch((err) => {
+        if (err.code !== "ENOENT") {
+          return PromiseBB.reject(err);
+        }
+        log("debug", "base ini file missing, skipping purge", {
+          file: iniFileName,
+        });
+      }),
   );
 }
 
