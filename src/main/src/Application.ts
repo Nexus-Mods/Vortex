@@ -229,6 +229,7 @@ class Application {
     app.on("window-all-closed", () => {
       log("info", "Vortex closing");
       finalizeMainWrite()
+        .then(() => this.waitForRendererExit())
         .then(() => {
           log("info", "clean application end");
           DuckDBSingleton.getInstance().close();
@@ -1103,6 +1104,45 @@ class Application {
         // Fall back to non-maximized
         this.mMainWindow?.show(false, startMinimized);
       });
+  }
+
+  /**
+   * Wait for the renderer process to fully exit so that all its file handles
+   * are released by the OS. This prevents EPERM errors on the next startup
+   * when trying to remove extension directories that the old renderer had loaded.
+   */
+  private async waitForRendererExit(): Promise<void> {
+    const pid = this.mMainWindow?.getRendererPid();
+    if (pid === undefined) {
+      return;
+    }
+
+    const isRunning = (p: number): boolean => {
+      try {
+        process.kill(p, 0);
+        return true;
+      } catch {
+        return false;
+      }
+    };
+
+    if (!isRunning(pid)) {
+      return;
+    }
+
+    log("debug", "waiting for renderer process to exit", { pid });
+    const MAX_WAIT_MS = 5000;
+    const POLL_INTERVAL_MS = 50;
+    const start = Date.now();
+    while (isRunning(pid) && Date.now() - start < MAX_WAIT_MS) {
+      await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+    }
+
+    if (isRunning(pid)) {
+      log("warn", "renderer process did not exit in time", { pid });
+    } else {
+      log("debug", "renderer process exited", { pid, elapsed: Date.now() - start });
+    }
   }
 
   private testUserEnvironment(): void {
