@@ -7,10 +7,7 @@ import {
   getProvidedUri,
   uri as validateUri,
   adaptorName,
-  semver,
-  activateContainer,
-  createContainer,
-  deactivateContainer,
+  semVer,
 } from "@vortex/adaptor-api";
 import { parentPort } from "node:worker_threads";
 
@@ -42,7 +39,7 @@ const allowedModules: Record<string, unknown> = {
 };
 
 // Step 2: Create a service container with proxies for each required URI
-const container = createContainer();
+const container = new Map<string, unknown>();
 for (const requiresUri of config.requires) {
   const proxy = createServiceProxy(requiresUri, (msg: IMethodMessage) =>
     transport.call(msg),
@@ -50,11 +47,10 @@ for (const requiresUri of config.requires) {
   container.set(requiresUri, proxy);
 }
 
-// Step 3: Activate the container so virtual:services imports resolve
-activateContainer(container);
-
-// Step 4: Evaluate the bundle
-const context = vm.createContext();
+// Step 3: Evaluate the bundle in a VM context with the container set on globalThis
+const context = vm.createContext({
+  __vortex_service_container: container,
+});
 const bundleModule = new vm.SourceTextModule(bundle, { context });
 
 await bundleModule.link((specifier) => {
@@ -62,7 +58,7 @@ await bundleModule.link((specifier) => {
     throw new Error(`Adaptor sandbox: module "${specifier}" is not allowed`);
   }
 
-  const exports = allowedModules[specifier];
+  const exports = allowedModules[specifier] as Record<string, unknown>;
 
   const synth = new vm.SyntheticModule(
     Object.keys(exports),
@@ -79,10 +75,7 @@ await bundleModule.link((specifier) => {
 
 await bundleModule.evaluate();
 
-// Step 5: Deactivate the container
-deactivateContainer();
-
-// Step 6: Scan exports for @provides decorated classes
+// Step 4: Scan exports for @provides decorated classes
 const dispatchers = new Map<
   string,
   (msg: IMethodMessage) => Promise<unknown>
@@ -92,31 +85,19 @@ const providedUris: string[] = [];
 for (const exportedValue of Object.values(bundleModule.namespace)) {
   if (typeof exportedValue !== "function") continue;
 
-  const ctor = exportedValue as new (...args: unknown[]) => unknown;
+  const ctor = exportedValue as new (...args: unknown[]) => Record<string, (...args: unknown[]) => unknown>;
   const providedUri = getProvidedUri(ctor);
   if (providedUri == null) continue;
 
-  const instance = new (ctor as new () => Record<
-    string,
-    (...args: unknown[]) => unknown
-  >)();
+  const instance = new ctor();
   const dispatcher = createMethodDispatcher(providedUri, instance);
   dispatchers.set(providedUri, dispatcher);
   providedUris.push(providedUri);
 }
 
-// Step 7: Build the manifest and send "ready"
-const manifest: IAdaptorManifest = {
-  id: validateUri(`adaptor:${config.name}`),
-  name: adaptorName(config.name),
-  version: semver(config.version),
-  provides: providedUris.map((u) => validateUri(u)),
-  requires: config.requires.map((u) => validateUri(u)),
-};
-
-transport.send({ type: "ready", manifest });
-
-// Step 8: Route incoming calls to the correct dispatcher
+// Step 5: Route incoming calls to the correct dispatcher.
+// This MUST be registered before sending "ready", otherwise the host could
+// send a call between receiving "ready" and the worker registering onCall.
 transport.onCall(async (msg: IMethodMessage) => {
   const dispatcher = dispatchers.get(msg.uri);
   if (dispatcher == null) {
@@ -125,7 +106,18 @@ transport.onCall(async (msg: IMethodMessage) => {
   return dispatcher(msg);
 });
 
-// Step 9: Listen for shutdown
+// Step 6: Build the manifest and send "ready"
+const manifest: IAdaptorManifest = {
+  id: validateUri(`adaptor:${config.name}`),
+  name: adaptorName(config.name),
+  version: semVer(config.version),
+  provides: providedUris.map((u) => validateUri(u)),
+  requires: config.requires.map((u) => validateUri(u)),
+};
+
+transport.send({ type: "ready", manifest });
+
+// Step 7: Listen for shutdown
 transport
   .once<{ type: "shutdown" }>("shutdown")
   .then(() => {

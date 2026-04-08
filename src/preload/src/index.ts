@@ -71,6 +71,23 @@ try {
         betterIpcRenderer.send("extensions:init-all-main", installType),
     },
 
+    adaptors: {
+      list: () => betterIpcRenderer.invoke("adaptors:list"),
+      call: (
+        adaptorName: string,
+        serviceUri: string,
+        method: string,
+        args: unknown[],
+      ) =>
+        betterIpcRenderer.invoke(
+          "adaptors:call",
+          adaptorName,
+          serviceUri,
+          method,
+          args,
+        ),
+    },
+
     updater: {
       getStatus: () => betterIpcRenderer.invoke("updater:get-status"),
       setChannel: (channel: string, manual: boolean) =>

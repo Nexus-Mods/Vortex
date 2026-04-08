@@ -7,7 +7,7 @@ import type { IAdaptorManifest, PID, URI } from "@vortex/adaptor-api";
  * Used for routing messages to the correct adaptor instance.
  */
 export class NameService {
-  private names = new Map<string, PID>();
+  private names = new Map<URI, PID>();
 
   register(name: URI, pid: PID): void {
     this.names.set(name, pid);
@@ -37,7 +37,7 @@ export interface IRegisteredAdaptor {
  * and lifecycle management.
  */
 export class AdaptorRegistry {
-  private adaptors = new Map<string, IRegisteredAdaptor>();
+  private adaptors = new Map<PID, IRegisteredAdaptor>();
 
   register(pid: PID, manifest: IAdaptorManifest): void {
     this.adaptors.set(pid, { pid, manifest });

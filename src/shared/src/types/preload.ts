@@ -51,6 +51,9 @@ export interface Api {
   /** Extensions API - for requesting main process initialization */
   extensions: ExtensionsApi;
 
+  /** Adaptor host API - for querying adaptor services from renderer */
+  adaptors: AdaptorsApi;
+
   /** Updater API - for querying update status from main process */
   updater: UpdaterApi;
   /** Dialog APIs */
@@ -373,6 +376,26 @@ export interface ExtensionsApi {
    * Should be called once after ExtensionManager is initialized.
    */
   initializeAllMain(installType: string): void;
+}
+
+/** API for querying adaptor services from the main process */
+export interface AdaptorsApi {
+  /** Returns the list of loaded adaptors with their manifests. */
+  list(): Promise<
+    Array<{
+      name: string;
+      pid: string;
+      provides: string[];
+      requires: string[];
+    }>
+  >;
+  /** Calls a service method on a loaded adaptor. */
+  call(
+    adaptorName: string,
+    serviceUri: string,
+    method: string,
+    args: unknown[],
+  ): Promise<unknown>;
 }
 
 /** API for querying update status from main process */

@@ -31,6 +31,7 @@ export type {
 
 export {
   QualifiedPath,
+  qpath,
   OSPath,
   PathProviderError,
   PathResolverError,

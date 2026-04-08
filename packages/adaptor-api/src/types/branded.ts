@@ -74,13 +74,13 @@ export function messageId(value: string): MessageId {
   return value as MessageId;
 }
 
-const SEMVER_PATTERN = /^\d+\.\d+\.\d+(-[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)*)?$/;
+const SEMVER_PATTERN = /^\d+\.\d+\.\d+(-[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*)?(\+[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*)?$/;
 
 /**
  * Validates and brands a string as a {@link SemVer}.
  * Throws if the format is invalid.
  */
-export function semver(value: string): SemVer {
+export function semVer(value: string): SemVer {
   if (!SEMVER_PATTERN.test(value)) {
     throw new Error(
       `Invalid SemVer: "${value}" — must match "x.y.z" (e.g. "1.0.0")`,

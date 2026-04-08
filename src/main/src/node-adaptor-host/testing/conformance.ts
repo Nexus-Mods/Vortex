@@ -1,6 +1,6 @@
 import type { IMessageHandler } from "@vortex/adaptor-api";
 
-import { adaptorName, semver, uri } from "@vortex/adaptor-api";
+import { adaptorName, semVer, uri } from "@vortex/adaptor-api";
 import { describe, expect, it, beforeAll, afterAll } from "vitest";
 
 import { createTestHarness, type ITestHarness } from "./harness.js";
@@ -22,7 +22,7 @@ export function runConformanceTests(
 
       expect(() => uri(m.id)).not.toThrow();
       expect(() => adaptorName(m.name)).not.toThrow();
-      expect(() => semver(m.version)).not.toThrow();
+      expect(() => semVer(m.version)).not.toThrow();
       for (const u of m.provides) {
         expect(() => uri(u)).not.toThrow();
       }

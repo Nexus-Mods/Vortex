@@ -1,0 +1,23 @@
+{
+  "$schema": "https://www.schemastore.org/package.json",
+  "name": "@vortex/adaptor-cyberpunk2077",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node ./build.mjs",
+    "dist": "node ./build.mjs",
+    "typecheck": "pnpm tsc --noEmit -p tsconfig.json"
+  },
+  "main": "./dist/index.mjs",
+  "vortex:requires": [
+    "vortex:host/filesystem"
+  ],
+  "devDependencies": {
+    "@vortex/adaptor-api": "workspace:*",
+    "@vortex/fs": "workspace:*"
+  },
+  "peerDependencies": {
+    "@vortex/adaptor-api": "workspace:*"
+  }
+}

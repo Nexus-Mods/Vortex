@@ -18,6 +18,31 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
+    "./contracts/filesystem": {
+      "development": "./src/contracts/filesystem.ts",
+      "import": "./dist/contracts/filesystem.js",
+      "require": "./dist/contracts/filesystem.cjs"
+    },
+    "./contracts/game-info": {
+      "development": "./src/contracts/game-info.ts",
+      "import": "./dist/contracts/game-info.js",
+      "require": "./dist/contracts/game-info.cjs"
+    },
+    "./contracts/game-mod-types": {
+      "development": "./src/contracts/game-mod-types.ts",
+      "import": "./dist/contracts/game-mod-types.js",
+      "require": "./dist/contracts/game-mod-types.cjs"
+    },
+    "./contracts/game-paths": {
+      "development": "./src/contracts/game-paths.ts",
+      "import": "./dist/contracts/game-paths.js",
+      "require": "./dist/contracts/game-paths.cjs"
+    },
+    "./contracts/game-tools": {
+      "development": "./src/contracts/game-tools.ts",
+      "import": "./dist/contracts/game-tools.js",
+      "require": "./dist/contracts/game-tools.cjs"
+    },
     "./contracts/ping": {
       "development": "./src/contracts/ping.ts",
       "import": "./dist/contracts/ping.js",
@@ -28,7 +53,15 @@
       "import": "./dist/plugin.js",
       "require": "./dist/plugin.cjs"
     },
+    "./types/store-ids": {
+      "development": "./src/types/store-ids.ts",
+      "import": "./dist/types/store-ids.js",
+      "require": "./dist/types/store-ids.cjs"
+    },
     "./package.json": "./package.json"
+  },
+  "dependencies": {
+    "@vortex/fs": "workspace:*"
   },
   "peerDependencies": {
     "rolldown": "catalog:"
@@ -43,6 +76,26 @@
         "import": "./dist/index.js",
         "require": "./dist/index.cjs"
       },
+      "./contracts/filesystem": {
+        "import": "./dist/contracts/filesystem.js",
+        "require": "./dist/contracts/filesystem.cjs"
+      },
+      "./contracts/game-info": {
+        "import": "./dist/contracts/game-info.js",
+        "require": "./dist/contracts/game-info.cjs"
+      },
+      "./contracts/game-mod-types": {
+        "import": "./dist/contracts/game-mod-types.js",
+        "require": "./dist/contracts/game-mod-types.cjs"
+      },
+      "./contracts/game-paths": {
+        "import": "./dist/contracts/game-paths.js",
+        "require": "./dist/contracts/game-paths.cjs"
+      },
+      "./contracts/game-tools": {
+        "import": "./dist/contracts/game-tools.js",
+        "require": "./dist/contracts/game-tools.cjs"
+      },
       "./contracts/ping": {
         "import": "./dist/contracts/ping.js",
         "require": "./dist/contracts/ping.cjs"
@@ -50,6 +103,10 @@
       "./plugin": {
         "import": "./dist/plugin.js",
         "require": "./dist/plugin.cjs"
+      },
+      "./types/store-ids": {
+        "import": "./dist/types/store-ids.js",
+        "require": "./dist/types/store-ids.cjs"
       },
       "./package.json": "./package.json"
     }

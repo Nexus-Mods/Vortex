@@ -14,12 +14,7 @@ export type {
   IMethodMessage,
 } from "./interfaces";
 
-export {
-  createContainer,
-  activateContainer,
-  deactivateContainer,
-  getContainer,
-} from "./runtime-container";
+export { getContainer } from "./runtime-container";
 
 export type { URI, PID, MessageId, SemVer, AdaptorName } from "./types/branded";
-export { uri, pid, messageId, semver, adaptorName } from "./types/branded";
+export { uri, pid, messageId, semVer, adaptorName } from "./types/branded";

@@ -7,7 +7,6 @@ import type {
 
 import { uri, messageId } from "@vortex/adaptor-api";
 import * as fs from "node:fs/promises";
-import * as path from "node:path";
 
 import { AdaptorRegistry, NameService } from "./registry.js";
 import { createMessageIdAllocator, createPidAllocator } from "./runtime.js";
@@ -61,7 +60,7 @@ export function createAdaptorHost(
   const hostHandlerMap = new Map<string, IMessageHandler>(
     Object.entries(hostHandlers ?? {}),
   );
-  const workers = new Map<string, WorkerEntry>();
+  const workers = new Map<PID, WorkerEntry>();
 
   const log: AdaptorHostLogger =
     logger ??
@@ -72,7 +71,6 @@ export function createAdaptorHost(
   if (!bootstrapPath) {
     throw new Error("bootstrapPath is required");
   }
-  const resolvedBootstrapPath = bootstrapPath;
 
   async function loadAdaptor(config: {
     name: string;
@@ -82,7 +80,7 @@ export function createAdaptorHost(
   }): Promise<ILoadedAdaptor> {
     const adaptorPid = nextPid();
     const bundle = await fs.readFile(config.bundlePath, "utf-8");
-    const handle = createNodeWorker(resolvedBootstrapPath);
+    const handle = createNodeWorker(bootstrapPath);
     const transport = createRpcTransport(handle.worker);
 
     // Register crash/exit handlers immediately so errors during init aren't lost
@@ -155,6 +153,7 @@ export function createAdaptorHost(
     const entry = workers.get(workerPid);
     if (!entry) return;
     entry.transport.dispose();
+    entry.handle.terminate().catch(() => {});
     workers.delete(workerPid);
     const registered = registry.get(workerPid);
     if (registered) {
@@ -187,7 +186,7 @@ export function createAdaptorHost(
   }
 
   async function shutdownAll(): Promise<void> {
-    const pids = [...workers.keys()] as PID[];
+    const pids = [...workers.keys()];
     await Promise.all(pids.map(shutdown));
   }
 

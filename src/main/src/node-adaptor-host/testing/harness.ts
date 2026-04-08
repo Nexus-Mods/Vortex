@@ -6,7 +6,7 @@ import type {
 } from "@vortex/adaptor-api";
 
 import { uri } from "@vortex/adaptor-api";
-import * as fs from "node:fs";
+import * as fs from "node:fs/promises";
 import * as path from "node:path";
 
 import { createMessageIdAllocator } from "../runtime.js";
@@ -50,7 +50,7 @@ export async function createTestHarness(
     });
   });
 
-  const bundle = fs.readFileSync(bundlePath, "utf-8");
+  const bundle = await fs.readFile(bundlePath, "utf-8");
   const readyPromise = transport.once<{
     type: "ready";
     manifest: IAdaptorManifest;

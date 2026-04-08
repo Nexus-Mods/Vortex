@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { adaptorName, messageId, pid, semver, uri } from "./branded.js";
+import { adaptorName, messageId, pid, semVer, uri } from "./branded.js";
 
 describe("uri", () => {
   it("accepts a valid URI", () => {
@@ -48,23 +48,23 @@ describe("messageId", () => {
   });
 });
 
-describe("semver", () => {
+describe("semVer", () => {
   it("accepts a valid semver string", () => {
-    const result = semver("1.0.0");
+    const result = semVer("1.0.0");
     expect(result).toBe("1.0.0");
   });
 
   it("accepts semver with pre-release", () => {
-    const result = semver("1.0.0-beta.1");
+    const result = semVer("1.0.0-beta.1");
     expect(result).toBe("1.0.0-beta.1");
   });
 
   it("rejects a non-semver string", () => {
-    expect(() => semver("1.0")).toThrow();
+    expect(() => semVer("1.0")).toThrow();
   });
 
   it("rejects an empty string", () => {
-    expect(() => semver("")).toThrow();
+    expect(() => semVer("")).toThrow();
   });
 });
 

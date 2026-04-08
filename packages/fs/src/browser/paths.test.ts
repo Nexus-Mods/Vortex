@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { QualifiedPath } from "./paths";
+import { QualifiedPath, qpath } from "./paths";
 
 describe("QualifiedPath.parse", () => {
   it.each([
@@ -169,5 +169,32 @@ describe("QualifiedPath.components", () => {
       const qp = QualifiedPath.parse("foo://bar//baz/qux.ts");
       expect(qp.with({})).toBe(qp);
     });
+  });
+});
+
+describe("qpath", () => {
+  it("joins segments onto a QualifiedPath base", () => {
+    const install = QualifiedPath.parse("steam://SteamApps/common/Skyrim");
+    const result = qpath`${install}/engine/config`;
+    expect(result.value).toBe("steam://SteamApps/common/Skyrim/engine/config");
+  });
+
+  it("handles multiple interpolated values", () => {
+    const base = QualifiedPath.parse("linux:///home/user");
+    const sub = "games";
+    const result = qpath`${base}/${sub}/saves`;
+    expect(result.value).toBe("linux:///home/user/games/saves");
+  });
+
+  it("parses a plain string with no QualifiedPath base", () => {
+    const result = qpath`linux:///home/user/.config`;
+    expect(result.scheme).toBe("linux");
+    expect(result.path).toBe("/home/user/.config");
+  });
+
+  it("returns the base unchanged when no trailing path", () => {
+    const base = QualifiedPath.parse("steam://app");
+    const result = qpath`${base}`;
+    expect(result.value).toBe("steam://app");
   });
 });

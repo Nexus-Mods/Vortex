@@ -1,6 +1,6 @@
 {
   "$schema": "https://www.schemastore.org/tsconfig.json",
-  "extends": "../../tsconfig.strict.json",
+  "extends": "../../../tsconfig.base.json",
   "include": ["src/**/*"],
   "compilerOptions": {
     "target": "esnext",
@@ -8,13 +8,9 @@
     "moduleResolution": "bundler",
     "allowJs": false,
     "composite": true,
-    "declaration": true,
-    "noEmit": true,
+    "experimentalDecorators": true,
     "types": [],
-    "lib": ["ESNext"],
-    "isolatedDeclarations": true,
-    "paths": {
-      "@vortex/adaptor-api": ["./src/lib.ts"]
-    },
+    "lib": ["ESNext", "DOM"],
+    "customConditions": ["development"],
   },
 }
