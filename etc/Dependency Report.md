@@ -45,6 +45,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | electron-context-menu | 3.6.1 |
 | electron-redux | 1.4.9-sync |
 | electron-updater | 4.6.5 |
+| encoding-down | 6.3.0 |
 | exe-version | 2.3.0 |
 | feedparser | 2.3.0 |
 | fs-extra | 9.1.0 |
@@ -61,6 +62,8 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | is-admin | 3.0.0 |
 | json-socket | 0.3.0 |
 | jsonwebtoken | 9.0.3 |
+| leveldown | 5.6.0 |
+| levelup | 4.4.0 |
 | limiter | 3.0.0 |
 | lodash | 4.17.23 |
 | memoize-one | 5.2.1 |
