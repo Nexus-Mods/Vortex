@@ -13,8 +13,8 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | @headlessui/react | 1.7.19 |
 | @mdi/js | 7.4.47 |
 | @msgpack/msgpack | 2.8.0 |
-| @nexusmods/fomod-installer-ipc | 0.12.0 |
-| @nexusmods/fomod-installer-native | 0.12.0 |
+| @nexusmods/fomod-installer-ipc | 0.13.0 |
+| @nexusmods/fomod-installer-native | 0.13.0 |
 | @nexusmods/nexus-api | 1.5.2 |
 | @opentelemetry/api | 1.9.1 |
 | @opentelemetry/context-async-hooks | 2.6.1 |
@@ -25,6 +25,8 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | @tailwindcss/cli | 4.2.2 |
 | @types/bluebird | 3.5.20 |
 | @types/uuid | 3.4.13 |
+| @vortex/adaptor-api | link:../../packages/adaptor-api |
+| @vortex/fs | link:../../packages/fs |
 | bbcode-to-react | 0.2.11 |
 | big.js | 5.2.2 |
 | bluebird | 3.7.2 |
@@ -45,12 +47,13 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | electron-context-menu | 3.6.1 |
 | electron-redux | 1.4.9-sync |
 | electron-updater | 4.6.5 |
+| encoding-down | 6.3.0 |
 | exe-version | 2.3.0 |
 | feedparser | 2.3.0 |
 | fs-extra | 9.1.0 |
 | fuzzball | 1.4.0 |
 | glob | 11.1.0 |
-| got | 14.6.6 |
+| got | 15.0.0 |
 | graphlib | 2.1.8 |
 | i18next | 19.9.2 |
 | i18next-fs-backend | 2.6.1 |
@@ -61,6 +64,8 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | is-admin | 3.0.0 |
 | json-socket | 0.3.0 |
 | jsonwebtoken | 9.0.3 |
+| leveldown | 5.6.0 |
+| levelup | 4.4.0 |
 | limiter | 3.0.0 |
 | lodash | 4.17.23 |
 | memoize-one | 5.2.1 |
@@ -68,7 +73,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | mixpanel-browser | 2.77.0 |
 | modmeta-db | 0.9.3 |
 | native-errors | 2.0.3 |
-| node-7z | 0.7.9 |
+| node-7z | 0.8.0 |
 | normalize-url | 6.1.0 |
 | numeral | 2.0.6 |
 | p-queue | 9.1.0 |
