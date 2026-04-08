@@ -70,7 +70,7 @@ export async function download<T>(
     ? await Promise.resolve(chunker(probe.size, resource))
     : [];
 
-  const isChunked = chunks.length > 0;
+  const isChunked = chunks.length > 1;
 
   const completedRanges = checkpoint?.completedRanges ?? [];
   const pendingChunks = chunks.filter(
