@@ -1,21 +1,19 @@
-import { homedir, tmpdir } from "node:os";
-import { join } from "node:path/posix";
-
-import type { ResolvedPath } from "../browser/paths";
 import type {
+  ResolvedPath,
   LinuxPathProvider,
   LinuxPathBase,
   XDGBase,
-} from "../browser/paths.linux";
+} from "@vortex/fs";
 
 import {
   QualifiedPath,
   PathResolverError,
   PathProviderError,
-} from "../browser/paths";
-import { XDG } from "../browser/paths.linux";
+  XDG,
+} from "@vortex/fs";
+import { homedir, tmpdir } from "node:os";
+import { join } from "node:path/posix";
 
-/** @internal */
 export class LinuxPathProviderImpl implements LinuxPathProvider {
   readonly platform = "linux" as const;
   readonly scheme = "linux" as const;

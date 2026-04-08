@@ -8,18 +8,11 @@ const isGitHubCI = process.env.CI && process.env.GITHUB_ACTIONS;
 export default defineConfig({
   test: {
     projects: [
-      "./src/main",
-      "./scripts",
+      "./src/**/vitest.config.ts",
       "./src/main/vitest.integration.config.ts",
-      "./src/renderer",
-      "./src/shared",
-      "./packages/adaptor-api",
-      "./packages/adaptors/ping-test",
-      "./packages/fs",
-      "./extensions/feedback",
-      "./extensions/gamebryo-savegame-management",
-      "./extensions/nmm-import-tool",
-      "./extensions/games/game-stardewvalley",
+      "./packages/**/vitest.config.ts",
+      "./extensions/**/vitest.config.ts",
+      "./scripts/vitest.config.ts",
     ],
     reporters: [
       "default",
