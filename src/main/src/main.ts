@@ -160,6 +160,22 @@ try {
 
 process.env.Path = process.env.Path + path.delimiter + import.meta.dirname;
 
+if (process.platform === "linux") {
+  // node-loot.node has RUNPATH $ORIGIN/../../loot_api which resolves correctly
+  // in the source tree but breaks in the packaged app where libloot.so.0 is
+  // co-located with node-loot.node inside bundledPlugins/gamebryo-plugin-management.
+  // Prepend that directory to LD_LIBRARY_PATH so dlopen finds libloot.so.0 when
+  // the extension is loaded in the renderer process (which inherits this env var).
+  const lootLibDir = path.join(
+    getVortexPath("bundledPlugins"),
+    "gamebryo-plugin-management",
+  );
+  const existing = process.env.LD_LIBRARY_PATH;
+  process.env.LD_LIBRARY_PATH = existing
+    ? `${lootLibDir}:${existing}`
+    : lootLibDir;
+}
+
 const handleError = (error: Error) => {
   if (Application.shouldIgnoreError(error)) {
     return;
