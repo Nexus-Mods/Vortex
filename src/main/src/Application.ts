@@ -16,7 +16,7 @@ import {
 import { currentStatePath } from "@vortex/shared/state";
 import crashDump from "crash-dump";
 import { app, dialog, ipcMain, protocol, shell } from "electron";
-import contextMenu from "electron-context-menu";
+import type contextMenuType from "electron-context-menu";
 import isAdmin from "is-admin";
 import * as _ from "lodash";
 import { mkdirSync, statSync } from "node:fs";
@@ -170,6 +170,14 @@ class Application {
   }
 
   private setupContextMenu() {
+    if (process.platform === "linux") {
+      // electron-context-menu calls require('electron') at module load time.
+      // On Linux this can resolve to the npm package path string rather than
+      // the Electron API, crashing on startup. Guard until a proper fix lands.
+      return;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const contextMenu = require("electron-context-menu") as typeof contextMenuType;
     contextMenu({
       showCopyImage: false,
       showLookUpSelection: false,
