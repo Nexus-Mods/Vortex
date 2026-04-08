@@ -127,27 +127,30 @@ export async function download<T>(
         }
       }
 
-      await downloadChunked(
-        resolved,
-        probe,
-        handle,
-        chunkQueue,
-        pendingChunks,
-        chunkProgress,
-        abortSignal,
-        rateLimiter,
+      await chunkQueue.addAll(
+        pendingChunks.map(
+          (chunk) => async () =>
+            downloadChunk(
+              chunk,
+              resolved,
+              probe,
+              handle,
+              chunkProgress.get(chunk.index),
+              abortSignal,
+              rateLimiter,
+            ),
+        ),
       );
     } else {
       const progress = progressReporter.init(probe.size);
 
-      await downloadSingle(
-        resolved,
-        probe,
-        handle,
-        progress,
+      await downloadStream(resolved.probeUrl, handle, progress, {
         abortSignal,
         rateLimiter,
-      );
+        writePosition: 0,
+        etag: probe.etag,
+        chunk: null,
+      });
     }
   } catch (err) {
     if (isCancellation(err)) {
@@ -302,49 +305,6 @@ async function downloadStream(
     if (err instanceof DownloadError || isCancellation(err)) throw err;
     throw toNetworkError(stream.requestUrl, err);
   }
-}
-
-async function downloadSingle(
-  resource: NormalizedResource,
-  probe: ProbeResult,
-  handle: FileHandle,
-  progress: Progress,
-  abortSignal: AbortSignal,
-  rateLimiter: RateLimiter | null,
-): Promise<void> {
-  await downloadStream(resource.probeUrl, handle, progress, {
-    abortSignal,
-    rateLimiter,
-    writePosition: 0,
-    etag: probe.etag,
-    chunk: null,
-  });
-}
-
-async function downloadChunked(
-  resource: NormalizedResource,
-  probe: ProbeResult,
-  handle: FileHandle,
-  chunkQueue: PQueue,
-  chunks: Chunk[],
-  chunkProgress: Map<number, ChunkProgress>,
-  abortSignal: AbortSignal,
-  rateLimiter: RateLimiter | null,
-): Promise<void> {
-  await chunkQueue.addAll(
-    chunks.map(
-      (chunk) => async () =>
-        downloadChunk(
-          chunk,
-          resource,
-          probe,
-          handle,
-          chunkProgress.get(chunk.index),
-          abortSignal,
-          rateLimiter,
-        ),
-    ),
-  );
 }
 
 async function downloadChunk(
