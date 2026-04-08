@@ -213,7 +213,7 @@ catalog:
   modmeta-db: git+https://github.com/Nexus-Mods/modmeta-db#daa8935b6e38e255ec192c908adfce35d47c0336
   native-errors: git+https://github.com/Nexus-Mods/node-native-errors#51913db07e4c9b68a96ba7fcf741b32796758f18
   nexus-api: git+https://github.com/Nexus-Mods/node-nexus-api#d16099d8c9def488dde7b545428d4d7a04668679
-  node-7z: git+https://github.com/Nexus-Mods/node-7z#3d98d2ba40906f8afa9de52d2ceb6a44f7143198
+  node-7z: git+https://github.com/Nexus-Mods/node-7z#a7a7996e93ed88a7b584a2279fd6e0712a53c4db
   normalize-url: ^6.0.1
   numeral: ^2.0.6
   oxfmt: ^0.41.0
