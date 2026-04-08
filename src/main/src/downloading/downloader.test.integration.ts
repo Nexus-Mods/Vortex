@@ -7,7 +7,7 @@ import { describe, it, expect, vi, beforeAll, afterAll, test } from "vitest";
 import type { Resolver } from "./resolver";
 
 import { staticChunker, type Chunk } from "./chunking";
-import { download, defaultChunkConcurrency } from "./downloader";
+import { download } from "./downloader";
 import { DownloadError } from "./errors";
 import { ProgressReporter } from "./progress";
 import { urlResolver } from "./resolver";
@@ -54,10 +54,6 @@ async function makeTmpDir(): Promise<TmpDir> {
   return new TmpDir(dir);
 }
 
-function makeProgressReporter() {
-  return new ProgressReporter();
-}
-
 async function completeDownload(
   url: URL,
   destDir: string,
@@ -72,7 +68,7 @@ const defaultOptions = () => ({
   filename: "output",
   resolver: urlResolver,
   chunker: staticChunker(),
-  progressReporter: makeProgressReporter(),
+  progressReporter: undefined as ProgressReporter | undefined,
   abortController: new AbortController(),
 });
 
@@ -86,11 +82,16 @@ function runDownload(
   const promise = download(
     url,
     dest,
-    options.resolver,
-    options.chunker,
-    options.progressReporter,
-    options.abortController.signal,
+    {
+      resolver: options.resolver,
+      chunker: options.chunker,
+    },
+    {
+      progressReporter: options.progressReporter,
+      abortSignal: options.abortController.signal,
+    },
   );
+
   return { promise, dest };
 }
 
@@ -107,17 +108,11 @@ describe("download", () => {
       await using tmp = await makeTmpDir();
       const dest = path.join(tmp.dir, "output");
 
-      // Full download first so the file exists on disk for r+ mode.
-      await download(
-        route.url,
-        dest,
-        urlResolver,
-        noChunks,
-        makeProgressReporter(),
-        new AbortController().signal,
-      );
+      await download(route.url, dest, {
+        resolver: urlResolver,
+        chunker: noChunks,
+      });
 
-      // Clear request log so we only see the resumed download's requests.
       route.requests.length = 0;
 
       const resumeOffset = 1024 * 1024;
@@ -129,12 +124,8 @@ describe("download", () => {
       await download(
         route.url,
         dest,
-        urlResolver,
-        noChunks,
-        makeProgressReporter(),
-        new AbortController().signal,
-        defaultChunkConcurrency,
-        checkpoint,
+        { resolver: urlResolver, chunker: noChunks },
+        { checkpoint },
       );
 
       const gets = route.requests.filter((r) => r.method === "GET");
@@ -153,18 +144,11 @@ describe("download", () => {
       await using tmp = await makeTmpDir();
       const dest = path.join(tmp.dir, "output");
 
-      // First: do a full download so the file exists on disk with correct size.
-      await download(
-        route.url,
-        dest,
-        urlResolver,
-        noChunks,
-        makeProgressReporter(),
-        new AbortController().signal,
-      );
+      await download(route.url, dest, {
+        resolver: urlResolver,
+        chunker: noChunks,
+      });
 
-      // Now resume from a checkpoint at 1 MB. The file already has valid
-      // content, so the first 1 MB stays intact and the rest is re-fetched.
       const resumeOffset = 1024 * 1024;
       const checkpoint = {
         etag: null,
@@ -174,12 +158,8 @@ describe("download", () => {
       await download(
         route.url,
         dest,
-        urlResolver,
-        noChunks,
-        makeProgressReporter(),
-        new AbortController().signal,
-        defaultChunkConcurrency,
-        checkpoint,
+        { resolver: urlResolver, chunker: noChunks },
+        { checkpoint },
       );
 
       const result = await readFile(dest);
@@ -193,15 +173,10 @@ describe("download", () => {
       await using tmp = await makeTmpDir();
       const dest = path.join(tmp.dir, "output");
 
-      // Full download first to create the file.
-      await download(
-        route.url,
-        dest,
-        urlResolver,
-        noChunks,
-        makeProgressReporter(),
-        new AbortController().signal,
-      );
+      await download(route.url, dest, {
+        resolver: urlResolver,
+        chunker: noChunks,
+      });
 
       const resumeOffset = 1024 * 1024;
       const checkpoint = {
@@ -209,16 +184,12 @@ describe("download", () => {
         completedRanges: [{ start: 0, end: resumeOffset - 1 }],
       };
 
-      const progressReporter = makeProgressReporter();
+      const progressReporter = new ProgressReporter();
       await download(
         route.url,
         dest,
-        urlResolver,
-        noChunks,
-        progressReporter,
-        new AbortController().signal,
-        defaultChunkConcurrency,
-        checkpoint,
+        { resolver: urlResolver, chunker: noChunks },
+        { progressReporter, checkpoint },
       );
 
       const progress = progressReporter.getProgress();
@@ -236,15 +207,10 @@ describe("download", () => {
       await using tmp = await makeTmpDir();
       const dest = path.join(tmp.dir, "output");
 
-      // Full download first.
-      await download(
-        route.url,
-        dest,
-        urlResolver,
-        noChunks,
-        makeProgressReporter(),
-        new AbortController().signal,
-      );
+      await download(route.url, dest, {
+        resolver: urlResolver,
+        chunker: noChunks,
+      });
 
       const resumeOffset = 1024 * 1024;
       const checkpoint = {
@@ -252,22 +218,16 @@ describe("download", () => {
         completedRanges: [{ start: 0, end: resumeOffset - 1 }],
       };
 
-      const progressReporter = makeProgressReporter();
+      const progressReporter = new ProgressReporter();
       const abortController = new AbortController();
 
       const promise = download(
         route.url,
         dest,
-        urlResolver,
-        noChunks,
-        progressReporter,
-        abortController.signal,
-        defaultChunkConcurrency,
-        checkpoint,
+        { resolver: urlResolver, chunker: noChunks },
+        { progressReporter, abortSignal: abortController.signal, checkpoint },
       );
 
-      // Poll until the progress reporter has been initialized, then
-      // verify the fast-forwarded baseline is at least the resume offset.
       await vi.waitFor(
         () => {
           const p = progressReporter.getProgress();
@@ -287,15 +247,10 @@ describe("download", () => {
       await using tmp = await makeTmpDir();
       const dest = path.join(tmp.dir, "output");
 
-      // Full download first so the file exists on disk for r+ mode.
-      await download(
-        route.url,
-        dest,
-        urlResolver,
-        noChunks,
-        makeProgressReporter(),
-        new AbortController().signal,
-      );
+      await download(route.url, dest, {
+        resolver: urlResolver,
+        chunker: noChunks,
+      });
 
       route.requests.length = 0;
 
@@ -307,12 +262,8 @@ describe("download", () => {
       await download(
         route.url,
         dest,
-        urlResolver,
-        noChunks,
-        makeProgressReporter(),
-        new AbortController().signal,
-        defaultChunkConcurrency,
-        checkpoint,
+        { resolver: urlResolver, chunker: noChunks },
+        { checkpoint },
       );
 
       const gets = route.requests.filter((r) => r.method === "GET");
@@ -327,17 +278,11 @@ describe("download", () => {
       await using tmp = await makeTmpDir();
       const dest = path.join(tmp.dir, "output");
 
-      // Full download first.
-      await download(
-        route.url,
-        dest,
-        urlResolver,
-        noChunks,
-        makeProgressReporter(),
-        new AbortController().signal,
-      );
+      await download(route.url, dest, {
+        resolver: urlResolver,
+        chunker: noChunks,
+      });
 
-      // Checkpoint with two contiguous ranges: [0, 499999] and [500000, 999999]
       const checkpoint = {
         etag: null,
         completedRanges: [
@@ -349,16 +294,11 @@ describe("download", () => {
       await download(
         route.url,
         dest,
-        urlResolver,
-        noChunks,
-        makeProgressReporter(),
-        new AbortController().signal,
-        defaultChunkConcurrency,
-        checkpoint,
+        { resolver: urlResolver, chunker: noChunks },
+        { checkpoint },
       );
 
       const gets = route.requests.filter((r) => r.method === "GET");
-      // The last GET should request from byte 1000000 onward
       const resumeGet = gets[gets.length - 1];
       expect(resumeGet.range).toEqual({
         kind: "bounded",
@@ -377,18 +317,11 @@ describe("download", () => {
       await using tmp = await makeTmpDir();
       const dest = path.join(tmp.dir, "output");
 
-      // Full download first.
-      await download(
-        route.url,
-        dest,
-        urlResolver,
-        noChunks,
-        makeProgressReporter(),
-        new AbortController().signal,
-      );
+      await download(route.url, dest, {
+        resolver: urlResolver,
+        chunker: noChunks,
+      });
 
-      // Ranges with a gap: [0, 499999] then [600000, 999999].
-      // writePosition should stop at 500000 (the end of the first contiguous run).
       const checkpoint = {
         etag: null,
         completedRanges: [
@@ -400,12 +333,8 @@ describe("download", () => {
       await download(
         route.url,
         dest,
-        urlResolver,
-        noChunks,
-        makeProgressReporter(),
-        new AbortController().signal,
-        defaultChunkConcurrency,
-        checkpoint,
+        { resolver: urlResolver, chunker: noChunks },
+        { checkpoint },
       );
 
       const gets = route.requests.filter((r) => r.method === "GET");
@@ -423,7 +352,6 @@ describe("download", () => {
       const originalEtag = '"version-1"';
       const newEtag = '"version-2"';
 
-      // The server returns a different etag than what the checkpoint has.
       const handler: RequestHandler = ({ req, res }) => {
         if (req.method === "HEAD") {
           res.writeHead(200, {
@@ -452,12 +380,8 @@ describe("download", () => {
         download(
           route.url,
           dest,
-          urlResolver,
-          staticChunker(),
-          makeProgressReporter(),
-          new AbortController().signal,
-          defaultChunkConcurrency,
-          checkpoint,
+          { resolver: urlResolver, chunker: staticChunker() },
+          { checkpoint },
         ),
       ).rejects.toMatchObject({
         payload: { code: "protocol-violation", url: route.url },
@@ -473,30 +397,18 @@ describe("download", () => {
       await using tmp = await makeTmpDir();
       const dest = path.join(tmp.dir, "output");
 
-      // Full download first so the file exists for r+ mode.
-      await download(
-        route.url,
-        dest,
-        urlResolver,
-        staticChunker(),
-        makeProgressReporter(),
-        new AbortController().signal,
-      );
+      await download(route.url, dest, {
+        resolver: urlResolver,
+        chunker: staticChunker(),
+      });
 
-      const checkpoint = {
-        etag,
-        completedRanges: [],
-      };
+      const checkpoint = { etag, completedRanges: [] };
 
       await download(
         route.url,
         dest,
-        urlResolver,
-        staticChunker(),
-        makeProgressReporter(),
-        new AbortController().signal,
-        defaultChunkConcurrency,
-        checkpoint,
+        { resolver: urlResolver, chunker: staticChunker() },
+        { checkpoint },
       );
 
       const heads = route.requests.filter((r) => r.method === "HEAD");
@@ -519,17 +431,11 @@ describe("download", () => {
         interval: "second",
       });
 
-      await download(
-        route.url,
-        dest,
-        urlResolver,
-        staticChunker(),
-        makeProgressReporter(),
-        new AbortController().signal,
-        defaultChunkConcurrency,
-        null,
+      await download(route.url, dest, {
+        resolver: urlResolver,
+        chunker: staticChunker(),
         rateLimiter,
-      );
+      });
 
       const result = await readFile(dest);
       expect(Buffer.compare(SMALL_FILE, result)).toBe(0);
@@ -548,17 +454,11 @@ describe("download", () => {
         interval: "second",
       });
 
-      await download(
-        route.url,
-        dest,
-        urlResolver,
-        staticChunker(),
-        makeProgressReporter(),
-        new AbortController().signal,
-        defaultChunkConcurrency,
-        null,
+      await download(route.url, dest, {
+        resolver: urlResolver,
+        chunker: staticChunker(),
         rateLimiter,
-      );
+      });
 
       const result = await readFile(dest);
       expect(Buffer.compare(LARGE_FILE, result)).toBe(0);
@@ -572,7 +472,6 @@ describe("download", () => {
       const dest = path.join(tmp.dir, "output");
 
       const { RateLimiter } = await import("limiter");
-      // Extremely low rate to ensure the limiter blocks long enough to cancel.
       const rateLimiter = new RateLimiter({
         tokensPerInterval: 1,
         interval: "second",
@@ -583,16 +482,10 @@ describe("download", () => {
       const promise = download(
         route.url,
         dest,
-        urlResolver,
-        staticChunker(),
-        makeProgressReporter(),
-        abortController.signal,
-        defaultChunkConcurrency,
-        null,
-        rateLimiter,
+        { resolver: urlResolver, chunker: staticChunker(), rateLimiter },
+        { abortSignal: abortController.signal },
       );
 
-      // Give it a moment to start receiving data and hit the rate limiter.
       setTimeout(() => abortController.abort(), 200);
 
       await expect(promise).rejects.toMatchObject({
@@ -606,42 +499,46 @@ describe("download", () => {
     { file: SMALL_FILE, acceptRanges: true, size: "small" },
     { file: LARGE_FILE, acceptRanges: false, size: "large" },
     { file: LARGE_FILE, acceptRanges: true, size: "large" },
-  ])("produces a byte-perfect file for a $size file with range support: $acceptRanges", async ({ file, acceptRanges }) => {
-    using route = server.route(
-      serveFile({ body: file, acceptRanges }),
-    );
-    await using tmp = await makeTmpDir();
-    const result = await completeDownload(route.url, tmp.dir);
-    expect(Buffer.compare(file, result)).toBe(0);
-  });
+  ])(
+    "produces a byte-perfect file for a $size file with range support: $acceptRanges",
+    async ({ file, acceptRanges }) => {
+      using route = server.route(serveFile({ body: file, acceptRanges }));
+      await using tmp = await makeTmpDir();
+      const result = await completeDownload(route.url, tmp.dir);
+      expect(Buffer.compare(file, result)).toBe(0);
+    },
+  );
 
   test.each([
     { contentLength: undefined, description: "absent" },
     { contentLength: "0", description: "zero" },
-  ])("falls back to single download when content-length is $description, even with accept-ranges", async ({ contentLength }) => {
-    const handler: RequestHandler = ({ req, res }) => {
-      if (req.method === "HEAD") {
-        const headers: Record<string, string> = { "accept-ranges": "bytes" };
-        if (contentLength !== undefined) {
-          headers["content-length"] = contentLength;
+  ])(
+    "falls back to single download when content-length is $description, even with accept-ranges",
+    async ({ contentLength }) => {
+      const handler: RequestHandler = ({ req, res }) => {
+        if (req.method === "HEAD") {
+          const headers: Record<string, string> = { "accept-ranges": "bytes" };
+          if (contentLength !== undefined) {
+            headers["content-length"] = contentLength;
+          }
+          res.writeHead(200, headers);
+          res.end();
+        } else {
+          res.writeHead(200);
+          res.end(LARGE_FILE);
         }
-        res.writeHead(200, headers);
-        res.end();
-      } else {
-        res.writeHead(200);
-        res.end(LARGE_FILE);
-      }
-      return Promise.resolve();
-    };
+        return Promise.resolve();
+      };
 
-    using route = server.route(handler);
-    await using tmp = await makeTmpDir();
-    const result = await completeDownload(route.url, tmp.dir);
-    expect(Buffer.compare(LARGE_FILE, result)).toBe(0);
-    const gets = route.requests.filter((r) => r.method === "GET");
-    expect(gets).toHaveLength(1);
-    expect(gets[0].range).toBeNull();
-  });
+      using route = server.route(handler);
+      await using tmp = await makeTmpDir();
+      const result = await completeDownload(route.url, tmp.dir);
+      expect(Buffer.compare(LARGE_FILE, result)).toBe(0);
+      const gets = route.requests.filter((r) => r.method === "GET");
+      expect(gets).toHaveLength(1);
+      expect(gets[0].range).toBeNull();
+    },
+  );
 
   it("rejects with protocol-violation when a chunk response exceeds the requested byte range", async () => {
     const handler: RequestHandler = ({ req, res }) => {
@@ -654,8 +551,6 @@ describe("download", () => {
         return Promise.resolve();
       }
 
-      // Honour the range header for the Content-Range, but send the full file
-      // body — more bytes than the declared range covers.
       const range = req.headers["range"] ?? "bytes=0-0";
       res.writeHead(206, {
         "content-range": `${range.replace("=", " ")}/${LARGE_FILE.length}`,
@@ -681,7 +576,7 @@ describe("download", () => {
         serveFile({ body: LARGE_FILE, acceptRanges: false }),
       );
       await using tmp = await makeTmpDir();
-      const progressReporter = makeProgressReporter();
+      const progressReporter = new ProgressReporter();
       await completeDownload(route.url, tmp.dir, { progressReporter });
       expect(progressReporter.getProgress().size).toBe(LARGE_FILE.length);
     });
@@ -700,7 +595,7 @@ describe("download", () => {
 
       using route = server.route(handler);
       await using tmp = await makeTmpDir();
-      const progressReporter = makeProgressReporter();
+      const progressReporter = new ProgressReporter();
       await completeDownload(route.url, tmp.dir, { progressReporter });
       expect(progressReporter.getProgress().size).toBeNull();
     });
@@ -708,17 +603,20 @@ describe("download", () => {
     test.each([
       { acceptRanges: false, mode: "single" },
       { acceptRanges: true, mode: "chunked" },
-    ])("reports bytesReceived equal to file size on completion for a $mode download", async ({ acceptRanges }) => {
-      using route = server.route(
-        serveFile({ body: LARGE_FILE, acceptRanges }),
-      );
-      await using tmp = await makeTmpDir();
-      const progressReporter = makeProgressReporter();
-      await completeDownload(route.url, tmp.dir, { progressReporter });
-      expect(progressReporter.getProgress().bytesReceived).toBe(
-        LARGE_FILE.length,
-      );
-    });
+    ])(
+      "reports bytesReceived equal to file size on completion for a $mode download",
+      async ({ acceptRanges }) => {
+        using route = server.route(
+          serveFile({ body: LARGE_FILE, acceptRanges }),
+        );
+        await using tmp = await makeTmpDir();
+        const progressReporter = new ProgressReporter();
+        await completeDownload(route.url, tmp.dir, { progressReporter });
+        expect(progressReporter.getProgress().bytesReceived).toBe(
+          LARGE_FILE.length,
+        );
+      },
+    );
 
     it("reports one chunk per chunksPerFile for a chunked download", async () => {
       const chunksPerFile = 4;
@@ -726,7 +624,7 @@ describe("download", () => {
         serveFile({ body: LARGE_FILE, acceptRanges: true }),
       );
       await using tmp = await makeTmpDir();
-      const progressReporter = makeProgressReporter();
+      const progressReporter = new ProgressReporter();
       await completeDownload(route.url, tmp.dir, { progressReporter });
 
       const progress = progressReporter.getProgress();
