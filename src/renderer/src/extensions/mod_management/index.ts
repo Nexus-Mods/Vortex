@@ -836,7 +836,7 @@ function genUpdateModDeployment(installManager: InstallManager) {
 
             let mergeResult: { [modType: string]: IMergeResultByType };
             const lastDeployment: { [typeId: string]: IDeployedFile[] } = {};
-            const mods: Record<string, IMod> = state.persistent.mods?.[profile?.gameId];
+            const mods: Record<string, IMod> = state.persistent.mods?.[profile?.gameId] ?? {};
             notification.message = t("Deploying mods");
             api.sendNotification(notification);
             api.store.dispatch(startActivity("mods", "deployment"));
