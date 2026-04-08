@@ -7,7 +7,7 @@ import { type URL } from "node:url";
 import PQueue from "p-queue";
 
 import type { ByteRange, Chunk, Chunker } from "./chunking";
-import type { ChunkProgress, Progress, ProgressReporter } from "./progress";
+import type { ChunkProgress, ProgressReporter } from "./progress";
 import type { Resolver, NormalizedResource } from "./resolver";
 
 import { isCancellation, toNetworkError, DownloadError } from "./errors";
@@ -142,14 +142,50 @@ export async function download<T>(
         ),
       );
     } else {
+      let writePosition = 0;
+      let expectedRemainingBytes: number | undefined = undefined;
+      let rangeChunk: Chunk | null = null;
+
+      if (checkpoint !== null && completedRanges.length > 0) {
+        const sorted = completedRanges
+          .map((range) => range.end)
+          .sort((a, b) => a - b);
+
+        // NOTE(erri120): Safest position to resume from
+        writePosition = sorted[0] + 1;
+
+        if (probe.size !== null) {
+          expectedRemainingBytes = probe.size - writePosition;
+        }
+      }
+
+      // When the server supports range requests, use a Range header
+      // even in the non-chunked path. This avoids re-downloading
+      // already-completed bytes when resuming and lets the server
+      // send only the remainder of the file.
+      if (probe.acceptsRanges && probe.size > 0 && writePosition > 0) {
+        rangeChunk = {
+          index: 0,
+          range: { start: writePosition, end: probe.size - 1 },
+        };
+        expectedRemainingBytes = probe.size - writePosition;
+      }
+
       const progress = progressReporter.init(probe.size);
+
+      // Fast-forward progress to account for already-written bytes
+      if (writePosition > 0) {
+        progress.bytesReceived = writePosition;
+        progress.bytesWritten = writePosition;
+      }
 
       await downloadStream(resolved.probeUrl, handle, progress, {
         abortSignal,
         rateLimiter,
-        writePosition: 0,
+        writePosition,
         etag: probe.etag,
-        chunk: null,
+        chunk: rangeChunk,
+        expectedRemainingBytes,
       });
     }
   } catch (err) {
