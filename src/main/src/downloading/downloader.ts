@@ -1,17 +1,13 @@
 import type { RateLimiter } from "limiter";
 import type { IncomingHttpHeaders } from "node:http";
 
-import { unknownToError } from "@vortex/shared";
 import got, { type Headers } from "got";
-import { type WriteStream } from "node:fs";
 import { type FileHandle as NodeFileHandle, open } from "node:fs/promises";
-import { Transform, type TransformCallback } from "node:stream";
-import { pipeline } from "node:stream/promises";
 import { type URL } from "node:url";
 import PQueue from "p-queue";
 
 import type { ByteRange, Chunk, Chunker } from "./chunking";
-import type { ChunkProgress, Progress, ProgressReporter } from "./progress";
+import type { ChunkProgress, ProgressReporter } from "./progress";
 import type { Resolver, NormalizedResource } from "./resolver";
 
 import { isCancellation, toNetworkError, DownloadError } from "./errors";
@@ -74,7 +70,7 @@ export async function download<T>(
     ? await Promise.resolve(chunker(probe.size, resource))
     : [];
 
-  const isChunked = chunks.length > 0;
+  const isChunked = chunks.length > 1;
 
   const completedRanges = checkpoint?.completedRanges ?? [];
   const pendingChunks = chunks.filter(
@@ -131,27 +127,77 @@ export async function download<T>(
         }
       }
 
-      await downloadChunked(
-        resolved,
-        probe,
-        handle,
-        chunkQueue,
-        pendingChunks,
-        chunkProgress,
-        abortSignal,
-        rateLimiter,
+      await chunkQueue.addAll(
+        pendingChunks.map(
+          (chunk) => async () =>
+            downloadChunk(
+              chunk,
+              resolved,
+              probe,
+              handle,
+              chunkProgress.get(chunk.index),
+              abortSignal,
+              rateLimiter,
+            ),
+        ),
       );
     } else {
+      let writePosition = 0;
+      let expectedRemainingBytes: number | undefined = undefined;
+      let rangeChunk: Chunk | null = null;
+
+      if (checkpoint !== null && completedRanges.length > 0) {
+        const sortedRanges = completedRanges.toSorted(
+          (a, b) => a.start - b.start,
+        );
+
+        let currentEnd = -1;
+
+        for (const range of sortedRanges) {
+          if (range.start === currentEnd + 1) {
+            currentEnd = range.end;
+          } else if (range.start === 0) {
+            currentEnd = range.end;
+          } else {
+            break;
+          }
+        }
+
+        writePosition = currentEnd + 1;
+
+        if (probe.size !== null) {
+          expectedRemainingBytes = probe.size - writePosition;
+        }
+      }
+
+      // When the server supports range requests, use a Range header
+      // even in the non-chunked path. This avoids re-downloading
+      // already-completed bytes when resuming and lets the server
+      // send only the remainder of the file.
+      if (probe.acceptsRanges && probe.size > 0 && writePosition > 0) {
+        rangeChunk = {
+          index: 0,
+          range: { start: writePosition, end: probe.size - 1 },
+        };
+        expectedRemainingBytes = probe.size - writePosition;
+      }
+
       const progress = progressReporter.init(probe.size);
 
-      await downloadSingle(
-        resolved,
-        probe,
-        handle,
-        progress,
+      // Fast-forward progress to account for already-written bytes
+      if (writePosition > 0) {
+        progress.bytesReceived = writePosition;
+        progress.bytesWritten = writePosition;
+      }
+
+      await downloadStream(resolved.probeUrl, handle, progress, {
         abortSignal,
         rateLimiter,
-      );
+        writePosition,
+        etag: probe.etag,
+        chunk: rangeChunk,
+        expectedRemainingBytes,
+      });
     }
   } catch (err) {
     if (isCancellation(err)) {
@@ -235,100 +281,77 @@ async function consumeTokens(
     abortSignal.throwIfAborted();
     const toRemove = Math.min(remaining, limiter.tokenBucket.bucketSize);
     const delay = limiter.removeTokens(toRemove);
-    if (delay instanceof Promise) {
-      await delay;
-    }
+    await delay;
     remaining -= toRemove;
   }
 }
 
-function createThrottleTransform(
-  rateLimiter: RateLimiter,
-  abortSignal: AbortSignal,
-): Transform {
-  return new Transform({
-    transform(chunk: Buffer, _encoding: string, callback: TransformCallback) {
-      consumeTokens(rateLimiter, chunk.length, abortSignal)
-        .then(() => callback(null, chunk))
-        .catch((err) => callback(unknownToError(err)));
-    },
-  });
-}
-
-async function downloadSingle(
-  resource: NormalizedResource,
-  probe: ProbeResult,
+async function downloadStream(
+  url: URL,
   handle: FileHandle,
-  progress: Progress,
-  abortSignal: AbortSignal,
-  rateLimiter: RateLimiter | null,
+  progress: { bytesReceived: number; bytesWritten: number },
+  options: {
+    abortSignal: AbortSignal;
+    rateLimiter: RateLimiter | null;
+    writePosition: number;
+    etag: string | null;
+    chunk: Chunk | null;
+    expectedRemainingBytes?: number;
+  },
 ): Promise<void> {
   const stream = createGotStream(
-    resource.probeUrl,
-    abortSignal,
-    probe.etag,
-    null,
+    url,
+    options.abortSignal,
+    options.etag,
+    options.chunk,
   );
-
-  let fileStream: WriteStream;
-
-  try {
-    fileStream = handle.fd.createWriteStream({ autoClose: false });
-  } catch (err) {
-    throw new DownloadError(
-      { code: "fs-error", path: handle.path },
-      `Failed to create write stream for ${handle.path}`,
-      err,
-    );
-  }
+  let writePosition = options.writePosition;
+  let remaining = options.expectedRemainingBytes;
 
   try {
-    stream.on("data", (data: Buffer) => {
-      progress.bytesReceived += data.length;
-    });
+    for await (const data of stream) {
+      const buffer = data as Buffer;
+      progress.bytesReceived += buffer.length;
 
-    await (rateLimiter
-      ? pipeline(
-          stream,
-          createThrottleTransform(rateLimiter, abortSignal),
-          fileStream,
-        )
-      : pipeline(stream, fileStream));
+      if (remaining !== undefined) {
+        if (buffer.length > remaining) {
+          throw new DownloadError(
+            { code: "protocol-violation", url: url },
+            `Server sent ${buffer.length} bytes but only ${remaining} were expected; response exceeds requested range`,
+          );
+        }
+        remaining -= buffer.length;
+      }
+
+      if (options.rateLimiter) {
+        await consumeTokens(
+          options.rateLimiter,
+          buffer.length,
+          options.abortSignal,
+        );
+      }
+
+      try {
+        const result = await handle.fd.write(
+          buffer,
+          0,
+          buffer.length,
+          writePosition,
+        );
+        progress.bytesWritten += result.bytesWritten;
+        writePosition += result.bytesWritten;
+      } catch (err) {
+        throw new DownloadError(
+          { code: "fs-error", path: handle.path },
+          `Failed to write to ${handle.path}`,
+          err,
+        );
+      }
+    }
   } catch (err) {
-    // NOTE(erri120): cancellation errors are handled by consumers
-    if (isCancellation(err)) throw err;
+    if (err instanceof DownloadError || isCancellation(err)) throw err;
     throw toNetworkError(stream.requestUrl, err);
-  } finally {
-    progress.bytesReceived = fileStream.bytesWritten;
-    progress.bytesWritten = fileStream.bytesWritten;
-    fileStream.destroy();
   }
-}
-
-async function downloadChunked(
-  resource: NormalizedResource,
-  probe: ProbeResult,
-  handle: FileHandle,
-  chunkQueue: PQueue,
-  chunks: Chunk[],
-  chunkProgress: Map<number, ChunkProgress>,
-  abortSignal: AbortSignal,
-  rateLimiter: RateLimiter | null,
-): Promise<void> {
-  await chunkQueue.addAll(
-    chunks.map(
-      (chunk) => async () =>
-        downloadChunk(
-          chunk,
-          resource,
-          probe,
-          handle,
-          chunkProgress.get(chunk.index),
-          abortSignal,
-          rateLimiter,
-        ),
-    ),
-  );
 }
 
 async function downloadChunk(
@@ -343,53 +366,16 @@ async function downloadChunk(
   abortSignal.throwIfAborted();
 
   const url = await resource.chunkUrl(chunk);
-  const stream = createGotStream(url, abortSignal, probe.etag, chunk);
+  const expectedRemainingBytes = chunk.range.end - chunk.range.start + 1;
 
-  let writePosition = chunk.range.start;
-
-  try {
-    for await (const data of stream) {
-      const buffer = data as Buffer;
-      progress.bytesReceived += buffer.length;
-
-      const remaining = chunk.range.end - writePosition + 1;
-      if (buffer.length > remaining) {
-        throw new DownloadError(
-          { code: "protocol-violation", url: url },
-          `Server sent ${buffer.length} bytes but only ${remaining} were expected for chunk ${chunk.index} (bytes ${chunk.range.start}-${chunk.range.end}); response exceeds requested range`,
-        );
-      }
-
-      if (rateLimiter) {
-        await consumeTokens(rateLimiter, buffer.length, abortSignal);
-      }
-
-      let bytesWritten = 0;
-
-      try {
-        const result = await handle.fd.write(
-          buffer,
-          0,
-          buffer.length,
-          writePosition,
-        );
-
-        bytesWritten += result.bytesWritten;
-        writePosition += result.bytesWritten;
-      } catch (err) {
-        throw new DownloadError(
-          { code: "fs-error", path: handle.path },
-          `Failed to write to ${handle.path}`,
-          err,
-        );
-      } finally {
-        progress.bytesWritten += bytesWritten;
-      }
-    }
-  } catch (err) {
-    if (err instanceof DownloadError || isCancellation(err)) throw err;
-    throw toNetworkError(stream.requestUrl, err);
-  }
+  await downloadStream(url, handle, progress, {
+    abortSignal,
+    rateLimiter,
+    writePosition: chunk.range.start,
+    etag: probe.etag,
+    chunk,
+    expectedRemainingBytes,
+  });
 }
 
 function createHeaders(etag: string | null, chunk: Chunk | null): Headers {
