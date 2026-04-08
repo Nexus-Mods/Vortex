@@ -48,6 +48,14 @@ function copyGameSettings(
           // profile ini missing, create it now from global file
           case "ProGlo":
             return fs.copyAsync(destination, source, { noSelfCopy: true });
+          // .base file missing — game hasn't been run yet, nothing to copy
+          case "GloPro":
+          case "GloBac":
+            if (err.code === "ENOENT") {
+              log("debug", "base settings file missing, skipping", { source });
+              return PromiseBB.resolve();
+            }
+            return PromiseBB.reject(err);
           // fatal error
           default:
             return PromiseBB.reject(err);
