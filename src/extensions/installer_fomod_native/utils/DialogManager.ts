@@ -13,12 +13,8 @@ import {
   setDialogState,
   startDialog,
 } from "../../installer_fomod_shared/actions/installerUI";
-<<<<<<< HEAD:src/extensions/installer_fomod_native/utils/DialogManager.ts
-import {
-=======
 import type {
   IChoices,
->>>>>>> e9281a4af (Merge pull request #22250 from Nexus-Mods/fix/21864):src/renderer/src/extensions/installer_fomod_native/utils/DialogManager.ts
   IHeaderImage,
   IInstallerState,
   IInstallStep,
@@ -278,22 +274,22 @@ export class DialogManager implements IDialogManager {
     }
 
     for (const group of step.optionalFileGroups.group) {
-      const presetGroup = presetStep.groups.find(
-        (g) => g.name === group.name,
-      );
+      const presetGroup = presetStep.groups.find((g) => g.name === group.name);
       if (!presetGroup) {
         continue;
       }
 
-      const pluginIds = presetGroup.choices.map((c) => {
-        // Match by index first, fall back to name lookup
-        const byIdx = group.options.find((opt) => opt.id === c.idx);
-        if (byIdx) {
-          return byIdx.id;
-        }
-        const byName = group.options.find((opt) => opt.name === c.name);
-        return byName?.id;
-      }).filter((id): id is number => id != null);
+      const pluginIds = presetGroup.choices
+        .map((c) => {
+          // Match by index first, fall back to name lookup
+          const byIdx = group.options.find((opt) => opt.id === c.idx);
+          if (byIdx) {
+            return byIdx.id;
+          }
+          const byName = group.options.find((opt) => opt.name === c.name);
+          return byName?.id;
+        })
+        .filter((id): id is number => id != null);
 
       if (pluginIds.length > 0) {
         this.mSelectCB(step.id, group.id, pluginIds);
