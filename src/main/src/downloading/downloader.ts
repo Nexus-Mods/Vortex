@@ -1,12 +1,8 @@
 import type { RateLimiter } from "limiter";
 import type { IncomingHttpHeaders } from "node:http";
 
-import { unknownToError } from "@vortex/shared";
 import got, { type Headers } from "got";
-import { type WriteStream } from "node:fs";
 import { type FileHandle as NodeFileHandle, open } from "node:fs/promises";
-import { Transform, type TransformCallback } from "node:stream";
-import { pipeline } from "node:stream/promises";
 import { type URL } from "node:url";
 import PQueue from "p-queue";
 
@@ -235,24 +231,77 @@ async function consumeTokens(
     abortSignal.throwIfAborted();
     const toRemove = Math.min(remaining, limiter.tokenBucket.bucketSize);
     const delay = limiter.removeTokens(toRemove);
-    if (delay instanceof Promise) {
-      await delay;
-    }
+    await delay;
     remaining -= toRemove;
   }
 }
 
-function createThrottleTransform(
-  rateLimiter: RateLimiter,
-  abortSignal: AbortSignal,
-): Transform {
-  return new Transform({
-    transform(chunk: Buffer, _encoding: string, callback: TransformCallback) {
-      consumeTokens(rateLimiter, chunk.length, abortSignal)
-        .then(() => callback(null, chunk))
-        .catch((err) => callback(unknownToError(err)));
-    },
-  });
+async function downloadStream(
+  url: URL,
+  handle: FileHandle,
+  progress: { bytesReceived: number; bytesWritten: number },
+  options: {
+    abortSignal: AbortSignal;
+    rateLimiter: RateLimiter | null;
+    writePosition: number;
+    etag: string | null;
+    chunk: Chunk | null;
+    expectedRemainingBytes?: number;
+  },
+): Promise<void> {
+  const stream = createGotStream(
+    url,
+    options.abortSignal,
+    options.etag,
+    options.chunk,
+  );
+  let writePosition = options.writePosition;
+  let remaining = options.expectedRemainingBytes;
+
+  try {
+    for await (const data of stream) {
+      const buffer = data as Buffer;
+      progress.bytesReceived += buffer.length;
+
+      if (remaining !== undefined) {
+        if (buffer.length > remaining) {
+          throw new DownloadError(
+            { code: "protocol-violation", url: url },
+            `Server sent ${buffer.length} bytes but only ${remaining} were expected; response exceeds requested range`,
+          );
+        }
+        remaining -= buffer.length;
+      }
+
+      if (options.rateLimiter) {
+        await consumeTokens(
+          options.rateLimiter,
+          buffer.length,
+          options.abortSignal,
+        );
+      }
+
+      try {
+        const result = await handle.fd.write(
+          buffer,
+          0,
+          buffer.length,
+          writePosition,
+        );
+        progress.bytesWritten += result.bytesWritten;
+        writePosition += result.bytesWritten;
+      } catch (err) {
+        throw new DownloadError(
+          { code: "fs-error", path: handle.path },
+          `Failed to write to ${handle.path}`,
+          err,
+        );
+      }
+    }
+  } catch (err) {
+    if (err instanceof DownloadError || isCancellation(err)) throw err;
+    throw toNetworkError(stream.requestUrl, err);
+  }
 }
 
 async function downloadSingle(
@@ -263,46 +312,13 @@ async function downloadSingle(
   abortSignal: AbortSignal,
   rateLimiter: RateLimiter | null,
 ): Promise<void> {
-  const stream = createGotStream(
-    resource.probeUrl,
+  await downloadStream(resource.probeUrl, handle, progress, {
     abortSignal,
-    probe.etag,
-    null,
-  );
-
-  let fileStream: WriteStream;
-
-  try {
-    fileStream = handle.fd.createWriteStream({ autoClose: false });
-  } catch (err) {
-    throw new DownloadError(
-      { code: "fs-error", path: handle.path },
-      `Failed to create write stream for ${handle.path}`,
-      err,
-    );
-  }
-
-  try {
-    stream.on("data", (data: Buffer) => {
-      progress.bytesReceived += data.length;
-    });
-
-    await (rateLimiter
-      ? pipeline(
-          stream,
-          createThrottleTransform(rateLimiter, abortSignal),
-          fileStream,
-        )
-      : pipeline(stream, fileStream));
-  } catch (err) {
-    // NOTE(erri120): cancellation errors are handled by consumers
-    if (isCancellation(err)) throw err;
-    throw toNetworkError(stream.requestUrl, err);
-  } finally {
-    progress.bytesReceived = fileStream.bytesWritten;
-    progress.bytesWritten = fileStream.bytesWritten;
-    fileStream.destroy();
-  }
+    rateLimiter,
+    writePosition: 0,
+    etag: probe.etag,
+    chunk: null,
+  });
 }
 
 async function downloadChunked(
@@ -343,53 +359,16 @@ async function downloadChunk(
   abortSignal.throwIfAborted();
 
   const url = await resource.chunkUrl(chunk);
-  const stream = createGotStream(url, abortSignal, probe.etag, chunk);
+  const expectedRemainingBytes = chunk.range.end - chunk.range.start + 1;
 
-  let writePosition = chunk.range.start;
-
-  try {
-    for await (const data of stream) {
-      const buffer = data as Buffer;
-      progress.bytesReceived += buffer.length;
-
-      const remaining = chunk.range.end - writePosition + 1;
-      if (buffer.length > remaining) {
-        throw new DownloadError(
-          { code: "protocol-violation", url: url },
-          `Server sent ${buffer.length} bytes but only ${remaining} were expected for chunk ${chunk.index} (bytes ${chunk.range.start}-${chunk.range.end}); response exceeds requested range`,
-        );
-      }
-
-      if (rateLimiter) {
-        await consumeTokens(rateLimiter, buffer.length, abortSignal);
-      }
-
-      let bytesWritten = 0;
-
-      try {
-        const result = await handle.fd.write(
-          buffer,
-          0,
-          buffer.length,
-          writePosition,
-        );
-
-        bytesWritten += result.bytesWritten;
-        writePosition += result.bytesWritten;
-      } catch (err) {
-        throw new DownloadError(
-          { code: "fs-error", path: handle.path },
-          `Failed to write to ${handle.path}`,
-          err,
-        );
-      } finally {
-        progress.bytesWritten += bytesWritten;
-      }
-    }
-  } catch (err) {
-    if (err instanceof DownloadError || isCancellation(err)) throw err;
-    throw toNetworkError(stream.requestUrl, err);
-  }
+  await downloadStream(url, handle, progress, {
+    abortSignal,
+    rateLimiter,
+    writePosition: chunk.range.start,
+    etag: probe.etag,
+    chunk,
+    expectedRemainingBytes,
+  });
 }
 
 function createHeaders(etag: string | null, chunk: Chunk | null): Headers {
