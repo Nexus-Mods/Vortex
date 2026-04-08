@@ -266,7 +266,8 @@ class Application {
     app.on("second-instance", (_event: Event, secondaryArgv: string[]) => {
       log("debug", "getting arguments from second instance", secondaryArgv);
       this.applyArguments(parseCommandline(secondaryArgv, true)).catch(
-        (err: unknown) => log("error", "error applying arguments", unknownToError(err)),
+        (err: unknown) =>
+          log("error", "error applying arguments", unknownToError(err)),
       );
     });
 
@@ -320,7 +321,9 @@ class Application {
     app
       .whenReady()
       .then(onReady)
-      .catch((err: unknown) => log("error", "error starting application", unknownToError(err)));
+      .catch((err: unknown) =>
+        log("error", "error starting application", unknownToError(err)),
+      );
 
     app.on(
       "web-contents-created",
@@ -905,17 +908,24 @@ class Application {
         const sharedStatePath = path.join(sharedPath, currentStatePath);
         try {
           const tempPersistor = await LevelPersist.create(
-            sharedStatePath, undefined, false);
+            sharedStatePath,
+            undefined,
+            false,
+          );
           try {
             const sharedSub = new SubPersistor(tempPersistor, "user");
             const val = await sharedSub.getItem(["multiUser"]);
             if (!JSON.parse(val)) {
               // User toggled back to per-user while in shared mode
-              log("info",
-                "shared database has multiUser disabled, reverting to per-user");
+              log(
+                "info",
+                "shared database has multiUser disabled, reverting to per-user",
+              );
               multiUser = false;
               await baseSubPersistor.setItem(
-                ["multiUser"], JSON.stringify(false));
+                ["multiUser"],
+                JSON.stringify(false),
+              );
               // Remove the stale flag from the shared DB so it doesn't
               // block future switches back to shared mode
               await sharedSub.removeItem(["multiUser"]);

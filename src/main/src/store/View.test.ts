@@ -33,10 +33,7 @@ describe("View", () => {
         { id: "2", name: "b", value: 20 },
       ];
       const conn = createMockConnection(rows);
-      const view = new View<TestRow>(
-        conn,
-        "test_table",
-      );
+      const view = new View<TestRow>(conn, "test_table");
 
       const result = await view.all();
 
@@ -48,10 +45,7 @@ describe("View", () => {
 
     it("returns empty array for empty table", async () => {
       const conn = createMockConnection([]);
-      const view = new View<TestRow>(
-        conn,
-        "test_table",
-      );
+      const view = new View<TestRow>(conn, "test_table");
 
       const result = await view.all();
 
@@ -63,10 +57,7 @@ describe("View", () => {
     it("filters by a single column", async () => {
       const rows = [{ id: "1", name: "a", value: 10 }];
       const conn = createMockConnection(rows);
-      const view = new View<TestRow>(
-        conn,
-        "test_table",
-      );
+      const view = new View<TestRow>(conn, "test_table");
 
       const result = await view.where({ name: "a" });
 
@@ -79,10 +70,7 @@ describe("View", () => {
 
     it("filters by multiple columns with AND", async () => {
       const conn = createMockConnection([]);
-      const view = new View<TestRow>(
-        conn,
-        "test_table",
-      );
+      const view = new View<TestRow>(conn, "test_table");
 
       await view.where({ name: "a", value: 10 });
 
@@ -94,10 +82,7 @@ describe("View", () => {
 
     it("returns all rows when no filter keys provided", async () => {
       const conn = createMockConnection([{ id: "1", name: "a", value: 10 }]);
-      const view = new View<TestRow>(
-        conn,
-        "test_table",
-      );
+      const view = new View<TestRow>(conn, "test_table");
 
       await view.where({});
 
@@ -111,10 +96,7 @@ describe("View", () => {
     it("returns first matching row", async () => {
       const row = { id: "1", name: "a", value: 10 };
       const conn = createMockConnection([row]);
-      const view = new View<TestRow>(
-        conn,
-        "test_table",
-      );
+      const view = new View<TestRow>(conn, "test_table");
 
       const result = await view.findOne({ id: "1" });
 
@@ -127,10 +109,7 @@ describe("View", () => {
 
     it("returns null when no match", async () => {
       const conn = createMockConnection([]);
-      const view = new View<TestRow>(
-        conn,
-        "test_table",
-      );
+      const view = new View<TestRow>(conn, "test_table");
 
       const result = await view.findOne({ id: "missing" });
 
@@ -145,10 +124,7 @@ describe("View", () => {
         { id: "2", name: "b", value: 20 },
       ];
       const conn = createMockConnection(rows);
-      const view = new View<TestRow>(
-        conn,
-        "test_table",
-      );
+      const view = new View<TestRow>(conn, "test_table");
 
       const collected: TestRow[] = [];
       for await (const row of view) {

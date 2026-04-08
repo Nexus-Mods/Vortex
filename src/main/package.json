@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@duckdb/node-api": "catalog:",
+    "@vortex/adaptor-api": "workspace:*",
     "@electron/remote": "catalog:",
     "@headlessui/react": "catalog:",
     "@mdi/js": "catalog:",

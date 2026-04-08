@@ -6,10 +6,7 @@
  */
 
 import type { UpdateStatus } from "@vortex/shared/ipc";
-import type {
-  CancellationToken,
-  UpdateInfo,
-} from "electron-updater";
+import type { CancellationToken, UpdateInfo } from "electron-updater";
 
 import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import { app, dialog } from "electron";

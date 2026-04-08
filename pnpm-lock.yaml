@@ -3790,6 +3790,21 @@ importers:
         specifier: workspace:*
         version: link:../../packages/vortex-api
 
+  packages/adaptor-api:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 22.19.15
+      rolldown:
+        specifier: 'catalog:'
+        version: 1.0.0-rc.9
+
+  packages/adaptors/ping-test:
+    devDependencies:
+      '@vortex/adaptor-api':
+        specifier: workspace:*
+        version: link:../../adaptor-api
+
   packages/e2e:
     devDependencies:
       '@playwright/test':
@@ -3958,6 +3973,9 @@ importers:
       '@types/uuid':
         specifier: 'catalog:'
         version: 3.4.13
+      '@vortex/adaptor-api':
+        specifier: workspace:*
+        version: link:../../packages/adaptor-api
       '@vortex/fs':
         specifier: workspace:*
         version: link:../../packages/fs
@@ -7545,6 +7563,7 @@ packages:
   '@xmldom/xmldom@0.8.11':
     resolution: {integrity: sha512-cQzWCtO6C8TQiYl1ruKNn2U6Ao4o4WBBcbL61yJl84x+j5sOWWFU9X7DpND8XZG3daDppSsigMdfAIl2upQBRw==}
     engines: {node: '>=10.0.0'}
+    deprecated: this version has critical issues, please update to the latest version
 
   '@xstate/fsm@1.6.5':
     resolution: {integrity: sha512-b5o1I6aLNeYlU/3CPlj/Z91ybk1gUsKT+5NAJI+2W4UjvS5KLG28K9v5UvNoFVjHV8PajVZ00RH3vnjyQO7ZAw==}
@@ -13680,7 +13699,7 @@ snapshots:
       '@eslint-react/eff': 2.3.7
       '@typescript-eslint/types': 8.57.2
       '@typescript-eslint/typescript-estree': 8.57.2(typescript@5.9.3)
-      '@typescript-eslint/utils': 8.47.0(eslint@9.39.1)(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.57.2(eslint@9.39.1)(typescript@5.9.3)
       string-ts: 2.3.1
     transitivePeerDependencies:
       - eslint
@@ -13695,7 +13714,7 @@ snapshots:
       '@eslint-react/var': 2.3.7(eslint@9.39.1)(typescript@5.9.3)
       '@typescript-eslint/scope-manager': 8.57.2
       '@typescript-eslint/types': 8.57.2
-      '@typescript-eslint/utils': 8.47.0(eslint@9.39.1)(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.57.2(eslint@9.39.1)(typescript@5.9.3)
       birecord: 0.1.1
       ts-pattern: 5.9.0
     transitivePeerDependencies:
@@ -13712,7 +13731,7 @@ snapshots:
       '@typescript-eslint/scope-manager': 8.57.2
       '@typescript-eslint/type-utils': 8.57.2(eslint@9.39.1)(typescript@5.9.3)
       '@typescript-eslint/types': 8.57.2
-      '@typescript-eslint/utils': 8.47.0(eslint@9.39.1)(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.57.2(eslint@9.39.1)(typescript@5.9.3)
       eslint: 9.39.1(jiti@2.6.1)
       eslint-plugin-react-dom: 2.3.7(eslint@9.39.1)(typescript@5.9.3)
       eslint-plugin-react-hooks-extra: 2.3.7(eslint@9.39.1)(typescript@5.9.3)
@@ -13727,7 +13746,7 @@ snapshots:
   '@eslint-react/shared@2.3.7(eslint@9.39.1)(typescript@5.9.3)':
     dependencies:
       '@eslint-react/eff': 2.3.7
-      '@typescript-eslint/utils': 8.47.0(eslint@9.39.1)(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.57.2(eslint@9.39.1)(typescript@5.9.3)
       ts-pattern: 5.9.0
       zod: 4.3.6
     transitivePeerDependencies:
@@ -13741,7 +13760,7 @@ snapshots:
       '@eslint-react/eff': 2.3.7
       '@typescript-eslint/scope-manager': 8.57.2
       '@typescript-eslint/types': 8.57.2
-      '@typescript-eslint/utils': 8.47.0(eslint@9.39.1)(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.57.2(eslint@9.39.1)(typescript@5.9.3)
       ts-pattern: 5.9.0
     transitivePeerDependencies:
       - eslint
@@ -15240,8 +15259,8 @@ snapshots:
 
   '@typescript-eslint/project-service@8.47.0(typescript@5.9.3)':
     dependencies:
-      '@typescript-eslint/tsconfig-utils': 8.47.0(typescript@5.9.3)
-      '@typescript-eslint/types': 8.47.0
+      '@typescript-eslint/tsconfig-utils': 8.57.2(typescript@5.9.3)
+      '@typescript-eslint/types': 8.57.2
       debug: 4.4.3
       typescript: 5.9.3
     transitivePeerDependencies:
@@ -17427,7 +17446,7 @@ snapshots:
       '@eslint-react/var': 2.3.7(eslint@9.39.1)(typescript@5.9.3)
       '@typescript-eslint/scope-manager': 8.57.2
       '@typescript-eslint/types': 8.57.2
-      '@typescript-eslint/utils': 8.47.0(eslint@9.39.1)(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.57.2(eslint@9.39.1)(typescript@5.9.3)
       compare-versions: 6.1.1
       eslint: 9.39.1(jiti@2.6.1)
       string-ts: 2.3.1
@@ -17446,7 +17465,7 @@ snapshots:
       '@typescript-eslint/scope-manager': 8.57.2
       '@typescript-eslint/type-utils': 8.57.2(eslint@9.39.1)(typescript@5.9.3)
       '@typescript-eslint/types': 8.57.2
-      '@typescript-eslint/utils': 8.47.0(eslint@9.39.1)(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.57.2(eslint@9.39.1)(typescript@5.9.3)
       eslint: 9.39.1(jiti@2.6.1)
       string-ts: 2.3.1
       ts-pattern: 5.9.0
@@ -17464,7 +17483,7 @@ snapshots:
       '@typescript-eslint/scope-manager': 8.57.2
       '@typescript-eslint/type-utils': 8.57.2(eslint@9.39.1)(typescript@5.9.3)
       '@typescript-eslint/types': 8.57.2
-      '@typescript-eslint/utils': 8.47.0(eslint@9.39.1)(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.57.2(eslint@9.39.1)(typescript@5.9.3)
       eslint: 9.39.1(jiti@2.6.1)
       string-ts: 2.3.1
       ts-pattern: 5.9.0
@@ -17481,7 +17500,7 @@ snapshots:
       '@eslint-react/var': 2.3.7(eslint@9.39.1)(typescript@5.9.3)
       '@typescript-eslint/scope-manager': 8.57.2
       '@typescript-eslint/types': 8.57.2
-      '@typescript-eslint/utils': 8.47.0(eslint@9.39.1)(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.57.2(eslint@9.39.1)(typescript@5.9.3)
       eslint: 9.39.1(jiti@2.6.1)
       string-ts: 2.3.1
       ts-pattern: 5.9.0
@@ -17499,7 +17518,7 @@ snapshots:
       '@typescript-eslint/scope-manager': 8.57.2
       '@typescript-eslint/type-utils': 8.57.2(eslint@9.39.1)(typescript@5.9.3)
       '@typescript-eslint/types': 8.57.2
-      '@typescript-eslint/utils': 8.47.0(eslint@9.39.1)(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.57.2(eslint@9.39.1)(typescript@5.9.3)
       compare-versions: 6.1.1
       eslint: 9.39.1(jiti@2.6.1)
       is-immutable-type: 5.0.1(eslint@9.39.1)(typescript@5.9.3)
@@ -17693,8 +17712,7 @@ snapshots:
 
   extsprintf@1.3.0: {}
 
-  extsprintf@1.4.1:
-    optional: true
+  extsprintf@1.4.1: {}
 
   eyes@0.1.8: {}
 
@@ -21447,7 +21465,7 @@ snapshots:
     dependencies:
       assert-plus: 1.0.0
       core-util-is: 1.0.2
-      extsprintf: 1.3.0
+      extsprintf: 1.4.1
 
   verror@1.10.1:
     dependencies:
@@ -21725,7 +21743,7 @@ snapshots:
 
   wide-align@1.1.5:
     dependencies:
-      string-width: 1.0.2
+      string-width: 4.2.3
 
   wildcard@2.0.1: {}
 

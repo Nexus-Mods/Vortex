@@ -1,0 +1,60 @@
+{
+  "$schema": "https://www.schemastore.org/package.json",
+  "name": "@vortex/adaptor-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm tsdown",
+    "dist": "pnpm tsdown",
+    "typecheck": "pnpm tsc",
+    "test": "pnpm vitest run",
+    "lint": "pnpm eslint --concurrency auto .",
+    "lint:quiet": "pnpm eslint --concurrency auto --quiet ."
+  },
+  "exports": {
+    ".": {
+      "development": "./src/lib.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./contracts/ping": {
+      "development": "./src/contracts/ping.ts",
+      "import": "./dist/contracts/ping.js",
+      "require": "./dist/contracts/ping.cjs"
+    },
+    "./plugin": {
+      "development": "./src/plugin.ts",
+      "import": "./dist/plugin.js",
+      "require": "./dist/plugin.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "peerDependencies": {
+    "rolldown": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "rolldown": "catalog:"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "import": "./dist/index.js",
+        "require": "./dist/index.cjs"
+      },
+      "./contracts/ping": {
+        "import": "./dist/contracts/ping.js",
+        "require": "./dist/contracts/ping.cjs"
+      },
+      "./plugin": {
+        "import": "./dist/plugin.js",
+        "require": "./dist/plugin.cjs"
+      },
+      "./package.json": "./package.json"
+    }
+  },
+  "types": "./dist/index.d.cts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js"
+}

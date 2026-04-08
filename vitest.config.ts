@@ -13,6 +13,8 @@ export default defineConfig({
       "./src/main/vitest.integration.config.ts",
       "./src/renderer",
       "./src/shared",
+      "./packages/adaptor-api",
+      "./packages/adaptors/ping-test",
       "./packages/fs",
       "./extensions/feedback",
       "./extensions/gamebryo-savegame-management",

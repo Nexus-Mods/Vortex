@@ -12,7 +12,7 @@
     "target": "esnext",
     "module": "esnext",
     "moduleResolution": "bundler",
-    "customConditions": ["node"],
     "types": ["node"],
+    "customConditions": ["node", "development"],
   },
 }
