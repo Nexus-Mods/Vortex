@@ -175,11 +175,7 @@ export interface ISettingsInterface {
   tools?: {
     addToolsToTitleBar: boolean;
     order?: { [gameId: string]: string[] };
-<<<<<<< HEAD
-    pinned?: { [gameId: string]: string[] };
-=======
     pinned?: { [gameId: string]: { [toolId: string]: boolean } };
->>>>>>> 4a6585a85 (Merge pull request #22281 from Nexus-Mods/_v2.0-tools)
   };
   primaryTool?: { [gameId: string]: string };
 }
