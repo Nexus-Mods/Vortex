@@ -188,6 +188,14 @@ async function probeUrl(
   // https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/ETag
   const etag = response.headers.etag ?? null;
 
+  // NOTE(erri120): Server has to do the precondition check of the ETag.
+  if (etag && previousETag && etag !== previousETag) {
+    throw new DownloadError(
+      { code: "protocol-violation", url: url },
+      "ETag has changed, server didn't validate precondition",
+    );
+  }
+
   return { size, acceptsRanges, etag };
 }
 
