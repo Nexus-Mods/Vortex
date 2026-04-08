@@ -50,7 +50,7 @@ export const useToolsData = (): UseToolsDataResult => {
   );
   const pinnedToolsMap = useSelector(
     (state: IState) =>
-      (state.settings?.interface as any)?.tools?.pinned?.[gameId ?? ""] ?? {},
+      state.settings?.interface?.tools?.pinned?.[gameId ?? ""] ?? {},
     shallowEqual,
   );
 
