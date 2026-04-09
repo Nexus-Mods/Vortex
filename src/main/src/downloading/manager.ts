@@ -5,12 +5,13 @@ import type { Chunker, ByteRange } from "./chunking";
 import type { TimeoutOptions } from "./downloader";
 import type { DownloadProgress } from "./progress";
 import type { Resolver } from "./resolver";
+import type { RetryStrategy } from "./retry";
 
 import { staticChunker } from "./chunking";
 import { download } from "./downloader";
 import { DownloadError } from "./errors";
 import { ProgressReporter } from "./progress";
-import { defaultRetryStrategy, RetryStrategy } from "./retry";
+import { defaultRetryStrategy } from "./retry";
 
 export type DownloadHandle<T = unknown> = {
   /** The promise resolves when the download completes */
