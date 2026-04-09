@@ -1,7 +1,8 @@
 import type { RateLimiter } from "limiter";
 import type { IncomingHttpHeaders } from "node:http";
 
-import got, { type Headers } from "got";
+import { unknownToError } from "@vortex/shared";
+import got, { type Headers, type Delays as GotTimeoutOptions } from "got";
 import { type FileHandle as NodeFileHandle, open } from "node:fs/promises";
 import { type URL } from "node:url";
 import PQueue from "p-queue";
@@ -9,9 +10,11 @@ import PQueue from "p-queue";
 import type { ByteRange, Chunk, Chunker } from "./chunking";
 import type { ChunkProgress, ProgressReporter } from "./progress";
 import type { Resolver, NormalizedResource } from "./resolver";
+import type { RetryStrategy } from "./retry";
 
 import { isCancellation, toNetworkError, DownloadError } from "./errors";
 import { normalize } from "./resolver";
+import { sleep } from "./retry";
 
 export const defaultChunkConcurrency = 4;
 
@@ -21,35 +24,61 @@ export type Checkpoint = {
   completedRanges: ByteRange[];
 };
 
+export type TimeoutOptions = {
+  // TODO: use Temporal API
+
+  /** Hard upper limit for the entire duration of a single HTTP request (ms). */
+  request: number;
+
+  /** Timeout for DNS lookup (ms). */
+  lookup: number;
+
+  /** Timeout for DNS lookup + TCP connect + TLS handshake (ms). */
+  connect: number;
+
+  /** Timeout between received data packets before treating the connection as stalled (ms). */
+  stall: number;
+};
+
 /** @internal */
 export async function download<T>(
   resource: T,
   dest: string,
-  resolver: Resolver<T>,
-  chunker: Chunker<T>,
-  progressReporter: ProgressReporter,
-  abortSignal: AbortSignal,
-  chunkConcurrency: number = defaultChunkConcurrency,
-  checkpoint: Checkpoint | null = null,
-  rateLimiter: RateLimiter | null = null,
+  strategy: {
+    resolver: Resolver<T>;
+    chunker: Chunker<T>;
+    rateLimiter?: RateLimiter;
+    retry?: RetryStrategy;
+  },
+  options?: {
+    progressReporter?: ProgressReporter;
+    abortSignal?: AbortSignal;
+    chunkConcurrency?: number;
+    checkpoint?: Checkpoint;
+    timeout?: TimeoutOptions;
+  },
 ): Promise<void> {
-  if (abortSignal.aborted) {
+  if (options?.abortSignal?.aborted) {
     throw new DownloadError({ code: "cancellation" }, "Download cancelled");
   }
 
   let resolved: NormalizedResource;
   try {
-    resolved = normalize(await resolver(resource));
+    resolved = normalize(await strategy.resolver(resource));
   } catch (err) {
     throw new DownloadError({ code: "resolver-error" }, "Resolver failed", err);
   }
 
   let probe: ProbeResult;
   try {
-    probe = await probeUrl(
-      resolved.probeUrl,
-      abortSignal,
-      checkpoint?.etag ?? null,
+    probe = await withRetry(
+      () =>
+        probeUrl(resolved.probeUrl, options?.checkpoint?.etag ?? null, {
+          abortSignal: options?.abortSignal,
+          timeout: options?.timeout,
+        }),
+      strategy.retry,
+      options?.abortSignal,
     );
   } catch (err) {
     if (isCancellation(err)) {
@@ -63,16 +92,17 @@ export async function download<T>(
     throw toNetworkError(resolved.probeUrl, err);
   }
 
-  if (probe.etag) progressReporter.etag = probe.etag;
+  if (probe.etag && options?.progressReporter)
+    options.progressReporter.etag = probe.etag;
 
   const canChunk = probe.acceptsRanges && probe.size > 0;
   const chunks = canChunk
-    ? await Promise.resolve(chunker(probe.size, resource))
+    ? await Promise.resolve(strategy.chunker(probe.size, resource))
     : [];
 
   const isChunked = chunks.length > 1;
 
-  const completedRanges = checkpoint?.completedRanges ?? [];
+  const completedRanges = options?.checkpoint?.completedRanges ?? [];
   const pendingChunks = chunks.filter(
     (chunk) =>
       !completedRanges.some(
@@ -86,7 +116,7 @@ export async function download<T>(
     // https://nodejs.org/api/fs.html#file-system-flags
     // 'w+': Open file for reading and writing. The file is created (if it does not exist) or truncated (if it exists).
     // 'r+': Open file for reading and writing. An exception occurs if the file does not exist.
-    const flag = checkpoint === null ? "w+" : "r+";
+    const flag = options?.checkpoint ? "r+" : "w+";
     const fd = await open(dest, flag);
     handle = { fd, path: dest };
   } catch (err) {
@@ -97,7 +127,7 @@ export async function download<T>(
     );
   }
 
-  if (checkpoint === null && probe.size > 0) {
+  if (options?.checkpoint && probe.size > 0) {
     try {
       await handle.fd.truncate(probe.size);
     } catch (err) {
@@ -111,42 +141,66 @@ export async function download<T>(
 
   try {
     if (isChunked) {
-      const chunkQueue = new PQueue({ concurrency: chunkConcurrency });
-      const chunkProgress = progressReporter.initChunked(chunks, probe.size);
+      const chunkQueue = new PQueue({
+        concurrency: options?.chunkConcurrency ?? defaultChunkConcurrency,
+      });
 
-      // fast forward progress reporter to checkpoint
-      for (const chunk of chunks) {
-        const isComplete = completedRanges.some(
-          (r) => r.start <= chunk.range.start && r.end >= chunk.range.end,
+      let chunkProgress: Map<number, ChunkProgress> | null = null;
+      if (options?.progressReporter) {
+        chunkProgress = options.progressReporter.initChunked(
+          chunks,
+          probe.size,
         );
-        if (isComplete) {
-          const progress = chunkProgress.get(chunk.index);
-          const size = chunk.range.end - chunk.range.start + 1;
-          progress.bytesReceived = size;
-          progress.bytesWritten = size;
+
+        // fast forward progress reporter to checkpoint
+        for (const chunk of chunks) {
+          const isComplete = completedRanges.some(
+            (r) => r.start <= chunk.range.start && r.end >= chunk.range.end,
+          );
+          if (isComplete) {
+            const progress = chunkProgress.get(chunk.index);
+            const size = chunk.range.end - chunk.range.start + 1;
+            progress.bytesReceived = size;
+            progress.bytesWritten = size;
+          }
         }
       }
 
       await chunkQueue.addAll(
         pendingChunks.map(
           (chunk) => async () =>
-            downloadChunk(
-              chunk,
-              resolved,
-              probe,
-              handle,
-              chunkProgress.get(chunk.index),
-              abortSignal,
-              rateLimiter,
+            withRetry(
+              () => {
+                // Reset chunk progress before each attempt so a failed
+                // partial download doesn't leave stale byte counts.
+                if (chunkProgress) {
+                  const progress = chunkProgress.get(chunk.index);
+                  progress.bytesReceived = 0;
+                  progress.bytesWritten = 0;
+                }
+
+                return downloadChunk(chunk, resolved, probe, handle, {
+                  abortSignal: options?.abortSignal,
+                  rateLimiter: strategy.rateLimiter,
+                  timeout: options?.timeout,
+                  progress: chunkProgress
+                    ? chunkProgress.get(chunk.index)
+                    : undefined,
+                });
+              },
+              strategy.retry,
+              options?.abortSignal,
             ),
         ),
       );
     } else {
-      let writePosition = 0;
-      let expectedRemainingBytes: number | undefined = undefined;
-      let rangeChunk: Chunk | null = null;
+      // Compute the checkpoint baseline: the contiguous byte position
+      // that was already completed before this download call. On retry
+      // we reset back to this position rather than to zero, because
+      // those bytes are already valid on disk.
+      let checkpointPosition = 0;
 
-      if (checkpoint !== null && completedRanges.length > 0) {
+      if (options?.checkpoint && completedRanges.length > 0) {
         const sortedRanges = completedRanges.toSorted(
           (a, b) => a.start - b.start,
         );
@@ -163,41 +217,55 @@ export async function download<T>(
           }
         }
 
-        writePosition = currentEnd + 1;
-
-        if (probe.size !== null) {
-          expectedRemainingBytes = probe.size - writePosition;
-        }
+        checkpointPosition = currentEnd + 1;
       }
 
-      // When the server supports range requests, use a Range header
-      // even in the non-chunked path. This avoids re-downloading
-      // already-completed bytes when resuming and lets the server
-      // send only the remainder of the file.
-      if (probe.acceptsRanges && probe.size > 0 && writePosition > 0) {
-        rangeChunk = {
-          index: 0,
-          range: { start: writePosition, end: probe.size - 1 },
-        };
-        expectedRemainingBytes = probe.size - writePosition;
-      }
+      const progress = options?.progressReporter?.init(probe.size);
 
-      const progress = progressReporter.init(probe.size);
+      await withRetry(
+        () => {
+          // Reset write position and progress back to the checkpoint
+          // baseline on every attempt. Any bytes written by a previous
+          // failed attempt will be overwritten.
+          const writePosition = checkpointPosition;
 
-      // Fast-forward progress to account for already-written bytes
-      if (writePosition > 0) {
-        progress.bytesReceived = writePosition;
-        progress.bytesWritten = writePosition;
-      }
+          if (progress) {
+            progress.bytesReceived = checkpointPosition;
+            progress.bytesWritten = checkpointPosition;
+          }
 
-      await downloadStream(resolved.probeUrl, handle, progress, {
-        abortSignal,
-        rateLimiter,
-        writePosition,
-        etag: probe.etag,
-        chunk: rangeChunk,
-        expectedRemainingBytes,
-      });
+          let expectedRemainingBytes: number | undefined = undefined;
+          let rangeChunk: Chunk | null = null;
+
+          if (probe.size !== null && writePosition > 0) {
+            expectedRemainingBytes = probe.size - writePosition;
+          }
+
+          // When the server supports range requests, use a Range header
+          // even in the non-chunked path. This avoids re-downloading
+          // already-completed bytes when resuming and lets the server
+          // send only the remainder of the file.
+          if (probe.acceptsRanges && probe.size > 0 && writePosition > 0) {
+            rangeChunk = {
+              index: 0,
+              range: { start: writePosition, end: probe.size - 1 },
+            };
+            expectedRemainingBytes = probe.size - writePosition;
+          }
+
+          return downloadStream(resolved.probeUrl, handle, writePosition, {
+            progress: progress,
+            abortSignal: options?.abortSignal,
+            rateLimiter: strategy.rateLimiter,
+            timeout: options?.timeout,
+            etag: probe.etag,
+            chunk: rangeChunk,
+            expectedRemainingBytes,
+          });
+        },
+        strategy.retry,
+        options?.abortSignal,
+      );
     }
   } catch (err) {
     if (isCancellation(err)) {
@@ -216,12 +284,17 @@ export async function download<T>(
 
 async function probeUrl(
   url: URL,
-  abortSignal: AbortSignal,
   previousETag: string | null,
+  options: {
+    abortSignal?: AbortSignal;
+    timeout?: TimeoutOptions;
+  },
 ): Promise<ProbeResult> {
   const response = await got.head(url, {
-    signal: abortSignal,
+    signal: options?.abortSignal,
     headers: createHeaders(previousETag, null),
+    timeout: createGotTimeoutOptions(options.timeout),
+    retry: { limit: 0 },
   });
 
   const size = getSize(response.headers, "content-length");
@@ -257,13 +330,18 @@ async function probeUrl(
  */
 function createGotStream(
   url: URL,
-  abortSignal: AbortSignal,
-  etag: string | null,
-  chunk: Chunk | null,
+  options: {
+    abortSignal?: AbortSignal;
+    etag?: string;
+    chunk?: Chunk;
+    timeout?: TimeoutOptions;
+  },
 ) {
   const stream = got.stream(url, {
-    signal: abortSignal,
-    headers: createHeaders(etag, chunk),
+    signal: options?.abortSignal,
+    headers: createHeaders(options?.etag, options?.chunk),
+    timeout: createGotTimeoutOptions(options.timeout),
+    retry: { limit: 0 },
   });
 
   stream.on("error", () => {});
@@ -271,14 +349,29 @@ function createGotStream(
   return stream;
 }
 
+function createGotTimeoutOptions(
+  timeout?: TimeoutOptions,
+): GotTimeoutOptions | undefined {
+  if (!timeout) return undefined;
+
+  return {
+    lookup: timeout.lookup,
+    connect: timeout.connect,
+    secureConnect: timeout.connect,
+    socket: timeout.stall,
+    response: timeout.stall,
+    request: timeout.request,
+  };
+}
+
 async function consumeTokens(
   limiter: RateLimiter,
   bytes: number,
-  abortSignal: AbortSignal,
+  abortSignal?: AbortSignal,
 ): Promise<void> {
   let remaining = bytes;
   while (remaining > 0) {
-    abortSignal.throwIfAborted();
+    abortSignal?.throwIfAborted();
     const toRemove = Math.min(remaining, limiter.tokenBucket.bucketSize);
     const delay = limiter.removeTokens(toRemove);
     await delay;
@@ -289,29 +382,31 @@ async function consumeTokens(
 async function downloadStream(
   url: URL,
   handle: FileHandle,
-  progress: { bytesReceived: number; bytesWritten: number },
+  writePosition: number,
   options: {
-    abortSignal: AbortSignal;
-    rateLimiter: RateLimiter | null;
-    writePosition: number;
-    etag: string | null;
-    chunk: Chunk | null;
+    progress?: { bytesReceived: number; bytesWritten: number };
+    abortSignal?: AbortSignal;
+    rateLimiter?: RateLimiter;
+    timeout?: TimeoutOptions;
+    etag?: string;
+    chunk?: Chunk;
     expectedRemainingBytes?: number;
   },
 ): Promise<void> {
-  const stream = createGotStream(
-    url,
-    options.abortSignal,
-    options.etag,
-    options.chunk,
-  );
-  let writePosition = options.writePosition;
+  const { progress } = options;
+  const stream = createGotStream(url, {
+    abortSignal: options.abortSignal,
+    etag: options.etag,
+    chunk: options.chunk,
+    timeout: options.timeout,
+  });
+
   let remaining = options.expectedRemainingBytes;
 
   try {
     for await (const data of stream) {
       const buffer = data as Buffer;
-      progress.bytesReceived += buffer.length;
+      if (progress) progress.bytesReceived += buffer.length;
 
       if (remaining !== undefined) {
         if (buffer.length > remaining) {
@@ -338,7 +433,8 @@ async function downloadStream(
           buffer.length,
           writePosition,
         );
-        progress.bytesWritten += result.bytesWritten;
+
+        if (progress) progress.bytesWritten += result.bytesWritten;
         writePosition += result.bytesWritten;
       } catch (err) {
         throw new DownloadError(
@@ -359,33 +455,66 @@ async function downloadChunk(
   resource: NormalizedResource,
   probe: ProbeResult,
   handle: FileHandle,
-  progress: ChunkProgress,
-  abortSignal: AbortSignal,
-  rateLimiter: RateLimiter | null,
+  options: {
+    progress?: ChunkProgress;
+    rateLimiter?: RateLimiter;
+    timeout?: TimeoutOptions;
+    abortSignal?: AbortSignal;
+  },
 ): Promise<void> {
-  abortSignal.throwIfAborted();
+  options.abortSignal?.throwIfAborted();
 
   const url = await resource.chunkUrl(chunk);
   const expectedRemainingBytes = chunk.range.end - chunk.range.start + 1;
 
-  await downloadStream(url, handle, progress, {
-    abortSignal,
-    rateLimiter,
-    writePosition: chunk.range.start,
-    etag: probe.etag,
+  await downloadStream(url, handle, chunk.range.start, {
     chunk,
     expectedRemainingBytes,
+    etag: probe.etag,
+    progress: options.progress,
+    rateLimiter: options.rateLimiter,
+    timeout: options.timeout,
+    abortSignal: options.abortSignal,
   });
 }
 
-function createHeaders(etag: string | null, chunk: Chunk | null): Headers {
+/**
+ * Retry helper that re-invokes `fn` according to the given strategy.
+ * Cancellations are never retried. Uses abort-aware sleep so backoff
+ * delays are interrupted when the signal fires.
+ */
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  strategy?: RetryStrategy,
+  abortSignal?: AbortSignal,
+): Promise<T> {
+  if (!strategy) return await fn();
+
+  let attempt = 0;
+  while (true) {
+    try {
+      return await fn();
+    } catch (err) {
+      if (isCancellation(err)) throw err;
+      attempt++;
+      const verdict = strategy({ attempt, error: unknownToError(err) });
+      if (!verdict.retry) throw err;
+      await sleep(verdict.delayMs, abortSignal);
+    }
+  }
+}
+
+function createHeaders(
+  etag: string | undefined,
+  chunk: Chunk | undefined,
+): Headers {
   const range = chunk
     ? `bytes=${chunk.range.start}-${chunk.range.end}`
     : undefined;
 
   // Weak ETags MUST NOT be used with preconditions. The "W/" prefix is case sensitive.
   // https://www.rfc-editor.org/rfc/rfc9110#name-etag
-  const isStrongETag = etag !== null && !etag.startsWith("W/");
+  const isStrongETag = etag && !etag.startsWith("W/");
   const ifMatch = isStrongETag ? etag : undefined;
 
   return {

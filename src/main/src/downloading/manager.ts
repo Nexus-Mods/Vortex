@@ -2,13 +2,16 @@ import { RateLimiter } from "limiter";
 import PQueue from "p-queue";
 
 import type { Chunker, ByteRange } from "./chunking";
+import type { TimeoutOptions } from "./downloader";
 import type { DownloadProgress } from "./progress";
 import type { Resolver } from "./resolver";
+import type { RetryStrategy } from "./retry";
 
 import { staticChunker } from "./chunking";
-import { defaultChunkConcurrency, download } from "./downloader";
+import { download } from "./downloader";
 import { DownloadError } from "./errors";
 import { ProgressReporter } from "./progress";
+import { defaultRetryStrategy } from "./retry";
 
 export type DownloadHandle<T = unknown> = {
   /** The promise resolves when the download completes */
@@ -24,6 +27,24 @@ export type DownloadHandle<T = unknown> = {
   pause: () => Promise<DownloadCheckpoint<T>>;
 };
 
+export const defaultTimeout: () => TimeoutOptions = () => ({
+  lookup: 5_000,
+  connect: 30_000,
+  stall: 15_000,
+  request: 5 * 60_000,
+});
+
+export type DownloadManagerOptions = {
+  /** Maximum number of concurrent downloads. */
+  concurrency: number;
+
+  /** Optional global bandwidth limit in bytes per second. */
+  bytesPerSecond?: number;
+
+  /** Optional timeout settings. */
+  timeout?: Partial<TimeoutOptions>;
+};
+
 export type DownloadCheckpoint<T = unknown> = {
   resource: T;
   dest: string;
@@ -34,11 +55,14 @@ export type DownloadCheckpoint<T = unknown> = {
 export class DownloadManager {
   readonly #downloadQueue: PQueue;
   readonly #rateLimiter: RateLimiter | null;
+  readonly #timeout: TimeoutOptions;
 
-  constructor(initialConcurrency: number, bytesPerSecond?: number) {
+  constructor(options: DownloadManagerOptions) {
     this.#downloadQueue = new PQueue({
-      concurrency: initialConcurrency,
+      concurrency: options.concurrency,
     });
+
+    const { bytesPerSecond, timeout } = options;
 
     if (bytesPerSecond && !isNaN(bytesPerSecond)) {
       this.#rateLimiter = new RateLimiter({
@@ -48,6 +72,8 @@ export class DownloadManager {
     } else {
       this.#rateLimiter = null;
     }
+
+    this.#timeout = { ...defaultTimeout(), ...timeout };
   }
 
   /** Number of pending downloads. */
@@ -64,12 +90,14 @@ export class DownloadManager {
     checkpoint: DownloadCheckpoint<T>,
     resolver: Resolver<T>,
     chunker: Chunker<T>,
+    retry: RetryStrategy = defaultRetryStrategy(),
   ): DownloadHandle {
     return this.#download(
       checkpoint.resource,
       checkpoint.dest,
       resolver,
       chunker,
+      retry,
       checkpoint,
     );
   }
@@ -79,8 +107,9 @@ export class DownloadManager {
     dest: string,
     resolver: Resolver<T>,
     chunker: Chunker<T> = staticChunker(),
+    retry: RetryStrategy = defaultRetryStrategy(),
   ): DownloadHandle<T> {
-    return this.#download(resource, dest, resolver, chunker, null);
+    return this.#download(resource, dest, resolver, chunker, retry);
   }
 
   #download<T>(
@@ -88,7 +117,8 @@ export class DownloadManager {
     dest: string,
     resolver: Resolver<T>,
     chunker: Chunker<T>,
-    checkpoint: DownloadCheckpoint<T> | null,
+    retry: RetryStrategy,
+    checkpoint?: DownloadCheckpoint<T>,
   ): DownloadHandle<T> {
     const progressReporter = new ProgressReporter();
     const abortController = new AbortController();
@@ -97,13 +127,18 @@ export class DownloadManager {
       download(
         resource,
         dest,
-        resolver,
-        chunker,
-        progressReporter,
-        abortController.signal,
-        defaultChunkConcurrency,
-        checkpoint,
-        this.#rateLimiter,
+        {
+          resolver,
+          chunker,
+          retry: retry,
+          rateLimiter: this.#rateLimiter,
+        },
+        {
+          progressReporter,
+          abortSignal: abortController.signal,
+          checkpoint,
+          timeout: this.#timeout,
+        },
       ),
     );
 

@@ -4,9 +4,9 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 
+import { staticChunker } from "./chunking";
 import { DownloadManager, type DownloadCheckpoint } from "./manager";
 import { urlResolver } from "./resolver";
-import { staticChunker } from "./chunking";
 import {
   type TestServer,
   createSharedTestServer,
@@ -54,7 +54,7 @@ describe("DownloadManager", () => {
       serveFile({ body: SMALL_FILE, acceptRanges: false }),
     );
     await using tmp = await makeTmpDir();
-    const manager = new DownloadManager(3);
+    const manager = new DownloadManager({ concurrency: 3 });
     const dest = path.join(tmp.dir, "output");
     await manager.download(route.url, dest, urlResolver).promise;
     const result = await readFile(dest);
@@ -69,7 +69,7 @@ describe("DownloadManager", () => {
     );
     try {
       await using tmp = await makeTmpDir();
-      const manager = new DownloadManager(1);
+      const manager = new DownloadManager({ concurrency: 1 });
       await Promise.all(
         routes.map(({ url }, i) =>
           manager
@@ -92,7 +92,7 @@ describe("DownloadManager", () => {
     );
     try {
       await using tmp = await makeTmpDir();
-      const manager = new DownloadManager(3);
+      const manager = new DownloadManager({ concurrency: 3 });
       await Promise.all(
         routes.map(
           ({ url }, i) =>
@@ -114,7 +114,7 @@ describe("DownloadManager", () => {
       serveFile({ body: LARGE_FILE, acceptRanges: true }),
     );
     await using tmp = await makeTmpDir();
-    const manager = new DownloadManager(3);
+    const manager = new DownloadManager({ concurrency: 3 });
     const handle = manager.download(
       route.url,
       path.join(tmp.dir, "output"),
@@ -129,7 +129,7 @@ describe("DownloadManager", () => {
       serveFile({ body: LARGE_FILE, acceptRanges: false }),
     );
     await using tmp = await makeTmpDir();
-    const manager = new DownloadManager(3);
+    const manager = new DownloadManager({ concurrency: 3 });
     const handle = manager.download(
       route.url,
       path.join(tmp.dir, "output"),
@@ -147,7 +147,7 @@ describe("DownloadManager", () => {
       ),
     );
     await using tmp = await makeTmpDir();
-    const manager = new DownloadManager(1);
+    const manager = new DownloadManager({ concurrency: 1 });
 
     const h1 = manager.download(
       route.url,
@@ -191,7 +191,7 @@ describe("DownloadManager", () => {
         ),
       );
       await using tmp = await makeTmpDir();
-      const manager = new DownloadManager(1);
+      const manager = new DownloadManager({ concurrency: 1 });
       const dest = path.join(tmp.dir, "output");
       const handle = manager.download(route.url, dest, urlResolver);
 
@@ -219,7 +219,7 @@ describe("DownloadManager", () => {
         serveFile({ body: SMALL_FILE, acceptRanges: true }),
       );
       await using tmp = await makeTmpDir();
-      const manager = new DownloadManager(1);
+      const manager = new DownloadManager({ concurrency: 1 });
 
       const checkpoint = {
         resource: route.url,
@@ -240,7 +240,7 @@ describe("DownloadManager", () => {
         ),
       );
       await using tmp = await makeTmpDir();
-      const manager = new DownloadManager(1);
+      const manager = new DownloadManager({ concurrency: 1 });
       const dest = path.join(tmp.dir, "output");
       const handle = manager.download(route.url, dest, urlResolver);
 
@@ -273,7 +273,7 @@ describe("DownloadManager", () => {
         ),
       );
       await using tmp = await makeTmpDir();
-      const manager = new DownloadManager(1);
+      const manager = new DownloadManager({ concurrency: 1 });
       const handle = manager.download(
         route.url,
         path.join(tmp.dir, "output"),
@@ -295,7 +295,7 @@ describe("DownloadManager", () => {
         ),
       );
       await using tmp = await makeTmpDir();
-      const manager = new DownloadManager(1);
+      const manager = new DownloadManager({ concurrency: 1 });
       const dest = path.join(tmp.dir, "output");
       const handle = manager.download(route.url, dest, urlResolver);
 
@@ -317,7 +317,7 @@ describe("DownloadManager", () => {
         ),
       );
       await using tmp = await makeTmpDir();
-      const manager = new DownloadManager(1);
+      const manager = new DownloadManager({ concurrency: 1 });
       const handle = manager.download(
         route.url,
         path.join(tmp.dir, "output"),
@@ -350,7 +350,7 @@ describe("DownloadManager", () => {
         ),
       );
       await using tmp = await makeTmpDir();
-      const manager = new DownloadManager(1);
+      const manager = new DownloadManager({ concurrency: 1 });
       const handle = manager.download(
         route.url,
         path.join(tmp.dir, "output"),
@@ -375,7 +375,7 @@ describe("DownloadManager", () => {
       );
       await using tmp = await makeTmpDir();
       // concurrency=1 with a queued download keeps the target pending
-      const manager = new DownloadManager(1);
+      const manager = new DownloadManager({ concurrency: 1 });
       // blocker occupies the single slot
       using blockerRoute = server.route(
         withHooks(
@@ -406,7 +406,7 @@ describe("DownloadManager", () => {
         serveFile({ body: SMALL_FILE, acceptRanges: false }),
       );
       await using tmp = await makeTmpDir();
-      const manager = new DownloadManager(1);
+      const manager = new DownloadManager({ concurrency: 1 });
       const handle = manager.download(
         route.url,
         path.join(tmp.dir, "output"),
@@ -426,7 +426,7 @@ describe("DownloadManager", () => {
         ),
       );
       await using tmp = await makeTmpDir();
-      const manager = new DownloadManager(3);
+      const manager = new DownloadManager({ concurrency: 3 });
       const handle = manager.download(
         route.url,
         path.join(tmp.dir, "output"),
