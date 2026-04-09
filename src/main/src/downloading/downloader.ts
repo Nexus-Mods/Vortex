@@ -1,6 +1,7 @@
 import type { RateLimiter } from "limiter";
 import type { IncomingHttpHeaders } from "node:http";
 
+import { unknownToError } from "@vortex/shared";
 import got, { type Headers, type Delays as GotTimeoutOptions } from "got";
 import { type FileHandle as NodeFileHandle, open } from "node:fs/promises";
 import { type URL } from "node:url";
@@ -9,9 +10,11 @@ import PQueue from "p-queue";
 import type { ByteRange, Chunk, Chunker } from "./chunking";
 import type { ChunkProgress, ProgressReporter } from "./progress";
 import type { Resolver, NormalizedResource } from "./resolver";
+import type { RetryStrategy } from "./retry";
 
 import { isCancellation, toNetworkError, DownloadError } from "./errors";
 import { normalize } from "./resolver";
+import { sleep } from "./retry";
 
 export const defaultChunkConcurrency = 4;
 
@@ -45,6 +48,7 @@ export async function download<T>(
     resolver: Resolver<T>;
     chunker: Chunker<T>;
     rateLimiter?: RateLimiter;
+    retry?: RetryStrategy;
   },
   options?: {
     progressReporter?: ProgressReporter;
@@ -67,13 +71,14 @@ export async function download<T>(
 
   let probe: ProbeResult;
   try {
-    probe = await probeUrl(
-      resolved.probeUrl,
-      options?.checkpoint?.etag ?? null,
-      {
-        abortSignal: options?.abortSignal,
-        timeout: options?.timeout,
-      },
+    probe = await withRetry(
+      () =>
+        probeUrl(resolved.probeUrl, options?.checkpoint?.etag ?? null, {
+          abortSignal: options?.abortSignal,
+          timeout: options?.timeout,
+        }),
+      strategy.retry,
+      options?.abortSignal,
     );
   } catch (err) {
     if (isCancellation(err)) {
@@ -164,20 +169,36 @@ export async function download<T>(
       await chunkQueue.addAll(
         pendingChunks.map(
           (chunk) => async () =>
-            downloadChunk(chunk, resolved, probe, handle, {
-              abortSignal: options?.abortSignal,
-              rateLimiter: strategy.rateLimiter,
-              timeout: options?.timeout,
-              progress: chunkProgress
-                ? chunkProgress.get(chunk.index)
-                : undefined,
-            }),
+            withRetry(
+              () => {
+                // Reset chunk progress before each attempt so a failed
+                // partial download doesn't leave stale byte counts.
+                if (chunkProgress) {
+                  const progress = chunkProgress.get(chunk.index);
+                  progress.bytesReceived = 0;
+                  progress.bytesWritten = 0;
+                }
+
+                return downloadChunk(chunk, resolved, probe, handle, {
+                  abortSignal: options?.abortSignal,
+                  rateLimiter: strategy.rateLimiter,
+                  timeout: options?.timeout,
+                  progress: chunkProgress
+                    ? chunkProgress.get(chunk.index)
+                    : undefined,
+                });
+              },
+              strategy.retry,
+              options?.abortSignal,
+            ),
         ),
       );
     } else {
-      let writePosition = 0;
-      let expectedRemainingBytes: number | undefined = undefined;
-      let rangeChunk: Chunk | null = null;
+      // Compute the checkpoint baseline: the contiguous byte position
+      // that was already completed before this download call. On retry
+      // we reset back to this position rather than to zero, because
+      // those bytes are already valid on disk.
+      let checkpointPosition = 0;
 
       if (options?.checkpoint && completedRanges.length > 0) {
         const sortedRanges = completedRanges.toSorted(
@@ -196,42 +217,55 @@ export async function download<T>(
           }
         }
 
-        writePosition = currentEnd + 1;
-
-        if (probe.size !== null) {
-          expectedRemainingBytes = probe.size - writePosition;
-        }
-      }
-
-      // When the server supports range requests, use a Range header
-      // even in the non-chunked path. This avoids re-downloading
-      // already-completed bytes when resuming and lets the server
-      // send only the remainder of the file.
-      if (probe.acceptsRanges && probe.size > 0 && writePosition > 0) {
-        rangeChunk = {
-          index: 0,
-          range: { start: writePosition, end: probe.size - 1 },
-        };
-        expectedRemainingBytes = probe.size - writePosition;
+        checkpointPosition = currentEnd + 1;
       }
 
       const progress = options?.progressReporter?.init(probe.size);
 
-      // Fast-forward progress to account for already-written bytes
-      if (writePosition > 0 && progress) {
-        progress.bytesReceived = writePosition;
-        progress.bytesWritten = writePosition;
-      }
+      await withRetry(
+        () => {
+          // Reset write position and progress back to the checkpoint
+          // baseline on every attempt. Any bytes written by a previous
+          // failed attempt will be overwritten.
+          const writePosition = checkpointPosition;
 
-      await downloadStream(resolved.probeUrl, handle, writePosition, {
-        progress: progress,
-        abortSignal: options?.abortSignal,
-        rateLimiter: strategy.rateLimiter,
-        timeout: options?.timeout,
-        etag: probe.etag,
-        chunk: rangeChunk,
-        expectedRemainingBytes,
-      });
+          if (progress) {
+            progress.bytesReceived = checkpointPosition;
+            progress.bytesWritten = checkpointPosition;
+          }
+
+          let expectedRemainingBytes: number | undefined = undefined;
+          let rangeChunk: Chunk | null = null;
+
+          if (probe.size !== null && writePosition > 0) {
+            expectedRemainingBytes = probe.size - writePosition;
+          }
+
+          // When the server supports range requests, use a Range header
+          // even in the non-chunked path. This avoids re-downloading
+          // already-completed bytes when resuming and lets the server
+          // send only the remainder of the file.
+          if (probe.acceptsRanges && probe.size > 0 && writePosition > 0) {
+            rangeChunk = {
+              index: 0,
+              range: { start: writePosition, end: probe.size - 1 },
+            };
+            expectedRemainingBytes = probe.size - writePosition;
+          }
+
+          return downloadStream(resolved.probeUrl, handle, writePosition, {
+            progress: progress,
+            abortSignal: options?.abortSignal,
+            rateLimiter: strategy.rateLimiter,
+            timeout: options?.timeout,
+            etag: probe.etag,
+            chunk: rangeChunk,
+            expectedRemainingBytes,
+          });
+        },
+        strategy.retry,
+        options?.abortSignal,
+      );
     }
   } catch (err) {
     if (isCancellation(err)) {
@@ -442,6 +476,32 @@ async function downloadChunk(
     timeout: options.timeout,
     abortSignal: options.abortSignal,
   });
+}
+
+/**
+ * Retry helper that re-invokes `fn` according to the given strategy.
+ * Cancellations are never retried. Uses abort-aware sleep so backoff
+ * delays are interrupted when the signal fires.
+ */
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  strategy?: RetryStrategy,
+  abortSignal?: AbortSignal,
+): Promise<T> {
+  if (!strategy) return await fn();
+
+  let attempt = 0;
+  while (true) {
+    try {
+      return await fn();
+    } catch (err) {
+      if (isCancellation(err)) throw err;
+      attempt++;
+      const verdict = strategy({ attempt, error: unknownToError(err) });
+      if (!verdict.retry) throw err;
+      await sleep(verdict.delayMs, abortSignal);
+    }
+  }
 }
 
 function createHeaders(

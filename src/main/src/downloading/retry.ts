@@ -19,6 +19,34 @@ export type RetryContext = {
  */
 export type RetryStrategy = (context: RetryContext) => RetryVerdict;
 
+const retryableErrorCodes = new Set([
+  // Connection timed out (POSIX.1-2001).
+  "ETIMEDOUT",
+  // Connection reset (POSIX.1-2001).
+  "ECONNRESET",
+  // Connection refused (POSIX.1-2001).
+  "ECONNREFUSED",
+  // Broken pipe (POSIX.1-2001).
+  "EPIPE",
+  // Network unreachable (POSIX.1-2001).
+  "ENETUNREACH",
+]);
+
+const retryableStatusCodes = new Set([
+  // Request Timeout
+  408,
+  // Too Many Requests
+  429,
+  // Internal Server Error
+  500,
+  // Bad Gateway
+  502,
+  // Service Unavailable
+  503,
+  // Gateway Timeout
+  504,
+]);
+
 /**
  * Creates a retry strategy with exponential backoff and jitter.
  */
@@ -27,34 +55,6 @@ export function defaultRetryStrategy(
   baseDelayMs: number = 1000,
   maxDelayMs: number = 30_000,
 ): RetryStrategy {
-  const retryableErrorCodes = new Set([
-    // Connection timed out (POSIX.1-2001).
-    "ETIMEDOUT",
-    // Connection reset (POSIX.1-2001).
-    "ECONNRESET",
-    // Connection refused (POSIX.1-2001).
-    "ECONNREFUSED",
-    // Broken pipe (POSIX.1-2001).
-    "EPIPE",
-    // Network unreachable (POSIX.1-2001).
-    "ENETUNREACH",
-  ]);
-
-  const retryableStatusCodes = new Set([
-    // Request Timeout
-    408,
-    // Too Many Requests
-    429,
-    // Internal Server Error
-    500,
-    // Bad Gateway
-    502,
-    // Service Unavailable
-    503,
-    // Gateway Timeout
-    504,
-  ]);
-
   return ({ attempt, error }: RetryContext): RetryVerdict => {
     if (attempt > maxRetries) return { retry: false };
     if (!isRetryableError(error, retryableErrorCodes, retryableStatusCodes)) {

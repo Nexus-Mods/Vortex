@@ -10,6 +10,7 @@ import { staticChunker } from "./chunking";
 import { download } from "./downloader";
 import { DownloadError } from "./errors";
 import { ProgressReporter } from "./progress";
+import { defaultRetryStrategy, RetryStrategy } from "./retry";
 
 export type DownloadHandle<T = unknown> = {
   /** The promise resolves when the download completes */
@@ -88,12 +89,14 @@ export class DownloadManager {
     checkpoint: DownloadCheckpoint<T>,
     resolver: Resolver<T>,
     chunker: Chunker<T>,
+    retry: RetryStrategy = defaultRetryStrategy(),
   ): DownloadHandle {
     return this.#download(
       checkpoint.resource,
       checkpoint.dest,
       resolver,
       chunker,
+      retry,
       checkpoint,
     );
   }
@@ -103,8 +106,9 @@ export class DownloadManager {
     dest: string,
     resolver: Resolver<T>,
     chunker: Chunker<T> = staticChunker(),
+    retry: RetryStrategy = defaultRetryStrategy(),
   ): DownloadHandle<T> {
-    return this.#download(resource, dest, resolver, chunker);
+    return this.#download(resource, dest, resolver, chunker, retry);
   }
 
   #download<T>(
@@ -112,6 +116,7 @@ export class DownloadManager {
     dest: string,
     resolver: Resolver<T>,
     chunker: Chunker<T>,
+    retry: RetryStrategy,
     checkpoint?: DownloadCheckpoint<T>,
   ): DownloadHandle<T> {
     const progressReporter = new ProgressReporter();
@@ -124,6 +129,7 @@ export class DownloadManager {
         {
           resolver,
           chunker,
+          retry: retry,
           rateLimiter: this.#rateLimiter,
         },
         {
