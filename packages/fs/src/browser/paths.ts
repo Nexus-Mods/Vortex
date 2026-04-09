@@ -316,18 +316,18 @@ export class QualifiedPath {
 /**
  * Tagged template literal for building {@link QualifiedPath} values.
  *
- * If the first interpolation is a `QualifiedPath`, it is used as the base
+ * If the first interpolation is a {@link `QualifiedPath`}, it is used as the base
  * and remaining segments are joined onto it. Otherwise the assembled string
- * is parsed as a new `QualifiedPath`.
+ * is parsed as a new {@link `QualifiedPath`}.
  *
  * @example
- * ```ts
- * const install = QualifiedPath.parse("steam://SteamApps/common/Skyrim/");
+ * ```ts @import.meta.vitest
+ * const install = QualifiedPath.parse("steam://SteamApps/common/Skyrim");
  * const config = qpath`${install}/engine/config`;
- * // => steam://SteamApps/common/Skyrim/engine/config
+ * assert(config.value === "steam://SteamApps/common/Skyrim/engine/config");
  *
  * const fresh = qpath`linux:///home/user/.config`;
- * // => linux:///home/user/.config
+ * assert(fresh.value === "linux:///home/user/.config");
  * ```
  *
  * @public
@@ -343,7 +343,8 @@ export function qpath(
     let tail = strings[0] ?? ""; // text before the QualifiedPath (should be empty)
     for (let i = 1; i <= values.length; i++) {
       const v = i < values.length ? values[i] : undefined;
-      const val = v instanceof QualifiedPath ? v.value : (v !== undefined ? String(v) : "");
+      const val =
+        v instanceof QualifiedPath ? v.value : v !== undefined ? String(v) : "";
       tail += (strings[i] ?? "") + val;
     }
     // Split on / and filter empties to get clean path components
@@ -355,7 +356,9 @@ export function qpath(
   let result = strings[0] ?? "";
   for (let i = 0; i < values.length; i++) {
     const v = values[i];
-    result += (v instanceof QualifiedPath ? v.value : String(v)) + (strings[i + 1] ?? "");
+    result +=
+      (v instanceof QualifiedPath ? v.value : String(v)) +
+      (strings[i + 1] ?? "");
   }
   return QualifiedPath.parse(result);
 }
