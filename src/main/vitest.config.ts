@@ -5,7 +5,6 @@ const config: ViteUserConfig = defineConfig({
     name: "@vortex/main",
     environment: "node",
     include: ["src/**/*.test.ts"],
-    exclude: ["src/**/*.test.integration.ts"],
   },
 });
 
