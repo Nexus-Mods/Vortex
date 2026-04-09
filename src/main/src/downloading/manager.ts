@@ -2,11 +2,12 @@ import { RateLimiter } from "limiter";
 import PQueue from "p-queue";
 
 import type { Chunker, ByteRange } from "./chunking";
+import type { TimeoutOptions } from "./downloader";
 import type { DownloadProgress } from "./progress";
 import type { Resolver } from "./resolver";
 
 import { staticChunker } from "./chunking";
-import { defaultChunkConcurrency, download } from "./downloader";
+import { download } from "./downloader";
 import { DownloadError } from "./errors";
 import { ProgressReporter } from "./progress";
 
@@ -24,6 +25,24 @@ export type DownloadHandle<T = unknown> = {
   pause: () => Promise<DownloadCheckpoint<T>>;
 };
 
+export const defaultTimeout: () => TimeoutOptions = () => ({
+  lookup: 5_000,
+  connect: 30_000,
+  stall: 15_000,
+  request: 5 * 60_000,
+});
+
+export type DownloadManagerOptions = {
+  /** Maximum number of concurrent downloads. */
+  concurrency: number;
+
+  /** Optional global bandwidth limit in bytes per second. */
+  bytesPerSecond?: number;
+
+  /** Optional timeout settings. */
+  timeout?: Partial<TimeoutOptions>;
+};
+
 export type DownloadCheckpoint<T = unknown> = {
   resource: T;
   dest: string;
@@ -34,11 +53,14 @@ export type DownloadCheckpoint<T = unknown> = {
 export class DownloadManager {
   readonly #downloadQueue: PQueue;
   readonly #rateLimiter: RateLimiter | null;
+  readonly #timeout: TimeoutOptions;
 
-  constructor(initialConcurrency: number, bytesPerSecond?: number) {
+  constructor(options: DownloadManagerOptions) {
     this.#downloadQueue = new PQueue({
-      concurrency: initialConcurrency,
+      concurrency: options.concurrency,
     });
+
+    const { bytesPerSecond, timeout } = options;
 
     if (bytesPerSecond && !isNaN(bytesPerSecond)) {
       this.#rateLimiter = new RateLimiter({
@@ -48,6 +70,8 @@ export class DownloadManager {
     } else {
       this.#rateLimiter = null;
     }
+
+    this.#timeout = { ...defaultTimeout(), ...timeout };
   }
 
   /** Number of pending downloads. */
@@ -106,6 +130,7 @@ export class DownloadManager {
           progressReporter,
           abortSignal: abortController.signal,
           checkpoint,
+          timeout: this.#timeout,
         },
       ),
     );

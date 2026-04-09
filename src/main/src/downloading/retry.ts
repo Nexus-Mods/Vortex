@@ -112,7 +112,13 @@ function isRetryableError(
  * immediately if the signal is already aborted or becomes aborted
  * during the wait.
  */
-export function sleep(ms: number, signal: AbortSignal): Promise<void> {
+export function sleep(ms: number, signal?: AbortSignal): Promise<void> {
+  if (!signal) {
+    return new Promise((resolve) => {
+      setTimeout(() => resolve(), ms);
+    });
+  }
+
   return new Promise((resolve, reject) => {
     if (signal.aborted) {
       reject(

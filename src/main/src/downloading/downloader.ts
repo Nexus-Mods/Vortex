@@ -21,6 +21,22 @@ export type Checkpoint = {
   completedRanges: ByteRange[];
 };
 
+export type TimeoutOptions = {
+  // TODO: use Temporal API
+
+  /** Hard upper limit for the entire duration of a single HTTP request (ms). */
+  request: number;
+
+  /** Timeout for DNS lookup (ms). */
+  lookup: number;
+
+  /** Timeout for DNS lookup + TCP connect + TLS handshake (ms). */
+  connect: number;
+
+  /** Timeout between received data packets before treating the connection as stalled (ms). */
+  stall: number;
+};
+
 /** @internal */
 export async function download<T>(
   resource: T,
@@ -35,6 +51,7 @@ export async function download<T>(
     abortSignal?: AbortSignal;
     chunkConcurrency?: number;
     checkpoint?: Checkpoint;
+    timeout?: TimeoutOptions;
   },
 ): Promise<void> {
   if (options?.abortSignal?.aborted) {
@@ -147,6 +164,7 @@ export async function download<T>(
             downloadChunk(chunk, resolved, probe, handle, {
               abortSignal: options?.abortSignal,
               rateLimiter: strategy.rateLimiter,
+              timeout: options?.timeout,
               progress: chunkProgress
                 ? chunkProgress.get(chunk.index)
                 : undefined,
@@ -206,6 +224,7 @@ export async function download<T>(
         progress: progress,
         abortSignal: options?.abortSignal,
         rateLimiter: strategy.rateLimiter,
+        timeout: options?.timeout,
         etag: probe.etag,
         chunk: rangeChunk,
         expectedRemainingBytes,
@@ -269,13 +288,28 @@ async function probeUrl(
  */
 function createGotStream(
   url: URL,
-  abortSignal: AbortSignal,
-  etag: string | null,
-  chunk: Chunk | null,
+  options: {
+    abortSignal?: AbortSignal;
+    etag?: string;
+    chunk?: Chunk;
+    timeout?: TimeoutOptions;
+  },
 ) {
+  const timeout = options.timeout;
+
   const stream = got.stream(url, {
-    signal: abortSignal,
-    headers: createHeaders(etag, chunk),
+    signal: options?.abortSignal,
+    headers: createHeaders(options?.etag, options?.chunk),
+    timeout: timeout
+      ? {
+          lookup: timeout.lookup,
+          connect: timeout.connect,
+          secureConnect: timeout.connect,
+          socket: timeout.stall,
+          response: timeout.stall,
+          request: timeout.request,
+        }
+      : undefined,
   });
 
   stream.on("error", () => {});
@@ -306,18 +340,19 @@ async function downloadStream(
     progress?: { bytesReceived: number; bytesWritten: number };
     abortSignal?: AbortSignal;
     rateLimiter?: RateLimiter;
+    timeout?: TimeoutOptions;
     etag?: string;
     chunk?: Chunk;
     expectedRemainingBytes?: number;
   },
 ): Promise<void> {
   const { progress } = options;
-  const stream = createGotStream(
-    url,
-    options.abortSignal,
-    options.etag,
-    options.chunk,
-  );
+  const stream = createGotStream(url, {
+    abortSignal: options.abortSignal,
+    etag: options.etag,
+    chunk: options.chunk,
+    timeout: options.timeout,
+  });
 
   let remaining = options.expectedRemainingBytes;
 
@@ -376,6 +411,7 @@ async function downloadChunk(
   options: {
     progress?: ChunkProgress;
     rateLimiter?: RateLimiter;
+    timeout?: TimeoutOptions;
     abortSignal?: AbortSignal;
   },
 ): Promise<void> {
@@ -390,18 +426,22 @@ async function downloadChunk(
     etag: probe.etag,
     progress: options.progress,
     rateLimiter: options.rateLimiter,
+    timeout: options.timeout,
     abortSignal: options.abortSignal,
   });
 }
 
-function createHeaders(etag: string | null, chunk: Chunk | null): Headers {
+function createHeaders(
+  etag: string | undefined,
+  chunk: Chunk | undefined,
+): Headers {
   const range = chunk
     ? `bytes=${chunk.range.start}-${chunk.range.end}`
     : undefined;
 
   // Weak ETags MUST NOT be used with preconditions. The "W/" prefix is case sensitive.
   // https://www.rfc-editor.org/rfc/rfc9110#name-etag
-  const isStrongETag = etag !== null && !etag.startsWith("W/");
+  const isStrongETag = etag && !etag.startsWith("W/");
   const ifMatch = isStrongETag ? etag : undefined;
 
   return {
