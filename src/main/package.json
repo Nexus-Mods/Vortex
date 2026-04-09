@@ -12,7 +12,8 @@
     "typecheck": "pnpm tsc",
     "lint": "pnpm eslint --concurrency auto .",
     "lint:quiet": "pnpm eslint --concurrency auto --quiet .",
-    "test": "pnpm vitest run --config ./vitest.config.ts && pnpm vitest run --config ./vitest.integration.config.ts",
+    "test": "pnpm vitest run --config ./vitest.config.ts",
+    "test:integration": "pnpm vitest run --config ./vitest.integration.config.ts",
     "package": "node ./prepare-dist-package.mjs && pnpm install --dir=./dist && pnpm electron-builder --config ./electron-builder.config.json --config.win.forceCodeSigning=true --config.win.sign=./sign.cjs --publish never",
     "package:nosign": "node ./prepare-dist-package.mjs && pnpm install --dir=./dist && pnpm electron-builder --config ./electron-builder.config.json --publish never",
     "prepare:win": "curl -L \"https://aka.ms/vs/17/release/vc_redist.x64.exe\" -o \"./build/VC_redist.x64.exe\" --create-dirs && curl -L \"https://aka.ms/dotnet/9.0/windowsdesktop-runtime-win-x64.exe\" -o \"./build/windowsdesktop-runtime-win-x64.exe\" --create-dirs"
