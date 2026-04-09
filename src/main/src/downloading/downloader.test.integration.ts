@@ -1,9 +1,9 @@
+import { RateLimiter } from "limiter";
 import { randomBytes } from "node:crypto";
 import { readFile, mkdtemp, mkdir, rm } from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 import { describe, it, expect, vi, beforeAll, afterAll, test } from "vitest";
-import { RateLimiter } from "limiter";
 
 import type { Resolver } from "./resolver";
 
@@ -12,6 +12,7 @@ import { download, type TimeoutOptions } from "./downloader";
 import { DownloadError } from "./errors";
 import { ProgressReporter } from "./progress";
 import { urlResolver } from "./resolver";
+import { defaultRetryStrategy } from "./retry";
 import {
   type TestServer,
   type RequestHandler,
@@ -21,6 +22,9 @@ import {
   delayAt,
   delayBeforeChunk,
   withHooks,
+  serveDropConnection,
+  serveTruncated,
+  failFirst,
 } from "./test-server";
 
 const LARGE_FILE = randomBytes(20 * 1024 * 1024);
@@ -1040,6 +1044,328 @@ describe("download", () => {
 
       expect(err).toBeInstanceOf(DownloadError);
       expect((err as DownloadError).code).toBe("cancellation");
+    });
+  });
+
+  describe("retry", () => {
+    const noChunks = () => [];
+
+    // ── probe retries ──────────────────────────────────────────────
+
+    it("retries a failed probe and succeeds", async () => {
+      const { handler } = failFirst(2, {
+        failure: serveStatus(503),
+        success: serveFile({ body: SMALL_FILE, acceptRanges: false }),
+      });
+      using route = server.route(handler);
+      await using tmp = await makeTmpDir();
+      const dest = path.join(tmp.dir, "output");
+
+      await download(route.url, dest, {
+        resolver: urlResolver,
+        chunker: staticChunker(),
+        retry: defaultRetryStrategy(3, 50, 200),
+      });
+
+      const result = await readFile(dest);
+      expect(Buffer.compare(SMALL_FILE, result)).toBe(0);
+
+      // 2 failed HEADs + 1 successful HEAD + 1 GET = 4 total,
+      // but we only care that 3 HEADs were sent.
+      const heads = route.requests.filter((r) => r.method === "HEAD");
+      expect(heads).toHaveLength(3);
+    });
+
+    it("gives up after exhausting probe retries", async () => {
+      // 5 failures but only 2 retries allowed → never reaches success.
+      const { handler } = failFirst(5, {
+        failure: serveStatus(503),
+        success: serveFile({ body: SMALL_FILE, acceptRanges: false }),
+      });
+      using route = server.route(handler);
+      await using tmp = await makeTmpDir();
+      const dest = path.join(tmp.dir, "output");
+
+      await expect(
+        download(route.url, dest, {
+          resolver: urlResolver,
+          chunker: staticChunker(),
+          retry: defaultRetryStrategy(2, 50, 200),
+        }),
+      ).rejects.toMatchObject({
+        payload: { code: "network-bad-status" },
+      });
+    });
+
+    // ── non-chunked stream retries ─────────────────────────────────
+
+    it("retries a failed non-chunked stream and produces a correct file", async () => {
+      const { handler } = failFirst(2, {
+        failure: serveDropConnection(),
+        success: serveFile({ body: LARGE_FILE, acceptRanges: false }),
+      });
+      // failFirst counts all requests, but the HEAD always succeeds
+      // because the first request (HEAD) is counted as failure #1 by
+      // failFirst. To target only GETs we need a thin wrapper that
+      // always delegates HEADs to the success handler.
+      const inner = serveFile({ body: LARGE_FILE, acceptRanges: false });
+      let getFailures = 0;
+      const retryHandler: RequestHandler = (ctx) => {
+        if (ctx.req.method !== "GET" || getFailures >= 2) return inner(ctx);
+        getFailures++;
+        return serveDropConnection()(ctx);
+      };
+
+      using route = server.route(retryHandler);
+      await using tmp = await makeTmpDir();
+      const dest = path.join(tmp.dir, "output");
+
+      await download(route.url, dest, {
+        resolver: urlResolver,
+        chunker: noChunks,
+        retry: defaultRetryStrategy(3, 50, 200),
+      });
+
+      const result = await readFile(dest);
+      expect(Buffer.compare(LARGE_FILE, result)).toBe(0);
+    });
+
+    it("resets progress counters on each non-chunked retry attempt", async () => {
+      const inner = serveFile({ body: LARGE_FILE, acceptRanges: false });
+      let getFailures = 0;
+      const handler: RequestHandler = (ctx) => {
+        if (ctx.req.method === "GET" && getFailures < 1) {
+          getFailures++;
+          return serveDropConnection()(ctx);
+        }
+        return inner(ctx);
+      };
+
+      using route = server.route(handler);
+      await using tmp = await makeTmpDir();
+      const dest = path.join(tmp.dir, "output");
+
+      const progressReporter = new ProgressReporter();
+
+      await download(
+        route.url,
+        dest,
+        {
+          resolver: urlResolver,
+          chunker: noChunks,
+          retry: defaultRetryStrategy(3, 50, 200),
+        },
+        { progressReporter },
+      );
+
+      const progress = progressReporter.getProgress();
+      // After recovery the counters must equal the file size exactly,
+      // not the file size plus whatever was received before the reset.
+      expect(progress.bytesReceived).toBe(LARGE_FILE.length);
+      expect(progress.bytesWritten).toBe(LARGE_FILE.length);
+    });
+
+    it("resets write position on non-chunked retry so the file is not corrupted", async () => {
+      // Serve partial data then kill the socket, twice, then succeed.
+      const inner = serveFile({ body: LARGE_FILE, acceptRanges: false });
+      let getFailures = 0;
+      const handler: RequestHandler = (ctx) => {
+        if (ctx.req.method === "GET" && getFailures < 2) {
+          getFailures++;
+          return serveTruncated(LARGE_FILE, 1024)(ctx);
+        }
+        return inner(ctx);
+      };
+
+      using route = server.route(handler);
+      await using tmp = await makeTmpDir();
+      const dest = path.join(tmp.dir, "output");
+
+      await download(route.url, dest, {
+        resolver: urlResolver,
+        chunker: noChunks,
+        retry: defaultRetryStrategy(3, 50, 200),
+      });
+
+      const result = await readFile(dest);
+      expect(Buffer.compare(LARGE_FILE, result)).toBe(0);
+    });
+
+    // ── non-chunked resume + retry ─────────────────────────────────
+
+    it("resets to the checkpoint position (not zero) on non-chunked retry with a checkpoint", async () => {
+      await using tmp = await makeTmpDir();
+      const dest = path.join(tmp.dir, "output");
+
+      // Use a clean route to create the initial file so the resumed
+      // r+ open succeeds. This avoids triggering the fault handler
+      // during setup.
+      using setupRoute = server.route(
+        serveFile({ body: LARGE_FILE, acceptRanges: true }),
+      );
+      await download(setupRoute.url, dest, {
+        resolver: urlResolver,
+        chunker: noChunks,
+      });
+
+      // Now set up the fault-injecting route for the retry test.
+      const inner = serveFile({ body: LARGE_FILE, acceptRanges: true });
+      let getFailures = 0;
+      const handler: RequestHandler = (ctx) => {
+        if (ctx.req.method === "GET" && getFailures < 1) {
+          getFailures++;
+          return serveDropConnection()(ctx);
+        }
+        return inner(ctx);
+      };
+
+      using route = server.route(handler);
+
+      const resumeOffset = 1024 * 1024;
+      const checkpoint = {
+        etag: null,
+        completedRanges: [{ start: 0, end: resumeOffset - 1 }],
+      };
+
+      const progressReporter = new ProgressReporter();
+
+      await download(
+        route.url,
+        dest,
+        {
+          resolver: urlResolver,
+          chunker: noChunks,
+          retry: defaultRetryStrategy(3, 50, 200),
+        },
+        { checkpoint, progressReporter },
+      );
+
+      // Both the failed attempt and the retry should have used a Range
+      // header starting from the checkpoint offset, not from zero.
+      const gets = route.requests.filter((r) => r.method === "GET");
+      expect(gets.length).toBeGreaterThanOrEqual(2);
+      for (const get of gets) {
+        expect(get.range).toMatchObject({ start: resumeOffset });
+      }
+
+      // Final progress must reflect the full file size.
+      const progress = progressReporter.getProgress();
+      expect(progress.bytesReceived).toBe(LARGE_FILE.length);
+      expect(progress.bytesWritten).toBe(LARGE_FILE.length);
+    });
+
+    // ── chunked retries ────────────────────────────────────────────
+
+    it("retries a failed chunk and produces a correct file", async () => {
+      const inner = serveFile({ body: LARGE_FILE, acceptRanges: true });
+
+      let getFailures = 0;
+      const handler: RequestHandler = (ctx) => {
+        if (ctx.req.method === "GET" && getFailures < 1) {
+          getFailures++;
+          return serveDropConnection()(ctx);
+        }
+        return inner(ctx);
+      };
+
+      using route = server.route(handler);
+      await using tmp = await makeTmpDir();
+      const dest = path.join(tmp.dir, "output");
+
+      await download(route.url, dest, {
+        resolver: urlResolver,
+        chunker: staticChunker(),
+        retry: defaultRetryStrategy(3, 50, 200),
+      });
+
+      const result = await readFile(dest);
+      expect(Buffer.compare(LARGE_FILE, result)).toBe(0);
+    });
+
+    it("resets chunk progress counters on each chunked retry attempt", async () => {
+      const inner = serveFile({ body: LARGE_FILE, acceptRanges: true });
+
+      let getFailures = 0;
+      const handler: RequestHandler = (ctx) => {
+        if (ctx.req.method === "GET" && getFailures < 1) {
+          getFailures++;
+          return serveDropConnection()(ctx);
+        }
+        return inner(ctx);
+      };
+
+      using route = server.route(handler);
+      await using tmp = await makeTmpDir();
+      const dest = path.join(tmp.dir, "output");
+
+      const progressReporter = new ProgressReporter();
+
+      await download(
+        route.url,
+        dest,
+        {
+          resolver: urlResolver,
+          chunker: staticChunker(),
+          retry: defaultRetryStrategy(3, 50, 200),
+        },
+        { progressReporter },
+      );
+
+      const progress = progressReporter.getProgress();
+      // Total bytes must match the file size exactly — inflated values
+      // would indicate the failed attempt's partial bytes leaked through.
+      expect(progress.bytesReceived).toBe(LARGE_FILE.length);
+      expect(progress.bytesWritten).toBe(LARGE_FILE.length);
+    });
+
+    // ── non-retryable errors ───────────────────────────────────────
+    it("does not retry non-retryable HTTP status codes", async () => {
+      using route = server.route(serveStatus(404));
+      await using tmp = await makeTmpDir();
+      const dest = path.join(tmp.dir, "output");
+
+      await expect(
+        download(route.url, dest, {
+          resolver: urlResolver,
+          chunker: staticChunker(),
+          retry: defaultRetryStrategy(3, 50, 200),
+        }),
+      ).rejects.toMatchObject({
+        payload: { code: "network-bad-status", statusCode: 404 },
+      });
+
+      // Only one HEAD was attempted — no retries.
+      const heads = route.requests.filter((r) => r.method === "HEAD");
+      expect(heads).toHaveLength(1);
+    });
+
+    it("does not retry cancellation", async () => {
+      using route = server.route(
+        withHooks(
+          serveFile({ body: LARGE_FILE, acceptRanges: false }),
+          delayAt("onRequest", 200),
+        ),
+      );
+      await using tmp = await makeTmpDir();
+      const dest = path.join(tmp.dir, "output");
+
+      const abortController = new AbortController();
+      abortController.abort();
+
+      await expect(
+        download(
+          route.url,
+          dest,
+          {
+            resolver: urlResolver,
+            chunker: staticChunker(),
+            retry: defaultRetryStrategy(3, 50, 200),
+          },
+          { abortSignal: abortController.signal },
+        ),
+      ).rejects.toMatchObject({
+        payload: { code: "cancellation" },
+      });
     });
   });
 });
