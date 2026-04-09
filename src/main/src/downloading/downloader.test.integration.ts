@@ -3,11 +3,12 @@ import { readFile, mkdtemp, mkdir, rm } from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 import { describe, it, expect, vi, beforeAll, afterAll, test } from "vitest";
+import { RateLimiter } from "limiter";
 
 import type { Resolver } from "./resolver";
 
 import { staticChunker, type Chunk } from "./chunking";
-import { download } from "./downloader";
+import { download, type TimeoutOptions } from "./downloader";
 import { DownloadError } from "./errors";
 import { ProgressReporter } from "./progress";
 import { urlResolver } from "./resolver";
@@ -425,7 +426,6 @@ describe("download", () => {
       await using tmp = await makeTmpDir();
       const dest = path.join(tmp.dir, "output");
 
-      const { RateLimiter } = await import("limiter");
       const rateLimiter = new RateLimiter({
         tokensPerInterval: 512 * 1024,
         interval: "second",
@@ -448,7 +448,6 @@ describe("download", () => {
       await using tmp = await makeTmpDir();
       const dest = path.join(tmp.dir, "output");
 
-      const { RateLimiter } = await import("limiter");
       const rateLimiter = new RateLimiter({
         tokensPerInterval: 50 * 1024 * 1024,
         interval: "second",
@@ -471,7 +470,6 @@ describe("download", () => {
       await using tmp = await makeTmpDir();
       const dest = path.join(tmp.dir, "output");
 
-      const { RateLimiter } = await import("limiter");
       const rateLimiter = new RateLimiter({
         tokensPerInterval: 1,
         interval: "second",
@@ -861,6 +859,185 @@ describe("download", () => {
       const err = await runDownload(route.url, tmp.dir, {
         abortController,
       }).promise.catch((e) => e);
+      expect(err).toBeInstanceOf(DownloadError);
+      expect((err as DownloadError).code).toBe("cancellation");
+    });
+  });
+
+  describe("timeout", () => {
+    it("rejects with a network error when the server stalls beyond the stall timeout", async () => {
+      using route = server.route(
+        withHooks(
+          serveFile({
+            body: LARGE_FILE,
+            acceptRanges: false,
+            chunkSize: 1024,
+          }),
+          delayBeforeChunk(0, 5_000),
+        ),
+      );
+      await using tmp = await makeTmpDir();
+      const dest = path.join(tmp.dir, "output");
+
+      const timeout: TimeoutOptions = {
+        request: 30_000,
+        lookup: 5_000,
+        connect: 5_000,
+        stall: 200,
+      };
+
+      await expect(
+        download(
+          route.url,
+          dest,
+          {
+            resolver: urlResolver,
+            chunker: staticChunker(),
+          },
+          {
+            timeout,
+          },
+        ),
+      ).rejects.toMatchObject({
+        payload: { code: "network-timeout" },
+      });
+    }, 1_000);
+
+    it("rejects with a network timeout when the request timeout elapses", async () => {
+      using route = server.route(
+        withHooks(
+          serveFile({ body: LARGE_FILE, acceptRanges: false }),
+          delayAt("onRequest", 5_000),
+        ),
+      );
+      await using tmp = await makeTmpDir();
+      const dest = path.join(tmp.dir, "output");
+
+      const timeout: TimeoutOptions = {
+        request: 200,
+        lookup: 5_000,
+        connect: 5_000,
+        stall: 5_000,
+      };
+
+      await expect(
+        download(
+          route.url,
+          dest,
+          {
+            resolver: urlResolver,
+            chunker: staticChunker(),
+          },
+          {
+            timeout,
+          },
+        ),
+      ).rejects.toMatchObject({
+        payload: { code: "network-timeout" },
+      });
+    }, 1_000);
+
+    it("completes successfully when timeouts are generous", async () => {
+      using route = server.route(
+        serveFile({ body: SMALL_FILE, acceptRanges: false }),
+      );
+      await using tmp = await makeTmpDir();
+      const dest = path.join(tmp.dir, "output");
+
+      const timeout: TimeoutOptions = {
+        request: 30_000,
+        lookup: 5_000,
+        connect: 5_000,
+        stall: 5_000,
+      };
+
+      await download(
+        route.url,
+        dest,
+        {
+          resolver: urlResolver,
+          chunker: staticChunker(),
+        },
+        {
+          timeout,
+        },
+      );
+
+      const result = await readFile(dest);
+      expect(Buffer.compare(SMALL_FILE, result)).toBe(0);
+    });
+
+    it("rejects a chunked download when the stall timeout elapses mid-chunk", async () => {
+      using route = server.route(
+        withHooks(
+          serveFile({
+            body: LARGE_FILE,
+            acceptRanges: true,
+            chunkSize: 1024,
+          }),
+          delayBeforeChunk(0, 5_000),
+        ),
+      );
+      await using tmp = await makeTmpDir();
+      const dest = path.join(tmp.dir, "output");
+
+      const timeout: TimeoutOptions = {
+        request: 30_000,
+        lookup: 5_000,
+        connect: 5_000,
+        stall: 200,
+      };
+
+      await expect(
+        download(
+          route.url,
+          dest,
+          {
+            resolver: urlResolver,
+            chunker: staticChunker(),
+          },
+          {
+            timeout,
+          },
+        ),
+      ).rejects.toMatchObject({
+        payload: { code: "network-timeout" },
+      });
+    }, 1_000);
+
+    it("rejects with cancellation, not a timeout error, when abort races a timeout", async () => {
+      using route = server.route(
+        withHooks(
+          serveFile({ body: LARGE_FILE, acceptRanges: false }),
+          delayAt("onRequest", 5_000),
+        ),
+      );
+      await using tmp = await makeTmpDir();
+      const dest = path.join(tmp.dir, "output");
+
+      const timeout: TimeoutOptions = {
+        request: 2_000,
+        lookup: 5_000,
+        connect: 5_000,
+        stall: 5_000,
+      };
+
+      const abortController = new AbortController();
+      abortController.abort();
+
+      const err = await download(
+        route.url,
+        dest,
+        {
+          resolver: urlResolver,
+          chunker: staticChunker(),
+        },
+        {
+          timeout,
+          abortSignal: abortController.signal,
+        },
+      ).catch((e) => e);
+
       expect(err).toBeInstanceOf(DownloadError);
       expect((err as DownloadError).code).toBe("cancellation");
     });
