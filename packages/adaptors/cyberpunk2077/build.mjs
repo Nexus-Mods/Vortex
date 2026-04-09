@@ -1,10 +1,11 @@
-import { rolldown, defineConfig } from "rolldown";
 import { vortexAdaptorPlugin } from "@vortex/adaptor-api/plugin";
+import { rolldown, defineConfig } from "rolldown";
 
 const config = defineConfig({
   input: "./src/index.ts",
   platform: "neutral",
-  external: (id) => id.startsWith("@vortex/adaptor-api"),
+  external: (id) =>
+    id.startsWith("@vortex/adaptor-api") || id.startsWith("@vortex/fs"),
   plugins: [
     vortexAdaptorPlugin({
       filesystem: "vortex:host/filesystem",

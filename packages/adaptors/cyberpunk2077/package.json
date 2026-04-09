@@ -19,6 +19,7 @@
     "@vortex/fs": "workspace:*"
   },
   "peerDependencies": {
-    "@vortex/adaptor-api": "workspace:*"
+    "@vortex/adaptor-api": "workspace:*",
+    "@vortex/fs": "workspace:*"
   }
 }

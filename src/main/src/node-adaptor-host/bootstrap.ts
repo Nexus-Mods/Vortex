@@ -1,5 +1,3 @@
-import vm from "node:vm";
-
 import type { IAdaptorManifest, IMethodMessage } from "@vortex/adaptor-api";
 
 import * as adaptorApi from "@vortex/adaptor-api";
@@ -9,6 +7,8 @@ import {
   adaptorName,
   semVer,
 } from "@vortex/adaptor-api";
+import * as fsApi from "@vortex/fs";
+import vm from "node:vm";
 import { parentPort } from "node:worker_threads";
 
 import { createMethodDispatcher, createServiceProxy } from "./runtime.js";
@@ -36,6 +36,7 @@ const { bundle, config } = init;
 
 const allowedModules: Record<string, unknown> = {
   "@vortex/adaptor-api": adaptorApi,
+  "@vortex/fs": fsApi,
 };
 
 // Step 2: Create a service container with proxies for each required URI
@@ -51,6 +52,7 @@ for (const requiresUri of config.requires) {
 const context = vm.createContext({
   __vortex_service_container: container,
 });
+
 const bundleModule = new vm.SourceTextModule(bundle, { context });
 
 await bundleModule.link((specifier) => {
@@ -85,7 +87,9 @@ const providedUris: string[] = [];
 for (const exportedValue of Object.values(bundleModule.namespace)) {
   if (typeof exportedValue !== "function") continue;
 
-  const ctor = exportedValue as new (...args: unknown[]) => Record<string, (...args: unknown[]) => unknown>;
+  const ctor = exportedValue as new (
+    ...args: unknown[]
+  ) => Record<string, (...args: unknown[]) => unknown>;
   const providedUri = getProvidedUri(ctor);
   if (providedUri == null) continue;
 
