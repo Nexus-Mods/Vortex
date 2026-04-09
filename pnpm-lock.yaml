@@ -536,8 +536,8 @@ catalogs:
       specifier: git+https://github.com/Nexus-Mods/node-nexus-api#d16099d8c9def488dde7b545428d4d7a04668679
       version: 1.5.1
     node-7z:
-      specifier: git+https://github.com/Nexus-Mods/node-7z#a7a7996e93ed88a7b584a2279fd6e0712a53c4db
-      version: 0.8.0
+      specifier: git+https://github.com/Nexus-Mods/node-7z#b75def8d0d7d81a03f4526c52b8ada9a34a06479
+      version: 0.8.1
     normalize-url:
       specifier: ^6.0.1
       version: 6.1.0
@@ -1014,7 +1014,7 @@ importers:
         version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@10.0.1)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
       node-7z:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/a7a7996e93ed88a7b584a2279fd6e0712a53c4db
+        version: https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/b75def8d0d7d81a03f4526c52b8ada9a34a06479
       react:
         specifier: 'catalog:'
         version: 16.14.0
@@ -3313,7 +3313,7 @@ importers:
         version: 2.4.1
       node-7z:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/a7a7996e93ed88a7b584a2279fd6e0712a53c4db
+        version: https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/b75def8d0d7d81a03f4526c52b8ada9a34a06479
       react:
         specifier: 'catalog:'
         version: 16.14.0
@@ -3487,7 +3487,7 @@ importers:
         version: 19.9.2
       node-7z:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/a7a7996e93ed88a7b584a2279fd6e0712a53c4db
+        version: https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/b75def8d0d7d81a03f4526c52b8ada9a34a06479
       react:
         specifier: 'catalog:'
         version: 16.14.0
@@ -3906,7 +3906,7 @@ importers:
         version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@10.0.1)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
       node-7z:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/a7a7996e93ed88a7b584a2279fd6e0712a53c4db
+        version: https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/b75def8d0d7d81a03f4526c52b8ada9a34a06479
       re-reselect:
         specifier: 'catalog:'
         version: 4.0.1(reselect@4.1.8)
@@ -4119,7 +4119,7 @@ importers:
         version: https://codeload.github.com/Nexus-Mods/node-native-errors/tar.gz/51913db07e4c9b68a96ba7fcf741b32796758f18(bluebird@3.7.2)
       node-7z:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/a7a7996e93ed88a7b584a2279fd6e0712a53c4db
+        version: https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/b75def8d0d7d81a03f4526c52b8ada9a34a06479
       normalize-url:
         specifier: 'catalog:'
         version: 6.1.0
@@ -4760,7 +4760,7 @@ importers:
         version: https://codeload.github.com/Nexus-Mods/node-native-errors/tar.gz/51913db07e4c9b68a96ba7fcf741b32796758f18(bluebird@3.7.2)
       node-7z:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/a7a7996e93ed88a7b584a2279fd6e0712a53c4db
+        version: https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/b75def8d0d7d81a03f4526c52b8ada9a34a06479
       normalize-url:
         specifier: 'catalog:'
         version: 6.1.0
@@ -4935,14 +4935,14 @@ importers:
 
 packages:
 
+  7z-bin@https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/025786f01319526b56400b0410af6268adc1125c:
+    resolution: {tarball: https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/025786f01319526b56400b0410af6268adc1125c}
+    version: 26.0.1
+    hasBin: true
+
   7z-bin@https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/3298c42e69e3220dc39694bc2f610c077c3e213a:
     resolution: {tarball: https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/3298c42e69e3220dc39694bc2f610c077c3e213a}
     version: 24.0.1
-    hasBin: true
-
-  7z-bin@https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/7a285607c7530af9ae26a7b27e2f7847281c94dd:
-    resolution: {tarball: https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/7a285607c7530af9ae26a7b27e2f7847281c94dd}
-    version: 26.0.0
     hasBin: true
 
   7zip-bin@5.2.0:
@@ -10651,9 +10651,9 @@ packages:
   nice-try@1.0.5:
     resolution: {integrity: sha512-1nh45deeb5olNY7eX82BkPO7SSxR5SSYJiPTrTdFUVYwAl8CKMA5N9PjTYkHiRjisVcxcQ1HXdLhx2qxxJzLNQ==}
 
-  node-7z@https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/a7a7996e93ed88a7b584a2279fd6e0712a53c4db:
-    resolution: {tarball: https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/a7a7996e93ed88a7b584a2279fd6e0712a53c4db}
-    version: 0.8.0
+  node-7z@https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/b75def8d0d7d81a03f4526c52b8ada9a34a06479:
+    resolution: {tarball: https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/b75def8d0d7d81a03f4526c52b8ada9a34a06479}
+    version: 0.8.1
 
   node-abi@3.89.0:
     resolution: {integrity: sha512-6u9UwL0HlAl21+agMN3YAMXcKByMqwGx+pq+P76vii5f7hTPtKDp08/H9py6DY+cfDw7kQNTGEj/rly3IgbNQA==}
@@ -12816,9 +12816,9 @@ packages:
 
 snapshots:
 
-  7z-bin@https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/3298c42e69e3220dc39694bc2f610c077c3e213a: {}
+  7z-bin@https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/025786f01319526b56400b0410af6268adc1125c: {}
 
-  7z-bin@https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/7a285607c7530af9ae26a7b27e2f7847281c94dd: {}
+  7z-bin@https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/3298c42e69e3220dc39694bc2f610c077c3e213a: {}
 
   7zip-bin@5.2.0: {}
 
@@ -19318,9 +19318,9 @@ snapshots:
 
   nice-try@1.0.5: {}
 
-  node-7z@https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/a7a7996e93ed88a7b584a2279fd6e0712a53c4db:
+  node-7z@https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/b75def8d0d7d81a03f4526c52b8ada9a34a06479:
     dependencies:
-      7z-bin: https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/7a285607c7530af9ae26a7b27e2f7847281c94dd
+      7z-bin: https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/025786f01319526b56400b0410af6268adc1125c
       bluebird: 3.7.2
 
   node-abi@3.89.0:
