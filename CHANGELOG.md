@@ -5,9 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.0.0-alpha.3] - 2026-03-31
+## [2.0.0-alpha.4] - 2026-04-09
 
-_Internal alpha release for testing — not for public distribution._
+### Added
+
+- Ability to preserve FOMOD presets when installing variants ([#22320](https://github.com/Nexus-Mods/Vortex/pull/22320))
+
+### Changed
+
+- Updated 7zip binaries to 26.00 ([#22284](https://github.com/Nexus-Mods/Vortex/pull/22284))
+- Updated onboarding videos ([#22316](https://github.com/Nexus-Mods/Vortex/pull/22316))
+
+### Fixed
+
+- Wrong 7z binary used for linux environment ([#22319](https://github.com/Nexus-Mods/Vortex/pull/22319))
+
+- FOMOD UI cancelling installation on backdrop click ([#22278](https://github.com/Nexus-Mods/Vortex/pull/22278))
+- FOMOD installer now uses new preselect parameter instead of UI syncing ([#22280](https://github.com/Nexus-Mods/Vortex/pull/22280))
+- Renderer process not waited on before app relaunch ([#22274](https://github.com/Nexus-Mods/Vortex/pull/22274))
+- Manual FOMOD reinstall now shows dialog with preselected values ([#22250](https://github.com/Nexus-Mods/Vortex/pull/22250))
+- Crash when sorting an empty mod list ([#22247](https://github.com/Nexus-Mods/Vortex/pull/22247))
+- Restore state from backup workaround not functioning ([#22248](https://github.com/Nexus-Mods/Vortex/pull/22248))
+- Several issues with staging/game folder recovery after tampering ([#22246](https://github.com/Nexus-Mods/Vortex/pull/22246))
+- Missing defensive code when fetching mod info from API ([#22243](https://github.com/Nexus-Mods/Vortex/pull/22243))
+- Stack overflow when resolving long synchronous promise chains ([#22237](https://github.com/Nexus-Mods/Vortex/pull/22237))
+- Collection mods not considered when checking if requirements are installed ([#22127](https://github.com/Nexus-Mods/Vortex/pull/22127))
+- UI blocker/dimmer not cleared on successful OAuth login ([#22129](https://github.com/Nexus-Mods/Vortex/pull/22129))
+- Profile pages not respecting "Enable Profile Management" toggle in new UI ([#22131](https://github.com/Nexus-Mods/Vortex/pull/22131))
+- Startup crash when dialogs shown before main window exists ([#22121](https://github.com/Nexus-Mods/Vortex/pull/22121))
+- Remaining instances of `app.quit` causing application crash ([#22095](https://github.com/Nexus-Mods/Vortex/pull/22095))
+- Missing peer dependencies for modmeta-db ([#22093](https://github.com/Nexus-Mods/Vortex/pull/22093))
+- Workaround for Electron >=39.6.1 crash on BrowserView close ([#22086](https://github.com/Nexus-Mods/Vortex/pull/22086))
+
+## [2.0.0-alpha.3] - 2026-03-31
 
 ### Added
 
