@@ -1,5 +1,4 @@
 declare global {
-  // eslint-disable-next-line no-var
   var __vortex_service_container: Map<string, unknown> | undefined;
 }
 

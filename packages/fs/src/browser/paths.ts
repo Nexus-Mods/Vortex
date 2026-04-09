@@ -316,9 +316,9 @@ export class QualifiedPath {
 /**
  * Tagged template literal for building {@link QualifiedPath} values.
  *
- * If the first interpolation is a {@link `QualifiedPath`}, it is used as the base
+ * If the first interpolation is a {@link QualifiedPath}, it is used as the base
  * and remaining segments are joined onto it. Otherwise the assembled string
- * is parsed as a new {@link `QualifiedPath`}.
+ * is parsed as a new {@link QualifiedPath}.
  *
  * @example
  * ```ts @import.meta.vitest

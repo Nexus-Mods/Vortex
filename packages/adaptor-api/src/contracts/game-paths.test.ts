@@ -1,6 +1,6 @@
-import { describe, expectTypeOf, it } from "vitest";
-
 import type { QualifiedPath } from "@vortex/fs";
+
+import { describe, expectTypeOf, it } from "vitest";
 
 import type {
   GameFolder,

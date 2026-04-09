@@ -7,6 +7,7 @@ import type {
   NexusModsDomain,
   RegistryKey,
 } from "../types/store-ids.js";
+
 import {
   steamAppId,
   epicCatalogNamespace,
