@@ -28,20 +28,10 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
-    "./contracts/filesystem": {
-      "development": "./src/contracts/filesystem.ts",
-      "import": "./dist/contracts/filesystem.js",
-      "require": "./dist/contracts/filesystem.cjs"
-    },
     "./contracts/game-info": {
       "development": "./src/contracts/game-info.ts",
       "import": "./dist/contracts/game-info.js",
       "require": "./dist/contracts/game-info.cjs"
-    },
-    "./contracts/game-mod-types": {
-      "development": "./src/contracts/game-mod-types.ts",
-      "import": "./dist/contracts/game-mod-types.js",
-      "require": "./dist/contracts/game-mod-types.cjs"
     },
     "./contracts/game-paths": {
       "development": "./src/contracts/game-paths.ts",
@@ -71,17 +61,9 @@
         "import": "./dist/index.js",
         "require": "./dist/index.cjs"
       },
-      "./contracts/filesystem": {
-        "import": "./dist/contracts/filesystem.js",
-        "require": "./dist/contracts/filesystem.cjs"
-      },
       "./contracts/game-info": {
         "import": "./dist/contracts/game-info.js",
         "require": "./dist/contracts/game-info.cjs"
-      },
-      "./contracts/game-mod-types": {
-        "import": "./dist/contracts/game-mod-types.js",
-        "require": "./dist/contracts/game-mod-types.cjs"
       },
       "./contracts/game-paths": {
         "import": "./dist/contracts/game-paths.js",

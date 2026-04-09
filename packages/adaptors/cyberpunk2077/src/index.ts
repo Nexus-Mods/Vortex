@@ -6,8 +6,6 @@ import type {
   IGamePathService,
 } from "@vortex/adaptor-api/contracts/game-paths";
 import { GameFolder } from "@vortex/adaptor-api/contracts/game-paths";
-import type { IGameModTypesService } from "@vortex/adaptor-api/contracts/game-mod-types";
-import { gameModTypes } from "@vortex/adaptor-api/contracts/game-mod-types";
 import type { IGameToolsService } from "@vortex/adaptor-api/contracts/game-tools";
 import { gameTools } from "@vortex/adaptor-api/contracts/game-tools";
 import type { QualifiedPath } from "@vortex/fs";
@@ -41,50 +39,6 @@ export class GamePathService implements IGamePathService {
       [GameFolder.preferences]: qpath`${installPath}/engine/config/platform/pc`,
       [GameFolder.saves]: qpath`${installPath}/saved_games`,
     });
-  }
-}
-
-@provides("vortex:adaptor/cyberpunk2077/mod-types")
-export class GameModTypesService implements IGameModTypesService {
-  getModTypes(folders: GameFolderMap) {
-    const install = folders.install;
-    if (!install)
-      return Promise.reject(new Error("GameFolderMap missing 'install' entry"));
-    const result = gameModTypes({
-      archive: {
-        name: "Archive Mod",
-        targetPath: qpath`${install}/archive/pc/mod`,
-        stopPatterns: ["archive/pc/mod"],
-        filePatterns: ["*.archive", "*.xl"],
-      },
-      cet: {
-        name: "Cyber Engine Tweaks",
-        targetPath: qpath`${install}/bin/x64/plugins/cyber_engine_tweaks`,
-        stopPatterns: ["bin/x64/plugins/cyber_engine_tweaks"],
-        filePatterns: ["*.lua"],
-      },
-      redscript: {
-        name: "Redscript",
-        targetPath: qpath`${install}/r6/scripts`,
-        stopPatterns: ["r6/scripts"],
-        filePatterns: ["*.reds"],
-      },
-      red4ext: {
-        name: "RED4ext",
-        targetPath: qpath`${install}/red4ext/plugins`,
-        stopPatterns: ["red4ext/plugins"],
-        filePatterns: ["*.dll"],
-      },
-      tweaks: {
-        name: "TweakXL",
-        targetPath: qpath`${install}/r6/tweaks`,
-        stopPatterns: ["r6/tweaks"],
-        filePatterns: ["*.yaml", "*.tweak"],
-        runsAfter: ["cet", "redscript"],
-      },
-    });
-
-    return Promise.resolve(result);
   }
 }
 

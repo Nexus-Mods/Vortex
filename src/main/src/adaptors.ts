@@ -1,15 +1,10 @@
 import type { IMessageHandler } from "@vortex/adaptor-api";
-import type { IFileSystemService } from "@vortex/adaptor-api/contracts/filesystem";
 import type { IPingService } from "@vortex/adaptor-api/contracts/ping";
-import type { PathResolver } from "@vortex/fs";
 import type { Serializable } from "@vortex/shared/ipc";
 
-import { QualifiedPath } from "@vortex/fs";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-import { FileSystemBackendImpl } from "./filesystem/fs";
-import { LinuxPathProviderImpl } from "./filesystem/paths.linux";
 import { getVortexPath } from "./getVortexPath";
 import { betterIpcMain } from "./ipc";
 import { log } from "./logging";
@@ -22,111 +17,19 @@ import {
 // Infrastructure packages — not adaptors, don't try to load them
 const INFRA_PACKAGES = new Set(["adaptor-api"]);
 
-function createPathResolver(): PathResolver {
-  if (process.platform === "linux") {
-    return new LinuxPathProviderImpl();
-  }
-  // TODO: Add WindowsPathProviderImpl when available
-  throw new Error(
-    `No PathResolver available for platform: ${process.platform}`,
-  );
-}
-
-type MethodCall<T> = {
-  [K in keyof T]: T[K] extends (...args: infer A) => unknown
-    ? { method: K; args: A }
-    : never;
-}[keyof T];
-
-/**
- * Creates the host-side filesystem handler.
- * Parses QualifiedPath args from RPC, resolves via PathResolver,
- * and delegates to FileSystemBackendImpl.
- *
- * TODO: Replace manual resolution with a composed FileSystem instance
- * (PathResolver + FileSystemBackend) once that layer exists in @vortex/fs.
- */
-function createFileSystemHandler(): IMessageHandler {
-  const resolver = createPathResolver();
-  const backend = new FileSystemBackendImpl();
-
-  function resolve(arg: unknown): Promise<string> {
-    if (typeof arg !== "string") {
-      throw new Error(
-        `Expected string argument for path resolution, got ${typeof arg}`,
-      );
-    }
-    return resolver.resolve(QualifiedPath.parse(arg));
-  }
-
-  return async (msg) => {
-    const payload = msg.payload;
-    if (
-      typeof payload !== "object" ||
-      payload === null ||
-      !("method" in payload) ||
-      typeof (payload as Record<string, unknown>).method !== "string" ||
-      !("args" in payload) ||
-      !Array.isArray((payload as Record<string, unknown>).args)
-    ) {
-      throw new Error(
-        "Invalid filesystem IPC payload: expected { method: string, args: unknown[] }",
-      );
-    }
-
-    const { method, args } = payload as MethodCall<IFileSystemService>;
-
-    switch (method) {
-      case "copy": {
-        const source = await resolve(args[0]);
-        const target = await resolve(args[1]);
-        const options = args[2];
-        return backend.copy(source, target, options);
-      }
-      case "move": {
-        const source = await resolve(args[0]);
-        const target = await resolve(args[1]);
-        const options = args[2];
-        return backend.move(source, target, options);
-      }
-      case "readFile":
-        return backend.readFile(await resolve(args[0]));
-      case "writeFile":
-        return backend.writeFile(await resolve(args[0]), args[1]);
-      case "createDirectory":
-        return backend.createDirectory(await resolve(args[0]));
-      case "delete":
-        return backend.delete(await resolve(args[0]));
-      case "deleteRecursive":
-        return backend.deleteRecursive(await resolve(args[0]));
-      case "stat":
-        return backend.stat(await resolve(args[0]), args[1]);
-      default: {
-        const exhausted: never = method;
-        throw new Error(
-          `Unknown method on filesystem service: ${exhausted as string}`,
-        );
-      }
-    }
-  };
-}
-
 // Host-provided services
 const HOST_SERVICES: Record<string, IMessageHandler> = {
-  "vortex:host/filesystem": createFileSystemHandler(),
   "vortex:host/ping": (msg) => {
-    const { method, args } = msg.payload as MethodCall<IPingService>;
+    const { method, args } = msg.payload as { method: keyof IPingService; args: unknown[] };
     if (method === "ping") {
-      return Promise.resolve(`pong: ${args[0]}`);
+      return Promise.resolve(`pong: ${(args as [string])[0]}`);
     }
     if (method === "health") {
       return Promise.resolve({ status: "ok" as const });
     }
 
-    const exhausted: never = method;
-
     return Promise.reject(
-      new Error(`Unknown method on ping service: ${exhausted as string}`),
+      new Error(`Unknown method on ping service: ${method as string}`),
     );
   },
 };

@@ -7,9 +7,7 @@ const config = defineConfig({
   external: (id) =>
     id.startsWith("@vortex/adaptor-api") || id.startsWith("@vortex/fs"),
   plugins: [
-    vortexAdaptorPlugin({
-      filesystem: "vortex:host/filesystem",
-    }),
+    vortexAdaptorPlugin({}),
   ],
 });
 
