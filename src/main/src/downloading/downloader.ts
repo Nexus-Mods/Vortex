@@ -1,7 +1,7 @@
 import type { RateLimiter } from "limiter";
 import type { IncomingHttpHeaders } from "node:http";
 
-import got, { type Headers } from "got";
+import got, { type Headers, type Delays as GotTimeoutOptions } from "got";
 import { type FileHandle as NodeFileHandle, open } from "node:fs/promises";
 import { type URL } from "node:url";
 import PQueue from "p-queue";
@@ -70,7 +70,10 @@ export async function download<T>(
     probe = await probeUrl(
       resolved.probeUrl,
       options?.checkpoint?.etag ?? null,
-      options?.abortSignal,
+      {
+        abortSignal: options?.abortSignal,
+        timeout: options?.timeout,
+      },
     );
   } catch (err) {
     if (isCancellation(err)) {
@@ -248,11 +251,16 @@ export async function download<T>(
 async function probeUrl(
   url: URL,
   previousETag: string | null,
-  abortSignal?: AbortSignal,
+  options: {
+    abortSignal?: AbortSignal;
+    timeout?: TimeoutOptions;
+  },
 ): Promise<ProbeResult> {
   const response = await got.head(url, {
-    signal: abortSignal,
+    signal: options?.abortSignal,
     headers: createHeaders(previousETag, null),
+    timeout: createGotTimeoutOptions(options.timeout),
+    retry: { limit: 0 },
   });
 
   const size = getSize(response.headers, "content-length");
@@ -295,26 +303,31 @@ function createGotStream(
     timeout?: TimeoutOptions;
   },
 ) {
-  const timeout = options.timeout;
-
   const stream = got.stream(url, {
     signal: options?.abortSignal,
     headers: createHeaders(options?.etag, options?.chunk),
-    timeout: timeout
-      ? {
-          lookup: timeout.lookup,
-          connect: timeout.connect,
-          secureConnect: timeout.connect,
-          socket: timeout.stall,
-          response: timeout.stall,
-          request: timeout.request,
-        }
-      : undefined,
+    timeout: createGotTimeoutOptions(options.timeout),
+    retry: { limit: 0 },
   });
 
   stream.on("error", () => {});
 
   return stream;
+}
+
+function createGotTimeoutOptions(
+  timeout?: TimeoutOptions,
+): GotTimeoutOptions | undefined {
+  if (!timeout) return undefined;
+
+  return {
+    lookup: timeout.lookup,
+    connect: timeout.connect,
+    secureConnect: timeout.connect,
+    socket: timeout.stall,
+    response: timeout.stall,
+    request: timeout.request,
+  };
 }
 
 async function consumeTokens(
