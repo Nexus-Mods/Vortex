@@ -18,10 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Wrong 7z binary used for linux environment ([#22319](https://github.com/Nexus-Mods/Vortex/pull/22319))
 
 - FOMOD UI cancelling installation on backdrop click ([#22278](https://github.com/Nexus-Mods/Vortex/pull/22278))
-- FOMOD installer now uses new preselect parameter instead of UI syncing ([#22280](https://github.com/Nexus-Mods/Vortex/pull/22280))
 - Renderer process not waited on before app relaunch ([#22274](https://github.com/Nexus-Mods/Vortex/pull/22274))
 - Manual FOMOD reinstall now shows dialog with preselected values ([#22250](https://github.com/Nexus-Mods/Vortex/pull/22250))
 - Crash when sorting an empty mod list ([#22247](https://github.com/Nexus-Mods/Vortex/pull/22247))
