@@ -12,6 +12,16 @@
     "lint": "pnpm eslint --concurrency auto .",
     "lint:quiet": "pnpm eslint --concurrency auto --quiet ."
   },
+  "dependencies": {
+    "@vortex/fs": "workspace:*"
+  },
+  "peerDependencies": {
+    "rolldown": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "rolldown": "catalog:"
+  },
   "exports": {
     ".": {
       "development": "./src/lib.ts",
@@ -53,22 +63,7 @@
       "import": "./dist/plugin.js",
       "require": "./dist/plugin.cjs"
     },
-    "./types/store-ids": {
-      "development": "./src/types/store-ids.ts",
-      "import": "./dist/types/store-ids.js",
-      "require": "./dist/types/store-ids.cjs"
-    },
     "./package.json": "./package.json"
-  },
-  "dependencies": {
-    "@vortex/fs": "workspace:*"
-  },
-  "peerDependencies": {
-    "rolldown": "catalog:"
-  },
-  "devDependencies": {
-    "@types/node": "catalog:",
-    "rolldown": "catalog:"
   },
   "publishConfig": {
     "exports": {
@@ -104,14 +99,10 @@
         "import": "./dist/plugin.js",
         "require": "./dist/plugin.cjs"
       },
-      "./types/store-ids": {
-        "import": "./dist/types/store-ids.js",
-        "require": "./dist/types/store-ids.cjs"
-      },
       "./package.json": "./package.json"
     }
   },
-  "types": "./dist/index.d.cts",
   "main": "./dist/index.cjs",
-  "module": "./dist/index.js"
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.cts"
 }
