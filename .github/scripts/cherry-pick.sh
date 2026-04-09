@@ -59,7 +59,12 @@ for TARGET in "${TARGETS[@]}"; do
   else
     git push --force origin "$BRANCH"
 
-    if ! gh pr list --head "$BRANCH" --base "$TARGET" --json number --jq '.[0].number' | grep -q .; then
+    EXISTING_PR=$(gh pr list --head "$BRANCH" --base "$TARGET" --json number --jq '.[0].number')
+
+    if [ -n "$EXISTING_PR" ]; then
+      echo "PR #${EXISTING_PR} already exists for $BRANCH -> $TARGET, skipping creation."
+      PR_URL="https://github.com/$(gh repo view --json nameWithOwner --jq .nameWithOwner)/pull/${EXISTING_PR}"
+    else
       DRAFT_FLAG=""
       BODY="Cherry-pick of #${PR_NUMBER} into \`${TARGET}\`."
 
@@ -71,14 +76,18 @@ for TARGET in "${TARGETS[@]}"; do
 > This cherry-pick had merge conflicts that need manual resolution."
       fi
 
-      gh pr create \
+      PR_URL=$(gh pr create \
         --base "$TARGET" \
         --head "$BRANCH" \
         --title "$PR_TITLE" \
         $DRAFT_FLAG \
-        --body "$BODY"
-    else
-      echo "PR already exists for $BRANCH -> $TARGET, skipping creation."
+        --body "$BODY")
+      echo "$PR_URL"
+    fi
+
+    if [ "$HAS_CONFLICTS" = "false" ]; then
+      echo "No conflicts detected, auto-merging..."
+      gh pr merge "$PR_URL" --merge --delete-branch
     fi
   fi
 
