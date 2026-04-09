@@ -18,7 +18,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-
 - FOMOD UI cancelling installation on backdrop click ([#22278](https://github.com/Nexus-Mods/Vortex/pull/22278))
 - Renderer process not waited on before app relaunch ([#22274](https://github.com/Nexus-Mods/Vortex/pull/22274))
 - Manual FOMOD reinstall now shows dialog with preselected values ([#22250](https://github.com/Nexus-Mods/Vortex/pull/22250))
@@ -1645,6 +1644,8 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[2.0.0-alpha.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.0.0-alpha.4
+[2.0.0-alpha.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.0.0-alpha.3
 [2.0.0-alpha.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.0.0-alpha.2
 [2.0.0-alpha.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.0.0-alpha.1
 [1.16.7]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.7
