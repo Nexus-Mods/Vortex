@@ -7,7 +7,8 @@
   "scripts": {
     "build": "node ./build.mjs",
     "dist": "node ./build.mjs",
-    "typecheck": "pnpm tsc --noEmit -p tsconfig.json"
+    "typecheck": "pnpm tsc",
+    "lint": "pnpm eslint --concurrency auto --quiet ."
   },
   "main": "./dist/index.mjs",
   "vortex:requires": [

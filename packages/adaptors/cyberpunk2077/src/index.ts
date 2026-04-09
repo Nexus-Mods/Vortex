@@ -24,32 +24,33 @@ const INFO = gameInfo({
 
 @provides("vortex:adaptor/cyberpunk2077/info")
 export class GameInfoService implements IGameInfoService {
-  async getGameInfo() {
-    return INFO;
+  getGameInfo() {
+    return Promise.resolve(INFO);
   }
 }
 
 @provides("vortex:adaptor/cyberpunk2077/paths")
 export class GamePathService implements IGamePathService {
-  async resolveGameFolders(
+  resolveGameFolders(
     _store: string,
     installPath: QualifiedPath,
   ): Promise<GameFolderMap> {
-    return {
+    return Promise.resolve({
       [GameFolder.install]: installPath,
       [GameFolder.config]: qpath`${installPath}/engine/config`,
       [GameFolder.preferences]: qpath`${installPath}/engine/config/platform/pc`,
       [GameFolder.saves]: qpath`${installPath}/saved_games`,
-    };
+    });
   }
 }
 
 @provides("vortex:adaptor/cyberpunk2077/mod-types")
 export class GameModTypesService implements IGameModTypesService {
-  async getModTypes(folders: GameFolderMap) {
+  getModTypes(folders: GameFolderMap) {
     const install = folders.install;
-    if (!install) throw new Error("GameFolderMap missing 'install' entry");
-    return gameModTypes({
+    if (!install)
+      return Promise.reject(new Error("GameFolderMap missing 'install' entry"));
+    const result = gameModTypes({
       archive: {
         name: "Archive Mod",
         targetPath: qpath`${install}/archive/pc/mod`,
@@ -82,15 +83,18 @@ export class GameModTypesService implements IGameModTypesService {
         runsAfter: ["cet", "redscript"],
       },
     });
+
+    return Promise.resolve(result);
   }
 }
 
 @provides("vortex:adaptor/cyberpunk2077/tools")
 export class GameToolsService implements IGameToolsService {
-  async getGameTools(folders: GameFolderMap) {
+  getGameTools(folders: GameFolderMap) {
     const install = folders.install;
-    if (!install) throw new Error("GameFolderMap missing 'install' entry");
-    return gameTools({
+    if (!install)
+      return Promise.reject(new Error("GameFolderMap missing 'install' entry"));
+    const result = gameTools({
       game: qpath`${install}/bin/x64/Cyberpunk2077.exe`,
       tools: {
         redmod: {
@@ -99,5 +103,7 @@ export class GameToolsService implements IGameToolsService {
         },
       },
     });
+
+    return Promise.resolve(result);
   }
 }
