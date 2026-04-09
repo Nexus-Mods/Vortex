@@ -4,7 +4,7 @@
   "include": [
     "./src/node",
     "./src/browser",
-    "../../typings.custom/promise.d.ts",
+    "../../typings.custom/promise.d.ts"
   ],
   "compilerOptions": {
     "composite": true,
@@ -16,6 +16,6 @@
     "types": ["node"],
     "allowJs": false,
     "isolatedDeclarations": true,
-    "noUncheckedSideEffectImports": true,
-  },
+    "noUncheckedSideEffectImports": true
+  }
 }

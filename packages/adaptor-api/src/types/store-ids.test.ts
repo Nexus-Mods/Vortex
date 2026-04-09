@@ -35,7 +35,9 @@ describe("epicCatalogNamespace", () => {
   });
 
   it("rejects empty string", () => {
-    expect(() => epicCatalogNamespace("")).toThrow("Invalid EpicCatalogNamespace");
+    expect(() => epicCatalogNamespace("")).toThrow(
+      "Invalid EpicCatalogNamespace",
+    );
   });
 });
 
@@ -109,9 +111,9 @@ describe("registryKey", () => {
   });
 
   it("accepts a valid HKEY_CURRENT_USER key", () => {
-    expect(
-      registryKey("HKEY_CURRENT_USER\\SOFTWARE\\Valve\\Steam"),
-    ).toBe("HKEY_CURRENT_USER\\SOFTWARE\\Valve\\Steam");
+    expect(registryKey("HKEY_CURRENT_USER\\SOFTWARE\\Valve\\Steam")).toBe(
+      "HKEY_CURRENT_USER\\SOFTWARE\\Valve\\Steam",
+    );
   });
 
   it("rejects key without valid HKEY_ root", () => {

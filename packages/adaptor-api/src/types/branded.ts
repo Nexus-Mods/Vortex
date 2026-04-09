@@ -74,7 +74,8 @@ export function messageId(value: string): MessageId {
   return value as MessageId;
 }
 
-const SEMVER_PATTERN = /^\d+\.\d+\.\d+(-[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*)?(\+[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*)?$/;
+const SEMVER_PATTERN =
+  /^\d+\.\d+\.\d+(-[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*)?(\+[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*)?$/;
 
 /**
  * Validates and brands a string as a {@link SemVer}.

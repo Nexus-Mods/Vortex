@@ -8,12 +8,16 @@ export type SteamAppId = number & { readonly __brand: "SteamAppId" };
 /**
  * An Epic Games catalog namespace (hex string, e.g. "ac82db5035584c7f8a2c548d98c200a1").
  */
-export type EpicCatalogNamespace = string & { readonly __brand: "EpicCatalogNamespace" };
+export type EpicCatalogNamespace = string & {
+  readonly __brand: "EpicCatalogNamespace";
+};
 
 /**
  * An Epic Games catalog item ID (hex string, e.g. "d5241c76f17840b2953a9a6b76e6c890").
  */
-export type EpicCatalogItemId = string & { readonly __brand: "EpicCatalogItemId" };
+export type EpicCatalogItemId = string & {
+  readonly __brand: "EpicCatalogItemId";
+};
 
 /**
  * A GOG game ID (positive integer, e.g. 1508702879).
@@ -23,7 +27,9 @@ export type GOGGameId = number & { readonly __brand: "GOGGameId" };
 /**
  * An Xbox package family name (e.g. "BethesdaSoftworks.SkyrimSE_3275kfvn8vcwc").
  */
-export type XboxPackageFamilyName = string & { readonly __brand: "XboxPackageFamilyName" };
+export type XboxPackageFamilyName = string & {
+  readonly __brand: "XboxPackageFamilyName";
+};
 
 /**
  * A Nexus Mods game domain slug (lowercase alphanumeric, e.g. "skyrimspecialedition").
@@ -84,9 +90,7 @@ export function epicCatalogItemId(value: string): EpicCatalogItemId {
  */
 export function gogGameId(value: number): GOGGameId {
   if (!Number.isInteger(value) || value <= 0) {
-    throw new Error(
-      `Invalid GOGGameId: ${value} — must be a positive integer`,
-    );
+    throw new Error(`Invalid GOGGameId: ${value} — must be a positive integer`);
   }
   return value as GOGGameId;
 }
