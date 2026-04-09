@@ -5299,7 +5299,10 @@ class InstallManager {
 
         if (action !== undefined) {
           let variant: string = context.get("variant-name");
-          const preserveChoices: boolean = context.get("preserve-choices", true);
+          const preserveChoices: boolean = context.get(
+            "preserve-choices",
+            true,
+          );
           if (action === "variant" && variant === undefined) {
             choices = queryVariantNameDialog(
               context.get("replace-or-variant") !== undefined,
@@ -5374,11 +5377,11 @@ class InstallManager {
           });
         } else {
           // No other profile uses this mod, safe to replace
-<<<<<<< HEAD:src/extensions/mod_management/InstallManager.ts
-          choices = Bluebird.resolve({ action: "replace", remember: false });
-=======
-          choices = Promise.resolve({ action: "replace", remember: false, preserveChoices: true });
->>>>>>> 87cd89d9e (Merge pull request #22320 from Nexus-Mods/feat/app-257):src/renderer/src/extensions/mod_management/InstallManager.ts
+          choices = Bluebird.resolve({
+            action: "replace",
+            remember: false,
+            preserveChoices: true,
+          });
         }
       } else {
         choices = choices ?? queryDialog();
@@ -5386,7 +5389,12 @@ class InstallManager {
 
       choices
         .then(
-          (result: { action: string; variant: string; remember: boolean; preserveChoices?: boolean }) => {
+          (result: {
+            action: string;
+            variant: string;
+            remember: boolean;
+            preserveChoices?: boolean;
+          }) => {
             const wasEnabled = (modId: string) => {
               return currentProfile?.gameId === gameId
                 ? getSafe(currentProfile.modState, [modId, "enabled"], false)
@@ -5404,14 +5412,8 @@ class InstallManager {
                 gameId,
                 modId,
                 (err) => {
-<<<<<<< HEAD:src/extensions/mod_management/InstallManager.ts
                   if (err !== null) {
                     reject(err);
-=======
-                  if (err != null) {
-                    const error = unknownToError(err);
-                    reject(error);
->>>>>>> 87cd89d9e (Merge pull request #22320 from Nexus-Mods/feat/app-257):src/renderer/src/extensions/mod_management/InstallManager.ts
                   } else {
                     const omittedAttributes = [
                       "version",
@@ -5438,7 +5440,10 @@ class InstallManager {
             if (result.action === "variant") {
               if (result.remember === true) {
                 context?.set?.("replace-or-variant", "variant");
-                context?.set?.("preserve-choices", result.preserveChoices ?? true);
+                context?.set?.(
+                  "preserve-choices",
+                  result.preserveChoices ?? true,
+                );
               }
               if (currentProfile !== undefined) {
                 const actions = modIds.map((id) =>
@@ -5470,7 +5475,11 @@ class InstallManager {
                 variant: result.variant,
                 enable,
                 attributes: result.preserveChoices
-                  ? _.pick(mod.attributes, ["modId", "fileId", "installerChoices"])
+                  ? _.pick(mod.attributes, [
+                      "modId",
+                      "fileId",
+                      "installerChoices",
+                    ])
                   : {},
                 rules: [],
                 replaceChoice: "variant",
@@ -5478,7 +5487,10 @@ class InstallManager {
             } else if (result.action === "replace") {
               if (result.remember === true) {
                 context?.set?.("replace-or-variant", "replace");
-                context?.set?.("preserve-choices", result.preserveChoices ?? true);
+                context?.set?.(
+                  "preserve-choices",
+                  result.preserveChoices ?? true,
+                );
               }
               if (modIds.length > 1) {
                 queryVariantReplacement().then((res: IDialogResult) => {
