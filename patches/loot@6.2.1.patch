@@ -1,0 +1,83 @@
+diff --git a/binding.gyp b/binding.gyp
+index f73f16d..d8b1865 100644
+--- a/binding.gyp
++++ b/binding.gyp
+@@ -21,9 +21,6 @@
+                 "./loot_api/include",
+                 "<!(node -p \"require('node-addon-api').include_dir\")"
+             ],
+-            "libraries": [
+-                "-l../loot_api/libloot"
+-            ],
+             'cflags!': ['-fno-exceptions', '-g', '-O0'],
+             'cflags_cc!': ['-fno-exceptions'],
+             'msvs_settings': {
+@@ -41,6 +38,10 @@
+             },
+             "conditions": [
+               ["OS=='win'", {
++                "libraries": [
++                  "-l../loot_api/libloot",
++                  "-DelayLoad:node.exe"
++                ],
+                 "defines!": [
+                   "_HAS_EXCEPTIONS=0"
+                 ],
+@@ -48,9 +49,6 @@
+                   "_HAS_EXCEPTIONS=1",
+                   "WINVER=0x600"
+                 ],
+-                "libraries": [
+-                  "-DelayLoad:node.exe",
+-                ],
+                 'msvs_settings': {
+                   "VCLibrarianTool": {
+                     'AdditionalOptions': [ '/LTCG' ]
+@@ -59,6 +57,15 @@
+                     'LinkTimeCodeGeneration': 1
+                   }
+                 }
++              }],
++              ["OS=='linux'", {
++                "libraries": [
++                  "-L../loot_api",
++                  "-llibloot"
++                ],
++                "ldflags": [
++                  "-Wl,-rpath,'$$ORIGIN/../../loot_api'"
++                ]
+               }]
+             ]
+         }
+diff --git a/async.js b/async.js
+index 975fd21f3591aaac1a54b53cd991535d342540e0..0ed98568b3717b62646d2c2a48a69420032742f6 100644
+--- a/async.js
++++ b/async.js
+@@ -11,7 +11,10 @@ const CHUNK_SIZE = 32 * 1024;
+
+ let currentLogLevel = 2; // default: info (matches previous hardcoded filter)
+
+-const client = net.connect(`\\\\?\\pipe\\loot-ipc-${process.argv[2]}`, (arg) => {
++const lootIpcPath = process.platform === 'linux'
++  ? `/tmp/loot-ipc-${process.argv[2]}`
++  : `\\\\?\\pipe\\loot-ipc-${process.argv[2]}`;
++const client = net.connect(lootIpcPath, (arg) => {
+   let instance;
+   let dataBuffer = '';
+
+diff --git a/index.js b/index.js
+index 7c80af054c63104682671ea0f9c44a1398aec23c..46f6865e9ba0327927956feafaeb017cae6293a2 100644
+--- a/index.js
++++ b/index.js
+@@ -118,7 +118,10 @@ class LootAsync {
+     try {
+       // this seems to fail for some users with EINVAL. why?
+       // May be a wine-only problem but that's not confirmed
+-      this.ipc.listen(`\\\\?\\pipe\\loot-ipc-${this.id}`, () => {
++      const lootIpcPath = process.platform === 'linux'
++        ? `/tmp/loot-ipc-${this.id}`
++        : `\\\\?\\pipe\\loot-ipc-${this.id}`;
++      this.ipc.listen(lootIpcPath, () => {
+         this.ipc.on('connection', socket => {
+           this.socket = socket;
+           socket
