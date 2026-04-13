@@ -20,7 +20,7 @@ import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { actions, ComponentEx, FlexLayout, log, MainPage, selectors, tooltip,
          types, util } from 'vortex-api';
-import { uploadCollection } from '../../util/util';
+import { hasEditPermissions, uploadCollection } from '../../util/util';
 
 export interface ICollectionsMainPageBaseProps extends WithTranslation {
   active: boolean;
@@ -258,8 +258,9 @@ class CollectionsMainPage extends ComponentEx<ICollectionsMainPageProps, ICompon
     }
 
     const author = mods[modId].attributes?.['uploaderId'];
+    const canContribute = hasEditPermissions(mods[modId].attributes?.permissions);
 
-    if ((author !== undefined) && (author !== userInfo?.userId)) {
+    if ((author !== undefined) && (author !== userInfo?.userId) && !canContribute) {
       const result = await api.showDialog('question',
         'Edit Collection', {
           text: 'This collection has been uploaded with a different account ({{uploadAuthor}}) '
