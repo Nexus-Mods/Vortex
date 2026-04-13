@@ -70,3 +70,73 @@ describe("adaptor host integration (Worker)", () => {
     await host?.shutdownAll();
   });
 });
+
+describe("adaptor host per-worker service factories", () => {
+  it("mints a fresh session per worker and disposes it on shutdown", async () => {
+    const events: string[] = [];
+    let sessionCount = 0;
+
+    const host = createAdaptorHost(
+      {
+        "vortex:host/ping": {
+          perWorker() {
+            const id = ++sessionCount;
+            events.push(`create:${id}`);
+            return {
+              handler: (msg) => {
+                const payload = msg.payload as {
+                  method: string;
+                  args: unknown[];
+                };
+                if (payload.method === "ping") {
+                  return Promise.resolve(
+                    `pong-${id}: ${JSON.stringify(payload.args[0])}`,
+                  );
+                }
+                return Promise.resolve({ status: "ok" });
+              },
+              dispose: () => {
+                events.push(`dispose:${id}`);
+                return Promise.resolve();
+              },
+            };
+          },
+        },
+      },
+      BOOTSTRAP_PATH,
+    );
+
+    const a = await host.loadAdaptor({
+      name: "ping-test",
+      version: "1.0.0",
+      bundlePath: BUNDLE_PATH,
+      requires: ["vortex:host/ping"],
+    });
+    const b = await host.loadAdaptor({
+      name: "ping-test",
+      version: "1.0.0",
+      bundlePath: BUNDLE_PATH,
+      requires: ["vortex:host/ping"],
+    });
+
+    // Each worker must see its own session id in the echoed pong.
+    const aReply = (await a.call("vortex:adaptor/ping-test/echo", "echo", [
+      "hi",
+    ])) as string;
+    const bReply = (await b.call("vortex:adaptor/ping-test/echo", "echo", [
+      "hi",
+    ])) as string;
+    expect(aReply).toBe('echo: pong-1: "hi"');
+    expect(bReply).toBe('echo: pong-2: "hi"');
+
+    // Orderly shutdown of one worker releases that worker's session only.
+    await host.shutdown(a.pid);
+    expect(events).toContain("create:1");
+    expect(events).toContain("create:2");
+    expect(events).toContain("dispose:1");
+    expect(events).not.toContain("dispose:2");
+
+    await host.shutdownAll();
+    expect(events).toContain("dispose:2");
+  });
+});

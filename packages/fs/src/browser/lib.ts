@@ -29,6 +29,7 @@ export type {
   PathComponent,
   PathProvider,
   PathResolver,
+  PathResolverRegistry,
   OSPathProvider,
   OSPathBase,
   RelativePath,
@@ -42,6 +43,7 @@ export {
   PathResolverError,
   RelativePathError,
   relativePath,
+  PathResolverRegistryImpl,
 } from "./paths";
 
 export { XDG } from "./paths.linux";

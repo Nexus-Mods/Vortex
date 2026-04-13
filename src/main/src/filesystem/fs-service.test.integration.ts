@@ -10,6 +10,9 @@
 import type { IMethodMessage } from "@vortex/adaptor-api";
 
 import {
+  NodeFileSystemBackendImpl,
+  NodeFileSystemImpl,
+  PathResolverRegistryImpl,
   QualifiedPath,
   createFileSystemClient,
   FileSystemError,
@@ -27,7 +30,6 @@ import {
   type IRpcTransport,
 } from "../node-adaptor-host/transport.js";
 import { createFileSystemServiceHandler } from "./fs-service.js";
-import { FileSystemBackendImpl } from "./fs.js";
 import { LinuxPathProviderImpl } from "./paths.linux.js";
 
 describe("filesystem RPC end-to-end", () => {
@@ -45,11 +47,11 @@ describe("filesystem RPC end-to-end", () => {
     hostTransport = createRpcTransport(port1);
     clientTransport = createRpcTransport(port2);
 
-    service = createFileSystemServiceHandler(
-      new FileSystemBackendImpl(),
-      new LinuxPathProviderImpl(),
-      { batchSize: 2 },
+    const filesystem = new NodeFileSystemImpl(
+      new NodeFileSystemBackendImpl(),
+      new PathResolverRegistryImpl([new LinuxPathProviderImpl()]),
     );
+    service = createFileSystemServiceHandler(filesystem, { batchSize: 2 });
 
     hostTransport.onCall((msg: IMethodMessage) =>
       service.handler({

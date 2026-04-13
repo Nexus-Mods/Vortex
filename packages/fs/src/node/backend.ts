@@ -1,17 +1,5 @@
-import type {
-  DirectoryStatus,
-  FileStatus,
-  FileSystemBackend,
-  Pattern,
-  ResolvedPath,
-  StatResult,
-  Status,
-  StatusTime,
-  FileSystemErrorCode,
-} from "@vortex/fs";
 import type { BigIntStats, ReadStream, WriteStream } from "node:fs";
 
-import { FileSystemError, matches } from "@vortex/fs";
 import {
   cp,
   link,
@@ -28,11 +16,28 @@ import {
 } from "node:fs/promises";
 import { join, dirname } from "node:path";
 
-function parseNodeError(err: unknown): {
+import type {
+  DirectoryStatus,
+  FileStatus,
+  FileSystemErrorCode,
+  StatResult,
+  Status,
+  StatusTime,
+} from "../browser/filesystem";
+import type { Pattern } from "../browser/matcher";
+import type { ResolvedPath } from "../browser/paths";
+import type { NodeFileSystemBackend } from "./filesystem";
+
+import { FileSystemError } from "../browser/filesystem";
+import { matches } from "../browser/matcher";
+
+interface ParsedNodeError {
   code: FileSystemErrorCode;
   isTransient: boolean;
   originalCode: string;
-} {
+}
+
+function parseNodeError(err: unknown): ParsedNodeError {
   if (!(err instanceof Error)) {
     return { code: "generic", isTransient: false, originalCode: "" };
   }
@@ -88,7 +93,15 @@ function parseNodeError(err: unknown): {
   }
 }
 
-export class FileSystemBackendImpl implements FileSystemBackend {
+/**
+ * Node-backed implementation of {@link NodeFileSystemBackend}. Operates on
+ * native {@link ResolvedPath} values; path resolution from
+ * {@link QualifiedPath} is the responsibility of the {@link IFileSystem}
+ * that wraps this backend.
+ *
+ * @public
+ */
+export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
   async copy(
     source: ResolvedPath,
     target: ResolvedPath,
@@ -280,6 +293,11 @@ export class FileSystemBackendImpl implements FileSystemBackend {
     mode: "w",
     options?: { start?: number },
   ): Promise<WriteStream>;
+  createStream(
+    path: ResolvedPath,
+    mode: string,
+    options?: { start?: number; end?: number },
+  ): Promise<ReadStream | WriteStream>;
   async createStream(
     path: ResolvedPath,
     mode: string,
@@ -394,7 +412,16 @@ export class FileSystemBackendImpl implements FileSystemBackend {
       exclude?: Pattern;
     },
   ): Promise<AsyncIterator<[ResolvedPath, Status]>>;
-
+  enumerateDirectory(
+    path: ResolvedPath,
+    options?: {
+      includeStatus?: boolean | "symlink";
+      types?: "all" | "files" | "directories";
+      recursive?: boolean;
+      include?: Pattern;
+      exclude?: Pattern;
+    },
+  ): Promise<AsyncIterator<ResolvedPath | [ResolvedPath, Status]>>;
   async enumerateDirectory(
     path: ResolvedPath,
     options?: {
@@ -437,6 +464,10 @@ export class FileSystemBackendImpl implements FileSystemBackend {
           return { done: false, value: [resolvedPath, status] };
         }
       },
+      return: async () => {
+        await dir.close().catch(() => undefined);
+        return { done: true, value: undefined };
+      },
     };
   }
 
@@ -460,7 +491,7 @@ export class FileSystemBackendImpl implements FileSystemBackend {
   }
 }
 
-function parseTime(stats: BigIntStats) {
+function parseTime(stats: BigIntStats): StatusTime {
   const times: StatusTime = {
     accessTime: stats.atimeNs,
     modifiedTime: stats.mtimeNs,

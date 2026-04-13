@@ -130,6 +130,70 @@ describe("createRpcTransport", () => {
     b.dispose();
   });
 
+  it("preserves Error.cause across the transport envelope", async () => {
+    const { a, b } = makeChannel();
+
+    b.onCall(() => {
+      const root = new Error("root cause");
+      root.name = "RootError";
+      (root as Error & { code?: string }).code = "EROOT";
+      const wrapped = new Error("wrapped", { cause: root });
+      wrapped.name = "WrappedError";
+      return Promise.reject(wrapped);
+    });
+
+    await a.call({ uri: "test:svc", method: "fail", args: [] }).then(
+      () => {
+        throw new Error("expected rejection");
+      },
+      (err: unknown) => {
+        expect(err).toBeInstanceOf(Error);
+        const top = err as Error;
+        expect(top.name).toBe("WrappedError");
+        expect(top.message).toBe("wrapped");
+
+        expect(top.cause).toBeInstanceOf(Error);
+        const cause = top.cause as Error & { code?: string };
+        expect(cause.name).toBe("RootError");
+        expect(cause.message).toBe("root cause");
+        expect(cause.code).toBe("EROOT");
+      },
+    );
+
+    a.dispose();
+    b.dispose();
+  });
+
+  it("truncates cause chains deeper than the envelope limit", async () => {
+    const { a, b } = makeChannel();
+
+    b.onCall(() => {
+      // Chain: L0 → L1 → L2 → L3 → L4. Envelope keeps the top + 3 causes, so
+      // L4 is dropped.
+      const l4 = new Error("l4");
+      const l3 = new Error("l3", { cause: l4 });
+      const l2 = new Error("l2", { cause: l3 });
+      const l1 = new Error("l1", { cause: l2 });
+      const l0 = new Error("l0", { cause: l1 });
+      return Promise.reject(l0);
+    });
+
+    await a
+      .call({ uri: "test:svc", method: "fail", args: [] })
+      .catch((err: unknown) => {
+        const chain: string[] = [];
+        let cur: unknown = err;
+        while (cur instanceof Error) {
+          chain.push(cur.message);
+          cur = (cur as Error & { cause?: unknown }).cause;
+        }
+        expect(chain).toEqual(["l0", "l1", "l2", "l3"]);
+      });
+
+    a.dispose();
+    b.dispose();
+  });
+
   it("falls back to a generic Error when no envelope metadata is present", async () => {
     const { a, b } = makeChannel();
 

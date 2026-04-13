@@ -13,6 +13,11 @@
  * transport envelope are all exercised.
  */
 
+import {
+  NodeFileSystemBackendImpl,
+  NodeFileSystemImpl,
+  PathResolverRegistryImpl,
+} from "@vortex/fs";
 import * as fs from "node:fs/promises";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
@@ -23,7 +28,6 @@ import {
   type ITestHarness,
 } from "../node-adaptor-host/testing/harness.js";
 import { createFileSystemServiceHandler } from "./fs-service.js";
-import { FileSystemBackendImpl } from "./fs.js";
 import { LinuxPathProviderImpl } from "./paths.linux.js";
 
 const BUNDLE_PATH = path.resolve(
@@ -48,11 +52,11 @@ describe("fs-test adaptor (Worker end-to-end)", () => {
     // Serialised QualifiedPath shape. The adaptor rehydrates on receipt.
     rootQP = { value: `linux://${root}`, scheme: "linux", path: root };
 
-    service = createFileSystemServiceHandler(
-      new FileSystemBackendImpl(),
-      new LinuxPathProviderImpl(),
-      { batchSize: 2 },
+    const filesystem = new NodeFileSystemImpl(
+      new NodeFileSystemBackendImpl(),
+      new PathResolverRegistryImpl([new LinuxPathProviderImpl()]),
     );
+    service = createFileSystemServiceHandler(filesystem, { batchSize: 2 });
 
     harness = await createTestHarness(
       BUNDLE_PATH,

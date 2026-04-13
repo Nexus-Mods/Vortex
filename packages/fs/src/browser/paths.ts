@@ -115,6 +115,64 @@ export class PathResolverError extends Error {
 }
 
 /**
+ * Dispatches path resolution across multiple {@link PathResolver}s keyed by
+ * scheme. Resolvers are registered by their {@link PathResolver.scheme} and
+ * selected by matching the scheme of the {@link QualifiedPath} being
+ * resolved.
+ *
+ * @public */
+export interface PathResolverRegistry {
+  /** Registers a resolver for its declared scheme. Overwrites any prior
+   *  resolver for the same scheme. */
+  register(resolver: PathResolver): void;
+
+  /** Returns the resolver for the given scheme, or `undefined` if none is
+   *  registered. */
+  get(scheme: string): PathResolver | undefined;
+
+  /** Resolves the given {@link QualifiedPath} by dispatching to the resolver
+   *  registered for its scheme.
+   *
+   * @throws {@link PathResolverError} when no resolver is registered for the
+   *   path's scheme. */
+  resolve(path: QualifiedPath): Promise<ResolvedPath>;
+}
+
+/**
+ * Default {@link PathResolverRegistry} implementation backed by a `Map`.
+ *
+ * @public */
+export class PathResolverRegistryImpl implements PathResolverRegistry {
+  readonly #byScheme = new Map<string, PathResolver>();
+
+  constructor(resolvers?: Iterable<PathResolver>) {
+    if (resolvers) {
+      for (const resolver of resolvers) this.register(resolver);
+    }
+  }
+
+  register(resolver: PathResolver): void {
+    this.#byScheme.set(resolver.scheme, resolver);
+  }
+
+  get(scheme: string): PathResolver | undefined {
+    return this.#byScheme.get(scheme);
+  }
+
+  resolve(path: QualifiedPath): Promise<ResolvedPath> {
+    const resolver = this.#byScheme.get(path.scheme);
+    if (!resolver) {
+      return Promise.reject(
+        new PathResolverError(
+          `No resolver registered for scheme '${path.scheme}'`,
+        ),
+      );
+    }
+    return resolver.resolve(path);
+  }
+}
+
+/**
  * Creates {@link QualifiedPath} instances from a base.
  *
  * @public */

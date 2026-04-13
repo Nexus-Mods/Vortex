@@ -1,13 +1,17 @@
 import type { IMessage, IMessageHandler } from "@vortex/adaptor-api";
 import type { StatResult } from "@vortex/fs";
 
-import { QualifiedPath } from "@vortex/fs";
+import {
+  NodeFileSystemBackendImpl,
+  NodeFileSystemImpl,
+  PathResolverRegistryImpl,
+  QualifiedPath,
+} from "@vortex/fs";
 import * as fs from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { FileSystemBackendImpl } from "./fs";
 import { createFileSystemServiceHandler } from "./fs-service";
 import { LinuxPathProviderImpl } from "./paths.linux";
 
@@ -41,11 +45,11 @@ describe("createFileSystemServiceHandler", () => {
   beforeEach(async () => {
     root = await fs.mkdtemp(join(tmpdir(), "fs-service-"));
     rootQP = QualifiedPath.parse(`linux://${root}`);
-    service = createFileSystemServiceHandler(
-      new FileSystemBackendImpl(),
-      new LinuxPathProviderImpl(),
-      { batchSize: 2 },
+    const filesystem = new NodeFileSystemImpl(
+      new NodeFileSystemBackendImpl(),
+      new PathResolverRegistryImpl([new LinuxPathProviderImpl()]),
     );
+    service = createFileSystemServiceHandler(filesystem, { batchSize: 2 });
   });
 
   afterEach(async () => {
