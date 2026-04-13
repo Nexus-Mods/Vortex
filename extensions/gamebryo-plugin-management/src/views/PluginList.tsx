@@ -347,7 +347,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       description: 'Is plugin enabled in current profile',
       icon: 'check-o',
       calc: (plugin: IPluginCombined) => {
-        return plugin.isNative
+        // Blueprint plugins are managed by the game engine itself, so treat
+        // them like natives: no user-visible status / no inline toggle.
+        return plugin.isNative || plugin.isBlueprint
           ? undefined
           : (plugin.filePath.toLowerCase().endsWith(GHOST_EXT))
           ? 'Ghost'
@@ -365,8 +367,11 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           { key: 'ghost', text: 'Ghost', icon: 'ghost' },
         ],
         onChangeValue: (plugin: IPluginCombined, value: any) => {
-          if (plugin.isNative) {
-            // safeguard so we don't accidentally disable a native plugin
+          if (plugin.isNative || plugin.isBlueprint) {
+            // safeguard so we don't accidentally disable a native or Blueprint
+            // plugin — Blueprint plugins are force-loaded by the game and
+            // stripping them from plugins.txt would just cause the engine to
+            // re-add them on next launch.
             return;
           }
 
@@ -471,6 +476,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         isMaster: false,
         isLight: false,
         isMedium: false,
+        isBlueprint: false,
         parseFailed: false,
         masterList: [],
         author: '',
@@ -730,6 +736,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             isMedium: this.props.isMediumMaster(
               pluginsIn[pluginName].filePath, esp.isMedium, this.props.gameMode
             ),
+            isBlueprint: esp.isBlueprint,
             parseFailed: false,
             description: esp.description,
             author: esp.author,
@@ -747,6 +754,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             isMaster: false,
             isLight: false,
             isMedium: false,
+            isBlueprint: false,
             parseFailed: true,
             description: '',
             author: '',
@@ -807,7 +815,16 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
     pluginIds.forEach((key: string) => {
       const plugin = plugins[key];
+<<<<<<< HEAD
       if ((plugin === undefined) || plugin.isNative) {
+=======
+      const combined = this.state.pluginsCombined[key];
+      if (
+        plugin === undefined ||
+        plugin.isNative ||
+        combined?.isBlueprint
+      ) {
+>>>>>>> 7c9bbd005 (Merge pull request #22400 from Nexus-Mods/task/app-260/app-261/app-263)
         return;
       }
       if (plugin.filePath.toLowerCase().endsWith(GHOST_EXT)) {
@@ -823,7 +840,16 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
     pluginIds.forEach((key: string) => {
       const plugin = plugins[key];
+<<<<<<< HEAD
       if ((plugin === undefined) || plugin.isNative) {
+=======
+      const combined = this.state.pluginsCombined[key];
+      if (
+        plugin === undefined ||
+        plugin.isNative ||
+        combined?.isBlueprint
+      ) {
+>>>>>>> 7c9bbd005 (Merge pull request #22400 from Nexus-Mods/task/app-260/app-261/app-263)
         return;
       }
 
@@ -839,8 +865,19 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     const { gameMode, onSetPluginGhost, plugins } = this.props;
 
     pluginIds.forEach((key: string) => {
+<<<<<<< HEAD
       if ((plugins[key]?.filePath !== undefined)
           && !plugins[key]?.filePath.toLowerCase().endsWith(GHOST_EXT)) {
+=======
+      const combined = this.state.pluginsCombined[key];
+      if (plugins[key]?.isNative || combined?.isBlueprint) {
+        return;
+      }
+      if (
+        plugins[key]?.filePath !== undefined &&
+        !plugins[key]?.filePath.toLowerCase().endsWith(GHOST_EXT)
+      ) {
+>>>>>>> 7c9bbd005 (Merge pull request #22400 from Nexus-Mods/task/app-260/app-261/app-263)
         onSetPluginGhost(key, gameMode, true, false);
       }
     });

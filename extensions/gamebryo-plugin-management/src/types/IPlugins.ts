@@ -63,6 +63,7 @@ export interface IPluginParsed {
   isMaster: boolean;
   isLight: boolean;
   isMedium: boolean;
+  isBlueprint: boolean;
   parseFailed: boolean;
   masterList: string[];
   author: string;
