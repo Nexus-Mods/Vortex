@@ -422,8 +422,8 @@ catalogs:
       specifier: ^5.4.0
       version: 5.7.0
     esptk:
-      specifier: git+https://github.com/Nexus-Mods/node-esptk#6b8900658d66438fe92ac55bc182a45404e8bf3f
-      version: 2.2.1
+      specifier: git+https://github.com/Nexus-Mods/node-esptk#7b7db98d2c69b6b6cad2cb3dcd7972143adaa7bd
+      version: 2.2.2
     exe-version:
       specifier: git+https://github.com/Nexus-Mods/node-exe-version#eded60fc0a0f3c234e1d586d2eb9952401945406
       version: 2.3.0
@@ -506,8 +506,8 @@ catalogs:
       specifier: ^4.17.21
       version: 4.17.23
     loot:
-      specifier: git+https://github.com/Nexus-Mods/node-loot#04a77fcae028b0838b5e0c53cfcdc65898c49727
-      version: 6.2.1
+      specifier: git+https://github.com/Nexus-Mods/node-loot#7b6028fb2caeb3a2af6a0c3d68630c033cc01e8d
+      version: 6.2.2
     lru-cache:
       specifier: ^11.2.6
       version: 11.2.7
@@ -1651,10 +1651,10 @@ importers:
     optionalDependencies:
       esptk:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-esptk/tar.gz/6b8900658d66438fe92ac55bc182a45404e8bf3f
+        version: https://codeload.github.com/Nexus-Mods/node-esptk/tar.gz/7b7db98d2c69b6b6cad2cb3dcd7972143adaa7bd
       loot:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/04a77fcae028b0838b5e0c53cfcdc65898c49727
+        version: https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/7b6028fb2caeb3a2af6a0c3d68630c033cc01e8d
 
   extensions/gamebryo-savegame-management:
     devDependencies:
@@ -9065,9 +9065,9 @@ packages:
     engines: {node: '>=4'}
     hasBin: true
 
-  esptk@https://codeload.github.com/Nexus-Mods/node-esptk/tar.gz/6b8900658d66438fe92ac55bc182a45404e8bf3f:
-    resolution: {tarball: https://codeload.github.com/Nexus-Mods/node-esptk/tar.gz/6b8900658d66438fe92ac55bc182a45404e8bf3f}
-    version: 2.2.1
+  esptk@https://codeload.github.com/Nexus-Mods/node-esptk/tar.gz/7b7db98d2c69b6b6cad2cb3dcd7972143adaa7bd:
+    resolution: {tarball: https://codeload.github.com/Nexus-Mods/node-esptk/tar.gz/7b7db98d2c69b6b6cad2cb3dcd7972143adaa7bd}
+    version: 2.2.2
 
   esquery@1.7.0:
     resolution: {integrity: sha512-Ap6G0WQwcU/LHsvLwON1fAQX9Zp0A2Y6Y/cJBl9r/JbW90Zyg4/zbG6zzKa2OTALELarYHmKu0GhpM5EO+7T0g==}
@@ -10322,9 +10322,9 @@ packages:
     resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
     hasBin: true
 
-  loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/04a77fcae028b0838b5e0c53cfcdc65898c49727:
-    resolution: {tarball: https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/04a77fcae028b0838b5e0c53cfcdc65898c49727}
-    version: 6.2.1
+  loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/7b6028fb2caeb3a2af6a0c3d68630c033cc01e8d:
+    resolution: {tarball: https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/7b6028fb2caeb3a2af6a0c3d68630c033cc01e8d}
+    version: 6.2.2
 
   lowercase-keys@2.0.0:
     resolution: {integrity: sha512-tqNXrS78oMOE73NMxK4EMLQsQowWf8jKooH9g7xPavRT706R6bkQJ6DY2Te7QukaZsulxa30wQ7bk0pm4XiHmA==}
@@ -17612,7 +17612,7 @@ snapshots:
   esprima@4.0.1:
     optional: true
 
-  esptk@https://codeload.github.com/Nexus-Mods/node-esptk/tar.gz/6b8900658d66438fe92ac55bc182a45404e8bf3f:
+  esptk@https://codeload.github.com/Nexus-Mods/node-esptk/tar.gz/7b7db98d2c69b6b6cad2cb3dcd7972143adaa7bd:
     dependencies:
       autogypi: 0.2.2
       node-addon-api: 8.5.0
@@ -18965,7 +18965,7 @@ snapshots:
     dependencies:
       js-tokens: 4.0.0
 
-  loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/04a77fcae028b0838b5e0c53cfcdc65898c49727:
+  loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/7b6028fb2caeb3a2af6a0c3d68630c033cc01e8d:
     dependencies:
       autogypi: 0.2.2
       lodash: 4.17.23
