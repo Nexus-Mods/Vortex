@@ -7,7 +7,7 @@ These steps cover the shared repository bootstrap flow for Windows and Linux.
 
 ## Setup
 
-1. Install [Volta] via cmd/terminal.
+1. Open a terminal and install [Volta].
 
 Linux:
 
@@ -21,15 +21,27 @@ Windows:
 winget install Volta.Volta
 ```
 
-After installing Volta, restart terminal to update `$PATH`.
+After installing Volta, close and reopen terminal to update `$PATH`.
 You can verify Volta is working by running `volta --version`.
 
-2. Clone the repository through your git client or CLI with submodules, then open command prompt/terminal in that folder:
+2. Clone the repository through your git client or CLI with submodules, then open a terminal in that folder:
+
+Linux:
 
 ```bash
 git clone --recurse-submodules https://github.com/Nexus-Mods/Vortex.git
 cd Vortex
 ```
+
+Windows:
+
+```powershell
+git clone --recurse-submodules https://github.com/Nexus-Mods/Vortex.git C:\v
+cd C:\v
+```
+
+Use `C:\v` on Windows to avoid path length issues.
+
 3. Install the pinned `node.js` and `yarn` versions:
 
 ```bash
@@ -63,7 +75,7 @@ dotnet --list-sdks
 
 ## Notes
 
-- If `volta` is not available after terminal restart, add `~/.volta/bin` to your shell `PATH`
+- If `volta` is not available after reopening terminal, add `~/.volta/bin` to your shell `PATH`
 - You may want to pin Node locally with `volta pin node@22.22.0` to match the repo's `package.json`
 
 [Generic Installation Instructions]: ./generic.md

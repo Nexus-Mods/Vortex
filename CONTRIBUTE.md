@@ -14,7 +14,7 @@ Before you start, make sure you have:
 ## Setup
 
 1. Install distro-specific prerequisites:
-    - Microsoft Windows
+    - [Windows setup]
     - Linux:
         - [Arch-based setup] (Arch, CachyOS, Manjaro)
         - [Debian-based setup] (Debian, Ubuntu, Pop!_OS, Linux Mint)
@@ -77,4 +77,5 @@ information.
 [VS Code]: https://code.visualstudio.com/
 [VS Code download]: https://code.visualstudio.com/download
 [WebStorm]: https://www.jetbrains.com/webstorm/
+[Windows setup]: ./docs/install-instructions/windows.md
 [Windows packaging]: ./docs/packaging/windows.md

@@ -13,7 +13,7 @@ Vortex depends on native Node modules which require [node-gyp]. You need a
 
 ### Windows
 
-Install VS 2022 Build Tools. Follow the [node-gyp Windows instructions].
+Use [Windows setup] for full Windows prerequisites.
 
 ### Linux
 
@@ -36,7 +36,7 @@ After these prerequisites are installed, continue with [Shared Setup].
 
 [.NET 9 SDK]: https://dotnet.microsoft.com/en-us/download/dotnet/9.0
 [node-gyp]: https://github.com/nodejs/node-gyp
-[node-gyp Windows instructions]: https://github.com/nodejs/node-gyp?tab=readme-ov-file#on-windows
 [NixOS Setup]: ./nixos.md
 [Shared Setup]: ./shared.md
+[Windows setup]: ./windows.md
 [supported Python version]: https://devguide.python.org/versions/
