@@ -2,28 +2,35 @@ import type { Chunk } from "./chunking";
 
 export type Resolver<T> = (resource: T) => Promise<ResolvedResource>;
 
+export type ResolvedEndpoint = { url: URL; headers?: Record<string, string> };
+
 export type ResolvedResource =
-  | URL
-  | { probeUrl: URL; chunkUrl?: (chunk: Chunk) => Promise<URL> };
+  | ResolvedEndpoint
+  | {
+      probeEndpoint: ResolvedEndpoint;
+      chunkEndpoint?: (chunk: Chunk) => Promise<ResolvedEndpoint>;
+    };
 
-export const urlResolver: Resolver<URL> = (url) => Promise.resolve(url);
+export const urlResolver: Resolver<URL> = (url) => Promise.resolve({ url });
 
+/** @internal */
 export type NormalizedResource = {
-  probeUrl: URL;
-  chunkUrl: (chunk: Chunk) => Promise<URL>;
+  probeEndpoint: ResolvedEndpoint;
+  chunkEndpoint: (chunk: Chunk) => Promise<ResolvedEndpoint>;
 };
 
+/** @internal */
 export function normalize(resource: ResolvedResource): NormalizedResource {
-  if (resource instanceof URL) {
+  if ("url" in resource) {
     return {
-      probeUrl: resource,
-      chunkUrl: () => Promise.resolve(resource),
+      probeEndpoint: resource,
+      chunkEndpoint: () => Promise.resolve(resource),
     };
   }
 
-  const { probeUrl, chunkUrl } = resource;
+  const { probeEndpoint, chunkEndpoint } = resource;
   return {
-    probeUrl,
-    chunkUrl: chunkUrl ?? (() => Promise.resolve(probeUrl)),
+    probeEndpoint,
+    chunkEndpoint: chunkEndpoint ?? (() => Promise.resolve(probeEndpoint)),
   };
 }

@@ -1,6 +1,8 @@
+import { DownloadError } from "@vortex/shared/errors";
+
 import { TimeoutError, HTTPError, RequestError, AbortError } from "got";
 
-import { DownloadError } from "@vortex/shared/errors";
+import type { ResolvedEndpoint } from "./resolver";
 
 export function isCancellation(err: unknown): boolean {
   // NOTE(erri120): The `got` package throws a custom `AbortError` class on cancellation
@@ -11,7 +13,12 @@ export function isCancellation(err: unknown): boolean {
   return err instanceof DOMException && err.name === "AbortError";
 }
 
-export function toNetworkError(url: URL, err: unknown): DownloadError {
+export function toNetworkError(
+  endpoint: URL | ResolvedEndpoint,
+  err: unknown,
+): DownloadError {
+  const url = endpoint instanceof URL ? endpoint : endpoint.url;
+
   if (err instanceof DownloadError) return err;
   if (err instanceof TimeoutError)
     return new DownloadError(

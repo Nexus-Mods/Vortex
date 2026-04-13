@@ -43,6 +43,9 @@ export type DownloadManagerOptions = {
 
   /** Optional timeout settings. */
   timeout?: Partial<TimeoutOptions>;
+
+  /** Optional User-Agent header sent on every request. */
+  userAgent?: string;
 };
 
 export type DownloadCheckpoint<T = unknown> = {
@@ -56,13 +59,15 @@ export class DownloadManager {
   readonly #downloadQueue: PQueue;
   readonly #rateLimiter: RateLimiter | null;
   readonly #timeout: TimeoutOptions;
+  readonly #userAgent: string | undefined;
 
   constructor(options: DownloadManagerOptions) {
     this.#downloadQueue = new PQueue({
       concurrency: options.concurrency,
     });
 
-    const { bytesPerSecond, timeout } = options;
+    const { bytesPerSecond, timeout, userAgent } = options;
+    this.#userAgent = userAgent;
 
     if (bytesPerSecond && !isNaN(bytesPerSecond)) {
       this.#rateLimiter = new RateLimiter({
@@ -138,6 +143,7 @@ export class DownloadManager {
           abortSignal: abortController.signal,
           checkpoint,
           timeout: this.#timeout,
+          userAgent: this.#userAgent,
         },
       ),
     );
