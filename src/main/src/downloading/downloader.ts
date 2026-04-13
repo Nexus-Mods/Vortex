@@ -57,6 +57,7 @@ export async function download<T>(
     chunkConcurrency?: number;
     checkpoint?: Checkpoint;
     timeout?: TimeoutOptions;
+    userAgent?: string;
   },
 ): Promise<void> {
   if (options?.abortSignal?.aborted) {
@@ -77,6 +78,7 @@ export async function download<T>(
         probeUrl(resolved.probeUrl, options?.checkpoint?.etag ?? null, {
           abortSignal: options?.abortSignal,
           timeout: options?.timeout,
+          userAgent: options?.userAgent,
         }),
       strategy.retry,
       options?.abortSignal,
@@ -184,6 +186,7 @@ export async function download<T>(
                   abortSignal: options?.abortSignal,
                   rateLimiter: strategy.rateLimiter,
                   timeout: options?.timeout,
+                  userAgent: options?.userAgent,
                   progress: chunkProgress
                     ? chunkProgress.get(chunk.index)
                     : undefined,
@@ -259,6 +262,7 @@ export async function download<T>(
             abortSignal: options?.abortSignal,
             rateLimiter: strategy.rateLimiter,
             timeout: options?.timeout,
+            userAgent: options?.userAgent,
             etag: probe.etag,
             chunk: rangeChunk,
             expectedRemainingBytes,
@@ -289,11 +293,12 @@ async function probeUrl(
   options: {
     abortSignal?: AbortSignal;
     timeout?: TimeoutOptions;
+    userAgent?: string;
   },
 ): Promise<ProbeResult> {
   const response = await got.head(url, {
     signal: options?.abortSignal,
-    headers: createHeaders(previousETag, null),
+    headers: createHeaders(previousETag, null, options.userAgent),
     timeout: createGotTimeoutOptions(options.timeout),
     retry: { limit: 0 },
   });
@@ -344,11 +349,12 @@ function createGotStream(
     etag?: string;
     chunk?: Chunk;
     timeout?: TimeoutOptions;
+    userAgent?: string;
   },
 ) {
   const stream = got.stream(url, {
     signal: options?.abortSignal,
-    headers: createHeaders(options?.etag, options?.chunk),
+    headers: createHeaders(options?.etag, options?.chunk, options?.userAgent),
     timeout: createGotTimeoutOptions(options.timeout),
     retry: { limit: 0 },
   });
@@ -397,6 +403,7 @@ async function downloadStream(
     abortSignal?: AbortSignal;
     rateLimiter?: RateLimiter;
     timeout?: TimeoutOptions;
+    userAgent?: string;
     etag?: string;
     chunk?: Chunk;
     expectedRemainingBytes?: number;
@@ -408,6 +415,7 @@ async function downloadStream(
     etag: options.etag,
     chunk: options.chunk,
     timeout: options.timeout,
+    userAgent: options.userAgent,
   });
 
   let remaining = options.expectedRemainingBytes;
@@ -468,6 +476,7 @@ async function downloadChunk(
     progress?: ChunkProgress;
     rateLimiter?: RateLimiter;
     timeout?: TimeoutOptions;
+    userAgent?: string;
     abortSignal?: AbortSignal;
   },
 ): Promise<void> {
@@ -483,6 +492,7 @@ async function downloadChunk(
     progress: options.progress,
     rateLimiter: options.rateLimiter,
     timeout: options.timeout,
+    userAgent: options.userAgent,
     abortSignal: options.abortSignal,
   });
 }
@@ -516,6 +526,7 @@ async function withRetry<T>(
 function createHeaders(
   etag: string | undefined,
   chunk: Chunk | undefined,
+  userAgent?: string,
 ): Headers {
   const range = chunk
     ? `bytes=${chunk.range.start}-${chunk.range.end}`
@@ -529,6 +540,7 @@ function createHeaders(
   return {
     Range: range,
     "If-Match": ifMatch,
+    "User-Agent": userAgent,
   };
 }
 
