@@ -36,12 +36,11 @@ export interface MessagePortLike {
   // Node-style
   on?(event: "message", listener: (value: unknown) => void): void;
   off?(event: "message", listener: (value: unknown) => void): void;
-  // Browser-style
-  addEventListener?(type: string, listener: unknown, ...rest: unknown[]): void;
+  // Browser-style (accepts EventListenerOrEventListenerObject for compatibility)
+  addEventListener?(type: string, listener: EventListenerOrEventListenerObject): void;
   removeEventListener?(
     type: string,
-    listener: unknown,
-    ...rest: unknown[]
+    listener: EventListenerOrEventListenerObject,
   ): void;
 }
 
@@ -93,8 +92,10 @@ export function createRpcTransport(port: MessagePortLike): IRpcTransport {
     const envelope = data as Record<string, unknown>;
     const { type } = envelope;
 
-    if (type === "call") {
-      const { correlationId, msg } = envelope as unknown as CallMessage;
+    const correlationId = typeof envelope.correlationId === "string" ? envelope.correlationId : undefined;
+
+    if (type === "call" && correlationId !== undefined) {
+      const msg = envelope.msg as IMethodMessage;
 
       const respond = (response: RpcMessage) => port.postMessage(response);
 
@@ -117,8 +118,8 @@ export function createRpcTransport(port: MessagePortLike): IRpcTransport {
       return;
     }
 
-    if (type === "result") {
-      const { correlationId, value } = envelope as unknown as ResultMessage;
+    if (type === "result" && correlationId !== undefined) {
+      const value = envelope.value;
       const entry = pending.get(correlationId);
       if (entry) {
         pending.delete(correlationId);
@@ -127,8 +128,8 @@ export function createRpcTransport(port: MessagePortLike): IRpcTransport {
       return;
     }
 
-    if (type === "error") {
-      const { correlationId, message } = envelope as unknown as ErrorMessage;
+    if (type === "error" && correlationId !== undefined) {
+      const message = typeof envelope.message === "string" ? envelope.message : "Unknown error";
       const entry = pending.get(correlationId);
       if (entry) {
         pending.delete(correlationId);
@@ -138,22 +139,24 @@ export function createRpcTransport(port: MessagePortLike): IRpcTransport {
     }
 
     // One-way signal: notify once() waiters
-    const waiters = onceListeners.get(type as string);
-    if (waiters && waiters.length > 0) {
-      const { resolve } = waiters.shift();
-      resolve(data);
+    if (typeof type === "string") {
+      const waiters = onceListeners.get(type);
+      if (waiters && waiters.length > 0) {
+        const waiter = waiters.shift();
+        if (waiter) waiter.resolve(data);
+      }
     }
   }
 
   // Normalise over both Node and browser port styles
   let nodeListener: ((value: unknown) => void) | undefined;
-  let browserListener: ((event: { data: unknown }) => void) | undefined;
+  let browserListener: EventListener | undefined;
 
   if (typeof port.on === "function") {
     nodeListener = (value: unknown) => handleMessage(value);
     port.on("message", nodeListener);
   } else if (typeof port.addEventListener === "function") {
-    browserListener = (event: { data: unknown }) => handleMessage(event.data);
+    browserListener = (event: Event) => handleMessage((event as MessageEvent).data);
     port.addEventListener("message", browserListener);
   }
 

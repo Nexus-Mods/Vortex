@@ -12,11 +12,36 @@
     "lint": "pnpm eslint --concurrency auto .",
     "lint:quiet": "pnpm eslint --concurrency auto --quiet ."
   },
+  "dependencies": {
+    "@vortex/fs": "workspace:*"
+  },
+  "peerDependencies": {
+    "rolldown": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "rolldown": "catalog:"
+  },
   "exports": {
     ".": {
       "development": "./src/lib.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
+    },
+    "./contracts/game-info": {
+      "development": "./src/contracts/game-info.ts",
+      "import": "./dist/contracts/game-info.js",
+      "require": "./dist/contracts/game-info.cjs"
+    },
+    "./contracts/game-paths": {
+      "development": "./src/contracts/game-paths.ts",
+      "import": "./dist/contracts/game-paths.js",
+      "require": "./dist/contracts/game-paths.cjs"
+    },
+    "./contracts/game-tools": {
+      "development": "./src/contracts/game-tools.ts",
+      "import": "./dist/contracts/game-tools.js",
+      "require": "./dist/contracts/game-tools.cjs"
     },
     "./contracts/ping": {
       "development": "./src/contracts/ping.ts",
@@ -30,18 +55,23 @@
     },
     "./package.json": "./package.json"
   },
-  "peerDependencies": {
-    "rolldown": "catalog:"
-  },
-  "devDependencies": {
-    "@types/node": "catalog:",
-    "rolldown": "catalog:"
-  },
   "publishConfig": {
     "exports": {
       ".": {
         "import": "./dist/index.js",
         "require": "./dist/index.cjs"
+      },
+      "./contracts/game-info": {
+        "import": "./dist/contracts/game-info.js",
+        "require": "./dist/contracts/game-info.cjs"
+      },
+      "./contracts/game-paths": {
+        "import": "./dist/contracts/game-paths.js",
+        "require": "./dist/contracts/game-paths.cjs"
+      },
+      "./contracts/game-tools": {
+        "import": "./dist/contracts/game-tools.js",
+        "require": "./dist/contracts/game-tools.cjs"
       },
       "./contracts/ping": {
         "import": "./dist/contracts/ping.js",
@@ -54,7 +84,7 @@
       "./package.json": "./package.json"
     }
   },
-  "types": "./dist/index.d.cts",
   "main": "./dist/index.cjs",
-  "module": "./dist/index.js"
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.cts"
 }

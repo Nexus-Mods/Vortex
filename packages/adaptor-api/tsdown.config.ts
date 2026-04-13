@@ -4,7 +4,7 @@ export default defineConfig({
   entry: {
     index: "./src/lib.ts",
     plugin: "./src/plugin.ts",
-    "contracts/ping": "./src/contracts/ping.ts",
+    "contracts/*": ["./src/contracts/*.ts", "!./src/contracts/*.test.ts"],
   },
   format: ["esm", "cjs"],
   dts: {

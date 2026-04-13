@@ -3791,6 +3791,10 @@ importers:
         version: link:../../packages/vortex-api
 
   packages/adaptor-api:
+    dependencies:
+      '@vortex/fs':
+        specifier: workspace:*
+        version: link:../fs
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -3798,6 +3802,15 @@ importers:
       rolldown:
         specifier: 'catalog:'
         version: 1.0.0-rc.9
+
+  packages/adaptors/cyberpunk2077:
+    devDependencies:
+      '@vortex/adaptor-api':
+        specifier: workspace:*
+        version: link:../../adaptor-api
+      '@vortex/fs':
+        specifier: workspace:*
+        version: link:../../fs
 
   packages/adaptors/ping-test:
     devDependencies:
@@ -17901,7 +17914,7 @@ snapshots:
       raf: 3.4.1
       react: 16.14.0
       react-display-name: 0.2.5
-      react-dnd: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@22.19.15)(@types/react@16.14.69)(react@16.14.0)
+      react-dnd: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@25.5.0)(@types/react@16.14.69)(react@16.14.0)
       react-dom: 16.14.0(react@16.14.0)
 
   fs-constants@1.0.0: {}
@@ -20144,7 +20157,7 @@ snapshots:
       lodash.isequal: 4.5.0
       prop-types: 15.8.1
       react: 16.14.0
-      react-dnd: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@22.19.15)(@types/react@16.14.69)(react@16.14.0)
+      react-dnd: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@25.5.0)(@types/react@16.14.69)(react@16.14.0)
       react-dnd-html5-backend: 11.1.3
       react-dom: 16.14.0(react@16.14.0)
       react-lifecycles-compat: 3.0.4

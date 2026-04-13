@@ -1,45 +1,23 @@
-let activeContainer: Map<string, unknown> | null = null;
-
-/**
- * Creates an empty service container.
- * Populate it with service proxies before passing to {@link activateContainer}.
- */
-export function createContainer(): Map<string, unknown> {
-  return new Map();
+declare global {
+  var __vortex_service_container: Map<string, unknown> | undefined;
 }
 
 /**
- * Sets the given container as the active global container.
- * Must be called before any `virtual:services` imports resolve.
- *
- * @param container - A populated service container to activate.
- */
-export function activateContainer(container: Map<string, unknown>): void {
-  activeContainer = container;
-}
-
-/**
- * Clears the active container.
- * Services resolved before this call remain usable via their captured references.
- */
-export function deactivateContainer(): void {
-  activeContainer = null;
-}
-
-/**
- * Returns an accessor for the active container.
- * Resolution is lazy — it reads from whatever container is active at call time,
- * not at the time {@link getContainer} itself was called.
+ * Returns an accessor for the service container.
+ * The container is set on `globalThis.__vortex_service_container` by the
+ * bootstrapper before the adaptor bundle is evaluated — the API package
+ * itself does not own or manage this state.
  */
 export function getContainer(): { resolve(uri: string): unknown } {
   return {
     resolve(uri: string): unknown {
-      if (!activeContainer) {
+      const container = globalThis.__vortex_service_container;
+      if (!container) {
         throw new Error(
-          "Service container not initialized — services can only be used after activation",
+          "Service container not initialized — the bootstrapper must set globalThis.__vortex_service_container before evaluation",
         );
       }
-      const svc = activeContainer.get(uri);
+      const svc = container.get(uri);
       if (!svc) {
         throw new Error(`Service not found: ${uri}`);
       }

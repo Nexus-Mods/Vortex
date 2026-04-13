@@ -7,5 +7,5 @@ export type WindowsPathBase = OSPathBase;
 export interface WindowsPathProvider extends PathProvider<WindowsPathBase> {
   readonly platform: "windows";
 
-  enumerateDrives(): Promise<QualifiedPath>;
+  enumerateDrives(): Promise<QualifiedPath[]>;
 }

@@ -44,7 +44,7 @@ export interface FileSystem {
   readFile(path: QualifiedPath): Promise<Uint8Array>;
 
   /**
-   * Writes data from a file.
+   * Writes data to a file.
    *
    * @throws {@link FileSystemError}
    * */
@@ -75,7 +75,7 @@ export interface FileSystem {
    * Returns the status of the entry.
    *
    * @param path - Path to query.
-   * @param options - Whether to parse sym links explicilty or silently follow them.
+   * @param options - Whether to parse sym links explicitly or silently follow them.
    *
    * @throws {@link FileSystemError}
    * */

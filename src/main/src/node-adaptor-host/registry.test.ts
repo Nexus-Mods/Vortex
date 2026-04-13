@@ -1,6 +1,6 @@
 import type { IAdaptorManifest } from "@vortex/adaptor-api";
 
-import { adaptorName, pid, semver, uri } from "@vortex/adaptor-api";
+import { adaptorName, pid, semVer, uri } from "@vortex/adaptor-api";
 import { describe, expect, it } from "vitest";
 
 import { AdaptorRegistry, NameService } from "./registry.js";
@@ -48,7 +48,7 @@ function makeManifest(id: string, name: string): IAdaptorManifest {
   return {
     id: uri(id),
     name: adaptorName(name),
-    version: semver("0.1.0"),
+    version: semVer("0.1.0"),
     provides: [uri(`${id}/echo`)],
     requires: [],
   };

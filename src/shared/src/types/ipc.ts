@@ -322,6 +322,22 @@ export interface InvokeChannels {
 
   // Compile stylesheets
   "styles:compile": (filePaths: string[]) => Promise<string>;
+
+  // Adaptor host — renderer queries adaptor services through these
+  "adaptors:list": () => Promise<
+    Array<{
+      name: string;
+      pid: string;
+      provides: string[];
+      requires: string[];
+    }>
+  >;
+  "adaptors:call": (
+    adaptorName: string,
+    serviceUri: string,
+    method: string,
+    args: unknown[],
+  ) => Promise<Serializable>;
 }
 
 /** Represents all IPC-safe typed arrays */

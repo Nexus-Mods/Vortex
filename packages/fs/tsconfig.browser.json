@@ -12,6 +12,6 @@
     "types": [],
     "allowJs": false,
     "isolatedDeclarations": true,
-    "noUncheckedSideEffectImports": true,
-  },
+    "noUncheckedSideEffectImports": true
+  }
 }
