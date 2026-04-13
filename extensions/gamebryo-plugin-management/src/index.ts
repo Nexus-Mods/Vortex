@@ -36,6 +36,7 @@ import {
   revisionText,
   syncGameSupport,
   supportedGames,
+  supportsBlueprintPlugins,
   supportsESL,
   supportsMediumMasters,
 } from "./util/gameSupport";
@@ -262,7 +263,24 @@ function updatePluginListImpl(
               {},
             );
             if (pluginPersistor !== undefined) {
-              pluginPersistor.setKnownPlugins(knownPlugins);
+              let blueprintIds: Set<string> | undefined;
+              if (supportsBlueprintPlugins(gameId)) {
+                blueprintIds = new Set<string>();
+                for (const pluginId of Object.keys(pluginStates)) {
+                  try {
+                    const esp = new ESPFile(
+                      pluginStates[pluginId].filePath,
+                      gameId,
+                    );
+                    if (esp.isBlueprint) {
+                      blueprintIds.add(pluginId);
+                    }
+                  } catch (err) {
+                    // parse failures are already reported elsewhere; skip
+                  }
+                }
+              }
+              pluginPersistor.setKnownPlugins(knownPlugins, blueprintIds);
             }
           }
           return Promise.resolve();
@@ -457,6 +475,7 @@ function register(
       isLight: fileInfo.isLight,
       isMedium: fileInfo.isMedium,
       isDummy: fileInfo.isDummy,
+      isBlueprint: supportsBlueprintPlugins(gameMode) && fileInfo.isBlueprint,
       author: fileInfo.author,
       description: fileInfo.description,
       masterList: fileInfo.masterList,
@@ -686,6 +705,38 @@ function register(
 
   const pluginInfoCache = new PluginInfoCache(context.api);
 
+  // Cross-extension API: lets other extensions (e.g. game-starfield) query
+  // Blueprint-plugin status without having to take a native-addon dependency
+  // on esptk themselves.
+  //
+  // Takes an absolute plugin file path so the lookup is self-contained — the
+  // API never depends on Vortex's pluginList Redux state being populated, and
+  // can be called at any point after gamemode activation.
+  //
+  // Returns false for non-Starfield game modes (supportsBlueprintPlugins gate),
+  // for files the parser can't read, and for files whose TES4 header doesn't
+  // set the Blueprint flag. Consumers should treat a thrown/non-boolean result
+  // as a no-op and not assume anything about blueprint-ness.
+  context.registerAPI(
+    "isBlueprintPlugin",
+    (pluginFilePath: string): boolean => {
+      const gameMode = selectors.activeGameId(context.api.getState());
+      if (!supportsBlueprintPlugins(gameMode)) {
+        return false;
+      }
+      try {
+        return pluginInfoCache.getInfo(pluginFilePath).isBlueprint;
+      } catch (err) {
+        log("warn", "isBlueprintPlugin parse failed", {
+          pluginFilePath,
+          err: (err as Error).message,
+        });
+        return false;
+      }
+    },
+    { minArguments: 1 },
+  );
+
   context.registerTest("plugins-locked", "gamemode-activated", () =>
     testPluginsLocked(selectors.activeGameId(context.api.store.getState())),
   );
@@ -694,6 +745,12 @@ function register(
   );
   context.registerTest("master-missing", "plugins-changed" as any, () =>
     testMissingMasters(context.api, pluginInfoCache),
+  );
+  context.registerTest("blueprint-master", "gamemode-activated", () =>
+    testBlueprintMasters(context.api, pluginInfoCache),
+  );
+  context.registerTest("blueprint-master", "plugins-changed" as any, () =>
+    testBlueprintMasters(context.api, pluginInfoCache),
   );
   context.registerTest("rules-unfulfilled", "loot-info-updated" as any, () =>
     testRulesUnfulfilled(context.api),
@@ -1202,6 +1259,7 @@ function testExceededPluginLimit(
 
 interface IESPInfo {
   isLight: boolean;
+  isBlueprint: boolean;
   masterList: string[];
 }
 
@@ -1242,6 +1300,8 @@ class PluginInfoCache {
         lastINO: ino,
         info: {
           isLight: info.isLight,
+          isBlueprint:
+            supportsBlueprintPlugins(activeGameMode) && info.isBlueprint,
           masterList: info.masterList,
         },
       };
@@ -1386,6 +1446,135 @@ function testMissingMasters(
       severity: "warning" as types.ProblemSeverity,
     });
   }
+}
+
+/**
+ * For Starfield only. Verifies that no non-Blueprint plugin declares a Blueprint
+ * plugin as a master. The game strips Blueprint masters from non-Blueprint
+ * plugins in memory, which destroys references and produces unresolved FormIDs.
+ */
+function testBlueprintMasters(
+  api: types.IExtensionApi,
+  infoCache: PluginInfoCache,
+): Promise<types.ITestResult> {
+  const { translate, store } = api;
+  const state = store.getState();
+  const gameMode = selectors.activeGameId(state);
+  if (!gameSupported(gameMode) || !supportsBlueprintPlugins(gameMode)) {
+    return Promise.resolve(undefined);
+  }
+
+  const pluginList = state.session.plugins.pluginList ?? {};
+  const natives = new Set<string>(nativePlugins(gameMode));
+  const loadOrder: { [plugin: string]: ILoadOrder } = state.loadOrder;
+  const enabledPlugins = Object.keys(loadOrder).filter(
+    (plugin: string) => loadOrder[plugin].enabled || natives.has(plugin),
+  );
+
+  interface IParsedPlugin {
+    name: string;
+    isBlueprint: boolean;
+    masterList: string[];
+  }
+
+  const pluginDetails: IParsedPlugin[] = enabledPlugins
+    .filter((name: string) => pluginList[name] !== undefined)
+    .map((plugin) => {
+      try {
+        const info = infoCache.getInfo(pluginList[plugin].filePath);
+        return {
+          name: plugin,
+          isBlueprint: info.isBlueprint,
+          masterList: info.masterList,
+        };
+      } catch (err) {
+        log("warn", "failed to parse esp file", {
+          name: pluginList[plugin].filePath,
+          err: err.message,
+        });
+        return { name: plugin, isBlueprint: false, masterList: [] };
+      }
+    });
+
+  const blueprintPlugins = new Set<string>(
+    pluginDetails
+      .filter((plugin) => plugin.isBlueprint)
+      .map((plugin) => plugin.name),
+  );
+
+  if (blueprintPlugins.size === 0) {
+    return Promise.resolve(undefined);
+  }
+
+  const broken = pluginDetails.reduce((prev, plugin) => {
+    if (plugin.isBlueprint) {
+      return prev;
+    }
+    const offendingMasters = plugin.masterList.filter((master) =>
+      blueprintPlugins.has(master.toLowerCase()),
+    );
+    if (offendingMasters.length > 0) {
+      prev[plugin.name] = offendingMasters;
+    }
+    return prev;
+  }, {} as { [pluginName: string]: string[] });
+
+  if (Object.keys(broken).length === 0) {
+    return Promise.resolve(undefined);
+  }
+
+  const link = (pluginName: string) =>
+    `[link="cb://showplugin/${pluginName}"]${pluginName}[/link]`;
+
+  return Promise.resolve({
+    description: {
+      short: translate("Blueprint plugin used as master"),
+      long:
+        translate(
+          "The following enabled plugins declare a Blueprint plugin as a master. " +
+            "Starfield strips Blueprint masters from non-Blueprint plugins at load, " +
+            "which will break references and corrupt your save. These plugins must " +
+            "be disabled or rebuilt against a non-Blueprint master:",
+        ) +
+        "[table][tbody]" +
+        Object.keys(broken)
+          .map((plugin) => {
+            const offending = broken[plugin].map(link).join("[br][/br]");
+            const detail = pluginList[plugin];
+            const name =
+              detail !== undefined ? path.basename(detail.filePath) : plugin;
+            return (
+              "[tr]" +
+              [link(name), translate("has Blueprint master"), offending]
+                .map((iter) => `[td]${iter}[/td]`)
+                .join() +
+              "[/tr]" +
+              "[tr][/tr]"
+            );
+          })
+          .join("\n") +
+        "[/tbody][/table]",
+      context: {
+        callbacks: {
+          showplugin: (pluginName: string) => {
+            const stateNow: types.IState = store.getState();
+            const gameModeNow = selectors.activeGameId(stateNow);
+            if (gameSupported(gameModeNow)) {
+              api.events.emit("show-main-page", "gamebryo-plugins");
+              store.dispatch(
+                actions.setAttributeFilter(
+                  "gamebryo-plugins",
+                  "name",
+                  pluginName,
+                ),
+              );
+            }
+          },
+        },
+      },
+    },
+    severity: "error" as types.ProblemSeverity,
+  });
 }
 
 function testRulesUnfulfilled(

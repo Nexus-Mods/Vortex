@@ -175,7 +175,7 @@ catalog:
   eslint-plugin-better-tailwindcss: ^4.0.2
   eslint-plugin-import: ^2.32.0
   eslint-plugin-perfectionist: ^5.4.0
-  esptk: git+https://github.com/Nexus-Mods/node-esptk#6b8900658d66438fe92ac55bc182a45404e8bf3f
+  esptk: git+https://github.com/Nexus-Mods/node-esptk#7b7db98d2c69b6b6cad2cb3dcd7972143adaa7bd
   exe-version: git+https://github.com/Nexus-Mods/node-exe-version#eded60fc0a0f3c234e1d586d2eb9952401945406
   feedparser: ^2.2.9
   font-scanner: ^0.2.1
@@ -203,7 +203,7 @@ catalog:
   levelup: 4.4.0
   limiter: ^3.0.0
   lodash: ^4.17.21
-  loot: git+https://github.com/Nexus-Mods/node-loot#04a77fcae028b0838b5e0c53cfcdc65898c49727
+  loot: git+https://github.com/Nexus-Mods/node-loot#7b6028fb2caeb3a2af6a0c3d68630c033cc01e8d
   lru-cache: ^11.2.6
   markdown-ast: ^0.2.1
   memoize-one: ^5.1.1

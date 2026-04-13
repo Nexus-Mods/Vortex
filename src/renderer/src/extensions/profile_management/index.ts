@@ -958,7 +958,8 @@ function init(context: IExtensionContext): boolean {
     group: "per-game",
     isModernOnly: true,
     visible: () =>
-      activeGameId(context.api.store.getState()) !== undefined,
+      activeGameId(context.api.store.getState()) !== undefined &&
+      context.api.store.getState().settings.interface.profilesVisible,
     props: () => ({ features: profileFeatures }),
   });
 
