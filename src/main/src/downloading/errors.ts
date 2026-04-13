@@ -1,28 +1,6 @@
 import { TimeoutError, HTTPError, RequestError, AbortError } from "got";
 
-export type DownloadErrorPayload =
-  | { code: "cancellation" }
-  | { code: "network-error"; url: URL }
-  | { code: "network-timeout"; url: URL }
-  | { code: "network-bad-status"; url: URL; statusCode: number }
-  | { code: "precondition-failed"; url: URL }
-  | { code: "protocol-violation"; url: URL }
-  | { code: "fs-error"; path: string }
-  | { code: "resolver-error" };
-
-export class DownloadError extends Error {
-  readonly payload: DownloadErrorPayload;
-
-  constructor(payload: DownloadErrorPayload, message: string, cause?: unknown) {
-    super(message, { cause });
-    this.name = "DownloadError";
-    this.payload = payload;
-  }
-
-  public get code(): DownloadErrorPayload["code"] {
-    return this.payload.code;
-  }
-}
+import { DownloadError } from "@vortex/shared/errors";
 
 export function isCancellation(err: unknown): boolean {
   // NOTE(erri120): The `got` package throws a custom `AbortError` class on cancellation

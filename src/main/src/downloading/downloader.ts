@@ -12,7 +12,8 @@ import type { ChunkProgress, ProgressReporter } from "./progress";
 import type { Resolver, NormalizedResource } from "./resolver";
 import type { RetryStrategy } from "./retry";
 
-import { isCancellation, toNetworkError, DownloadError } from "./errors";
+import { DownloadError } from "@vortex/shared/errors";
+import { isCancellation, toNetworkError } from "./errors";
 import { normalize } from "./resolver";
 import { sleep } from "./retry";
 

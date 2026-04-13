@@ -9,7 +9,7 @@ import type { Resolver } from "./resolver";
 
 import { staticChunker, type Chunk } from "./chunking";
 import { download, type TimeoutOptions } from "./downloader";
-import { DownloadError } from "./errors";
+import { DownloadError } from "@vortex/shared/errors";
 import { ProgressReporter } from "./progress";
 import { urlResolver } from "./resolver";
 import { defaultRetryStrategy } from "./retry";
