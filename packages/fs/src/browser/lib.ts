@@ -29,7 +29,12 @@ export type {
   OSPathBase,
 } from "./paths";
 
-export { QualifiedPath, OSPath } from "./paths";
+export {
+  QualifiedPath,
+  OSPath,
+  PathProviderError,
+  PathResolverError,
+} from "./paths";
 
 export { XDG } from "./paths.linux";
 export type { LinuxPathBase, LinuxPathProvider, XDGBase } from "./paths.linux";

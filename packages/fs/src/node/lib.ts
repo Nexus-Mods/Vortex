@@ -29,7 +29,12 @@ export type {
   OSPathBase,
 } from "../browser/paths";
 
-export { QualifiedPath, OSPath } from "../browser/paths";
+export {
+  QualifiedPath,
+  OSPath,
+  PathProviderError,
+  PathResolverError,
+} from "../browser/paths";
 
 export { XDG } from "../browser/paths.linux";
 export type {
@@ -47,5 +52,3 @@ export type {
   NodeFileSystem as FileSystem,
   NodeFileSystemBackend as FileSystemBackend,
 } from "./filesystem";
-
-export { RealFileSystemBackend } from "./filesystem";

@@ -87,6 +87,7 @@ export class VortexModInstaller {
     pluginPath: string,
     scriptPath: string,
     preset: any,
+    preselect: boolean,
     validate: boolean,
   ): Promise<fomodT.types.InstallResult | null> => {
     this.mScriptPath = scriptPath;
@@ -96,6 +97,7 @@ export class VortexModInstaller {
       pluginPath,
       scriptPath,
       preset,
+      preselect,
       validate,
     );
   };

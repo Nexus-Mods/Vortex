@@ -1,7 +1,14 @@
-export type Chunk = {
-  index: number;
+/**
+ * A range starting at 0 with a length of 500 bytes is represented as start=0, end=499
+ * */
+export type ByteRange = {
   start: number;
   end: number;
+};
+
+export type Chunk = {
+  index: number;
+  range: ByteRange;
 };
 
 /**
@@ -27,11 +34,16 @@ export function staticChunker(
     }
 
     const chunkSize = Math.ceil(size / numChunks);
-    const chunks = Array.from({ length: numChunks }, (_, i) => ({
-      index: i,
-      start: i * chunkSize,
-      end: Math.min(i * chunkSize + chunkSize - 1, size - 1),
-    }));
+    const chunks = Array.from(
+      { length: numChunks },
+      (_, i): Chunk => ({
+        index: i,
+        range: {
+          start: i * chunkSize,
+          end: Math.min(i * chunkSize + chunkSize - 1, size - 1),
+        },
+      }),
+    );
 
     return chunks;
   };

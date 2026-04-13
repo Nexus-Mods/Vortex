@@ -53,6 +53,12 @@ export const install = async (
     // thread — converting/dispatching large installSteps arrays — for no
     // visible benefit since the dialog is never shown.
     const isUnattended = unattended === true && fomodChoices != null;
+
+    // When attended (manual reinstall) with saved choices, pass them as a
+    // preset with preselect=true so the C# engine pre-selects options in
+    // the dialog while still showing it for user modification.
+    const preselect = !isUnattended && fomodChoices != null;
+
     const modInstaller = await VortexModInstaller.create(
       api,
       instanceId,
@@ -66,6 +72,7 @@ export const install = async (
       pluginPath,
       scriptPath,
       fomodChoices,
+      preselect,
       validate,
     );
 

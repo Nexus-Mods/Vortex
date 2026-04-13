@@ -32,10 +32,7 @@ describe("Table", () => {
     it("has all(), where(), findOne()", async () => {
       const rows = [{ id: "1", name: "a", value: 10 }];
       const conn = createMockConnection(rows);
-      const table = new Table<TestRow>(
-        conn,
-        "test_table",
-      );
+      const table = new Table<TestRow>(conn, "test_table");
 
       expect(await table.all()).toEqual(rows);
       expect(await table.where({ id: "1" })).toEqual(rows);
@@ -46,10 +43,7 @@ describe("Table", () => {
   describe("insert()", () => {
     it("inserts a single row", async () => {
       const conn = createMockConnection();
-      const table = new Table<TestRow>(
-        conn,
-        "test_table",
-      );
+      const table = new Table<TestRow>(conn, "test_table");
 
       await table.insert({ id: "1", name: "a", value: 10 });
 
@@ -63,10 +57,7 @@ describe("Table", () => {
   describe("insertMany()", () => {
     it("inserts multiple rows", async () => {
       const conn = createMockConnection();
-      const table = new Table<TestRow>(
-        conn,
-        "test_table",
-      );
+      const table = new Table<TestRow>(conn, "test_table");
 
       await table.insertMany([
         { id: "1", name: "a", value: 10 },
@@ -80,10 +71,7 @@ describe("Table", () => {
   describe("update()", () => {
     it("updates matching rows", async () => {
       const conn = createMockConnection();
-      const table = new Table<TestRow>(
-        conn,
-        "test_table",
-      );
+      const table = new Table<TestRow>(conn, "test_table");
 
       await table.update({ id: "1" }, { name: "updated" });
 
@@ -95,10 +83,7 @@ describe("Table", () => {
 
     it("is a no-op when set is empty", async () => {
       const conn = createMockConnection();
-      const table = new Table<TestRow>(
-        conn,
-        "test_table",
-      );
+      const table = new Table<TestRow>(conn, "test_table");
 
       await table.update({ id: "1" }, {});
 
@@ -109,10 +94,7 @@ describe("Table", () => {
   describe("delete()", () => {
     it("deletes matching rows", async () => {
       const conn = createMockConnection();
-      const table = new Table<TestRow>(
-        conn,
-        "test_table",
-      );
+      const table = new Table<TestRow>(conn, "test_table");
 
       await table.delete({ id: "1" });
 
@@ -124,10 +106,7 @@ describe("Table", () => {
 
     it("throws on empty filter to prevent full-table delete", async () => {
       const conn = createMockConnection();
-      const table = new Table<TestRow>(
-        conn,
-        "test_table",
-      );
+      const table = new Table<TestRow>(conn, "test_table");
 
       await expect(table.delete({})).rejects.toThrow(
         "delete() requires at least one filter",

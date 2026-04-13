@@ -476,7 +476,13 @@ abstract class LinkingActivator implements IDeploymentMethod {
       .statAsync(dataPath)
       .then(() => this.purgeLinks(installPath, dataPath, onProgress))
       .then(() => this.postLinkPurge(dataPath, false, true, directoryCleaning))
-      .then(() => undefined));
+      .then(() => undefined)
+      .catch((err: unknown) => {
+        if (getErrorCode(err) === "ENOENT") {
+          return Promise.resolve(undefined);
+        }
+        return Promise.reject(err);
+      }));
   }
 
   public postPurge(): PromiseLike<void> {

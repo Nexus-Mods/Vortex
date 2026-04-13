@@ -164,23 +164,9 @@ export function purgeMods(
           // If the user is unmanaging the game and the purge was unable to find any
           //  of the game's mods path during the purge, that suggests that the user
           //  has uninstalled the game and is trying to "unmanage" the game.
+          //  In this case, there's nothing left to purge so we can safely resolve.
           if (["ENOENT"].includes(getErrorCode(err)) && isUnmanaging) {
-            const game = getGame(gameId);
-            const discovery = getSafe(
-              state,
-              ["settings", "gameMode", "discovered", gameId],
-              undefined,
-            );
-            if (game === undefined || discovery?.path === undefined) {
-              return Promise.reject(err);
-            }
-            const modTypePaths = game.getModPaths(discovery.path);
-            const modPaths = Object.keys(modTypePaths).map(
-              (modType) => modTypePaths[modType],
-            );
-            if (modPaths.includes((err as NodeJS.ErrnoException).path)) {
-              return Promise.resolve();
-            }
+            return Promise.resolve();
           } else {
             return Promise.reject(err);
           }

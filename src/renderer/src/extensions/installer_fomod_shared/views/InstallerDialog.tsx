@@ -431,6 +431,7 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
         id="fomod-installer-dialog"
         show={activeInstanceId != null}
         onHide={this.cancel}
+        backdrop="static"
       >
         <Modal.Header>
           <Modal.Title>{moduleName}</Modal.Title>

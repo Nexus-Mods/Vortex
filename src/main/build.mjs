@@ -17,3 +17,20 @@ const config = createConfig(INPUT, OUTPUT, "cjs", [], (id) => {
 
 const bundle = await rolldown(config);
 await bundle.write(config.output);
+
+const BOOTSTRAP_INPUT = path.resolve(
+  import.meta.dirname,
+  "./src/node-adaptor-host/bootstrap.ts",
+);
+const BOOTSTRAP_OUTPUT = path.join(mainOutputDirectory, "bootstrap.mjs");
+
+const bootstrapConfig = createConfig(
+  BOOTSTRAP_INPUT,
+  BOOTSTRAP_OUTPUT,
+  "esm",
+  [],
+  (id) => id.startsWith("@vortex/adaptor-api"),
+);
+
+const bootstrapBundle = await rolldown(bootstrapConfig);
+await bootstrapBundle.write(bootstrapConfig.output);

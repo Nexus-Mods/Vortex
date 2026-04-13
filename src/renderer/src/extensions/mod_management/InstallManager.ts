@@ -249,7 +249,7 @@ class DynamicDownloadConcurrencyLimiter {
   public do<T>(cb: () => PromiseLike<T>): Promise<T> {
     return new Promise<T>((resolve, reject) => {
       this.mQueue.push({ cb, resolve, reject });
-      this.process();
+      void this.process();
     });
   }
 
@@ -279,14 +279,14 @@ class DynamicDownloadConcurrencyLimiter {
         .finally(() => {
           this.mRunning--;
           // Process next items after a short delay to allow state to update
-          setTimeout(() => this.process(), 100);
+          setTimeout(() => void this.process(), 100);
         });
     }
 
     // If we still have items queued but no slots, check again later
     // Also periodically check for paused downloads that might need to be resumed
     if (this.mQueue.length > 0 && toProcess === 0) {
-      setTimeout(() => this.process(), 500);
+      setTimeout(() => void this.process(), 500);
     }
   }
 }
@@ -462,7 +462,7 @@ function findCollectionByDownload(
   const matchingRule = getCollectionModByReference(state, {
     tag: download.modInfo?.referenceTag,
     fileMD5: download.fileMD5,
-    fileId: download.modInfo?.fileId,
+    fileId: download.modInfo?.nexus?.ids?.fileId?.toString(),
     logicalFileName: download.localPath,
   });
   if (!matchingRule) {
@@ -5287,12 +5287,14 @@ class InstallManager {
                   action: "variant",
                   variant,
                   remember: result.input.remember,
+                  preserveChoices: result.input.preserveChoices ?? true,
                 }),
               );
             } else if (result.input.replace) {
               return {
                 action: "replace",
                 remember: result.input.remember,
+                preserveChoices: result.input.preserveChoices ?? true,
               };
             }
           });
@@ -5335,6 +5337,7 @@ class InstallManager {
         action: string;
         variant?: string;
         remember: boolean;
+        preserveChoices?: boolean;
       }>;
 
       const checkRoVRemember: ICheckbox[] = [];
@@ -5363,6 +5366,7 @@ class InstallManager {
 
         if (action !== undefined) {
           let variant: string = context.get("variant-name");
+          const preserveChoices: boolean = context.get("preserve-choices", true);
           if (action === "variant" && variant === undefined) {
             choices = Promise.resolve(queryVariantNameDialog(
               context.get("replace-or-variant") !== undefined,
@@ -5370,6 +5374,7 @@ class InstallManager {
               action,
               variant: variantName,
               remember: true,
+              preserveChoices,
             }));
           } else {
             if (variant !== undefined && installOptions.variantNumber > 1) {
@@ -5379,9 +5384,23 @@ class InstallManager {
               action,
               variant,
               remember: true,
+              preserveChoices,
             });
           }
         }
+      }
+
+      const hasInstallerChoices = mods.some(
+        (m) => m.attributes?.installerChoices?.options != null,
+      );
+      if (hasInstallerChoices) {
+        checkRoVRemember.push({
+          id: "preserveChoices",
+          value: true,
+          text: api.translate(
+            "Pre-populate installer options from existing mod",
+          ),
+        });
       }
 
       // When installing as a dependency, check if the existing mod is enabled in a different profile.
@@ -5418,10 +5437,11 @@ class InstallManager {
             action: "variant",
             variant: autoVariant,
             remember: false,
+            preserveChoices: true,
           });
         } else {
           // No other profile uses this mod, safe to replace
-          choices = Promise.resolve({ action: "replace", remember: false });
+          choices = Promise.resolve({ action: "replace", remember: false, preserveChoices: true });
         }
       } else {
         choices = choices ?? Promise.resolve(queryDialog());
@@ -5429,7 +5449,7 @@ class InstallManager {
 
       choices
         .then(
-          (result: { action: string; variant: string; remember: boolean }) => {
+          (result: { action: string; variant: string; remember: boolean; preserveChoices?: boolean }) => {
             const wasEnabled = (modId: string) => {
               return currentProfile?.gameId === gameId
                 ? getSafe(currentProfile.modState, [modId, "enabled"], false)
@@ -5448,17 +5468,22 @@ class InstallManager {
                 modId,
                 (err) => {
                   if (err != null) {
-                    reject(err);
+                    const error = unknownToError(err);
+                    reject(error);
                   } else {
+                    const omittedAttributes = [
+                      "version",
+                      "fileName",
+                      "fileVersion",
+                    ];
+                    if (!result.preserveChoices) {
+                      omittedAttributes.push("installerChoices");
+                    }
                     resolve({
                       id: modId,
                       variant,
                       enable: wasEnabled(modId),
-                      attributes: _.omit(mod.attributes, [
-                        "version",
-                        "fileName",
-                        "fileVersion",
-                      ]),
+                      attributes: _.omit(mod.attributes, omittedAttributes),
                       rules: mod.rules,
                       replaceChoice: "replace",
                     });
@@ -5471,6 +5496,7 @@ class InstallManager {
             if (result.action === "variant") {
               if (result.remember === true) {
                 context?.set?.("replace-or-variant", "variant");
+                context?.set?.("preserve-choices", result.preserveChoices ?? true);
               }
               if (currentProfile !== undefined) {
                 const actions = modIds.map((id) =>
@@ -5501,13 +5527,16 @@ class InstallManager {
                 id: modId + "+" + result.variant,
                 variant: result.variant,
                 enable,
-                attributes: {},
+                attributes: result.preserveChoices
+                  ? _.pick(mod.attributes, ["modId", "fileId", "installerChoices"])
+                  : {},
                 rules: [],
                 replaceChoice: "variant",
               });
             } else if (result.action === "replace") {
               if (result.remember === true) {
                 context?.set?.("replace-or-variant", "replace");
+                context?.set?.("preserve-choices", result.preserveChoices ?? true);
               }
               if (modIds.length > 1) {
                 queryVariantReplacement().then((res: IDialogResult) => {

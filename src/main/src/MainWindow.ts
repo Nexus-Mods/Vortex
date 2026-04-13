@@ -78,6 +78,7 @@ class MainWindow {
   private mShown: boolean;
   private mInspector: boolean;
   private mInitialWindowSettings: IWindow | null = null;
+  private mRendererPid: number | undefined;
 
   /**
    * Create a MainWindow instance.
@@ -364,6 +365,10 @@ class MainWindow {
     return this.mWindow;
   }
 
+  public getRendererPid(): number | undefined {
+    return this.mRendererPid;
+  }
+
   private getWindowSettings(
     windowMetrics: IWindow | null | undefined,
   ): Electron.BrowserWindowConstructorOptions {
@@ -416,6 +421,13 @@ class MainWindow {
       // electron.exe (STATUS_FATAL_USER_CALLBACK_EXCEPTION / 0xC000041D).
       // See: https://github.com/electron/electron/issues/50040
       event.preventDefault();
+      // Save the renderer process PID before destroying so Application can
+      // wait for the process to fully exit and release file handles.
+      try {
+        this.mRendererPid = this.mWindow.webContents.getOSProcessId();
+      } catch {
+        // webContents may already be gone
+      }
       this.mWindow.webContents.send("window:event:close");
       closeAllViews(this.mWindow);
       this.mWindow.destroy();

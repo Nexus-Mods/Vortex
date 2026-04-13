@@ -38,7 +38,10 @@ class LevelPersist implements IPersistor {
     }
     try {
       const singleton = DuckDBSingleton.getInstance();
-      const extensionDir = path.join(getVortexPath("base_unpacked"), "duckdb-extensions");
+      const extensionDir = path.join(
+        getVortexPath("base_unpacked"),
+        "duckdb-extensions",
+      );
       await singleton.initialize(extensionDir);
 
       const alias = singleton.nextAlias();

@@ -229,6 +229,7 @@ class Application {
     app.on("window-all-closed", () => {
       log("info", "Vortex closing");
       finalizeMainWrite()
+        .then(() => this.waitForRendererExit())
         .then(() => {
           log("info", "clean application end");
           DuckDBSingleton.getInstance().close();
@@ -266,7 +267,8 @@ class Application {
     app.on("second-instance", (_event: Event, secondaryArgv: string[]) => {
       log("debug", "getting arguments from second instance", secondaryArgv);
       this.applyArguments(parseCommandline(secondaryArgv, true)).catch(
-        (err: unknown) => log("error", "error applying arguments", unknownToError(err)),
+        (err: unknown) =>
+          log("error", "error applying arguments", unknownToError(err)),
       );
     });
 
@@ -320,7 +322,9 @@ class Application {
     app
       .whenReady()
       .then(onReady)
-      .catch((err: unknown) => log("error", "error starting application", unknownToError(err)));
+      .catch((err: unknown) =>
+        log("error", "error starting application", unknownToError(err)),
+      );
 
     app.on(
       "web-contents-created",
@@ -771,22 +775,41 @@ class Application {
   ): Promise<void> {
     log("info", "importing state backup", { backupPath, replace });
 
-    const backupData = JSON.parse(
-      await readFile(backupPath, "utf-8"),
-    ) as Record<string, unknown>;
-
-    for (const [hive, hiveData] of Object.entries(backupData)) {
-      const sub = new SubPersistor(persistor, hive);
-
-      if (replace) {
-        const existingKeys = await sub.getAllKeys();
-        await Promise.all(existingKeys.map((key) => sub.removeItem(key)));
-      }
-
-      const leaves = this.flattenState(hiveData, []);
-      await Promise.all(
-        leaves.map(({ key, value }) => sub.setItem(key, JSON.stringify(value))),
+    let backupData: Record<string, unknown>;
+    try {
+      backupData = JSON.parse(
+        await readFile(backupPath, "utf-8"),
+      ) as Record<string, unknown>;
+    } catch (err) {
+      log("error", "failed to parse state backup", { backupPath, error: err });
+      throw new DataInvalid(
+        `The state backup file is invalid: ${getErrorMessageOrDefault(err)}`,
       );
+    }
+
+    // Wrap all operations in a single transaction to avoid concurrent
+    // BEGIN TRANSACTION calls from individual setItem/removeItem calls.
+    await persistor.beginTransaction();
+    try {
+      for (const [hive, hiveData] of Object.entries(backupData)) {
+        const sub = new SubPersistor(persistor, hive);
+
+        if (replace) {
+          const existingKeys = await sub.getAllKeys();
+          for (const key of existingKeys) {
+            await sub.removeItem(key);
+          }
+        }
+
+        const leaves = this.flattenState(hiveData, []);
+        for (const { key, value } of leaves) {
+          await sub.setItem(key, JSON.stringify(value));
+        }
+      }
+      await persistor.commitTransaction();
+    } catch (err) {
+      await persistor.rollbackTransaction();
+      throw err;
     }
 
     log("info", "state backup imported");
@@ -905,17 +928,24 @@ class Application {
         const sharedStatePath = path.join(sharedPath, currentStatePath);
         try {
           const tempPersistor = await LevelPersist.create(
-            sharedStatePath, undefined, false);
+            sharedStatePath,
+            undefined,
+            false,
+          );
           try {
             const sharedSub = new SubPersistor(tempPersistor, "user");
             const val = await sharedSub.getItem(["multiUser"]);
             if (!JSON.parse(val)) {
               // User toggled back to per-user while in shared mode
-              log("info",
-                "shared database has multiUser disabled, reverting to per-user");
+              log(
+                "info",
+                "shared database has multiUser disabled, reverting to per-user",
+              );
               multiUser = false;
               await baseSubPersistor.setItem(
-                ["multiUser"], JSON.stringify(false));
+                ["multiUser"],
+                JSON.stringify(false),
+              );
               // Remove the stale flag from the shared DB so it doesn't
               // block future switches back to shared mode
               await sharedSub.removeItem(["multiUser"]);
@@ -1093,6 +1123,45 @@ class Application {
         // Fall back to non-maximized
         this.mMainWindow?.show(false, startMinimized);
       });
+  }
+
+  /**
+   * Wait for the renderer process to fully exit so that all its file handles
+   * are released by the OS. This prevents EPERM errors on the next startup
+   * when trying to remove extension directories that the old renderer had loaded.
+   */
+  private async waitForRendererExit(): Promise<void> {
+    const pid = this.mMainWindow?.getRendererPid();
+    if (pid === undefined) {
+      return;
+    }
+
+    const isRunning = (p: number): boolean => {
+      try {
+        process.kill(p, 0);
+        return true;
+      } catch {
+        return false;
+      }
+    };
+
+    if (!isRunning(pid)) {
+      return;
+    }
+
+    log("debug", "waiting for renderer process to exit", { pid });
+    const MAX_WAIT_MS = 5000;
+    const POLL_INTERVAL_MS = 50;
+    const start = Date.now();
+    while (isRunning(pid) && Date.now() - start < MAX_WAIT_MS) {
+      await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+    }
+
+    if (isRunning(pid)) {
+      log("warn", "renderer process did not exit in time", { pid });
+    } else {
+      log("debug", "renderer process exited", { pid, elapsed: Date.now() - start });
+    }
   }
 
   private testUserEnvironment(): void {
