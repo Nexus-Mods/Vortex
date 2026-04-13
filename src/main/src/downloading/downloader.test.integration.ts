@@ -5,11 +5,11 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { describe, it, expect, vi, beforeAll, afterAll, test } from "vitest";
 
-import type { Resolver } from "./resolver";
+import type { ResolvedResource, ResolvedEndpoint, Resolver } from "./resolver";
 
 import { staticChunker, type Chunk } from "./chunking";
 import { download, type TimeoutOptions } from "./downloader";
-import { DownloadError } from "./errors";
+import { DownloadError } from "@vortex/shared/errors";
 import { ProgressReporter } from "./progress";
 import { urlResolver } from "./resolver";
 import { defaultRetryStrategy } from "./retry";
@@ -714,6 +714,18 @@ describe("download", () => {
         });
       },
     );
+
+    it("rejects with is-html when the server returns text/html", async () => {
+      using route = server.route(
+        serveStatus(200, { "content-type": "text/html; charset=utf-8" }),
+      );
+      await using tmp = await makeTmpDir();
+      await expect(
+        runDownload(route.url, tmp.dir).promise,
+      ).rejects.toMatchObject({
+        payload: { code: "is-html", url: route.url },
+      });
+    });
   });
 
   describe("resolver", () => {
@@ -733,7 +745,8 @@ describe("download", () => {
         serveFile({ body: LARGE_FILE, acceptRanges: true }),
       );
       await using tmp = await makeTmpDir();
-      const resolver: Resolver<URL> = (u) => Promise.resolve({ probeUrl: u });
+      const resolver: Resolver<URL> = (u) =>
+        Promise.resolve({ probeEndpoint: { url: u } });
       await completeDownload(route.url, tmp.dir, { resolver });
       expect(
         route.requests.filter((r) => r.method === "GET").length,
@@ -749,14 +762,17 @@ describe("download", () => {
         serveFile({ body: LARGE_FILE, acceptRanges: true }),
       );
       await using tmp = await makeTmpDir();
-      const chunkUrlFn = vi.fn((_chunk: Chunk) =>
-        Promise.resolve(chunkRoute.url),
+      const chunkEndpointFn = vi.fn((_chunk: Chunk) =>
+        Promise.resolve<ResolvedEndpoint>({ url: chunkRoute.url }),
       );
       const resolver: Resolver<never> = () =>
-        Promise.resolve({ probeUrl: probeRoute.url, chunkUrl: chunkUrlFn });
+        Promise.resolve<ResolvedResource>({
+          probeEndpoint: { url: probeRoute.url },
+          chunkEndpoint: chunkEndpointFn,
+        });
 
       await completeDownload(null, tmp.dir, { resolver });
-      expect(chunkUrlFn).toHaveBeenCalledTimes(chunksPerFile);
+      expect(chunkEndpointFn).toHaveBeenCalledTimes(chunksPerFile);
       expect(
         probeRoute.requests.filter((r) => r.method === "HEAD"),
       ).toHaveLength(1);
@@ -777,13 +793,16 @@ describe("download", () => {
       );
       try {
         await using tmp = await makeTmpDir();
-        const chunkUrlFn = vi.fn((chunk: Chunk) =>
-          Promise.resolve(
-            chunkRoutes[Math.floor(chunk.range.start / chunkSize)].url,
-          ),
+        const chunkEndpointFn = vi.fn((chunk: Chunk) =>
+          Promise.resolve<ResolvedEndpoint>({
+            url: chunkRoutes[Math.floor(chunk.range.start / chunkSize)].url,
+          }),
         );
         const resolver: Resolver<never> = () =>
-          Promise.resolve({ probeUrl: probeRoute.url, chunkUrl: chunkUrlFn });
+          Promise.resolve<ResolvedResource>({
+            probeEndpoint: { url: probeRoute.url },
+            chunkEndpoint: chunkEndpointFn,
+          });
 
         await completeDownload(null, tmp.dir, { resolver, chunker });
 
@@ -795,6 +814,87 @@ describe("download", () => {
       } finally {
         chunkRoutes.forEach((r) => r.deregister());
       }
+    });
+  });
+
+  describe("headers", () => {
+    it("sends userAgent as User-Agent on the probe request", async () => {
+      using route = server.route(
+        serveFile({ body: SMALL_FILE, acceptRanges: false }),
+      );
+      await using tmp = await makeTmpDir();
+      await download(
+        route.url,
+        path.join(tmp.dir, "output"),
+        { resolver: urlResolver, chunker: staticChunker() },
+        { userAgent: "TestAgent/1.0" },
+      );
+      const head = route.requests.find((r) => r.method === "HEAD");
+      expect(head?.headers["user-agent"]).toBe("TestAgent/1.0");
+    });
+
+    it("sends userAgent as User-Agent on GET requests", async () => {
+      using route = server.route(
+        serveFile({ body: SMALL_FILE, acceptRanges: false }),
+      );
+      await using tmp = await makeTmpDir();
+      await download(
+        route.url,
+        path.join(tmp.dir, "output"),
+        { resolver: urlResolver, chunker: staticChunker() },
+        { userAgent: "TestAgent/1.0" },
+      );
+      const get = route.requests.find((r) => r.method === "GET");
+      expect(get?.headers["user-agent"]).toBe("TestAgent/1.0");
+    });
+
+    it("sends resolver headers on the probe request", async () => {
+      using route = server.route(
+        serveFile({ body: SMALL_FILE, acceptRanges: false }),
+      );
+      await using tmp = await makeTmpDir();
+      const resolver: Resolver<URL> = (url) =>
+        Promise.resolve({ url, headers: { Referer: "https://example.com" } });
+      await download(
+        route.url,
+        path.join(tmp.dir, "output"),
+        { resolver, chunker: staticChunker() },
+      );
+      const head = route.requests.find((r) => r.method === "HEAD");
+      expect(head?.headers["referer"]).toBe("https://example.com");
+    });
+
+    it("sends resolver headers on GET requests", async () => {
+      using route = server.route(
+        serveFile({ body: SMALL_FILE, acceptRanges: false }),
+      );
+      await using tmp = await makeTmpDir();
+      const resolver: Resolver<URL> = (url) =>
+        Promise.resolve({ url, headers: { Referer: "https://example.com" } });
+      await download(
+        route.url,
+        path.join(tmp.dir, "output"),
+        { resolver, chunker: staticChunker() },
+      );
+      const get = route.requests.find((r) => r.method === "GET");
+      expect(get?.headers["referer"]).toBe("https://example.com");
+    });
+
+    it("resolver headers overwrite userAgent when keys collide", async () => {
+      using route = server.route(
+        serveFile({ body: SMALL_FILE, acceptRanges: false }),
+      );
+      await using tmp = await makeTmpDir();
+      const resolver: Resolver<URL> = (url) =>
+        Promise.resolve({ url, headers: { "User-Agent": "ResolverAgent/2.0" } });
+      await download(
+        route.url,
+        path.join(tmp.dir, "output"),
+        { resolver, chunker: staticChunker() },
+        { userAgent: "ManagerAgent/1.0" },
+      );
+      const head = route.requests.find((r) => r.method === "HEAD");
+      expect(head?.headers["user-agent"]).toBe("ResolverAgent/2.0");
     });
   });
 
