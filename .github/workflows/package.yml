@@ -167,7 +167,7 @@ jobs:
           Write-Output "✅ Package validation successful - installer and metadata files created"
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2.6.1
+        uses: softprops/action-gh-release@v3.0.0
         if: ${{ inputs.release == true }}
         with:
           files: |
@@ -181,7 +181,7 @@ jobs:
           tag_name: ${{ steps.setOutputs.outputs.tagVersion }}
 
       - name: Create GitHub Release on Vortex-Staging
-        uses: softprops/action-gh-release@v2.6.1
+        uses: softprops/action-gh-release@v3.0.0
         if: ${{ inputs.staging-release == true }}
         with:
           files: |
