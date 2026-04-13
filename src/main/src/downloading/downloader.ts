@@ -324,7 +324,6 @@ async function probeUrl(
 ): Promise<ProbeResult> {
   const response = await got.head(endpoint.url, {
     headers: createHeaders(previousETag, null, endpoint.headers),
-    retry: { limit: 0 },
   });
 
   const contentType = response.headers["content-type"] ?? "";
