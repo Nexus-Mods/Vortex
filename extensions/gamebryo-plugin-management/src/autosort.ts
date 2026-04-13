@@ -447,7 +447,9 @@ class LootInterface {
 
     try {
       await loot.loadPluginsAsync(plugins
-        .filter(id => (pluginList[id] !== undefined) && pluginList[id].deployed)
+        .filter(id => (pluginList[id] !== undefined)
+          && pluginList[id].deployed
+          && !pluginList[id].filePath?.toLowerCase().endsWith(GHOST_EXT))
         .map(name => name.toLowerCase()), false);
       pluginsLoaded = true;
     } catch (err) {

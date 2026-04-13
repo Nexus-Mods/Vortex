@@ -9,8 +9,9 @@ export class PluginFlagFilterComponent extends React.Component<types.IFilterProp
     const { t, filter } = this.props;
 
     const selectionFilters = [
-      'Master', 'Light', 'Loads Archive', 'Could be light', 'Native', 'Not light', 'Dirty',
-      'Don\'t clean', 'Warnings', 'Incompatible', 'LOOT Messages', 'Tags'];
+      'Master', 'Blueprint', 'Light', 'Dummy', 'Loads Archive', 'Could be light',
+      'Native', 'Not light', 'Dirty', 'Don\'t clean', 'Warnings', 'Incompatible',
+      'LOOT Messages', 'Tags'];
 
     const currentFilters = selectionFilters.map(current => ({
       label: t(current, { ns: NAMESPACE }),

@@ -45,6 +45,9 @@ class PluginPersistor implements types.IPersistor {
   private mPlugins: IPluginMap;
   // deployed plugins, mapping their plugin id to their file name on disk
   private mKnownPlugins: { [pluginId: string]: string } = {};
+  // plugin ids of Blueprint plugins (Starfield-only) — these are managed by
+  // the game itself and must not be written to plugins.txt / loadorder.txt.
+  private mBlueprintPluginIds: Set<string> = new Set();
   private mInstalledNative: string[] = [];
   private mRetryCounter: number = retryCount;
   private mLoaded: boolean = false;
@@ -100,8 +103,20 @@ class PluginPersistor implements types.IPersistor {
     });
   }
 
-  public setKnownPlugins(knownPlugins: { [pluginId: string]: string }) {
+  /**
+   * Update the set of known plugins and — atomically — the set of Blueprint
+   * plugin ids (Starfield-only). Blueprint plugins are managed by the game
+   * itself and must not appear in plugins.txt or loadorder.txt; writing them
+   * causes the game to strip them on launch. Passing both in a single call
+   * guarantees the serializer never observes a state where known plugins have
+   * been updated but the Blueprint filter has not.
+   */
+  public setKnownPlugins(
+    knownPlugins: { [pluginId: string]: string },
+    blueprintPluginIds: Set<string> = new Set(),
+  ) {
     this.mKnownPlugins = knownPlugins;
+    this.mBlueprintPluginIds = blueprintPluginIds;
     this.updateNative();
     this.serialize();
   }
@@ -255,7 +270,10 @@ class PluginPersistor implements types.IPersistor {
     // we need a list that includes all deployed plugins and only those,
     // sorted by their load order
     // this includes native plugins, which may be filtered out later, depending on the game
+    // Blueprint plugins (Starfield) are excluded entirely: the game manages them
+    // itself and strips any that appear in plugins.txt / loadorder.txt on launch.
     const sorted: string[] = Object.keys(this.mKnownPlugins)
+            .filter(pluginId => !this.mBlueprintPluginIds.has(pluginId))
             .sort((lhs: string, rhs: string) => this.loadOrder(lhs) - this.loadOrder(rhs))
             .filter(pluginId => pluginId !== undefined)
             .map(pluginId => this.mKnownPlugins[pluginId]);
