@@ -27,6 +27,7 @@ export interface IGameSupport {
   nativePluginsPatterns?: string[];
   supportsESL?: boolean | (() => boolean);
   supportsMediumMasters?: boolean | (() => boolean);
+  supportsBlueprintPlugins?: boolean | (() => boolean);
   minRevision?: number;
 }
 
@@ -155,15 +156,23 @@ const gameSupport = util.makeOverlayableDictionary<string, IGameSupport>(
         "oldmars.esm",
         "shatteredspace.esm",
         "blueprintships-starfield.esm",
+        "blueprintships-sfbgs050.esm", // Terran Armada (APP-260)
         "sfbgs003.esm",
         "sfbgs004.esm",
         "sfbgs006.esm",
         "sfbgs007.esm",
         "sfbgs008.esm",
+        "sfbgs00d.esm", // Free Lanes (APP-260)
+        "sfbgs047.esm", // Moon Jumper (APP-260)
+        "sfbgs050.esm", // Terran Armada (APP-260)
       ],
-      nativePluginsPatterns: ["^sfbgs00[0-8]\.esm$"],
+      // SFBGS is Bethesda's reserved namespace for Starfield DLC/Creation Club
+      // plugins; three hex digits covers the known scheme and future DLC
+      // following the same pattern without needing code changes.
+      nativePluginsPatterns: ["^sfbgs[0-9a-f]{3}\\.esm$"],
       supportsESL: true,
       supportsMediumMasters: true,
+      supportsBlueprintPlugins: true,
     },
     oblivion: {
       appDataPath: "oblivion",
@@ -445,6 +454,20 @@ export const supportsMediumMasters = memoizeOne((gameMode: string): boolean => {
   }
   return supportsMediumMasters;
 });
+
+export const supportsBlueprintPlugins = memoizeOne(
+  (gameMode: string): boolean => {
+    if (!gameSupport.has(gameMode)) {
+      return false;
+    }
+    const supported =
+      gameSupport.get(gameMode, "supportsBlueprintPlugins") ?? false;
+    if (typeof supported === "function") {
+      return supported();
+    }
+    return supported;
+  },
+);
 
 export function pluginExtensions(gameMode: string): string[] {
   return supportsESL(gameMode) ? [".esm", ".esp", ".esl"] : [".esm", ".esp"];

@@ -24,6 +24,10 @@ export function getPluginFlags(
     result.push("Master");
   }
 
+  if (plugin.isBlueprint) {
+    result.push("Blueprint");
+  }
+
   if (supportsESL) {
     if (plugin.isLight) {
       result.push("Light");
@@ -136,6 +140,22 @@ const PluginFlags = (props: IProps): JSX.Element => {
         key={key}
         name="plugin-master"
         tooltip={t("Master")}
+      />,
+    );
+  }
+
+  if (plugin.isBlueprint) {
+    const key = `ico-blueprint-${plugin.id}`;
+    flags.push(
+      <tooltip.Icon
+        id={key}
+        key={key}
+        name="locked"
+        tooltip={t(
+          "Blueprint plugin - force-loaded by the game and pinned to the end " +
+            "of the load order. Managed by the game, not Vortex.",
+          { ns: NAMESPACE },
+        )}
       />,
     );
   }

@@ -13,6 +13,7 @@ export class PluginFlagFilterComponent extends React.Component<
 
     const selectionFilters = [
       "Master",
+      "Blueprint",
       "Light",
       "Dummy",
       "Loads Archive",
