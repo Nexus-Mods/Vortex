@@ -264,6 +264,7 @@ catalog:
   tailwindcss: ^4.1.17
   terser-webpack-plugin: ^5.3.10
   tmp: ^0.1.0
+  tough-cookie: ^6.0.1
   ts-loader: ^9.5.1
   ts-v-gen: ^1.0.1
   tsconfig-paths-webpack-plugin: ^4.2.0

@@ -20,7 +20,6 @@
   },
   "dependencies": {
     "@duckdb/node-api": "catalog:",
-    "@vortex/adaptor-api": "workspace:*",
     "@electron/remote": "catalog:",
     "@headlessui/react": "catalog:",
     "@mdi/js": "catalog:",
@@ -37,6 +36,7 @@
     "@tailwindcss/cli": "catalog:",
     "@types/bluebird": "catalog:",
     "@types/uuid": "catalog:",
+    "@vortex/adaptor-api": "workspace:*",
     "@vortex/fs": "workspace:*",
     "bbcode-to-react": "catalog:",
     "big.js": "catalog:",
@@ -125,6 +125,7 @@
     "string-template": "catalog:",
     "tailwindcss": "catalog:",
     "tmp": "catalog:",
+    "tough-cookie": "catalog:",
     "turbowalk": "catalog:",
     "universal-analytics": "catalog:",
     "uuid": "catalog:",
