@@ -1,7 +1,12 @@
+export type { FileSystemSendFn } from "../browser/client";
+
+export { createFileSystemClient } from "../browser/client";
+
 export type {
   DirectoryStatus,
   FileStatus,
   FileSystemErrorCode,
+  IFileSystem,
   StatResult,
   Status,
   StatusTime,
@@ -12,7 +17,6 @@ export type {
   FileSystem as BaseFileSystem,
   FileSystemBackend as BaseFileSystemBackend,
 } from "../browser/filesystem";
-
 export { FileSystemError } from "../browser/filesystem";
 
 export type { Pattern } from "../browser/matcher";

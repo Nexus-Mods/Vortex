@@ -10,6 +10,9 @@ import { homedir, tmpdir } from "node:os";
 import * as path from "node:path";
 import { posix as pathPosix } from "node:path";
 
+import { FileSystemBackendImpl } from "./filesystem/fs";
+import { createFileSystemServiceHandler } from "./filesystem/fs-service";
+import { LinuxPathProviderImpl } from "./filesystem/paths.linux";
 import { getVortexPath } from "./getVortexPath";
 import { betterIpcMain } from "./ipc";
 import { log } from "./logging";
@@ -41,6 +44,32 @@ const HOST_SERVICES: Record<string, IMessageHandler> = {
     );
   },
 };
+
+let filesystemService: ReturnType<
+  typeof createFileSystemServiceHandler
+> | null = null;
+
+/**
+ * Builds and registers the `vortex:host/filesystem` handler if a path
+ * resolver is available for the current platform. Skipped with a warning
+ * on platforms we haven't wired a resolver for yet (notably Windows,
+ * until a `WindowsPathProvider` implementation lands).
+ */
+function registerFilesystemService(): void {
+  if (process.platform !== "linux") {
+    log(
+      "info",
+      "[adaptor-host] Skipping vortex:host/filesystem registration: no path resolver for platform {{platform}}",
+      { platform: process.platform },
+    );
+    return;
+  }
+
+  const backend = new FileSystemBackendImpl();
+  const resolver = new LinuxPathProviderImpl();
+  filesystemService = createFileSystemServiceHandler(backend, resolver);
+  HOST_SERVICES["vortex:host/filesystem"] = filesystemService.handler;
+}
 
 /**
  * Scans node_modules/@vortex/ for adaptor packages (names starting with adaptor-).
@@ -211,6 +240,7 @@ function buildStorePathSnapshot(
  */
 export async function initAdaptorHost(): Promise<void> {
   const bootstrapPath = path.join(getVortexPath("base"), "bootstrap.mjs");
+  registerFilesystemService();
   const host = createAdaptorHost(HOST_SERVICES, bootstrapPath, (level, msg) =>
     log(level, msg),
   );

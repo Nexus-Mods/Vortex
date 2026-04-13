@@ -28,6 +28,11 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
+    "./contracts/filesystem": {
+      "development": "./src/contracts/filesystem.ts",
+      "import": "./dist/contracts/filesystem.js",
+      "require": "./dist/contracts/filesystem.cjs"
+    },
     "./contracts/game-info": {
       "development": "./src/contracts/game-info.ts",
       "import": "./dist/contracts/game-info.js",
@@ -75,6 +80,10 @@
       ".": {
         "import": "./dist/index.js",
         "require": "./dist/index.cjs"
+      },
+      "./contracts/filesystem": {
+        "import": "./dist/contracts/filesystem.js",
+        "require": "./dist/contracts/filesystem.cjs"
       },
       "./contracts/game-info": {
         "import": "./dist/contracts/game-info.js",

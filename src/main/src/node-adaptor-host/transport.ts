@@ -16,13 +16,69 @@ interface ResultMessage {
   value: unknown;
 }
 
+/**
+ * Structured error envelope. The transport itself is agnostic to the error
+ * classes it carries: the sender serialises `name`, `code`, and any extra
+ * own enumerable properties (e.g. `FileSystemError.isTransient`); the
+ * receiver rehydrates a generic `Error` with those fields copied back, so
+ * contract-specific clients (like `@vortex/fs`'s client polyfill) can
+ * branch on `err.name` and reconstruct their concrete error type.
+ */
 interface ErrorMessage {
   type: "error";
   correlationId: string;
   message: string;
+  errorName?: string;
+  errorCode?: string;
+  errorData?: Record<string, unknown>;
 }
 
 type RpcMessage = CallMessage | ResultMessage | ErrorMessage;
+
+/** Own-property keys that are part of the standard Error surface. */
+const STANDARD_ERROR_KEYS = new Set<string>([
+  "name",
+  "message",
+  "stack",
+  "cause",
+  "code",
+]);
+
+function serialiseError(correlationId: string, err: unknown): ErrorMessage {
+  const message = getErrorMessage(err);
+  const base: ErrorMessage = { type: "error", correlationId, message };
+  if (!(err instanceof Error)) return base;
+
+  if (err.name && err.name !== "Error") base.errorName = err.name;
+
+  const errWithCode = err as Error & { code?: unknown };
+  if (typeof errWithCode.code === "string") base.errorCode = errWithCode.code;
+
+  const extras: Record<string, unknown> = {};
+  for (const key of Object.getOwnPropertyNames(err)) {
+    if (STANDARD_ERROR_KEYS.has(key)) continue;
+    const value = (err as unknown as Record<string, unknown>)[key];
+    if (typeof value === "function") continue;
+    extras[key] = value;
+  }
+  if (Object.keys(extras).length > 0) base.errorData = extras;
+
+  return base;
+}
+
+function deserialiseError(envelope: Record<string, unknown>): Error {
+  const message =
+    typeof envelope.message === "string" ? envelope.message : "Unknown error";
+  const err = new Error(message);
+  if (typeof envelope.errorName === "string") err.name = envelope.errorName;
+  if (typeof envelope.errorCode === "string") {
+    (err as Error & { code?: string }).code = envelope.errorCode;
+  }
+  if (envelope.errorData && typeof envelope.errorData === "object") {
+    Object.assign(err, envelope.errorData);
+  }
+  return err;
+}
 
 // --- Port abstraction ---
 
@@ -37,7 +93,10 @@ export interface MessagePortLike {
   on?(event: "message", listener: (value: unknown) => void): void;
   off?(event: "message", listener: (value: unknown) => void): void;
   // Browser-style (accepts EventListenerOrEventListenerObject for compatibility)
-  addEventListener?(type: string, listener: EventListenerOrEventListenerObject): void;
+  addEventListener?(
+    type: string,
+    listener: EventListenerOrEventListenerObject,
+  ): void;
   removeEventListener?(
     type: string,
     listener: EventListenerOrEventListenerObject,
@@ -92,7 +151,10 @@ export function createRpcTransport(port: MessagePortLike): IRpcTransport {
     const envelope = data as Record<string, unknown>;
     const { type } = envelope;
 
-    const correlationId = typeof envelope.correlationId === "string" ? envelope.correlationId : undefined;
+    const correlationId =
+      typeof envelope.correlationId === "string"
+        ? envelope.correlationId
+        : undefined;
 
     if (type === "call" && correlationId !== undefined) {
       const msg = envelope.msg as IMethodMessage;
@@ -111,8 +173,7 @@ export function createRpcTransport(port: MessagePortLike): IRpcTransport {
       callHandler(msg).then(
         (value) => respond({ type: "result", correlationId, value }),
         (err: unknown) => {
-          const message = getErrorMessage(err);
-          respond({ type: "error", correlationId, message });
+          respond(serialiseError(correlationId, err));
         },
       );
       return;
@@ -129,11 +190,10 @@ export function createRpcTransport(port: MessagePortLike): IRpcTransport {
     }
 
     if (type === "error" && correlationId !== undefined) {
-      const message = typeof envelope.message === "string" ? envelope.message : "Unknown error";
       const entry = pending.get(correlationId);
       if (entry) {
         pending.delete(correlationId);
-        entry.reject(new Error(message));
+        entry.reject(deserialiseError(envelope));
       }
       return;
     }
@@ -156,7 +216,8 @@ export function createRpcTransport(port: MessagePortLike): IRpcTransport {
     nodeListener = (value: unknown) => handleMessage(value);
     port.on("message", nodeListener);
   } else if (typeof port.addEventListener === "function") {
-    browserListener = (event: Event) => handleMessage((event as MessageEvent).data);
+    browserListener = (event: Event) =>
+      handleMessage((event as MessageEvent).data);
     port.addEventListener("message", browserListener);
   }
 

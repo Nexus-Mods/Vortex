@@ -96,6 +96,53 @@ describe("createRpcTransport", () => {
     b.dispose();
   });
 
+  it("carries name/code/data through the structured error envelope", async () => {
+    const { a, b } = makeChannel();
+
+    class CustomError extends Error {
+      readonly code: string;
+      readonly isTransient: boolean;
+      constructor(message: string, code: string, isTransient: boolean) {
+        super(message);
+        this.name = "CustomError";
+        this.code = code;
+        this.isTransient = isTransient;
+      }
+    }
+
+    b.onCall(() => Promise.reject(new CustomError("boom", "not found", true)));
+
+    await a.call({ uri: "test:svc", method: "fail", args: [] }).then(
+      () => {
+        throw new Error("expected rejection");
+      },
+      (err: unknown) => {
+        expect(err).toBeInstanceOf(Error);
+        const e = err as Error & { code?: string; isTransient?: boolean };
+        expect(e.name).toBe("CustomError");
+        expect(e.message).toBe("boom");
+        expect(e.code).toBe("not found");
+        expect(e.isTransient).toBe(true);
+      },
+    );
+
+    a.dispose();
+    b.dispose();
+  });
+
+  it("falls back to a generic Error when no envelope metadata is present", async () => {
+    const { a, b } = makeChannel();
+
+    b.onCall(() => Promise.reject(new Error("plain")));
+
+    await expect(
+      a.call({ uri: "test:svc", method: "fail", args: [] }),
+    ).rejects.toMatchObject({ name: "Error", message: "plain" });
+
+    a.dispose();
+    b.dispose();
+  });
+
   it("rejects pending calls on dispose", async () => {
     const { a, b } = makeChannel();
 
