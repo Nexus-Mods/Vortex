@@ -1,3 +1,23 @@
+import type * as Redux from "redux";
+import type { OutputSelector } from "reselect";
+
+import { getErrorMessageOrDefault } from "@vortex/shared";
+import PromiseBB from "bluebird";
+import update from "immutability-helper";
+import * as _ from "lodash";
+import * as React from "react";
+import { Button } from "react-bootstrap";
+import * as ReactDOM from "react-dom";
+import { createSelector } from "reselect";
+
+import type { IActionDefinition } from "../types/IActionDefinition";
+import type { IAttributeState } from "../types/IAttributeState";
+import type { IExtensibleProps } from "../types/IExtensionProvider";
+import type { II18NProps } from "../types/II18NProps";
+import type { IRowState, IState, ITableState } from "../types/IState";
+import type { ITableAttribute } from "../types/ITableAttribute";
+import type { SortDirection } from "../types/SortDirection";
+
 import {
   collapseGroup,
   setAttributeFilter,
@@ -6,20 +26,12 @@ import {
   setCollapsedGroups,
   setGroupingAttribute,
 } from "../actions/tables";
-import type { IActionDefinition } from "../types/IActionDefinition";
-import type { IAttributeState } from "../types/IAttributeState";
-import type { IExtensibleProps } from "../types/IExtensionProvider";
-import type { II18NProps } from "../types/II18NProps";
-import type { IRowState, IState, ITableState } from "../types/IState";
-import type { ITableAttribute } from "../types/ITableAttribute";
-import type { SortDirection } from "../types/SortDirection";
-import { ComponentEx, connect, extend, translate } from "./ComponentEx";
+import smoothScroll from "../smoothScroll";
 import Debouncer from "../util/Debouncer";
 import { log } from "../util/log";
-import smoothScroll from "../smoothScroll";
 import { getSafe, setSafe } from "../util/storeHelper";
 import { makeUnique, sanitizeCSSId, truthy } from "../util/util";
-
+import { ComponentEx, connect, extend, translate } from "./ComponentEx";
 import IconBar from "./IconBar";
 import GroupingRow, { EMPTY_ID } from "./table/GroupingRow";
 import HeaderCell from "./table/HeaderCell";
@@ -28,17 +40,6 @@ import TableDetail from "./table/TableDetail";
 import TableRow from "./table/TableRow";
 import ToolbarIcon from "./ToolbarIcon";
 import Usage from "./Usage";
-
-import PromiseBB from "bluebird";
-import update from "immutability-helper";
-import * as _ from "lodash";
-import * as React from "react";
-import { Button } from "react-bootstrap";
-import * as ReactDOM from "react-dom";
-import type * as Redux from "redux";
-import type { OutputSelector } from "reselect";
-import { createSelector } from "reselect";
-import { getErrorMessageOrDefault } from "@vortex/shared";
 
 export type ChangeDataHandler = (
   rowId: string,
@@ -374,7 +375,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     }
 
     return (
-      <div id={`table-${tableId}`} className={containerClasses.join(" ")}>
+      <div className={containerClasses.join(" ")} id={`table-${tableId}`}>
         <div className="table-container-inner">
           <div
             className="table-main-pane"
@@ -382,19 +383,24 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
             tabIndex={0}
             onKeyDown={this.handleKeyDown}
           >
-            <Table hover>
+            <Table hover={true}>
               {showHeader === false ? null : this.renderHeader(true)}
+
               {this.renderBody()}
             </Table>
+
             {this.props.children}
           </div>
+
           {this.renderFooter()}
         </div>
+
         {showHeader === false ? null : (
           <div className="table-header-pane" ref={this.mainHeaderRef}>
-            <Table hover>{this.renderHeader(false)}</Table>
+            <Table hover={true}>{this.renderHeader(false)}</Table>
           </div>
         )}
+
         {showDetails === false ? null : (
           <div className={`table-details-pane ${openClass}`}>
             {this.renderDetails()}
@@ -422,8 +428,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           {this.mVisibleAttributes.map((attribute) =>
             this.renderHeaderField(attribute, proxy),
           )}
+
           {actionHeader}
         </TR>
+
         {filterActive ? (
           <TR className="table-pinned" domRef={this.setPinnedRef}>
             <TD colSpan={this.mVisibleAttributes.length + 1}>
@@ -431,6 +439,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
                 "This table is filtered, showing {{shown}}/{{hidden}} items.",
                 { replace: { shown: filteredLength, hidden: totalLength } },
               )}
+
               <Button onClick={this.clearFilters}>
                 {t("Clear all filters")}
               </Button>
@@ -471,19 +480,20 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       <div className="table-footer-placeholder">
         <div className="table-footer">
           <IconBar
-            t={t}
             className="menubar"
             group={`${tableId}-multirow-actions`}
             groupByIcon={false}
             instanceId={selected}
             staticElements={multiRowActions}
+            t={t}
           />
 
           <div className="menubar">
             <p>{t("{{ count }} item selected", { count: selected.length })}</p>
+
             <ToolbarIcon
-              key="btn-deselect"
               icon="deselect"
+              key="btn-deselect"
               text={t("Deselect All")}
               onClick={this.deselectAll}
             />
@@ -517,16 +527,16 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
             const rows = group.rows || [];
             return [
               <GroupingRow
-                t={t}
-                key={group.id || "__empty"}
+                count={group.count}
+                expanded={expanded}
                 groupId={group.id}
                 groupName={group.name}
-                expanded={expanded}
-                count={group.count}
+                key={group.id || "__empty"}
+                t={t}
                 width={this.mVisibleAttributes.length + 1}
-                onToggle={this.toggleGroup}
-                onExpandAll={this.expandAll}
                 onCollapseAll={this.collapseAll}
+                onExpandAll={this.expandAll}
+                onToggle={this.toggleGroup}
               />,
               ...rows.map((rowId) =>
                 this.renderRow(rowId, sortAttribute, group.id),
@@ -713,13 +723,13 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
     return (
       <TableDetail
-        t={t}
-        rowIds={rowIdsDelayed}
-        rowData={calculatedValues}
-        rawData={data}
         attributes={this.mVisibleDetails}
         language={language}
+        rawData={data}
+        rowData={calculatedValues}
+        rowIds={rowIdsDelayed}
         show={detailsOpen}
+        t={t}
         title={detailsTitle}
         onToggleShow={this.toggleDetails}
       />
@@ -802,14 +812,15 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           {hasActions ? (
             <div className="header-action-label">{t("Actions")}</div>
           ) : null}
+
           {columnToggles.length > 0 ? (
             <IconBar
-              id={`${tableId}-tableactions`}
-              group={`${tableId}-action-icons-multi`}
               className="table-actions"
-              staticElements={columnToggles}
               collapse="force"
+              group={`${tableId}-action-icons-multi`}
               icon="settings"
+              id={`${tableId}-tableactions`}
+              staticElements={columnToggles}
               t={t}
             />
           ) : null}
@@ -857,31 +868,31 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
     return (
       <TableRow
-        t={t}
-        tableId={tableId}
-        id={tableRowId}
-        rowClasses={extraClasses}
-        key={tableRowId}
-        data={calculatedValues[rowId]}
-        group={groupId}
-        rawData={data[rowId]}
+        actions={singleRowActions}
         attributes={attributes}
+        container={this.mScrollRef}
+        data={calculatedValues[rowId]}
+        domRef={this.setRowRef}
+        group={groupId}
+        grouped={groupId !== undefined}
+        hasActions={hasActions !== undefined ? hasActions : true}
+        highlighted={getSafe(rowState, [rowId, "highlighted"], false)}
+        id={tableRowId}
         inlines={this.mVisibleInlines}
+        key={tableRowId}
+        language={language}
+        rawData={data[rowId]}
+        rowClasses={extraClasses}
+        selected={getSafe(rowState, [rowId, "selected"], false)}
         sortAttribute={
           sortAttribute !== undefined ? sortAttribute.id : undefined
         }
-        actions={singleRowActions}
-        hasActions={hasActions !== undefined ? hasActions : true}
-        language={language}
-        onClick={this.selectRow}
-        selected={getSafe(rowState, [rowId, "selected"], false)}
-        highlighted={getSafe(rowState, [rowId, "highlighted"], false)}
-        domRef={this.setRowRef}
-        container={this.mScrollRef}
+        t={t}
+        tableId={tableId}
         visible={rowVisibility[tableRowId] === true}
-        grouped={groupId !== undefined}
-        onSetVisible={this.setRowVisible}
+        onClick={this.selectRow}
         onHighlight={this.setRowHighlight}
+        onSetVisible={this.setRowVisible}
       />
     );
   }
@@ -917,25 +928,25 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       }
       return (
         <HeaderCell
-          className={classes.join(" ")}
-          key={attribute.id}
           attribute={attribute}
-          state={attributeState}
+          className={classes.join(" ")}
           doFilter={true}
           doGroup={attribute.id === groupBy}
-          onSetSortDirection={this.setSortDirection}
-          onSetGroup={this.setGroup}
-          onSetFilter={this.setFilter}
+          key={attribute.id}
           ref={proxy ? this.setHeaderCellRef : undefined}
+          state={attributeState}
           t={t}
+          onSetFilter={this.setFilter}
+          onSetGroup={this.setGroup}
+          onSetSortDirection={this.setSortDirection}
         >
           {attribute.filter !== undefined ? (
             <attribute.filter.component
-              filter={filt}
               attributeId={attribute.id}
               domRef={
                 attribute.isDefaultFilter ? this.setDefaultFilterRef : undefined
               }
+              filter={filt}
               t={t}
               onSetFilter={this.setFilter}
             />
@@ -1784,7 +1795,13 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     }
 
     // Focus the table container to enable keyboard shortcuts (CTRL+A, arrow keys, etc.)
-    this.mScrollRef?.focus();
+    // but not when the click landed inside an interactive control, otherwise we
+    // blur react-select inputs (and similar) on mouseup, which slams dropdown menus
+    // shut before the user can pick an option.
+    const target = evt.target as HTMLElement;
+    if (!target?.closest?.('input, select, textarea, [contenteditable="true"], .Select')) {
+      this.mScrollRef?.focus();
+    }
   };
 
   private selectOnly(rowId: string, groupId: string, click: boolean) {
