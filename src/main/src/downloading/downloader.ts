@@ -2,6 +2,7 @@ import type { RateLimiter } from "limiter";
 import type { IncomingHttpHeaders } from "node:http";
 
 import { unknownToError } from "@vortex/shared";
+import { DownloadError } from "@vortex/shared/errors";
 import got, { type Headers, type Delays as GotTimeoutOptions } from "got";
 import { type FileHandle as NodeFileHandle, open } from "node:fs/promises";
 import PQueue from "p-queue";
@@ -15,7 +16,6 @@ import type {
 } from "./resolver";
 import type { RetryStrategy } from "./retry";
 
-import { DownloadError } from "@vortex/shared/errors";
 import { isCancellation, toNetworkError } from "./errors";
 import { normalize } from "./resolver";
 import { sleep } from "./retry";
@@ -314,7 +314,7 @@ async function probeUrl(
   const contentType = response.headers["content-type"] ?? "";
   if (contentType.startsWith("text/html")) {
     throw new DownloadError(
-      { code: "is-html", url },
+      { code: "is-html", url: endpoint.url },
       "Server returned an HTML page instead of a file",
     );
   }
