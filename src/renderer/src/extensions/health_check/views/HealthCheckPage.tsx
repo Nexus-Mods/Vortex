@@ -20,10 +20,14 @@ import { useSelector, useDispatch } from "react-redux";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IModFileInfo, IModRequirementExt } from "../types";
 
+<<<<<<< HEAD
 import {
   setOpenMainPage,
   setSettingsPage,
 } from "../../../actions/session";
+=======
+import { setOpenMainPage, setSettingsPage } from "../../../actions/session";
+>>>>>>> b3298bea8 (Merge pull request #22332 from Nexus-Mods/fix/app-262)
 import { Button } from "../../../ui/components/button/Button";
 import { Icon } from "../../../ui/components/icon/Icon";
 import { NoResults } from "../../../ui/components/no_results/NoResults";
