@@ -9,26 +9,9 @@ export class PluginFlagFilterComponent extends React.Component<types.IFilterProp
     const { t, filter } = this.props;
 
     const selectionFilters = [
-<<<<<<< HEAD
-      'Master', 'Light', 'Loads Archive', 'Could be light', 'Native', 'Not light', 'Dirty',
-      'Don\'t clean', 'Warnings', 'Incompatible', 'LOOT Messages', 'Tags'];
-=======
-      "Master",
-      "Blueprint",
-      "Light",
-      "Dummy",
-      "Loads Archive",
-      "Could be light",
-      "Native",
-      "Not light",
-      "Dirty",
-      "Don't clean",
-      "Warnings",
-      "Incompatible",
-      "LOOT Messages",
-      "Tags",
-    ];
->>>>>>> 7c9bbd005 (Merge pull request #22400 from Nexus-Mods/task/app-260/app-261/app-263)
+      'Master', 'Blueprint', 'Light', 'Dummy', 'Loads Archive', 'Could be light',
+      'Native', 'Not light', 'Dirty', 'Don\'t clean', 'Warnings', 'Incompatible',
+      'LOOT Messages', 'Tags'];
 
     const currentFilters = selectionFilters.map(current => ({
       label: t(current, { ns: NAMESPACE }),

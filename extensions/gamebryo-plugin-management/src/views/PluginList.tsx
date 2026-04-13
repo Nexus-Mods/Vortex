@@ -815,16 +815,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
     pluginIds.forEach((key: string) => {
       const plugin = plugins[key];
-<<<<<<< HEAD
-      if ((plugin === undefined) || plugin.isNative) {
-=======
       const combined = this.state.pluginsCombined[key];
-      if (
-        plugin === undefined ||
-        plugin.isNative ||
-        combined?.isBlueprint
-      ) {
->>>>>>> 7c9bbd005 (Merge pull request #22400 from Nexus-Mods/task/app-260/app-261/app-263)
+      if ((plugin === undefined) || plugin.isNative || combined?.isBlueprint) {
         return;
       }
       if (plugin.filePath.toLowerCase().endsWith(GHOST_EXT)) {
@@ -840,16 +832,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
     pluginIds.forEach((key: string) => {
       const plugin = plugins[key];
-<<<<<<< HEAD
-      if ((plugin === undefined) || plugin.isNative) {
-=======
       const combined = this.state.pluginsCombined[key];
-      if (
-        plugin === undefined ||
-        plugin.isNative ||
-        combined?.isBlueprint
-      ) {
->>>>>>> 7c9bbd005 (Merge pull request #22400 from Nexus-Mods/task/app-260/app-261/app-263)
+      if ((plugin === undefined) || plugin.isNative || combined?.isBlueprint) {
         return;
       }
 
@@ -865,19 +849,12 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     const { gameMode, onSetPluginGhost, plugins } = this.props;
 
     pluginIds.forEach((key: string) => {
-<<<<<<< HEAD
-      if ((plugins[key]?.filePath !== undefined)
-          && !plugins[key]?.filePath.toLowerCase().endsWith(GHOST_EXT)) {
-=======
       const combined = this.state.pluginsCombined[key];
       if (plugins[key]?.isNative || combined?.isBlueprint) {
         return;
       }
-      if (
-        plugins[key]?.filePath !== undefined &&
-        !plugins[key]?.filePath.toLowerCase().endsWith(GHOST_EXT)
-      ) {
->>>>>>> 7c9bbd005 (Merge pull request #22400 from Nexus-Mods/task/app-260/app-261/app-263)
+      if ((plugins[key]?.filePath !== undefined)
+          && !plugins[key]?.filePath.toLowerCase().endsWith(GHOST_EXT)) {
         onSetPluginGhost(key, gameMode, true, false);
       }
     });
