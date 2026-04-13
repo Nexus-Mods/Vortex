@@ -4,6 +4,41 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.16.9] - 2026-04-13
+
+### Added
+
+- **Starfield**: Added support for blueprint plugins.
+- **FOMOD Variants**: Added the ability to preserve FOMOD presets/installer choices when installing variants. A new checkbox lets users choose between keeping the previous preset or starting from a fresh dialog with auto-select based on existing files. ([#20556](https://github.com/Nexus-Mods/Vortex/issues/20556))
+
+### Changed
+
+- **7-Zip**: Updated bundled 7-Zip to 26.00.
+- **libloot**: Updated to 0.29.3.
+- **Starfield**: Updated native plugin list for new DLCs.
+- **FOMOD Re-install**: Manual FOMOD re-installs now show the dialog with previously selected values pre-populated, instead of toggling between a fresh dialog and a silent re-install. Users who want to keep the preset can click through; those who want to change something can adjust the pre-selection. (Not applied during collection installs.) ([#21864](https://github.com/Nexus-Mods/Vortex/issues/21864))
+
+### Fixed
+
+- **Plugin Management**: Fixed the load order page mechanism switch (rules-based vs. drag-and-drop) requiring an app restart to take effect.
+- **Collections**: Collaborators with edit permissions are no longer shown the "different account" warning when editing a collection uploaded by someone else.
+
+## [1.16.8] - 2026-03-31
+
+### Bug Fixes
+
+- **External Changes Dialog**: Fixed the dialog incorrectly appearing after batch mod reinstallations and updates.
+- **Load Order Export**: Fixed export failing silently when permission elevation was required.
+- **Installer Choices**: Fixed installer choices still not being preserved during mod reinstalls.
+- **Category Management**: Fixed category column not updating and category filter excluding too many results. ([#19423](https://github.com/Nexus-Mods/Vortex/issues/19423), [#21456](https://github.com/Nexus-Mods/Vortex/issues/21456), [#20735](https://github.com/Nexus-Mods/Vortex/issues/20735), [#21820](https://github.com/Nexus-Mods/Vortex/issues/21820))
+- **Conflict Dialog**: Fixed duplicate entries and rule changes being dropped when unlocking rules.
+
+### Improvements
+
+- **Drag & Drop**: Restored drag-drop support for non-archive files on the mods page.
+- **libloot**: Updated to 0.29.1.
+- **BG3**: Added Baldur's Gate 3 specific fixes. (lslib installer and minor tweaks)
+
 ## [1.16.7] - 2026-03-17
 
 ### Added
@@ -1494,6 +1529,8 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[1.16.9]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.9
+[1.16.8]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.8
 [1.16.7]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.7
 [1.16.6]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.6
 [1.16.5]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.5
