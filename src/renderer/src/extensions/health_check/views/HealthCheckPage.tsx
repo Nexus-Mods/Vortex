@@ -20,7 +20,7 @@ import { useSelector, useDispatch } from "react-redux";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IModFileInfo, IModRequirementExt } from "../types";
 
-import { setSettingsPage } from "../../../actions/session";
+import { setOpenMainPage, setSettingsPage } from "../../../actions/session";
 import { Button } from "../../../ui/components/button/Button";
 import { Icon } from "../../../ui/components/icon/Icon";
 import { NoResults } from "../../../ui/components/no_results/NoResults";
@@ -238,7 +238,7 @@ function HealthCheckPage({
                 size="sm"
                 title={t("common:::settings")}
                 onClick={() => {
-                  api.events.emit("show-main-page", "application_settings");
+                  dispatch(setOpenMainPage("application_settings", false));
                   dispatch(setSettingsPage("Vortex"));
                 }}
               />
