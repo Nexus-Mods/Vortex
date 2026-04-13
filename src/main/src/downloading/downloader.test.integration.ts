@@ -5,7 +5,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { describe, it, expect, vi, beforeAll, afterAll, test } from "vitest";
 
-import type { Resolver } from "./resolver";
+import type { ResolvedResource, ResolvedEndpoint, Resolver } from "./resolver";
 
 import { staticChunker, type Chunk } from "./chunking";
 import { download, type TimeoutOptions } from "./downloader";
@@ -745,7 +745,8 @@ describe("download", () => {
         serveFile({ body: LARGE_FILE, acceptRanges: true }),
       );
       await using tmp = await makeTmpDir();
-      const resolver: Resolver<URL> = (u) => Promise.resolve({ probeUrl: u });
+      const resolver: Resolver<URL> = (u) =>
+        Promise.resolve({ probeEndpoint: { url: u } });
       await completeDownload(route.url, tmp.dir, { resolver });
       expect(
         route.requests.filter((r) => r.method === "GET").length,
@@ -761,14 +762,17 @@ describe("download", () => {
         serveFile({ body: LARGE_FILE, acceptRanges: true }),
       );
       await using tmp = await makeTmpDir();
-      const chunkUrlFn = vi.fn((_chunk: Chunk) =>
-        Promise.resolve(chunkRoute.url),
+      const chunkEndpointFn = vi.fn((_chunk: Chunk) =>
+        Promise.resolve<ResolvedEndpoint>({ url: chunkRoute.url }),
       );
       const resolver: Resolver<never> = () =>
-        Promise.resolve({ probeUrl: probeRoute.url, chunkUrl: chunkUrlFn });
+        Promise.resolve<ResolvedResource>({
+          probeEndpoint: { url: probeRoute.url },
+          chunkEndpoint: chunkEndpointFn,
+        });
 
       await completeDownload(null, tmp.dir, { resolver });
-      expect(chunkUrlFn).toHaveBeenCalledTimes(chunksPerFile);
+      expect(chunkEndpointFn).toHaveBeenCalledTimes(chunksPerFile);
       expect(
         probeRoute.requests.filter((r) => r.method === "HEAD"),
       ).toHaveLength(1);
@@ -789,13 +793,16 @@ describe("download", () => {
       );
       try {
         await using tmp = await makeTmpDir();
-        const chunkUrlFn = vi.fn((chunk: Chunk) =>
-          Promise.resolve(
-            chunkRoutes[Math.floor(chunk.range.start / chunkSize)].url,
-          ),
+        const chunkEndpointFn = vi.fn((chunk: Chunk) =>
+          Promise.resolve<ResolvedEndpoint>({
+            url: chunkRoutes[Math.floor(chunk.range.start / chunkSize)].url,
+          }),
         );
         const resolver: Resolver<never> = () =>
-          Promise.resolve({ probeUrl: probeRoute.url, chunkUrl: chunkUrlFn });
+          Promise.resolve<ResolvedResource>({
+            probeEndpoint: { url: probeRoute.url },
+            chunkEndpoint: chunkEndpointFn,
+          });
 
         await completeDownload(null, tmp.dir, { resolver, chunker });
 
