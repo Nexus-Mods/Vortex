@@ -144,7 +144,13 @@ function makeMockClient(): Pick<
       }),
     createCollection: vi
       .fn<NexusV3Client["createCollection"]>()
-      .mockResolvedValue({ id: "999", revision_id: "rev-1" }),
+      .mockResolvedValue({
+        id: "999",
+        slug: "test-slug",
+        revision_id: "rev-1",
+        revision_number: 1,
+        revision_status: "draft",
+      }),
     createCollectionRevision: vi
       .fn<NexusV3Client["createCollectionRevision"]>()
       .mockResolvedValue({ id: "rev-2", collection_id: "888" }),
