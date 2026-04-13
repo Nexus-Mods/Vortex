@@ -1,6 +1,6 @@
 import { HTTPError } from "got";
 
-import { DownloadError } from "./errors";
+import { DownloadError } from "@vortex/shared/errors";
 
 /** The verdict returned by a {@link RetryStrategy}. */
 export type RetryVerdict = { retry: true; delayMs: number } | { retry: false };

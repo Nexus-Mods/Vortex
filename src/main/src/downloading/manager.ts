@@ -9,7 +9,7 @@ import type { RetryStrategy } from "./retry";
 
 import { staticChunker } from "./chunking";
 import { download } from "./downloader";
-import { DownloadError } from "./errors";
+import { DownloadError } from "@vortex/shared/errors";
 import { ProgressReporter } from "./progress";
 import { defaultRetryStrategy } from "./retry";
 

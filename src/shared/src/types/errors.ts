@@ -1,3 +1,28 @@
+export type DownloadErrorPayload =
+  | { code: "cancellation" }
+  | { code: "network-error"; url: URL }
+  | { code: "network-timeout"; url: URL }
+  | { code: "network-bad-status"; url: URL; statusCode: number }
+  | { code: "precondition-failed"; url: URL }
+  | { code: "protocol-violation"; url: URL }
+  | { code: "is-html"; url: URL }
+  | { code: "fs-error"; path: string }
+  | { code: "resolver-error" };
+
+export class DownloadError extends Error {
+  readonly payload: DownloadErrorPayload;
+
+  constructor(payload: DownloadErrorPayload, message: string, cause?: unknown) {
+    super(message, { cause });
+    this.name = "DownloadError";
+    this.payload = payload;
+  }
+
+  public get code(): DownloadErrorPayload["code"] {
+    return this.payload.code;
+  }
+}
+
 export interface ReportableError {
   message: string;
   title?: string;

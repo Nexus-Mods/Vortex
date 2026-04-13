@@ -9,7 +9,7 @@ import type { Resolver } from "./resolver";
 
 import { staticChunker, type Chunk } from "./chunking";
 import { download, type TimeoutOptions } from "./downloader";
-import { DownloadError } from "./errors";
+import { DownloadError } from "@vortex/shared/errors";
 import { ProgressReporter } from "./progress";
 import { urlResolver } from "./resolver";
 import { defaultRetryStrategy } from "./retry";
@@ -714,6 +714,18 @@ describe("download", () => {
         });
       },
     );
+
+    it("rejects with is-html when the server returns text/html", async () => {
+      using route = server.route(
+        serveStatus(200, { "content-type": "text/html; charset=utf-8" }),
+      );
+      await using tmp = await makeTmpDir();
+      await expect(
+        runDownload(route.url, tmp.dir).promise,
+      ).rejects.toMatchObject({
+        payload: { code: "is-html", url: route.url },
+      });
+    });
   });
 
   describe("resolver", () => {

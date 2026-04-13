@@ -12,7 +12,8 @@ import type { ChunkProgress, ProgressReporter } from "./progress";
 import type { Resolver, NormalizedResource } from "./resolver";
 import type { RetryStrategy } from "./retry";
 
-import { isCancellation, toNetworkError, DownloadError } from "./errors";
+import { DownloadError } from "@vortex/shared/errors";
+import { isCancellation, toNetworkError } from "./errors";
 import { normalize } from "./resolver";
 import { sleep } from "./retry";
 
@@ -296,6 +297,14 @@ async function probeUrl(
     timeout: createGotTimeoutOptions(options.timeout),
     retry: { limit: 0 },
   });
+
+  const contentType = response.headers["content-type"] ?? "";
+  if (contentType.startsWith("text/html")) {
+    throw new DownloadError(
+      { code: "is-html", url },
+      "Server returned an HTML page instead of a file",
+    );
+  }
 
   const size = getSize(response.headers, "content-length");
 
