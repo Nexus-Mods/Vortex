@@ -298,6 +298,14 @@ async function probeUrl(
     retry: { limit: 0 },
   });
 
+  const contentType = response.headers["content-type"] ?? "";
+  if (contentType.startsWith("text/html")) {
+    throw new DownloadError(
+      { code: "is-html", url },
+      "Server returned an HTML page instead of a file",
+    );
+  }
+
   const size = getSize(response.headers, "content-length");
 
   // https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Accept-Ranges
