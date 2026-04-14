@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0-beta.1] - 2026-04-14
+
+_First beta of the 2.0 release. See the alpha release notes below for a full list of changes since 1.16._
+
+### Added
+
+- Support for blueprint plugins in Starfield's load order ([#22400](https://github.com/Nexus-Mods/Vortex/pull/22400))
+
+### Changed
+
+- Updated Starfield native plugins list for new DLCs ([#22400](https://github.com/Nexus-Mods/Vortex/pull/22400))
+- Updated libloot to 0.29.3 ([#22400](https://github.com/Nexus-Mods/Vortex/pull/22400))
+
+### Fixed
+
+- Dropdown buttons not responding to click after row focus steal ([#22413](https://github.com/Nexus-Mods/Vortex/pull/22413))
+- Collection edit incorrectly warning collaborators who have edit permissions ([#22405](https://github.com/Nexus-Mods/Vortex/pull/22405))
+- Plugin management switch requiring app restart when toggling between rules-based and drag-and-drop ([#22400](https://github.com/Nexus-Mods/Vortex/pull/22400))
+- Healthcheck settings button not always opening global settings ([#22332](https://github.com/Nexus-Mods/Vortex/pull/22332))
+- Wrong 7z binary used for Linux environment ([#22319](https://github.com/Nexus-Mods/Vortex/pull/22319))
+
 ## [2.0.0-alpha.4] - 2026-04-09
 
 ### Added
@@ -132,26 +153,26 @@ _Internal alpha release for testing — not for public distribution._
 
 ### Added
 
-- New Healthcheck feature which notifies you of common issues in your mod setup, such as missing dependencies, and suggests fixes to keep your modded game stable and functioning properly.  
-- New UI with 1-click game switching and cleaner visual style. Added a toggle in Settings to revert to the legacy UI.  
-- Design system restructure with component demos and documentation ([#20669](https://github.com/Nexus-Mods/Vortex/pull/20669))  
-- Vortex API package is now synced and tagged for every Vortex release. See [Nexus-Mods/vortex-api](https://github.com/Nexus-Mods/vortex-api/) for more information.  
+- New Healthcheck feature which notifies you of common issues in your mod setup, such as missing dependencies, and suggests fixes to keep your modded game stable and functioning properly.
+- New UI with 1-click game switching and cleaner visual style. Added a toggle in Settings to revert to the legacy UI.
+- Design system restructure with component demos and documentation ([#20669](https://github.com/Nexus-Mods/Vortex/pull/20669))
+- Vortex API package is now synced and tagged for every Vortex release. See [Nexus-Mods/vortex-api](https://github.com/Nexus-Mods/vortex-api/) for more information.
 - Better crash and error reporting
 
 ### Changed
 
-- Upgraded from Electron 37.4.0 to Electron 39.8.0 (Node.js 22)   
-- **[BREAKING]** Internal project structure has changed drastically. Extensions with deep path imports instead of API imports will break. See [Nexus-Mods/vortex-api](https://github.com/Nexus-Mods/vortex-api/) for more information.  
-- Changed default installation path 
+- Upgraded from Electron 37.4.0 to Electron 39.8.0 (Node.js 22)
+- **[BREAKING]** Internal project structure has changed drastically. Extensions with deep path imports instead of API imports will break. See [Nexus-Mods/vortex-api](https://github.com/Nexus-Mods/vortex-api/) for more information.
+- Changed default installation path
 
 ### Fixed
 
-- Permission elevation fixes ([#20547](https://github.com/Nexus-Mods/Vortex/pull/20547))  
-- Process cancellation error handling ([#20549](https://github.com/Nexus-Mods/Vortex/pull/20549))  
-- Plugin list renderer crash prevention ([#20522](https://github.com/Nexus-Mods/Vortex/pull/20522))  
-- Collection extension disabled crash prevention ([#20637](https://github.com/Nexus-Mods/Vortex/pull/20637))  
-- Notification aggregator and group rendering protective code  
-- Main process exception handling  
+- Permission elevation fixes ([#20547](https://github.com/Nexus-Mods/Vortex/pull/20547))
+- Process cancellation error handling ([#20549](https://github.com/Nexus-Mods/Vortex/pull/20549))
+- Plugin list renderer crash prevention ([#20522](https://github.com/Nexus-Mods/Vortex/pull/20522))
+- Collection extension disabled crash prevention ([#20637](https://github.com/Nexus-Mods/Vortex/pull/20637))
+- Notification aggregator and group rendering protective code
+- Main process exception handling
 - State backup import fixes
 
 ## [1.16.7] - 2026-03-17
@@ -212,7 +233,6 @@ _Internal alpha release for testing — not for public distribution._
 - Improved UI stutter/responsiveness during collection installation
 - Improved hash based on stack to better de-duplicate GitHub tickets
 
-
 ## [1.16.4] - 2026-02-19
 
 - Fixed plugin cyclic interaction dialog changes not reflected in userlist ([#19605](https://github.com/Nexus-Mods/Vortex/issues/19605))
@@ -227,17 +247,17 @@ _Internal alpha release for testing — not for public distribution._
 
 ## [1.16.3] - 2026-02-17
 
-  - Fixed collection react components not rerendering correctly
-  - Fixed history events causing crash if failed to set light flag
-  - Added error handling for unhandled errors when starting/resuming download
+- Fixed collection react components not rerendering correctly
+- Fixed history events causing crash if failed to set light flag
+- Added error handling for unhandled errors when starting/resuming download
   ([#20306](https://github.com/Nexus-Mods/Vortex/issues/20306), [#20036](https://github.com/Nexus-Mods/Vortex/issues/20036))
-  - Added protective code to validate potentially invalid download entries
-  - Fixed race condition causing file assembler to close file prematurely
-  - Fixed installerChoices potentially not persisting on collection clone
-  - Fixed myCollections query potentially returning unowned results ([#20257](https://github.com/Nexus-Mods/Vortex/issues/20257))
-  - Fixed deleting custom themes ([#19324](https://github.com/Nexus-Mods/Vortex/issues/19324))
-  - Populate pluginList on collection installation
-  - Fixed mod installations not working for SkyrimVR/FalloutVR ([#19808](https://github.com/Nexus-Mods/Vortex/issues/19808))
+- Added protective code to validate potentially invalid download entries
+- Fixed race condition causing file assembler to close file prematurely
+- Fixed installerChoices potentially not persisting on collection clone
+- Fixed myCollections query potentially returning unowned results ([#20257](https://github.com/Nexus-Mods/Vortex/issues/20257))
+- Fixed deleting custom themes ([#19324](https://github.com/Nexus-Mods/Vortex/issues/19324))
+- Populate pluginList on collection installation
+- Fixed mod installations not working for SkyrimVR/FalloutVR ([#19808](https://github.com/Nexus-Mods/Vortex/issues/19808))
 
 ## [1.16.2] - 2026-02-12
 
