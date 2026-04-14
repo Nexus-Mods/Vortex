@@ -26,7 +26,7 @@ const themeMap = {
   primary: "text-primary-moderate",
 } as const satisfies Record<Theme, string>;
 
-export type PictogramName = "health-check";
+export type PictogramName = "health-check" | "tools";
 
 export const Pictogram = ({
   className,

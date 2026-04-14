@@ -72,6 +72,7 @@
 
         &.nxm-button-icon-only {
             min-width: 0;
+            width: calc(var(--spacing) * 9);
         }
 
         &:not(.nxm-button-icon-only) .nxm-button-icon {
@@ -242,8 +243,16 @@
 
 .nxm-button-sm {
     min-height: calc(var(--spacing) * 7);
+
+    &.nxm-button-icon-only {
+        width: calc(var(--spacing) * 7);
+    }
 }
 
 .nxm-button-xs {
     min-height: calc(var(--spacing) * 6);
+
+    &.nxm-button-icon-only {
+        width: calc(var(--spacing) * 6);
+    }
 }
