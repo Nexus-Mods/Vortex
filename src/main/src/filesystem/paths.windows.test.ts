@@ -54,7 +54,7 @@ describe("WindowsPathProviderImpl.resolve", () => {
 describe("WindowsPathProviderImpl.fromBase", () => {
   const provider = new WindowsPathProviderImpl();
 
-  it("returns USERPROFILE (or homedir fallback) for 'home'", async () => {
+  it.runIf(process.platform === "win32")("returns USERPROFILE (or homedir fallback) for 'home'", async () => {
     const qp = await provider.fromBase("home");
     expect(qp.scheme).toBe("windows");
     // Round-trip: resolve back to native matches the source value (modulo
@@ -67,7 +67,7 @@ describe("WindowsPathProviderImpl.fromBase", () => {
     expect(native).toBe(expected);
   });
 
-  it("returns tmpdir() for 'temp'", async () => {
+  it.runIf(process.platform === "win32")("returns tmpdir() for 'temp'", async () => {
     const qp = await provider.fromBase("temp");
     expect(qp.scheme).toBe("windows");
     const native = await provider.resolve(qp);
