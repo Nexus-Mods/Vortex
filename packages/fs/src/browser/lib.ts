@@ -39,7 +39,6 @@ export {
   PathResolverError,
   RelativePathError,
   relativePath,
-  PathResolverRegistryImpl,
 } from "./paths";
 
 export { XDG } from "./paths.linux";

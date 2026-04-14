@@ -39,7 +39,6 @@ export {
   PathResolverError,
   RelativePathError,
   relativePath,
-  PathResolverRegistryImpl,
 } from "../browser/paths";
 
 export { XDG } from "../browser/paths.linux";
@@ -59,5 +58,3 @@ export type {
   NodeFileSystem as FileSystem,
   NodeFileSystemBackend as FileSystemBackend,
 } from "./filesystem";
-export { NodeFileSystemImpl } from "./filesystem-impl";
-export { WebFileSystemImpl } from "./web-filesystem-impl";

@@ -13,12 +13,6 @@
  * transport envelope are all exercised.
  */
 
-import {
-  NodeFileSystemImpl,
-  PathResolverRegistryImpl,
-} from "@vortex/fs";
-
-import { NodeFileSystemBackendImpl } from "./backend";
 import * as fs from "node:fs/promises";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
@@ -28,7 +22,10 @@ import {
   createTestHarness,
   type ITestHarness,
 } from "../node-adaptor-host/testing/harness.js";
+import { NodeFileSystemBackendImpl } from "./backend";
+import { NodeFileSystemImpl } from "./filesystem-impl";
 import { createFileSystemServiceHandler } from "./fs-service.js";
+import { PathResolverRegistryImpl } from "./path-resolver-registry";
 import { nativeToQP, platformResolver } from "./testing.js";
 
 const BUNDLE_PATH = path.resolve(

@@ -1,16 +1,12 @@
+import { FileSystemError, QualifiedPath } from "@vortex/fs";
 import * as nodeFs from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import {
-  FileSystemError,
-  NodeFileSystemImpl,
-  PathResolverRegistryImpl,
-  QualifiedPath,
-} from "@vortex/fs";
-
 import { NodeFileSystemBackendImpl } from "./backend";
+import { NodeFileSystemImpl } from "./filesystem-impl";
+import { PathResolverRegistryImpl } from "./path-resolver-registry";
 import { nativeToQP, platformResolver, platformScheme } from "./testing";
 
 describe("NodeFileSystemImpl", () => {

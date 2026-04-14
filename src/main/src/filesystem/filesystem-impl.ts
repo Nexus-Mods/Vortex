@@ -1,17 +1,17 @@
-import type { ReadStream, WriteStream } from "node:fs";
-
-import { isAbsolute, relative, sep as pathSep } from "node:path";
-
-import type { StatResult, Status } from "../browser/filesystem";
-import type { Pattern } from "../browser/matcher";
 import type {
+  FileSystem as NodeFileSystem,
+  FileSystemBackend as NodeFileSystemBackend,
   PathResolverRegistry,
+  Pattern,
   QualifiedPath,
   ResolvedPath,
-} from "../browser/paths";
-import type { NodeFileSystem, NodeFileSystemBackend } from "./filesystem";
+  StatResult,
+  Status,
+} from "@vortex/fs";
+import type { ReadStream, WriteStream } from "node:fs";
 
-import { FileSystemError } from "../browser/filesystem";
+import { FileSystemError } from "@vortex/fs";
+import { isAbsolute, relative, sep as pathSep } from "node:path";
 
 /**
  * Node-backed implementation of {@link NodeFileSystem}. Composes a

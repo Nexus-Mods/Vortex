@@ -9,15 +9,7 @@
 
 import type { IMethodMessage } from "@vortex/adaptor-api";
 
-import {
-  NodeFileSystemImpl,
-  PathResolverRegistryImpl,
-  QualifiedPath,
-  FileSystemError,
-} from "@vortex/fs";
-
-import { createFileSystemClient } from "./client";
-import { NodeFileSystemBackendImpl } from "./backend";
+import { FileSystemError, QualifiedPath } from "@vortex/fs";
 import * as fs from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -30,7 +22,11 @@ import {
   createRpcTransport,
   type IRpcTransport,
 } from "../node-adaptor-host/transport.js";
+import { NodeFileSystemBackendImpl } from "./backend";
+import { createFileSystemClient } from "./client";
+import { NodeFileSystemImpl } from "./filesystem-impl";
 import { createFileSystemServiceHandler } from "./fs-service.js";
+import { PathResolverRegistryImpl } from "./path-resolver-registry";
 import { nativeToQP, platformResolver } from "./testing.js";
 
 describe("filesystem RPC end-to-end", () => {

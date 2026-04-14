@@ -4,19 +4,16 @@ import type { IFileSystem, PathResolver } from "@vortex/fs";
 import type { Serializable } from "@vortex/shared/ipc";
 
 import { Base, OS, Store } from "@vortex/adaptor-api/stores/lib";
-import {
-  NodeFileSystemImpl,
-  PathResolverRegistryImpl,
-  QualifiedPath,
-} from "@vortex/fs";
-
-import { NodeFileSystemBackendImpl } from "./filesystem/backend";
+import { QualifiedPath } from "@vortex/fs";
 import * as fs from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import * as path from "node:path";
 import { posix as pathPosix } from "node:path";
 
+import { NodeFileSystemBackendImpl } from "./filesystem/backend";
+import { NodeFileSystemImpl } from "./filesystem/filesystem-impl";
 import { createFileSystemServiceHandler } from "./filesystem/fs-service";
+import { PathResolverRegistryImpl } from "./filesystem/path-resolver-registry";
 import { LinuxPathProviderImpl } from "./filesystem/paths.linux";
 import { WindowsPathProviderImpl } from "./filesystem/paths.windows";
 import { getVortexPath } from "./getVortexPath";
@@ -130,7 +127,7 @@ function resolveAdaptorBundle(
 }
 
 // Module-level state for the adaptor host system
-let adaptorHost: IAdaptorHost | null = null;
+let _adaptorHost: IAdaptorHost | null = null;
 const loadedAdaptors = new Map<string, ILoadedAdaptor>();
 
 // ============================================================================
@@ -265,7 +262,7 @@ export async function initAdaptorHost(): Promise<void> {
   const host = createAdaptorHost(HOST_SERVICES, bootstrapPath, (level, msg) =>
     log(level, msg),
   );
-  adaptorHost = host;
+  _adaptorHost = host;
 
   registerIpcHandlers();
 

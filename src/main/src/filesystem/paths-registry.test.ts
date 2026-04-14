@@ -1,12 +1,9 @@
+import type { PathResolver, ResolvedPath } from "@vortex/fs";
+
+import { PathResolverError, QualifiedPath } from "@vortex/fs";
 import { describe, expect, it } from "vitest";
 
-import type { PathResolver, ResolvedPath } from "./paths";
-
-import {
-  PathResolverError,
-  PathResolverRegistryImpl,
-  QualifiedPath,
-} from "./paths";
+import { PathResolverRegistryImpl } from "./path-resolver-registry";
 
 function mkResolver(scheme: string, prefix: string): PathResolver {
   return {

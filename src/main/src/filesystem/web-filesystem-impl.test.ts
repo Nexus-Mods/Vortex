@@ -1,18 +1,15 @@
+import type { QualifiedPath } from "@vortex/fs";
+
 import * as nodeFs from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import type { QualifiedPath } from "@vortex/fs";
-
-import {
-  NodeFileSystemImpl,
-  PathResolverRegistryImpl,
-  WebFileSystemImpl,
-} from "@vortex/fs";
-
 import { NodeFileSystemBackendImpl } from "./backend";
+import { NodeFileSystemImpl } from "./filesystem-impl";
+import { PathResolverRegistryImpl } from "./path-resolver-registry";
 import { nativeToQP, platformResolver } from "./testing";
+import { WebFileSystemImpl } from "./web-filesystem-impl";
 
 describe("WebFileSystemImpl", () => {
   let root: string;

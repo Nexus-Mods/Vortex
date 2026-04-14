@@ -1,18 +1,15 @@
 import type { IMessage, IMessageHandler } from "@vortex/adaptor-api";
 import type { StatResult } from "@vortex/fs";
 
-import {
-  NodeFileSystemImpl,
-  PathResolverRegistryImpl,
-} from "@vortex/fs";
-
-import { NodeFileSystemBackendImpl } from "./backend";
 import * as fs from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import { NodeFileSystemBackendImpl } from "./backend";
+import { NodeFileSystemImpl } from "./filesystem-impl";
 import { createFileSystemServiceHandler } from "./fs-service";
+import { PathResolverRegistryImpl } from "./path-resolver-registry";
 import { nativeToQP, platformResolver } from "./testing";
 
 /**

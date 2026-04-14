@@ -1,16 +1,19 @@
+import type {
+  FileSystem as NodeFileSystem,
+  Pattern,
+  QualifiedPath,
+  StatResult,
+  Status,
+  WebFileSystem,
+} from "@vortex/fs";
 import type { ReadStream, WriteStream } from "node:fs";
 
 import { Readable, Writable } from "node:stream";
 
-import type { StatResult, Status, WebFileSystem } from "../browser/filesystem";
-import type { Pattern } from "../browser/matcher";
-import type { QualifiedPath } from "../browser/paths";
-import type { NodeFileSystem } from "./filesystem";
-
 /**
  * Web-streams-flavoured {@link WebFileSystem} that wraps a
  * {@link NodeFileSystem}. All flat methods delegate straight through; only
- * `createStream` differs — it converts the backing Node `ReadStream` /
+ * `createStream` differs -- it converts the backing Node `ReadStream` /
  * `WriteStream` into `ReadableStream` / `WritableStream` via
  * `Readable.toWeb()` / `Writable.toWeb()`.
  *
