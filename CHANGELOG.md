@@ -17,12 +17,16 @@ _First beta of the 2.0 release. See the alpha release notes below for a full lis
 
 - Updated Starfield native plugins list for new DLCs ([#22400](https://github.com/Nexus-Mods/Vortex/pull/22400))
 - Updated libloot to 0.29.3 ([#22400](https://github.com/Nexus-Mods/Vortex/pull/22400))
+- Tools page functional feedback ([#22423](https://github.com/Nexus-Mods/Vortex/pull/22423))
 
 ### Fixed
 
 - Dropdown buttons not responding to click after row focus steal ([#22413](https://github.com/Nexus-Mods/Vortex/pull/22413))
 - Collection edit incorrectly warning collaborators who have edit permissions ([#22405](https://github.com/Nexus-Mods/Vortex/pull/22405))
 - Plugin management switch requiring app restart when toggling between rules-based and drag-and-drop ([#22400](https://github.com/Nexus-Mods/Vortex/pull/22400))
+- Renderer looping on tools page ([#22433](https://github.com/Nexus-Mods/Vortex/pull/22433))
+- Active profile deletion not handled correctly ([#22426](https://github.com/Nexus-Mods/Vortex/pull/22426))
+- Minimize and maximize not working correctly ([#22425](https://github.com/Nexus-Mods/Vortex/pull/22425))
 - Healthcheck settings button not always opening global settings ([#22332](https://github.com/Nexus-Mods/Vortex/pull/22332))
 - Wrong 7z binary used for Linux environment ([#22319](https://github.com/Nexus-Mods/Vortex/pull/22319))
 
@@ -1664,6 +1668,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[2.0.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.0.0-beta.1
 [2.0.0-alpha.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.0.0-alpha.4
 [2.0.0-alpha.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.0.0-alpha.3
 [2.0.0-alpha.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.0.0-alpha.2
