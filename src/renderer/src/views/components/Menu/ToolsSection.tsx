@@ -56,7 +56,7 @@ const PlayButton: FC<PlayButtonProps> = ({
         className="w-full transition-all"
         disabled={disabled}
         filled="strong"
-        leftIconPath={mdiPlay}
+        leftIconPath={primaryStarter ? mdiPlay : undefined}
         onClick={onClick}
       >
         {label}
