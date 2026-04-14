@@ -290,6 +290,34 @@ export class QualifiedPath {
   }
 
   /**
+   * Rehydrates a {@link QualifiedPath} from a value that has crossed a
+   * structured-clone boundary (worker RPC, IPC). Accepts:
+   * - an existing {@link QualifiedPath} instance (returned as-is)
+   * - a plain object with a string `value` field (re-parsed)
+   *
+   * Throws a `TypeError` for anything else. Used at service boundaries
+   * where arguments arrive as prototype-stripped clones.
+   *
+   * Declared with `this: void` so the method can be detached from the
+   * class (`const fn = QualifiedPath.rehydrate`) without surprise `this`
+   * binding.
+   *
+   * @public
+   */
+  public static rehydrate(this: void, value: unknown): QualifiedPath {
+    if (value instanceof QualifiedPath) return value;
+    if (
+      value !== null &&
+      typeof value === "object" &&
+      "value" in value &&
+      typeof (value as { value: unknown }).value === "string"
+    ) {
+      return QualifiedPath.parse((value as { value: string }).value);
+    }
+    throw new TypeError("Expected QualifiedPath");
+  }
+
+  /**
    * Returns the slice after the last period.
    *
    * @example

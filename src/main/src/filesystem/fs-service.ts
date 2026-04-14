@@ -47,6 +47,8 @@ export function createFileSystemServiceHandler(
   const cursors = new Map<string, CursorEntry>();
   let cursorCounter = 0;
 
+  const rehydrate = QualifiedPath.rehydrate;
+
   const dispatch = async (payload: FsPayload): Promise<unknown> => {
     const { method, args } = payload;
     switch (method) {
@@ -56,7 +58,7 @@ export function createFileSystemServiceHandler(
           unknown,
           { overwrite: boolean } | undefined,
         ];
-        await fs.copy(toQP(src), toQP(dst), opts);
+        await fs.copy(rehydrate(src), rehydrate(dst), opts);
         return undefined;
       }
       case "move": {
@@ -65,31 +67,31 @@ export function createFileSystemServiceHandler(
           unknown,
           { overwrite: boolean } | undefined,
         ];
-        await fs.move(toQP(src), toQP(dst), opts);
+        await fs.move(rehydrate(src), rehydrate(dst), opts);
         return undefined;
       }
       case "readFile": {
         const [p] = args;
-        return fs.readFile(toQP(p));
+        return fs.readFile(rehydrate(p));
       }
       case "writeFile": {
         const [p, contents] = args as [unknown, Uint8Array];
-        await fs.writeFile(toQP(p), contents);
+        await fs.writeFile(rehydrate(p), contents);
         return undefined;
       }
       case "createDirectory": {
         const [p] = args;
-        await fs.createDirectory(toQP(p));
+        await fs.createDirectory(rehydrate(p));
         return undefined;
       }
       case "delete": {
         const [p] = args;
-        await fs.delete(toQP(p));
+        await fs.delete(rehydrate(p));
         return undefined;
       }
       case "deleteRecursive": {
         const [p] = args;
-        await fs.deleteRecursive(toQP(p));
+        await fs.deleteRecursive(rehydrate(p));
         return undefined;
       }
       case "stat": {
@@ -97,12 +99,12 @@ export function createFileSystemServiceHandler(
           unknown,
           { parseSymLink: boolean } | undefined,
         ];
-        return fs.stat(toQP(p), opts);
+        return fs.stat(rehydrate(p), opts);
       }
       case "enumerateOpen": {
         const [pathArg, opts] = args as [unknown, EnumerateOptions | undefined];
         const iterator = await fs.enumerateDirectory(
-          toQP(pathArg),
+          rehydrate(pathArg),
           (opts ?? {}) as Parameters<IFileSystem["enumerateDirectory"]>[1],
         );
         const cursorId = `fs-cur:${++cursorCounter}`;
@@ -148,19 +150,6 @@ export function createFileSystemServiceHandler(
   };
 
   return { handler, closeAll };
-}
-
-function toQP(value: unknown): QualifiedPath {
-  if (value instanceof QualifiedPath) return value;
-  if (
-    value !== null &&
-    typeof value === "object" &&
-    "value" in value &&
-    typeof (value as { value: unknown }).value === "string"
-  ) {
-    return QualifiedPath.parse((value as { value: string }).value);
-  }
-  throw new TypeError("Expected QualifiedPath");
 }
 
 async function pullBatch(
