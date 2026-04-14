@@ -9,7 +9,10 @@ import { CACHE_EXPIRE_MS, CACHE_LRU_COUNT } from "../constants";
 // ---------------------------------------------------------------------------
 
 /** Create a minimal mock of IExtensionApi for InfoCache. */
-function makeMockApi(collections: any = {}, revisions: any = {}) {
+function makeMockApi(
+  collections: any = {},
+  revisions: any = {},
+): { api: any; state: any } {
   const state = {
     persistent: {
       collections: {
@@ -27,7 +30,7 @@ function makeMockApi(collections: any = {}, revisions: any = {}) {
       getState: () => state,
       emitAndAwait: vi.fn().mockResolvedValue([undefined]),
       showErrorNotification: vi.fn(),
-    } as any,
+    },
     state,
   };
 }

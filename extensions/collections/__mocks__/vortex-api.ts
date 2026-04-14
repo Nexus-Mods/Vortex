@@ -35,8 +35,7 @@ function setSafe<T extends object>(
     copy[firstElement] = value;
   } else {
     if (!Object.prototype.hasOwnProperty.call(copy, firstElement)) {
-      copy[firstElement] =
-        typeof path[1] === "number" ? [] : {};
+      copy[firstElement] = typeof path[1] === "number" ? [] : {};
     }
     copy[firstElement] = setSafe(copy[firstElement], path.slice(1), value);
   }
@@ -195,7 +194,10 @@ export const util = {
     schedule() {}
   },
   batchDispatch: (_store: any, _actions: any[]) => {},
-  deleteOrNop: <T extends object>(state: T, path: Array<string | number>): T => {
+  deleteOrNop: <T extends object>(
+    state: T,
+    path: Array<string | number>,
+  ): T => {
     if (path.length === 0) return state;
     const copy: any = Array.isArray(state) ? state.slice() : { ...state };
     if (path.length === 1) {
@@ -262,11 +264,17 @@ export class PureComponentEx extends React.PureComponent {
 
 // Stub UI components
 export const ActionDropdown = () => null;
-export const FlexLayout = Object.assign(() => null, { Flex: () => null, Fixed: () => null });
+export const FlexLayout = Object.assign(() => null, {
+  Flex: () => null,
+  Fixed: () => null,
+});
 export const Icon = () => null;
 export const More = () => null;
 export const Usage = () => null;
-export const MainPage = Object.assign(() => null, { Body: () => null, Header: () => null });
+export const MainPage = Object.assign(() => null, {
+  Body: () => null,
+  Header: () => null,
+});
 export const Toggle = () => null;
 export const Spinner = () => null;
 export const tooltip = { Button: () => null, IconButton: () => null };

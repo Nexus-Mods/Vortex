@@ -7,7 +7,7 @@ import * as actions from "../actions/persistent";
 // Helpers
 // ---------------------------------------------------------------------------
 
-function reduce(state: any, actionCreator: any, payload: any) {
+function reduce(state: any, actionCreator: any, payload: any): any {
   const key = actionCreator.toString();
   const fn = reducer.reducers[key];
   if (!fn) {

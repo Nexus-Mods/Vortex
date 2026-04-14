@@ -41,12 +41,26 @@ describe("isFuzzyVersion", () => {
 // ---------------------------------------------------------------------------
 
 describe("postProcessRule", () => {
+  const makeModRef = (overrides: Record<string, any> = {}): any => ({
+    versionMatch: "1.0.0",
+    ...overrides,
+  });
+
+  const makeRule = (
+    source: Record<string, any>,
+    reference: Record<string, any>,
+    type = "after",
+  ): any => ({
+    source: makeModRef(source),
+    type,
+    reference: makeModRef(reference),
+  });
+
   it("returns a deep copy, not the same object", () => {
-    const rule = {
-      source: { versionMatch: "1.0.0", logicalFileName: "A" },
-      type: "after",
-      reference: { versionMatch: "2.0.0", logicalFileName: "B" },
-    } as any;
+    const rule = makeRule(
+      { logicalFileName: "A" },
+      { versionMatch: "2.0.0", logicalFileName: "B" },
+    );
 
     const result = postProcessRule(rule);
     expect(result).not.toBe(rule);
@@ -54,15 +68,14 @@ describe("postProcessRule", () => {
   });
 
   it("strips fileExpression from reference when version is fuzzy and logicalFileName exists", () => {
-    const rule = {
-      source: { versionMatch: "1.0.0" },
-      type: "after",
-      reference: {
+    const rule = makeRule(
+      {},
+      {
         versionMatch: "*",
         logicalFileName: "ModB",
         fileExpression: "ModB-v*.zip",
       },
-    } as any;
+    );
 
     const result = postProcessRule(rule);
     expect(result.reference.fileExpression).toBeUndefined();
@@ -70,15 +83,15 @@ describe("postProcessRule", () => {
   });
 
   it("strips fileExpression from source when version is fuzzy and logicalFileName exists", () => {
-    const rule = {
-      source: {
+    const rule = makeRule(
+      {
         versionMatch: ">=1.0.0+prefer",
         logicalFileName: "ModA",
         fileExpression: "ModA-*.zip",
       },
-      type: "before",
-      reference: { versionMatch: "1.0.0" },
-    } as any;
+      {},
+      "before",
+    );
 
     const result = postProcessRule(rule);
     expect(result.source.fileExpression).toBeUndefined();
@@ -86,48 +99,45 @@ describe("postProcessRule", () => {
   });
 
   it("keeps fileExpression when version is exact", () => {
-    const rule = {
-      source: { versionMatch: "1.0.0" },
-      type: "after",
-      reference: {
+    const rule = makeRule(
+      {},
+      {
         versionMatch: "2.0.0",
         logicalFileName: "ModB",
         fileExpression: "ModB-v2.zip",
       },
-    } as any;
+    );
 
     const result = postProcessRule(rule);
     expect(result.reference.fileExpression).toBe("ModB-v2.zip");
   });
 
   it("keeps fileExpression when logicalFileName is missing even if version is fuzzy", () => {
-    const rule = {
-      source: { versionMatch: "1.0.0" },
-      type: "after",
-      reference: {
+    const rule = makeRule(
+      {},
+      {
         versionMatch: "*",
         fileExpression: "ModB-v*.zip",
       },
-    } as any;
+    );
 
     const result = postProcessRule(rule);
     expect(result.reference.fileExpression).toBe("ModB-v*.zip");
   });
 
   it("handles both source and reference being fuzzy simultaneously", () => {
-    const rule = {
-      source: {
+    const rule = makeRule(
+      {
         versionMatch: "*",
         logicalFileName: "ModA",
         fileExpression: "ModA-*.zip",
       },
-      type: "after",
-      reference: {
+      {
         versionMatch: ">=2.0.0+prefer",
         logicalFileName: "ModB",
         fileExpression: "ModB-*.zip",
       },
-    } as any;
+    );
 
     const result = postProcessRule(rule);
     expect(result.source.fileExpression).toBeUndefined();
@@ -135,11 +145,11 @@ describe("postProcessRule", () => {
   });
 
   it("preserves other fields (type, other reference properties)", () => {
-    const rule = {
-      source: { versionMatch: "1.0.0", id: "src-id", fileMD5: "abc" },
-      type: "conflicts",
-      reference: { versionMatch: "2.0.0", id: "ref-id", fileMD5: "def" },
-    } as any;
+    const rule = makeRule(
+      { id: "src-id", fileMD5: "abc" },
+      { versionMatch: "2.0.0", id: "ref-id", fileMD5: "def" },
+      "conflicts",
+    );
 
     const result = postProcessRule(rule);
     expect(result.type).toBe("conflicts");

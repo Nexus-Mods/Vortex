@@ -11,6 +11,26 @@ import {
 } from "./util";
 
 // ---------------------------------------------------------------------------
+// Shared factories
+// ---------------------------------------------------------------------------
+
+const makeRuleEx = (overrides: Record<string, any> = {}): any => ({
+  sourceName: "ModA",
+  type: "after",
+  referenceName: "ModB",
+  ...overrides,
+});
+
+const makeModWithRule = (
+  fileSize: number | undefined,
+  ruleType: string,
+  extras: Record<string, any> = {},
+): any => ({
+  attributes: { fileSize },
+  collectionRule: { type: ruleType, reference: {}, ...extras },
+});
+
+// ---------------------------------------------------------------------------
 // hasEditPermissions
 // ---------------------------------------------------------------------------
 
@@ -24,17 +44,24 @@ describe("hasEditPermissions", () => {
   });
 
   it("returns false when collection:edit is not present", () => {
-    const perms = [{ key: "collection:view" }, { key: "collection:delete" }];
-    expect(hasEditPermissions(perms as any)).toBe(false);
+    const perms: any[] = [
+      { key: "collection:view" },
+      { key: "collection:delete" },
+    ];
+    expect(hasEditPermissions(perms)).toBe(false);
   });
 
   it("returns true when collection:edit is present", () => {
-    const perms = [{ key: "collection:view" }, { key: "collection:edit" }];
-    expect(hasEditPermissions(perms as any)).toBe(true);
+    const perms: any[] = [
+      { key: "collection:view" },
+      { key: "collection:edit" },
+    ];
+    expect(hasEditPermissions(perms)).toBe(true);
   });
 
   it("returns false for empty array", () => {
-    expect(hasEditPermissions([] as any)).toBe(false);
+    const perms: any[] = [];
+    expect(hasEditPermissions(perms)).toBe(false);
   });
 });
 
@@ -63,11 +90,7 @@ describe("md5sum", () => {
 
 describe("ruleId", () => {
   it("produces a stable md5 hash from source, type, and reference", () => {
-    const rule = {
-      sourceName: "ModA",
-      type: "after",
-      referenceName: "ModB",
-    } as any;
+    const rule = makeRuleEx();
     const id = ruleId(rule);
 
     expect(id).toMatch(/^[0-9a-f]{32}$/);
@@ -76,31 +99,15 @@ describe("ruleId", () => {
   });
 
   it("produces different IDs for different rules", () => {
-    const rule1 = {
-      sourceName: "ModA",
-      type: "after",
-      referenceName: "ModB",
-    } as any;
-    const rule2 = {
-      sourceName: "ModA",
-      type: "before",
-      referenceName: "ModB",
-    } as any;
+    const rule1 = makeRuleEx();
+    const rule2 = makeRuleEx({ type: "before" });
 
     expect(ruleId(rule1)).not.toBe(ruleId(rule2));
   });
 
   it("produces different IDs when source/reference swap", () => {
-    const rule1 = {
-      sourceName: "ModA",
-      type: "after",
-      referenceName: "ModB",
-    } as any;
-    const rule2 = {
-      sourceName: "ModB",
-      type: "after",
-      referenceName: "ModA",
-    } as any;
+    const rule1 = makeRuleEx();
+    const rule2 = makeRuleEx({ sourceName: "ModB", referenceName: "ModA" });
 
     expect(ruleId(rule1)).not.toBe(ruleId(rule2));
   });
@@ -124,29 +131,26 @@ describe("getUnfulfilledNotificationId", () => {
 
 describe("isRelevant", () => {
   it("returns true when mod has a state (is being downloaded/installed)", () => {
-    const mod = { state: "downloading", collectionRule: { type: "recommends" } };
-    expect(isRelevant(mod as any)).toBe(true);
+    const mod: any = {
+      state: "downloading",
+      collectionRule: { type: "recommends" },
+    };
+    expect(isRelevant(mod)).toBe(true);
   });
 
   it("returns false when rule is ignored", () => {
-    const mod = {
-      collectionRule: { type: "requires", ignored: true },
-    };
-    expect(isRelevant(mod as any)).toBe(false);
+    const mod: any = { collectionRule: { type: "requires", ignored: true } };
+    expect(isRelevant(mod)).toBe(false);
   });
 
   it("returns false for non-requires rules without state", () => {
-    const mod = {
-      collectionRule: { type: "recommends" },
-    };
-    expect(isRelevant(mod as any)).toBe(false);
+    const mod: any = { collectionRule: { type: "recommends" } };
+    expect(isRelevant(mod)).toBe(false);
   });
 
   it("returns true for requires rules without state and not ignored", () => {
-    const mod = {
-      collectionRule: { type: "requires" },
-    };
-    expect(isRelevant(mod as any)).toBe(true);
+    const mod: any = { collectionRule: { type: "requires" } };
+    expect(isRelevant(mod)).toBe(true);
   });
 });
 
@@ -156,53 +160,38 @@ describe("isRelevant", () => {
 
 describe("calculateCollectionSize", () => {
   it("sums fileSize of relevant mods", () => {
-    const mods = {
-      m1: {
-        attributes: { fileSize: 100 },
-        collectionRule: { type: "requires" },
-      },
-      m2: {
-        attributes: { fileSize: 200 },
-        collectionRule: { type: "requires" },
-      },
-    } as any;
+    const mods: any = {
+      m1: makeModWithRule(100, "requires"),
+      m2: makeModWithRule(200, "requires"),
+    };
 
     expect(calculateCollectionSize(mods)).toBe(300);
   });
 
   it("skips irrelevant mods (recommends without state)", () => {
-    const mods = {
-      m1: {
-        attributes: { fileSize: 100 },
-        collectionRule: { type: "requires" },
-      },
-      m2: {
-        attributes: { fileSize: 500 },
-        collectionRule: { type: "recommends" },
-      },
-    } as any;
+    const mods: any = {
+      m1: makeModWithRule(100, "requires"),
+      m2: makeModWithRule(500, "recommends"),
+    };
 
     expect(calculateCollectionSize(mods)).toBe(100);
   });
 
   it("falls back to reference.fileSize when mod attribute is missing", () => {
-    const mods = {
+    const mods: any = {
       m1: {
         attributes: {},
         collectionRule: { type: "requires", reference: { fileSize: 50 } },
       },
-    } as any;
+    };
 
     expect(calculateCollectionSize(mods)).toBe(50);
   });
 
   it("treats missing size as 0", () => {
-    const mods = {
-      m1: {
-        attributes: {},
-        collectionRule: { type: "requires", reference: {} },
-      },
-    } as any;
+    const mods: any = {
+      m1: makeModWithRule(undefined, "requires"),
+    };
 
     expect(calculateCollectionSize(mods)).toBe(0);
   });
@@ -212,23 +201,17 @@ describe("calculateCollectionSize", () => {
   });
 
   it("includes ignored=false requires mods", () => {
-    const mods = {
-      m1: {
-        attributes: { fileSize: 100 },
-        collectionRule: { type: "requires", ignored: false },
-      },
-    } as any;
+    const mods: any = {
+      m1: makeModWithRule(100, "requires", { ignored: false }),
+    };
 
     expect(calculateCollectionSize(mods)).toBe(100);
   });
 
   it("excludes ignored mods", () => {
-    const mods = {
-      m1: {
-        attributes: { fileSize: 100 },
-        collectionRule: { type: "requires", ignored: true },
-      },
-    } as any;
+    const mods: any = {
+      m1: makeModWithRule(100, "requires", { ignored: true }),
+    };
 
     expect(calculateCollectionSize(mods)).toBe(0);
   });

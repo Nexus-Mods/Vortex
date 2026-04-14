@@ -60,7 +60,8 @@ describe("getActiveInstallSession", () => {
   });
 
   it("returns fallback when session state is missing entirely", () => {
-    expect(getActiveInstallSession({} as any)).toBeUndefined();
+    const emptyState: any = {};
+    expect(getActiveInstallSession(emptyState)).toBeUndefined();
   });
 });
 

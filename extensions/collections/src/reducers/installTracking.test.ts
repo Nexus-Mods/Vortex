@@ -10,7 +10,7 @@ import * as actions from "../actions/installTracking";
 // ---------------------------------------------------------------------------
 
 /** Shorthand: run a reducer action on a state. */
-function reduce(state: any, actionCreator: any, payload: any) {
+function reduce(state: any, actionCreator: any, payload: any): any {
   const key = actionCreator.toString();
   const fn = reducer.reducers[key];
   if (!fn) {
