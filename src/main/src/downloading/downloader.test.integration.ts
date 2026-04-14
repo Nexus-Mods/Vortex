@@ -3,6 +3,7 @@ import { randomBytes } from "node:crypto";
 import { readFile, mkdtemp, mkdir, rm } from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
+import { CookieJar } from "tough-cookie";
 import { describe, it, expect, vi, beforeAll, afterAll, test } from "vitest";
 
 import type { ResolvedResource, ResolvedEndpoint, Resolver } from "./resolver";
@@ -1466,6 +1467,77 @@ describe("download", () => {
       ).rejects.toMatchObject({
         payload: { code: "cancellation" },
       });
+    });
+  });
+
+  describe("cookies", () => {
+    it("sends cookies from the jar in every request", async () => {
+      using route = server.route(serveFile({ body: SMALL_FILE }));
+      await using tmp = await makeTmpDir();
+
+      const jar = new CookieJar();
+      await jar.setCookie("session=abc123", route.url.toString());
+
+      await download(
+        route.url,
+        path.join(tmp.dir, "output"),
+        { resolver: urlResolver, chunker: staticChunker() },
+        { cookieJar: jar },
+      );
+
+      for (const req of route.requests) {
+        expect(req.headers.cookie).toContain("session=abc123");
+      }
+    });
+
+    it("stores Set-Cookie headers from responses in the jar", async () => {
+      using route = server.route(
+        serveFile({
+          body: SMALL_FILE,
+          headers: { "set-cookie": "token=xyz; Path=/" },
+        }),
+      );
+      await using tmp = await makeTmpDir();
+
+      const jar = new CookieJar();
+
+      await download(
+        route.url,
+        path.join(tmp.dir, "output"),
+        { resolver: urlResolver, chunker: staticChunker() },
+        { cookieJar: jar },
+      );
+
+      const cookies = await jar.getCookies(route.url.toString());
+      expect(cookies).toHaveLength(1);
+      expect(cookies[0].key).toBe("token");
+      expect(cookies[0].value).toBe("xyz");
+    });
+
+    it("sends a cookie set by the probe response in the download request", async () => {
+      using route = server.route(
+        serveFile({
+          body: SMALL_FILE,
+          headers: { "set-cookie": "probe=seen; Path=/" },
+        }),
+      );
+      await using tmp = await makeTmpDir();
+
+      const jar = new CookieJar();
+
+      await download(
+        route.url,
+        path.join(tmp.dir, "output"),
+        { resolver: urlResolver, chunker: staticChunker() },
+        { cookieJar: jar },
+      );
+
+      // First request is the HEAD probe; second is the GET download.
+      const [head, get] = route.requests;
+      expect(head.method).toBe("HEAD");
+      expect(get.method).toBe("GET");
+      // Cookie set in HEAD response must appear in the GET request.
+      expect(get.headers.cookie).toContain("probe=seen");
     });
   });
 });
