@@ -92,12 +92,10 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
   const gameId = useSelector((state: IState) => activeGameId(state));
   const gameDomainName = nexusGameId(getGame(gameId), gameId);
 
-  const isLoggedIn = useSelector(
-    (state: IState) => {
-      const nexus = state.confidential?.account?.["nexus"];
-      return !!(nexus?.APIKey || nexus?.OAuthCredentials);
-    },
-  );
+  const isLoggedIn = useSelector((state: IState) => {
+    const nexus = state.confidential?.account?.["nexus"];
+    return !!(nexus?.APIKey || nexus?.OAuthCredentials);
+  });
   const adultContentFilter = useSelector(
     (state: IState) => state.persistent["nexus"]?.userInfo?.adult,
   );
@@ -162,11 +160,29 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
         }
       });
     } else {
-      // Use the Vortex API to handle the NXM link
+      // Use the Vortex API to handle the NXM link.
+      // Populate modInfo.nexus.ids so the persisted download is recognised as
+      // a collection by `nexusIdsFromDownloadId` — without these fields the
+      // download-completed analytics in DownloadObserver can't tell it apart
+      // from a non-Nexus download and silently skips the event.
       api.events.emit(
         "start-download",
         [nxmUrl],
-        {},
+        {
+          game: gameId,
+          source: "nexus",
+          name: collection.name,
+          nexus: {
+            ids: {
+              gameId: collection.game.domainName,
+              collectionId: collection.id,
+              revisionId: collection.latestPublishedRevision?.id,
+              collectionSlug: collection.slug,
+              revisionNumber:
+                collection.latestPublishedRevision?.revisionNumber,
+            },
+          },
+        },
         undefined,
         (err: Error) => {
           if (err && !(err instanceof UserCanceled)) {
