@@ -126,7 +126,7 @@ export const ToolRow: FC<ToolRowProps> = ({
           </>
         )}
 
-        {!starter.isGame && (
+        {!starter.isGame && !isPrimary && (
           <Button
             buttonType="tertiary"
             disabled={!isPinned && pinDisabled}
