@@ -452,8 +452,8 @@ catalogs:
       specifier: ^17.3.0
       version: 17.4.0
     got:
-      specifier: 15.0.0
-      version: 15.0.0
+      specifier: 15.0.2
+      version: 15.0.2
     graphlib:
       specifier: ^2.1.7
       version: 2.1.8
@@ -4075,7 +4075,7 @@ importers:
         version: 11.1.0
       got:
         specifier: 'catalog:'
-        version: 15.0.0
+        version: 15.0.2
       graphlib:
         specifier: 'catalog:'
         version: 2.1.8
@@ -9496,8 +9496,8 @@ packages:
     resolution: {integrity: sha512-6tfZ91bOr7bOXnK7PRDCGBLa1H4U080YHNaAQ2KsMGlLEzRbk44nsZF2E1IeRc3vtJHPVbKCYgdFbaGO2ljd8g==}
     engines: {node: '>=10.19.0'}
 
-  got@15.0.0:
-    resolution: {integrity: sha512-CUqLG9oFZRis7SZq5Bcxh42LpzxXgXwxWVwNljo60oki8Cq3GXVRpDY2K4GwTzYz3htyXf212nfNg2socz4esQ==}
+  got@15.0.2:
+    resolution: {integrity: sha512-opPIdoQSTOGqX3h0d8QQoqCX0oF728V1PFxbPqquAFSeWPUOlPQ3Gi6IKIqGm6NMcDl+DWUwQb2RR+xvuEJOQQ==}
     engines: {node: '>=22'}
 
   graceful-fs@4.2.11:
@@ -18180,7 +18180,7 @@ snapshots:
       p-cancelable: 2.1.1
       responselike: 2.0.1
 
-  got@15.0.0:
+  got@15.0.2:
     dependencies:
       '@sindresorhus/is': 7.2.0
       byte-counter: 0.1.0
