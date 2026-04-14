@@ -49,6 +49,7 @@ export interface UseToolsValidationResult {
 export const useToolsValidation = (
   starters: IStarterInfo[],
   discoveryPath: string | undefined,
+  deploymentCounter: number = 0,
 ): UseToolsValidationResult => {
   const [validToolIds, setValidToolIds] = useState<Set<string>>(
     () => new Set(),
@@ -66,7 +67,7 @@ export const useToolsValidation = (
     return () => {
       cancelled = true;
     };
-  }, [starters, discoveryPath]);
+  }, [starters, discoveryPath, deploymentCounter]);
 
   const isToolValid = useMemo(() => {
     return (info: IStarterInfo): boolean => {
