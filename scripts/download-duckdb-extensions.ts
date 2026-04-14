@@ -2,7 +2,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as https from "node:https";
 import * as zlib from "node:zlib";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -43,7 +43,7 @@ export function parseDuckDBVersion(rawVersion: string): string {
   if (match === null) {
     throw new Error(
       `Unexpected @duckdb/node-api version format: "${rawVersion}". ` +
-        `Expected pattern: "<major>.<minor>.<patch>-r.<n>"`
+        `Expected pattern: "<major>.<minor>.<patch>-r.<n>"`,
     );
   }
   return `v${match[1]}`;
@@ -62,7 +62,7 @@ export function buildExtensionUrl(opts: BuildUrlOptions): string {
   if (type === "http") {
     if (!repository) {
       throw new Error(
-        `Extension "${name}" has type "http" but is missing a "repository" field.`
+        `Extension "${name}" has type "http" but is missing a "repository" field.`,
       );
     }
     return `${repository}/${version}/${platform}/${name}.duckdb_extension.gz`;
@@ -83,36 +83,38 @@ function downloadFile(url: string, destPath: string): Promise<void> {
     const file = fs.createWriteStream(destPath);
 
     const request = (url: string) => {
-      https.get(url, (res) => {
-        if (res.statusCode === 301 || res.statusCode === 302) {
-          // Follow redirect
-          file.destroy();
-          fs.unlinkSync(destPath);
-          request(res.headers.location!);
-          return;
-        }
-        if (res.statusCode !== 200) {
-          file.destroy();
-          fs.unlinkSync(destPath);
-          reject(new Error(`HTTP ${res.statusCode} downloading ${url}`));
-          return;
-        }
-        const gunzip = zlib.createGunzip();
-        res.pipe(gunzip).pipe(file);
-        file.on("finish", () => {
-          file.close();
-          resolve();
-        });
-        gunzip.on("error", (err) => {
-          file.destroy();
-          fs.unlinkSync(destPath);
-          reject(err);
-        });
-        file.on("error", (err) => {
-          fs.unlinkSync(destPath);
-          reject(err);
-        });
-      }).on("error", reject);
+      https
+        .get(url, (res) => {
+          if (res.statusCode === 301 || res.statusCode === 302) {
+            // Follow redirect
+            file.destroy();
+            fs.unlinkSync(destPath);
+            request(res.headers.location!);
+            return;
+          }
+          if (res.statusCode !== 200) {
+            file.destroy();
+            fs.unlinkSync(destPath);
+            reject(new Error(`HTTP ${res.statusCode} downloading ${url}`));
+            return;
+          }
+          const gunzip = zlib.createGunzip();
+          res.pipe(gunzip).pipe(file);
+          file.on("finish", () => {
+            file.close();
+            resolve();
+          });
+          gunzip.on("error", (err) => {
+            file.destroy();
+            fs.unlinkSync(destPath);
+            reject(err);
+          });
+          file.on("error", (err) => {
+            fs.unlinkSync(destPath);
+            reject(err);
+          });
+        })
+        .on("error", reject);
     };
 
     request(url);
@@ -125,12 +127,14 @@ function downloadFile(url: string, destPath: string): Promise<void> {
 
 async function main(): Promise<void> {
   const configPath = path.resolve(__dirname, "duckdb-extensions.json");
-  const config: ExtensionConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
+  const config: ExtensionConfig = JSON.parse(
+    fs.readFileSync(configPath, "utf8"),
+  );
 
   // Detect DuckDB version from the installed @duckdb/node-api package
   const nodeApiPkgPath = path.resolve(
     __dirname,
-    "../src/main/node_modules/@duckdb/node-api/package.json"
+    "../src/main/node_modules/@duckdb/node-api/package.json",
   );
   const nodeApiPkg = JSON.parse(fs.readFileSync(nodeApiPkgPath, "utf8"));
   const duckdbVersion = parseDuckDBVersion(nodeApiPkg.version as string);
@@ -153,7 +157,7 @@ async function main(): Promise<void> {
         outputDir,
         duckdbVersion,
         platform,
-        `${ext.name}.duckdb_extension`
+        `${ext.name}.duckdb_extension`,
       );
 
       if (fs.existsSync(destPath)) {
@@ -175,7 +179,7 @@ async function main(): Promise<void> {
 // Only run when executed directly (not when imported for testing)
 const isMain =
   typeof process.argv[1] === "string" &&
-  import.meta.url === `file:///${process.argv[1].replace(/\\/g, "/")}`;
+  import.meta.url === pathToFileURL(process.argv[1]).href;
 
 if (isMain) {
   main().catch((err: unknown) => {

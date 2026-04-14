@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { parseDuckDBVersion, buildExtensionUrl } from "./download-duckdb-extensions";
+import {
+  parseDuckDBVersion,
+  buildExtensionUrl,
+} from "./download-duckdb-extensions";
 
 describe("parseDuckDBVersion", () => {
   it("strips the -r.X suffix and prepends v", () => {
@@ -22,12 +25,13 @@ describe("buildExtensionUrl", () => {
     const url = buildExtensionUrl({
       type: "http",
       name: "level_pivot",
-      repository: "https://halgari.github.io/duckdb-level-pivot/current_release",
+      repository:
+        "https://halgari.github.io/duckdb-level-pivot/current_release",
       version: "v1.5.1",
       platform: "windows_amd64",
     });
     expect(url).toBe(
-      "https://halgari.github.io/duckdb-level-pivot/current_release/v1.5.1/windows_amd64/level_pivot.duckdb_extension.gz"
+      "https://halgari.github.io/duckdb-level-pivot/current_release/v1.5.1/windows_amd64/level_pivot.duckdb_extension.gz",
     );
   });
 
@@ -39,7 +43,7 @@ describe("buildExtensionUrl", () => {
       platform: "linux_amd64",
     });
     expect(url).toBe(
-      "https://community-extensions.duckdb.org/v1/v1.5.1/linux_amd64/delta.duckdb_extension.gz"
+      "https://community-extensions.duckdb.org/v1/v1.5.1/linux_amd64/delta.duckdb_extension.gz",
     );
   });
 
@@ -50,7 +54,7 @@ describe("buildExtensionUrl", () => {
         name: "my_ext",
         version: "v1.5.1",
         platform: "windows_amd64",
-      })
+      }),
     ).toThrow(/repository/i);
   });
 });
