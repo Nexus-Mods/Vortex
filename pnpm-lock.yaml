@@ -4630,6 +4630,9 @@ importers:
       '@vitejs/plugin-react':
         specifier: 'catalog:'
         version: 6.0.1(vite@8.0.3)
+      '@vortex/fs':
+        specifier: workspace:*
+        version: link:../../packages/fs
       '@vortex/shared':
         specifier: workspace:*
         version: link:../shared

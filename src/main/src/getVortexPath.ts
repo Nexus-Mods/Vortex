@@ -1,6 +1,8 @@
 import type { VortexPaths } from "@vortex/shared/ipc";
 
+import { XDG } from "@vortex/fs";
 import { app, type App } from "electron";
+import * as os from "node:os";
 import * as path from "node:path";
 
 // If running as a forked child process, read Electron app info from environment variables
@@ -122,6 +124,14 @@ function cachedAppPath(id: ElectronPathId) {
 }
 
 function localAppData(): string {
+  if (process.platform === "linux") {
+    // NOTE: BG3 and Bethesda game extensions use localAppData for config paths.
+    // On Linux these resolve to XDG_DATA_HOME. Proton-prefix resolution
+    // for these games will be handled in Phase 2.
+    return (
+      process.env[XDG.data] ?? path.join(os.homedir(), ".local", "share")
+    );
+  }
   return (
     process.env.LOCALAPPDATA ||
     path.resolve(cachedAppPath("appData"), "..", "Local")
