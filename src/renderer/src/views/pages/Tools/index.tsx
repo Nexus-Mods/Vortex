@@ -97,7 +97,10 @@ export const ToolsPage: FC = () => {
               <>
                 {/* Default launcher section */}
                 <div className="space-y-2">
-                  <div className="flex items-center gap-x-2">
+                  <div
+                    className="flex items-center gap-x-2"
+                    title={t("Runs instead of the game when you hit Play")}
+                  >
                     <Icon
                       className="shrink-0 text-translucent-moderate"
                       path={mdiFlash}
@@ -134,7 +137,10 @@ export const ToolsPage: FC = () => {
 
                 {/* Pinned tools section */}
                 <div className="space-y-2">
-                  <div className="flex items-center gap-x-2">
+                  <div
+                    className="flex items-center gap-x-2"
+                    title={t("Pin shortcuts to your most used tools")}
+                  >
                     <Icon
                       className="shrink-0 text-translucent-moderate"
                       path={mdiPin}
@@ -186,7 +192,12 @@ export const ToolsPage: FC = () => {
 
             {/* Tools section */}
             <div className="space-y-2">
-              <div className="flex items-center gap-x-2">
+              <div
+                className="flex items-center gap-x-2"
+                title={t(
+                  "External programs or launch options used alongside the game",
+                )}
+              >
                 <Icon
                   className="shrink-0 text-translucent-moderate"
                   path={mdiWrench}

@@ -1,6 +1,6 @@
 import path from "path";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useSelector } from "react-redux";
+import { shallowEqual, useSelector } from "react-redux";
 
 import type { IState } from "../../../types/IState";
 import type { IStarterInfo } from "../../../util/StarterInfo";
@@ -43,16 +43,22 @@ export const useToolsData = () => {
     (state: IState) => state.settings.gameMode.discovered,
   );
   const discoveredTools = useSelector(
-    (state: IState) => state.settings.gameMode.discovered?.[gameMode]?.tools ?? {},
+    (state: IState) =>
+      state.settings.gameMode.discovered?.[gameMode]?.tools ?? {},
+    shallowEqual,
   );
   const toolsOrder = useSelector(
-    (state: IState) => state.settings.interface.tools?.order?.[gameMode] ?? [],
+    (state: IState) =>
+      state.settings.interface.tools?.order?.[gameMode] ?? [],
+    shallowEqual,
   );
   const primaryTool = useSelector(
     (state: IState) => state.settings.interface.primaryTool?.[gameMode],
   );
   const pinnedToolsMap = useSelector(
-    (state: IState) => state.settings.interface.tools?.pinned?.[gameMode] ?? {},
+    (state: IState) =>
+      state.settings.interface.tools?.pinned?.[gameMode] ?? {},
+    shallowEqual,
   );
   const toolsRunning = useSelector(
     (state: IState) => state.session.base.toolsRunning,
@@ -94,13 +100,7 @@ export const useToolsData = () => {
     if (discoveryPath !== undefined) {
       void validateTools(tools, discoveryPath).then(setValidToolIds);
     }
-  }, [
-    tools,
-    discoveredGames,
-    gameMode,
-    mods,
-    deploymentCounter,
-  ]);
+  }, [tools, discoveredGames, gameMode, mods, deploymentCounter]);
 
   // ── Derived: hidden / pinned / unpinned / launcher split ─────────────────
 
