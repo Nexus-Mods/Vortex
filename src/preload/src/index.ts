@@ -192,18 +192,6 @@ try {
         betterIpcRenderer.invoke("window:setAlwaysOnTop", windowId, flag),
       moveTop: (windowId: number) =>
         betterIpcRenderer.invoke("window:moveTop", windowId),
-      onMaximize: (callback) => {
-        const listener = () => callback();
-        ipcRenderer.on("window:event:maximize", listener);
-        return () =>
-          ipcRenderer.removeListener("window:event:maximize", listener);
-      },
-      onUnmaximize: (callback) => {
-        const listener = () => callback();
-        ipcRenderer.on("window:event:unmaximize", listener);
-        return () =>
-          ipcRenderer.removeListener("window:event:unmaximize", listener);
-      },
       onClose: (callback) => {
         const listener = () => callback();
         ipcRenderer.on("window:event:close", listener);
