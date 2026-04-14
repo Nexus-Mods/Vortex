@@ -66,12 +66,24 @@ export class WindowsPathProviderImpl implements WindowsPathProvider {
     return Promise.resolve(QP.parse(value));
   }
 
+  #home(): string {
+    const env = process.env["USERPROFILE"];
+    return env && env.length > 0 ? env : homedir();
+  }
+
   fromBase(base: WindowsPathBase): Promise<QualifiedPath> {
     if (base === "home") {
-      const env = process.env["USERPROFILE"];
-      return this.#create(env && env.length > 0 ? env : homedir());
+      return this.#create(this.#home());
     } else if (base === "temp") {
       return this.#create(tmpdir());
+    } else if (base === "appData") {
+      return this.#create(pathWin32.join(this.#home(), "AppData"));
+    } else if (base === "documents") {
+      return this.#create(pathWin32.join(this.#home(), "Documents"));
+    } else if (base === "my games") {
+      return this.#create(
+        pathWin32.join(this.#home(), "Documents", "My Games"),
+      );
     }
 
     const exhausted: never = base;
