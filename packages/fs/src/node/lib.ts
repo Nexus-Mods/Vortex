@@ -44,6 +44,7 @@ export type {
   XDGBase,
 } from "../browser/paths.linux";
 
+export { WindowsPath } from "../browser/paths.windows";
 export type {
   WindowsPathBase,
   WindowsPathProvider,
