@@ -56,7 +56,7 @@ const PlayButton: FC<PlayButtonProps> = ({
         className="w-full transition-all"
         disabled={disabled}
         filled="strong"
-        leftIconPath={primaryStarter ? mdiPlay : undefined}
+        leftIconPath={mdiPlay}
         onClick={onClick}
       >
         {label}
@@ -131,7 +131,7 @@ export const ToolsSection: FC<ToolsSectionProps> = ({ isAnimating }) => {
         disabled={exclusiveRunning || isPrimaryRunning || !primaryStarter}
         isCollapsed={menuIsCollapsed}
         isPrimaryRunning={isPrimaryRunning}
-        primaryStarter={primaryStarter}
+        primaryStarter={primaryToolId ? primaryStarter : undefined}
         onClick={handlePlay}
       />
     </div>
