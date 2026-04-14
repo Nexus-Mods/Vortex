@@ -2,7 +2,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as https from "node:https";
 import * as zlib from "node:zlib";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -179,7 +179,7 @@ async function main(): Promise<void> {
 // Only run when executed directly (not when imported for testing)
 const isMain =
   typeof process.argv[1] === "string" &&
-  import.meta.url === `file:///${process.argv[1].replace(/\\/g, "/")}`;
+  import.meta.url === pathToFileURL(process.argv[1]).href;
 
 if (isMain) {
   main().catch((err: unknown) => {
