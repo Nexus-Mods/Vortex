@@ -29,8 +29,8 @@ export function nativeToQP(nativePath: string): QualifiedPath {
     const forward = nativePath.replace(/\\/g, "/");
     const match = /^([A-Za-z]):\/(.*)$/.exec(forward);
     if (match) {
-      const drive = match[1].toUpperCase();
-      const tail = match[2];
+      const drive = match[1]!.toUpperCase();
+      const tail = match[2]!;
       const path = tail.length > 0 ? `/${drive}/${tail}` : `/${drive}`;
       return QualifiedPath.parse(`${scheme}://${path}`);
     }
