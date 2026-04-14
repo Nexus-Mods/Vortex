@@ -5,7 +5,7 @@ import { fs, types, util } from "vortex-api";
 import { ICollection, ICollectionModRule } from "../types/ICollection";
 import { validateICollection } from "../validationCode/validation";
 
-function isFuzzyVersion(input: string): boolean {
+export function isFuzzyVersion(input: string): boolean {
   if (!input) {
     return false;
   }
@@ -20,7 +20,7 @@ function isFuzzyVersion(input: string): boolean {
  * collections.
  * Should be cleared when we do a stable release
  */
-function postProcessRule(rule: ICollectionModRule): ICollectionModRule {
+export function postProcessRule(rule: ICollectionModRule): ICollectionModRule {
   const result = JSON.parse(JSON.stringify(rule));
   // remove fileExpression from references with fuzzy version when there's already a
   // logicalFileName, because the fileExpressions we stored are simply the file name and that

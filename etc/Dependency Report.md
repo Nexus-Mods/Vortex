@@ -73,7 +73,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | mixpanel-browser | 2.77.0 |
 | modmeta-db | 0.9.3 |
 | native-errors | 2.0.3 |
-| node-7z | 0.8.0 |
+| node-7z | 0.8.1 |
 | normalize-url | 6.1.0 |
 | numeral | 2.0.6 |
 | p-queue | 9.1.0 |
