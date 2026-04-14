@@ -3,11 +3,10 @@ import type {
   IFileSystem,
   StatResult,
   Status,
-} from "./filesystem";
-import type { Pattern } from "./matcher";
+} from "@vortex/fs";
+import type { Pattern } from "@vortex/fs";
 
-import { FileSystemError } from "./filesystem";
-import { QualifiedPath } from "./paths";
+import { FileSystemError, QualifiedPath } from "@vortex/fs";
 
 /**
  * Send function shape used by the client polyfill. The caller provides a

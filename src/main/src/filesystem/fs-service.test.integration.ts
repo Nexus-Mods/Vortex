@@ -10,13 +10,14 @@
 import type { IMethodMessage } from "@vortex/adaptor-api";
 
 import {
-  NodeFileSystemBackendImpl,
   NodeFileSystemImpl,
   PathResolverRegistryImpl,
   QualifiedPath,
-  createFileSystemClient,
   FileSystemError,
 } from "@vortex/fs";
+
+import { createFileSystemClient } from "./client";
+import { NodeFileSystemBackendImpl } from "./backend";
 import * as fs from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";

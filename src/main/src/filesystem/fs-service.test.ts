@@ -2,10 +2,11 @@ import type { IMessage, IMessageHandler } from "@vortex/adaptor-api";
 import type { StatResult } from "@vortex/fs";
 
 import {
-  NodeFileSystemBackendImpl,
   NodeFileSystemImpl,
   PathResolverRegistryImpl,
 } from "@vortex/fs";
+
+import { NodeFileSystemBackendImpl } from "./backend";
 import * as fs from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";

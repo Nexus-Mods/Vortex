@@ -1,7 +1,3 @@
-export type { FileSystemSendFn } from "./client";
-
-export { createFileSystemClient } from "./client";
-
 export type {
   DirectoryStatus,
   FileStatus,

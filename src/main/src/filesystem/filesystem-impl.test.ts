@@ -3,10 +3,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { FileSystemError } from "../browser/filesystem";
-import { PathResolverRegistryImpl, QualifiedPath } from "../browser/paths";
+import {
+  FileSystemError,
+  NodeFileSystemImpl,
+  PathResolverRegistryImpl,
+  QualifiedPath,
+} from "@vortex/fs";
+
 import { NodeFileSystemBackendImpl } from "./backend";
-import { NodeFileSystemImpl } from "./filesystem-impl";
 import { nativeToQP, platformResolver, platformScheme } from "./testing";
 
 describe("NodeFileSystemImpl", () => {
@@ -60,7 +64,7 @@ describe("NodeFileSystemImpl", () => {
     while (true) {
       const step = await iter.next();
       if (step.done) break;
-      const qp = step.value;
+      const qp = step.value as QualifiedPath;
       expect(qp).toBeInstanceOf(QualifiedPath);
       expect(qp.scheme).toBe(platformScheme());
       seen.push(qp.basename);
@@ -93,7 +97,7 @@ describe("NodeFileSystemImpl", () => {
     while (true) {
       const step = await iter.next();
       if (step.done) break;
-      seen.push(step.value.path);
+      seen.push((step.value as QualifiedPath).path);
     }
     expect(seen.some((p) => p.endsWith(`${rootQP.path}/sub/nested.txt`))).toBe(
       true,

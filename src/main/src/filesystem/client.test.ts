@@ -1,11 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 
 import type { FileSystemSendFn } from "./client";
-import type { Status } from "./filesystem";
+import type { Status } from "@vortex/fs";
 
 import { createFileSystemClient } from "./client";
-import { FileSystemError } from "./filesystem";
-import { QualifiedPath } from "./paths";
+import { FileSystemError, QualifiedPath } from "@vortex/fs";
 
 const ROOT = QualifiedPath.parse("linux:///tmp/fs-client-test");
 const FILE = ROOT.join("hello.txt");

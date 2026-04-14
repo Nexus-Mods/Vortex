@@ -5,11 +5,12 @@ import type { Serializable } from "@vortex/shared/ipc";
 
 import { Base, OS, Store } from "@vortex/adaptor-api/stores/lib";
 import {
-  NodeFileSystemBackendImpl,
   NodeFileSystemImpl,
   PathResolverRegistryImpl,
   QualifiedPath,
 } from "@vortex/fs";
+
+import { NodeFileSystemBackendImpl } from "./filesystem/backend";
 import * as fs from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import * as path from "node:path";

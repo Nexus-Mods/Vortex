@@ -8,7 +8,8 @@ import {
   semVer,
 } from "@vortex/adaptor-api";
 import * as fsApi from "@vortex/fs";
-import { createFileSystemClient } from "@vortex/fs";
+
+import { createFileSystemClient } from "../filesystem/client.js";
 import vm from "node:vm";
 import { parentPort } from "node:worker_threads";
 

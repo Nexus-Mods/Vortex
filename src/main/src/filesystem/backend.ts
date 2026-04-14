@@ -23,13 +23,11 @@ import type {
   StatResult,
   Status,
   StatusTime,
-} from "../browser/filesystem";
-import type { Pattern } from "../browser/matcher";
-import type { ResolvedPath } from "../browser/paths";
-import type { NodeFileSystemBackend } from "./filesystem";
+} from "@vortex/fs";
+import type { Pattern, ResolvedPath } from "@vortex/fs";
+import type { FileSystemBackend as NodeFileSystemBackend } from "@vortex/fs";
 
-import { FileSystemError } from "../browser/filesystem";
-import { matches } from "../browser/matcher";
+import { FileSystemError, matches } from "@vortex/fs";
 
 interface ParsedNodeError {
   code: FileSystemErrorCode;

@@ -1,7 +1,3 @@
-export type { FileSystemSendFn } from "../browser/client";
-
-export { createFileSystemClient } from "../browser/client";
-
 export type {
   DirectoryStatus,
   FileStatus,
@@ -58,8 +54,6 @@ export type {
   WindowsPathBase,
   WindowsPathProvider,
 } from "../browser/paths.windows";
-
-export { NodeFileSystemBackendImpl } from "./backend";
 
 export type {
   NodeFileSystem as FileSystem,
