@@ -318,12 +318,29 @@ async function installCollection(
     .then((result) => {
       if (result.action === "Install") {
         const gameId = revision.collection.game.domainName;
+        // Populate modInfo.nexus.ids so the persisted download is recognised
+        // as a collection by `nexusIdsFromDownloadId`. Without it,
+        // CollectionsDownloadCompletedEvent never fires for collections
+        // installed via this code path.
         api.events.emit(
           "start-download",
           [
             `nxm://${gameId}/collections/${revision.collection.slug}/revisions/${revision.revisionNumber}`,
           ],
-          {},
+          {
+            game: gameId,
+            source: "nexus",
+            name: revision.collection.name,
+            nexus: {
+              ids: {
+                gameId,
+                collectionId: revision.collection.id,
+                revisionId: revision.id,
+                collectionSlug: revision.collection.slug,
+                revisionNumber: revision.revisionNumber,
+              },
+            },
+          },
           undefined,
           (err) => {
             if (err !== null && !(err instanceof util.UserCanceled)) {
@@ -894,7 +911,7 @@ function register(
   const collectionsMap = () =>
     collectionsMapFunc(
       stateFunc().persistent.mods[selectors.activeGameId(stateFunc())] ??
-      emptyObj,
+        emptyObj,
     );
   const collectionOptions = memoize(generateCollectionOptions);
 
@@ -948,7 +965,7 @@ function register(
     groupName: (modId: string) =>
       util.renderModName(
         stateFunc().persistent.mods[selectors.activeGameId(stateFunc())]?.[
-        modId
+          modId
         ],
       ),
     isDefaultVisible: false,
@@ -1222,7 +1239,7 @@ function register(
         if (driver.profile !== undefined) {
           collection =
             state.persistent.mods[driver.profile.gameId]?.[
-            driver.collection.id
+              driver.collection.id
             ] ?? driver.collection;
         } else {
           collection = driver.collection;
@@ -1813,7 +1830,12 @@ function once(api: types.IExtensionApi, collectionsCB: () => ICallbackMap) {
 
   const onGameModeChange = (gameMode: string) => {
     if (driver.profile?.gameId && driver.profile.gameId !== gameMode) {
-      pauseCollection(api, driver.profile?.gameId, driver.collection?.id, false);
+      pauseCollection(
+        api,
+        driver.profile?.gameId,
+        driver.collection?.id,
+        false,
+      );
     }
 
     updateOwnCollectionsCB(gameMode);
