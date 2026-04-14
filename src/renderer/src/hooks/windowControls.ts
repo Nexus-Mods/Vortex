@@ -38,18 +38,12 @@ export const useIsMaximized = () => {
       setIsMaximized(maximized);
     });
 
-    // Subscribe to window events
-    const unsubscribeMaximize = api.window.onMaximize(() =>
-      setIsMaximized(true),
-    );
-    const unsubscribeUnmaximize = api.window.onUnmaximize(() =>
-      setIsMaximized(false),
+    // Subscribe to window maximized state changes
+    const unsubscribe = api.window.onMaximized((maximized) =>
+      setIsMaximized(maximized),
     );
 
-    return () => {
-      unsubscribeMaximize();
-      unsubscribeUnmaximize();
-    };
+    return unsubscribe;
   }, []);
 
   return isMaximized;
