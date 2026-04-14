@@ -8,8 +8,6 @@ export const GameFolder = {
   install: "install",
   saves: "saves",
   preferences: "preferences",
-  config: "config",
-  cache: "cache",
 } as const;
 
 export type GameFolder = (typeof GameFolder)[keyof typeof GameFolder];
@@ -24,33 +22,49 @@ export type GameFolderMap = Partial<Record<GameFolder, QualifiedPath>> & {
 };
 
 /**
- * Adaptor-provided service that resolves a game's auxiliary folder paths
- * given a discovered installation location and the store that found it.
+ * Adaptor-provided service that resolves a game's folder paths given
+ * store-scoped and game-scoped base paths.
  *
  * Each game adaptor `@provides` this at its own URI
  * (e.g. `"vortex:adaptor/skyrim-se/paths"`).
  */
 export interface IGamePathService {
   /**
-   * Resolves the game's auxiliary folders relative to its installation.
+   * Resolves the game's folders by composing paths onto the store base.
    *
-   * @param store - Which store discovered the game (`"steam"`, `"epic"`, `"gog"`, `"xbox"`).
-   * @param installPath - The discovered game installation path
-   *   (e.g. `steam://SteamApps/common/Skyrim Special Edition/`).
-   * @returns A map of folder short names to qualified paths.
+   * The adaptor constructs store-scheme paths for each folder using
+   * well-known sub-paths on `storeBase`:
+   * - `storeBase/install` -- the game's install directory
+   * - `storeBase/home` -- OS home directory (`%USERPROFILE%`)
+   * - `storeBase/documents` -- OS Documents directory
+   * - `storeBase/my games` -- OS My Games directory
+   * - `storeBase/appData` -- OS AppData directory
+   *
+   * The framework builds a game resolver from the returned map by
+   * mapping each folder name onto `gameBase`:
+   * ```
+   * gameBase.join(folderName) → returned storePath
+   * ```
+   *
+   * @param storeBase - Store-scoped root path (e.g. `steam://1234`).
+   *   The adaptor joins OS bases and game-specific sub-paths onto this.
+   * @param gameBase - Game-scoped root path (e.g. `game://steam/1234`).
+   *   Passed for context; the framework uses it to build resolver mappings.
+   * @returns A map of folder short names to store-scheme qualified paths.
    *
    * @example
    * ```ts
+   * // storeBase = steam://1234
    * // A Skyrim SE adaptor might return:
    * {
-   *   [GameFolder.preferences]: QualifiedPath.parse("steam://documents/My Games/Skyrim Special Edition/"),
-   *   [GameFolder.saves]:       QualifiedPath.parse("steam://documents/My Games/Skyrim Special Edition/Saves/"),
-   *   [GameFolder.config]:      QualifiedPath.parse("steam://localAppData/Skyrim Special Edition/"),
+   *   [GameFolder.install]:     qpath`${storeBase}/install`,
+   *   [GameFolder.saves]:       qpath`${storeBase}/my games/Skyrim Special Edition/Saves`,
+   *   [GameFolder.preferences]: qpath`${storeBase}/appData/Local/Skyrim Special Edition`,
    * }
    * ```
    */
   resolveGameFolders(
-    store: string,
-    installPath: QualifiedPath,
+    storeBase: QualifiedPath,
+    gameBase: QualifiedPath,
   ): Promise<GameFolderMap>;
 }

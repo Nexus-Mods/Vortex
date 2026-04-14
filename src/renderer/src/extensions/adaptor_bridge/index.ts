@@ -126,6 +126,60 @@ function gameIdFromUri(gameUri: string): string {
 }
 
 /**
+ * Looks up the store-specific game ID from the game info based on which
+ * store discovered the game. Returns `undefined` if the store is unknown
+ * or the game info lacks an entry for that store.
+ */
+function storeGameId(store: string, info: GameInfo): string | undefined {
+  if (store === "steam" && info.steam?.length) {
+    return String(info.steam[0].appId);
+  }
+  if (store === "gog" && info.gog?.length) {
+    return String(info.gog[0].gameId);
+  }
+  if (store === "epic" && info.epic?.length) {
+    return info.epic[0].catalogNamespace;
+  }
+  if (store === "xbox" && info.xbox?.length) {
+    return info.xbox[0].packageFamilyName;
+  }
+  return undefined;
+}
+
+/** Serialized QualifiedPath shape that survives IPC. */
+interface SerializedQualifiedPath {
+  value: string;
+  scheme: string;
+  path: string;
+}
+
+/**
+ * Constructs the store-scoped and game-scoped base QualifiedPaths used by
+ * adaptor services.
+ *
+ * - `storeBase`: e.g. `steam://1091500` -- the adaptor joins OS bases and
+ *   game-specific sub-paths onto this.
+ * - `gameBase`: e.g. `game://steam/1091500` -- the framework uses this to
+ *   build resolver mappings from the folder names returned by the adaptor.
+ */
+function buildBasePaths(
+  store: string,
+  id: string,
+): { storeBase: SerializedQualifiedPath; gameBase: SerializedQualifiedPath } {
+  const storeBase: SerializedQualifiedPath = {
+    value: `${store}://${id}`,
+    scheme: store,
+    path: "",
+  };
+  const gameBase: SerializedQualifiedPath = {
+    value: `game://${store}/${id}`,
+    scheme: "game",
+    path: "",
+  };
+  return { storeBase, gameBase };
+}
+
+/**
  * Converts adaptor store IDs into the queryArgs format that Vortex's
  * GameStoreHelper understands. This is how Vortex discovers installed
  * games on disk — it queries Steam, Epic, GOG, etc. with these IDs.
@@ -189,11 +243,7 @@ async function registerAdaptor(
 
   // Fetch game info eagerly — we need the game ID and store IDs
   // for registerGame which must happen synchronously during init
-  const info = (await callAdaptor(
-    name,
-    infoUri,
-    "getGameInfo",
-  )) as GameInfo;
+  const info = (await callAdaptor(name, infoUri, "getGameInfo")) as GameInfo;
 
   const gameId = gameIdFromUri(info.gameUri);
 
@@ -210,14 +260,21 @@ async function registerAdaptor(
   let cachedTools: GameToolsInfo | null = null;
 
   /** Resolves game folder paths. Called once after discovery. */
-  async function getFolders(
-    store: string,
-    gamePath: string,
-  ): Promise<GameFolderMap> {
+  async function getFolders(store: string): Promise<GameFolderMap> {
     if (!cachedFolders && pathsUri) {
+      const id = storeGameId(store, info);
+      if (!id) {
+        log(
+          "warn",
+          "[adaptor-bridge] No store-specific game ID for {{store}} on {{name}}, skipping folder resolution",
+          { store, name },
+        );
+        return {};
+      }
+      const { storeBase, gameBase } = buildBasePaths(store, id);
       cachedFolders = (await callAdaptor(name, pathsUri, "resolveGameFolders", [
-        store,
-        gamePath,
+        storeBase,
+        gameBase,
       ])) as GameFolderMap;
     }
     return cachedFolders ?? {};
@@ -264,9 +321,9 @@ async function registerAdaptor(
   context.registerGame({
     id: gameId,
     name: info.displayName,
-    logo: "",              // TODO: adaptor-provided logo
+    logo: "", // TODO: adaptor-provided logo
     executable: () => ".", // Placeholder — updated in setup after tools resolve
-    requiredFiles: [],     // Adaptors don't use file-based discovery
+    requiredFiles: [], // Adaptors don't use file-based discovery
     mergeMods: true,
     queryModPath: () => ".", // Actual paths come from mod type registrations
     queryArgs: buildQueryArgs(info), // Enables GameStoreHelper discovery
@@ -281,46 +338,52 @@ async function registerAdaptor(
      *
      * Resolution chain: paths → tools + mod types (both need folders)
      */
-    setup: (discovery) => Bluebird.resolve((async () => {
-      const store = discovery.store ?? "unknown";
-      const gamePath = discovery.path;
-      if (!gamePath) {
-        log("warn", `[adaptor-bridge] No discovery path for ${name}, skipping setup`);
-        return;
-      }
+    setup: (discovery) =>
+      Bluebird.resolve(
+        (async () => {
+          const store = discovery.store ?? "unknown";
+          const gamePath = discovery.path;
+          if (!gamePath) {
+            log(
+              "warn",
+              `[adaptor-bridge] No discovery path for ${name}, skipping setup`,
+            );
+            return;
+          }
 
-      // Step 1: Resolve folder paths (install, saves, config, etc.)
-      const folders = await getFolders(store, gamePath);
+          // Step 1: Resolve folder paths (install, saves, preferences, etc.)
+          const folders = await getFolders(store);
 
-      // Step 2: Resolve tools (depends on folders)
-      const tools = await getTools(folders);
+          // Step 2: Resolve tools (depends on folders)
+          const tools = await getTools(folders);
 
-      // Step 3: Wire the game executable from the tools service
-      if (tools) {
-        discovery.executable = tools.game.executable.path;
-      }
+          // Step 3: Wire the game executable from the tools service
+          if (tools) {
+            discovery.executable = tools.game.executable.path;
+          }
 
-      // Step 4: Populate supported tools
-      if (tools?.tools) {
-        for (const [toolId, tool] of Object.entries(tools.tools)) {
-          supportedTools.push({
-            id: `${gameId}-${toolId}`,
-            name: tool.name,
-            shortName: tool.shortName,
-            executable: () => tool.executable.path,
-            requiredFiles: (tool.requiredFiles ?? []).map((f) => f.path),
-            parameters: tool.parameters,
-            environment: tool.environment,
-            exclusive: tool.exclusive,
-            defaultPrimary: tool.defaultPrimary,
-            shell: tool.shell,
-            detach: tool.detach,
-            onStart: tool.onStart,
-            relative: true, // Always relative to game folder
-          });
-        }
-      }
-    })()),
+          // Step 4: Populate supported tools
+          if (tools?.tools) {
+            for (const [toolId, tool] of Object.entries(tools.tools)) {
+              supportedTools.push({
+                id: `${gameId}-${toolId}`,
+                name: tool.name,
+                shortName: tool.shortName,
+                executable: () => tool.executable.path,
+                requiredFiles: (tool.requiredFiles ?? []).map((f) => f.path),
+                parameters: tool.parameters,
+                environment: tool.environment,
+                exclusive: tool.exclusive,
+                defaultPrimary: tool.defaultPrimary,
+                shell: tool.shell,
+                detach: tool.detach,
+                onStart: tool.onStart,
+                relative: true, // Always relative to game folder
+              });
+            }
+          }
+        })(),
+      ),
   });
 }
 

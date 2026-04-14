@@ -11,7 +11,7 @@ import type {
 describe("GameFolder", () => {
   it("is a union of well-known folder names", () => {
     expectTypeOf<GameFolder>().toEqualTypeOf<
-      "install" | "saves" | "preferences" | "config" | "cache"
+      "install" | "saves" | "preferences"
     >();
   });
 });
@@ -35,5 +35,11 @@ describe("IGamePathService", () => {
     expectTypeOf<
       IGamePathService["resolveGameFolders"]
     >().returns.resolves.toMatchTypeOf<GameFolderMap>();
+  });
+
+  it("accepts storeBase and gameBase QualifiedPath parameters", () => {
+    expectTypeOf<
+      IGamePathService["resolveGameFolders"]
+    >().parameters.toEqualTypeOf<[QualifiedPath, QualifiedPath]>();
   });
 });

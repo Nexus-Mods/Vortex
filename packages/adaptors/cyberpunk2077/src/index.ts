@@ -30,14 +30,13 @@ export class GameInfoService implements IGameInfoService {
 @provides("vortex:adaptor/cyberpunk2077/paths")
 export class GamePathService implements IGamePathService {
   resolveGameFolders(
-    _store: string,
-    installPath: QualifiedPath,
+    storeBase: QualifiedPath,
+    _gameBase: QualifiedPath,
   ): Promise<GameFolderMap> {
     return Promise.resolve({
-      [GameFolder.install]: installPath,
-      [GameFolder.config]: qpath`${installPath}/engine/config`,
-      [GameFolder.preferences]: qpath`${installPath}/engine/config/platform/pc`,
-      [GameFolder.saves]: qpath`${installPath}/saved_games`,
+      [GameFolder.install]: qpath`${storeBase}/install`,
+      [GameFolder.saves]: qpath`${storeBase}/home/Saved Games/CD Projekt Red/Cyberpunk 2077`,
+      [GameFolder.preferences]: qpath`${storeBase}/appData/Local/CD Projekt Red/Cyberpunk 2077`,
     });
   }
 }
