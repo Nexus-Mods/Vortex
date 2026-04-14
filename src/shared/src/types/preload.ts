@@ -236,12 +236,6 @@ export interface WindowAPI {
   /** Move window to top of stack */
   moveTop(windowId: number): Promise<void>;
 
-  /** Register listener for window maximize event. Returns unsubscribe function. */
-  onMaximize(callback: () => void): () => void;
-
-  /** Register listener for window unmaximize event. Returns unsubscribe function. */
-  onUnmaximize(callback: () => void): () => void;
-
   /** Register listener for window close event. Returns unsubscribe function. */
   onClose(callback: () => void): () => void;
 
