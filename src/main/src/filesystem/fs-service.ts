@@ -24,6 +24,24 @@ interface CursorEntry {
 const DEFAULT_BATCH_SIZE = 128;
 
 /**
+ * Restores a {@link QualifiedPath} from a structured-cloned value that
+ * crossed the worker RPC boundary. Accepts an existing instance (returned
+ * as-is) or a plain object with a string `value` field (re-parsed).
+ */
+function rehydrate(value: unknown): QualifiedPath {
+  if (value instanceof QualifiedPath) return value;
+  if (
+    value !== null &&
+    typeof value === "object" &&
+    "value" in value &&
+    typeof (value as { value: unknown }).value === "string"
+  ) {
+    return QualifiedPath.parse((value as { value: string }).value);
+  }
+  throw new TypeError("Expected QualifiedPath");
+}
+
+/**
  * Handler for the `vortex:host/filesystem` URI. Rehydrates
  * {@link QualifiedPath} arguments (structured-cloned across the worker
  * boundary), delegates every operation to the supplied
@@ -46,8 +64,6 @@ export function createFileSystemServiceHandler(
   const batchSize = options?.batchSize ?? DEFAULT_BATCH_SIZE;
   const cursors = new Map<string, CursorEntry>();
   let cursorCounter = 0;
-
-  const rehydrate = QualifiedPath.rehydrate;
 
   const dispatch = async (payload: FsPayload): Promise<unknown> => {
     const { method, args } = payload;

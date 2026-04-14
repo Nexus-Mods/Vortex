@@ -31,6 +31,10 @@ export function platformScheme(): string {
 /**
  * Wraps a native temp-directory path as a {@link QualifiedPath} using the
  * platform-appropriate scheme and encoding.
+ *
+ * NOTE: The Windows encoding here must match WindowsPathProviderImpl.#create
+ * (src/main/src/filesystem/paths.windows.ts) and nativeToQualifiedPath
+ * (src/renderer/src/extensions/adaptor_bridge/index.ts).
  */
 export function nativeToQP(nativePath: string): QualifiedPath {
   const scheme = platformScheme();

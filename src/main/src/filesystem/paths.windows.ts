@@ -41,6 +41,10 @@ export class WindowsPathProviderImpl implements WindowsPathProvider {
    * drive-letter encoding. Uses `path.win32.parse` to detect the root so
    * UNC / drive-relative inputs are rejected up-front rather than silently
    * producing a malformed `QualifiedPath`.
+   *
+   * NOTE: The encoding here must match nativeToQualifiedPath
+   * (src/renderer/src/extensions/adaptor_bridge/index.ts) and the
+   * nativeToQP helper (src/main/src/filesystem/testing.ts).
    */
   #create(nativePath: string): Promise<QualifiedPath> {
     const parsed = pathWin32.parse(nativePath);
