@@ -30,7 +30,7 @@ import {
   type IRpcTransport,
 } from "../node-adaptor-host/transport.js";
 import { createFileSystemServiceHandler } from "./fs-service.js";
-import { LinuxPathProviderImpl } from "./paths.linux.js";
+import { nativeToQP, platformResolver } from "./testing.js";
 
 describe("filesystem RPC end-to-end", () => {
   let root: string;
@@ -41,7 +41,7 @@ describe("filesystem RPC end-to-end", () => {
 
   beforeEach(async () => {
     root = await fs.mkdtemp(join(tmpdir(), "fs-rpc-"));
-    rootQP = QualifiedPath.parse(`linux://${root}`);
+    rootQP = nativeToQP(root);
 
     const { port1, port2 } = new MessageChannel();
     hostTransport = createRpcTransport(port1);
@@ -49,7 +49,7 @@ describe("filesystem RPC end-to-end", () => {
 
     const filesystem = new NodeFileSystemImpl(
       new NodeFileSystemBackendImpl(),
-      new PathResolverRegistryImpl([new LinuxPathProviderImpl()]),
+      new PathResolverRegistryImpl([platformResolver()]),
     );
     service = createFileSystemServiceHandler(filesystem, { batchSize: 2 });
 

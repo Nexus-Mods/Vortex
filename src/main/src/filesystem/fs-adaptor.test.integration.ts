@@ -2,9 +2,9 @@
  * Full end-to-end test for the filesystem contract from inside a real
  * adaptor Worker. Loads the `fs-test` adaptor bundle through the same
  * `createTestHarness` flow used by `loader.test.integration.ts`, wires
- * `vortex:host/filesystem` to a real `FileSystemBackendImpl` +
- * `LinuxPathProviderImpl` over a tmpdir, and calls the `fs-test` probe
- * service to make the Worker exercise the injected `IFileSystem`.
+ * `vortex:host/filesystem` to a real `NodeFileSystemImpl` over a tmpdir,
+ * and calls the `fs-test` probe service to make the Worker exercise the
+ * injected `IFileSystem`.
  *
  * Unlike `fs-service.test.integration.ts`, which talks to the host
  * handler directly over an in-process MessageChannel, this test pushes
@@ -28,7 +28,7 @@ import {
   type ITestHarness,
 } from "../node-adaptor-host/testing/harness.js";
 import { createFileSystemServiceHandler } from "./fs-service.js";
-import { LinuxPathProviderImpl } from "./paths.linux.js";
+import { nativeToQP, platformResolver } from "./testing.js";
 
 const BUNDLE_PATH = path.resolve(
   import.meta.dirname,
@@ -41,20 +41,24 @@ const BOOTSTRAP_PATH = path.resolve(
 
 const PROBE_URI = "vortex:adaptor/fs-test/probe";
 
+/** Serialize a QualifiedPath to a plain object for the wire. */
+function serialize(qp: { value: string; scheme: string; path: string }) {
+  return { value: qp.value, scheme: qp.scheme, path: qp.path };
+}
+
 describe("fs-test adaptor (Worker end-to-end)", () => {
   let root: string;
-  let rootQP: { value: string; scheme: string; path: string };
+  let rootQP: ReturnType<typeof nativeToQP>;
   let harness: ITestHarness;
   let service: ReturnType<typeof createFileSystemServiceHandler>;
 
   beforeEach(async () => {
     root = await fs.mkdtemp(path.join(tmpdir(), "fs-adaptor-"));
-    // Serialised QualifiedPath shape. The adaptor rehydrates on receipt.
-    rootQP = { value: `linux://${root}`, scheme: "linux", path: root };
+    rootQP = nativeToQP(root);
 
     const filesystem = new NodeFileSystemImpl(
       new NodeFileSystemBackendImpl(),
-      new PathResolverRegistryImpl([new LinuxPathProviderImpl()]),
+      new PathResolverRegistryImpl([platformResolver()]),
     );
     service = createFileSystemServiceHandler(filesystem, { batchSize: 2 });
 
@@ -77,11 +81,7 @@ describe("fs-test adaptor (Worker end-to-end)", () => {
   });
 
   it("round-trips writeFile + readFile through the Worker via IFileSystem", async () => {
-    const target = {
-      ...rootQP,
-      value: `${rootQP.value}/hello.txt`,
-      path: `${rootQP.path}/hello.txt`,
-    };
+    const target = serialize(rootQP.join("hello.txt"));
     const bytes = (await harness.call(PROBE_URI, "writeRead", [
       target,
       [1, 2, 3, 4],
@@ -95,11 +95,7 @@ describe("fs-test adaptor (Worker end-to-end)", () => {
   });
 
   it("surfaces FileSystemError across the Worker boundary with code/isTransient", async () => {
-    const missing = {
-      ...rootQP,
-      value: `${rootQP.value}/nope.txt`,
-      path: `${rootQP.path}/nope.txt`,
-    };
+    const missing = serialize(rootQP.join("nope.txt"));
     const result = (await harness.call(PROBE_URI, "readMissing", [
       missing,
     ])) as { name: string; code: string; isTransient: boolean };
@@ -118,7 +114,7 @@ describe("fs-test adaptor (Worker end-to-end)", () => {
     }
 
     const names = (await harness.call(PROBE_URI, "listFiles", [
-      rootQP,
+      serialize(rootQP),
     ])) as string[];
 
     expect(names).toEqual(["a.txt", "b.txt", "c.txt", "d.txt", "e.txt"]);

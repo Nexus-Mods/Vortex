@@ -446,6 +446,7 @@ async function registerAdaptor(
             discovery.executable = tools.game.executable.path;
           }
 
+
           // Step 4: Populate supported tools
           if (tools?.tools) {
             for (const [toolId, tool] of Object.entries(tools.tools)) {

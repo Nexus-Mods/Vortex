@@ -5,7 +5,6 @@ import {
   NodeFileSystemBackendImpl,
   NodeFileSystemImpl,
   PathResolverRegistryImpl,
-  QualifiedPath,
 } from "@vortex/fs";
 import * as fs from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -13,7 +12,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { createFileSystemServiceHandler } from "./fs-service";
-import { LinuxPathProviderImpl } from "./paths.linux";
+import { nativeToQP, platformResolver } from "./testing";
 
 /**
  * Simulate the transport boundary: class instances arrive as plain
@@ -40,14 +39,15 @@ function invoke(
 describe("createFileSystemServiceHandler", () => {
   let root: string;
   let service: ReturnType<typeof createFileSystemServiceHandler>;
-  let rootQP: QualifiedPath;
+  let rootQP: ReturnType<typeof nativeToQP>;
 
   beforeEach(async () => {
     root = await fs.mkdtemp(join(tmpdir(), "fs-service-"));
-    rootQP = QualifiedPath.parse(`linux://${root}`);
+    rootQP = nativeToQP(root);
+    const resolver = platformResolver();
     const filesystem = new NodeFileSystemImpl(
       new NodeFileSystemBackendImpl(),
-      new PathResolverRegistryImpl([new LinuxPathProviderImpl()]),
+      new PathResolverRegistryImpl([resolver]),
     );
     service = createFileSystemServiceHandler(filesystem, { batchSize: 2 });
   });
@@ -116,9 +116,9 @@ describe("createFileSystemServiceHandler", () => {
         .map((e) => (e as { value: string }).value)
         .sort();
       expect(values).toEqual([
-        `linux://${root}/a.txt`,
-        `linux://${root}/b.txt`,
-        `linux://${root}/c.txt`,
+        rootQP.join("a.txt").value,
+        rootQP.join("b.txt").value,
+        rootQP.join("c.txt").value,
       ]);
 
       // Cursor should already be forgotten — next call on it is empty+done.
@@ -165,7 +165,7 @@ describe("createFileSystemServiceHandler", () => {
       const entry = open.batch[0];
       if (entry === undefined) throw new Error("expected one entry");
       const [qp, status] = entry;
-      expect(qp.value).toBe(`linux://${root}/a.txt`);
+      expect(qp.value).toBe(rootQP.join("a.txt").value);
       expect(status.isFile).toBe(true);
       expect(status.size).toBe(2);
     });
@@ -203,8 +203,7 @@ describe("createFileSystemServiceHandler", () => {
   });
 
   it("resolves QualifiedPath inputs back to the native path", async () => {
-    // Direct resolver sanity check: linux://<abs> should resolve to <abs>.
-    const resolver = new LinuxPathProviderImpl();
+    const resolver = platformResolver();
     const resolved = await resolver.resolve(rootQP);
     expect(resolved).toBe(root);
   });

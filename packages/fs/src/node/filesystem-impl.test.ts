@@ -3,22 +3,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import type { PathResolver, ResolvedPath } from "../browser/paths";
-
 import { FileSystemError } from "../browser/filesystem";
 import { PathResolverRegistryImpl, QualifiedPath } from "../browser/paths";
 import { NodeFileSystemBackendImpl } from "./backend";
 import { NodeFileSystemImpl } from "./filesystem-impl";
-
-function linuxResolver(): PathResolver {
-  return {
-    scheme: "linux",
-    parent: null,
-    resolve(path: QualifiedPath): Promise<ResolvedPath> {
-      return Promise.resolve(path.path);
-    },
-  };
-}
+import { nativeToQP, platformResolver, platformScheme } from "./testing";
 
 describe("NodeFileSystemImpl", () => {
   let root: string;
@@ -27,10 +16,10 @@ describe("NodeFileSystemImpl", () => {
 
   beforeEach(async () => {
     root = await nodeFs.mkdtemp(join(tmpdir(), "node-fs-"));
-    rootQP = QualifiedPath.parse(`linux://${root}`);
+    rootQP = nativeToQP(root);
     fs = new NodeFileSystemImpl(
       new NodeFileSystemBackendImpl(),
-      new PathResolverRegistryImpl([linuxResolver()]),
+      new PathResolverRegistryImpl([platformResolver()]),
     );
   });
 
@@ -73,7 +62,7 @@ describe("NodeFileSystemImpl", () => {
       if (step.done) break;
       const qp = step.value;
       expect(qp).toBeInstanceOf(QualifiedPath);
-      expect(qp.scheme).toBe("linux");
+      expect(qp.scheme).toBe(platformScheme());
       seen.push(qp.basename);
     }
     expect(seen.sort()).toEqual(["a.txt", "b.txt", "c.txt"]);
