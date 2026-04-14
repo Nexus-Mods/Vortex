@@ -12,29 +12,54 @@ import {
 } from "@vortex/fs";
 import { access } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
+import { win32 as pathWin32 } from "node:path";
 
 /**
  * Node-backed implementation of {@link WindowsPathProvider}.
  *
- * Paths under the `windows` scheme carry native Windows paths with forward
- * slashes in the `QualifiedPath.path` component (e.g. the native path
- * `C:\\Users\\alice` round-trips through `windows://C:/Users/alice`). Slash
- * conversion happens at the edges: `resolve()` converts `/` → `\\` before
- * returning a native path, and path constructors normalise native `\\` → `/`
- * before building the `QualifiedPath`.
+ * Paths under the `windows` scheme encode Windows native paths as a rooted
+ * POSIX-style path where the drive letter is the first component:
  *
- * Current scope is plain drive-letter absolute paths. UNC paths
- * (`\\\\server\\share`), `\\\\?\\`-prefixed long paths, and drive-relative
- * paths (`C:foo` without a separator) are not handled.
+ *   native `C:\Users\alice\file.txt`  ⇔  `windows:///C/Users/alice/file.txt`
+ *   native `C:\`                      ⇔  `windows:///C`
+ *
+ * The leading `/` enforces that paths are always rooted (no drive-relative
+ * ambiguity), the drive letter is a single `[A-Za-z]` component, and the
+ * remainder uses forward slashes so `QualifiedPath.join` / `parent` behave
+ * naturally without platform-specific handling.
+ *
+ * UNC paths (`\\server\share`) and drive-relative paths (`C:foo` without a
+ * separator) are out of scope and are rejected at the edge.
  */
 export class WindowsPathProviderImpl implements WindowsPathProvider {
   readonly platform = "windows" as const;
   readonly scheme = "windows" as const;
   readonly parent = null;
 
+  /**
+   * Wraps a Windows native path as a `QualifiedPath` in the rooted
+   * drive-letter encoding. Uses `path.win32.parse` to detect the root so
+   * UNC / drive-relative inputs are rejected up-front rather than silently
+   * producing a malformed `QualifiedPath`.
+   */
   #create(nativePath: string): Promise<QualifiedPath> {
-    const normalised = nativePath.replace(/\\/g, "/");
-    return Promise.resolve(QP.parse(`${this.scheme}://${normalised}`));
+    const parsed = pathWin32.parse(nativePath);
+    const root = parsed.root;
+    const driveMatch = /^([A-Za-z]):[\\/]$/.exec(root);
+    if (driveMatch === null) {
+      return Promise.reject(
+        new PathProviderError(
+          `Unsupported Windows path '${nativePath}': only drive-letter absolute paths are handled (no UNC, no drive-relative)`,
+        ),
+      );
+    }
+    const drive = driveMatch[1].toUpperCase();
+    const tail = nativePath.slice(root.length).replace(/\\/g, "/");
+    const value =
+      tail.length > 0
+        ? `${this.scheme}:///${drive}/${tail}`
+        : `${this.scheme}:///${drive}`;
+    return Promise.resolve(QP.parse(value));
   }
 
   fromBase(base: WindowsPathBase): Promise<QualifiedPath> {
@@ -57,7 +82,30 @@ export class WindowsPathProviderImpl implements WindowsPathProvider {
         new PathResolverError(`Unsupported scheme '${path.scheme}'`),
       );
     }
-    return Promise.resolve(path.path.replace(/\//g, "\\"));
+    const p = path.path;
+    if (!p.startsWith("/")) {
+      return Promise.reject(
+        new PathResolverError(
+          `Invalid windows path '${path.value}': must be rooted (leading '/')`,
+        ),
+      );
+    }
+    const rest = p.slice(1);
+    const slash = rest.indexOf("/");
+    const drive = slash === -1 ? rest : rest.slice(0, slash);
+    if (!/^[A-Za-z]$/.test(drive)) {
+      return Promise.reject(
+        new PathResolverError(
+          `Invalid windows path '${path.value}': first component must be a single drive letter`,
+        ),
+      );
+    }
+    const tail = slash === -1 ? "" : rest.slice(slash + 1);
+    const native =
+      tail.length > 0
+        ? `${drive.toUpperCase()}:\\${tail.replace(/\//g, "\\")}`
+        : `${drive.toUpperCase()}:\\`;
+    return Promise.resolve(native);
   }
 
   async enumerateDrives(): Promise<QualifiedPath[]> {

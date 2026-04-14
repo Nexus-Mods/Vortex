@@ -11,18 +11,40 @@ import { WindowsPathProviderImpl } from "./paths.windows";
 describe("WindowsPathProviderImpl.resolve", () => {
   const provider = new WindowsPathProviderImpl();
 
-  it("converts forward slashes to native backslashes", async () => {
-    const qp = QualifiedPath.parse("windows://C:/Users/alice/file.txt");
+  it("maps rooted drive-letter paths to native Windows paths", async () => {
+    const qp = QualifiedPath.parse("windows:///C/Users/alice/file.txt");
     expect(await provider.resolve(qp)).toBe("C:\\Users\\alice\\file.txt");
   });
 
-  it("leaves drive-only paths intact", async () => {
-    const qp = QualifiedPath.parse("windows://C:");
-    expect(await provider.resolve(qp)).toBe("C:");
+  it("maps drive-only paths to the drive root", async () => {
+    const qp = QualifiedPath.parse("windows:///C");
+    expect(await provider.resolve(qp)).toBe("C:\\");
+  });
+
+  it("uppercases lowercase drive letters on resolve", async () => {
+    const qp = QualifiedPath.parse("windows:///c/Users/alice");
+    expect(await provider.resolve(qp)).toBe("C:\\Users\\alice");
   });
 
   it("rejects unsupported schemes", async () => {
     const qp = QualifiedPath.parse("linux:///home/alice");
+    await expect(provider.resolve(qp)).rejects.toBeInstanceOf(
+      PathResolverError,
+    );
+  });
+
+  it("rejects non-rooted paths", async () => {
+    // No leading '/' — the parse grammar would tolerate `windows://C/...`
+    // (the `//` before `C` is treated as the data separator), so we guard
+    // at resolve time.
+    const qp = QualifiedPath.parse("windows://C//Users/alice");
+    await expect(provider.resolve(qp)).rejects.toBeInstanceOf(
+      PathResolverError,
+    );
+  });
+
+  it("rejects paths whose first component is not a single drive letter", async () => {
+    const qp = QualifiedPath.parse("windows:///CD/Users");
     await expect(provider.resolve(qp)).rejects.toBeInstanceOf(
       PathResolverError,
     );
@@ -35,19 +57,25 @@ describe("WindowsPathProviderImpl.fromBase", () => {
   it("returns USERPROFILE (or homedir fallback) for 'home'", async () => {
     const qp = await provider.fromBase("home");
     expect(qp.scheme).toBe("windows");
-    // Whatever USERPROFILE / homedir() returned must round-trip through the
-    // scheme with forward slashes.
+    // Round-trip: resolve back to native matches the source value (modulo
+    // drive-letter casing).
+    const native = await provider.resolve(qp);
     const expected = (process.env["USERPROFILE"] ?? homedir()).replace(
-      /\\/g,
-      "/",
+      /^([a-z]):/,
+      (_, c: string) => `${c.toUpperCase()}:`,
     );
-    expect(qp.path).toBe(expected);
+    expect(native).toBe(expected);
   });
 
   it("returns tmpdir() for 'temp'", async () => {
     const qp = await provider.fromBase("temp");
     expect(qp.scheme).toBe("windows");
-    expect(qp.path).toBe(tmpdir().replace(/\\/g, "/"));
+    const native = await provider.resolve(qp);
+    const expected = tmpdir().replace(
+      /^([a-z]):/,
+      (_, c: string) => `${c.toUpperCase()}:`,
+    );
+    expect(native).toBe(expected);
   });
 
   it("rejects unknown bases", async () => {
@@ -66,8 +94,8 @@ describe("WindowsPathProviderImpl.enumerateDrives", () => {
       expect(drives.length).toBeGreaterThan(0);
       for (const d of drives) {
         expect(d.scheme).toBe("windows");
-        // Drive root path shape is like "C:/"
-        expect(d.path).toMatch(/^[A-Z]:\/?$/);
+        // Drive-only paths look like "/C" in the new encoding.
+        expect(d.path).toMatch(/^\/[A-Z]$/);
       }
     },
   );
