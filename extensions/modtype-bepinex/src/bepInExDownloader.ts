@@ -1,4 +1,39 @@
-/* eslint-disable max-lines-per-function */
+/**
+ * BepInEx pack downloader / installer.
+ *
+ * `ensureBepInExPack` is the entry point invoked from `gamemode-activated`,
+ * `will-deploy` and (with `force=true`) from the `check-mods-version`
+ * `forceUpdate` flow. It decides whether the configured BepInEx pack needs
+ * to be (re-)downloaded for the active game and, if so, dispatches to the
+ * appropriate download source.
+ *
+ * Decision flow (in order):
+ *
+ *   1. Bail out unless the game is registered with `addGameSupport` AND has
+ *      `autoDownloadBepInEx: true`.
+ *   2. Pinned-version check (sets `force=true` when the installed injector
+ *      doesn't match the pinned version):
+ *        - runs only when `bepinexVersion` is set, `forceGithubDownload` is
+ *          NOT set, and `customPackDownloader` is NOT set.
+ *        - skipped for `customPackDownloader` extensions because that
+ *          resolver owns version selection - re-pinning here would loop on
+ *          every deploy whenever the resolver returns a version that
+ *          differs from the pin.
+ *   3. Github-update mode (`forceGithubDownload && isUpdate`): query Github
+ *      for a newer release and exit. Does not install on its own.
+ *   4. If an injector mod is already installed and `force` is not set,
+ *      return without doing anything.
+ *   5. Dispatch a download in priority order:
+ *        a. `customPackDownloader` if provided (extension-controlled
+ *           resolver).
+ *        b. Github if `forceGithubDownload` is true.
+ *        c. Otherwise: try the bundled Nexus pinned download, fall back to
+ *           Github if the version doesn't match what we bundle.
+ *
+ * The downstream `install()` and `download()` helpers gate themselves on
+ * the same "is an injector already installed?" check, with `force=true`
+ * bypassing that gate so a forced reinstall actually fires.
+ */
 import path from "path";
 import semver from "semver";
 import { actions, fs, log, selectors, types, util } from "vortex-api";
@@ -6,13 +41,11 @@ import { actions, fs, log, selectors, types, util } from "vortex-api";
 import {
   getDownload,
   getSupportMap,
-  NEXUS,
   MODTYPE_BIX_INJECTOR,
 } from "./common";
 import {
   IBepInExGameConfig,
   INexusDownloadInfo,
-  NotPremiumError,
 } from "./types";
 
 import { checkForUpdates, downloadFromGithub } from "./githubDownloader";
@@ -32,21 +65,20 @@ function genDownloadProps(api: types.IExtensionApi, archiveName: string) {
 
 function updateSupportedGames(
   api: types.IExtensionApi,
-  downloadInfo: INexusDownloadInfo,
+  downloadId: string,
 ) {
-  const { downloadId, downloads } = genDownloadProps(
-    api,
-    downloadInfo.archiveName,
+  const state = api.getState();
+  const download: types.IDownload = util.getSafe(
+    state,
+    ["persistent", "downloads", "files", downloadId],
+    undefined,
   );
-  if (downloadId === undefined) {
-    throw new util.NotFound(
-      `bepinex download is missing: ${downloadInfo.archiveName}`,
-    );
+  if (download === undefined) {
+    throw new util.NotFound(`bepinex download is missing: ${downloadId}`);
   }
 
-  const currentlySupported = downloads[downloadId].game;
   const supportedGames = new Set<string>(
-    currentlySupported.concat(Object.keys(getSupportMap())),
+    download.game.concat(Object.keys(getSupportMap())),
   );
   api.store.dispatch(
     actions.setCompatibleGames(downloadId, Array.from(supportedGames)),
@@ -88,65 +120,165 @@ async function install(
   }
 }
 
+/**
+ * Starts a Nexus download via Vortex's standard `start-download` pipeline
+ * using an `nxm://` URL. This path works for both premium and free Nexus
+ * users - free users get the usual browser-redirect dialog flow
+ * automatically.
+ *
+ * Returns the new download id on success, or `undefined` when the user
+ * cancelled or the fetch failed.
+ */
+async function startNxmDownload(
+  api: types.IExtensionApi,
+  downloadInfo: INexusDownloadInfo,
+): Promise<string | undefined> {
+  const { domainId, modId, fileId, archiveName, gameId } = downloadInfo;
+
+  if (api.ext?.ensureLoggedIn !== undefined) {
+    await api.ext.ensureLoggedIn();
+  }
+
+  const nxmUrl = `nxm://${domainId}/mods/${modId}/files/${fileId}`;
+  const dlInfo = {
+    game: gameId,
+    source: "nexus",
+    name: archiveName,
+    nexus: {
+      ids: {
+        gameId: domainId,
+        modId,
+        fileId,
+      },
+    },
+  };
+
+  try {
+    return await util.toPromise<string>((cb) =>
+      api.events.emit(
+        "start-download",
+        [nxmUrl],
+        dlInfo,
+        undefined,
+        cb,
+        undefined,
+        { allowInstall: false },
+      ),
+    );
+  } catch (err) {
+    if (err instanceof util.UserCanceled) {
+      log("info", "user canceled download of BepInEx");
+      return undefined;
+    }
+    log(
+      "error",
+      "failed to download from NexusMods.com",
+      JSON.stringify(downloadInfo, undefined, 2),
+    );
+    err["attachLogOnReport"] = true;
+    api.showErrorNotification("Failed to download BepInEx dependency", err);
+    return undefined;
+  }
+}
+
 async function download(
   api: types.IExtensionApi,
   downloadInfo: INexusDownloadInfo,
   force?: boolean,
-) {
-  const { domainId, modId, fileId, archiveName, allowAutoInstall } =
-    downloadInfo;
-  const state = api.getState();
-  if (
-    !util.getSafe(
-      state,
-      ["persistent", "nexus", "userInfo", "isPremium"],
-      false,
-    )
-  ) {
-    return Promise.reject(new NotPremiumError());
+): Promise<string | void> {
+  // Reuse the archive if it's already staged in Vortex; otherwise fetch it
+  // via the standard pipeline.
+  const dlId = genDownloadProps(api, downloadInfo.archiveName).downloadId
+    ?? await startNxmDownload(api, downloadInfo);
+  if (dlId == null) {
+    return;
   }
 
-  const downloadId = genDownloadProps(api, archiveName).downloadId;
-  if (downloadId !== undefined) {
-    try {
-      updateSupportedGames(api, downloadInfo);
-      return install(api, downloadInfo, downloadId, force);
-    } catch (err) {
-      return Promise.reject(err);
+  try {
+    updateSupportedGames(api, dlId);
+    return install(api, downloadInfo, dlId, force);
+  } catch (err) {
+    return Promise.reject(err);
+  }
+}
+
+// Extracts the first MAJOR.MINOR.PATCH triple from a version string and
+// ignores anything else (leading "v", trailing ".0" cosmetic padding, "-pre"
+// suffixes, BIX 4 segment revisions, etc).
+const SEMVER_RE = /(\d+\.\d+\.\d+)/;
+
+function extractSemver(version: string | undefined): string {
+  return version?.match(SEMVER_RE)?.[1] ?? "0.0.0";
+}
+
+function hasPinnedVersionInstalled(
+  mods: { [modId: string]: types.IMod },
+  injectorModIds: string[],
+  pinnedVersion: string,
+): boolean {
+  const target = extractSemver(pinnedVersion);
+  return injectorModIds.some(
+    (id) => extractSemver(mods[id]?.attributes?.version) === target,
+  );
+}
+
+function getLatestInstalledVersion(
+  mods: { [modId: string]: types.IMod },
+  injectorModIds: string[],
+): string {
+  return injectorModIds.reduce((prev, id) => {
+    const version = extractSemver(mods[id]?.attributes?.version);
+    return semver.gt(version, prev) ? version : prev;
+  }, "0.0.0");
+}
+
+async function runCustomPackDownloader(
+  api: types.IExtensionApi,
+  state: types.IState,
+  gameId: string,
+  gameConf: IBepInExGameConfig,
+  force?: boolean,
+): Promise<void> {
+  let downloadRes: string | INexusDownloadInfo;
+  try {
+    downloadRes = await gameConf.customPackDownloader!(
+      util.getVortexPath("temp"),
+    );
+    if ((downloadRes as INexusDownloadInfo) !== undefined) {
+      await download(api, downloadRes as INexusDownloadInfo, force);
+    } else if (typeof downloadRes === "string") {
+      if (!path.isAbsolute(downloadRes)) {
+        log("error", "failed to download custom pack", "expected absolute path");
+      }
+      const downloadsPath = selectors.downloadPathForGame(state, gameId);
+      await fs.copyAsync(
+        downloadRes,
+        path.join(downloadsPath, path.basename(downloadRes)),
+      );
+    } else {
+      log("error", "failed to download custom pack", { downloadRes });
     }
+  } catch (err) {
+    log("error", "failed to download custom pack", err);
   }
+}
 
-  return api
-    .emitAndAwait(
-      "nexus-download",
-      domainId,
-      modId,
-      fileId,
-      archiveName,
-      allowAutoInstall,
-    )
-    .then(() => {
-      const { downloadId } = genDownloadProps(api, downloadInfo.archiveName);
-      try {
-        updateSupportedGames(api, downloadInfo);
-        return install(api, downloadInfo, downloadId, force);
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    })
-    .catch((err) => {
-      if (err instanceof util.UserCanceled) {
-        log("info", "user canceled download of BepInEx");
-      } else {
-        log(
-          "error",
-          "failed to download from NexusMods.com",
-          JSON.stringify(downloadInfo, undefined, 2),
-        );
-        err["attachLogOnReport"] = true;
-        api.showErrorNotification("Failed to download BepInEx dependency", err);
-      }
-    });
+async function downloadDefaultOrFallback(
+  api: types.IExtensionApi,
+  gameConf: IBepInExGameConfig,
+  force?: boolean,
+): Promise<void> {
+  const defaultDownload = getDownload(gameConf);
+  try {
+    if (gameConf.bepinexVersion != null
+        && gameConf.bepinexVersion !== defaultDownload.version) {
+      // Pinned to a version we don't bundle for Nexus - go to Github instead.
+      throw new util.ProcessCanceled("BepInEx version mismatch");
+    }
+    await download(api, defaultDownload, force);
+  } catch {
+    await downloadFromGithub(api, gameConf);
+  }
 }
 
 export async function ensureBepInExPack(
@@ -156,57 +288,32 @@ export async function ensureBepInExPack(
   isUpdate?: boolean,
 ) {
   const state = api.getState();
-  const gameId =
-    gameMode === undefined ? selectors.activeGameId(state) : gameMode;
-  const profileId = selectors.lastActiveProfileForGame(state, gameId);
+  const gameId = gameMode ?? selectors.activeGameId(state);
   const gameConf: IBepInExGameConfig = getSupportMap()[gameId];
-  if (gameConf === undefined || !gameConf.autoDownloadBepInEx) {
+  if (gameConf?.autoDownloadBepInEx !== true) {
     return;
   }
 
-  const mods: { [modId: string]: types.IMod } = util.getSafe(
-    state,
-    ["persistent", "mods", gameId],
-    {},
-  );
+  const mods: Record<string, types.IMod> =
+    state.persistent.mods[gameId] ?? {};
   const injectorModIds = Object.keys(mods).filter(
     (id) => mods[id]?.type === MODTYPE_BIX_INJECTOR,
   );
-  if (
-    gameConf.bepinexVersion !== undefined &&
-    gameConf.forceGithubDownload !== true
-  ) {
-    const hasRequiredVersion = injectorModIds.reduce((prev, iter) => {
-      let version: string = mods[iter]?.attributes?.version ?? "0.0.0";
-      if (version.length > 6) {
-        // Ugly hack but people are pointlessly adding 0s to the end of the version.
-        //  AFAICT the only reason they do this is for the sake of configuration
-        //  changes which we don't need.
-        version = version.slice(0, 6);
-      }
-      const modVersion = semver.coerce(version)?.raw || "0.0.0";
-      if (modVersion === gameConf.bepinexVersion) {
-        prev = true;
-      }
-      return prev;
-    }, false);
-    if (!hasRequiredVersion) {
-      force = true;
-    }
-  } else if (gameConf.forceGithubDownload === true && isUpdate) {
-    const latest = injectorModIds.reduce((prev, iter) => {
-      let version: string = mods[iter]?.attributes?.version ?? "0.0.0";
-      try {
-        const coerced = semver.coerce(mods[iter]?.attributes?.version);
-        version = coerced.raw || "0.0.0";
-      } catch (err) {
-        version = "0.0.0";
-      }
-      if (semver.gt(version, prev)) {
-        prev = version;
-      }
-      return prev;
-    }, "0.0.0");
+
+  // Pinned-version mode: force a reinstall if no installed injector matches.
+  // Skipped when a customPackDownloader is in play - that resolver owns
+  // version selection and pinning here would loop on every deploy whenever
+  // the downloaded pack's version differs from the pin.
+  if (gameConf.bepinexVersion != null
+      && gameConf.forceGithubDownload !== true
+      && gameConf.customPackDownloader == null
+      && !hasPinnedVersionInstalled(mods, injectorModIds, gameConf.bepinexVersion)) {
+    force = true;
+  }
+
+  // Github-update mode: just look for a newer release and exit.
+  if (gameConf.forceGithubDownload === true && isUpdate) {
+    const latest = getLatestInstalledVersion(mods, injectorModIds);
     try {
       await checkForUpdates(api, gameConf, latest);
     } catch (err) {
@@ -215,77 +322,18 @@ export async function ensureBepInExPack(
     return;
   }
 
-  const isInjectorInstalled = !force
-    ? Object.keys(mods).find((id) => mods[id].type === MODTYPE_BIX_INJECTOR) !==
-    undefined
-    : false;
-
-  if (isInjectorInstalled) {
-    // We have a mod installed with the injector modType, do nothing.
+  // Already have an injector and not forcing a reinstall - nothing to do.
+  if (!force && injectorModIds.length > 0) {
     return;
   }
 
-  let downloadRes;
-  if (gameConf.customPackDownloader !== undefined) {
-    try {
-      downloadRes = await gameConf.customPackDownloader(
-        util.getVortexPath("temp"),
-      );
-      if ((downloadRes as INexusDownloadInfo) !== undefined) {
-        await download(api, downloadRes as INexusDownloadInfo, force);
-      } else if (typeof downloadRes === "string") {
-        if (!path.isAbsolute(downloadRes)) {
-          log(
-            "error",
-            "failed to download custom pack",
-            "expected absolute path",
-          );
-        }
-        const downloadsPath = selectors.downloadPathForGame(state, gameId);
-        await fs.copyAsync(
-          downloadRes,
-          path.join(downloadsPath, path.basename(downloadRes)),
-        );
-      } else {
-        log("error", "failed to download custom pack", { downloadRes });
-        return;
-      }
-    } catch (err) {
-      if (err instanceof NotPremiumError) {
-        const downloadInfo = downloadRes as INexusDownloadInfo;
-        const url =
-          path.join(NEXUS, downloadInfo.domainId, "mods", downloadInfo.modId.toString()) +
-          `?tab=files&file_id=${downloadRes.fileId}&nmm=1`;
-        util.opn(url).catch((err2) =>
-          api.showErrorNotification("Failed to download custom pack", err2, {
-            allowReport: false,
-          }),
-        );
-      }
-      log("error", "failed to download custom pack", err);
-      return;
-    }
-  } else if (gameConf.forceGithubDownload !== true) {
-    const defaultDownload = getDownload(gameConf);
-    try {
-      if (
-        !!gameConf.bepinexVersion &&
-        gameConf.bepinexVersion !== defaultDownload.version
-      ) {
-        // Go to Github instead!
-        throw new util.ProcessCanceled("BepInEx version mismatch");
-      }
-      await download(api, defaultDownload, force);
-    } catch (err) {
-      await downloadFromGithub(api, gameConf);
-    }
-  } else {
-    try {
-      await downloadFromGithub(api, gameConf);
-    } catch (err) {
-      return Promise.reject(err);
-    }
+  if (gameConf.customPackDownloader != null) {
+    return runCustomPackDownloader(api, state, gameId, gameConf, force);
   }
+  if (gameConf.forceGithubDownload === true) {
+    return downloadFromGithub(api, gameConf);
+  }
+  return downloadDefaultOrFallback(api, gameConf, force);
 }
 
 export async function raiseConsentDialog(
@@ -322,44 +370,3 @@ export async function raiseConsentDialog(
     ],
   );
 }
-
-// async function downloadFromGithub(api: types.IExtensionApi, dlInfo: INexusDownloadInfoExt) {
-//   const t = api.translate;
-//   const replace = {
-//     archiveName: dlInfo.archiveName,
-//   };
-//   const instructions = t('Once you allow Vortex to browse to GitHub - '
-//     + 'Please scroll down and click on "{{archiveName}}"', { replace });
-//   return new Promise((resolve, reject) => {
-//     api.emitAndAwait('browse-for-download', dlInfo.githubUrl, instructions)
-//       .then((result: string[]) => {
-//         if (!result || !result.length) {
-//           // If the user clicks outside the window without downloading.
-//           return reject(new util.UserCanceled());
-//         }
-//         if (!result[0].includes(dlInfo.archiveName)) {
-//           return reject(new util.ProcessCanceled('Selected wrong download'));
-//         }
-//         api.events.emit('start-download', [result[0]], {}, undefined,
-//           (error, id) => {
-//             if (error !== null) {
-//               return reject(error);
-//             }
-//             api.events.emit('start-install-download', id, true, (err, modId) => {
-//               if (err) {
-//                 // Error notification gets reported by the event listener
-//                 log('error', 'Error installing download', err);
-//               }
-//               return resolve(undefined);
-//             });
-//           }, 'never');
-//       });
-//   })
-//   .catch(err => {
-//     if (err instanceof util.UserCanceled) {
-//       return Promise.resolve();
-//     } else {
-//       return downloadFromGithub(api, dlInfo);
-//     }
-//   });
-// }
