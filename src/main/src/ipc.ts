@@ -4,6 +4,8 @@ import type {
   InvokeChannels,
   SerializableArgs,
   AssertSerializable,
+  CallbackChannels,
+  MainCallbackChannels,
 } from "@vortex/shared/ipc";
 
 import { ipcMain, type WebContents } from "electron";
@@ -14,6 +16,7 @@ export const betterIpcMain = {
   on: mainOn,
   handle: mainHandle,
   send: mainSend,
+  callback: mainCallback,
 };
 
 export type LogOptions = boolean | { includeArgs: boolean };
@@ -48,15 +51,77 @@ function mainOn<C extends keyof RendererChannels>(
     ...args: SerializableArgs<Parameters<RendererChannels[C]>>
   ) => void,
   logOptions: LogOptions = false,
-): void {
-  ipcMain.on(
-    channel,
-    (event, ...args: SerializableArgs<Parameters<RendererChannels[C]>>) => {
-      ipcLogger(logOptions, channel, event, args);
-      assertTrustedSender(event);
-      listener(event, ...args);
-    },
-  );
+): () => void {
+  const outerListener = (
+    event: Electron.IpcMainEvent,
+    ...args: SerializableArgs<Parameters<RendererChannels[C]>>
+  ) => {
+    ipcLogger(logOptions, channel, event, args);
+    assertTrustedSender(event);
+    listener(event, ...args);
+  };
+
+  ipcMain.on(channel, outerListener);
+  return () => ipcMain.off(channel, outerListener);
+}
+
+function mainCallback<C extends keyof CallbackChannels>(
+  channel: C,
+  webContents: WebContents,
+  timeout: number,
+  ...args: SerializableArgs<Parameters<MainCallbackChannels[C]>>
+): Promise<AssertSerializable<Awaited<ReturnType<CallbackChannels[C]>>>> {
+  const collationId = args[0];
+
+  let resolve: (
+    value: AssertSerializable<Awaited<ReturnType<CallbackChannels[C]>>>,
+  ) => void | undefined = undefined;
+  let reject: (reason?: Error) => void | undefined = undefined;
+
+  const promise = new Promise<
+    AssertSerializable<Awaited<ReturnType<CallbackChannels[C]>>>
+  >((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+
+  new Promise<void>((resolve) => {
+    setTimeout(() => {
+      if (reject) {
+        resolve = undefined;
+
+        reject(
+          new Error(
+            `Callback for channel '${channel}' timed out after ${timeout}ms`,
+          ),
+        );
+
+        reject = undefined;
+      }
+
+      resolve();
+    }, timeout);
+  }).catch(() => {});
+
+  const off = mainOn(`callback:${channel}`, (event, ...args) => {
+    const { sender } = event;
+    if (sender.id !== webContents.id) return;
+
+    const receivedCollationId = args[0];
+    if (receivedCollationId !== collationId) return;
+
+    const result = args[1];
+    if (resolve) {
+      resolve(
+        result as AssertSerializable<Awaited<ReturnType<CallbackChannels[C]>>>,
+      );
+    }
+  });
+
+  mainSend(webContents, channel, ...args);
+  return promise.finally(() => {
+    off();
+  });
 }
 
 function mainHandle<C extends keyof InvokeChannels>(
