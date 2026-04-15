@@ -48,6 +48,11 @@
       "import": "./dist/contracts/game-tools.js",
       "require": "./dist/contracts/game-tools.cjs"
     },
+    "./contracts/glob": {
+      "development": "./src/contracts/glob.ts",
+      "import": "./dist/contracts/glob.js",
+      "require": "./dist/contracts/glob.cjs"
+    },
     "./contracts/ping": {
       "development": "./src/contracts/ping.ts",
       "import": "./dist/contracts/ping.js",
@@ -86,6 +91,10 @@
       "./contracts/game-tools": {
         "import": "./dist/contracts/game-tools.js",
         "require": "./dist/contracts/game-tools.cjs"
+      },
+      "./contracts/glob": {
+        "import": "./dist/contracts/glob.js",
+        "require": "./dist/contracts/glob.cjs"
       },
       "./contracts/ping": {
         "import": "./dist/contracts/ping.js",
