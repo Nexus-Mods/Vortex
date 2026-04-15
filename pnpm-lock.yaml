@@ -455,7 +455,7 @@ catalogs:
       specifier: ^1.3.0
       version: 1.4.0
     gamebryo-savegame:
-      specifier: git+https://github.com/Nexus-Mods/node-gamebryo-savegames#44625835a12e1686d06bb85b2441b3a006c5fe5a
+      specifier: git+https://github.com/Nexus-Mods/node-gamebryo-savegames#9149445e798a632a38337229dd0b60b67efb74bd
       version: 2.1.3
     glob:
       specifier: ^11.0.3
@@ -1766,7 +1766,7 @@ importers:
     optionalDependencies:
       gamebryo-savegame:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-gamebryo-savegames/tar.gz/44625835a12e1686d06bb85b2441b3a006c5fe5a
+        version: https://codeload.github.com/Nexus-Mods/node-gamebryo-savegames/tar.gz/9149445e798a632a38337229dd0b60b67efb74bd
 
   extensions/gamebryo-test-settings:
     devDependencies:
@@ -9726,8 +9726,8 @@ packages:
   fuzzball@1.4.0:
     resolution: {integrity: sha512-ufKO0SHW65RSqZNu4rmLmraQVuwb8kVf8S/ICpkih/PfIff2YW3sa8zTvt7d7hJFXY1IvOOGJTeXxs69XLBd4Q==}
 
-  gamebryo-savegame@https://codeload.github.com/Nexus-Mods/node-gamebryo-savegames/tar.gz/44625835a12e1686d06bb85b2441b3a006c5fe5a:
-    resolution: {tarball: https://codeload.github.com/Nexus-Mods/node-gamebryo-savegames/tar.gz/44625835a12e1686d06bb85b2441b3a006c5fe5a}
+  gamebryo-savegame@https://codeload.github.com/Nexus-Mods/node-gamebryo-savegames/tar.gz/9149445e798a632a38337229dd0b60b67efb74bd:
+    resolution: {tarball: https://codeload.github.com/Nexus-Mods/node-gamebryo-savegames/tar.gz/9149445e798a632a38337229dd0b60b67efb74bd}
     version: 2.1.3
 
   gauge@2.7.4:
@@ -19093,7 +19093,7 @@ snapshots:
       string.fromcodepoint: 0.2.1
       string.prototype.codepointat: 0.2.1
 
-  gamebryo-savegame@https://codeload.github.com/Nexus-Mods/node-gamebryo-savegames/tar.gz/44625835a12e1686d06bb85b2441b3a006c5fe5a:
+  gamebryo-savegame@https://codeload.github.com/Nexus-Mods/node-gamebryo-savegames/tar.gz/9149445e798a632a38337229dd0b60b67efb74bd:
     dependencies:
       autogypi: 0.2.2
       copyfiles: 2.4.1
