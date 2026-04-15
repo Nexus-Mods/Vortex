@@ -109,7 +109,7 @@ function updateSaves(
         const oldSaves: { [id: string]: ISavegame } = state.session.saves.saves;
 
         if (!saveDictEqual(oldSaves, savesDict)) {
-          store.dispatch(setSavegames(result.newSavegames, result.truncated));
+          store.dispatch(setSavegames(savesDict, result.truncated));
         }
         return Promise.resolve(result.failedReads);
       },
