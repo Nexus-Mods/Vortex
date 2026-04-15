@@ -22,11 +22,13 @@ Multiple labels can be used on a single PR to cherry-pick into several branches.
 
 | Scenario | Result |
 |---|---|
-| Clean cherry-pick | Branch pushed, PR created and **auto-merged** |
+| Clean cherry-pick | Branch pushed, PR created with **auto-merge enabled** — lands once required reviews and CI pass |
 | Cherry-pick with conflicts | Branch pushed, **draft** PR created with warning (requires manual resolution) |
 | Target branch doesn't exist | Skipped with a warning |
 | Branch already exists remotely | Force-pushed, existing PR reused |
 | No `pick:` labels | Workflow exits early |
+
+> Auto-merge uses GitHub's native [auto-merge](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/automatically-merging-a-pull-request) feature, so cherry-pick PRs still respect the target branch's protection rules (required approvals, status checks, etc.). The repo must have **Allow auto-merge** enabled in *Settings → General → Pull Requests*.
 
 ## Cherry-pick branches
 

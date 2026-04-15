@@ -86,8 +86,8 @@ for TARGET in "${TARGETS[@]}"; do
     fi
 
     if [ "$HAS_CONFLICTS" = "false" ]; then
-      echo "No conflicts detected, auto-merging..."
-      gh pr merge "$PR_URL" --merge --delete-branch
+      echo "No conflicts detected, enabling auto-merge (will land once branch protections are satisfied)..."
+      gh pr merge "$PR_URL" --auto --merge --delete-branch
     fi
   fi
 
