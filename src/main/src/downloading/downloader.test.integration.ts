@@ -6,9 +6,14 @@ import * as path from "node:path";
 import { CookieJar } from "tough-cookie";
 import { describe, it, expect, vi, beforeAll, afterAll, test } from "vitest";
 
-import type { ResolvedResource, ResolvedEndpoint, Resolver } from "./resolver";
+import type {
+  ResolvedResource,
+  ResolvedEndpoint,
+  Resolver,
+  Chunk,
+} from "@vortex/shared/download";
 
-import { staticChunker, type Chunk } from "./chunking";
+import { staticChunker } from "@vortex/shared/download";
 import { download, type TimeoutOptions } from "./downloader";
 import { DownloadError } from "@vortex/shared/errors";
 import { ProgressReporter } from "./progress";

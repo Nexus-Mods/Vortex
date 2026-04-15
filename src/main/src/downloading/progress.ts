@@ -1,20 +1,9 @@
-import type { ByteRange, Chunk } from "./chunking";
-
-export type Progress = {
-  bytesReceived: number;
-  bytesWritten: number;
-};
-
-export type ChunkProgress = Progress & {
-  chunkRange: ByteRange;
-};
-
-export type DownloadProgress = Progress & {
-  /** Size of the file being downloaded. This can be null when the server returns no size. */
-  size: number | null;
-} & ({ isChunked: false } | { isChunked: true; chunks: ChunkProgress[] });
-
-export type ProgressCallback = (progress: DownloadProgress) => void;
+import type {
+  Chunk,
+  ChunkProgress,
+  DownloadProgress,
+  Progress,
+} from "@vortex/shared/download";
 
 /** @internal */
 export class ProgressReporter {

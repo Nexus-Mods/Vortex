@@ -25,6 +25,11 @@
       "import": "./dist/cli.js",
       "require": "./dist/cli.cjs"
     },
+    "./download": {
+      "development": "./src/api/download.ts",
+      "import": "./dist/download.js",
+      "require": "./dist/download.cjs"
+    },
     "./errors": {
       "development": "./src/api/errors.ts",
       "import": "./dist/errors.js",
@@ -69,6 +74,10 @@
       "./cli": {
         "import": "./dist/cli.js",
         "require": "./dist/cli.cjs"
+      },
+      "./download": {
+        "import": "./dist/download.js",
+        "require": "./dist/download.cjs"
       },
       "./errors": {
         "import": "./dist/errors.js",

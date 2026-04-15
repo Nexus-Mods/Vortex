@@ -1,15 +1,9 @@
-import type { Chunk } from "./chunking";
-
-export type Resolver<T> = (resource: T) => Promise<ResolvedResource>;
-
-export type ResolvedEndpoint = { url: URL; headers?: Record<string, string> };
-
-export type ResolvedResource =
-  | ResolvedEndpoint
-  | {
-      probeEndpoint: ResolvedEndpoint;
-      chunkEndpoint?: (chunk: Chunk) => Promise<ResolvedEndpoint>;
-    };
+import type {
+  Chunk,
+  Resolver,
+  ResolvedEndpoint,
+  ResolvedResource,
+} from "@vortex/shared/download";
 
 export const urlResolver: Resolver<URL> = (url) => Promise.resolve({ url });
 

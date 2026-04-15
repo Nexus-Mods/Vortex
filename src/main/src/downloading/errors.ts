@@ -1,8 +1,7 @@
+import type { ResolvedEndpoint } from "@vortex/shared/download";
+
 import { DownloadError } from "@vortex/shared/errors";
-
 import { TimeoutError, HTTPError, RequestError, AbortError } from "got";
-
-import type { ResolvedEndpoint } from "./resolver";
 
 export function isCancellation(err: unknown): boolean {
   // NOTE(erri120): The `got` package throws a custom `AbortError` class on cancellation
