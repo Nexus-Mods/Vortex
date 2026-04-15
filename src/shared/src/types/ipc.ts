@@ -189,7 +189,7 @@ export interface MainChannels extends MainCallbackChannels {
   "menu:click": (menuItemId: string) => void;
 }
 
-/* Type containing all known channels used by renderer processes to send to and receive messages from the main process */
+/** Type containing all known channels used by renderer processes to send to and receive messages from the main process */
 export interface InvokeChannels {
   // NOTE(erri120): Parameters must be serializable and return values must be Promises resolving serializable content.
 
