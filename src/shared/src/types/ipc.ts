@@ -169,14 +169,7 @@ export interface MainChannels {
   "menu:click": (menuItemId: string) => void;
 }
 
-/** Type containing all known channels for synchronous IPC operations (used primarily by preload scripts) */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface SyncChannels {
-  // NOTE: These are synchronous IPC channels used during preload initialization.
-  // Use sparingly as they block the renderer process.
-}
-
-/** Type containing all known channels used by renderer processes to send to and receive messages from the main process */
+/* Type containing all known channels used by renderer processes to send to and receive messages from the main process */
 export interface InvokeChannels {
   // NOTE(erri120): Parameters must be serializable and return values must be Promises resolving serializable content.
 
