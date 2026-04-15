@@ -87,8 +87,28 @@ export type VortexPaths = {
   desktop: string;
 };
 
+export interface CallbackChannels {
+  "example:ping": (ping: string) => Promise<{ pong: string }>;
+}
+
+export type MainCallbackChannels = {
+  [C in keyof CallbackChannels]: CallbackChannels[C] extends (
+    ...args: infer Args
+  ) => Promise<infer _Return>
+    ? (collationId: number, ...args: Args) => void
+    : never;
+};
+
+export type RendererCallbackChannels = {
+  [C in keyof CallbackChannels as `callback:${C}`]: CallbackChannels[C] extends (
+    ...args: infer _Args
+  ) => Promise<infer Return>
+    ? (collationId: number, result: Return) => void
+    : never;
+};
+
 /** Type containing all known channels used by renderer processes to send messages to the main process */
-export interface RendererChannels {
+export interface RendererChannels extends RendererCallbackChannels {
   // NOTE(erri120): Parameters must be serializable and return values must be void.
 
   /** Logs a message */
@@ -130,7 +150,7 @@ export interface RendererChannels {
 }
 
 /** Type containing all known channels used by the main process to send messages to a renderer process */
-export interface MainChannels {
+export interface MainChannels extends MainCallbackChannels {
   // NOTE(erri120): Parameters must be serializable and return values must be void.
 
   // Examples:
