@@ -391,7 +391,17 @@ type SerializablePrimitive =
   | DataView
   | TypedArray;
 
-/** Represents all IPC-safe types */
+/**
+ * Represents all IPC-safe types.
+ *
+ * This is **Electron's structured-clone contract**, not `JSON.stringify`.
+ * Values of type `Serializable` survive `ipcMain.send`/`ipcRenderer.invoke`
+ * and preserve `Date`, `Map`, `Set`, `ArrayBuffer`, typed arrays, etc.
+ * They do **not** round-trip through `JSON.stringify` — Maps and Sets
+ * serialize to `{}`, and typed arrays to their object form. Do not
+ * `JSON.stringify` values of this type without first converting them to
+ * a JSON-safe shape.
+ */
 export type Serializable =
   | SerializablePrimitive
   | Serializable[]

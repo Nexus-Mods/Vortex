@@ -11,6 +11,14 @@
  * whose info.nexusMods domain matches → call paths() → fetch mod's default
  * file list from Nexus GraphQL + S3 meta → call install() → render table.
  *
+ * Environment:
+ *   NEXUS_API_KEY — optional. Some Nexus endpoints (GraphQL modFiles)
+ *     gate on an API key; set this if the script reports 401/403.
+ *
+ * Network: this CLI calls live Nexus services (games.json, GraphQL,
+ * file-metadata S3) on every run. It has no offline fixture mode and
+ * should not be wired into CI as-is.
+ *
  * Prerequisites: `pnpm build` must have produced
  *   src/main/out/bootstrap.mjs
  *   packages/adaptors/<name>/dist/index.mjs
@@ -185,7 +193,7 @@ export async function fetchArchiveManifest(
   modId: number,
   fileUri: string,
 ): Promise<PreviewDirectory> {
-  const url = `${NEXUS_FILE_META_BASE}/${gameId}/${modId}/${encodeURI(fileUri)}.json`;
+  const url = `${NEXUS_FILE_META_BASE}/${gameId}/${modId}/${encodeURIComponent(fileUri)}.json`;
   return fetchJson<PreviewDirectory>(url);
 }
 

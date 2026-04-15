@@ -1,9 +1,9 @@
 import type { IMessageHandler } from "@vortex/adaptor-api";
 import type { IPingService } from "@vortex/adaptor-api/contracts/ping";
-import type { Store, StorePathSnapshot } from "@vortex/adaptor-api/stores/lib";
+import type { StorePathSnapshot } from "@vortex/adaptor-api/stores/lib";
 import type { Serializable } from "@vortex/shared/ipc";
 
-import { Base, OS } from "@vortex/adaptor-api/stores/lib";
+import { Base, OS, Store } from "@vortex/adaptor-api/stores/lib";
 import { QualifiedPath } from "@vortex/fs";
 import * as fs from "node:fs";
 import { homedir, tmpdir } from "node:os";
@@ -170,6 +170,8 @@ function detectHostOS(): OS {
   );
 }
 
+const KNOWN_STORES: ReadonlySet<string> = new Set(Object.values(Store));
+
 /**
  * Builds a {@link StorePathSnapshot} for a given discovery.
  *
@@ -334,6 +336,20 @@ function registerIpcHandlers(): void {
   betterIpcMain.handle(
     "adaptors:build-snapshot",
     (_event: unknown, store: string, gamePath: string) => {
+      if (!KNOWN_STORES.has(store)) {
+        return Promise.reject(
+          new Error(
+            `adaptors:build-snapshot: unknown store "${store}" (expected one of: ${[...KNOWN_STORES].join(", ")})`,
+          ),
+        );
+      }
+      if (typeof gamePath !== "string" || gamePath.trim().length === 0) {
+        return Promise.reject(
+          new Error(
+            "adaptors:build-snapshot: gamePath must be a non-empty string",
+          ),
+        );
+      }
       return Promise.resolve(
         buildStorePathSnapshot(store as Store, gamePath) as unknown,
       ) as Promise<Serializable>;

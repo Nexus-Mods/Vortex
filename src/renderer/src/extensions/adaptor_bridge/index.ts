@@ -118,17 +118,62 @@ export interface InstallMapping {
   destination: string;
 }
 
+type InstallerDispatch = (
+  files: readonly string[],
+) => Promise<readonly InstallMapping[]>;
+
 /**
  * Registry of per-game mod-installer dispatch functions, populated as
  * adaptors are discovered and their `setup()` callback runs. Keyed by
  * game ID. Reads the same cached paths + snapshot the bridge already
  * tracks, so callers outside the bridge (e.g. a future InstallManager
- * integration) don't need to re-resolve them.
+ * integration) don't need to re-resolve them. The registry itself is
+ * module-private; consumers go through the exported accessors below.
  */
-export const adaptorInstallerRegistry = new Map<
-  string,
-  (files: readonly string[]) => Promise<readonly InstallMapping[]>
->();
+const installerRegistry = new Map<string, InstallerDispatch>();
+
+/** Returns the installer dispatch for a game, or `undefined`. */
+export function getAdaptorInstaller(
+  gameId: string,
+): InstallerDispatch | undefined {
+  return installerRegistry.get(gameId);
+}
+
+/** Returns the set of game IDs that currently have an adaptor installer. */
+export function adaptorInstallerGameIds(): readonly string[] {
+  return [...installerRegistry.keys()];
+}
+
+/**
+ * Validates that an adaptor's `install()` reply matches the
+ * {@link InstallMapping} shape before we hand it to any consumer.
+ * A misbehaving adaptor shouldn't be able to surface as a crash in
+ * downstream code that trusted the cast.
+ */
+function assertInstallMappings(
+  value: unknown,
+  adaptorName: string,
+): readonly InstallMapping[] {
+  if (!Array.isArray(value)) {
+    throw new Error(
+      `[adaptor-bridge] ${adaptorName}: installer returned non-array`,
+    );
+  }
+  for (const entry of value) {
+    if (
+      typeof entry !== "object" ||
+      entry === null ||
+      typeof (entry as { source?: unknown }).source !== "string" ||
+      typeof (entry as { anchor?: unknown }).anchor !== "string" ||
+      typeof (entry as { destination?: unknown }).destination !== "string"
+    ) {
+      throw new Error(
+        `[adaptor-bridge] ${adaptorName}: installer returned malformed mapping`,
+      );
+    }
+  }
+  return value as readonly InstallMapping[];
+}
 
 // ---------------------------------------------------------------------------
 // IPC helpers
@@ -315,11 +360,12 @@ async function registerAdaptor(
         `[adaptor-bridge] ${name}: installer called before paths resolved`,
       );
     }
-    return (await callAdaptor(name, installerUri, "install", [
+    const raw = await callAdaptor(name, installerUri, "install", [
       cachedSnapshot,
       cachedPaths,
       files,
-    ])) as readonly InstallMapping[];
+    ]);
+    return assertInstallMappings(raw, name);
   }
 
   // The supportedTools array is passed by reference to registerGame and
@@ -376,7 +422,7 @@ async function registerAdaptor(
           cachedSnapshot = null;
           cachedPaths = null;
           cachedTools = null;
-          adaptorInstallerRegistry.delete(gameId);
+          installerRegistry.delete(gameId);
 
           const store = discovery.store ?? "unknown";
           const gamePath = discovery.path;
@@ -425,7 +471,7 @@ async function registerAdaptor(
           // route archive contents through the adaptor. Only registered
           // when the adaptor declares both /paths and /installer URIs.
           if (installerUri && pathsUri && paths !== null) {
-            adaptorInstallerRegistry.set(gameId, invokeInstaller);
+            installerRegistry.set(gameId, invokeInstaller);
           }
         })(),
       ),
