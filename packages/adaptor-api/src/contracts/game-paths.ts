@@ -1,56 +1,83 @@
-import type { QualifiedPath } from "@vortex/fs";
+import { QualifiedPath } from "@vortex/fs";
+
+import type { Base, StorePathSnapshot } from "../stores/providers.js";
 
 /**
- * Well-known game folder names that the framework understands.
- * Adaptors may also return additional game-specific folder names.
- */
-export const GameFolder = {
-  install: "install",
-  saves: "saves",
-  preferences: "preferences",
-  config: "config",
-  cache: "cache",
-} as const;
-
-export type GameFolder = (typeof GameFolder)[keyof typeof GameFolder];
-
-/**
- * A mapping of folder names to qualified paths.
- * Well-known {@link GameFolder} keys are typed; arbitrary game-specific
- * keys (e.g. `"creationKit"`, `"scripts"`) are also permitted.
- */
-export type GameFolderMap = Partial<Record<GameFolder, QualifiedPath>> & {
-  [key: string]: QualifiedPath | undefined;
-};
+ * Path-map returned by an adaptor's {@link IGamePathService.paths}.
+ *
+ * The key space is `T` plus the mandatory {@link Base.Game} entry. `T`
+ * is adaptor-declared; it can mix further {@link Base} values with
+ * adaptor-specific string literals (e.g. `"creationKit"`, `"scripts"`).
+ *
+ * Values are concrete OS-scheme {@link QualifiedPath}s the adaptor
+ * built from a {@link StorePathProvider} — the framework does not
+ * resolve them further.
+ *
+ * @public */
+export type GamePaths<T extends string = never> = Map<T | Base, QualifiedPath>;
 
 /**
- * Adaptor-provided service that resolves a game's auxiliary folder paths
- * given a discovered installation location and the store that found it.
+ * Adaptor-provided service that resolves a game's folder paths.
  *
  * Each game adaptor `@provides` this at its own URI
- * (e.g. `"vortex:adaptor/skyrim-se/paths"`).
- */
-export interface IGamePathService {
+ * (e.g. `"vortex:adaptor/skyrim-se/paths"`). The generic `T` is the
+ * adaptor-declared extra key space — a union of string literals for
+ * whatever game-specific folders the adaptor exposes beyond the
+ * required {@link Base.Game}.
+ *
+ * @public */
+export interface IGamePathService<T extends string = never> {
   /**
-   * Resolves the game's auxiliary folders relative to its installation.
+   * Returns the full {@link GamePaths} map for the discovered game.
    *
-   * @param store - Which store discovered the game (`"steam"`, `"epic"`, `"gog"`, `"xbox"`).
-   * @param installPath - The discovered game installation path
-   *   (e.g. `steam://SteamApps/common/Skyrim Special Edition/`).
-   * @returns A map of folder short names to qualified paths.
+   * The adaptor receives a {@link StorePathSnapshot} already scoped to
+   * this discovery (store, host OS, game runtime OS, install path) and
+   * wraps it via `createStorePathProvider` to get a
+   * `StorePathProvider`. Every returned map must include a
+   * {@link Base.Game} entry — the framework uses it to populate the
+   * install directory.
    *
    * @example
    * ```ts
-   * // A Skyrim SE adaptor might return:
-   * {
-   *   [GameFolder.preferences]: QualifiedPath.parse("steam://documents/My Games/Skyrim Special Edition/"),
-   *   [GameFolder.saves]:       QualifiedPath.parse("steam://documents/My Games/Skyrim Special Edition/Saves/"),
-   *   [GameFolder.config]:      QualifiedPath.parse("steam://localAppData/Skyrim Special Edition/"),
+   * async paths(snapshot: StorePathSnapshot): Promise<GamePaths<"saves">> {
+   *   const provider = createStorePathProvider(snapshot);
+   *   const game = await provider.fromBase(Base.Game);
+   *   const saves = provider.gameOS === OS.Windows
+   *     ? (await provider.fromBase(Base.Home)).join("Saved Games", "My Game")
+   *     : game.join("saves");
+   *   return new Map([[Base.Game, game], ["saves", saves]]);
    * }
    * ```
    */
-  resolveGameFolders(
-    store: string,
-    installPath: QualifiedPath,
-  ): Promise<GameFolderMap>;
+  paths(snapshot: StorePathSnapshot): Promise<GamePaths<T>>;
+}
+
+/**
+ * Reconstructs a {@link GamePaths} Map after it has crossed an IPC
+ * boundary. `structuredClone` preserves the `Map` itself but strips
+ * {@link QualifiedPath} prototypes off the values; this helper rebuilds
+ * them via {@link QualifiedPath.parse}.
+ *
+ * Adaptors call this at the top of methods that receive `GamePaths`
+ * back from the host (e.g. {@link IGameToolsService.getGameTools}).
+ *
+ * @public */
+export function rehydrateGamePaths<T extends string = never>(
+  raw: ReadonlyMap<T | Base, QualifiedPath>,
+): GamePaths<T> {
+  const out = new Map<T | Base, QualifiedPath>();
+  for (const [key, value] of raw) {
+    if (value instanceof QualifiedPath) {
+      out.set(key, value);
+      continue;
+    }
+    const str = (value as { value?: string }).value;
+    if (typeof str !== "string") {
+      throw new Error(
+        `rehydrateGamePaths: entry "${String(key)}" is not a QualifiedPath`,
+      );
+    }
+    out.set(key, QualifiedPath.parse(str));
+  }
+  return out;
 }

@@ -24,18 +24,18 @@
  * The resolution chain is:
  *   IGameInfoService → called eagerly (needed for registerGame)
  *   IGamePathService → called on first discovery (setup callback)
- *   IGameToolsService → called after paths resolve (needs GameFolderMap)
+ *   IGameToolsService → called after paths resolve (needs GamePaths)
  *
  * ## Integration points
  *
  * - Store IDs → queryArgs for GameStoreHelper discovery
- * - GameFolderMap → tool executable paths
+ * - GamePaths → tool executable paths
  * - Tools → supportedTools array on the IGame object
  */
 
-import type { IExtensionContext } from "../../types/IExtensionContext";
-
 import Bluebird from "bluebird"; // Used for setup callback return type
+
+import type { IExtensionContext } from "../../types/IExtensionContext";
 
 import { log } from "../../util/log";
 
@@ -43,8 +43,9 @@ import { log } from "../../util/log";
 // Type definitions for adaptor IPC responses
 //
 // These mirror the adaptor contract types but use plain objects instead of
-// class instances (QualifiedPath is serialized to { value, scheme, path }
-// when crossing the IPC boundary).
+// class instances (QualifiedPath is structured-cloned into a plain object
+// when crossing the IPC boundary). The bridge forwards these blobs back
+// into the adaptor untouched; only the adaptor rebuilds QualifiedPaths.
 // ---------------------------------------------------------------------------
 
 interface AdaptorEntry {
@@ -65,10 +66,20 @@ interface GameInfo {
   nexusMods?: Array<{ domain: string; name?: string }>;
 }
 
-/** Serialized QualifiedPath objects become plain objects over IPC. */
-interface GameFolderMap {
-  [key: string]: { value: string; scheme: string; path: string };
-}
+/**
+ * Opaque snapshot returned by `adaptors:build-snapshot`. The renderer
+ * treats this as an opaque blob: it goes straight into `paths()` as
+ * an argument, and the adaptor's own `createStorePathProvider` wraps it.
+ */
+type OpaqueStorePathSnapshot = unknown;
+
+/**
+ * Opaque `GamePaths` blob returned by `IGamePathService.paths`. The
+ * renderer forwards it into `getGameTools` without inspecting it; the
+ * receiving adaptor calls `rehydrateGamePaths` to turn it back into a
+ * Map of real QualifiedPaths.
+ */
+type OpaqueGamePaths = unknown;
 
 interface GameExecutable {
   executable: { value: string; path: string };
@@ -189,11 +200,7 @@ async function registerAdaptor(
 
   // Fetch game info eagerly — we need the game ID and store IDs
   // for registerGame which must happen synchronously during init
-  const info = (await callAdaptor(
-    name,
-    infoUri,
-    "getGameInfo",
-  )) as GameInfo;
+  const info = (await callAdaptor(name, infoUri, "getGameInfo")) as GameInfo;
 
   const gameId = gameIdFromUri(info.gameUri);
 
@@ -204,32 +211,34 @@ async function registerAdaptor(
 
   // --- Lazy resolution closures ---
   // These cache the results of adaptor service calls so we only
-  // cross the IPC boundary once per service per session.
+  // cross the IPC boundary once per service per session. They get
+  // reset at the top of setup() to handle re-discovery.
 
-  let cachedFolders: GameFolderMap | null = null;
+  let pathsResolved = false;
+  let cachedPaths: OpaqueGamePaths = null;
   let cachedTools: GameToolsInfo | null = null;
 
-  /** Resolves game folder paths. Called once after discovery. */
-  async function getFolders(
+  /** Resolves game paths. Called once after discovery. */
+  async function getPaths(
     store: string,
     gamePath: string,
-  ): Promise<GameFolderMap> {
-    if (!cachedFolders && pathsUri) {
-      cachedFolders = (await callAdaptor(name, pathsUri, "resolveGameFolders", [
-        store,
-        gamePath,
-      ])) as GameFolderMap;
+  ): Promise<OpaqueGamePaths> {
+    if (!pathsResolved && pathsUri) {
+      const snapshot: OpaqueStorePathSnapshot =
+        await window.api.adaptors.buildSnapshot(store, gamePath);
+      cachedPaths = await callAdaptor(name, pathsUri, "paths", [snapshot]);
+      pathsResolved = true;
     }
-    return cachedFolders ?? {};
+    return cachedPaths;
   }
 
-  /** Resolves game tools. Depends on folders being resolved first. */
+  /** Resolves game tools. Depends on paths being resolved first. */
   async function getTools(
-    folders: GameFolderMap,
+    paths: OpaqueGamePaths,
   ): Promise<GameToolsInfo | null> {
     if (!cachedTools && toolsUri) {
       cachedTools = (await callAdaptor(name, toolsUri, "getGameTools", [
-        folders,
+        paths,
       ])) as GameToolsInfo;
     }
     return cachedTools;
@@ -264,9 +273,9 @@ async function registerAdaptor(
   context.registerGame({
     id: gameId,
     name: info.displayName,
-    logo: "",              // TODO: adaptor-provided logo
+    logo: "", // TODO: adaptor-provided logo
     executable: () => ".", // Placeholder — updated in setup after tools resolve
-    requiredFiles: [],     // Adaptors don't use file-based discovery
+    requiredFiles: [], // Adaptors don't use file-based discovery
     mergeMods: true,
     queryModPath: () => ".", // Actual paths come from mod type registrations
     queryArgs: buildQueryArgs(info), // Enables GameStoreHelper discovery
@@ -279,48 +288,59 @@ async function registerAdaptor(
      * This is where we lazily resolve all adaptor services, because now we
      * have a concrete install path and store to work with.
      *
-     * Resolution chain: paths → tools + mod types (both need folders)
+     * Resolution chain: paths → tools + mod types (both need paths)
      */
-    setup: (discovery) => Bluebird.resolve((async () => {
-      const store = discovery.store ?? "unknown";
-      const gamePath = discovery.path;
-      if (!gamePath) {
-        log("warn", `[adaptor-bridge] No discovery path for ${name}, skipping setup`);
-        return;
-      }
+    setup: (discovery) =>
+      Bluebird.resolve(
+        (async () => {
+          // Invalidate caches on re-discovery (install moved, different store).
+          pathsResolved = false;
+          cachedPaths = null;
+          cachedTools = null;
 
-      // Step 1: Resolve folder paths (install, saves, config, etc.)
-      const folders = await getFolders(store, gamePath);
+          const store = discovery.store ?? "unknown";
+          const gamePath = discovery.path;
+          if (!gamePath) {
+            log(
+              "warn",
+              `[adaptor-bridge] No discovery path for ${name}, skipping setup`,
+            );
+            return;
+          }
 
-      // Step 2: Resolve tools (depends on folders)
-      const tools = await getTools(folders);
+          // Step 1: Resolve folder paths (game, saves, preferences, etc.)
+          const paths = await getPaths(store, gamePath);
 
-      // Step 3: Wire the game executable from the tools service
-      if (tools) {
-        discovery.executable = tools.game.executable.path;
-      }
+          // Step 2: Resolve tools (depends on paths)
+          const tools = await getTools(paths);
 
-      // Step 4: Populate supported tools
-      if (tools?.tools) {
-        for (const [toolId, tool] of Object.entries(tools.tools)) {
-          supportedTools.push({
-            id: `${gameId}-${toolId}`,
-            name: tool.name,
-            shortName: tool.shortName,
-            executable: () => tool.executable.path,
-            requiredFiles: (tool.requiredFiles ?? []).map((f) => f.path),
-            parameters: tool.parameters,
-            environment: tool.environment,
-            exclusive: tool.exclusive,
-            defaultPrimary: tool.defaultPrimary,
-            shell: tool.shell,
-            detach: tool.detach,
-            onStart: tool.onStart,
-            relative: true, // Always relative to game folder
-          });
-        }
-      }
-    })()),
+          // Step 3: Wire the game executable from the tools service
+          if (tools) {
+            discovery.executable = tools.game.executable.path;
+          }
+
+          // Step 4: Populate supported tools
+          if (tools?.tools) {
+            for (const [toolId, tool] of Object.entries(tools.tools)) {
+              supportedTools.push({
+                id: `${gameId}-${toolId}`,
+                name: tool.name,
+                shortName: tool.shortName,
+                executable: () => tool.executable.path,
+                requiredFiles: (tool.requiredFiles ?? []).map((f) => f.path),
+                parameters: tool.parameters,
+                environment: tool.environment,
+                exclusive: tool.exclusive,
+                defaultPrimary: tool.defaultPrimary,
+                shell: tool.shell,
+                detach: tool.detach,
+                onStart: tool.onStart,
+                relative: true, // Always relative to game folder
+              });
+            }
+          }
+        })(),
+      ),
   });
 }
 

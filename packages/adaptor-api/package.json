@@ -53,6 +53,11 @@
       "import": "./dist/plugin.js",
       "require": "./dist/plugin.cjs"
     },
+    "./stores/lib": {
+      "development": "./src/stores/lib.ts",
+      "import": "./dist/stores/lib.js",
+      "require": "./dist/stores/lib.cjs"
+    },
     "./package.json": "./package.json"
   },
   "publishConfig": {
@@ -80,6 +85,10 @@
       "./plugin": {
         "import": "./dist/plugin.js",
         "require": "./dist/plugin.cjs"
+      },
+      "./stores/lib": {
+        "import": "./dist/stores/lib.js",
+        "require": "./dist/stores/lib.cjs"
       },
       "./package.json": "./package.json"
     }

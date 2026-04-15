@@ -1,6 +1,6 @@
 import type { QualifiedPath } from "@vortex/fs";
 
-import type { GameFolderMap } from "./game-paths.js";
+import type { GamePaths } from "./game-paths.js";
 
 /**
  * The main game executable. Always exclusive — the framework knows
@@ -53,10 +53,12 @@ export interface GameToolsInfo {
 
 /**
  * Adaptor-provided service for declaring game executables and tools.
- * Each game adaptor `@provides` this at its own URI.
+ * Each game adaptor `@provides` this at its own URI. The generic `T`
+ * mirrors the extra key space declared by {@link IGamePathService}
+ * for this adaptor.
  */
-export interface IGameToolsService {
-  getGameTools(folders: GameFolderMap): Promise<GameToolsInfo>;
+export interface IGameToolsService<T extends string = never> {
+  getGameTools(paths: GamePaths<T>): Promise<GameToolsInfo>;
 }
 
 // --- Shorthand input types ---

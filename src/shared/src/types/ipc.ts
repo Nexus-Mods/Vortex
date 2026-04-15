@@ -351,6 +351,15 @@ export interface InvokeChannels {
     method: string,
     args: unknown[],
   ) => Promise<Serializable>;
+  /**
+   * Builds a store-path snapshot for a newly discovered game. The
+   * renderer uses this instead of constructing path bases itself so the
+   * adaptor can be handed a fully-resolved {@link StorePathProvider}.
+   */
+  "adaptors:build-snapshot": (
+    store: string,
+    gamePath: string,
+  ) => Promise<Serializable>;
 }
 
 /** Represents all IPC-safe typed arrays */
@@ -386,7 +395,9 @@ type SerializablePrimitive =
 export type Serializable =
   | SerializablePrimitive
   | Serializable[]
-  | { [key: string]: Serializable };
+  | { [key: string]: Serializable }
+  | Map<Serializable, Serializable>
+  | Set<Serializable>;
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
 

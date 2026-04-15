@@ -360,7 +360,9 @@ export interface PersistApi {
    * The renderer applies these via __persist_push, which is excluded from
    * persistDiffMiddleware to prevent feedback loops.
    */
-  onPush(callback: (hive: PersistedHive, operations: DiffOperation[]) => void): void;
+  onPush(
+    callback: (hive: PersistedHive, operations: DiffOperation[]) => void,
+  ): void;
 }
 
 /** API for requesting extension main process initialization */
@@ -390,6 +392,13 @@ export interface AdaptorsApi {
     method: string,
     args: unknown[],
   ): Promise<unknown>;
+  /**
+   * Builds a store-path snapshot for a discovered game. The returned
+   * value is a `StorePathSnapshot` from `@vortex/adaptor-api/stores/lib`
+   * (the renderer sees it as `unknown` to avoid dragging the adaptor-api
+   * types into the preload surface; the bridge casts locally).
+   */
+  buildSnapshot(store: string, gamePath: string): Promise<unknown>;
 }
 
 /** API for querying update status from main process */
