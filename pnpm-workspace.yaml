@@ -185,7 +185,7 @@ catalog:
   fork-ts-checker-webpack-plugin: ^9.0.2
   fs-extra: ^9.1.0
   fuzzball: ^1.3.0
-  gamebryo-savegame: git+https://github.com/Nexus-Mods/node-gamebryo-savegames#f060df62b04aa53e0d2fa7e6de0c9df423bbd44c
+  gamebryo-savegame: git+https://github.com/Nexus-Mods/node-gamebryo-savegames#9149445e798a632a38337229dd0b60b67efb74bd
   glob: ^11.0.3
   globals: ^17.3.0
   got: ^14.6.6
