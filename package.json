@@ -54,6 +54,7 @@
     "@typescript-eslint/utils": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "@vitest/ui": "catalog:",
+    "cli-table3": "catalog:",
     "copyfiles": "catalog:",
     "cross-env": "catalog:",
     "eslint": "catalog:",

@@ -140,6 +140,7 @@ catalog:
   bsatk: git+https://github.com/Nexus-Mods/node-bsatk#5a3d15fae2177bfb0a42b794d3afb21eda563c59
   bsdiff-node: git+https://github.com/Nexus-Mods/bsdiff-node#a2bd60f5f96d172892b7f6708fb9a7a212b3b2e5
   classnames: ^2.2.6
+  cli-table3: ^0.6.5
   commander: ^4.0.1
   content-disposition: ^0.5.3
   content-type: ^1.0.4
