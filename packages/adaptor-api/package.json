@@ -33,6 +33,11 @@
       "import": "./dist/contracts/game-info.js",
       "require": "./dist/contracts/game-info.cjs"
     },
+    "./contracts/game-installer": {
+      "development": "./src/contracts/game-installer.ts",
+      "import": "./dist/contracts/game-installer.js",
+      "require": "./dist/contracts/game-installer.cjs"
+    },
     "./contracts/game-paths": {
       "development": "./src/contracts/game-paths.ts",
       "import": "./dist/contracts/game-paths.js",
@@ -69,6 +74,10 @@
       "./contracts/game-info": {
         "import": "./dist/contracts/game-info.js",
         "require": "./dist/contracts/game-info.cjs"
+      },
+      "./contracts/game-installer": {
+        "import": "./dist/contracts/game-installer.js",
+        "require": "./dist/contracts/game-installer.cjs"
       },
       "./contracts/game-paths": {
         "import": "./dist/contracts/game-paths.js",

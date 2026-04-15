@@ -2,6 +2,10 @@ import { provides } from "@vortex/adaptor-api";
 import type { IGameInfoService } from "@vortex/adaptor-api/contracts/game-info";
 import { gameInfo } from "@vortex/adaptor-api/contracts/game-info";
 import type {
+  IGameInstallerService,
+  InstallMapping,
+} from "@vortex/adaptor-api/contracts/game-installer";
+import type {
   GamePaths,
   IGamePathService,
 } from "@vortex/adaptor-api/contracts/game-paths";
@@ -17,7 +21,7 @@ import {
   OS,
   createStorePathProvider,
 } from "@vortex/adaptor-api/stores/lib";
-import type { QualifiedPath } from "@vortex/fs";
+import type { QualifiedPath, RelativePath } from "@vortex/fs";
 
 type CyberpunkExtras = "saves" | "preferences";
 type CyberpunkPaths = GamePaths<CyberpunkExtras>;
@@ -42,20 +46,31 @@ export class GameInfoService implements IGameInfoService {
 export class GamePathService implements IGamePathService<CyberpunkExtras> {
   async paths(snapshot: StorePathSnapshot): Promise<CyberpunkPaths> {
     const provider: StorePathProvider = createStorePathProvider(snapshot);
-    const game = await provider.fromBase(Base.Game);
 
-    let saves: QualifiedPath;
-    let preferences: QualifiedPath;
-    if (provider.gameOS === OS.Windows) {
-      const home = await provider.fromBase(Base.Home);
-      const appData = await provider.fromBase(Base.AppData);
-      saves = home.join("Saved Games", "CD Projekt Red", "Cyberpunk 2077");
-      preferences = appData.join("Local", "CD Projekt Red", "Cyberpunk 2077");
-    } else {
-      // Native Linux builds keep saves/config inside the install directory.
-      saves = game.join("saved_games");
-      preferences = game.join("engine", "config", "platform", "pc");
+    // Cyberpunk 2077 has no native Linux build. On Linux hosts, the
+    // only supported configuration is Proton, in which case gameOS is
+    // Windows (the game thinks it's on Windows inside the Wine prefix).
+    // A gameOS of Linux means the caller handed us a native Linux
+    // discovery, which cannot exist for this title.
+    if (provider.gameOS !== OS.Windows) {
+      throw new Error(
+        "Cyberpunk 2077 has no native Linux build; gameOS must be Windows (Proton)",
+      );
     }
+
+    const game = await provider.fromBase(Base.Game);
+    const home = await provider.fromBase(Base.Home);
+    const appData = await provider.fromBase(Base.AppData);
+    const saves = home.join(
+      "Saved Games",
+      "CD Projekt Red",
+      "Cyberpunk 2077",
+    );
+    const preferences = appData.join(
+      "Local",
+      "CD Projekt Red",
+      "Cyberpunk 2077",
+    );
 
     return new Map<Base | CyberpunkExtras, QualifiedPath>([
       [Base.Game, game],
@@ -84,5 +99,30 @@ export class GameToolsService implements IGameToolsService<CyberpunkExtras> {
     });
 
     return Promise.resolve(result);
+  }
+}
+
+/**
+ * Reference installer: routes files by extension. Real Cyberpunk
+ * installation policy (archive overlays, REDmod manifests, etc.) is
+ * out of scope for this demo.
+ */
+@provides("vortex:adaptor/cyberpunk2077/installer")
+export class GameInstallerService implements IGameInstallerService<CyberpunkExtras> {
+  install(
+    _context: StorePathSnapshot,
+    _paths: CyberpunkPaths,
+    files: readonly RelativePath[],
+  ): Promise<readonly InstallMapping<CyberpunkExtras>[]> {
+    const mappings: InstallMapping<CyberpunkExtras>[] = files.map((source) => {
+      if (source.endsWith(".ini")) {
+        return { source, anchor: "preferences", destination: source };
+      }
+      if (source.endsWith(".sav")) {
+        return { source, anchor: "saves", destination: source };
+      }
+      return { source, anchor: Base.Game, destination: source };
+    });
+    return Promise.resolve(mappings);
   }
 }

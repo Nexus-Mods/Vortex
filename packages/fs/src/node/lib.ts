@@ -27,6 +27,7 @@ export type {
   PathResolver,
   OSPathProvider,
   OSPathBase,
+  RelativePath,
 } from "../browser/paths";
 
 export {
@@ -35,6 +36,8 @@ export {
   OSPath,
   PathProviderError,
   PathResolverError,
+  RelativePathError,
+  relativePath,
 } from "../browser/paths";
 
 export { XDG } from "../browser/paths.linux";

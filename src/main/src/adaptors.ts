@@ -96,6 +96,14 @@ const loadedAdaptors = new Map<string, ILoadedAdaptor>();
 /**
  * Converts a native filesystem path into a `windows://` or `linux://`
  * QualifiedPath. Mirrors the renderer bridge's old `nativeToQualifiedPath`.
+ *
+ * TODO(proton): this only works when `os` matches the host platform. Once
+ * Proton support lands and `gameOS === OS.Windows` on a Linux host, the
+ * caller must first translate the native Linux path into a Wine-prefix
+ * Windows path (e.g. `Z:\home\user\...` or `C:\users\steamuser\...`) and
+ * pass that in. Feeding a raw Linux path through this function with
+ * `os = Windows` falls past the drive-letter regex and produces
+ * `windows:////home/...` — structurally malformed.
  */
 function nativeToQualifiedPath(nativePath: string, os: OS): QualifiedPath {
   if (os === OS.Windows) {
