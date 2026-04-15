@@ -73,10 +73,12 @@ function mainCallback<C extends keyof CallbackChannels>(
 ): Promise<AssertSerializable<Awaited<ReturnType<CallbackChannels[C]>>>> {
   const collationId = args[0];
 
-  let resolve: (
-    value: AssertSerializable<Awaited<ReturnType<CallbackChannels[C]>>>,
-  ) => void | undefined = undefined;
-  let reject: (reason?: Error) => void | undefined = undefined;
+  let resolve:
+    | ((
+        value: AssertSerializable<Awaited<ReturnType<CallbackChannels[C]>>>,
+      ) => void)
+    | undefined = undefined;
+  let reject: ((reason?: Error) => void) | undefined = undefined;
 
   const promise = new Promise<
     AssertSerializable<Awaited<ReturnType<CallbackChannels[C]>>>
@@ -85,23 +87,19 @@ function mainCallback<C extends keyof CallbackChannels>(
     reject = rej;
   });
 
-  new Promise<void>((resolve) => {
-    setTimeout(() => {
-      if (reject) {
-        resolve = undefined;
+  const timer = setTimeout(() => {
+    if (reject) {
+      resolve = undefined;
 
-        reject(
-          new Error(
-            `Callback for channel '${channel}' timed out after ${timeout}ms`,
-          ),
-        );
+      reject(
+        new Error(
+          `Callback for channel '${channel}' timed out after ${timeout}ms`,
+        ),
+      );
 
-        reject = undefined;
-      }
-
-      resolve();
-    }, timeout);
-  }).catch(() => {});
+      reject = undefined;
+    }
+  }, timeout);
 
   const off = mainOn(`callback:${channel}`, (event, ...args) => {
     const { sender } = event;
@@ -112,15 +110,18 @@ function mainCallback<C extends keyof CallbackChannels>(
 
     const result = args[1];
     if (resolve) {
+      reject = undefined;
       resolve(
         result as AssertSerializable<Awaited<ReturnType<CallbackChannels[C]>>>,
       );
+      resolve = undefined;
     }
   });
 
   mainSend(webContents, channel, ...args);
   return promise.finally(() => {
     off();
+    clearTimeout(timer);
   });
 }
 
