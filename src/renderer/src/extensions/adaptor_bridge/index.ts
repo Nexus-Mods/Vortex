@@ -198,6 +198,29 @@ async function callAdaptor(
 // Data transformation helpers
 // ---------------------------------------------------------------------------
 
+/** Serialized QualifiedPath shape as it appears after IPC structured-clone. */
+interface SerializedQP {
+  value: string;
+  scheme: string;
+  path: string;
+}
+
+/**
+ * Converts a serialized QualifiedPath's URI-style `.path` component to a
+ * native filesystem path. Windows paths are encoded as `/C/Users/foo` in
+ * the QP and need to become `C:\Users\foo`; Linux paths are already native.
+ */
+function qpPathToNative(qp: SerializedQP): string {
+  if (qp.scheme === "windows") {
+    const p = qp.path;
+    if (p.length >= 3 && p[0] === "/" && p[2] === "/") {
+      return p[1] + ":" + p.slice(2).replace(/\//g, "\\");
+    }
+    return p.replace(/\//g, "\\");
+  }
+  return qp.path;
+}
+
 /**
  * Extracts a game ID from a game URI.
  * "game:cyberpunk2077" → "cyberpunk2077"
@@ -467,10 +490,28 @@ async function registerAdaptor(
             }
           }
 
-          // Step 5: Expose the installer dispatch so later callers
-          // (e.g. InstallManager integration, in a follow-up PR) can
-          // route archive contents through the adaptor. Only registered
-          // when the adaptor declares both /paths and /installer URIs.
+          // Step 5: Register mod types for non-game anchors so the
+          // deployment system knows where to route files that target
+          // saves, preferences, or other adaptor-declared directories.
+          if (paths !== null) {
+            const pathEntries = paths as Record<string, SerializedQP>;
+            for (const [anchor, qp] of Object.entries(pathEntries)) {
+              if (anchor === "game") continue;
+              const modTypeId = `${gameId}-${anchor}`;
+              const nativePath = qpPathToNative(qp);
+              context.registerModType(
+                modTypeId,
+                50,
+                (gId) => gId === gameId,
+                () => nativePath,
+                () => Promise.resolve(false) as never,
+              );
+            }
+          }
+
+          // Step 6: Expose the installer dispatch so the registered
+          // "adaptor" installer can route archive contents through the
+          // adaptor's stop-pattern resolver.
           if (installerUri && pathsUri && paths !== null) {
             installerRegistry.set(gameId, invokeInstaller);
           }
@@ -509,13 +550,31 @@ function init(context: IExtensionContext): boolean {
         .filter((f) => !f.endsWith("/") && !f.endsWith("\\"))
         .map((f) => f.replace(/\\/g, "/"));
       const mappings = await dispatch(normalized);
-      return {
-        instructions: mappings.map((m) => ({
+      const instructions: Array<{ type: string; source?: string; destination?: string; value?: string }> =
+        mappings.map((m) => ({
           type: "copy" as const,
           source: m.source,
           destination: m.destination,
-        })),
-      };
+        }));
+
+      // Determine the mod type from the anchor field. A single mod can
+      // only target one mod type in Vortex, so mixed anchors are an error.
+      const anchors = new Set(mappings.map((m) => m.anchor));
+      if (anchors.size > 1) {
+        throw new Error(
+          `[adaptor-bridge] Mod targets multiple anchors (${[...anchors].join(", ")}); ` +
+            "a single mod can only deploy to one location",
+        );
+      }
+      const anchor = [...anchors][0];
+      if (anchor !== undefined && anchor !== "game") {
+        instructions.push({
+          type: "setmodtype",
+          value: `${gameId}-${anchor}`,
+        });
+      }
+
+      return { instructions };
     },
   );
 
