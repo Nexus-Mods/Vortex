@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import type {
   ByteRange,
   Chunker,
@@ -19,6 +21,9 @@ import { ProgressReporter } from "./progress";
 import { defaultRetryStrategy } from "./retry";
 
 export type DownloadHandle<T = unknown> = {
+  /** Globally unique identifier for this download. */
+  readonly downloadId: string;
+
   /** The promise resolves when the download completes */
   readonly promise: Promise<void>;
 
@@ -57,6 +62,7 @@ export type DownloadManagerOptions = {
 };
 
 export type DownloadCheckpoint<T = unknown> = {
+  downloadId: string;
   resource: T;
   dest: string;
   completedRanges: ByteRange[];
@@ -69,6 +75,7 @@ export class DownloadManager {
   readonly #timeout: TimeoutOptions;
   readonly #userAgent: string | undefined;
   readonly #cookieJar: CookieJar | undefined;
+  readonly #downloads: Map<string, DownloadHandle> = new Map();
 
   constructor(options: DownloadManagerOptions) {
     this.#downloadQueue = new PQueue({
@@ -101,12 +108,38 @@ export class DownloadManager {
     return this.#downloadQueue.runningTasks.length;
   }
 
+  /** Returns the handle for an active download, or `undefined` if unknown. */
+  get(downloadId: string): DownloadHandle | undefined {
+    return this.#downloads.get(downloadId);
+  }
+
+  /** Cancels an active download. No-op if the `downloadId` is unknown. */
+  cancel(downloadId: string): void {
+    this.#downloads.get(downloadId)?.cancel();
+  }
+
+  /** Pauses an active download and returns a checkpoint. Throws if the `downloadId` is unknown. */
+  pause(downloadId: string): Promise<DownloadCheckpoint> {
+    const handle = this.#downloads.get(downloadId);
+    if (handle === undefined)
+      throw new Error(`Unknown download: ${downloadId}`);
+    return handle.pause();
+  }
+
+  /** Returns the current progress of an active download. Throws if the `downloadId` is unknown. */
+  getProgress(downloadId: string): DownloadProgress {
+    const handle = this.#downloads.get(downloadId);
+    if (handle === undefined)
+      throw new Error(`Unknown download: ${downloadId}`);
+    return handle.getProgress();
+  }
+
   resume<T>(
     checkpoint: DownloadCheckpoint<T>,
     resolver: Resolver<T>,
     chunker: Chunker<T>,
     retry: RetryStrategy = defaultRetryStrategy(),
-  ): DownloadHandle {
+  ): DownloadHandle<T> {
     return this.#download(
       checkpoint.resource,
       checkpoint.dest,
@@ -114,6 +147,7 @@ export class DownloadManager {
       chunker,
       retry,
       checkpoint,
+      checkpoint.downloadId,
     );
   }
 
@@ -134,6 +168,7 @@ export class DownloadManager {
     chunker: Chunker<T>,
     retry: RetryStrategy,
     checkpoint?: DownloadCheckpoint<T>,
+    downloadId: string = randomUUID(),
   ): DownloadHandle<T> {
     const progressReporter = new ProgressReporter();
     const abortController = new AbortController();
@@ -197,6 +232,7 @@ export class DownloadManager {
       }
 
       return {
+        downloadId,
         resource,
         dest,
         completedRanges,
@@ -204,11 +240,19 @@ export class DownloadManager {
       };
     };
 
-    return {
+    const handle: DownloadHandle<T> = {
+      downloadId,
       promise,
       getProgress: () => progressReporter.getProgress(),
       cancel: () => abortController.abort(),
       pause,
     };
+
+    this.#downloads.set(downloadId, handle);
+    void settled.then(() => {
+      this.#downloads.delete(downloadId);
+    });
+
+    return handle;
   }
 }

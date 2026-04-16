@@ -222,6 +222,7 @@ describe("DownloadManager", () => {
       const manager = new DownloadManager({ concurrency: 1 });
 
       const checkpoint = {
+        downloadId: "test-id",
         resource: route.url,
         dest: path.join(tmp.dir, "does-not-exist"),
         completedRanges: [],
