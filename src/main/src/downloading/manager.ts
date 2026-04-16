@@ -1,16 +1,19 @@
+import type {
+  ByteRange,
+  Chunker,
+  DownloadProgress,
+  Resolver,
+  RetryStrategy,
+} from "@vortex/shared/download";
 import type { CookieJar } from "tough-cookie";
 
+import { staticChunker } from "@vortex/shared/download";
 import { DownloadError } from "@vortex/shared/errors";
 import { RateLimiter } from "limiter";
 import PQueue from "p-queue";
 
-import type { Chunker, ByteRange } from "./chunking";
 import type { TimeoutOptions } from "./downloader";
-import type { DownloadProgress } from "./progress";
-import type { Resolver } from "./resolver";
-import type { RetryStrategy } from "./retry";
 
-import { staticChunker } from "./chunking";
 import { download } from "./downloader";
 import { ProgressReporter } from "./progress";
 import { defaultRetryStrategy } from "./retry";

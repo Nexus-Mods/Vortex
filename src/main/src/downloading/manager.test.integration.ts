@@ -4,7 +4,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 
-import { staticChunker } from "./chunking";
+import { staticChunker } from "@vortex/shared/download";
 import { DownloadManager, type DownloadCheckpoint } from "./manager";
 import { urlResolver } from "./resolver";
 import {

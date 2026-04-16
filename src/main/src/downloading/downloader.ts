@@ -1,4 +1,13 @@
 import type {
+  ByteRange,
+  Chunk,
+  Chunker,
+  ChunkProgress,
+  ResolvedEndpoint,
+  Resolver,
+  RetryStrategy,
+} from "@vortex/shared/download";
+import type {
   Got,
   Headers,
   Delays as GotTimeoutOptions,
@@ -14,14 +23,8 @@ import got from "got";
 import { type FileHandle as NodeFileHandle, open } from "node:fs/promises";
 import PQueue from "p-queue";
 
-import type { ByteRange, Chunk, Chunker } from "./chunking";
-import type { ChunkProgress, ProgressReporter } from "./progress";
-import type {
-  Resolver,
-  NormalizedResource,
-  ResolvedEndpoint,
-} from "./resolver";
-import type { RetryStrategy } from "./retry";
+import type { ProgressReporter } from "./progress";
+import type { NormalizedResource } from "./resolver";
 
 import { isCancellation, toNetworkError } from "./errors";
 import { normalize } from "./resolver";
