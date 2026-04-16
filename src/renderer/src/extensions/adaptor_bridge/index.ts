@@ -501,7 +501,14 @@ function init(context: IExtensionContext): boolean {
           `[adaptor-bridge] No adaptor installer registered for game "${gameId}"`,
         );
       }
-      const mappings = await dispatch(files);
+      // InstallManager's buildFileList produces backslash-separated paths
+      // on Windows and appends path.sep to directory entries. Adaptors
+      // expect forward-slash RelativePaths with no trailing separator, so
+      // normalize here and filter out directory entries.
+      const normalized = files
+        .filter((f) => !f.endsWith("/") && !f.endsWith("\\"))
+        .map((f) => f.replace(/\\/g, "/"));
+      const mappings = await dispatch(normalized);
       return {
         instructions: mappings.map((m) => ({
           type: "copy" as const,
