@@ -2,7 +2,7 @@ import type { RelativePath } from "@vortex/fs";
 
 import { relativePath } from "@vortex/fs";
 
-import type { Base, StorePathSnapshot } from "../stores/providers.js";
+import type { StorePathProvider } from "../stores/providers.js";
 import type { GamePaths } from "./game-paths.js";
 
 import { compileGlob } from "./glob.js";
@@ -20,7 +20,7 @@ export interface InstallMapping<T extends string = never> {
   /** Relative path inside the archive. */
   readonly source: RelativePath;
   /** Anchor key into the adaptor's {@link GamePaths}. */
-  readonly anchor: T | Base;
+  readonly anchor: "game" | T;
   /** Path under the anchor where the file should be deployed. */
   readonly destination: RelativePath;
 }
@@ -38,13 +38,13 @@ export interface IGameInstallerService<T extends string = never> {
   /**
    * Produces one {@link InstallMapping} per archive file to be deployed.
    *
-   * The `context` argument is the same {@link StorePathSnapshot} that
+   * The `context` argument is the same {@link StorePathProvider} that
    * `IGamePathService.paths()` receives, so store, baseOS, gameOS, and
-   * pre-resolved bases are all accessible without a second RPC. The
-   * `paths` argument is the same map previously returned by this
-   * adaptor's `paths()` method; call {@link rehydrateGamePaths} on it
-   * if path manipulation is needed, as it has crossed a structured-
-   * clone boundary.
+   * base lookups are all accessible without a second RPC. The `paths`
+   * argument is the same object previously returned by this adaptor's
+   * `paths()` method; call {@link rehydrateGamePaths} on it if path
+   * manipulation is needed, as it has crossed a structured-clone
+   * boundary.
    *
    * Files that should not be deployed can be omitted from the output.
    * Adaptors that cannot handle the archive should throw; callers
@@ -53,8 +53,8 @@ export interface IGameInstallerService<T extends string = never> {
    * @example
    * ```ts
    * async install(
-   *   _context: StorePathSnapshot,
-   *   _paths: GamePaths<"saves">,
+   *   _context: StorePathProvider,
+   *   _paths: GamePaths<"game" | "saves">,
    *   files: readonly RelativePath[],
    * ): Promise<readonly InstallMapping<"saves">[]> {
    *   return files.map((source) => ({
@@ -66,8 +66,8 @@ export interface IGameInstallerService<T extends string = never> {
    * ```
    */
   install(
-    context: StorePathSnapshot,
-    paths: GamePaths<T>,
+    context: StorePathProvider,
+    paths: GamePaths<"game" | T>,
     files: readonly RelativePath[],
   ): Promise<readonly InstallMapping<T>[]>;
 }
@@ -125,7 +125,7 @@ export interface StopPattern<T extends string = never> {
   /** Glob pattern tested against archive file paths. */
   readonly match: string;
   /** Anchor key into the adaptor's {@link GamePaths}. */
-  readonly anchor: T | Base;
+  readonly anchor: "game" | T;
   /** Optional explicit destination template or function. */
   readonly destination?: string | ((ctx: DestinationContext) => string);
 }

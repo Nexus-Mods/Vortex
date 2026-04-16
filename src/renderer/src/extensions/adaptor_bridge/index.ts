@@ -69,7 +69,8 @@ interface GameInfo {
 /**
  * Opaque snapshot returned by `adaptors:build-snapshot`. The renderer
  * treats this as an opaque blob: it goes straight into `paths()` as
- * an argument, and the adaptor's own `createStorePathProvider` wraps it.
+ * an argument, and the worker dispatch layer wraps it into a
+ * `StorePathProvider` before the adaptor method is called.
  */
 type OpaqueStorePathSnapshot = unknown;
 

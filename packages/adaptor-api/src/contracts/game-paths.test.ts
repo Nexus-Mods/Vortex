@@ -1,34 +1,44 @@
 import { QualifiedPath } from "@vortex/fs";
 import { describe, expect, expectTypeOf, it } from "vitest";
 
-import type { StorePathSnapshot } from "../stores/providers.js";
+import type { StorePathProvider } from "../stores/providers.js";
 import type { GamePaths, IGamePathService } from "./game-paths.js";
 
-import { Base } from "../stores/providers.js";
 import { rehydrateGamePaths } from "./game-paths.js";
 
 describe("GamePaths<T>", () => {
-  it("allows the mandatory Base.Game key", () => {
-    expectTypeOf<GamePaths>().toMatchTypeOf<Map<Base, QualifiedPath>>();
+  it("produces the expected mapped-type shape for game-only", () => {
+    expectTypeOf<GamePaths<"game">>().toEqualTypeOf<{
+      game: QualifiedPath;
+    }>();
   });
 
   it("admits adaptor-declared keys via T", () => {
-    expectTypeOf<GamePaths<"saves" | "preferences">>().toMatchTypeOf<
-      Map<"saves" | "preferences" | Base, QualifiedPath>
-    >();
+    expectTypeOf<GamePaths<"game" | "saves" | "preferences">>().toEqualTypeOf<{
+      game: QualifiedPath;
+      saves: QualifiedPath;
+      preferences: QualifiedPath;
+    }>();
   });
 });
 
 describe("IGamePathService", () => {
-  it("exposes a paths method returning Promise<GamePaths>", () => {
-    expectTypeOf<
-      IGamePathService["paths"]
-    >().returns.resolves.toMatchTypeOf<GamePaths>();
+  it("always includes 'game' in the returned GamePaths", () => {
+    expectTypeOf<IGamePathService["paths"]>().returns.resolves.toMatchTypeOf<{
+      game: QualifiedPath;
+    }>();
   });
 
-  it("takes a single StorePathSnapshot argument", () => {
+  it("takes a single StorePathProvider argument", () => {
     expectTypeOf<IGamePathService["paths"]>().parameters.toEqualTypeOf<
-      [StorePathSnapshot]
+      [StorePathProvider]
+    >();
+  });
+
+  it("threads T into the return type alongside 'game'", () => {
+    type Svc = IGamePathService<"saves">;
+    expectTypeOf<Svc["paths"]>().returns.resolves.toEqualTypeOf<
+      GamePaths<"game" | "saves">
     >();
   });
 });
@@ -51,22 +61,22 @@ describe("rehydrateGamePaths", () => {
   it("reconstructs QualifiedPath instances from prototype-stripped data", () => {
     const game = QualifiedPath.parse("windows:///C/Games/Foo");
     const saves = QualifiedPath.parse("windows:///C/Users/me/Saved Games/Foo");
-    const stripped = new Map<Base | "saves", QualifiedPath>([
-      [Base.Game, stripPrototype(game)],
-      ["saves", stripPrototype(saves)],
-    ]);
-    expect(stripped.get(Base.Game)).not.toBeInstanceOf(QualifiedPath);
+    const stripped = {
+      game: stripPrototype(game),
+      saves: stripPrototype(saves),
+    } as GamePaths<"game" | "saves">;
+    expect(stripped.game).not.toBeInstanceOf(QualifiedPath);
 
-    const rehydrated = rehydrateGamePaths<"saves">(stripped);
-    expect(rehydrated.get(Base.Game)).toBeInstanceOf(QualifiedPath);
-    expect(rehydrated.get(Base.Game)?.value).toBe(game.value);
-    expect(rehydrated.get("saves")?.value).toBe(saves.value);
+    const rehydrated = rehydrateGamePaths(stripped);
+    expect(rehydrated.game).toBeInstanceOf(QualifiedPath);
+    expect(rehydrated.game.value).toBe(game.value);
+    expect(rehydrated.saves.value).toBe(saves.value);
   });
 
   it("passes through already-hydrated QualifiedPath values", () => {
     const game = QualifiedPath.parse("linux:///games/Foo");
-    const raw = new Map<Base, QualifiedPath>([[Base.Game, game]]);
+    const raw = { game } as GamePaths<"game">;
     const rehydrated = rehydrateGamePaths(raw);
-    expect(rehydrated.get(Base.Game)).toBe(game);
+    expect(rehydrated.game).toBe(game);
   });
 });

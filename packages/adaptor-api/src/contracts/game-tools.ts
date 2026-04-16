@@ -58,7 +58,7 @@ export interface GameToolsInfo {
  * for this adaptor.
  */
 export interface IGameToolsService<T extends string = never> {
-  getGameTools(paths: GamePaths<T>): Promise<GameToolsInfo>;
+  getGameTools(paths: GamePaths<"game" | T>): Promise<GameToolsInfo>;
 }
 
 // --- Shorthand input types ---

@@ -1,10 +1,12 @@
 import { PathProviderError, QualifiedPath } from "@vortex/fs";
 
-import type {
-  Base,
+import {
   OS,
-  StorePathProvider,
-  StorePathSnapshot,
+  type Base,
+  type LinuxStorePathProvider,
+  type StorePathProvider,
+  type StorePathSnapshot,
+  type WindowsStorePathProvider,
 } from "./providers";
 
 /**
@@ -15,11 +17,17 @@ import type {
  * values that crossed the wire, so this factory walks the nested map
  * and reparses each value into a real `QualifiedPath` instance.
  *
- * @public */
+ * Called by the worker dispatch layer before invoking adaptor methods;
+ * adaptors receive the resulting {@link StorePathProvider} directly.
+ *
+ * @internal */
 export function createStorePathProvider(
   snapshot: StorePathSnapshot,
 ): StorePathProvider {
-  const rebuilt = new Map<OS, Map<Base, QualifiedPath>>();
+  const rebuilt = new Map<
+    (typeof OS)[keyof typeof OS],
+    Map<Base, QualifiedPath>
+  >();
   for (const [os, bases] of snapshot.bases) {
     const inner = new Map<Base, QualifiedPath>();
     for (const [base, value] of bases) {
@@ -28,30 +36,46 @@ export function createStorePathProvider(
     rebuilt.set(os, inner);
   }
 
+  function fromBase(
+    base: Base,
+    os: (typeof OS)[keyof typeof OS] = snapshot.gameOS,
+  ): Promise<QualifiedPath> {
+    const forOS = rebuilt.get(os);
+    if (!forOS) {
+      return Promise.reject(
+        new PathProviderError(
+          `StorePathProvider has no bases resolved for OS "${os}"`,
+        ),
+      );
+    }
+    const resolved = forOS.get(base);
+    if (!resolved) {
+      return Promise.reject(
+        new PathProviderError(
+          `StorePathProvider has no "${base}" base for OS "${os}"`,
+        ),
+      );
+    }
+    return Promise.resolve(resolved);
+  }
+
+  if (snapshot.gameOS === OS.Windows) {
+    return {
+      store: snapshot.store,
+      baseOS: snapshot.baseOS,
+      gameOS: OS.Windows,
+      isWindows: true as const,
+      fromBase,
+    } as WindowsStorePathProvider;
+  }
+
   return {
     store: snapshot.store,
     baseOS: snapshot.baseOS,
-    gameOS: snapshot.gameOS,
-    fromBase(base: Base, os: OS = snapshot.gameOS): Promise<QualifiedPath> {
-      const forOS = rebuilt.get(os);
-      if (!forOS) {
-        return Promise.reject(
-          new PathProviderError(
-            `StorePathProvider has no bases resolved for OS "${os}"`,
-          ),
-        );
-      }
-      const resolved = forOS.get(base);
-      if (!resolved) {
-        return Promise.reject(
-          new PathProviderError(
-            `StorePathProvider has no "${base}" base for OS "${os}"`,
-          ),
-        );
-      }
-      return Promise.resolve(resolved);
-    },
-  };
+    gameOS: OS.Linux,
+    isWindows: false as const,
+    fromBase,
+  } as LinuxStorePathProvider;
 }
 
 /**

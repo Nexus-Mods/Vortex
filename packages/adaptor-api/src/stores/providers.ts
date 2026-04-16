@@ -56,16 +56,37 @@ export const Base = {
   XdgRuntime: "xdg.runtime",
 } as const;
 
-/** @public */
+/** Full union of all base directory names. @public */
 export type Base = (typeof Base)[keyof typeof Base];
 
+/** Bases present on all platforms. @public */
+export type CommonBase = typeof Base.Game | typeof Base.Home | typeof Base.Temp;
+
+/** Bases available when `gameOS` is Windows. @public */
+export type WindowsBase =
+  | CommonBase
+  | typeof Base.AppData
+  | typeof Base.Documents
+  | typeof Base.MyGames;
+
+/** Bases available when `gameOS` is Linux. @public */
+export type LinuxBase =
+  | CommonBase
+  | typeof Base.XdgCache
+  | typeof Base.XdgConfig
+  | typeof Base.XdgData
+  | typeof Base.XdgState
+  | typeof Base.XdgRuntime;
+
 /**
- * Pre-resolved per-discovery path snapshot handed to an adaptor's
- * {@link IGamePathService.paths} method.
+ * Pre-resolved per-discovery path snapshot. The host builds this and
+ * sends it over IPC; the worker dispatch layer wraps it into a
+ * {@link StorePathProvider} before calling adaptor methods.
  *
- * The host resolves every platform base up front so the adaptor can
- * build its {@link GamePaths} without any further cross-process calls.
- * @public */
+ * Adaptors should not depend on this type directly — use
+ * {@link StorePathProvider} instead.
+ *
+ * @internal */
 export interface StorePathSnapshot {
   readonly store: Store;
   /** Host OS the user is running on. */
@@ -87,20 +108,54 @@ export interface StorePathSnapshot {
 }
 
 /**
- * Adaptor-facing provider over a {@link StorePathSnapshot}.
+ * Provider for a game whose runtime OS is Windows.
  *
- * Built on the adaptor side via {@link createStorePathProvider} from the
- * snapshot the host sends over IPC. All lookups are local — no RPC
- * happens during path construction.
+ * After `if (provider.isWindows)`, TypeScript narrows to this type
+ * and `fromBase` only accepts {@link WindowsBase} keys.
  * @public */
-export interface StorePathProvider {
+export interface WindowsStorePathProvider {
   readonly store: Store;
   readonly baseOS: OS;
-  readonly gameOS: OS;
+  readonly gameOS: typeof OS.Windows;
+  readonly isWindows: true;
   /**
    * Resolve a known base. Defaults to {@link gameOS}; pass {@link baseOS}
    * (or any other {@link OS}) explicitly to get the host-side path.
    * @throws PathProviderError if the base is not known for the requested OS.
    */
-  fromBase(base: Base, os?: OS): Promise<QualifiedPath>;
+  fromBase(base: WindowsBase, os?: OS): Promise<QualifiedPath>;
 }
+
+/**
+ * Provider for a game whose runtime OS is Linux.
+ *
+ * After `if (!provider.isWindows)`, TypeScript narrows to this type
+ * and `fromBase` only accepts {@link LinuxBase} keys.
+ * @public */
+export interface LinuxStorePathProvider {
+  readonly store: Store;
+  readonly baseOS: OS;
+  readonly gameOS: typeof OS.Linux;
+  readonly isWindows: false;
+  /**
+   * Resolve a known base. Defaults to {@link gameOS}; pass {@link baseOS}
+   * (or any other {@link OS}) explicitly to get the host-side path.
+   * @throws PathProviderError if the base is not known for the requested OS.
+   */
+  fromBase(base: LinuxBase, os?: OS): Promise<QualifiedPath>;
+}
+
+/**
+ * Adaptor-facing provider over a {@link StorePathSnapshot}.
+ *
+ * Built by the worker dispatch layer from the snapshot the host sends
+ * over IPC. All lookups are local — no RPC happens during path
+ * construction.
+ *
+ * Use the `isWindows` discriminant to narrow the provider and get
+ * compile-time safety for OS-specific bases.
+ *
+ * @public */
+export type StorePathProvider =
+  | WindowsStorePathProvider
+  | LinuxStorePathProvider;

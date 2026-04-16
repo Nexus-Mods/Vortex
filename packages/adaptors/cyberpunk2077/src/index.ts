@@ -14,19 +14,12 @@ import type {
 import { rehydrateGamePaths } from "@vortex/adaptor-api/contracts/game-paths";
 import type { IGameToolsService } from "@vortex/adaptor-api/contracts/game-tools";
 import { gameTools } from "@vortex/adaptor-api/contracts/game-tools";
-import type {
-  StorePathProvider,
-  StorePathSnapshot,
-} from "@vortex/adaptor-api/stores/lib";
-import {
-  Base,
-  OS,
-  createStorePathProvider,
-} from "@vortex/adaptor-api/stores/lib";
-import type { QualifiedPath, RelativePath } from "@vortex/fs";
+import type { StorePathProvider } from "@vortex/adaptor-api/stores/lib";
+import { Base } from "@vortex/adaptor-api/stores/lib";
+import type { RelativePath } from "@vortex/fs";
 
 type CyberpunkExtras = "saves" | "preferences";
-type CyberpunkPaths = GamePaths<CyberpunkExtras>;
+type CyberpunkPaths = GamePaths<"game" | CyberpunkExtras>;
 
 const INFO = gameInfo({
   gameUri: "game:cyberpunk2077",
@@ -46,15 +39,13 @@ export class GameInfoService implements IGameInfoService {
 
 @provides("vortex:adaptor/cyberpunk2077/paths")
 export class GamePathService implements IGamePathService<CyberpunkExtras> {
-  async paths(snapshot: StorePathSnapshot): Promise<CyberpunkPaths> {
-    const provider: StorePathProvider = createStorePathProvider(snapshot);
-
+  async paths(provider: StorePathProvider): Promise<CyberpunkPaths> {
     // Cyberpunk 2077 has no native Linux build. On Linux hosts, the
     // only supported configuration is Proton, in which case gameOS is
     // Windows (the game thinks it's on Windows inside the Wine prefix).
     // A gameOS of Linux means the caller handed us a native Linux
     // discovery, which cannot exist for this title.
-    if (provider.gameOS !== OS.Windows) {
+    if (!provider.isWindows) {
       throw new Error(
         "Cyberpunk 2077 has no native Linux build; gameOS must be Windows (Proton)",
       );
@@ -70,27 +61,24 @@ export class GamePathService implements IGamePathService<CyberpunkExtras> {
       "Cyberpunk 2077",
     );
 
-    return new Map<Base | CyberpunkExtras, QualifiedPath>([
-      [Base.Game, game],
-      ["saves", saves],
-      ["preferences", preferences],
-    ]);
+    return { game, saves, preferences };
   }
 }
 
 @provides("vortex:adaptor/cyberpunk2077/tools")
 export class GameToolsService implements IGameToolsService<CyberpunkExtras> {
   getGameTools(paths: CyberpunkPaths) {
-    const rehydrated = rehydrateGamePaths<CyberpunkExtras>(paths);
-    const game = rehydrated.get(Base.Game);
-    if (!game) {
-      return Promise.reject(new Error("GamePaths missing 'game' entry"));
-    }
+    const rehydrated = rehydrateGamePaths(paths);
     const result = gameTools({
-      game: game.join("bin", "x64", "Cyberpunk2077.exe"),
+      game: rehydrated.game.join("bin", "x64", "Cyberpunk2077.exe"),
       tools: {
         redmod: {
-          executable: game.join("tools", "redmod", "bin", "redMod.exe"),
+          executable: rehydrated.game.join(
+            "tools",
+            "redmod",
+            "bin",
+            "redMod.exe",
+          ),
           name: "REDmod",
         },
       },
@@ -162,7 +150,7 @@ const CYBERPUNK_STOP_PATTERNS: readonly StopPattern<CyberpunkExtras>[] = [
 @provides("vortex:adaptor/cyberpunk2077/installer")
 export class GameInstallerService implements IGameInstallerService<CyberpunkExtras> {
   install(
-    _context: StorePathSnapshot,
+    _context: StorePathProvider,
     _paths: CyberpunkPaths,
     files: readonly RelativePath[],
   ): Promise<readonly InstallMapping<CyberpunkExtras>[]> {

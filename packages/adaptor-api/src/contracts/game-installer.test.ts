@@ -3,7 +3,7 @@ import type { RelativePath } from "@vortex/fs";
 import { relativePath } from "@vortex/fs";
 import { describe, expect, expectTypeOf, it } from "vitest";
 
-import type { StorePathSnapshot } from "../stores/providers.js";
+import type { StorePathProvider } from "../stores/providers.js";
 import type {
   IGameInstallerService,
   InstallMapping,
@@ -19,14 +19,16 @@ const rel = (...parts: string[]): readonly RelativePath[] =>
   parts.map((p) => relativePath(p));
 
 describe("InstallMapping<T>", () => {
-  it("accepts any Base as the anchor when T is empty", () => {
+  it("defaults to 'game' as the only anchor when T is empty", () => {
     const entry = {} as InstallMapping;
-    expectTypeOf(entry.anchor).toEqualTypeOf<Base>();
+    expectTypeOf(entry.anchor).toEqualTypeOf<"game">();
   });
 
   it("admits adaptor-declared anchor keys via T", () => {
     const entry = {} as InstallMapping<"saves" | "preferences">;
-    expectTypeOf(entry.anchor).toEqualTypeOf<"saves" | "preferences" | Base>();
+    expectTypeOf(entry.anchor).toEqualTypeOf<
+      "game" | "saves" | "preferences"
+    >();
   });
 
   it("types source and destination as RelativePath", () => {
@@ -39,7 +41,7 @@ describe("InstallMapping<T>", () => {
 describe("IGameInstallerService", () => {
   it("exposes an install method taking context, paths, files", () => {
     expectTypeOf<IGameInstallerService["install"]>().parameters.toEqualTypeOf<
-      [StorePathSnapshot, GamePaths, readonly RelativePath[]]
+      [StorePathProvider, GamePaths<"game">, readonly RelativePath[]]
     >();
   });
 
@@ -52,7 +54,7 @@ describe("IGameInstallerService", () => {
   it("threads T through to both paths and mappings", () => {
     type Svc = IGameInstallerService<"saves">;
     expectTypeOf<Svc["install"]>().parameters.toEqualTypeOf<
-      [StorePathSnapshot, GamePaths<"saves">, readonly RelativePath[]]
+      [StorePathProvider, GamePaths<"game" | "saves">, readonly RelativePath[]]
     >();
     expectTypeOf<Svc["install"]>().returns.resolves.toEqualTypeOf<
       readonly InstallMapping<"saves">[]
@@ -60,7 +62,7 @@ describe("IGameInstallerService", () => {
   });
 });
 
-describe("resolveStopPatterns — implicit destination", () => {
+describe("resolveStopPatterns -- implicit destination", () => {
   it("preserves the whole file path when no wrapper", () => {
     const patterns: StopPattern[] = [
       { match: "archive/pc/mod/*.archive", anchor: Base.Game },
@@ -108,7 +110,7 @@ describe("resolveStopPatterns — implicit destination", () => {
   });
 });
 
-describe("resolveStopPatterns — first match wins", () => {
+describe("resolveStopPatterns -- first match wins", () => {
   it("picks the earliest matching pattern even when a later one also matches", () => {
     // Both patterns match readme.md; "docs" comes first so it wins.
     const patterns: StopPattern<"docs">[] = [
@@ -138,7 +140,7 @@ describe("resolveStopPatterns — first match wins", () => {
   });
 });
 
-describe("resolveStopPatterns — unmatched files dropped", () => {
+describe("resolveStopPatterns -- unmatched files dropped", () => {
   it("silently omits files that match no pattern", () => {
     const patterns: StopPattern[] = [
       { match: "**/archive/pc/mod/*.archive", anchor: Base.Game },
@@ -148,7 +150,7 @@ describe("resolveStopPatterns — unmatched files dropped", () => {
   });
 });
 
-describe("resolveStopPatterns — explicit destination", () => {
+describe("resolveStopPatterns -- explicit destination", () => {
   it("interpolates template placeholders", () => {
     const patterns: StopPattern[] = [
       {
@@ -205,7 +207,7 @@ describe("resolveStopPatterns — explicit destination", () => {
   });
 });
 
-describe("resolveStopPatterns — brace alternation", () => {
+describe("resolveStopPatterns -- brace alternation", () => {
   it("matches either extension", () => {
     const patterns: StopPattern[] = [
       { match: "**/archive/pc/mod/*.{archive,xl}", anchor: Base.Game },

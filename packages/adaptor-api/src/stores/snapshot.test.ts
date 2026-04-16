@@ -1,7 +1,15 @@
 import { PathProviderError, QualifiedPath } from "@vortex/fs";
-import { describe, expect, it } from "vitest";
+import { describe, expect, expectTypeOf, it } from "vitest";
 
-import { Base, OS, Store, type StorePathSnapshot } from "./providers.js";
+import {
+  Base,
+  OS,
+  Store,
+  type LinuxStorePathProvider,
+  type StorePathProvider,
+  type StorePathSnapshot,
+  type WindowsStorePathProvider,
+} from "./providers.js";
 import { createStorePathProvider } from "./snapshot.js";
 
 function steamSnapshot(gameOS: OS = OS.Windows): StorePathSnapshot {
@@ -50,11 +58,12 @@ describe("createStorePathProvider", () => {
 
   it("rejects when the base is absent for the requested OS", async () => {
     const provider = createStorePathProvider(steamSnapshot());
-    await expect(provider.fromBase(Base.XdgData)).rejects.toBeInstanceOf(
-      PathProviderError,
-    );
+    // XdgData is a Linux base, not present under Windows gameOS
     await expect(
-      provider.fromBase(Base.Documents, OS.Linux),
+      provider.fromBase(Base.XdgData as never),
+    ).rejects.toBeInstanceOf(PathProviderError);
+    await expect(
+      provider.fromBase(Base.Documents as never, OS.Linux),
     ).rejects.toBeInstanceOf(PathProviderError);
   });
 
@@ -115,5 +124,30 @@ describe("createStorePathProvider", () => {
     const provider = createStorePathProvider(snapshot);
     const game = await provider.fromBase(Base.Game);
     expect(game).toBeInstanceOf(QualifiedPath);
+  });
+});
+
+describe("isWindows discriminant", () => {
+  it("returns isWindows: true when gameOS is Windows", () => {
+    const provider = createStorePathProvider(steamSnapshot(OS.Windows));
+    expect(provider.isWindows).toBe(true);
+    expect(provider.gameOS).toBe(OS.Windows);
+  });
+
+  it("returns isWindows: false when gameOS is Linux", () => {
+    const provider = createStorePathProvider(steamSnapshot(OS.Linux));
+    expect(provider.isWindows).toBe(false);
+    expect(provider.gameOS).toBe(OS.Linux);
+  });
+
+  it("narrows to WindowsStorePathProvider when isWindows is checked", () => {
+    const provider: StorePathProvider = createStorePathProvider(
+      steamSnapshot(OS.Windows),
+    );
+    if (provider.isWindows) {
+      expectTypeOf(provider).toEqualTypeOf<WindowsStorePathProvider>();
+    } else {
+      expectTypeOf(provider).toEqualTypeOf<LinuxStorePathProvider>();
+    }
   });
 });
