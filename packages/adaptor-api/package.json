@@ -33,6 +33,11 @@
       "import": "./dist/contracts/game-info.js",
       "require": "./dist/contracts/game-info.cjs"
     },
+    "./contracts/game-installer": {
+      "development": "./src/contracts/game-installer.ts",
+      "import": "./dist/contracts/game-installer.js",
+      "require": "./dist/contracts/game-installer.cjs"
+    },
     "./contracts/game-paths": {
       "development": "./src/contracts/game-paths.ts",
       "import": "./dist/contracts/game-paths.js",
@@ -43,6 +48,11 @@
       "import": "./dist/contracts/game-tools.js",
       "require": "./dist/contracts/game-tools.cjs"
     },
+    "./contracts/glob": {
+      "development": "./src/contracts/glob.ts",
+      "import": "./dist/contracts/glob.js",
+      "require": "./dist/contracts/glob.cjs"
+    },
     "./contracts/ping": {
       "development": "./src/contracts/ping.ts",
       "import": "./dist/contracts/ping.js",
@@ -52,6 +62,11 @@
       "development": "./src/plugin.ts",
       "import": "./dist/plugin.js",
       "require": "./dist/plugin.cjs"
+    },
+    "./stores/lib": {
+      "development": "./src/stores/lib.ts",
+      "import": "./dist/stores/lib.js",
+      "require": "./dist/stores/lib.cjs"
     },
     "./package.json": "./package.json"
   },
@@ -65,6 +80,10 @@
         "import": "./dist/contracts/game-info.js",
         "require": "./dist/contracts/game-info.cjs"
       },
+      "./contracts/game-installer": {
+        "import": "./dist/contracts/game-installer.js",
+        "require": "./dist/contracts/game-installer.cjs"
+      },
       "./contracts/game-paths": {
         "import": "./dist/contracts/game-paths.js",
         "require": "./dist/contracts/game-paths.cjs"
@@ -73,6 +92,10 @@
         "import": "./dist/contracts/game-tools.js",
         "require": "./dist/contracts/game-tools.cjs"
       },
+      "./contracts/glob": {
+        "import": "./dist/contracts/glob.js",
+        "require": "./dist/contracts/glob.cjs"
+      },
       "./contracts/ping": {
         "import": "./dist/contracts/ping.js",
         "require": "./dist/contracts/ping.cjs"
@@ -80,6 +103,10 @@
       "./plugin": {
         "import": "./dist/plugin.js",
         "require": "./dist/plugin.cjs"
+      },
+      "./stores/lib": {
+        "import": "./dist/stores/lib.js",
+        "require": "./dist/stores/lib.cjs"
       },
       "./package.json": "./package.json"
     }

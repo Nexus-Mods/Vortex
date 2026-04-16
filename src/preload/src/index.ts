@@ -86,6 +86,8 @@ try {
           method,
           args,
         ),
+      buildSnapshot: (store: string, gamePath: string) =>
+        betterIpcRenderer.invoke("adaptors:build-snapshot", store, gamePath),
     },
 
     updater: {

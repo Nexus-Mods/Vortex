@@ -27,6 +27,7 @@ export type {
   PathResolver,
   OSPathProvider,
   OSPathBase,
+  RelativePath,
 } from "./paths";
 
 export {
@@ -35,6 +36,8 @@ export {
   OSPath,
   PathProviderError,
   PathResolverError,
+  RelativePathError,
+  relativePath,
 } from "./paths";
 
 export { XDG } from "./paths.linux";

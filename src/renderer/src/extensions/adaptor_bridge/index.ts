@@ -24,18 +24,18 @@
  * The resolution chain is:
  *   IGameInfoService → called eagerly (needed for registerGame)
  *   IGamePathService → called on first discovery (setup callback)
- *   IGameToolsService → called after paths resolve (needs GameFolderMap)
+ *   IGameToolsService → called after paths resolve (needs GamePaths)
  *
  * ## Integration points
  *
  * - Store IDs → queryArgs for GameStoreHelper discovery
- * - GameFolderMap → tool executable paths
+ * - GamePaths → tool executable paths
  * - Tools → supportedTools array on the IGame object
  */
 
-import type { IExtensionContext } from "../../types/IExtensionContext";
-
 import Bluebird from "bluebird"; // Used for setup callback return type
+
+import type { IExtensionContext } from "../../types/IExtensionContext";
 
 import { log } from "../../util/log";
 
@@ -43,8 +43,9 @@ import { log } from "../../util/log";
 // Type definitions for adaptor IPC responses
 //
 // These mirror the adaptor contract types but use plain objects instead of
-// class instances (QualifiedPath is serialized to { value, scheme, path }
-// when crossing the IPC boundary).
+// class instances (QualifiedPath is structured-cloned into a plain object
+// when crossing the IPC boundary). The bridge forwards these blobs back
+// into the adaptor untouched; only the adaptor rebuilds QualifiedPaths.
 // ---------------------------------------------------------------------------
 
 interface AdaptorEntry {
@@ -65,10 +66,21 @@ interface GameInfo {
   nexusMods?: Array<{ domain: string; name?: string }>;
 }
 
-/** Serialized QualifiedPath objects become plain objects over IPC. */
-interface GameFolderMap {
-  [key: string]: { value: string; scheme: string; path: string };
-}
+/**
+ * Opaque snapshot returned by `adaptors:build-snapshot`. The renderer
+ * treats this as an opaque blob: it goes straight into `paths()` as
+ * an argument, and the worker dispatch layer wraps it into a
+ * `StorePathProvider` before the adaptor method is called.
+ */
+type OpaqueStorePathSnapshot = unknown;
+
+/**
+ * Opaque `GamePaths` blob returned by `IGamePathService.paths`. The
+ * renderer forwards it into `getGameTools` without inspecting it; the
+ * receiving adaptor calls `rehydrateGamePaths` to turn it back into a
+ * Map of real QualifiedPaths.
+ */
+type OpaqueGamePaths = unknown;
 
 interface GameExecutable {
   executable: { value: string; path: string };
@@ -93,6 +105,75 @@ interface ToolEntry {
 interface GameToolsInfo {
   game: GameExecutable;
   tools?: Record<string, ToolEntry>;
+}
+
+/**
+ * Serialized form of `InstallMapping<T>` from `IGameInstallerService`.
+ * `anchor` is left as `string` here because the bridge is agnostic to
+ * the adaptor's extra-key space `T`. Only consumers that know the
+ * adaptor's type parameter can narrow it further.
+ */
+export interface InstallMapping {
+  source: string;
+  anchor: string;
+  destination: string;
+}
+
+type InstallerDispatch = (
+  files: readonly string[],
+) => Promise<readonly InstallMapping[]>;
+
+/**
+ * Registry of per-game mod-installer dispatch functions, populated as
+ * adaptors are discovered and their `setup()` callback runs. Keyed by
+ * game ID. Reads the same cached paths + snapshot the bridge already
+ * tracks, so callers outside the bridge (e.g. a future InstallManager
+ * integration) don't need to re-resolve them. The registry itself is
+ * module-private; consumers go through the exported accessors below.
+ */
+const installerRegistry = new Map<string, InstallerDispatch>();
+
+/** Returns the installer dispatch for a game, or `undefined`. */
+export function getAdaptorInstaller(
+  gameId: string,
+): InstallerDispatch | undefined {
+  return installerRegistry.get(gameId);
+}
+
+/** Returns the set of game IDs that currently have an adaptor installer. */
+export function adaptorInstallerGameIds(): readonly string[] {
+  return [...installerRegistry.keys()];
+}
+
+/**
+ * Validates that an adaptor's `install()` reply matches the
+ * {@link InstallMapping} shape before we hand it to any consumer.
+ * A misbehaving adaptor shouldn't be able to surface as a crash in
+ * downstream code that trusted the cast.
+ */
+function assertInstallMappings(
+  value: unknown,
+  adaptorName: string,
+): readonly InstallMapping[] {
+  if (!Array.isArray(value)) {
+    throw new Error(
+      `[adaptor-bridge] ${adaptorName}: installer returned non-array`,
+    );
+  }
+  for (const entry of value) {
+    if (
+      typeof entry !== "object" ||
+      entry === null ||
+      typeof (entry as { source?: unknown }).source !== "string" ||
+      typeof (entry as { anchor?: unknown }).anchor !== "string" ||
+      typeof (entry as { destination?: unknown }).destination !== "string"
+    ) {
+      throw new Error(
+        `[adaptor-bridge] ${adaptorName}: installer returned malformed mapping`,
+      );
+    }
+  }
+  return value as readonly InstallMapping[];
 }
 
 // ---------------------------------------------------------------------------
@@ -183,17 +264,14 @@ async function registerAdaptor(
   const infoUri = provides.find((u) => u.endsWith("/info"));
   const pathsUri = provides.find((u) => u.endsWith("/paths"));
   const toolsUri = provides.find((u) => u.endsWith("/tools"));
+  const installerUri = provides.find((u) => u.endsWith("/installer"));
 
   // An adaptor must at least provide game info to be a game adaptor
   if (!infoUri) return;
 
   // Fetch game info eagerly — we need the game ID and store IDs
   // for registerGame which must happen synchronously during init
-  const info = (await callAdaptor(
-    name,
-    infoUri,
-    "getGameInfo",
-  )) as GameInfo;
+  const info = (await callAdaptor(name, infoUri, "getGameInfo")) as GameInfo;
 
   const gameId = gameIdFromUri(info.gameUri);
 
@@ -204,35 +282,91 @@ async function registerAdaptor(
 
   // --- Lazy resolution closures ---
   // These cache the results of adaptor service calls so we only
-  // cross the IPC boundary once per service per session.
+  // cross the IPC boundary once per service per session. They get
+  // reset at the top of setup() to handle re-discovery.
 
-  let cachedFolders: GameFolderMap | null = null;
+  let pathsResolved = false;
+  let cachedSnapshot: OpaqueStorePathSnapshot | null = null;
+  let cachedPaths: OpaqueGamePaths | null = null;
   let cachedTools: GameToolsInfo | null = null;
 
-  /** Resolves game folder paths. Called once after discovery. */
-  async function getFolders(
-    store: string,
-    gamePath: string,
-  ): Promise<GameFolderMap> {
-    if (!cachedFolders && pathsUri) {
-      cachedFolders = (await callAdaptor(name, pathsUri, "resolveGameFolders", [
-        store,
-        gamePath,
-      ])) as GameFolderMap;
-    }
-    return cachedFolders ?? {};
+  // An adaptor with a tools service but no paths service is a manifest
+  // error: getGameTools takes a GamePaths argument, and we have nothing
+  // sensible to pass. Skip tools registration in that case rather than
+  // invoking the adaptor with `null`.
+  if (toolsUri && !pathsUri) {
+    log(
+      "warn",
+      "[adaptor-bridge] Adaptor {{name}} provides tools but no paths service; tools will be ignored",
+      { name },
+    );
   }
 
-  /** Resolves game tools. Depends on folders being resolved first. */
+  // Same invariant for the installer service: install() takes the
+  // GamePaths returned by paths(), so a manifest without a paths URI
+  // has nothing to feed it.
+  if (installerUri && !pathsUri) {
+    log(
+      "warn",
+      "[adaptor-bridge] Adaptor {{name}} provides installer but no paths service; installer will be ignored",
+      { name },
+    );
+  }
+
+  /** Resolves game paths. Called once after discovery. */
+  async function getPaths(
+    store: string,
+    gamePath: string,
+  ): Promise<OpaqueGamePaths | null> {
+    if (!pathsResolved && pathsUri) {
+      cachedSnapshot = await window.api.adaptors.buildSnapshot(store, gamePath);
+      cachedPaths = await callAdaptor(name, pathsUri, "paths", [
+        cachedSnapshot,
+      ]);
+      pathsResolved = true;
+    }
+    return cachedPaths;
+  }
+
+  /**
+   * Resolves game tools. Requires paths to have resolved first. Returns
+   * `null` if the adaptor provides no tools service or if paths were
+   * unavailable (we never call `getGameTools` with a `null` paths arg).
+   */
   async function getTools(
-    folders: GameFolderMap,
+    paths: OpaqueGamePaths | null,
   ): Promise<GameToolsInfo | null> {
-    if (!cachedTools && toolsUri) {
+    if (!toolsUri || paths === null) return null;
+    if (!cachedTools) {
       cachedTools = (await callAdaptor(name, toolsUri, "getGameTools", [
-        folders,
+        paths,
       ])) as GameToolsInfo;
     }
     return cachedTools;
+  }
+
+  /**
+   * Dispatches the per-archive installer call to the adaptor. Must be
+   * called after paths have resolved, so the installer can be fed the
+   * same snapshot (the shared context) and the resolved GamePaths blob,
+   * both forwarded opaquely. Returns an empty array when the adaptor
+   * does not declare an installer service.
+   */
+  async function invokeInstaller(
+    files: readonly string[],
+  ): Promise<readonly InstallMapping[]> {
+    if (!installerUri || !pathsUri) return [];
+    if (!cachedSnapshot || !cachedPaths) {
+      throw new Error(
+        `[adaptor-bridge] ${name}: installer called before paths resolved`,
+      );
+    }
+    const raw = await callAdaptor(name, installerUri, "install", [
+      cachedSnapshot,
+      cachedPaths,
+      files,
+    ]);
+    return assertInstallMappings(raw, name);
   }
 
   // The supportedTools array is passed by reference to registerGame and
@@ -264,9 +398,9 @@ async function registerAdaptor(
   context.registerGame({
     id: gameId,
     name: info.displayName,
-    logo: "",              // TODO: adaptor-provided logo
+    logo: "", // TODO: adaptor-provided logo
     executable: () => ".", // Placeholder — updated in setup after tools resolve
-    requiredFiles: [],     // Adaptors don't use file-based discovery
+    requiredFiles: [], // Adaptors don't use file-based discovery
     mergeMods: true,
     queryModPath: () => ".", // Actual paths come from mod type registrations
     queryArgs: buildQueryArgs(info), // Enables GameStoreHelper discovery
@@ -279,48 +413,69 @@ async function registerAdaptor(
      * This is where we lazily resolve all adaptor services, because now we
      * have a concrete install path and store to work with.
      *
-     * Resolution chain: paths → tools + mod types (both need folders)
+     * Resolution chain: paths → tools + mod types (both need paths)
      */
-    setup: (discovery) => Bluebird.resolve((async () => {
-      const store = discovery.store ?? "unknown";
-      const gamePath = discovery.path;
-      if (!gamePath) {
-        log("warn", `[adaptor-bridge] No discovery path for ${name}, skipping setup`);
-        return;
-      }
+    setup: (discovery) =>
+      Bluebird.resolve(
+        (async () => {
+          // Invalidate caches on re-discovery (install moved, different store).
+          pathsResolved = false;
+          cachedSnapshot = null;
+          cachedPaths = null;
+          cachedTools = null;
+          installerRegistry.delete(gameId);
 
-      // Step 1: Resolve folder paths (install, saves, config, etc.)
-      const folders = await getFolders(store, gamePath);
+          const store = discovery.store ?? "unknown";
+          const gamePath = discovery.path;
+          if (!gamePath) {
+            log(
+              "warn",
+              `[adaptor-bridge] No discovery path for ${name}, skipping setup`,
+            );
+            return;
+          }
 
-      // Step 2: Resolve tools (depends on folders)
-      const tools = await getTools(folders);
+          // Step 1: Resolve folder paths (game, saves, preferences, etc.)
+          const paths = await getPaths(store, gamePath);
 
-      // Step 3: Wire the game executable from the tools service
-      if (tools) {
-        discovery.executable = tools.game.executable.path;
-      }
+          // Step 2: Resolve tools (depends on paths)
+          const tools = await getTools(paths);
 
-      // Step 4: Populate supported tools
-      if (tools?.tools) {
-        for (const [toolId, tool] of Object.entries(tools.tools)) {
-          supportedTools.push({
-            id: `${gameId}-${toolId}`,
-            name: tool.name,
-            shortName: tool.shortName,
-            executable: () => tool.executable.path,
-            requiredFiles: (tool.requiredFiles ?? []).map((f) => f.path),
-            parameters: tool.parameters,
-            environment: tool.environment,
-            exclusive: tool.exclusive,
-            defaultPrimary: tool.defaultPrimary,
-            shell: tool.shell,
-            detach: tool.detach,
-            onStart: tool.onStart,
-            relative: true, // Always relative to game folder
-          });
-        }
-      }
-    })()),
+          // Step 3: Wire the game executable from the tools service
+          if (tools) {
+            discovery.executable = tools.game.executable.path;
+          }
+
+          // Step 4: Populate supported tools
+          if (tools?.tools) {
+            for (const [toolId, tool] of Object.entries(tools.tools)) {
+              supportedTools.push({
+                id: `${gameId}-${toolId}`,
+                name: tool.name,
+                shortName: tool.shortName,
+                executable: () => tool.executable.path,
+                requiredFiles: (tool.requiredFiles ?? []).map((f) => f.path),
+                parameters: tool.parameters,
+                environment: tool.environment,
+                exclusive: tool.exclusive,
+                defaultPrimary: tool.defaultPrimary,
+                shell: tool.shell,
+                detach: tool.detach,
+                onStart: tool.onStart,
+                relative: true, // Always relative to game folder
+              });
+            }
+          }
+
+          // Step 5: Expose the installer dispatch so later callers
+          // (e.g. InstallManager integration, in a follow-up PR) can
+          // route archive contents through the adaptor. Only registered
+          // when the adaptor declares both /paths and /installer URIs.
+          if (installerUri && pathsUri && paths !== null) {
+            installerRegistry.set(gameId, invokeInstaller);
+          }
+        })(),
+      ),
   });
 }
 
