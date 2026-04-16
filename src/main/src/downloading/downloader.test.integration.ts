@@ -861,11 +861,10 @@ describe("download", () => {
       await using tmp = await makeTmpDir();
       const resolver: Resolver<URL> = (url) =>
         Promise.resolve({ url, headers: { Referer: "https://example.com" } });
-      await download(
-        route.url,
-        path.join(tmp.dir, "output"),
-        { resolver, chunker: staticChunker() },
-      );
+      await download(route.url, path.join(tmp.dir, "output"), {
+        resolver,
+        chunker: staticChunker(),
+      });
       const head = route.requests.find((r) => r.method === "HEAD");
       expect(head?.headers["referer"]).toBe("https://example.com");
     });
@@ -877,11 +876,10 @@ describe("download", () => {
       await using tmp = await makeTmpDir();
       const resolver: Resolver<URL> = (url) =>
         Promise.resolve({ url, headers: { Referer: "https://example.com" } });
-      await download(
-        route.url,
-        path.join(tmp.dir, "output"),
-        { resolver, chunker: staticChunker() },
-      );
+      await download(route.url, path.join(tmp.dir, "output"), {
+        resolver,
+        chunker: staticChunker(),
+      });
       const get = route.requests.find((r) => r.method === "GET");
       expect(get?.headers["referer"]).toBe("https://example.com");
     });
@@ -892,7 +890,10 @@ describe("download", () => {
       );
       await using tmp = await makeTmpDir();
       const resolver: Resolver<URL> = (url) =>
-        Promise.resolve({ url, headers: { "User-Agent": "ResolverAgent/2.0" } });
+        Promise.resolve({
+          url,
+          headers: { "User-Agent": "ResolverAgent/2.0" },
+        });
       await download(
         route.url,
         path.join(tmp.dir, "output"),

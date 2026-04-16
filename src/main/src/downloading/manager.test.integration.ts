@@ -205,9 +205,15 @@ describe("DownloadManager", () => {
 
       await waitForFile(dest);
 
-      const checkpoint = await handle.pause();
+      const pauseResult = await handle.pause();
+      expect(pauseResult.status).toBe("paused");
+      if (pauseResult.status !== "paused") throw new Error("expected paused");
 
-      const resumed = manager.resume(checkpoint, urlResolver, staticChunker());
+      const resumed = manager.resume(
+        pauseResult.checkpoint,
+        urlResolver,
+        staticChunker(),
+      );
       await resumed.promise;
 
       const result = await readFile(dest);
@@ -255,9 +261,15 @@ describe("DownloadManager", () => {
 
       await waitForFile(dest);
 
-      const checkpoint = await handle.pause();
+      const pauseResult = await handle.pause();
+      expect(pauseResult.status).toBe("paused");
+      if (pauseResult.status !== "paused") throw new Error("expected paused");
 
-      const resumed = manager.resume(checkpoint, urlResolver, staticChunker());
+      const resumed = manager.resume(
+        pauseResult.checkpoint,
+        urlResolver,
+        staticChunker(),
+      );
       await resumed.pause();
 
       expect(manager.numRunning).toBe(0);
@@ -300,10 +312,12 @@ describe("DownloadManager", () => {
       const dest = path.join(tmp.dir, "output");
       const handle = manager.download(route.url, dest, urlResolver);
 
-      const checkpoint = await handle.pause();
+      const pauseResult = await handle.pause();
+      expect(pauseResult.status).toBe("paused");
+      if (pauseResult.status !== "paused") throw new Error("expected paused");
 
-      expect(checkpoint.resource).toBe(route.url);
-      expect(checkpoint.dest).toBe(dest);
+      expect(pauseResult.checkpoint.resource).toBe(route.url);
+      expect(pauseResult.checkpoint.dest).toBe(dest);
     });
 
     it("returns completedRanges covering [0, bytesWritten) for a non-chunked download paused mid-transfer", async () => {
@@ -332,10 +346,13 @@ describe("DownloadManager", () => {
         },
         { timeout: 10_000, interval: 50 },
       );
-      const checkpoint = await handle.pause();
+      const pauseResult = await handle.pause();
+      expect(pauseResult.status).toBe("paused");
+      if (pauseResult.status !== "paused") throw new Error("expected paused");
 
-      if (checkpoint.completedRanges.length > 0) {
-        const [range] = checkpoint.completedRanges;
+      const completedRanges = pauseResult.checkpoint.completedRanges;
+      if (completedRanges.length > 0) {
+        const [range] = completedRanges;
         expect(range.start).toBe(0);
         expect(range.end).toBeGreaterThan(0);
         expect(range.end).toBeLessThanOrEqual(LARGE_FILE.length);
@@ -358,9 +375,11 @@ describe("DownloadManager", () => {
         urlResolver,
       );
 
-      const checkpoint = await handle.pause();
+      const pauseResult = await handle.pause();
+      expect(pauseResult.status).toBe("paused");
+      if (pauseResult.status !== "paused") throw new Error("expected paused");
 
-      for (const range of checkpoint.completedRanges) {
+      for (const range of pauseResult.checkpoint.completedRanges) {
         expect(range.start).toBeGreaterThanOrEqual(0);
         expect(range.end).toBeGreaterThan(range.start);
         expect(range.end).toBeLessThanOrEqual(LARGE_FILE.length);
@@ -398,8 +417,8 @@ describe("DownloadManager", () => {
       // handle is still pending in the queue
       expect(manager.numPending).toBe(1);
 
-      const checkpoint = await handle.pause();
-      expect(checkpoint.completedRanges).toEqual([]);
+      const pauseResult = await handle.pause();
+      expect(pauseResult.status).toBe("queued");
     });
 
     it("does not throw when pause is called after the download has already completed", async () => {

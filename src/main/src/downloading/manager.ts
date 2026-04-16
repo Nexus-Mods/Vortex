@@ -1,5 +1,3 @@
-import { randomUUID } from "node:crypto";
-
 import type {
   ByteRange,
   Chunker,
@@ -12,29 +10,49 @@ import type { CookieJar } from "tough-cookie";
 import { staticChunker } from "@vortex/shared/download";
 import { DownloadError } from "@vortex/shared/errors";
 import { RateLimiter } from "limiter";
+import { randomUUID } from "node:crypto";
 import PQueue from "p-queue";
 
 import type { TimeoutOptions } from "./downloader";
+import type { DownloadStatus } from "./progress";
 
 import { download } from "./downloader";
 import { ProgressReporter } from "./progress";
 import { defaultRetryStrategy } from "./retry";
 
+export type DownloadState = DownloadProgress & { status: DownloadStatus };
+
+export type PauseResult<T = unknown> =
+  | (DownloadState & { status: "paused"; checkpoint: DownloadCheckpoint<T> })
+  | (DownloadState & {
+      status: Exclude<DownloadStatus, "paused">;
+    });
+
 export type DownloadHandle<T = unknown> = {
   /** Globally unique identifier for this download. */
   readonly downloadId: string;
 
-  /** The promise resolves when the download completes */
+  /** The promise resolves when the download completes. */
   readonly promise: Promise<void>;
 
   /** Returns the current download progress. */
   getProgress: () => DownloadProgress;
 
-  /** Cancels the download. */
-  cancel: () => void;
+  /** Returns the current download status. */
+  getStatus: () => DownloadStatus;
 
-  /** Pauses the download. */
-  pause: () => Promise<DownloadCheckpoint<T>>;
+  /**
+   * Cancels the download if it is running. Returns the resulting state.
+   * If the download is not running, returns the current state unchanged.
+   */
+  cancel: () => DownloadState;
+
+  /**
+   * Pauses the download if it is running. Returns the resulting state with
+   * a checkpoint for later resumption. If the download is not running,
+   * returns the current state with `checkpoint: null`.
+   */
+  pause: () => Promise<PauseResult<T>>;
 };
 
 export const defaultTimeout: () => TimeoutOptions = () => ({
@@ -108,30 +126,44 @@ export class DownloadManager {
     return this.#downloadQueue.runningTasks.length;
   }
 
-  /** Returns the handle for an active download, or `undefined` if unknown. */
+  /**
+   * Returns the handle for a tracked download, or `undefined` if the
+   * `downloadId` has never been seen by this manager.
+   */
   get(downloadId: string): DownloadHandle | undefined {
     return this.#downloads.get(downloadId);
   }
 
-  /** Cancels an active download. No-op if the `downloadId` is unknown. */
-  cancel(downloadId: string): void {
-    this.#downloads.get(downloadId)?.cancel();
+  /**
+   * Returns a snapshot of the current state for a tracked download, or
+   * `undefined` if the `downloadId` has never been seen by this manager.
+   */
+  getState(downloadId: string): DownloadState | undefined {
+    const handle = this.#downloads.get(downloadId);
+    if (handle === undefined) return undefined;
+    return { ...handle.getProgress(), status: handle.getStatus() };
   }
 
-  /** Pauses an active download and returns a checkpoint. Throws if the `downloadId` is unknown. */
-  pause(downloadId: string): Promise<DownloadCheckpoint> {
+  /**
+   * Cancels a download if it is running. Returns the resulting state.
+   * Throws if the `downloadId` is unknown.
+   */
+  cancel(downloadId: string): DownloadState {
+    const handle = this.#downloads.get(downloadId);
+    if (handle === undefined)
+      throw new Error(`Unknown download: ${downloadId}`);
+    return handle.cancel();
+  }
+
+  /**
+   * Pauses a download if it is running. Returns the resulting state with a
+   * checkpoint for later resumption. Throws if the `downloadId` is unknown.
+   */
+  pause(downloadId: string): Promise<PauseResult<unknown>> {
     const handle = this.#downloads.get(downloadId);
     if (handle === undefined)
       throw new Error(`Unknown download: ${downloadId}`);
     return handle.pause();
-  }
-
-  /** Returns the current progress of an active download. Throws if the `downloadId` is unknown. */
-  getProgress(downloadId: string): DownloadProgress {
-    const handle = this.#downloads.get(downloadId);
-    if (handle === undefined)
-      throw new Error(`Unknown download: ${downloadId}`);
-    return handle.getProgress();
   }
 
   resume<T>(
@@ -173,8 +205,9 @@ export class DownloadManager {
     const progressReporter = new ProgressReporter();
     const abortController = new AbortController();
 
-    const rawPromise = this.#downloadQueue.add(() =>
-      download(
+    const rawPromise = this.#downloadQueue.add(() => {
+      progressReporter.status = "running";
+      return download(
         resource,
         dest,
         {
@@ -191,27 +224,33 @@ export class DownloadManager {
           timeout: this.#timeout,
           userAgent: this.#userAgent,
         },
-      ),
-    );
+      );
+    });
 
     // Swallow all rejections on one fork so that pause()/cancel() flows
     // never surface as unhandled rejections.
     const settled = rawPromise.catch(() => {});
 
-    // The consumer-facing promise. We silently swallow cancellation
-    // rejections so that tests (and callers) that only await pause()
-    // without also awaiting handle.promise don't trigger unhandled
-    // rejection warnings.  Non-cancellation errors still reject.
+    // The consumer-facing promise. Cancellation rejections are swallowed so
+    // that callers awaiting only pause() don't see unhandled rejections.
+    // Non-cancellation errors still reject.
     const promise = rawPromise.catch((err) => {
       if (err instanceof DownloadError && err.code === "cancellation") return;
       throw err;
     });
 
-    const pause = async (): Promise<DownloadCheckpoint<T>> => {
-      abortController.abort();
-      // Wait for the download to fully settle (settled never rejects).
-      await settled;
+    const cancel = (): DownloadState => {
+      if (progressReporter.status === "running") {
+        progressReporter.status = "canceled";
+        abortController.abort();
+      }
+      return {
+        ...progressReporter.getProgress(),
+        status: progressReporter.status,
+      };
+    };
 
+    const buildCheckpoint = (): DownloadCheckpoint<T> => {
       const progress = progressReporter.getProgress();
       let completedRanges: ByteRange[] = [];
 
@@ -223,12 +262,7 @@ export class DownloadManager {
           })
           .map((c) => c.chunkRange);
       } else if (progress.bytesWritten > 0) {
-        completedRanges = [
-          {
-            start: 0,
-            end: progress.bytesWritten,
-          },
-        ];
+        completedRanges = [{ start: 0, end: progress.bytesWritten }];
       }
 
       return {
@@ -240,18 +274,61 @@ export class DownloadManager {
       };
     };
 
+    const pause = async (): Promise<PauseResult<T>> => {
+      if (progressReporter.status === "paused") {
+        return {
+          ...progressReporter.getProgress(),
+          status: "paused",
+          checkpoint: buildCheckpoint(),
+        };
+      }
+
+      if (progressReporter.status !== "running") {
+        return {
+          ...progressReporter.getProgress(),
+          status: progressReporter.status,
+        };
+      }
+
+      progressReporter.status = "paused";
+      abortController.abort();
+      // Wait for the download to fully settle (settled never rejects).
+      await settled;
+
+      return {
+        ...progressReporter.getProgress(),
+        status: "paused",
+        checkpoint: buildCheckpoint(),
+      };
+    };
+
     const handle: DownloadHandle<T> = {
       downloadId,
       promise,
       getProgress: () => progressReporter.getProgress(),
-      cancel: () => abortController.abort(),
+      getStatus: () => progressReporter.status,
+      cancel,
       pause,
     };
 
     this.#downloads.set(downloadId, handle);
-    void settled.then(() => {
-      this.#downloads.delete(downloadId);
-    });
+
+    // Handle terminal status transitions not covered by cancel() or pause().
+    // Only updates status if it is still "running" — explicit control operations
+    // (cancel/pause) set status synchronously before aborting, so they take
+    // precedence.
+    void rawPromise.then(
+      () => {
+        progressReporter.status = "completed";
+      },
+      (err) => {
+        if (progressReporter.status !== "running") return;
+        progressReporter.status =
+          err instanceof DownloadError && err.code === "cancellation"
+            ? "canceled"
+            : "failed";
+      },
+    );
 
     return handle;
   }
