@@ -36,6 +36,7 @@
 import Bluebird from "bluebird"; // Used for setup callback return type
 
 import type { IExtensionContext } from "../../types/IExtensionContext";
+import type { IInstruction } from "../../extensions/mod_management/types/IInstallResult";
 
 import { log } from "../../util/log";
 
@@ -209,6 +210,15 @@ interface SerializedQP {
  * Converts a serialized QualifiedPath's URI-style `.path` component to a
  * native filesystem path. Windows paths are encoded as `/C/Users/foo` in
  * the QP and need to become `C:\Users\foo`; Linux paths are already native.
+ *
+ * NOTE: paths that don't match the `/X/...` drive-letter pattern (e.g. UNC
+ * paths or bare relative segments) fall through to a simple slash-flip.
+ * This is intentional — QualifiedPath always produces the `/X/...` form
+ * for local drives, so the fallback is a defensive catch-all rather than
+ * an expected code path.
+ *
+ * TODO: replace with `resolveAbsolutePath` from `@vortex/fs` once the
+ * browser-side path resolver lands.
  */
 function qpPathToNative(qp: SerializedQP): string {
   if (qp.scheme === "windows") {
@@ -494,17 +504,31 @@ async function registerAdaptor(
           // deployment system knows where to route files that target
           // saves, preferences, or other adaptor-declared directories.
           if (paths !== null) {
-            const pathEntries = paths as Record<string, SerializedQP>;
-            for (const [anchor, qp] of Object.entries(pathEntries)) {
+            for (const [anchor, qp] of Object.entries(
+              paths as Record<string, unknown>,
+            )) {
               if (anchor === "game") continue;
+              if (
+                typeof qp !== "object" ||
+                qp === null ||
+                typeof (qp as SerializedQP).scheme !== "string" ||
+                typeof (qp as SerializedQP).path !== "string"
+              ) {
+                log(
+                  "warn",
+                  "[adaptor-bridge] {{name}}: skipping non-QP paths entry {{anchor}}",
+                  { name, anchor },
+                );
+                continue;
+              }
               const modTypeId = `${gameId}-${anchor}`;
-              const nativePath = qpPathToNative(qp);
+              const nativePath = qpPathToNative(qp as SerializedQP);
               context.registerModType(
                 modTypeId,
                 50,
                 (gId) => gId === gameId,
                 () => nativePath,
-                () => Promise.resolve(false) as never,
+                () => Bluebird.resolve(false),
               );
             }
           }
@@ -526,8 +550,9 @@ async function registerAdaptor(
 
 function init(context: IExtensionContext): boolean {
   // Register a single installer that delegates to whichever adaptor owns
-  // the active game. Priority 25 sits after fomod (20) so fomod archives
-  // still get fomod treatment, but before the generic fallback (1000).
+  // the active game. Priority 25 sits after both fomod installers (native
+  // at 10, IPC at 20) so fomod archives still get fomod treatment, but
+  // before the generic fallback (1000).
   context.registerInstaller(
     "adaptor",
     25,
@@ -550,12 +575,16 @@ function init(context: IExtensionContext): boolean {
         .filter((f) => !f.endsWith("/") && !f.endsWith("\\"))
         .map((f) => f.replace(/\\/g, "/"));
       const mappings = await dispatch(normalized);
-      const instructions: Array<{ type: string; source?: string; destination?: string; value?: string }> =
-        mappings.map((m) => ({
-          type: "copy" as const,
-          source: m.source,
-          destination: m.destination,
-        }));
+      if (mappings.length === 0) {
+        throw new Error(
+          `[adaptor-bridge] Adaptor returned no install mappings for game "${gameId}"`,
+        );
+      }
+      const instructions: IInstruction[] = mappings.map((m) => ({
+        type: "copy" as const,
+        source: m.source,
+        destination: m.destination,
+      }));
 
       // Determine the mod type from the anchor field. A single mod can
       // only target one mod type in Vortex, so mixed anchors are an error.
