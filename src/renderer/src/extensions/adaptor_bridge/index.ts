@@ -484,6 +484,34 @@ async function registerAdaptor(
 // ---------------------------------------------------------------------------
 
 function init(context: IExtensionContext): boolean {
+  // Register a single installer that delegates to whichever adaptor owns
+  // the active game. Priority 25 sits after fomod (20) so fomod archives
+  // still get fomod treatment, but before the generic fallback (1000).
+  context.registerInstaller(
+    "adaptor",
+    25,
+    (_files, gameId) => {
+      const supported = getAdaptorInstaller(gameId) !== undefined;
+      return Promise.resolve({ supported, requiredFiles: [] });
+    },
+    async (files, _destinationPath, gameId) => {
+      const dispatch = getAdaptorInstaller(gameId);
+      if (dispatch === undefined) {
+        throw new Error(
+          `[adaptor-bridge] No adaptor installer registered for game "${gameId}"`,
+        );
+      }
+      const mappings = await dispatch(files);
+      return {
+        instructions: mappings.map((m) => ({
+          type: "copy" as const,
+          source: m.source,
+          destination: m.destination,
+        })),
+      };
+    },
+  );
+
   // On startup, discover and register all loaded adaptors.
   // context.once() runs after all extensions are initialized but before
   // the UI is fully interactive — the right time to register games.
