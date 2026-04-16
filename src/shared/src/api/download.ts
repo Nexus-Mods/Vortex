@@ -5,7 +5,6 @@ export type {
   Chunker,
   DownloadProgress,
   Progress,
-  ProgressCallback,
   ResolvedEndpoint,
   ResolvedResource,
   Resolver,
