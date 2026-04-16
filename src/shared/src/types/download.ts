@@ -95,5 +95,3 @@ export type DownloadProgress = Progress & {
   /** Size of the file being downloaded. This can be null when the server returns no size. */
   size: number | null;
 } & ({ isChunked: false } | { isChunked: true; chunks: ChunkProgress[] });
-
-export type ProgressCallback = (progress: DownloadProgress) => void;
