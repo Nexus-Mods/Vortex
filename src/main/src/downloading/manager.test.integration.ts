@@ -186,8 +186,8 @@ describe("DownloadManager", () => {
     it("skips already-downloaded chunks on resume", async () => {
       using route = server.route(
         withHooks(
-          serveFile({ body: LARGE_FILE, acceptRanges: true }),
-          delayBeforeChunk(2, 300),
+          serveFile({ body: LARGE_FILE, acceptRanges: true, chunkSize: 64 * 1024 }),
+          delayBeforeChunk(2, 2_000),
         ),
       );
       await using tmp = await makeTmpDir();
@@ -242,8 +242,8 @@ describe("DownloadManager", () => {
     it("decrements numRunning after resume settles on pause", async () => {
       using route = server.route(
         withHooks(
-          serveFile({ body: LARGE_FILE, acceptRanges: true }),
-          delayBeforeChunk(1, 300),
+          serveFile({ body: LARGE_FILE, acceptRanges: true, chunkSize: 64 * 1024 }),
+          delayBeforeChunk(1, 2_000),
         ),
       );
       await using tmp = await makeTmpDir();
@@ -419,6 +419,18 @@ describe("DownloadManager", () => {
 
       const pauseResult = await handle.pause();
       expect(pauseResult.status).toBe("queued");
+
+      // Cancel blocker so the queue slot opens, then wait for handle to start
+      // running and cancel it too — otherwise both downloads outlive the route
+      // registrations and produce unhandled 404 rejections.
+      _blocker.cancel();
+      await _blocker.promise.catch(() => {});
+      await vi.waitFor(() => handle.getStatus() === "running", {
+        timeout: 5_000,
+        interval: 10,
+      });
+      handle.cancel();
+      await handle.promise.catch(() => {});
     });
 
     it("does not throw when pause is called after the download has already completed", async () => {
