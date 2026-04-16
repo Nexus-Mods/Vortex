@@ -1,6 +1,4 @@
-import type { QualifiedPath } from "@vortex/fs";
-
-import { QualifiedPath as QP } from "@vortex/fs";
+import { type QualifiedPath, QualifiedPath as QP } from "@vortex/fs";
 
 import type { GamePaths } from "./game-paths.js";
 

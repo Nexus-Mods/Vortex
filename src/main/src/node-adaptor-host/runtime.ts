@@ -85,10 +85,20 @@ export function createMethodDispatcher(
   return (msg: IMethodMessage) => {
     const fn = instance[msg.method];
     if (typeof fn !== "function") {
-      throw new Error(`No method "${msg.method}" on service ${uri}`);
+      return Promise.reject(
+        new Error(`No method "${msg.method}" on service ${uri}`),
+      );
     }
 
-    const res = fn.apply(instance, transformArgs(msg.args));
-    return Promise.resolve(res as unknown);
+    try {
+      const res = fn.apply(instance, transformArgs(msg.args));
+      return Promise.resolve(res as unknown);
+    } catch (err) {
+      const wrapped =
+        err instanceof Error
+          ? err
+          : new Error(typeof err === "string" ? err : "Non-Error throw");
+      return Promise.reject(wrapped);
+    }
   };
 }

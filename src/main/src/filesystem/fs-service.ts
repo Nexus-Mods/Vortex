@@ -65,91 +65,85 @@ export function createFileSystemServiceHandler(
   const cursors = new Map<string, CursorEntry>();
   let cursorCounter = 0;
 
-  const dispatch = async (payload: FsPayload): Promise<unknown> => {
-    const { method, args } = payload;
+  async function dispatchFlat(
+    method: string,
+    args: unknown[],
+  ): Promise<unknown> {
     switch (method) {
       case "copy": {
-        const [src, dst, opts] = args as [
-          unknown,
-          unknown,
-          { overwrite: boolean } | undefined,
-        ];
-        await fs.copy(rehydrate(src), rehydrate(dst), opts);
-        return undefined;
+        const [s, d, o] = args as [unknown, unknown, { overwrite: boolean }?];
+        await fs.copy(rehydrate(s), rehydrate(d), o);
+        return;
       }
       case "move": {
-        const [src, dst, opts] = args as [
-          unknown,
-          unknown,
-          { overwrite: boolean } | undefined,
-        ];
-        await fs.move(rehydrate(src), rehydrate(dst), opts);
-        return undefined;
+        const [s, d, o] = args as [unknown, unknown, { overwrite: boolean }?];
+        await fs.move(rehydrate(s), rehydrate(d), o);
+        return;
       }
-      case "readFile": {
-        const [p] = args;
-        return fs.readFile(rehydrate(p));
-      }
-      case "writeFile": {
-        const [p, contents] = args as [unknown, Uint8Array];
-        await fs.writeFile(rehydrate(p), contents);
-        return undefined;
-      }
-      case "createDirectory": {
-        const [p] = args;
-        await fs.createDirectory(rehydrate(p));
-        return undefined;
-      }
-      case "delete": {
-        const [p] = args;
-        await fs.delete(rehydrate(p));
-        return undefined;
-      }
-      case "deleteRecursive": {
-        const [p] = args;
-        await fs.deleteRecursive(rehydrate(p));
-        return undefined;
-      }
-      case "stat": {
-        const [p, opts] = args as [
-          unknown,
-          { parseSymLink: boolean } | undefined,
-        ];
-        return fs.stat(rehydrate(p), opts);
-      }
-      case "enumerateOpen": {
-        const [pathArg, opts] = args as [unknown, EnumerateOptions | undefined];
-        const iterator = await fs.enumerateDirectory(
-          rehydrate(pathArg),
-          (opts ?? {}) as Parameters<IFileSystem["enumerateDirectory"]>[1],
+      case "readFile":
+        return fs.readFile(rehydrate(args[0]));
+      case "writeFile":
+        await fs.writeFile(rehydrate(args[0]), args[1] as Uint8Array);
+        return;
+      case "createDirectory":
+        await fs.createDirectory(rehydrate(args[0]));
+        return;
+      case "delete":
+        await fs.delete(rehydrate(args[0]));
+        return;
+      case "deleteRecursive":
+        await fs.deleteRecursive(rehydrate(args[0]));
+        return;
+      case "stat":
+        return fs.stat(
+          rehydrate(args[0]),
+          args[1] as { parseSymLink: boolean } | undefined,
         );
-        const cursorId = `fs-cur:${++cursorCounter}`;
-        const entry: CursorEntry = { iterator };
-        cursors.set(cursorId, entry);
-        const { batch, done } = await pullBatch(entry, batchSize);
-        if (done) cursors.delete(cursorId);
-        return { cursorId, batch, done };
-      }
-      case "enumerateNext": {
-        const [cursorId] = args as [string];
-        const entry = cursors.get(cursorId);
-        if (entry === undefined) return { batch: [], done: true };
-        const { batch, done } = await pullBatch(entry, batchSize);
-        if (done) cursors.delete(cursorId);
-        return { batch, done };
-      }
-      case "enumerateClose": {
-        const [cursorId] = args as [string];
-        const entry = cursors.get(cursorId);
-        if (entry !== undefined) {
-          cursors.delete(cursorId);
-          await entry.iterator.return?.(undefined).catch(() => undefined);
-        }
-        return undefined;
-      }
       default:
         throw new Error(`Unknown filesystem method: ${method}`);
     }
+  }
+
+  async function dispatchCursor(
+    method: string,
+    args: unknown[],
+  ): Promise<unknown> {
+    if (method === "enumerateOpen") {
+      const [pathArg, opts] = args as [unknown, EnumerateOptions?];
+      const iterator = await fs.enumerateDirectory(
+        rehydrate(pathArg),
+        (opts ?? {}) as Parameters<IFileSystem["enumerateDirectory"]>[1],
+      );
+      const cursorId = `fs-cur:${++cursorCounter}`;
+      cursors.set(cursorId, { iterator });
+      const { batch, done } = await pullBatch({ iterator }, batchSize);
+      if (done) cursors.delete(cursorId);
+      return { cursorId, batch, done };
+    }
+    if (method === "enumerateNext") {
+      const [cursorId] = args as [string];
+      const entry = cursors.get(cursorId);
+      if (entry === undefined) return { batch: [], done: true };
+      const { batch, done } = await pullBatch(entry, batchSize);
+      if (done) cursors.delete(cursorId);
+      return { batch, done };
+    }
+    if (method === "enumerateClose") {
+      const [cursorId] = args as [string];
+      const entry = cursors.get(cursorId);
+      if (entry !== undefined) {
+        cursors.delete(cursorId);
+        await entry.iterator.return?.(undefined).catch(() => undefined);
+      }
+      return;
+    }
+    throw new Error(`Unknown filesystem method: ${method}`);
+  }
+
+  const dispatch = async (payload: FsPayload): Promise<unknown> => {
+    const { method, args } = payload;
+    if (method.startsWith("enumerate")) return dispatchCursor(method, args);
+    return dispatchFlat(method, args);
   };
 
   const handler: IMessageHandler = (msg: IMessage<unknown>) =>

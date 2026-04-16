@@ -34,7 +34,7 @@ export function platformScheme(): string {
  *
  * NOTE: The Windows encoding here must match WindowsPathProviderImpl.#create
  * (src/main/src/filesystem/paths.windows.ts) and nativeToQualifiedPath
- * (src/renderer/src/extensions/adaptor_bridge/index.ts).
+ * (src/main/src/adaptors.ts).
  */
 export function nativeToQP(nativePath: string): QualifiedPath {
   const scheme = platformScheme();
