@@ -24,7 +24,6 @@ type CyberpunkPaths = GamePaths<"game" | CyberpunkExtras>;
 const INFO = gameInfo({
   gameUri: "game:cyberpunk2077",
   displayName: "Cyberpunk 2077",
-  executable: "bin/x64/Cyberpunk2077.exe",
   steam: 1091500,
   epic: "77f2b98e2cef40c8a7437518bf420e47",
   gog: 1423049311,

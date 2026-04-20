@@ -265,7 +265,9 @@ export async function initAdaptorHost(): Promise<void> {
 
       // Eagerly fetch game info so it's available synchronously to the
       // renderer bridge during extension init.
-      const infoUri = m.provides.find((u) => u.endsWith("/info"));
+      const infoUri = m.provides.find((u) =>
+        /^vortex:adaptor\/[^/]+\/info$/.test(u),
+      );
       if (infoUri) {
         try {
           const info = (await adaptor.call(

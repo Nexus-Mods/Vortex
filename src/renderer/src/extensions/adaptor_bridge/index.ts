@@ -67,8 +67,6 @@ interface GameInfo {
   gog?: Array<{ gameId: number; name?: string }>;
   xbox?: Array<{ packageFamilyName: string; name?: string }>;
   nexusMods?: Array<{ domain: string; name?: string }>;
-  /** Relative path to the game executable (e.g. "bin/x64/Game.exe"). */
-  executable?: string;
 }
 
 /**
@@ -304,12 +302,18 @@ function registerAdaptor(
 ): void {
   const { name, provides } = adaptor;
 
-  // Match adaptor service URIs by their suffix convention.
-  // e.g. "vortex:adaptor/cyberpunk2077/info" ends with "/info"
-  const infoUri = provides.find((u) => u.endsWith("/info"));
-  const pathsUri = provides.find((u) => u.endsWith("/paths"));
-  const toolsUri = provides.find((u) => u.endsWith("/tools"));
-  const installerUri = provides.find((u) => u.endsWith("/installer"));
+  // Match adaptor service URIs by the exact "vortex:adaptor/{id}/{service}"
+  // convention.  A full regex avoids false positives from URIs that merely
+  // happen to end with the service name.
+  const findService = (service: string): string | undefined =>
+    provides.find((u) =>
+      new RegExp(`^vortex:adaptor/[^/]+/${service}$`).test(u),
+    );
+
+  const infoUri = findService("info");
+  const pathsUri = findService("paths");
+  const toolsUri = findService("tools");
+  const installerUri = findService("installer");
 
   // An adaptor must at least provide game info to be a game adaptor
   if (!infoUri) return;
@@ -434,10 +438,9 @@ function registerAdaptor(
     relative: boolean;
   }> = [];
 
-  // Executable path from the adaptor's game info. Available before
-  // discovery runs so that handleDiscoveredGame produces the correct
-  // value. Falls back to "." if the adaptor didn't declare one.
-  let resolvedExecutable: string = info.executable ?? ".";
+  // Placeholder until the tools service resolves the real executable
+  // path after discovery. Updated in the setup callback.
+  let resolvedExecutable = ".";
 
   const gameDetails: Record<string, unknown> = {
     steamAppId: info.steam?.[0]?.appId,
@@ -490,7 +493,15 @@ function registerAdaptor(
           // Step 2: Resolve tools (depends on paths)
           const tools = await getTools(paths);
 
-          // Step 3: Populate supported tools
+          // Step 3: Wire the game executable from the tools service.
+          // The executable is a QualifiedPath; .path gives the
+          // relative portion within its anchor (per-store resolved).
+          if (tools?.game?.executable?.path) {
+            resolvedExecutable = tools.game.executable.path;
+            discovery.executable = resolvedExecutable;
+          }
+
+          // Step 4: Populate supported tools (additional launchers, etc.)
           if (tools?.tools) {
             for (const [toolId, tool] of Object.entries(tools.tools)) {
               supportedTools.push({
@@ -511,7 +522,7 @@ function registerAdaptor(
             }
           }
 
-          // Step 4: Register mod types for non-game anchors so the
+          // Step 5: Register mod types for non-game anchors so the
           // deployment system knows where to route files that target
           // saves, preferences, or other adaptor-declared directories.
           if (paths !== null) {
@@ -544,7 +555,7 @@ function registerAdaptor(
             }
           }
 
-          // Step 5: Expose the installer dispatch so the registered
+          // Step 6: Expose the installer dispatch so the registered
           // "adaptor" installer can route archive contents through the
           // adaptor's stop-pattern resolver.
           if (installerUri && pathsUri && paths !== null) {

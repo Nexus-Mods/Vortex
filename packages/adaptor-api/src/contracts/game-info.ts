@@ -85,12 +85,6 @@ export interface GameInfo {
 
   /** Windows registry keys for game discovery. */
   registryKeys?: RegistryKey[];
-
-  /**
-   * Relative path to the game's main executable (e.g. "bin/x64/Game.exe").
-   * Used by the bridge to set executable() before discovery runs.
-   */
-  executable?: string;
 }
 
 // --- Shorthand input types ---
@@ -130,7 +124,6 @@ export interface GameInfoInput {
   xbox?: OneOrMany<XboxInput>;
   nexusMods?: OneOrMany<NexusModsInput>;
   registryKeys?: OneOrMany<RegistryInput>;
-  executable?: string;
 }
 
 // --- Normalization helpers ---
@@ -193,7 +186,6 @@ export function gameInfo(input: GameInfoInput): GameInfo {
     xbox: toArray(input.xbox)?.map(normXbox),
     nexusMods: toArray(input.nexusMods)?.map(normNexus),
     registryKeys: toArray(input.registryKeys)?.map(normRegistry),
-    executable: input.executable,
   };
 }
 
