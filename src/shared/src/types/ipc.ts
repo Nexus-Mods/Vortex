@@ -2,7 +2,7 @@
 // Everything in here is compile-time only, meaning the interfaces you find here
 // are never used to create an object. They are only used for type inferrence.
 
-import type { ByteRange } from "./download";
+import type { ByteRange, DownloadProgress } from "./download";
 import type { SerializedSpan } from "../telemetry/types";
 import type {
   BrowserViewConstructorOptions,
@@ -363,6 +363,7 @@ export interface InvokeChannels {
   "download:pause": (downloadId: string) => Promise<WireDownloadCheckpoint>;
   "download:resume": (checkpoint: WireDownloadCheckpoint) => Promise<void>;
   "download:cancel": (downloadId: string) => Promise<void>;
+  "download:getProgress": (downloadId: string) => Promise<DownloadProgress>;
 
   // Adaptor host — renderer queries adaptor services through these
   "adaptors:list": () => Promise<
