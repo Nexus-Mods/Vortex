@@ -178,8 +178,18 @@ async function createMinimalPackageJson(workspacePackageMap, catalog) {
   };
 
   if (mainPkg.dependencies && Object.keys(mainPkg.dependencies).length > 0) {
+    const deps = { ...mainPkg.dependencies };
+
+    // On Linux, winapi-bindings is replaced at bundle time by a JS shim
+    // (see build.mjs linuxAlias). The native .node binary is not needed at
+    // runtime and causes an EEXIST conflict in electron-builder packaging
+    // when combined with the asarUnpack "**/*.node" pattern.
+    if (process.platform === "linux") {
+      delete deps["winapi-bindings"];
+    }
+
     minimal.dependencies = rewriteFileDependencies(
-      mainPkg.dependencies,
+      deps,
       workspacePackageMap,
       catalog,
     );
@@ -237,8 +247,21 @@ async function preparePNPM(rawWorkspaceYaml) {
   const catalog = extractCatalogBlock(rawWorkspaceYaml);
   const overrides = extractOverridesBlock(rawWorkspaceYaml);
 
+  // On Linux, prevent winapi-bindings from compiling its native binary.
+  // The JS shim is bundled into main.cjs at build time; the .node file is not
+  // needed at runtime and causes an EEXIST conflict in electron-builder.
+  const neverBuild =
+    process.platform === "linux"
+      ? "\nneverBuiltDependencies:\n  - winapi-bindings\n"
+      : "";
+
   const minimalYaml =
-    (overrides ? overrides + "\n" : "") + catalog + "\n" + allowBuilds + "\n";
+    (overrides ? overrides + "\n" : "") +
+    catalog +
+    "\n" +
+    allowBuilds +
+    neverBuild +
+    "\n";
 
   await writeFile(resolve(DIST_DIR, "pnpm-workspace.yaml"), minimalYaml);
   console.log("✔  Created dist/pnpm-workspace.yaml");
