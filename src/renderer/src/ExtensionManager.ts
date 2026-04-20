@@ -134,6 +134,7 @@ import {
   wrapExtCBSync,
 } from "./util/util";
 import { webpackRequireHack } from "./util/webpack-hacks";
+import { IPCDownloadAdapter } from "./IPCDownloadAdapter";
 
 const modmeta = lazyRequire<typeof modmetaT>(() => require("modmeta-db"));
 
@@ -711,6 +712,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
       registerLoadOrder: undefined,
       registerGameSpecificCollectionsData: undefined,
       registerHistoryStack: undefined,
+      registerDownloadProtocol: undefined,
       registerAPI: undefined,
       requireVersion: undefined,
       requireExtension: undefined,
@@ -788,6 +790,7 @@ class ExtensionManager {
   private mModDBAPIKey: string;
   private mModDBCache: { [id: string]: ILookupResult[] } = {};
   private mContextProxyHandler: ContextProxyHandler;
+  private mDownloadAdapter: IPCDownloadAdapter;
   private mExtensionState: { [extId: string]: IExtensionState };
   private mLoadFailures: { [extId: string]: IExtensionLoadFailure[] } = {};
   private mOptionalExtensions: { [extId: string]: IExtensionOptional[] } = {};
@@ -900,6 +903,8 @@ class ExtensionManager {
       ext: {},
       NAMESPACE: "common",
     };
+
+    this.mDownloadAdapter = new IPCDownloadAdapter(this.mApi);
 
     // Use provided extension state directly (renderer-only architecture)
     // Extensions that need to be removed will be handled when setStore() is called
@@ -1228,6 +1233,12 @@ class ExtensionManager {
    */
   public applyExtensionsOfExtensions() {
     this.mContextProxyHandler.invokeAdditions(this.mExtensions);
+    this.mContextProxyHandler
+      .getCalls("registerDownloadProtocol")
+      .forEach((call) => {
+        const [scheme, handler] = call.arguments as [string, Parameters<IPCDownloadAdapter["registerProtocol"]>[1]];
+        this.mDownloadAdapter.registerProtocol(scheme, handler);
+      });
   }
 
   /**

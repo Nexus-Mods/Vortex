@@ -19,6 +19,7 @@ import type { DownloadStatus } from "./progress";
 import { download } from "./downloader";
 import { ProgressReporter } from "./progress";
 import { defaultRetryStrategy } from "./retry";
+import { log } from "../logging";
 
 export type DownloadState = DownloadProgress & { status: DownloadStatus };
 
@@ -205,7 +206,10 @@ export class DownloadManager {
     const progressReporter = new ProgressReporter();
     const abortController = new AbortController();
 
+    log("debug", "queuing download", { downloadId, dest });
+
     const rawPromise = this.#downloadQueue.add(() => {
+      log("debug", "download starting", { downloadId });
       progressReporter.status = "running";
       return download(
         resource,
@@ -241,6 +245,7 @@ export class DownloadManager {
 
     const cancel = (): DownloadState => {
       if (progressReporter.status === "running") {
+        log("debug", "cancelling download", { downloadId });
         progressReporter.status = "canceled";
         abortController.abort();
       }
@@ -290,10 +295,12 @@ export class DownloadManager {
         };
       }
 
+      log("debug", "pausing download", { downloadId });
       progressReporter.status = "paused";
       abortController.abort();
       // Wait for the download to fully settle (settled never rejects).
       await settled;
+      log("debug", "download paused", { downloadId });
 
       return {
         ...progressReporter.getProgress(),
@@ -314,19 +321,22 @@ export class DownloadManager {
     this.#downloads.set(downloadId, handle);
 
     // Handle terminal status transitions not covered by cancel() or pause().
-    // Only updates status if it is still "running" — explicit control operations
+    // Only updates status if it is still "running" - explicit control operations
     // (cancel/pause) set status synchronously before aborting, so they take
     // precedence.
     void rawPromise.then(
       () => {
+        log("debug", "download completed", { downloadId });
         progressReporter.status = "completed";
       },
       (err) => {
         if (progressReporter.status !== "running") return;
-        progressReporter.status =
-          err instanceof DownloadError && err.code === "cancellation"
-            ? "canceled"
-            : "failed";
+        const isCancellation =
+          err instanceof DownloadError && err.code === "cancellation";
+        progressReporter.status = isCancellation ? "canceled" : "failed";
+        if (!isCancellation) {
+          log("warn", "download failed", { downloadId, err });
+        }
       },
     );
 

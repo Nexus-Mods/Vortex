@@ -131,15 +131,8 @@ function refreshDownloads(
 export type ProtocolHandler = (
   inputUrl: string,
   name: string,
+  friendlyName: string,
 ) => PromiseBB<IResolvedURL>;
-
-export interface IExtensionContextExt extends IExtensionContext {
-  // register a download protocol handler
-  // TODO: these kinds of handlers are rather limited as they can only return
-  // ftp/http/https urls that can be downloaded directly, you can't add
-  // meta information about the file.
-  registerDownloadProtocol: (schema: string, handler: ProtocolHandler) => void;
-}
 
 function attributeExtractor(input: any) {
   let downloadGame: string | string[] = getSafe(
@@ -1076,7 +1069,7 @@ function processCommandline(api: IExtensionApi) {
   }
 }
 
-function init(context: IExtensionContextExt): boolean {
+function init(context: IExtensionContext): boolean {
   const downloadCount = new ReduxProp(
     context.api,
     [["persistent", "downloads", "files"]],
