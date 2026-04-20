@@ -1,4 +1,7 @@
-import type { WireResolvedResource } from "@vortex/shared/ipc";
+import type {
+  WireDownloadCheckpoint,
+  WireResolvedResource,
+} from "@vortex/shared/ipc";
 
 import { unknownToError } from "@vortex/shared";
 import * as path from "node:path";
@@ -10,47 +13,30 @@ import { downloadPathForGame } from "./extensions/download_management/selectors"
 import { activeGameId } from "./extensions/profile_management/selectors";
 import { log } from "./logging";
 
-const modInfoSchema = z
-  .looseObject({
-    game: z.string().optional(),
-    name: z.string().optional(),
-  })
-  .catch({ game: undefined, name: undefined });
-
-type ModInfo = z.infer<typeof modInfoSchema>;
-
-const startDownloadArgsSchema = z
-  .tuple([
-    z.array(z.string()),
-    modInfoSchema,
-    z.string().optional(),
-    z
-      .function({ input: [z.unknown().nullable(), z.string().optional()] })
-      .optional(),
-  ])
-  .rest(z.unknown());
-
-const removeDownloadArgsSchema = z
-  .tuple([
-    z.string(),
-    z
-      .function({
-        input: [z.unknown().nullable()],
-      })
-      .optional(),
-  ])
-  .rest(z.unknown());
-
 type ProtocolHandler = (
   inputUrl: string,
-  name: string,
-  friendlyName: string,
+  fileName: string,
+  displayName: string,
 ) => PromiseLike<{ urls: string[]; updatedUrl?: string; meta: unknown }>;
 
+/**
+ * The legacy download API encodes an optional Referer header directly into the
+ * URL string using `<` as a separator: `"https://cdn.example.com/file<https://referer.example.com"`.
+ */
+type EncodedUrl = {
+  url: URL;
+  referer?: string;
+};
+
+function parseEncodedUrl(raw: string): EncodedUrl {
+  const [rawUrl, referer] = raw.split("<");
+  return { url: new URL(rawUrl), referer };
+}
+
 type StoredDownloadInfo = {
-  url: string;
-  name: string;
-  friendlyName: string;
+  encodedUrl: EncodedUrl;
+  fileName: string;
+  displayName: string;
 };
 
 export class IPCDownloadAdapter {
@@ -58,16 +44,19 @@ export class IPCDownloadAdapter {
   readonly #handlers: Record<string, ProtocolHandler> = {};
 
   readonly #pending = new Map<number, StoredDownloadInfo>();
+  readonly #infoByDownloadId = new Map<string, StoredDownloadInfo>();
+  readonly #checkpointByDownloadId = new Map<string, WireDownloadCheckpoint>();
   #nextCollationId = 0;
 
   constructor(api: IExtensionApi) {
+    // TODO: remove after cut-off to fully switch implementation
+    if (process.env.VORTEX_USE_IPC_DOWNLOADER !== "1") return;
+
     this.#api = api;
 
     window.api.downloader.onResolve((collationId) =>
       this.#resolve(collationId),
     );
-
-    if (process.env.VORTEX_USE_IPC_DOWNLOADER !== "1") return;
 
     api.events.on("start-download", (...args: unknown[]) => {
       const parsed = startDownloadArgsSchema.safeParse(args);
@@ -101,6 +90,36 @@ export class IPCDownloadAdapter {
         log("error", "failed to remove download", err);
       });
     });
+
+    api.events.on("pause-download", (...args: unknown[]) => {
+      const parsed = pauseDownloadArgsSchema.safeParse(args);
+      if (!parsed.success) {
+        log("warn", "failed to parse 'pause-download' args", {
+          error: parsed.error,
+        });
+        return;
+      }
+
+      const [downloadId, callback] = parsed.data;
+      this.#handlePauseDownload(downloadId, callback).catch((err) => {
+        log("error", "failed to pause download", err);
+      });
+    });
+
+    api.events.on("resume-download", (...args: unknown[]) => {
+      const parsed = resumeDownloadArgsSchema.safeParse(args);
+      if (!parsed.success) {
+        log("warn", "failed to parse 'resume-download' args", {
+          error: parsed.error,
+        });
+        return;
+      }
+
+      const [downloadId, callback] = parsed.data;
+      this.#handleResumeDownload(downloadId, callback).catch((err) => {
+        log("error", "failed to resume download", err);
+      });
+    });
   }
 
   registerProtocol(scheme: string, handler: ProtocolHandler): void {
@@ -108,47 +127,52 @@ export class IPCDownloadAdapter {
     log("debug", `registered protocol handler for scheme '${scheme}'`);
   }
 
-  async start(
-    url: string,
-    dest: string,
-    name: string = "",
-    friendlyName: string = "",
-  ): Promise<string> {
-    const collationId = this.#nextCollationId++;
-    this.#pending.set(collationId, { url, name, friendlyName });
-    log("debug", "starting download", { url, dest, name, collationId });
-    const { downloadId } = await window.api.downloader.start(dest, collationId);
-    log("debug", "download queued", { downloadId, collationId });
-    return downloadId;
-  }
-
-  cancel(downloadId: string): Promise<void> {
-    log("debug", "cancelling download", { downloadId });
-    return window.api.downloader.cancel(downloadId);
-  }
-
   async #handleStartDownload(
-    urls: string[],
+    rawUrls: string[],
     modInfo: ModInfo,
     fileName?: string,
     callback?: (err: Error | null, id?: string) => void,
   ): Promise<void> {
-    const url = urls[0].toString().split("<")[0];
-    const state = this.#api.getState();
-    const dest = downloadPathForGame(
-      state,
-      modInfo.game ?? activeGameId(state),
-    );
+    // TODO: decide how to handle multiple URL inputs
+    const rawUrl = rawUrls[0];
 
-    let name: string;
+    const encodedUrl = parseEncodedUrl(rawUrl.toString());
+
     try {
-      name = fileName || path.basename(new URL(url).pathname);
+      fileName ??= path.basename(encodedUrl.url.pathname);
     } catch {
-      name = fileName ?? "";
+      fileName ??= "";
     }
 
+    const state = this.#api.getState();
+    const dest = path.join(
+      downloadPathForGame(state, modInfo.game ?? activeGameId(state)),
+      fileName,
+    );
+
     try {
-      const downloadId = await this.start(url, path.join(dest, name), name, modInfo.name ?? "");
+      const collationId = this.#nextCollationId++;
+      const info: StoredDownloadInfo = {
+        encodedUrl: encodedUrl,
+        fileName,
+        displayName: modInfo.name ?? "",
+      };
+
+      this.#pending.set(collationId, info);
+      log("debug", "starting download", {
+        encodedUrl,
+        dest,
+        fileName,
+        collationId,
+      });
+
+      const { downloadId } = await window.api.downloader.start(
+        dest,
+        collationId,
+      );
+
+      this.#infoByDownloadId.set(downloadId, info);
+      log("debug", "download queued", { downloadId, collationId });
       callback?.(null, downloadId);
     } catch (err) {
       callback?.(unknownToError(err));
@@ -160,8 +184,49 @@ export class IPCDownloadAdapter {
     callback?: (err: Error | null) => void,
   ): Promise<void> {
     try {
-      await this.cancel(downloadId);
+      log("debug", "cancelling download", { downloadId });
+      await window.api.downloader.cancel(downloadId);
       callback?.(null);
+    } catch (err) {
+      callback?.(unknownToError(err));
+    }
+  }
+
+  async #handlePauseDownload(
+    downloadId: string,
+    callback?: (err: Error | null) => void,
+  ): Promise<void> {
+    try {
+      log("debug", "pausing download", { downloadId });
+      const checkpoint = await window.api.downloader.pause(downloadId);
+      this.#checkpointByDownloadId.set(downloadId, checkpoint);
+      callback?.(null);
+    } catch (err) {
+      callback?.(unknownToError(err));
+    }
+  }
+
+  async #handleResumeDownload(
+    downloadId: string,
+    callback?: (err: Error | null, id?: string) => void,
+  ): Promise<void> {
+    try {
+      const checkpoint = this.#checkpointByDownloadId.get(downloadId);
+      if (checkpoint === undefined) {
+        throw new Error(`No checkpoint stored for download ${downloadId}`);
+      }
+
+      const info = this.#infoByDownloadId.get(downloadId);
+      if (info === undefined) {
+        throw new Error(`No stored info for download ${downloadId}`);
+      }
+
+      const collationId = this.#nextCollationId++;
+      this.#pending.set(collationId, info);
+
+      log("debug", "resuming download", { downloadId, collationId });
+      await window.api.downloader.resume(checkpoint, collationId);
+      callback?.(null, downloadId);
     } catch (err) {
       callback?.(unknownToError(err));
     }
@@ -172,24 +237,83 @@ export class IPCDownloadAdapter {
     if (info === undefined) {
       throw new Error(`No pending download for collationId ${collationId}`);
     }
+
     this.#pending.delete(collationId);
 
-    const { url, name, friendlyName } = info;
-    const scheme = new URL(url).protocol.replace(/:$/, "");
+    const { encodedUrl, fileName, displayName } = info;
+    const headers: Record<string, string> | undefined = encodedUrl.referer
+      ? { Referer: encodedUrl.referer }
+      : undefined;
+
+    const scheme = encodedUrl.url.protocol.replace(/:$/, "");
     const handler = this.#handlers[scheme];
 
     if (handler !== undefined) {
-      log("debug", "resolving download via protocol handler", { scheme, url });
-      const resolved = await Promise.resolve(handler(url, name, friendlyName));
+      log("debug", "resolving download via protocol handler", {
+        scheme,
+        encodedUrl,
+      });
+
+      const resolved = await Promise.resolve(
+        handler(encodedUrl.url.toString(), fileName, displayName),
+      );
+
       log("debug", "download resolved", { resolvedUrl: resolved.urls[0] });
       return { probeEndpoint: { url: resolved.urls[0] } };
     }
 
     if (scheme === "http" || scheme === "https") {
-      log("debug", "resolving download directly", { url });
-      return { probeEndpoint: { url } };
+      log("debug", "resolving download directly", { encodedUrl });
+      return { probeEndpoint: { url: encodedUrl.url.toString(), headers } };
     }
 
     throw new Error(`No protocol handler registered for scheme: ${scheme}`);
   }
 }
+
+const modInfoSchema = z
+  .looseObject({
+    game: z.string().optional(),
+    name: z.string().optional(),
+  })
+  .catch({ game: undefined, name: undefined });
+
+type ModInfo = z.infer<typeof modInfoSchema>;
+
+const startDownloadArgsSchema = z
+  .tuple([
+    z.array(z.string()),
+    modInfoSchema,
+    z.string().optional(),
+    z
+      .function({ input: [z.unknown().nullable(), z.string().optional()] })
+      .optional(),
+  ])
+  .rest(z.unknown());
+
+const removeDownloadArgsSchema = z
+  .tuple([
+    z.string(),
+    z
+      .function({
+        input: [z.unknown().nullable()],
+      })
+      .optional(),
+  ])
+  .rest(z.unknown());
+
+const pauseDownloadArgsSchema = z
+  .tuple([
+    z.string(),
+    z.function({ input: [z.unknown().nullable()] }).optional(),
+  ])
+  .rest(z.unknown());
+
+const resumeDownloadArgsSchema = z
+  .tuple([
+    z.string(),
+    z
+      .function({ input: [z.unknown().nullable(), z.string().optional()] })
+      .optional(),
+  ])
+  .rest(z.unknown());
