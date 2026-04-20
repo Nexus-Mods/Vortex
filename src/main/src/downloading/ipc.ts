@@ -14,6 +14,7 @@ import { staticChunker } from "@vortex/shared/download";
 import type { DownloadManager } from "./manager";
 
 import { betterIpcMain } from "../ipc";
+import { log } from "../logging";
 
 function wireToResolvedEndpoint(wire: WireEndpoint): ResolvedEndpoint {
   return { url: new URL(wire.url), headers: wire.headers };
@@ -50,6 +51,9 @@ export function init(manager: DownloadManager): void {
     const resolver = () => Promise.resolve(resource);
     const handle = manager.download(resource, dest, resolver);
     webContentsByDownloadId.set(handle.downloadId, webContents);
+    handle.promise.catch((err) =>
+      log("error", "download failed", { downloadId: handle.downloadId, err }),
+    );
     return { downloadId: handle.downloadId };
   });
 
@@ -93,8 +97,11 @@ export function init(manager: DownloadManager): void {
         etag: wireCheckpoint.etag,
       };
       const resolver = () => Promise.resolve(resource);
-      manager.resume(checkpoint, resolver, staticChunker());
+      const handle = manager.resume(checkpoint, resolver, staticChunker());
       webContentsByDownloadId.set(wireCheckpoint.downloadId, webContents);
+      handle.promise.catch((err) =>
+        log("error", "download failed", { downloadId: wireCheckpoint.downloadId, err }),
+      );
     },
   );
 
