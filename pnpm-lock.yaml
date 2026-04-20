@@ -3821,6 +3821,15 @@ importers:
         specifier: workspace:*
         version: link:../../fs
 
+  packages/adaptors/fs-test:
+    devDependencies:
+      '@vortex/adaptor-api':
+        specifier: workspace:*
+        version: link:../../adaptor-api
+      '@vortex/fs':
+        specifier: workspace:*
+        version: link:../../fs
+
   packages/adaptors/ping-test:
     devDependencies:
       '@vortex/adaptor-api':

@@ -1,4 +1,4 @@
-import type { QualifiedPath } from "@vortex/fs";
+import { type QualifiedPath, QualifiedPath as QP } from "@vortex/fs";
 
 import type { GamePaths } from "./game-paths.js";
 
@@ -73,6 +73,7 @@ export interface GameToolsInput {
 }
 
 function isQualifiedPath(value: unknown): value is QualifiedPath {
+  if (value instanceof QP) return true;
   return (
     typeof value === "object" &&
     value !== null &&
