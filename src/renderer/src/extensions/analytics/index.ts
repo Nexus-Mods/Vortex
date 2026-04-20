@@ -82,6 +82,10 @@ function init(context: IExtensionContext): boolean {
     );
 
     async function startAnalytics() {
+      if (AnalyticsMixpanel.isUserSet()) {
+        return;
+      }
+
       try {
         const userInfo = getUserInfo();
         if (userInfo === undefined) {
