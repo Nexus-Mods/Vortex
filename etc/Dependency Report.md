@@ -26,6 +26,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | @types/bluebird | 3.5.20 |
 | @types/uuid | 3.4.13 |
 | @vortex/adaptor-api | link:../../packages/adaptor-api |
+| @vortex/adaptor-cyberpunk2077 | link:../../packages/adaptors/cyberpunk2077 |
 | @vortex/fs | link:../../packages/fs |
 | bbcode-to-react | 0.2.11 |
 | big.js | 5.2.2 |

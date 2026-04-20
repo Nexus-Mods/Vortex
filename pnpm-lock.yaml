@@ -3998,6 +3998,9 @@ importers:
       '@vortex/adaptor-api':
         specifier: workspace:*
         version: link:../../packages/adaptor-api
+      '@vortex/adaptor-cyberpunk2077':
+        specifier: workspace:*
+        version: link:../../packages/adaptors/cyberpunk2077
       '@vortex/fs':
         specifier: workspace:*
         version: link:../../packages/fs

@@ -57,7 +57,7 @@ class GameRow extends ComponentEx<IProps, {}> {
     }
 
     const logoPath: string =
-      game.extensionPath !== undefined
+      game.extensionPath !== undefined && game.logo !== undefined
         ? path.join(game.extensionPath, game.logo)
         : game.imageURL;
 
@@ -100,11 +100,19 @@ class GameRow extends ComponentEx<IProps, {}> {
       </Popover>
     );
 
-    const protocol = new URL(logoPath)?.protocol;
-    const imgurl =
-      protocol != null && protocol.startsWith("http")
-        ? logoPath
-        : pathToFileURL(logoPath).href;
+    let imgurl = null;
+    if (logoPath != null) {
+      let protocol = null;
+      try {
+        protocol = new URL(logoPath)?.protocol;
+      } catch {
+        // not a URL, treat as file path
+      }
+      imgurl =
+        protocol != null && protocol.startsWith("http")
+          ? logoPath
+          : pathToFileURL(logoPath).href;
+    }
 
     return (
       <ListGroupItem className={classes.join(" ")}>

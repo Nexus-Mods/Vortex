@@ -5,6 +5,7 @@ import type { Serializable } from "@vortex/shared/ipc";
 
 import { Base, OS, Store } from "@vortex/adaptor-api/stores/lib";
 import { QualifiedPath } from "@vortex/fs";
+import { ipcMain } from "electron";
 import * as fs from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import * as path from "node:path";
@@ -82,6 +83,65 @@ function resolveAdaptorBundle(
 // Module-level state for the adaptor host system
 let adaptorHost: IAdaptorHost | null = null;
 const loadedAdaptors = new Map<string, ILoadedAdaptor>();
+const cachedGameInfo = new Map<string, unknown>();
+
+// ============================================================================
+// Nexus Mods image URL resolution
+//
+// The renderer's Nexus integration caches the games list at
+// {vortex-temp}/nexus_gamelist.json. We read this cache (best-effort)
+// to look up numeric game IDs and construct thumbnail URLs for adaptors.
+// ============================================================================
+
+interface NexusGameEntry {
+  id: number;
+  domain_name: string;
+}
+
+/**
+ * Reads the cached Nexus games list and returns a domain→numericId map.
+ * Returns an empty map if the cache doesn't exist yet (first run).
+ */
+function loadNexusGamesList(): Map<string, number> {
+  const map = new Map<string, number>();
+  try {
+    // The renderer writes the cache under userData/temp/ (Vortex overrides
+    // the "temp" path later in Application.constructor, but that hasn't
+    // run yet when initAdaptorHost fires). Use userData directly.
+    const cachePath = path.join(
+      getVortexPath("userData"),
+      "temp",
+      "nexus_gamelist.json",
+    );
+    const raw = fs.readFileSync(cachePath, "utf-8");
+    const entries = JSON.parse(raw) as NexusGameEntry[];
+    for (const entry of entries) {
+      map.set(entry.domain_name, entry.id);
+    }
+  } catch {
+    // Cache doesn't exist yet — image URLs will be missing until
+    // the Nexus integration fetches the list on first login.
+  }
+  return map;
+}
+
+/**
+ * Constructs a Nexus Mods thumbnail URL for a game, or returns undefined
+ * if the game has no Nexus domain or the numeric ID isn't in the cache.
+ */
+function resolveNexusImageUrl(
+  gameInfo: Record<string, unknown>,
+  nexusGames: Map<string, number>,
+): string | undefined {
+  const nexusMods = gameInfo.nexusMods as
+    | Array<{ domain: string }>
+    | undefined;
+  const domain = nexusMods?.[0]?.domain;
+  if (!domain) return undefined;
+  const numericId = nexusGames.get(domain);
+  if (numericId === undefined) return undefined;
+  return `https://images.nexusmods.com/images/games/v2/${numericId}/thumbnail.jpg`;
+}
 
 // ============================================================================
 // Store path snapshot construction
@@ -226,6 +286,11 @@ export async function initAdaptorHost(): Promise<void> {
     return;
   }
 
+  // Load the Nexus games list cache so we can resolve image URLs.
+  // This runs before the logger is initialized (Application constructor
+  // hasn't run yet), so we defer the log message until after the first await.
+  const nexusGames = loadNexusGamesList();
+
   const scopeDir = path.join(getVortexPath("modules"), "@vortex");
 
   for (const name of adaptorNames) {
@@ -252,6 +317,16 @@ export async function initAdaptorHost(): Promise<void> {
       loadedCount++;
       const m = adaptor.manifest;
 
+      // Log here (after the first await) because the logger isn't ready
+      // during the synchronous setup above.
+      if (loadedCount === 1 && nexusGames.size > 0) {
+        log(
+          "info",
+          "[adaptor-host] Nexus games cache: {{count}} entries",
+          { count: nexusGames.size },
+        );
+      }
+
       log("info", "[adaptor-host] Loaded adaptor: {{name}} v{{version}}", {
         name: m.name,
         version: m.version,
@@ -259,6 +334,31 @@ export async function initAdaptorHost(): Promise<void> {
       log("info", "[adaptor-host]   provides: {{provides}}", {
         provides: m.provides.join(", "),
       });
+
+      // Eagerly fetch game info so it's available synchronously to the
+      // renderer bridge during extension init.
+      const infoUri = m.provides.find((u) => u.endsWith("/info"));
+      if (infoUri) {
+        try {
+          const info = await adaptor.call(infoUri, "getGameInfo", []);
+          // Resolve Nexus image URL and attach it to the cached info
+          const infoObj = info as Record<string, unknown>;
+          const imageURL = resolveNexusImageUrl(infoObj, nexusGames);
+          if (imageURL) {
+            infoObj.imageURL = imageURL;
+          }
+          cachedGameInfo.set(name, info);
+        } catch (err: unknown) {
+          log(
+            "warn",
+            "[adaptor-host] Failed to pre-fetch game info for {{name}}: {{error}}",
+            {
+              name,
+              error: err instanceof Error ? err.message : "Unknown error",
+            },
+          );
+        }
+      }
     } catch (err: unknown) {
       log(
         "warn",
@@ -281,6 +381,34 @@ export async function initAdaptorHost(): Promise<void> {
 // ============================================================================
 
 function registerIpcHandlers(): void {
+  /**
+   * Synchronous handler that returns adaptor manifests together with
+   * pre-fetched game info. The renderer bridge calls this during
+   * extension init (where only synchronous work is allowed) so that
+   * `registerGame` can be invoked before `endRegistration`.
+   */
+  ipcMain.on("adaptors:list-with-info", (event) => {
+    const result: Array<{
+      name: string;
+      pid: string;
+      provides: string[];
+      requires: string[];
+      gameInfo: unknown | null;
+    }> = [];
+
+    for (const [name, adaptor] of loadedAdaptors) {
+      result.push({
+        name,
+        pid: adaptor.pid,
+        provides: [...adaptor.manifest.provides],
+        requires: [...adaptor.manifest.requires],
+        gameInfo: cachedGameInfo.get(name) ?? null,
+      });
+    }
+
+    event.returnValue = result;
+  });
+
   /**
    * Returns the list of loaded adaptors with their manifests.
    * Renderer uses this to discover what game services are available.

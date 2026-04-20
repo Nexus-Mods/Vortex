@@ -168,7 +168,7 @@ class GameStoreHelper {
               });
             }
           }
-          if (result && result.priority !== undefined) {
+          if (result) {
             result.priority =
               storeQuery.prefer ??
               this.mStoresDict[result.gameStoreId]?.priority ??

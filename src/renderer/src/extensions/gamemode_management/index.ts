@@ -801,18 +801,27 @@ function init(context: IExtensionContext): boolean {
   context.registerGame = ((game: IGame, extensionPath: string) => {
     try {
       game.extensionPath = extensionPath;
-      const gameExtInfo = JSON.parse(
-        fs.readFileSync(path.join(extensionPath, "info.json"), {
-          encoding: "utf8",
-        }),
-      );
-      game.contributed =
-        gameExtInfo.author === COMPANY_ID ||
-          gameExtInfo.author === NEXUSMODS_EXT_ID
-          ? undefined
-          : gameExtInfo.author;
-      game.final = semver.gte(gameExtInfo.version, "1.0.0");
-      game.version = gameExtInfo.version;
+      let hasInfoJson = false;
+      try {
+        const gameExtInfo = JSON.parse(
+          fs.readFileSync(path.join(extensionPath, "info.json"), {
+            encoding: "utf8",
+          }),
+        );
+        game.contributed =
+          gameExtInfo.author === COMPANY_ID ||
+            gameExtInfo.author === NEXUSMODS_EXT_ID
+            ? undefined
+            : gameExtInfo.author;
+        game.final = semver.gte(gameExtInfo.version, "1.0.0");
+        game.version = gameExtInfo.version;
+        hasInfoJson = true;
+      } catch {
+        // No info.json (e.g. adaptor bridge registrations).
+        // Use sensible defaults so the game still appears.
+        game.final = true;
+        game.version = "1.0.0";
+      }
       $.extensionGames.push(game);
     } catch (err) {
       context.api.showErrorNotification("Game Extension not loaded", err, {

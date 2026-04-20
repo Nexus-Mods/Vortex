@@ -38,6 +38,7 @@
     "@types/bluebird": "catalog:",
     "@types/uuid": "catalog:",
     "@vortex/adaptor-api": "workspace:*",
+    "@vortex/adaptor-cyberpunk2077": "workspace:*",
     "@vortex/fs": "workspace:*",
     "bbcode-to-react": "catalog:",
     "big.js": "catalog:",

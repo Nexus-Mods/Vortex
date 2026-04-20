@@ -390,6 +390,18 @@ export interface AdaptorsApi {
       requires: string[];
     }>
   >;
+  /**
+   * Synchronous version of `list` that also includes pre-fetched game info.
+   * Used by the adaptor bridge during extension init where only synchronous
+   * work is allowed (registerGame must be called before endRegistration).
+   */
+  listWithInfoSync(): Array<{
+    name: string;
+    pid: string;
+    provides: string[];
+    requires: string[];
+    gameInfo: unknown | null;
+  }>;
   /** Calls a service method on a loaded adaptor. */
   call(
     adaptorName: string,

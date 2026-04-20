@@ -34,6 +34,7 @@
  */
 
 import Bluebird from "bluebird"; // Used for setup callback return type
+import * as path from "path";
 
 import type { IExtensionContext } from "../../types/IExtensionContext";
 import type { IInstruction } from "../../extensions/mod_management/types/IInstallResult";
@@ -54,6 +55,7 @@ interface AdaptorEntry {
   pid: string;
   provides: string[]; // URIs like "vortex:adaptor/cyberpunk2077/info"
   requires: string[];
+  gameInfo?: GameInfo | null;
 }
 
 /** Serialized form of GameInfo from IGameInfoService. */
@@ -65,6 +67,10 @@ interface GameInfo {
   gog?: Array<{ gameId: number; name?: string }>;
   xbox?: Array<{ packageFamilyName: string; name?: string }>;
   nexusMods?: Array<{ domain: string; name?: string }>;
+  /** Relative path to the game executable (e.g. "bin/x64/Game.exe"). */
+  executable?: string;
+  /** Nexus Mods thumbnail URL, resolved by the main process from the cached games list. */
+  imageURL?: string;
 }
 
 /**
@@ -248,20 +254,24 @@ function gameIdFromUri(gameUri: string): string {
  */
 function buildQueryArgs(
   info: GameInfo,
-): Record<string, Array<{ id?: string; name?: string }>> {
-  const args: Record<string, Array<{ id?: string; name?: string }>> = {};
+): Record<string, Array<{ id?: string; name?: string; prefer?: number }>> {
+  const args: Record<
+    string,
+    Array<{ id?: string; name?: string; prefer?: number }>
+  > = {};
 
+  // prefer values enforce ordering: Steam > GOG > Epic > Xbox
   if (info.steam?.length) {
-    args.steam = info.steam.map((s) => ({ id: String(s.appId) }));
-  }
-  if (info.epic?.length) {
-    args.epic = info.epic.map((e) => ({ id: e.catalogNamespace }));
+    args.steam = info.steam.map((s) => ({ id: String(s.appId), prefer: 0 }));
   }
   if (info.gog?.length) {
-    args.gog = info.gog.map((g) => ({ id: String(g.gameId) }));
+    args.gog = info.gog.map((g) => ({ id: String(g.gameId), prefer: 1 }));
+  }
+  if (info.epic?.length) {
+    args.epic = info.epic.map((e) => ({ id: e.catalogNamespace, prefer: 2 }));
   }
   if (info.xbox?.length) {
-    args.xbox = info.xbox.map((x) => ({ id: x.packageFamilyName }));
+    args.xbox = info.xbox.map((x) => ({ id: x.packageFamilyName, prefer: 3 }));
   }
 
   return args;
@@ -278,18 +288,22 @@ function buildQueryArgs(
  * translates its declarative contract data into the imperative
  * registerGame/registerModType calls that Vortex understands.
  *
+ * This function is called synchronously during `init()` so that
+ * `registerGame` runs before `endRegistration`. Game info is
+ * pre-fetched by the main process and passed in via the adaptor entry.
+ *
  * The flow is:
- * 1. Fetch game info eagerly (needed for registerGame)
+ * 1. Use pre-fetched game info (needed for registerGame)
  * 2. Register the game with queryArgs for store discovery
  * 3. In the setup callback (called after discovery), lazily resolve:
  *    a. Game folder paths (IGamePathService)
  *    b. Tools and executable info (IGameToolsService)
  * 4. Populate tools from the resolved data
  */
-async function registerAdaptor(
+function registerAdaptor(
   context: IExtensionContext,
   adaptor: AdaptorEntry,
-): Promise<void> {
+): void {
   const { name, provides } = adaptor;
 
   // Match adaptor service URIs by their suffix convention.
@@ -302,9 +316,9 @@ async function registerAdaptor(
   // An adaptor must at least provide game info to be a game adaptor
   if (!infoUri) return;
 
-  // Fetch game info eagerly — we need the game ID and store IDs
-  // for registerGame which must happen synchronously during init
-  const info = (await callAdaptor(name, infoUri, "getGameInfo")) as GameInfo;
+  // Game info was pre-fetched by the main process during adaptor load
+  const info = adaptor.gameInfo as GameInfo | null;
+  if (!info) return;
 
   const gameId = gameIdFromUri(info.gameUri);
 
@@ -422,6 +436,11 @@ async function registerAdaptor(
     relative: boolean;
   }> = [];
 
+  // Executable path from the adaptor's game info. Available before
+  // discovery runs so that handleDiscoveredGame produces the correct
+  // value. Falls back to "." if the adaptor didn't declare one.
+  let resolvedExecutable: string = info.executable ?? ".";
+
   const gameDetails: Record<string, unknown> = {
     steamAppId: info.steam?.[0]?.appId,
     nexusPageId: info.nexusMods?.[0]?.domain,
@@ -431,8 +450,7 @@ async function registerAdaptor(
   context.registerGame({
     id: gameId,
     name: info.displayName,
-    logo: "", // TODO: adaptor-provided logo
-    executable: () => ".", // Placeholder — updated in setup after tools resolve
+    executable: () => resolvedExecutable,
     requiredFiles: [], // Adaptors don't use file-based discovery
     mergeMods: true,
     queryModPath: () => ".", // Actual paths come from mod type registrations
@@ -440,6 +458,10 @@ async function registerAdaptor(
     supportedTools,
     environment: {},
     details: gameDetails,
+    // Nexus Mods thumbnail URL, resolved by the main process from the
+    // cached games list. Carried as an extra property — IGame doesn't
+    // declare it, but IGameStored does and the object is used by reference.
+    ...(info.imageURL ? { imageURL: info.imageURL } : {}),
 
     /**
      * Setup callback — called by Vortex after the game is discovered on disk.
@@ -473,11 +495,6 @@ async function registerAdaptor(
 
           // Step 2: Resolve tools (depends on paths)
           const tools = await getTools(paths);
-
-          // Step 3: Wire the game executable from the tools service
-          if (tools) {
-            discovery.executable = tools.game.executable.path;
-          }
 
           // Step 4: Populate supported tools
           if (tools?.tools) {
@@ -607,25 +624,22 @@ function init(context: IExtensionContext): boolean {
     },
   );
 
-  // On startup, discover and register all loaded adaptors.
-  // context.once() runs after all extensions are initialized but before
-  // the UI is fully interactive — the right time to register games.
-  context.once(async () => {
-    try {
-      const adaptors = await window.api.adaptors.list();
+  // Register all loaded adaptors synchronously during init so that
+  // registerGame calls happen before endRegistration. The adaptor
+  // list and pre-fetched game info come from a synchronous IPC call.
+  try {
+    const adaptors = window.api.adaptors.listWithInfoSync() as AdaptorEntry[];
 
-      if (adaptors.length === 0) {
-        log("info", "[adaptor-bridge] No adaptors loaded");
-        return;
-      }
-
+    if (adaptors.length === 0) {
+      log("info", "[adaptor-bridge] No adaptors loaded");
+    } else {
       log("info", "[adaptor-bridge] Found {{count}} adaptor(s)", {
         count: adaptors.length,
       });
 
       for (const adaptor of adaptors) {
         try {
-          await registerAdaptor(context, adaptor);
+          registerAdaptor(context, adaptor);
         } catch (err) {
           log(
             "warn",
@@ -637,12 +651,12 @@ function init(context: IExtensionContext): boolean {
           );
         }
       }
-    } catch (err) {
-      log("error", "[adaptor-bridge] Failed to query adaptors: {{error}}", {
-        error: err instanceof Error ? err.message : "Unknown error",
-      });
     }
-  });
+  } catch (err) {
+    log("error", "[adaptor-bridge] Failed to query adaptors: {{error}}", {
+      error: err instanceof Error ? err.message : "Unknown error",
+    });
+  }
 
   return true;
 }
