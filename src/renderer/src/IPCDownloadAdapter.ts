@@ -163,7 +163,7 @@ export class IPCDownloadAdapter {
     const handler = this.#handlers[scheme];
 
     if (handler !== undefined) {
-      const resolved = await handler(url, name, friendlyName);
+      const resolved = await Promise.resolve(handler(url, name, friendlyName));
       return { probeEndpoint: { url: resolved.urls[0] } };
     }
 

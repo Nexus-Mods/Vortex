@@ -314,7 +314,7 @@ export class DownloadManager {
     this.#downloads.set(downloadId, handle);
 
     // Handle terminal status transitions not covered by cancel() or pause().
-    // Only updates status if it is still "running" — explicit control operations
+    // Only updates status if it is still "running" - explicit control operations
     // (cancel/pause) set status synchronously before aborting, so they take
     // precedence.
     void rawPromise.then(
