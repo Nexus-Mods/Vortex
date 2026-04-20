@@ -48,7 +48,6 @@ assets/downloads
 .devcontainer
 .editorconfig
 .eslintrc*
-tsconfig*.json
 vitest.config.ts
 
 # Misc
