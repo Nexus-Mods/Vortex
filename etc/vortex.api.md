@@ -2235,6 +2235,11 @@ interface IExtensionContext {
     registerDashlet: RegisterDashlet;
     registerDeploymentMethod: (method: IDeploymentMethod) => void;
     registerDialog: RegisterDialog;
+    registerDownloadProtocol: (scheme: string, handler: (inputUrl: string, name: string, friendlyName: string) => PromiseLike<{
+        urls: string[];
+        updatedUrl?: string;
+        meta: unknown;
+    }>) => void;
     registerFooter: RegisterFooter;
     registerGame: (game: IGame) => void;
     registerGameInfoProvider: (id: string, priority: number, expireMS: number, keys: string[], query: GameInfoQuery) => void;

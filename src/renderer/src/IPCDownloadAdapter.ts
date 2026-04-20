@@ -4,7 +4,6 @@ import { unknownToError } from "@vortex/shared";
 import * as path from "node:path";
 import { z } from "zod";
 
-import type { IProtocolHandlers } from "./extensions/download_management/types/ProtocolHandlers";
 import type { IExtensionApi } from "./types/IExtensionContext";
 
 import { downloadPathForGame } from "./extensions/download_management/selectors";
@@ -42,6 +41,12 @@ const removeDownloadArgsSchema = z
   ])
   .rest(z.unknown());
 
+type ProtocolHandler = (
+  inputUrl: string,
+  name: string,
+  friendlyName: string,
+) => PromiseLike<{ urls: string[]; updatedUrl?: string; meta: unknown }>;
+
 type StoredDownloadInfo = {
   url: string;
   name: string;
@@ -50,17 +55,18 @@ type StoredDownloadInfo = {
 
 export class IPCDownloadAdapter {
   readonly #api: IExtensionApi;
-  readonly #handlers: IProtocolHandlers;
+  readonly #handlers: Record<string, ProtocolHandler> = {};
 
   readonly #pending = new Map<number, StoredDownloadInfo>();
 
-  constructor(api: IExtensionApi, handlers: IProtocolHandlers) {
+  constructor(api: IExtensionApi) {
     this.#api = api;
-    this.#handlers = handlers;
 
     window.api.downloader.onResolve((collationId) =>
       this.#resolve(collationId),
     );
+
+    if (process.env.VORTEX_USE_IPC_DOWNLOADER !== "1") return;
 
     api.events.on("start-download", (...args: unknown[]) => {
       const parsed = startDownloadArgsSchema.safeParse(args);
@@ -94,6 +100,10 @@ export class IPCDownloadAdapter {
         log("error", "failed to remove download", err);
       });
     });
+  }
+
+  registerProtocol(scheme: string, handler: ProtocolHandler): void {
+    this.#handlers[scheme] = handler;
   }
 
   async start(
