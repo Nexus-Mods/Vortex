@@ -10,6 +10,8 @@ import { countIf } from "../../../util/util";
 
 import type { IGameStored } from "../types/IGameStored";
 
+import { nexusGames } from "../../../extensions/nexus_integration/util";
+import { nexusGameId } from "../../../extensions/nexus_integration/util/convertGameId";
 import GameInfoPopover from "./GameInfoPopover";
 
 import type PromiseBB from "bluebird";
@@ -58,10 +60,21 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
       return null;
     }
 
-    const logoPath: string =
+    let logoPath: string | undefined =
       game.extensionPath !== undefined && game.logo !== undefined
         ? path.join(game.extensionPath, game.logo)
         : game.imageURL;
+
+    // For adaptor-registered games (no local logo), resolve a Nexus thumbnail
+    if (logoPath == null) {
+      const domain = nexusGameId(game);
+      const numericId = domain != null
+        ? nexusGames().find((g) => g.domain_name === domain)?.id
+        : undefined;
+      if (numericId !== undefined) {
+        logoPath = `https://images.nexusmods.com/images/games/v2/${numericId}/thumbnail.jpg`;
+      }
+    }
 
     // Mod count should only be shown for Managed and Discovered games as
     //  the supported type suggests that the game has been removed from the machine.

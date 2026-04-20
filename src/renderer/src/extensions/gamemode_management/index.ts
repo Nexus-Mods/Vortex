@@ -801,7 +801,6 @@ function init(context: IExtensionContext): boolean {
   context.registerGame = ((game: IGame, extensionPath: string) => {
     try {
       game.extensionPath = extensionPath;
-      let hasInfoJson = false;
       try {
         const gameExtInfo = JSON.parse(
           fs.readFileSync(path.join(extensionPath, "info.json"), {
@@ -815,7 +814,6 @@ function init(context: IExtensionContext): boolean {
             : gameExtInfo.author;
         game.final = semver.gte(gameExtInfo.version, "1.0.0");
         game.version = gameExtInfo.version;
-        hasInfoJson = true;
       } catch {
         // No info.json (e.g. adaptor bridge registrations).
         // Use sensible defaults so the game still appears.

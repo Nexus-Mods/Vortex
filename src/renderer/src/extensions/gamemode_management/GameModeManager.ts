@@ -480,7 +480,6 @@ class GameModeManager {
       id: game.id,
       logo: game.logo,
       extensionPath: game.extensionPath,
-      imageURL: (game as unknown as IGameStored).imageURL,
       parameters: game.parameters || [],
       requiredFiles: game.requiredFiles,
       supportedTools:

@@ -69,8 +69,6 @@ interface GameInfo {
   nexusMods?: Array<{ domain: string; name?: string }>;
   /** Relative path to the game executable (e.g. "bin/x64/Game.exe"). */
   executable?: string;
-  /** Nexus Mods thumbnail URL, resolved by the main process from the cached games list. */
-  imageURL?: string;
 }
 
 /**
@@ -298,7 +296,7 @@ function buildQueryArgs(
  * 3. In the setup callback (called after discovery), lazily resolve:
  *    a. Game folder paths (IGamePathService)
  *    b. Tools and executable info (IGameToolsService)
- * 4. Populate tools from the resolved data
+ *    c. Populate supported tools from the resolved data
  */
 function registerAdaptor(
   context: IExtensionContext,
@@ -458,10 +456,6 @@ function registerAdaptor(
     supportedTools,
     environment: {},
     details: gameDetails,
-    // Nexus Mods thumbnail URL, resolved by the main process from the
-    // cached games list. Carried as an extra property — IGame doesn't
-    // declare it, but IGameStored does and the object is used by reference.
-    ...(info.imageURL ? { imageURL: info.imageURL } : {}),
 
     /**
      * Setup callback — called by Vortex after the game is discovered on disk.
@@ -496,7 +490,7 @@ function registerAdaptor(
           // Step 2: Resolve tools (depends on paths)
           const tools = await getTools(paths);
 
-          // Step 4: Populate supported tools
+          // Step 3: Populate supported tools
           if (tools?.tools) {
             for (const [toolId, tool] of Object.entries(tools.tools)) {
               supportedTools.push({
@@ -517,7 +511,7 @@ function registerAdaptor(
             }
           }
 
-          // Step 5: Register mod types for non-game anchors so the
+          // Step 4: Register mod types for non-game anchors so the
           // deployment system knows where to route files that target
           // saves, preferences, or other adaptor-declared directories.
           if (paths !== null) {
@@ -550,7 +544,7 @@ function registerAdaptor(
             }
           }
 
-          // Step 6: Expose the installer dispatch so the registered
+          // Step 5: Expose the installer dispatch so the registered
           // "adaptor" installer can route archive contents through the
           // adaptor's stop-pattern resolver.
           if (installerUri && pathsUri && paths !== null) {
