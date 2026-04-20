@@ -48,7 +48,7 @@ function gameFromDiscovery(
 ): IGameStored {
   return {
     id,
-    name: discovered.name,
+    name: discovered.name ?? id,
     shortName: discovered.shortName,
     executable: discovered.executable,
     extensionPath: discovered.extensionPath,
@@ -503,8 +503,8 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
   private applyGameFilter = (game: IGameStored): boolean => {
     const { currentFilterValue } = this.state;
     return (
-      game.name.toLowerCase().includes(currentFilterValue.toLowerCase()) ||
-      !currentFilterValue
+      !currentFilterValue ||
+      game.name?.toLowerCase().includes(currentFilterValue.toLowerCase())
     );
   };
 
