@@ -137,6 +137,7 @@ const userlistReducer: types.IReducerSpec = {
         );
       }
     },
+    [actions.clearUserlist as any]: () => ({ plugins: [], groups: [] }),
     [actions.removeGroupRule as any]: (state, payload) => {
       const idx = state.groups.findIndex(
         (group) => group.name.toUpperCase() === payload.groupId.toUpperCase(),
