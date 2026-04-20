@@ -22,6 +22,8 @@ import type {
   Serializable,
   UpdateStatus,
   VortexPaths,
+  WireDownloadCheckpoint,
+  WireResolvedResource,
 } from "./ipc";
 import type { Level } from "./logging";
 import type { PersistedHive, PersistedState } from "./state";
@@ -91,6 +93,9 @@ export interface Api {
 
   /** Telemetry APIs - span export from renderer to main */
   telemetry: TelemetryApi;
+
+  /** Downloader APIs */
+  downloader: DownloaderApi;
 }
 
 export interface Example {
@@ -428,6 +433,30 @@ export interface UpdaterApi {
    * Trigger restart and install of the downloaded update.
    */
   restartAndInstall(): void;
+}
+
+/** API for interacting with the DownloadManager in main */
+export interface DownloaderApi {
+  /** Enqueues a download. Returns a globally unique `downloadId` and the `collationId` for resolve callbacks. */
+  start(dest: string): Promise<{ downloadId: string; collationId: number }>;
+
+  /** Pauses an active download and returns a checkpoint for later resumption. */
+  pause(downloadId: string): Promise<WireDownloadCheckpoint>;
+
+  /** Resumes a download from a checkpoint. */
+  resume(checkpoint: WireDownloadCheckpoint): Promise<void>;
+
+  /** Cancels an active download. */
+  cancel(downloadId: string): Promise<void>;
+
+  /**
+   * Registers a handler invoked by main when it needs the renderer to resolve a download URL.
+   * The `collationId` maps to the download started via `start()`.
+   * Returns an unsubscribe function.
+   */
+  onResolve(
+    handler: (collationId: number) => Promise<WireResolvedResource>,
+  ): () => void;
 }
 
 /** API for forwarding telemetry spans from renderer to main for buffering/export */

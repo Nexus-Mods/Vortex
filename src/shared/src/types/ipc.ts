@@ -2,6 +2,7 @@
 // Everything in here is compile-time only, meaning the interfaces you find here
 // are never used to create an object. They are only used for type inferrence.
 
+import type { ByteRange } from "./download";
 import type { SerializedSpan } from "../telemetry/types";
 import type {
   BrowserViewConstructorOptions,
@@ -87,8 +88,27 @@ export type VortexPaths = {
   desktop: string;
 };
 
+export type WireEndpoint = {
+  url: string;
+  headers?: Record<string, string>;
+};
+
+export type WireResolvedResource = {
+  probeEndpoint: WireEndpoint;
+  chunkEndpoints?: WireEndpoint[];
+};
+
+export type WireDownloadCheckpoint = {
+  downloadId: string;
+  dest: string;
+  completedRanges: ByteRange[];
+  etag: string | null;
+};
+
 export interface CallbackChannels {
   "example:ping": (ping: string) => Promise<{ pong: string }>;
+
+  "download:resolve": () => Promise<WireResolvedResource>;
 }
 
 export type MainCallbackChannels = {
@@ -335,6 +355,14 @@ export interface InvokeChannels {
 
   // Compile stylesheets
   "styles:compile": (filePaths: string[]) => Promise<string>;
+
+  // Download channels
+  "download:start": (
+    dest: string,
+  ) => Promise<{ downloadId: string; collationId: number }>;
+  "download:pause": (downloadId: string) => Promise<WireDownloadCheckpoint>;
+  "download:resume": (checkpoint: WireDownloadCheckpoint) => Promise<void>;
+  "download:cancel": (downloadId: string) => Promise<void>;
 
   // Adaptor host — renderer queries adaptor services through these
   "adaptors:list": () => Promise<
