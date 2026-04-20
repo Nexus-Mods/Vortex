@@ -148,7 +148,7 @@ export class IPCDownloadAdapter {
     }
 
     try {
-      const downloadId = await this.start(url, dest, name, modInfo.name ?? "");
+      const downloadId = await this.start(url, path.join(dest, name), name, modInfo.name ?? "");
       callback?.(null, downloadId);
     } catch (err) {
       callback?.(unknownToError(err));
