@@ -28,6 +28,7 @@ import { log } from "../../logging";
 import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
 import { runElevated } from "../../util/elevated";
 import * as fs from "../../util/fs";
+import { getIPCPath } from "../../util/ipc";
 import getVortexPath from "../../util/getVortexPath";
 import makeReactive from "../../util/makeReactive";
 import { activeGameId, gameName } from "../../util/selectors";
@@ -91,7 +92,7 @@ function startIPCServer(ipcPath: string, onMessage: OnMessageCB): net.Server {
           log("error", "elevated code reported error", err);
         });
     })
-    .listen(path.join("\\\\?\\pipe", ipcPath))
+    .listen(getIPCPath(ipcPath))
     .on("error", (err) => {
       log("error", "Failed to create ipc server", err);
     });
@@ -732,7 +733,7 @@ function baseFunc(
   };
 
   const client = new imp.JsonSocket(new imp.net.Socket());
-  client.connect(imp.path.join("\\\\?\\pipe", ipcPath));
+  client.connect(ipcPath);
 
   client
     .on("connect", () => {
@@ -770,7 +771,7 @@ function makeScript(args: any): string {
     funcBody.slice(funcBody.indexOf("{") + 1, funcBody.lastIndexOf("}"));
   let prog: string = `
         let moduleRoot = '${projectRoot}';\n
-        let ipcPath = '${IPC_ID}';\n
+        let ipcPath = '${getIPCPath(IPC_ID)}';\n
       `;
 
   if (args !== undefined) {

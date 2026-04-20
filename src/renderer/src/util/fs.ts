@@ -43,6 +43,7 @@ import {
   UserCanceled,
 } from "./CustomErrors";
 import { runElevated } from "./elevated";
+import { getIPCPath } from "./ipc";
 import { createErrorReport, getVisibleWindow } from "./errorHandling";
 import lazyRequire from "./lazyRequire";
 import { log } from "./log";
@@ -1074,7 +1075,7 @@ function elevated(
             }
           });
       })
-      .listen(path.join("\\\\?\\pipe", ipcPath));
+      .listen(getIPCPath(ipcPath));
     runElevated(ipcPath, func, parameters).catch((err: unknown) => {
       clearTimeout(timeout);
       const nativeCode = getErrorNativeCode(err);
