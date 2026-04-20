@@ -73,7 +73,7 @@ try {
 
     adaptors: {
       list: () => betterIpcRenderer.invoke("adaptors:list"),
-      listWithInfoSync: () => ipcRenderer.sendSync("adaptors:list-with-info"),
+      listWithInfoSync: (): unknown[] => ipcRenderer.sendSync("adaptors:list-with-info") as unknown[],
       call: (
         adaptorName: string,
         serviceUri: string,
