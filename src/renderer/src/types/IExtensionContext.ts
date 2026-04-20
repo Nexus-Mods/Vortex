@@ -1174,8 +1174,6 @@ export interface IExtensionContext {
     scheme: string,
     handler: (
       inputUrl: string,
-      name: string,
-      friendlyName: string,
     ) => PromiseLike<{ urls: string[]; updatedUrl?: string; meta: unknown }>,
   ) => void;
 

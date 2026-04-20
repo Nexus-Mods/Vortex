@@ -15,8 +15,6 @@ import { log } from "./logging";
 
 type ProtocolHandler = (
   inputUrl: string,
-  fileName: string,
-  displayName: string,
 ) => PromiseLike<{ urls: string[]; updatedUrl?: string; meta: unknown }>;
 
 /**
@@ -35,8 +33,6 @@ function parseEncodedUrl(raw: string): EncodedUrl {
 
 type StoredDownloadInfo = {
   encodedUrl: EncodedUrl;
-  fileName: string;
-  displayName: string;
 };
 
 export class IPCDownloadAdapter {
@@ -154,8 +150,6 @@ export class IPCDownloadAdapter {
       const collationId = this.#nextCollationId++;
       const info: StoredDownloadInfo = {
         encodedUrl: encodedUrl,
-        fileName,
-        displayName: modInfo.name ?? "",
       };
 
       this.#pending.set(collationId, info);
@@ -240,7 +234,7 @@ export class IPCDownloadAdapter {
 
     this.#pending.delete(collationId);
 
-    const { encodedUrl, fileName, displayName } = info;
+    const { encodedUrl } = info;
     const headers: Record<string, string> | undefined = encodedUrl.referer
       ? { Referer: encodedUrl.referer }
       : undefined;
@@ -255,7 +249,7 @@ export class IPCDownloadAdapter {
       });
 
       const resolved = await Promise.resolve(
-        handler(encodedUrl.url.toString(), fileName, displayName),
+        handler(encodedUrl.url.toString()),
       );
 
       log("debug", "download resolved", { resolvedUrl: resolved.urls[0] });
