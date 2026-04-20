@@ -79,6 +79,7 @@
     "@types/ws": "catalog:",
     "@types/xml2js": "catalog:",
     "@vitejs/plugin-react": "catalog:",
+    "@vortex/fs": "workspace:*",
     "@vortex/shared": "workspace:*",
     "@welldone-software/why-did-you-render": "catalog:",
     "bbcode-to-react": "catalog:",
