@@ -36,6 +36,7 @@
 import Bluebird from "bluebird"; // Used for setup callback return type
 
 import type { IExtensionContext } from "../../types/IExtensionContext";
+import type { IInstruction } from "../../extensions/mod_management/types/IInstallResult";
 
 import { log } from "../../util/log";
 
@@ -197,6 +198,38 @@ async function callAdaptor(
 // ---------------------------------------------------------------------------
 // Data transformation helpers
 // ---------------------------------------------------------------------------
+
+/** Serialized QualifiedPath shape as it appears after IPC structured-clone. */
+interface SerializedQP {
+  value: string;
+  scheme: string;
+  path: string;
+}
+
+/**
+ * Converts a serialized QualifiedPath's URI-style `.path` component to a
+ * native filesystem path. Windows paths are encoded as `/C/Users/foo` in
+ * the QP and need to become `C:\Users\foo`; Linux paths are already native.
+ *
+ * NOTE: paths that don't match the `/X/...` drive-letter pattern (e.g. UNC
+ * paths or bare relative segments) fall through to a simple slash-flip.
+ * This is intentional — QualifiedPath always produces the `/X/...` form
+ * for local drives, so the fallback is a defensive catch-all rather than
+ * an expected code path.
+ *
+ * TODO: replace with `resolveAbsolutePath` from `@vortex/fs` once the
+ * browser-side path resolver lands.
+ */
+function qpPathToNative(qp: SerializedQP): string {
+  if (qp.scheme === "windows") {
+    const p = qp.path;
+    if (p.length >= 3 && p[0] === "/" && p[2] === "/") {
+      return p[1] + ":" + p.slice(2).replace(/\//g, "\\");
+    }
+    return p.replace(/\//g, "\\");
+  }
+  return qp.path;
+}
 
 /**
  * Extracts a game ID from a game URI.
@@ -467,10 +500,42 @@ async function registerAdaptor(
             }
           }
 
-          // Step 5: Expose the installer dispatch so later callers
-          // (e.g. InstallManager integration, in a follow-up PR) can
-          // route archive contents through the adaptor. Only registered
-          // when the adaptor declares both /paths and /installer URIs.
+          // Step 5: Register mod types for non-game anchors so the
+          // deployment system knows where to route files that target
+          // saves, preferences, or other adaptor-declared directories.
+          if (paths !== null) {
+            for (const [anchor, qp] of Object.entries(
+              paths as Record<string, unknown>,
+            )) {
+              if (anchor === "game") continue;
+              if (
+                typeof qp !== "object" ||
+                qp === null ||
+                typeof (qp as SerializedQP).scheme !== "string" ||
+                typeof (qp as SerializedQP).path !== "string"
+              ) {
+                log(
+                  "warn",
+                  "[adaptor-bridge] {{name}}: skipping non-QP paths entry {{anchor}}",
+                  { name, anchor },
+                );
+                continue;
+              }
+              const modTypeId = `${gameId}-${anchor}`;
+              const nativePath = qpPathToNative(qp as SerializedQP);
+              context.registerModType(
+                modTypeId,
+                50,
+                (gId) => gId === gameId,
+                () => nativePath,
+                () => Bluebird.resolve(false),
+              );
+            }
+          }
+
+          // Step 6: Expose the installer dispatch so the registered
+          // "adaptor" installer can route archive contents through the
+          // adaptor's stop-pattern resolver.
           if (installerUri && pathsUri && paths !== null) {
             installerRegistry.set(gameId, invokeInstaller);
           }
@@ -484,6 +549,64 @@ async function registerAdaptor(
 // ---------------------------------------------------------------------------
 
 function init(context: IExtensionContext): boolean {
+  // Register a single installer that delegates to whichever adaptor owns
+  // the active game. Priority 25 sits after both fomod installers (native
+  // at 10, IPC at 20) so fomod archives still get fomod treatment, but
+  // before the generic fallback (1000).
+  context.registerInstaller(
+    "adaptor",
+    25,
+    (_files, gameId) => {
+      const supported = getAdaptorInstaller(gameId) !== undefined;
+      return Promise.resolve({ supported, requiredFiles: [] });
+    },
+    async (files, _destinationPath, gameId) => {
+      const dispatch = getAdaptorInstaller(gameId);
+      if (dispatch === undefined) {
+        throw new Error(
+          `[adaptor-bridge] No adaptor installer registered for game "${gameId}"`,
+        );
+      }
+      // InstallManager's buildFileList produces backslash-separated paths
+      // on Windows and appends path.sep to directory entries. Adaptors
+      // expect forward-slash RelativePaths with no trailing separator, so
+      // normalize here and filter out directory entries.
+      const normalized = files
+        .filter((f) => !f.endsWith("/") && !f.endsWith("\\"))
+        .map((f) => f.replace(/\\/g, "/"));
+      const mappings = await dispatch(normalized);
+      if (mappings.length === 0) {
+        throw new Error(
+          `[adaptor-bridge] Adaptor returned no install mappings for game "${gameId}"`,
+        );
+      }
+      const instructions: IInstruction[] = mappings.map((m) => ({
+        type: "copy" as const,
+        source: m.source,
+        destination: m.destination,
+      }));
+
+      // Determine the mod type from the anchor field. A single mod can
+      // only target one mod type in Vortex, so mixed anchors are an error.
+      const anchors = new Set(mappings.map((m) => m.anchor));
+      if (anchors.size > 1) {
+        throw new Error(
+          `[adaptor-bridge] Mod targets multiple anchors (${[...anchors].join(", ")}); ` +
+            "a single mod can only deploy to one location",
+        );
+      }
+      const anchor = [...anchors][0];
+      if (anchor !== undefined && anchor !== "game") {
+        instructions.push({
+          type: "setmodtype",
+          value: `${gameId}-${anchor}`,
+        });
+      }
+
+      return { instructions };
+    },
+  );
+
   // On startup, discover and register all loaded adaptors.
   // context.once() runs after all extensions are initialized but before
   // the UI is fully interactive — the right time to register games.
