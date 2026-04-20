@@ -11,6 +11,7 @@ import {
   ICreateCollectionResult,
   IGraphErrorDetail,
 } from "@nexusmods/nexus-api";
+import { V3ApiError } from "@vortex/nexus-api-v3";
 import Bluebird from "bluebird";
 import * as _ from "lodash";
 import Zip from "node-7z";
@@ -415,6 +416,34 @@ export async function doExportToAPI(
         type: "error",
         title: "The server rejected this collection",
         message: err.message || "<No reason given>",
+      });
+      throw new util.ProcessCanceled("collection rejected");
+    } else if (err instanceof V3ApiError) {
+      const message = err.detail || err.message;
+      const validationErrors = err.validationErrors ?? [];
+      api.sendNotification({
+        type: "error",
+        message: "The server rejected this collection",
+        actions: [
+          {
+            title: "More",
+            action: () => {
+              api.showDialog(
+                "error",
+                "The server rejected this collection",
+                {
+                  text:
+                    validationErrors.length === 0
+                      ? message
+                      : validationErrors
+                        .map((ve) => `${ve.pointer}: ${ve.detail}`)
+                        .join("\n"),
+                },
+                [{ label: "Close" }],
+              );
+            },
+          },
+        ],
       });
       throw new util.ProcessCanceled("collection rejected");
     } else if (err.constructor.name === "GraphError") {

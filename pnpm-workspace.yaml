@@ -292,6 +292,8 @@ catalog:
   xml2js: ^0.5.0
   xxhash-addon: ^2.0.3
   zod: ^4.3.5
+  openapi-fetch: ^0.14.0
+  openapi-typescript: ^7.8.0
 
 catalogMode: strict
 cleanupUnusedCatalogs: true

@@ -15,6 +15,7 @@
   "devDependencies": {
     "7z-bin": "catalog:",
     "@nexusmods/nexus-api": "catalog:",
+    "@vortex/nexus-api-v3": "workspace:*",
     "@types/lodash": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",

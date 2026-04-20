@@ -49,6 +49,7 @@ import type { IModFileContentSearchFilter } from '@nexusmods/nexus-api';
 import type { IModInfo } from 'modmeta-db';
 import type { IModInfo as IModInfo_2 } from '@nexusmods/nexus-api';
 import type { IModRequirements } from '@nexusmods/nexus-api';
+import type { IncomingHttpHeaders } from 'http';
 import type { IncomingMessage } from 'http';
 import type { IPreference } from '@nexusmods/nexus-api';
 import type { IPreferenceQuery } from '@nexusmods/nexus-api';
@@ -4056,6 +4057,16 @@ interface IUnavailableReason {
     solution?: (t: TFunction) => string;
 }
 
+// @public (undocumented)
+interface IUploadResult {
+    // (undocumented)
+    body: Buffer;
+    // (undocumented)
+    headers: IncomingHttpHeaders;
+    // (undocumented)
+    statusCode: number;
+}
+
 // @public
 interface IUser {
     // (undocumented)
@@ -6022,6 +6033,9 @@ type UpdateType = "drag-n-drop" | "props-update" | "refresh";
 // @public (undocumented)
 function upload(targetUrl: string, dataStream: Readable, dataSize: number): Promise<Buffer>;
 
+// @public (undocumented)
+function uploadWithHeaders(targetUrl: string, dataStream: Readable, dataSize: number, extraHeaders?: Record<string, string>): Promise<IUploadResult>;
+
 // Warning: (ae-forgotten-export) The symbol "IUsageProps" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
@@ -6195,8 +6209,10 @@ declare namespace util {
         jsonRequest,
         request,
         upload,
+        uploadWithHeaders,
         IRequestOptions,
-        Method
+        Method,
+        IUploadResult
     }
 }
 export { util }

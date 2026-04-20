@@ -1,0 +1,34 @@
+{
+  "$schema": "https://www.schemastore.org/package.json",
+  "name": "@vortex/nexus-api-v3",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "codegen": "openapi-typescript https://api.nexusmods.com/openapi.yaml -o src/generated/nexus-api-v3.d.ts",
+    "build": "pnpm codegen && pnpm tsdown",
+    "dist": "pnpm tsdown",
+    "test": "vitest run",
+    "typecheck": "pnpm tsc --noEmit -p tsconfig.json",
+    "postinstall": "pnpm codegen"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "dependencies": {
+    "openapi-fetch": "catalog:"
+  },
+  "devDependencies": {
+    "openapi-typescript": "catalog:",
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
