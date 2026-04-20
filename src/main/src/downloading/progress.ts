@@ -5,8 +5,25 @@ import type {
   Progress,
 } from "@vortex/shared/download";
 
+export type DownloadStatus =
+  | "queued"
+  | "running"
+  | "completed"
+  | "paused"
+  | "canceled"
+  | "failed";
+
 /** @internal */
 export class ProgressReporter {
+  #status: DownloadStatus = "queued";
+  get status(): DownloadStatus {
+    return this.#status;
+  }
+
+  set status(value: DownloadStatus) {
+    this.#status = value;
+  }
+
   #isChunked: boolean = false;
   #chunkProgress: Map<number, ChunkProgress> = new Map();
   #progress: Progress = { bytesReceived: 0, bytesWritten: 0 };
