@@ -43,7 +43,7 @@ interface IResolvedRule {
   rule: types.IModRule;
 }
 
-function sanitizeExpression(fileName: string): string {
+export function sanitizeExpression(fileName: string): string {
   // drop extension and anything like ".1" or " (1)" at the end which probaby
   // indicates duplicate downloads (either in our own format or common browser
   // style)
@@ -53,7 +53,7 @@ function sanitizeExpression(fileName: string): string {
     .replace(/ \(\d+\)$/, "");
 }
 
-function toInt(input: string | number | undefined | null) {
+export function toInt(input: string | number | undefined | null) {
   if (!input) {
     return 0;
   }
@@ -65,7 +65,7 @@ function toInt(input: string | number | undefined | null) {
   return input;
 }
 
-function deduceSource(
+export function deduceSource(
   mod: types.IMod,
   sourceInfo: ICollectionSourceInfo,
   versionMatcher: string,
@@ -434,7 +434,7 @@ export function makeBiDirRule(
   };
 }
 
-function makeTransferrable(
+export function makeTransferrable(
   mods: { [modId: string]: types.IMod },
   collection: types.IMod,
   rule: types.IModRule,
