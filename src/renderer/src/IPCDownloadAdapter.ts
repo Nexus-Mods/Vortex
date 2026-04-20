@@ -35,13 +35,19 @@ type StoredDownloadInfo = {
   encodedUrl: EncodedUrl;
 };
 
+type DownloadState = {
+  encodedUrl: EncodedUrl;
+  checkpoint?: WireDownloadCheckpoint;
+};
+
 export class IPCDownloadAdapter {
   readonly #api: IExtensionApi;
   readonly #handlers: Record<string, ProtocolHandler> = {};
 
+  // TODO: APP-353, APP-228 once the URL and checkpoint are both written to Redux,
+  // #downloadState can be removed entirely and both resume paths read from Redux instead.
   readonly #pending = new Map<number, StoredDownloadInfo>();
-  readonly #infoByDownloadId = new Map<string, StoredDownloadInfo>();
-  readonly #checkpointByDownloadId = new Map<string, WireDownloadCheckpoint>();
+  readonly #downloadState = new Map<string, DownloadState>();
   #nextCollationId = 0;
 
   constructor(api: IExtensionApi) {
@@ -165,7 +171,7 @@ export class IPCDownloadAdapter {
         collationId,
       );
 
-      this.#infoByDownloadId.set(downloadId, info);
+      this.#downloadState.set(downloadId, { encodedUrl: info.encodedUrl });
       log("debug", "download queued", { downloadId, collationId });
       callback?.(null, downloadId);
     } catch (err) {
@@ -193,7 +199,8 @@ export class IPCDownloadAdapter {
     try {
       log("debug", "pausing download", { downloadId });
       const checkpoint = await window.api.downloader.pause(downloadId);
-      this.#checkpointByDownloadId.set(downloadId, checkpoint);
+      const state = this.#downloadState.get(downloadId);
+      if (state !== undefined) state.checkpoint = checkpoint;
       callback?.(null);
     } catch (err) {
       callback?.(unknownToError(err));
@@ -205,21 +212,19 @@ export class IPCDownloadAdapter {
     callback?: (err: Error | null, id?: string) => void,
   ): Promise<void> {
     try {
-      const checkpoint = this.#checkpointByDownloadId.get(downloadId);
-      if (checkpoint === undefined) {
+      const state = this.#downloadState.get(downloadId);
+      if (state === undefined) {
+        throw new Error(`No stored state for download ${downloadId}`);
+      }
+      if (state.checkpoint === undefined) {
         throw new Error(`No checkpoint stored for download ${downloadId}`);
       }
 
-      const info = this.#infoByDownloadId.get(downloadId);
-      if (info === undefined) {
-        throw new Error(`No stored info for download ${downloadId}`);
-      }
-
       const collationId = this.#nextCollationId++;
-      this.#pending.set(collationId, info);
+      this.#pending.set(collationId, { encodedUrl: state.encodedUrl });
 
       log("debug", "resuming download", { downloadId, collationId });
-      await window.api.downloader.resume(checkpoint, collationId);
+      await window.api.downloader.resume(state.checkpoint, collationId);
       callback?.(null, downloadId);
     } catch (err) {
       callback?.(unknownToError(err));
