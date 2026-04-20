@@ -104,6 +104,7 @@ export class IPCDownloadAdapter {
 
   registerProtocol(scheme: string, handler: ProtocolHandler): void {
     this.#handlers[scheme] = handler;
+    log("debug", `registered protocol handler for scheme '${scheme}'`);
   }
 
   async start(
@@ -112,12 +113,15 @@ export class IPCDownloadAdapter {
     name: string = "",
     friendlyName: string = "",
   ): Promise<string> {
+    log("debug", "starting download", { url, dest, name });
     const { downloadId, collationId } = await window.api.downloader.start(dest);
     this.#pending.set(collationId, { url, name, friendlyName });
+    log("debug", "download queued", { downloadId, collationId });
     return downloadId;
   }
 
   cancel(downloadId: string): Promise<void> {
+    log("debug", "cancelling download", { downloadId });
     return window.api.downloader.cancel(downloadId);
   }
 
@@ -173,11 +177,14 @@ export class IPCDownloadAdapter {
     const handler = this.#handlers[scheme];
 
     if (handler !== undefined) {
+      log("debug", "resolving download via protocol handler", { scheme, url });
       const resolved = await Promise.resolve(handler(url, name, friendlyName));
+      log("debug", "download resolved", { resolvedUrl: resolved.urls[0] });
       return { probeEndpoint: { url: resolved.urls[0] } };
     }
 
     if (scheme === "http" || scheme === "https") {
+      log("debug", "resolving download directly", { url });
       return { probeEndpoint: { url } };
     }
 
