@@ -6,6 +6,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: vortex-dev
+    command: ["pnpm", "run", "dev"]
     ports:
       - "3000:3000"
       - "5173:5173"
