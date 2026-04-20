@@ -1,0 +1,57 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Dependencies
+node_modules
+.pnpm-store
+
+# Build outputs
+dist
+out
+build
+.next
+.vite
+.rollup
+
+# Development
+.env.local
+.env.*.local
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+coverage
+.nyc_output
+*.lcov
+
+# CI/CD
+.github
+.gitlab-ci.yml
+
+# Documentation
+docs
+README.md
+CHANGELOG.md
+*.md
+
+# Assets (if large)
+assets/videos
+assets/downloads
+
+# IDE config
+.devcontainer
+.editorconfig
+.eslintrc*
+tsconfig*.json
+vitest.config.ts
+
+# Misc
+*.log
+.turbo
+.cache

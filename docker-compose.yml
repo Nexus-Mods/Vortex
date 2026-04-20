@@ -1,0 +1,38 @@
+version: '3.9'
+
+services:
+  vortex:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vortex-dev
+    ports:
+      - "3000:3000"
+      - "5173:5173"
+    environment:
+      NODE_ENV: development
+      DEBUG: "vortex:*"
+    volumes:
+      # Bind mount source code for hot reload
+      - ./src:/app/src
+      - ./packages:/app/packages
+      - ./extensions:/app/extensions
+      # Named volume for node_modules to avoid conflicts
+      - node_modules:/app/node_modules
+      - pnpm_store:/app/.pnpm-store
+    working_dir: /app
+    # Watch for file changes and rebuild
+    develop:
+      watch:
+        - path: ./src
+          action: rebuild
+        - path: ./packages
+          action: rebuild
+        - path: ./extensions
+          action: rebuild
+        - path: ./package.json
+          action: rebuild
+
+volumes:
+  node_modules:
+  pnpm_store:
