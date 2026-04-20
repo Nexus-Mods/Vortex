@@ -436,7 +436,7 @@ function findCollectionByDownload(
 
     // Download lookups will not hold any patch/filelist/installerChoices info.
     //  Which is why in this case we want to ensure that we only match using regular reference fields.
-    const matchingRule = collectionMod.rules.find((rule) => {
+    const matchingRule = collectionMod.rules?.find((rule) => {
       const { patches, fileList, installerChoices, ...refWithoutExtras } =
         rule.reference;
       return testModReference(lookup, refWithoutExtras);
@@ -643,7 +643,7 @@ class InstallManager {
 
         const filtered = rules.filter(
           (iter) =>
-            collection.rules.find((rule) => _.isEqual(iter, rule)) !==
+            collection.rules?.find((rule) => _.isEqual(iter, rule)) !==
             undefined,
         );
 
