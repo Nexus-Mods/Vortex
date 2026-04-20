@@ -437,14 +437,24 @@ export interface UpdaterApi {
 
 /** API for interacting with the DownloadManager in main */
 export interface DownloaderApi {
-  /** Enqueues a download. Returns a globally unique `downloadId` and the `collationId` for resolve callbacks. */
-  start(dest: string): Promise<{ downloadId: string; collationId: number }>;
+  /**
+   * Enqueues a download. The caller must generate `collationId` and register
+   * any resolve handler before calling this, so that the main-side resolve
+   * callback cannot arrive before the handler is ready.
+   */
+  start(dest: string, collationId: number): Promise<{ downloadId: string }>;
 
   /** Pauses an active download and returns a checkpoint for later resumption. */
   pause(downloadId: string): Promise<WireDownloadCheckpoint>;
 
-  /** Resumes a download from a checkpoint. */
-  resume(checkpoint: WireDownloadCheckpoint): Promise<void>;
+  /**
+   * Resumes a download from a checkpoint. The caller must generate `collationId`
+   * and register any resolve handler before calling this.
+   */
+  resume(
+    checkpoint: WireDownloadCheckpoint,
+    collationId: number,
+  ): Promise<void>;
 
   /** Cancels an active download. */
   cancel(downloadId: string): Promise<void>;

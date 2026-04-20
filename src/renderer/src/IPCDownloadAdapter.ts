@@ -58,6 +58,7 @@ export class IPCDownloadAdapter {
   readonly #handlers: Record<string, ProtocolHandler> = {};
 
   readonly #pending = new Map<number, StoredDownloadInfo>();
+  #nextCollationId = 0;
 
   constructor(api: IExtensionApi) {
     this.#api = api;
@@ -113,9 +114,10 @@ export class IPCDownloadAdapter {
     name: string = "",
     friendlyName: string = "",
   ): Promise<string> {
-    log("debug", "starting download", { url, dest, name });
-    const { downloadId, collationId } = await window.api.downloader.start(dest);
+    const collationId = this.#nextCollationId++;
     this.#pending.set(collationId, { url, name, friendlyName });
+    log("debug", "starting download", { url, dest, name, collationId });
+    const { downloadId } = await window.api.downloader.start(dest, collationId);
     log("debug", "download queued", { downloadId, collationId });
     return downloadId;
   }

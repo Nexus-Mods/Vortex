@@ -359,9 +359,13 @@ export interface InvokeChannels {
   // Download channels
   "download:start": (
     dest: string,
-  ) => Promise<{ downloadId: string; collationId: number }>;
+    collationId: number,
+  ) => Promise<{ downloadId: string }>;
   "download:pause": (downloadId: string) => Promise<WireDownloadCheckpoint>;
-  "download:resume": (checkpoint: WireDownloadCheckpoint) => Promise<void>;
+  "download:resume": (
+    checkpoint: WireDownloadCheckpoint,
+    collationId: number,
+  ) => Promise<void>;
   "download:cancel": (downloadId: string) => Promise<void>;
   "download:getProgress": (downloadId: string) => Promise<DownloadProgress>;
 

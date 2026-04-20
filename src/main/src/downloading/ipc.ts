@@ -36,11 +36,9 @@ function wireToResolvedResource(wire: WireResolvedResource): ResolvedResource {
 export function init(manager: DownloadManager): void {
   const timeout = 30_000;
 
-  let nextCollationId = 0;
   const webContentsByDownloadId = new Map<string, WebContents>();
 
-  betterIpcMain.handle("download:start", async (event, dest) => {
-    const collationId = nextCollationId++;
+  betterIpcMain.handle("download:start", async (event, dest, collationId) => {
     const webContents = event.sender;
     const wireResource = await betterIpcMain.callback(
       "download:resolve",
@@ -52,7 +50,7 @@ export function init(manager: DownloadManager): void {
     const resolver = () => Promise.resolve(resource);
     const handle = manager.download(resource, dest, resolver);
     webContentsByDownloadId.set(handle.downloadId, webContents);
-    return { downloadId: handle.downloadId, collationId };
+    return { downloadId: handle.downloadId };
   });
 
   betterIpcMain.handle("download:cancel", (_event, downloadId) => {
@@ -76,27 +74,29 @@ export function init(manager: DownloadManager): void {
     return wire;
   });
 
-  betterIpcMain.handle("download:resume", async (event, wireCheckpoint) => {
-    const collationId = nextCollationId++;
-    const webContents = event.sender;
-    const wireResource = await betterIpcMain.callback(
-      "download:resolve",
-      webContents,
-      timeout,
-      collationId,
-    );
-    const resource = wireToResolvedResource(wireResource);
-    const checkpoint = {
-      downloadId: wireCheckpoint.downloadId,
-      resource,
-      dest: wireCheckpoint.dest,
-      completedRanges: wireCheckpoint.completedRanges,
-      etag: wireCheckpoint.etag,
-    };
-    const resolver = () => Promise.resolve(resource);
-    manager.resume(checkpoint, resolver, staticChunker());
-    webContentsByDownloadId.set(wireCheckpoint.downloadId, webContents);
-  });
+  betterIpcMain.handle(
+    "download:resume",
+    async (event, wireCheckpoint, collationId) => {
+      const webContents = event.sender;
+      const wireResource = await betterIpcMain.callback(
+        "download:resolve",
+        webContents,
+        timeout,
+        collationId,
+      );
+      const resource = wireToResolvedResource(wireResource);
+      const checkpoint = {
+        downloadId: wireCheckpoint.downloadId,
+        resource,
+        dest: wireCheckpoint.dest,
+        completedRanges: wireCheckpoint.completedRanges,
+        etag: wireCheckpoint.etag,
+      };
+      const resolver = () => Promise.resolve(resource);
+      manager.resume(checkpoint, resolver, staticChunker());
+      webContentsByDownloadId.set(wireCheckpoint.downloadId, webContents);
+    },
+  );
 
   betterIpcMain.handle("download:getProgress", (_event, downloadId) => {
     const handle = manager.get(downloadId);

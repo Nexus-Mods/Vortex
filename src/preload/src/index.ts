@@ -284,11 +284,12 @@ try {
     },
 
     downloader: {
-      start: (dest) => betterIpcRenderer.invoke("download:start", dest),
+      start: (dest, collationId) =>
+        betterIpcRenderer.invoke("download:start", dest, collationId),
       pause: (downloadId) =>
         betterIpcRenderer.invoke("download:pause", downloadId),
-      resume: (checkpoint) =>
-        betterIpcRenderer.invoke("download:resume", checkpoint),
+      resume: (checkpoint, collationId) =>
+        betterIpcRenderer.invoke("download:resume", checkpoint, collationId),
       cancel: (downloadId) =>
         betterIpcRenderer.invoke("download:cancel", downloadId),
       onResolve: (handler) => {
