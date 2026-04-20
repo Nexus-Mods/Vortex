@@ -400,7 +400,7 @@ export interface AdaptorsApi {
     pid: string;
     provides: string[];
     requires: string[];
-    gameInfo: unknown | null;
+    gameInfo: unknown;
   }>;
   /** Calls a service method on a loaded adaptor. */
   call(
