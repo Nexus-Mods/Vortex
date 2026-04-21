@@ -100,10 +100,19 @@ export function isErrorWithSystemCode(
 }
 
 /**
- * Strip the installation-specific path prefix from a stack frame, keeping
- * only from `src/` or `node_modules/` onward so fingerprints are stable
- * across different machines and install locations. Path separators are
- * normalized to forward slashes.
+ * Sanitize paths embedded in a string — stack frames, error messages, or any
+ * free-form text that may contain absolute paths. Two passes:
+ *
+ *   1. Install-prefix strip: when a path reaches a known Vortex anchor (src/,
+ *      node_modules/, app.asar, plugins/) everything before the anchor is
+ *      dropped, making fingerprints stable across machines.
+ *   2. User-home redact: any remaining `C:/Users/<name>/`, `/Users/<name>/`,
+ *      or `/home/<name>/` has the username replaced with `<USER>`. This
+ *      covers paths with no Vortex anchor (e.g. game install dirs in ENOENT
+ *      messages) where we want to keep diagnostic context but not the OS
+ *      username — GDPR Art. 5(1)(c) data minimisation.
+ *
+ * Path separators are normalized to forward slashes.
  *
  * Examples:
  *   "at f (D:\Dev\Vortex\src\foo.ts:1:2)" → "at f (src/foo.ts:1:2)"
@@ -111,10 +120,14 @@ export function isErrorWithSystemCode(
  *   "at f (C:\Program Files\Vortex\resources\app.asar\renderer.js:1:2)" → "at f (app.asar/renderer.js:1:2)"
  *   "at f (D:\Program Files\Vortex\resources\app.asar.unpacked\bundledPlugins\x\index.js:1:2)" → "at f (app.asar.unpacked/bundledPlugins/x/index.js:1:2)"
  *   "at f (C:\Users\user\AppData\Roaming\Vortex\plugins\x\index.js:1:2)" → "at f (plugins/x/index.js:1:2)"
+ *   "ENOENT ... 'C:\Users\bob\AppData\Local\Larian\Mods\foo.pak'" → "ENOENT ... 'C:/Users/<USER>/AppData/Local/Larian/Mods/foo.pak'"
  *   "at f (chrome-extension://id/page.js:1:2)" → unchanged
  */
 export const sanitizeFramePath = (frame: string): string =>
-  frame.replace(INSTALL_PATH_RE, "").replace(/\\/g, "/");
+  frame
+    .replace(INSTALL_PATH_RE, "")
+    .replace(/\\/g, "/")
+    .replace(USER_HOME_RE, "$1<USER>");
 
 const _SEP = String.raw`[/\\]`;
 const _WIN = String.raw`[A-Za-z]:${_SEP}`; // C:\ or C:/
@@ -127,6 +140,12 @@ const INSTALL_PATH_RE = new RegExp(
   String.raw`(?:${_WIN}|${_UNIX})${_SEGS}(?=${_ANCHORS}${_SEP})`,
   "g",
 );
+
+/** Matches the username segment of a user-home path (`/Users/<name>` or
+ * `/home/<name>`). Run after backslash normalization so only forward slashes
+ * need to be considered. The username character class excludes `<` so that
+ * already-redacted `<USER>` is not matched again (idempotence). */
+const USER_HOME_RE = /(\/(?:Users|home)\/)([^/\s'"<>:|?*]+)/gi;
 
 /**
  * Compute a fingerprint from the stack trace call frames and app version.
