@@ -11,7 +11,7 @@ import {
   setPluginList,
   updatePluginWarnings,
 } from "./actions/plugins";
-import { removeGroupRule, setGroup } from "./actions/userlist";
+import { clearUserlist, removeGroupRule, setGroup } from "./actions/userlist";
 import { openGroupEditor, setCreateRule } from "./actions/userlistEdit";
 import { loadOrderReducer } from "./reducers/loadOrder";
 import { pluginsReducer } from "./reducers/plugins";
@@ -560,6 +560,15 @@ function register(
     );
   }
 
+  context.registerProfileFeature(
+    "local_loot_rules",
+    "boolean",
+    "connection",
+    "LOOT Rules",
+    "This profile has its own plugin rules and groups",
+    () => gameSupported(selectors.activeGameId(context.api.store.getState())),
+  );
+
   context.registerSettings("Workarounds", Settings, undefined, () => {
     const state = context.api.store.getState();
     const gameMode = selectors.activeGameId(state);
@@ -656,6 +665,42 @@ function register(
     "History",
     () => {
       context.api.ext.showHistory?.("plugins");
+    },
+  );
+
+  context.registerAction(
+    "gamebryo-plugin-icons",
+    300,
+    "undo",
+    {},
+    "Reset Plugin Rules",
+    () => {
+      context.api
+        .showDialog("question", "Reset Plugin Rules", {
+          text:
+            "This will remove ALL custom plugin rules, plugin group assignments, " +
+            "and custom groups. Only rules from the LOOT masterlist will remain.\n\n" +
+            "This cannot be undone.",
+        }, [{ label: "Cancel" }, { label: "Reset" }])
+        .then((result: types.IDialogResult) => {
+          if (result.action === "Reset") {
+            const state: IStateWithGamebryo = context.api.store.getState();
+            const userlist = state.userlist;
+            // explicitly unset group assignments so the UI updates
+            const unsetGroups = (userlist?.plugins ?? [])
+              .filter((plugin) => plugin.group !== undefined)
+              .map((plugin) => setGroup(plugin.name, undefined));
+            util.batchDispatch(
+              context.api.store,
+              [...unsetGroups, clearUserlist()],
+            );
+            context.api.sendNotification({
+              type: "success",
+              message: "Plugin rules have been reset to defaults",
+              displayMS: 3000,
+            });
+          }
+        });
     },
   );
 
@@ -831,6 +876,80 @@ function updateCurrentProfile(api: types.IExtensionApi): Promise<void> {
       resolve,
     );
   });
+}
+
+/**
+ * swap the userlist.yaml file between profiles when the local_loot_rules
+ * feature toggle is enabled. Called after persistors are disabled to prevent
+ * stale writes.
+ */
+async function swapUserlistForProfile(
+  oldProfile: types.IProfile | undefined,
+  newProfile: types.IProfile | undefined,
+): Promise<void> {
+  const oldHasLocal = oldProfile?.features?.local_loot_rules === true;
+  const newHasLocal = newProfile?.features?.local_loot_rules === true;
+
+  if (!oldHasLocal && !newHasLocal) {
+    return;
+  }
+
+  const gameId = oldProfile?.gameId ?? newProfile?.gameId;
+  if (gameId === undefined) {
+    return;
+  }
+
+  const userDataPath = util.getVortexPath("userData");
+  const activeFile = path.join(userDataPath, gameId, "userlist.yaml");
+  const globalBackup = path.join(userDataPath, gameId, "userlist.yaml.global");
+
+  const getProfileDir = (profile: types.IProfile) =>
+    path.join(userDataPath, gameId, "profiles", profile.id);
+  const getProfileFile = (profile: types.IProfile) =>
+    path.join(getProfileDir(profile), "userlist.yaml");
+
+  const copyIgnoringMissing = async (src: string, dest: string) => {
+    try {
+      await fs.copyAsync(src, dest, { noSelfCopy: true });
+    } catch (err) {
+      if (err.code !== "ENOENT") {
+        throw err;
+      }
+    }
+  };
+
+  // save old profile's rules to its profile directory
+  if (oldHasLocal && oldProfile?.pendingRemove !== true) {
+    await fs.ensureDirAsync(getProfileDir(oldProfile));
+    await copyIgnoringMissing(activeFile, getProfileFile(oldProfile));
+
+    if (!newHasLocal) {
+      // restore global backup
+      await copyIgnoringMissing(globalBackup, activeFile);
+    }
+  }
+
+  // load new profile's rules from its profile directory
+  if (newHasLocal) {
+    if (!oldHasLocal) {
+      // back up the current global userlist
+      await copyIgnoringMissing(activeFile, globalBackup);
+    }
+
+    try {
+      await fs.statAsync(getProfileFile(newProfile));
+      // profile has a saved copy — restore it
+      await fs.copyAsync(getProfileFile(newProfile), activeFile, { noSelfCopy: true });
+    } catch (err) {
+      if (err.code === "ENOENT") {
+        // first time: seed the profile dir from the current file
+        await fs.ensureDirAsync(getProfileDir(newProfile));
+        await copyIgnoringMissing(activeFile, getProfileFile(newProfile));
+      } else {
+        throw err;
+      }
+    }
+  }
 }
 
 let watcher: fs.FSWatcher;
@@ -2094,6 +2213,69 @@ function init(context: IExtensionContextExt) {
           },
         );
 
+        // when the user toggles local_loot_rules on the active profile,
+        // immediately back up the global userlist and seed the profile copy
+        context.api.onStateChange(
+          ["persistent", "profiles"],
+          (previous, current) => {
+            const activeProfileId = util.getSafe(
+              context.api.store.getState(),
+              ["settings", "profiles", "activeProfileId"],
+              undefined,
+            );
+            if (activeProfileId === undefined) {
+              return;
+            }
+            const prevFeature = previous[activeProfileId]?.features?.local_loot_rules;
+            const currFeature = current[activeProfileId]?.features?.local_loot_rules;
+            if (prevFeature === currFeature) {
+              return;
+            }
+            const profile = current[activeProfileId];
+            if (profile === undefined || !gameSupported(profile.gameId)) {
+              return;
+            }
+            const userDataPath = util.getVortexPath("userData");
+            const activeFile = path.join(userDataPath, profile.gameId, "userlist.yaml");
+            const globalBackup = path.join(userDataPath, profile.gameId, "userlist.yaml.global");
+            const profDir = path.join(userDataPath, profile.gameId, "profiles", profile.id);
+            const profFile = path.join(profDir, "userlist.yaml");
+
+            const copyIgnoringMissing = async (src: string, dest: string) => {
+              try {
+                await fs.copyAsync(src, dest, { noSelfCopy: true });
+              } catch (err) {
+                if (err.code !== "ENOENT") {
+                  throw err;
+                }
+              }
+            };
+
+            if (currFeature && !prevFeature) {
+              // toggled ON: back up global and seed profile copy
+              (async () => {
+                await copyIgnoringMissing(activeFile, globalBackup);
+                await fs.ensureDirAsync(profDir);
+                await copyIgnoringMissing(activeFile, profFile);
+              })().catch((err) => {
+                log("warn", "failed to initialize per-profile userlist", err.message);
+              });
+            } else if (!currFeature && prevFeature) {
+              // toggled OFF: save profile state, restore global backup
+              (async () => {
+                await fs.ensureDirAsync(profDir);
+                await copyIgnoringMissing(activeFile, profFile);
+                await copyIgnoringMissing(globalBackup, activeFile);
+                if (userlistPersistor !== undefined) {
+                  await userlistPersistor.loadFiles(profile.gameId);
+                }
+              })().catch((err) => {
+                log("warn", "failed to restore global userlist", err.message);
+              });
+            }
+          },
+        );
+
         context.api.events.on(
           "set-plugin-list",
           (newPlugins: string[], setEnabled?: boolean) => {
@@ -2114,13 +2296,44 @@ function init(context: IExtensionContextExt) {
             nextProfileId: string,
             enqueue: (cb: () => Promise<void>) => void,
           ) => {
+            const state = context.api.store.getState();
+            const oldProfileId = util.getSafe(
+              state, ["settings", "profiles", "activeProfileId"], undefined,
+            );
+            const oldProfile = state.persistent.profiles[oldProfileId];
+            const nextProfile = nextProfileId !== undefined
+              ? selectors.profileById(state, nextProfileId)
+              : undefined;
+
             if (nextProfileId === undefined) {
               context.api.store.dispatch(setPluginList(undefined));
+              // still need to save per-profile userlist before deactivation
+              if (oldProfile?.features?.local_loot_rules) {
+                enqueue(() =>
+                  stopSync()
+                    .then(() =>
+                      userlistPersistor !== undefined
+                        ? userlistPersistor.disable()
+                        : Promise.resolve(),
+                    )
+                    .then(() =>
+                      masterlistPersistor !== undefined
+                        ? masterlistPersistor.disable()
+                        : Promise.resolve(),
+                    )
+                    .then(() => swapUserlistForProfile(oldProfile, undefined))
+                    .then(() => loot.wait())
+                    .catch((err) => {
+                      context.api.showErrorNotification(
+                        "Failed to change profile", err,
+                      );
+                      return Promise.resolve();
+                    }),
+                );
+              }
               return;
             }
-            const state = context.api.store.getState();
             const gameMode = selectors.activeGameId(state);
-            const nextProfile = selectors.profileById(state, nextProfileId);
             if (nextProfile !== undefined && nextProfile.gameId !== gameMode) {
               context.api.store.dispatch(setPluginList(undefined));
             }
@@ -2136,6 +2349,7 @@ function init(context: IExtensionContextExt) {
                     ? masterlistPersistor.disable()
                     : Promise.resolve(),
                 )
+                .then(() => swapUserlistForProfile(oldProfile, nextProfile))
                 .then(() => loot.wait())
                 .catch((err) => {
                   context.api.showErrorNotification(
