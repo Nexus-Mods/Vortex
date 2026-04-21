@@ -230,7 +230,7 @@ function main(context: types.IExtensionContext): boolean {
 
   context.registerGame({
     id: GAME_ID,
-    name: 'Fallout:\tNew Vegas',
+    name: 'Fallout: New Vegas',
     setup: (discovery) => prepareForModding(context.api, discovery) as any,
     shortName: 'New Vegas',
     mergeMods: true,
