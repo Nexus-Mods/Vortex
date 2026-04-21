@@ -7,6 +7,7 @@ import { util } from "vortex-api";
 
 const configDefaults: ICollectionConfig = {
   recommendNewProfile: false,
+  excludePluginRules: false,
 };
 
 export async function generateConfig(
