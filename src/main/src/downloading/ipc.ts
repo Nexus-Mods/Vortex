@@ -1,9 +1,12 @@
 import type {
+  DownloadState,
   ResolvedEndpoint,
   ResolvedResource,
 } from "@vortex/shared/download";
+import type { DownloadError } from "@vortex/shared/errors";
 import type {
   WireDownloadCheckpoint,
+  WireDownloadError,
   WireEndpoint,
   WireResolvedResource,
 } from "@vortex/shared/ipc";
@@ -15,6 +18,14 @@ import type { DownloadManager } from "./manager";
 
 import { betterIpcMain } from "../ipc";
 import { log } from "../logging";
+
+function downloadErrorToWire(err: DownloadError): WireDownloadError {
+  const { payload } = err;
+  const wirePayload = "url" in payload
+    ? { ...payload, url: payload.url.toString() }
+    : { ...payload };
+  return { payload: wirePayload, message: err.message };
+}
 
 function wireToResolvedEndpoint(wire: WireEndpoint): ResolvedEndpoint {
   return { url: new URL(wire.url), headers: wire.headers };
@@ -100,15 +111,35 @@ export function init(manager: DownloadManager): void {
       const handle = manager.resume(checkpoint, resolver, staticChunker());
       webContentsByDownloadId.set(wireCheckpoint.downloadId, webContents);
       handle.promise.catch((err) =>
-        log("error", "download failed", { downloadId: wireCheckpoint.downloadId, err }),
+        log("error", "download failed", {
+          downloadId: wireCheckpoint.downloadId,
+          err,
+        }),
       );
     },
   );
 
-  betterIpcMain.handle("download:getProgress", (_event, downloadId) => {
+  betterIpcMain.handle("download:getState", (_event, downloadId) => {
     const handle = manager.get(downloadId);
     if (handle === undefined)
       throw new Error(`Unknown download: ${downloadId}`);
-    return handle.getProgress();
+    return stateToWire(handle.getState());
   });
+
+  betterIpcMain.handle("download:getStates", (_event, downloadIds) => {
+    const result: Record<string, ReturnType<typeof stateToWire>> = {};
+    for (const downloadId of downloadIds) {
+      const handle = manager.get(downloadId);
+      if (handle === undefined) continue;
+      result[downloadId] = stateToWire(handle.getState());
+    }
+    return result;
+  });
+}
+
+function stateToWire(state: DownloadState) {
+  return {
+    ...state,
+    error: state.status === "failed" ? downloadErrorToWire(state.error) : null,
+  };
 }

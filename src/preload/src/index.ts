@@ -292,6 +292,10 @@ try {
         betterIpcRenderer.invoke("download:resume", checkpoint, collationId),
       cancel: (downloadId) =>
         betterIpcRenderer.invoke("download:cancel", downloadId),
+      getState: (downloadId) =>
+        betterIpcRenderer.invoke("download:getState", downloadId),
+      getStates: (downloadIds) =>
+        betterIpcRenderer.invoke("download:getStates", downloadIds),
       onResolve: (handler) => {
         const listener = (
           _event: Electron.IpcRendererEvent,

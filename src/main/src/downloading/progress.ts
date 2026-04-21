@@ -2,16 +2,9 @@ import type {
   Chunk,
   ChunkProgress,
   DownloadProgress,
+  DownloadStatus,
   Progress,
 } from "@vortex/shared/download";
-
-export type DownloadStatus =
-  | "queued"
-  | "running"
-  | "completed"
-  | "paused"
-  | "canceled"
-  | "failed";
 
 /** @internal */
 export class ProgressReporter {

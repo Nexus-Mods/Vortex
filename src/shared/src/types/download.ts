@@ -1,3 +1,5 @@
+import type { DownloadError } from "./errors";
+
 /**
  * A range starting at 0 with a length of 500 bytes is represented as start=0, end=499
  */
@@ -91,7 +93,33 @@ export type ChunkProgress = Progress & {
   chunkRange: ByteRange;
 };
 
+export type DownloadStatus =
+  | "queued"
+  | "running"
+  | "completed"
+  | "paused"
+  | "canceled"
+  | "failed";
+
 export type DownloadProgress = Progress & {
   /** Size of the file being downloaded. This can be null when the server returns no size. */
   size: number | null;
 } & ({ isChunked: false } | { isChunked: true; chunks: ChunkProgress[] });
+
+export type DownloadCheckpoint<T = unknown> = {
+  downloadId: string;
+  resource: T;
+  dest: string;
+  completedRanges: ByteRange[];
+  etag: string | null;
+};
+
+export type DownloadState = DownloadProgress &
+  (
+    | { status: Exclude<DownloadStatus, "failed"> }
+    | { status: "failed"; error: DownloadError }
+  );
+
+export type PauseResult<T = unknown> =
+  | (DownloadState & { status: "paused"; checkpoint: DownloadCheckpoint<T> })
+  | (DownloadState & { status: Exclude<DownloadStatus, "paused"> });

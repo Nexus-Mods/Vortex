@@ -151,10 +151,7 @@ import { MainContext } from "../../views/MainWindow";
 import { getGame } from "../gamemode_management/util/getGame";
 import { app } from "electron";
 import Icon from "../../controls/Icon";
-import {
-  getErrorMessageOrDefault,
-  unknownToError,
-} from "@vortex/shared";
+import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 
 let nexus: NexusT;
 let userInfoDebouncer: Debouncer;
@@ -1613,8 +1610,6 @@ type AwaitLinkCB = (
 interface IDLQueueItem {
   input: string;
   url: NXMUrl;
-  name: string;
-  friendlyName: string;
   canceled: boolean;
   res: (res: IResolvedURL) => void;
   rej: (err: Error) => void;
@@ -1638,12 +1633,7 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
   // out of the larger process without the user having to click cancel multiple times.
   // Thus we have to keep track of all queued downloads.
 
-  function freeUserDownload(
-    input: string,
-    url: NXMUrl,
-    name: string,
-    friendlyName: string,
-  ) {
+  function freeUserDownload(input: string, url: NXMUrl) {
     // non-premium user trying to download a file with no id, have to send the user to the
     // corresponding site to generate a proper link
     return new PromiseBB<IResolvedURL>((resolve, reject, onCancel) => {
@@ -1714,8 +1704,6 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
       const queueItems = {
         input,
         url,
-        name,
-        friendlyName,
         res,
         rej,
         queryRelevantUpdates,
@@ -1867,11 +1855,7 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
       });
   }
 
-  const resolveFunc = (
-    input: string,
-    name?: string,
-    friendlyName?: string,
-  ): PromiseBB<IResolvedURL> => {
+  const resolveFunc = (input: string): PromiseBB<IResolvedURL> => {
     const state = api.store.getState();
 
     let url: NXMUrl;
@@ -1907,7 +1891,6 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
       url.gameId !== SITE_ID &&
       url.key === undefined
     ) {
-
       const games = knownGames(state);
       const gameId = convertNXMIdReverse(games, url.gameId);
       const pageId = nexusGameId(gameById(state, gameId), url.gameId);
@@ -1917,7 +1900,7 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
           if (modInfo["direct_download_enabled"]) {
             return premiumUserDownload(input, url, true);
           } else {
-            return freeUserDownload(input, url, name, friendlyName);
+            return freeUserDownload(input, url);
           }
         })
         .catch((err) => {
@@ -1925,7 +1908,7 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
           log("warn", "failed to query mod info for direct download check", {
             error: err.message,
           });
-          return freeUserDownload(input, url, name, friendlyName);
+          return freeUserDownload(input, url);
         });
     } else {
       return premiumUserDownload(input, url);
@@ -1939,11 +1922,7 @@ function onUpdated() {
   bringToFront();
 }
 
-type ResolveFunc = (
-  input: string,
-  name?: string,
-  friendlyName?: string,
-) => PromiseBB<IResolvedURL>;
+type ResolveFunc = (input: string) => PromiseBB<IResolvedURL>;
 
 function onDownloadImpl(resolveFunc: ResolveFunc, inputUrl: string) {
   const queueItem = freeDLQueue.find((iter) => iter.input === inputUrl);
@@ -1961,9 +1940,7 @@ function onDownloadImpl(resolveFunc: ResolveFunc, inputUrl: string) {
     modId: url.modId,
     fileId: url.fileId,
     resolve: (resUrl: string) =>
-      resolveFunc(resUrl, queueItem.name, queueItem.friendlyName)
-        .then(queueItem.res)
-        .catch(queueItem.rej),
+      resolveFunc(resUrl).then(queueItem.res).catch(queueItem.rej),
   });
 
   opn(
@@ -1980,8 +1957,6 @@ function onSkip(api: IExtensionApi, inputUrl: string) {
         const fileIdSet = new Set<string>();
         const fileNames = new Set<string>();
         fileIdSet.add(queueItem.url.fileId.toString());
-        fileNames.add(queueItem.name);
-        fileNames.add(queueItem.friendlyName);
         updates.forEach((update) => {
           if (update.old_file_id != null) {
             fileIdSet.add(update.old_file_id.toString());
@@ -2025,20 +2000,6 @@ function onRetryImpl(
   }
 
   resolveFunc(queueItem.input).then(queueItem.res).catch(queueItem.rej);
-
-  /*
-const awaitedLink = {
-gameId: url.gameId,
-modId: url.modId,
-fileId: url.fileId,
-resolve: (resUrl: string) =>
-resolveFunc(resUrl, queueItem.name, queueItem.friendlyName)
-  .then(queueItem.res)
-  .catch(queueItem.rej),
-};
-*/
-
-  //awaitedLinks.push(awaitedLink);
 }
 
 function onCheckStatusImpl() {
