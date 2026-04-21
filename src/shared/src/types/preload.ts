@@ -22,6 +22,8 @@ import type {
   Serializable,
   UpdateStatus,
   VortexPaths,
+  WireDownloadCheckpoint,
+  WireResolvedResource,
 } from "./ipc";
 import type { Level } from "./logging";
 import type { PersistedHive, PersistedState } from "./state";
@@ -50,6 +52,9 @@ export interface Api {
 
   /** Extensions API - for requesting main process initialization */
   extensions: ExtensionsApi;
+
+  /** Adaptor host API - for querying adaptor services from renderer */
+  adaptors: AdaptorsApi;
 
   /** Updater API - for querying update status from main process */
   updater: UpdaterApi;
@@ -88,6 +93,9 @@ export interface Api {
 
   /** Telemetry APIs - span export from renderer to main */
   telemetry: TelemetryApi;
+
+  /** Downloader APIs */
+  downloader: DownloaderApi;
 }
 
 export interface Example {
@@ -236,12 +244,6 @@ export interface WindowAPI {
   /** Move window to top of stack */
   moveTop(windowId: number): Promise<void>;
 
-  /** Register listener for window maximize event. Returns unsubscribe function. */
-  onMaximize(callback: () => void): () => void;
-
-  /** Register listener for window unmaximize event. Returns unsubscribe function. */
-  onUnmaximize(callback: () => void): () => void;
-
   /** Register listener for window close event. Returns unsubscribe function. */
   onClose(callback: () => void): () => void;
 
@@ -363,7 +365,9 @@ export interface PersistApi {
    * The renderer applies these via __persist_push, which is excluded from
    * persistDiffMiddleware to prevent feedback loops.
    */
-  onPush(callback: (hive: PersistedHive, operations: DiffOperation[]) => void): void;
+  onPush(
+    callback: (hive: PersistedHive, operations: DiffOperation[]) => void,
+  ): void;
 }
 
 /** API for requesting extension main process initialization */
@@ -373,6 +377,33 @@ export interface ExtensionsApi {
    * Should be called once after ExtensionManager is initialized.
    */
   initializeAllMain(installType: string): void;
+}
+
+/** API for querying adaptor services from the main process */
+export interface AdaptorsApi {
+  /** Returns the list of loaded adaptors with their manifests. */
+  list(): Promise<
+    Array<{
+      name: string;
+      pid: string;
+      provides: string[];
+      requires: string[];
+    }>
+  >;
+  /** Calls a service method on a loaded adaptor. */
+  call(
+    adaptorName: string,
+    serviceUri: string,
+    method: string,
+    args: unknown[],
+  ): Promise<unknown>;
+  /**
+   * Builds a store-path snapshot for a discovered game. The returned
+   * value is a `StorePathSnapshot` from `@vortex/adaptor-api/stores/lib`
+   * (the renderer sees it as `unknown` to avoid dragging the adaptor-api
+   * types into the preload surface; the bridge casts locally).
+   */
+  buildSnapshot(store: string, gamePath: string): Promise<unknown>;
 }
 
 /** API for querying update status from main process */
@@ -402,6 +433,40 @@ export interface UpdaterApi {
    * Trigger restart and install of the downloaded update.
    */
   restartAndInstall(): void;
+}
+
+/** API for interacting with the DownloadManager in main */
+export interface DownloaderApi {
+  /**
+   * Enqueues a download. The caller must generate `collationId` and register
+   * any resolve handler before calling this, so that the main-side resolve
+   * callback cannot arrive before the handler is ready.
+   */
+  start(dest: string, collationId: number): Promise<{ downloadId: string }>;
+
+  /** Pauses an active download and returns a checkpoint for later resumption. */
+  pause(downloadId: string): Promise<WireDownloadCheckpoint>;
+
+  /**
+   * Resumes a download from a checkpoint. The caller must generate `collationId`
+   * and register any resolve handler before calling this.
+   */
+  resume(
+    checkpoint: WireDownloadCheckpoint,
+    collationId: number,
+  ): Promise<void>;
+
+  /** Cancels an active download. */
+  cancel(downloadId: string): Promise<void>;
+
+  /**
+   * Registers a handler invoked by main when it needs the renderer to resolve a download URL.
+   * The `collationId` maps to the download started via `start()`.
+   * Returns an unsubscribe function.
+   */
+  onResolve(
+    handler: (collationId: number) => Promise<WireResolvedResource>,
+  ): () => void;
 }
 
 /** API for forwarding telemetry spans from renderer to main for buffering/export */

@@ -2,6 +2,7 @@
 // Everything in here is compile-time only, meaning the interfaces you find here
 // are never used to create an object. They are only used for type inferrence.
 
+import type { ByteRange, DownloadProgress } from "./download";
 import type { SerializedSpan } from "../telemetry/types";
 import type {
   BrowserViewConstructorOptions,
@@ -87,8 +88,47 @@ export type VortexPaths = {
   desktop: string;
 };
 
+export type WireEndpoint = {
+  url: string;
+  headers?: Record<string, string>;
+};
+
+export type WireResolvedResource = {
+  probeEndpoint: WireEndpoint;
+  chunkEndpoints?: WireEndpoint[];
+};
+
+export type WireDownloadCheckpoint = {
+  downloadId: string;
+  dest: string;
+  completedRanges: ByteRange[];
+  etag: string | null;
+};
+
+export interface CallbackChannels {
+  "example:ping": (ping: string) => Promise<{ pong: string }>;
+
+  "download:resolve": () => Promise<WireResolvedResource>;
+}
+
+export type MainCallbackChannels = {
+  [C in keyof CallbackChannels]: CallbackChannels[C] extends (
+    ...args: infer Args
+  ) => Promise<infer _Return>
+    ? (collationId: number, ...args: Args) => void
+    : never;
+};
+
+export type RendererCallbackChannels = {
+  [C in keyof CallbackChannels as `callback:${C}`]: CallbackChannels[C] extends (
+    ...args: infer _Args
+  ) => Promise<infer Return>
+    ? (collationId: number, result: Return) => void
+    : never;
+};
+
 /** Type containing all known channels used by renderer processes to send messages to the main process */
-export interface RendererChannels {
+export interface RendererChannels extends RendererCallbackChannels {
   // NOTE(erri120): Parameters must be serializable and return values must be void.
 
   /** Logs a message */
@@ -130,7 +170,7 @@ export interface RendererChannels {
 }
 
 /** Type containing all known channels used by the main process to send messages to a renderer process */
-export interface MainChannels {
+export interface MainChannels extends MainCallbackChannels {
   // NOTE(erri120): Parameters must be serializable and return values must be void.
 
   // Examples:
@@ -167,13 +207,6 @@ export interface MainChannels {
 
   // Menu click events (main -> renderer)
   "menu:click": (menuItemId: string) => void;
-}
-
-/** Type containing all known channels for synchronous IPC operations (used primarily by preload scripts) */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface SyncChannels {
-  // NOTE: These are synchronous IPC channels used during preload initialization.
-  // Use sparingly as they block the renderer process.
 }
 
 /** Type containing all known channels used by renderer processes to send to and receive messages from the main process */
@@ -322,6 +355,44 @@ export interface InvokeChannels {
 
   // Compile stylesheets
   "styles:compile": (filePaths: string[]) => Promise<string>;
+
+  // Download channels
+  "download:start": (
+    dest: string,
+    collationId: number,
+  ) => Promise<{ downloadId: string }>;
+  "download:pause": (downloadId: string) => Promise<WireDownloadCheckpoint>;
+  "download:resume": (
+    checkpoint: WireDownloadCheckpoint,
+    collationId: number,
+  ) => Promise<void>;
+  "download:cancel": (downloadId: string) => Promise<void>;
+  "download:getProgress": (downloadId: string) => Promise<DownloadProgress>;
+
+  // Adaptor host — renderer queries adaptor services through these
+  "adaptors:list": () => Promise<
+    Array<{
+      name: string;
+      pid: string;
+      provides: string[];
+      requires: string[];
+    }>
+  >;
+  "adaptors:call": (
+    adaptorName: string,
+    serviceUri: string,
+    method: string,
+    args: unknown[],
+  ) => Promise<Serializable>;
+  /**
+   * Builds a store-path snapshot for a newly discovered game. The
+   * renderer uses this instead of constructing path bases itself so the
+   * adaptor can be handed a fully-resolved {@link StorePathProvider}.
+   */
+  "adaptors:build-snapshot": (
+    store: string,
+    gamePath: string,
+  ) => Promise<Serializable>;
 }
 
 /** Represents all IPC-safe typed arrays */
@@ -353,11 +424,23 @@ type SerializablePrimitive =
   | DataView
   | TypedArray;
 
-/** Represents all IPC-safe types */
+/**
+ * Represents all IPC-safe types.
+ *
+ * This is **Electron's structured-clone contract**, not `JSON.stringify`.
+ * Values of type `Serializable` survive `ipcMain.send`/`ipcRenderer.invoke`
+ * and preserve `Date`, `Map`, `Set`, `ArrayBuffer`, typed arrays, etc.
+ * They do **not** round-trip through `JSON.stringify` — Maps and Sets
+ * serialize to `{}`, and typed arrays to their object form. Do not
+ * `JSON.stringify` values of this type without first converting them to
+ * a JSON-safe shape.
+ */
 export type Serializable =
   | SerializablePrimitive
   | Serializable[]
-  | { [key: string]: Serializable };
+  | { [key: string]: Serializable }
+  | Map<Serializable, Serializable>
+  | Set<Serializable>;
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
 

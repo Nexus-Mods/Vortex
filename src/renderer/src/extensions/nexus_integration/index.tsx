@@ -404,16 +404,6 @@ const requestLog = {
   },
 };
 
-export interface IExtensionContextExt extends IExtensionContext {
-  registerDownloadProtocol: (
-    schema: string,
-    handler: (
-      inputUrl: string,
-      name: string,
-    ) => PromiseBB<{ urls: string[]; meta: any }>,
-  ) => void;
-}
-
 function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
   let askUser: PromiseBB<boolean>;
   if (isUpdate) {
@@ -805,6 +795,10 @@ function processAttributes(
         nexusCollectionInfo?.revisionNumber?.toString?.(),
       allowRating: input?.download?.modInfo?.nexus?.modInfo?.allow_rating,
       customFileName: fuzzRatio < 50 ? `${modName} - ${fileName}` : undefined,
+      newestFileId:
+        nexusCollectionInfo?.collection?.latestPublishedRevision?.id,
+      newestVersion:
+        nexusCollectionInfo?.collection?.latestPublishedRevision?.revisionNumber?.toString?.(),
       rating: nexusCollectionInfo?.rating,
       requirements: nexusModInfo?.requirements,
     };
@@ -2064,7 +2058,7 @@ function onCancelImpl(api: IExtensionApi, inputUrl: string): boolean {
   }
 }
 
-function init(context: IExtensionContextExt): boolean {
+function init(context: IExtensionContext): boolean {
   context.registerReducer(["confidential", "account", "nexus"], accountReducer);
   context.registerReducer(["settings", "nexus"], settingsReducer);
   context.registerReducer(["persistent", "nexus"], persistentReducer);

@@ -27,16 +27,21 @@ export type {
   PathResolver,
   OSPathProvider,
   OSPathBase,
+  RelativePath,
 } from "./paths";
 
 export {
   QualifiedPath,
+  qpath,
   OSPath,
   PathProviderError,
   PathResolverError,
+  RelativePathError,
+  relativePath,
 } from "./paths";
 
 export { XDG } from "./paths.linux";
 export type { LinuxPathBase, LinuxPathProvider, XDGBase } from "./paths.linux";
 
+export { WindowsPath } from "./paths.windows";
 export type { WindowsPathBase, WindowsPathProvider } from "./paths.windows";

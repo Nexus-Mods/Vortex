@@ -1,0 +1,17 @@
+{
+  "$schema": "https://www.schemastore.org/tsconfig.json",
+  "extends": "../../../tsconfig.strict.json",
+  "include": ["src/**/*"],
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "allowJs": false,
+    "composite": true,
+    "noEmit": true,
+    "experimentalDecorators": true,
+    "types": [],
+    "lib": ["ESNext", "DOM"],
+    "customConditions": ["development"],
+  },
+}

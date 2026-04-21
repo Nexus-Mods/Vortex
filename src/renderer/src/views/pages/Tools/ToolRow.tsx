@@ -10,22 +10,20 @@ import {
   mdiPlay,
   mdiFlash,
   mdiFlashOff,
-  mdiWrench,
 } from "@mdi/js";
 import React, { type FC } from "react";
 import { Image } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { pathToFileURL } from "url";
 
-import type { IStarterInfo } from "../../../util/StarterInfo";
+import { Button } from '@/ui/components/button/Button';
+import { Dropdown } from "@/ui/components/dropdown/Dropdown";
+import { DropdownItem } from "@/ui/components/dropdown/DropdownItem";
+import { DropdownItems } from "@/ui/components/dropdown/DropdownItems";
+import { Typography } from "@/ui/components/typography/Typography";
+import StarterInfo, { type IStarterInfo } from "@/util/StarterInfo";
 
-import { Button } from "../../../ui/components/button/Button";
-import { Dropdown } from "../../../ui/components/dropdown/Dropdown";
-import { DropdownItem } from "../../../ui/components/dropdown/DropdownItem";
-import { DropdownItems } from "../../../ui/components/dropdown/DropdownItems";
-import { Icon } from "../../../ui/components/icon/Icon";
-import { Typography } from "../../../ui/components/typography/Typography";
-import StarterInfo from "../../../util/StarterInfo";
+const Divider = () => <div className="h-7 w-px bg-stroke-weak" />;
 
 export interface ToolRowProps {
   starter: IStarterInfo;
@@ -82,106 +80,114 @@ export const ToolRow: FC<ToolRowProps> = ({
   }
 
   return (
-    <div className="hover-overlay-weak flex w-full items-center gap-x-3 rounded-sm bg-surface-mid px-4 py-3 shadow-xs">
-      <div className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-xs">
+    <div className="hover-overlay-weak flex w-full min-w-0 items-center gap-x-4 rounded-sm bg-surface-mid pr-3 shadow-xs">
+      <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-l-sm bg-surface-high">
         {iconSrc ? (
-          <Image className="size-full object-contain" src={iconSrc} />
+          <Image src={iconSrc} />
         ) : (
-          <Icon className="text-translucent-moderate" path={mdiWrench} />
-        )}
-      </div>
-
-      <div className="grow space-y-0.5">
-        <Typography>{starterInfo.name}</Typography>
-
-        {isRunning && (
-          <Typography appearance="subdued" typographyType="body-sm">
-            {t("Running...")}
+          <Typography appearance="moderate" className="uppercase" typographyType="body-lg">
+            {starterInfo.name?.charAt(0) || 'T'}
           </Typography>
         )}
       </div>
 
-      <div className="flex shrink-0 items-center gap-x-1">
+      <Typography as="div" className="flex min-w-0 grow items-center gap-x-2">
+        <span className="truncate">
+          {starterInfo.name}
+        </span>
+
+        {isRunning && (
+          <span className="shrink-0 text-neutral-subdued">
+            {t("Running...")}
+          </span>
+        )}
+      </Typography>
+
+      <div className="flex shrink-0 items-center gap-x-4">
         {showReorder && isPinned && (
           <>
-            <Button
-              buttonType="tertiary"
-              disabled={isFirst}
-              leftIconPath={mdiArrowUp}
-              size="xs"
-              title={isFirst ? t("Already at the top") : t("Move up")}
-              onClick={() => onMoveUp?.(starter)}
-            />
+            <div className="flex gap-x-2">
+              <Button
+                buttonType="tertiary"
+                disabled={isFirst}
+                leftIconPath={mdiArrowUp}
+                size="sm"
+                title={isFirst ? t("Already at the top") : t("Move up")}
+                onClick={() => onMoveUp?.(starter)}
+              />
 
-            <Button
-              buttonType="tertiary"
-              disabled={isLast}
-              leftIconPath={mdiArrowDown}
-              size="xs"
-              title={isLast ? t("Already at the bottom") : t("Move down")}
-              onClick={() => onMoveDown?.(starter)}
-            />
+              <Button
+                buttonType="tertiary"
+                disabled={isLast}
+                leftIconPath={mdiArrowDown}
+                size="sm"
+                title={isLast ? t("Already at the bottom") : t("Move down")}
+                onClick={() => onMoveDown?.(starter)}
+              />
+            </div>
 
-            <div className="mx-0.5 h-4 w-px bg-stroke-weak" />
+            <Divider />
           </>
         )}
 
-        {!starter.isGame && (
-          <Button
-            buttonType="tertiary"
-            disabled={!isPinned && pinDisabled}
-            leftIconPath={isPinned ? mdiPinOff : mdiPin}
-            size="xs"
-            title={
-              !isPinned && pinDisabled
-                ? pinDisabledReason
-                : isPinned
-                  ? t("Unpin tool")
-                  : t("Pin tool")
-            }
-            onClick={() => onTogglePin(starter)}
-          />
-        )}
+        <div className="flex gap-x-2">
+          {!starter.isGame && !isPrimary && (
+            <Button
+              buttonType="tertiary"
+              disabled={!isPinned && pinDisabled}
+              leftIconPath={isPinned ? mdiPinOff : mdiPin}
+              size="sm"
+              title={
+                !isPinned && pinDisabled
+                  ? pinDisabledReason
+                  : isPinned
+                    ? t("Unpin tool")
+                    : t("Pin tool")
+              }
+              onClick={() => onTogglePin(starter)}
+            />
+          )}
 
-        <Dropdown>
-          <Menu.Button
-            as={Button}
-            buttonType="tertiary"
-            leftIconPath={mdiDotsVertical}
-            size="xs"
-          />
+          <Dropdown>
+            <Menu.Button
+              as={Button}
+              buttonType="tertiary"
+              leftIconPath={mdiDotsVertical}
+              size="sm"
+            />
 
-          <DropdownItems>
-            <DropdownItem
-              leftIconPath={mdiPencil}
-              onClick={() => onEdit(starterInfo)}
-            >
-              {t("Edit")}
-            </DropdownItem>
-
-            <DropdownItem
-              disabled={!isPrimary && !isValid}
-              leftIconPath={isPrimary ? mdiFlashOff : mdiFlash}
-              onClick={() => onSetPrimary(starterInfo)}
-            >
-              {isPrimary
-                ? t("Remove default launcher")
-                : t("Set as default launcher")}
-            </DropdownItem>
-
-            {!starter.isGame && (
+            <DropdownItems>
               <DropdownItem
-                className="nxm-dropdown-item-danger"
-                leftIconPath={mdiDelete}
-                onClick={() => onRemove(starterInfo)}
+                leftIconPath={mdiPencil}
+                onClick={() => onEdit(starterInfo)}
               >
-                {t("Delete")}
+                {t("Edit")}
               </DropdownItem>
-            )}
-          </DropdownItems>
-        </Dropdown>
 
-        <div className="mx-0.5 h-4 w-px bg-stroke-weak" />
+              <DropdownItem
+                disabled={!isPrimary && !isValid}
+                leftIconPath={isPrimary ? mdiFlashOff : mdiFlash}
+                onClick={() => onSetPrimary(starterInfo)}
+              >
+                {isPrimary
+                  ? t("Remove default launcher")
+                  : t("Set as default launcher")}
+              </DropdownItem>
+
+              {!starter.isGame && (
+                <DropdownItem
+                  className="nxm-dropdown-item-danger"
+                  leftIconPath={mdiDelete}
+                  onClick={() => onRemove(starterInfo)}
+                >
+                  {t("Delete")}
+                </DropdownItem>
+              )}
+            </DropdownItems>
+          </Dropdown>
+        </div>
+
+        <Divider />
 
         <Button
           buttonType="secondary"

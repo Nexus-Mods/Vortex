@@ -1,34 +1,32 @@
 # Contributing
 
+Recommended editor: [VS Code] with workspace extensions.
+You will be prompted to install them when you first open the repo.
+
 ## Requirements
 
-This document will explain how to get started with Vortex development. First, make sure you have these general coding requirements:
+Before you start, make sure you have:
 
-- a [GitHub account](https://github.com/login) for creating pull requests,
-- the `git` [CLI](https://git-scm.com/) or one [GUI client](https://git-scm.com/tools/guis) like [GitHub Desktop](https://github.com/apps/desktop),
-- an editor with TypeScript support like [VSCode](https://code.visualstudio.com/download), [WebStorm](https://www.jetbrains.com/webstorm/) or [Neovim](https://neovim.io/).
-
-Next, you need to install some build tools for Vortex:
-
-- [Volta](https://docs.volta.sh/guide/getting-started) for Node version management,
-- and the [.NET 9 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/9.0) for building .NET projects.
-
-Vortex depends on native Node modules which require [node-gyp](https://github.com/nodejs/node-gyp). You need to install a [supported Python version](https://devguide.python.org/versions/) and a C/C++ toolchain:
-
-- Windows: VS 2022 Build Tools, follow [node-gyp documentation](https://github.com/nodejs/node-gyp?tab=readme-ov-file#on-windows) for installation instructions
-- Linux: make and GCC (package `build-essentails` on Debian/Ubuntu and `base-devel` on Arch Linux)
-
-Starting with Python 3.12 you also need to install the `setuptools` packages. Verify your version by running `python3 --version` and install the package through `pip` or your system's package manager.
+- A [GitHub account] for creating pull requests,
+- The `git` [CLI] or a [GUI client] such as [GitHub Desktop],
+- An editor with TypeScript support such as [VS Code download], [WebStorm] or [Neovim].
 
 ## Setup
 
-1. Clone the repository
-2. `volta install node@22`
-3. `npm install --global corepack@latest`
-4. `corepack install`
-5. `pnpm install`
+1. Install distro-specific prerequisites:
+    - [Windows setup]
+    - Linux:
+        - [Arch-based setup] (Arch, CachyOS, Manjaro)
+        - [Debian-based setup] (Debian, Ubuntu, Pop!_OS, Linux Mint)
+        - [Fedora setup]
+        - [NixOS setup]
+    - If your distribution is not listed, try [Generic Installation Instructions].
+
+2. Continue with [Shared Setup].
 
 ## Developing
+
+After you have finished the setup steps:
 
 1. `pnpm run build:all`
 2. `pnpm run start`
@@ -37,37 +35,47 @@ Starting with Python 3.12 you also need to install the `setuptools` packages. Ve
 
 ### VS Code
 
-- **F5** - Debug both main and renderer processes
-- **Build first** - Always run `pnpm run build:all` before debugging
+- **F5** debugs both main and renderer processes
+- **Build first** by running `pnpm run build:all` before debugging
 
-See [docs/DEBUGGING-GUIDE.md](./docs/DEBUGGING-GUIDE.md) for detailed debugging instructions.
+See [docs/DEBUGGING-GUIDE.md] for detailed debugging
+instructions.
 
 ## Packaging
 
-### Local unsigned packages (Windows)
-
-To create a packaged installer for local testing without code signing:
-
-```
-pnpm run package:local
-```
-
-This downloads the required redistributables (VC++ and .NET Runtime) and creates an unsigned installer in the `dist/` directory.
-
-### Signed release builds
-
-Signed builds are created automatically via CI. Do not run `pnpm run package` locally.
+- [Windows packaging]
+- [Flatpak packaging]
 
 ## FAQ
 
 ### When will my changes be added to the stable release?
 
-Please see [docs/branching-and-release-strategy.md](https://github.com/Nexus-Mods/Vortex/blob/master/docs/branching-and-release-strategy.md) for more information
+See [docs/branching-and-release-strategy.md] for more
+information.
 
 ## Further Reading
 
-- [Debugging](./docs/DEBUGGING-GUIDE.md)
-- [Flatpak](./docs/flatpak-maintenance.md)
-- [Docker Dev Containers](./docker)
-- [Nix](./flake.nix)
+- [Debugging]
+- [Docker Dev Containers]
 
+[Arch-based setup]: ./docs/install-instructions/archlinux.md
+[CLI]: https://git-scm.com/
+[Debian-based setup]: ./docs/install-instructions/debian-based.md
+[Debugging]: ./docs/DEBUGGING-GUIDE.md
+[Docker Dev Containers]: ./docker
+[docs/DEBUGGING-GUIDE.md]: ./docs/DEBUGGING-GUIDE.md
+[docs/branching-and-release-strategy.md]: ./docs/branching-and-release-strategy.md
+[Fedora setup]: ./docs/install-instructions/fedora.md
+[Flatpak packaging]: ./docs/packaging/flatpak.md
+[GUI client]: https://git-scm.com/tools/guis
+[Generic Installation Instructions]: ./docs/install-instructions/generic.md
+[GitHub account]: https://github.com/login
+[GitHub Desktop]: https://github.com/apps/desktop
+[Neovim]: https://neovim.io/
+[NixOS setup]: ./docs/install-instructions/nixos.md
+[Shared Setup]: ./docs/install-instructions/shared.md
+[VS Code]: https://code.visualstudio.com/
+[VS Code download]: https://code.visualstudio.com/download
+[WebStorm]: https://www.jetbrains.com/webstorm/
+[Windows setup]: ./docs/install-instructions/windows.md
+[Windows packaging]: ./docs/packaging/windows.md

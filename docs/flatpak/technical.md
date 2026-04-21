@@ -4,7 +4,9 @@ Technical notes for developers working on the Flatpak build.
 
 ## Build Pipeline
 
-Offline-first: `flatpak-node-generator` converts Yarn lockfiles into `generated-sources.json` so builds need no network. Yarn pulls from an offline mirror inside the sandbox.
+Offline-first: `flatpak-node-generator` converts Yarn lockfiles into
+`generated-sources.json` so builds need no network. Yarn pulls from an offline
+mirror inside the sandbox.
 
 Build stages (in the SDK sandbox):
 
@@ -54,18 +56,27 @@ Use this to test the actual user installation experience.
 
 `flatpak/run.sh` launches with `zypak-wrapper /app/main/vortex`.
 
-- Zypak runs Electron inside the sandbox (see [Zypak docs](https://github.com/refi64/zypak))
+- Zypak runs Electron inside the sandbox (see [Zypak docs])
 - Desktop file points to `run.sh`
 - Entrypoint must use Zypak per Flatpak Electron guidance
 
 ## Why These Choices
 
-**Full host filesystem access**: Game installs can be anywhere. Deployment uses hardlinks/symlinks/moves. Portals are not viable because scanning and deployment are background operations that cannot wait for user-mediated prompts.
+- **Full host filesystem access**: Game installs can be anywhere. Deployment
+  uses hardlinks, symlinks, and moves. Portals are not viable because scanning
+  and deployment are background operations that cannot wait for user prompts.
 
-**Offline builds**: Required for Flathub and reproducible builds. All Yarn/NPM dependencies must be in `generated-sources.json`.
+- **Offline builds**: Required for Flathub and reproducible builds. All
+  Yarn and NPM dependencies must be in `generated-sources.json`.
 
-**Zypak wrapper**: Required by the Electron BaseApp to run Chromium's sandbox inside Flatpak's sandbox.
+- **Zypak wrapper**: Required by the Electron BaseApp to run Chromium's
+  sandbox inside Flatpak's sandbox.
 
-**.NET runtime staging**: Framework-dependent tools (like `dotnetprobe`) need `DOTNET_ROOT` pointing to the staged runtime at `/app/lib/dotnet`.
+- **.NET runtime staging**: Framework-dependent tools such as `dotnetprobe`
+  need `DOTNET_ROOT` pointing to the staged runtime at `/app/lib/dotnet`.
 
-**Electron builder**: We use `electron-builder` with the `dir` target to package the app with the Electron runtime. This creates a complete distribution in `dist/linux-unpacked/` that gets copied to `/app/main`.
+- **Electron builder**: We use `electron-builder` with the `dir` target to
+  package the app with the Electron runtime. This creates a complete
+  distribution in `dist/linux-unpacked/` that gets copied to `/app/main`.
+
+[Zypak docs]: https://github.com/refi64/zypak

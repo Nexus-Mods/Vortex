@@ -1,77 +1,3 @@
-import { setDownloadModInfo } from "../../actions";
-import type {
-  IExtensionApi,
-  StateChangeCallback,
-} from "../../types/IExtensionContext";
-import type { IDownload, IMod, IModTable, IState } from "../../types/IState";
-import {
-  DataInvalid,
-  ProcessCanceled,
-  UserCanceled,
-} from "../../util/CustomErrors";
-import Debouncer from "../../util/Debouncer";
-import * as fs from "../../util/fs";
-import { log } from "../../util/log";
-import { calcDuration, showError } from "../../util/message";
-import { upload } from "../../util/network";
-import { submitCollectionV3 } from "./util_v3/submitCollectionV3";
-import opn from "../../util/opn";
-import {
-  activeGameId,
-  currentGame,
-  downloadPathForGame,
-  gameById,
-  knownGames,
-} from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
-import { batchDispatch, truthy } from "../../util/util";
-
-import { resolveCategoryName } from "../category_management";
-import {
-  AlreadyDownloaded,
-  DownloadIsHTML,
-} from "../download_management/DownloadManager";
-import { SITE_ID } from "../gamemode_management/constants";
-import type { IGameStoredExt } from "../gamemode_management/types/IGameStored";
-import { setUpdatingMods } from "../mod_management/actions/session";
-import type { IModListItem } from "../news_dashlet/types";
-
-import { setUserInfo } from "./actions/persistent";
-import { findLatestUpdate, retrieveModInfo } from "./util/checkModsVersion";
-import { makeModUID } from "./util/UIDs";
-import {
-  nexusGameId,
-  toNXMId,
-  convertGameIdReverse,
-} from "./util/convertGameId";
-import {
-  FULL_COLLECTION_INFO,
-  FULL_REVISION_INFO,
-  CURRENT_REVISION_INFO,
-  COLLECTION_SEARCH_QUERY,
-  MOD_REQUIREMENTS_INFO,
-  MY_COLLECTIONS_SEARCH_QUERY,
-} from "./util/graphQueries";
-import submitFeedback from "./util/submitFeedback";
-
-import {
-  NEXUS_BASE_URL,
-  NEXUS_GAMES_URL,
-  USERINFO_ENDPOINT,
-} from "./constants";
-import {
-  checkModVersionsImpl,
-  endorseDirectImpl,
-  endorseThing,
-  ensureLoggedIn,
-  processErrorMessage,
-  resolveGraphError,
-  startDownload,
-  transformUserInfoFromApi,
-  updateKey,
-  updateToken,
-} from "./util";
-
 import type {
   EndorsedStatus,
   ICollection,
@@ -94,18 +20,90 @@ import type {
   IPreference,
 } from "@nexusmods/nexus-api";
 import type Nexus from "@nexusmods/nexus-api";
+
 import { NexusError, RateLimitError, TimeoutError } from "@nexusmods/nexus-api";
-import Bluebird from "bluebird";
-import * as path from "path";
-import * as semver from "semver";
-import type { ITokenReply } from "./util/oauth";
-import { isLoggedIn } from "./selectors";
-import type { IValidateKeyDataV2 } from "./types/IValidateKeyData";
 import {
   getErrorCode,
   getErrorMessageOrDefault,
   unknownToError,
 } from "@vortex/shared";
+import Bluebird from "bluebird";
+import * as path from "path";
+import * as semver from "semver";
+
+import type {
+  IExtensionApi,
+  StateChangeCallback,
+} from "../../types/IExtensionContext";
+import type { IDownload, IMod, IModTable, IState } from "../../types/IState";
+import type { IGameStoredExt } from "../gamemode_management/types/IGameStored";
+import type { IModListItem } from "../news_dashlet/types";
+import type { IValidateKeyDataV2 } from "./types/IValidateKeyData";
+import type { ITokenReply } from "./util/oauth";
+
+import { setDownloadModInfo } from "../../actions";
+import { log } from "../../logging";
+import {
+  DataInvalid,
+  ProcessCanceled,
+  UserCanceled,
+} from "../../util/CustomErrors";
+import Debouncer from "../../util/Debouncer";
+import * as fs from "../../util/fs";
+import { calcDuration, showError } from "../../util/message";
+import { upload } from "../../util/network";
+import opn from "../../util/opn";
+import {
+  activeGameId,
+  currentGame,
+  downloadPathForGame,
+  gameById,
+  knownGames,
+} from "../../util/selectors";
+import { getSafe } from "../../util/storeHelper";
+import { batchDispatch, truthy } from "../../util/util";
+import { resolveCategoryName } from "../category_management";
+import {
+  AlreadyDownloaded,
+  DownloadIsHTML,
+} from "../download_management/DownloadManager";
+import { SITE_ID } from "../gamemode_management/constants";
+import { setUpdatingMods } from "../mod_management/actions/session";
+import { setUserInfo } from "./actions/persistent";
+import {
+  NEXUS_BASE_URL,
+  NEXUS_GAMES_URL,
+} from "./constants";
+import { isLoggedIn } from "./selectors";
+import {
+  checkModVersionsImpl,
+  endorseDirectImpl,
+  endorseThing,
+  ensureLoggedIn,
+  nexusGamesProm,
+  processErrorMessage,
+  resolveGraphError,
+  startDownload,
+  transformUserInfoFromApi,
+  updateKey,
+  updateToken,
+} from "./util";
+import { findLatestUpdate, retrieveModInfo } from "./util/checkModsVersion";
+import {
+  nexusGameId,
+  toNXMId,
+  convertGameIdReverse,
+} from "./util/convertGameId";
+import {
+  FULL_COLLECTION_INFO,
+  FULL_REVISION_INFO,
+  COLLECTION_SEARCH_QUERY,
+  MOD_REQUIREMENTS_INFO,
+  MY_COLLECTIONS_SEARCH_QUERY,
+} from "./util/graphQueries";
+import submitFeedback from "./util/submitFeedback";
+import { makeModUID } from "./util/UIDs";
+import { submitCollectionV3 } from "./util_v3/submitCollectionV3";
 
 export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
   const state: IState = api.store.getState();
@@ -1056,36 +1054,39 @@ export function onGetModRequirements(
       return Bluebird.resolve({});
     }
 
-    // Build UIDs for all mods (64-bit: game ID in upper 32 bits, mod ID in lower 32 bits)
-    // Pass Vortex gameId so makeModUID can convert to numeric Nexus game ID
-    const uidToModId: { [uid: string]: number } = {};
-    const validUids: string[] = [];
+    return Bluebird.resolve((async () => {
+      // makeModUID needs the nexus games list to map domain -> numeric game id.
+      // This should've been done on startup, but there appears to be
+      // a race condition https://github.com/Nexus-Mods/Vortex/issues/22466
+      await nexusGamesProm();
 
-    for (const modId of modIds) {
-      const modUid = makeModUID({
-        gameId,
-        modId: modId.toString(),
-        fileId: "0", // Not needed for mod UID but required by interface
-      });
+      // Build UIDs for all mods (64-bit: game ID in upper 32 bits, mod ID in lower 32 bits)
+      // Pass Vortex gameId so makeModUID can convert to numeric Nexus game ID
+      const validUids: string[] = [];
 
-      if (modUid) {
-        uidToModId[modUid] = modId;
-        validUids.push(modUid);
-      } else {
-        log("warn", "Failed to create mod UID for requirements lookup", {
-          gameId: nexusGameDomain,
-          modId,
+      for (const modId of modIds) {
+        const modUid = makeModUID({
+          gameId,
+          modId: modId.toString(),
+          fileId: "0", // Not needed for mod UID but required by interface
         });
+
+        if (modUid) {
+          validUids.push(modUid);
+        } else {
+          log("warn", "Failed to create mod UID for requirements lookup", {
+            gameId: nexusGameDomain,
+            modId,
+          });
+        }
       }
-    }
 
-    if (validUids.length === 0) {
-      return Bluebird.resolve({});
-    }
+      if (validUids.length === 0) {
+        return [];
+      }
 
-    // Query must include modId to map results back to mods
-    return Bluebird.resolve(
-      nexus.modsByUid(
+      // Query must include modId to map results back to mods
+      return nexus.modsByUid(
         {
           modId: true,
           modRequirements: MOD_REQUIREMENTS_INFO,
@@ -1093,8 +1094,8 @@ export function onGetModRequirements(
           thumbnailUrl: true,
         },
         validUids,
-      ),
-    )
+      );
+    })())
       .then((mods) => {
         const result: Record<number, Partial<IModRequirements>> = {};
         for (const mod of mods) {
@@ -1336,7 +1337,7 @@ export function onSubmitFeedback(nexus: Nexus) {
   };
 }
 
-export function onSubmitCollection(api: IExtensionApi, nexus: Nexus) {
+export function onSubmitCollection(api: IExtensionApi) {
   return (
     collectionInfo: ICollectionManifest,
     assetFilePath: string,
@@ -1346,7 +1347,6 @@ export function onSubmitCollection(api: IExtensionApi, nexus: Nexus) {
     const state = api.getState();
     submitCollectionV3(
       state,
-      nexus,
       collectionInfo,
       assetFilePath,
       collectionId || undefined,

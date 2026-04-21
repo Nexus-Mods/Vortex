@@ -112,7 +112,7 @@ export interface ServiceAliases {}
  */
 export type ServiceFor<K extends string> = K extends keyof ServiceRegistry
   ? ServiceRegistry[K]
-  : unknown;
+  : never;
 
 // --- Method Message ---
 

@@ -172,9 +172,9 @@ export class FileSystemBackendImpl implements FileSystemBackend {
 
       let message = `Failed to move '${source}' to '${target}'`;
       if (code === "no permissions") {
-        message = `Failed to copy '${source}' to '${target}': insufficient permissions`;
+        message = `Failed to move '${source}' to '${target}': insufficient permissions`;
       } else if (code === "not found") {
-        message = `Failed to copy '${source}': source does not exist`;
+        message = `Failed to move '${source}': source does not exist`;
       }
 
       throw new FileSystemError(code, message, err, isTransient);
@@ -367,7 +367,7 @@ export class FileSystemBackendImpl implements FileSystemBackend {
 
       throw new FileSystemError(
         code,
-        `Failed to start ${path}`,
+        `Failed to stat ${path}`,
         err,
         isTransient,
       );

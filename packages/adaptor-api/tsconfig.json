@@ -13,5 +13,8 @@
     "types": [],
     "lib": ["ESNext"],
     "isolatedDeclarations": true,
-  },
+    "paths": {
+      "@vortex/adaptor-api": ["./src/lib.ts"]
+    }
+  }
 }

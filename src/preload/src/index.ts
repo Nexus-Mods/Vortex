@@ -71,6 +71,25 @@ try {
         betterIpcRenderer.send("extensions:init-all-main", installType),
     },
 
+    adaptors: {
+      list: () => betterIpcRenderer.invoke("adaptors:list"),
+      call: (
+        adaptorName: string,
+        serviceUri: string,
+        method: string,
+        args: unknown[],
+      ) =>
+        betterIpcRenderer.invoke(
+          "adaptors:call",
+          adaptorName,
+          serviceUri,
+          method,
+          args,
+        ),
+      buildSnapshot: (store: string, gamePath: string) =>
+        betterIpcRenderer.invoke("adaptors:build-snapshot", store, gamePath),
+    },
+
     updater: {
       getStatus: () => betterIpcRenderer.invoke("updater:get-status"),
       setChannel: (channel: string, manual: boolean) =>
@@ -175,18 +194,6 @@ try {
         betterIpcRenderer.invoke("window:setAlwaysOnTop", windowId, flag),
       moveTop: (windowId: number) =>
         betterIpcRenderer.invoke("window:moveTop", windowId),
-      onMaximize: (callback) => {
-        const listener = () => callback();
-        ipcRenderer.on("window:event:maximize", listener);
-        return () =>
-          ipcRenderer.removeListener("window:event:maximize", listener);
-      },
-      onUnmaximize: (callback) => {
-        const listener = () => callback();
-        ipcRenderer.on("window:event:unmaximize", listener);
-        return () =>
-          ipcRenderer.removeListener("window:event:unmaximize", listener);
-      },
       onClose: (callback) => {
         const listener = () => callback();
         ipcRenderer.on("window:event:close", listener);
@@ -274,6 +281,35 @@ try {
     telemetry: {
       forwardSpan: (span) =>
         betterIpcRenderer.send("telemetry:forward-span", span),
+    },
+
+    downloader: {
+      start: (dest, collationId) =>
+        betterIpcRenderer.invoke("download:start", dest, collationId),
+      pause: (downloadId) =>
+        betterIpcRenderer.invoke("download:pause", downloadId),
+      resume: (checkpoint, collationId) =>
+        betterIpcRenderer.invoke("download:resume", checkpoint, collationId),
+      cancel: (downloadId) =>
+        betterIpcRenderer.invoke("download:cancel", downloadId),
+      onResolve: (handler) => {
+        const listener = (
+          _event: Electron.IpcRendererEvent,
+          collationId: number,
+        ) => {
+          handler(collationId)
+            .then((result) => {
+              betterIpcRenderer.send(
+                "callback:download:resolve",
+                collationId,
+                result,
+              );
+            })
+            .catch((err) => console.error(err));
+        };
+        ipcRenderer.on("download:resolve", listener);
+        return () => ipcRenderer.removeListener("download:resolve", listener);
+      },
     },
   });
 } catch (err) {

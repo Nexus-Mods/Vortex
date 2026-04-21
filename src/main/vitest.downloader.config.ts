@@ -2,9 +2,9 @@ import { defineConfig, type ViteUserConfig } from "vitest/config";
 
 const config: ViteUserConfig = defineConfig({
   test: {
-    name: "@vortex/main (integration)",
+    name: "@vortex/main (downloader)",
     environment: "node",
-    include: ["src/**/*.test.integration.ts"],
+    include: ["src/downloading/*.test.integration.ts"],
     testTimeout: 30_000,
   },
 });

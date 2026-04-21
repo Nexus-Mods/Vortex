@@ -33,7 +33,7 @@ function getEnabledPlugins(
 interface IUserlistEntry {
   name: string;
   group?: string;
-  after?: string[];
+  after?: Array<string | ILootReference>;
 }
 
 interface IGamebryoRules {
@@ -42,13 +42,13 @@ interface IGamebryoRules {
 }
 
 function extractPluginRules(
-  state: types.IState,
+  state: IStateWithLootLists,
   plugins: string[],
 ): IGamebryoRules {
   const installedPlugins: Set<string> = new Set(
     plugins.map((name) => name.toLowerCase()),
   );
-  const customisedPlugins = state["userlist"].plugins.filter(
+  const customisedPlugins = (state.userlist?.plugins ?? []).filter(
     (plug: IUserlistEntry) =>
       installedPlugins.has(plug.name.toLowerCase()) &&
       (plug.after !== undefined || plug.group !== undefined),
@@ -59,7 +59,7 @@ function extractPluginRules(
   // aren't included in the pack
   return {
     plugins: customisedPlugins,
-    groups: state["userlist"].groups,
+    groups: state.userlist?.groups ?? [],
   };
 }
 
@@ -150,20 +150,29 @@ export async function parser(
   collection: ICollection,
   collectionMod: types.IMod,
 ) {
-  const state: types.IState = api.getState();
+  const state: IStateWithLootLists = api.getState();
 
-  if ((state as any).userlist === undefined) {
+  if (state.userlist === undefined) {
     // may be that the plugin extension is disabled.
     // if so, that may be intentional so can't report an error.
     return;
   }
 
+  // re-read the mod from state to pick up attributes set during install dialog
+  const currentMod = state.persistent.mods[gameId]?.[collectionMod.id];
+  const skipPluginRules = currentMod?.attributes?.skipPluginRules === true;
+
   const mods = state.persistent.mods[gameId];
 
-  // set up groups and their rules
-  if (Array.isArray(collection.pluginRules?.groups)) {
+  const userlist = state.userlist;
+
+  // set up groups and their rules (skipped if user opted out)
+  if (!skipPluginRules && Array.isArray(collection.pluginRules?.groups)) {
     util.batchDispatch(api.store, collection.pluginRules.groups.reduce((prev, group) => {
-      if ((state as any).userlist.groups[group.name] === undefined) {
+      const isNew = userlist.groups.find(
+        (g) => g.name.toUpperCase() === group.name.toUpperCase(),
+      ) === undefined;
+      if (isNew) {
         prev.push({
           type: 'ADD_PLUGIN_GROUP', payload: {
             group: group.name,
@@ -223,10 +232,14 @@ export async function parser(
     .filter((noti) => noti.id.startsWith("multiple-plugins-"))
     .forEach((noti) => api.dismissNotification(noti.id));
 
+  if (skipPluginRules) {
+    return;
+  }
+
   util.batchDispatch(
     api.store,
     (collection.pluginRules?.plugins ?? []).reduce((prev, plugin) => {
-      const existing = (state as any).userlist.plugins.find(
+      const existing = userlist.plugins.find(
         (plug) => plug.name.toUpperCase() === plugin.name.toUpperCase(),
       );
 
@@ -325,6 +338,12 @@ interface ILOOTList {
   plugins: ILOOTPlugin[];
   groups: ILOOTGroup[];
 }
+
+type IStateWithLootLists = types.IState & {
+  userlist?: ILOOTList;
+  masterlist?: ILOOTList;
+};
+
 
 function ruleName(rule: string | ILootReference): string {
   if (typeof rule === "string") {

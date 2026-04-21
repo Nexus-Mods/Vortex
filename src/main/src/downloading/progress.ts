@@ -1,23 +1,29 @@
-import type { ByteRange, Chunk } from "./chunking";
+import type {
+  Chunk,
+  ChunkProgress,
+  DownloadProgress,
+  Progress,
+} from "@vortex/shared/download";
 
-export type Progress = {
-  bytesReceived: number;
-  bytesWritten: number;
-};
-
-export type ChunkProgress = Progress & {
-  chunkRange: ByteRange;
-};
-
-export type DownloadProgress = Progress & {
-  /** Size of the file being downloaded. This can be null when the server returns no size. */
-  size: number | null;
-} & ({ isChunked: false } | { isChunked: true; chunks: ChunkProgress[] });
-
-export type ProgressCallback = (progress: DownloadProgress) => void;
+export type DownloadStatus =
+  | "queued"
+  | "running"
+  | "completed"
+  | "paused"
+  | "canceled"
+  | "failed";
 
 /** @internal */
 export class ProgressReporter {
+  #status: DownloadStatus = "queued";
+  get status(): DownloadStatus {
+    return this.#status;
+  }
+
+  set status(value: DownloadStatus) {
+    this.#status = value;
+  }
+
   #isChunked: boolean = false;
   #chunkProgress: Map<number, ChunkProgress> = new Map();
   #progress: Progress = { bytesReceived: 0, bytesWritten: 0 };

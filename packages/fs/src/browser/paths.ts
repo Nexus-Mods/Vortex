@@ -17,6 +17,76 @@ export type Extension = string;
  * @public */
 export type ResolvedPath = string;
 
+declare const RelativePathBrand: unique symbol;
+
+/**
+ * Forward-slash-separated relative path. Guaranteed to have no leading
+ * slash, no drive-letter prefix, and no `..` segments. Values are only
+ * constructed through {@link relativePath}, which validates and
+ * normalizes the input.
+ *
+ * @public */
+export type RelativePath = string & { readonly [RelativePathBrand]: true };
+
+/**
+ * Thrown by {@link relativePath} when its input cannot be normalized
+ * into a valid relative path.
+ * @public */
+export class RelativePathError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "RelativePathError";
+  }
+}
+
+/**
+ * Constructs a {@link RelativePath} after validation and normalization.
+ *
+ * - Backslashes are converted to forward slashes.
+ * - A single trailing slash is trimmed.
+ * - Empty segments (repeated separators) are collapsed.
+ *
+ * @throws {@link RelativePathError} if the input is absolute (leading
+ * slash), contains a Windows drive-letter prefix (e.g. `C:`), or
+ * contains any `..` segment.
+ *
+ * @example
+ * ```ts @import.meta.vitest
+ * assert(relativePath("foo/bar.txt") === "foo/bar.txt");
+ * assert(relativePath("foo\\bar\\baz") === "foo/bar/baz");
+ * assert(relativePath("foo/") === "foo");
+ * ```
+ *
+ * @public */
+export function relativePath(raw: string): RelativePath {
+  const normalized = raw.replace(/\\/g, "/");
+
+  if (normalized.startsWith("/")) {
+    throw new RelativePathError(
+      `RelativePath must not start with '/': "${raw}"`,
+    );
+  }
+  if (/^[A-Za-z]:/.test(normalized)) {
+    throw new RelativePathError(
+      `RelativePath must not include a drive letter: "${raw}"`,
+    );
+  }
+
+  const trimmed =
+    normalized.endsWith("/") && normalized.length > 1
+      ? normalized.slice(0, -1)
+      : normalized;
+
+  const segments = trimmed.split("/").filter((s) => s.length > 0);
+  if (segments.some((s) => s === "..")) {
+    throw new RelativePathError(
+      `RelativePath must not contain '..' segments: "${raw}"`,
+    );
+  }
+
+  return segments.join("/") as RelativePath;
+}
+
 /**
  * Resolves {@link QualifiedPath} to {@link ResolvedPath}.
  *
@@ -311,4 +381,54 @@ export class QualifiedPath {
   toJSON(): string {
     return this.value;
   }
+}
+
+/**
+ * Tagged template literal for building {@link QualifiedPath} values.
+ *
+ * If the first interpolation is a {@link QualifiedPath}, it is used as the base
+ * and remaining segments are joined onto it. Otherwise the assembled string
+ * is parsed as a new {@link QualifiedPath}.
+ *
+ * @example
+ * ```ts @import.meta.vitest
+ * const install = QualifiedPath.parse("steam://SteamApps/common/Skyrim");
+ * const config = qpath`${install}/engine/config`;
+ * assert(config.value === "steam://SteamApps/common/Skyrim/engine/config");
+ *
+ * const fresh = qpath`linux:///home/user/.config`;
+ * assert(fresh.value === "linux:///home/user/.config");
+ * ```
+ *
+ * @public
+ */
+export function qpath(
+  strings: TemplateStringsArray,
+  ...values: (QualifiedPath | string | number)[]
+): QualifiedPath {
+  // Fast path: first value is a QualifiedPath, join the rest as path segments
+  if (values.length > 0 && values[0] instanceof QualifiedPath) {
+    const base = values[0];
+    // Build the trailing path from remaining template parts and values
+    let tail = strings[0] ?? ""; // text before the QualifiedPath (should be empty)
+    for (let i = 1; i <= values.length; i++) {
+      const v = i < values.length ? values[i] : undefined;
+      const val =
+        v instanceof QualifiedPath ? v.value : v !== undefined ? String(v) : "";
+      tail += (strings[i] ?? "") + val;
+    }
+    // Split on / and filter empties to get clean path components
+    const components = tail.split("/").filter((s) => s.length > 0);
+    return components.length > 0 ? base.join(...components) : base;
+  }
+
+  // General path: assemble the full string and parse
+  let result = strings[0] ?? "";
+  for (let i = 0; i < values.length; i++) {
+    const v = values[i];
+    result +=
+      (v instanceof QualifiedPath ? v.value : String(v)) +
+      (strings[i + 1] ?? "");
+  }
+  return QualifiedPath.parse(result);
 }

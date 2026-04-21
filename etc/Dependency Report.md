@@ -53,7 +53,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | fs-extra | 9.1.0 |
 | fuzzball | 1.4.0 |
 | glob | 11.1.0 |
-| got | 15.0.0 |
+| got | 15.0.2 |
 | graphlib | 2.1.8 |
 | i18next | 19.9.2 |
 | i18next-fs-backend | 2.6.1 |
@@ -73,7 +73,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | mixpanel-browser | 2.77.0 |
 | modmeta-db | 0.9.3 |
 | native-errors | 2.0.3 |
-| node-7z | 0.8.0 |
+| node-7z | 0.8.1 |
 | normalize-url | 6.1.0 |
 | numeral | 2.0.6 |
 | p-queue | 9.1.0 |
@@ -114,6 +114,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | string-template | 1.0.0 |
 | tailwindcss | 4.2.2 |
 | tmp | 0.1.0 |
+| tough-cookie | 6.0.1 |
 | turbowalk | 3.1.1 |
 | universal-analytics | 0.4.23 |
 | uuid | 3.4.0 |

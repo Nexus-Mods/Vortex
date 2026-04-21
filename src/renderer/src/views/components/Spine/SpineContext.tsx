@@ -222,23 +222,35 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
 
   const selectGame = useCallback(
     (gameId: string) => {
-      if (defaultGamePage === undefined) return;
-      const targetPage = lastPageRef.current[gameId] || defaultGamePage;
       const profileId = lastActiveProfile[gameId];
+      const profileExists =
+        profileId !== undefined &&
+        profileByIdSelector(api.getState(), profileId) !== undefined;
+
       setIsDownloadsMode(false);
       setHomeForGameId(null);
-      if (
-        profileId !== undefined &&
-        profileId !== activeProfileId &&
-        profileByIdSelector(api.getState(), profileId) !== undefined
-      ) {
+
+      if (!profileExists) {
+        // No usable last-active profile for this game — ask the
+        // profile_management extension to show the profile picker dialog.
+        // Once the user picks a profile the resulting profile-did-change will
+        // update activeGameId, which re-derives `selection` and the existing
+        // useEffect navigates to the correct game page automatically.
+        api?.events.emit("activate-game", gameId);
+        return;
+      }
+
+      if (defaultGamePage === undefined) return;
+      const targetPage = lastPageRef.current[gameId] || defaultGamePage;
+
+      if (profileId !== activeProfileId) {
         // Profile needs to change - wait for activation before navigating
         dispatch(setNextProfile(profileId));
         api?.events.once("profile-did-change", () => {
           dispatch(setOpenMainPage(targetPage, false));
         });
       } else {
-        // Profile is already active or last profile no longer exists
+        // Profile is already active
         dispatch(setOpenMainPage(targetPage, false));
       }
     },

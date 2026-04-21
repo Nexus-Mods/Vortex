@@ -27,13 +27,17 @@ export type {
   PathResolver,
   OSPathProvider,
   OSPathBase,
+  RelativePath,
 } from "../browser/paths";
 
 export {
   QualifiedPath,
+  qpath,
   OSPath,
   PathProviderError,
   PathResolverError,
+  RelativePathError,
+  relativePath,
 } from "../browser/paths";
 
 export { XDG } from "../browser/paths.linux";
@@ -43,6 +47,7 @@ export type {
   XDGBase,
 } from "../browser/paths.linux";
 
+export { WindowsPath } from "../browser/paths.windows";
 export type {
   WindowsPathBase,
   WindowsPathProvider,

@@ -10,7 +10,9 @@ const config: UserConfig = defineConfig({
   dts: {
     sourcemap: true,
   },
-  exports: true,
+  exports: {
+    devExports: "development",
+  },
   platform: "neutral",
 });
 

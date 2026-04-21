@@ -4,33 +4,34 @@ How to build and update the Flatpak package.
 
 > [!WARNING]
 > ## IMPORTANT: PNPM LOCKFILES ARE NOT SUPPORTED IN FLATPAK-BUILDER-TOOLS YET
-> Flatpak dependency source generation still relies on compatibility lockfiles (npm/yarn), not `pnpm-lock.yaml`.
-> - https://github.com/flatpak/flatpak-builder-tools/pull/511
-> - https://github.com/flatpak/flatpak-builder-tools/issues/383
+> Flatpak dependency source generation still relies on compatibility lockfiles
+> such as npm and Yarn, not `pnpm-lock.yaml`.
+> - [Flatpak Builder Tools PR 511]
+> - [Flatpak Builder Tools issue 383]
 
 > [!note] Prerequisites
-> See [Flatpak basics in CONTRIBUTE.md](../CONTRIBUTE.md#flatpak-basics-linux-packaging).
+> See [Flatpak packaging] for the basics and
+> first-time setup.
 
 ## Helper Scripts
 
-Scripts in `flatpak/scripts/` automate common tasks. They manage their own virtual environment and can run from any directory.
+Scripts in `flatpak/scripts/` automate common tasks. They manage their own
+virtual environment and can run from any directory.
 
 > [!tip]
 > Use `python` instead if `python3` does not work on your system.
 
-### Development workflow
+### Development Workflow
 
-| Script             | Purpose                                                         |
-| ------------------ | --------------------------------------------------------------- |
-| `flatpak_build.py` | Build the Flatpak with standard defaults                        |
-| `flatpak_run.py`   | Run the installed Flatpak (builds and installs first if needed) |
+- `flatpak_build.py`: build the Flatpak with standard defaults
+- `flatpak_run.py`: run the installed Flatpak, building and installing first
+  if needed
 
-### Distribution/UX Testing workflow
+### Distribution And UX Testing Workflow
 
-| Script               | Purpose                                                                 |
-| -------------------- | ----------------------------------------------------------------------- |
-| `flatpak_install.py` | Export to a local repo, install the app (appears in KDE Discover, etc.) |
-| `flatpak_bundle.py`  | Export to a local repo and create a `.flatpak` bundle                   |
+- `flatpak_install.py`: export to a local repo and install the app so it
+  appears in KDE Discover and similar software centers
+- `flatpak_bundle.py`: export to a local repo and create a `.flatpak` bundle
 
 ## Typical Workflows
 
@@ -82,15 +83,21 @@ python3 flatpak/scripts/flatpak_bundle.py --skip-build
 
 ### Workflow Notes
 
-- `flatpak_run.py` ensures the app is installed (builds and installs if needed), then runs it
-- `flatpak_install.py --skip-build` re-exports from existing build without rebuilding
+- `flatpak_run.py` ensures the app is installed, then runs it
+- `flatpak_install.py --skip-build` re-exports from an existing build without
+  rebuilding
 - `flatpak_bundle.py` creates a `.flatpak` file for distribution
-- `nxm://` protocol switching should work out of the box: whichever Vortex build you launched last should become the active handler
+- `nxm://` protocol switching should work out of the box. Whichever Vortex
+  build you launched last should become the active handler
 
 ## Script Differences
 
-- **`flatpak_run.py`**: Development testing with proper single-instance support. Installs the app if needed (so protocol handlers work correctly), then runs the installed version.
-- **`flatpak_install.py`**: UX testing. Installs the app properly so it appears in software centers. Creates a local OSTree repo at `flatpak/flatpak-repo/` (gitignored).
+- **`flatpak_run.py`**: development testing with proper single-instance
+  support. It installs the app if needed so protocol handlers work correctly,
+  then runs the installed version
+- **`flatpak_install.py`**: UX testing. It installs the app properly so it
+  appears in software centers and creates a local OSTree repo at
+  `flatpak/flatpak-repo/` which is gitignored
 
 ## Runtime Updates
 
@@ -116,8 +123,10 @@ This is required for _Flathub submission_ and ensures reproducible builds.
 
 To keep source files in sync automatically, build scripts now:
 
-- hash recursive repository `yarn.lock` files and compare against `flatpak/generated-sources.hash`
-- hash FOMOD `.csproj`/NuGet input files and compare against `flatpak/generated-nuget-sources.hash`
+- hash recursive repository `yarn.lock` files and compare against
+  `flatpak/generated-sources.hash`
+- hash FOMOD `.csproj` and NuGet input files and compare against
+  `flatpak/generated-nuget-sources.hash`
 - regenerate each generated source file only when needed
 
 To sync both generated source files manually, run:
@@ -138,11 +147,15 @@ If you are debugging `generated-nuget-sources.json` generation, run:
 python3 flatpak/scripts/flatpak_sources.py --only nuget --force
 ```
 
-NuGet source syncing scans `extensions/` by default. Use `--search-root` if you need to narrow the scope during debugging.
+NuGet source syncing scans `extensions/` by default. Use `--search-root` if
+you need to narrow the scope during debugging.
 
 ## Troubleshooting
 
-- Missing submodule files during Flatpak build: `yarn install` normally runs `preinstall.js`, which initializes submodules. If you have not run `yarn install` locally, run `git submodule update --init --recursive` first.
+- Missing submodule files during Flatpak build: `yarn install` normally runs
+  `preinstall.js`, which initializes submodules. If you have not run
+  `yarn install` locally, run `git submodule update --init --recursive`
+  first
 - `nxm://` handler did not switch automatically:
 
 ```bash
@@ -158,6 +171,13 @@ xdg-settings set default-url-scheme-handler nxm com.nexusmods.vortex.dev.desktop
 
 ## References
 
-- [Flatpak Electron guide](https://docs.flatpak.org/en/latest/electron.html)
-- [Flatpak .NET guide](https://docs.flatpak.org/en/latest/dotnet.html)
-- [flatpak-builder documentation](https://docs.flatpak.org/en/latest/flatpak-builder.html)
+- [Flatpak Electron guide]
+- [Flatpak .NET guide]
+- [flatpak-builder documentation]
+
+[Flatpak packaging]: ../packaging/flatpak.md
+[Flatpak builder tools issue 383]: https://github.com/flatpak/flatpak-builder-tools/issues/383
+[Flatpak Builder Tools PR 511]: https://github.com/flatpak/flatpak-builder-tools/pull/511
+[Flatpak .NET guide]: https://docs.flatpak.org/en/latest/dotnet.html
+[Flatpak Electron guide]: https://docs.flatpak.org/en/latest/electron.html
+[flatpak-builder documentation]: https://docs.flatpak.org/en/latest/flatpak-builder.html

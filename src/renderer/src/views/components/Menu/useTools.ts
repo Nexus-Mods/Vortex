@@ -47,6 +47,7 @@ export const useTools = (
     discoveryPath,
     primaryToolId,
     pinnedToolsMap,
+    deploymentCounter,
   } = useToolsData();
 
   // Get all starters for validation
@@ -55,7 +56,7 @@ export const useTools = (
     [gameStarter, tools],
   );
 
-  const { isToolValid } = useToolsValidation(allStarters, discoveryPath);
+  const { isToolValid } = useToolsValidation(allStarters, discoveryPath, deploymentCounter);
 
   const { exclusiveRunning, isToolRunning } = useToolsRunning();
 

@@ -2,9 +2,10 @@ import type {
   RendererChannels,
   MainChannels,
   InvokeChannels,
-  SyncChannels,
   SerializableArgs,
   AssertSerializable,
+  CallbackChannels,
+  MainCallbackChannels,
 } from "@vortex/shared/ipc";
 
 import { ipcMain, type WebContents } from "electron";
@@ -14,8 +15,8 @@ import { log } from "./logging";
 export const betterIpcMain = {
   on: mainOn,
   handle: mainHandle,
-  handleSync: mainHandleSync,
   send: mainSend,
+  callback: mainCallback,
 };
 
 export type LogOptions = boolean | { includeArgs: boolean };
@@ -50,15 +51,78 @@ function mainOn<C extends keyof RendererChannels>(
     ...args: SerializableArgs<Parameters<RendererChannels[C]>>
   ) => void,
   logOptions: LogOptions = false,
-): void {
-  ipcMain.on(
-    channel,
-    (event, ...args: SerializableArgs<Parameters<RendererChannels[C]>>) => {
-      ipcLogger(logOptions, channel, event, args);
-      assertTrustedSender(event);
-      listener(event, ...args);
-    },
-  );
+): () => void {
+  const outerListener = (
+    event: Electron.IpcMainEvent,
+    ...args: SerializableArgs<Parameters<RendererChannels[C]>>
+  ) => {
+    ipcLogger(logOptions, channel, event, args);
+    assertTrustedSender(event);
+    listener(event, ...args);
+  };
+
+  ipcMain.on(channel, outerListener);
+  return () => ipcMain.off(channel, outerListener);
+}
+
+function mainCallback<C extends keyof CallbackChannels>(
+  channel: C,
+  webContents: WebContents,
+  timeout: number,
+  ...args: SerializableArgs<Parameters<MainCallbackChannels[C]>>
+): Promise<AssertSerializable<Awaited<ReturnType<CallbackChannels[C]>>>> {
+  const collationId = args[0];
+
+  let resolve:
+    | ((
+        value: AssertSerializable<Awaited<ReturnType<CallbackChannels[C]>>>,
+      ) => void)
+    | undefined = undefined;
+  let reject: ((reason?: Error) => void) | undefined = undefined;
+
+  const promise = new Promise<
+    AssertSerializable<Awaited<ReturnType<CallbackChannels[C]>>>
+  >((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+
+  const timer = setTimeout(() => {
+    if (reject) {
+      resolve = undefined;
+
+      reject(
+        new Error(
+          `Callback for channel '${channel}' timed out after ${timeout}ms`,
+        ),
+      );
+
+      reject = undefined;
+    }
+  }, timeout);
+
+  const off = mainOn(`callback:${channel}`, (event, ...args) => {
+    const { sender } = event;
+    if (sender.id !== webContents.id) return;
+
+    const receivedCollationId = args[0];
+    if (receivedCollationId !== collationId) return;
+
+    const result = args[1];
+    if (resolve) {
+      reject = undefined;
+      resolve(
+        result as AssertSerializable<Awaited<ReturnType<CallbackChannels[C]>>>,
+      );
+      resolve = undefined;
+    }
+  });
+
+  mainSend(webContents, channel, ...args);
+  return promise.finally(() => {
+    off();
+    clearTimeout(timer);
+  });
 }
 
 function mainHandle<C extends keyof InvokeChannels>(
@@ -77,22 +141,6 @@ function mainHandle<C extends keyof InvokeChannels>(
       ipcLogger(logOptions, channel, event, args);
       assertTrustedSender(event);
       return listener(event, ...args);
-    },
-  );
-}
-
-function mainHandleSync<C extends keyof SyncChannels>(
-  channel: C,
-  listener: (
-    event: Electron.IpcMainEvent,
-    ...args: SerializableArgs<Parameters<SyncChannels[C]>>
-  ) => AssertSerializable<ReturnType<SyncChannels[C]>>,
-): void {
-  ipcMain.on(
-    channel,
-    (event, ...args: SerializableArgs<Parameters<SyncChannels[C]>>) => {
-      assertTrustedSender(event);
-      event.returnValue = listener(event, ...args);
     },
   );
 }

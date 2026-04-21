@@ -24,6 +24,9 @@ const settings = (props: IInstructionProps) => {
   const [recommendNewProfile, setRecommendNewProfile] = React.useState(
     collection.attributes?.collection?.collectionConfig?.recommendNewProfile,
   );
+  const [excludePluginRules, setExcludePluginRules] = React.useState(
+    collection.attributes?.collection?.collectionConfig?.excludePluginRules,
+  );
 
   const toggleRecommendNewProfile = React.useCallback(() => {
     const newValue = !recommendNewProfile;
@@ -33,6 +36,15 @@ const settings = (props: IInstructionProps) => {
       newValue,
     );
   }, [onSetCollectionAttribute, recommendNewProfile, setRecommendNewProfile]);
+
+  const toggleExcludePluginRules = React.useCallback(() => {
+    const newValue = !excludePluginRules;
+    setExcludePluginRules(newValue);
+    onSetCollectionAttribute(
+      ["collectionConfig", "excludePluginRules"],
+      newValue,
+    );
+  }, [onSetCollectionAttribute, excludePluginRules, setExcludePluginRules]);
 
   return (
     <FlexLayout
@@ -59,6 +71,23 @@ const settings = (props: IInstructionProps) => {
         >
           {t(
             "If enabled, Vortex will recommend creating a new profile when installing this collection. If disabled, the collection will be installed into the currently active profile.",
+          )}
+        </More>
+      </Toggle>
+
+      <Toggle
+        id={"settings-exclude-plugin-rules"}
+        onToggle={toggleExcludePluginRules}
+        checked={excludePluginRules}
+      >
+        {t("Exclude plugin rules")}
+        <More
+          id="collection-settings-excludepluginrules"
+          name={t("Exclude plugin rules")}
+        >
+          {t(
+            "If enabled, custom LOOT plugin rules and groups will not be included when exporting this collection. "
+            + "This prevents inherited rules from spreading between collections.",
           )}
         </More>
       </Toggle>

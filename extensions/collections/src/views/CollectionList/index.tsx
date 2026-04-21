@@ -34,7 +34,7 @@ import {
   types,
   util,
 } from "vortex-api";
-import { uploadCollection } from "../../util/util";
+import { hasEditPermissions, uploadCollection } from "../../util/util";
 
 export interface ICollectionsMainPageBaseProps extends WithTranslation {
   active: boolean;
@@ -292,8 +292,15 @@ class CollectionsMainPage extends ComponentEx<
     }
 
     const author = mods[modId].attributes?.["uploaderId"];
+    const canContribute = hasEditPermissions(
+      mods[modId].attributes?.permissions,
+    );
 
-    if (author !== undefined && author !== userInfo?.userId) {
+    if (
+      author !== undefined &&
+      author !== userInfo?.userId &&
+      !canContribute
+    ) {
       const result = await api.showDialog(
         "question",
         "Edit Collection",
