@@ -1,19 +1,24 @@
-import { nexusGameId } from "./convertGameId";
-import { getGame } from "../../gamemode_management/util/getGame";
-import { log } from "../../../util/log";
+import type { IGameListEntry } from '@nexusmods/nexus-api';
+
 import type { IModRepoId } from "../../mod_management/types/IMod";
+
+import { log } from "../../../logging";
+import { getGame } from "../../gamemode_management/util/getGame";
 import { nexusGames } from "../util";
+import { nexusGameId } from "./convertGameId";
 
 const gameNum = (() => {
   let cache: { [gameId: string]: number } | undefined;
+  let gamesList: IGameListEntry[];
   return (gameId: string): number | undefined => {
-    if (cache === undefined) {
-      const games = nexusGames();
+    const games = nexusGames();
+    if (cache === undefined || gamesList !== games) {
       if (games.length > 0) {
         cache = games.reduce((prev, game) => {
           prev[game.domain_name] = game.id;
           return prev;
         }, {});
+        gamesList = games;
       }
     }
 
