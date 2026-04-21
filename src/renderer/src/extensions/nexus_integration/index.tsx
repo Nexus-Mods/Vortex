@@ -795,6 +795,10 @@ function processAttributes(
         nexusCollectionInfo?.revisionNumber?.toString?.(),
       allowRating: input?.download?.modInfo?.nexus?.modInfo?.allow_rating,
       customFileName: fuzzRatio < 50 ? `${modName} - ${fileName}` : undefined,
+      newestFileId:
+        nexusCollectionInfo?.collection?.latestPublishedRevision?.id,
+      newestVersion:
+        nexusCollectionInfo?.collection?.latestPublishedRevision?.revisionNumber?.toString?.(),
       rating: nexusCollectionInfo?.rating,
       requirements: nexusModInfo?.requirements,
     };
