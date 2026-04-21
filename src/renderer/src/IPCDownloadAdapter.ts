@@ -6,12 +6,13 @@ import type {
 
 import { unknownToError } from "@vortex/shared";
 import { HTTPError, UserCanceled, DownloadError } from "@vortex/shared/errors";
+import { access } from "node:fs/promises";
 import * as path from "node:path";
 import { z } from "zod";
 
 import type { IExtensionApi } from "./types/IExtensionContext";
 
-import { DownloadIsHTML } from "./extensions/download_management/DownloadManager";
+import { AlreadyDownloaded, DownloadIsHTML } from "@vortex/shared/errors";
 import { downloadPathForGame } from "./extensions/download_management/selectors";
 import { activeGameId } from "./extensions/profile_management/selectors";
 import { log } from "./logging";
@@ -178,6 +179,12 @@ export class IPCDownloadAdapter {
       downloadPathForGame(state, modInfo.game ?? activeGameId(state)),
       fileName,
     );
+
+    const fileExists = await access(dest).then(() => true, () => false);
+    if (fileExists) {
+      callback?.(new AlreadyDownloaded(path.basename(dest)));
+      return;
+    }
 
     try {
       const collationId = this.#nextCollationId++;
