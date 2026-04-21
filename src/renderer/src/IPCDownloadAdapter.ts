@@ -71,6 +71,8 @@ export class IPCDownloadAdapter {
   // #downloadState can be removed entirely and both resume paths read from Redux instead.
   readonly #pending = new Map<number, StoredDownloadInfo>();
   readonly #downloadState = new Map<string, DownloadState>();
+  readonly #lastBytesReceived = new Map<string, number>();
+  #lastPollTime = Date.now();
   #nextCollationId = 0;
 
   constructor(api: IExtensionApi) {
@@ -279,20 +281,38 @@ export class IPCDownloadAdapter {
   async #poll(): Promise<void> {
     const downloadIds = this.#downloadState.keys().toArray();
     if (downloadIds.length === 0) return;
+
+    const now = Date.now();
+    const elapsedSec = (now - this.#lastPollTime) / 1000;
+    this.#lastPollTime = now;
+
     const states = await window.api.downloader.getStates(downloadIds);
+
+    let totalDeltaBytes = 0;
     for (const [downloadId, state] of Object.entries(states)) {
-      // TODO: dispatch progress to Redux (APP-326)
-      if (
-        state.status !== "completed" &&
-        state.status !== "failed" &&
-        state.status !== "canceled"
-      )
-        continue;
+      const prev = this.#lastBytesReceived.get(downloadId) ?? 0;
+      const delta = Math.max(0, state.bytesReceived - prev);
+      totalDeltaBytes += delta;
+      this.#lastBytesReceived.set(downloadId, state.bytesReceived);
+
+      // TODO: dispatch downloadProgress + setDownloadPausable to Redux (APP-353)
+
+      const isTerminal =
+        state.status === "completed" ||
+        state.status === "failed" ||
+        state.status === "canceled";
+      if (!isTerminal) continue;
+
       const err = rehydrateDownloadError(state);
       if (err !== null)
         log("warn", "download ended with error", { downloadId, err });
       this.#downloadState.delete(downloadId);
+      this.#lastBytesReceived.delete(downloadId);
     }
+
+    const speed = elapsedSec > 0 ? totalDeltaBytes / elapsedSec : 0;
+    // TODO: dispatch setDownloadSpeed(Math.round(speed)) to Redux (APP-353)
+    void speed;
   }
 
   async #resolve(collationId: number): Promise<WireResolvedResource> {
