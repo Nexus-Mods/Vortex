@@ -67,6 +67,7 @@ interface IInstallDialogState {
   selectedProfile: string;
   confirmProfile: boolean;
   recommendedNewProfile: boolean;
+  skipPluginRules: boolean;
 }
 
 function nop() {
@@ -166,6 +167,7 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
       selectedProfile: undefined,
       confirmProfile: false,
       recommendedNewProfile: false,
+      skipPluginRules: false,
     });
 
     if (props.driver !== undefined) {
@@ -308,6 +310,22 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
           >
             {t("Install mods during collection downloads")}
           </Toggle>
+          <Toggle
+            checked={this.state.skipPluginRules}
+            onToggle={this.toggleSkipPluginRules}
+          >
+            {t("Skip plugin rules")}
+            <More
+              id="install-skip-plugin-rules"
+              name={t("Skip plugin rules")}
+            >
+              {t(
+                "If enabled, custom LOOT plugin rules and groups included in this collection "
+                + "will not be applied. This can help prevent inherited plugin rules from "
+                + "causing conflicts.",
+              )}
+            </More>
+          </Toggle>
         </Modal.Body>
         <Modal.Footer>
           {this.state.confirmProfile ? (
@@ -329,6 +347,19 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
   private changeProfile = (value: { value: string; label: string }) => {
     if (!!value) {
       this.nextState.selectedProfile = value.value;
+    }
+  };
+
+  private toggleSkipPluginRules = (checked: boolean) => {
+    this.nextState.skipPluginRules = checked;
+    const { driver, onSetModAttribute } = this.props;
+    if (driver?.collection !== undefined) {
+      onSetModAttribute(
+        driver.profile.gameId,
+        driver.collection.id,
+        "skipPluginRules",
+        checked,
+      );
     }
   };
 
