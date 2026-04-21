@@ -1,7 +1,9 @@
 import type {
   ByteRange,
   Chunker,
-  DownloadProgress,
+  DownloadCheckpoint,
+  DownloadState,
+  PauseResult,
   Resolver,
   RetryStrategy,
 } from "@vortex/shared/download";
@@ -14,20 +16,11 @@ import { randomUUID } from "node:crypto";
 import PQueue from "p-queue";
 
 import type { TimeoutOptions } from "./downloader";
-import type { DownloadStatus } from "./progress";
 
+import { log } from "../logging";
 import { download } from "./downloader";
 import { ProgressReporter } from "./progress";
 import { defaultRetryStrategy } from "./retry";
-import { log } from "../logging";
-
-export type DownloadState = DownloadProgress & { status: DownloadStatus };
-
-export type PauseResult<T = unknown> =
-  | (DownloadState & { status: "paused"; checkpoint: DownloadCheckpoint<T> })
-  | (DownloadState & {
-      status: Exclude<DownloadStatus, "paused">;
-    });
 
 export type DownloadHandle<T = unknown> = {
   /** Globally unique identifier for this download. */
@@ -36,11 +29,8 @@ export type DownloadHandle<T = unknown> = {
   /** The promise resolves when the download completes. */
   readonly promise: Promise<void>;
 
-  /** Returns the current download progress. */
-  getProgress: () => DownloadProgress;
-
-  /** Returns the current download status. */
-  getStatus: () => DownloadStatus;
+  /** Returns a snapshot of the current download state. */
+  getState: () => DownloadState;
 
   /**
    * Cancels the download if it is running. Returns the resulting state.
@@ -51,7 +41,7 @@ export type DownloadHandle<T = unknown> = {
   /**
    * Pauses the download if it is running. Returns the resulting state with
    * a checkpoint for later resumption. If the download is not running,
-   * returns the current state with `checkpoint: null`.
+   * returns the current state unchanged.
    */
   pause: () => Promise<PauseResult<T>>;
 };
@@ -78,14 +68,6 @@ export type DownloadManagerOptions = {
 
   /** Optional cookie jar for cookie management. */
   cookieJar?: CookieJar;
-};
-
-export type DownloadCheckpoint<T = unknown> = {
-  downloadId: string;
-  resource: T;
-  dest: string;
-  completedRanges: ByteRange[];
-  etag: string | null;
 };
 
 export class DownloadManager {
@@ -140,9 +122,7 @@ export class DownloadManager {
    * `undefined` if the `downloadId` has never been seen by this manager.
    */
   getState(downloadId: string): DownloadState | undefined {
-    const handle = this.#downloads.get(downloadId);
-    if (handle === undefined) return undefined;
-    return { ...handle.getProgress(), status: handle.getStatus() };
+    return this.#downloads.get(downloadId)?.getState();
   }
 
   /**
@@ -243,16 +223,15 @@ export class DownloadManager {
       throw err;
     });
 
+    let terminalError: DownloadError | null = null;
+
     const cancel = (): DownloadState => {
       if (progressReporter.status === "running") {
         log("debug", "cancelling download", { downloadId });
         progressReporter.status = "canceled";
         abortController.abort();
       }
-      return {
-        ...progressReporter.getProgress(),
-        status: progressReporter.status,
-      };
+      return getState();
     };
 
     const buildCheckpoint = (): DownloadCheckpoint<T> => {
@@ -280,19 +259,18 @@ export class DownloadManager {
     };
 
     const pause = async (): Promise<PauseResult<T>> => {
-      if (progressReporter.status === "paused") {
+      const currentStatus = progressReporter.status;
+
+      if (currentStatus === "paused") {
         return {
-          ...progressReporter.getProgress(),
-          status: "paused",
+          ...getState(),
+          status: currentStatus,
           checkpoint: buildCheckpoint(),
         };
       }
 
-      if (progressReporter.status !== "running") {
-        return {
-          ...progressReporter.getProgress(),
-          status: progressReporter.status,
-        };
+      if (currentStatus !== "running") {
+        return { ...getState(), status: currentStatus, error: terminalError };
       }
 
       log("debug", "pausing download", { downloadId });
@@ -302,18 +280,24 @@ export class DownloadManager {
       await settled;
       log("debug", "download paused", { downloadId });
 
-      return {
-        ...progressReporter.getProgress(),
-        status: "paused",
-        checkpoint: buildCheckpoint(),
-      };
+      return { ...getState(), status: "paused", checkpoint: buildCheckpoint() };
+    };
+
+    const getState = (): DownloadState => {
+      const progress = progressReporter.getProgress();
+      const currentStatus = progressReporter.status;
+
+      if (currentStatus === "failed") {
+        return { ...progress, status: currentStatus, error: terminalError };
+      }
+
+      return { ...progress, status: currentStatus };
     };
 
     const handle: DownloadHandle<T> = {
       downloadId,
       promise,
-      getProgress: () => progressReporter.getProgress(),
-      getStatus: () => progressReporter.status,
+      getState,
       cancel,
       pause,
     };
@@ -334,6 +318,7 @@ export class DownloadManager {
         const isCancellation =
           err instanceof DownloadError && err.code === "cancellation";
         progressReporter.status = isCancellation ? "canceled" : "failed";
+        if (err instanceof DownloadError) terminalError = err;
         if (!isCancellation) {
           log("warn", "download failed", { downloadId, err });
         }

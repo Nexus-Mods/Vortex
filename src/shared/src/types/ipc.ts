@@ -2,7 +2,12 @@
 // Everything in here is compile-time only, meaning the interfaces you find here
 // are never used to create an object. They are only used for type inferrence.
 
-import type { ByteRange, DownloadProgress } from "./download";
+import type {
+  DownloadCheckpoint,
+  DownloadProgress,
+  DownloadStatus,
+} from "./download";
+import type { DownloadErrorPayload } from "./errors";
 import type { SerializedSpan } from "../telemetry/types";
 import type {
   BrowserViewConstructorOptions,
@@ -98,12 +103,15 @@ export type WireResolvedResource = {
   chunkEndpoints?: WireEndpoint[];
 };
 
-export type WireDownloadCheckpoint = {
-  downloadId: string;
-  dest: string;
-  completedRanges: ByteRange[];
-  etag: string | null;
+type Wirify<T> = { [K in keyof T]: T[K] extends URL ? string : T[K] };
+export type WireDownloadError = Wirify<DownloadErrorPayload>;
+
+export type WireDownloadState = DownloadProgress & {
+  status: DownloadStatus;
+  error: WireDownloadError | null;
 };
+
+export type WireDownloadCheckpoint = Omit<DownloadCheckpoint, "resource">;
 
 export interface CallbackChannels {
   "example:ping": (ping: string) => Promise<{ pong: string }>;
@@ -367,7 +375,7 @@ export interface InvokeChannels {
     collationId: number,
   ) => Promise<void>;
   "download:cancel": (downloadId: string) => Promise<void>;
-  "download:getProgress": (downloadId: string) => Promise<DownloadProgress>;
+  "download:getState": (downloadId: string) => Promise<WireDownloadState>;
 
   // Adaptor host — renderer queries adaptor services through these
   "adaptors:list": () => Promise<

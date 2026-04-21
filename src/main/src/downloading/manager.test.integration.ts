@@ -4,8 +4,11 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 
-import { staticChunker } from "@vortex/shared/download";
-import { DownloadManager, type DownloadCheckpoint } from "./manager";
+import {
+  staticChunker,
+  type DownloadCheckpoint,
+} from "@vortex/shared/download";
+import { DownloadManager } from "./manager";
 import { urlResolver } from "./resolver";
 import {
   type TestServer,
@@ -120,7 +123,7 @@ describe("DownloadManager", () => {
       path.join(tmp.dir, "output"),
       urlResolver,
     );
-    expect(handle.getProgress().bytesReceived).toBe(0);
+    expect(handle.getState().bytesReceived).toBe(0);
     await handle.promise;
   });
 
@@ -136,7 +139,7 @@ describe("DownloadManager", () => {
       urlResolver,
     );
     await handle.promise;
-    expect(handle.getProgress().bytesReceived).toBe(LARGE_FILE.length);
+    expect(handle.getState().bytesReceived).toBe(LARGE_FILE.length);
   });
 
   it("reflects numPending and numRunning correctly", async () => {
@@ -186,7 +189,11 @@ describe("DownloadManager", () => {
     it("skips already-downloaded chunks on resume", async () => {
       using route = server.route(
         withHooks(
-          serveFile({ body: LARGE_FILE, acceptRanges: true, chunkSize: 64 * 1024 }),
+          serveFile({
+            body: LARGE_FILE,
+            acceptRanges: true,
+            chunkSize: 64 * 1024,
+          }),
           delayBeforeChunk(2, 2_000),
         ),
       );
@@ -197,8 +204,8 @@ describe("DownloadManager", () => {
 
       await vi.waitFor(
         () => {
-          const progress = handle.getProgress();
-          return progress.isChunked && progress.chunks.length >= 2;
+          const state = handle.getState();
+          return state.isChunked && state.chunks.length >= 2;
         },
         { timeout: 10_000, interval: 50 },
       );
@@ -242,7 +249,11 @@ describe("DownloadManager", () => {
     it("decrements numRunning after resume settles on pause", async () => {
       using route = server.route(
         withHooks(
-          serveFile({ body: LARGE_FILE, acceptRanges: true, chunkSize: 64 * 1024 }),
+          serveFile({
+            body: LARGE_FILE,
+            acceptRanges: true,
+            chunkSize: 64 * 1024,
+          }),
           delayBeforeChunk(1, 2_000),
         ),
       );
@@ -253,8 +264,8 @@ describe("DownloadManager", () => {
 
       await vi.waitFor(
         () => {
-          const progress = handle.getProgress();
-          return progress.isChunked && progress.chunks.length >= 1;
+          const state = handle.getState();
+          return state.isChunked && state.chunks.length >= 1;
         },
         { timeout: 10_000, interval: 50 },
       );
@@ -342,7 +353,7 @@ describe("DownloadManager", () => {
       // poll until the downloader has written at least one byte, then pause
       await vi.waitFor(
         () => {
-          expect(handle.getProgress().bytesReceived).toBeGreaterThan(0);
+          expect(handle.getState().bytesReceived).toBeGreaterThan(0);
         },
         { timeout: 10_000, interval: 50 },
       );
@@ -425,7 +436,7 @@ describe("DownloadManager", () => {
       // registrations and produce unhandled 404 rejections.
       _blocker.cancel();
       await _blocker.promise.catch(() => {});
-      await vi.waitFor(() => handle.getStatus() === "running", {
+      await vi.waitFor(() => handle.getState().status === "running", {
         timeout: 5_000,
         interval: 10,
       });

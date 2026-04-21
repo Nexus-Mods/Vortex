@@ -1,17 +1,40 @@
 import type {
   WireDownloadCheckpoint,
+  WireDownloadError,
   WireResolvedResource,
 } from "@vortex/shared/ipc";
 
 import { unknownToError } from "@vortex/shared";
+import { HTTPError, TemporaryError, UserCanceled } from "@vortex/shared/errors";
 import * as path from "node:path";
 import { z } from "zod";
 
 import type { IExtensionApi } from "./types/IExtensionContext";
 
+import { DownloadIsHTML } from "./extensions/download_management/DownloadManager";
 import { downloadPathForGame } from "./extensions/download_management/selectors";
 import { activeGameId } from "./extensions/profile_management/selectors";
 import { log } from "./logging";
+
+function rehydrateDownloadError(wire: WireDownloadError): Error {
+  switch (wire.code) {
+    case "cancellation":
+      return new UserCanceled();
+    case "is-html":
+      return new DownloadIsHTML(wire.url);
+    case "network-error":
+    case "network-timeout":
+      return new TemporaryError(`Download failed: ${wire.code}`);
+    case "network-bad-status":
+      return new HTTPError(
+        wire.statusCode,
+        `HTTP ${wire.statusCode}`,
+        wire.url,
+      );
+    default:
+      return new Error(`Download failed: ${(wire as { code: string }).code}`);
+  }
+}
 
 type ProtocolHandler = (
   inputUrl: string,

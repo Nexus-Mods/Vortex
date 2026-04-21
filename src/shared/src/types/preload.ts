@@ -23,6 +23,7 @@ import type {
   UpdateStatus,
   VortexPaths,
   WireDownloadCheckpoint,
+  WireDownloadState,
   WireResolvedResource,
 } from "./ipc";
 import type { Level } from "./logging";
@@ -458,6 +459,9 @@ export interface DownloaderApi {
 
   /** Cancels an active download. */
   cancel(downloadId: string): Promise<void>;
+
+  /** Returns the current state of a download, including status and any terminal error. */
+  getState(downloadId: string): Promise<WireDownloadState>;
 
   /**
    * Registers a handler invoked by main when it needs the renderer to resolve a download URL.
