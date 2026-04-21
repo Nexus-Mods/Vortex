@@ -1674,13 +1674,14 @@ class InstallManager {
                   installingFileId = fileId;
                   const isCollection = modInfo.revisionId !== undefined;
 
+                  // Collections handle their own update flow via collectionUpdate
+                  // in the collections extension — skip previous version detection.
                   existingMod =
-                    fileId !== undefined
+                    fileId !== undefined && !isCollection
                       ? this.findPreviousVersionMod(
                           fileId,
                           api.store,
                           installGameId,
-                          isCollection,
                           modInfo.modId,
                           modInfo.logicalFileName,
                         )
@@ -1697,6 +1698,11 @@ class InstallManager {
                       },
                       iter,
                     ) => {
+                      // Skip the source collection when checking dependents — it's
+                      // being updated itself so its rules will be replaced.
+                      if (iter === sourceModId) {
+                        return prev;
+                      }
                       const depRule = (mods[iter].rules ?? []).find(
                         (rule) =>
                           rule.type === "requires" &&
@@ -2670,15 +2676,22 @@ class InstallManager {
           }
 
           const sourceMod = api.getState().persistent.mods[gameId][sourceModId];
-          // Check if mod is already installed with matching installer choices and patches
           const mods = api.getState().persistent.mods[gameId];
+
+          // Mods with patches are always reinstalled as variants so the
+          // correct diffs are applied to clean files - skip the lookup.
+          const hasPatches =
+            currentDep.patches != null &&
+            Object.keys(currentDep.patches).length > 0;
           const fullReference: IModReference = {
             ...currentDep.reference,
             installerChoices: currentDep.installerChoices,
             patches: currentDep.patches,
             fileList: currentDep.fileList,
           };
-          const existingMod = findModByRef(fullReference, mods);
+          const existingMod = hasPatches
+            ? undefined
+            : findModByRef(fullReference, mods);
           const modId =
             existingMod != null
               ? existingMod.id
@@ -2780,6 +2793,21 @@ class InstallManager {
 
             // Clear retry counter on successful installation
             this.mDependencyRetryCount.delete(installKey);
+
+            // When the mod was already installed (existingMod found), we still
+            // need to signal completion so session tracking updates its status
+            // from "downloaded" to "installed". Without this, retained mods get
+            // stuck in "downloaded" state and are requeued indefinitely.
+            // Skip for newly-installed mods — installModAsync already emits.
+            if (existingMod != null) {
+              api.events.emit(
+                "did-install-mod",
+                gameId,
+                downloadId,
+                modId,
+                api.getState().persistent.mods[gameId]?.[modId]?.attributes,
+              );
+            }
           }
 
           this.mActiveInstalls.delete(installKey);
@@ -4921,60 +4949,45 @@ class InstallManager {
 
   private findPreviousVersionMod(
     fileId: number,
-    store: Redux.Store<any>,
+    store: Redux.Store<IState>,
     gameMode: string,
-    isCollection: boolean,
     nexusModId?: number,
     logicalFileName?: string,
-  ): IMod {
-    const mods = store.getState().persistent.mods[gameMode] || {};
-    // This is not great, but we need to differentiate between revisionIds and fileIds
-    //  as it's perfectly possible for a collection's revision id to match a regular
-    //  mod's fileId resulting in false positives and therefore mashed up metadata.
-    const filterFunc = (modId: string) =>
-      isCollection
-        ? mods[modId].type === "collection"
-        : mods[modId].type !== "collection";
-    let mod: IMod;
-    Object.keys(mods)
-      .filter(filterFunc)
-      .forEach((key) => {
-        // TODO: fileId/revisionId can potentially be more up to date than the last
-        //  known "newestFileId" property if the curator/mod author has released a new
-        //  version of his collection/mod since the last time the user checked for updates
-        const newestFileId: number = mods[key].attributes?.newestFileId;
-        const currentFileId: number =
-          mods[key].attributes?.fileId ?? mods[key].attributes?.revisionId;
-        if (newestFileId !== currentFileId && newestFileId === fileId) {
-          mod = mods[key];
-        }
-        // Also detect same-file different-version by Nexus modId + logicalFileName.
-        // logicalFileName identifies the specific file on a mod page, so matching both
-        // avoids false positives when a mod page hosts multiple unrelated files.
-        if (
-          mod === undefined &&
-          nexusModId != null &&
-          logicalFileName != null
-        ) {
-          const installedModId: number = mods[key].attributes?.modId;
-          const installedLogicalFileName: string =
-            mods[key].attributes?.logicalFileName;
-          const installedFileId: number = mods[key].attributes?.fileId;
-          if (
-            installedModId === nexusModId &&
-            installedLogicalFileName === logicalFileName &&
-            installedFileId !== fileId
-          ) {
-            mod = mods[key];
-          }
-        }
-      });
+  ): IMod | undefined {
+    const mods = (store.getState().persistent.mods[gameMode] || {}) as Record<string, IMod>;
 
-    return mod;
+    const candidates: IMod[] = Object.values(mods).filter(
+      (m: IMod) => m.type !== "collection",
+    );
+
+    // Primary: the update check already told us which fileId is newest
+    const byNewestId: IMod | undefined = candidates.find((m: IMod) => {
+      const newestFileId: number | undefined = m.attributes?.newestFileId;
+      const currentFileId: number | undefined = m.attributes?.fileId;
+      return newestFileId !== currentFileId && newestFileId === fileId;
+    });
+    if (byNewestId !== undefined) {
+      return byNewestId;
+    }
+
+    // Fallback: same Nexus mod page, different file. Use logicalFileName as a
+    // tiebreaker when available to avoid false positives on pages that host
+    // multiple unrelated files.
+    if (nexusModId != null) {
+      return candidates.find(
+        (m: IMod) =>
+          m.attributes?.modId === nexusModId &&
+          (logicalFileName == null ||
+            m.attributes?.logicalFileName === logicalFileName) &&
+          m.attributes?.fileId !== fileId,
+      );
+    }
+
+    return undefined;
   }
 
   private queryIgnoreDependent(
-    store: ThunkStore<any>,
+    store: ThunkStore<IState>,
     gameId: string,
     dependents: Array<{ owner: string; rule: IModRule }>,
   ): Promise<void> {
@@ -5041,7 +5054,7 @@ class InstallManager {
     });
   }
 
-  private queryProfileCount(store: ThunkStore<any>): number {
+  private queryProfileCount(store: ThunkStore<IState>): number {
     const state = store.getState();
     const profiles = gameProfiles(state);
     return profiles.length;
@@ -5049,7 +5062,7 @@ class InstallManager {
 
   private userVersionChoice(
     oldMod: IMod,
-    store: ThunkStore<any>,
+    store: ThunkStore<IState>,
   ): Promise<string> {
     const totalProfiles = this.queryProfileCount(store);
     const batchAction = "remember-user-version-choice-action";
@@ -5071,7 +5084,7 @@ class InstallManager {
     const rememberAction = context?.get?.(batchAction);
     return rememberAction
       ? Promise.resolve(rememberAction)
-      : totalProfiles === 1
+      : totalProfiles === 1 && oldMod.type !== "collection"
         ? Promise.resolve(REPLACE_ACTION)
         : new Promise<string>((resolve, reject) => {
             store
@@ -6780,6 +6793,14 @@ class InstallManager {
               dependency: dep.reference.logicalFileName,
               downloadId,
             });
+          }
+
+          // Mods with patches are always reinstalled as variants so the
+          // correct diffs are applied to clean files. Clear any existing mod
+          // match so they flow through to queueInstallation regardless of
+          // whether the tag matched above.
+          if (dep.patches != null && Object.keys(dep.patches).length > 0) {
+            dep.mod = undefined;
           }
 
           return dep.mod == null
