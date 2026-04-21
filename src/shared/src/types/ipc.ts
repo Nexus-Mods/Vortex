@@ -104,7 +104,7 @@ export type WireResolvedResource = {
 };
 
 type Wirify<T> = { [K in keyof T]: T[K] extends URL ? string : T[K] };
-export type WireDownloadError = Wirify<DownloadErrorPayload>;
+export type WireDownloadError = { payload: Wirify<DownloadErrorPayload>; message: string };
 
 export type WireDownloadState = DownloadProgress & {
   status: DownloadStatus;
@@ -376,6 +376,7 @@ export interface InvokeChannels {
   ) => Promise<void>;
   "download:cancel": (downloadId: string) => Promise<void>;
   "download:getState": (downloadId: string) => Promise<WireDownloadState>;
+  "download:getStates": (downloadIds: string[]) => Promise<Record<string, WireDownloadState>>;
 
   // Adaptor host — renderer queries adaptor services through these
   "adaptors:list": () => Promise<

@@ -1,4 +1,5 @@
 import type {
+  DownloadState,
   ResolvedEndpoint,
   ResolvedResource,
 } from "@vortex/shared/download";
@@ -20,8 +21,10 @@ import { log } from "../logging";
 
 function downloadErrorToWire(err: DownloadError): WireDownloadError {
   const { payload } = err;
-  if ("url" in payload) return { ...payload, url: payload.url.toString() };
-  return { ...payload };
+  const wirePayload = "url" in payload
+    ? { ...payload, url: payload.url.toString() }
+    : { ...payload };
+  return { payload: wirePayload, message: err.message };
 }
 
 function wireToResolvedEndpoint(wire: WireEndpoint): ResolvedEndpoint {
@@ -120,11 +123,23 @@ export function init(manager: DownloadManager): void {
     const handle = manager.get(downloadId);
     if (handle === undefined)
       throw new Error(`Unknown download: ${downloadId}`);
-    const state = handle.getState();
-    return {
-      ...state,
-      error:
-        state.status === "failed" ? downloadErrorToWire(state.error) : null,
-    };
+    return stateToWire(handle.getState());
   });
+
+  betterIpcMain.handle("download:getStates", (_event, downloadIds) => {
+    const result: Record<string, ReturnType<typeof stateToWire>> = {};
+    for (const downloadId of downloadIds) {
+      const handle = manager.get(downloadId);
+      if (handle === undefined) continue;
+      result[downloadId] = stateToWire(handle.getState());
+    }
+    return result;
+  });
+}
+
+function stateToWire(state: DownloadState) {
+  return {
+    ...state,
+    error: state.status === "failed" ? downloadErrorToWire(state.error) : null,
+  };
 }

@@ -463,6 +463,9 @@ export interface DownloaderApi {
   /** Returns the current state of a download, including status and any terminal error. */
   getState(downloadId: string): Promise<WireDownloadState>;
 
+  /** Returns the current state for multiple downloads in one call. Unknown IDs are omitted. */
+  getStates(downloadIds: string[]): Promise<Record<string, WireDownloadState>>;
+
   /**
    * Registers a handler invoked by main when it needs the renderer to resolve a download URL.
    * The `collationId` maps to the download started via `start()`.

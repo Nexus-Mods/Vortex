@@ -1,11 +1,11 @@
 import type {
   WireDownloadCheckpoint,
-  WireDownloadError,
+  WireDownloadState,
   WireResolvedResource,
 } from "@vortex/shared/ipc";
 
 import { unknownToError } from "@vortex/shared";
-import { HTTPError, TemporaryError, UserCanceled } from "@vortex/shared/errors";
+import { HTTPError, UserCanceled, DownloadError } from "@vortex/shared/errors";
 import * as path from "node:path";
 import { z } from "zod";
 
@@ -16,23 +16,22 @@ import { downloadPathForGame } from "./extensions/download_management/selectors"
 import { activeGameId } from "./extensions/profile_management/selectors";
 import { log } from "./logging";
 
-function rehydrateDownloadError(wire: WireDownloadError): Error {
-  switch (wire.code) {
-    case "cancellation":
-      return new UserCanceled();
+function rehydrateDownloadError(state: WireDownloadState): Error | null {
+  if (state.status === "canceled") return new UserCanceled();
+  if (state.status !== "failed" || state.error === null) return null;
+  const { payload, message } = state.error;
+  switch (payload.code) {
     case "is-html":
-      return new DownloadIsHTML(wire.url);
-    case "network-error":
-    case "network-timeout":
-      return new TemporaryError(`Download failed: ${wire.code}`);
+      return new DownloadIsHTML(payload.url);
     case "network-bad-status":
-      return new HTTPError(
-        wire.statusCode,
-        `HTTP ${wire.statusCode}`,
-        wire.url,
-      );
+      return new HTTPError(payload.statusCode, message, payload.url);
     default:
-      return new Error(`Download failed: ${(wire as { code: string }).code}`);
+      return new DownloadError(
+        "url" in payload
+          ? { ...payload, url: new URL(payload.url) }
+          : { ...payload },
+        message,
+      );
   }
 }
 
@@ -78,6 +77,11 @@ export class IPCDownloadAdapter {
     if (process.env.VORTEX_USE_IPC_DOWNLOADER !== "1") return;
 
     this.#api = api;
+
+    const pollingInterval = 200;
+    this.#pollLoop(pollingInterval).catch(() => {
+      /* ignored */
+    });
 
     window.api.downloader.onResolve((collationId) =>
       this.#resolve(collationId),
@@ -251,6 +255,36 @@ export class IPCDownloadAdapter {
       callback?.(null, downloadId);
     } catch (err) {
       callback?.(unknownToError(err));
+    }
+  }
+
+  async #pollLoop(interval: number): Promise<void> {
+    for (;;) {
+      try {
+        await new Promise<void>((r) => setTimeout(r, interval));
+        await this.#poll();
+      } catch {
+        // ignored
+      }
+    }
+  }
+
+  async #poll(): Promise<void> {
+    const downloadIds = this.#downloadState.keys().toArray();
+    if (downloadIds.length === 0) return;
+    const states = await window.api.downloader.getStates(downloadIds);
+    for (const [downloadId, state] of Object.entries(states)) {
+      // TODO: dispatch progress to Redux (APP-326)
+      if (
+        state.status !== "completed" &&
+        state.status !== "failed" &&
+        state.status !== "canceled"
+      )
+        continue;
+      const err = rehydrateDownloadError(state);
+      if (err !== null)
+        log("warn", "download ended with error", { downloadId, err });
+      this.#downloadState.delete(downloadId);
     }
   }
 
