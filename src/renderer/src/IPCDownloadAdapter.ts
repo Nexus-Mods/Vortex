@@ -5,14 +5,29 @@ import type {
 } from "@vortex/shared/ipc";
 
 import { unknownToError } from "@vortex/shared";
-import { HTTPError, UserCanceled, DownloadError } from "@vortex/shared/errors";
-import { access } from "node:fs/promises";
+import {
+  AlreadyDownloaded,
+  DownloadIsHTML,
+  HTTPError,
+  UserCanceled,
+  DownloadError,
+} from "@vortex/shared/errors";
+import { access, rm } from "node:fs/promises";
 import * as path from "node:path";
 import { z } from "zod";
 
 import type { IExtensionApi } from "./types/IExtensionContext";
 
-import { AlreadyDownloaded, DownloadIsHTML } from "@vortex/shared/errors";
+import {
+  downloadProgress,
+  finishDownload,
+  initDownload,
+  pauseDownload,
+  removeDownload,
+  setDownloadFilePath,
+  setDownloadPausable,
+  setDownloadSpeed,
+} from "./extensions/download_management/actions/state";
 import { downloadPathForGame } from "./extensions/download_management/selectors";
 import { activeGameId } from "./extensions/profile_management/selectors";
 import { log } from "./logging";
@@ -72,7 +87,9 @@ export class IPCDownloadAdapter {
   readonly #pending = new Map<number, StoredDownloadInfo>();
   readonly #downloadState = new Map<string, DownloadState>();
   readonly #lastBytesReceived = new Map<string, number>();
-  #lastPollTime = Date.now();
+  readonly #lastProgressDispatch = new Map<string, number>();
+  #speedAccumBytes = 0;
+  #lastSpeedDispatch: number | null = null;
   #nextCollationId = 0;
 
   constructor(api: IExtensionApi) {
@@ -182,9 +199,13 @@ export class IPCDownloadAdapter {
       fileName,
     );
 
-    const fileExists = await access(dest).then(() => true, () => false);
+    const fileExists = await access(dest).then(
+      () => true,
+      () => false,
+    );
     if (fileExists) {
-      callback?.(new AlreadyDownloaded(path.basename(dest)));
+      const err = new AlreadyDownloaded(path.basename(dest));
+      callback?.(err);
       return;
     }
 
@@ -210,6 +231,19 @@ export class IPCDownloadAdapter {
       this.#downloadState.set(downloadId, { encodedUrl: info.encodedUrl });
       log("debug", "download queued", { downloadId, collationId });
       callback?.(null, downloadId);
+
+      const gameId = modInfo.game ?? activeGameId(state);
+      // Create the Redux record. nexus_integration's onChangeDownloads watches
+      // downloads.files and triggers metadata enrichment when nexus.ids is present.
+      this.#api.store.dispatch(
+        initDownload(downloadId, rawUrls, modInfo, [gameId]),
+      );
+      // Set localPath immediately so the directory watcher can match the file on
+      // disk and skip creating a duplicate addLocalDownload record for the same file.
+      this.#api.store.dispatch(setDownloadFilePath(downloadId, fileName));
+      // All IPC downloads support pause via checkpoint. DownloadView checks
+      // download.pausable to show/hide the pause button.
+      this.#api.store.dispatch(setDownloadPausable(downloadId, true));
     } catch (err) {
       callback?.(unknownToError(err));
     }
@@ -220,8 +254,20 @@ export class IPCDownloadAdapter {
     callback?: (err: Error | null) => void,
   ): Promise<void> {
     try {
-      log("debug", "cancelling download", { downloadId });
-      await window.api.downloader.cancel(downloadId);
+      if (this.#downloadState.has(downloadId)) {
+        log("debug", "cancelling download", { downloadId });
+        await window.api.downloader.cancel(downloadId);
+      } else {
+        const state = this.#api.getState();
+        const download = state.persistent.downloads.files?.[downloadId];
+        if (download?.localPath) {
+          const gameId = download.game?.[0] ?? activeGameId(state);
+          const dlPath = downloadPathForGame(state, gameId);
+          await rm(path.join(dlPath, download.localPath), { force: true });
+        }
+        // Remove record from Redux to clear it from the downloads list.
+        this.#api.store.dispatch(removeDownload(downloadId));
+      }
       callback?.(null);
     } catch (err) {
       callback?.(unknownToError(err));
@@ -237,6 +283,9 @@ export class IPCDownloadAdapter {
       const checkpoint = await window.api.downloader.pause(downloadId);
       const state = this.#downloadState.get(downloadId);
       if (state !== undefined) state.checkpoint = checkpoint;
+      // Transition Redux state to "paused". DownloadView uses this to swap
+      // the pause button for a resume button.
+      this.#api.store.dispatch(pauseDownload(downloadId, true, []));
       callback?.(null);
     } catch (err) {
       callback?.(unknownToError(err));
@@ -282,11 +331,8 @@ export class IPCDownloadAdapter {
     const downloadIds = this.#downloadState.keys().toArray();
     if (downloadIds.length === 0) return;
 
-    const now = Date.now();
-    const elapsedSec = (now - this.#lastPollTime) / 1000;
-    this.#lastPollTime = now;
-
     const states = await window.api.downloader.getStates(downloadIds);
+    const now = Date.now();
 
     let totalDeltaBytes = 0;
     for (const [downloadId, state] of Object.entries(states)) {
@@ -295,12 +341,28 @@ export class IPCDownloadAdapter {
       totalDeltaBytes += delta;
       this.#lastBytesReceived.set(downloadId, state.bytesReceived);
 
-      // TODO: dispatch downloadProgress + setDownloadPausable to Redux (APP-353)
-
       const isTerminal =
         state.status === "completed" ||
         state.status === "failed" ||
         state.status === "canceled";
+
+      const secSinceProgress =
+        (now - (this.#lastProgressDispatch.get(downloadId) ?? 0)) / 1000;
+      if (delta > 0 && (secSinceProgress >= 1 || isTerminal)) {
+        this.#lastProgressDispatch.set(downloadId, now);
+        // Update received/total bytes. The reducer transitions state from
+        // "init" to "started" on first non-zero received, driving the progress bar.
+        this.#api.store.dispatch(
+          downloadProgress(
+            downloadId,
+            state.bytesReceived,
+            state.size ?? 0,
+            [],
+            [],
+          ),
+        );
+      }
+
       if (!isTerminal) continue;
 
       const err = rehydrateDownloadError(state);
@@ -308,11 +370,45 @@ export class IPCDownloadAdapter {
         log("warn", "download ended with error", { downloadId, err });
       this.#downloadState.delete(downloadId);
       this.#lastBytesReceived.delete(downloadId);
+      this.#lastProgressDispatch.delete(downloadId);
+
+      if (state.status === "completed") {
+        // Mark record as finished. nexus_integration reads finished records
+        // for attribute extraction during mod installation.
+        this.#api.store.dispatch(finishDownload(downloadId, "finished", null));
+        // Notify listeners that the download completed. InstallManager listens
+        // for this to trigger auto-install when automation is enabled.
+        this.#api.events.emit("did-finish-download", downloadId, "finished");
+      } else if (state.status === "canceled") {
+        // User canceled - remove the record entirely, no file to keep.
+        this.#api.store.dispatch(removeDownload(downloadId));
+      } else {
+        // Mark record as failed so the UI can show an error state.
+        this.#api.store.dispatch(finishDownload(downloadId, "failed", err));
+        this.#api.events.emit("did-finish-download", downloadId, "failed");
+      }
     }
 
-    const speed = elapsedSec > 0 ? totalDeltaBytes / elapsedSec : 0;
-    // TODO: dispatch setDownloadSpeed(Math.round(speed)) to Redux (APP-353)
-    void speed;
+    this.#speedAccumBytes += totalDeltaBytes;
+
+    if (totalDeltaBytes > 0 && this.#lastSpeedDispatch === null) {
+      this.#lastSpeedDispatch = now;
+    }
+
+    if (this.#lastSpeedDispatch !== null) {
+      const secSinceDispatch = (now - this.#lastSpeedDispatch) / 1000;
+      if (secSinceDispatch >= 1 || this.#downloadState.size === 0) {
+        const speed =
+          secSinceDispatch > 0 ? this.#speedAccumBytes / secSinceDispatch : 0;
+        this.#speedAccumBytes = 0;
+        this.#lastSpeedDispatch = this.#downloadState.size > 0 ? now : null;
+        if (speed > 0 || this.#downloadState.size === 0) {
+          // Update speed display and speedHistory for the download graph.
+          // Aggregated over 1s to avoid thrashing Redux with every poll tick.
+          this.#api.store.dispatch(setDownloadSpeed(Math.round(speed)));
+        }
+      }
+    }
   }
 
   async #resolve(collationId: number): Promise<WireResolvedResource> {

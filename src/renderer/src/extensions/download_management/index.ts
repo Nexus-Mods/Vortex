@@ -1485,6 +1485,7 @@ function init(context: IExtensionContext): boolean {
         maxParallelDownloads,
         store.getState().settings.downloads.maxChunks,
         (speed: number) => {
+          if (process.env.VORTEX_USE_IPC_DOWNLOADER === "1") return;
           if (
             speed !== 0 ||
             store.getState().persistent.downloads.speed !== 0
