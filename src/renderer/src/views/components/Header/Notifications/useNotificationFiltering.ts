@@ -103,34 +103,27 @@ export const useNotificationFiltering = ({
 
   const quickUpdate = useCallback(() => {
     const { notifications: notis, filtered: filt } = stateRef.current;
-    const updates: Array<{ index: number; notification: INotification }> = [];
+    const updates: INotification[] = [];
 
-    for (let i = 0; i < filt.length; ++i) {
-      if (filt[i].id !== undefined) {
-        const ref = notis.find((n) => n.id === filt[i].id);
-        if (
-          ref !== undefined &&
-          (filt[i].message !== ref.message || filt[i].progress !== ref.progress)
-        ) {
-          updates.push({
-            index: i,
-            notification: {
-              ...filt[i],
-              message: ref.message,
-              progress: ref.progress,
-            },
-          });
-        }
+    for (const item of filt) {
+      if (item?.id === undefined) {
+        continue;
+      }
+      const ref = notis.find((n) => n.id === item.id);
+      if (
+        ref !== undefined &&
+        (item.message !== ref.message || item.progress !== ref.progress)
+      ) {
+        updates.push({ ...item, message: ref.message, progress: ref.progress });
       }
     }
 
     if (updates.length > 0) {
       setFiltered((prev) => {
-        const newFiltered = [...prev];
-        updates.forEach(({ index, notification }) => {
-          newFiltered[index] = notification;
-        });
-        return newFiltered;
+        const byId = new Map(updates.map((u) => [u.id, u]));
+        return prev.map((item) =>
+          item?.id !== undefined ? (byId.get(item.id) ?? item) : item,
+        );
       });
     }
   }, []);
