@@ -402,6 +402,16 @@ export interface InvokeChannels {
     store: string,
     gamePath: string,
   ) => Promise<Serializable>;
+
+  /**
+   * Executes a declarative version detection strategy on the main
+   * process side (PE header read, text file parse, etc.).
+   */
+  "adaptors:detect-version": (source: {
+    type: string;
+    path: { value: string };
+    regex?: string;
+  }) => Promise<string>;
 }
 
 /** Represents all IPC-safe typed arrays */

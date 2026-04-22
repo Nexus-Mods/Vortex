@@ -88,6 +88,11 @@ try {
         ),
       buildSnapshot: (store: string, gamePath: string) =>
         betterIpcRenderer.invoke("adaptors:build-snapshot", store, gamePath),
+      detectVersion: (source: {
+        type: string;
+        path: { value: string };
+        regex?: string;
+      }) => betterIpcRenderer.invoke("adaptors:detect-version", source),
     },
 
     updater: {

@@ -12,6 +12,8 @@ import type {
   IGamePathService,
 } from "@vortex/adaptor-api/contracts/game-paths";
 import { rehydrateGamePaths } from "@vortex/adaptor-api/contracts/game-paths";
+import { peHeader } from "@vortex/adaptor-api/contracts/game-version";
+import type { VersionSource } from "@vortex/adaptor-api/contracts/game-version";
 import type { IGameToolsService } from "@vortex/adaptor-api/contracts/game-tools";
 import { gameTools } from "@vortex/adaptor-api/contracts/game-tools";
 import type { StorePathProvider } from "@vortex/adaptor-api/stores/lib";
@@ -62,6 +64,11 @@ export class GamePathService implements IGamePathService<CyberpunkExtras> {
     );
 
     return { game, saves, preferences };
+  }
+
+  async getVersionSource(paths: CyberpunkPaths): Promise<VersionSource> {
+    const rehydrated = rehydrateGamePaths(paths);
+    return peHeader(rehydrated.game.join("bin", "x64", "Cyberpunk2077.exe"));
   }
 }
 
@@ -141,6 +148,18 @@ const CYBERPUNK_STOP_PATTERNS: readonly StopPattern<CyberpunkExtras>[] = [
 
   // REDmod packages (self-contained mod directories under mods/).
   { match: "**/mods/**", anchor: Base.Game },
+
+  // ASI plugins (distinct from Red4Ext -- lives in bin/x64/plugins/).
+  { match: "**/bin/x64/plugins/**/*.asi", anchor: Base.Game },
+
+  // Input Loader XML configs.
+  { match: "**/r6/input/**/*.xml", anchor: Base.Game },
+
+  // Cache files (InputContexts, UserMappings, modded cache).
+  { match: "**/r6/cache/**", anchor: Base.Game },
+
+  // Character preset files (ACU, CyberCAT).
+  { match: "**/*.preset", anchor: Base.Game },
 
   // Engine config and tool files.
   { match: "**/engine/config/**/*.{ini,json,xml}", anchor: Base.Game },

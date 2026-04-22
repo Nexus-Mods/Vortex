@@ -5,10 +5,14 @@ import type { Serializable } from "@vortex/shared/ipc";
 
 import { Base, OS, Store } from "@vortex/adaptor-api/stores/lib";
 import { QualifiedPath } from "@vortex/fs";
+import type exeVersionT from "exe-version";
 import * as fs from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import * as path from "node:path";
 import { posix as pathPosix } from "node:path";
+
+// Lazy-loaded to avoid pulling the native module at import time.
+let exeVersionFn: typeof exeVersionT | undefined;
 
 import { getVortexPath } from "./getVortexPath";
 import { betterIpcMain } from "./ipc";
@@ -118,6 +122,36 @@ function nativeToQualifiedPath(nativePath: string, os: OS): QualifiedPath {
     return QualifiedPath.parse(`windows://${forward}`);
   }
   return QualifiedPath.parse(`linux://${nativePath}`);
+}
+
+/**
+ * Converts a QualifiedPath back to a native filesystem path.
+ * Reverses {@link nativeToQualifiedPath}.
+ *
+ * `windows:///C/Users/foo` → `C:\Users\foo`
+ * `linux:///home/user/game` → `/home/user/game`
+ */
+function qualifiedPathToNative(qp: {
+  value?: string;
+  scheme?: string;
+  path?: string;
+}): string {
+  const value = qp.value;
+  if (typeof value !== "string") {
+    throw new Error("qualifiedPathToNative: missing .value on QualifiedPath");
+  }
+  const parsed = QualifiedPath.parse(value);
+  const raw = `/${parsed.data}${parsed.data ? "/" : ""}${parsed.path}`;
+
+  if (parsed.scheme === "windows") {
+    // raw is like "/C/Users/foo" → "C:\Users\foo"
+    const m = /^\/([A-Za-z])\/(.*)$/.exec(raw);
+    if (m) {
+      return `${m[1]}:\\${m[2].replace(/\//g, "\\")}`;
+    }
+    return raw.replace(/\//g, "\\");
+  }
+  return raw;
 }
 
 /**
@@ -353,6 +387,50 @@ function registerIpcHandlers(): void {
       return Promise.resolve(
         buildStorePathSnapshot(store as Store, gamePath) as unknown,
       ) as Promise<Serializable>;
+    },
+  );
+
+  /**
+   * Executes a declarative version detection strategy. The renderer
+   * sends a {@link VersionSource} descriptor; we resolve the
+   * QualifiedPath to a native path and read the version.
+   */
+  betterIpcMain.handle(
+    "adaptors:detect-version",
+    (
+      _event: unknown,
+      source: { type: string; path: { value: string }; regex?: string },
+    ) => {
+      const nativePath = qualifiedPathToNative(source.path);
+
+      switch (source.type) {
+        case "pe-header": {
+          if (!exeVersionFn) {
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            const mod = require("exe-version") as { default: typeof exeVersionT };
+            exeVersionFn = mod.default;
+          }
+          try {
+            return Promise.resolve(exeVersionFn(nativePath));
+          } catch {
+            return Promise.resolve("0.0.0");
+          }
+        }
+        case "text-file": {
+          try {
+            const content = fs.readFileSync(nativePath, "utf8");
+            if (source.regex) {
+              const match = new RegExp(source.regex).exec(content);
+              return Promise.resolve(match?.[1] ?? "0.0.0");
+            }
+            return Promise.resolve(content.trim());
+          } catch {
+            return Promise.resolve("0.0.0");
+          }
+        }
+        default:
+          return Promise.resolve("0.0.0");
+      }
     },
   );
 }

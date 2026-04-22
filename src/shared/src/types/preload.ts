@@ -405,6 +405,16 @@ export interface AdaptorsApi {
    * types into the preload surface; the bridge casts locally).
    */
   buildSnapshot(store: string, gamePath: string): Promise<unknown>;
+  /**
+   * Executes a declarative version detection strategy on the main
+   * process side. The source describes what to read (PE header, text
+   * file, etc.) and where.
+   */
+  detectVersion(source: {
+    type: string;
+    path: { value: string };
+    regex?: string;
+  }): Promise<string>;
 }
 
 /** API for querying update status from main process */
