@@ -11,7 +11,10 @@ import {
   UserCanceled,
   DownloadError,
 } from "@vortex/shared/errors";
+import { createHash } from "node:crypto";
+import { createReadStream } from "node:fs";
 import { access, rm } from "node:fs/promises";
+import { pipeline } from "node:stream/promises";
 import * as path from "node:path";
 import { z } from "zod";
 
@@ -28,6 +31,7 @@ import {
   pauseDownload,
   removeDownload,
   setDownloadFilePath,
+  setDownloadHash,
   setDownloadInterrupted,
   setDownloadPausable,
   setDownloadSpeed,
@@ -208,6 +212,46 @@ export class IPCDownloadAdapter {
         });
         this.#api.store.dispatch(setDownloadInterrupted(id, download.received));
       }
+    }
+  }
+
+  async #completeDownload(downloadId: string): Promise<void> {
+    const reduxState = this.#api.getState();
+    const download = reduxState.persistent.downloads.files?.[downloadId];
+
+    if (download?.localPath !== undefined) {
+      const gameId = download.game?.[0] ?? activeGameId(reduxState);
+      const dlPath = downloadPathForGame(reduxState, gameId);
+      const filePath = path.join(dlPath, download.localPath);
+      try {
+        // TODO: move hashing into main process
+
+        // MD5 is used as a fallback identifier for collection rule matching and
+        // reverse ModDB lookups for files that lack Nexus IDs (e.g. non-NXM downloads).
+        const hash = createHash("md5");
+        await pipeline(createReadStream(filePath), hash);
+        this.#api.store.dispatch(
+          setDownloadHash(downloadId, hash.digest("hex")),
+        );
+      } catch (err) {
+        log("warn", "failed to compute MD5 for download", { downloadId, err });
+      }
+    }
+
+    // Mark record as finished. nexus_integration reads finished records
+    // for attribute extraction during mod installation.
+    this.#api.store.dispatch(finishDownload(downloadId, "finished", null));
+    // Notify listeners that the download completed. InstallManager listens
+    // for this to trigger auto-install when automation is enabled.
+    this.#api.events.emit("did-finish-download", downloadId, "finished");
+
+    // Trigger auto-install if the user has automation enabled or if this
+    // download was started as an update (e.g. from the mod management view).
+    if (
+      reduxState.settings.automation?.install ||
+      download?.modInfo?.["startedAsUpdate"] === true
+    ) {
+      this.#api.events.emit("start-install-download", downloadId);
     }
   }
 
@@ -401,23 +445,9 @@ export class IPCDownloadAdapter {
       this.#api.store.dispatch(clearDownloadCheckpoint(downloadId));
 
       if (state.status === "completed") {
-        // Mark record as finished. nexus_integration reads finished records
-        // for attribute extraction during mod installation.
-        this.#api.store.dispatch(finishDownload(downloadId, "finished", null));
-        // Notify listeners that the download completed. InstallManager listens
-        // for this to trigger auto-install when automation is enabled.
-        this.#api.events.emit("did-finish-download", downloadId, "finished");
-
-        const reduxState = this.#api.getState();
-        const download = reduxState.persistent.downloads.files?.[downloadId];
-        // Trigger auto-install if the user has automation enabled or if this
-        // download was started as an update (e.g. from the mod management view).
-        if (
-          reduxState.settings.automation?.install ||
-          download?.modInfo?.["startedAsUpdate"] === true
-        ) {
-          this.#api.events.emit("start-install-download", downloadId);
-        }
+        this.#completeDownload(downloadId).catch((err) => {
+          log("error", "failed to finalize download", { downloadId, err });
+        });
       } else if (state.status === "canceled") {
         // User canceled - remove the record entirely, no file to keep.
         this.#api.store.dispatch(removeDownload(downloadId));
