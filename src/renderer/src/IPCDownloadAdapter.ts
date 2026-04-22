@@ -28,6 +28,7 @@ import {
   pauseDownload,
   removeDownload,
   setDownloadFilePath,
+  setDownloadInterrupted,
   setDownloadPausable,
   setDownloadSpeed,
 } from "./extensions/download_management/actions/state";
@@ -176,6 +177,38 @@ export class IPCDownloadAdapter {
   registerProtocol(scheme: string, handler: ProtocolHandler): void {
     this.#handlers[scheme] = handler;
     log("debug", `registered protocol handler for scheme '${scheme}'`);
+  }
+
+  processInterruptedDownloads(): void {
+    if (process.env.VORTEX_USE_IPC_DOWNLOADER !== "1") return;
+
+    const state = this.#api.getState();
+    const files = state.persistent.downloads.files ?? {};
+    const checkpoints = state.persistent.downloads.checkpoints ?? {};
+
+    for (const [id, download] of Object.entries(files)) {
+      if (!["init", "started"].includes(download.state)) continue;
+
+      const checkpoint = checkpoints[id];
+      if (checkpoint !== undefined) {
+        log("debug", "auto-resuming interrupted download", { id });
+        this.#downloadState.set(id, {
+          encodedUrl: parseEncodedUrl(checkpoint.resource),
+        });
+        window.api.downloader.resume(checkpoint).catch((err) => {
+          log("error", "failed to auto-resume download", { id, err });
+          this.#downloadState.delete(id);
+          this.#api.store.dispatch(
+            setDownloadInterrupted(id, download.received),
+          );
+        });
+      } else {
+        log("debug", "interrupted download has no checkpoint, marking paused", {
+          id,
+        });
+        this.#api.store.dispatch(setDownloadInterrupted(id, download.received));
+      }
+    }
   }
 
   async #handleStartDownload(

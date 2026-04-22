@@ -950,8 +950,11 @@ class ExtensionManager {
           // file handles yet despite waitForRendererExit in the main process.
           // Log and continue — the remove flag stays in state so it retries on
           // next startup.
-          log("warn", "failed to remove extension, will retry on next startup",
-            { extId, error: getErrorMessageOrDefault(err) });
+          log(
+            "warn",
+            "failed to remove extension, will retry on next startup",
+            { extId, error: getErrorMessageOrDefault(err) },
+          );
         }
       });
 
@@ -1115,6 +1118,8 @@ class ExtensionManager {
       this.mApi.store.getState() as T;
     this.mApi.onStateChange = this.stateChangeHandler;
 
+    this.mDownloadAdapter.processInterruptedDownloads();
+
     this.mApi.onStateChange(["settings", "metaserver", "servers"], () => {
       this.mForceDBReconnect = true;
     });
@@ -1236,7 +1241,10 @@ class ExtensionManager {
     this.mContextProxyHandler
       .getCalls("registerDownloadProtocol")
       .forEach((call) => {
-        const [scheme, handler] = call.arguments as [string, Parameters<IPCDownloadAdapter["registerProtocol"]>[1]];
+        const [scheme, handler] = call.arguments as [
+          string,
+          Parameters<IPCDownloadAdapter["registerProtocol"]>[1],
+        ];
         this.mDownloadAdapter.registerProtocol(scheme, handler);
       });
   }
@@ -1828,7 +1836,7 @@ class ExtensionManager {
         const extProxy = new Proxy(contextProxy, apiProxy);
         const init = ext.initFunc();
         if (typeof init !== "function") {
-        const relevantInfo = _.pick(ext, ["name", "namespace", "path"]);
+          const relevantInfo = _.pick(ext, ["name", "namespace", "path"]);
           throw new Error(
             `corrupt extension, failed to initialize: ${JSON.stringify(relevantInfo)}`,
           );
