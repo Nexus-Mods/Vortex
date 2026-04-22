@@ -28,8 +28,6 @@ const POLL_MAX_ATTEMPTS = 150; // 5 minutes
 const RETRY_ATTEMPTS = 3;
 const RETRY_BASE_DELAY_MS = 1000;
 
-const MULTIPART_CONCURRENCY = 4;
-
 // States declared by the OpenAPI schema. A successful upload transitions
 // created → available; anything else is an unknown state we did not opt into.
 const KNOWN_INPROGRESS_STATES = new Set(["created"]);
@@ -254,35 +252,23 @@ export async function uploadMultipart(
         `but ${fileSize} bytes at ${part_size_bytes} bytes/part needs ${expectedParts}`,
     );
   }
-  const etags: Array<{ partNumber: number; etag: string }> = new Array(
-    totalParts,
-  );
-
-  // Worker-pool pattern: N workers drain a shared index counter. Preserves
-  // insertion order in `etags` regardless of completion order.
-  let next = 0;
-  const workers = Array.from(
-    { length: Math.min(MULTIPART_CONCURRENCY, totalParts) },
-    async () => {
-      while (true) {
-        if (signal?.aborted) throw abortError(signal);
-        const i = next++;
-        if (i >= totalParts) return;
-        const start = i * part_size_bytes;
-        const end = Math.min(start + part_size_bytes, fileSize);
-        etags[i] = await uploadPart(
-          part_presigned_urls[i],
-          filePath,
-          start,
-          end,
-          i + 1,
-          totalParts,
-          signal,
-        );
-      }
-    },
-  );
-  await Promise.all(workers);
+  const etags: Array<{ partNumber: number; etag: string }> = [];
+  for (let i = 0; i < totalParts; i++) {
+    if (signal?.aborted) throw abortError(signal);
+    const start = i * part_size_bytes;
+    const end = Math.min(start + part_size_bytes, fileSize);
+    etags.push(
+      await uploadPart(
+        part_presigned_urls[i],
+        filePath,
+        start,
+        end,
+        i + 1,
+        totalParts,
+        signal,
+      ),
+    );
+  }
 
   // Complete the multipart upload by POSTing the ETags XML to S3.
   const xml = buildCompleteMultipartXml(etags);
