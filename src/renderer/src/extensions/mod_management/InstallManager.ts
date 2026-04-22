@@ -1852,6 +1852,11 @@ class InstallManager {
                 .then((result: IInstallResult & { installerId?: string }) => {
                   setAttribute("mod.modId", modId);
                   setAttribute("mod.installerId", result.installerId ?? "unknown");
+                  if (!Array.isArray(result.instructions)) {
+                    return Promise.reject(
+                      new DataInvalid("Installer produced no instructions"),
+                    );
+                  }
                   setAttribute("mod.fileCount",
                     result.instructions.filter(i => i.type === "copy").length);
                   // update choices now that the installer may have produced new ones

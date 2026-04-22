@@ -157,7 +157,7 @@ function main(context: types.IExtensionContext) {
     },
   });
 
-  context.registerInstaller('scriptmergerdummy', 15, scriptMergerTest as any, scriptMergerDummyInstaller as any);
+  context.registerInstaller('scriptmergerdummy', 15, scriptMergerTest as any, (() => scriptMergerDummyInstaller(context.api)) as any);
   context.registerInstaller('witcher3menumodroot', 20, testMenuModRoot as any, installMenuMod as any);
   context.registerInstaller('witcher3mixed', 25, testSupportedMixed as any, installMixed as any);
   context.registerInstaller('witcher3tl', 30, testSupportedTL as any, installTL as any);
