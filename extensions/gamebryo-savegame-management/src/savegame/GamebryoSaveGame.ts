@@ -1,6 +1,6 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import { BinaryReader } from './BinaryReader';
+import * as fs from "fs";
+import * as path from "path";
+import { BinaryReader } from "./BinaryReader";
 
 export interface Dimensions {
   width: number;
@@ -52,7 +52,14 @@ function readWINSYSTEMTIME(reader: BinaryReader): WINSYSTEMTIME {
 
 function systemTimeToEpoch(st: WINSYSTEMTIME): number {
   // C++ mktime() interprets as local time, so we must too
-  const d = new Date(st.wYear, st.wMonth - 1, st.wDay, st.wHour, st.wMinute, st.wSecond);
+  const d = new Date(
+    st.wYear,
+    st.wMonth - 1,
+    st.wDay,
+    st.wHour,
+    st.wMinute,
+    st.wSecond,
+  );
   return Math.floor(d.getTime() / 1000);
 }
 
@@ -61,23 +68,26 @@ function systemTimeToEpoch(st: WINSYSTEMTIME): number {
  * assume the save content uses Windows-1251 encoding.
  */
 function determineEncoding(fileName: string): string {
-  const nameOnly = fileName.replace(/^.*[/\\]/, '').replace(/\.[^.]+$/, '');
-  const relevant = nameOnly.replace(/[0-9.\- ]/g, '');
-  if (relevant.length === 0) return 'utf8';
+  const nameOnly = fileName.replace(/^.*[/\\]/, "").replace(/\.[^.]+$/, "");
+  const relevant = nameOnly.replace(/[0-9.\- ]/g, "");
+  if (relevant.length === 0) return "utf8";
 
   let cyrillicCount = 0;
   for (const ch of relevant) {
     const code = ch.charCodeAt(0);
-    if (code >= 0x400 && code <= 0x52F) cyrillicCount++;
+    if (code >= 0x400 && code <= 0x52f) cyrillicCount++;
   }
 
   if ((cyrillicCount * 100) / relevant.length > 50) {
-    return 'windows-1251';
+    return "windows-1251";
   }
-  return 'utf8';
+  return "utf8";
 }
 
-function readOblivion(reader: BinaryReader, quickRead: boolean): Partial<SaveGameData> {
+function readOblivion(
+  reader: BinaryReader,
+  quickRead: boolean,
+): Partial<SaveGameData> {
   reader.setBZString(true);
 
   reader.skip(1); // Major version
@@ -93,8 +103,10 @@ function readOblivion(reader: BinaryReader, quickRead: boolean): Partial<SaveGam
 
   const gameDays = reader.readFloat();
   const playTime =
-    Math.floor(gameDays) + ' days, ' +
-    (Math.floor(gameDays * 24) % 24) + ' hours';
+    Math.floor(gameDays) +
+    " days, " +
+    (Math.floor(gameDays * 24) % 24) +
+    " hours";
 
   reader.skip(4); // game ticks
 
@@ -114,12 +126,22 @@ function readOblivion(reader: BinaryReader, quickRead: boolean): Partial<SaveGam
   }
 
   return {
-    characterName, characterLevel, location, saveNumber,
-    creationTime, playTime, plugins, screenshotSize, screenshot,
+    characterName,
+    characterLevel,
+    location,
+    saveNumber,
+    creationTime,
+    playTime,
+    plugins,
+    screenshotSize,
+    screenshot,
   };
 }
 
-function readSkyrim(reader: BinaryReader, quickRead: boolean): Partial<SaveGameData> {
+function readSkyrim(
+  reader: BinaryReader,
+  quickRead: boolean,
+): Partial<SaveGameData> {
   reader.skip(4); // header size
   const version = reader.readUint32(); // header version
   const saveNumber = reader.readUint32();
@@ -159,7 +181,11 @@ function readSkyrim(reader: BinaryReader, quickRead: boolean): Partial<SaveGameD
 
       const uncompressedSize = reader.readUint32();
       const compressedSize = reader.readUint32();
-      reader.setCompression(compressionFormat, compressedSize, uncompressedSize);
+      reader.setCompression(
+        compressionFormat,
+        compressedSize,
+        uncompressedSize,
+      );
     }
 
     const formVersion = reader.readUint8();
@@ -172,12 +198,22 @@ function readSkyrim(reader: BinaryReader, quickRead: boolean): Partial<SaveGameD
   }
 
   return {
-    characterName, characterLevel, location, saveNumber,
-    creationTime, playTime, plugins, screenshotSize, screenshot,
+    characterName,
+    characterLevel,
+    location,
+    saveNumber,
+    creationTime,
+    playTime,
+    plugins,
+    screenshotSize,
+    screenshot,
   };
 }
 
-function readFO3(reader: BinaryReader, quickRead: boolean): Partial<SaveGameData> {
+function readFO3(
+  reader: BinaryReader,
+  quickRead: boolean,
+): Partial<SaveGameData> {
   reader.skip(4); // Save header size
   reader.skip(4); // File version (always 0x30)
   reader.skip(1); // Delimiter
@@ -227,13 +263,22 @@ function readFO3(reader: BinaryReader, quickRead: boolean): Partial<SaveGameData
   }
 
   return {
-    characterName, characterLevel, location, saveNumber,
+    characterName,
+    characterLevel,
+    location,
+    saveNumber,
     creationTime: 0,
-    playTime, plugins, screenshotSize, screenshot,
+    playTime,
+    plugins,
+    screenshotSize,
+    screenshot,
   };
 }
 
-function readFO4(reader: BinaryReader, quickRead: boolean): Partial<SaveGameData> {
+function readFO4(
+  reader: BinaryReader,
+  quickRead: boolean,
+): Partial<SaveGameData> {
   reader.skip(4); // header size
   reader.skip(4); // header version
   const saveNumber = reader.readUint32();
@@ -271,26 +316,38 @@ function readFO4(reader: BinaryReader, quickRead: boolean): Partial<SaveGameData
   }
 
   return {
-    characterName, characterLevel, location, saveNumber,
-    creationTime, playTime, plugins, screenshotSize, screenshot,
+    characterName,
+    characterLevel,
+    location,
+    saveNumber,
+    creationTime,
+    playTime,
+    plugins,
+    screenshotSize,
+    screenshot,
   };
 }
 
-const HEADERS: Array<[string, (r: BinaryReader, q: boolean) => Partial<SaveGameData>]> = [
-  ['TES4SAVEGAME', readOblivion],
-  ['TESV_SAVEGAME', readSkyrim],
-  ['FO3SAVEGAME', readFO3],
-  ['FO4_SAVEGAME', readFO4],
+const HEADERS: Array<
+  [string, (r: BinaryReader, q: boolean) => Partial<SaveGameData>]
+> = [
+  ["TES4SAVEGAME", readOblivion],
+  ["TESV_SAVEGAME", readSkyrim],
+  ["FO3SAVEGAME", readFO3],
+  ["FO4_SAVEGAME", readFO4],
 ];
 
 // Quick read only needs the first ~256 bytes of header metadata.
 // Reading 4KB avoids loading multi-MB files just to parse a few fields.
 const QUICK_READ_BYTES = 4096;
 
-export function parseSaveGame(filePath: string, quickRead: boolean): SaveGameData {
+export function parseSaveGame(
+  filePath: string,
+  quickRead: boolean,
+): SaveGameData {
   let buf: Buffer;
   if (quickRead) {
-    const fd = fs.openSync(filePath, 'r');
+    const fd = fs.openSync(filePath, "r");
     try {
       buf = Buffer.alloc(QUICK_READ_BYTES);
       fs.readSync(fd, buf, 0, QUICK_READ_BYTES, 0);
@@ -315,7 +372,7 @@ export function parseSaveGame(filePath: string, quickRead: boolean): SaveGameDat
   }
 
   if (!result) {
-    throw new Error('invalid file header');
+    throw new Error("invalid file header");
   }
 
   // Fallback: use file mtime if no creation time was parsed
@@ -329,12 +386,12 @@ export function parseSaveGame(filePath: string, quickRead: boolean): SaveGameDat
   }
 
   return {
-    characterName: result.characterName || '',
+    characterName: result.characterName || "",
     characterLevel: result.characterLevel || 0,
-    location: result.location || '',
+    location: result.location || "",
     saveNumber: result.saveNumber || 0,
     creationTime: result.creationTime || 0,
-    playTime: result.playTime || '',
+    playTime: result.playTime || "",
     plugins: result.plugins || [],
     screenshotSize: result.screenshotSize || { width: 0, height: 0 },
     screenshot: result.screenshot || Buffer.alloc(0),

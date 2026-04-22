@@ -1,4 +1,4 @@
-import { parseSaveGame, SaveGameData, Dimensions } from './GamebryoSaveGame';
+import { parseSaveGame, SaveGameData, Dimensions } from "./GamebryoSaveGame";
 
 export { SaveGameData, Dimensions };
 
