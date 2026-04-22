@@ -24,6 +24,7 @@ import * as fs from "../util/fs";
 import getVortexPath from "../util/getVortexPath";
 import { deleteOrNop, getSafe, rehydrate, setSafe } from "../util/storeHelper";
 import { appReducer } from "./app";
+import { downloadsReducer } from "./downloads";
 import { loReducer } from "./loadOrder";
 import { notificationsReducer } from "./notifications";
 import { notificationSettingsReducer } from "./notificationSettings";
@@ -82,7 +83,11 @@ let backupTime: number;
  *      and apply it to the local state using setSafe / deleteOrNop.
  */
 function pushRed(state: any, payload: any, statePath: string): any {
-  if (!payload || typeof payload.hive !== "string" || !Array.isArray(payload.operations)) {
+  if (
+    !payload ||
+    typeof payload.hive !== "string" ||
+    !Array.isArray(payload.operations)
+  ) {
     return state;
   }
 
@@ -105,7 +110,9 @@ function pushRed(state: any, payload: any, statePath: string): any {
       if (op.path.length < subPath.length) {
         continue;
       }
-      const matches = subPath.every((seg: string, i: number) => op.path[i] === seg);
+      const matches = subPath.every(
+        (seg: string, i: number) => op.path[i] === seg,
+      );
       if (!matches) {
         continue;
       }
@@ -259,6 +266,7 @@ export function buildReducerTree(
     app: appReducer,
     persistent: {
       loadOrder: loReducer,
+      downloads: downloadsReducer,
     },
     session: {
       base: sessionReducer,
