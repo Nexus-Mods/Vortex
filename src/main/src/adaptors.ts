@@ -141,17 +141,22 @@ function qualifiedPathToNative(qp: {
     throw new Error("qualifiedPathToNative: missing .value on QualifiedPath");
   }
   const parsed = QualifiedPath.parse(value);
-  const raw = `/${parsed.data}${parsed.data ? "/" : ""}${parsed.path}`;
+
+  // Reconstruct the full inner path from data + path segments.
+  // QualifiedPath splits "windows:///C/Users/foo" as:
+  //   data="" path="/C/Users/foo"   (no // separator in the rest)
+  // Or "windows://steam//C/Users/foo" as:
+  //   data="steam" path="C/Users/foo"
+  const segments = [parsed.data, parsed.path].filter(Boolean).join("/");
 
   if (parsed.scheme === "windows") {
-    // raw is like "/C/Users/foo" → "C:\Users\foo"
-    const m = /^\/([A-Za-z])\/(.*)$/.exec(raw);
+    const m = /^\/?([A-Za-z])\/(.*)$/.exec(segments);
     if (m) {
       return `${m[1]}:\\${m[2].replace(/\//g, "\\")}`;
     }
-    return raw.replace(/\//g, "\\");
+    return segments.replace(/\//g, "\\");
   }
-  return raw;
+  return segments.startsWith("/") ? segments : `/${segments}`;
 }
 
 /**
