@@ -1,0 +1,38 @@
+{
+  "fileName": "skyrimse_1.ess",
+  "quick": {
+    "characterName": "Prisoner",
+    "characterLevel": 1,
+    "location": "Skyrim",
+    "saveNumber": 1,
+    "creationTime": 1755109717,
+    "playTime": "000.04.42"
+  },
+  "full": {
+    "characterName": "Prisoner",
+    "characterLevel": 1,
+    "location": "Skyrim",
+    "saveNumber": 1,
+    "creationTime": 1755109717,
+    "playTime": "000.04.42",
+    "plugins": [
+      "Skyrim.esm",
+      "Update.esm",
+      "Dawnguard.esm",
+      "HearthFires.esm",
+      "Dragonborn.esm",
+      "ccBGSSSE001-Fish.esm",
+      "ccBGSSSE025-AdvDSGS.esm",
+      "ccQDRSSE001-SurvivalMode.esl",
+      "ccBGSSSE037-Curios.esl",
+      "_ResourcePack.esl"
+    ],
+    "screenshotSize": {
+      "width": 320,
+      "height": 192
+    },
+    "screenshotHash": "cfa5ce847fc03c4b10be8693a126a238d8a8ba69c534742b6e7cc11f565066f3",
+    "screenshotLength": 245760,
+    "screenshotHead": "Y21q/2dxa/9/jYD/b3hc/1diSv+gp4z/dn9T/2x1dP9yenr/aHJx/2Vubv9fZ2f/Ymtq/2lzcf9rdHL/bXVy/211cv+AhoT/am9t/2pvbv9pcG7/bHFv/2dvbf9pcW7/aHBv/3F5d/9rc3H/ZW5q/2Vsav9ocW3/c3h2/3N5d/9obmz/aG9t/2lxb/9pcm//Z29t/21zcf9lbGv/cXl2/2Vta/9eZmT/ZWxr/2Vta/9mb27/ZW9t/2hycP9qdHL/aHFv/2dvbv9lbWz/cnl5/2dwbv9mcG//ZW1r/2BpaP9ja2n/Zm9t/2Zwbv9hamj/ZG5s/2JqaP9kbGr/aHFv/w=="
+  }
+}

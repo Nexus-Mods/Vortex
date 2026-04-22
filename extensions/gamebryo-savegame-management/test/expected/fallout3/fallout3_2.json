@@ -1,0 +1,29 @@
+{
+  "fileName": "fallout3_2.fos",
+  "quick": {
+    "characterName": "Kai",
+    "characterLevel": 1,
+    "location": "Vault 101 Entrance",
+    "saveNumber": 1,
+    "creationTime": 1604362940,
+    "playTime": "000.21.58"
+  },
+  "full": {
+    "characterName": "Kai",
+    "characterLevel": 1,
+    "location": "Vault 101 Entrance",
+    "saveNumber": 1,
+    "creationTime": 1604362940,
+    "playTime": "000.21.58",
+    "plugins": [
+      "Fallout3.esm"
+    ],
+    "screenshotSize": {
+      "width": 512,
+      "height": 288
+    },
+    "screenshotHash": "037da34434e2c74f749072c4adf18c5affec571bf81dcb7a267e8ecd6b2dfd2a",
+    "screenshotLength": 589824,
+    "screenshotHead": "Mjcv/zU7Mv80OTD/Ky8n/xwgGv8MDwz/HB8Z/yMmHv8gIxz/HB8Z/xkcF/8cIBn/FBcS/wcJB/8cIBr/Oj41/y0vJ/8oKiP/Ky4n/x4gGv8ZGxb/EhUQ/xodF/8gIh3/ICEb/ykrIv8EBgP/BAcG/wYJCP8YHBj/LC8n/xseGf8YGxb/GRwX/xQXE/8JCwn/BQgH/w0RD/9PWEj/U1xL/ztCNv81PDL/PUQ4/0JIO/8/RTn/PkU6/yEnIf8jKiT/ICci/yQsJ/8mLin/HCMf/yw0Lf8xOjL/Iywm/yoyLP8qMyz/CxAO/xIXFP8hKCP/GR4b/wwREP8aIB7/GB0a/w=="
+  }
+}

@@ -3,7 +3,7 @@ import { ISavegame } from "../types/ISavegame";
 import { CORRUPTED_NAME, MAX_SAVEGAMES } from "../constants";
 
 import Promise from "bluebird";
-import * as savegameLib from "gamebryo-savegame";
+import * as savegameLib from "../savegame";
 import * as path from "path";
 import turbowalk, { IEntry } from "turbowalk";
 import { fs } from "vortex-api";

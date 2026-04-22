@@ -1,0 +1,38 @@
+{
+  "fileName": "falloutnv_1.fos",
+  "quick": {
+    "characterName": "DeadMoney",
+    "characterLevel": 1,
+    "location": "Brotherhood of Steel Bunker",
+    "saveNumber": 95,
+    "creationTime": 1725874714,
+    "playTime": "001.29.40"
+  },
+  "full": {
+    "characterName": "DeadMoney",
+    "characterLevel": 1,
+    "location": "Brotherhood of Steel Bunker",
+    "saveNumber": 95,
+    "creationTime": 1725874714,
+    "playTime": "001.29.40",
+    "plugins": [
+      "FalloutNV.esm",
+      "DeadMoney.esm",
+      "HonestHearts.esm",
+      "OldWorldBlues.esm",
+      "LonesomeRoad.esm",
+      "GunRunnersArsenal.esm",
+      "ClassicPack.esm",
+      "MercenaryPack.esm",
+      "TribalPack.esm",
+      "CaravanPack.esm"
+    ],
+    "screenshotSize": {
+      "width": 512,
+      "height": 288
+    },
+    "screenshotHash": "e1e159745f9f617bca30a2199b6cece23be5002de448674754cc8f61c05f711b",
+    "screenshotLength": 589824,
+    "screenshotHead": "BAQC/wYFBP8GBgT/CAYF/wgHBf8JCAb/BAMC/wgHBf8HBgT/CAcF/wgHBf8JCAb/CQkH/wcHBv8HCAf/CAkI/wgJCP8ICQj/CQoJ/wkLCf8JCgn/CQoJ/wkKCf8ICQj/CAkI/wkKCf8JCgn/CQkI/wkKCP8JCgj/CQoI/wkKCP8ICQj/CQkI/wgIB/8ICAb/BgYF/wcHBf8HBwX/BgYF/wYFBP8EBAT/BQUE/wcGBf8HBgX/BgUE/wYFBP8IBwX/CAgG/wYFBP8GBQT/BgYE/wcGBf8FBQT/BgYF/wgIB/8GBgX/BgYF/wcHBv8HBgb/BgYF/wYGBf8GBgX/BQUE/w=="
+  }
+}

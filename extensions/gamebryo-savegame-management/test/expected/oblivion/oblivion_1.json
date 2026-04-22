@@ -1,0 +1,29 @@
+{
+  "fileName": "oblivion_1.ess",
+  "quick": {
+    "characterName": "WoodElf Female",
+    "characterLevel": 1,
+    "location": "Imperial Prison",
+    "saveNumber": 9,
+    "creationTime": 1289678538,
+    "playTime": "1 days, 1 hours"
+  },
+  "full": {
+    "characterName": "WoodElf Female",
+    "characterLevel": 1,
+    "location": "Imperial Prison",
+    "saveNumber": 9,
+    "creationTime": 1289678538,
+    "playTime": "1 days, 1 hours",
+    "plugins": [
+      "Oblivion.esm"
+    ],
+    "screenshotSize": {
+      "width": 256,
+      "height": 160
+    },
+    "screenshotHash": "7b1b7645011353d0070d4404bda2358e8aa4a92cae4215064a057309fc1de2b8",
+    "screenshotLength": 163840,
+    "screenshotHead": "DhEQ/wwODf8GCAb/CgwK/woMC/8PEhD/EhYT/xMWE/8XHBn/GB0a/xccGv8bIB3/HSMg/xshHf8lLyz/JC0q/yEpJf8fJSL/ISgl/yEoJf8bIR7/FRkW/xccGP8ZHhr/HCEe/xkfHf8iKiX/JzEr/x0iH/8ZHhr/ISgk/w4QDv8OEQ7/FhoW/xQYFv8dIyH/HCIe/xofHP8ZHhv/DxIQ/wQFBf8FBQT/BQUE/wYGBf8HBwf/BwcH/wsLCv8LDAr/CgoJ/xcZGP8xQTz/KDIv/yMrKP8hKif/JC0q/x8lI/8bIh7/HyUi/yMqJ/8kKyj/Iikn/xgeGv8fJyP/HCIf/w=="
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "fileName": "falloutnv_3.fos",
+  "quick": {
+    "characterName": "Alice",
+    "characterLevel": 25,
+    "location": "Goodsprings",
+    "saveNumber": 2017,
+    "creationTime": 1734815249,
+    "playTime": "001.17.04"
+  },
+  "full": {
+    "characterName": "Alice",
+    "characterLevel": 25,
+    "location": "Goodsprings",
+    "saveNumber": 2017,
+    "creationTime": 1734815249,
+    "playTime": "001.17.04",
+    "plugins": [
+      "FalloutNV.esm",
+      "DeadMoney.esm",
+      "HonestHearts.esm",
+      "OldWorldBlues.esm",
+      "LonesomeRoad.esm",
+      "GunRunnersArsenal.esm",
+      "ClassicPack.esm",
+      "MercenaryPack.esm",
+      "TribalPack.esm",
+      "CaravanPack.esm"
+    ],
+    "screenshotSize": {
+      "width": 512,
+      "height": 288
+    },
+    "screenshotHash": "247e7b7055ed244f0162dbb3a6f697e03374857ae22e00cc76caf9b80d5d1674",
+    "screenshotLength": 589824,
+    "screenshotHead": "TUIr/xEOC/8zKhz/ExAN/xANCv8XFBH/GBUQ/xMQDP8SEAz/EQ8L/xIPDP8TEAv/DQwH/0E5Jv9NQyz/Xk8y/zIuIf88NSX/UkUr/0A4J/9GOyj/TUEq/0g8Jv89Nib/PjYm/0g/K/89Nib/PjYk/zcwIv87NCf/RTwp/09FLv9fUTL/NTAk/2VWNf9oWDX/QDko/0tCLP9EPCr/Rz4s/zs2KP80MCb/Qjwr/1xPM/9NQSz/T0Mt/z44Kv88Nij/eGQ+/0RANP8tKR//PDUj/zg1Jv9HPCb/LCcd/zgxIf9MPyf/Lywh/zArIf8pJR3/T0Ip/zAqHf82Lx//Rz4r/w=="
+  }
+}

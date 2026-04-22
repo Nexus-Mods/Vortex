@@ -1,0 +1,39 @@
+{
+  "fileName": "oblivion_3.ess",
+  "quick": {
+    "characterName": "Henry the Great",
+    "characterLevel": 1,
+    "location": "Sewers",
+    "saveNumber": 2,
+    "creationTime": 1708910733,
+    "playTime": "1 days, 7 hours"
+  },
+  "full": {
+    "characterName": "Henry the Great",
+    "characterLevel": 1,
+    "location": "Sewers",
+    "saveNumber": 2,
+    "creationTime": 1708910733,
+    "playTime": "1 days, 7 hours",
+    "plugins": [
+      "Oblivion.esm",
+      "Knights.esp",
+      "DLCBattlehornCastle.esp",
+      "DLCSpellTomes.esp",
+      "DLCMehrunesRazor.esp",
+      "DLCShiveringIsles.esp",
+      "DLCFrostcrag.esp",
+      "DLCHorseArmor.esp",
+      "DLCOrrery.esp",
+      "DLCVileLair.esp",
+      "DLCThievesDen.esp"
+    ],
+    "screenshotSize": {
+      "width": 256,
+      "height": 144
+    },
+    "screenshotHash": "7c314dbc1af7a4d9e0dd57307abe5de189684175df58e33c2e10d7fccbbd03c6",
+    "screenshotLength": 147456,
+    "screenshotHead": "QFIv/0FcQP8xRy3/JjUg/yo5Jf8tQCr/Mkgx/zZONP83UDX/NU40/zZRN/85Vzr/NlI2/ztZPf84Uzn/Mk00/zNLN/8oPyz/MEIy/wULBP8FCgT/BAgE/wQHA/8EBgP/AwUD/woMB/8TFg7/QUsx/yo0Jf8lMSP/Ljwt/y88Lf8oNCf/Kzcq/yYwI/8nMST/MD4w/yk3Kv8EBwT/BAcE/wQIBP8ECQT/BAoE/xMdEv86SjP/QFhC/zdON/80STP/OE01/zhONf8iMBv/IjAb/yQ0Hf9FXED/QmBF/05vUf83UDf/Plk9/z1XPP8zSDH/BQ4E/wQMBP8ECwT/BQoE/w=="
+  }
+}

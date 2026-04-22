@@ -1,0 +1,30 @@
+{
+  "fileName": "skyrim_3.ess",
+  "quick": {
+    "characterName": "Last Dragonborn",
+    "characterLevel": 1,
+    "location": "Helgen Keep",
+    "saveNumber": 2,
+    "creationTime": 1761177894,
+    "playTime": "000.14.38"
+  },
+  "full": {
+    "characterName": "Last Dragonborn",
+    "characterLevel": 1,
+    "location": "Helgen Keep",
+    "saveNumber": 2,
+    "creationTime": 1761177894,
+    "playTime": "000.14.38",
+    "plugins": [
+      "Skyrim.esm",
+      "Update.esm"
+    ],
+    "screenshotSize": {
+      "width": 320,
+      "height": 192
+    },
+    "screenshotHash": "5adaadaf541e38cb22497d385f0e8c9e0df000f86fb6c0f0d81964d3857e0c01",
+    "screenshotLength": 245760,
+    "screenshotHead": "GhsT/xobFf8eHhf/Hx4W/yEgGP8iIhv/Hh4Y/yEgGv8nJh3/JiQc/yMiG/8kIxv/JiUd/ygnHv8jIhr/GxoU/xkYEv8ZGBL/GxsT/x8fFv8jIxr/Hh4X/yEgGf8fHxj/IB8Y/yAgGP8gHxn/ICAY/yIhGv8gHxf/ISAV/yEhFf8jIRb/JCIY/xwbEv8WFQ//FBQP/xgXEf8cGxT/GRgT/yIhGv8oJh3/IyIZ/yAfFv8lIxn/KCYc/yMgF/8bGRL/GBcR/xsaEv8bGhP/HRwU/xwbE/8dHBT/Hx0U/x4dFP8fHhX/GxoS/x0cE/8gHxb/HBwU/xwcFP8ZGRH/GhkR/w=="
+  }
+}
