@@ -1817,8 +1817,9 @@ class ExtensionManager {
         const extProxy = new Proxy(contextProxy, apiProxy);
         const init = ext.initFunc();
         if (typeof init !== "function") {
+        const relevantInfo = _.pick(ext, ["name", "namespace", "path"]);
           throw new Error(
-            `init isn't a function but ${typeof init}: ${init} for ${Object.keys(ext)}`,
+            `corrupt extension, failed to initialize: ${JSON.stringify(relevantInfo)}`,
           );
         }
         init(extProxy as IExtensionContext);
