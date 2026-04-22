@@ -81,18 +81,12 @@ type StoredDownloadInfo = {
   encodedUrl: EncodedUrl;
 };
 
-type DownloadState = {
-  encodedUrl: EncodedUrl;
-};
-
 export class IPCDownloadAdapter {
   readonly #api: IExtensionApi;
   readonly #handlers: Record<string, ProtocolHandler> = {};
 
-  // TODO: APP-353, APP-228 once the URL and checkpoint are both written to Redux,
-  // #downloadState can be removed entirely and both resume paths read from Redux instead.
   readonly #pending = new Map<number, StoredDownloadInfo>();
-  readonly #downloadState = new Map<string, DownloadState>();
+  readonly #activeDownloads = new Set<string>();
   readonly #lastBytesReceived = new Map<string, number>();
   readonly #lastProgressDispatch = new Map<string, number>();
   #speedAccumBytes = 0;
@@ -196,12 +190,10 @@ export class IPCDownloadAdapter {
       const checkpoint = checkpoints[id];
       if (checkpoint !== undefined) {
         log("debug", "auto-resuming interrupted download", { id });
-        this.#downloadState.set(id, {
-          encodedUrl: parseEncodedUrl(checkpoint.resource),
-        });
+        this.#activeDownloads.add(id);
         window.api.downloader.resume(checkpoint).catch((err) => {
           log("error", "failed to auto-resume download", { id, err });
-          this.#downloadState.delete(id);
+          this.#activeDownloads.delete(id);
           this.#api.store.dispatch(
             setDownloadInterrupted(id, download.received),
           );
@@ -307,7 +299,7 @@ export class IPCDownloadAdapter {
         collationId,
       );
 
-      this.#downloadState.set(downloadId, { encodedUrl: info.encodedUrl });
+      this.#activeDownloads.add(downloadId);
       log("debug", "download queued", { downloadId, collationId });
       callback?.(null, downloadId);
 
@@ -333,7 +325,7 @@ export class IPCDownloadAdapter {
     callback?: (err: Error | null) => void,
   ): Promise<void> {
     try {
-      if (this.#downloadState.has(downloadId)) {
+      if (this.#activeDownloads.has(downloadId)) {
         log("debug", "cancelling download", { downloadId });
         await window.api.downloader.cancel(downloadId);
       } else {
@@ -399,7 +391,7 @@ export class IPCDownloadAdapter {
   }
 
   async #poll(): Promise<void> {
-    const downloadIds = this.#downloadState.keys().toArray();
+    const downloadIds = [...this.#activeDownloads];
     if (downloadIds.length === 0) return;
 
     const states = await window.api.downloader.getStates(downloadIds);
@@ -439,7 +431,7 @@ export class IPCDownloadAdapter {
       const err = rehydrateDownloadError(state);
       if (err !== null)
         log("warn", "download ended with error", { downloadId, err });
-      this.#downloadState.delete(downloadId);
+      this.#activeDownloads.delete(downloadId);
       this.#lastBytesReceived.delete(downloadId);
       this.#lastProgressDispatch.delete(downloadId);
       this.#api.store.dispatch(clearDownloadCheckpoint(downloadId));
@@ -466,12 +458,12 @@ export class IPCDownloadAdapter {
 
     if (this.#lastSpeedDispatch !== null) {
       const secSinceDispatch = (now - this.#lastSpeedDispatch) / 1000;
-      if (secSinceDispatch >= 1 || this.#downloadState.size === 0) {
+      if (secSinceDispatch >= 1 || this.#activeDownloads.size === 0) {
         const speed =
           secSinceDispatch > 0 ? this.#speedAccumBytes / secSinceDispatch : 0;
         this.#speedAccumBytes = 0;
-        this.#lastSpeedDispatch = this.#downloadState.size > 0 ? now : null;
-        if (speed > 0 || this.#downloadState.size === 0) {
+        this.#lastSpeedDispatch = this.#activeDownloads.size > 0 ? now : null;
+        if (speed > 0 || this.#activeDownloads.size === 0) {
           // Update speed display and speedHistory for the download graph.
           // Aggregated over 1s to avoid thrashing Redux with every poll tick.
           this.#api.store.dispatch(setDownloadSpeed(Math.round(speed)));
