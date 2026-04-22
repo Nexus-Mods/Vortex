@@ -136,8 +136,8 @@ describe("toV3CollectionPayload", () => {
     expect(info.game_versions).toBeNull();
 
     const source = payload.collection_manifest.mods[0].source;
-    expect(source.mod_id).toBeUndefined();
-    expect(source.file_id).toBeUndefined();
+    expect(source.mod_id).toBeNull();
+    expect(source.file_id).toBeNull();
     expect(source.md5).toBeNull();
     expect(source.file_size).toBeNull();
   });

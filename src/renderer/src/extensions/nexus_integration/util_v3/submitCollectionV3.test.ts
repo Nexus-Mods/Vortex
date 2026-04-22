@@ -1,4 +1,4 @@
-import type { ICollectionManifest } from "@nexusmods/nexus-api";
+import type { ICollectionManifest, default as Nexus } from "@nexusmods/nexus-api";
 import type { NexusV3Client } from "@vortex/nexus-api-v3";
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -30,12 +30,9 @@ vi.mock("./manifestMapping", () => ({
   })),
 }));
 
-vi.mock("../guards", () => ({
-  hasConfidentialWithNexus: vi.fn(() => true),
-}));
-
 vi.mock("../selectors", () => ({
   apiKey: vi.fn(() => "test-api-key"),
+  isLoggedIn: vi.fn(() => true),
 }));
 
 import { createNexusV3Client } from "@vortex/nexus-api-v3";
@@ -43,7 +40,7 @@ import { stat } from "fs-extra";
 
 import type { IState } from "../../../types/IState";
 
-import { hasConfidentialWithNexus } from "../guards";
+import { isLoggedIn } from "../selectors";
 import { submitCollectionV3 } from "./submitCollectionV3";
 import { uploadMultipart, uploadSinglePart } from "./uploadV3";
 
@@ -75,6 +72,12 @@ function makeManifest(): ICollectionManifest {
     },
     mods: [],
   };
+}
+
+function makeNexus(): Nexus {
+  return {
+    editCollection: vi.fn().mockResolvedValue(true),
+  } as unknown as Nexus;
 }
 
 function makeMockClient(): Pick<
@@ -140,10 +143,12 @@ function makeMockClient(): Pick<
 
 describe("submitCollectionV3", () => {
   let mockClient: ReturnType<typeof makeMockClient>;
+  let mockNexus: Nexus;
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockClient = makeMockClient();
+    mockNexus = makeNexus();
     mockCreateClient.mockReturnValue(mockClient as NexusV3Client);
     mockStat.mockResolvedValue({ size: SMALL_FILE_SIZE });
   });
@@ -154,6 +159,7 @@ describe("submitCollectionV3", () => {
 
       await submitCollectionV3(
         makeState(),
+        mockNexus,
         makeManifest(),
         "/tmp/small.zip",
         undefined,
@@ -173,6 +179,7 @@ describe("submitCollectionV3", () => {
 
       await submitCollectionV3(
         makeState(),
+        mockNexus,
         makeManifest(),
         "/tmp/large.zip",
         undefined,
@@ -192,6 +199,7 @@ describe("submitCollectionV3", () => {
     it("returns id, slug, revisionNumber, and revisionStatus from V3 response", async () => {
       const result = await submitCollectionV3(
         makeState(),
+        mockNexus,
         makeManifest(),
         "/tmp/file.zip",
         undefined,
@@ -215,6 +223,7 @@ describe("submitCollectionV3", () => {
     it("returns id, revisionNumber, and revisionStatus from V3 response (slug unchanged)", async () => {
       const result = await submitCollectionV3(
         makeState(),
+        mockNexus,
         makeManifest(),
         "/tmp/file.zip",
         888,
@@ -234,12 +243,42 @@ describe("submitCollectionV3", () => {
       expect(result.revision?.revisionNumber).toBe(2);
       expect(result.revision?.revisionStatus).toBe("draft");
     });
+
+    it("calls nexus.editCollection with the current name before the revision upload", async () => {
+      await submitCollectionV3(
+        makeState(),
+        mockNexus,
+        makeManifest(),
+        "/tmp/file.zip",
+        888,
+      );
+
+      expect(mockNexus.editCollection).toHaveBeenCalledWith(888, "Test");
+      const editOrder = vi.mocked(mockNexus.editCollection).mock
+        .invocationCallOrder[0];
+      const revisionOrder = vi.mocked(mockClient.createCollectionRevision).mock
+        .invocationCallOrder[0];
+      expect(editOrder).toBeLessThan(revisionOrder);
+    });
+
+    it("does not call nexus.editCollection when creating a new collection", async () => {
+      await submitCollectionV3(
+        makeState(),
+        mockNexus,
+        makeManifest(),
+        "/tmp/file.zip",
+        undefined,
+      );
+
+      expect(mockNexus.editCollection).not.toHaveBeenCalled();
+    });
   });
 
   describe("upload lifecycle", () => {
     it("calls finalise and poll after upload", async () => {
       await submitCollectionV3(
         makeState(),
+        mockNexus,
         makeManifest(),
         "/tmp/file.zip",
         undefined,
@@ -251,7 +290,7 @@ describe("submitCollectionV3", () => {
 
   describe("auth", () => {
     it("throws when not logged in", async () => {
-      vi.mocked(hasConfidentialWithNexus).mockReturnValueOnce(false);
+      vi.mocked(isLoggedIn).mockReturnValueOnce(false);
 
       await expect(
         submitCollectionV3(

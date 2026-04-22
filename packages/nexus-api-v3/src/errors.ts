@@ -10,13 +10,15 @@ export class V3ApiError extends Error {
   public readonly instance: string;
   public readonly validationErrors?: ValidationProblemItem[];
 
-  constructor(problem: ProblemDetails & { errors?: ValidationProblemItem[] }) {
-    super(problem.title);
+  constructor(
+    problem: Partial<ProblemDetails> & { errors?: ValidationProblemItem[] },
+  ) {
+    super(problem.title || "Request failed");
     this.name = "V3ApiError";
-    this.status = problem.status;
-    this.problemType = problem.type;
-    this.detail = problem.detail;
-    this.instance = problem.instance;
+    this.status = problem.status ?? 0;
+    this.problemType = problem.type || "about:blank";
+    this.detail = problem.detail || "";
+    this.instance = problem.instance || "";
     this.validationErrors = problem.errors;
   }
 }

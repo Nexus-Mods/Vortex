@@ -66,6 +66,16 @@ describe("pollUploadAvailable", () => {
 
     expect(getUpload).toHaveBeenCalledTimes(3);
   });
+
+  it("bails out on a terminal failure state", async () => {
+    const getUpload = vi.fn().mockResolvedValue({ state: "failed" });
+    const client = makeClient({ getUpload });
+
+    await expect(
+      pollUploadAvailable(client, "upload-123"),
+    ).rejects.toThrow(/terminal failure state/);
+    expect(getUpload).toHaveBeenCalledOnce();
+  });
 });
 
 describe("uploadSinglePart", () => {

@@ -1,6 +1,8 @@
 import type {
   ICollectionManifest,
   ICreateCollectionResult,
+  IOAuthCredentials,
+  default as Nexus,
 } from "@nexusmods/nexus-api";
 
 import { createNexusV3Client } from "@vortex/nexus-api-v3";
@@ -10,8 +12,7 @@ import type { IState } from "../../../types/IState";
 
 import { log } from "../../../logging";
 import { MULTIPART_THRESHOLD, NEXUS_V3_BASE_URL } from "../constants";
-import { hasConfidentialWithNexus } from "../guards";
-import { apiKey as apiKeySelector } from "../selectors";
+import { apiKey as apiKeySelector, isLoggedIn } from "../selectors";
 import { toV3CollectionPayload } from "./manifestMapping";
 import {
   pollUploadAvailable,
@@ -20,16 +21,14 @@ import {
 } from "./uploadV3";
 
 function createClientFromState(state: IState) {
-  if (!hasConfidentialWithNexus(state.confidential)) {
+  if (!isLoggedIn(state)) {
     throw new Error("Not logged in to Nexus Mods");
   }
 
-  const nexusAccount = state.confidential.account.nexus;
-  const apiKey: string | undefined = apiKeySelector(state);
-  const oauthCredentials = nexusAccount.OAuthCredentials as
-    | { token?: string }
-    | undefined;
-  const oauthToken = oauthCredentials?.token;
+  const apiKey = apiKeySelector(state);
+  const oauthCred: IOAuthCredentials =
+    state.confidential.account?.["nexus"]?.["OAuthCredentials"];
+  const oauthToken = oauthCred?.token;
 
   return createNexusV3Client({
     baseUrl: NEXUS_V3_BASE_URL,
@@ -40,6 +39,7 @@ function createClientFromState(state: IState) {
 
 export async function submitCollectionV3(
   state: IState,
+  nexus: Nexus,
   collectionInfo: ICollectionManifest,
   assetFilePath: string,
   collectionId: number | undefined,
@@ -87,6 +87,12 @@ export async function submitCollectionV3(
       success: true,
     };
   }
+
+  // V3 revision creation doesn't propagate collection-level metadata (name)
+  // to the parent collection. Preserve the legacy behaviour by calling
+  // GraphQL editCollection first, mirroring the pre-v3 flow which ran
+  // editCollection unconditionally before every revision upload.
+  await nexus.editCollection(collectionId, collectionInfo.info.name);
 
   const revisionResult = await client.createCollectionRevision(
     String(collectionId),

@@ -12,8 +12,8 @@ function toV3ManifestModSource(
 ): V3CollectionManifestModSource {
   return {
     type: source.type satisfies V3CollectionManifestModSource["type"],
-    mod_id: source.modId?.toString(),
-    file_id: source.fileId?.toString(),
+    mod_id: source.modId?.toString() ?? null,
+    file_id: source.fileId?.toString() ?? null,
     md5: source.md5 ?? null,
     file_size: source.fileSize ?? null,
     update_policy:

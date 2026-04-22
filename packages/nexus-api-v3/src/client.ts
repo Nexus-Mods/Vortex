@@ -105,21 +105,30 @@ export function createNexusV3Client(options: NexusV3ClientOptions) {
 
 function toV3Error(error: unknown, response: Response): V3ApiError {
   // openapi-fetch returns the parsed error body. For problem+json responses,
-  // this will be a ProblemDetails or ValidationProblem object.
-  if (
-    error &&
-    typeof error === "object" &&
-    "title" in error &&
-    "status" in error
-  ) {
-    return new V3ApiError(error as any);
-  }
-  // Fallback for unexpected error shapes
+  // this will be a ProblemDetails or ValidationProblem object — but proxies,
+  // 502 pages, and transport errors can all produce other shapes, so we fall
+  // back to the HTTP response whenever a field is missing.
+  const problem =
+    error && typeof error === "object" ? (error as Record<string, unknown>) : {};
+
   return new V3ApiError({
-    type: "about:blank",
-    title: "Request failed",
-    status: response.status,
-    detail: String(error),
-    instance: response.url,
+    type: typeof problem.type === "string" ? problem.type : "about:blank",
+    title:
+      typeof problem.title === "string" && problem.title.length > 0
+        ? problem.title
+        : `HTTP ${response.status}`,
+    status:
+      typeof problem.status === "number" ? problem.status : response.status,
+    detail:
+      typeof problem.detail === "string"
+        ? problem.detail
+        : error instanceof Error
+          ? error.message
+          : "",
+    instance:
+      typeof problem.instance === "string" ? problem.instance : response.url,
+    errors: Array.isArray(problem.errors)
+      ? (problem.errors as V3ApiError["validationErrors"])
+      : undefined,
   });
 }
