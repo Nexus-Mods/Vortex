@@ -43,6 +43,7 @@ export async function submitCollectionV3(
   collectionInfo: ICollectionManifest,
   assetFilePath: string,
   collectionId: number | undefined,
+  signal?: AbortSignal,
 ): Promise<ICreateCollectionResult> {
   const client = createClientFromState(state);
   const stat = await fs.stat(assetFilePath);
@@ -61,16 +62,21 @@ export async function submitCollectionV3(
   if (fileSize <= MULTIPART_THRESHOLD) {
     const upload = await client.createUpload(fileSize, filename);
     uploadId = upload.id;
-    await uploadSinglePart(upload.presigned_url, assetFilePath, fileSize);
+    await uploadSinglePart(
+      upload.presigned_url,
+      assetFilePath,
+      fileSize,
+      signal,
+    );
   } else {
     const multipart = await client.createMultipartUpload(fileSize, filename);
     uploadId = multipart.id;
-    await uploadMultipart(multipart, assetFilePath, fileSize);
+    await uploadMultipart(multipart, assetFilePath, fileSize, signal);
   }
 
   // Step 2: Finalise and wait for availability
   await client.finaliseUpload(uploadId);
-  await pollUploadAvailable(client, uploadId);
+  await pollUploadAvailable(client, uploadId, signal);
 
   // Step 3: Create collection or revision
   const payload = toV3CollectionPayload(collectionInfo);

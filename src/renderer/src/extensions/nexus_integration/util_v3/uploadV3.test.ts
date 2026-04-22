@@ -67,13 +67,67 @@ describe("pollUploadAvailable", () => {
     expect(getUpload).toHaveBeenCalledTimes(3);
   });
 
-  it("bails out on a terminal failure state", async () => {
+  it("bails after tolerating unknown states a few times", async () => {
     const getUpload = vi.fn().mockResolvedValue({ state: "failed" });
     const client = makeClient({ getUpload });
 
+    const promise = pollUploadAvailable(client, "upload-123");
+    const settled = promise.catch((err: unknown) => err);
+    await vi.runAllTimersAsync();
+    const err = await settled;
+
+    expect(err).toBeInstanceOf(Error);
+    expect((err as Error).message).toMatch(/unknown state/);
+    // One initial observation + tolerance-1 more before bailing (3 total).
+    expect(getUpload).toHaveBeenCalledTimes(3);
+  });
+
+  it("keeps polling through a single unknown-state blip", async () => {
+    const getUpload = vi
+      .fn()
+      .mockResolvedValueOnce({ state: "created" })
+      .mockResolvedValueOnce({ state: "mystery-new-state" })
+      .mockResolvedValueOnce({ state: "created" })
+      .mockResolvedValueOnce({ state: "available" });
+    const client = makeClient({ getUpload });
+
+    const promise = pollUploadAvailable(client, "upload-123");
+    await vi.runAllTimersAsync();
+    await promise;
+
+    expect(getUpload).toHaveBeenCalledTimes(4);
+  });
+
+  it("throws promptly when signal is already aborted", async () => {
+    const getUpload = vi.fn().mockResolvedValue({ state: "created" });
+    const client = makeClient({ getUpload });
+    const controller = new AbortController();
+    controller.abort();
+
     await expect(
-      pollUploadAvailable(client, "upload-123"),
-    ).rejects.toThrow(/terminal failure state/);
+      pollUploadAvailable(client, "upload-123", controller.signal),
+    ).rejects.toThrow();
+    expect(getUpload).not.toHaveBeenCalled();
+  });
+
+  it("aborts between polls when signal fires", async () => {
+    const getUpload = vi.fn().mockResolvedValue({ state: "created" });
+    const client = makeClient({ getUpload });
+    const controller = new AbortController();
+
+    const promise = pollUploadAvailable(
+      client,
+      "upload-123",
+      controller.signal,
+    );
+    const settled = promise.catch((err: unknown) => err);
+    // Let the first poll run and enter the sleep.
+    await vi.advanceTimersByTimeAsync(0);
+    controller.abort();
+    await vi.runAllTimersAsync();
+
+    const err = await settled;
+    expect(err).toBeInstanceOf(Error);
     expect(getUpload).toHaveBeenCalledOnce();
   });
 });

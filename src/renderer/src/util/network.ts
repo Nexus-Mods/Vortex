@@ -176,15 +176,37 @@ export interface IUploadResult {
   statusCode: number;
 }
 
+export class HttpUploadError extends Error {
+  public readonly statusCode: number;
+  constructor(message: string, statusCode: number) {
+    super(message);
+    this.name = "HttpUploadError";
+    this.statusCode = statusCode;
+  }
+}
+
+function toAbortError(signal: AbortSignal | undefined): Error {
+  const reason: unknown = signal?.reason;
+  if (reason instanceof Error) return reason;
+  if (typeof reason === "string") return new Error(reason);
+  return new Error("Upload aborted");
+}
+
 export function uploadWithHeaders(
   targetUrl: string,
   dataStream: Readable,
   dataSize: number,
   extraHeaders?: Record<string, string>,
+  signal?: AbortSignal,
 ): Promise<IUploadResult> {
   return new Promise((resolve, reject) => {
     log("debug", "uploading file (with headers)", { targetUrl, dataSize });
     const started = Date.now();
+
+    if (signal?.aborted) {
+      return reject(toAbortError(signal));
+    }
+
     const req = request(
       "PUT",
       targetUrl,
@@ -210,7 +232,10 @@ export function uploadWithHeaders(
           .on("end", () => {
             if (statusCode !== 200) {
               return reject(
-                new Error(`Upload failed. Status Code: ${statusCode}`),
+                new HttpUploadError(
+                  `Upload failed. Status Code: ${statusCode}`,
+                  statusCode ?? 0,
+                ),
               );
             }
             resolve({
@@ -227,6 +252,17 @@ export function uploadWithHeaders(
     req.on("error", (err) => {
       return reject(err);
     });
+
+    const onAbort = () => {
+      const reason = toAbortError(signal);
+      req.destroy(reason);
+      dataStream.destroy(reason);
+    };
+    signal?.addEventListener("abort", onAbort, { once: true });
+    req.on("close", () => {
+      signal?.removeEventListener("abort", onAbort);
+    });
+
     dataStream.pipe(req, {
       end: true,
     });
