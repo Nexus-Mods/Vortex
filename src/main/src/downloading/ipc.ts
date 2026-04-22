@@ -97,7 +97,7 @@ export function init(manager: DownloadManager): void {
     return wire;
   });
 
-  betterIpcMain.handle("download:resume", async (event, wireCheckpoint) => {
+  betterIpcMain.handle("download:resume", (event, wireCheckpoint) => {
     const webContents = event.sender;
     const resource = wireToResolvedResource({
       probeEndpoint: { url: wireCheckpoint.resource },
