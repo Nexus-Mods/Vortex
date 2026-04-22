@@ -30,7 +30,6 @@ allowBuilds:
   native-errors: true
   protobufjs: true
   unrs-resolver: true
-  vortexmt: true
   winapi-bindings: true
   xxhash-addon: true
 
@@ -279,7 +278,6 @@ catalog:
   vite-plugin-doctest: ^2.0.0
   vitest: ^4.1.0
   vortex-parse-ini: git+https://github.com/Nexus-Mods/vortex-parse-ini#2425af99d1cff2331ccf3aacfa892c314e99e18d
-  vortexmt: git+https://github.com/Nexus-Mods/node-vortexmt#5251ea012ce856742aeaf73a583073497aff773a
   webpack: ^5.94.0
   webpack-cli: ^5.1.4
   webpack-node-externals: ^3.0.0
