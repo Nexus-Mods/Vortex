@@ -1,5 +1,4 @@
 import type {
-  WireDownloadCheckpoint,
   WireDownloadState,
   WireResolvedResource,
 } from "@vortex/shared/ipc";
@@ -18,6 +17,10 @@ import { z } from "zod";
 
 import type { IExtensionApi } from "./types/IExtensionContext";
 
+import {
+  clearDownloadCheckpoint,
+  setDownloadCheckpoint,
+} from "./actions/downloads";
 import {
   downloadProgress,
   finishDownload,
@@ -75,7 +78,6 @@ type StoredDownloadInfo = {
 
 type DownloadState = {
   encodedUrl: EncodedUrl;
-  checkpoint?: WireDownloadCheckpoint;
 };
 
 export class IPCDownloadAdapter {
@@ -281,10 +283,7 @@ export class IPCDownloadAdapter {
     try {
       log("debug", "pausing download", { downloadId });
       const checkpoint = await window.api.downloader.pause(downloadId);
-      const state = this.#downloadState.get(downloadId);
-      if (state !== undefined) state.checkpoint = checkpoint;
-      // Transition Redux state to "paused". DownloadView uses this to swap
-      // the pause button for a resume button.
+      this.#api.store.dispatch(setDownloadCheckpoint(downloadId, checkpoint));
       this.#api.store.dispatch(pauseDownload(downloadId, true, []));
       callback?.(null);
     } catch (err) {
@@ -297,16 +296,14 @@ export class IPCDownloadAdapter {
     callback?: (err: Error | null, id?: string) => void,
   ): Promise<void> {
     try {
-      const state = this.#downloadState.get(downloadId);
-      if (state === undefined) {
-        throw new Error(`No stored state for download ${downloadId}`);
-      }
-      if (state.checkpoint === undefined) {
+      const checkpoint =
+        this.#api.getState().persistent.downloads.checkpoints[downloadId];
+      if (checkpoint === undefined) {
         throw new Error(`No checkpoint stored for download ${downloadId}`);
       }
 
       log("debug", "resuming download", { downloadId });
-      await window.api.downloader.resume(state.checkpoint);
+      await window.api.downloader.resume(checkpoint);
       callback?.(null, downloadId);
     } catch (err) {
       callback?.(unknownToError(err));
@@ -368,6 +365,7 @@ export class IPCDownloadAdapter {
       this.#downloadState.delete(downloadId);
       this.#lastBytesReceived.delete(downloadId);
       this.#lastProgressDispatch.delete(downloadId);
+      this.#api.store.dispatch(clearDownloadCheckpoint(downloadId));
 
       if (state.status === "completed") {
         // Mark record as finished. nexus_integration reads finished records
