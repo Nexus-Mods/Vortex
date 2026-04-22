@@ -295,6 +295,7 @@ describe("submitCollectionV3", () => {
       await expect(
         submitCollectionV3(
           makeState(),
+          mockNexus,
           makeManifest(),
           "/tmp/file.zip",
           undefined,

@@ -186,29 +186,55 @@ describe("uploadMultipart", () => {
     ).rejects.toThrow("ETag");
   });
 
-  it("throws if multipart completion fails", async () => {
+  it("retries and then throws if multipart completion keeps failing", async () => {
     mockUploadWithHeaders.mockResolvedValueOnce({
       body: Buffer.alloc(0),
       headers: { etag: '"etag-1"' },
       statusCode: 200,
     });
 
-    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
       ok: false,
       status: 500,
       text: vi.fn().mockResolvedValue("Internal Server Error"),
     } as unknown as Response);
 
+    vi.useFakeTimers();
+    const promise = uploadMultipart(
+      {
+        part_size_bytes: 100,
+        part_presigned_urls: ["https://s3.example.com/part1"],
+        complete_presigned_url: "https://s3.example.com/complete",
+      },
+      "/tmp/file.zip",
+      50,
+    );
+    // Swallow the eventual rejection so the assertion below owns it.
+    const settled = promise.catch((err: unknown) => err);
+    await vi.runAllTimersAsync();
+    vi.useRealTimers();
+
+    const err = await settled;
+    expect(err).toBeInstanceOf(Error);
+    expect((err as Error).message).toMatch(
+      /Failed to complete multipart upload/,
+    );
+    // Completion POST is retried up to RETRY_ATTEMPTS (3) times.
+    expect(fetchSpy).toHaveBeenCalledTimes(3);
+  });
+
+  it("throws with mismatched part layout", async () => {
     await expect(
       uploadMultipart(
         {
           part_size_bytes: 100,
+          // One URL provided, but 250 bytes at 100 bytes/part needs 3 parts.
           part_presigned_urls: ["https://s3.example.com/part1"],
           complete_presigned_url: "https://s3.example.com/complete",
         },
         "/tmp/file.zip",
-        50,
+        250,
       ),
-    ).rejects.toThrow("Failed to complete multipart upload");
+    ).rejects.toThrow(/Multipart layout mismatch/);
   });
 });

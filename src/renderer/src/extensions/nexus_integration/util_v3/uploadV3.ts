@@ -157,6 +157,13 @@ export async function uploadMultipart(
   const { part_size_bytes, part_presigned_urls, complete_presigned_url } =
     multipart;
   const totalParts = part_presigned_urls.length;
+  const expectedParts = Math.ceil(fileSize / part_size_bytes);
+  if (expectedParts !== totalParts) {
+    throw new Error(
+      `Multipart layout mismatch: server returned ${totalParts} presigned URLs `
+        + `but ${fileSize} bytes at ${part_size_bytes} bytes/part needs ${expectedParts}`,
+    );
+  }
   const etags: Array<{ partNumber: number; etag: string }> = new Array(
     totalParts,
   );
@@ -187,19 +194,22 @@ export async function uploadMultipart(
 
   // Complete the multipart upload by POSTing the ETags XML to S3.
   const xml = buildCompleteMultipartXml(etags);
-  const response = await withRetry(
-    () =>
-      fetch(complete_presigned_url, {
+  await withRetry(
+    async () => {
+      const response = await fetch(complete_presigned_url, {
         method: "POST",
         headers: { "Content-Type": "application/xml" },
         body: xml,
-      }),
+      });
+      if (!response.ok) {
+        // Throw inside withRetry so transient 5xx responses are retried.
+        const body = await response.text();
+        throw new Error(
+          `Failed to complete multipart upload: ${response.status} ${body}`,
+        );
+      }
+      return response;
+    },
     "multipart completion",
   );
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(
-      `Failed to complete multipart upload: ${response.status} ${body}`,
-    );
-  }
 }
