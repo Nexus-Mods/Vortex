@@ -76,7 +76,8 @@ for (const game of GAME_DIRS) {
           expect(quick.characterLevel).toBe(eq.characterLevel);
           expect(trimAtNull(quick.location)).toBe(eq.location);
           expect(quick.saveNumber).toBe(eq.saveNumber);
-          expect(quick.creationTime).toBe(eq.creationTime);
+          // creationTime is skipped: Oblivion uses local timezone via Date(),
+          // FO3/NV falls back to file mtime — both are environment-dependent
           expect(quick.playTime).toBe(eq.playTime);
         });
 
@@ -90,7 +91,6 @@ for (const game of GAME_DIRS) {
           expect(full.characterLevel).toBe(ef.characterLevel);
           expect(trimAtNull(full.location)).toBe(ef.location);
           expect(full.saveNumber).toBe(ef.saveNumber);
-          expect(full.creationTime).toBe(ef.creationTime);
           expect(full.playTime).toBe(ef.playTime);
           expect(full.plugins).toEqual(ef.plugins);
 
