@@ -3003,7 +3003,7 @@ class ExtensionManager {
   }
 
   /** Finds the default exported extension init function of a module */
-  private static getExtensionInitFunc(mod: unknown): ExtensionInit | undefined {
+  public static getExtensionInitFunc(mod: unknown): ExtensionInit | undefined {
     if (!mod) return undefined;
 
     if (typeof mod === "function") return mod as ExtensionInit;
