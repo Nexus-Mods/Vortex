@@ -1,7 +1,7 @@
 import { Readable } from "stream";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-vi.mock("../../../util/log", () => ({
+vi.mock("../../../logging", () => ({
   log: vi.fn(),
 }));
 
@@ -119,8 +119,8 @@ describe("uploadMultipart", () => {
 
     await uploadMultipart(
       {
-        parts_size: 100,
-        parts_presigned_url: [
+        part_size_bytes: 100,
+        part_presigned_urls: [
           "https://s3.example.com/part1",
           "https://s3.example.com/part2",
         ],
@@ -166,8 +166,8 @@ describe("uploadMultipart", () => {
     await expect(
       uploadMultipart(
         {
-          parts_size: 100,
-          parts_presigned_url: ["https://s3.example.com/part1"],
+          part_size_bytes: 100,
+          part_presigned_urls: ["https://s3.example.com/part1"],
           complete_presigned_url: "https://s3.example.com/complete",
         },
         "/tmp/file.zip",
@@ -192,8 +192,8 @@ describe("uploadMultipart", () => {
     await expect(
       uploadMultipart(
         {
-          parts_size: 100,
-          parts_presigned_url: ["https://s3.example.com/part1"],
+          part_size_bytes: 100,
+          part_presigned_urls: ["https://s3.example.com/part1"],
           complete_presigned_url: "https://s3.example.com/complete",
         },
         "/tmp/file.zip",

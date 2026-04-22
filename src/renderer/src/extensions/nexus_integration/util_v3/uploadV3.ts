@@ -2,7 +2,7 @@ import type { NexusV3Client } from "@vortex/nexus-api-v3";
 
 import { createReadStream } from "fs";
 
-import { log } from "../../../util/log";
+import { log } from "../../../logging";
 import { uploadWithHeaders } from "../../../util/network";
 
 const POLL_INTERVAL_MS = 2000;
@@ -51,24 +51,25 @@ function buildCompleteMultipartXml(
 
 export async function uploadMultipart(
   multipart: {
-    parts_size: number;
-    parts_presigned_url: string[];
+    part_size_bytes: number;
+    part_presigned_urls: string[];
     complete_presigned_url: string;
   },
   filePath: string,
   fileSize: number,
 ): Promise<void> {
-  const { parts_size, parts_presigned_url, complete_presigned_url } = multipart;
+  const { part_size_bytes, part_presigned_urls, complete_presigned_url } =
+    multipart;
   const etags: Array<{ partNumber: number; etag: string }> = [];
 
-  for (let i = 0; i < parts_presigned_url.length; i++) {
-    const start = i * parts_size;
-    const end = Math.min(start + parts_size, fileSize);
+  for (let i = 0; i < part_presigned_urls.length; i++) {
+    const start = i * part_size_bytes;
+    const end = Math.min(start + part_size_bytes, fileSize);
     const chunkSize = end - start;
 
     const stream = createReadStream(filePath, { start, end: end - 1 });
     const result = await uploadWithHeaders(
-      parts_presigned_url[i],
+      part_presigned_urls[i],
       stream,
       chunkSize,
     );
@@ -83,7 +84,7 @@ export async function uploadMultipart(
     etags.push({ partNumber: i + 1, etag });
     log("debug", "multipart part uploaded", {
       part: i + 1,
-      total: parts_presigned_url.length,
+      total: part_presigned_urls.length,
       etag,
     });
   }

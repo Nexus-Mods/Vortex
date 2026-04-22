@@ -1,13 +1,9 @@
-import type Nexus from "@nexusmods/nexus-api";
-import type {
-  ICollection,
-  ICollectionManifest,
-} from "@nexusmods/nexus-api";
+import type { ICollectionManifest } from "@nexusmods/nexus-api";
 import type { NexusV3Client } from "@vortex/nexus-api-v3";
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-vi.mock("../../../util/log", () => ({
+vi.mock("../../../logging", () => ({
   log: vi.fn(),
 }));
 
@@ -81,26 +77,6 @@ function makeManifest(): ICollectionManifest {
   };
 }
 
-interface MockCollection {
-  id: number;
-  slug: string;
-  currentRevision?: { id: number; revisionNumber: number; status: string };
-}
-
-function makeGetMyCollections(collections: MockCollection[]) {
-  return vi
-    .fn<Nexus["getMyCollections"]>()
-    .mockResolvedValue(
-      collections as unknown as Array<Partial<ICollection>>,
-    );
-}
-
-function makeNexus(collections: MockCollection[] = []): Nexus {
-  return {
-    getMyCollections: makeGetMyCollections(collections),
-  } as unknown as Nexus;
-}
-
 function makeMockClient(): Pick<
   NexusV3Client,
   | "createUpload"
@@ -116,30 +92,30 @@ function makeMockClient(): Pick<
       .mockResolvedValue({
         id: "upload-123",
         presigned_url: "https://s3.example.com/upload",
-        user_id: "1",
+        user: { id: "1" },
         state: "created",
       }),
     createMultipartUpload: vi
       .fn<NexusV3Client["createMultipartUpload"]>()
       .mockResolvedValue({
         id: "upload-456",
-        parts_size: 100 * 1024 * 1024,
-        parts_presigned_url: [
+        part_size_bytes: 100 * 1024 * 1024,
+        part_presigned_urls: [
           "https://s3.example.com/part1",
           "https://s3.example.com/part2",
         ],
         complete_presigned_url: "https://s3.example.com/complete",
-        user_id: "1",
+        user: { id: "1" },
         state: "created",
       }),
     finaliseUpload: vi
       .fn<NexusV3Client["finaliseUpload"]>()
-      .mockResolvedValue({ id: "upload-123", user_id: "1", state: "created" }),
+      .mockResolvedValue({ id: "upload-123", user: { id: "1" }, state: "created" }),
     getUpload: vi
       .fn<NexusV3Client["getUpload"]>()
       .mockResolvedValue({
         id: "upload-123",
-        user_id: "1",
+        user: { id: "1" },
         state: "available",
       }),
     createCollection: vi
@@ -147,13 +123,18 @@ function makeMockClient(): Pick<
       .mockResolvedValue({
         id: "999",
         slug: "test-slug",
-        revision_id: "rev-1",
+        revision_id: "1",
         revision_number: 1,
         revision_status: "draft",
       }),
     createCollectionRevision: vi
       .fn<NexusV3Client["createCollectionRevision"]>()
-      .mockResolvedValue({ id: "rev-2", collection_id: "888" }),
+      .mockResolvedValue({
+        id: "42",
+        collection_id: "888",
+        revision_number: 2,
+        revision_status: "draft",
+      }),
   };
 }
 
@@ -170,17 +151,9 @@ describe("submitCollectionV3", () => {
   describe("upload path selection", () => {
     it("uses single-part upload for small files", async () => {
       mockStat.mockResolvedValue({ size: SMALL_FILE_SIZE });
-      const nexus = makeNexus([
-        {
-          id: 999,
-          slug: "test",
-          currentRevision: { id: 1, revisionNumber: 0, status: "draft" },
-        },
-      ]);
 
       await submitCollectionV3(
         makeState(),
-        nexus,
         makeManifest(),
         "/tmp/small.zip",
         undefined,
@@ -197,17 +170,9 @@ describe("submitCollectionV3", () => {
 
     it("uses multipart upload for large files", async () => {
       mockStat.mockResolvedValue({ size: LARGE_FILE_SIZE });
-      const nexus = makeNexus([
-        {
-          id: 999,
-          slug: "test",
-          currentRevision: { id: 1, revisionNumber: 0, status: "draft" },
-        },
-      ]);
 
       await submitCollectionV3(
         makeState(),
-        nexus,
         makeManifest(),
         "/tmp/large.zip",
         undefined,
@@ -223,19 +188,10 @@ describe("submitCollectionV3", () => {
     });
   });
 
-  describe("collection creation", () => {
-    it("creates a new collection when collectionId is undefined", async () => {
-      const nexus = makeNexus([
-        {
-          id: 999,
-          slug: "test-slug",
-          currentRevision: { id: 1, revisionNumber: 0, status: "draft" },
-        },
-      ]);
-
+  describe("new collection", () => {
+    it("returns id, slug, revisionNumber, and revisionStatus from V3 response", async () => {
       const result = await submitCollectionV3(
         makeState(),
-        nexus,
         makeManifest(),
         "/tmp/file.zip",
         undefined,
@@ -249,24 +205,16 @@ describe("submitCollectionV3", () => {
       expect(result.success).toBe(true);
       expect(result.collection?.id).toBe(999);
       expect(result.collection?.slug).toBe("test-slug");
+      expect(result.revision?.id).toBe(1);
+      expect(result.revision?.revisionNumber).toBe(1);
+      expect(result.revision?.revisionStatus).toBe("draft");
     });
+  });
 
-    it("creates a revision when collectionId is provided", async () => {
-      const nexus = makeNexus([
-        {
-          id: 888,
-          slug: "existing-slug",
-          currentRevision: {
-            id: 2,
-            revisionNumber: 1,
-            status: "under_moderation",
-          },
-        },
-      ]);
-
+  describe("revision update", () => {
+    it("returns id, revisionNumber, and revisionStatus from V3 response (slug unchanged)", async () => {
       const result = await submitCollectionV3(
         makeState(),
-        nexus,
         makeManifest(),
         "/tmp/file.zip",
         888,
@@ -280,89 +228,18 @@ describe("submitCollectionV3", () => {
       expect(mockClient.createCollection).not.toHaveBeenCalled();
       expect(result.success).toBe(true);
       expect(result.collection?.id).toBe(888);
-      expect(result.collection?.slug).toBe("existing-slug");
-    });
-  });
-
-  describe("fetchCollectionDetails", () => {
-    it("returns slug and revision details from GraphQL", async () => {
-      const collections = [
-        {
-          id: 999,
-          slug: "my-collection",
-          currentRevision: {
-            id: 42,
-            revisionNumber: 3,
-            status: "published",
-          },
-        },
-      ];
-      const getMyCollections = makeGetMyCollections(collections);
-      const nexus = { getMyCollections } as unknown as Nexus;
-
-      const result = await submitCollectionV3(
-        makeState(),
-        nexus,
-        makeManifest(),
-        "/tmp/file.zip",
-        undefined,
-      );
-
-      expect(getMyCollections).toHaveBeenCalled();
-      expect(result.collection?.slug).toBe("my-collection");
-      expect(result.revision?.id).toBe(42);
-      expect(result.revision?.revisionNumber).toBe(3);
-      expect(result.revision?.revisionStatus).toBe("published");
-    });
-
-    it("returns partial result when collection not found in GraphQL", async () => {
-      const nexus = makeNexus([]); // empty — collection not found
-
-      const result = await submitCollectionV3(
-        makeState(),
-        nexus,
-        makeManifest(),
-        "/tmp/file.zip",
-        undefined,
-      );
-
-      expect(result.success).toBe(true);
-      expect(result.collection?.id).toBe(999);
+      // slug intentionally not returned — caller keeps previously stored value
       expect(result.collection?.slug).toBeUndefined();
-      expect(result.revision).toBeUndefined();
-    });
-
-    it("handles collection with no currentRevision", async () => {
-      const nexus = makeNexus([
-        { id: 999, slug: "test", currentRevision: undefined },
-      ]);
-
-      const result = await submitCollectionV3(
-        makeState(),
-        nexus,
-        makeManifest(),
-        "/tmp/file.zip",
-        undefined,
-      );
-
-      expect(result.collection?.slug).toBe("test");
-      expect(result.revision).toBeUndefined();
+      expect(result.revision?.id).toBe(42);
+      expect(result.revision?.revisionNumber).toBe(2);
+      expect(result.revision?.revisionStatus).toBe("draft");
     });
   });
 
   describe("upload lifecycle", () => {
     it("calls finalise and poll after upload", async () => {
-      const nexus = makeNexus([
-        {
-          id: 999,
-          slug: "test",
-          currentRevision: { id: 1, revisionNumber: 0, status: "draft" },
-        },
-      ]);
-
       await submitCollectionV3(
         makeState(),
-        nexus,
         makeManifest(),
         "/tmp/file.zip",
         undefined,
@@ -379,7 +256,6 @@ describe("submitCollectionV3", () => {
       await expect(
         submitCollectionV3(
           makeState(),
-          makeNexus(),
           makeManifest(),
           "/tmp/file.zip",
           undefined,

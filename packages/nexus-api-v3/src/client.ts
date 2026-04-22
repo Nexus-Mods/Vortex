@@ -1,4 +1,4 @@
-import createClient from "openapi-fetch";
+import createClient, { type Middleware } from "openapi-fetch";
 
 import type { paths } from "./generated/nexus-api-v3";
 import { V3ApiError } from "./errors";
@@ -7,6 +7,7 @@ export interface NexusV3ClientOptions {
   baseUrl: string;
   apiKey?: string;
   bearerToken?: string;
+  middleware?: Middleware[];
 }
 
 export type NexusV3Client = ReturnType<typeof createNexusV3Client>;
@@ -26,6 +27,10 @@ export function createNexusV3Client(options: NexusV3ClientOptions) {
     baseUrl: options.baseUrl,
     headers,
   });
+
+  for (const mw of options.middleware ?? []) {
+    client.use(mw);
+  }
 
   // Wrap the client methods to throw V3ApiError on error responses
   return {

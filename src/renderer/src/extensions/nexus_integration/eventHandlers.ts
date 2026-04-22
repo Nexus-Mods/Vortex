@@ -88,6 +88,7 @@ import {
   updateKey,
   updateToken,
 } from "./util";
+import { submitCollectionV3 } from "./util_v3/submitCollectionV3";
 import { findLatestUpdate, retrieveModInfo } from "./util/checkModsVersion";
 import {
   nexusGameId,
@@ -103,7 +104,6 @@ import {
 } from "./util/graphQueries";
 import submitFeedback from "./util/submitFeedback";
 import { makeModUID } from "./util/UIDs";
-import { submitCollectionV3 } from "./util_v3/submitCollectionV3";
 
 export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
   const state: IState = api.store.getState();
@@ -1344,9 +1344,8 @@ export function onSubmitCollection(api: IExtensionApi) {
     collectionId: number,
     callback: (err: Error, response?: any) => void,
   ) => {
-    const state = api.getState();
     submitCollectionV3(
-      state,
+      api.getState(),
       collectionInfo,
       assetFilePath,
       collectionId || undefined,

@@ -38,14 +38,21 @@ function toV3ManifestMod(
   };
 }
 
+function emptyToNull(value: string | undefined | null): string | null {
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
+  return value;
+}
+
 function toV3Manifest(manifest: ICollectionManifest): V3CollectionManifest {
   return {
     info: {
       author: manifest.info.author,
-      author_url: manifest.info.authorUrl ?? null,
+      author_url: emptyToNull(manifest.info.authorUrl),
       name: manifest.info.name,
-      description: manifest.info.description ?? null,
-      summary: manifest.info.summary ?? null,
+      description: emptyToNull(manifest.info.description),
+      summary: emptyToNull(manifest.info.summary),
       domain_name: manifest.info.domainName,
       game_versions: manifest.info.gameVersions ?? null,
     },

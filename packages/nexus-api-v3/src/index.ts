@@ -5,3 +5,4 @@ export {
   type NexusV3ClientOptions,
 } from "./client";
 export { V3ApiError } from "./errors";
+export type { Middleware as NexusV3Middleware } from "openapi-fetch";

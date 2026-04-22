@@ -1,4 +1,3 @@
-import type Nexus from "@nexusmods/nexus-api";
 import type {
   ICollectionManifest,
   ICreateCollectionResult,
@@ -9,7 +8,7 @@ import * as fs from "fs-extra";
 
 import type { IState } from "../../../types/IState";
 
-import { log } from "../../../util/log";
+import { log } from "../../../logging";
 import { MULTIPART_THRESHOLD, NEXUS_V3_BASE_URL } from "../constants";
 import { hasConfidentialWithNexus } from "../guards";
 import { apiKey as apiKeySelector } from "../selectors";
@@ -26,7 +25,7 @@ function createClientFromState(state: IState) {
   }
 
   const nexusAccount = state.confidential.account.nexus;
-  const apiKey = apiKeySelector(state);
+  const apiKey: string | undefined = apiKeySelector(state);
   const oauthCredentials = nexusAccount.OAuthCredentials as
     | { token?: string }
     | undefined;
@@ -39,56 +38,8 @@ function createClientFromState(state: IState) {
   });
 }
 
-async function fetchCollectionDetails(
-  nexus: Nexus,
-  collectionId: number,
-): Promise<ICreateCollectionResult> {
-  log("debug", "calling getMyCollections", { collectionId });
-  const collections = await nexus.getMyCollections(
-    {
-      id: true,
-      slug: true,
-      currentRevision: {
-        id: true,
-        revisionNumber: true,
-        status: true,
-      },
-    },
-    undefined,
-    100,
-    0,
-  );
-  log("debug", "getMyCollections returned", {
-    count: collections.length,
-    ids: collections.map((c) => c.id),
-  });
-
-  const collection = collections.find((c) => c.id === collectionId);
-  if (collection) {
-    return {
-      collection: { id: collection.id, slug: collection.slug },
-      revision: collection.currentRevision
-        ? {
-            id: collection.currentRevision.id,
-            revisionNumber: collection.currentRevision.revisionNumber,
-            revisionStatus: collection.currentRevision.status,
-          }
-        : undefined,
-      success: true,
-    };
-  }
-
-  log("warn", "collection not found in getMyCollections", { collectionId });
-  return {
-    collection: { id: collectionId },
-    revision: undefined,
-    success: true,
-  };
-}
-
 export async function submitCollectionV3(
   state: IState,
-  nexus: Nexus,
   collectionInfo: ICollectionManifest,
   assetFilePath: string,
   collectionId: number | undefined,
@@ -117,36 +68,39 @@ export async function submitCollectionV3(
     await uploadMultipart(multipart, assetFilePath, fileSize);
   }
 
-  // Step 2: Finalise upload
-  log("debug", "finalising upload", { uploadId });
+  // Step 2: Finalise and wait for availability
   await client.finaliseUpload(uploadId);
-
-  // Step 3: Poll until available
-  log("debug", "polling upload availability", { uploadId });
   await pollUploadAvailable(client, uploadId);
-  log("debug", "upload available", { uploadId });
 
-  // Step 4: Create collection or revision
+  // Step 3: Create collection or revision
   const payload = toV3CollectionPayload(collectionInfo);
 
-  let createdCollectionId: number;
-
   if (collectionId === undefined) {
-    log("debug", "creating new collection", { uploadId });
     const result = await client.createCollection(uploadId, payload);
-    createdCollectionId = Number(result.id);
-    log("info", "collection created", { collectionId: createdCollectionId });
-  } else {
-    log("debug", "creating new revision", { uploadId, collectionId });
-    await client.createCollectionRevision(
-      String(collectionId),
-      uploadId,
-      payload,
-    );
-    createdCollectionId = collectionId;
-    log("info", "revision created", { collectionId: createdCollectionId });
+    return {
+      collection: { id: Number(result.id), slug: result.slug },
+      revision: {
+        id: Number(result.revision_id),
+        revisionNumber: result.revision_number,
+        revisionStatus: result.revision_status,
+      },
+      success: true,
+    };
   }
 
-  // Step 5: Fetch full details via GraphQL (slug, revisionNumber, etc.)
-  return fetchCollectionDetails(nexus, createdCollectionId);
+  const revisionResult = await client.createCollectionRevision(
+    String(collectionId),
+    uploadId,
+    payload,
+  );
+  // Slug is unchanged from the previous upload (caller already has it stored).
+  return {
+    collection: { id: collectionId },
+    revision: {
+      id: Number(revisionResult.id),
+      revisionNumber: revisionResult.revision_number,
+      revisionStatus: revisionResult.revision_status,
+    },
+    success: true,
+  };
 }

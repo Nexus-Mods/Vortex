@@ -339,7 +339,10 @@ export async function doExportToAPI(
         ),
       );
       collectionId = result.collection.id;
-      collectionSlug = result.collection.slug;
+      // V3 revision endpoint omits slug (it never changes), so fall back to
+      // the previously stored slug on the mod.
+      collectionSlug =
+        result.collection.slug ?? mod.attributes?.collectionSlug;
       api.store.dispatch(
         actions.setModAttribute(gameId, modId, "collectionId", collectionId),
       );
@@ -348,15 +351,14 @@ export async function doExportToAPI(
           gameId,
           modId,
           "collectionSlug",
-          result.collection.slug,
+          collectionSlug,
         ),
       );
       api.store.dispatch(
         actions.setModAttribute(gameId, modId, "source", "nexus"),
       );
-      const revisionId = result.revision?.id ?? result["revisionId"];
-      revisionNumber =
-        result.revision?.revisionNumber ?? result["revisionNumber"];
+      const revisionId = result.revision?.id;
+      revisionNumber = result.revision?.revisionNumber;
       api.store.dispatch(
         actions.setModAttribute(gameId, modId, "revisionId", revisionId),
       );
