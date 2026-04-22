@@ -11,7 +11,6 @@ import { doExportToAPI } from "../collectionExport";
 import { ICollectionModRuleEx } from "../types/ICollection";
 import { IEntryEx } from "../types/IEntryEx";
 import { IModEx } from "../types/IModEx";
-import { fileMD5 } from "vortexmt";
 import turbowalk, { IEntry, IWalkOptions } from "turbowalk";
 import { TOS_URL } from "../constants";
 
@@ -146,14 +145,7 @@ export function calculateCollectionSize(mods: {
 }
 
 export async function fileMD5Async(fileName: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    fileMD5(
-      fileName,
-      (err: Error, result: string) =>
-        err !== null ? reject(err) : resolve(result),
-      () => null,
-    );
-  });
+  return util.fileMD5(fileName);
 }
 
 export async function walkPath(
