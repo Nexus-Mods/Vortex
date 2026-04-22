@@ -1342,6 +1342,7 @@ export function onSubmitCollection(api: IExtensionApi, nexus: Nexus) {
     collectionInfo: ICollectionManifest,
     assetFilePath: string,
     collectionId: number,
+    signal: AbortSignal | undefined,
     callback: (err: Error, response?: any) => void,
   ) => {
     submitCollectionV3(
@@ -1350,6 +1351,7 @@ export function onSubmitCollection(api: IExtensionApi, nexus: Nexus) {
       collectionInfo,
       assetFilePath,
       collectionId || undefined,
+      signal,
     )
       .then((response) => callback(null, response))
       .catch((err) => callback(unknownToError(err)));

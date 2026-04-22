@@ -281,7 +281,9 @@ export async function doExportToAPI(
   const state: types.IState = api.store.getState();
   const mod = state.persistent.mods[gameId][modId];
 
-  const { progress, progressEnd } = makeProgressFunction(api);
+  const { progress, progressEnd, signal } = makeProgressFunction(api, {
+    cancellable: true,
+  });
 
   const errors: Array<{ message: string; replace: any }> = [];
 
@@ -335,6 +337,7 @@ export async function doExportToAPI(
           filterInfo(info),
           filePath,
           collectionId,
+          signal,
           cb,
         ),
       );
@@ -403,6 +406,9 @@ export async function doExportToAPI(
     progressEnd();
   } catch (err) {
     progressEnd();
+    if (err instanceof util.UserCanceled) {
+      throw err;
+    }
     if (err.name === "ModFileNotFound") {
       const file = info.mods.find((iter) => iter.source.fileId === err.fileId);
       api.sendNotification({

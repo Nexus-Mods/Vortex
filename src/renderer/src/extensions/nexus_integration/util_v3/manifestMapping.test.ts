@@ -136,8 +136,10 @@ describe("toV3CollectionPayload", () => {
     expect(info.game_versions).toBeNull();
 
     const source = payload.collection_manifest.mods[0].source;
-    expect(source.mod_id).toBeNull();
-    expect(source.file_id).toBeNull();
+    // mod_id / file_id fall back to empty strings — V3 backend rejects
+    // both null and missing fields, requires a String
+    expect(source.mod_id).toBe("");
+    expect(source.file_id).toBe("");
     expect(source.md5).toBeNull();
     expect(source.file_size).toBeNull();
   });

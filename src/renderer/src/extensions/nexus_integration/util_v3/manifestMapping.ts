@@ -10,10 +10,15 @@ type V3CollectionManifestModSource =
 function toV3ManifestModSource(
   source: ICollectionManifest["mods"][number]["source"],
 ): V3CollectionManifestModSource {
+  // NOTE: The V3 OpenAPI spec marks mod_id/file_id as optional (mod_id?: string),
+  // but the backend's Sorbet runtime treats them as required non-nilable strings.
+  // Omitting the field raises "Can't set mod_id to nil - need a String" and
+  // sending null raises "does not allow null values". Send empty strings as a
+  // workaround for non-nexus sources until the backend spec is fixed.
   return {
     type: source.type satisfies V3CollectionManifestModSource["type"],
-    mod_id: source.modId?.toString() ?? null,
-    file_id: source.fileId?.toString() ?? null,
+    mod_id: source.modId?.toString() ?? "",
+    file_id: source.fileId?.toString() ?? "",
     md5: source.md5 ?? null,
     file_size: source.fileSize ?? null,
     update_policy:
