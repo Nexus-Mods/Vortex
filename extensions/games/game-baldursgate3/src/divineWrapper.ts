@@ -6,50 +6,55 @@ import { GAME_ID } from './common';
 import { DivineAction, IDivineOptions, IDivineOutput } from './types';
 import { getLatestLSLibMod, logError } from './util';
 
-import * as nodeUtil from 'util';
-import * as child_process from 'child_process';
+import {
+  DEFAULT_TIMEOUT_MS,
+  DivineAborted,
+  DivineMissingDotNet,
+  IDivineRunOptions,
+  parsePackageListOutput,
+  runDivineCore,
+} from './divineCore';
 
-const exec = nodeUtil.promisify(child_process.exec);
+// Run 5 concurrent Divine processes - retry each process 5 times if it fails,
+// but do not retry aborted operations — they should fail fast.
+const concurrencyLimiter: util.ConcurrencyLimiter = new util.ConcurrencyLimiter(
+  5,
+  (err: Error) => !(err instanceof DivineAborted));
 
-// Run 5 concurrent Divine processes - retry each process 5 times if it fails.
-const concurrencyLimiter: util.ConcurrencyLimiter = new util.ConcurrencyLimiter(5, () => true);
+// Module-level AbortController lets callers cancel all in-flight and queued
+// divine operations at once (e.g. when switching games). Replaced after each
+// abort so subsequent calls run normally.
+let abortController = new AbortController();
 
-// This is probably overkill - mod extraction shouldn't take
-//  more than a few seconds.
-const TIMEOUT_MS = 10000;
-
-export class DivineExecMissing extends Error {
-  constructor() {
-    super('Divine executable is missing');
-    this.name = 'DivineExecMissing';
-  }
+export function abortDivineOperations(): void {
+  abortController.abort();
+  abortController = new AbortController();
+  concurrencyLimiter.clearQueue();
 }
 
-export class DivineMissingDotNet extends Error {
-  constructor() {
-    super('LSLib requires .NET 8 Desktop Runtime to be installed.');
-    this.name = 'DivineMissingDotNet';
+function resolveExePath(api: types.IExtensionApi): string {
+  const state = api.getState();
+  const stagingFolder = selectors.installPathForGame(state, GAME_ID);
+  const lsLib = getLatestLSLibMod(api);
+  if (lsLib === undefined) {
+    throw new Error('LSLib/Divine tool is missing');
   }
+  return path.join(stagingFolder, lsLib.installationPath, 'tools', 'divine.exe');
 }
-
-export class DivineTimedOut extends Error {
-  constructor() {
-    super('Divine process timed out');
-    this.name = 'DivineTimedOut';
-  }
-}
-
-const execOpts: child_process.ExecOptions = {
-  timeout: TIMEOUT_MS,
-};
 
 async function runDivine(api: types.IExtensionApi,
                          action: DivineAction,
                          divineOpts: IDivineOptions)
                          : Promise<IDivineOutput> {
+  // Capture the signal at enqueue time. If the controller is replaced by
+  // abortDivineOperations() while this call is queued or retrying, the
+  // captured signal stays aborted and every attempt fails fast.
+  const signal = abortController.signal;
+  const runOpts: IDivineRunOptions = { signal, timeoutMs: DEFAULT_TIMEOUT_MS };
   return new Promise((resolve, reject) => concurrencyLimiter.do(async () => {
     try {
-      const result = await divine(api, action, divineOpts, execOpts);
+      const exePath = resolveExePath(api);
+      const result = await runDivineCore(exePath, action, divineOpts, runOpts);
       return resolve(result);
     } catch (err) {
       return reject(err);
@@ -57,102 +62,34 @@ async function runDivine(api: types.IExtensionApi,
   }));
 }
 
-async function divine(api: types.IExtensionApi,
-  action: DivineAction,
-  divineOpts: IDivineOptions,
-  execOpts: child_process.ExecOptions): Promise<IDivineOutput> {
-  return new Promise<IDivineOutput>(async (resolve, reject) => {
-    const state = api.getState();
-    const stagingFolder = selectors.installPathForGame(state, GAME_ID);
-    const lsLib: types.IMod = getLatestLSLibMod(api);
-    if (lsLib === undefined) {
-      const err = new Error('LSLib/Divine tool is missing');
-      err['attachLogOnReport'] = false;
-      return reject(err);
-    }
-    const exe = path.join(stagingFolder, lsLib.installationPath, 'tools', 'divine.exe');
-    const args = [
-      '--action', action,
-      '--source', `"${divineOpts.source}"`,
-      '--game', 'bg3',
-    ];
-
-    if (divineOpts.loglevel !== undefined) {
-      args.push('--loglevel', divineOpts.loglevel);
-    } else {
-      args.push('--loglevel', 'off');
-    }
-
-    if (divineOpts.destination !== undefined) {
-      args.push('--destination', `"${divineOpts.destination}"`);
-    }
-    if (divineOpts.expression !== undefined) {
-      args.push('--expression', `"${divineOpts.expression}"`);
-    }
-
-    try {
-      const command = `"${exe}" ${args.join(' ')}`;
-      const { stdout, stderr } = await exec(command, execOpts);
-      if (!!stderr) {
-        return reject(new Error(`divine.exe failed: ${stderr}`));
-      }
-      if (!stdout && action !== 'list-package') {
-        return resolve({ stdout: '', returnCode: 2 })
-      }      
-      const stdoutStr = typeof stdout === 'string' ? stdout : stdout?.toString?.() ?? '';
-      if (['error', 'fatal'].some(x => stdoutStr.toLowerCase().startsWith(x))) {
-        // Really?
-        return reject(new Error(`divine.exe failed: ${stdoutStr}`));
-      } else  {
-        return resolve({ stdout: stdoutStr, returnCode: 0 });
-      }
-    } catch (err) {
-      if (err.code === 'ENOENT') {
-        return reject(new DivineExecMissing());
-      }
-
-      if(err.message.includes('You must install or update .NET')) {
-        return reject(new DivineMissingDotNet());
-      }
-
-      const error = new Error(`divine.exe failed: ${err.message}`);
-      error['attachLogOnReport'] = true;
-      return reject(error);
-    }
-  });
-}
-
-export async function extractPak(api: types.IExtensionApi, pakPath, destPath, pattern) {
+export async function extractPak(api: types.IExtensionApi, pakPath: string, destPath: string, pattern: string): Promise<IDivineOutput> {
   return runDivine(api, 'extract-package',
     { source: pakPath, destination: destPath, expression: pattern });
 }
 
 export async function listPackage(api: types.IExtensionApi, pakPath: string): Promise<string[]> {
-  let res;
+  let res: IDivineOutput | undefined;
   try {
     res = await runDivine(api, 'list-package', { source: pakPath, loglevel: 'off' });
-  } catch (error) {    
+  } catch (error) {
+    if (error instanceof DivineAborted) {
+      throw error;
+    }
     logError(`listPackage caught error: `, { error });
-    //log('debug', 'listPackage error', error.message);
 
-    if(error instanceof DivineMissingDotNet) {  
+    if (error instanceof DivineMissingDotNet) {
       log('error', 'Missing .NET', error.message);
       api.dismissNotification('bg3-reading-paks-activity');
-      api.showErrorNotification('LSLib requires .NET 8', 
+      api.showErrorNotification('LSLib requires .NET 8',
       'LSLib requires .NET 8 Desktop Runtime to be installed.' +
       '[br][/br][br][/br]' +
-      '[list=1][*]Download and Install [url=https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-desktop-8.0.3-windows-x64-installer].NET 8.0 Desktop Runtime from Microsoft[/url]'  + 
-      '[*]Close Vortex' + 
-      '[*]Restart Computer' + 
+      '[list=1][*]Download and Install [url=https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-desktop-8.0.3-windows-x64-installer].NET 8.0 Desktop Runtime from Microsoft[/url]'  +
+      '[*]Close Vortex' +
+      '[*]Restart Computer' +
       '[*]Open Vortex[/list]',
        { id: 'bg3-dotnet-error', allowReport: false, isBBCode: true });
     }
   }
 
-  //logDebug(`listPackage res=`, res);
-  const lines = (res?.stdout || '').split('\n').map(line => line.trim()).filter(line => line.length !== 0);
-
-  //logDebug(`listPackage lines=`, lines);
-
-  return lines;
+  return parsePackageListOutput(res?.stdout ?? '');
 }

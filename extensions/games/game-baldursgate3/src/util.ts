@@ -340,8 +340,8 @@ export async function extractPakInfoImpl(api: types.IExtensionApi, pakPath: stri
 export async function extractMeta(api: types.IExtensionApi, pakPath: string, mod: types.IMod): Promise<IModSettings> {
   const metaPath = path.join(util.getVortexPath('temp'), 'lsmeta', shortid());
   await fs.ensureDirAsync(metaPath);
-  await extractPak(api, pakPath, metaPath, '*/meta.lsx');
   try {
+    await extractPak(api, pakPath, metaPath, '*/meta.lsx');
     // the meta.lsx may be in a subdirectory. There is probably a pattern here
     // but we'll just use it from wherever
     let metaLSXPath: string = path.join(metaPath, 'meta.lsx');
