@@ -3,10 +3,9 @@ import { ISavegame } from "../types/ISavegame";
 import { CORRUPTED_NAME, MAX_SAVEGAMES } from "../constants";
 
 import Promise from "bluebird";
-import * as savegameLib from "../savegame";
+import { parseSaveGame } from "../savegame/GamebryoSaveGame";
 import * as path from "path";
 import turbowalk, { IEntry } from "turbowalk";
-import { fs } from "vortex-api";
 
 // TODO essentially disables cache clearing since we can as many screenshots as the max of
 // savegames we will display.
@@ -115,73 +114,58 @@ export function loadSaveGame(
   tries: number = 2,
 ): Promise<void> {
   return new Promise<void>((resolve, reject) => {
+    const id = path.basename(filePath);
     try {
-      savegameLib.create(filePath, !full, (err, sg) => {
-        const id = path.basename(filePath);
-        if (err !== null) {
-          onAddSavegame({
-            id,
-            filePath,
-            fileSize,
-            attributes: {
-              id: 0,
-              name: CORRUPTED_NAME,
-              location: "N/A",
-              playTime: "N/A",
-              level: 0,
-              filename: id,
-              plugins: [],
-              loadedTime: Date.now(),
-              corrupted: true,
-            },
-          });
-          return reject(err);
-        }
-        if (full) {
-          screenshotCache[id] = {
-            lastAccess: Date.now(),
-            data: new Uint8ClampedArray(sg.screenshot),
-          };
-        }
-        const save: ISavegame = {
-          id,
-          filePath,
-          fileSize,
-          attributes: {
-            id: sg.saveNumber,
-            name: sg.characterName,
-            level: sg.characterLevel,
-            filename: id,
-            location: sg.location,
-            plugins: sg.plugins,
-            screenshot: full
-              ? {
-                  width: sg.screenshotSize.width,
-                  height: sg.screenshotSize.height,
-                }
-              : undefined,
-            loadedTime: Date.now(),
-            creationtime: timestampFormat(sg.creationTime),
-            playTime: sg.playTime,
-          },
+      const sg = parseSaveGame(filePath, !full);
+      if (full) {
+        screenshotCache[id] = {
+          lastAccess: Date.now(),
+          data: new Uint8ClampedArray(sg.screenshot),
         };
-
-        onAddSavegame(save);
-        resolve();
-      });
-    } catch (err) {
-      if (err.message.startsWith("failed to open")) {
-        // error messages from the lib aren't very enlightening unfortunately.
-        // it could be a temporary problem (i.e. the game currently writing the
-        // save and thus it would be locked so try again).
-        // this opens the file with a js function, if that fails too we get a
-        // better error message we may be able to handle
-        fs.openAsync(filePath, "r")
-          .then(() => reject(err))
-          .catch((fserr) => reject(fserr));
-      } else {
-        reject(err);
       }
+      const save: ISavegame = {
+        id,
+        filePath,
+        fileSize,
+        attributes: {
+          id: sg.saveNumber,
+          name: sg.characterName,
+          level: sg.characterLevel,
+          filename: id,
+          location: sg.location,
+          plugins: sg.plugins,
+          screenshot: full
+            ? {
+                width: sg.screenshotSize.width,
+                height: sg.screenshotSize.height,
+              }
+            : undefined,
+          loadedTime: Date.now(),
+          creationtime: timestampFormat(sg.creationTime),
+          playTime: sg.playTime,
+        },
+      };
+
+      onAddSavegame(save);
+      resolve();
+    } catch (err) {
+      onAddSavegame({
+        id,
+        filePath,
+        fileSize,
+        attributes: {
+          id: 0,
+          name: CORRUPTED_NAME,
+          location: "N/A",
+          playTime: "N/A",
+          level: 0,
+          filename: id,
+          plugins: [],
+          loadedTime: Date.now(),
+          corrupted: true,
+        },
+      });
+      reject(err);
     }
   })
     .then(() => maintainCache())
