@@ -448,14 +448,8 @@ export interface DownloaderApi {
   /** Pauses an active download and returns a checkpoint for later resumption. */
   pause(downloadId: string): Promise<WireDownloadCheckpoint>;
 
-  /**
-   * Resumes a download from a checkpoint. The caller must generate `collationId`
-   * and register any resolve handler before calling this.
-   */
-  resume(
-    checkpoint: WireDownloadCheckpoint,
-    collationId: number,
-  ): Promise<void>;
+  /** Resumes a download from a checkpoint. */
+  resume(checkpoint: WireDownloadCheckpoint): Promise<void>;
 
   /** Cancels an active download. */
   cancel(downloadId: string): Promise<void>;

@@ -305,11 +305,8 @@ export class IPCDownloadAdapter {
         throw new Error(`No checkpoint stored for download ${downloadId}`);
       }
 
-      const collationId = this.#nextCollationId++;
-      this.#pending.set(collationId, { encodedUrl: state.encodedUrl });
-
-      log("debug", "resuming download", { downloadId, collationId });
-      await window.api.downloader.resume(state.checkpoint, collationId);
+      log("debug", "resuming download", { downloadId });
+      await window.api.downloader.resume(state.checkpoint);
       callback?.(null, downloadId);
     } catch (err) {
       callback?.(unknownToError(err));
