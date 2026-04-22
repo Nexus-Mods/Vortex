@@ -1,6 +1,7 @@
-import { parseSaveGame, SaveGameData, Dimensions } from "./GamebryoSaveGame";
+import type { Dimensions, SaveGameData } from "./GamebryoSaveGame";
+import { parseSaveGame } from "./GamebryoSaveGame";
 
-export { SaveGameData, Dimensions };
+export type { Dimensions, SaveGameData };
 
 /**
  * Async factory function matching the existing native module's API:

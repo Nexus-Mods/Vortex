@@ -2,7 +2,8 @@ import { describe, it, expect } from "vitest";
 import * as fs from "fs";
 import * as path from "path";
 import * as crypto from "crypto";
-import { parseSaveGame, SaveGameData } from "../src/savegame/GamebryoSaveGame";
+import type { SaveGameData } from "../src/savegame/GamebryoSaveGame";
+import { parseSaveGame } from "../src/savegame/GamebryoSaveGame";
 
 const SAVES_DIR = path.join(__dirname, "saves");
 const EXPECTED_DIR = path.join(__dirname, "expected");
