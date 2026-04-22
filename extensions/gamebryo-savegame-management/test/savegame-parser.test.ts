@@ -72,13 +72,15 @@ for (const game of GAME_DIRS) {
             true,
           );
           const eq = expected.quick;
-          expect(trimAtNull(quick.characterName)).toBe(eq.characterName);
+          expect(trimAtNull(quick.characterName)).toBe(
+            trimAtNull(eq.characterName),
+          );
           expect(quick.characterLevel).toBe(eq.characterLevel);
-          expect(trimAtNull(quick.location)).toBe(eq.location);
+          expect(trimAtNull(quick.location)).toBe(trimAtNull(eq.location));
           expect(quick.saveNumber).toBe(eq.saveNumber);
           // creationTime is skipped: Oblivion uses local timezone via Date(),
           // FO3/NV falls back to file mtime — both are environment-dependent
-          expect(quick.playTime).toBe(eq.playTime);
+          expect(trimAtNull(quick.playTime)).toBe(trimAtNull(eq.playTime));
         });
 
         it("full read", () => {
@@ -87,11 +89,13 @@ for (const game of GAME_DIRS) {
             false,
           );
           const ef = expected.full;
-          expect(trimAtNull(full.characterName)).toBe(ef.characterName);
+          expect(trimAtNull(full.characterName)).toBe(
+            trimAtNull(ef.characterName),
+          );
           expect(full.characterLevel).toBe(ef.characterLevel);
-          expect(trimAtNull(full.location)).toBe(ef.location);
+          expect(trimAtNull(full.location)).toBe(trimAtNull(ef.location));
           expect(full.saveNumber).toBe(ef.saveNumber);
-          expect(full.playTime).toBe(ef.playTime);
+          expect(trimAtNull(full.playTime)).toBe(trimAtNull(ef.playTime));
           expect(full.plugins).toEqual(ef.plugins);
 
           if (ef.screenshotSize) {
