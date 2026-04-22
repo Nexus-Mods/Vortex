@@ -407,6 +407,17 @@ export class IPCDownloadAdapter {
         // Notify listeners that the download completed. InstallManager listens
         // for this to trigger auto-install when automation is enabled.
         this.#api.events.emit("did-finish-download", downloadId, "finished");
+
+        const reduxState = this.#api.getState();
+        const download = reduxState.persistent.downloads.files?.[downloadId];
+        // Trigger auto-install if the user has automation enabled or if this
+        // download was started as an update (e.g. from the mod management view).
+        if (
+          reduxState.settings.automation?.install ||
+          download?.modInfo?.["startedAsUpdate"] === true
+        ) {
+          this.#api.events.emit("start-install-download", downloadId);
+        }
       } else if (state.status === "canceled") {
         // User canceled - remove the record entirely, no file to keep.
         this.#api.store.dispatch(removeDownload(downloadId));
