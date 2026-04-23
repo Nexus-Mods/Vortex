@@ -2,6 +2,7 @@ export type {
   DirectoryStatus,
   FileStatus,
   FileSystemErrorCode,
+  IFileSystem,
   StatResult,
   Status,
   StatusTime,
@@ -12,7 +13,6 @@ export type {
   FileSystem as BaseFileSystem,
   FileSystemBackend as BaseFileSystemBackend,
 } from "../browser/filesystem";
-
 export { FileSystemError } from "../browser/filesystem";
 
 export type { Pattern } from "../browser/matcher";
@@ -25,6 +25,7 @@ export type {
   PathComponent,
   PathProvider,
   PathResolver,
+  PathResolverRegistry,
   OSPathProvider,
   OSPathBase,
   RelativePath,

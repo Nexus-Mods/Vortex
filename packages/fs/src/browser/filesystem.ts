@@ -2,6 +2,16 @@ import type { Pattern } from "./matcher";
 import type { QualifiedPath, ResolvedPath } from "./paths";
 
 /**
+ * Interface-only alias for {@link FileSystem}. The `I`-prefixed name
+ * matches the convention used by `@vortex/adaptor-api` service
+ * contracts, so a contract file can declare the host filesystem
+ * service with `ServiceRegistry["vortex:host/filesystem"]: IFileSystem`
+ * without introducing a parallel duplicate interface.
+ *
+ * @public */
+export type IFileSystem = FileSystem;
+
+/**
  * Filesystem operations.
  *
  * @public */

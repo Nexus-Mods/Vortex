@@ -1,6 +1,6 @@
-import type { IMessageHandler } from "@vortex/adaptor-api";
 import type { IPingService } from "@vortex/adaptor-api/contracts/ping";
 import type { StorePathSnapshot } from "@vortex/adaptor-api/stores/lib";
+import type { IFileSystem, PathResolver } from "@vortex/fs";
 import type { Serializable } from "@vortex/shared/ipc";
 
 import { Base, OS, Store } from "@vortex/adaptor-api/stores/lib";
@@ -10,11 +10,18 @@ import { homedir, tmpdir } from "node:os";
 import * as path from "node:path";
 import { posix as pathPosix } from "node:path";
 
+import { NodeFileSystemBackendImpl } from "./filesystem/backend";
+import { NodeFileSystemImpl } from "./filesystem/filesystem-impl";
+import { createFileSystemServiceHandler } from "./filesystem/fs-service";
+import { PathResolverRegistryImpl } from "./filesystem/path-resolver-registry";
+import { LinuxPathProviderImpl } from "./filesystem/paths.linux";
+import { WindowsPathProviderImpl } from "./filesystem/paths.windows";
 import { getVortexPath } from "./getVortexPath";
 import { betterIpcMain } from "./ipc";
 import { log } from "./logging";
 import {
   createAdaptorHost,
+  type HostService,
   type IAdaptorHost,
   type ILoadedAdaptor,
 } from "./node-adaptor-host/loader";
@@ -23,7 +30,7 @@ import {
 const INFRA_PACKAGES = new Set(["adaptor-api"]);
 
 // Host-provided services
-const HOST_SERVICES: Record<string, IMessageHandler> = {
+const HOST_SERVICES: Record<string, HostService> = {
   "vortex:host/ping": (msg) => {
     const { method, args } = msg.payload as {
       method: keyof IPingService;
@@ -41,6 +48,46 @@ const HOST_SERVICES: Record<string, IMessageHandler> = {
     );
   },
 };
+
+/**
+ * Builds and registers the `vortex:host/filesystem` handler if a path
+ * resolver is available for the current platform. The service is
+ * registered as a per-worker factory so each adaptor gets its own cursor
+ * map — enumeration state does not leak between adaptors, and cursors are
+ * released when the owning worker is cleaned up.
+ *
+ * Skipped with a warning on platforms we haven't wired a resolver for
+ * yet.
+ */
+function registerFilesystemService(): void {
+  let resolver: PathResolver;
+  if (process.platform === "linux") {
+    resolver = new LinuxPathProviderImpl();
+  } else if (process.platform === "win32") {
+    resolver = new WindowsPathProviderImpl();
+  } else {
+    log(
+      "info",
+      "[adaptor-host] Skipping vortex:host/filesystem registration: no path resolver for platform {{platform}}",
+      { platform: process.platform },
+    );
+    return;
+  }
+
+  const backend = new NodeFileSystemBackendImpl();
+  const registry = new PathResolverRegistryImpl([resolver]);
+  const filesystem: IFileSystem = new NodeFileSystemImpl(backend, registry);
+
+  HOST_SERVICES["vortex:host/filesystem"] = {
+    perWorker() {
+      const session = createFileSystemServiceHandler(filesystem);
+      return {
+        handler: session.handler,
+        dispose: () => session.closeAll(),
+      };
+    },
+  };
+}
 
 /**
  * Scans node_modules/@vortex/ for adaptor packages (names starting with adaptor-).
@@ -80,7 +127,7 @@ function resolveAdaptorBundle(
 }
 
 // Module-level state for the adaptor host system
-let adaptorHost: IAdaptorHost | null = null;
+let _adaptorHost: IAdaptorHost | null = null;
 const loadedAdaptors = new Map<string, ILoadedAdaptor>();
 
 // ============================================================================
@@ -211,10 +258,11 @@ function buildStorePathSnapshot(
  */
 export async function initAdaptorHost(): Promise<void> {
   const bootstrapPath = path.join(getVortexPath("base"), "bootstrap.mjs");
+  registerFilesystemService();
   const host = createAdaptorHost(HOST_SERVICES, bootstrapPath, (level, msg) =>
     log(level, msg),
   );
-  adaptorHost = host;
+  _adaptorHost = host;
 
   registerIpcHandlers();
 
