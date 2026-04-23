@@ -1,0 +1,18 @@
+{
+  "gnrl": {
+    "type": "general",
+    "version": 1,
+    "fileCount": 3,
+    "fileList": [
+      "meshes\\weapon\\gun.nif",
+      "scripts\\myscript.pex",
+      "materials\\test.bgsm"
+    ]
+  },
+  "dx10": {
+    "type": "dx10",
+    "version": 1,
+    "fileCount": 2,
+    "fileList": ["textures\\weapons\\gun_d.dds", "textures\\weapons\\gun_n.dds"]
+  }
+}

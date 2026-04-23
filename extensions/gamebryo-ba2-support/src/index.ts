@@ -1,8 +1,7 @@
-import loadBA2, { BA2Archive } from "ba2tk";
 import Promise from "bluebird";
 import { types, util } from "vortex-api";
 
-const loadBA2async = Promise.promisify(loadBA2);
+import { BA2Archive, loadBA2 } from "./ba2";
 
 class BA2Handler implements types.IArchiveHandler {
   private mBA2: BA2Archive;
@@ -44,14 +43,7 @@ class BA2Handler implements types.IArchiveHandler {
   }
 
   public extractAll(outputPath: string): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      this.mBA2.extractAll(outputPath, (readErr) => {
-        if (readErr !== null) {
-          reject(readErr);
-        }
-        resolve();
-      });
-    });
+    return Promise.resolve(this.mBA2.extractAll(outputPath));
   }
 
   public readFile(filePath: string): NodeJS.ReadableStream {
@@ -63,8 +55,8 @@ function createBA2Handler(
   fileName: string,
   options: types.IArchiveOptions,
 ): Promise<types.IArchiveHandler> {
-  return loadBA2async(fileName).then(
-    (archive: BA2Archive) => new BA2Handler(archive),
+  return Promise.resolve(
+    loadBA2(fileName).then((archive) => new BA2Handler(archive)),
   );
 }
 
