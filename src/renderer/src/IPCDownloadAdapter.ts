@@ -694,9 +694,14 @@ const modInfoSchema = z
 
 type ModInfo = z.infer<typeof modInfoSchema>;
 
+const urlStringSchema = z.union([
+  z.string(),
+  z.custom<URL>((v) => v instanceof URL).transform((v) => v.toString()),
+]);
+
 const startDownloadArgsSchema = z
   .tuple([
-    z.array(z.string()),
+    z.array(urlStringSchema),
     modInfoSchema,
     z.string().optional(),
     z
