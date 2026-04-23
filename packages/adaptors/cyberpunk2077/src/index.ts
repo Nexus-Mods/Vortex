@@ -1,4 +1,4 @@
-import { provides } from "@vortex/adaptor-api";
+import { getContainer, provides } from "@vortex/adaptor-api";
 import type { IGameInfoService } from "@vortex/adaptor-api/contracts/game-info";
 import { gameInfo } from "@vortex/adaptor-api/contracts/game-info";
 import type {
@@ -28,10 +28,18 @@ import type {
 } from "@vortex/adaptor-api/contracts/prelaunch";
 import type { StorePathProvider } from "@vortex/adaptor-api/stores/lib";
 import { Base } from "@vortex/adaptor-api/stores/lib";
-import type { RelativePath } from "@vortex/fs";
+import type { IFileSystem } from "@vortex/fs";
+import { QualifiedPath, type RelativePath } from "@vortex/fs";
 
 type CyberpunkExtras = "saves" | "preferences";
 type CyberpunkPaths = GamePaths<"game" | CyberpunkExtras>;
+
+function getFs(): IFileSystem {
+  return getContainer().resolve("vortex:host/filesystem") as IFileSystem;
+}
+
+const TEXT_ENCODER = new TextEncoder();
+const TEXT_DECODER = new TextDecoder();
 
 const INFO = gameInfo({
   gameUri: "game:cyberpunk2077",
@@ -242,11 +250,69 @@ export class GameLoadOrderService
     return Promise.resolve(LOAD_ORDERS);
   }
 
-  getLoadOrderState(
-    _paths: CyberpunkPaths,
+  async getLoadOrderState(
+    paths: CyberpunkPaths,
     loadOrderId: string,
   ): Promise<LoadOrderState> {
-    return Promise.resolve(getOrCreateState(loadOrderId));
+    if (loadOrderId !== "archive") {
+      return getOrCreateState(loadOrderId);
+    }
+
+    const rehydrated = rehydrateGamePaths(paths);
+    const modDir = rehydrated.game.join("archive", "pc", "mod");
+    const modlistPath = rehydrated.game.join("archive", "pc", "mod", "modlist.txt");
+
+    // Discover .archive files on disk
+    const archiveFiles: string[] = [];
+    try {
+      const iter = await getFs().enumerateDirectory(modDir, {
+        types: "files",
+        recursive: false,
+      });
+
+      let next = await iter.next();
+      while (!next.done) {
+        const qp = next.value as { path: string };
+        const fileName = qp.path.split("/").pop() ?? "";
+        if (fileName.endsWith(".archive") || fileName.endsWith(".xl")) {
+          archiveFiles.push(fileName);
+        }
+        next = await iter.next();
+      }
+    } catch {
+      // Directory may not exist yet (no archive mods deployed).
+      return getOrCreateState(loadOrderId);
+    }
+
+    // Read existing modlist.txt for ordering
+    let existingOrder: string[] = [];
+    try {
+      const raw = await getFs().readFile(modlistPath);
+      existingOrder = TEXT_DECODER.decode(raw)
+        .split("\n")
+        .map((l) => l.trim())
+        .filter((l) => l.length > 0);
+    } catch {
+      // No modlist.txt: use alphabetical order.
+    }
+
+    // Build ordered entry list: files in modlist.txt order first,
+    // then any remaining files in alphabetical order.
+    const orderedFiles = [
+      ...existingOrder.filter((f) => archiveFiles.includes(f)),
+      ...archiveFiles
+        .filter((f) => !existingOrder.includes(f))
+        .sort(),
+    ];
+
+    const state = getOrCreateState(loadOrderId);
+    state.entries = orderedFiles.map((f) => ({
+      id: f,
+      name: f,
+      enabled: true,
+    }));
+
+    return state;
   }
 
   setEntryOrder(
@@ -259,16 +325,40 @@ export class GameLoadOrderService
     return Promise.resolve(state);
   }
 
-  serializeToDisk(
-    _paths: CyberpunkPaths,
-    _loadOrderId: string,
+  async serializeToDisk(
+    paths: CyberpunkPaths,
+    loadOrderId: string,
   ): Promise<void> {
-    // TODO: Write the load order to the game directory.
-    // For "archive": write a modlist.txt or equivalent ordering file
-    //   under archive/pc/mod/.
-    // For "redmod": write the mod order that the REDmod deploy tool
-    //   reads (mods/modlist.txt or deploy argument order).
-    return Promise.resolve();
+    if (loadOrderId !== "archive") {
+      // REDmod load order is alphabetical by folder name; no file to write.
+      return;
+    }
+
+    const rehydrated = rehydrateGamePaths(paths);
+    const modDir = rehydrated.game.join("archive", "pc", "mod");
+    const modlistPath = rehydrated.game.join("archive", "pc", "mod", "modlist.txt");
+    const state = getOrCreateState(loadOrderId);
+
+    // Build the modlist.txt content from the current entry order.
+    // Only include enabled entries. First entry = highest priority.
+    const lines = state.entries
+      .filter((e) => e.enabled)
+      .map((e) => e.id);
+
+    if (lines.length === 0) {
+      // No entries: remove modlist.txt so the game falls back to
+      // alphabetical order.
+      try {
+        await getFs().delete(modlistPath);
+      } catch {
+        // File may not exist; that's fine.
+      }
+      return;
+    }
+
+    const content = lines.join("\n") + "\n";
+    await getFs().createDirectory(modDir);
+    await getFs().writeFile(modlistPath, TEXT_ENCODER.encode(content));
   }
 }
 
@@ -305,13 +395,25 @@ export class GamePrelaunchService
     ]);
   }
 
-  shouldRun(_paths: CyberpunkPaths, taskId: string): Promise<boolean> {
-    if (taskId === "redmod-deploy") {
-      // TODO: Query the mod-files host service to check whether any
-      // REDmod packages (mods under mods/) have changed since the
-      // last deploy. For now, always run.
-      return Promise.resolve(true);
+  async shouldRun(paths: CyberpunkPaths, taskId: string): Promise<boolean> {
+    if (taskId !== "redmod-deploy") return false;
+
+    // Check if any REDmod packages exist under mods/.
+    // If there are none, skip the deploy entirely.
+    const rehydrated = rehydrateGamePaths(paths);
+    const modsDir = rehydrated.game.join("mods");
+
+    try {
+      const iter = await getFs().enumerateDirectory(modsDir, {
+        types: "directories",
+        recursive: false,
+      });
+      const first = await iter.next();
+      // If there's at least one subdirectory, we have REDmods.
+      return !first.done;
+    } catch {
+      // mods/ doesn't exist: no REDmods installed.
+      return false;
     }
-    return Promise.resolve(false);
   }
 }
