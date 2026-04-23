@@ -16,6 +16,16 @@ import { peHeader } from "@vortex/adaptor-api/contracts/game-version";
 import type { VersionSource } from "@vortex/adaptor-api/contracts/game-version";
 import type { IGameToolsService } from "@vortex/adaptor-api/contracts/game-tools";
 import { gameTools } from "@vortex/adaptor-api/contracts/game-tools";
+import type {
+  IGameLoadOrderService,
+  LoadOrderDefinition,
+  LoadOrderEntry,
+  LoadOrderState,
+} from "@vortex/adaptor-api/contracts/load-order";
+import type {
+  IGamePrelaunchService,
+  PrelaunchTask,
+} from "@vortex/adaptor-api/contracts/prelaunch";
 import type { StorePathProvider } from "@vortex/adaptor-api/stores/lib";
 import { Base } from "@vortex/adaptor-api/stores/lib";
 import type { RelativePath } from "@vortex/fs";
@@ -174,5 +184,95 @@ export class GameInstallerService implements IGameInstallerService<CyberpunkExtr
     files: readonly RelativePath[],
   ): Promise<readonly InstallMapping<CyberpunkExtras>[]> {
     return Promise.resolve(resolveStopPatterns(CYBERPUNK_STOP_PATTERNS, files));
+  }
+}
+
+// ── Load Order ──────────────────────────────────────────────────────
+
+const LOAD_ORDERS: LoadOrderDefinition[] = [
+  {
+    id: "archive",
+    displayName: "Archive Load Order",
+    description:
+      "Controls the priority of .archive and .xl files in archive/pc/mod/.",
+  },
+];
+
+/**
+ * In-memory load order state. A real implementation would persist to
+ * disk and read from the game's mod directory, but this establishes
+ * the contract and data flow.
+ */
+const loadOrderState = new Map<string, LoadOrderState>();
+
+function getOrCreateState(loadOrderId: string): LoadOrderState {
+  let state = loadOrderState.get(loadOrderId);
+  if (!state) {
+    state = { entries: [], rules: [] };
+    loadOrderState.set(loadOrderId, state);
+  }
+  return state;
+}
+
+@provides("vortex:adaptor/cyberpunk2077/load-order")
+export class GameLoadOrderService implements IGameLoadOrderService<CyberpunkExtras> {
+  getLoadOrders(_paths: CyberpunkPaths): Promise<LoadOrderDefinition[]> {
+    return Promise.resolve(LOAD_ORDERS);
+  }
+
+  getLoadOrderState(
+    _paths: CyberpunkPaths,
+    loadOrderId: string,
+  ): Promise<LoadOrderState> {
+    return Promise.resolve(getOrCreateState(loadOrderId));
+  }
+
+  setEntryOrder(
+    _paths: CyberpunkPaths,
+    loadOrderId: string,
+    entries: LoadOrderEntry[],
+  ): Promise<LoadOrderState> {
+    const state = getOrCreateState(loadOrderId);
+    state.entries = entries;
+    return Promise.resolve(state);
+  }
+
+  serializeToDisk(_paths: CyberpunkPaths, _loadOrderId: string): Promise<void> {
+    // TODO: Write the archive load order to the game directory.
+    // For now this is a no-op; the contract and data flow are
+    // exercised but disk serialization is not yet implemented.
+    return Promise.resolve();
+  }
+}
+
+// ── Prelaunch ───────────────────────────────────────────────────────
+
+@provides("vortex:adaptor/cyberpunk2077/prelaunch")
+export class GamePrelaunchService implements IGamePrelaunchService<CyberpunkExtras> {
+  getPrelaunchTasks(paths: CyberpunkPaths): Promise<PrelaunchTask[]> {
+    const rehydrated = rehydrateGamePaths(paths);
+    return Promise.resolve([
+      {
+        id: "redmod-deploy",
+        name: "REDmod Deploy",
+        executable: rehydrated.game.join(
+          "tools",
+          "redmod",
+          "bin",
+          "redMod.exe",
+        ),
+        args: ["deploy"],
+        conditional: true,
+      },
+    ]);
+  }
+
+  shouldRun(_paths: CyberpunkPaths, taskId: string): Promise<boolean> {
+    if (taskId === "redmod-deploy") {
+      // TODO: Check whether archive mods have changed since the last
+      // deploy. For now, always run to exercise the contract.
+      return Promise.resolve(true);
+    }
+    return Promise.resolve(false);
   }
 }
