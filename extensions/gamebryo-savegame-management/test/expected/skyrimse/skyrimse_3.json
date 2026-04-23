@@ -1,0 +1,38 @@
+{
+  "fileName": "skyrimse_3.ess",
+  "quick": {
+    "characterName": "Prisoner",
+    "characterLevel": 1,
+    "location": "Helgen Keep",
+    "saveNumber": 5,
+    "creationTime": 1769155929,
+    "playTime": "000.30.18"
+  },
+  "full": {
+    "characterName": "Prisoner",
+    "characterLevel": 1,
+    "location": "Helgen Keep",
+    "saveNumber": 5,
+    "creationTime": 1769155929,
+    "playTime": "000.30.18",
+    "plugins": [
+      "Skyrim.esm",
+      "Update.esm",
+      "Dawnguard.esm",
+      "HearthFires.esm",
+      "Dragonborn.esm",
+      "ccBGSSSE001-Fish.esm",
+      "ccBGSSSE025-AdvDSGS.esm",
+      "ccQDRSSE001-SurvivalMode.esl",
+      "ccBGSSSE037-Curios.esl",
+      "_ResourcePack.esl"
+    ],
+    "screenshotSize": {
+      "width": 320,
+      "height": 192
+    },
+    "screenshotHash": "d6521ed2da164eb6b6e3680bba56cd0e7ebc6f04f10ac0e8559f480f46bed2ca",
+    "screenshotLength": 245760,
+    "screenshotHead": "AwMA/wECAP8DAwD/AwMA/wIDAP8EBQH/BQUB/wIDAP8BAQD/AwQA/wQEAP8DAgD/BQUA/w0MBf8JBwL/BwYB/wgHAv8HBQL/AgIA/wQDAf8HBwP/BAUD/w0OB/8KCgT/BwcC/wkIAv8ODAT/AgEA/wQDAP8DBAL/BwgD/w0MBf8bFgv/ExAG/xIQBv8lHhT/EREI/xcWDf8MCgT/CgcD/w0KBP8aFwn/BQQA/w4LBf8MCwP/DgwG/wsKBP8HBwL/BgcB/xIRCf8HBgP/BQYC/wkOBv8JDgP/BAcB/wsOBv8LDgX/Cg8E/woTB/8HCgL/BAQA/wgHA/8LDwf/CAcD/w=="
+  }
+}
