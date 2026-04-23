@@ -13,7 +13,7 @@ import {
 } from "@vortex/shared/errors";
 import { createHash } from "node:crypto";
 import { createReadStream } from "node:fs";
-import { access, rm } from "node:fs/promises";
+import { access, rename, rm } from "node:fs/promises";
 import * as path from "node:path";
 import { pipeline } from "node:stream/promises";
 import { z } from "zod";
@@ -102,6 +102,7 @@ export class IPCDownloadAdapter {
     string,
     (err: Error | null, id?: string) => void
   >();
+  readonly #fileNameHints = new Map<string, string>();
   readonly #activeDownloads = new Set<string>();
   readonly #lastBytesReceived = new Map<string, number>();
   readonly #lastProgressDispatch = new Map<string, number>();
@@ -373,21 +374,45 @@ export class IPCDownloadAdapter {
     }
   }
 
-  async #completeDownload(downloadId: string): Promise<void> {
+  async #completeDownload(
+    downloadId: string,
+    wireState: WireDownloadState,
+  ): Promise<void> {
     const reduxState = this.#api.getState();
     const download = reduxState.persistent.downloads.files?.[downloadId];
 
     if (download?.localPath !== undefined) {
       const gameId = download.game?.[0] ?? activeGameId(reduxState);
       const dlPath = downloadPathForGame(reduxState, gameId);
-      const filePath = path.join(dlPath, download.localPath);
+      const tempPath = path.join(dlPath, download.localPath);
+
+      // Determine the final filename: server Content-Disposition > caller hint > temp name.
+      const hint = this.#fileNameHints.get(downloadId);
+      this.#fileNameHints.delete(downloadId);
+      const finalName = wireState.fileName ?? hint ?? download.localPath;
+      const finalPath = path.join(dlPath, finalName);
+
+      if (finalPath !== tempPath) {
+        try {
+          await rename(tempPath, finalPath);
+          this.#api.store.dispatch(setDownloadFilePath(downloadId, finalName));
+        } catch (err) {
+          log("warn", "failed to rename download to final name", {
+            downloadId,
+            tempPath,
+            finalPath,
+            err,
+          });
+        }
+      }
+
       try {
         // TODO: move hashing into main process
 
         // MD5 is used as a fallback identifier for collection rule matching and
         // reverse ModDB lookups for files that lack Nexus IDs (e.g. non-NXM downloads).
         const hash = createHash("md5");
-        await pipeline(createReadStream(filePath), hash);
+        await pipeline(createReadStream(finalPath), hash);
         this.#api.store.dispatch(
           setDownloadHash(downloadId, hash.digest("hex")),
         );
@@ -430,26 +455,24 @@ export class IPCDownloadAdapter {
 
     const encodedUrl = parseEncodedUrl(rawUrl.toString());
 
-    try {
-      fileName ??= path.basename(encodedUrl.url.pathname);
-    } catch {
-      fileName ??= "";
-    }
-
     const state = this.#api.getState();
-    const dest = path.join(
-      downloadPathForGame(state, modInfo.game ?? activeGameId(state)),
-      fileName,
+    const dlPath = downloadPathForGame(
+      state,
+      modInfo.game ?? activeGameId(state),
     );
 
-    const fileExists = await access(dest).then(
-      () => true,
-      () => false,
-    );
-    if (fileExists) {
-      const err = new AlreadyDownloaded(path.basename(dest));
-      callback?.(err);
-      return;
+    // Check for an existing file using the caller-supplied name before queuing.
+    // We can only do this when a name is provided; temp-named downloads are always new.
+    if (fileName !== undefined) {
+      const namedDest = path.join(dlPath, fileName);
+      const fileExists = await access(namedDest).then(
+        () => true,
+        () => false,
+      );
+      if (fileExists) {
+        callback?.(new AlreadyDownloaded(fileName));
+        return;
+      }
     }
 
     try {
@@ -460,10 +483,17 @@ export class IPCDownloadAdapter {
       };
 
       this.#pending.set(collationId, info);
+
+      // Use a temporary filename so the main process can start writing immediately.
+      // #completeDownload renames to the final name derived from Content-Disposition.
+      // The real filename is passed as a hint; the server name takes priority.
+      const collationStr = collationId.toString().padStart(8, "0");
+      const tempName = `__vortex_tmp_${collationStr}`;
+      const dest = path.join(dlPath, tempName);
+
       log("debug", "starting download", {
         encodedUrl,
         dest,
-        fileName,
         collationId,
       });
 
@@ -476,6 +506,11 @@ export class IPCDownloadAdapter {
       if (callback !== undefined) {
         this.#downloadCallbacks.set(downloadId, callback);
       }
+      // Store caller-supplied name as hint for #completeDownload.
+      // Content-Disposition (wireState.fileName) takes priority; this is the fallback.
+      if (fileName !== undefined) {
+        this.#fileNameHints.set(downloadId, fileName);
+      }
       log("debug", "download queued", { downloadId, collationId });
 
       const gameId = modInfo.game ?? activeGameId(state);
@@ -484,9 +519,8 @@ export class IPCDownloadAdapter {
       this.#api.store.dispatch(
         initDownload(downloadId, rawUrls, modInfo, [gameId]),
       );
-      // Set localPath immediately so the directory watcher can match the file on
-      // disk and skip creating a duplicate addLocalDownload record for the same file.
-      this.#api.store.dispatch(setDownloadFilePath(downloadId, fileName));
+      // Set localPath to the temp name so the UI has something to display.
+      this.#api.store.dispatch(setDownloadFilePath(downloadId, tempName));
       // All IPC downloads support pause via checkpoint. DownloadView checks
       // download.pausable to show/hide the pause button.
       this.#api.store.dispatch(setDownloadPausable(downloadId, true));
@@ -623,7 +657,7 @@ export class IPCDownloadAdapter {
 
       if (state.status === "completed") {
         this.#emitAnalytics(downloadId, "completed");
-        this.#completeDownload(downloadId).catch((err) => {
+        this.#completeDownload(downloadId, state).catch((err) => {
           log("error", "failed to finalize download", { downloadId, err });
         });
       } else if (state.status === "canceled") {
