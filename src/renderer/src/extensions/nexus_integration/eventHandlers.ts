@@ -855,16 +855,22 @@ export function onGetNexusCollectionRevision(
         collectionSlug,
         revisionNumber > 0 ? revisionNumber : undefined,
       ),
-    ).catch((err) => {
+    ).catch((err: NexusError & { collectionSlug?: string, revisionNumber?: number }) => {
+      const message = getErrorMessageOrDefault(err);
+      const isRevisionUnavailable = [
+        "NOT_FOUND",
+        "COLLECTION_REVISION_DISCARDED",
+        "COLLECTION_UNDER_MODERATION",
+      ].includes(err.code);
       const allowReport =
-        !err.message.includes("network disconnected") &&
-        !err.message.includes(
+        !isRevisionUnavailable &&
+        !message.includes("network disconnected") &&
+        !message.includes(
           "Cannot return null for non-nullable field CollectionRevision.collection",
-        ) &&
-        err.code !== "COLLECTION_UNDER_MODERATION";
-      err["collectionSlug"] = collectionSlug;
-      err["revisionNumber"] = revisionNumber;
-      if (err.code !== "NOT_FOUND") {
+        );
+      err.collectionSlug = collectionSlug;
+      err.revisionNumber = revisionNumber;
+      if (!isRevisionUnavailable) {
         api.showErrorNotification("Failed to get nexus revision info", err, {
           id: "failed-get-revision-info",
           allowReport,
