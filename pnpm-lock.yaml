@@ -289,9 +289,6 @@ catalogs:
     '@welldone-software/why-did-you-render':
       specifier: ^10.0.1
       version: 10.0.1
-    ba2tk:
-      specifier: git+https://github.com/Nexus-Mods/node-ba2tk#762d8de841ca1c770a0925311fd626d71de67971
-      version: 2.0.9
     bbcode-to-react:
       specifier: git+https://github.com/TanninOne/bbcode-to-react#c67356006470e5066ea447e04a3968dca367339d
       version: 0.2.11
@@ -1438,9 +1435,6 @@ importers:
       '@types/rimraf':
         specifier: 'catalog:'
         version: 2.0.5
-      ba2tk:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-ba2tk/tar.gz/762d8de841ca1c770a0925311fd626d71de67971(bluebird@3.7.2)
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
@@ -7904,10 +7898,6 @@ packages:
   aws4@1.13.2:
     resolution: {integrity: sha512-lHe62zvbTB5eEABUVi/AwVh0ZKY9rMMDhmm+eeyuuUQbQ3+J+fONVQOZyj+DdrvD4BY33uYniyRJ4UJIaSKAfw==}
 
-  ba2tk@https://codeload.github.com/Nexus-Mods/node-ba2tk/tar.gz/762d8de841ca1c770a0925311fd626d71de67971:
-    resolution: {tarball: https://codeload.github.com/Nexus-Mods/node-ba2tk/tar.gz/762d8de841ca1c770a0925311fd626d71de67971}
-    version: 2.0.9
-
   babel-plugin-polyfill-corejs2@0.4.17:
     resolution: {integrity: sha512-aTyf30K/rqAsNwN76zYrdtx8obu0E4KoUME29B1xj+B3WxgvWkp943vYQ+z8Mv3lw9xHXMHpvSPOBxzAkIa94w==}
     peerDependencies:
@@ -10837,10 +10827,6 @@ packages:
     resolution: {integrity: sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g==}
     engines: {node: '>= 0.8.0'}
 
-  os-tmpdir@1.0.2:
-    resolution: {integrity: sha512-D2FR03Vir7FIu45XBY20mTb+/ZSWB00sjU9jdQXt83gDrI4Ztz5Fs7/yy74g2N5SVQY4xY1qDr4rNddwYRVX0g==}
-    engines: {node: '>=0.10.0'}
-
   outlayer@2.1.1:
     resolution: {integrity: sha512-+GplXsCQ3VrbGujAeHEzP9SXsBmJxzn/YdDSQZL0xqBmAWBmortu2Y9Gwdp9J0bgDQ8/YNIPMoBM13nTwZfAhw==}
 
@@ -12117,10 +12103,6 @@ packages:
 
   tmp-promise@3.0.3:
     resolution: {integrity: sha512-RwM7MoPojPxsOBYnyd2hy0bxtIlVrihNs9pj5SUvY8Zz1sQcQG2tG1hSr8PDxfgEB8RNKDhqbIlroIarSNDNsQ==}
-
-  tmp@0.0.29:
-    resolution: {integrity: sha512-89PTqMWGDva+GqClOqBV9s3SMh7MA3Mq0pJUdAoHuF65YoE7O0LermaZkVfT5/Ngfo18H4eYiyG7zKOtnEbxsw==}
-    engines: {node: '>=0.4.0'}
 
   tmp@0.1.0:
     resolution: {integrity: sha512-J7Z2K08jbGcdA1kkQpJSqLF6T0tdQqpR2pnSUXsIchbPdTI9v3e85cLW0d6WDhwuAleOV71j2xWs8qMPfK7nKw==}
@@ -16055,17 +16037,6 @@ snapshots:
 
   aws4@1.13.2: {}
 
-  ba2tk@https://codeload.github.com/Nexus-Mods/node-ba2tk/tar.gz/762d8de841ca1c770a0925311fd626d71de67971(bluebird@3.7.2):
-    dependencies:
-      autogypi: 0.2.2
-      node-addon-api: 8.5.0
-      node-gyp: 9.4.1(bluebird@3.7.2)
-      prebuild-install: 7.1.0
-      tmp: 0.0.29
-    transitivePeerDependencies:
-      - bluebird
-      - supports-color
-
   babel-plugin-polyfill-corejs2@0.4.17(@babel/core@7.29.0):
     dependencies:
       '@babel/compat-data': 7.29.0
@@ -19547,8 +19518,6 @@ snapshots:
       type-check: 0.4.0
       word-wrap: 1.2.5
 
-  os-tmpdir@1.0.2: {}
-
   outlayer@2.1.1:
     dependencies:
       ev-emitter: 1.1.1
@@ -21124,10 +21093,6 @@ snapshots:
   tmp-promise@3.0.3:
     dependencies:
       tmp: 0.2.5
-
-  tmp@0.0.29:
-    dependencies:
-      os-tmpdir: 1.0.2
 
   tmp@0.1.0:
     dependencies:
