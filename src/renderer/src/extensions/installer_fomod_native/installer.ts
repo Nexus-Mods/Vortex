@@ -24,18 +24,23 @@ export const install = async (
   files: string[],
   scriptPath: string,
   gameId: string,
-  choicesIn?: {  type: string; options: IChoices },
+  choicesIn?: unknown,
   unattended?: boolean,
   details?: IInstallationDetails,
 ) => {
   const instanceId = shortid();
 
-  const fomodChoices: IChoices =
-    choicesIn !== undefined
-    && choicesIn.type === "fomod"
-    && Array.isArray(choicesIn.options)
-      ? choicesIn.options
-      : undefined;
+  const isFomodChoicesIn = (
+    value: unknown,
+  ): value is { type: string; options: IChoices } =>
+    typeof value === "object"
+    && value != null
+    && (value as { type?: unknown }).type === "fomod"
+    && Array.isArray((value as { options?: unknown }).options);
+
+  const fomodChoices: IChoices = isFomodChoicesIn(choicesIn)
+    ? choicesIn.options
+    : undefined;
 
   const invokeInstall = async (validate: boolean) => {
     // When override instructions file is present, use only the universal stop patterns and null pluginPath
