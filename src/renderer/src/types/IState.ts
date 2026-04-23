@@ -1,3 +1,4 @@
+import type { DownloadCheckpoint } from "@vortex/shared/download";
 import type { IParameters } from "@vortex/shared/cli";
 
 import type { ICategoryDictionary } from "../extensions/category_management/types/ICategoryDictionary";
@@ -153,6 +154,7 @@ export interface IStateDownloads {
   speed: number;
   speedHistory: number[];
   files: { [id: string]: IDownload };
+  checkpoints: { [id: string]: DownloadCheckpoint<string> };
 }
 
 export interface IDashletSettings {

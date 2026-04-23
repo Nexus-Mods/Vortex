@@ -288,8 +288,8 @@ try {
         betterIpcRenderer.invoke("download:start", dest, collationId),
       pause: (downloadId) =>
         betterIpcRenderer.invoke("download:pause", downloadId),
-      resume: (checkpoint, collationId) =>
-        betterIpcRenderer.invoke("download:resume", checkpoint, collationId),
+      resume: (checkpoint) =>
+        betterIpcRenderer.invoke("download:resume", checkpoint),
       cancel: (downloadId) =>
         betterIpcRenderer.invoke("download:cancel", downloadId),
       getState: (downloadId) =>
