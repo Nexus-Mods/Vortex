@@ -1,7 +1,10 @@
 import { ICollection, IDownloadURL, IRevision } from "@nexusmods/nexus-api";
 import Bluebird from "bluebird";
-import { actions, selectors, types, util } from "vortex-api";
+import * as path from "path";
+import { actions, fs, selectors, types, util } from "vortex-api";
 import InstallDriver from "./util/InstallDriver";
+import { readCollection } from "./util/importCollection";
+import { collectionModToRule } from "./util/transformCollection";
 import showChangelog from "./views/InstallDialog/InstallChangelogDialog";
 
 async function collectionUpdate(
@@ -90,21 +93,43 @@ async function collectionUpdate(
       "Update Collection",
     );
 
-    const oldRules = oldMod?.rules ?? [];
+    // Determine obsolete mods and clean up BEFORE installing the new revision.
+    // This prevents a race condition where did-install-mod starts the InstallDriver
+    // concurrently with the cleanup below.
 
-    const newModId = await util.toPromise<string | undefined>((cb) =>
-      api.events.emit("start-install-download", dlId, undefined, cb),
+    // Extract collection.json from the downloaded archive to get the new revision's
+    // full mod list (including tags, external and bundled mods).
+    const dlPath = selectors.downloadPathForGame(
+      api.getState(),
+      downloadGameId,
+    );
+    const localPath =
+      api.getState().persistent.downloads.files[dlId]?.localPath;
+    const archivePath = path.join(dlPath, localPath);
+    const tempDir = path.join(
+      util.getVortexPath("temp"),
+      "collection-update-" + oldModId,
     );
 
-    // remove old revision and mods installed for the old revision that are no longer required
-
-    const mods = api.getState().persistent.mods[gameMode];
-
-    if (newModId === undefined || mods[newModId] === undefined) {
-      throw new util.ProcessCanceled(
-        "Download failed, update archive not found",
+    let newRules: types.IModRule[];
+    const szip = new util.SevenZip();
+    await szip.extractFull(archivePath, tempDir);
+    try {
+      const newCollectionData = await readCollection(
+        api,
+        path.join(tempDir, "collection.json"),
       );
+      const knownGames = selectors.knownGames(api.getState());
+      newRules = newCollectionData.mods.map((mod) =>
+        collectionModToRule(knownGames, mod),
+      );
+    } catch (err) {
+      await fs.removeAsync(tempDir).catch(() => undefined);
+      throw err;
     }
+
+    const oldRules = oldMod?.rules ?? [];
+    const mods = api.getState().persistent.mods[gameMode];
 
     // candidates is any mod that is depended upon by the old revision that was installed
     // as a dependency
@@ -118,8 +143,7 @@ async function collectionUpdate(
       );
 
     const notCandidates = Object.values(mods).filter(
-      (mod) =>
-        !candidates.includes(mod) && ![oldModId, newModId].includes(mod.id),
+      (mod) => !candidates.includes(mod) && mod.id !== oldModId,
     );
 
     const references = (rules: types.IModRule[], mod: types.IMod) =>
@@ -133,13 +157,15 @@ async function collectionUpdate(
     const obsolete = candidates
       // see if there is a mod outside candidates that requires it but before anything we
       // check the new version of the collection because that's the most likely to require it
-      .filter((mod) => !references(mods[newModId].rules, mod))
+      .filter((mod) => !references(newRules, mod))
       .filter(
         (mod) =>
           notCandidates
             // that depends upon the candidate,
             .find((other) => references(other.rules, mod)) === undefined,
       );
+
+    await fs.removeAsync(tempDir).catch(() => undefined);
 
     let ops = { remove: [], keep: [] };
 
@@ -223,12 +249,52 @@ async function collectionUpdate(
       ),
     );
 
+    // Snapshot which optional mods are enabled before removing the old collection
+    const profile = selectors.activeProfile(api.getState());
+    const enabledOptionalMods: string[] = candidates
+      .filter((mod) => {
+        const isOptional = oldRules.some(
+          (r) =>
+            r.type === "recommends" &&
+            util.testModReference(mod, r.reference),
+        );
+        return (
+          isOptional &&
+          util.getSafe(profile?.modState, [mod.id, "enabled"], false)
+        );
+      })
+      .map((mod) => mod.id);
+
+    // Remove old collection and obsolete mods
     await util.toPromise((cb) =>
       api.events.emit("remove-mods", gameMode, [oldModId, ...ops.remove], cb, {
         incomplete: true,
         ignoreInstalling: true,
       }),
     );
+
+    // Install the new revision — did-install-mod will start the driver
+    // cleanly since cleanup is already done
+    const newModId = await util.toPromise<string | undefined>((cb) =>
+      api.events.emit("start-install-download", dlId, undefined, cb),
+    );
+
+    if (newModId === undefined) {
+      throw new util.ProcessCanceled(
+        "Download failed, update archive not found",
+      );
+    }
+
+    // Restore enabled state for optional mods that survived the update
+    if (profile !== undefined && enabledOptionalMods.length > 0) {
+      const currentMods = api.getState().persistent.mods[gameMode];
+      util.batchDispatch(
+        api.store,
+        enabledOptionalMods
+          .filter((id) => currentMods?.[id] !== undefined)
+          .map((id) => actions.setModEnabled(profile.id, id, true)),
+      );
+    }
   } catch (err) {
     if (!(err instanceof util.UserCanceled)) {
       api.showErrorNotification("Failed to download collection", err, {

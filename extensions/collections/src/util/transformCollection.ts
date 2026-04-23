@@ -830,6 +830,11 @@ export async function modToCollection(
     bundleTags,
   );
 
+  const { pluginRules, ...gameSpecificWithoutRules } = gameSpecific;
+  const filteredGameSpecific = collectionConfig.excludePluginRules
+    ? gameSpecificWithoutRules
+    : gameSpecific;
+
   const res: ICollection = {
     info: collectionInfo,
     mods: await rulesToCollectionMods(
@@ -846,7 +851,7 @@ export async function modToCollection(
     ),
     modRules,
     ...extData,
-    ...gameSpecific,
+    ...filteredGameSpecific,
     collectionConfig: { ...collectionConfig },
   };
 

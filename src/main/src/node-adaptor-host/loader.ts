@@ -42,14 +42,47 @@ export interface IAdaptorHost {
   nameService: NameService;
 }
 
+/**
+ * A per-worker session produced by a {@link HostServiceFactory}. The
+ * `handler` is the call target for this worker's RPC requests against the
+ * service; `dispose()` is invoked when the worker is cleaned up (crash or
+ * orderly shutdown) and should release any worker-scoped state (open
+ * cursors, file handles, etc.).
+ */
+export interface HostServiceSession {
+  handler: IMessageHandler;
+  dispose?(): Promise<void>;
+}
+
+/**
+ * Host-service definition that produces a fresh {@link HostServiceSession}
+ * per worker. Use this when a service holds worker-scoped state that must
+ * not leak across workers (e.g. directory enumeration cursors).
+ */
+export interface HostServiceFactory {
+  perWorker(): HostServiceSession;
+}
+
+/**
+ * A host-service definition. Either a bare {@link IMessageHandler} — shared
+ * across every worker, no lifecycle — or a {@link HostServiceFactory} that
+ * mints a fresh session per worker with an optional dispose hook.
+ */
+export type HostService = IMessageHandler | HostServiceFactory;
+
+function isHostServiceFactory(value: HostService): value is HostServiceFactory {
+  return typeof value === "object" && "perWorker" in value;
+}
+
 interface WorkerEntry {
   pid: PID;
   handle: IWorkerHandle;
   transport: IRpcTransport;
+  sessions: HostServiceSession[];
 }
 
 export function createAdaptorHost(
-  hostHandlers?: Record<string, IMessageHandler>,
+  hostHandlers?: Record<string, HostService>,
   bootstrapPath?: string,
   logger?: AdaptorHostLogger,
 ): IAdaptorHost {
@@ -57,7 +90,7 @@ export function createAdaptorHost(
   const registry = new AdaptorRegistry();
   const nextPid = createPidAllocator();
   const nextMsgId = createMessageIdAllocator();
-  const hostHandlerMap = new Map<string, IMessageHandler>(
+  const serviceDefs = new Map<string, HostService>(
     Object.entries(hostHandlers ?? {}),
   );
   const workers = new Map<PID, WorkerEntry>();
@@ -83,6 +116,21 @@ export function createAdaptorHost(
     const handle = createNodeWorker(bootstrapPath);
     const transport = createRpcTransport(handle.worker);
 
+    // Build a per-worker handler map. Bare handlers are shared across every
+    // worker; factories are invoked once per worker so their sessions carry
+    // worker-scoped state (and can release it at shutdown).
+    const workerHandlers = new Map<string, IMessageHandler>();
+    const workerSessions: HostServiceSession[] = [];
+    for (const [serviceUri, def] of serviceDefs) {
+      if (isHostServiceFactory(def)) {
+        const session = def.perWorker();
+        workerHandlers.set(serviceUri, session.handler);
+        workerSessions.push(session);
+      } else {
+        workerHandlers.set(serviceUri, def);
+      }
+    }
+
     // Register crash/exit handlers immediately so errors during init aren't lost
     handle.worker.on("error", (err: Error) => {
       log(
@@ -103,7 +151,7 @@ export function createAdaptorHost(
 
     // Handle reverse calls (adaptor → host services)
     transport.onCall(async (msg: IMethodMessage) => {
-      const handler = hostHandlerMap.get(msg.uri);
+      const handler = workerHandlers.get(msg.uri);
       if (!handler) {
         throw new Error(`No host handler for URI: ${msg.uri}`);
       }
@@ -134,7 +182,12 @@ export function createAdaptorHost(
       nameService.register(provided, adaptorPid);
     }
     registry.register(adaptorPid, manifest);
-    workers.set(adaptorPid, { pid: adaptorPid, handle, transport });
+    workers.set(adaptorPid, {
+      pid: adaptorPid,
+      handle,
+      transport,
+      sessions: workerSessions,
+    });
 
     return {
       manifest,
@@ -154,6 +207,14 @@ export function createAdaptorHost(
     if (!entry) return;
     entry.transport.dispose();
     entry.handle.terminate().catch(() => {});
+    // Release worker-scoped host service state (open cursors, file handles,
+    // etc). Fire-and-forget: an individual dispose failure should not
+    // prevent cleanup of the rest.
+    for (const session of entry.sessions) {
+      if (session.dispose !== undefined) {
+        session.dispose().catch(() => undefined);
+      }
+    }
     workers.delete(workerPid);
     const registered = registry.get(workerPid);
     if (registered) {

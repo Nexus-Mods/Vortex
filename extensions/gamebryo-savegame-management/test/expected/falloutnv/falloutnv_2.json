@@ -1,0 +1,30 @@
+{
+  "fileName": "falloutnv_2.fos",
+  "quick": {
+    "characterName": "Courier",
+    "characterLevel": 1,
+    "location": "Mojave Wasteland",
+    "saveNumber": 1,
+    "creationTime": 1721758210,
+    "playTime": "000.10.35"
+  },
+  "full": {
+    "characterName": "Courier",
+    "characterLevel": 1,
+    "location": "Mojave Wasteland",
+    "saveNumber": 1,
+    "creationTime": 1721758210,
+    "playTime": "000.10.35",
+    "plugins": [
+      "FalloutNV.esm",
+      "FalloutNV_lang.esp"
+    ],
+    "screenshotSize": {
+      "width": 512,
+      "height": 320
+    },
+    "screenshotHash": "9cfc410ec7d1ba3dcf7d0764ff924bd63c346682243489cef3b47d9a98ac7e78",
+    "screenshotLength": 655360,
+    "screenshotHead": "h4WL/4eFi/+HhYv/h4WL/4eFi/+HhYv/h4WL/4eFi/+HhYv/h4WL/4eFi/+HhYv/hoWL/4WEi/+GhIv/h4WL/4eFi/+Jh4z/iIaM/4iGjP+HhYz/hoWM/4eFjP+HhYz/iYaM/4uIjf+PjI7/lJCP/52Xkf+el5L/n5iS/6Obk/+jm5P/o5uT/6SclP+mnpT/q6GV/6yilv+upJb/rqSW/62jlv+sopb/qqGW/6qhlv+poJb/qaCW/6qhl/+qopj/qqKY/6yjmf+wppr/t6yc/72xnv/As5//xreg/8m4oP/MvKH/zbyi/y0qKf8uKyn/0cCj/9XEpP/XxqX/2sim/w=="
+  }
+}

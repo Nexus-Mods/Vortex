@@ -1,29 +1,29 @@
-import { removeExtension } from "../../actions";
+import type ZipT from "node-7z";
+
 import { unknownToError } from "@vortex/shared";
+import PromiseBB from "bluebird";
+import * as _ from "lodash";
+import * as path from "path";
+import rimraf from "rimraf";
+
+import type { ExtensionType, IExtension } from "../../types/extensions";
 import type { IExtensionApi } from "../../types/IExtensionContext";
 import type { IState } from "../../types/IState";
+
+import { removeExtension } from "../../actions";
+import ExtensionManager from "../../ExtensionManager";
+import { log } from "../../logging";
 import { DataInvalid } from "../../util/CustomErrors";
+import { withTrackedActivity } from "../../util/errorHandling";
 import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
-import lazyRequire from "../../util/lazyRequire";
-import { log } from "../../util/log";
-import { withTrackedActivity } from "../../util/errorHandling";
 import { INVALID_FILENAME_RE } from "../../util/util";
 import { webpackRequireHack } from "../../util/webpack-hacks";
-
 import {
   countryExists,
   languageExists,
 } from "../settings_interface/languagemap";
-
-import type { ExtensionType, IExtension } from "../../types/extensions";
 import { readExtensionInfo } from "./util";
-
-import PromiseBB from "bluebird";
-import * as _ from "lodash";
-import type ZipT from "node-7z";
-import * as path from "path";
-import rimraf from "rimraf";
 
 const rimrafAsync: (removePath: string, options: any) => PromiseBB<void> =
   PromiseBB.promisify(rimraf);
@@ -68,7 +68,14 @@ function installExtensionDependencies(
 
   try {
     const extension = webpackRequireHack(path.join(extPath, "index.js"));
-    extension.default(context);
+    const initFunc = ExtensionManager.getExtensionInitFunc(extension);
+    if (initFunc === undefined) {
+      log("warn", "extension has no init function, skipping dependency scan", {
+        extPath,
+      });
+      return PromiseBB.resolve();
+    }
+    initFunc(context);
 
     const state: IState = api.store.getState();
 

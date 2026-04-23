@@ -1,0 +1,30 @@
+{
+  "fileName": "skyrim_2.ess",
+  "quick": {
+    "characterName": "Last Dragonborn",
+    "characterLevel": 1,
+    "location": "Bleak Falls Sanctum",
+    "saveNumber": 3,
+    "creationTime": 1761189788,
+    "playTime": "000.37.53"
+  },
+  "full": {
+    "characterName": "Last Dragonborn",
+    "characterLevel": 1,
+    "location": "Bleak Falls Sanctum",
+    "saveNumber": 3,
+    "creationTime": 1761189788,
+    "playTime": "000.37.53",
+    "plugins": [
+      "Skyrim.esm",
+      "Update.esm"
+    ],
+    "screenshotSize": {
+      "width": 320,
+      "height": 192
+    },
+    "screenshotHash": "b8a0855e98110e1cb2d4e9e66b1726554344d572d8ab260e40206f786a802f40",
+    "screenshotLength": 245760,
+    "screenshotHead": "EhMQ/xARDv8PDwz/DA0J/wwMCP8LCwj/CwwI/woLCP8KCgj/CgkH/woJBv8JBwX/CAgF/wkIBv8HBgT/CAcF/wYGA/8EAwH/AwMB/wICAP8DAwD/BAQB/wUEAP8GBQL/BwcD/wgHA/8JCAP/CQkE/wkJBP8JCgb/DA0I/w0NCf8QEQz/EBEN/xERDv8REQ7/Dg8L/w0MCf8NCwb/CwgF/woHBP8LCAT/CgcE/wsKB/8JCQb/Dg4J/w4NCv8NDAn/DAsI/xIPC/8PDQn/DgwJ/wkIBv8ICAb/CQkH/woJB/8IBwX/CwoH/woIBf8JBgT/CAYD/wQDAf8IBgP/CwoG/w=="
+  }
+}

@@ -21,7 +21,7 @@ const persistentReducer: types.IReducerSpec = {
       const { revisionId, revisionInfo, timestamp } = payload;
 
       if (revisionInfo === undefined) {
-        return util.deleteOrNop(state, ["revisions", "revisionId"]);
+        return util.deleteOrNop(state, ["revisions", revisionId]);
       } else {
         return util.setSafe(state, ["revisions", revisionId], {
           timestamp,

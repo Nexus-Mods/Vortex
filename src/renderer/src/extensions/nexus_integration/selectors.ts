@@ -80,7 +80,7 @@ export const nexusIdsFromDownloadId = createSelector(
       collectionSlug: dl?.modInfo?.nexus?.ids?.collectionSlug,
       collectionId:
         dl?.modInfo?.nexus?.ids?.collectionId?.toString() ??
-        dl?.modInfo?.nexus?.revisionInfo?.collection?.id?.toString(),
+        (dl?.modInfo?.nexus?.revisionInfo?.collection?.id?.toString() as string),
       revisionId: dl?.modInfo?.nexus?.ids?.revisionId?.toString(),
     };
   },
