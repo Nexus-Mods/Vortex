@@ -1,67 +1,32 @@
 /**
  * Minimal vortex-api mock for collections extension unit tests.
  *
- * Only the utilities actually exercised by the code under test are implemented.
- * Everything else is a no-op / passthrough so imports don't explode.
+ * Prefer re-exporting real implementations from the Vortex sources.
+ * Only fall back to stubs for things that would transitively pull in
+ * runtime dependencies that aren't available in the test environment
+ * (electron app paths, child_process, native modules, etc).
  */
 
+import {
+  getSafe as realGetSafe,
+  setSafe as realSetSafe,
+  merge as realMerge,
+  deleteOrNop as realDeleteOrNop,
+} from "../../../src/renderer/src/util/storeHelper";
+import {
+  UserCanceled as RealUserCanceled,
+  ProcessCanceled as RealProcessCanceled,
+  DataInvalid as RealDataInvalid,
+} from "../../../src/shared/src/types/errors";
+import { generateCollectionSessionId as realGenerateCollectionSessionId } from "../../../src/renderer/src/extensions/collections_integration/util";
+
 // ---------------------------------------------------------------------------
-// util
+// Stubs for utilities whose real implementations transitively pull in
+// electron / native modules (util/util.ts, getVortexPath, logging, etc).
+// These stubs intentionally implement only the behaviour the tests exercise.
 // ---------------------------------------------------------------------------
 
-function getSafe(state: any, path: (string | number)[], fallback: any): any {
-  let current = state;
-  for (const key of path) {
-    if (current === undefined || current === null) {
-      return fallback;
-    }
-    current = current[key];
-  }
-  return current ?? fallback;
-}
-
-function setSafe<T extends object>(
-  state: T,
-  path: Array<string | number>,
-  value: any,
-): T {
-  if (path.length === 0) {
-    return { ...value };
-  }
-  const firstElement = path[0];
-  const copy = Array.isArray(state) ? (state.slice() as any) : { ...state };
-
-  if (path.length === 1) {
-    copy[firstElement] = value;
-  } else {
-    if (!Object.prototype.hasOwnProperty.call(copy, firstElement)) {
-      copy[firstElement] = typeof path[1] === "number" ? [] : {};
-    }
-    copy[firstElement] = setSafe(copy[firstElement], path.slice(1), value);
-  }
-  return copy;
-}
-
-function merge<T extends object>(
-  state: T,
-  path: Array<string | number>,
-  value: any,
-): T {
-  const newVal = { ...getSafe(state, path, {}), ...value };
-  return setSafe(state, path, newVal);
-}
-
-function generateCollectionSessionId(
-  collectionId: string,
-  profileId: string,
-): string {
-  if (!profileId || !collectionId) {
-    return null as any;
-  }
-  return `${collectionId}_${profileId}`;
-}
-
-function renderModName(mod: any, opts?: any): string {
+function renderModName(mod: any): string {
   return (
     mod?.attributes?.customFileName ??
     mod?.attributes?.logicalFileName ??
@@ -71,7 +36,7 @@ function renderModName(mod: any, opts?: any): string {
   );
 }
 
-function renderModReference(ref: any, mod?: any): string {
+function renderModReference(ref: any): string {
   return (
     ref?.description ??
     ref?.logicalFileName ??
@@ -98,10 +63,7 @@ function makeModReference(mod: any) {
 }
 
 function testModReference(mod: any, ref: any): boolean {
-  if (ref?.id && mod?.id === ref.id) {
-    return true;
-  }
-  return false;
+  return !!(ref?.id && mod?.id === ref.id);
 }
 
 function coerceToSemver(version: string): string {
@@ -124,20 +86,6 @@ function convertGameIdReverse(knownGames: any[], domainName: string): string {
   return game?.id ?? domainName;
 }
 
-class UserCanceled extends Error {
-  constructor() {
-    super("User canceled");
-    this.name = "UserCanceled";
-  }
-}
-
-class ProcessCanceled extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "ProcessCanceled";
-  }
-}
-
 function lazyRequire<T>(factory: () => T): () => T {
   let cached: T | undefined;
   const proxy = (() => {
@@ -150,7 +98,6 @@ function lazyRequire<T>(factory: () => T): () => T {
     }
     return cached;
   }) as any;
-  // Make it behave as a passthrough proxy for property access
   return new Proxy(proxy, {
     get(_target, prop) {
       const obj = proxy();
@@ -159,11 +106,19 @@ function lazyRequire<T>(factory: () => T): () => T {
   });
 }
 
+// ---------------------------------------------------------------------------
+// util
+// ---------------------------------------------------------------------------
+
 export const util = {
-  getSafe,
-  setSafe,
-  merge,
-  generateCollectionSessionId,
+  getSafe: realGetSafe,
+  setSafe: realSetSafe,
+  merge: realMerge,
+  deleteOrNop: realDeleteOrNop,
+  generateCollectionSessionId: realGenerateCollectionSessionId,
+  UserCanceled: RealUserCanceled,
+  ProcessCanceled: RealProcessCanceled,
+  DataInvalid: RealDataInvalid,
   renderModName,
   renderModReference,
   findModByRef,
@@ -172,10 +127,8 @@ export const util = {
   coerceToSemver,
   convertGameIdReverse,
   lazyRequire,
-  UserCanceled,
-  ProcessCanceled,
   opn: async () => {},
-  nexusModsURL: (...args: any[]) => "https://example.com",
+  nexusModsURL: (..._args: any[]) => "https://example.com",
   nexusGameId: (game: any) => game?.id ?? "",
   Campaign: { GeneralNavigation: "navigation" },
   Section: { Collections: "collections" },
@@ -194,32 +147,10 @@ export const util = {
     schedule() {}
   },
   batchDispatch: (_store: any, _actions: any[]) => {},
-  deleteOrNop: <T extends object>(
-    state: T,
-    path: Array<string | number>,
-  ): T => {
-    if (path.length === 0) return state;
-    const copy: any = Array.isArray(state) ? state.slice() : { ...state };
-    if (path.length === 1) {
-      delete copy[path[0]];
-    } else {
-      const child = copy[path[0]];
-      if (child !== undefined) {
-        copy[path[0]] = util.deleteOrNop(child, path.slice(1));
-      }
-    }
-    return copy;
-  },
   toPromise: (fn: any) => new Promise((resolve) => fn(resolve)),
   makeQueue: () => {
     const fn = (cb: () => any, _parallel?: boolean) => cb();
     return fn;
-  },
-  DataInvalid: class DataInvalid extends Error {
-    constructor(message: string) {
-      super(message);
-      this.name = "DataInvalid";
-    }
   },
 };
 

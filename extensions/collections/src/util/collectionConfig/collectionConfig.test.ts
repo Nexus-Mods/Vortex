@@ -28,7 +28,10 @@ describe("generateConfig", () => {
   it("returns default config when collectionMod has no config", async () => {
     const result = await generateConfig(makeGeneratorProps());
 
-    expect(result).toEqual({ recommendNewProfile: false });
+    expect(result).toEqual({
+      recommendNewProfile: false,
+      excludePluginRules: false,
+    });
   });
 
   it("returns stored config from collectionMod attributes", async () => {
@@ -56,7 +59,10 @@ describe("parseConfig", () => {
   it("returns default config when collection has no config", async () => {
     const result = await parseConfig(makeParserProps());
 
-    expect(result).toEqual({ recommendNewProfile: false });
+    expect(result).toEqual({
+      recommendNewProfile: false,
+      excludePluginRules: false,
+    });
   });
 
   it("returns config from collection data", async () => {

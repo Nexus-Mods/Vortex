@@ -1,5 +1,5 @@
 import Bluebird from "bluebird";
-import * as bsdiffT from "bsdiff-node";
+import type * as bsdiffT from "bsdiff-node";
 import * as crc32 from "crc-32";
 import * as path from "path";
 import { fs, log, selectors, types, util } from "vortex-api";

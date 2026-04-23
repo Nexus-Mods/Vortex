@@ -10,11 +10,8 @@ export default defineConfig({
       "vortex-api": mock("vortex-api"),
       vortexmt: mock("vortexmt"),
       turbowalk: mock("turbowalk"),
-      "modmeta-db": mock("modmeta-db"),
-      "bsdiff-node": mock("bsdiff-node"),
       "node-7z": mock("node-7z"),
       tmp: mock("tmp"),
-      "@nexusmods/nexus-api": mock("nexus-api"),
     },
   },
   test: {
