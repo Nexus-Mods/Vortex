@@ -1,40 +1,40 @@
 import { generate as shortid } from "shortid";
 
-import { VortexModInstaller } from "./utils/VortexModInstaller";
-
-import type { IChoices } from "../installer_fomod_shared/types/interface";
-import {
-  getPluginPath,
-  getStopPatterns,
-  uniPatterns,
-} from "../installer_fomod_shared/utils/gameSupport";
-import { getChoicesFromState } from "../installer_fomod_shared/utils/helpers";
-
-import type { IInstallationDetails } from "../mod_management/types/InstallFunc";
-
 import type {
   IExtensionApi,
   IInstallResult,
   IInstruction,
   InstructionType,
 } from "../../types/api";
-import { getGame } from "../gamemode_management/util/getGame";
+import type { IChoices } from "../installer_fomod_shared/types/interface";
+import type { IInstallationDetails } from "../mod_management/types/InstallFunc";
+
 import { UserCanceled } from "../../util/CustomErrors";
+import { getGame } from "../gamemode_management/util/getGame";
+import {
+  getPluginPath,
+  getStopPatterns,
+  uniPatterns,
+} from "../installer_fomod_shared/utils/gameSupport";
+import { getChoicesFromState } from "../installer_fomod_shared/utils/helpers";
+import { VortexModInstaller } from "./utils/VortexModInstaller";
 
 export const install = async (
   api: IExtensionApi,
   files: string[],
   scriptPath: string,
   gameId: string,
-  choicesIn?: any,
+  choicesIn?: {  type: string; options: IChoices },
   unattended?: boolean,
   details?: IInstallationDetails,
 ) => {
   const instanceId = shortid();
 
   const fomodChoices: IChoices =
-    choicesIn !== undefined && choicesIn.type === "fomod"
-      ? (choicesIn.options ?? {})
+    choicesIn !== undefined
+    && choicesIn.type === "fomod"
+    && Array.isArray(choicesIn.options)
+      ? choicesIn.options
       : undefined;
 
   const invokeInstall = async (validate: boolean) => {
