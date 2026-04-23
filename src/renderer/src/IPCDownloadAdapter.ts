@@ -42,6 +42,7 @@ import {
   setDownloadFilePath,
   setDownloadHash,
   setDownloadInterrupted,
+  setDownloadModInfo,
   setDownloadPausable,
   setDownloadSpeed,
 } from "./extensions/download_management/actions/state";
@@ -50,6 +51,7 @@ import { nexusIdsFromDownloadId } from "./extensions/nexus_integration/selectors
 import { makeModAndFileUIDs } from "./extensions/nexus_integration/util/UIDs";
 import { activeGameId } from "./extensions/profile_management/selectors";
 import { log } from "./logging";
+import { batchDispatch, flatten } from "./util/util";
 
 function rehydrateDownloadError(state: WireDownloadState): Error | null {
   if (state.status === "canceled") return new UserCanceled();
@@ -98,6 +100,10 @@ export class IPCDownloadAdapter {
   readonly #handlers: Record<string, ProtocolHandler> = {};
 
   readonly #pending = new Map<number, StoredDownloadInfo>();
+  // Captures `meta` from the protocol handler in #resolve so it can be merged
+  // into download.modInfo once the downloadId is known. The nxm resolver returns
+  // nexus IDs (modId/fileId or collectionId/revisionId) here.
+  readonly #resolvedMeta = new Map<number, unknown>();
   readonly #downloadCallbacks = new Map<
     string,
     (err: Error | null, id?: string) => void
@@ -475,8 +481,8 @@ export class IPCDownloadAdapter {
       }
     }
 
+    const collationId = this.#nextCollationId++;
     try {
-      const collationId = this.#nextCollationId++;
       const info: StoredDownloadInfo = {
         encodedUrl: encodedUrl,
         callback,
@@ -524,7 +530,23 @@ export class IPCDownloadAdapter {
       // All IPC downloads support pause via checkpoint. DownloadView checks
       // download.pausable to show/hide the pause button.
       this.#api.store.dispatch(setDownloadPausable(downloadId, true));
+
+      // Flatten the resolver's meta into download.modInfo. For nxm URLs this
+      // carries nexus.ids.modId/fileId (or collectionId/revisionId), which
+      // attributeExtractors and collection install plumbing read from.
+      const resolvedMeta = this.#resolvedMeta.get(collationId);
+      this.#resolvedMeta.delete(collationId);
+      if (resolvedMeta !== undefined) {
+        const flattened = flatten(resolvedMeta) as Record<string, unknown>;
+        const actions = Object.keys(flattened).map((key) =>
+          setDownloadModInfo(downloadId, key, flattened[key]),
+        );
+        if (actions.length > 0) {
+          batchDispatch(this.#api.store, actions);
+        }
+      }
     } catch (err) {
+      this.#resolvedMeta.delete(collationId);
       callback?.(unknownToError(err));
     }
   }
@@ -725,6 +747,11 @@ export class IPCDownloadAdapter {
       const resolved = await Promise.resolve(
         handler(encodedUrl.url.toString()),
       );
+
+      // Stash resolver meta so #handleStartDownload can merge it into modInfo.
+      if (resolved.meta !== undefined && resolved.meta !== null) {
+        this.#resolvedMeta.set(collationId, resolved.meta);
+      }
 
       log("debug", "download resolved", { resolvedUrl: resolved.urls[0] });
       return { probeEndpoint: { url: resolved.urls[0] } };
