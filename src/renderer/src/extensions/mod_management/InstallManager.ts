@@ -1147,7 +1147,7 @@ class InstallManager {
         ));
     }
 
-    const fileList: string[] = [];
+    let fileList: string[] = [];
 
     return extractProm
       .then(({ code, errors }: { code: number; errors: string[] }) => {
@@ -1175,9 +1175,8 @@ class InstallManager {
           return Promise.resolve();
         }
       })
-      .then(() => buildFileList(tempPath))
-      .then((result) => { fileList.push(...result); })
-      .then(() => {
+      .then(async () => {
+        fileList = await buildFileList(tempPath);
         if (truthy(extractList) && extractList.length > 0) {
           return makeListInstaller(extractList, tempPath);
         } else {
@@ -4025,7 +4024,7 @@ class InstallManager {
     unattended?: boolean,
     details?: IInstallationDetails,
   ): Promise<IInstallResult> {
-    const fileList: string[] = [];
+    let fileList: string[] = [];
     let phase = "Extracting";
 
     const progress = (files: string[], percent: number) => {
@@ -4079,9 +4078,8 @@ class InstallManager {
           await this.queryContinue(api, errors, archivePath);
         }
       })
-      .then(() => buildFileList(tempPath))
-      .then((result) => { fileList.push(...result); })
       .then(async () => {
+        fileList = await buildFileList(tempPath);
         const hasFomodSegment = (file: string) => {
           const segments = file.toLowerCase().split(path.sep);
           return segments.includes("fomod");
