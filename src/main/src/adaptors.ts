@@ -1,3 +1,5 @@
+import type { IMessageHandler } from "@vortex/adaptor-api";
+import type { GameInfo } from "@vortex/adaptor-api/contracts/game-info";
 import type { IPingService } from "@vortex/adaptor-api/contracts/ping";
 import type { StorePathSnapshot } from "@vortex/adaptor-api/stores/lib";
 import type { IFileSystem, PathResolver } from "@vortex/fs";
@@ -6,6 +8,7 @@ import type { Serializable } from "@vortex/shared/ipc";
 import { Base, OS, Store } from "@vortex/adaptor-api/stores/lib";
 import { QualifiedPath } from "@vortex/fs";
 import type exeVersionT from "exe-version";
+import { ipcMain } from "electron";
 import * as fs from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import * as path from "node:path";
@@ -133,6 +136,7 @@ function resolveAdaptorBundle(
 // Module-level state for the adaptor host system
 let _adaptorHost: IAdaptorHost | null = null;
 const loadedAdaptors = new Map<string, ILoadedAdaptor>();
+const cachedGameInfo = new Map<string, GameInfo>();
 
 // ============================================================================
 // Store path snapshot construction
@@ -346,6 +350,31 @@ export async function initAdaptorHost(): Promise<void> {
       log("info", "[adaptor-host]   provides: {{provides}}", {
         provides: m.provides.join(", "),
       });
+
+      // Eagerly fetch game info so it's available synchronously to the
+      // renderer bridge during extension init.
+      const infoUri = m.provides.find((u) =>
+        /^vortex:adaptor\/[^/]+\/info$/.test(u),
+      );
+      if (infoUri) {
+        try {
+          const info = (await adaptor.call(
+            infoUri,
+            "getGameInfo",
+            [],
+          )) as GameInfo;
+          cachedGameInfo.set(name, info);
+        } catch (err: unknown) {
+          log(
+            "warn",
+            "[adaptor-host] Failed to pre-fetch game info for {{name}}: {{error}}",
+            {
+              name,
+              error: err instanceof Error ? err.message : "Unknown error",
+            },
+          );
+        }
+      }
     } catch (err: unknown) {
       log(
         "warn",
@@ -368,6 +397,34 @@ export async function initAdaptorHost(): Promise<void> {
 // ============================================================================
 
 function registerIpcHandlers(): void {
+  /**
+   * Synchronous handler that returns adaptor manifests together with
+   * pre-fetched game info. The renderer bridge calls this during
+   * extension init (where only synchronous work is allowed) so that
+   * `registerGame` can be invoked before `endRegistration`.
+   */
+  ipcMain.on("adaptors:list-with-info", (event) => {
+    const result: Array<{
+      name: string;
+      pid: string;
+      provides: string[];
+      requires: string[];
+      gameInfo: GameInfo | null;
+    }> = [];
+
+    for (const [name, adaptor] of loadedAdaptors) {
+      result.push({
+        name,
+        pid: adaptor.pid,
+        provides: [...adaptor.manifest.provides],
+        requires: [...adaptor.manifest.requires],
+        gameInfo: cachedGameInfo.get(name) ?? null,
+      });
+    }
+
+    event.returnValue = result;
+  });
+
   /**
    * Returns the list of loaded adaptors with their manifests.
    * Renderer uses this to discover what game services are available.

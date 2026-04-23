@@ -1,13 +1,17 @@
 import type * as Redux from "redux";
 
 import { mdiDownload } from "@mdi/js";
-import { unknownToError } from "@vortex/shared";
+import {
+  getErrorCode,
+  getErrorMessageOrDefault,
+  unknownToError,
+} from "@vortex/shared";
 import PromiseBB from "bluebird";
 import * as _ from "lodash";
 import Zip from "node-7z";
 import * as path from "path";
 import { generate as shortid } from "shortid";
-import { fileMD5 } from "vortexmt";
+import { fileMD5 } from "../../util/checksum";
 import winapi from "winapi-bindings";
 
 import type {
@@ -938,20 +942,18 @@ function checkForUnfinalized(
                     })
                     .finally(() => ++completed);
                 } else {
-                  return toPromise<string>((cb) =>
-                    fileMD5(filePath, cb, () => {}),
-                  )
+                  return fileMD5(filePath)
                     .then((md5sum) => {
                       api.store.dispatch(setDownloadHash(id, md5sum));
                     })
-                    .catch((err) => {
-                      if (err.code === "ENOENT") {
+                    .catch((err: unknown) => {
+                      if (getErrorCode(err) === "ENOENT") {
                         // file doesn't exist, remove invalid download entry
                         api.store.dispatch(removeDownload(id));
                       } else {
                         log("error", "failed to calculate hash for download", {
                           file: downloads[id].localPath,
-                          error: err.message,
+                          error: getErrorMessageOrDefault(err),
                         });
                       }
                     })

@@ -73,6 +73,8 @@ try {
 
     adaptors: {
       list: () => betterIpcRenderer.invoke("adaptors:list"),
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+      listWithInfoSync: () => ipcRenderer.sendSync("adaptors:list-with-info"),
       call: (
         adaptorName: string,
         serviceUri: string,

@@ -3,8 +3,7 @@
   "version": "0.0.1",
   "description": "Support for new Gamebryo data archives",
   "scripts": {
-    "_native": "node ../copy-native.mjs ./node_modules/ba2tk/build/Release/ba2tk.node",
-    "_build": "node build.mjs && pnpm run _native && pnpm extractInfo",
+    "_build": "node build.mjs && pnpm extractInfo",
     "build": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build && node ../copy-extension.mjs out)",
     "dist": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build && node ../copy-extension.mjs dist)",
     "typecheck": "pnpm tsc"
@@ -19,7 +18,6 @@
   "devDependencies": {
     "@types/i18next": "catalog:",
     "@types/rimraf": "catalog:",
-    "ba2tk": "catalog:",
     "bluebird": "catalog:",
     "copyfiles": "catalog:",
     "rimraf": "catalog:",

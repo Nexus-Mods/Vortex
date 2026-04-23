@@ -24,7 +24,7 @@ import { toast } from "react-hot-toast";
 import * as semver from "semver";
 import { generate as shortid } from "shortid";
 import stringFormat from "string-template";
-import { fileMD5 } from "vortexmt";
+import { fileMD5 } from "./util/checksum";
 
 import type {
   DialogActions,
@@ -128,7 +128,6 @@ import {
   isFunction,
   setdefault,
   timeout,
-  toPromise,
   truthy,
   wrapExtCBAsync,
   wrapExtCBSync,
@@ -2308,35 +2307,26 @@ class ExtensionManager {
     progressFunc?: (progress: number, total: number) => void,
   ): PromiseBB<IHashResult> => {
     let lastProgress: number = 0;
-    const progressHash = (progress: number, total: number) => {
-      progressFunc?.(progress, total);
-      if (lastProgress !== total) {
-        lastProgress = total;
-      }
-    };
-    return toPromise<string>((cb) => fileMD5(data, cb, progressHash)).then(
-      (result) => {
-        if (lastProgress === 0) {
-          // Need to get the size from the file or buffer
-          const sizePromise = Buffer.isBuffer(data)
-            ? PromiseBB.resolve(data.length)
-            : fsVortex
-                .statAsync(data)
-                .then((stats) => stats.size)
-                .catch(() => 0);
-
-          return sizePromise.then((numBytes) => ({
-            md5sum: result,
-            numBytes,
-          }));
-        } else {
-          return PromiseBB.resolve({
-            md5sum: result,
-            numBytes: lastProgress,
-          });
+    const progressHash = progressFunc
+      ? (progress: number, total: number) => {
+          progressFunc(progress, total);
+          lastProgress = total;
         }
-      },
-    );
+      : undefined;
+
+    return PromiseBB.resolve(fileMD5(data, progressHash)).then((md5sum) => {
+      if (lastProgress > 0) {
+        return { md5sum, numBytes: lastProgress };
+      }
+      const sizePromise = Buffer.isBuffer(data)
+        ? PromiseBB.resolve(data.length)
+        : fsVortex
+            .statAsync(data)
+            .then((stats) => stats.size)
+            .catch(() => 0);
+
+      return sizePromise.then((numBytes) => ({ md5sum, numBytes }));
+    });
   };
 
   private openArchive = (
@@ -3130,6 +3120,7 @@ class ExtensionManager {
   private prepareExtensions(): IRegisteredExtension[] {
     const staticExtensions: Record<string, () => unknown> = {
       about_dialog: () => require("./extensions/about_dialog/index.ts"),
+      adaptor_bridge: () => require("./extensions/adaptor_bridge/index.ts"),
       analytics: () => require("./extensions/analytics/index.ts"),
       announcement_dashlet: () =>
         require("./extensions/announcement_dashlet/index.ts"),

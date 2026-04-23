@@ -13,7 +13,6 @@ packages:
 allowBuilds:
   "@nexusmods/fomod-installer-native": true
   "@parcel/watcher": true
-  ba2tk: true
   bsatk: true
   bsdiff-node: true
   core-js: true
@@ -30,7 +29,6 @@ allowBuilds:
   native-errors: true
   protobufjs: true
   unrs-resolver: true
-  vortexmt: true
   winapi-bindings: true
   xxhash-addon: true
 
@@ -131,7 +129,6 @@ catalog:
   "@vitest/coverage-v8": ^4.1.0
   "@vitest/ui": 4.1.0
   "@welldone-software/why-did-you-render": ^10.0.1
-  ba2tk: git+https://github.com/Nexus-Mods/node-ba2tk#762d8de841ca1c770a0925311fd626d71de67971
   bbcode-to-react: git+https://github.com/TanninOne/bbcode-to-react#c67356006470e5066ea447e04a3968dca367339d
   big.js: ^5.2.2
   bluebird: ^3.7.2
@@ -278,7 +275,6 @@ catalog:
   vite-plugin-doctest: ^2.0.0
   vitest: ^4.1.0
   vortex-parse-ini: git+https://github.com/Nexus-Mods/vortex-parse-ini#2425af99d1cff2331ccf3aacfa892c314e99e18d
-  vortexmt: git+https://github.com/Nexus-Mods/node-vortexmt#5251ea012ce856742aeaf73a583073497aff773a
   webpack: ^5.94.0
   webpack-cli: ^5.1.4
   webpack-node-externals: ^3.0.0
