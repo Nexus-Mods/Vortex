@@ -39,7 +39,7 @@ import { log, setupLogging, changeLogPath } from "./logging";
 import MainWindow from "./MainWindow";
 import SplashScreen from "./SplashScreen";
 import DuckDBSingleton from "./store/DuckDBSingleton";
-import LevelPersist, { DatabaseLocked } from "./store/LevelPersist";
+import LevelPersist, { DatabaseLocked, DatabaseOpenError } from "./store/LevelPersist";
 import {
   initMainPersistence,
   readPersistedValue,
@@ -410,6 +410,17 @@ class Application {
           "Startup failed",
           "Vortex seems to be running already. " +
             "If you can't see it, please check the task manager.",
+        );
+
+        app.quit();
+      } else if (err instanceof DatabaseOpenError) {
+        dialog.showErrorBox(
+          "Startup failed",
+          `Vortex couldn't open its application database at:\n\n` +
+            `${err.path}\n\n` +
+            `Underlying error: ${err.cause}\n\n` +
+            `This is not a "database locked" condition — a different problem is preventing the database from opening. ` +
+            `Check that the path is accessible, the drive isn't full or read-only, and that no antivirus is quarantining files in that folder.`,
         );
 
         app.quit();
