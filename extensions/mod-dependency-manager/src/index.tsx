@@ -1139,9 +1139,10 @@ function makeLoadOrderAttribute(
     calc: (mod: types.IMod) => loadOrder[mod.id],
     condition: () => {
       const gameMode = selectors.activeGameId(api.store.getState());
+      const game = gameMode !== undefined ? util.getGame(gameMode) : undefined;
       // if mergeMods is a function we could still actually get file conflicts, because
       // it's then not guaranteed that the mod path is unique
-      return util.getGame(gameMode).mergeMods !== false;
+      return game !== undefined && game.mergeMods !== false;
     },
     edit: {},
     externalData: (onChange: () => void) => {
@@ -1169,7 +1170,8 @@ function makeDependenciesAttribute(
     ),
     condition: () => {
       const gameMode = selectors.activeGameId(api.store.getState());
-      return util.getGame(gameMode).mergeMods !== false;
+      const game = gameMode !== undefined ? util.getGame(gameMode) : undefined;
+      return game !== undefined && game.mergeMods !== false;
     },
     calc: (mod: types.IMod) => mod,
     isToggleable: true,
