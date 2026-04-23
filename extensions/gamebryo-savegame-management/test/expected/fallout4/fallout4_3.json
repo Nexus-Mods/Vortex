@@ -1,0 +1,35 @@
+{
+  "fileName": "fallout4_3.fos",
+  "quick": {
+    "characterName": "Kira",
+    "characterLevel": 1,
+    "location": "Убежище 111",
+    "saveNumber": 3,
+    "creationTime": 1754521540,
+    "playTime": "0д.0ч.37м.0 д.0 ч.37 мин"
+  },
+  "full": {
+    "characterName": "Kira",
+    "characterLevel": 1,
+    "location": "Убежище 111",
+    "saveNumber": 3,
+    "creationTime": 1754521540,
+    "playTime": "0д.0ч.37м.0 д.0 ч.37 мин",
+    "plugins": [
+      "Fallout4.esm",
+      "DLCRobot.esm",
+      "DLCworkshop01.esm",
+      "DLCCoast.esm",
+      "DLCworkshop02.esm",
+      "DLCworkshop03.esm",
+      "DLCNukaWorld.esm"
+    ],
+    "screenshotSize": {
+      "width": 640,
+      "height": 384
+    },
+    "screenshotHash": "850e857058082a46cac562149f34ec6dba40a51cb8b0833a19db64a521d5bfc7",
+    "screenshotLength": 983040,
+    "screenshotHead": "IyUj/ykqJ/8oKif/KCkn/yYsLP8oKyf/KCsm/yksKf8pLCj/Ki0o/ywvK/8tMCz/LTEr/ywxLf8sLif/KCkl/yorJv8sLyn/Ky0o/yksJ/8sLSj/Li8p/ywuKf8qKyb/LjAr/y8zK/8vMiz/LjEr/y0vK/8uMCr/LS4p/ywsJv8uLyn/LCwn/ywtKv8pKib/KSom/yYmI/8kJCL/LSwm/yssJv8pKyb/KSom/ywsKP8kJCL/Jiop/yYsLP8mKyz/JC80/yUuMf8lLjL/JzAz/y8zKv8zNy3/MTUs/zA1Lv8nMTL/Jy4s/ys1N/8tOj7/KjY5/yYyM/8nMzP/JjAy/w=="
+  }
+}

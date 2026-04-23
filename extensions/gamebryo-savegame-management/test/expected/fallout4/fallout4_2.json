@@ -1,0 +1,35 @@
+{
+  "fileName": "fallout4_2.fos",
+  "quick": {
+    "characterName": "Kira",
+    "characterLevel": 1,
+    "location": "Убежище 111",
+    "saveNumber": 2,
+    "creationTime": 1754521516,
+    "playTime": "0д.0ч.36м.0 д.0 ч.36 мин"
+  },
+  "full": {
+    "characterName": "Kira",
+    "characterLevel": 1,
+    "location": "Убежище 111",
+    "saveNumber": 2,
+    "creationTime": 1754521516,
+    "playTime": "0д.0ч.36м.0 д.0 ч.36 мин\u0000〹慡㕢㑦捡て㜲",
+    "plugins": [
+      "Fallout4.esm",
+      "DLCRobot.esm",
+      "DLCworkshop01.esm",
+      "DLCCoast.esm",
+      "DLCworkshop02.esm",
+      "DLCworkshop03.esm",
+      "DLCNukaWorld.esm"
+    ],
+    "screenshotSize": {
+      "width": 640,
+      "height": 384
+    },
+    "screenshotHash": "53c436d96f13bf940f1c5dbfbd4226a988b1f56d31c03d371668c7b9c2c3b052",
+    "screenshotLength": 983040,
+    "screenshotHead": "EBQT/xAUE/8QFBP/EBQT/xAUE/8QFBP/EBQT/xAUE/8QFBP/EBQT/xAUE/8QFBP/EBQT/xAUE/8QFBP/EBQT/xAUE/8QFBP/EBQT/xAUE/8QFBP/EBQT/xAUE/8QFBP/EBQT/xAUE/8QFBP/EBQT/xAUE/8QFBL/EBMS/xATEv8QFBP/EBQS/xAUE/8QFBP/EBMS/xAUE/8QFBP/EBQT/xATEv8QFBP/EBQT/xAUE/8QFBL/EBQT/xAUE/8QExL/EBMS/xAUE/8QExL/EBQS/w4PDv8NDw7/DA4N/wsMDP8QExH/DxMR/w8TEf8KDAv/CgsK/xYbGP8fJiH/HSQf/w=="
+  }
+}

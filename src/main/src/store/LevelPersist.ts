@@ -20,6 +20,26 @@ export class DatabaseLocked extends Error {
   }
 }
 
+export class DatabaseOpenError extends Error {
+  public readonly path: string;
+  public readonly cause: string;
+  constructor(persistPath: string, cause: string) {
+    super(`Failed to open database at ${persistPath}: ${cause}`);
+    this.name = this.constructor.name;
+    this.path = persistPath;
+    this.cause = cause;
+  }
+}
+
+// Lock-contention text produced by leveldb's env layer when another process
+// holds the LOCK file — matched across platforms.  Only these messages should
+// trigger the "another instance is running" code path.
+function isLockContention(message: string): boolean {
+  return /being used by another process|already held|resource (temporarily )?unavailable|resource busy/i.test(
+    message,
+  );
+}
+
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -49,19 +69,28 @@ class LevelPersist implements IPersistor {
       return new LevelPersist(connection, alias);
     } catch (unknownErr) {
       const err = unknownToError(unknownErr);
-      log("warn", "duckdb: openDB failed", {
-        message: err.message,
-        triesRemaining: tries,
-        path: persistPath,
-      });
       if (err instanceof DataInvalid) {
         throw err;
       }
       if (/corrupt/i.test(err.message)) {
         throw new DataInvalid(err.message);
       }
+      if (!isLockContention(err.message)) {
+        // Not a lock conflict — retrying won't help. Surface the real cause so
+        // the startup handler can show the user an accurate diagnostic instead
+        // of the misleading "another instance is running" dialog.
+        log("warn", "duckdb: openDB failed", {
+          message: err.message,
+          path: persistPath,
+        });
+        throw new DatabaseOpenError(persistPath, err.message);
+      }
+      log("warn", "duckdb: openDB locked, retrying", {
+        message: err.message,
+        triesRemaining: tries,
+        path: persistPath,
+      });
       if (tries === 0) {
-        log("info", "failed to open db", err);
         throw new DatabaseLocked();
       }
       await delay(500);

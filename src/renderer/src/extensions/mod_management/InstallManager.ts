@@ -1147,7 +1147,7 @@ class InstallManager {
         ));
     }
 
-    const fileList: string[] = [];
+    let fileList: string[] = [];
 
     return extractProm
       .then(({ code, errors }: { code: number; errors: string[] }) => {
@@ -1175,9 +1175,8 @@ class InstallManager {
           return Promise.resolve();
         }
       })
-      .then(() => buildFileList(tempPath))
-      .then((result) => { fileList.push(...result); })
-      .then(() => {
+      .then(async () => {
+        fileList = await buildFileList(tempPath);
         if (truthy(extractList) && extractList.length > 0) {
           return makeListInstaller(extractList, tempPath);
         } else {
@@ -1326,7 +1325,8 @@ class InstallManager {
     );
     const profileId =
       batchContext?.get<string>("profileId") ?? activeProfile(state)?.id;
-    const currentProfile = profileById(state, profileId);
+    const currentProfile =
+      profileById(state, profileId) ?? activeProfile(state);
 
     // Use parallel installation concurrency limiter instead of sequential mQueue
     this.mMainInstallsLimit
@@ -1434,6 +1434,13 @@ class InstallManager {
                       installGameId,
                       modId,
                     });
+                    if (currentProfile === undefined) {
+                      return Promise.reject(
+                        new ProcessCanceled(
+                          "You need to manage a game before installing this mod",
+                        ),
+                      );
+                    }
                     installGameId = currentProfile.gameId;
                   }
                   const discovery = discoveryByGame(state, installGameId);
@@ -1856,6 +1863,11 @@ class InstallManager {
                 .then((result: IInstallResult & { installerId?: string }) => {
                   setAttribute("mod.modId", modId);
                   setAttribute("mod.installerId", result.installerId ?? "unknown");
+                  if (!Array.isArray(result.instructions)) {
+                    return Promise.reject(
+                      new DataInvalid("Installer produced no instructions"),
+                    );
+                  }
                   setAttribute("mod.fileCount",
                     result.instructions.filter(i => i.type === "copy").length);
                   // update choices now that the installer may have produced new ones
@@ -4025,7 +4037,7 @@ class InstallManager {
     unattended?: boolean,
     details?: IInstallationDetails,
   ): Promise<IInstallResult> {
-    const fileList: string[] = [];
+    let fileList: string[] = [];
     let phase = "Extracting";
 
     const progress = (files: string[], percent: number) => {
@@ -4079,9 +4091,8 @@ class InstallManager {
           await this.queryContinue(api, errors, archivePath);
         }
       })
-      .then(() => buildFileList(tempPath))
-      .then((result) => { fileList.push(...result); })
       .then(async () => {
+        fileList = await buildFileList(tempPath);
         const hasFomodSegment = (file: string) => {
           const segments = file.toLowerCase().split(path.sep);
           return segments.includes("fomod");

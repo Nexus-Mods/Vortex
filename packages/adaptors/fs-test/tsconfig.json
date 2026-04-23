@@ -1,0 +1,20 @@
+{
+  "$schema": "https://www.schemastore.org/tsconfig.json",
+  "extends": "../../../tsconfig.base.json",
+  "include": ["src/**/*"],
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "allowJs": false,
+    "composite": true,
+    "experimentalDecorators": true,
+    "types": [],
+    // `DOM` is required so TypeScript can parse the `WebFileSystem`
+    // declarations that leak in via `@vortex/fs`'s development-condition
+    // exports (ReadableStream / WritableStream references). The adaptor
+    // itself never touches those APIs at runtime.
+    "lib": ["ESNext", "DOM"],
+    "customConditions": ["development"]
+  }
+}

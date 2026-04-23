@@ -1,0 +1,29 @@
+{
+  "fileName": "oblivion_2.ess",
+  "quick": {
+    "characterName": "Imperial Male",
+    "characterLevel": 1,
+    "location": "Imperial Prison",
+    "saveNumber": 19,
+    "creationTime": 1289846192,
+    "playTime": "1 days, 1 hours"
+  },
+  "full": {
+    "characterName": "Imperial Male",
+    "characterLevel": 1,
+    "location": "Imperial Prison",
+    "saveNumber": 19,
+    "creationTime": 1289846192,
+    "playTime": "1 days, 1 hours",
+    "plugins": [
+      "Oblivion.esm"
+    ],
+    "screenshotSize": {
+      "width": 256,
+      "height": 160
+    },
+    "screenshotHash": "85d2bfd991772fa46f97a7263689ae2ef50494016e3f454aeedf41dab8689591",
+    "screenshotLength": 163840,
+    "screenshotHead": "GR0c/xkcGf8TFBL/GBsZ/xwfHf8aHRv/Ghwb/xISEf8ODw3/DhAQ/w0QD/8ICQj/Cw0M/woMCv8NDw3/ERUS/xMWFP8WGxj/GB0a/xccGv8cIR//GyAd/x4lIf8mLyv/ICck/yMrKP8gJiL/Iigm/x4kIf8YHBn/ExYT/xkfGv8ZHxv/GyAd/yEoJP8gJiH/HiUh/x8lIv8aIBv/ExcU/w8RD/8RExH/JCso/ys3M/8mMCv/JzEs/yEoJP8gKCX/HyYj/xwgHv8WGxn/Fx0b/x0iIP8lLCj/KjIt/yctKv8jKCb/Jiwo/xUaGP8HBwf/CQkJ/wsLCv8LCwr/Dg4N/w=="
+  }
+}

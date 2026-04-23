@@ -1,0 +1,30 @@
+{
+  "fileName": "skyrim_1.ess",
+  "quick": {
+    "characterName": "Last Dragonborn",
+    "characterLevel": 1,
+    "location": "Skyrim",
+    "saveNumber": 2,
+    "creationTime": 1761179064,
+    "playTime": "000.24.17"
+  },
+  "full": {
+    "characterName": "Last Dragonborn",
+    "characterLevel": 1,
+    "location": "Skyrim",
+    "saveNumber": 2,
+    "creationTime": 1761179064,
+    "playTime": "000.24.17",
+    "plugins": [
+      "Skyrim.esm",
+      "Update.esm"
+    ],
+    "screenshotSize": {
+      "width": 320,
+      "height": 192
+    },
+    "screenshotHash": "1b4ce6db10b2bff6ade9bf23d129cb0443bda31f86c877b9a5fbab00bc9ac66d",
+    "screenshotLength": 245760,
+    "screenshotHead": "rru//666v/+uu7//rru//6+7v/+vvMD/sL3B/7C9wf+wvMD/rru//626vv+suLz/qra6/6m1uf+ns7j/prG2/6WwtP+kr7P/pK+z/6SwtP+msbX/p7K2/6izt/+otLj/qLO3/6eytv+lsLT/oq2y/6Gssf+gq7D/oKyw/6Gssf+hrbH/oq6y/6Kusv+jrrL/pK+z/6SwtP+lsLT/prG1/6eytf+os7f/qLS3/6m1uP+ptbj/qbW5/6m1uf+otLj/qLS4/6m0uP+ptLj/qrW5/6u2uv+tuLv/rrm8/6+6vf+vur3/rrm8/624vP+st7v/q7a6/6u2uf+rtrn/qra5/w=="
+  }
+}

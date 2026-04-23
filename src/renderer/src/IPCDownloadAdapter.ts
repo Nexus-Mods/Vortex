@@ -1,5 +1,4 @@
 import type {
-  WireDownloadCheckpoint,
   WireDownloadState,
   WireResolvedResource,
 } from "@vortex/shared/ipc";
@@ -12,12 +11,28 @@ import {
   UserCanceled,
   DownloadError,
 } from "@vortex/shared/errors";
+import { createHash } from "node:crypto";
+import { createReadStream } from "node:fs";
 import { access, rm } from "node:fs/promises";
 import * as path from "node:path";
+import { pipeline } from "node:stream/promises";
 import { z } from "zod";
 
 import type { IExtensionApi } from "./types/IExtensionContext";
 
+import {
+  clearDownloadCheckpoint,
+  setDownloadCheckpoint,
+} from "./actions/downloads";
+import {
+  CollectionsDownloadCancelledEvent,
+  CollectionsDownloadCompletedEvent,
+  CollectionsDownloadFailedEvent,
+  ModsDownloadCancelledEvent,
+  ModsDownloadCompletedEvent,
+  ModsDownloadFailedEvent,
+  ModsDownloadStartedClientEvent,
+} from "./extensions/analytics/mixpanel/MixpanelEvents";
 import {
   downloadProgress,
   finishDownload,
@@ -25,10 +40,14 @@ import {
   pauseDownload,
   removeDownload,
   setDownloadFilePath,
+  setDownloadHash,
+  setDownloadInterrupted,
   setDownloadPausable,
   setDownloadSpeed,
 } from "./extensions/download_management/actions/state";
 import { downloadPathForGame } from "./extensions/download_management/selectors";
+import { nexusIdsFromDownloadId } from "./extensions/nexus_integration/selectors";
+import { makeModAndFileUIDs } from "./extensions/nexus_integration/util/UIDs";
 import { activeGameId } from "./extensions/profile_management/selectors";
 import { log } from "./logging";
 
@@ -73,21 +92,15 @@ type StoredDownloadInfo = {
   encodedUrl: EncodedUrl;
 };
 
-type DownloadState = {
-  encodedUrl: EncodedUrl;
-  checkpoint?: WireDownloadCheckpoint;
-};
-
 export class IPCDownloadAdapter {
   readonly #api: IExtensionApi;
   readonly #handlers: Record<string, ProtocolHandler> = {};
 
-  // TODO: APP-353, APP-228 once the URL and checkpoint are both written to Redux,
-  // #downloadState can be removed entirely and both resume paths read from Redux instead.
   readonly #pending = new Map<number, StoredDownloadInfo>();
-  readonly #downloadState = new Map<string, DownloadState>();
+  readonly #activeDownloads = new Set<string>();
   readonly #lastBytesReceived = new Map<string, number>();
   readonly #lastProgressDispatch = new Map<string, number>();
+  readonly #startedEventEmitted = new Set<string>();
   #speedAccumBytes = 0;
   #lastSpeedDispatch: number | null = null;
   #nextCollationId = 0;
@@ -176,6 +189,225 @@ export class IPCDownloadAdapter {
     log("debug", `registered protocol handler for scheme '${scheme}'`);
   }
 
+  processInterruptedDownloads(): void {
+    if (process.env.VORTEX_USE_IPC_DOWNLOADER !== "1") return;
+
+    const state = this.#api.getState();
+    const files = state.persistent.downloads.files ?? {};
+    const checkpoints = state.persistent.downloads.checkpoints ?? {};
+
+    for (const [id, download] of Object.entries(files)) {
+      if (!["init", "started"].includes(download.state)) continue;
+
+      const checkpoint = checkpoints[id];
+      if (checkpoint !== undefined) {
+        log("debug", "auto-resuming interrupted download", { id });
+        this.#activeDownloads.add(id);
+        window.api.downloader.resume(checkpoint).catch((err) => {
+          log("error", "failed to auto-resume download", { id, err });
+          this.#activeDownloads.delete(id);
+          this.#api.store.dispatch(
+            setDownloadInterrupted(id, download.received),
+          );
+        });
+      } else {
+        log("debug", "interrupted download has no checkpoint, marking paused", {
+          id,
+        });
+        this.#api.store.dispatch(setDownloadInterrupted(id, download.received));
+      }
+    }
+  }
+
+  #emitAnalytics(
+    downloadId: string,
+    eventType: "started" | "completed" | "failed" | "canceled",
+    error?: Error,
+  ): void {
+    const state = this.#api.getState();
+    const nexusIds = nexusIdsFromDownloadId(state, downloadId);
+    if (!nexusIds?.numericGameId || isNaN(nexusIds.numericGameId)) return;
+
+    const download = state.persistent.downloads.files?.[downloadId];
+    const isCollection =
+      nexusIds.collectionSlug !== undefined &&
+      nexusIds.revisionId !== undefined;
+
+    if (eventType === "started") {
+      if (
+        isCollection ||
+        nexusIds.modId === undefined ||
+        nexusIds.fileId === undefined
+      )
+        return;
+      const { modUID, fileUID } = makeModAndFileUIDs(
+        nexusIds.numericGameId.toString(),
+        nexusIds.modId,
+        nexusIds.fileId,
+      );
+      this.#api.events.emit(
+        "analytics-track-mixpanel-event",
+        new ModsDownloadStartedClientEvent(
+          nexusIds.modId,
+          nexusIds.fileId,
+          nexusIds.numericGameId,
+          modUID,
+          fileUID,
+        ),
+      );
+      return;
+    }
+
+    if (eventType === "completed") {
+      const duration_ms = Date.now() - (download?.fileTime ?? Date.now());
+      const file_size = download?.size ?? 0;
+      if (isCollection && nexusIds.collectionId && nexusIds.revisionId) {
+        this.#api.events.emit(
+          "analytics-track-mixpanel-event",
+          new CollectionsDownloadCompletedEvent(
+            nexusIds.collectionId,
+            nexusIds.revisionId,
+            nexusIds.numericGameId,
+            file_size,
+            duration_ms,
+          ),
+        );
+      } else if (
+        nexusIds.modId !== undefined &&
+        nexusIds.fileId !== undefined
+      ) {
+        const { modUID, fileUID } = makeModAndFileUIDs(
+          nexusIds.numericGameId.toString(),
+          nexusIds.modId,
+          nexusIds.fileId,
+        );
+        this.#api.events.emit(
+          "analytics-track-mixpanel-event",
+          new ModsDownloadCompletedEvent(
+            nexusIds.modId,
+            nexusIds.fileId,
+            nexusIds.numericGameId,
+            modUID,
+            fileUID,
+            file_size,
+            duration_ms,
+          ),
+        );
+      }
+      return;
+    }
+
+    if (eventType === "canceled") {
+      if (isCollection && nexusIds.collectionId && nexusIds.revisionId) {
+        this.#api.events.emit(
+          "analytics-track-mixpanel-event",
+          new CollectionsDownloadCancelledEvent(
+            nexusIds.collectionId,
+            nexusIds.revisionId,
+            nexusIds.numericGameId,
+          ),
+        );
+      } else if (
+        nexusIds.modId !== undefined &&
+        nexusIds.fileId !== undefined
+      ) {
+        const { modUID, fileUID } = makeModAndFileUIDs(
+          nexusIds.numericGameId.toString(),
+          nexusIds.modId,
+          nexusIds.fileId,
+        );
+        this.#api.events.emit(
+          "analytics-track-mixpanel-event",
+          new ModsDownloadCancelledEvent(
+            nexusIds.modId,
+            nexusIds.fileId,
+            nexusIds.numericGameId,
+            modUID,
+            fileUID,
+          ),
+        );
+      }
+      return;
+    }
+
+    if (eventType === "failed") {
+      const message = error?.message ?? "";
+      if (isCollection && nexusIds.collectionId && nexusIds.revisionId) {
+        this.#api.events.emit(
+          "analytics-track-mixpanel-event",
+          new CollectionsDownloadFailedEvent(
+            nexusIds.collectionId,
+            nexusIds.revisionId,
+            nexusIds.numericGameId,
+            "",
+            message,
+          ),
+        );
+      } else if (
+        nexusIds.modId !== undefined &&
+        nexusIds.fileId !== undefined
+      ) {
+        const { modUID, fileUID } = makeModAndFileUIDs(
+          nexusIds.numericGameId.toString(),
+          nexusIds.modId,
+          nexusIds.fileId,
+        );
+        this.#api.events.emit(
+          "analytics-track-mixpanel-event",
+          new ModsDownloadFailedEvent(
+            nexusIds.modId,
+            nexusIds.fileId,
+            nexusIds.numericGameId,
+            modUID,
+            fileUID,
+            "",
+            message,
+          ),
+        );
+      }
+    }
+  }
+
+  async #completeDownload(downloadId: string): Promise<void> {
+    const reduxState = this.#api.getState();
+    const download = reduxState.persistent.downloads.files?.[downloadId];
+
+    if (download?.localPath !== undefined) {
+      const gameId = download.game?.[0] ?? activeGameId(reduxState);
+      const dlPath = downloadPathForGame(reduxState, gameId);
+      const filePath = path.join(dlPath, download.localPath);
+      try {
+        // TODO: move hashing into main process
+
+        // MD5 is used as a fallback identifier for collection rule matching and
+        // reverse ModDB lookups for files that lack Nexus IDs (e.g. non-NXM downloads).
+        const hash = createHash("md5");
+        await pipeline(createReadStream(filePath), hash);
+        this.#api.store.dispatch(
+          setDownloadHash(downloadId, hash.digest("hex")),
+        );
+      } catch (err) {
+        log("warn", "failed to compute MD5 for download", { downloadId, err });
+      }
+    }
+
+    // Mark record as finished. nexus_integration reads finished records
+    // for attribute extraction during mod installation.
+    this.#api.store.dispatch(finishDownload(downloadId, "finished", null));
+    // Notify listeners that the download completed. InstallManager listens
+    // for this to trigger auto-install when automation is enabled.
+    this.#api.events.emit("did-finish-download", downloadId, "finished");
+
+    // Trigger auto-install if the user has automation enabled or if this
+    // download was started as an update (e.g. from the mod management view).
+    if (
+      reduxState.settings.automation?.install ||
+      download?.modInfo?.["startedAsUpdate"] === true
+    ) {
+      this.#api.events.emit("start-install-download", downloadId);
+    }
+  }
+
   async #handleStartDownload(
     rawUrls: string[],
     modInfo: ModInfo,
@@ -228,7 +460,7 @@ export class IPCDownloadAdapter {
         collationId,
       );
 
-      this.#downloadState.set(downloadId, { encodedUrl: info.encodedUrl });
+      this.#activeDownloads.add(downloadId);
       log("debug", "download queued", { downloadId, collationId });
       callback?.(null, downloadId);
 
@@ -254,7 +486,7 @@ export class IPCDownloadAdapter {
     callback?: (err: Error | null) => void,
   ): Promise<void> {
     try {
-      if (this.#downloadState.has(downloadId)) {
+      if (this.#activeDownloads.has(downloadId)) {
         log("debug", "cancelling download", { downloadId });
         await window.api.downloader.cancel(downloadId);
       } else {
@@ -281,10 +513,7 @@ export class IPCDownloadAdapter {
     try {
       log("debug", "pausing download", { downloadId });
       const checkpoint = await window.api.downloader.pause(downloadId);
-      const state = this.#downloadState.get(downloadId);
-      if (state !== undefined) state.checkpoint = checkpoint;
-      // Transition Redux state to "paused". DownloadView uses this to swap
-      // the pause button for a resume button.
+      this.#api.store.dispatch(setDownloadCheckpoint(downloadId, checkpoint));
       this.#api.store.dispatch(pauseDownload(downloadId, true, []));
       callback?.(null);
     } catch (err) {
@@ -297,19 +526,14 @@ export class IPCDownloadAdapter {
     callback?: (err: Error | null, id?: string) => void,
   ): Promise<void> {
     try {
-      const state = this.#downloadState.get(downloadId);
-      if (state === undefined) {
-        throw new Error(`No stored state for download ${downloadId}`);
-      }
-      if (state.checkpoint === undefined) {
+      const checkpoint =
+        this.#api.getState().persistent.downloads.checkpoints[downloadId];
+      if (checkpoint === undefined) {
         throw new Error(`No checkpoint stored for download ${downloadId}`);
       }
 
-      const collationId = this.#nextCollationId++;
-      this.#pending.set(collationId, { encodedUrl: state.encodedUrl });
-
-      log("debug", "resuming download", { downloadId, collationId });
-      await window.api.downloader.resume(state.checkpoint, collationId);
+      log("debug", "resuming download", { downloadId });
+      await window.api.downloader.resume(checkpoint);
       callback?.(null, downloadId);
     } catch (err) {
       callback?.(unknownToError(err));
@@ -328,7 +552,7 @@ export class IPCDownloadAdapter {
   }
 
   async #poll(): Promise<void> {
-    const downloadIds = this.#downloadState.keys().toArray();
+    const downloadIds = [...this.#activeDownloads];
     if (downloadIds.length === 0) return;
 
     const states = await window.api.downloader.getStates(downloadIds);
@@ -345,6 +569,15 @@ export class IPCDownloadAdapter {
         state.status === "completed" ||
         state.status === "failed" ||
         state.status === "canceled";
+
+      if (delta > 0 && !this.#startedEventEmitted.has(downloadId)) {
+        const reduxDownload =
+          this.#api.getState().persistent.downloads.files?.[downloadId];
+        if ((reduxDownload?.received ?? 0) === 0) {
+          this.#emitAnalytics(downloadId, "started");
+        }
+        this.#startedEventEmitted.add(downloadId);
+      }
 
       const secSinceProgress =
         (now - (this.#lastProgressDispatch.get(downloadId) ?? 0)) / 1000;
@@ -368,21 +601,23 @@ export class IPCDownloadAdapter {
       const err = rehydrateDownloadError(state);
       if (err !== null)
         log("warn", "download ended with error", { downloadId, err });
-      this.#downloadState.delete(downloadId);
+      this.#activeDownloads.delete(downloadId);
       this.#lastBytesReceived.delete(downloadId);
       this.#lastProgressDispatch.delete(downloadId);
+      this.#startedEventEmitted.delete(downloadId);
+      this.#api.store.dispatch(clearDownloadCheckpoint(downloadId));
 
       if (state.status === "completed") {
-        // Mark record as finished. nexus_integration reads finished records
-        // for attribute extraction during mod installation.
-        this.#api.store.dispatch(finishDownload(downloadId, "finished", null));
-        // Notify listeners that the download completed. InstallManager listens
-        // for this to trigger auto-install when automation is enabled.
-        this.#api.events.emit("did-finish-download", downloadId, "finished");
+        this.#emitAnalytics(downloadId, "completed");
+        this.#completeDownload(downloadId).catch((err) => {
+          log("error", "failed to finalize download", { downloadId, err });
+        });
       } else if (state.status === "canceled") {
+        this.#emitAnalytics(downloadId, "canceled");
         // User canceled - remove the record entirely, no file to keep.
         this.#api.store.dispatch(removeDownload(downloadId));
       } else {
+        this.#emitAnalytics(downloadId, "failed", err ?? undefined);
         // Mark record as failed so the UI can show an error state.
         this.#api.store.dispatch(finishDownload(downloadId, "failed", err));
         this.#api.events.emit("did-finish-download", downloadId, "failed");
@@ -397,12 +632,12 @@ export class IPCDownloadAdapter {
 
     if (this.#lastSpeedDispatch !== null) {
       const secSinceDispatch = (now - this.#lastSpeedDispatch) / 1000;
-      if (secSinceDispatch >= 1 || this.#downloadState.size === 0) {
+      if (secSinceDispatch >= 1 || this.#activeDownloads.size === 0) {
         const speed =
           secSinceDispatch > 0 ? this.#speedAccumBytes / secSinceDispatch : 0;
         this.#speedAccumBytes = 0;
-        this.#lastSpeedDispatch = this.#downloadState.size > 0 ? now : null;
-        if (speed > 0 || this.#downloadState.size === 0) {
+        this.#lastSpeedDispatch = this.#activeDownloads.size > 0 ? now : null;
+        if (speed > 0 || this.#activeDownloads.size === 0) {
           // Update speed display and speedHistory for the download graph.
           // Aggregated over 1s to avoid thrashing Redux with every poll tick.
           this.#api.store.dispatch(setDownloadSpeed(Math.round(speed)));
