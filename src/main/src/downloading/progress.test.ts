@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 
-import type { Chunk } from "./chunking";
+import type { Chunk } from "@vortex/shared/download";
 
 import { ProgressReporter } from "./progress";
 

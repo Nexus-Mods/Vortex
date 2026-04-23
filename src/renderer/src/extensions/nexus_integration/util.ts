@@ -18,15 +18,27 @@ import type {
   IModFileQuery,
 } from "@nexusmods/nexus-api";
 import type Nexus from "@nexusmods/nexus-api";
-import { NexusError, RateLimitError, TimeoutError } from "@nexusmods/nexus-api";
-import { makeFileUID } from "./util/UIDs";
-import BluebirdPromise from "bluebird";
 import type { TFunction } from "i18next";
+import type * as Redux from "redux";
+
+import { NexusError, RateLimitError, TimeoutError } from "@nexusmods/nexus-api";
+import {
+  getErrorMessageOrDefault,
+  unknownToError,
+} from "@vortex/shared";
+import BluebirdPromise from "bluebird";
 import jwt from "jsonwebtoken";
 import * as _ from "lodash";
 import * as path from "path";
-import type * as Redux from "redux";
 import * as util from "util";
+
+import type { IExtensionApi, ThunkStore } from "../../types/IExtensionContext";
+import type { IMod, IState } from "../../types/IState";
+import type { RedownloadMode } from "../download_management/DownloadManager";
+import type { IJWTAccessToken } from "./types/IJWTAccessToken";
+import type { IValidateKeyDataV2 } from "./types/IValidateKeyData";
+import type { ITokenReply } from "./util/oauth";
+
 import {
   addNotification,
   dismissNotification,
@@ -35,8 +47,7 @@ import {
   setModAttribute,
   setOAuthCredentials,
 } from "../../actions";
-import type { IExtensionApi, ThunkStore } from "../../types/IExtensionContext";
-import type { IMod, IState } from "../../types/IState";
+import { log } from "../../logging";
 import {
   DataInvalid,
   HTTPError,
@@ -47,16 +58,14 @@ import {
 import { contextify } from "../../util/errorHandling";
 import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
-import { getPreloadApi, getWindowId } from "../../util/preloadAccess";
 import { RateLimitExceeded } from "../../util/github";
-import { log } from "../../logging";
 import { calcDuration, showError } from "../../util/message";
 import { jsonRequest } from "../../util/network";
 import opn from "../../util/opn";
+import { getPreloadApi, getWindowId } from "../../util/preloadAccess";
 import { activeGameId } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, toPromise, truthy } from "../../util/util";
-import type { RedownloadMode } from "../download_management/DownloadManager";
 import {
   AlreadyDownloaded,
   DownloadIsHTML,
@@ -74,7 +83,7 @@ import {
 } from "./constants";
 import NXMUrl from "./NXMUrl";
 import { isLoggedIn } from "./selectors";
-import type { IJWTAccessToken } from "./types/IJWTAccessToken";
+import { IAccountStatus } from "./types/IValidateKeyData";
 import {
   checkModVersion,
   fetchRecentUpdates,
@@ -88,14 +97,8 @@ import {
 } from "./util/convertGameId";
 import { endorseCollection, endorseMod } from "./util/endorseMod";
 import { FULL_REVISION_INFO, MOD_FILE_INFO } from "./util/graphQueries";
-import type { ITokenReply } from "./util/oauth";
 import OAuth from "./util/oauth";
-import type { IValidateKeyDataV2 } from "./types/IValidateKeyData";
-import { IAccountStatus } from "./types/IValidateKeyData";
-import {
-  getErrorMessageOrDefault,
-  unknownToError,
-} from "@vortex/shared";
+import { makeFileUID } from "./util/UIDs";
 
 const UPDATE_CHECK_DELAY = 60 * 60 * 1000;
 

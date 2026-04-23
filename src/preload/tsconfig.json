@@ -1,10 +1,10 @@
 {
   "$schema": "https://www.schemastore.org/tsconfig.json",
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../tsconfig.strict.json",
   "include": [
     "src/**/*",
     "../../typings.custom/electron.d.ts",
-    "../../typings.custom/promise.d.ts"
+    "../../typings.custom/promise.d.ts",
   ],
   "compilerOptions": {
     "composite": true,
@@ -12,6 +12,6 @@
     "target": "esnext",
     "module": "esnext",
     "moduleResolution": "bundler",
-    "types": ["node"]
-  }
+    "types": ["node"],
+  },
 }

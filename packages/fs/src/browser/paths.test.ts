@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { QualifiedPath, qpath } from "./paths";
+import { QualifiedPath, RelativePathError, qpath, relativePath } from "./paths";
 
 describe("QualifiedPath.parse", () => {
   it.each([
@@ -169,6 +169,39 @@ describe("QualifiedPath.components", () => {
       const qp = QualifiedPath.parse("foo://bar//baz/qux.ts");
       expect(qp.with({})).toBe(qp);
     });
+  });
+});
+
+describe("relativePath", () => {
+  it.each([
+    ["foo/bar.txt", "foo/bar.txt"],
+    ["foo", "foo"],
+    ["foo/bar/baz.txt", "foo/bar/baz.txt"],
+  ])('"%s" → "%s"', (input, expected) => {
+    expect(relativePath(input)).toBe(expected);
+  });
+
+  it("normalizes backslashes to forward slashes", () => {
+    expect(relativePath("foo\\bar\\baz.txt")).toBe("foo/bar/baz.txt");
+  });
+
+  it("trims a trailing slash", () => {
+    expect(relativePath("foo/bar/")).toBe("foo/bar");
+  });
+
+  it("collapses repeated separators", () => {
+    expect(relativePath("foo//bar///baz")).toBe("foo/bar/baz");
+  });
+
+  it.each([
+    ["/foo/bar", "leading slash"],
+    ["C:/Users/me", "drive letter"],
+    ["c:\\Users\\me", "drive letter (backslash, lowercase)"],
+    ["foo/../bar", ".. segment"],
+    ["../foo", ".. segment at start"],
+    ["foo/..", ".. segment at end"],
+  ])('rejects "%s" (%s)', (input) => {
+    expect(() => relativePath(input)).toThrow(RelativePathError);
   });
 });
 

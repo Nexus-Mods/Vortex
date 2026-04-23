@@ -12,11 +12,11 @@ describe("setSavegames", () => {
       fileSize: 1024,
       attributes: {},
     };
-    expect(sessionActions.setSavegames([savegame], false)).toEqual({
+    expect(sessionActions.setSavegames({ savegame1: savegame }, false)).toEqual({
       error: false,
       type: "SET_SAVEGAMES",
       payload: {
-        savegames: [savegame],
+        savegames: { savegame1: savegame },
         truncated: false,
       },
     });

@@ -4,8 +4,11 @@ import { rolldown, defineConfig } from "rolldown";
 const config = defineConfig({
   input: "./src/index.ts",
   platform: "neutral",
-  external: (id) =>
-    id.startsWith("@vortex/adaptor-api") || id.startsWith("@vortex/fs"),
+  // Only the two host-provided root modules are externalized. Subpath
+  // imports like `@vortex/adaptor-api/contracts/game-installer` are
+  // bundled in, because the adaptor sandbox only exposes the root
+  // `@vortex/adaptor-api` and `@vortex/fs` specifiers at runtime.
+  external: (id) => id === "@vortex/adaptor-api" || id === "@vortex/fs",
   plugins: [
     vortexAdaptorPlugin({}),
   ],

@@ -22,6 +22,7 @@ export interface UseToolsDataResult {
   discoveryPath: string | undefined;
   primaryToolId: string | undefined;
   pinnedToolsMap: { [key: string]: boolean };
+  deploymentCounter: number;
 }
 
 /**
@@ -52,6 +53,10 @@ export const useToolsData = (): UseToolsDataResult => {
     (state: IState) =>
       state.settings?.interface?.tools?.pinned?.[gameId ?? ""] ?? {},
     shallowEqual,
+  );
+  const deploymentCounter = useSelector(
+    (state: IState) =>
+      state.persistent?.deployment?.deploymentCounter?.[gameId ?? ""] ?? 0,
   );
 
   const gameStarter = useMemo((): StarterInfo | undefined => {
@@ -145,5 +150,6 @@ export const useToolsData = (): UseToolsDataResult => {
     discoveryPath: gameDiscovery?.path,
     primaryToolId,
     pinnedToolsMap,
+    deploymentCounter,
   };
 };

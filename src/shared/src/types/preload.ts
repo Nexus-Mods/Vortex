@@ -22,6 +22,9 @@ import type {
   Serializable,
   UpdateStatus,
   VortexPaths,
+  WireDownloadCheckpoint,
+  WireDownloadState,
+  WireResolvedResource,
 } from "./ipc";
 import type { Level } from "./logging";
 import type { PersistedHive, PersistedState } from "./state";
@@ -91,6 +94,9 @@ export interface Api {
 
   /** Telemetry APIs - span export from renderer to main */
   telemetry: TelemetryApi;
+
+  /** Downloader APIs */
+  downloader: DownloaderApi;
 }
 
 export interface Example {
@@ -360,7 +366,9 @@ export interface PersistApi {
    * The renderer applies these via __persist_push, which is excluded from
    * persistDiffMiddleware to prevent feedback loops.
    */
-  onPush(callback: (hive: PersistedHive, operations: DiffOperation[]) => void): void;
+  onPush(
+    callback: (hive: PersistedHive, operations: DiffOperation[]) => void,
+  ): void;
 }
 
 /** API for requesting extension main process initialization */
@@ -390,6 +398,13 @@ export interface AdaptorsApi {
     method: string,
     args: unknown[],
   ): Promise<unknown>;
+  /**
+   * Builds a store-path snapshot for a discovered game. The returned
+   * value is a `StorePathSnapshot` from `@vortex/adaptor-api/stores/lib`
+   * (the renderer sees it as `unknown` to avoid dragging the adaptor-api
+   * types into the preload surface; the bridge casts locally).
+   */
+  buildSnapshot(store: string, gamePath: string): Promise<unknown>;
 }
 
 /** API for querying update status from main process */
@@ -419,6 +434,40 @@ export interface UpdaterApi {
    * Trigger restart and install of the downloaded update.
    */
   restartAndInstall(): void;
+}
+
+/** API for interacting with the DownloadManager in main */
+export interface DownloaderApi {
+  /**
+   * Enqueues a download. The caller must generate `collationId` and register
+   * any resolve handler before calling this, so that the main-side resolve
+   * callback cannot arrive before the handler is ready.
+   */
+  start(dest: string, collationId: number): Promise<{ downloadId: string }>;
+
+  /** Pauses an active download and returns a checkpoint for later resumption. */
+  pause(downloadId: string): Promise<WireDownloadCheckpoint>;
+
+  /** Resumes a download from a checkpoint. */
+  resume(checkpoint: WireDownloadCheckpoint): Promise<void>;
+
+  /** Cancels an active download. */
+  cancel(downloadId: string): Promise<void>;
+
+  /** Returns the current state of a download, including status and any terminal error. */
+  getState(downloadId: string): Promise<WireDownloadState>;
+
+  /** Returns the current state for multiple downloads in one call. Unknown IDs are omitted. */
+  getStates(downloadIds: string[]): Promise<Record<string, WireDownloadState>>;
+
+  /**
+   * Registers a handler invoked by main when it needs the renderer to resolve a download URL.
+   * The `collationId` maps to the download started via `start()`.
+   * Returns an unsubscribe function.
+   */
+  onResolve(
+    handler: (collationId: number) => Promise<WireResolvedResource>,
+  ): () => void;
 }
 
 /** API for forwarding telemetry spans from renderer to main for buffering/export */

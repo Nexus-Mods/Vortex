@@ -131,7 +131,7 @@ export const ToolsSection: FC<ToolsSectionProps> = ({ isAnimating }) => {
         disabled={exclusiveRunning || isPrimaryRunning || !primaryStarter}
         isCollapsed={menuIsCollapsed}
         isPrimaryRunning={isPrimaryRunning}
-        primaryStarter={primaryStarter}
+        primaryStarter={primaryToolId ? primaryStarter : undefined}
         onClick={handlePlay}
       />
     </div>

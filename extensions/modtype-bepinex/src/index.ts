@@ -20,7 +20,6 @@ import {
 import {
   IBepInExGameConfig,
   INexusDownloadInfo,
-  NotPremiumError,
 } from "./types";
 import { createDirectories, dismissNotifications, toBlue } from "./util";
 
@@ -84,11 +83,7 @@ async function onCheckModVersion(
   }
   const forceUpdate = (dwnl?: INexusDownloadInfo) =>
     ensureBepInExPack(api, gameId, true)
-      .catch((err) => {
-        return err instanceof NotPremiumError
-          ? Promise.resolve()
-          : api.showErrorNotification("Failed to update BepInEx", err);
-      })
+      .catch((err) => api.showErrorNotification("Failed to update BepInEx", err))
       .finally(() => {
         if (dwnl === undefined) {
           return Promise.resolve();
@@ -486,14 +481,12 @@ function init(context: types.IExtensionContext) {
             replace,
           }),
         )
-        .catch((err) => {
-          return err instanceof NotPremiumError
-            ? Promise.resolve()
-            : context.api.showErrorNotification(
-              "Failed to download/install BepInEx",
-              err,
-            );
-        })
+        .catch((err) =>
+          context.api.showErrorNotification(
+            "Failed to download/install BepInEx",
+            err,
+          ),
+        )
         .finally(() => {
           const state = context.api.getState();
           const mods: { [modId: string]: types.IMod } = util.getSafe(
@@ -530,14 +523,12 @@ function init(context: types.IExtensionContext) {
       if (!isSupported(profile.gameId)) {
         return;
       }
-      return ensureBepInExPack(context.api, profile.gameId).catch((err) => {
-        return err instanceof NotPremiumError
-          ? Promise.resolve()
-          : context.api.showErrorNotification(
-            "Failed to download/install BepInEx",
-            err,
-          );
-      });
+      return ensureBepInExPack(context.api, profile.gameId).catch((err) =>
+        context.api.showErrorNotification(
+          "Failed to download/install BepInEx",
+          err,
+        ),
+      );
     });
 
     context.api.events.on(

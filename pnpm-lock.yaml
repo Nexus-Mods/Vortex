@@ -53,11 +53,11 @@ catalogs:
       specifier: ^2.7.0
       version: 2.8.0
     '@nexusmods/fomod-installer-ipc':
-      specifier: ^0.13.0
-      version: 0.13.0
+      specifier: ^0.13.1
+      version: 0.13.1
     '@nexusmods/fomod-installer-native':
-      specifier: ^0.13.0
-      version: 0.13.0
+      specifier: ^0.13.1
+      version: 0.13.1
     '@nexusmods/nexus-api':
       specifier: git+https://github.com/Nexus-Mods/node-nexus-api#4192c0c9f34306c2167e258dd4fef773af406161
       version: 1.5.2
@@ -316,6 +316,9 @@ catalogs:
     classnames:
       specifier: ^2.2.6
       version: 2.5.1
+    cli-table3:
+      specifier: ^0.6.5
+      version: 0.6.5
     commander:
       specifier: ^4.0.1
       version: 4.1.1
@@ -443,8 +446,8 @@ catalogs:
       specifier: ^1.3.0
       version: 1.4.0
     gamebryo-savegame:
-      specifier: git+https://github.com/Nexus-Mods/node-gamebryo-savegames#f060df62b04aa53e0d2fa7e6de0c9df423bbd44c
-      version: 2.1.2
+      specifier: git+https://github.com/Nexus-Mods/node-gamebryo-savegames#9149445e798a632a38337229dd0b60b67efb74bd
+      version: 2.1.3
     glob:
       specifier: ^11.0.3
       version: 11.1.0
@@ -820,6 +823,9 @@ importers:
       '@vitest/ui':
         specifier: 'catalog:'
         version: 4.1.0(vitest@4.1.2)
+      cli-table3:
+        specifier: 'catalog:'
+        version: 0.6.5
       copyfiles:
         specifier: 'catalog:'
         version: 2.4.1
@@ -1736,7 +1742,7 @@ importers:
     optionalDependencies:
       gamebryo-savegame:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-gamebryo-savegames/tar.gz/f060df62b04aa53e0d2fa7e6de0c9df423bbd44c
+        version: https://codeload.github.com/Nexus-Mods/node-gamebryo-savegames/tar.gz/9149445e798a632a38337229dd0b60b67efb74bd
 
   extensions/gamebryo-test-settings:
     devDependencies:
@@ -3955,10 +3961,10 @@ importers:
         version: 2.8.0
       '@nexusmods/fomod-installer-ipc':
         specifier: 'catalog:'
-        version: 0.13.0
+        version: 0.13.1
       '@nexusmods/fomod-installer-native':
         specifier: 'catalog:'
-        version: 0.13.0
+        version: 0.13.1
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4192c0c9f34306c2167e258dd4fef773af406161
@@ -4461,10 +4467,10 @@ importers:
         version: 2.8.0
       '@nexusmods/fomod-installer-ipc':
         specifier: 'catalog:'
-        version: 0.13.0
+        version: 0.13.1
       '@nexusmods/fomod-installer-native':
         specifier: 'catalog:'
-        version: 0.13.0
+        version: 0.13.1
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4192c0c9f34306c2167e258dd4fef773af406161
@@ -5558,6 +5564,10 @@ packages:
     resolution: {integrity: sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA==}
     engines: {node: '>=18'}
 
+  '@colors/colors@1.5.0':
+    resolution: {integrity: sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==}
+    engines: {node: '>=0.1.90'}
+
   '@develar/schema-utils@2.6.5':
     resolution: {integrity: sha512-0cp4PsWQ/9avqTVMCtZ+GirikIA36ikvjtHweU4/j8yLtgObI0+JUPhYFScgwlteveGB1rt3Cm8UhN04XayDig==}
     engines: {node: '>= 8.9.0'}
@@ -5841,12 +5851,12 @@ packages:
   '@napi-rs/wasm-runtime@1.1.1':
     resolution: {integrity: sha512-p64ah1M1ld8xjWv3qbvFwHiFVWrq1yFvV4f7w+mzaqiR4IlSgkqhcRdHwsGgomwzBH51sRY4NEowLxnaBjcW/A==}
 
-  '@nexusmods/fomod-installer-ipc@0.13.0':
-    resolution: {integrity: sha512-oWc2eCsu8FewYFq3w5gRFtiDZFbRPIWi1VgvqHJQhKN93WTmzVf0po7r3F/604SDTpNAuquHgFqWU8np7S83yA==}
+  '@nexusmods/fomod-installer-ipc@0.13.1':
+    resolution: {integrity: sha512-Q3tZIMWjMV0J8wJAe2qPCMQQJP+MlI7fn60UFtRYcO8igdaevQvI0OPprH8bJyFOe3WMDyrpyyQiD9vTjwPqww==}
     engines: {node: '>=22'}
 
-  '@nexusmods/fomod-installer-native@0.13.0':
-    resolution: {integrity: sha512-jkoXlWllwWXiQKrN1tKvTl7e86yw8kis3dA8FdPvzlxuYY/MkMThMzlIe81zlh0fROBEvcxHTy9SUZVbST4UDQ==}
+  '@nexusmods/fomod-installer-native@0.13.1':
+    resolution: {integrity: sha512-6fcow0nDO8I4KFYG1ffa5z9FcKkZsW/D1Axjkb5ebmV47JKg10nJALv8sVkd0hCrKCW8oJZEEvgHKOkF2Pn9ww==}
     engines: {node: '>=22'}
 
   '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4192c0c9f34306c2167e258dd4fef773af406161':
@@ -8162,6 +8172,10 @@ packages:
     resolution: {integrity: sha512-4diC9HaTE+KRAMWhDhrGOECgWZxoevMc5TlkObMqNSsVU62PYzXZ/SMTjzyGAFF1YusgxGcSWTEXBhp0CPwQ1A==}
     engines: {node: '>=6'}
 
+  cli-table3@0.6.5:
+    resolution: {integrity: sha512-+W/5efTR7y5HRD7gACw9yQjqMVvEMLBHmboM/kPWam+H+Hmyrgjh6YncVKK122YZkXrLudzTuAukUw9FnMf7IQ==}
+    engines: {node: 10.* || >= 12.*}
+
   cli-truncate@2.1.0:
     resolution: {integrity: sha512-n8fOixwDD6b/ObinzTrp1ZKFzbgvKZvuz/TvejnLn1aQfC6r52XEx85FmuC+3HI+JM7coBRXUvNqEU2PHVrHpg==}
     engines: {node: '>=8'}
@@ -9371,9 +9385,9 @@ packages:
   fuzzball@1.4.0:
     resolution: {integrity: sha512-ufKO0SHW65RSqZNu4rmLmraQVuwb8kVf8S/ICpkih/PfIff2YW3sa8zTvt7d7hJFXY1IvOOGJTeXxs69XLBd4Q==}
 
-  gamebryo-savegame@https://codeload.github.com/Nexus-Mods/node-gamebryo-savegames/tar.gz/f060df62b04aa53e0d2fa7e6de0c9df423bbd44c:
-    resolution: {tarball: https://codeload.github.com/Nexus-Mods/node-gamebryo-savegames/tar.gz/f060df62b04aa53e0d2fa7e6de0c9df423bbd44c}
-    version: 2.1.2
+  gamebryo-savegame@https://codeload.github.com/Nexus-Mods/node-gamebryo-savegames/tar.gz/9149445e798a632a38337229dd0b60b67efb74bd:
+    resolution: {tarball: https://codeload.github.com/Nexus-Mods/node-gamebryo-savegames/tar.gz/9149445e798a632a38337229dd0b60b67efb74bd}
+    version: 2.1.3
 
   gauge@2.7.4:
     resolution: {integrity: sha512-14x4kjc6lkD3ltw589k0NrPD6cCNTD6CWoVUNpB85+DrtONoZn+Rug6xZU5RvSC4+TZPxA5AnBibQYAvZn41Hg==}
@@ -13621,6 +13635,9 @@ snapshots:
 
   '@bcoe/v8-coverage@1.0.2': {}
 
+  '@colors/colors@1.5.0':
+    optional: true
+
   '@develar/schema-utils@2.6.5':
     dependencies:
       ajv: 6.14.0
@@ -14056,9 +14073,9 @@ snapshots:
       '@tybys/wasm-util': 0.10.1
     optional: true
 
-  '@nexusmods/fomod-installer-ipc@0.13.0': {}
+  '@nexusmods/fomod-installer-ipc@0.13.1': {}
 
-  '@nexusmods/fomod-installer-native@0.13.0':
+  '@nexusmods/fomod-installer-native@0.13.1':
     dependencies:
       node-gyp-build: 4.8.4
 
@@ -16388,6 +16405,12 @@ snapshots:
 
   clean-stack@2.2.0: {}
 
+  cli-table3@0.6.5:
+    dependencies:
+      string-width: 4.2.3
+    optionalDependencies:
+      '@colors/colors': 1.5.0
+
   cli-truncate@2.1.0:
     dependencies:
       slice-ansi: 3.0.0
@@ -17999,7 +18022,7 @@ snapshots:
       string.fromcodepoint: 0.2.1
       string.prototype.codepointat: 0.2.1
 
-  gamebryo-savegame@https://codeload.github.com/Nexus-Mods/node-gamebryo-savegames/tar.gz/f060df62b04aa53e0d2fa7e6de0c9df423bbd44c:
+  gamebryo-savegame@https://codeload.github.com/Nexus-Mods/node-gamebryo-savegames/tar.gz/9149445e798a632a38337229dd0b60b67efb74bd:
     dependencies:
       autogypi: 0.2.2
       copyfiles: 2.4.1

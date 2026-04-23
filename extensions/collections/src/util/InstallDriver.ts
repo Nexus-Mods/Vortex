@@ -1109,9 +1109,15 @@ class InstallDriver {
       ["requires", "recommends"].includes(rule.type),
     );
     const dependencies: types.IModRule[] = required.reduce((accum, rule) => {
+      // Mods with binary patches are always reinstalled as variants so the
+      // correct diffs are applied to clean files.
+      if (rule.extra?.patches != null) {
+        accum.push(rule);
+        return accum;
+      }
       const modRef: any = {
         ...rule.reference,
-        patches: rule?.extra?.patches ? { ...rule.extra.patches } : undefined,
+        patches: undefined,
         fileList: rule?.fileList,
       };
       const mod = util.findModByRef(modRef, mods);

@@ -159,6 +159,7 @@ const gameSupport = util.makeOverlayableDictionary<string, IGameSupport>(
         "blueprintships-sfbgs050.esm", // Terran Armada (APP-260)
         "sfbgs003.esm",
         "sfbgs004.esm",
+        "sfbgs005.esm",
         "sfbgs006.esm",
         "sfbgs007.esm",
         "sfbgs008.esm",
@@ -166,10 +167,9 @@ const gameSupport = util.makeOverlayableDictionary<string, IGameSupport>(
         "sfbgs047.esm", // Moon Jumper (APP-260)
         "sfbgs050.esm", // Terran Armada (APP-260)
       ],
-      // SFBGS is Bethesda's reserved namespace for Starfield DLC/Creation Club
-      // plugins; three hex digits covers the known scheme and future DLC
-      // following the same pattern without needing code changes.
-      nativePluginsPatterns: ["^sfbgs[0-9a-f]{3}\\.esm$"],
+      // Match only the sequential DLC range (sfbgs000–sfbgs008); DLCs with
+      // hex-letter IDs are covered by the explicit list above and the .ccc file.
+      nativePluginsPatterns: ["^sfbgs00[0-8]\.esm$"],
       supportsESL: true,
       supportsMediumMasters: true,
       supportsBlueprintPlugins: true,

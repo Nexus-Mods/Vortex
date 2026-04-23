@@ -86,6 +86,8 @@ try {
           method,
           args,
         ),
+      buildSnapshot: (store: string, gamePath: string) =>
+        betterIpcRenderer.invoke("adaptors:build-snapshot", store, gamePath),
     },
 
     updater: {
@@ -279,6 +281,39 @@ try {
     telemetry: {
       forwardSpan: (span) =>
         betterIpcRenderer.send("telemetry:forward-span", span),
+    },
+
+    downloader: {
+      start: (dest, collationId) =>
+        betterIpcRenderer.invoke("download:start", dest, collationId),
+      pause: (downloadId) =>
+        betterIpcRenderer.invoke("download:pause", downloadId),
+      resume: (checkpoint) =>
+        betterIpcRenderer.invoke("download:resume", checkpoint),
+      cancel: (downloadId) =>
+        betterIpcRenderer.invoke("download:cancel", downloadId),
+      getState: (downloadId) =>
+        betterIpcRenderer.invoke("download:getState", downloadId),
+      getStates: (downloadIds) =>
+        betterIpcRenderer.invoke("download:getStates", downloadIds),
+      onResolve: (handler) => {
+        const listener = (
+          _event: Electron.IpcRendererEvent,
+          collationId: number,
+        ) => {
+          handler(collationId)
+            .then((result) => {
+              betterIpcRenderer.send(
+                "callback:download:resolve",
+                collationId,
+                result,
+              );
+            })
+            .catch((err) => console.error(err));
+        };
+        ipcRenderer.on("download:resolve", listener);
+        return () => ipcRenderer.removeListener("download:resolve", listener);
+      },
     },
   });
 } catch (err) {

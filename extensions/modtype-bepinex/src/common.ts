@@ -83,28 +83,33 @@ export const resolveBixPackage = (
 };
 
 export const addGameSupport = (gameConf: IBepInExGameConfig) => {
-  if (
-    gameConf.unityBuild === "unityil2cpp" &&
-    gameConf.bepinexVersion !== undefined &&
-    semver.lt(gameConf.bepinexVersion, "6.0.0")
-  ) {
+  const isIL2CPP = gameConf.unityBuild === "unityil2cpp";
+
+  if (isIL2CPP
+      && gameConf.bepinexVersion != null
+      && semver.lt(gameConf.bepinexVersion, "6.0.0")) {
     throw new Error("IL2CPP builds require BepInEx 6.0.0 or above");
-  } else {
-    if (
-      gameConf.unityBuild === "unityil2cpp" &&
-      gameConf.bepinexVersion === undefined
-    ) {
-      gameConf.bepinexVersion = "6.0.0";
-    } else {
-      if (gameConf.bepinexVersion == null) {
-        gameConf.bepinexVersion = DEFAULT_VERSION;
-      }
-    }
-    gameConf.bepinexCoercedVersion = util.semverCoerce(
-      gameConf.bepinexVersion,
-    ).version;
-    GAME_SUPPORT[gameConf.gameId] = gameConf;
   }
+
+  // Pick a default version when the extension hasn't pinned one. IL2CPP needs
+  //  6.0.0+; otherwise we use DEFAULT_VERSION - but only when the extension
+  //  isn't delegating version selection to a customPackDownloader (pinning in
+  //  that case forces a reinstall on every deploy whenever the downloaded
+  //  pack's version differs from DEFAULT_VERSION).
+  if (gameConf.bepinexVersion == null) {
+    if (isIL2CPP) {
+      gameConf.bepinexVersion = "6.0.0";
+    } else if (gameConf.customPackDownloader === undefined) {
+      gameConf.bepinexVersion = DEFAULT_VERSION;
+    }
+  }
+
+  if (gameConf.bepinexVersion != null) {
+    gameConf.bepinexCoercedVersion =
+      util.semverCoerce(gameConf.bepinexVersion).version;
+  }
+
+  GAME_SUPPORT[gameConf.gameId] = gameConf;
 };
 
 const AVAILABLE: IAvailableDownloads = {
@@ -184,10 +189,10 @@ const getLatestVersion = (arch: string): string => {
 export const getDownload = (
   gameConf: IBepInExGameConfig,
 ): INexusDownloadInfoExt => {
-  const arch = !!gameConf.architecture ? gameConf.architecture : "x64";
+  const arch = gameConf.architecture ?? "x64";
   const versionKey = `${gameConf.bepinexVersion}${arch}`;
   const download: INexusDownloadInfoExt =
-    gameConf.bepinexVersion !== undefined &&
+    gameConf.bepinexVersion != null &&
       Object.keys(AVAILABLE).includes(versionKey)
       ? AVAILABLE[versionKey]
       : AVAILABLE[getLatestVersion(arch)];

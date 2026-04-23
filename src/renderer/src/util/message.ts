@@ -13,8 +13,6 @@ import type { HTTPError } from "./CustomErrors";
 
 import { addNotification, showDialog } from "../actions/notifications";
 import { NoDeployment } from "../extensions/mod_management/util/exceptions";
-import { unknownToError } from "@vortex/shared";
-import { jsonRequest } from "./network";
 import {
   StalledError,
   TemporaryError,
@@ -26,6 +24,7 @@ import { didIgnoreError, isOutdated, recordErrorSpan } from "./errorHandling";
 import getVortexPath from "./getVortexPath";
 import { log } from "./log";
 import { decodeSystemError } from "./nativeErrors";
+import { jsonRequest } from "./network";
 import opn from "./opn";
 import { flatten, nexusModsURL, truthy } from "./util";
 
@@ -145,6 +144,12 @@ function shouldAllowReport(
   return !noReportErrors.includes(err.code);
 }
 
+const hasStringStack = (v: unknown): v is { stack: string } =>
+  typeof v === "object"
+  && v != null
+  && "stack" in v
+  && typeof (v as { stack: unknown }).stack === "string";
+
 /**
  * show an error notification with an optional "more" button that displays further details
  * in a modal dialog.
@@ -184,7 +189,15 @@ export function showError(
 
   const isCommunityExtension = options.extensionName !== undefined;
   if (allowReport && !isOutdated() && !didIgnoreError()) {
-    const error = details instanceof Error ? details : unknownToError(details);
+    let error: Error;
+    if (details instanceof Error) {
+      error = details;
+    } else {
+      error = new Error(err.text ?? err.message ?? "unknown error");
+      if (hasStringStack(details)) {
+        error.stack = details.stack;
+      }
+    }
     recordErrorSpan(title, error, {
       "error.isCommunityExtension": isCommunityExtension,
     });

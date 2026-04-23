@@ -163,9 +163,23 @@ export function setupAutoUpdater(installType: string): void {
         log("info", "Update check completed");
         cancellationToken = check?.cancellationToken;
 
-        // Auto-download for regular installs
-        if (installType === "regular" && check?.downloadPromise !== null) {
-          check.downloadPromise.catch((err) => {
+        const updateVersion = check?.updateInfo?.version;
+
+        // Auto-download patch updates for regular installs;
+        // minor/major updates require user-initiated download via renderer
+        if (
+          installType === "regular"
+          && currentVersion != null
+          && updateVersion != null
+          && semver.satisfies(updateVersion, `~${currentVersion.version}`, {
+            includePrerelease: true,
+          })
+        ) {
+          log("info", "Patch update detected, auto-downloading", {
+            from: currentVersion.version,
+            to: updateVersion,
+          });
+          autoUpdater.downloadUpdate(cancellationToken).catch((err) => {
             log("warn", "Auto-download failed", {
               error: getErrorMessageOrDefault(err),
             });

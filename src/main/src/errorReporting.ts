@@ -5,6 +5,7 @@ import {
   BasicTracerProvider,
   SimpleSpanProcessor,
 } from "@opentelemetry/sdk-trace-base";
+import { sanitizeFramePath } from "@vortex/shared";
 import { recordErrorOnSpan } from "@vortex/shared/telemetry";
 import { app } from "electron";
 import { readFile } from "node:fs/promises";
@@ -78,7 +79,7 @@ export async function reportCrash(
       attributes: {
         "crash.type": type,
         "crash.sourceProcess": sourceProcess ?? "unknown",
-        "error.message": error.message,
+        "error.message": sanitizeFramePath(error.message),
         "error.code": error.code ?? "",
       },
     });

@@ -2,8 +2,9 @@ import type { IModFile, IModFileQuery } from "@nexusmods/nexus-api";
 import type Nexus from "@nexusmods/nexus-api";
 import type { TFunction } from "i18next";
 
+import { getErrorMessageOrDefault } from "@vortex/shared";
 import * as React from "react";
-import { Button, Panel } from "react-bootstrap";
+import { Button } from "react-bootstrap";
 import { useSelector } from "react-redux";
 
 import type { IComponentContext } from "../../../types/IComponentContext";
@@ -15,9 +16,9 @@ import { log } from "../../../util/log";
 import opn from "../../../util/opn";
 import { Campaign, Content, nexusModsURL, Section } from "../../../util/util";
 import { MainContext } from "../../../views/MainWindow";
-import { getErrorMessageOrDefault } from "@vortex/shared";
 import { NEXUS_BASE_URL, PREMIUM_PATH } from "../constants";
 import NXMUrl from "../NXMUrl";
+import { nexusGamesProm } from "../util";
 import { makeFileUID } from "../util/UIDs";
 import NewFreeDownloadModal from "./NewFreeDownloadModal";
 
@@ -163,6 +164,10 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
       setCampaign(url.getParam("campaign"));
 
       try {
+        // makeFileUID needs the nexus games list to map domain -> numeric game id.
+        // This should've been done on startup, but there appears to be
+        // a race condition https://github.com/Nexus-Mods/Vortex/issues/22466
+        await nexusGamesProm();
         const fileInfoList = await nexus.modFilesByUid(FILE_QUERY, [
           makeFileUID({ fileId: url.fileId.toString(), gameId: url.gameId }),
         ]);

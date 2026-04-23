@@ -33,3 +33,5 @@ export const removeGroupRule = createAction(
   "REMOVE_GROUP_RULE",
   (groupId: string, reference: string) => ({ groupId, reference }),
 );
+
+export const clearUserlist = createAction("CLEAR_USERLIST");

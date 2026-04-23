@@ -1,23 +1,11 @@
-import { HTTPError } from "got";
+import type {
+  RetryContext,
+  RetryStrategy,
+  RetryVerdict,
+} from "@vortex/shared/download";
 
 import { DownloadError } from "@vortex/shared/errors";
-
-/** The verdict returned by a {@link RetryStrategy}. */
-export type RetryVerdict = { retry: true; delayMs: number } | { retry: false };
-
-/** Context passed to the retry strategy for each failure. */
-export type RetryContext = {
-  /** Which attempt just failed (1-based: 1 = first failure, 2 = second, etc.) */
-  attempt: number;
-  /** The error from the failed attempt. */
-  error: Error;
-};
-
-/**
- * Decides whether a failed chunk should be retried and how long to wait.
- * Returning `{ retry: false }` stops retrying and lets the error propagate.
- */
-export type RetryStrategy = (context: RetryContext) => RetryVerdict;
+import { HTTPError } from "got";
 
 const retryableErrorCodes = new Set([
   // Connection timed out (POSIX.1-2001).
@@ -71,9 +59,6 @@ export function defaultRetryStrategy(
   };
 }
 
-/** A retry strategy that never retries. */
-export const noRetry: RetryStrategy = () => ({ retry: false });
-
 function isRetryableError(
   err: Error,
   codes: Set<string>,
@@ -111,6 +96,8 @@ function isRetryableError(
  * Abort-aware sleep. Resolves after `ms` milliseconds, or rejects
  * immediately if the signal is already aborted or becomes aborted
  * during the wait.
+ *
+ * @internal
  */
 export function sleep(ms: number, signal?: AbortSignal): Promise<void> {
   if (!signal) {

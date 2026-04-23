@@ -57,6 +57,8 @@ import {
 } from "./errorReporting";
 import { initAdaptorHost } from "./adaptors";
 import { getVortexPath } from "./getVortexPath";
+import { init as initDownloadIpc } from "./downloading/ipc";
+import { DownloadManager } from "./downloading/manager";
 import { init as initIpcHandlers } from "./ipcHandlers";
 import { log } from "./logging";
 import StylesheetCompiler from "./stylesheetCompiler";
@@ -212,7 +214,10 @@ async function main(): Promise<void> {
   process.on("uncaughtException", handleError);
   process.on("unhandledRejection", handleError);
 
+  const downloadManager = new DownloadManager({ concurrency: 3 });
+
   initIpcHandlers();
+  initDownloadIpc(downloadManager);
   initAdaptorHost().catch((err: unknown) => {
     log("warn", "Failed to initialize adaptor host", {
       error: err instanceof Error ? err.message : String(err as string),

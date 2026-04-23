@@ -16,30 +16,42 @@
   "types": "./dist/index.d.cts",
   "exports": {
     ".": {
+      "development": "./src/index.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
     "./cli": {
+      "development": "./src/api/cli.ts",
       "import": "./dist/cli.js",
       "require": "./dist/cli.cjs"
     },
+    "./download": {
+      "development": "./src/api/download.ts",
+      "import": "./dist/download.js",
+      "require": "./dist/download.cjs"
+    },
     "./errors": {
+      "development": "./src/api/errors.ts",
       "import": "./dist/errors.js",
       "require": "./dist/errors.cjs"
     },
     "./ipc": {
+      "development": "./src/api/ipc.ts",
       "import": "./dist/ipc.js",
       "require": "./dist/ipc.cjs"
     },
     "./preload": {
+      "development": "./src/api/preload.ts",
       "import": "./dist/preload.js",
       "require": "./dist/preload.cjs"
     },
     "./state": {
+      "development": "./src/api/state.ts",
       "import": "./dist/state.js",
       "require": "./dist/state.cjs"
     },
     "./telemetry": {
+      "development": "./src/api/telemetry.ts",
       "import": "./dist/telemetry.js",
       "require": "./dist/telemetry.cjs"
     },
@@ -56,20 +68,36 @@
   "publishConfig": {
     "exports": {
       ".": {
-        "import": "./dist/index.mjs",
+        "import": "./dist/index.js",
         "require": "./dist/index.cjs"
       },
+      "./cli": {
+        "import": "./dist/cli.js",
+        "require": "./dist/cli.cjs"
+      },
+      "./download": {
+        "import": "./dist/download.js",
+        "require": "./dist/download.cjs"
+      },
+      "./errors": {
+        "import": "./dist/errors.js",
+        "require": "./dist/errors.cjs"
+      },
       "./ipc": {
-        "import": "./dist/ipc.mjs",
+        "import": "./dist/ipc.js",
         "require": "./dist/ipc.cjs"
       },
       "./preload": {
-        "import": "./dist/preload.mjs",
+        "import": "./dist/preload.js",
         "require": "./dist/preload.cjs"
       },
       "./state": {
-        "import": "./dist/state.mjs",
+        "import": "./dist/state.js",
         "require": "./dist/state.cjs"
+      },
+      "./telemetry": {
+        "import": "./dist/telemetry.js",
+        "require": "./dist/telemetry.cjs"
       },
       "./package.json": "./package.json"
     }

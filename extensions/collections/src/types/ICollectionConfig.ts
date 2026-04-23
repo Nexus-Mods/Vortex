@@ -3,6 +3,7 @@ import { types } from "vortex-api";
 
 export interface ICollectionConfig {
   recommendNewProfile: boolean;
+  excludePluginRules: boolean;
 }
 
 export interface IConfigGeneratorProps {
