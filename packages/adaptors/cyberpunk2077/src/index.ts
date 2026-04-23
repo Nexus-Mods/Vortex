@@ -189,6 +189,18 @@ export class GameInstallerService implements IGameInstallerService<CyberpunkExtr
 
 // ── Load Order ──────────────────────────────────────────────────────
 
+/**
+ * Cyberpunk 2077 has two independent load orders:
+ *
+ * 1. **Archive** -- Controls the priority of .archive and .xl files
+ *    deployed to archive/pc/mod/. Higher-priority archives override
+ *    lower-priority ones when they touch the same game resources.
+ *
+ * 2. **REDmod** -- Controls the priority of REDmod packages under
+ *    the mods/ directory. REDmod is Cyberpunk's official modding
+ *    framework; each mod folder is a self-contained package that the
+ *    REDmod deploy tool merges before launch.
+ */
 const LOAD_ORDERS: LoadOrderDefinition[] = [
   {
     id: "archive",
@@ -196,12 +208,20 @@ const LOAD_ORDERS: LoadOrderDefinition[] = [
     description:
       "Controls the priority of .archive and .xl files in archive/pc/mod/.",
   },
+  {
+    id: "redmod",
+    displayName: "REDmod Load Order",
+    description:
+      "Controls the priority of REDmod packages under mods/. " +
+      "The REDmod deploy tool merges these before launch.",
+  },
 ];
 
 /**
- * In-memory load order state. A real implementation would persist to
- * disk and read from the game's mod directory, but this establishes
- * the contract and data flow.
+ * In-memory load order state keyed by load order ID. Each entry
+ * persists across calls within the adaptor's lifetime. The host
+ * is responsible for long-term persistence via setEntryOrder /
+ * serializeToDisk.
  */
 const loadOrderState = new Map<string, LoadOrderState>();
 
@@ -215,7 +235,9 @@ function getOrCreateState(loadOrderId: string): LoadOrderState {
 }
 
 @provides("vortex:adaptor/cyberpunk2077/load-order")
-export class GameLoadOrderService implements IGameLoadOrderService<CyberpunkExtras> {
+export class GameLoadOrderService
+  implements IGameLoadOrderService<CyberpunkExtras>
+{
   getLoadOrders(_paths: CyberpunkPaths): Promise<LoadOrderDefinition[]> {
     return Promise.resolve(LOAD_ORDERS);
   }
@@ -237,18 +259,34 @@ export class GameLoadOrderService implements IGameLoadOrderService<CyberpunkExtr
     return Promise.resolve(state);
   }
 
-  serializeToDisk(_paths: CyberpunkPaths, _loadOrderId: string): Promise<void> {
-    // TODO: Write the archive load order to the game directory.
-    // For now this is a no-op; the contract and data flow are
-    // exercised but disk serialization is not yet implemented.
+  serializeToDisk(
+    _paths: CyberpunkPaths,
+    _loadOrderId: string,
+  ): Promise<void> {
+    // TODO: Write the load order to the game directory.
+    // For "archive": write a modlist.txt or equivalent ordering file
+    //   under archive/pc/mod/.
+    // For "redmod": write the mod order that the REDmod deploy tool
+    //   reads (mods/modlist.txt or deploy argument order).
     return Promise.resolve();
   }
 }
 
 // ── Prelaunch ───────────────────────────────────────────────────────
 
+/**
+ * REDmod deploy tool needs to run before Cyberpunk launches whenever
+ * the set of REDmod packages has changed. The tool merges all enabled
+ * REDmod packages into the game's runtime data.
+ *
+ * The `conditional` flag tells the framework to call `shouldRun()`
+ * before executing. This avoids a redundant deploy when mods haven't
+ * changed since the last run.
+ */
 @provides("vortex:adaptor/cyberpunk2077/prelaunch")
-export class GamePrelaunchService implements IGamePrelaunchService<CyberpunkExtras> {
+export class GamePrelaunchService
+  implements IGamePrelaunchService<CyberpunkExtras>
+{
   getPrelaunchTasks(paths: CyberpunkPaths): Promise<PrelaunchTask[]> {
     const rehydrated = rehydrateGamePaths(paths);
     return Promise.resolve([
@@ -269,8 +307,9 @@ export class GamePrelaunchService implements IGamePrelaunchService<CyberpunkExtr
 
   shouldRun(_paths: CyberpunkPaths, taskId: string): Promise<boolean> {
     if (taskId === "redmod-deploy") {
-      // TODO: Check whether archive mods have changed since the last
-      // deploy. For now, always run to exercise the contract.
+      // TODO: Query the mod-files host service to check whether any
+      // REDmod packages (mods under mods/) have changed since the
+      // last deploy. For now, always run.
       return Promise.resolve(true);
     }
     return Promise.resolve(false);

@@ -68,6 +68,11 @@
       "import": "./dist/contracts/load-order.js",
       "require": "./dist/contracts/load-order.cjs"
     },
+    "./contracts/mod-files": {
+      "development": "./src/contracts/mod-files.ts",
+      "import": "./dist/contracts/mod-files.js",
+      "require": "./dist/contracts/mod-files.cjs"
+    },
     "./contracts/ping": {
       "development": "./src/contracts/ping.ts",
       "import": "./dist/contracts/ping.js",
@@ -127,6 +132,10 @@
       "./contracts/load-order": {
         "import": "./dist/contracts/load-order.js",
         "require": "./dist/contracts/load-order.cjs"
+      },
+      "./contracts/mod-files": {
+        "import": "./dist/contracts/mod-files.js",
+        "require": "./dist/contracts/mod-files.cjs"
       },
       "./contracts/ping": {
         "import": "./dist/contracts/ping.js",
