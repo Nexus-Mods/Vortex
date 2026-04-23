@@ -48,7 +48,6 @@
     "ts-v-gen": "catalog:",
     "turbowalk": "catalog:",
     "typescript": "catalog:",
-    "vortex-api": "workspace:*",
-    "vortexmt": "catalog:"
+    "vortex-api": "workspace:*"
   }
 }
