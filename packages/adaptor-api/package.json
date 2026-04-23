@@ -53,6 +53,11 @@
       "import": "./dist/contracts/game-tools.js",
       "require": "./dist/contracts/game-tools.cjs"
     },
+    "./contracts/game-version": {
+      "development": "./src/contracts/game-version.ts",
+      "import": "./dist/contracts/game-version.js",
+      "require": "./dist/contracts/game-version.cjs"
+    },
     "./contracts/glob": {
       "development": "./src/contracts/glob.ts",
       "import": "./dist/contracts/glob.js",
@@ -100,6 +105,10 @@
       "./contracts/game-tools": {
         "import": "./dist/contracts/game-tools.js",
         "require": "./dist/contracts/game-tools.cjs"
+      },
+      "./contracts/game-version": {
+        "import": "./dist/contracts/game-version.js",
+        "require": "./dist/contracts/game-version.cjs"
       },
       "./contracts/glob": {
         "import": "./dist/contracts/glob.js",

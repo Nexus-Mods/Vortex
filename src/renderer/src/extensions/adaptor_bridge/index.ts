@@ -136,6 +136,13 @@ type InstallerDispatch = (
  */
 const installerRegistry = new Map<string, InstallerDispatch>();
 
+/**
+ * Detected game versions from adaptor version sources, keyed by game ID.
+ * Populated during the setup callback when an adaptor declares a
+ * `getVersionSource` method on its paths service.
+ */
+const detectedVersions = new Map<string, string>();
+
 /** Returns the installer dispatch for a game, or `undefined`. */
 export function getAdaptorInstaller(
   gameId: string,
@@ -395,6 +402,30 @@ function registerAdaptor(
   }
 
   /**
+   * Detects the game version using the adaptor's declared strategy.
+   * Calls `getVersionSource` on the paths service, then sends the
+   * resulting descriptor to the main process for execution.
+   * Returns null if the adaptor doesn't declare version detection.
+   */
+  async function getVersion(
+    paths: OpaqueGamePaths | null,
+  ): Promise<string | null> {
+    if (!pathsUri || paths === null) return null;
+    try {
+      const source = await callAdaptor(name, pathsUri, "getVersionSource", [
+        paths,
+      ]);
+      if (!source || typeof source !== "object") return null;
+      return await window.api.adaptors.detectVersion(
+        source as { type: string; path: { value: string }; regex?: string },
+      );
+    } catch {
+      // getVersionSource is optional; adaptor may not implement it
+      return null;
+    }
+  }
+
+  /**
    * Dispatches the per-archive installer call to the adaptor. Must be
    * called after paths have resolved, so the installer can be fed the
    * same snapshot (the shared context) and the resolved GamePaths blob,
@@ -490,10 +521,21 @@ function registerAdaptor(
           // Step 1: Resolve folder paths (game, saves, preferences, etc.)
           const paths = await getPaths(store, gamePath);
 
-          // Step 2: Resolve tools (depends on paths)
+          // Step 2: Detect game version (if adaptor declares a strategy)
+          const version = await getVersion(paths);
+          if (version && version !== "0.0.0") {
+            detectedVersions.set(gameId, version);
+            log(
+              "info",
+              "[adaptor-bridge] {{gameId}} version: {{version}}",
+              { gameId, version },
+            );
+          }
+
+          // Step 3: Resolve tools (depends on paths)
           const tools = await getTools(paths);
 
-          // Step 3: Wire the game executable from the tools service.
+          // Step 4: Wire the game executable from the tools service.
           // The executable is a QualifiedPath; .path gives the
           // relative portion within its anchor (per-store resolved).
           if (tools?.game?.executable?.path) {
@@ -501,7 +543,7 @@ function registerAdaptor(
             discovery.executable = resolvedExecutable;
           }
 
-          // Step 4: Populate supported tools (additional launchers, etc.)
+          // Step 5: Populate supported tools (additional launchers, etc.)
           if (tools?.tools) {
             for (const [toolId, tool] of Object.entries(tools.tools)) {
               supportedTools.push({
@@ -522,7 +564,7 @@ function registerAdaptor(
             }
           }
 
-          // Step 5: Register mod types for non-game anchors so the
+          // Step 6: Register mod types for non-game anchors so the
           // deployment system knows where to route files that target
           // saves, preferences, or other adaptor-declared directories.
           if (paths !== null) {
@@ -555,7 +597,7 @@ function registerAdaptor(
             }
           }
 
-          // Step 6: Expose the installer dispatch so the registered
+          // Step 7: Expose the installer dispatch so the registered
           // "adaptor" installer can route archive contents through the
           // adaptor's stop-pattern resolver.
           if (installerUri && pathsUri && paths !== null) {
@@ -571,6 +613,16 @@ function registerAdaptor(
 // ---------------------------------------------------------------------------
 
 function init(context: IExtensionContext): boolean {
+  // Register a version provider for adaptor-managed games. Priority 15
+  // sits before the built-in ext-version-check (20) and exec-version-check
+  // (100), so adaptor-detected versions take precedence.
+  context.registerGameVersionProvider(
+    "adaptor-version",
+    15,
+    (game) => Promise.resolve(detectedVersions.has(game.id)),
+    (game) => Promise.resolve(detectedVersions.get(game.id) ?? "0.0.0"),
+  );
+
   // Register a single installer that delegates to whichever adaptor owns
   // the active game. Priority 25 sits after both fomod installers (native
   // at 10, IPC at 20) so fomod archives still get fomod treatment, but
