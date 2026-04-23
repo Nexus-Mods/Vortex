@@ -14,8 +14,8 @@ import {
 import { createHash } from "node:crypto";
 import { createReadStream } from "node:fs";
 import { access, rm } from "node:fs/promises";
-import { pipeline } from "node:stream/promises";
 import * as path from "node:path";
+import { pipeline } from "node:stream/promises";
 import { z } from "zod";
 
 import type { IExtensionApi } from "./types/IExtensionContext";
@@ -24,6 +24,15 @@ import {
   clearDownloadCheckpoint,
   setDownloadCheckpoint,
 } from "./actions/downloads";
+import {
+  CollectionsDownloadCancelledEvent,
+  CollectionsDownloadCompletedEvent,
+  CollectionsDownloadFailedEvent,
+  ModsDownloadCancelledEvent,
+  ModsDownloadCompletedEvent,
+  ModsDownloadFailedEvent,
+  ModsDownloadStartedClientEvent,
+} from "./extensions/analytics/mixpanel/MixpanelEvents";
 import {
   downloadProgress,
   finishDownload,
@@ -37,6 +46,8 @@ import {
   setDownloadSpeed,
 } from "./extensions/download_management/actions/state";
 import { downloadPathForGame } from "./extensions/download_management/selectors";
+import { nexusIdsFromDownloadId } from "./extensions/nexus_integration/selectors";
+import { makeModAndFileUIDs } from "./extensions/nexus_integration/util/UIDs";
 import { activeGameId } from "./extensions/profile_management/selectors";
 import { log } from "./logging";
 
@@ -89,6 +100,7 @@ export class IPCDownloadAdapter {
   readonly #activeDownloads = new Set<string>();
   readonly #lastBytesReceived = new Map<string, number>();
   readonly #lastProgressDispatch = new Map<string, number>();
+  readonly #startedEventEmitted = new Set<string>();
   #speedAccumBytes = 0;
   #lastSpeedDispatch: number | null = null;
   #nextCollationId = 0;
@@ -203,6 +215,155 @@ export class IPCDownloadAdapter {
           id,
         });
         this.#api.store.dispatch(setDownloadInterrupted(id, download.received));
+      }
+    }
+  }
+
+  #emitAnalytics(
+    downloadId: string,
+    eventType: "started" | "completed" | "failed" | "canceled",
+    error?: Error,
+  ): void {
+    const state = this.#api.getState();
+    const nexusIds = nexusIdsFromDownloadId(state, downloadId);
+    if (!nexusIds?.numericGameId || isNaN(nexusIds.numericGameId)) return;
+
+    const download = state.persistent.downloads.files?.[downloadId];
+    const isCollection =
+      nexusIds.collectionSlug !== undefined &&
+      nexusIds.revisionId !== undefined;
+
+    if (eventType === "started") {
+      if (
+        isCollection ||
+        nexusIds.modId === undefined ||
+        nexusIds.fileId === undefined
+      )
+        return;
+      const { modUID, fileUID } = makeModAndFileUIDs(
+        nexusIds.numericGameId.toString(),
+        nexusIds.modId,
+        nexusIds.fileId,
+      );
+      this.#api.events.emit(
+        "analytics-track-mixpanel-event",
+        new ModsDownloadStartedClientEvent(
+          nexusIds.modId,
+          nexusIds.fileId,
+          nexusIds.numericGameId,
+          modUID,
+          fileUID,
+        ),
+      );
+      return;
+    }
+
+    if (eventType === "completed") {
+      const duration_ms = Date.now() - (download?.fileTime ?? Date.now());
+      const file_size = download?.size ?? 0;
+      if (isCollection && nexusIds.collectionId && nexusIds.revisionId) {
+        this.#api.events.emit(
+          "analytics-track-mixpanel-event",
+          new CollectionsDownloadCompletedEvent(
+            nexusIds.collectionId,
+            nexusIds.revisionId,
+            nexusIds.numericGameId,
+            file_size,
+            duration_ms,
+          ),
+        );
+      } else if (
+        nexusIds.modId !== undefined &&
+        nexusIds.fileId !== undefined
+      ) {
+        const { modUID, fileUID } = makeModAndFileUIDs(
+          nexusIds.numericGameId.toString(),
+          nexusIds.modId,
+          nexusIds.fileId,
+        );
+        this.#api.events.emit(
+          "analytics-track-mixpanel-event",
+          new ModsDownloadCompletedEvent(
+            nexusIds.modId,
+            nexusIds.fileId,
+            nexusIds.numericGameId,
+            modUID,
+            fileUID,
+            file_size,
+            duration_ms,
+          ),
+        );
+      }
+      return;
+    }
+
+    if (eventType === "canceled") {
+      if (isCollection && nexusIds.collectionId && nexusIds.revisionId) {
+        this.#api.events.emit(
+          "analytics-track-mixpanel-event",
+          new CollectionsDownloadCancelledEvent(
+            nexusIds.collectionId,
+            nexusIds.revisionId,
+            nexusIds.numericGameId,
+          ),
+        );
+      } else if (
+        nexusIds.modId !== undefined &&
+        nexusIds.fileId !== undefined
+      ) {
+        const { modUID, fileUID } = makeModAndFileUIDs(
+          nexusIds.numericGameId.toString(),
+          nexusIds.modId,
+          nexusIds.fileId,
+        );
+        this.#api.events.emit(
+          "analytics-track-mixpanel-event",
+          new ModsDownloadCancelledEvent(
+            nexusIds.modId,
+            nexusIds.fileId,
+            nexusIds.numericGameId,
+            modUID,
+            fileUID,
+          ),
+        );
+      }
+      return;
+    }
+
+    if (eventType === "failed") {
+      const message = error?.message ?? "";
+      if (isCollection && nexusIds.collectionId && nexusIds.revisionId) {
+        this.#api.events.emit(
+          "analytics-track-mixpanel-event",
+          new CollectionsDownloadFailedEvent(
+            nexusIds.collectionId,
+            nexusIds.revisionId,
+            nexusIds.numericGameId,
+            "",
+            message,
+          ),
+        );
+      } else if (
+        nexusIds.modId !== undefined &&
+        nexusIds.fileId !== undefined
+      ) {
+        const { modUID, fileUID } = makeModAndFileUIDs(
+          nexusIds.numericGameId.toString(),
+          nexusIds.modId,
+          nexusIds.fileId,
+        );
+        this.#api.events.emit(
+          "analytics-track-mixpanel-event",
+          new ModsDownloadFailedEvent(
+            nexusIds.modId,
+            nexusIds.fileId,
+            nexusIds.numericGameId,
+            modUID,
+            fileUID,
+            "",
+            message,
+          ),
+        );
       }
     }
   }
@@ -409,6 +570,15 @@ export class IPCDownloadAdapter {
         state.status === "failed" ||
         state.status === "canceled";
 
+      if (delta > 0 && !this.#startedEventEmitted.has(downloadId)) {
+        const reduxDownload =
+          this.#api.getState().persistent.downloads.files?.[downloadId];
+        if ((reduxDownload?.received ?? 0) === 0) {
+          this.#emitAnalytics(downloadId, "started");
+        }
+        this.#startedEventEmitted.add(downloadId);
+      }
+
       const secSinceProgress =
         (now - (this.#lastProgressDispatch.get(downloadId) ?? 0)) / 1000;
       if (delta > 0 && (secSinceProgress >= 1 || isTerminal)) {
@@ -434,16 +604,20 @@ export class IPCDownloadAdapter {
       this.#activeDownloads.delete(downloadId);
       this.#lastBytesReceived.delete(downloadId);
       this.#lastProgressDispatch.delete(downloadId);
+      this.#startedEventEmitted.delete(downloadId);
       this.#api.store.dispatch(clearDownloadCheckpoint(downloadId));
 
       if (state.status === "completed") {
+        this.#emitAnalytics(downloadId, "completed");
         this.#completeDownload(downloadId).catch((err) => {
           log("error", "failed to finalize download", { downloadId, err });
         });
       } else if (state.status === "canceled") {
+        this.#emitAnalytics(downloadId, "canceled");
         // User canceled - remove the record entirely, no file to keep.
         this.#api.store.dispatch(removeDownload(downloadId));
       } else {
+        this.#emitAnalytics(downloadId, "failed", err ?? undefined);
         // Mark record as failed so the UI can show an error state.
         this.#api.store.dispatch(finishDownload(downloadId, "failed", err));
         this.#api.events.emit("did-finish-download", downloadId, "failed");
