@@ -1,6 +1,6 @@
 /* eslint-disable */
 import path from 'path';
-import { types } from 'vortex-api';
+import { types, util } from 'vortex-api';
 import { CONFIG_MATRIX_REL_PATH, GAME_ID, SCRIPT_MERGER_FILES, PART_SUFFIX } from './common';
 import { PrefixType } from './types';
 
@@ -11,19 +11,15 @@ export function scriptMergerTest(files, gameId) {
   return Promise.resolve({ supported, requiredFiles: SCRIPT_MERGER_FILES });
 }
 
-export function scriptMergerDummyInstaller() {
-  return (api: types.IExtensionApi) => {
-    api.showErrorNotification('Invalid Mod', 'It looks like you tried to install '
-      + 'The Witcher 3 Script Merger, which is a tool and not a mod for The Witcher 3.\n\n'
-      + 'The script merger should\'ve been installed automatically by Vortex as soon as you activated this extension. '
-      + 'If the download or installation has failed for any reason - please let us know why, by reporting the error through '
-      + 'our feedback system and make sure to include vortex logs. Please note: if you\'ve installed '
-      + 'the script merger in previous versions of Vortex as a mod and STILL have it installed '
-      + '(it\'s present in your mod list) - you should consider un-installing it followed by a Vortex restart; '
-      + 'the automatic merger installer/updater should then kick off and set up the tool for you.',
-      { allowReport: false });
-    return Promise.reject(new util.ProcessCanceled('Invalid mod'));
-  }
+export function scriptMergerDummyInstaller(api: types.IExtensionApi): Promise<types.IInstallResult> {
+  api.showErrorNotification?.(
+    'The Witcher 3 Script Merger is a tool, not a mod — it can\'t be installed this way.',
+    'The script merger should\'ve been installed automatically by Vortex as soon as you activated this extension. '
+    + 'If the download or installation failed, please let us know via the feedback system and include your Vortex logs. '
+    + 'Note: if you installed the script merger as a mod in an older Vortex and it\'s still in your mod list, '
+    + 'uninstall it and restart Vortex — the automatic installer will then set it up for you.',
+    { allowReport: false });
+  return Promise.reject(new util.ProcessCanceled('Invalid mod'));
 }
 
 export function testMenuModRoot(instructions: any[], gameId: string): Promise<types.ISupportedResult | boolean> {

@@ -1,6 +1,6 @@
 {
   "name": "game-witcher3",
-  "version": "1.7.3",
+  "version": "1.7.4",
   "description": "Support for The Witcher 3",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",
