@@ -12,6 +12,8 @@ import type { IMod } from "../../mod_management/types/IMod";
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 import type { IGameStored } from "../types/IGameStored";
 
+import { nexusGames } from "../../../extensions/nexus_integration/util";
+import { nexusGameId } from "../../../extensions/nexus_integration/util/convertGameId";
 import { ComponentEx } from "../../../controls/ComponentEx";
 import IconBar from "../../../controls/IconBar";
 import OverlayTrigger from "../../../controls/OverlayTrigger";
@@ -56,10 +58,21 @@ class GameRow extends ComponentEx<IProps, {}> {
       return null;
     }
 
-    const logoPath: string =
-      game.extensionPath !== undefined
+    let logoPath: string | undefined =
+      game.extensionPath !== undefined && game.logo !== undefined
         ? path.join(game.extensionPath, game.logo)
         : game.imageURL;
+
+    // For adaptor-registered games (no local logo), resolve a Nexus thumbnail
+    if (logoPath == null) {
+      const domain = nexusGameId(game);
+      const numericId = domain != null
+        ? nexusGames().find((g) => g.domain_name === domain)?.id
+        : undefined;
+      if (numericId !== undefined) {
+        logoPath = `https://images.nexusmods.com/images/games/v2/${numericId}/thumbnail.jpg`;
+      }
+    }
 
     const location =
       discovery !== undefined && discovery.path !== undefined ? (
@@ -100,11 +113,19 @@ class GameRow extends ComponentEx<IProps, {}> {
       </Popover>
     );
 
-    const protocol = new URL(logoPath)?.protocol;
-    const imgurl =
-      protocol != null && protocol.startsWith("http")
-        ? logoPath
-        : pathToFileURL(logoPath).href;
+    let imgurl = null;
+    if (logoPath != null) {
+      let protocol = null;
+      try {
+        protocol = new URL(logoPath)?.protocol;
+      } catch {
+        // not a URL, treat as file path
+      }
+      imgurl =
+        protocol != null && protocol.startsWith("http")
+          ? logoPath
+          : pathToFileURL(logoPath).href;
+    }
 
     return (
       <ListGroupItem className={classes.join(" ")}>

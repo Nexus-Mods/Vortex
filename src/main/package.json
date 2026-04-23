@@ -141,6 +141,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@vortex/adaptor-cyberpunk2077": "workspace:*",
     "@types/bbcode-to-react": "catalog:",
     "@types/big.js": "catalog:",
     "@types/content-disposition": "catalog:",

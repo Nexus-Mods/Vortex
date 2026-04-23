@@ -4389,6 +4389,9 @@ importers:
       '@types/xml2js':
         specifier: 'catalog:'
         version: 0.4.14
+      '@vortex/adaptor-cyberpunk2077':
+        specifier: workspace:*
+        version: link:../../packages/adaptors/cyberpunk2077
       '@vortex/shared':
         specifier: workspace:*
         version: link:../shared
