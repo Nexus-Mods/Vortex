@@ -90,6 +90,7 @@ function parseEncodedUrl(raw: string): EncodedUrl {
 
 type StoredDownloadInfo = {
   encodedUrl: EncodedUrl;
+  callback?: (err: Error | null, id?: string) => void;
 };
 
 export class IPCDownloadAdapter {
@@ -97,6 +98,10 @@ export class IPCDownloadAdapter {
   readonly #handlers: Record<string, ProtocolHandler> = {};
 
   readonly #pending = new Map<number, StoredDownloadInfo>();
+  readonly #downloadCallbacks = new Map<
+    string,
+    (err: Error | null, id?: string) => void
+  >();
   readonly #activeDownloads = new Set<string>();
   readonly #lastBytesReceived = new Map<string, number>();
   readonly #lastProgressDispatch = new Map<string, number>();
@@ -397,6 +402,12 @@ export class IPCDownloadAdapter {
     // Notify listeners that the download completed. InstallManager listens
     // for this to trigger auto-install when automation is enabled.
     this.#api.events.emit("did-finish-download", downloadId, "finished");
+    // Fire the start-download callback now that the file is on disk. Callers
+    // (e.g. nexus_integration collection download) rely on the callback firing
+    // after completion to trigger installation, matching DownloadObserver behaviour.
+    const cb = this.#downloadCallbacks.get(downloadId);
+    this.#downloadCallbacks.delete(downloadId);
+    cb?.(null, downloadId);
 
     // Trigger auto-install if the user has automation enabled or if this
     // download was started as an update (e.g. from the mod management view).
@@ -445,6 +456,7 @@ export class IPCDownloadAdapter {
       const collationId = this.#nextCollationId++;
       const info: StoredDownloadInfo = {
         encodedUrl: encodedUrl,
+        callback,
       };
 
       this.#pending.set(collationId, info);
@@ -461,8 +473,10 @@ export class IPCDownloadAdapter {
       );
 
       this.#activeDownloads.add(downloadId);
+      if (callback !== undefined) {
+        this.#downloadCallbacks.set(downloadId, callback);
+      }
       log("debug", "download queued", { downloadId, collationId });
-      callback?.(null, downloadId);
 
       const gameId = modInfo.game ?? activeGameId(state);
       // Create the Redux record. nexus_integration's onChangeDownloads watches
@@ -616,11 +630,17 @@ export class IPCDownloadAdapter {
         this.#emitAnalytics(downloadId, "canceled");
         // User canceled - remove the record entirely, no file to keep.
         this.#api.store.dispatch(removeDownload(downloadId));
+        const cancelCb = this.#downloadCallbacks.get(downloadId);
+        this.#downloadCallbacks.delete(downloadId);
+        cancelCb?.(new UserCanceled(), downloadId);
       } else {
         this.#emitAnalytics(downloadId, "failed", err ?? undefined);
         // Mark record as failed so the UI can show an error state.
         this.#api.store.dispatch(finishDownload(downloadId, "failed", err));
         this.#api.events.emit("did-finish-download", downloadId, "failed");
+        const failCb = this.#downloadCallbacks.get(downloadId);
+        this.#downloadCallbacks.delete(downloadId);
+        failCb?.(err ?? new Error("download failed"), downloadId);
       }
     }
 
