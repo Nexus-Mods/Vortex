@@ -1,6 +1,12 @@
 import { Popover } from "@headlessui/react";
 import { mdiBell, mdiBellOutline } from "@mdi/js";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useSelector } from "react-redux";
 
 import { useExtensionContext } from "../../../../ExtensionProvider";
@@ -71,6 +77,7 @@ const NotificationsContent: React.FC<{ popoverOpen: boolean }> = ({
   return (
     <>
       <Popover.Button
+        aria-label="Notifications"
         as={IconButton}
         disabled={visibleCount === 0}
         iconPath={visibleCount > 0 ? mdiBell : mdiBellOutline}
