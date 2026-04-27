@@ -53,9 +53,9 @@ class DraggableList extends ComponentEx<IProps, IDraggableListState> {
     });
   }
 
-  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
-    if (this.props.items !== newProps.items) {
-      this.nextState.ordered = newProps.items.slice(0);
+  public componentDidUpdate(prevProps: IProps) {
+    if (prevProps.items !== this.props.items) {
+      this.nextState.ordered = this.props.items.slice(0);
     }
   }
 

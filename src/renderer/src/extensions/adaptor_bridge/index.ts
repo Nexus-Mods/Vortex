@@ -38,6 +38,10 @@ import * as path from "path";
 
 import type { IExtensionContext } from "../../types/IExtensionContext";
 import type { IInstruction } from "../../extensions/mod_management/types/IInstallResult";
+import {
+  addDiscoveredGame,
+} from "../gamemode_management/actions/settings";
+import { setKnownGames } from "../gamemode_management/actions/session";
 
 import { log } from "../../util/log";
 
@@ -654,10 +658,30 @@ function registerAdaptor(
           const tools = await getTools(paths);
 
           // Step 4: Wire the game executable from the tools service.
-          // The executable is a QualifiedPath; .path gives the
-          // relative portion within its anchor (per-store resolved).
-          if (tools?.game?.executable?.path) {
-            resolvedExecutable = tools.game.executable.path;
+          // The executable QP is absolute; StarterInfo expects a path
+          // relative to the game directory, so convert to native and
+          // compute relative from gamePath.
+          if (tools?.game?.executable) {
+            const exeNative = qpPathToNative(
+              tools.game.executable as unknown as SerializedQP,
+            );
+            resolvedExecutable = path.relative(gamePath, exeNative);
+            // Update the persisted discovery so StarterInfo picks up
+            // the real executable on subsequent launches.
+            context.api.store.dispatch(
+              addDiscoveredGame(gameId, { executable: resolvedExecutable }),
+            );
+            // Also patch the session-only known games list so the
+            // current session's StarterInfo uses the resolved exe
+            // instead of the placeholder ".".
+            const known = context.api.store.getState().session.gameMode
+              .known as Array<{ id: string; executable: string }>;
+            const updated = known.map((g) =>
+              g.id === gameId
+                ? { ...g, executable: resolvedExecutable }
+                : g,
+            );
+            context.api.store.dispatch(setKnownGames(updated));
           }
 
           // Step 5: Populate supported tools (additional launchers, etc.)
