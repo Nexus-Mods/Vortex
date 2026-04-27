@@ -11,7 +11,7 @@
     "lint": "pnpm eslint --concurrency auto --quiet ."
   },
   "main": "./dist/index.mjs",
-  "vortex:requires": [],
+  "vortex:requires": ["vortex:host/filesystem"],
   "devDependencies": {
     "@vortex/adaptor-api": "workspace:*",
     "@vortex/fs": "workspace:*"
