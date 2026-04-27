@@ -64,7 +64,7 @@ function init(context: IExtensionContext): boolean {
               },
               {
                 title: status.downloaded ? "Restart" : "Install",
-                action: () => {
+                action: (dismiss) => {
                   if (status.downloaded) {
                     window.api.updater.restartAndInstall();
                   } else {
@@ -72,6 +72,7 @@ function init(context: IExtensionContext): boolean {
                       context.api.store.getState().settings.update.channel;
                     window.api.updater.downloadUpdate(channel, true);
                   }
+                  dismiss();
                 },
               },
             ],
