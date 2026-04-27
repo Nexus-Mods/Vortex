@@ -1,0 +1,23 @@
+{
+  "name": "fingerprints-action",
+  "private": true,
+  "version": "0.0.0",
+  "description": "GitHub Action: collect fingerprints from PR body / release tag / manual input and write to vortex.resolved_fingerprints in ClickHouse.",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "ncc build src/index.ts -o dist --license LICENSES.txt",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@actions/core": "^1.11.1",
+    "@actions/github": "^6.0.0",
+    "@clickhouse/client": "^1.12.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.0",
+    "@vercel/ncc": "^0.38.3",
+    "typescript": "^5.4.0",
+    "vitest": "^2.1.0"
+  }
+}
