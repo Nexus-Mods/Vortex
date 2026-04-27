@@ -29,13 +29,13 @@ interface BenchmarkResult {
   maxUs: number;
 }
 
-function benchmarkFile(filePath: string, gameId: string): BenchmarkResult {
+async function benchmarkFile(filePath: string, gameId: string): Promise<BenchmarkResult> {
   const timings: number[] = [];
 
   // Warm up
   for (let i = 0; i < 100; i++) {
     try {
-      new ESPFile(filePath, gameId);
+      await ESPFile.open(filePath, gameId);
     } catch {}
   }
 
@@ -43,7 +43,7 @@ function benchmarkFile(filePath: string, gameId: string): BenchmarkResult {
   for (let i = 0; i < ITERATIONS; i++) {
     const start = process.hrtime.bigint();
     try {
-      new ESPFile(filePath, gameId);
+      await ESPFile.open(filePath, gameId);
     } catch {}
     const end = process.hrtime.bigint();
     timings.push(Number(end - start) / 1000); // ns → μs
@@ -94,7 +94,7 @@ function main() {
     const filePath = path.join(CORPUS_DIR, entry.file);
     if (!fs.existsSync(filePath)) continue;
 
-    const result = benchmarkFile(filePath, entry.gameId);
+    const result = await benchmarkFile(filePath, entry.gameId);
     tsResults.push(result);
 
     const bl = baselineMap.get(result.file);

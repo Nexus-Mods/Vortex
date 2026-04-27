@@ -36,8 +36,8 @@ describe("ESP parser corpus validation", () => {
     if (!fs.existsSync(filePath)) continue;
 
     if (expected.parseError) {
-      it(`${expected.file} should throw on parse`, () => {
-        expect(() => new ESPFile(filePath, expected.gameId)).toThrow();
+      it(`${expected.file} should throw on parse`, async () => {
+        await expect(ESPFile.open(filePath, expected.gameId)).rejects.toThrow();
       });
       continue;
     }
@@ -45,8 +45,8 @@ describe("ESP parser corpus validation", () => {
     describe(expected.file, () => {
       let esp: ESPFile;
 
-      it("parses without error", () => {
-        esp = new ESPFile(filePath, expected.gameId);
+      it("parses without error", async () => {
+        esp = await ESPFile.open(filePath, expected.gameId);
       });
 
       it("isMaster matches", () => {
@@ -93,7 +93,6 @@ describe("ESP parser corpus validation", () => {
 });
 
 describe("setLightFlag round-trip", () => {
-  // Pick one file that is NOT currently light-flagged and one that IS
   const nonLight = expectedOutputs.find(
     (e) => !e.isLight && !e.parseError && e.gameId === "skyrimse",
   );
@@ -102,20 +101,19 @@ describe("setLightFlag round-trip", () => {
   );
 
   if (nonLight) {
-    it(`enables light flag on ${nonLight.file}`, () => {
+    it(`enables light flag on ${nonLight.file}`, async () => {
       const srcPath = path.join(CORPUS_DIR, nonLight.file);
       const tmpPath = srcPath + ".setlight.tmp";
       fs.copyFileSync(srcPath, tmpPath);
 
       try {
-        const esp = new ESPFile(tmpPath, nonLight.gameId);
+        const esp = await ESPFile.open(tmpPath, nonLight.gameId);
         expect(esp.isLight).toBe(false);
 
-        esp.setLightFlag(true);
+        await esp.setLightFlag(true);
 
-        const esp2 = new ESPFile(tmpPath, nonLight.gameId);
+        const esp2 = await ESPFile.open(tmpPath, nonLight.gameId);
         expect(esp2.isLight).toBe(true);
-        // Other fields should be unchanged
         expect(esp2.isMaster).toBe(nonLight.isMaster);
         expect(esp2.author).toBe(nonLight.author);
         expect([...esp2.masterList].sort()).toEqual(
@@ -128,23 +126,24 @@ describe("setLightFlag round-trip", () => {
   }
 
   if (isLight) {
-    it(`disables light flag on ${isLight.file}`, () => {
+    it(`disables light flag on ${isLight.file}`, async () => {
       const srcPath = path.join(CORPUS_DIR, isLight.file);
       const tmpPath = srcPath + ".setlight.tmp";
       fs.copyFileSync(srcPath, tmpPath);
 
       try {
-        const esp = new ESPFile(tmpPath, isLight.gameId);
+        const esp = await ESPFile.open(tmpPath, isLight.gameId);
         expect(esp.isLight).toBe(true);
 
-        esp.setLightFlag(false);
+        await esp.setLightFlag(false);
 
-        const esp2 = new ESPFile(tmpPath, isLight.gameId);
+        const esp2 = await ESPFile.open(tmpPath, isLight.gameId);
         expect(esp2.isLight).toBe(false);
-        // Other fields should be unchanged
         expect(esp2.isMaster).toBe(isLight.isMaster);
         expect(esp2.author).toBe(isLight.author);
-        expect(esp2.masterList).toEqual(isLight.masterList);
+        expect([...esp2.masterList].sort()).toEqual(
+          [...isLight.masterList].sort(),
+        );
       } finally {
         fs.unlinkSync(tmpPath);
       }

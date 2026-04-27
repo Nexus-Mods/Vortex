@@ -102,9 +102,9 @@ interface IBaseProps {
     filePath: string,
     flag: boolean,
     gameMode: string,
-  ) => boolean;
+  ) => Promise<boolean>;
   openLOOTSite: () => Promise<any>;
-  parseESPFile: (filePath: string, gameMode: string) => IESPFile;
+  parseESPFile: (filePath: string, gameMode: string) => Promise<IESPFile>;
   safeBasename: (filePath: string) => string;
   installedPlugins: () => Set<string>;
 }
@@ -878,62 +878,55 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     const pluginsParsed: { [pluginName: string]: IPluginParsed } = {};
     let pluginsLoot;
 
-    return Promise.each(pluginNames, (pluginName: string) => {
+    return Promise.each(pluginNames, async (pluginName: string) => {
       if (updateId !== this.mUpdateId) {
         return Promise.reject(new util.ProcessCanceled("new update started"));
       }
-      return new Promise((resolve, reject) => {
-        try {
-          const esp = this.props.parseESPFile(
+      try {
+        const esp = await this.props.parseESPFile(
+          pluginsIn[pluginName].filePath,
+          this.props.gameMode,
+        );
+        pluginsParsed[pluginName] = {
+          isMaster: this.props.isMaster(
             pluginsIn[pluginName].filePath,
+            esp.isMaster,
             this.props.gameMode,
-          );
-          pluginsParsed[pluginName] = {
-            isMaster: this.props.isMaster(
-              pluginsIn[pluginName].filePath,
-              esp.isMaster,
-              this.props.gameMode,
-            ),
-            isLight: this.props.isLight(
-              pluginsIn[pluginName].filePath,
-              esp.isLight,
-              this.props.gameMode,
-            ),
-            isMedium: this.props.isMediumMaster(
-              pluginsIn[pluginName].filePath,
-              esp.isMedium,
-              this.props.gameMode,
-            ),
-            isBlueprint: esp.isBlueprint,
-            parseFailed: false,
-            description: esp.description,
-            author: esp.author,
-            masterList: esp.masterList,
-            revision: (esp as any).revision,
-          };
-        } catch (err) {
-          // TODO: there is a time window where this is called on a file that
-          //   no longer exists. Since the error message reported from the native
-          //   lib isn't super informative we can't differentiate yet, so not
-          //   treating this as a big problem.
-          log("info", "failed to parse esp", {
-            path: pluginsIn[pluginName].filePath,
-            error: err.message,
-          });
-          pluginsParsed[pluginName] = {
-            isMaster: false,
-            isLight: false,
-            isMedium: false,
-            isBlueprint: false,
-            parseFailed: true,
-            description: "",
-            author: "",
-            masterList: [],
-            revision: 999,
-          };
-        }
-        resolve();
-      });
+          ),
+          isLight: this.props.isLight(
+            pluginsIn[pluginName].filePath,
+            esp.isLight,
+            this.props.gameMode,
+          ),
+          isMedium: await this.props.isMediumMaster(
+            pluginsIn[pluginName].filePath,
+            esp.isMedium,
+            this.props.gameMode,
+          ),
+          isBlueprint: esp.isBlueprint,
+          parseFailed: false,
+          description: esp.description,
+          author: esp.author,
+          masterList: esp.masterList,
+          revision: (esp as any).revision,
+        };
+      } catch (err) {
+        log("info", "failed to parse esp", {
+          path: pluginsIn[pluginName].filePath,
+          error: err.message,
+        });
+        pluginsParsed[pluginName] = {
+          isMaster: false,
+          isLight: false,
+          isMedium: false,
+          isBlueprint: false,
+          parseFailed: true,
+          description: "",
+          author: "",
+          masterList: [],
+          revision: 999,
+        };
+      }
     })
       .then(
         () =>

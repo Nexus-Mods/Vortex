@@ -31,15 +31,14 @@ const TAG_SNAM = 0x4d414e53; // "SNAM"
 const TAG_XXXX = 0x58585858; // "XXXX"
 
 /**
- * Pure TypeScript replacement for the native C++ esptk addon.
- * Parses Bethesda ESP/ESM/ESL plugin file headers using typed-binary
- * for declarative struct definitions.
+ * Pure TypeScript ESP/ESM/ESL plugin file parser.
  *
- * API is identical to the C++ version for drop-in replacement.
+ * Use the static `open()` method to parse a file:
+ *   const esp = await ESPFile.open(filePath, gameMode);
  */
 export class ESPFile {
-  private _filePath: string;
-  private _gameMode: string;
+  private _filePath: string = "";
+  private _gameMode: string = "";
   private _flags: number = 0;
   private _revision: number = 0;
   private _numRecords: number = 0;
@@ -47,13 +46,20 @@ export class ESPFile {
   private _description: string = "";
   private _masters: string[] = [];
 
-  constructor(filePath: string, gameMode: string) {
-    this._filePath = filePath;
-    this._gameMode = gameMode;
+  private constructor() {}
 
-    let fd: number;
+  /**
+   * Open and parse an ESP/ESM/ESL plugin file header.
+   * Only reads the TES4 record (~200 bytes to ~50KB), not the entire file.
+   */
+  static async open(filePath: string, gameMode: string): Promise<ESPFile> {
+    const esp = new ESPFile();
+    esp._filePath = filePath;
+    esp._gameMode = gameMode;
+
+    let fh: fs.promises.FileHandle;
     try {
-      fd = fs.openSync(filePath, "r");
+      fh = await fs.promises.open(filePath, "r");
     } catch (e: any) {
       if (e.code === "ENOENT") {
         const err = new Error("file not found") as any;
@@ -69,26 +75,25 @@ export class ESPFile {
       // Read only the TES4 header record, not the entire file.
       // First read 24 bytes: 20-byte record header + 4 bytes version info.
       const header = Buffer.alloc(24);
-      const headerRead = fs.readSync(fd, header, 0, 24, 0);
-      if (headerRead < 24) {
+      const { bytesRead } = await fh.read(header, 0, 24, 0);
+      if (bytesRead < 24) {
         throw new InvalidFileError("file incomplete", filePath);
       }
 
       const dataSize = header.readUInt32LE(4);
-      // Total record = 24 bytes header + dataSize subrecord data
-      // (Oblivion-style shares the version info bytes with subrecord data,
-      //  but we read them in the header already and re-parse from offset 20)
       const totalSize = 24 + dataSize;
       const buf = Buffer.alloc(totalSize);
       header.copy(buf);
       if (dataSize > 0) {
-        fs.readSync(fd, buf, 24, dataSize, 24);
+        await fh.read(buf, 24, dataSize, 24);
       }
 
-      this.parse(buf);
+      esp.parse(buf);
     } finally {
-      fs.closeSync(fd);
+      await fh.close();
     }
+
+    return esp;
   }
 
   private parse(buf: Buffer): void {
@@ -104,8 +109,6 @@ export class ESPFile {
 
     const dataSize = buf.readUInt32LE(4);
     this._flags = buf.readUInt32LE(8);
-    // header.id at offset 12 is unused
-    // header.revision at offset 16 is unused (revision comes from version info)
 
     // The C++ esptk reads 4 bytes after the 20-byte header as "version info".
     // revision() returns those 4 bytes interpreted as uint32le.
@@ -149,10 +152,9 @@ export class ESPFile {
       switch (tag) {
         case TAG_HEDR: {
           if (payloadSize >= 12) {
-            // HEDR: version(f32) + numRecords(i32) + nextObjectId(u32)
             this._numRecords = buf.readInt32LE(offset + 4);
           } else {
-            this._numRecords = 1; // prevent appearing as dummy
+            this._numRecords = 1;
           }
           break;
         }
@@ -233,11 +235,11 @@ export class ESPFile {
    * Modify the light plugin flag in the file header.
    * Writes the 4-byte flags field directly at offset 8.
    */
-  setLightFlag(enabled: boolean): void {
-    const fd = fs.openSync(this._filePath, "r+");
+  async setLightFlag(enabled: boolean): Promise<void> {
+    const fh = await fs.promises.open(this._filePath, "r+");
     try {
       const flagBuf = Buffer.alloc(4);
-      fs.readSync(fd, flagBuf, 0, 4, 8);
+      await fh.read(flagBuf, 0, 4, 8);
       let flags = flagBuf.readUInt32LE(0);
 
       const flagBit =
@@ -245,9 +247,9 @@ export class ESPFile {
       flags = enabled ? flags | flagBit : flags & ~flagBit;
 
       flagBuf.writeUInt32LE(flags, 0);
-      fs.writeSync(fd, flagBuf, 0, 4, 8);
+      await fh.write(flagBuf, 0, 4, 8);
     } finally {
-      fs.closeSync(fd);
+      await fh.close();
     }
   }
 }

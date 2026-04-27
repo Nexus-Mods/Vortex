@@ -241,7 +241,7 @@ function updatePluginListImpl(
       // game mode management will notice this as well.
       return fs.readdirAsync(modPath).catch((err) => []);
     })
-    .then((fileNames: string[]) => {
+    .then(async (fileNames: string[]) => {
       return Promise.filter(fileNames, (val) => isPlugin(modPath, val, gameId))
         .each((fileName: string) => setPluginState(modPath, fileName, true))
         .then(() => {
@@ -268,7 +268,7 @@ function updatePluginListImpl(
                 blueprintIds = new Set<string>();
                 for (const pluginId of Object.keys(pluginStates)) {
                   try {
-                    const esp = new ESPFile(
+                    const esp = await ESPFile.open(
                       pluginStates[pluginId].filePath,
                       gameId,
                     );
@@ -438,16 +438,16 @@ function register(
     );
   };
 
-  const isMediumMaster = (
+  const isMediumMaster = async (
     filePath: string,
     flag: boolean,
     gameMode: string,
-  ): boolean => {
+  ): Promise<boolean> => {
     if (path.extname(filePath) === GHOST_EXT) {
       filePath = path.basename(filePath, GHOST_EXT);
     }
     const masterExts = [".esm"];
-    const file = new ESPFile(filePath, gameMode);
+    const file = await ESPFile.open(filePath, gameMode);
     return (
       flag ||
       (masterExts.indexOf(path.extname(filePath).toLowerCase()) !== -1 &&
@@ -468,8 +468,11 @@ function register(
   const openLOOTSite = () =>
     util.opn("https://loot.github.io/").catch(() => null);
 
-  const parseESPFile = (filePath: string, gameMode: string): IESPFile => {
-    const fileInfo = new ESPFile(filePath, gameMode);
+  const parseESPFile = async (
+    filePath: string,
+    gameMode: string,
+  ): Promise<IESPFile> => {
+    const fileInfo = await ESPFile.open(filePath, gameMode);
     return {
       isMaster: fileInfo.isMaster,
       isLight: fileInfo.isLight,
@@ -764,13 +767,13 @@ function register(
   // as a no-op and not assume anything about blueprint-ness.
   context.registerAPI(
     "isBlueprintPlugin",
-    (pluginFilePath: string): boolean => {
+    async (pluginFilePath: string): Promise<boolean> => {
       const gameMode = selectors.activeGameId(context.api.getState());
       if (!supportsBlueprintPlugins(gameMode)) {
         return false;
       }
       try {
-        return pluginInfoCache.getInfo(pluginFilePath).isBlueprint;
+        return (await pluginInfoCache.getInfo(pluginFilePath)).isBlueprint;
       } catch (err) {
         log("warn", "isBlueprintPlugin parse failed", {
           pluginFilePath,
@@ -1321,20 +1324,20 @@ function testExceededPluginLimit(
   }
   const loadOrder = util.getSafe(state, ["loadOrder"], {});
   const pluginList = state.session.plugins.pluginList ?? {};
-  const plugins = Object.keys(pluginList).reduce((accum, key) => {
+  const plugins: Record<string, any> = {};
+  for (const key of Object.keys(pluginList)) {
     if (util.getSafe(loadOrder, [key, "enabled"], false)) {
       let isLight;
       try {
-        isLight = infoCache.getInfo(pluginList[key].filePath).isLight;
+        isLight = (await infoCache.getInfo(pluginList[key].filePath)).isLight;
       } catch (err) {
         // We won't log this as the error will most definitely
         //  be raised somewhere else -> nop
         isLight = false;
       }
-      accum[key] = { ...pluginList[key], isLight };
+      plugins[key] = { ...pluginList[key], isLight };
     }
-    return accum;
-  }, {});
+  }
 
   const isValid = (id: string) => {
     const plugin = plugins[id];
@@ -1395,12 +1398,12 @@ class PluginInfoCache {
     this.mAPI = api;
   }
 
-  public getInfo(filePath: string): IESPInfo {
+  public async getInfo(filePath: string): Promise<IESPInfo> {
     const id = this.fileId(filePath);
     let mtime: number;
     let ino: bigint;
     try {
-      const stat = fs.statSync(filePath, { bigint: true });
+      const stat = await fs.promises.stat(filePath, { bigint: true });
       mtime = Number(stat.mtimeMs);
       ino = stat.ino;
     } catch (err) {
@@ -1413,7 +1416,7 @@ class PluginInfoCache {
       mtime !== this.mCache[id].lastModified ||
       ino !== this.mCache[id].lastINO
     ) {
-      const info = new ESPFile(filePath, activeGameMode);
+      const info = await ESPFile.open(filePath, activeGameMode);
       this.mCache[id] = {
         lastModified: mtime,
         lastINO: ino,
@@ -1460,22 +1463,20 @@ function testMissingMasters(
   const enabledPlugins = Object.keys(loadOrder).filter(
     (plugin: string) => loadOrder[plugin].enabled || natives.has(plugin),
   );
-  const pluginDetails = enabledPlugins
-    .filter((name: string) => pluginList[name] !== undefined)
-    .map((plugin) => {
-      try {
-        return {
-          name: plugin,
-          masterList: infoCache.getInfo(pluginList[plugin].filePath).masterList,
-        };
-      } catch (err) {
-        log("warn", "failed to parse esp file", {
-          name: pluginList[plugin].filePath,
-          err: err.message,
-        });
-        return { name: plugin, masterList: [] };
-      }
-    });
+  const pluginDetails: { name: string; masterList: string[] }[] = [];
+  for (const plugin of enabledPlugins) {
+    if (pluginList[plugin] === undefined) continue;
+    try {
+      const info = await infoCache.getInfo(pluginList[plugin].filePath);
+      pluginDetails.push({ name: plugin, masterList: info.masterList });
+    } catch (err) {
+      log("warn", "failed to parse esp file", {
+        name: pluginList[plugin].filePath,
+        err: err.message,
+      });
+      pluginDetails.push({ name: plugin, masterList: [] });
+    }
+  }
 
   const activePlugins = new Set<string>(
     pluginDetails.map((plugin) => plugin.name),
@@ -1596,24 +1597,24 @@ function testBlueprintMasters(
     masterList: string[];
   }
 
-  const pluginDetails: IParsedPlugin[] = enabledPlugins
-    .filter((name: string) => pluginList[name] !== undefined)
-    .map((plugin) => {
-      try {
-        const info = infoCache.getInfo(pluginList[plugin].filePath);
-        return {
-          name: plugin,
-          isBlueprint: info.isBlueprint,
-          masterList: info.masterList,
-        };
-      } catch (err) {
-        log("warn", "failed to parse esp file", {
-          name: pluginList[plugin].filePath,
-          err: err.message,
-        });
-        return { name: plugin, isBlueprint: false, masterList: [] };
-      }
-    });
+  const pluginDetails: IParsedPlugin[] = [];
+  for (const plugin of enabledPlugins) {
+    if (pluginList[plugin] === undefined) continue;
+    try {
+      const info = await infoCache.getInfo(pluginList[plugin].filePath);
+      pluginDetails.push({
+        name: plugin,
+        isBlueprint: info.isBlueprint,
+        masterList: info.masterList,
+      });
+    } catch (err) {
+      log("warn", "failed to parse esp file", {
+        name: pluginList[plugin].filePath,
+        err: err.message,
+      });
+      pluginDetails.push({ name: plugin, isBlueprint: false, masterList: [] });
+    }
+  }
 
   const blueprintPlugins = new Set<string>(
     pluginDetails
@@ -1974,7 +1975,7 @@ function sanitizeForIPC(obj: any) {
 }
 
 function init(context: IExtensionContextExt) {
-  const setPluginLight = (id: string, enable: boolean) => {
+  const setPluginLight = async (id: string, enable: boolean) => {
     const state: IStateWithGamebryo = context.api.getState();
     const profile = selectors.activeProfile(state);
     const plugin: IPlugin = state.session.plugins.pluginList[id];
@@ -1982,8 +1983,8 @@ function init(context: IExtensionContextExt) {
       return;
     }
 
-    const esp = new ESPFile(plugin.filePath, profile.gameId);
-    esp.setLightFlag(enable);
+    const esp = await ESPFile.open(plugin.filePath, profile.gameId);
+    await esp.setLightFlag(enable);
 
     context.api.ext.addToHistory("plugins", {
       type: "plugin-eslified",
