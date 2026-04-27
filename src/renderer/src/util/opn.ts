@@ -1,7 +1,7 @@
 import PromiseBB from "bluebird";
 import path from "node:path";
 
-import { getPreloadApi } from "./preloadAccess";
+import { log } from "../logging";
 
 function isWindowsPath(target: string): boolean {
   return path.win32.isAbsolute(target);
@@ -22,10 +22,14 @@ function isUrlTarget(target: string): boolean {
 
 /** @deprecated */
 function open(target: string, _wait?: boolean): PromiseBB<void> {
+  if (!target) {
+    log("warn", "No target provided to open function");
+    return PromiseBB.resolve();
+  }
   if (isUrlTarget(target)) {
-    getPreloadApi().shell.openUrl(target);
+    window.api.shell.openUrl(target);
   } else {
-    getPreloadApi().shell.openFile(target);
+    window.api.shell.openFile(target);
   }
 
   return PromiseBB.resolve();

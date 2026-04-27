@@ -365,16 +365,12 @@ export async function checkModRequirements(
                 modId,
                 modName: getModName(),
                 // The nexus mods URL of the mod that requires this dependency
-                modUrl: requiringModNexusDomain
-                  ? `https://www.nexusmods.com/${requiringModNexusDomain}/mods/${modId}`
-                  : undefined,
+                modUrl: `https://www.nexusmods.com/${requiringModNexusDomain}/mods/${modId}`,
               },
               // The URL of the required dependency mod
               modUrl:
                 (req.url && req.url.trim()) ||
-                (domainName
-                  ? `https://www.nexusmods.com/${domainName}/mods/${requiredModId}`
-                  : undefined),
+                `https://www.nexusmods.com/${gameIdForStorage}/mods/${requiredModId}`,
             });
           }
         }

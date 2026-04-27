@@ -13,7 +13,6 @@ import type { IModFileInfo, IModRequirementExt } from "../../types";
 import { Button } from "../../../../ui/components/button/Button";
 import { Icon } from "../../../../ui/components/icon/Icon";
 import { Typography } from "../../../../ui/components/typography/Typography";
-import { opn } from "../../../../util/api";
 
 export const ModRequirement = ({
   mod,
@@ -66,27 +65,31 @@ export const ModRequirement = ({
 
           <div className="flex shrink-0 gap-x-2">
             {mod.externalRequirement ? (
-              <Button
-                buttonType="tertiary"
-                filled="weak"
-                leftIconPath={mdiWeb}
-                rightIconPath={mdiOpenInNew}
-                size="sm"
-                onClick={() => opn(mod.modUrl).catch(() => null)}
-              >
-                {t("detail::item::open_external_mod_page")}
-              </Button>
-            ) : (
-              <>
+              mod.modUrl ? (
                 <Button
                   buttonType="tertiary"
                   filled="weak"
-                  leftIcon={<img alt="" src="assets/images/nexus.svg" />}
+                  leftIconPath={mdiWeb}
+                  rightIconPath={mdiOpenInNew}
                   size="sm"
-                  onClick={() => opn(mod.modUrl).catch(() => null)}
+                  onClick={() => window.api.shell.openUrl(mod.modUrl)}
                 >
-                  {t("detail::item::open_mod_page")}
+                  {t("detail::item::open_external_mod_page")}
                 </Button>
+              ) : null
+            ) : (
+              <>
+                {mod.modUrl ? (
+                  <Button
+                    buttonType="tertiary"
+                    filled="weak"
+                    leftIcon={<img alt="" src="assets/images/nexus.svg" />}
+                    size="sm"
+                    onClick={() => window.api.shell.openUrl(mod.modUrl)}
+                  >
+                    {t("detail::item::open_mod_page")}
+                  </Button>
+                ) : null}
 
                 <Button
                   buttonType="secondary"
