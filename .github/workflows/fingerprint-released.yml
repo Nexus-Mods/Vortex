@@ -1,0 +1,25 @@
+name: Mark fingerprints as released
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: fingerprint-released-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/fingerprints
+        with:
+          mode: release
+          clickhouse-url: ${{ secrets.CLICKHOUSE_URL }}
+          clickhouse-user: ${{ secrets.CLICKHOUSE_USER }}
+          clickhouse-password: ${{ secrets.CLICKHOUSE_PASSWORD }}
