@@ -39,6 +39,8 @@ import {
   installLSLib, installBG3SE, installEngineInjector, installModFixer, installReplacer,
 } from './installers';
 
+import { abortDivineOperations } from './divineWrapper';
+
 import {
   isBG3SE, isLSLib, isLoose, isReplacer,
 } from './modTypes';
@@ -167,6 +169,10 @@ async function onCheckModVersion(api: types.IExtensionApi, gameId: string, mods:
 
 async function onGameModeActivated(api: types.IExtensionApi, gameId: string) {
   if (gameId !== GAME_ID) {
+    // Cancel any divine.exe operations still in flight from the previous game
+    // context so they don't surface errors or overwrite caches for a game the
+    // user has since left.
+    abortDivineOperations();
     PakInfoCache.getInstance(api).save();
     return;
   }

@@ -10,7 +10,7 @@ import { Builder, parseStringPromise, RenderOptions } from 'xml2js';
 import { LockedState } from 'vortex-api/lib/extensions/file_based_loadorder/types/types';
 import { IOpenOptions, ISaveOptions } from 'vortex-api/lib/types/IExtensionContext';
 
-import { DivineExecMissing } from './divineWrapper';
+import { DivineAborted, DivineExecMissing, DivinePakInvalid } from './divineCore';
 import { findNode, forceRefresh, getActivePlayerProfile, getDefaultModSettingsFormat, getPlayerProfiles, logDebug, modsPath, profilesPath } from './util';
 
 import PakInfoCache, { ICacheEntry } from './cache';
@@ -664,6 +664,18 @@ async function readPAKs(api: types.IExtensionApi) : Promise<Array<ICacheEntry>> 
           const pakPath = path.join(modsPath(), fileName);
           return cache.getCacheEntry(api, pakPath, mod);
         } catch (err) {
+          // Game switched (or similar) while we were reading paks — bail out
+          // without notifying the user; the new game context will re-scan.
+          if (err instanceof DivineAborted) {
+            return undefined;
+          }
+          // The pak itself is malformed — common with third-party mods and
+          // not actionable by the user. Log it and move on rather than
+          // spamming a notification per bad pak.
+          if (err instanceof DivinePakInvalid) {
+            log('warn', 'pak is invalid', { fileName, details: err.details });
+            return undefined;
+          }
           if (err instanceof DivineExecMissing) {
             const message = 'The installed copy of LSLib/Divine is corrupted - please '
               + 'delete the existing LSLib mod entry and re-install it. Make sure to '
@@ -673,14 +685,10 @@ async function readPAKs(api: types.IExtensionApi) : Promise<Array<ICacheEntry>> 
               { allowReport: false });
             return undefined;
           }
-          // could happen if the file got deleted since reading the list of paks.
-          // actually, this seems to be fairly common when updating a mod
-          if (err.code !== 'ENOENT') {
-            api.showErrorNotification('Failed to read pak. Please make sure you are using the latest version of LSLib by using the "Re-install LSLib/Divine" toolbar button on the Mods page.', err, {
-              allowReport: false,
-              message: fileName,
-            });
-          }
+          api.showErrorNotification('Failed to read pak. Please make sure you are using the latest version of LSLib by using the "Re-install LSLib/Divine" toolbar button on the Mods page.', err, {
+            allowReport: false,
+            message: fileName,
+          });
           return undefined;
         }
       };
@@ -689,7 +697,7 @@ async function readPAKs(api: types.IExtensionApi) : Promise<Array<ICacheEntry>> 
   }));
   api.dismissNotification('bg3-reading-paks-activity');
 
-  return res.filter(iter => iter !== undefined);
+  return res.filter((iter): iter is ICacheEntry => iter !== undefined);
 }
 
 async function readPAKList(api: types.IExtensionApi) {
