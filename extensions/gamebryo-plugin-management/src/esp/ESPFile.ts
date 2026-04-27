@@ -1,6 +1,6 @@
 import * as fs from "fs";
-import { BufferReader } from "typed-binary";
-import { RecordHeader, SubRecordHeader, HEDRData } from "./schemas";
+// Schema definitions in ./schemas.ts serve as the declarative format spec.
+// This module reads directly from the Buffer for performance.
 import {
   FLAG_MASTER,
   FLAG_LIGHT,
@@ -21,6 +21,14 @@ function readNullTermString(
   while (end < limit && buf[end] !== 0) end++;
   return buf.toString("ascii", offset, end);
 }
+
+// 4-byte subrecord type tags as little-endian uint32 for fast integer comparison
+const TAG_TES4 = 0x34534554; // "TES4"
+const TAG_HEDR = 0x52444548; // "HEDR"
+const TAG_MAST = 0x5453414d; // "MAST"
+const TAG_CNAM = 0x4d414e43; // "CNAM"
+const TAG_SNAM = 0x4d414e53; // "SNAM"
+const TAG_XXXX = 0x58585858; // "XXXX"
 
 /**
  * Pure TypeScript replacement for the native C++ esptk addon.
@@ -61,130 +69,97 @@ export class ESPFile {
   }
 
   private parse(buf: Buffer): void {
-    if (buf.length < 20) {
+    if (buf.length < 24) {
       throw new InvalidFileError("file incomplete", this._filePath);
     }
 
-    // Create an ArrayBuffer for typed-binary from the Node Buffer
-    const ab = buf.buffer.slice(
-      buf.byteOffset,
-      buf.byteOffset + buf.byteLength,
-    );
-    const reader = new BufferReader(ab, { endianness: "little" });
-
-    // Read TES4 record header (20 bytes)
-    const header = RecordHeader.read(reader);
-    if (header.type !== "TES4") {
+    // Read TES4 record header directly from Buffer (20 bytes)
+    // Layout: type[4] + dataSize[4] + flags[4] + id[4] + revision[4]
+    if (buf.readUInt32LE(0) !== TAG_TES4) {
       throw new InvalidFileError("invalid file type", this._filePath);
     }
 
-    this._flags = header.flags;
+    const dataSize = buf.readUInt32LE(4);
+    this._flags = buf.readUInt32LE(8);
+    // header.id at offset 12 is unused
+    // header.revision at offset 16 is unused (revision comes from version info)
 
     // The C++ esptk reads 4 bytes after the 20-byte header as "version info".
     // revision() returns those 4 bytes interpreted as uint32le.
     // For Oblivion-style files, these bytes are actually "HEDR" (the first
     // subrecord tag), so revision() returns 0x52444548 = 1380205896.
-    const headerEnd = reader.currentByteOffset; // should be 20
-    let oblivionStyle = false;
+    this._revision = buf.readUInt32LE(20);
 
-    if (buf.length >= headerEnd + 4) {
-      // Read the 4 version-info bytes as uint32le for the revision value
-      this._revision = buf.readUInt32LE(headerEnd);
-
-      if (
-        buf[headerEnd] === 0x48 && // H
-        buf[headerEnd + 1] === 0x45 && // E
-        buf[headerEnd + 2] === 0x44 && // D
-        buf[headerEnd + 3] === 0x52 // R
-      ) {
-        oblivionStyle = true;
-      }
-    }
-
-    if (!oblivionStyle) {
-      reader.skipBytes(4); // skip version info
-    }
-
-    // Parse subrecords within the data region
-    const dataEnd = reader.currentByteOffset + header.dataSize;
+    // Oblivion-style: if version info bytes are "HEDR", subrecords start at 20
+    let offset = this._revision === TAG_HEDR ? 20 : 24;
+    const dataEnd = offset + dataSize;
     let sizeOverride = 0;
 
-    while (reader.currentByteOffset < dataEnd) {
-      if (reader.currentByteOffset + 6 > buf.length) break;
+    // Parse subrecords: each is tag[4] + size[2] + data[size]
+    while (offset + 6 <= dataEnd && offset + 6 <= buf.length) {
+      const tag = buf.readUInt32LE(offset);
+      const subSize = buf.readUInt16LE(offset + 4);
+      offset += 6;
 
-      const sub = SubRecordHeader.read(reader);
-
-      if (sub.type === "XXXX") {
-        // XXXX provides a uint32 size override for the next subrecord
-        if (sub.size !== 4) {
+      if (tag === TAG_XXXX) {
+        if (subSize !== 4) {
           throw new InvalidRecordError(
             "XXXX record is supposed to be 4 bytes in size",
             this._filePath,
           );
         }
-        sizeOverride = reader.readUint32();
+        sizeOverride = buf.readUInt32LE(offset);
+        offset += 4;
         continue;
       }
 
-      const dataSize = sizeOverride || sub.size;
+      const payloadSize = sizeOverride || subSize;
       sizeOverride = 0;
 
-      if (reader.currentByteOffset + dataSize > buf.length) {
+      if (offset + payloadSize > buf.length) {
         throw new InvalidRecordError(
-          `sub-record incomplete: ${sub.type}`,
+          "sub-record incomplete",
           this._filePath,
         );
       }
 
-      switch (sub.type) {
-        case "HEDR": {
-          if (dataSize >= 12) {
-            const hedr = HEDRData.read(reader);
-            this._numRecords = hedr.numRecords;
-            if (dataSize > 12) reader.skipBytes(dataSize - 12);
+      switch (tag) {
+        case TAG_HEDR: {
+          if (payloadSize >= 12) {
+            // HEDR: version(f32) + numRecords(i32) + nextObjectId(u32)
+            this._numRecords = buf.readInt32LE(offset + 4);
           } else {
-            // Invalid HEDR size — set numRecords to 1 to prevent
-            // appearing as a dummy plugin (matches C++ behavior)
-            this._numRecords = 1;
-            reader.skipBytes(dataSize);
+            this._numRecords = 1; // prevent appearing as dummy
           }
           break;
         }
-        case "MAST": {
-          if (dataSize > 0) {
+        case TAG_MAST: {
+          if (payloadSize > 0) {
             this._masters.push(
-              readNullTermString(buf, reader.currentByteOffset, dataSize),
+              readNullTermString(buf, offset, payloadSize),
             );
           }
-          reader.skipBytes(dataSize);
           break;
         }
-        case "CNAM": {
-          if (dataSize > 0) {
-            this._author = readNullTermString(
-              buf,
-              reader.currentByteOffset,
-              dataSize,
-            );
+        case TAG_CNAM: {
+          if (payloadSize > 0) {
+            this._author = readNullTermString(buf, offset, payloadSize);
           }
-          reader.skipBytes(dataSize);
           break;
         }
-        case "SNAM": {
-          if (dataSize > 0) {
+        case TAG_SNAM: {
+          if (payloadSize > 0) {
             this._description = readNullTermString(
               buf,
-              reader.currentByteOffset,
-              dataSize,
+              offset,
+              payloadSize,
             );
           }
-          reader.skipBytes(dataSize);
           break;
         }
-        default:
-          reader.skipBytes(dataSize);
-          break;
       }
+
+      offset += payloadSize;
     }
   }
 
