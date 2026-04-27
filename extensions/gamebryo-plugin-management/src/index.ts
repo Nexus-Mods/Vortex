@@ -1982,18 +1982,9 @@ function init(context: IExtensionContextExt) {
       return;
     }
 
-    try {
-      const esp = new ESPFile(plugin.filePath, profile.gameId);
-      esp.setLightFlag(enable);
-    } catch (err) {
-      if (err.nativeCode !== 0) {
-        context.api.showErrorNotification("Failed to set light flag", err, {
-          message: plugin.filePath,
-          allowReport: true,
-        });
-        return;
-      }
-    }
+    const esp = new ESPFile(plugin.filePath, profile.gameId);
+    esp.setLightFlag(enable);
+
     context.api.ext.addToHistory("plugins", {
       type: "plugin-eslified",
       gameId: profile.gameId,
