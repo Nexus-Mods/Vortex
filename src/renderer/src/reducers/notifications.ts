@@ -13,6 +13,9 @@ import { generate as shortid } from "shortid";
 export const notificationsReducer: IReducerSpec = {
   reducers: {
     [actions.startNotification as any]: (state, payload) => {
+      if (payload == null || typeof payload !== "object") {
+        return state;
+      }
       let temp = state;
       const statePath =
         payload.type === "global"
@@ -39,6 +42,9 @@ export const notificationsReducer: IReducerSpec = {
       return pushSafe(temp, statePath, payload);
     },
     [actions.updateNotification as any]: (state, payload) => {
+      if (payload?.id == null) {
+        return state;
+      }
       const idx = state.notifications.findIndex(
         (noti) => noti.id === payload.id,
       );
