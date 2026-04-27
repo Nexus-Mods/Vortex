@@ -66,7 +66,7 @@ async function benchmarkFile(filePath: string, gameId: string): Promise<Benchmar
   };
 }
 
-function main() {
+async function main() {
   const manifestPath = path.join(CORPUS_DIR, "manifest.json");
   const manifest: ManifestEntry[] = JSON.parse(
     fs.readFileSync(manifestPath, "utf-8"),
@@ -138,6 +138,63 @@ function main() {
   );
   console.log(
     `${"Avg p99".padEnd(20)} ${(tsP99.toFixed(2) + "μs").padStart(12)} ${(blP99.toFixed(2) + "μs").padStart(12)} ${(tsP99 / blP99).toFixed(2).padStart(7)}x`,
+  );
+
+  // Parallel throughput benchmark: parse all corpus files concurrently
+  // This measures what the extension could do with Promise.all — something
+  // the sync C++ API could never do.
+  const allFiles = manifest
+    .map((e) => ({ path: path.join(CORPUS_DIR, e.file), gameId: e.gameId }))
+    .filter((e) => fs.existsSync(e.path));
+
+  const PARALLEL_ITERS = 1000;
+
+  // Warm up
+  for (let i = 0; i < 10; i++) {
+    await Promise.all(allFiles.map((f) => ESPFile.open(f.path, f.gameId).catch(() => {})));
+  }
+
+  // Sequential async (how the current code works with await in a loop)
+  const seqTimings: number[] = [];
+  for (let i = 0; i < PARALLEL_ITERS; i++) {
+    const start = process.hrtime.bigint();
+    for (const f of allFiles) {
+      try { await ESPFile.open(f.path, f.gameId); } catch {}
+    }
+    const end = process.hrtime.bigint();
+    seqTimings.push(Number(end - start) / 1000);
+  }
+  seqTimings.sort((a, b) => a - b);
+
+  // Parallel async (Promise.all)
+  const parTimings: number[] = [];
+  for (let i = 0; i < PARALLEL_ITERS; i++) {
+    const start = process.hrtime.bigint();
+    await Promise.all(allFiles.map((f) => ESPFile.open(f.path, f.gameId).catch(() => {})));
+    const end = process.hrtime.bigint();
+    parTimings.push(Number(end - start) / 1000);
+  }
+  parTimings.sort((a, b) => a - b);
+
+  // C++ sync baseline: sum of per-file means × file count
+  const cppTotalUs = baseline.reduce((s, b) => s + b.meanUs, 0);
+
+  const seqP50 = seqTimings[Math.floor(PARALLEL_ITERS * 0.5)];
+  const parP50 = parTimings[Math.floor(PARALLEL_ITERS * 0.5)];
+
+  console.log(`\n=== Batch Parse: All ${allFiles.length} Files ===`);
+  console.log(
+    `${"".padEnd(25)} ${"p50 (μs)".padStart(12)} ${"p50 (ms)".padStart(10)} ${"vs C++ sync".padStart(12)}`,
+  );
+  console.log("-".repeat(61));
+  console.log(
+    `${"C++ sync (sequential)".padEnd(25)} ${cppTotalUs.toFixed(0).padStart(12)} ${(cppTotalUs / 1000).toFixed(2).padStart(9)}ms ${"1.00x".padStart(12)}`,
+  );
+  console.log(
+    `${"TS async (sequential)".padEnd(25)} ${seqP50.toFixed(0).padStart(12)} ${(seqP50 / 1000).toFixed(2).padStart(9)}ms ${(seqP50 / cppTotalUs).toFixed(2).padStart(11)}x`,
+  );
+  console.log(
+    `${"TS async (Promise.all)".padEnd(25)} ${parP50.toFixed(0).padStart(12)} ${(parP50 / 1000).toFixed(2).padStart(9)}ms ${(parP50 / cppTotalUs).toFixed(2).padStart(11)}x`,
   );
 }
 
