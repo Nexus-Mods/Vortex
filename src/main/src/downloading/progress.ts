@@ -23,6 +23,7 @@ export class ProgressReporter {
 
   public size: number | null = null;
   public etag: string | null = null;
+  public fileName: string | null = null;
 
   public get isChunked(): boolean {
     return this.#isChunked;
@@ -79,6 +80,7 @@ export class ProgressReporter {
 
     const progress = {
       size: this.size,
+      fileName: this.fileName,
       bytesReceived,
       bytesWritten,
     };

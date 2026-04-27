@@ -13,7 +13,7 @@ import {
 } from "@vortex/shared/errors";
 import { createHash } from "node:crypto";
 import { createReadStream } from "node:fs";
-import { access, rm } from "node:fs/promises";
+import { access, rename, rm } from "node:fs/promises";
 import * as path from "node:path";
 import { pipeline } from "node:stream/promises";
 import { z } from "zod";
@@ -42,6 +42,7 @@ import {
   setDownloadFilePath,
   setDownloadHash,
   setDownloadInterrupted,
+  setDownloadModInfo,
   setDownloadPausable,
   setDownloadSpeed,
 } from "./extensions/download_management/actions/state";
@@ -50,6 +51,7 @@ import { nexusIdsFromDownloadId } from "./extensions/nexus_integration/selectors
 import { makeModAndFileUIDs } from "./extensions/nexus_integration/util/UIDs";
 import { activeGameId } from "./extensions/profile_management/selectors";
 import { log } from "./logging";
+import { batchDispatch, flatten } from "./util/util";
 
 function rehydrateDownloadError(state: WireDownloadState): Error | null {
   if (state.status === "canceled") return new UserCanceled();
@@ -90,6 +92,7 @@ function parseEncodedUrl(raw: string): EncodedUrl {
 
 type StoredDownloadInfo = {
   encodedUrl: EncodedUrl;
+  callback?: (err: Error | null, id?: string) => void;
 };
 
 export class IPCDownloadAdapter {
@@ -97,6 +100,15 @@ export class IPCDownloadAdapter {
   readonly #handlers: Record<string, ProtocolHandler> = {};
 
   readonly #pending = new Map<number, StoredDownloadInfo>();
+  // Captures `meta` from the protocol handler in #resolve so it can be merged
+  // into download.modInfo once the downloadId is known. The nxm resolver returns
+  // nexus IDs (modId/fileId or collectionId/revisionId) here.
+  readonly #resolvedMeta = new Map<number, unknown>();
+  readonly #downloadCallbacks = new Map<
+    string,
+    (err: Error | null, id?: string) => void
+  >();
+  readonly #fileNameHints = new Map<string, string>();
   readonly #activeDownloads = new Set<string>();
   readonly #lastBytesReceived = new Map<string, number>();
   readonly #lastProgressDispatch = new Map<string, number>();
@@ -368,21 +380,45 @@ export class IPCDownloadAdapter {
     }
   }
 
-  async #completeDownload(downloadId: string): Promise<void> {
+  async #completeDownload(
+    downloadId: string,
+    wireState: WireDownloadState,
+  ): Promise<void> {
     const reduxState = this.#api.getState();
     const download = reduxState.persistent.downloads.files?.[downloadId];
 
     if (download?.localPath !== undefined) {
       const gameId = download.game?.[0] ?? activeGameId(reduxState);
       const dlPath = downloadPathForGame(reduxState, gameId);
-      const filePath = path.join(dlPath, download.localPath);
+      const tempPath = path.join(dlPath, download.localPath);
+
+      // Determine the final filename: server Content-Disposition > caller hint > temp name.
+      const hint = this.#fileNameHints.get(downloadId);
+      this.#fileNameHints.delete(downloadId);
+      const finalName = wireState.fileName ?? hint ?? download.localPath;
+      const finalPath = path.join(dlPath, finalName);
+
+      if (finalPath !== tempPath) {
+        try {
+          await rename(tempPath, finalPath);
+          this.#api.store.dispatch(setDownloadFilePath(downloadId, finalName));
+        } catch (err) {
+          log("warn", "failed to rename download to final name", {
+            downloadId,
+            tempPath,
+            finalPath,
+            err,
+          });
+        }
+      }
+
       try {
         // TODO: move hashing into main process
 
         // MD5 is used as a fallback identifier for collection rule matching and
         // reverse ModDB lookups for files that lack Nexus IDs (e.g. non-NXM downloads).
         const hash = createHash("md5");
-        await pipeline(createReadStream(filePath), hash);
+        await pipeline(createReadStream(finalPath), hash);
         this.#api.store.dispatch(
           setDownloadHash(downloadId, hash.digest("hex")),
         );
@@ -397,6 +433,12 @@ export class IPCDownloadAdapter {
     // Notify listeners that the download completed. InstallManager listens
     // for this to trigger auto-install when automation is enabled.
     this.#api.events.emit("did-finish-download", downloadId, "finished");
+    // Fire the start-download callback now that the file is on disk. Callers
+    // (e.g. nexus_integration collection download) rely on the callback firing
+    // after completion to trigger installation, matching DownloadObserver behaviour.
+    const cb = this.#downloadCallbacks.get(downloadId);
+    this.#downloadCallbacks.delete(downloadId);
+    cb?.(null, downloadId);
 
     // Trigger auto-install if the user has automation enabled or if this
     // download was started as an update (e.g. from the mod management view).
@@ -419,39 +461,45 @@ export class IPCDownloadAdapter {
 
     const encodedUrl = parseEncodedUrl(rawUrl.toString());
 
-    try {
-      fileName ??= path.basename(encodedUrl.url.pathname);
-    } catch {
-      fileName ??= "";
-    }
-
     const state = this.#api.getState();
-    const dest = path.join(
-      downloadPathForGame(state, modInfo.game ?? activeGameId(state)),
-      fileName,
+    const dlPath = downloadPathForGame(
+      state,
+      modInfo.game ?? activeGameId(state),
     );
 
-    const fileExists = await access(dest).then(
-      () => true,
-      () => false,
-    );
-    if (fileExists) {
-      const err = new AlreadyDownloaded(path.basename(dest));
-      callback?.(err);
-      return;
+    // Check for an existing file using the caller-supplied name before queuing.
+    // We can only do this when a name is provided; temp-named downloads are always new.
+    if (fileName !== undefined) {
+      const namedDest = path.join(dlPath, fileName);
+      const fileExists = await access(namedDest).then(
+        () => true,
+        () => false,
+      );
+      if (fileExists) {
+        callback?.(new AlreadyDownloaded(fileName));
+        return;
+      }
     }
 
+    const collationId = this.#nextCollationId++;
     try {
-      const collationId = this.#nextCollationId++;
       const info: StoredDownloadInfo = {
         encodedUrl: encodedUrl,
+        callback,
       };
 
       this.#pending.set(collationId, info);
+
+      // Use a temporary filename so the main process can start writing immediately.
+      // #completeDownload renames to the final name derived from Content-Disposition.
+      // The real filename is passed as a hint; the server name takes priority.
+      const collationStr = collationId.toString().padStart(8, "0");
+      const tempName = `__vortex_tmp_${collationStr}`;
+      const dest = path.join(dlPath, tempName);
+
       log("debug", "starting download", {
         encodedUrl,
         dest,
-        fileName,
         collationId,
       });
 
@@ -461,8 +509,15 @@ export class IPCDownloadAdapter {
       );
 
       this.#activeDownloads.add(downloadId);
+      if (callback !== undefined) {
+        this.#downloadCallbacks.set(downloadId, callback);
+      }
+      // Store caller-supplied name as hint for #completeDownload.
+      // Content-Disposition (wireState.fileName) takes priority; this is the fallback.
+      if (fileName !== undefined) {
+        this.#fileNameHints.set(downloadId, fileName);
+      }
       log("debug", "download queued", { downloadId, collationId });
-      callback?.(null, downloadId);
 
       const gameId = modInfo.game ?? activeGameId(state);
       // Create the Redux record. nexus_integration's onChangeDownloads watches
@@ -470,13 +525,28 @@ export class IPCDownloadAdapter {
       this.#api.store.dispatch(
         initDownload(downloadId, rawUrls, modInfo, [gameId]),
       );
-      // Set localPath immediately so the directory watcher can match the file on
-      // disk and skip creating a duplicate addLocalDownload record for the same file.
-      this.#api.store.dispatch(setDownloadFilePath(downloadId, fileName));
+      // Set localPath to the temp name so the UI has something to display.
+      this.#api.store.dispatch(setDownloadFilePath(downloadId, tempName));
       // All IPC downloads support pause via checkpoint. DownloadView checks
       // download.pausable to show/hide the pause button.
       this.#api.store.dispatch(setDownloadPausable(downloadId, true));
+
+      // Flatten the resolver's meta into download.modInfo. For nxm URLs this
+      // carries nexus.ids.modId/fileId (or collectionId/revisionId), which
+      // attributeExtractors and collection install plumbing read from.
+      const resolvedMeta = this.#resolvedMeta.get(collationId);
+      this.#resolvedMeta.delete(collationId);
+      if (resolvedMeta !== undefined) {
+        const flattened = flatten(resolvedMeta) as Record<string, unknown>;
+        const actions = Object.keys(flattened).map((key) =>
+          setDownloadModInfo(downloadId, key, flattened[key]),
+        );
+        if (actions.length > 0) {
+          batchDispatch(this.#api.store, actions);
+        }
+      }
     } catch (err) {
+      this.#resolvedMeta.delete(collationId);
       callback?.(unknownToError(err));
     }
   }
@@ -609,18 +679,24 @@ export class IPCDownloadAdapter {
 
       if (state.status === "completed") {
         this.#emitAnalytics(downloadId, "completed");
-        this.#completeDownload(downloadId).catch((err) => {
+        this.#completeDownload(downloadId, state).catch((err) => {
           log("error", "failed to finalize download", { downloadId, err });
         });
       } else if (state.status === "canceled") {
         this.#emitAnalytics(downloadId, "canceled");
         // User canceled - remove the record entirely, no file to keep.
         this.#api.store.dispatch(removeDownload(downloadId));
+        const cancelCb = this.#downloadCallbacks.get(downloadId);
+        this.#downloadCallbacks.delete(downloadId);
+        cancelCb?.(new UserCanceled(), downloadId);
       } else {
         this.#emitAnalytics(downloadId, "failed", err ?? undefined);
         // Mark record as failed so the UI can show an error state.
         this.#api.store.dispatch(finishDownload(downloadId, "failed", err));
         this.#api.events.emit("did-finish-download", downloadId, "failed");
+        const failCb = this.#downloadCallbacks.get(downloadId);
+        this.#downloadCallbacks.delete(downloadId);
+        failCb?.(err ?? new Error("download failed"), downloadId);
       }
     }
 
@@ -672,6 +748,11 @@ export class IPCDownloadAdapter {
         handler(encodedUrl.url.toString()),
       );
 
+      // Stash resolver meta so #handleStartDownload can merge it into modInfo.
+      if (resolved.meta !== undefined && resolved.meta !== null) {
+        this.#resolvedMeta.set(collationId, resolved.meta);
+      }
+
       log("debug", "download resolved", { resolvedUrl: resolved.urls[0] });
       return { probeEndpoint: { url: resolved.urls[0] } };
     }
@@ -694,9 +775,14 @@ const modInfoSchema = z
 
 type ModInfo = z.infer<typeof modInfoSchema>;
 
+const urlStringSchema = z.union([
+  z.string(),
+  z.custom<URL>((v) => v instanceof URL).transform((v) => v.toString()),
+]);
+
 const startDownloadArgsSchema = z
   .tuple([
-    z.array(z.string()),
+    z.array(urlStringSchema),
     modInfoSchema,
     z.string().optional(),
     z
