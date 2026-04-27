@@ -310,16 +310,15 @@ function registerAdaptorLoadOrder(
 ): void {
   const { id: loId, displayName, description } = definition;
 
-  // registerLoadOrder is added to the context by the FBLO extension
-  const registerLoadOrder = (context as unknown as Record<string, unknown>)
-    .registerLoadOrder as
-    | ((info: Record<string, unknown>, extPath: string) => void)
+  // Use the runtime API exposed by FBLO so this works after init.
+  const addLoadOrderPage = context.api.ext.addLoadOrderPage as
+    | ((info: Record<string, unknown>, isContributed?: boolean) => void)
     | undefined;
 
-  if (!registerLoadOrder) {
+  if (!addLoadOrderPage) {
     log(
       "warn",
-      "[adaptor-bridge] registerLoadOrder not available, skipping {{lo}}",
+      "[adaptor-bridge] addLoadOrderPage API not available, skipping {{lo}}",
       { lo: loId },
     );
     return;
@@ -331,7 +330,7 @@ function registerAdaptorLoadOrder(
     { gameId, lo: loId, name: displayName },
   );
 
-  registerLoadOrder(
+  addLoadOrderPage(
     {
       gameId,
       toggleableEntries: true,
@@ -394,7 +393,7 @@ function registerAdaptorLoadOrder(
         return undefined;
       },
     },
-    "adaptor-bridge",
+    false, // not contributed - adaptor bridge is first-party
   );
 }
 
