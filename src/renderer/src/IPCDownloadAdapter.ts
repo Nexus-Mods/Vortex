@@ -118,9 +118,6 @@ export class IPCDownloadAdapter {
   #nextCollationId = 0;
 
   constructor(api: IExtensionApi) {
-    // TODO: remove after cut-off to fully switch implementation
-    if (process.env.VORTEX_USE_IPC_DOWNLOADER !== "1") return;
-
     this.#api = api;
 
     const pollingInterval = 200;
@@ -202,8 +199,6 @@ export class IPCDownloadAdapter {
   }
 
   processInterruptedDownloads(): void {
-    if (process.env.VORTEX_USE_IPC_DOWNLOADER !== "1") return;
-
     const state = this.#api.getState();
     const files = state.persistent.downloads.files ?? {};
     const checkpoints = state.persistent.downloads.checkpoints ?? {};

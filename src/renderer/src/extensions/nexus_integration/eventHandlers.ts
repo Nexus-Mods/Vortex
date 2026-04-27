@@ -63,17 +63,11 @@ import {
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, truthy } from "../../util/util";
 import { resolveCategoryName } from "../category_management";
-import {
-  AlreadyDownloaded,
-  DownloadIsHTML,
-} from "../download_management/DownloadManager";
+import { AlreadyDownloaded, DownloadIsHTML } from "@vortex/shared/errors";
 import { SITE_ID } from "../gamemode_management/constants";
 import { setUpdatingMods } from "../mod_management/actions/session";
 import { setUserInfo } from "./actions/persistent";
-import {
-  NEXUS_BASE_URL,
-  NEXUS_GAMES_URL,
-} from "./constants";
+import { NEXUS_BASE_URL, NEXUS_GAMES_URL } from "./constants";
 import { isLoggedIn } from "./selectors";
 import {
   checkModVersionsImpl,
@@ -855,29 +849,33 @@ export function onGetNexusCollectionRevision(
         collectionSlug,
         revisionNumber > 0 ? revisionNumber : undefined,
       ),
-    ).catch((err: NexusError & { collectionSlug?: string, revisionNumber?: number }) => {
-      const message = getErrorMessageOrDefault(err);
-      const isRevisionUnavailable = [
-        "NOT_FOUND",
-        "COLLECTION_REVISION_DISCARDED",
-        "COLLECTION_UNDER_MODERATION",
-      ].includes(err.code);
-      const allowReport =
-        !isRevisionUnavailable &&
-        !message.includes("network disconnected") &&
-        !message.includes(
-          "Cannot return null for non-nullable field CollectionRevision.collection",
-        );
-      err.collectionSlug = collectionSlug;
-      err.revisionNumber = revisionNumber;
-      if (!isRevisionUnavailable) {
-        api.showErrorNotification("Failed to get nexus revision info", err, {
-          id: "failed-get-revision-info",
-          allowReport,
-        });
-      }
-      return Bluebird.resolve(undefined);
-    });
+    ).catch(
+      (
+        err: NexusError & { collectionSlug?: string; revisionNumber?: number },
+      ) => {
+        const message = getErrorMessageOrDefault(err);
+        const isRevisionUnavailable = [
+          "NOT_FOUND",
+          "COLLECTION_REVISION_DISCARDED",
+          "COLLECTION_UNDER_MODERATION",
+        ].includes(err.code);
+        const allowReport =
+          !isRevisionUnavailable &&
+          !message.includes("network disconnected") &&
+          !message.includes(
+            "Cannot return null for non-nullable field CollectionRevision.collection",
+          );
+        err.collectionSlug = collectionSlug;
+        err.revisionNumber = revisionNumber;
+        if (!isRevisionUnavailable) {
+          api.showErrorNotification("Failed to get nexus revision info", err, {
+            id: "failed-get-revision-info",
+            allowReport,
+          });
+        }
+        return Bluebird.resolve(undefined);
+      },
+    );
   };
 }
 
@@ -1059,48 +1057,50 @@ export function onGetModRequirements(
       return Bluebird.resolve({});
     }
 
-    return Bluebird.resolve((async () => {
-      // makeModUID needs the nexus games list to map domain -> numeric game id.
-      // This should've been done on startup, but there appears to be
-      // a race condition https://github.com/Nexus-Mods/Vortex/issues/22466
-      await nexusGamesProm();
+    return Bluebird.resolve(
+      (async () => {
+        // makeModUID needs the nexus games list to map domain -> numeric game id.
+        // This should've been done on startup, but there appears to be
+        // a race condition https://github.com/Nexus-Mods/Vortex/issues/22466
+        await nexusGamesProm();
 
-      // Build UIDs for all mods (64-bit: game ID in upper 32 bits, mod ID in lower 32 bits)
-      // Pass Vortex gameId so makeModUID can convert to numeric Nexus game ID
-      const validUids: string[] = [];
+        // Build UIDs for all mods (64-bit: game ID in upper 32 bits, mod ID in lower 32 bits)
+        // Pass Vortex gameId so makeModUID can convert to numeric Nexus game ID
+        const validUids: string[] = [];
 
-      for (const modId of modIds) {
-        const modUid = makeModUID({
-          gameId,
-          modId: modId.toString(),
-          fileId: "0", // Not needed for mod UID but required by interface
-        });
-
-        if (modUid) {
-          validUids.push(modUid);
-        } else {
-          log("warn", "Failed to create mod UID for requirements lookup", {
-            gameId: nexusGameDomain,
-            modId,
+        for (const modId of modIds) {
+          const modUid = makeModUID({
+            gameId,
+            modId: modId.toString(),
+            fileId: "0", // Not needed for mod UID but required by interface
           });
+
+          if (modUid) {
+            validUids.push(modUid);
+          } else {
+            log("warn", "Failed to create mod UID for requirements lookup", {
+              gameId: nexusGameDomain,
+              modId,
+            });
+          }
         }
-      }
 
-      if (validUids.length === 0) {
-        return [];
-      }
+        if (validUids.length === 0) {
+          return [];
+        }
 
-      // Query must include modId to map results back to mods
-      return nexus.modsByUid(
-        {
-          modId: true,
-          modRequirements: MOD_REQUIREMENTS_INFO,
-          uid: true,
-          thumbnailUrl: true,
-        },
-        validUids,
-      );
-    })())
+        // Query must include modId to map results back to mods
+        return nexus.modsByUid(
+          {
+            modId: true,
+            modRequirements: MOD_REQUIREMENTS_INFO,
+            uid: true,
+            thumbnailUrl: true,
+          },
+          validUids,
+        );
+      })(),
+    )
       .then((mods) => {
         const result: Record<number, Partial<IModRequirements>> = {};
         for (const mod of mods) {

@@ -18,7 +18,7 @@ import {
   addLocalDownload,
   setDownloadModInfo,
 } from "../download_management/actions/state";
-import { AlreadyDownloaded } from "../download_management/DownloadManager";
+import { AlreadyDownloaded } from "@vortex/shared/errors";
 import { downloadPathForGame } from "../download_management/selectors";
 import { SITE_ID } from "../gamemode_management/constants";
 

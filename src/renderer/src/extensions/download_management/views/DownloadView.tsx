@@ -43,7 +43,7 @@ import { finishDownload, setDownloadTime } from "../actions/state";
 import type { IDownload } from "../types/IDownload";
 import getDownloadGames from "../util/getDownloadGames";
 
-import { DownloadIsHTML } from "../DownloadManager";
+import { DownloadIsHTML } from "@vortex/shared/errors";
 
 import DownloadGraph from "./DownloadGraph";
 
@@ -264,8 +264,8 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
 
     const { downloadGameFilter, useModernLayout } = this.props;
     if (useModernLayout && downloadGameFilter !== null) {
-      filteredIds = filteredIds.filter(
-        (dlId) => (downloads[dlId].game ?? []).includes(downloadGameFilter),
+      filteredIds = filteredIds.filter((dlId) =>
+        (downloads[dlId].game ?? []).includes(downloadGameFilter),
       );
     }
 

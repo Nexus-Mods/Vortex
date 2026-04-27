@@ -13,8 +13,8 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | @headlessui/react | 1.7.19 |
 | @mdi/js | 7.4.47 |
 | @msgpack/msgpack | 2.8.0 |
-| @nexusmods/fomod-installer-ipc | 0.13.0 |
-| @nexusmods/fomod-installer-native | 0.13.0 |
+| @nexusmods/fomod-installer-ipc | 0.13.1 |
+| @nexusmods/fomod-installer-native | 0.13.1 |
 | @nexusmods/nexus-api | 1.5.2 |
 | @opentelemetry/api | 1.9.1 |
 | @opentelemetry/context-async-hooks | 2.6.1 |
@@ -26,7 +26,6 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | @types/bluebird | 3.5.20 |
 | @types/uuid | 3.4.13 |
 | @vortex/adaptor-api | link:../../packages/adaptor-api |
-| @vortex/adaptor-cyberpunk2077 | link:../../packages/adaptors/cyberpunk2077 |
 | @vortex/fs | link:../../packages/fs |
 | bbcode-to-react | 0.2.11 |
 | big.js | 5.2.2 |
@@ -120,7 +119,6 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | universal-analytics | 0.4.23 |
 | uuid | 3.4.0 |
 | vortex-parse-ini | 0.4.0 |
-| vortexmt | 0.3.0 |
 | wholocks | 1.1.0 |
 | winapi-bindings | 2.7.3 |
 | winston | 2.4.7 |

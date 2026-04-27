@@ -45,7 +45,7 @@ import {
 } from "../../util/util";
 
 import type { ICategoryDictionary } from "../category_management/types/ICategoryDictionary";
-import { DownloadIsHTML } from "../download_management/DownloadManager";
+import { DownloadIsHTML } from "@vortex/shared/errors";
 import type { IGameStored } from "../gamemode_management/types/IGameStored";
 import type { IMod, IModRepoId } from "../mod_management/types/IMod";
 
