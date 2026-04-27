@@ -14,18 +14,19 @@ import React, {
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
+import { setDialogVisible } from "../../../actions/session";
+import { useExtensionContext } from "../../../ExtensionProvider";
 import {
   clearOAuthCredentials,
   setUserAPIKey,
 } from "../../../extensions/nexus_integration/actions/account";
 import { NEXUS_BASE_URL } from "../../../extensions/nexus_integration/constants";
-import { setDialogVisible } from "../../../actions/session";
-import { useExtensionContext } from "../../../ExtensionProvider";
 import { Dropdown } from "../../../ui/components/dropdown/Dropdown";
 import { DropdownDivider } from "../../../ui/components/dropdown/DropdownDivider";
 import { DropdownItem } from "../../../ui/components/dropdown/DropdownItem";
 import { DropdownItems } from "../../../ui/components/dropdown/DropdownItems";
 import { Icon } from "../../../ui/components/icon/Icon";
+import { UserCanceled } from "../../../util/CustomErrors";
 import opn from "../../../util/opn";
 import {
   isLoggedIn as isLoggedInSelector,
@@ -82,8 +83,11 @@ export const ProfileSection: FC = () => {
     } else {
       dispatch(setDialogVisible("login-dialog"));
       api.events.emit("request-nexus-login", (err: Error) => {
-        if (err !== null) {
-          api.showErrorNotification?.("Login Failed", err);
+        if (err != null && !(err instanceof UserCanceled)) {
+          api.showErrorNotification?.("Login Failed", err, {
+            id: "failed-get-nexus-key",
+            allowReport: false,
+          });
         }
       });
     }
