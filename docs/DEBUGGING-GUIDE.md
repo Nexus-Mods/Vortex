@@ -458,7 +458,6 @@ Production logs are in:
 
 - winapi-bindings
 - bsatk
-- esptk
 - loot
 - gamebryo-savegame
 - bsdiff-node

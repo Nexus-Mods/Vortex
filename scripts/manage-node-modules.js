@@ -70,13 +70,6 @@ const MODULE_CONFIG = {
     description: "BSA (Bethesda Softworks Archive) toolkit",
     type: "cpp",
   },
-  esptk: {
-    path: "extensions/gamebryo-plugin-management/node_modules/esptk",
-    repository: "https://github.com/Nexus-Mods/node-esptk.git",
-    sshRepository: "git@github.com:Nexus-Mods/node-esptk.git",
-    description: "ESP (Elder Scrolls Plugin) toolkit",
-    type: "cpp",
-  },
   loot: {
     path: "extensions/gamebryo-plugin-management/node_modules/loot",
     repository: "https://github.com/Nexus-Mods/node-loot.git",
@@ -682,7 +675,6 @@ PROJECT TYPES MANAGED:
 
 • Gamebryo Extension C++ Projects:
   - bsatk (BSA archive toolkit)
-  - esptk (ESP plugin toolkit)  
   - loot (Load order optimization)
   - gamebryo-savegame (Savegame management)
   - bsdiff-node (Binary diff/patch)

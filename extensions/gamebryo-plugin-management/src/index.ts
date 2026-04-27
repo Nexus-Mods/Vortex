@@ -754,8 +754,7 @@ function register(
   const pluginInfoCache = new PluginInfoCache(context.api);
 
   // Cross-extension API: lets other extensions (e.g. game-starfield) query
-  // Blueprint-plugin status without having to take a native-addon dependency
-  // on esptk themselves.
+  // Blueprint-plugin status without depending on the ESP parser directly.
   //
   // Takes an absolute plugin file path so the lookup is self-contained — the
   // API never depends on Vortex's pluginList Redux state being populated, and

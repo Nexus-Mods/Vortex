@@ -1,6 +1,6 @@
 /**
  * ESP parsing error types.
- * Property names and codes match the C++ esptk addon for backward compatibility.
+ * Property names and codes match the legacy native addon for backward compatibility.
  */
 
 export class InvalidFileError extends Error {

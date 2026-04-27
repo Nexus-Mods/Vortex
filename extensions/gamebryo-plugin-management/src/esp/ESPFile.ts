@@ -110,7 +110,7 @@ export class ESPFile {
     const dataSize = buf.readUInt32LE(4);
     this._flags = buf.readUInt32LE(8);
 
-    // The C++ esptk reads 4 bytes after the 20-byte header as "version info".
+    // The 4 bytes after the 20-byte header are "version info".
     // revision() returns those 4 bytes interpreted as uint32le.
     // For Oblivion-style files, these bytes are actually "HEDR" (the first
     // subrecord tag), so revision() returns 0x52444548 = 1380205896.
