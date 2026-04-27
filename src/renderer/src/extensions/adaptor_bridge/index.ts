@@ -659,7 +659,6 @@ function registerAdaptor(
           // relative portion within its anchor (per-store resolved).
           if (tools?.game?.executable?.path) {
             resolvedExecutable = tools.game.executable.path;
-            discovery.executable = resolvedExecutable;
           }
 
           // Step 5: Populate supported tools (additional launchers, etc.)
