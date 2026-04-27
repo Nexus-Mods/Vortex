@@ -2,7 +2,7 @@ import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IDownloadsAPIExtension } from "../types/IDownloadsAPIExtension";
 import type { IDownloadRemoveOptions } from "../types/IDownloadRemoveOptions";
 import type { IDownloadResult } from "../types/IDownloadResult";
-import type { RedownloadMode } from "../DownloadManager";
+import type { RedownloadMode } from "../types/IDownload";
 import type { IStartDownloadOptions } from "../types/IStartDownloadOptions";
 
 function extendAPI(api: IExtensionApi): IDownloadsAPIExtension {

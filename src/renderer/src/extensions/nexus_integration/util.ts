@@ -22,10 +22,7 @@ import type { TFunction } from "i18next";
 import type * as Redux from "redux";
 
 import { NexusError, RateLimitError, TimeoutError } from "@nexusmods/nexus-api";
-import {
-  getErrorMessageOrDefault,
-  unknownToError,
-} from "@vortex/shared";
+import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import BluebirdPromise from "bluebird";
 import jwt from "jsonwebtoken";
 import * as _ from "lodash";
@@ -34,7 +31,7 @@ import * as util from "util";
 
 import type { IExtensionApi, ThunkStore } from "../../types/IExtensionContext";
 import type { IMod, IState } from "../../types/IState";
-import type { RedownloadMode } from "../download_management/DownloadManager";
+import type { RedownloadMode } from "../download_management/types/IDownload";
 import type { IJWTAccessToken } from "./types/IJWTAccessToken";
 import type { IValidateKeyDataV2 } from "./types/IValidateKeyData";
 import type { ITokenReply } from "./util/oauth";
@@ -66,10 +63,7 @@ import { getPreloadApi, getWindowId } from "../../util/preloadAccess";
 import { activeGameId } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, toPromise, truthy } from "../../util/util";
-import {
-  AlreadyDownloaded,
-  DownloadIsHTML,
-} from "../download_management/DownloadManager";
+import { AlreadyDownloaded, DownloadIsHTML } from "@vortex/shared/errors";
 import { SITE_ID } from "../gamemode_management/constants";
 import { gameById, knownGames } from "../gamemode_management/selectors";
 import modName from "../mod_management/util/modName";
@@ -2031,7 +2025,6 @@ export function updateToken(
   nexus: Nexus,
   credentials: any,
 ): BluebirdPromise<boolean> {
-
   log("info", "updateToken()");
 
   // update the nexus-node object with our credentials.
@@ -2221,5 +2214,5 @@ export function nexusGamesProm(): BluebirdPromise<IGameListEntry[]> {
 }
 
 export function numericGameIdToDomainName(gameId: number): string | undefined {
-  return nexusGamesCache.find(g => g.id === gameId)?.domain_name;
+  return nexusGamesCache.find((g) => g.id === gameId)?.domain_name;
 }
