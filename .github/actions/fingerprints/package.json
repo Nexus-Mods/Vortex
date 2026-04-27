@@ -5,6 +5,7 @@
   "description": "GitHub Action: collect fingerprints from PR body / release tag / manual input and write to vortex.resolved_fingerprints in ClickHouse.",
   "main": "src/index.ts",
   "scripts": {
+    "preinstall": "npx only-allow pnpm",
     "build": "ncc build src/index.ts -o dist --license LICENSES.txt",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
