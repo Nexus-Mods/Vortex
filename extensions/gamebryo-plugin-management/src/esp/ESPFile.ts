@@ -16,9 +16,9 @@ function readNullTermString(
   offset: number,
   maxLen: number,
 ): string {
-  let end = offset;
   const limit = offset + maxLen;
-  while (end < limit && buf[end] !== 0) end++;
+  const nullPos = buf.indexOf(0, offset);
+  const end = nullPos >= 0 && nullPos < limit ? nullPos : limit;
   return buf.toString("ascii", offset, end);
 }
 
@@ -51,9 +51,9 @@ export class ESPFile {
     this._filePath = filePath;
     this._gameMode = gameMode;
 
-    let buf: Buffer;
+    let fd: number;
     try {
-      buf = fs.readFileSync(filePath);
+      fd = fs.openSync(filePath, "r");
     } catch (e: any) {
       if (e.code === "ENOENT") {
         const err = new Error("file not found") as any;
@@ -65,7 +65,30 @@ export class ESPFile {
       throw e;
     }
 
-    this.parse(buf);
+    try {
+      // Read only the TES4 header record, not the entire file.
+      // First read 24 bytes: 20-byte record header + 4 bytes version info.
+      const header = Buffer.alloc(24);
+      const headerRead = fs.readSync(fd, header, 0, 24, 0);
+      if (headerRead < 24) {
+        throw new InvalidFileError("file incomplete", filePath);
+      }
+
+      const dataSize = header.readUInt32LE(4);
+      // Total record = 24 bytes header + dataSize subrecord data
+      // (Oblivion-style shares the version info bytes with subrecord data,
+      //  but we read them in the header already and re-parse from offset 20)
+      const totalSize = 24 + dataSize;
+      const buf = Buffer.alloc(totalSize);
+      header.copy(buf);
+      if (dataSize > 0) {
+        fs.readSync(fd, buf, 24, dataSize, 24);
+      }
+
+      this.parse(buf);
+    } finally {
+      fs.closeSync(fd);
+    }
   }
 
   private parse(buf: Buffer): void {
