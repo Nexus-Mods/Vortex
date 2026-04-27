@@ -55,7 +55,7 @@ import LootInterface from "./autosort";
 import { GHOST_EXT, NAMESPACE } from "./statics";
 
 import Promise from "bluebird";
-import ESPFile from "esptk";
+import { ESPFile } from "./esp/ESPFile";
 import { access, constants } from "fs";
 import I18next from "i18next";
 import * as path from "path";

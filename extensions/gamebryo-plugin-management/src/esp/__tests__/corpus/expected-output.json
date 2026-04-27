@@ -1,0 +1,928 @@
+[
+  {
+    "file": "oblivion/oblivion_mod8759_8577.esp",
+    "gameId": "oblivion",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "DEFAULT",
+    "description": "",
+    "masterList": [
+      "Oblivion.esm"
+    ],
+    "revision": 1380205896
+  },
+  {
+    "file": "oblivion/oblivion_mod8889_7335.esp",
+    "gameId": "oblivion",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "Mad Mike",
+    "description": "Enter the Cube of Confusion if you dare! You can think of this as a demo, a beta test, or just a fun half finished thing. Anyways to get to the Cube look for a large glowing portal near the sewer entrance in the Market District!",
+    "masterList": [
+      "Oblivion.esm"
+    ],
+    "revision": 1380205896
+  },
+  {
+    "file": "oblivion/oblivion_mod8905_7349.esp",
+    "gameId": "oblivion",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "DEFAULT",
+    "description": "",
+    "masterList": [
+      "Oblivion.esm"
+    ],
+    "revision": 1380205896
+  },
+  {
+    "file": "oblivion/oblivion_mod8905_7349.esp",
+    "gameId": "oblivion",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "DEFAULT",
+    "description": "",
+    "masterList": [
+      "Oblivion.esm"
+    ],
+    "revision": 1380205896
+  },
+  {
+    "file": "oblivion/oblivion_mod20426_1000016779.esp",
+    "gameId": "oblivion",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "bananasplit",
+    "description": "Bravil Barrowfields improves the area around Bravil and the Larsius River.\r\n\r\nVersion 2\r\n{{BASH:C.Water}}",
+    "masterList": [
+      "Oblivion.esm"
+    ],
+    "revision": 1380205896
+  },
+  {
+    "file": "oblivion/oblivion_mod21693_54873.esp",
+    "gameId": "oblivion",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "WrinklyNinja",
+    "description": "Prevents Gates To Aesgaard 2 from starting before you complete Gates To Aesgaard 1.\r\n\r\nVersion: 1.0",
+    "masterList": [
+      "GTAesgaard.esp",
+      "GTAesgaard_2.esm",
+      "GTAesgaard_2.esp",
+      "Oblivion.esm"
+    ],
+    "revision": 1380205896
+  },
+  {
+    "file": "oblivion/oblivion_mod40392_93647.esp",
+    "gameId": "oblivion",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "Scot",
+    "description": "Beta 1.0",
+    "masterList": [
+      "Oblivion.esm"
+    ],
+    "revision": 1380205896
+  },
+  {
+    "file": "oblivion/oblivion_mod40392_1000007121.esp",
+    "gameId": "oblivion",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "Scot",
+    "description": "{{BASH: C.Light, C.Water}}",
+    "masterList": [
+      "Oblivion.esm"
+    ],
+    "revision": 1380205896
+  },
+  {
+    "file": "fallout3/fallout3_mod2479_38327.esp",
+    "gameId": "fallout3",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "DEFAULT",
+    "description": "",
+    "masterList": [
+      "Fallout3.esm"
+    ],
+    "revision": 15
+  },
+  {
+    "file": "fallout3/fallout3_mod2479_38897.esp",
+    "gameId": "fallout3",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "DEFAULT",
+    "description": "",
+    "masterList": [
+      "Fallout3.esm"
+    ],
+    "revision": 15
+  },
+  {
+    "file": "fallout3/fallout3_mod5696_54080.esp",
+    "gameId": "fallout3",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "Earthbind",
+    "description": "This mod turns Lucy West into a companion with voice and lip synced dialog. She can be hired after completing the \"Blood Ties\" quest.",
+    "masterList": [
+      "Fallout3.esm"
+    ],
+    "revision": 15
+  },
+  {
+    "file": "fallout3/fallout3_mod5696_1000028957.esp",
+    "gameId": "fallout3",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "Earthbind",
+    "description": "This mod turns Lucy West into a companion with voice and lip synced dialog. She can be hired after completing the \"Blood Ties\" quest.",
+    "masterList": [
+      "Fallout3.esm"
+    ],
+    "revision": 15
+  },
+  {
+    "file": "fallout3/fallout3_mod5696_1000029108.esp",
+    "gameId": "fallout3",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "Earthbind",
+    "description": "This mod turns Lucy West into a companion with voice and lip synced dialog. She can be hired after completing the \"Blood Ties\" quest.",
+    "masterList": [
+      "Fallout3.esm"
+    ],
+    "revision": 15
+  },
+  {
+    "file": "fallout3/fallout3_mod5696_1000029135.esp",
+    "gameId": "fallout3",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "Earthbind",
+    "description": "This mod turns Lucy West into a companion with voice and lip synced dialog. She can be hired after completing the \"Blood Ties\" quest.",
+    "masterList": [
+      "Fallout3.esm"
+    ],
+    "revision": 15
+  },
+  {
+    "file": "fallout3/fallout3_mod5696_1000029148.esp",
+    "gameId": "fallout3",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "Earthbind",
+    "description": "This mod turns Lucy West into a companion with voice and lip synced dialog. She can be hired after completing the \"Blood Ties\" quest.",
+    "masterList": [
+      "Fallout3.esm"
+    ],
+    "revision": 15
+  },
+  {
+    "file": "fallout3/fallout3_mod5696_1000029181.esp",
+    "gameId": "fallout3",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "Earthbind",
+    "description": "This mod turns Lucy West into a companion with voice and lip synced dialog. She can be hired after completing the \"Blood Ties\" quest.",
+    "masterList": [
+      "Fallout3.esm"
+    ],
+    "revision": 15
+  },
+  {
+    "file": "falloutnv/falloutnv_mod36893_74466.esp",
+    "gameId": "falloutnv",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "DEFAULT",
+    "description": "",
+    "masterList": [
+      "FalloutNV.esm"
+    ],
+    "revision": 15
+  },
+  {
+    "file": "falloutnv/falloutnv_mod38547_1000172899.esp",
+    "gameId": "falloutnv",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "DEFAULT",
+    "description": "",
+    "masterList": [
+      "FalloutNV.esm"
+    ],
+    "revision": 15
+  },
+  {
+    "file": "falloutnv/falloutnv_mod38547_1000172906.esp",
+    "gameId": "falloutnv",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "DEFAULT",
+    "description": "",
+    "masterList": [
+      "FalloutNV.esm"
+    ],
+    "revision": 15
+  },
+  {
+    "file": "falloutnv/falloutnv_mod50717_1000173565.esp",
+    "gameId": "falloutnv",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "gingersitka",
+    "description": "",
+    "masterList": [
+      "CaravanPack.esm",
+      "ClassicPack.esm",
+      "DeadMoney.esm",
+      "FalloutNV.esm",
+      "GunRunnersArsenal.esm",
+      "HonestHearts.esm",
+      "LonesomeRoad.esm",
+      "MercenaryPack.esm",
+      "OldWorldBlues.esm",
+      "TribalPack.esm"
+    ],
+    "revision": 15
+  },
+  {
+    "file": "falloutnv/falloutnv_mod51664_1000034198.esp",
+    "gameId": "falloutnv",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "sandbox6",
+    "description": "Undoes YUP's texture fixes to the Hunting Rifle, for compatibility with retexture mods that haven't fixed the texture paths.",
+    "masterList": [
+      "FalloutNV.esm"
+    ],
+    "revision": 15
+  },
+  {
+    "file": "falloutnv/falloutnv_mod51664_1000067329.esm",
+    "gameId": "falloutnv",
+    "isMaster": true,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "Y|yukichigai",
+    "description": "Yukichigai's Unofficial Patch, a collection of vital bugfixes for Fallout: New Vegas.\r\n\r\nThis version contains bugfixes for the base game and all main DLCs in one ESM.",
+    "masterList": [
+      "DeadMoney.esm",
+      "FalloutNV.esm",
+      "GunRunnersArsenal.esm",
+      "HonestHearts.esm",
+      "LonesomeRoad.esm",
+      "OldWorldBlues.esm"
+    ],
+    "revision": 15
+  },
+  {
+    "file": "falloutnv/falloutnv_mod51664_1000067329.esp",
+    "gameId": "falloutnv",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "Y|yukichigai",
+    "description": "Companion file for the Base Game + All DLC version of Yukichigai's Unofficial Patch.  Contains all edits to NPC records.  Stored separately in an ESP to prevent \"whiteface\"/body-head color mismatch bug.",
+    "masterList": [
+      "DeadMoney.esm",
+      "FalloutNV.esm",
+      "HonestHearts.esm",
+      "LonesomeRoad.esm",
+      "OldWorldBlues.esm",
+      "YUP - Base Game + All DLC.esm"
+    ],
+    "revision": 15
+  },
+  {
+    "file": "falloutnv/falloutnv_mod51664_1000074739.esp",
+    "gameId": "falloutnv",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "Y|yukichigai",
+    "description": "Companion file for the Base Game + All DLC version of Yukichigai's Unofficial Patch.  Contains all edits to NPC records.  Stored separately in an ESP to prevent \"whiteface\"/body-head color mismatch bug.",
+    "masterList": [
+      "DeadMoney.esm",
+      "FalloutNV.esm",
+      "HonestHearts.esm",
+      "LonesomeRoad.esm",
+      "OldWorldBlues.esm",
+      "YUP - Base Game + All DLC.esm"
+    ],
+    "revision": 15
+  },
+  {
+    "file": "skyrim/skyrim_mod3863_1000172397.esp",
+    "gameId": "skyrim",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "SkyUI Team",
+    "description": "SkyUI 5.1",
+    "masterList": [],
+    "revision": 43
+  },
+  {
+    "file": "skyrim/skyrim_mod12933_1000162321.esm",
+    "gameId": "skyrim",
+    "isMaster": true,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "Expired6978",
+    "description": "Extensible Follower Framework",
+    "masterList": [
+      "Skyrim.esm"
+    ],
+    "revision": 43
+  },
+  {
+    "file": "skyrim/skyrim_mod12933_1000162321.esp",
+    "gameId": "skyrim",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "Expired",
+    "description": "",
+    "masterList": [],
+    "revision": 43
+  },
+  {
+    "file": "skyrim/skyrim_mod12933_1000162321.esp",
+    "gameId": "skyrim",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "Expired",
+    "description": "",
+    "masterList": [],
+    "revision": 43
+  },
+  {
+    "file": "skyrim/skyrim_mod13722_1000076821.esp",
+    "gameId": "skyrim",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "Gabriel Mailhot (LogRaam)",
+    "description": "The Eyes Of Beauty - Elves Edition feature new eyes textures for elves:\r\n\r\nWood Elves\r\nDark Elves\r\nHigh Elves\r\n\r\nThe textures are Lore Friendly.\r\n\r\nThese high resolution textures are lore friendly.\r\n\r\n",
+    "masterList": [
+      "Skyrim.esm"
+    ],
+    "revision": 43
+  },
+  {
+    "file": "skyrim/skyrim_mod21689_1000094028.esp",
+    "gameId": "skyrim",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "DidymusEi",
+    "description": "- Adds a simple power for Vampire Lords that turns them into a cloud of bats and takes them to a major city of their choosing. Good for \"No Fast Travel\" playthroughs.",
+    "masterList": [
+      "Dawnguard.esm",
+      "Dragonborn.esm",
+      "Skyrim.esm",
+      "Update.esm"
+    ],
+    "revision": 43
+  },
+  {
+    "file": "skyrim/skyrim_mod23890_1000012761.esp",
+    "gameId": "skyrim",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "Didymus Ei",
+    "description": "",
+    "masterList": [
+      "Dawnguard.esm",
+      "Skyrim.esm",
+      "Update.esm"
+    ],
+    "revision": 43
+  },
+  {
+    "file": "skyrim/skyrim_mod23890_1000127601.esp",
+    "gameId": "skyrim",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "DidymusEi",
+    "description": "",
+    "masterList": [
+      "Dawnguard.esm",
+      "Skyrim.esm",
+      "Update.esm"
+    ],
+    "revision": 43
+  },
+  {
+    "file": "skyrimse/skyrimse_mod159_531.esp",
+    "gameId": "skyrimse",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "William Imm",
+    "description": "Even Better Quest Objectives\r\n\r\nVersion: 1.5.8a\r\n\r\nImproves the quest objective descriptions in the vanilla game and DLCs. No more taking wrong turns at Alberkurky. Or Riverwood.",
+    "masterList": [
+      "Dawnguard.esm",
+      "Dragonborn.esm",
+      "HearthFires.esm",
+      "Skyrim.esm",
+      "Update.esm",
+      "unofficial skyrim special edition patch.esp"
+    ],
+    "revision": 44
+  },
+  {
+    "file": "skyrimse/skyrimse_mod159_532.esp",
+    "gameId": "skyrimse",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "William Imm",
+    "description": "A very small optional file to move the recurring quest after the Dark Brotherhood questline to be a misc. quest. Currently, the game places it in the Dark Brotherhood section - since it's not a major quest, it shouldn't be treated like one.",
+    "masterList": [
+      "Skyrim.esm"
+    ],
+    "revision": 43
+  },
+  {
+    "file": "skyrimse/skyrimse_mod159_533.esp",
+    "gameId": "skyrimse",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "William Imm",
+    "description": "Compatilbity patch for Even Better Quest Objectives and Alternate Start - Live Another Life. Merges changes from the two mod. Made with  EBQO 1.5.7 and Live Another Life 3.1.4. Updates to Live Another Life have been known to break past versions of this patch, please disable or merge conflicts with TES5Edit if issues spring up.",
+    "masterList": [
+      "Alternate Start - Live Another Life.esp",
+      "BetterQuestObjectives.esp",
+      "Skyrim.esm",
+      "Unofficial Skyrim Special Edition Patch.esp"
+    ],
+    "revision": 43
+  },
+  {
+    "file": "skyrimse/skyrimse_mod159_535.esp",
+    "gameId": "skyrimse",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "William Imm",
+    "description": "Keeps Even Better Quest Objectives from breaking Arthmoors very, very well done Paarthurnax Dilemma mod, and also clears up one of the objectives from the new quest. Works with EBQO 1.5.7 and Paarthurnax Dilemma 1.2.9. If this patch keeps breaking the affected quest, disable it and make sure The Paarthurnax Dilemma loads after Even Better Quest Objectives.",
+    "masterList": [
+      "BetterQuestObjectives.esp",
+      "Skyrim.esm",
+      "The Paarthurnax Dilemma.esp",
+      "Unofficial Skyrim Special Edition Patch.esp",
+      "Update.esm"
+    ],
+    "revision": 43
+  },
+  {
+    "file": "skyrimse/skyrimse_mod159_1946.esp",
+    "gameId": "skyrimse",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "William Imm",
+    "description": "Merge a change between Cutting Room Floor and Even Better Quest Objectives, as well as alter the rest of the restored quests to have EBQO-style objectives. Compatible with EBQO 1.5.8 and Cutting Room Floor 2.0.3.",
+    "masterList": [
+      "Dawnguard.esm",
+      "Dragonborn.esm",
+      "HearthFires.esm",
+      "Skyrim.esm",
+      "Unofficial Skyrim Special Edition Patch.esp",
+      "Update.esm",
+      "cutting room floor.esp"
+    ],
+    "revision": 43
+  },
+  {
+    "file": "skyrimse/skyrimse_mod159_5907.esp",
+    "gameId": "skyrimse",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "William Imm",
+    "description": "Even Better Quest Objectives - PS4 Build\r\n\r\nVersion: 1.5-ps4branch\r\n\r\nImproves the quest objective descriptions in the vanilla game and DLCs. No more taking wrong turns at Alberkurky. Or Riverwood.\r\n\r\nThis version has no direct dependency on the Unofficial Skyrim Special Edition Patch, but will carry over as many fixes that don't directly depend on modified scripts or external assets.\r\n\r\nSony, why do you want us to suffer?",
+    "masterList": [
+      "Dawnguard.esm",
+      "Dragonborn.esm",
+      "HearthFires.esm",
+      "Skyrim.esm",
+      "Update.esm"
+    ],
+    "revision": 44
+  },
+  {
+    "file": "skyrimse/skyrimse_mod600_45869.esp",
+    "gameId": "skyrimse",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "DEFAULT",
+    "description": "{{BASH:Delev}}",
+    "masterList": [
+      "Dawnguard.esm",
+      "Dragonborn.esm",
+      "Hateful Wenches.esp",
+      "Immersive Wenches.esp",
+      "Skyrim.esm",
+      "Update.esm"
+    ],
+    "revision": 44
+  },
+  {
+    "file": "skyrimse/skyrimse_mod912_41300.esp",
+    "gameId": "skyrimse",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "OutLaw666",
+    "description": "This patch changes the speed and gravity values of all Elemental Arrows to match the values introduced by \"ScopedBows_ArrowTweaks.esp\".",
+    "masterList": [
+      "Dawnguard.esm",
+      "Dragonborn.esm",
+      "Skyrim.esm",
+      "Update.esm"
+    ],
+    "revision": 44
+  },
+  {
+    "file": "fallout4/fallout4_mod9912_59353.esp",
+    "gameId": "fallout4",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "DEFAULT",
+    "description": "",
+    "masterList": [
+      "Fallout4.esm"
+    ],
+    "revision": 131
+  },
+  {
+    "file": "fallout4/fallout4_mod10472_46195.esp",
+    "gameId": "fallout4",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "Krazyman999",
+    "description": "A patch for the realistic needs mod, Hardcore mode [on]... I love this mod, and now my food works with it as well... It fills the eat and drink needs, as well as adding salty dehydration to salty foods...",
+    "masterList": [
+      "Fallout4.esm",
+      "HardcoreMode_ON.esm",
+      "NewFood.esp"
+    ],
+    "revision": 131
+  },
+  {
+    "file": "fallout4/fallout4_mod10472_388801.esp",
+    "gameId": "fallout4",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "Krazyman999 aka KP",
+    "description": "A patch for Milk That Brahmin, so it works with New Food mod",
+    "masterList": [
+      "Fallout4.esm",
+      "MilkThatBrahmin.esp",
+      "NewFood.esp"
+    ],
+    "revision": 131
+  },
+  {
+    "file": "fallout4/fallout4_mod10737_148646.esp",
+    "gameId": "fallout4",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "Zzyxzz, SMB92, Battousai124",
+    "description": "Merges:\r\nBLD DLC plugins\r\nGhoul Plugin\r\n.75x VATS slow time\r\nMost of Better Perks  (still required for better compatibility and stability\r\nand\r\nVIS tags.\r\n\r\nDoes not include AMMO or OMOD changes, or the vanilla BLD LL addon (DLC only for reference).",
+    "masterList": [
+      "ArmorKeywords.esm",
+      "Better Locational Damage.esp",
+      "Better Perks.esp",
+      "DLCCoast.esm",
+      "DLCNukaWorld.esm",
+      "DLCRobot.esm",
+      "DLCworkshop01.esm",
+      "Fallout4.esm",
+      "Loads.esm",
+      "NewCalibers.esp",
+      "Weaponsmith Extended 2.esp"
+    ],
+    "revision": 131
+  },
+  {
+    "file": "fallout4/fallout4_mod12581_78396.esp",
+    "gameId": "fallout4",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "Feyawen A. R-R.",
+    "description": "Cartographers Map Markers\r\nNuka-World\r\n",
+    "masterList": [
+      "DLCNukaWorld.esm",
+      "Fallout4.esm"
+    ],
+    "revision": 131
+  },
+  {
+    "file": "fallout4/fallout4_mod12581_78396.esp",
+    "gameId": "fallout4",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "Feyawen A. R-R.",
+    "description": "Cartographers Map Markers\r\nNuka-World\r\n",
+    "masterList": [
+      "DLCNukaWorld.esm",
+      "Fallout4.esm"
+    ],
+    "revision": 131
+  },
+  {
+    "file": "fallout4/fallout4_mod12581_78396.esp",
+    "gameId": "fallout4",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "Feyawen A. R-R.",
+    "description": "Cartographers Map Markers\r\nNuka-World\r\n",
+    "masterList": [
+      "DLCNukaWorld.esm",
+      "Fallout4.esm"
+    ],
+    "revision": 131
+  },
+  {
+    "file": "fallout4/fallout4_mod12581_390403.esp",
+    "gameId": "fallout4",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "Feyawen A. R-R.",
+    "description": "Cartographers Map Markers\r\nCommonwealth\r\nv4.5\r\n\r\n",
+    "masterList": [
+      "Fallout4.esm"
+    ],
+    "revision": 131
+  },
+  {
+    "file": "starfield/starfield_mod143_62088.esm",
+    "gameId": "starfield",
+    "isMaster": true,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "Unofficial Patch Project Team",
+    "description": "Unofficial Shattered Space Patch\r\n\r\nVersion 1.0.4\r\n\r\nRequires Starfield version 1.16.236 or higher.",
+    "masterList": [
+      "ShatteredSpace.esm",
+      "Starfield.esm"
+    ],
+    "revision": 582
+  },
+  {
+    "file": "starfield/starfield_mod1996_36572.esp",
+    "gameId": "starfield",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "Samantha Says",
+    "description": "Increases your walking speed.",
+    "masterList": [
+      "Starfield.esm"
+    ],
+    "revision": 559
+  },
+  {
+    "file": "starfield/starfield_mod1996_40873.esm",
+    "gameId": "starfield",
+    "isMaster": true,
+    "isLight": true,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "Samantha Says",
+    "description": "Increases your walking speed from 1.09 to 1.49..",
+    "masterList": [
+      "Starfield.esm"
+    ],
+    "revision": 559
+  },
+  {
+    "file": "starfield/starfield_mod1996_40874.esp",
+    "gameId": "starfield",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "Samantha Says",
+    "description": "Increases your walking speed from 1.09 to 1.49..",
+    "masterList": [
+      "Starfield.esm"
+    ],
+    "revision": 559
+  },
+  {
+    "file": "starfield/starfield_mod2011_40876.esm",
+    "gameId": "starfield",
+    "isMaster": true,
+    "isLight": true,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "Samantha Says",
+    "description": "Changes many American English words into British English.\r\n\r\nAluminum => Aluminium\r\n\r\nFiber => Fibre\r\n\r\nSoccer => Football",
+    "masterList": [
+      "Starfield.esm"
+    ],
+    "revision": 559
+  },
+  {
+    "file": "starfield/starfield_mod2011_40877.esp",
+    "gameId": "starfield",
+    "isMaster": false,
+    "isLight": false,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "Samantha Says",
+    "description": "Changes many American English words into British English.\r\n\r\nAluminum => Aluminium\r\n\r\nFiber => Fibre\r\n\r\nSoccer => Football",
+    "masterList": [
+      "Starfield.esm"
+    ],
+    "revision": 559
+  },
+  {
+    "file": "starfield/starfield_mod3268_55814.esm",
+    "gameId": "starfield",
+    "isMaster": true,
+    "isLight": true,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "DEFAULT",
+    "description": "",
+    "masterList": [
+      "Starfield.esm"
+    ],
+    "revision": 576
+  },
+  {
+    "file": "starfield/starfield_mod3268_64429.esm",
+    "gameId": "starfield",
+    "isMaster": true,
+    "isLight": true,
+    "isMedium": false,
+    "isBlueprint": false,
+    "isDummy": false,
+    "author": "DEFAULT",
+    "description": "",
+    "masterList": [
+      "Constellation.esm",
+      "SFBGS003.esm",
+      "SFBGS006.esm",
+      "SFBGS007.esm",
+      "SFBGS008.esm",
+      "SFBGS047.esm",
+      "SFBGS050.esm",
+      "ShatteredSpace.esm",
+      "Starfield.esm",
+      "sfbgs004.esm",
+      "sfbgs00d.esm"
+    ],
+    "revision": 582
+  }
+]
