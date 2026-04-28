@@ -1,0 +1,21 @@
+name: Mark fingerprints as fixed
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  sync:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/fingerprints
+        with:
+          mode: pr
+          clickhouse-url: ${{ secrets.CLICKHOUSE_URL }}
+          clickhouse-user: ${{ secrets.CLICKHOUSE_USER }}
+          clickhouse-password: ${{ secrets.CLICKHOUSE_PASSWORD }}
