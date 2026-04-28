@@ -4,10 +4,11 @@
  */
 import { test, expect } from "../fixtures/vortex-app";
 import { loginToNexus } from "../helpers/login";
+import { freeUser } from "../helpers/users";
 
 test.describe("Login UI", () => {
   test("Login", async ({ vortexApp, vortexWindow }) => {
-    await loginToNexus(vortexApp, vortexWindow);
+    await loginToNexus(vortexApp, vortexWindow, freeUser);
   });
 
   // TODO: Implement with API key injection fixture

@@ -6,15 +6,15 @@ import {
 } from "@playwright/test";
 
 import { test } from "../fixtures/vortex-app";
+import { freeUser, type NexusUser } from "./users";
 import { LoginPage } from "../selectors/loginPage";
-
-const TEST_NEXUS_USERNAME = "NXMMember";
-const TEST_NEXUS_PASSWORD = "3BC1mwMZthxi";
 
 export async function loginToNexus(
   vortexApp: ElectronApplication,
   vortexWindow: Page,
+  user: NexusUser = freeUser,
 ): Promise<void> {
+  const { username, password } = user;
   let loginPage: Page | null = null;
   let authBrowser: Awaited<ReturnType<typeof chromium.launch>> | null = null;
   let authPage: Page | null = null;
@@ -70,7 +70,7 @@ export async function loginToNexus(
     });
   });
 
-  await test.step("Login with test credentials", async () => {
+  await test.step("Login with FreeUser credentials", async () => {
     if (authPage === null) {
       throw new Error("Auth page was not available for login.");
     }
@@ -81,8 +81,8 @@ export async function loginToNexus(
     await expect(nexusLoginPage.usernameInput).toBeVisible({ timeout: 20000 });
     await expect(nexusLoginPage.passwordInput).toBeVisible({ timeout: 20000 });
 
-    await nexusLoginPage.usernameInput.fill(TEST_NEXUS_USERNAME);
-    await nexusLoginPage.passwordInput.fill(TEST_NEXUS_PASSWORD);
+    await nexusLoginPage.usernameInput.fill(username);
+    await nexusLoginPage.passwordInput.fill(password);
     await nexusLoginPage.submitLoginButton.click();
 
     await expect(nexusLoginPage.oauthPermissionTitle).toContainText(

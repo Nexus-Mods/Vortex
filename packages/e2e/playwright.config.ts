@@ -1,4 +1,13 @@
+import { existsSync } from 'node:fs';
+import path from 'node:path';
+
 import { defineConfig } from "@playwright/test";
+
+const envFilePath = path.resolve(import.meta.dirname, '.env');
+
+if (existsSync(envFilePath)) {
+  process.loadEnvFile(envFilePath);
+}
 
 export default defineConfig({
   testDir: "./tests",
