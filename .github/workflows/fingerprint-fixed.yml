@@ -18,7 +18,7 @@ jobs:
     if: >-
       github.event.pull_request.merged == true &&
       !startsWith(github.event.pull_request.head.ref, 'cherry-pick/')
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted]
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/fingerprints
