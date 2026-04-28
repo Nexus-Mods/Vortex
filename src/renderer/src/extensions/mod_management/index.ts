@@ -829,10 +829,11 @@ function genUpdateModDeployment(installManager: InstallManager) {
               await installManager.waitForIdle();
             }
 
-            // Consume the set of mod IDs that finished installing since the
-            // last deployment. Their external changes (refchange / srcdeleted)
-            // are expected and will be auto-resolved per-mod.
-            const recentInstalls = installManager.consumeRecentInstalls();
+            // Consume the set of installation paths whose mods finished
+            // installing or were removed since the last deployment. Their
+            // external changes (refchange / srcdeleted) are expected and
+            // will be auto-resolved per-mod.
+            const recentChanges = installManager.consumeRecentChanges();
 
             let mergeResult: { [modType: string]: IMergeResultByType };
             const lastDeployment: { [typeId: string]: IDeployedFile[] } = {};
@@ -883,7 +884,7 @@ function genUpdateModDeployment(installManager: InstallManager) {
               stagingPath,
               modPaths,
               lastDeployment,
-              recentInstalls,
+              recentChanges,
             );
 
             progress(t("Checking for mod incompatibilities"), 25);
@@ -1845,7 +1846,16 @@ function once(api: IExtensionApi) {
       modId: string,
       cb?: (error: Error) => void,
       options?: IRemoveModOptions,
-    ) => onRemoveMod(api, getAllActivators(), gameId, modId, cb, options),
+    ) =>
+      onRemoveMod(
+        api,
+        getAllActivators(),
+        installManager,
+        gameId,
+        modId,
+        cb,
+        options,
+      ),
   );
 
   api.events.on(
@@ -1856,7 +1866,15 @@ function once(api: IExtensionApi) {
       cb?: (error: Error) => void,
       options?: IRemoveModOptions,
     ) => {
-      onRemoveMods(api, getAllActivators(), gameId, modIds, cb, options);
+      onRemoveMods(
+        api,
+        getAllActivators(),
+        installManager,
+        gameId,
+        modIds,
+        cb,
+        options,
+      );
     },
   );
 
