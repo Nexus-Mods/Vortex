@@ -17,6 +17,7 @@ interface FakePR {
   user: { login: string } | null;
   updated_at: string;
   merged_at: string | null;
+  head: { ref: string };
 }
 
 const makePR = (overrides: Partial<FakePR> = {}): FakePR => ({
@@ -25,6 +26,7 @@ const makePR = (overrides: Partial<FakePR> = {}): FakePR => ({
   user: { login: "alice" },
   updated_at: "2024-06-01T00:00:00Z",
   merged_at: "2024-06-01T00:00:00Z",
+  head: { ref: "feature-branch" },
   ...overrides,
 });
 
@@ -45,7 +47,9 @@ const makeOctokit = ({
   tagObjectSha = "sha-tag-target",
   commitDate = "2024-05-01T00:00:00Z",
 }: FakeOctokitOpts = {}) => {
-  const paginate = vi.fn().mockResolvedValue(tags) as ReturnType<typeof vi.fn> & {
+  const paginate = vi.fn().mockResolvedValue(tags) as ReturnType<
+    typeof vi.fn
+  > & {
     iterator: ReturnType<typeof vi.fn>;
   };
   paginate.iterator = vi.fn().mockReturnValue({
@@ -214,6 +218,26 @@ describe("collectFromRelease", () => {
     expect(octokit.rest.git.getCommit).toHaveBeenCalledWith(
       expect.objectContaining({ commit_sha: "real-commit-sha" }),
     );
+  });
+
+  it("skips cherry-pick PRs even if their body contains a fingerprint", async () => {
+    const octokit = makeOctokit({
+      commitDate: "2024-05-01T00:00:00Z",
+      prPages: [
+        [
+          makePR({
+            body: "Fixes fingerprint a1b2c3d4",
+            head: { ref: "cherry-pick/pr-123-to-master" },
+          }),
+          makePR({
+            body: "Fixes fingerprint b5c6d7e8",
+            head: { ref: "feature/real-fix" },
+          }),
+        ],
+      ],
+    });
+    const result = await collectFromRelease(octokit as never);
+    expect(result.rows.map((r) => r.fingerprint)).toEqual(["b5c6d7e8"]);
   });
 
   it("uses lightweight tags directly without calling getTag", async () => {

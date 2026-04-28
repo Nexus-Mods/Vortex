@@ -1,4 +1,4 @@
-name: Mark fingerprints as released
+name: Fingerprints - Mark as released
 on:
   push:
     tags:

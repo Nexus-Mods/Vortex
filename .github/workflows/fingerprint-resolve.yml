@@ -1,4 +1,4 @@
-name: Manually resolve fingerprint(s)
+name: Fingerprints - Manually resolve
 on:
   workflow_dispatch:
     inputs:

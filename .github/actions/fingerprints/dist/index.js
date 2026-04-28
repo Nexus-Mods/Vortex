@@ -36076,8 +36076,13 @@ const Mode = {
 };
 const MODES = Object.values(Mode);
 const isMode = (s) => MODES.some((v) => v === s);
-const FINGERPRINT_RE = /^[a-f0-9]{8}$/;
-const PR_FINGERPRINT_RE = /^Fixes fingerprint ([a-f0-9]{8})\b/gm;
+const FINGERPRINT_RE = /^[a-f0-9]{8}$/i;
+/**
+ * Matches `Fixes fingerprint <hex>` and `Fixes fingerprints <hex>(, <hex>)*`
+ * lines. The capture group is the raw fingerprint list — split it on
+ * `[\s,]+` to get individual values.
+ */
+const PR_FINGERPRINT_RE = /^Fixes fingerprints? ([a-f0-9]{8}(?:[\s,]+[a-f0-9]{8})*)\b/gim;
 
 ;// CONCATENATED MODULE: ./src/clickhouse.ts
 
@@ -36161,7 +36166,10 @@ const collectFromInput = () => {
     const status = rawStatus;
     const releaseVersion = core.getInput("release-version");
     const fingerprints = [
-        ...new Set(fingerprintsInput.split(/[\s,]+/).filter(Boolean)),
+        ...new Set(fingerprintsInput
+            .split(/[\s,]+/)
+            .filter(Boolean)
+            .map((fp) => fp.toLowerCase())),
     ];
     if (fingerprints.length === 0) {
         throw new Error("No fingerprints provided.");
@@ -36202,7 +36210,7 @@ const collectFromPR = () => {
     }
     const body = pr.body ?? "";
     const fingerprints = [
-        ...new Set([...body.matchAll(PR_FINGERPRINT_RE)].map((m) => m[1])),
+        ...new Set([...body.matchAll(PR_FINGERPRINT_RE)].flatMap((m) => m[1].split(/[\s,]+/).filter(Boolean).map((fp) => fp.toLowerCase()))),
     ];
     const rows = fingerprints.map((fingerprint) => ({
         fingerprint,
@@ -36264,10 +36272,15 @@ const collectFingerprintRowsSince = async (octokit, ctx, sinceDate, version) => 
             }
             if (!pr.merged_at || new Date(pr.merged_at) < sinceDate)
                 continue;
+            // Auto-cherry-pick PRs always have head branches like
+            // `cherry-pick/pr-N-to-TARGET` (see .github/scripts/cherry-pick.sh).
+            // Skip them — the original PR is what fixes the fingerprint.
+            if (pr.head.ref.startsWith("cherry-pick/"))
+                continue;
             mergedCount++;
             const body = pr.body ?? "";
             const fingerprints = [
-                ...new Set([...body.matchAll(PR_FINGERPRINT_RE)].map((m) => m[1])),
+                ...new Set([...body.matchAll(PR_FINGERPRINT_RE)].flatMap((m) => m[1].split(/[\s,]+/).filter(Boolean).map((fp) => fp.toLowerCase()))),
             ];
             for (const fingerprint of fingerprints) {
                 if (seen.has(fingerprint))

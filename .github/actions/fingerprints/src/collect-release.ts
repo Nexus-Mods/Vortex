@@ -68,11 +68,22 @@ const collectFingerprintRowsSince = async (
         return { rows, mergedCount };
       }
       if (!pr.merged_at || new Date(pr.merged_at) < sinceDate) continue;
+      // Auto-cherry-pick PRs always have head branches like
+      // `cherry-pick/pr-N-to-TARGET` (see .github/scripts/cherry-pick.sh).
+      // Skip them — the original PR is what fixes the fingerprint.
+      if (pr.head.ref.startsWith("cherry-pick/")) continue;
       mergedCount++;
 
       const body = pr.body ?? "";
       const fingerprints = [
-        ...new Set([...body.matchAll(PR_FINGERPRINT_RE)].map((m) => m[1])),
+        ...new Set(
+          [...body.matchAll(PR_FINGERPRINT_RE)].flatMap((m) =>
+            m[1]
+              .split(/[\s,]+/)
+              .filter(Boolean)
+              .map((fp) => fp.toLowerCase()),
+          ),
+        ),
       ];
       for (const fingerprint of fingerprints) {
         if (seen.has(fingerprint)) continue;
