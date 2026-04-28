@@ -421,9 +421,6 @@ catalogs:
     eslint-plugin-perfectionist:
       specifier: ^5.4.0
       version: 5.7.0
-    esptk:
-      specifier: git+https://github.com/Nexus-Mods/node-esptk#7b7db98d2c69b6b6cad2cb3dcd7972143adaa7bd
-      version: 2.2.2
     exe-version:
       specifier: git+https://github.com/Nexus-Mods/node-exe-version#eded60fc0a0f3c234e1d586d2eb9952401945406
       version: 2.3.0
@@ -703,6 +700,9 @@ catalogs:
     turbowalk:
       specifier: git+https://github.com/Nexus-Mods/node-turbowalk#3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
       version: 3.1.1
+    typed-binary:
+      specifier: ^4.3.3
+      version: 4.3.3
     typescript:
       specifier: 5.9.3
       version: 5.9.3
@@ -1639,13 +1639,13 @@ importers:
       shortid:
         specifier: 'catalog:'
         version: 2.2.17
+      typed-binary:
+        specifier: 'catalog:'
+        version: 4.3.3
       vortex-api:
         specifier: workspace:*
         version: link:../../packages/vortex-api
     optionalDependencies:
-      esptk:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-esptk/tar.gz/7b7db98d2c69b6b6cad2cb3dcd7972143adaa7bd
       loot:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/7b6028fb2caeb3a2af6a0c3d68630c033cc01e8d
@@ -9085,10 +9085,6 @@ packages:
     engines: {node: '>=4'}
     hasBin: true
 
-  esptk@https://codeload.github.com/Nexus-Mods/node-esptk/tar.gz/7b7db98d2c69b6b6cad2cb3dcd7972143adaa7bd:
-    resolution: {tarball: https://codeload.github.com/Nexus-Mods/node-esptk/tar.gz/7b7db98d2c69b6b6cad2cb3dcd7972143adaa7bd}
-    version: 2.2.2
-
   esquery@1.7.0:
     resolution: {integrity: sha512-Ap6G0WQwcU/LHsvLwON1fAQX9Zp0A2Y6Y/cJBl9r/JbW90Zyg4/zbG6zzKa2OTALELarYHmKu0GhpM5EO+7T0g==}
     engines: {node: '>=0.10'}
@@ -12255,6 +12251,9 @@ packages:
   typed-array-length@1.0.7:
     resolution: {integrity: sha512-3KS2b+kL7fsuk/eJZ7EQdnEmQoaho/r6KUef7hxvltNA5DR8NAUM+8wJMbJyZ4G9/7i3v5zPBIMN5aybAh2/Jg==}
     engines: {node: '>= 0.4'}
+
+  typed-binary@4.3.3:
+    resolution: {integrity: sha512-W2hLsSzt3k/tg38gDE4Fn/QiwcoqGuUHBc2cb3mXuH7KcYxe/GM57vzW14s2/bawB4R5knGgGq8Xb57vsaJ4Sg==}
 
   typed-emitter@1.4.0:
     resolution: {integrity: sha512-weBmoo3HhpKGgLBOYwe8EB31CzDFuaK7CCL+axXhUYhn4jo6DSkHnbefboCF5i4DQ2aMFe0C/FdTWcPdObgHyg==}
@@ -17624,16 +17623,6 @@ snapshots:
   esprima@4.0.1:
     optional: true
 
-  esptk@https://codeload.github.com/Nexus-Mods/node-esptk/tar.gz/7b7db98d2c69b6b6cad2cb3dcd7972143adaa7bd:
-    dependencies:
-      autogypi: 0.2.2
-      node-addon-api: 8.5.0
-      node-gyp: 10.3.1
-      prebuild-install: 7.1.3
-    transitivePeerDependencies:
-      - supports-color
-    optional: true
-
   esquery@1.7.0:
     dependencies:
       estraverse: 5.3.0
@@ -21263,6 +21252,8 @@ snapshots:
       is-typed-array: 1.1.15
       possible-typed-array-names: 1.1.0
       reflect.getprototypeof: 1.0.10
+
+  typed-binary@4.3.3: {}
 
   typed-emitter@1.4.0: {}
 

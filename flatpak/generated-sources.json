@@ -289,13 +289,6 @@
     },
     {
         "type": "file",
-        "url": "https://codeload.github.com/Nexus-Mods/node-esptk/tar.gz/6b8900658d66438fe92ac55bc182a45404e8bf3f",
-        "sha256": "322c6c105454491eab4d97747a3782acf54ca9a13889966b18172ed50cf17cff",
-        "dest-filename": "6b8900658d66438fe92ac55bc182a45404e8bf3f",
-        "dest": "flatpak-node/yarn-mirror"
-    },
-    {
-        "type": "file",
         "url": "https://codeload.github.com/Nexus-Mods/node-exe-version/tar.gz/893a394c9e113f9b5c797acb32f93e172829ae00",
         "sha256": "c6a6ffeed02fa017a940bae9f5b2a677d6bc2d4a72c8fe2330618932fa9275c2",
         "dest-filename": "893a394c9e113f9b5c797acb32f93e172829ae00",

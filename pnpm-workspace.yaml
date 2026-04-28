@@ -21,7 +21,7 @@ allowBuilds:
   drivelist: true
   electron: true
   esbuild: true
-  esptk: true
+
   font-scanner: true
   gamebryo-savegame: true
   leveldown: true
@@ -173,7 +173,7 @@ catalog:
   eslint-plugin-better-tailwindcss: ^4.0.2
   eslint-plugin-import: ^2.32.0
   eslint-plugin-perfectionist: ^5.4.0
-  esptk: git+https://github.com/Nexus-Mods/node-esptk#7b7db98d2c69b6b6cad2cb3dcd7972143adaa7bd
+
   exe-version: git+https://github.com/Nexus-Mods/node-exe-version#eded60fc0a0f3c234e1d586d2eb9952401945406
   feedparser: ^2.2.9
   font-scanner: ^0.2.1
@@ -267,6 +267,7 @@ catalog:
   tsconfig-paths-webpack-plugin: ^4.2.0
   tsdown: 0.21.0-beta.1
   turbowalk: git+https://github.com/Nexus-Mods/node-turbowalk#3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
+  typed-binary: ^4.3.3
   typescript: 5.9.3
   typescript-eslint: 8.47.0
   universal-analytics: ^0.4.23

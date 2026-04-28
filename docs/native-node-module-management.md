@@ -21,7 +21,6 @@ The Vortex project includes multiple types of projects maintained as separate re
 
 ### **Gamebryo Extension C++ Projects**
 - **bsatk** - BSA (Bethesda Softworks Archive) toolkit  
-- **esptk** - ESP (Elder Scrolls Plugin) toolkit
 - **loot** - LOOT (Load Order Optimization Tool) bindings
 - **gamebryo-savegame** - Gamebryo savegame management library
 - **bsdiff-node** - Binary diff/patch library for collections
@@ -177,7 +176,6 @@ node scripts/manage-node-modules.js workflow "Vortex integration updates" nexus
 | winapi-bindings | npm package | Git clone | Nexus-Mods repository |
 | xxhash-addon | npm package | Git clone | Third-party repository |
 | bsatk | npm package | Git clone | Nexus-Mods repository |
-| esptk | npm package | Git clone | Nexus-Mods repository |
 | loot | npm package | Git clone | Nexus-Mods repository |
 | gamebryo-savegame | npm package | Git clone | Nexus-Mods repository |
 | bsdiff-node | npm package | Git clone | Nexus-Mods repository |
@@ -382,7 +380,6 @@ yarn modules:workflow "Update Visual Studio integration"
 | winapi-bindings | C++ | Nexus-Mods/node-winapi-bindings | master |
 | xxhash-addon | C++ | jdarpinian/xxhash-addon | master |
 | bsatk | C++ | Nexus-Mods/node-bsatk | master |
-| esptk | C++ | Nexus-Mods/node-esptk | master |
 | loot | C++ | Nexus-Mods/node-loot | master |
 | gamebryo-savegame | C++ | Nexus-Mods/node-gamebryo-savegames | master |
 | bsdiff-node | C++ | Nexus-Mods/bsdiff-node | master |
@@ -394,7 +391,7 @@ All projects are included in `vortex.sln`:
 - **Core Solution Folder**: dotnetprobe
 - **FOMOD Installer Folder**: 8 C# projects from fomod-installer
 - **Native Addons Folder**: winapi-bindings, xxhash-addon
-- **Gamebryo Extensions Folder**: bsatk, esptk, loot, gamebryo-savegame, bsdiff-node
+- **Gamebryo Extensions Folder**: bsatk, loot, gamebryo-savegame, bsdiff-node
 
 Changes to `.vcxproj`, `.csproj`, source files, and configurations are all managed through this system.
 
@@ -502,7 +499,7 @@ yarn modules:update-branch my-feature-branch
 node scripts/update-package-branches.js update my-feature-branch
 
 # Update only specific modules
-yarn modules:update-branch fix-headers bsatk esptk
+yarn modules:update-branch fix-headers bsatk
 
 # Preview what would be updated (dry run)
 node scripts/update-package-branches.js generate my-feature-branch

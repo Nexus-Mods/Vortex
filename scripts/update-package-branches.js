@@ -145,7 +145,6 @@ class PackageUpdater {
     const keyMap = {
       "winapi-bindings": "winapi-bindings",
       bsatk: "bsatk",
-      esptk: "esptk",
       loot: "loot",
       "gamebryo-savegame": "gamebryo-savegame",
       "bsdiff-node": "bsdiff-node",
@@ -576,7 +575,7 @@ EXAMPLES:
   node scripts/update-package-branches.js update feature-branch
 
   # Update only specific modules to use 'fix-headers' branch
-  node scripts/update-package-branches.js update fix-headers bsatk esptk
+  node scripts/update-package-branches.js update fix-headers bsatk
 
   # Show what would be updated (preview only)
   node scripts/update-package-branches.js generate feature-branch
