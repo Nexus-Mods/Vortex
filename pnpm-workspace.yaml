@@ -89,7 +89,7 @@ catalog:
   "@types/lodash": ~4.17.24
   "@types/minimatch": ^2.0.29
   "@types/minimist": ~1.2.5
-  "@types/node": ^22
+  "@types/node": ^24
   "@types/node-7z": ~2.1.11
   "@types/numeral": ~2.0.5
   "@types/packery": ~1.4.37
@@ -158,7 +158,7 @@ catalog:
   dnd-core: ^9.4.0
   draggabilly: ^2.2.0
   drivelist: git+https://github.com/TanninOne/drivelist#720d1890db11482ec05fc0f6aa176cfa6e6844dd
-  electron: 39.8.0
+  electron: 41.3.0
   electron-builder: 24.13.3
   electron-context-menu: ^3.1.1
   electron-devtools-installer: ^3.2.0
