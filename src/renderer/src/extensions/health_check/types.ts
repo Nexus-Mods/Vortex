@@ -24,7 +24,7 @@ export type RequiringMod = Omit<
   "modId"
 > & {
   modId: number;
-  modUrl: string;
+  modUrl?: string;
 };
 
 /**
@@ -40,8 +40,8 @@ export interface IModRequirementExt
   modId: number;
   /** Nexus game domain ID */
   gameId: string;
-  /** Url to view mod information */
-  modUrl: string;
+  /** Url to view mod information; undefined if no URL could be derived (e.g., game has no Nexus domain mapping) */
+  modUrl?: string;
 }
 
 /**
