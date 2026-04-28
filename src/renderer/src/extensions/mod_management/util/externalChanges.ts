@@ -264,7 +264,11 @@ export function dealWithExternalChanges(
   stagingPath: string,
   modPaths: { [typeId: string]: string },
   lastDeployment: { [typeId: string]: IDeployedFile[] },
-  recentInstalls?: Set<string>,
+  // Installation paths whose mods Vortex itself just installed or removed.
+  // change.source is set from mod.installationPath (see LinkingDeployment),
+  // so we match against installation paths, not mod IDs — these can differ in
+  // the update-via-replace flow.
+  recentChanges?: Set<string>,
 ) {
   return checkForExternalChanges(
     api,
@@ -289,7 +293,7 @@ export function dealWithExternalChanges(
               return prevInner;
             }
             if (isInstallingCollection
-                || recentInstalls?.has(change.source)) {
+                || recentChanges?.has(change.source)) {
               prevInner.autoResolved.push(change);
               return prevInner;
             }

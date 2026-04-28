@@ -605,10 +605,15 @@ class InstallManager {
   //  to inspect the state of ongoing installations
   private mActiveInstalls: Map<string, IActiveInstallation> = new Map();
 
-  // Mod IDs that completed installation since the last deployment.
-  // Consumed (and cleared) by the deployment flow to auto-resolve expected
-  // external changes caused by reinstalls/updates.
-  private mRecentlyInstalledMods: Set<string> = new Set();
+  // Installation paths (mod.installationPath) of mods that completed
+  // installation or removal since the last deployment. Consumed (and cleared)
+  // by the deployment flow to auto-resolve expected external changes caused by
+  // Vortex's own operations. We track installation paths rather than mod IDs
+  // because that's what the deployment manifest stores in IDeployedFile.source,
+  // and in the update-via-replace flow a new mod can end up with id !=
+  // installationPath (e.g. new mod id reusing the previous version's staging
+  // folder), which would otherwise miss the auto-resolve filter.
+  private mRecentChangedPaths: Set<string> = new Set();
 
   // Tracks retry counts for failed dependency installations
   private mDependencyRetryCount: Map<string, number> = new Map();
@@ -1018,20 +1023,38 @@ class InstallManager {
 
   /**
    * Record that a mod was recently installed/reinstalled. The deployment flow
-   * uses this to auto-resolve expected external changes for these mods.
+   * uses this to auto-resolve expected external changes for these mods. We
+   * resolve to mod.installationPath because that's what the deployment
+   * manifest's IDeployedFile.source field stores; for the replace-existing-mod
+   * flow this can differ from `modId`.
    */
-  public markRecentInstall(modId: string): void {
-    this.mRecentlyInstalledMods.add(modId);
+  public markRecentInstall(modId: string, gameId: string): void {
+    if (!modId) {
+      return;
+    }
+    const mod = this.mApi.getState().persistent.mods?.[gameId]?.[modId];
+    this.mRecentChangedPaths.add(mod?.installationPath ?? modId);
   }
 
   /**
-   * Returns the set of mod IDs that completed installation since the last
-   * deployment and clears the internal tracking. Intended to be called once
-   * per deployment cycle.
+   * Record that a mod was just removed by Vortex. The next deployment flow
+   * will treat any srcdeleted/refchange entries from this installation path as
+   * expected (and drop them from the manifest).
    */
-  public consumeRecentInstalls(): Set<string> {
-    const result = new Set(this.mRecentlyInstalledMods);
-    this.mRecentlyInstalledMods.clear();
+  public markRecentRemoval(installationPath: string): void {
+    if (installationPath) {
+      this.mRecentChangedPaths.add(installationPath);
+    }
+  }
+
+  /**
+   * Returns the set of installation paths whose mods finished installing or
+   * were removed since the last deployment, and clears the internal tracking.
+   * Intended to be called once per deployment cycle.
+   */
+  public consumeRecentChanges(): Set<string> {
+    const result = new Set(this.mRecentChangedPaths);
+    this.mRecentChangedPaths.clear();
     return result;
   }
 
@@ -1301,7 +1324,7 @@ class InstallManager {
             duration: Date.now() - activeInstall.startTime,
           });
           if (id) {
-            this.markRecentInstall(id);
+            this.markRecentInstall(id, activeInstall.gameId);
           }
         }
       }
