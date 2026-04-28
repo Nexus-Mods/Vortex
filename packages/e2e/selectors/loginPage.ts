@@ -37,7 +37,7 @@ export class LoginPage {
     this.authorisationSuccessTitle = page.locator("p.oauth__title");
     this.profileButton = page
       .locator(
-        "button[title='Profile'], button[title='Log in'], button:has(img[alt]), button.hover-overlay.rounded-full",
+        "button[title='Profile'], button[title='Log in'], button:has(img[alt])",
       )
       .first();
     this.loggedInMenuItem = page
