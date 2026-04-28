@@ -2,8 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [2.0.0-beta.2] - 2026-04-27
+
+### Added
+
+- Per-profile plugin rules with "Reset Plugin Rules" button and curator/consumer controls to skip or exclude plugin rules when installing collections ([#22620](https://github.com/Nexus-Mods/Vortex/pull/22620))
+
+### Changed
+
+- BG3: refactored divine wrapper with cleaner error classification, cancellation on game switch, and silent skipping of corrupt third-party paks instead of "re-install LSLib" notifications ([#22679](https://github.com/Nexus-Mods/Vortex/pull/22679))
+
+### Fixed
+
+- Install crash from `fileList.push` spread overflowing the call stack on archives with ~100k+ files ([#22704](https://github.com/Nexus-Mods/Vortex/pull/22704))
+- FOMOD `KeyNotFoundException` when saved preset choices referenced steps that no longer exist ([#22706](https://github.com/Nexus-Mods/Vortex/pull/22706))
+- FOMOD installer rejecting saved presets when "no options" fell back to an empty object instead of an empty array ([#22716](https://github.com/Nexus-Mods/Vortex/pull/22716))
+- "Vortex seems to be running already" dialog incorrectly shown for non-ASCII path, permission, or disk-full errors instead of real DB lock contention ([#22703](https://github.com/Nexus-Mods/Vortex/pull/22703))
+- Mod install crash with undefined `gameId` when the current profile was stale or absent ([#22684](https://github.com/Nexus-Mods/Vortex/pull/22684))
+- Witcher 3 Script Merger dummy installer crash and misleading error notifications when installing the script merger archive as a mod ([#22677](https://github.com/Nexus-Mods/Vortex/pull/22677))
+- Missing extension identity in failed-init error payload making startup crash reports untraceable ([#22672](https://github.com/Nexus-Mods/Vortex/pull/22672))
+- Notifications render crash caused by `quickUpdate` stale-index writes ([#22643](https://github.com/Nexus-Mods/Vortex/pull/22643))
+- Notifications reducer and `quickUpdate` crashing on malformed payloads ([#22816](https://github.com/Nexus-Mods/Vortex/pull/22816))
+- File UID generation failing due to stale Nexus games cache ([#22641](https://github.com/Nexus-Mods/Vortex/pull/22641))
+- Several race conditions when switching collection revisions: patched mods not reinstalled, install driver starting before old mods were cleaned up, optional mods losing enabled state, update notification shown on latest revision, and install activity running indefinitely ([#22520](https://github.com/Nexus-Mods/Vortex/pull/22520))
+- Crash when downloading collection mods while the collection was being reinstalled or updated ([#22607](https://github.com/Nexus-Mods/Vortex/pull/22607))
+- Auto-download not triggering for patch updates in the auto-updater ([#22609](https://github.com/Nexus-Mods/Vortex/pull/22609))
+- Spurious error notification when the user declined the Nexus login consent prompt ([#22715](https://github.com/Nexus-Mods/Vortex/pull/22715))
+- Spurious error notification for discarded collection revisions and collections under moderation ([#22717](https://github.com/Nexus-Mods/Vortex/pull/22717))
+- Failed Gamebryo plugin light-flag changes (eslify) recorded as successful history entries ([#22803](https://github.com/Nexus-Mods/Vortex/pull/22803))
+- Morrowind plugin scan aborting the whole loop when a single mod's install directory was missing or inaccessible ([#22714](https://github.com/Nexus-Mods/Vortex/pull/22714))
 
 ## [2.0.0-beta.1] - 2026-04-14
 
@@ -1666,6 +1695,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[2.0.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.0.0-beta.2
 [2.0.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.0.0-beta.1
 [2.0.0-alpha.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.0.0-alpha.4
 [2.0.0-alpha.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.0.0-alpha.3
