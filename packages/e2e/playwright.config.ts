@@ -13,7 +13,7 @@ export default defineConfig({
   testDir: "./tests",
   timeout: 60_000,
   expect: {
-    timeout: 10_000,
+    timeout: 5_000,
   },
   retries: 1,
   // Each worker launches its own Electron instance with isolated user data.
@@ -26,6 +26,8 @@ export default defineConfig({
     ["junit", { outputFile: "test-results/junit.xml" }],
   ],
   use: {
+    actionTimeout: 5_000,
+    navigationTimeout: 5_000,
     screenshot: "only-on-failure",
     trace: "on-first-retry",
     video: "on-first-retry",

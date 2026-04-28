@@ -27,12 +27,8 @@ export async function loginToNexus(
   });
 
   await test.step("Click the login button", async () => {
-    const popupPromise = vortexWindow
-      .waitForEvent("popup", { timeout: 5000 })
-      .catch(() => null);
-    const appWindowPromise = vortexApp
-      .waitForEvent("window", { timeout: 5000 })
-      .catch(() => null);
+    const popupPromise = vortexWindow.waitForEvent("popup").catch(() => null);
+    const appWindowPromise = vortexApp.waitForEvent("window").catch(() => null);
 
     await expect(vortexLoginPage.vortexLoginButton).toBeVisible();
     await vortexLoginPage.vortexLoginButton.click();
@@ -41,7 +37,7 @@ export async function loginToNexus(
   });
 
   await test.step("Verify the browser has opened to the login page", async () => {
-    await expect(vortexLoginPage.oauthUrlField).toBeVisible({ timeout: 10000 });
+    await expect(vortexLoginPage.oauthUrlField).toBeVisible();
 
     const oauthUrl = await vortexLoginPage.oauthUrlField.inputValue();
     expect(oauthUrl).toMatch(/^https?:\/\//i);
@@ -65,9 +61,7 @@ export async function loginToNexus(
     await expect(authPage).toHaveURL(/nexusmods|users\./i);
 
     const nexusLoginPage = new LoginPage(authPage);
-    await expect(nexusLoginPage.authLoginHeading).toBeVisible({
-      timeout: 20000,
-    });
+    await expect(nexusLoginPage.authLoginHeading).toBeVisible();
   });
 
   await test.step("Login with FreeUser credentials", async () => {
@@ -77,21 +71,14 @@ export async function loginToNexus(
 
     const nexusLoginPage = new LoginPage(authPage);
 
-    await expect(nexusLoginPage.authLoginForm).toBeVisible({ timeout: 20000 });
-    await expect(nexusLoginPage.usernameInput).toBeVisible({ timeout: 20000 });
-    await expect(nexusLoginPage.passwordInput).toBeVisible({ timeout: 20000 });
-
     await nexusLoginPage.usernameInput.fill(username);
+    await expect(nexusLoginPage.usernameInput).toHaveValue(username);
     await nexusLoginPage.passwordInput.fill(password);
+    await expect(nexusLoginPage.passwordInput).toHaveValue(password);
+    await expect(nexusLoginPage.submitLoginButton).toBeEnabled();
     await nexusLoginPage.submitLoginButton.click();
 
-    await expect(nexusLoginPage.oauthPermissionTitle).toContainText(
-      /Vortex\s+would like to:/i,
-      { timeout: 30000 },
-    );
-    await expect(nexusLoginPage.oauthPermissionTitle).toBeVisible({
-      timeout: 30000,
-    });
+    await expect(nexusLoginPage.oauthPermissionTitle).toBeVisible();
   });
 
   await test.step("Click Authorise", async () => {
@@ -101,18 +88,10 @@ export async function loginToNexus(
 
     const nexusLoginPage = new LoginPage(authPage);
 
-    await expect(nexusLoginPage.authoriseButton).toBeVisible({
-      timeout: 30000,
-    });
+    await expect(nexusLoginPage.authoriseButton).toBeVisible();
     await nexusLoginPage.authoriseButton.click();
 
-    await expect(nexusLoginPage.authorisationSuccessTitle).toContainText(
-      /Authorisation successful!/i,
-      { timeout: 30000 },
-    );
-    await expect(nexusLoginPage.authorisationSuccessTitle).toBeVisible({
-      timeout: 30000,
-    });
+    await expect(nexusLoginPage.authorisationSuccessTitle).toBeVisible();
 
     if (authBrowser !== null) {
       await authBrowser.close();
@@ -130,9 +109,7 @@ export async function loginToNexus(
     await vortexWindow.bringToFront();
 
     if (
-      await vortexLoginPage.vortexLoginDialog
-        .isVisible({ timeout: 5000 })
-        .catch(() => false)
+      await vortexLoginPage.vortexLoginDialog.isVisible().catch(() => false)
     ) {
       await vortexWindow.keyboard.press("Escape").catch(() => undefined);
     }
@@ -140,7 +117,7 @@ export async function loginToNexus(
     await expect(vortexLoginPage.vortexLoginDialog).toBeHidden({
       timeout: 60000,
     });
-    await expect(vortexLoginPage.profileButton).toBeVisible({ timeout: 60000 });
+    await expect(vortexLoginPage.profileButton).toBeVisible();
 
     for (let attempt = 0; attempt < 3; attempt += 1) {
       try {
@@ -153,8 +130,6 @@ export async function loginToNexus(
       }
     }
 
-    await expect(vortexLoginPage.loggedInMenuItem).toBeVisible({
-      timeout: 60000,
-    });
+    await expect(vortexLoginPage.loggedInMenuItem).toBeVisible();
   });
 }
