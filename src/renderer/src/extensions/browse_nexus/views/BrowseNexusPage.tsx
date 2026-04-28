@@ -27,7 +27,6 @@ import { TabPanel } from "../../../ui/components/tabs/TabPanel";
 import { TabProvider } from "../../../ui/components/tabs/tabs.context";
 import { Typography } from "../../../ui/components/typography/Typography";
 import { UserCanceled } from "../../../util/api";
-import { getPreloadApi } from "../../../util/preloadAccess";
 import { activeGameId } from "../../../util/selectors";
 import MainPage from "../../../views/MainPage";
 import { CollectionsDownloadClickedEvent } from "../../analytics/mixpanel/MixpanelEvents";
@@ -73,7 +72,7 @@ async function adultContentDialog(
       ],
     );
     return result.action === "Cancel" ? false : true;
-  } catch (err) {
+  } catch {
     return adultContent;
   }
 }
@@ -152,9 +151,9 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
       adultContentFilter === false &&
       collection.latestPublishedRevision?.adultContent
     ) {
-      adultContentDialog(api, collection, false).then((proceed) => {
+      void adultContentDialog(api, collection, false).then((proceed) => {
         if (proceed) {
-          getPreloadApi().shell.openUrl(
+          window.api.shell.openUrl(
             "https://next.nexusmods.com/settings/content-blocking",
           );
         }
@@ -360,7 +359,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                     leftIconPath={mdiOpenInNew}
                     size="sm"
                     onClick={() =>
-                      getPreloadApi().shell.openUrl(
+                      window.api.shell.openUrl(
                         `https://www.nexusmods.com/games/${gameDomainName}/mods`,
                       )
                     }
@@ -381,7 +380,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                     key={collection.id}
                     onAddCollection={() => handleAddCollection(collection)}
                     onViewPage={() =>
-                      getPreloadApi().shell.openUrl(
+                      window.api.shell.openUrl(
                         `https://www.nexusmods.com/games/${collection.game.domainName}/collections/${collection.slug}`,
                       )
                     }
@@ -412,7 +411,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                 leftIconPath={mdiOpenInNew}
                 size="sm"
                 onClick={() =>
-                  getPreloadApi().shell.openUrl(
+                  window.api.shell.openUrl(
                     `https://www.nexusmods.com/games/${gameDomainName}/mods`,
                   )
                 }
