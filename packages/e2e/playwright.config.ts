@@ -1,9 +1,9 @@
-import { existsSync } from 'node:fs';
-import path from 'node:path';
+import { existsSync } from "node:fs";
+import path from "node:path";
 
 import { defineConfig } from "@playwright/test";
 
-const envFilePath = path.resolve(import.meta.dirname, '.env');
+const envFilePath = path.resolve(import.meta.dirname, ".env");
 
 if (existsSync(envFilePath)) {
   process.loadEnvFile(envFilePath);
@@ -19,9 +19,7 @@ export default defineConfig({
   // Each worker launches its own Electron instance with isolated user data.
   // CI: Windows runners are slower (1 worker), Linux can handle 2.
   // Local: 4 workers.
-  workers: process.env.CI
-    ? process.platform === 'win32' ? 1 : 2
-    : 4,
+  workers: process.env.CI ? (process.platform === "win32" ? 1 : 2) : 4,
   reporter: [
     ["list"],
     ["html", { open: "never" }],
