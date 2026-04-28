@@ -1,4 +1,5 @@
 import { unknownToError } from "@vortex/shared";
+
 import { log } from "./logging";
 
 type Partial =
