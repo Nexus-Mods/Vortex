@@ -71,14 +71,21 @@ export async function loginToNexus(
 
     const nexusLoginPage = new LoginPage(authPage);
 
-    await nexusLoginPage.usernameInput.fill(username);
-    await expect(nexusLoginPage.usernameInput).toHaveValue(username);
-    await nexusLoginPage.passwordInput.fill(password);
-    await expect(nexusLoginPage.passwordInput).toHaveValue(password);
-    await expect(nexusLoginPage.submitLoginButton).toBeEnabled();
-    await nexusLoginPage.submitLoginButton.click();
-
-    await expect(nexusLoginPage.oauthPermissionTitle).toBeVisible();
+    await test.step("Enter username", async () => {
+      await nexusLoginPage.usernameInput.fill(username);
+      await expect(nexusLoginPage.usernameInput).toHaveValue(username);
+    });
+    await test.step("Enter password", async () => {
+      await nexusLoginPage.passwordInput.fill(password);
+      await expect(nexusLoginPage.passwordInput).toHaveValue(password);
+    });
+    await test.step("Submit login form", async () => {
+      await expect(nexusLoginPage.submitLoginButton).toBeEnabled();
+      await nexusLoginPage.submitLoginButton.click();
+    });
+    await test.step("Verify OAuth permission screen", async () => {
+      await expect(nexusLoginPage.oauthPermissionTitle).toBeVisible();
+    });
   });
 
   await test.step("Click Authorise", async () => {
@@ -114,22 +121,9 @@ export async function loginToNexus(
       await vortexWindow.keyboard.press("Escape").catch(() => undefined);
     }
 
-    await expect(vortexLoginPage.vortexLoginDialog).toBeHidden({
-      timeout: 60000,
-    });
+    await expect(vortexLoginPage.vortexLoginDialog).toBeHidden();
     await expect(vortexLoginPage.profileButton).toBeVisible();
-
-    for (let attempt = 0; attempt < 3; attempt += 1) {
-      try {
-        await vortexLoginPage.profileButton.click({ timeout: 10000 });
-        break;
-      } catch (error) {
-        if (attempt === 2) {
-          throw error;
-        }
-      }
-    }
-
+    await vortexLoginPage.profileButton.click();
     await expect(vortexLoginPage.loggedInMenuItem).toBeVisible();
   });
 }
