@@ -1125,23 +1125,25 @@ export function onGetModRequirements(
         return result;
       })
       .catch((err) => {
+        const defaultDetails = {
+          gameId: nexusGameDomain,
+          modIds,
+        }
         if (err instanceof RateLimitError) {
           log("warn", "Rate limited when fetching mod requirements", {
-            gameId: nexusGameDomain,
-            modIds,
+            ...defaultDetails
           });
         } else if (err instanceof TimeoutError) {
           log("warn", "Timeout when fetching mod requirements", {
-            gameId: nexusGameDomain,
-            modIds,
+            ...defaultDetails
           });
         } else {
-          const detail = processErrorMessage(err);
-          api.showErrorNotification("Failed to get mod requirements", detail, {
-            allowReport: detail.noReport ? false : true,
+          const detail = processErrorMessage(err as NexusError);
+          log("warn", "Failed to get mod requirements", {
+            ...defaultDetails,
+            ...detail,
           });
         }
-
         return Bluebird.resolve({});
       });
   };
