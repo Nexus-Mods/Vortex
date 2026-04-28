@@ -1,3 +1,9 @@
 node_modules/
 lib/
 *.tsbuildinfo
+
+# The repo-root .gitignore excludes `dist` everywhere; re-include it here
+# because GitHub Actions runs the bundled dist/index.js at action invocation
+# time (it does NOT run pnpm install / pnpm run build first).
+!dist
+!dist/**
