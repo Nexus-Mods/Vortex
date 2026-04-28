@@ -17,7 +17,14 @@ export const collectFromPR = (): CollectResult => {
 
   const body: string = pr.body ?? "";
   const fingerprints = [
-    ...new Set([...body.matchAll(PR_FINGERPRINT_RE)].map((m) => m[1])),
+    ...new Set(
+      [...body.matchAll(PR_FINGERPRINT_RE)].flatMap((m) =>
+        m[1]
+          .split(/[\s,]+/)
+          .filter(Boolean)
+          .map((fp) => fp.toLowerCase()),
+      ),
+    ),
   ];
 
   const rows = fingerprints.map((fingerprint) => ({

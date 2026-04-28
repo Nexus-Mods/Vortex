@@ -1,7 +1,10 @@
-name: Mark fingerprints as fixed
+name: Fingerprints - Mark as fixed
 on:
   pull_request:
     types: [closed]
+    branches:
+      - master
+      - "v*"
 
 permissions:
   contents: read
@@ -9,7 +12,12 @@ permissions:
 
 jobs:
   sync:
-    if: github.event.pull_request.merged == true
+    # Skip the auto-cherry-pick PRs created by .github/scripts/cherry-pick.sh
+    # (head branches always start with `cherry-pick/`); the original PR is
+    # what fixes the fingerprint, the cherry-pick is just propagation.
+    if: >-
+      github.event.pull_request.merged == true &&
+      !startsWith(github.event.pull_request.head.ref, 'cherry-pick/')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
