@@ -372,8 +372,32 @@ export async function checkModRequirements(
             if (mainFiles.length !== 1) {
               continue;
             }
+<<<<<<< HEAD
           } catch {
             continue;
+=======
+
+            getModEntry().missingMods.push({
+              ...req,
+              modId: requiredModId,
+              gameId: gameIdForStorage,
+              uid: makeModUID({
+                modId: req.modId,
+                fileId: "0",
+                gameId: gameIdForStorage,
+              }),
+              requiredBy: {
+                modId,
+                modName: getModName(),
+                // The nexus mods URL of the mod that requires this dependency
+                modUrl: `https://www.nexusmods.com/${requiringModNexusDomain}/mods/${modId}`,
+              },
+              // The URL of the required dependency mod
+              modUrl:
+                (req.url && req.url.trim()) ||
+                `https://www.nexusmods.com/${gameIdForStorage}/mods/${requiredModId}`,
+            });
+>>>>>>> 58a152c52 (Merge pull request #22812 from Nexus-Mods/fix/app-386)
           }
 
           getModEntry().missingMods.push({

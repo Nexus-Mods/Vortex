@@ -1,7 +1,6 @@
 import { mdiAlertCircleOutline, mdiOpenInNew } from "@mdi/js";
 import React, { type PropsWithChildren } from "react";
 
-import { getPreloadApi } from "../../../util/preloadAccess";
 import { joinClasses } from "../../utils/joinClasses";
 import { Button } from "../button/Button";
 import { Icon } from "../icon/Icon";
@@ -76,7 +75,7 @@ export const NoResults = ({
             leftIconPath={mdiOpenInNew}
             size="sm"
             onClick={() =>
-              getPreloadApi().shell.openUrl(
+              window.api.shell.openUrl(
                 "https://help.nexusmods.com/article/125-contact-us",
               )
             }
