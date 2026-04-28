@@ -95,6 +95,15 @@ type StoredDownloadInfo = {
   callback?: (err: Error | null, id?: string) => void;
 };
 
+type ActiveDownload = {
+  callback?: (err: Error | null, id?: string) => void;
+  fileNameHint?: string;
+  allowInstall?: boolean;
+  lastBytesReceived: number;
+  lastProgressDispatch: number;
+  startedEventEmitted: boolean;
+};
+
 export class IPCDownloadAdapter {
   readonly #api: IExtensionApi;
   readonly #handlers: Record<string, ProtocolHandler> = {};
@@ -104,15 +113,7 @@ export class IPCDownloadAdapter {
   // into download.modInfo once the downloadId is known. The nxm resolver returns
   // nexus IDs (modId/fileId or collectionId/revisionId) here.
   readonly #resolvedMeta = new Map<number, unknown>();
-  readonly #downloadCallbacks = new Map<
-    string,
-    (err: Error | null, id?: string) => void
-  >();
-  readonly #fileNameHints = new Map<string, string>();
-  readonly #activeDownloads = new Set<string>();
-  readonly #lastBytesReceived = new Map<string, number>();
-  readonly #lastProgressDispatch = new Map<string, number>();
-  readonly #startedEventEmitted = new Set<string>();
+  readonly #activeDownloads = new Map<string, ActiveDownload>();
   #speedAccumBytes = 0;
   #lastSpeedDispatch: number | null = null;
   #nextCollationId = 0;
@@ -138,13 +139,19 @@ export class IPCDownloadAdapter {
         return;
       }
 
-      const [urls, modInfo, fileName, callback] = parsed.data;
+      const [urls, modInfo, fileName, callback, redownload, options] =
+        parsed.data;
 
-      this.#handleStartDownload(urls, modInfo, fileName, callback).catch(
-        (err) => {
-          log("error", "failed to start download", err);
-        },
-      );
+      this.#handleStartDownload(
+        urls,
+        modInfo,
+        fileName,
+        callback,
+        redownload,
+        options,
+      ).catch((err) => {
+        log("error", "failed to start download", err);
+      });
     });
 
     api.events.on("remove-download", (...args: unknown[]) => {
@@ -209,7 +216,11 @@ export class IPCDownloadAdapter {
       const checkpoint = checkpoints[id];
       if (checkpoint !== undefined) {
         log("debug", "auto-resuming interrupted download", { id });
-        this.#activeDownloads.add(id);
+        this.#activeDownloads.set(id, {
+          lastBytesReceived: 0,
+          lastProgressDispatch: 0,
+          startedEventEmitted: false,
+        });
         window.api.downloader.resume(checkpoint).catch((err) => {
           log("error", "failed to auto-resume download", { id, err });
           this.#activeDownloads.delete(id);
@@ -378,6 +389,7 @@ export class IPCDownloadAdapter {
   async #completeDownload(
     downloadId: string,
     wireState: WireDownloadState,
+    activeDownload?: ActiveDownload,
   ): Promise<void> {
     const reduxState = this.#api.getState();
     const download = reduxState.persistent.downloads.files?.[downloadId];
@@ -388,8 +400,7 @@ export class IPCDownloadAdapter {
       const tempPath = path.join(dlPath, download.localPath);
 
       // Determine the final filename: server Content-Disposition > caller hint > temp name.
-      const hint = this.#fileNameHints.get(downloadId);
-      this.#fileNameHints.delete(downloadId);
+      const hint = activeDownload?.fileNameHint;
       const finalName = wireState.fileName ?? hint ?? download.localPath;
       const finalPath = path.join(dlPath, finalName);
 
@@ -431,16 +442,19 @@ export class IPCDownloadAdapter {
     // Fire the start-download callback now that the file is on disk. Callers
     // (e.g. nexus_integration collection download) rely on the callback firing
     // after completion to trigger installation, matching DownloadObserver behaviour.
-    const cb = this.#downloadCallbacks.get(downloadId);
-    this.#downloadCallbacks.delete(downloadId);
-    cb?.(null, downloadId);
+    activeDownload?.callback?.(null, downloadId);
 
-    // Trigger auto-install if the user has automation enabled or if this
-    // download was started as an update (e.g. from the mod management view).
-    if (
+    const allowInstall = activeDownload?.allowInstall;
+
+    const autoInstall =
       reduxState.settings.automation?.install ||
-      download?.modInfo?.["startedAsUpdate"] === true
-    ) {
+      download?.modInfo?.["startedAsUpdate"] === true;
+
+    // Trigger auto-install respecting the per-download allowInstall override.
+    // "force" (stored as true) → always install; false → never; undefined → automation setting.
+    const shouldInstall =
+      allowInstall || (allowInstall !== false && autoInstall);
+    if (shouldInstall) {
       this.#api.events.emit("start-install-download", downloadId);
     }
   }
@@ -450,6 +464,8 @@ export class IPCDownloadAdapter {
     modInfo: ModInfo,
     fileName?: string,
     callback?: (err: Error | null, id?: string) => void,
+    redownload?: "never" | "ask" | "replace" | "always",
+    options?: { allowInstall?: boolean | "force" },
   ): Promise<void> {
     // TODO: decide how to handle multiple URL inputs
     const rawUrl = rawUrls[0];
@@ -464,20 +480,39 @@ export class IPCDownloadAdapter {
 
     // Check for an existing file using the caller-supplied name before queuing.
     // We can only do this when a name is provided; temp-named downloads are always new.
-    if (fileName !== undefined) {
+    if (fileName !== undefined && redownload !== "always") {
       const namedDest = path.join(dlPath, fileName);
       const fileExists = await access(namedDest).then(
         () => true,
         () => false,
       );
-      if (fileExists) {
-        const downloads = state.persistent.downloads.files;
-        const [existingId, _] = Object.entries(downloads).find(
-          ([_, download]) => download.localPath === fileName,
-        );
+      if (fileExists && redownload !== "replace") {
+        if (redownload === "ask") {
+          const result = await this.#api.showDialog?.(
+            "question",
+            "File already downloaded",
+            { text: `"${fileName}" is already on disk. Download again?` },
+            [{ label: "Use existing" }, { label: "Re-download" }],
+          );
 
-        callback?.(new AlreadyDownloaded(fileName, existingId));
-        return;
+          if (result?.action !== "Re-download") {
+            const downloads = state.persistent.downloads.files;
+            const [existingId, _] = Object.entries(downloads).find(
+              ([_, download]) => download.localPath === fileName,
+            );
+
+            callback?.(new AlreadyDownloaded(fileName, existingId));
+            return;
+          }
+        } else {
+          const downloads = state.persistent.downloads.files;
+          const [existingId, _] = Object.entries(downloads).find(
+            ([_, download]) => download.localPath === fileName,
+          );
+
+          callback?.(new AlreadyDownloaded(fileName, existingId));
+          return;
+        }
       }
     }
 
@@ -508,15 +543,21 @@ export class IPCDownloadAdapter {
         collationId,
       );
 
-      this.#activeDownloads.add(downloadId);
-      if (callback !== undefined) {
-        this.#downloadCallbacks.set(downloadId, callback);
-      }
-      // Store caller-supplied name as hint for #completeDownload.
-      // Content-Disposition (wireState.fileName) takes priority; this is the fallback.
-      if (fileName !== undefined) {
-        this.#fileNameHints.set(downloadId, fileName);
-      }
+      const allowInstall =
+        options?.allowInstall === false
+          ? false
+          : options?.allowInstall === "force"
+            ? true
+            : undefined;
+
+      this.#activeDownloads.set(downloadId, {
+        callback,
+        fileNameHint: fileName,
+        allowInstall,
+        lastBytesReceived: 0,
+        lastProgressDispatch: 0,
+        startedEventEmitted: false,
+      });
       log("debug", "download queued", { downloadId, collationId });
 
       const gameId = modInfo.game ?? activeGameId(state);
@@ -536,10 +577,11 @@ export class IPCDownloadAdapter {
       // attributeExtractors and collection install plumbing read from.
       const resolvedMeta = this.#resolvedMeta.get(collationId);
       this.#resolvedMeta.delete(collationId);
+
       if (resolvedMeta !== undefined) {
         const flattened = flatten(resolvedMeta) as Record<string, unknown>;
-        const actions = Object.keys(flattened).map((key) =>
-          setDownloadModInfo(downloadId, key, flattened[key]),
+        const actions = Object.entries(flattened).map(([key, value]) =>
+          setDownloadModInfo(downloadId, key, value),
         );
         if (actions.length > 0) {
           batchDispatch(this.#api.store, actions);
@@ -622,7 +664,7 @@ export class IPCDownloadAdapter {
   }
 
   async #poll(): Promise<void> {
-    const downloadIds = [...this.#activeDownloads];
+    const downloadIds = this.#activeDownloads.keys().toArray();
     if (downloadIds.length === 0) return;
 
     const states = await window.api.downloader.getStates(downloadIds);
@@ -630,29 +672,34 @@ export class IPCDownloadAdapter {
 
     let totalDeltaBytes = 0;
     for (const [downloadId, state] of Object.entries(states)) {
-      const prev = this.#lastBytesReceived.get(downloadId) ?? 0;
-      const delta = Math.max(0, state.bytesReceived - prev);
+      const activeDownload = this.#activeDownloads.get(downloadId);
+      if (activeDownload === undefined) continue;
+
+      const delta = Math.max(
+        0,
+        state.bytesReceived - activeDownload.lastBytesReceived,
+      );
       totalDeltaBytes += delta;
-      this.#lastBytesReceived.set(downloadId, state.bytesReceived);
+      activeDownload.lastBytesReceived = state.bytesReceived;
 
       const isTerminal =
         state.status === "completed" ||
         state.status === "failed" ||
         state.status === "canceled";
 
-      if (delta > 0 && !this.#startedEventEmitted.has(downloadId)) {
+      if (delta > 0 && !activeDownload.startedEventEmitted) {
         const reduxDownload =
           this.#api.getState().persistent.downloads.files?.[downloadId];
         if ((reduxDownload?.received ?? 0) === 0) {
           this.#emitAnalytics(downloadId, "started");
         }
-        this.#startedEventEmitted.add(downloadId);
+        activeDownload.startedEventEmitted = true;
       }
 
       const secSinceProgress =
-        (now - (this.#lastProgressDispatch.get(downloadId) ?? 0)) / 1000;
+        (now - activeDownload.lastProgressDispatch) / 1000;
       if (delta > 0 && (secSinceProgress >= 1 || isTerminal)) {
-        this.#lastProgressDispatch.set(downloadId, now);
+        activeDownload.lastProgressDispatch = now;
         // Update received/total bytes. The reducer transitions state from
         // "init" to "started" on first non-zero received, driving the progress bar.
         this.#api.store.dispatch(
@@ -672,31 +719,29 @@ export class IPCDownloadAdapter {
       if (err !== null)
         log("warn", "download ended with error", { downloadId, err });
       this.#activeDownloads.delete(downloadId);
-      this.#lastBytesReceived.delete(downloadId);
-      this.#lastProgressDispatch.delete(downloadId);
-      this.#startedEventEmitted.delete(downloadId);
       this.#api.store.dispatch(clearDownloadCheckpoint(downloadId));
 
       if (state.status === "completed") {
         this.#emitAnalytics(downloadId, "completed");
-        this.#completeDownload(downloadId, state).catch((err) => {
-          log("error", "failed to finalize download", { downloadId, err });
-        });
+        this.#completeDownload(downloadId, state, activeDownload).catch(
+          (err) => {
+            log("error", "failed to finalize download", { downloadId, err });
+          },
+        );
       } else if (state.status === "canceled") {
         this.#emitAnalytics(downloadId, "canceled");
         // User canceled - remove the record entirely, no file to keep.
         this.#api.store.dispatch(removeDownload(downloadId));
-        const cancelCb = this.#downloadCallbacks.get(downloadId);
-        this.#downloadCallbacks.delete(downloadId);
-        cancelCb?.(new UserCanceled(), downloadId);
+        activeDownload.callback?.(new UserCanceled(), downloadId);
       } else {
         this.#emitAnalytics(downloadId, "failed", err ?? undefined);
         // Mark record as failed so the UI can show an error state.
         this.#api.store.dispatch(finishDownload(downloadId, "failed", err));
         this.#api.events.emit("did-finish-download", downloadId, "failed");
-        const failCb = this.#downloadCallbacks.get(downloadId);
-        this.#downloadCallbacks.delete(downloadId);
-        failCb?.(err ?? new Error("download failed"), downloadId);
+        activeDownload.callback?.(
+          err ?? new Error("download failed"),
+          downloadId,
+        );
       }
     }
 
@@ -787,6 +832,12 @@ const startDownloadArgsSchema = z
     z.string().optional(),
     z
       .function({ input: [z.unknown().nullable(), z.string().optional()] })
+      .optional(),
+    z.enum(["never", "ask", "replace", "always"]).optional(),
+    z
+      .object({
+        allowInstall: z.union([z.boolean(), z.literal("force")]).optional(),
+      })
       .optional(),
   ])
   .rest(z.unknown());
