@@ -1,4 +1,4 @@
-import type { Locator, Page } from '@playwright/test';
+import type { Locator, Page } from "@playwright/test";
 
 export class LoginPage {
   readonly page: Page;
@@ -18,32 +18,30 @@ export class LoginPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.vortexLoginButton = page.getByRole('button', { name: 'Log in' });
-    this.vortexLoginDialog = page.locator('#login-dialog');
-    this.oauthUrlField = page.locator('#login-dialog input[readonly]').first();
-    this.authLoginHeading = page.getByRole('heading', {
+    this.vortexLoginButton = page.getByRole("button", { name: "Log in" });
+    this.vortexLoginDialog = page.locator("#login-dialog");
+    this.oauthUrlField = page.locator("#login-dialog input[readonly]").first();
+    this.authLoginHeading = page.getByRole("heading", {
       name: /Log in to\s+Nexus Mods/i,
     });
-    this.authLoginForm = page.locator('form#new_user');
-    this.usernameInput = page
-      .locator(
-        '#user_login, input[name="user[login]"], input[autocomplete="email"]',
-      )
+    this.authLoginForm = page.locator("form#new_user");
+    this.usernameInput = page.locator("#user_login");
+    this.passwordInput = page.locator('input[name="user[password]"]');
+    this.submitLoginButton = page
+      .getByRole("button", { name: /log in/i })
       .first();
-    this.passwordInput = page
-      .locator(
-        '#password, input[name="user[password]"], input[type="password"]',
-      )
+    this.oauthPermissionTitle = page.locator("p.oauth__title");
+    this.authoriseButton = page
+      .locator('input[type="submit"][value="Authorise"]')
       .first();
-    this.submitLoginButton = page.getByRole('button', { name: /log in/i }).first();
-    this.oauthPermissionTitle = page.locator('p.oauth__title');
-    this.authoriseButton = page.locator('input[type="submit"][value="Authorise"]').first();
-    this.authorisationSuccessTitle = page.locator('p.oauth__title');
+    this.authorisationSuccessTitle = page.locator("p.oauth__title");
     this.profileButton = page
       .locator(
-        "#btn-login, button[title='Profile'], button[title='Log in'], button:has(img[alt]), button.hover-overlay.rounded-full",
+        "button[title='Profile'], button[title='Log in'], button:has(img[alt]), button.hover-overlay.rounded-full",
       )
       .first();
-    this.loggedInMenuItem = page.getByText(/view profile on web|logout/i).first();
+    this.loggedInMenuItem = page
+      .getByText(/view profile on web|logout/i)
+      .first();
   }
 }
