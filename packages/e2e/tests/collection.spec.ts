@@ -69,7 +69,7 @@ test.describe("Collections", () => {
       await expect(loginHeading).toBeVisible({ timeout: 20000 });
     });
 
-    await test.step("Keep auth browser open for next login steps", async () => {
+    await test.step("Keep auth browser open for login steps", async () => {
       expect(authBrowser).not.toBeNull();
       expect(authContext).not.toBeNull();
       expect(authPage).not.toBeNull();
@@ -104,6 +104,80 @@ test.describe("Collections", () => {
         .getByRole("button", { name: /log in/i })
         .first()
         .click();
+
+      const oauthPermissionTitle = authPage.locator("p.oauth__title");
+      await expect(oauthPermissionTitle).toContainText(
+        /Vortex\s+would like to:/i,
+        {
+          timeout: 30000,
+        },
+      );
+      await expect(oauthPermissionTitle).toBeVisible({ timeout: 30000 });
+    });
+
+    await test.step("Click Authorise", async () => {
+      expect(authPage).not.toBeNull();
+      if (authPage === null) {
+        throw new Error("Auth page was not available for authorisation.");
+      }
+
+      const authoriseButton = authPage
+        .locator('input[type="submit"][value="Authorise"]')
+        .first();
+      await expect(authoriseButton).toBeVisible({ timeout: 30000 });
+      await authoriseButton.click();
+
+      const authorisationSuccessTitle = authPage.locator("p.oauth__title");
+      await expect(authorisationSuccessTitle).toContainText(
+        /Authorisation successful!/i,
+        { timeout: 30000 },
+      );
+      await expect(authorisationSuccessTitle).toBeVisible({ timeout: 30000 });
+
+      // Close the external auth browser so Vortex remains the only active app window.
+      if (authBrowser !== null) {
+        await authBrowser.close();
+      }
+      authBrowser = null;
+      authContext = null;
+      authPage = null;
+    });
+    await test.step("Verify dashboard has loaded", async () => {
+      const bodyText = await vortexWindow.locator("body").innerText();
+      expect(bodyText.length).toBeGreaterThan(0);
+    });
+
+    await test.step("Return to Vortex and verify logged in state", async () => {
+      await vortexWindow.bringToFront();
+
+      const loginDialog = vortexWindow.locator("#login-dialog");
+      if (await loginDialog.isVisible({ timeout: 5000 }).catch(() => false)) {
+        await vortexWindow.keyboard.press("Escape").catch(() => undefined);
+      }
+
+      await expect(loginDialog).toBeHidden({ timeout: 60000 });
+
+      const accountButton = vortexWindow
+        .locator(
+          "#btn-login, button[title='Profile'], button[title='Log in'], button:has(img[alt]), button.hover-overlay.rounded-full",
+        )
+        .first();
+      await expect(accountButton).toBeVisible({ timeout: 60000 });
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        try {
+          await accountButton.click({ timeout: 10000 });
+          break;
+        } catch (error) {
+          if (attempt === 2) {
+            throw error;
+          }
+        }
+      }
+
+      const loggedInMenuItem = vortexWindow
+        .getByText(/view profile on web|logout/i)
+        .first();
+      await expect(loggedInMenuItem).toBeVisible({ timeout: 60000 });
     });
   });
 });
