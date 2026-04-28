@@ -57,6 +57,7 @@ import { GHOST_EXT, NAMESPACE } from "./statics";
 import Promise from "bluebird";
 import { ESPFile } from "./esp/ESPFile";
 import { access, constants } from "fs";
+import { stat as fsStat } from "fs/promises";
 import I18next from "i18next";
 import * as path from "path";
 import * as Redux from "redux";
@@ -244,7 +245,7 @@ function updatePluginListImpl(
     .then(async (fileNames: string[]) => {
       return Promise.filter(fileNames, (val) => isPlugin(modPath, val, gameId))
         .each((fileName: string) => setPluginState(modPath, fileName, true))
-        .then(() => {
+        .then(async () => {
           store.dispatch(setPluginList(pluginStates));
           if (Object.keys(pluginStates).length > 0) {
             const notDeployed = Object.keys(pluginStates).find(
@@ -1311,7 +1312,7 @@ function testMasterlistOutdated(
   );
 }
 
-function testExceededPluginLimit(
+async function testExceededPluginLimit(
   api: types.IExtensionApi,
   infoCache: PluginInfoCache,
 ): Promise<types.ITestResult> {
@@ -1402,7 +1403,7 @@ class PluginInfoCache {
     let mtime: number;
     let ino: bigint;
     try {
-      const stat = await fs.promises.stat(filePath, { bigint: true });
+      const stat = await fsStat(filePath, { bigint: true });
       mtime = Number(stat.mtimeMs);
       ino = stat.ino;
     } catch (err) {
@@ -1445,7 +1446,7 @@ function testTriggerSort(api: types.IExtensionApi): Promise<types.ITestResult> {
   });
 }
 
-function testMissingMasters(
+async function testMissingMasters(
   api: types.IExtensionApi,
   infoCache: PluginInfoCache,
 ): Promise<types.ITestResult> {
@@ -1572,7 +1573,7 @@ function testMissingMasters(
  * plugin as a master. The game strips Blueprint masters from non-Blueprint
  * plugins in memory, which destroys references and produces unresolved FormIDs.
  */
-function testBlueprintMasters(
+async function testBlueprintMasters(
   api: types.IExtensionApi,
   infoCache: PluginInfoCache,
 ): Promise<types.ITestResult> {
