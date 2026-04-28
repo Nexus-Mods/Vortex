@@ -137,6 +137,7 @@ import { getSafe } from "../../util/storeHelper";
 import {
   batchDispatch,
   delay,
+  isFilenameValid,
   isPathValid,
   setdefault,
   toPromise,
@@ -536,9 +537,24 @@ function validateVariantName(
         }),
       },
     ];
-  } else {
-    return [];
   }
+
+  // The variant name is appended to the install folder name with a "+",
+  // so it must be a valid filename — path separators would create subfolders
+  // and orphan the mod (see issue #22813).
+  if (!isFilenameValid(variantName)) {
+    return [
+      {
+        id: "variant",
+        actions: ["Continue"],
+        errorText: t(
+          'Name cannot contain path separators or any of these characters: / \\ : * ? " < > |',
+        ),
+      },
+    ];
+  }
+
+  return [];
 }
 
 async function mapWithConcurrency<T, R>(
