@@ -1,7 +1,7 @@
 {
-  "name": "gamebryo-ba2-support",
-  "version": "0.0.1",
-  "description": "Support for new Gamebryo data archives",
+  "name": "gamebryo-archive-support",
+  "version": "0.1.0",
+  "description": "Support for Gamebryo/Bethesda archives (BSA and BA2)",
   "scripts": {
     "_build": "node build.mjs && pnpm extractInfo",
     "build": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build && node ../copy-extension.mjs out)",
@@ -13,14 +13,16 @@
   "type": "commonjs",
   "private": true,
   "config": {
-    "extensionName": "Gamebryo BA2 Support"
+    "extensionName": "Gamebryo Archive Support"
   },
   "devDependencies": {
     "@types/i18next": "catalog:",
     "@types/rimraf": "catalog:",
     "bluebird": "catalog:",
     "copyfiles": "catalog:",
+    "lz4js": "^0.2.0",
     "rimraf": "catalog:",
+    "tmp": "catalog:",
     "vortex-api": "workspace:*"
   }
 }
