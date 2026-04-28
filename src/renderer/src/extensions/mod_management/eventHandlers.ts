@@ -835,6 +835,7 @@ function undeployMods(
 export function onRemoveMods(
   api: IExtensionApi,
   activators: IDeploymentMethod[],
+  installManager: InstallManager,
   gameId: string,
   modIds: string[],
   callback?: (error: Error) => void,
@@ -948,6 +949,11 @@ export function onRemoveMods(
               forwardOptions,
             );
 
+            // Tell the deployment flow this removal is expected, so the
+            // next external-changes scan auto-resolves the now-srcdeleted
+            // manifest entries instead of surfacing a confusing dialog.
+            installManager.markRecentRemoval(mod.installationPath);
+
             batched.push(removeMod(gameId, mod.id));
             if (batched.length >= 10 || completedCount + 1 === totalCount) {
               batchDispatch(store, batched);
@@ -1000,6 +1006,7 @@ export function onRemoveMods(
 export function onRemoveMod(
   api: IExtensionApi,
   activators: IDeploymentMethod[],
+  installManager: InstallManager,
   gameId: string,
   modId: string,
   callback?: (error: Error) => void,
@@ -1009,7 +1016,15 @@ export function onRemoveMod(
     callback?.(null);
     return;
   }
-  return onRemoveMods(api, activators, gameId, [modId], callback, options);
+  return onRemoveMods(
+    api,
+    activators,
+    installManager,
+    gameId,
+    [modId],
+    callback,
+    options,
+  );
 }
 
 export function onAddMod(

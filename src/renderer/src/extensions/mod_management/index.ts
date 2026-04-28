@@ -829,10 +829,11 @@ function genUpdateModDeployment(installManager: InstallManager) {
               await installManager.waitForIdle();
             }
 
-            // Consume the set of mod IDs that finished installing since the
-            // last deployment. Their external changes (refchange / srcdeleted)
-            // are expected and will be auto-resolved per-mod.
-            const recentInstalls = installManager.consumeRecentInstalls();
+            // Consume the set of installation paths whose mods finished
+            // installing or were removed since the last deployment. Their
+            // external changes (refchange / srcdeleted) are expected and
+            // will be auto-resolved per-mod.
+            const recentChanges = installManager.consumeRecentChanges();
 
             let mergeResult: { [modType: string]: IMergeResultByType };
             const lastDeployment: { [typeId: string]: IDeployedFile[] } = {};
@@ -853,6 +854,40 @@ function genUpdateModDeployment(installManager: InstallManager) {
                 activator,
               );
               lastDeployment[typeId] = deployedFiles;
+            }
+
+            // Drop manifest entries whose source mod is no longer in Redux
+            // state. These are orphans from a prior remove (or any operation
+            // that failed to clean up the manifest synchronously) and would
+            // otherwise surface as srcdeleted/refchange against the user
+            // dialog on every subsequent deploy — including across restarts,
+            // when the in-memory recentChanges allow-list is empty. Merged
+            // entries are preserved: they belong to the merge step, not to
+            // any specific mod.
+            if (Object.keys(mods).length > 0) {
+              const knownInstallationPaths = new Set<string>(
+                Object.values(mods)
+                  .map((mod) => mod.installationPath)
+                  .filter(
+                    (p): p is string => typeof p === "string" && p.length > 0,
+                  ),
+              );
+              for (const typeId of Object.keys(lastDeployment)) {
+                const before = lastDeployment[typeId].length;
+                lastDeployment[typeId] = lastDeployment[typeId].filter(
+                  (entry) =>
+                    path.basename(entry.source).startsWith(MERGED_PATH) ||
+                    knownInstallationPaths.has(entry.source),
+                );
+                const dropped = before - lastDeployment[typeId].length;
+                if (dropped > 0) {
+                  log("info", "dropped orphan manifest entries", {
+                    typeId,
+                    dropped,
+                    remaining: lastDeployment[typeId].length,
+                  });
+                }
+              }
             }
 
             progress(t("Running pre-deployment events"), 2);
@@ -883,7 +918,7 @@ function genUpdateModDeployment(installManager: InstallManager) {
               stagingPath,
               modPaths,
               lastDeployment,
-              recentInstalls,
+              recentChanges,
             );
 
             progress(t("Checking for mod incompatibilities"), 25);
@@ -1845,7 +1880,16 @@ function once(api: IExtensionApi) {
       modId: string,
       cb?: (error: Error) => void,
       options?: IRemoveModOptions,
-    ) => onRemoveMod(api, getAllActivators(), gameId, modId, cb, options),
+    ) =>
+      onRemoveMod(
+        api,
+        getAllActivators(),
+        installManager,
+        gameId,
+        modId,
+        cb,
+        options,
+      ),
   );
 
   api.events.on(
@@ -1856,7 +1900,15 @@ function once(api: IExtensionApi) {
       cb?: (error: Error) => void,
       options?: IRemoveModOptions,
     ) => {
-      onRemoveMods(api, getAllActivators(), gameId, modIds, cb, options);
+      onRemoveMods(
+        api,
+        getAllActivators(),
+        installManager,
+        gameId,
+        modIds,
+        cb,
+        options,
+      );
     },
   );
 
