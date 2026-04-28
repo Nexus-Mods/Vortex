@@ -3,8 +3,6 @@
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-<<<<<<< HEAD
-=======
 
 ## [2.0.0-beta.2] - 2026-04-27
 
@@ -35,7 +33,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 - Spurious error notification for discarded collection revisions and collections under moderation ([#22717](https://github.com/Nexus-Mods/Vortex/pull/22717))
 - Failed Gamebryo plugin light-flag changes (eslify) recorded as successful history entries ([#22803](https://github.com/Nexus-Mods/Vortex/pull/22803))
 - Morrowind plugin scan aborting the whole loop when a single mod's install directory was missing or inaccessible ([#22714](https://github.com/Nexus-Mods/Vortex/pull/22714))
->>>>>>> 323a4148f (Merge pull request #22846 from Nexus-Mods/beta2-changelog)
 
 ## [2.0.0-beta.1] - 2026-04-14
 
@@ -1733,7 +1730,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
-<<<<<<< HEAD
+[2.0.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.0.0-beta.2
 [2.0.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/v2.0.0-beta.1
 [2.0.0-alpha.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/v2.0.0-alpha.4
 [2.0.0-alpha.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/v2.0.0-alpha.3
@@ -1741,14 +1738,6 @@ _Yanked due to critical issue found with file overrides_
 [2.0.0-alpha.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/v2.0.0-alpha.1
 [1.16.9]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.9
 [1.16.8]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.8
-=======
-[2.0.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.0.0-beta.2
-[2.0.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.0.0-beta.1
-[2.0.0-alpha.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.0.0-alpha.4
-[2.0.0-alpha.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.0.0-alpha.3
-[2.0.0-alpha.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.0.0-alpha.2
-[2.0.0-alpha.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.0.0-alpha.1
->>>>>>> 323a4148f (Merge pull request #22846 from Nexus-Mods/beta2-changelog)
 [1.16.7]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.7
 [1.16.6]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.6
 [1.16.5]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.5
