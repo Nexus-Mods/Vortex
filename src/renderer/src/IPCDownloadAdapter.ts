@@ -471,7 +471,12 @@ export class IPCDownloadAdapter {
         () => false,
       );
       if (fileExists) {
-        callback?.(new AlreadyDownloaded(fileName));
+        const downloads = state.persistent.downloads.files;
+        const [existingId, _] = Object.entries(downloads).find(
+          ([_, download]) => download.localPath === fileName,
+        );
+
+        callback?.(new AlreadyDownloaded(fileName, existingId));
         return;
       }
     }
