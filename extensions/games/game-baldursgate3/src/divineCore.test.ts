@@ -44,7 +44,14 @@ describe.skipIf(!isWindows)('divineCore end-to-end', () => {
 
   afterAll(async () => {
     if (tempDir) {
-      await fs.rm(tempDir, { recursive: true, force: true });
+      // A SIGTERM-killed divine.exe can leave a brief Windows file lock on
+      // the pak it was writing; retry on EBUSY/EPERM/ENOTEMPTY.
+      await fs.rm(tempDir, {
+        recursive: true,
+        force: true,
+        maxRetries: 5,
+        retryDelay: 200,
+      });
     }
   });
 
