@@ -5,7 +5,7 @@ import type {
   SpanProcessor,
 } from "@opentelemetry/sdk-trace-base";
 
-import { AsyncLocalStorageContextManager } from "@opentelemetry/context-async-hooks";
+import { ZoneContextManager } from "@opentelemetry/context-zone";
 import { BasicTracerProvider } from "@opentelemetry/sdk-trace-base";
 import { serializeSpan } from "@vortex/shared/telemetry";
 
@@ -54,10 +54,18 @@ export const createRendererTelemetryProvider = async (): Promise<void> => {
       spanProcessors: [new ForwardingSpanProcessor()],
     });
     provider.register({
-      // TODO: Switch to ZoneContextManager when Node.js is removed from renderer
-      contextManager: new AsyncLocalStorageContextManager(),
+      // ZoneContextManager (Zone.js) tracks async context entirely in
+      // userland — it patches Promise/setTimeout/microtasks/etc. and does
+      // not touch Node async hooks. AsyncLocalStorageContextManager crashes
+      // in the renderer under Node 24 because V8's AsyncContextFrame and
+      // Chromium fight over the `continuationPreservedEmbedderData` slot.
+      // Zone.js sidesteps that and stays valid when Node integration is
+      // eventually removed from the renderer.
+      contextManager: new ZoneContextManager(),
     });
 
+    // Bluebird bypasses the global Promise prototype that Zone.js patches,
+    // so cross-bluebird `.then()` boundaries still need an explicit hop.
     patchBluebirdContext();
   } catch (err) {
     log("error", "Failed to create renderer telemetry provider", {
