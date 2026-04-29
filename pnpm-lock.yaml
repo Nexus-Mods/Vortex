@@ -970,9 +970,6 @@ importers:
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4dd3460c2d02d93ba8f1bbeeeb2c5fa9af039a67
-      '@types/jest':
-        specifier: 'catalog:'
-        version: 29.5.14
       '@types/lodash':
         specifier: 'catalog:'
         version: 4.17.24
