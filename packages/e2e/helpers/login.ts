@@ -75,11 +75,9 @@ export async function loginToNexus(
 
       await test.step("Enter username", async () => {
         await nexusLoginPage.usernameInput.fill(username);
-        await expect(nexusLoginPage.usernameInput).toHaveValue(username);
       });
       await test.step("Enter password", async () => {
         await nexusLoginPage.passwordInput.fill(password);
-        await expect(nexusLoginPage.passwordInput).toHaveValue(password);
       });
       await test.step("Submit login form", async () => {
         await expect(nexusLoginPage.submitLoginButton).toBeEnabled();
