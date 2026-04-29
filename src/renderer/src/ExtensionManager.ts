@@ -24,7 +24,6 @@ import { toast } from "react-hot-toast";
 import * as semver from "semver";
 import { generate as shortid } from "shortid";
 import stringFormat from "string-template";
-import { fileMD5 } from "./util/checksum";
 
 import type {
   DialogActions,
@@ -89,6 +88,7 @@ import {
 import { suppressNotification } from "./actions/notificationSettings";
 import { setExtensionLoadFailures } from "./actions/session";
 import { setOptionalExtensions } from "./extensions/extension_manager/actions";
+import { IPCDownloadAdapter } from "./IPCDownloadAdapter";
 import { log } from "./logging";
 import { registerSanityCheck } from "./store/reduxSanity";
 import ReduxWatcher from "./store/ReduxWatcher";
@@ -96,6 +96,7 @@ import { computeStateDiff } from "./store/stateDiff";
 import StyleManager from "./StyleManager";
 import { getApplication } from "./util/application";
 import { Archive } from "./util/archives";
+import { fileMD5 } from "./util/checksum";
 import { COMPANY_ID } from "./util/constants";
 import {
   MissingDependency,
@@ -133,7 +134,7 @@ import {
   wrapExtCBSync,
 } from "./util/util";
 import { webpackRequireHack } from "./util/webpack-hacks";
-import { IPCDownloadAdapter } from "./IPCDownloadAdapter";
+import { isToastSystemDisabled } from "./views/layout/ToastContainer";
 
 const modmeta = lazyRequire<typeof modmetaT>(() => require("modmeta-db"));
 
@@ -1698,6 +1699,9 @@ class ExtensionManager {
   };
 
   private canBeToast = (notif: INotification) => {
+    if (isToastSystemDisabled()) {
+      return false;
+    }
     const invalidToastTypes = ["activity", "warning"];
     if (
       notif.displayMS != null &&
