@@ -4051,7 +4051,7 @@ importers:
         version: 3.6.1
       electron-redux:
         specifier: 'catalog:'
-        version: git+https://github.com/TanninOne/electron-redux.git#66bbd9d389579806e8c4ebd87bd513a668cc64a8
+        version: https://codeload.github.com/TanninOne/electron-redux/tar.gz/66bbd9d389579806e8c4ebd87bd513a668cc64a8
       electron-updater:
         specifier: 'catalog:'
         version: 4.6.5
@@ -4698,7 +4698,7 @@ importers:
         version: 3.6.1
       electron-redux:
         specifier: 'catalog:'
-        version: git+https://github.com/TanninOne/electron-redux.git#66bbd9d389579806e8c4ebd87bd513a668cc64a8
+        version: https://codeload.github.com/TanninOne/electron-redux/tar.gz/66bbd9d389579806e8c4ebd87bd513a668cc64a8
       electron-updater:
         specifier: 'catalog:'
         version: 4.6.5
@@ -8766,8 +8766,8 @@ packages:
   electron-publish@24.13.1:
     resolution: {integrity: sha512-2ZgdEqJ8e9D17Hwp5LEq5mLQPjqU3lv/IALvgp+4W8VeNhryfGhYEQC/PgDPMrnWUp+l60Ou5SJLsu+k4mhQ8A==}
 
-  electron-redux@git+https://github.com/TanninOne/electron-redux.git#66bbd9d389579806e8c4ebd87bd513a668cc64a8:
-    resolution: {commit: 66bbd9d389579806e8c4ebd87bd513a668cc64a8, repo: https://github.com/TanninOne/electron-redux.git, type: git}
+  electron-redux@https://codeload.github.com/TanninOne/electron-redux/tar.gz/66bbd9d389579806e8c4ebd87bd513a668cc64a8:
+    resolution: {tarball: https://codeload.github.com/TanninOne/electron-redux/tar.gz/66bbd9d389579806e8c4ebd87bd513a668cc64a8}
     version: 1.4.9-sync
 
   electron-to-chromium@1.5.325:
@@ -17099,7 +17099,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  electron-redux@git+https://github.com/TanninOne/electron-redux.git#66bbd9d389579806e8c4ebd87bd513a668cc64a8:
+  electron-redux@https://codeload.github.com/TanninOne/electron-redux/tar.gz/66bbd9d389579806e8c4ebd87bd513a668cc64a8:
     dependencies:
       debug: 3.2.7
       flux-standard-action: 2.1.2
