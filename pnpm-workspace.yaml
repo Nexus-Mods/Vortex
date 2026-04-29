@@ -14,7 +14,6 @@ allowBuilds:
   "@nexusmods/fomod-installer-native": true
   "@parcel/watcher": true
   bsatk: true
-  bsdiff-node: true
   core-js: true
   crash-dump: true
   diskusage: true
@@ -44,6 +43,7 @@ catalog:
   "@eslint-react/eslint-plugin": 2.3.7
   "@eslint/js": 9.39.1
   "@headlessui/react": ^1.7.19
+  '@hot-updater/bsdiff': ^0.30.6
   "@iarna/toml": ^2.2.5
   "@mdi/js": 7.4.47
   "@microsoft/api-extractor": ^7.57.6
@@ -136,7 +136,6 @@ catalog:
   bootstrap-sass: ^3.4.1
   bs58: ^4.0.1
   bsatk: git+https://github.com/Nexus-Mods/node-bsatk#5a3d15fae2177bfb0a42b794d3afb21eda563c59
-  bsdiff-node: git+https://github.com/Nexus-Mods/bsdiff-node#a2bd60f5f96d172892b7f6708fb9a7a212b3b2e5
   classnames: ^2.2.6
   cli-table3: ^0.6.5
   commander: ^4.0.1
