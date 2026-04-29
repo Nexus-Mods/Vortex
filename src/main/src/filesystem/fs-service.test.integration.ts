@@ -7,7 +7,7 @@
  * `bootstrap.ts` would do at runtime, driven from the test process.
  */
 
-import type { IMethodMessage } from "@vortex/adaptor-api";
+import type { IMethodMessage } from "@nexusmods/adaptor-api";
 
 import { FileSystemError, QualifiedPath } from "@vortex/fs";
 import * as fs from "node:fs/promises";

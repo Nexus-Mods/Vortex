@@ -1,6 +1,6 @@
 {
   "$schema": "https://www.schemastore.org/package.json",
-  "name": "@vortex/adaptor-api",
+  "name": "@nexusmods/adaptor-api",
   "version": "1.0.0",
   "private": true,
   "type": "module",

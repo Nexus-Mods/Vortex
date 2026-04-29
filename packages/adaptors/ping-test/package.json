@@ -15,9 +15,9 @@
     "vortex:host/ping"
   ],
   "devDependencies": {
-    "@vortex/adaptor-api": "workspace:*"
+    "@nexusmods/adaptor-api": "workspace:*"
   },
   "peerDependencies": {
-    "@vortex/adaptor-api": "workspace:*"
+    "@nexusmods/adaptor-api": "workspace:*"
   }
 }

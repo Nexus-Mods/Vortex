@@ -412,7 +412,7 @@ export interface AdaptorsApi {
   ): Promise<unknown>;
   /**
    * Builds a store-path snapshot for a discovered game. The returned
-   * value is a `StorePathSnapshot` from `@vortex/adaptor-api/stores/lib`
+   * value is a `StorePathSnapshot` from `@nexusmods/adaptor-api/stores/lib`
    * (the renderer sees it as `unknown` to avoid dragging the adaptor-api
    * types into the preload surface; the bridge casts locally).
    */

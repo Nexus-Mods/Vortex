@@ -1,4 +1,4 @@
-import { uri } from "@vortex/adaptor-api";
+import { uri } from "@nexusmods/adaptor-api";
 import * as path from "node:path";
 import { describe, expect, it, beforeAll, afterAll } from "vitest";
 

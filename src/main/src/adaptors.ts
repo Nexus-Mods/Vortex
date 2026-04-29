@@ -1,11 +1,11 @@
-import type { IMessageHandler } from "@vortex/adaptor-api";
-import type { GameInfo } from "@vortex/adaptor-api/contracts/game-info";
-import type { IPingService } from "@vortex/adaptor-api/contracts/ping";
-import type { StorePathSnapshot } from "@vortex/adaptor-api/stores/lib";
+import type { IMessageHandler } from "@nexusmods/adaptor-api";
+import type { GameInfo } from "@nexusmods/adaptor-api/contracts/game-info";
+import type { IPingService } from "@nexusmods/adaptor-api/contracts/ping";
+import type { StorePathSnapshot } from "@nexusmods/adaptor-api/stores/lib";
 import type { IFileSystem, PathResolver } from "@vortex/fs";
 import type { Serializable } from "@vortex/shared/ipc";
 
-import { Base, OS, Store } from "@vortex/adaptor-api/stores/lib";
+import { Base, OS, Store } from "@nexusmods/adaptor-api/stores/lib";
 import { QualifiedPath } from "@vortex/fs";
 import type exeVersionT from "exe-version";
 import { ipcMain } from "electron";

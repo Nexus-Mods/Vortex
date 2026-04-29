@@ -1,12 +1,12 @@
-import type { IAdaptorManifest, IMethodMessage } from "@vortex/adaptor-api";
+import type { IAdaptorManifest, IMethodMessage } from "@nexusmods/adaptor-api";
 
-import * as adaptorApi from "@vortex/adaptor-api";
+import * as adaptorApi from "@nexusmods/adaptor-api";
 import {
   getProvidedUri,
   uri as validateUri,
   adaptorName,
   semVer,
-} from "@vortex/adaptor-api";
+} from "@nexusmods/adaptor-api";
 import * as fsApi from "@vortex/fs";
 import vm from "node:vm";
 import { parentPort } from "node:worker_threads";
@@ -37,7 +37,7 @@ const init = await transport.once<InitMessage>("init");
 const { bundle, config } = init;
 
 const allowedModules: Record<string, unknown> = {
-  "@vortex/adaptor-api": adaptorApi,
+  "@nexusmods/adaptor-api": adaptorApi,
   "@vortex/fs": fsApi,
 };
 
@@ -64,7 +64,7 @@ for (const requiresUri of config.requires) {
 
 // Step 3: Evaluate the bundle in a VM context. The container is exposed
 // on BOTH the VM context's globalThis (so code running inside the bundle
-// sees it) and the worker's globalThis (because `@vortex/adaptor-api`'s
+// sees it) and the worker's globalThis (because `@nexusmods/adaptor-api`'s
 // `getContainer()` is a host-realm function, linked into the VM via
 // SyntheticModule but still retaining its original realm's globalThis).
 (

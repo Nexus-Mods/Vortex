@@ -1,4 +1,4 @@
-import type { IMessage, IMessageHandler } from "@vortex/adaptor-api";
+import type { IMessage, IMessageHandler } from "@nexusmods/adaptor-api";
 import type { StatResult } from "@vortex/fs";
 
 import * as fs from "node:fs/promises";

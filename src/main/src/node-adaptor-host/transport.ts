@@ -1,4 +1,4 @@
-import type { IMethodMessage } from "@vortex/adaptor-api";
+import type { IMethodMessage } from "@nexusmods/adaptor-api";
 
 import { getErrorMessage } from "@vortex/shared";
 

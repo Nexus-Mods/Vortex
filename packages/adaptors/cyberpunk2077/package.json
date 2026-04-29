@@ -13,11 +13,11 @@
   "main": "./dist/index.mjs",
   "vortex:requires": [],
   "devDependencies": {
-    "@vortex/adaptor-api": "workspace:*",
+    "@nexusmods/adaptor-api": "workspace:*",
     "@vortex/fs": "workspace:*"
   },
   "peerDependencies": {
-    "@vortex/adaptor-api": "workspace:*",
+    "@nexusmods/adaptor-api": "workspace:*",
     "@vortex/fs": "workspace:*"
   }
 }

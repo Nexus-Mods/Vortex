@@ -14,7 +14,7 @@
     "lib": ["ESNext"],
     "isolatedDeclarations": true,
     "paths": {
-      "@vortex/adaptor-api": ["./src/lib.ts"]
+      "@nexusmods/adaptor-api": ["./src/lib.ts"]
     }
   }
 }
