@@ -76,12 +76,18 @@ jobs:
         timeout-minutes: 30
         continue-on-error: true
         run: pnpm e2e
+        env:
+          E2E_NEXUS_FREE_USER_USERNAME: ${{ secrets.E2E_NEXUS_FREE_USER_USERNAME }}
+          E2E_NEXUS_FREE_USER_PASSWORD: ${{ secrets.E2E_NEXUS_FREE_USER_PASSWORD }}
 
       - name: Run E2E tests (Linux)
         if: runner.os == 'Linux'
         timeout-minutes: 30
         continue-on-error: true
         run: xvfb-run pnpm e2e
+        env:
+          E2E_NEXUS_FREE_USER_USERNAME: ${{ secrets.E2E_NEXUS_FREE_USER_USERNAME }}
+          E2E_NEXUS_FREE_USER_PASSWORD: ${{ secrets.E2E_NEXUS_FREE_USER_PASSWORD }}
 
       - name: Upload test report
         if: always()
