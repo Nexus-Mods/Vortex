@@ -40,6 +40,9 @@ catalogs:
     '@headlessui/react':
       specifier: ^1.7.19
       version: 1.7.19
+    '@hot-updater/bsdiff':
+      specifier: ^0.30.6
+      version: 0.30.6
     '@iarna/toml':
       specifier: ^2.2.5
       version: 2.2.5
@@ -964,6 +967,9 @@ importers:
       7z-bin:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/3298c42e69e3220dc39694bc2f610c077c3e213a
+      '@hot-updater/bsdiff':
+        specifier: 'catalog:'
+        version: 0.30.6
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4192c0c9f34306c2167e258dd4fef773af406161
@@ -4051,7 +4057,7 @@ importers:
         version: 3.6.1
       electron-redux:
         specifier: 'catalog:'
-        version: https://codeload.github.com/TanninOne/electron-redux/tar.gz/66bbd9d389579806e8c4ebd87bd513a668cc64a8
+        version: git+https://github.com/TanninOne/electron-redux.git#66bbd9d389579806e8c4ebd87bd513a668cc64a8
       electron-updater:
         specifier: 'catalog:'
         version: 4.6.5
@@ -4698,7 +4704,7 @@ importers:
         version: 3.6.1
       electron-redux:
         specifier: 'catalog:'
-        version: https://codeload.github.com/TanninOne/electron-redux/tar.gz/66bbd9d389579806e8c4ebd87bd513a668cc64a8
+        version: git+https://github.com/TanninOne/electron-redux.git#66bbd9d389579806e8c4ebd87bd513a668cc64a8
       electron-updater:
         specifier: 'catalog:'
         version: 4.6.5
@@ -5720,6 +5726,9 @@ packages:
     peerDependencies:
       react: ^16 || ^17 || ^18
       react-dom: ^16 || ^17 || ^18
+
+  '@hot-updater/bsdiff@0.30.6':
+    resolution: {integrity: sha512-Ux8WyYsYXlU13TahGCHHa3EQpfDQukGm0REFQEz7IxRXYFJf0+oOB0k8e+j+V9j53WXbUFdoRq+FIB+gMC2iLQ==}
 
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
@@ -8767,8 +8776,8 @@ packages:
   electron-publish@24.13.1:
     resolution: {integrity: sha512-2ZgdEqJ8e9D17Hwp5LEq5mLQPjqU3lv/IALvgp+4W8VeNhryfGhYEQC/PgDPMrnWUp+l60Ou5SJLsu+k4mhQ8A==}
 
-  electron-redux@https://codeload.github.com/TanninOne/electron-redux/tar.gz/66bbd9d389579806e8c4ebd87bd513a668cc64a8:
-    resolution: {tarball: https://codeload.github.com/TanninOne/electron-redux/tar.gz/66bbd9d389579806e8c4ebd87bd513a668cc64a8}
+  electron-redux@git+https://github.com/TanninOne/electron-redux.git#66bbd9d389579806e8c4ebd87bd513a668cc64a8:
+    resolution: {commit: 66bbd9d389579806e8c4ebd87bd513a668cc64a8, repo: https://github.com/TanninOne/electron-redux.git, type: git}
     version: 1.4.9-sync
 
   electron-to-chromium@1.5.325:
@@ -13851,6 +13860,8 @@ snapshots:
       react: 16.14.0
       react-dom: 16.14.0(react@16.14.0)
 
+  '@hot-updater/bsdiff@0.30.6': {}
+
   '@humanfs/core@0.19.1': {}
 
   '@humanfs/node@0.16.7':
@@ -15512,7 +15523,7 @@ snapshots:
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      vite: 8.0.3(@types/node@25.5.0)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.1)
+      vite: 8.0.3(@types/node@22.19.15)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.1)
 
   '@vitest/pretty-format@4.1.0':
     dependencies:
@@ -17102,7 +17113,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  electron-redux@https://codeload.github.com/TanninOne/electron-redux/tar.gz/66bbd9d389579806e8c4ebd87bd513a668cc64a8:
+  electron-redux@git+https://github.com/TanninOne/electron-redux.git#66bbd9d389579806e8c4ebd87bd513a668cc64a8:
     dependencies:
       debug: 3.2.7
       flux-standard-action: 2.1.2

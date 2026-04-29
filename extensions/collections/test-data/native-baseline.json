@@ -1,0 +1,52 @@
+{
+  "1kb-5pct": {
+    "fileSize": 1024,
+    "diffMs": 8.08,
+    "patchMs": 3.56,
+    "patchFileSize": 164,
+    "roundTripMatch": true,
+    "oldMd5": "e718e61cd43646a41289dcaf49eefb81",
+    "newMd5": "f90412fd7a9796c409e1187ff643d09a",
+    "patchedMd5": "f90412fd7a9796c409e1187ff643d09a"
+  },
+  "10kb-5pct": {
+    "fileSize": 10240,
+    "diffMs": 6.76,
+    "patchMs": 3.44,
+    "patchFileSize": 256,
+    "roundTripMatch": true,
+    "oldMd5": "82803c454edce71d5681a5a69989422e",
+    "newMd5": "3bcbe9a3bbfb555c1767abd6938bbdb1",
+    "patchedMd5": "3bcbe9a3bbfb555c1767abd6938bbdb1"
+  },
+  "100kb-5pct": {
+    "fileSize": 102400,
+    "diffMs": 37.54,
+    "patchMs": 3.9,
+    "patchFileSize": 866,
+    "roundTripMatch": true,
+    "oldMd5": "8f0cef9081d68c1df08888985522873e",
+    "newMd5": "7063ceadf087e7b1b99505ed8239dd49",
+    "patchedMd5": "7063ceadf087e7b1b99505ed8239dd49"
+  },
+  "1mb-5pct": {
+    "fileSize": 1048576,
+    "diffMs": 129.58,
+    "patchMs": 7.29,
+    "patchFileSize": 2940,
+    "roundTripMatch": true,
+    "oldMd5": "33c82ac60af26bc1d08a64f9247b62f3",
+    "newMd5": "b489de2ec4d4b4f84fef69e7b070cba8",
+    "patchedMd5": "b489de2ec4d4b4f84fef69e7b070cba8"
+  },
+  "10kb-1byte": {
+    "fileSize": 10240,
+    "diffMs": 4.98,
+    "patchMs": 3.61,
+    "patchFileSize": 149,
+    "roundTripMatch": true,
+    "oldMd5": "bddf64ec3be46749da75440ee19362fc",
+    "newMd5": "295be2df8cfc507ac2d630305f72cf1d",
+    "patchedMd5": "295be2df8cfc507ac2d630305f72cf1d"
+  }
+}

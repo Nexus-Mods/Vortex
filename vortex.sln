@@ -38,8 +38,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "node-loot", "extensions\gam
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GamebryoSave", "extensions\gamebryo-savegame-management\node_modules\gamebryo-savegame\build\GamebryoSave.vcxproj", "{FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bsdiff", "extensions\collections\node_modules\bsdiff-node\build\bsdiff.vcxproj", "{10101010-1010-1010-1010-101010101010}"
-EndProject
 
 # Solution Folders
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{20202020-2020-2020-2020-202020202020}"
@@ -209,14 +207,6 @@ Global
 		{FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF}.Release|x64.ActiveCfg = Release|x64
 		{FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF}.Release|x64.Build.0 = Release|x64
 		{FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF}.Release|x86.ActiveCfg = Release|x64
-		{10101010-1010-1010-1010-101010101010}.Debug|Any CPU.ActiveCfg = Debug|x64
-		{10101010-1010-1010-1010-101010101010}.Debug|x64.ActiveCfg = Debug|x64
-		{10101010-1010-1010-1010-101010101010}.Debug|x64.Build.0 = Debug|x64
-		{10101010-1010-1010-1010-101010101010}.Debug|x86.ActiveCfg = Debug|x64
-		{10101010-1010-1010-1010-101010101010}.Release|Any CPU.ActiveCfg = Release|x64
-		{10101010-1010-1010-1010-101010101010}.Release|x64.ActiveCfg = Release|x64
-		{10101010-1010-1010-1010-101010101010}.Release|x64.Build.0 = Release|x64
-		{10101010-1010-1010-1010-101010101010}.Release|x86.ActiveCfg = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -236,7 +226,6 @@ Global
 		{CCCCCCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC} = {50505050-5050-5050-5050-505050505050}
 		{EEEEEEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE} = {50505050-5050-5050-5050-505050505050}
 		{FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF} = {50505050-5050-5050-5050-505050505050}
-		{10101010-1010-1010-1010-101010101010} = {40404040-4040-4040-4040-404040404040}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {12345678-1234-1234-1234-123456789012}
