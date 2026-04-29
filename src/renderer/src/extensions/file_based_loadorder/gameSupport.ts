@@ -45,6 +45,35 @@ export function addGameEntry(gameEntry: ILoadOrderGameInfo, extPath: string) {
   });
 }
 
+/**
+ * Registers a load order entry without reading info.json from disk.
+ * Used by the adaptor bridge where there is no extension directory
+ * to inspect but the registration is always first-party.
+ */
+export function addGameEntryInline(
+  gameEntry: ILoadOrderGameInfo,
+  isContributed: boolean = false,
+): void {
+  if (gameEntry === undefined) {
+    log("error", "unable to add load order page - invalid game entry");
+    return;
+  }
+
+  const isDuplicate: boolean =
+    gameSupport.find((game) => game.gameId === gameEntry.gameId) !== undefined;
+
+  if (isDuplicate) {
+    log(
+      "debug",
+      "attempted to add duplicate gameEntry to load order extension",
+      gameEntry.gameId,
+    );
+    return;
+  }
+
+  gameSupport.push({ ...gameEntry, isContributed });
+}
+
 export function findGameEntry(gameId: string): ILoadOrderGameInfoExt {
   return gameSupport.find((game) => game.gameId === gameId);
 }

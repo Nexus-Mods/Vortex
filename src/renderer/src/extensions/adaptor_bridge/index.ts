@@ -38,6 +38,10 @@ import * as path from "path";
 
 import type { IExtensionContext } from "../../types/IExtensionContext";
 import type { IInstruction } from "../../extensions/mod_management/types/IInstallResult";
+import {
+  addDiscoveredGame,
+} from "../gamemode_management/actions/settings";
+import { setKnownGames } from "../gamemode_management/actions/session";
 
 import { log } from "../../util/log";
 
@@ -154,6 +158,17 @@ export function getAdaptorInstaller(
 export function adaptorInstallerGameIds(): readonly string[] {
   return [...installerRegistry.keys()];
 }
+
+/**
+ * Registry of per-game prelaunch info, keyed by game ID. Populated
+ * during setup when the adaptor provides a prelaunch service.
+ */
+interface PrelaunchInfo {
+  adaptorName: string;
+  prelaunchUri: string;
+  paths: unknown;
+}
+const prelaunchRegistry = new Map<string, PrelaunchInfo>();
 
 /**
  * Validates that an adaptor's `install()` reply matches the
@@ -281,6 +296,112 @@ function buildQueryArgs(
 }
 
 // ---------------------------------------------------------------------------
+// Load order bridge
+// ---------------------------------------------------------------------------
+
+/**
+ * Bridges a single adaptor load order definition into Vortex's
+ * file_based_loadorder system. The serialize/deserialize/validate
+ * callbacks delegate to the adaptor's IGameLoadOrderService via IPC.
+ */
+function registerAdaptorLoadOrder(
+  context: IExtensionContext,
+  adaptorName: string,
+  gameId: string,
+  loadOrderUri: string,
+  paths: OpaqueGamePaths,
+  definition: { id: string; displayName: string; description?: string },
+): void {
+  const { id: loId, displayName, description } = definition;
+
+  // Use the runtime API exposed by FBLO so this works after init.
+  const addLoadOrderPage = context.api.ext.addLoadOrderPage as
+    | ((info: Record<string, unknown>, isContributed?: boolean) => void)
+    | undefined;
+
+  if (!addLoadOrderPage) {
+    log(
+      "warn",
+      "[adaptor-bridge] addLoadOrderPage API not available, skipping {{lo}}",
+      { lo: loId },
+    );
+    return;
+  }
+
+  log(
+    "info",
+    "[adaptor-bridge] Registering load order: {{gameId}}/{{lo}} ({{name}})",
+    { gameId, lo: loId, name: displayName },
+  );
+
+  addLoadOrderPage(
+    {
+      gameId,
+      toggleableEntries: true,
+      clearStateOnPurge: false,
+      usageInstructions: description,
+
+      deserializeLoadOrder: async () => {
+        const state = (await callAdaptor(
+          adaptorName,
+          loadOrderUri,
+          "getLoadOrderState",
+          [paths, loId],
+        )) as {
+          entries: Array<{
+            id: string;
+            name: string;
+            enabled: boolean;
+            locked?: boolean;
+            data?: Record<string, unknown>;
+          }>;
+        };
+
+        return state.entries.map((e) => ({
+          id: e.id,
+          name: e.name,
+          enabled: e.enabled,
+          locked: e.locked ? "true" : "false",
+          data: e.data,
+        }));
+      },
+
+      serializeLoadOrder: async (
+        loadOrder: Array<{
+          id: string;
+          name: string;
+          enabled: boolean;
+          data?: unknown;
+        }>,
+      ) => {
+        const entries = loadOrder.map((e) => ({
+          id: e.id,
+          name: e.name,
+          enabled: e.enabled,
+          data: e.data as Record<string, unknown> | undefined,
+        }));
+        await callAdaptor(adaptorName, loadOrderUri, "setEntryOrder", [
+          paths,
+          loId,
+          entries,
+        ]);
+        await callAdaptor(adaptorName, loadOrderUri, "serializeToDisk", [
+          paths,
+          loId,
+        ]);
+      },
+
+      validate: async () => {
+        // Validation is handled by the adaptor's sorting rules.
+        // For now, accept all orderings.
+        return undefined;
+      },
+    },
+    false, // not contributed - adaptor bridge is first-party
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Per-adaptor registration
 // ---------------------------------------------------------------------------
 
@@ -321,6 +442,8 @@ function registerAdaptor(
   const pathsUri = findService("paths");
   const toolsUri = findService("tools");
   const installerUri = findService("installer");
+  const loadOrderUri = findService("load-order");
+  const prelaunchUri = findService("prelaunch");
 
   // An adaptor must at least provide game info to be a game adaptor
   if (!infoUri) return;
@@ -525,22 +648,40 @@ function registerAdaptor(
           const version = await getVersion(paths);
           if (version && version !== "0.0.0") {
             detectedVersions.set(gameId, version);
-            log(
-              "info",
-              "[adaptor-bridge] {{gameId}} version: {{version}}",
-              { gameId, version },
-            );
+            log("info", "[adaptor-bridge] {{gameId}} version: {{version}}", {
+              gameId,
+              version,
+            });
           }
 
           // Step 3: Resolve tools (depends on paths)
           const tools = await getTools(paths);
 
           // Step 4: Wire the game executable from the tools service.
-          // The executable is a QualifiedPath; .path gives the
-          // relative portion within its anchor (per-store resolved).
-          if (tools?.game?.executable?.path) {
-            resolvedExecutable = tools.game.executable.path;
-            discovery.executable = resolvedExecutable;
+          // The executable QP is absolute; StarterInfo expects a path
+          // relative to the game directory, so convert to native and
+          // compute relative from gamePath.
+          if (tools?.game?.executable) {
+            const exeNative = qpPathToNative(
+              tools.game.executable as unknown as SerializedQP,
+            );
+            resolvedExecutable = path.relative(gamePath, exeNative);
+            // Update the persisted discovery so StarterInfo picks up
+            // the real executable on subsequent launches.
+            context.api.store.dispatch(
+              addDiscoveredGame(gameId, { executable: resolvedExecutable }),
+            );
+            // Also patch the session-only known games list so the
+            // current session's StarterInfo uses the resolved exe
+            // instead of the placeholder ".".
+            const known = context.api.store.getState().session.gameMode
+              .known as Array<{ id: string; executable: string }>;
+            const updated = known.map((g) =>
+              g.id === gameId
+                ? { ...g, executable: resolvedExecutable }
+                : g,
+            );
+            context.api.store.dispatch(setKnownGames(updated));
           }
 
           // Step 5: Populate supported tools (additional launchers, etc.)
@@ -602,6 +743,55 @@ function registerAdaptor(
           // adaptor's stop-pattern resolver.
           if (installerUri && pathsUri && paths !== null) {
             installerRegistry.set(gameId, invokeInstaller);
+          }
+
+          // Step 8: Register load orders with Vortex's FBLO system.
+          // Each adaptor load order definition becomes a separate
+          // registerLoadOrder entry that bridges serialize/deserialize
+          // calls to the adaptor's IGameLoadOrderService via IPC.
+          if (loadOrderUri && paths !== null) {
+            try {
+              const loadOrders = (await callAdaptor(
+                name,
+                loadOrderUri,
+                "getLoadOrders",
+                [paths],
+              )) as Array<{
+                id: string;
+                displayName: string;
+                description?: string;
+              }>;
+
+              for (const lo of loadOrders) {
+                registerAdaptorLoadOrder(
+                  context,
+                  name,
+                  gameId,
+                  loadOrderUri,
+                  paths,
+                  lo,
+                );
+              }
+            } catch (err) {
+              log(
+                "warn",
+                "[adaptor-bridge] Failed to register load orders for {{name}}: {{error}}",
+                {
+                  name,
+                  error: err instanceof Error ? err.message : "Unknown error",
+                },
+              );
+            }
+          }
+
+          // Step 9: Store prelaunch info so the start hook can query
+          // the adaptor's prelaunch tasks before game launch.
+          if (prelaunchUri && paths !== null) {
+            prelaunchRegistry.set(gameId, {
+              adaptorName: name,
+              prelaunchUri,
+              paths,
+            });
           }
         })(),
       ),
@@ -678,6 +868,75 @@ function init(context: IExtensionContext): boolean {
       }
 
       return { instructions };
+    },
+  );
+
+  // Register a prelaunch start hook that runs adaptor prelaunch tasks
+  // before the game launches. Priority 90 runs after deployment checks
+  // (100) but before the actual launch. The hook queries the adaptor's
+  // prelaunch service, evaluates conditions, and runs qualifying tasks.
+  context.registerStartHook?.(
+    90,
+    "adaptor-prelaunch",
+    async (input) => {
+      const state = context.api.getState();
+      const profile = (state as any).settings?.profiles?.lastActiveProfile;
+      const profiles = (state as any).persistent?.profiles;
+      const gameId = profiles?.[profile]?.gameId as string | undefined;
+      if (!gameId) return input;
+
+      const info = prelaunchRegistry.get(gameId);
+      if (!info) return input;
+
+      try {
+        const tasks = (await callAdaptor(
+          info.adaptorName,
+          info.prelaunchUri,
+          "getPrelaunchTasks",
+          [info.paths],
+        )) as Array<{
+          id: string;
+          name: string;
+          executable: { path: string };
+          args?: string[];
+          conditional?: boolean;
+        }>;
+
+        for (const task of tasks) {
+          let shouldRun = true;
+          if (task.conditional) {
+            shouldRun = (await callAdaptor(
+              info.adaptorName,
+              info.prelaunchUri,
+              "shouldRun",
+              [info.paths, task.id],
+            )) as boolean;
+          }
+
+          if (shouldRun) {
+            log(
+              "info",
+              "[adaptor-bridge] Running prelaunch task: {{name}}",
+              { name: task.name },
+            );
+            // TODO: Actually spawn the process and wait for it.
+            // For now, log that we would run it. Full process
+            // spawning requires access to the main process tool
+            // runner, which is a separate integration point.
+          }
+        }
+      } catch (err) {
+        log(
+          "warn",
+          "[adaptor-bridge] Prelaunch tasks failed for {{gameId}}: {{error}}",
+          {
+            gameId,
+            error: err instanceof Error ? err.message : "Unknown error",
+          },
+        );
+      }
+
+      return input;
     },
   );
 

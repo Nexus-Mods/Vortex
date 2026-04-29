@@ -831,6 +831,12 @@ function init(context: IExtensionContext): boolean {
   }) as any;
 
   context.registerGameStub = (game: IGame, ext: IExtensionDownloadInfo) => {
+    // If a full game extension (e.g. from the adaptor bridge) already
+    // registered this game ID, skip the stub so it doesn't trigger the
+    // "game extension no longer included" dialog.
+    if ($.extensionGames.some((g) => g.id === game.id)) {
+      return;
+    }
     $.extensionStubs.push({ ext, game });
   };
 

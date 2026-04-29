@@ -63,10 +63,25 @@
       "import": "./dist/contracts/glob.js",
       "require": "./dist/contracts/glob.cjs"
     },
+    "./contracts/load-order": {
+      "development": "./src/contracts/load-order.ts",
+      "import": "./dist/contracts/load-order.js",
+      "require": "./dist/contracts/load-order.cjs"
+    },
+    "./contracts/mod-files": {
+      "development": "./src/contracts/mod-files.ts",
+      "import": "./dist/contracts/mod-files.js",
+      "require": "./dist/contracts/mod-files.cjs"
+    },
     "./contracts/ping": {
       "development": "./src/contracts/ping.ts",
       "import": "./dist/contracts/ping.js",
       "require": "./dist/contracts/ping.cjs"
+    },
+    "./contracts/prelaunch": {
+      "development": "./src/contracts/prelaunch.ts",
+      "import": "./dist/contracts/prelaunch.js",
+      "require": "./dist/contracts/prelaunch.cjs"
     },
     "./plugin": {
       "development": "./src/plugin.ts",
@@ -114,9 +129,21 @@
         "import": "./dist/contracts/glob.js",
         "require": "./dist/contracts/glob.cjs"
       },
+      "./contracts/load-order": {
+        "import": "./dist/contracts/load-order.js",
+        "require": "./dist/contracts/load-order.cjs"
+      },
+      "./contracts/mod-files": {
+        "import": "./dist/contracts/mod-files.js",
+        "require": "./dist/contracts/mod-files.cjs"
+      },
       "./contracts/ping": {
         "import": "./dist/contracts/ping.js",
         "require": "./dist/contracts/ping.cjs"
+      },
+      "./contracts/prelaunch": {
+        "import": "./dist/contracts/prelaunch.js",
+        "require": "./dist/contracts/prelaunch.cjs"
       },
       "./plugin": {
         "import": "./dist/plugin.js",
