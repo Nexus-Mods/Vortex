@@ -92,7 +92,7 @@ function postToWorker(
     pending.set(id, { resolve, reject });
     getWorker().postMessage(
       { id, op, left, right } satisfies BsdiffRequest,
-      [left.buffer, right.buffer],
+      [left.buffer as ArrayBuffer, right.buffer as ArrayBuffer],
     );
   });
 }
