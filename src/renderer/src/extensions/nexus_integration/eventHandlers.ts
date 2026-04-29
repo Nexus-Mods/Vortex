@@ -1129,14 +1129,14 @@ export function onGetModRequirements(
         const defaultDetails = {
           gameId: nexusGameDomain,
           modIds,
-        }
+        };
         if (err instanceof RateLimitError) {
           log("warn", "Rate limited when fetching mod requirements", {
-            ...defaultDetails
+            ...defaultDetails,
           });
         } else if (err instanceof TimeoutError) {
           log("warn", "Timeout when fetching mod requirements", {
-            ...defaultDetails
+            ...defaultDetails,
           });
         } else {
           const detail = processErrorMessage(err as NexusError);

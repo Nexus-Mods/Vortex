@@ -168,27 +168,33 @@ export async function parser(
 
   // set up groups and their rules (skipped if user opted out)
   if (!skipPluginRules && Array.isArray(collection.pluginRules?.groups)) {
-    util.batchDispatch(api.store, collection.pluginRules.groups.reduce((prev, group) => {
-      const isNew = userlist.groups.find(
-        (g) => g.name.toUpperCase() === group.name.toUpperCase(),
-      ) === undefined;
-      if (isNew) {
-        prev.push({
-          type: 'ADD_PLUGIN_GROUP', payload: {
-            group: group.name,
-          },
+    util.batchDispatch(
+      api.store,
+      collection.pluginRules.groups.reduce((prev, group) => {
+        const isNew =
+          userlist.groups.find(
+            (g) => g.name.toUpperCase() === group.name.toUpperCase(),
+          ) === undefined;
+        if (isNew) {
+          prev.push({
+            type: "ADD_PLUGIN_GROUP",
+            payload: {
+              group: group.name,
+            },
+          });
+        }
+        (group.after ?? []).forEach((after) => {
+          prev.push({
+            type: "ADD_GROUP_RULE",
+            payload: {
+              groupId: group.name,
+              reference: after,
+            },
+          });
         });
-      }
-      (group.after ?? []).forEach(after => {
-        prev.push({
-          type: 'ADD_GROUP_RULE', payload: {
-            groupId: group.name,
-            reference: after,
-          },
-        });
-      });
-      return prev;
-    }, []));
+        return prev;
+      }, []),
+    );
   }
 
   const collectionModIds = collectionMod.rules
@@ -343,7 +349,6 @@ type IStateWithLootLists = types.IState & {
   userlist?: ILOOTList;
   masterlist?: ILOOTList;
 };
-
 
 function ruleName(rule: string | ILootReference): string {
   if (typeof rule === "string") {
@@ -563,7 +568,7 @@ export function Interface(props: IExtendedInterfaceProps): JSX.Element {
         <p>
           {t(
             "The collection will include your custom load order rules so that " +
-            "users of your collection will get the same load order.",
+              "users of your collection will get the same load order.",
           )}
           <br />
           {t("Rules you remove here are also removed from your actual setup.")}

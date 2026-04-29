@@ -1,17 +1,17 @@
-const path = require('path');
-const { log, util } = require('vortex-api');
+const path = require("path");
+const { log, util } = require("vortex-api");
 
-const EXEC_PATH = path.join('Game', 'DarksoulsII.exe');
+const EXEC_PATH = path.join("Game", "DarksoulsII.exe");
 
 class DarkSouls2 {
   constructor(context) {
     this.context = context;
-    this.id = 'darksouls2';
-    this.name = 'Dark Souls II';
+    this.id = "darksouls2";
+    this.name = "Dark Souls II";
     this.mergeMods = true;
-    this.logo = 'gameart.jpg';
+    this.logo = "gameart.jpg";
     this.environment = {
-      SteamAPPId: '236430',
+      SteamAPPId: "236430",
     };
     this.details = {
       steamAppId: 236430,
@@ -20,19 +20,18 @@ class DarkSouls2 {
   }
 
   queryPath() {
-    return util.steam.findByAppId(['236430', '335300'])
-      .then(game => {
-        if (game.appid === '335300') {
-          this.details = {
-            steamAppId: game.appid,
-          };
-        }
-        return game.gamePath;
-      });
+    return util.steam.findByAppId(["236430", "335300"]).then((game) => {
+      if (game.appid === "335300") {
+        this.details = {
+          steamAppId: game.appid,
+        };
+      }
+      return game.gamePath;
+    });
   }
 
   queryModPath() {
-    return '.';
+    return ".";
   }
 
   executable() {

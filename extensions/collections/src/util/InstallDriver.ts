@@ -400,12 +400,8 @@ class InstallDriver {
 
           const lookup = util.lookupFromDownload(download);
           const matchingRule = this.mDependentMods.find((rule) => {
-            const {
-              patches,
-              fileList,
-              installerChoices,
-              ...refWithoutExtras
-            } = rule.reference;
+            const { patches, fileList, installerChoices, ...refWithoutExtras } =
+              rule.reference;
             return util.testModReference(lookup, refWithoutExtras);
           });
 

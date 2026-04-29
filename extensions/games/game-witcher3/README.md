@@ -6,7 +6,7 @@ The [Steam](https://store.steampowered.com/sub/124923/), [Epic](https://store.ep
 
 ## Features
 
-- 
+-
 
 ## Installation
 
@@ -20,7 +20,7 @@ It is also possible to manually set the game folder if the auto detection doesn'
 
 - `files go here`
 
-If your game lacks this file then it is likely that your installation has become corrupted somehow. 
+If your game lacks this file then it is likely that your installation has become corrupted somehow.
 
 ## Mod Management
 
@@ -32,7 +32,7 @@ Something about previous versions to now
 
 ## Dependencies
 
-As The Witcher 3 doesn't have 
+As The Witcher 3 doesn't have
 
 ## Troubleshooting
 
@@ -40,7 +40,7 @@ See below for known problems and fixes to common modding problems
 
 ### Known Issues
 
-* Mod management isn't an exact science so please report any mods that don't install correctly so we can continue to increase our compatibility and coverage.
+- Mod management isn't an exact science so please report any mods that don't install correctly so we can continue to increase our compatibility and coverage.
 
 ### Load Orders
 
@@ -48,8 +48,7 @@ Most load order issues can be fixed with a Purge and then Deploy.
 
 ### Further Support
 
-* [Vortex Support (Nexus Forums) ](https://forums.nexusmods.com/index.php?/forum/4306-vortex-support/)
-* [Vortex Support (Discord)](https://discord.com/channels/215154001799413770/408252140533055499)
+- [Vortex Support (Nexus Forums) ](https://forums.nexusmods.com/index.php?/forum/4306-vortex-support/)
+- [Vortex Support (Discord)](https://discord.com/channels/215154001799413770/408252140533055499)
 
 # Thanks!
-

@@ -16,7 +16,10 @@ import { truthy } from "../../util/util";
 import { MERGED_PATH } from "./modMerging";
 import renderModName from "./util/modName";
 
-async function ensureWritable(api: IExtensionApi, modPath: string): Promise<void> {
+async function ensureWritable(
+  api: IExtensionApi,
+  modPath: string,
+): Promise<void> {
   await fs.ensureDirWritableAsync(modPath, () =>
     api
       .showDialog(
@@ -88,10 +91,7 @@ async function deployMods(
         mod.fileOverrides
           .map((file) => {
             const relPath = path.relative(destinationPath, file);
-            const relPathWithSource = path.join(
-              mod.installationPath,
-              relPath,
-            );
+            const relPathWithSource = path.join(mod.installationPath, relPath);
             const normRelPathWithSource = normalize(relPathWithSource);
             return normRelPathWithSource;
           })
@@ -105,9 +105,7 @@ async function deployMods(
       );
     }
 
-    const mergePath = truthy(typeId)
-      ? MERGED_PATH + "." + typeId
-      : MERGED_PATH;
+    const mergePath = truthy(typeId) ? MERGED_PATH + "." + typeId : MERGED_PATH;
 
     await method.activate(
       path.join(installationPath, mergePath),

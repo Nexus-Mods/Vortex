@@ -1,4 +1,8 @@
-import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import {
+  getErrorCode,
+  getErrorMessageOrDefault,
+  unknownToError,
+} from "@vortex/shared";
 import * as fs from "fs";
 import * as path from "path";
 import * as tmp from "tmp";
@@ -111,8 +115,9 @@ export function runElevated(
           return reject(err);
         }
 
-        const modulePaths = getRealNodeModulePaths(process.cwd())
-          .map((p) => p.split("\\").join("/"));
+        const modulePaths = getRealNodeModulePaths(process.cwd()).map((p) =>
+          p.split("\\").join("/"),
+        );
 
         let mainBody = elevatedMain.toString();
         mainBody = mainBody.slice(
@@ -145,45 +150,48 @@ export function runElevated(
         ${mainBody}\n
       `;
 
-        fs.write(fd, prog, (writeErr: Error, _written: number, _str: string) => {
-          if (writeErr) {
+        fs.write(
+          fd,
+          prog,
+          (writeErr: Error, _written: number, _str: string) => {
+            if (writeErr) {
+              try {
+                cleanup();
+              } catch (cleanupErr) {
+                const errorMessage = getErrorMessageOrDefault(cleanupErr);
+                console.error(
+                  "failed to clean up temporary script",
+                  errorMessage,
+                );
+              }
+              return reject(writeErr);
+            }
+
             try {
-              cleanup();
-            } catch (cleanupErr) {
-              const errorMessage = getErrorMessageOrDefault(cleanupErr);
-              console.error(
-                "failed to clean up temporary script",
-                errorMessage,
-              );
+              fs.closeSync(fd);
+            } catch (closeErr) {
+              const err = unknownToError(closeErr);
+              const errCode = getErrorCode(err);
+              if (errCode !== "EBADF") {
+                return reject(err);
+              }
             }
-            return reject(writeErr);
-          }
 
-          try {
-            fs.closeSync(fd);
-          } catch (closeErr) {
-            const err = unknownToError(closeErr);
-            const errCode = getErrorCode(err);
-            if (errCode !== "EBADF") {
-              return reject(err);
+            try {
+              winapi.ShellExecuteEx({
+                verb: "runas",
+                file: process.execPath,
+                parameters: `--run ${tmpPath}`,
+                directory: path.dirname(process.execPath),
+                show: "shownormal",
+              });
+              return resolve(tmpPath);
+            } catch (shellErr) {
+              return reject(unknownToError(shellErr));
             }
-          }
-
-          try {
-            winapi.ShellExecuteEx({
-              verb: "runas",
-              file: process.execPath,
-              parameters: `--run ${tmpPath}`,
-              directory: path.dirname(process.execPath),
-              show: "shownormal",
-            });
-            return resolve(tmpPath);
-          } catch (shellErr) {
-            return reject(unknownToError(shellErr));
-          }
-        });
+          },
+        );
       },
     );
   });
 }
-

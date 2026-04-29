@@ -97,9 +97,7 @@ describe("setLightFlag round-trip", () => {
   const nonLight = expectedOutputs.find(
     (e) => !e.isLight && !e.parseError && e.gameId === "skyrimse",
   );
-  const isLight = expectedOutputs.find(
-    (e) => e.isLight && !e.parseError,
-  );
+  const isLight = expectedOutputs.find((e) => e.isLight && !e.parseError);
 
   if (nonLight) {
     it(`enables light flag on ${nonLight.file}`, async () => {

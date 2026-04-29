@@ -20,11 +20,7 @@ function generateBytes(size: number, seed: number): Buffer {
   return buf;
 }
 
-function modifyBytes(
-  buf: Buffer,
-  changePercent: number,
-  seed: number,
-): Buffer {
+function modifyBytes(buf: Buffer, changePercent: number, seed: number): Buffer {
   const result = Buffer.from(buf);
   let state = seed;
   const numChanges = Math.max(1, Math.floor(buf.length * changePercent));
@@ -98,10 +94,18 @@ describe("bsdiff WASM worker - file API", () => {
       fs.writeFileSync(tmpPath("old.bin"), oldBuf);
       fs.writeFileSync(tmpPath("new.bin"), newBuf);
 
-      await diffFiles(tmpPath("old.bin"), tmpPath("new.bin"), tmpPath("out.diff"));
+      await diffFiles(
+        tmpPath("old.bin"),
+        tmpPath("new.bin"),
+        tmpPath("out.diff"),
+      );
       expect(fs.existsSync(tmpPath("out.diff"))).toBe(true);
 
-      await patchFiles(tmpPath("old.bin"), tmpPath("patched.bin"), tmpPath("out.diff"));
+      await patchFiles(
+        tmpPath("old.bin"),
+        tmpPath("patched.bin"),
+        tmpPath("out.diff"),
+      );
       const patched = fs.readFileSync(tmpPath("patched.bin"));
       expect(md5(patched)).toBe(md5(newBuf));
     } finally {
@@ -128,10 +132,7 @@ describe("bsdiff WASM worker - native cross-compatibility", () => {
   }
 
   const baseline = JSON.parse(
-    fs.readFileSync(
-      path.join(TEST_DATA_DIR, "native-baseline.json"),
-      "utf8",
-    ),
+    fs.readFileSync(path.join(TEST_DATA_DIR, "native-baseline.json"), "utf8"),
   );
 
   for (const tc of TEST_CASES) {
@@ -183,7 +184,9 @@ describe("bsdiff WASM worker - performance", () => {
       ? JSON.parse(fs.readFileSync(baselinePath, "utf8"))
       : null;
 
-    console.log("\n=== bsdiff Performance: Native vs WASM (worker_threads) ===");
+    console.log(
+      "\n=== bsdiff Performance: Native vs WASM (worker_threads) ===",
+    );
     console.log(
       "| Test Case    | Native Diff | WASM Diff | Native Patch | WASM Patch | Patch Size |",
     );

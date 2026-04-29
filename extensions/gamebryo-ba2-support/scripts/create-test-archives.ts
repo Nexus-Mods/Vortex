@@ -42,9 +42,18 @@ interface FileEntry {
 
 function createGnrlArchive(): { buf: Buffer; files: string[] } {
   const files = [
-    { name: "meshes\\weapon\\gun.nif", content: Buffer.from("fake nif data for gun model") },
-    { name: "scripts\\myscript.pex", content: Buffer.from("fake compiled papyrus script") },
-    { name: "materials\\test.bgsm", content: Buffer.from("fake material data") },
+    {
+      name: "meshes\\weapon\\gun.nif",
+      content: Buffer.from("fake nif data for gun model"),
+    },
+    {
+      name: "scripts\\myscript.pex",
+      content: Buffer.from("fake compiled papyrus script"),
+    },
+    {
+      name: "materials\\test.bgsm",
+      content: Buffer.from("fake material data"),
+    },
   ];
 
   const entries: FileEntry[] = files.map((f) => {
@@ -66,7 +75,9 @@ function createGnrlArchive(): { buf: Buffer; files: string[] } {
   const entryOffsets: number[] = [];
   for (const entry of entries) {
     entryOffsets.push(dataOffset);
-    dataOffset += entry.useCompression ? entry.compressed.length : entry.content.length;
+    dataOffset += entry.useCompression
+      ? entry.compressed.length
+      : entry.content.length;
   }
 
   const nameTableOffset = dataOffset;
@@ -140,7 +151,9 @@ function createDx10Archive(): { buf: Buffer; files: string[] } {
       numMips: 9,
       dxgiFormat: 71,
       chunks: [
-        Buffer.from("fake mip0 texture data chunk that is reasonably long for compression"),
+        Buffer.from(
+          "fake mip0 texture data chunk that is reasonably long for compression",
+        ),
         Buffer.from("fake mip1 data"),
       ],
     },
@@ -216,7 +229,11 @@ function createDx10Archive(): { buf: Buffer; files: string[] } {
     let mipCounter = 0;
     for (const chunk of tex.compressedChunks) {
       writeUint64LE(buf, entryOffset + 0x00, chunk.offset);
-      writeUint32LE(buf, entryOffset + 0x08, chunk.useCompression ? chunk.compressed.length : 0);
+      writeUint32LE(
+        buf,
+        entryOffset + 0x08,
+        chunk.useCompression ? chunk.compressed.length : 0,
+      );
       writeUint32LE(buf, entryOffset + 0x0c, chunk.original.length);
       buf.writeUInt16LE(mipCounter, entryOffset + 0x10);
       buf.writeUInt16LE(mipCounter, entryOffset + 0x12);
@@ -291,13 +308,24 @@ const verification = {
     fileList: dx10.files,
   },
 };
-writeFileSync(join(OUT_DIR, "expected.json"), JSON.stringify(verification, null, 2) + "\n");
+writeFileSync(
+  join(OUT_DIR, "expected.json"),
+  JSON.stringify(verification, null, 2) + "\n",
+);
 
 console.log("Created test archives:");
 console.log("  test-gnrl-full.ba2:", gnrl.buf.length, "bytes");
 console.log("  test-dx10-full.ba2:", dx10.buf.length, "bytes");
-console.log("  test-gnrl.ba2:", stripArchive(gnrl.buf).length, "bytes (stripped)");
-console.log("  test-dx10.ba2:", stripArchive(dx10.buf).length, "bytes (stripped)");
+console.log(
+  "  test-gnrl.ba2:",
+  stripArchive(gnrl.buf).length,
+  "bytes (stripped)",
+);
+console.log(
+  "  test-dx10.ba2:",
+  stripArchive(dx10.buf).length,
+  "bytes (stripped)",
+);
 console.log("  expected.json");
 console.log("\nGNRL files:", gnrl.files);
 console.log("DX10 files:", dx10.files);

@@ -3,18 +3,13 @@
     "type": "wiki",
     "title": "About Load Orders",
     "url": "https://wiki.nexusmods.com/index.php/About_Load_Orders",
-    "keywords": [
-      "plugin",
-      "loot"
-    ]
+    "keywords": ["plugin", "loot"]
   },
   {
     "type": "wiki",
     "title": "Adding a new game to Vortex",
     "url": "https://wiki.nexusmods.com/index.php/Adding_a_new_game_to_Vortex",
-    "keywords": [
-      "discover"
-    ]
+    "keywords": ["discover"]
   },
   {
     "type": "wiki",
@@ -44,12 +39,7 @@
     "type": "wiki",
     "title": "Controlled Folder Access",
     "url": "https://wiki.nexusmods.com/index.php/Controlled_Folder_Access",
-    "keywords": [
-      "enoent",
-      "permission",
-      "skyrim.ini",
-      "fallout4.ini"
-    ]
+    "keywords": ["enoent", "permission", "skyrim.ini", "fallout4.ini"]
   },
   {
     "type": "wiki",
@@ -61,12 +51,7 @@
     "type": "wiki",
     "title": "Creating themes for Vortex",
     "url": "https://wiki.nexusmods.com/index.php/Creating_themes_for_Vortex",
-    "keywords": [
-      "look",
-      "font",
-      "style",
-      "readable"
-    ]
+    "keywords": ["look", "font", "style", "readable"]
   },
   {
     "type": "wiki",

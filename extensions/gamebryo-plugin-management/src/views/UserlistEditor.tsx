@@ -179,16 +179,16 @@ class Editor extends ComponentEx<IProps, IComponentState> {
                 value={
                   dialog.type
                     ? (() => {
-                      const typeLabels = {
-                        after: t("Must Load After"),
-                        requires: t("Requires"),
-                        incompatible: t("Is Incompatible With"),
-                      };
-                      return {
-                        value: dialog.type,
-                        label: typeLabels[dialog.type],
-                      };
-                    })()
+                        const typeLabels = {
+                          after: t("Must Load After"),
+                          requires: t("Requires"),
+                          incompatible: t("Is Incompatible With"),
+                        };
+                        return {
+                          value: dialog.type,
+                          label: typeLabels[dialog.type],
+                        };
+                      })()
                     : null
                 }
                 clearable={false}

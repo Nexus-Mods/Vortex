@@ -39,7 +39,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ## [0.2.13] - 2024-03-13
 
 - Fixed error when accessing conflicts before conflict calculation completed
-- Fixed another instance where redundant file overrides were *not* being removed
+- Fixed another instance where redundant file overrides were _not_ being removed
 - Fixed preview not working in override editor
 
 ## [0.2.12] - 2024-03-12

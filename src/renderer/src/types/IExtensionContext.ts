@@ -460,9 +460,7 @@ export interface IApiFuncOptions {
 }
 
 export interface IExtensionApiExtension
-  extends INexusAPIExtension,
-    IModsAPIExtension,
-    IDownloadsAPIExtension {
+  extends INexusAPIExtension, IModsAPIExtension, IDownloadsAPIExtension {
   ensureLoggedIn?: () => PromiseBB<void>;
   awaitProfileSwitch?: () => PromiseBB<string>;
   showOverlay?: (

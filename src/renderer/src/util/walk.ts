@@ -39,8 +39,7 @@ async function walk(
 
     const statResults = await Promise.all<fs.Stats | null>(
       fileNames.map((statPath) =>
-        fs.lstatAsync(path.join(target, statPath))
-          .catch(() => null),
+        fs.lstatAsync(path.join(target, statPath)).catch(() => null),
       ),
     );
 

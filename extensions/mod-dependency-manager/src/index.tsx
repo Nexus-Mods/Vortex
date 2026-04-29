@@ -57,7 +57,7 @@ import * as React from "react";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import * as Redux from "redux";
-import { } from "redux-thunk";
+import {} from "redux-thunk";
 import shortid from "shortid";
 import {
   actions,
@@ -374,8 +374,8 @@ async function updateOverrides(
         const isDeploying =
           conflicting.length > 1
             ? conflicting.find((c) =>
-              (c.fileOverrides ?? []).includes(fileName),
-            ) === undefined
+                (c.fileOverrides ?? []).includes(fileName),
+              ) === undefined
             : true;
 
         if (conflicting.length === 1 && !isDeploying) {
@@ -542,8 +542,8 @@ async function updateConflictInfo(
     const message: string[] = [
       t(
         "There are unresolved file conflicts. This just means that two or more mods contain the " +
-        "same files and you need to decide which of them loads last and thus provides " +
-        "the files.\n",
+          "same files and you need to decide which of them loads last and thus provides " +
+          "the files.\n",
       ),
       "[table][tbody]",
     ].concat(
@@ -552,8 +552,8 @@ async function updateConflictInfo(
           "[tr]" +
           t(
             "[td]{{modName}}[/td]" +
-            '[td][color="red"][svg]conflict[/svg][/color][/td]' +
-            "[td][list]{{conflicts}}[/list][/td][/tr]",
+              '[td][color="red"][svg]conflict[/svg][/color][/td]' +
+              "[td][list]{{conflicts}}[/list][/td][/tr]",
             {
               replace: {
                 modName: util.renderModName(mods[modId]),
@@ -683,9 +683,9 @@ function checkRulesFulfilled(api: types.IExtensionApi): Bluebird<void> {
           rulesUnfulfilled.length === 0
             ? null
             : {
-              modId: mod.id,
-              rules: rulesUnfulfilled,
-            };
+                modId: mod.id,
+                rules: rulesUnfulfilled,
+              };
 
         if (
           mod.attributes?.fileMD5 === undefined &&
@@ -817,7 +817,7 @@ const shouldSuppressUpdate = (api: types.IExtensionApi) => {
       .getSafe(state, ["session", "base", "activity", "mods"], [])
       .includes(activity) || // purge/deploy
     util.getSafe(state, ["session", "base", "activity", activity], []).length >
-    0; // installing_dependencies
+      0; // installing_dependencies
   const suppressingActivities = suppressOnActivities.filter((activity) =>
     isActivityRunning(activity),
   );
@@ -1070,7 +1070,7 @@ function generateLoadOrder(api: types.IExtensionApi): Bluebird<void> {
         );
       loadOrderChanged();
     })
-    .catch(err => {
+    .catch((err) => {
       if (!(err instanceof util.CycleError)) return;
 
       api.sendNotification({
@@ -1332,7 +1332,7 @@ function queryEnableDependencies(
     let md =
       t(
         "The mod you {{enabled}} depends on other mods, do you want to {{enable}} those " +
-        "as well?",
+          "as well?",
         {
           replace: {
             enabled: enabled ? t("enabled") : t("disabled"),
@@ -1346,7 +1346,7 @@ function queryEnableDependencies(
       md +=
         t(
           "This will only disable mods not required by something else but it may disable " +
-          "ones you had already enabled manually.",
+            "ones you had already enabled manually.",
         ) + "\n";
     }
 
@@ -1657,7 +1657,7 @@ function once(api: types.IExtensionApi) {
       const relevantChange = Object.keys(newState[gameMode]).find(
         (modId) =>
           util.getSafe(oldState, [gameMode, modId], undefined) !==
-          newState[gameMode][modId] &&
+            newState[gameMode][modId] &&
           changeMayAffectRules(
             util.getSafe(oldState, [gameMode, modId], undefined),
             newState[gameMode][modId],

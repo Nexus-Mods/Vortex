@@ -95,7 +95,14 @@ export const PagesProvider: FC<IPagesProviderProps> = ({ children }) => {
         dispatch(setOpenMainPage(firstVisible.id, false));
       }
     }
-  }, [mainPage, sortedPages, activeProfileId, activeGameId, profilesVisible, dispatch]);
+  }, [
+    mainPage,
+    sortedPages,
+    activeProfileId,
+    activeGameId,
+    profilesVisible,
+    dispatch,
+  ]);
 
   const contextValue = useMemo(
     () => ({

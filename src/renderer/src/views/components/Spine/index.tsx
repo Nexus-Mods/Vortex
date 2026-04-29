@@ -21,7 +21,8 @@ import { useSpineContext } from "./SpineContext";
 import { getGameImageUrls } from "./utils";
 
 export const Spine: FC = () => {
-  const { selection, selectHome, selectGame, selectGlobalPage } = useSpineContext();
+  const { selection, selectHome, selectGame, selectGlobalPage } =
+    useSpineContext();
 
   const [canScrollUp, setCanScrollUp] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -29,7 +30,6 @@ export const Spine: FC = () => {
   const knownGames = useSelector(knownGamesSelector);
   const discoveredGames = useSelector(discoveredGamesSelector);
   const allProfiles = useSelector(profilesSelector);
-
 
   const handleGlobalPageClick = useCallback(
     (pageId: string) => {
@@ -99,8 +99,7 @@ export const Spine: FC = () => {
                 <GameButton
                   cacheKey={cacheKey}
                   isActive={
-                    selection.type === "game" &&
-                    selection.gameId === game.id
+                    selection.type === "game" && selection.gameId === game.id
                   }
                   key={game.id}
                   preferred={preferred}

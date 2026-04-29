@@ -34,7 +34,7 @@ function saveThemeInternal(
   return fs.writeFileAsync(
     path.join(outputPath, "variables.scss"),
     "// Automatically generated. Changes to this file will be overwritten.\r\n" +
-    theme.join("\r\n"),
+      theme.join("\r\n"),
   );
 }
 

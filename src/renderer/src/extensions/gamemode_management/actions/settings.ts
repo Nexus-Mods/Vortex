@@ -1,4 +1,4 @@
-import { createAction } from 'redux-act';
+import { createAction } from "redux-act";
 
 import type { IDiscoveredTool } from "../../../types/IDiscoveredTool";
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";

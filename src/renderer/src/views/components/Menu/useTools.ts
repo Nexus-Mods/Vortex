@@ -56,7 +56,11 @@ export const useTools = (
     [gameStarter, tools],
   );
 
-  const { isToolValid } = useToolsValidation(allStarters, discoveryPath, deploymentCounter);
+  const { isToolValid } = useToolsValidation(
+    allStarters,
+    discoveryPath,
+    deploymentCounter,
+  );
 
   const { exclusiveRunning, isToolRunning } = useToolsRunning();
 
@@ -81,9 +85,7 @@ export const useTools = (
   // Hidden tools (removed in classic) are excluded. Only explicitly pinned tools show.
   // Excludes the launcher (shown in Play button). Capped at MAX_VISIBLE_TOOLS for the sidebar.
   const visibleTools = useMemo(() => {
-    const nonLauncher = tools.filter(
-      (starter) => starter.id !== primaryToolId,
-    );
+    const nonLauncher = tools.filter((starter) => starter.id !== primaryToolId);
 
     // Exclude hidden tools, then only show explicitly pinned ones
     const pinned = nonLauncher.filter(

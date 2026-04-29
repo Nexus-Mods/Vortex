@@ -180,7 +180,10 @@ describe("clearFeedbackFiles", () => {
         },
       },
     };
-    const result = sessionReducer.reducers.CLEAR_FEEDBACK_FILES(input, undefined);
+    const result = sessionReducer.reducers.CLEAR_FEEDBACK_FILES(
+      input,
+      undefined,
+    );
     expect(result).toEqual({ feedbackFiles: {} });
   });
 });

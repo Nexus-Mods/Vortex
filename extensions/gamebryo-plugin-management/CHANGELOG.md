@@ -41,6 +41,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - Fixed inability to sort via LOOT through the FBLO component (Starfield only)
 
 ## [0.3.4] - 2024-07-24
+
 - Fixed plugins page update being blocked on startup (if no mod activity has been recorded yet)
 
 ## [0.3.0] - 2024-06-20

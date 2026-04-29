@@ -7,10 +7,10 @@ body:
     attributes:
       value: |
         ### Thank you for taking the time to develop a game extension for Vortex! 
-        
+
         We are excited to see what you have created and to help you get it verified.
-        
-        To submit your extension for review and before one of our team can take a look, please fill in the form below. This form will provide you with details about the review process, puts all the pertinent information in a single place and will give you the ability to track the submission journey. 
+
+        To submit your extension for review and before one of our team can take a look, please fill in the form below. This form will provide you with details about the review process, puts all the pertinent information in a single place and will give you the ability to track the submission journey.
 
   - type: input
     id: nexus-username
@@ -52,7 +52,7 @@ body:
     id: extension-features
     attributes:
       label: New features
-      description:  If there is an existing extension for this game, your extension will need to be functionally better and\or have greater features than the existing one in order for us to verify it.   
+      description: If there is an existing extension for this game, your extension will need to be functionally better and\or have greater features than the existing one in order for us to verify it.
       placeholder: ex. Has load order support and works with game version 1.2.3
     validations:
       required: false
@@ -61,10 +61,10 @@ body:
     id: confirmation
     attributes:
       label: Information
-      description: Please double-check that all links above are working and that a check for any existing game extensions has been completed.  
+      description: Please double-check that all links above are working and that a check for any existing game extensions has been completed.
       options:
         - label: I confirm the above is accurate
-          required: true     
+          required: true
 
   - type: checkboxes
     id: packaging
@@ -73,13 +73,13 @@ body:
       description: For more information, please see [How to package a game extension](https://github.com/Nexus-Mods/Vortex/wiki/How-to-package-a-game-extension)
       options:
         - label: This extension is packaged correctly
-          required: true    
+          required: true
 
   - type: checkboxes
     id: testing
     attributes:
       label: Testing
-      description: For more information, please see [How to test a game extension](https://github.com/Nexus-Mods/Vortex/wiki/How-to-test-a-game-extension)  
+      description: For more information, please see [How to test a game extension](https://github.com/Nexus-Mods/Vortex/wiki/How-to-test-a-game-extension)
       options:
         - label: This game extension has been tested
           required: true

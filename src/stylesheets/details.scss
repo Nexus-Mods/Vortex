@@ -182,7 +182,10 @@ $navbar-default-link-color: #fff;
 $navbar-default-link-hover-color: $brand-success;
 $navbar-default-link-hover-bg: transparent;
 $navbar-default-link-active-color: #fff;
-$navbar-default-link-active-bg: color.adjust($navbar-default-bg, $lightness: -10%);
+$navbar-default-link-active-bg: color.adjust(
+    $navbar-default-bg,
+    $lightness: -10%
+);
 $navbar-default-link-disabled-color: #ccc;
 $navbar-default-link-disabled-bg: transparent;
 
@@ -190,9 +193,15 @@ $navbar-default-brand-color: $navbar-default-link-color;
 $navbar-default-brand-hover-color: $navbar-default-link-hover-color;
 $navbar-default-brand-hover-bg: transparent;
 
-$navbar-default-toggle-hover-bg: color.adjust($navbar-default-bg, $lightness: -10%);
+$navbar-default-toggle-hover-bg: color.adjust(
+    $navbar-default-bg,
+    $lightness: -10%
+);
 $navbar-default-toggle-icon-bar-bg: #fff;
-$navbar-default-toggle-border-color: color.adjust($navbar-default-bg, $lightness: -10%);
+$navbar-default-toggle-border-color: color.adjust(
+    $navbar-default-bg,
+    $lightness: -10%
+);
 
 //=== Inverted navbar
 $navbar-inverse-color: #fff;
@@ -203,7 +212,10 @@ $navbar-inverse-link-color: #fff;
 $navbar-inverse-link-hover-color: $brand-primary;
 $navbar-inverse-link-hover-bg: transparent;
 $navbar-inverse-link-active-color: #fff;
-$navbar-inverse-link-active-bg: color.adjust($navbar-inverse-bg, $lightness: -5%);
+$navbar-inverse-link-active-bg: color.adjust(
+    $navbar-inverse-bg,
+    $lightness: -5%
+);
 $navbar-inverse-link-disabled-color: #ccc;
 $navbar-inverse-link-disabled-bg: transparent;
 
@@ -211,9 +223,15 @@ $navbar-inverse-brand-color: $navbar-inverse-link-color;
 $navbar-inverse-brand-hover-color: $navbar-inverse-link-hover-color;
 $navbar-inverse-brand-hover-bg: transparent;
 
-$navbar-inverse-toggle-hover-bg: color.adjust($navbar-inverse-bg, $lightness: -10%);
+$navbar-inverse-toggle-hover-bg: color.adjust(
+    $navbar-inverse-bg,
+    $lightness: -10%
+);
 $navbar-inverse-toggle-icon-bar-bg: #fff;
-$navbar-inverse-toggle-border-color: color.adjust($navbar-inverse-bg, $lightness: -10%);
+$navbar-inverse-toggle-border-color: color.adjust(
+    $navbar-inverse-bg,
+    $lightness: -10%
+);
 
 //== Navs
 $nav-link-padding: 10px 15px;
@@ -394,7 +412,10 @@ $list-group-hover-bg: $gray-lighter;
 $list-group-active-color: $component-active-color;
 $list-group-active-bg: $component-active-bg;
 $list-group-active-border: $list-group-border;
-$list-group-active-text-color: color.adjust($list-group-active-bg, $lightness: 40%);
+$list-group-active-text-color: color.adjust(
+    $list-group-active-bg,
+    $lightness: 40%
+);
 
 $list-group-disabled-color: $gray-light;
 $list-group-disabled-bg: $gray-lighter;

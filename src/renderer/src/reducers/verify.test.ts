@@ -11,79 +11,128 @@ const emitSpy = () => vi.fn<(d: string) => void>();
 describe("verifyElement", () => {
   describe("type checking", () => {
     it("accepts a value matching the declared type", () => {
-      expect(verifyElement({ description: desc(""), type: "string" }, "hi")).toBe(true);
-      expect(verifyElement({ description: desc(""), type: "number" }, 42)).toBe(true);
-      expect(verifyElement({ description: desc(""), type: "boolean" }, true)).toBe(true);
-      expect(verifyElement({ description: desc(""), type: "array" }, [1])).toBe(true);
-      expect(verifyElement({ description: desc(""), type: "object" }, { a: 1 })).toBe(true);
+      expect(
+        verifyElement({ description: desc(""), type: "string" }, "hi"),
+      ).toBe(true);
+      expect(verifyElement({ description: desc(""), type: "number" }, 42)).toBe(
+        true,
+      );
+      expect(
+        verifyElement({ description: desc(""), type: "boolean" }, true),
+      ).toBe(true);
+      expect(verifyElement({ description: desc(""), type: "array" }, [1])).toBe(
+        true,
+      );
+      expect(
+        verifyElement({ description: desc(""), type: "object" }, { a: 1 }),
+      ).toBe(true);
     });
 
     it("rejects a value that does not match the declared type", () => {
-      expect(verifyElement({ description: desc(""), type: "string" }, 123)).toBe(false);
-      expect(verifyElement({ description: desc(""), type: "number" }, "hi")).toBe(false);
-      expect(verifyElement({ description: desc(""), type: "array" }, "not array")).toBe(false);
-      expect(verifyElement({ description: desc(""), type: "object" }, 42)).toBe(false);
+      expect(
+        verifyElement({ description: desc(""), type: "string" }, 123),
+      ).toBe(false);
+      expect(
+        verifyElement({ description: desc(""), type: "number" }, "hi"),
+      ).toBe(false);
+      expect(
+        verifyElement({ description: desc(""), type: "array" }, "not array"),
+      ).toBe(false);
+      expect(verifyElement({ description: desc(""), type: "object" }, 42)).toBe(
+        false,
+      );
     });
 
     it("skips type check when value is undefined and not required", () => {
-      expect(verifyElement({ description: desc(""), type: "string" }, undefined)).toBe(true);
+      expect(
+        verifyElement({ description: desc(""), type: "string" }, undefined),
+      ).toBe(true);
     });
 
     it("fails type check when value is undefined but required", () => {
       expect(
-        verifyElement({ description: desc(""), type: "string", required: true }, undefined),
+        verifyElement(
+          { description: desc(""), type: "string", required: true },
+          undefined,
+        ),
       ).toBe(false);
     });
   });
 
   describe("noUndefined", () => {
     it("rejects undefined", () => {
-      expect(verifyElement({ description: desc(""), noUndefined: true }, undefined)).toBe(false);
+      expect(
+        verifyElement({ description: desc(""), noUndefined: true }, undefined),
+      ).toBe(false);
     });
 
     it("accepts a defined value", () => {
-      expect(verifyElement({ description: desc(""), noUndefined: true }, "ok")).toBe(true);
+      expect(
+        verifyElement({ description: desc(""), noUndefined: true }, "ok"),
+      ).toBe(true);
     });
   });
 
   describe("noNull", () => {
     it("rejects null", () => {
-      expect(verifyElement({ description: desc(""), noNull: true }, null)).toBe(false);
+      expect(verifyElement({ description: desc(""), noNull: true }, null)).toBe(
+        false,
+      );
     });
 
     it("accepts non-null", () => {
-      expect(verifyElement({ description: desc(""), noNull: true }, 0)).toBe(true);
+      expect(verifyElement({ description: desc(""), noNull: true }, 0)).toBe(
+        true,
+      );
     });
   });
 
   describe("noEmpty", () => {
     it("rejects empty array", () => {
       expect(
-        verifyElement({ description: desc(""), type: "array", noEmpty: true }, []),
+        verifyElement(
+          { description: desc(""), type: "array", noEmpty: true },
+          [],
+        ),
       ).toBe(false);
     });
 
     it("rejects empty object", () => {
       expect(
-        verifyElement({ description: desc(""), type: "object", noEmpty: true }, {}),
+        verifyElement(
+          { description: desc(""), type: "object", noEmpty: true },
+          {},
+        ),
       ).toBe(false);
     });
 
     it("rejects empty string", () => {
       expect(
-        verifyElement({ description: desc(""), type: "string", noEmpty: true }, ""),
+        verifyElement(
+          { description: desc(""), type: "string", noEmpty: true },
+          "",
+        ),
       ).toBe(false);
     });
 
     it("accepts non-empty values", () => {
       expect(
-        verifyElement({ description: desc(""), type: "array", noEmpty: true }, [1]),
+        verifyElement(
+          { description: desc(""), type: "array", noEmpty: true },
+          [1],
+        ),
       ).toBe(true);
       expect(
-        verifyElement({ description: desc(""), type: "object", noEmpty: true }, { a: 1 }),
+        verifyElement(
+          { description: desc(""), type: "object", noEmpty: true },
+          { a: 1 },
+        ),
       ).toBe(true);
       expect(
-        verifyElement({ description: desc(""), type: "string", noEmpty: true }, "x"),
+        verifyElement(
+          { description: desc(""), type: "string", noEmpty: true },
+          "x",
+        ),
       ).toBe(true);
     });
   });
@@ -311,10 +360,20 @@ describe("verify", () => {
   it("replaces missing required field with default", () => {
     const input = { other: "val" };
     const verifiers: Record<string, IStateVerifier> = {
-      name: { description: desc("name required"), type: "string", required: true },
+      name: {
+        description: desc("name required"),
+        type: "string",
+        required: true,
+      },
     };
 
-    const result = verify("test", verifiers, input, { name: "default" }, emitSpy());
+    const result = verify(
+      "test",
+      verifiers,
+      input,
+      { name: "default" },
+      emitSpy(),
+    );
 
     expect(result.name).toBe("default");
   });

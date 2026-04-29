@@ -39,7 +39,10 @@ import { log, setupLogging, changeLogPath } from "./logging";
 import MainWindow from "./MainWindow";
 import SplashScreen from "./SplashScreen";
 import DuckDBSingleton from "./store/DuckDBSingleton";
-import LevelPersist, { DatabaseLocked, DatabaseOpenError } from "./store/LevelPersist";
+import LevelPersist, {
+  DatabaseLocked,
+  DatabaseOpenError,
+} from "./store/LevelPersist";
 import {
   initMainPersistence,
   readPersistedValue,
@@ -122,7 +125,9 @@ class Application {
   private mLevelPersistors: LevelPersist[] = [];
   private mArgs: IParameters;
   private mMainWindow: MainWindow | undefined;
-  private mMainWindowReady: Promise<Electron.WebContents | undefined> | undefined;
+  private mMainWindowReady:
+    | Promise<Electron.WebContents | undefined>
+    | undefined;
   private mTray: TrayIcon;
   private mAppMetadata: AppInitMetadata;
   private mFirstStart: boolean = false;
@@ -788,9 +793,10 @@ class Application {
 
     let backupData: Record<string, unknown>;
     try {
-      backupData = JSON.parse(
-        await readFile(backupPath, "utf-8"),
-      ) as Record<string, unknown>;
+      backupData = JSON.parse(await readFile(backupPath, "utf-8")) as Record<
+        string,
+        unknown
+      >;
     } catch (err) {
       log("error", "failed to parse state backup", { backupPath, error: err });
       throw new DataInvalid(
@@ -1171,7 +1177,10 @@ class Application {
     if (isRunning(pid)) {
       log("warn", "renderer process did not exit in time", { pid });
     } else {
-      log("debug", "renderer process exited", { pid, elapsed: Date.now() - start });
+      log("debug", "renderer process exited", {
+        pid,
+        elapsed: Date.now() - start,
+      });
     }
   }
 

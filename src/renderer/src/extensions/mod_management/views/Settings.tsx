@@ -68,7 +68,11 @@ import {
   isPathValid,
   isReservedDirectory,
 } from "../../../util/util";
-import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import {
+  getErrorCode,
+  getErrorMessageOrDefault,
+  unknownToError,
+} from "@vortex/shared";
 import {
   currentGame,
   currentGameDiscovery,
@@ -604,7 +608,11 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       })
       .catch((err) => {
         if (err instanceof TemporaryError) {
-          onShowError("Failed to move directories, please try again", err, false);
+          onShowError(
+            "Failed to move directories, please try again",
+            err,
+            false,
+          );
           return;
         }
         if (err instanceof UserCanceled) {
@@ -918,13 +926,16 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           return;
         }
         const errCode = getErrorCode(err);
-        if (errCode === null && (err as {errno?: number}).errno !== undefined) {
+        if (
+          errCode === null &&
+          (err as { errno?: number }).errno !== undefined
+        ) {
           // unresolved windows error code
           onShowError(
             "Failed to purge previous deployment",
             {
               error: err,
-              ErrorCode: (err as {errno?: number}).errno,
+              ErrorCode: (err as { errno?: number }).errno,
             },
             true,
           );

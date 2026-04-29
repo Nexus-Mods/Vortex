@@ -525,11 +525,10 @@ function registerAdaptor(
           const version = await getVersion(paths);
           if (version && version !== "0.0.0") {
             detectedVersions.set(gameId, version);
-            log(
-              "info",
-              "[adaptor-bridge] {{gameId}} version: {{version}}",
-              { gameId, version },
-            );
+            log("info", "[adaptor-bridge] {{gameId}} version: {{version}}", {
+              gameId,
+              version,
+            });
           }
 
           // Step 3: Resolve tools (depends on paths)

@@ -255,8 +255,7 @@ async function collectionUpdate(
       .filter((mod) => {
         const isOptional = oldRules.some(
           (r) =>
-            r.type === "recommends" &&
-            util.testModReference(mod, r.reference),
+            r.type === "recommends" && util.testModReference(mod, r.reference),
         );
         return (
           isOptional &&

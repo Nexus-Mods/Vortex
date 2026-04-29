@@ -67,7 +67,11 @@ import { ensureStagingDirectory } from "./stagingDirectory";
 import * as _ from "lodash";
 import type { RuleType } from "modmeta-db";
 import * as path from "path";
-import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import {
+  getErrorCode,
+  getErrorMessageOrDefault,
+  unknownToError,
+} from "@vortex/shared";
 
 async function checkStagingGame(
   api: IExtensionApi,
@@ -107,9 +111,10 @@ async function checkStagingFolder(
   const t = api.translate;
 
   // manifestPath can be undefined if the manifest is older
-  const normalize = manifestPath !== undefined
-    ? await getNormalizeFunc(manifestPath)
-    : undefined;
+  const normalize =
+    manifestPath !== undefined
+      ? await getNormalizeFunc(manifestPath)
+      : undefined;
 
   if (
     manifestPath !== undefined &&
@@ -159,10 +164,7 @@ async function checkStagingFolder(
       getApplication().quit();
       // resolve never
       return new Promise<never>(() => {});
-    } else if (
-      result.action === "Use selected" &&
-      result.input.manifest
-    ) {
+    } else if (result.action === "Use selected" && result.input.manifest) {
       return true;
     }
     return false;
@@ -217,11 +219,7 @@ async function purgeOldMethod(
           );
           await purgeDeployedFiles(modPaths[typeId], deployments[typeId]);
         } else {
-          await oldActivator.purge(
-            instPath,
-            modPaths[typeId],
-            profile.gameId,
-          );
+          await oldActivator.purge(instPath, modPaths[typeId], profile.gameId);
         }
       }
       // save (empty) activation - parallel is fine here, no ordering dependency
@@ -246,11 +244,9 @@ async function purgeOldMethod(
       return;
     }
     if (err instanceof TemporaryError) {
-      api.showErrorNotification(
-        "Purge failed, please try again",
-        err.message,
-        { allowReport: false },
-      );
+      api.showErrorNotification("Purge failed, please try again", err.message, {
+        allowReport: false,
+      });
       return;
     }
     api.showErrorNotification("Purge failed", err, {
@@ -324,14 +320,21 @@ export function onGameModeActivated(
   }
 
   setErrorContext("gamemode", game.name);
-  setErrorContext("extension_type", game.contributed ? "community" : "official");
+  setErrorContext(
+    "extension_type",
+    game.contributed ? "community" : "official",
+  );
   if (truthy(game?.version)) {
     setErrorContext("extension_version", game.version);
   }
   if (activatorToUse !== undefined) {
     setErrorContext("deployment_method", activatorToUse.id);
   }
-  const updateChannel = getSafe(state, ["settings", "update", "channel"], "stable");
+  const updateChannel = getSafe(
+    state,
+    ["settings", "update", "channel"],
+    "stable",
+  );
   setErrorContext("update_channel", updateChannel);
   const modTable = getSafe(state, ["persistent", "mods", gameId], {});
   setErrorContext("mod_count", String(Object.keys(modTable).length));
@@ -383,7 +386,9 @@ export function onGameModeActivated(
           });
       })
       .then(() => ensureStagingDirectory(api, instPath, gameId))
-      .then((updatedPath) => { instPath = updatedPath; });
+      .then((updatedPath) => {
+        instPath = updatedPath;
+      });
 
   const configuredActivatorId = currentActivator(state);
 
@@ -768,7 +773,11 @@ async function undeploy(
           }
           throw err;
         }
-        const newActivation = await activator.finalize(gameMode, deployPath, stagingPath);
+        const newActivation = await activator.finalize(
+          gameMode,
+          deployPath,
+          stagingPath,
+        );
         await saveActivation(
           gameMode,
           typeId,
@@ -934,13 +943,11 @@ export function onRemoveMods(
                 game: gameId,
                 mod: mod.id,
               });
-              await fs
-                .removeAsync(fullModPath)
-                .catch((err) => {
-                  if (err.code !== "ENOENT") {
-                    throw err;
-                  }
-                });
+              await fs.removeAsync(fullModPath).catch((err) => {
+                if (err.code !== "ENOENT") {
+                  throw err;
+                }
+              });
             }
             await api.emitAndAwait(
               "did-remove-mod",

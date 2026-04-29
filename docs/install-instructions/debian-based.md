@@ -2,7 +2,7 @@
 
 Install distro packages here first, then continue with [Shared Setup].
 
-Validated on 13 April 2026. Verified on Ubuntu 24.04 and Pop!_OS 24.04.
+Validated on 13 April 2026. Verified on Ubuntu 24.04 and Pop!\_OS 24.04.
 If any step is out of date, please open a [PR] or [issue].
 
 ## System Packages

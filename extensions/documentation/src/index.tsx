@@ -16,9 +16,11 @@ const WIKI_TOPICS = {
   ["deployment-methods"]: "MODDINGWIKI-Users-General-Deployment-Methods",
   ["downloading"]: "MODDINGWIKI-Users-General-Downloading-from-Nexus-Mods",
   ["external-changes"]: "MODDINGWIKI-Users-General-Managing-External-Changes",
-  ["keyboard-shortcuts"]: "MODDINGWIKI-Users-General-Managing-Keyboard-Shortcuts",
+  ["keyboard-shortcuts"]:
+    "MODDINGWIKI-Users-General-Managing-Keyboard-Shortcuts",
   ["file-conflicts"]: "MODDINGWIKI-Users-General-Managing-File-Conflicts",
-  ["load-order-about"]: "MODDINGWIKI-Users-General-The-Vortex-Approach-to-Load-Order",
+  ["load-order-about"]:
+    "MODDINGWIKI-Users-General-The-Vortex-Approach-to-Load-Order",
   ["load-order"]: "MODDINGWIKI-Users-General-Managing-your-Load-Order",
   ["profiles"]: "MODDINGWIKI-Users-General-Setting-up-Profiles",
 };

@@ -1,4 +1,4 @@
-import type { IGameListEntry } from '@nexusmods/nexus-api';
+import type { IGameListEntry } from "@nexusmods/nexus-api";
 
 import type { IModRepoId } from "../../mod_management/types/IMod";
 

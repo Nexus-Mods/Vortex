@@ -1,6 +1,6 @@
-import { types } from 'vortex-api';
+import { types } from "vortex-api";
 
-export type LockedState = 'true' | 'false' | 'always' | 'never';
+export type LockedState = "true" | "false" | "always" | "never";
 export type LoadOrder = ILoadOrderEntry[];
 
 export interface IProps {

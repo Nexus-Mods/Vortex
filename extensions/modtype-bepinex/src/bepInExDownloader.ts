@@ -38,15 +38,8 @@ import path from "path";
 import semver from "semver";
 import { actions, fs, log, selectors, types, util } from "vortex-api";
 
-import {
-  getDownload,
-  getSupportMap,
-  MODTYPE_BIX_INJECTOR,
-} from "./common";
-import {
-  IBepInExGameConfig,
-  INexusDownloadInfo,
-} from "./types";
+import { getDownload, getSupportMap, MODTYPE_BIX_INJECTOR } from "./common";
+import { IBepInExGameConfig, INexusDownloadInfo } from "./types";
 
 import { checkForUpdates, downloadFromGithub } from "./githubDownloader";
 
@@ -63,10 +56,7 @@ function genDownloadProps(api: types.IExtensionApi, archiveName: string) {
   return { downloads, downloadId, state };
 }
 
-function updateSupportedGames(
-  api: types.IExtensionApi,
-  downloadId: string,
-) {
+function updateSupportedGames(api: types.IExtensionApi, downloadId: string) {
   const state = api.getState();
   const download: types.IDownload = util.getSafe(
     state,
@@ -101,8 +91,8 @@ async function install(
     const isInjectorInstalled = force
       ? false
       : Object.keys(mods).find(
-        (id) => mods[id].type === MODTYPE_BIX_INJECTOR,
-      ) !== undefined;
+          (id) => mods[id].type === MODTYPE_BIX_INJECTOR,
+        ) !== undefined;
     if (!isInjectorInstalled) {
       return new Promise<string>((resolve, reject) => {
         api.events.emit(
@@ -188,8 +178,9 @@ async function download(
 ): Promise<string | void> {
   // Reuse the archive if it's already staged in Vortex; otherwise fetch it
   // via the standard pipeline.
-  const dlId = genDownloadProps(api, downloadInfo.archiveName).downloadId
-    ?? await startNxmDownload(api, downloadInfo);
+  const dlId =
+    genDownloadProps(api, downloadInfo.archiveName).downloadId ??
+    (await startNxmDownload(api, downloadInfo));
   if (dlId == null) {
     return;
   }
@@ -248,7 +239,11 @@ async function runCustomPackDownloader(
       await download(api, downloadRes as INexusDownloadInfo, force);
     } else if (typeof downloadRes === "string") {
       if (!path.isAbsolute(downloadRes)) {
-        log("error", "failed to download custom pack", "expected absolute path");
+        log(
+          "error",
+          "failed to download custom pack",
+          "expected absolute path",
+        );
       }
       const downloadsPath = selectors.downloadPathForGame(state, gameId);
       await fs.copyAsync(
@@ -270,8 +265,10 @@ async function downloadDefaultOrFallback(
 ): Promise<void> {
   const defaultDownload = getDownload(gameConf);
   try {
-    if (gameConf.bepinexVersion != null
-        && gameConf.bepinexVersion !== defaultDownload.version) {
+    if (
+      gameConf.bepinexVersion != null &&
+      gameConf.bepinexVersion !== defaultDownload.version
+    ) {
       // Pinned to a version we don't bundle for Nexus - go to Github instead.
       throw new util.ProcessCanceled("BepInEx version mismatch");
     }
@@ -294,8 +291,7 @@ export async function ensureBepInExPack(
     return;
   }
 
-  const mods: Record<string, types.IMod> =
-    state.persistent.mods[gameId] ?? {};
+  const mods: Record<string, types.IMod> = state.persistent.mods[gameId] ?? {};
   const injectorModIds = Object.keys(mods).filter(
     (id) => mods[id]?.type === MODTYPE_BIX_INJECTOR,
   );
@@ -304,10 +300,12 @@ export async function ensureBepInExPack(
   // Skipped when a customPackDownloader is in play - that resolver owns
   // version selection and pinning here would loop on every deploy whenever
   // the downloaded pack's version differs from the pin.
-  if (gameConf.bepinexVersion != null
-      && gameConf.forceGithubDownload !== true
-      && gameConf.customPackDownloader == null
-      && !hasPinnedVersionInstalled(mods, injectorModIds, gameConf.bepinexVersion)) {
+  if (
+    gameConf.bepinexVersion != null &&
+    gameConf.forceGithubDownload !== true &&
+    gameConf.customPackDownloader == null &&
+    !hasPinnedVersionInstalled(mods, injectorModIds, gameConf.bepinexVersion)
+  ) {
     force = true;
   }
 
@@ -351,13 +349,13 @@ export async function raiseConsentDialog(
     {
       bbcode: t(
         "The {{game}} game extension requires a widely used 3rd party assembly " +
-        "patching/injection library called Bepis Injector Extensible (BepInEx).{{bl}}" +
-        "Vortex can walk you through the download/installation process; once complete, BepInEx " +
-        "will be available in your mods page to enable/disable just like any other regular mod. " +
-        "Depending on the modding pattern of {{game}}, BepInEx may be a hard requirement " +
-        "for mods to function in-game, in which case you MUST have the library enabled and deployed " +
-        "at all times for the mods to work!{{bl}}" +
-        "To remove the library, simply disable the mod entry for BepInEx.",
+          "patching/injection library called Bepis Injector Extensible (BepInEx).{{bl}}" +
+          "Vortex can walk you through the download/installation process; once complete, BepInEx " +
+          "will be available in your mods page to enable/disable just like any other regular mod. " +
+          "Depending on the modding pattern of {{game}}, BepInEx may be a hard requirement " +
+          "for mods to function in-game, in which case you MUST have the library enabled and deployed " +
+          "at all times for the mods to work!{{bl}}" +
+          "To remove the library, simply disable the mod entry for BepInEx.",
         { replace },
       ),
     },

@@ -21,11 +21,13 @@ import type Nexus from "@nexusmods/nexus-api";
 import type { TFunction } from "i18next";
 import type * as Redux from "redux";
 
-import { GraphError, NexusError, RateLimitError, TimeoutError } from "@nexusmods/nexus-api";
 import {
-  getErrorMessageOrDefault,
-  unknownToError,
-} from "@vortex/shared";
+  GraphError,
+  NexusError,
+  RateLimitError,
+  TimeoutError,
+} from "@nexusmods/nexus-api";
+import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import { AlreadyDownloaded, DownloadIsHTML } from "@vortex/shared/errors";
 import BluebirdPromise from "bluebird";
 import jwt from "jsonwebtoken";

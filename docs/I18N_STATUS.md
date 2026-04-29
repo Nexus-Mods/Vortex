@@ -5,6 +5,7 @@
 ## Current State
 
 ### Namespaces Configured
+
 - ✅ `common` - In use (26 lines + actions section)
 - ✅ `collection` - Configured (browse + pagination sections populated)
 - ✅ `mod_management` - Configured (empty, ready for migration)
@@ -22,14 +23,15 @@
 ### Working Examples
 
 1. **BrowseNexusPage.tsx** (`src/extensions/browse_nexus/views/BrowseNexusPage.tsx`)
-   - 13 strings migrated to proper namespaced keys
-   - Uses `collection` and `common` namespaces
-   - Shows proper key structure: `namespace:::section:::key`
-   - Fully functional and tested
+    - 13 strings migrated to proper namespaced keys
+    - Uses `collection` and `common` namespaces
+    - Shows proper key structure: `namespace:::section:::key`
+    - Fully functional and tested
 
 ## Namespace Contents
 
 ### collection.json (13 strings)
+
 ```
 browse/
   - title: "Browse Collections ({{total}})"
@@ -47,6 +49,7 @@ pagination/
 ```
 
 ### common.json (26 lines + 1 section)
+
 - Pluralization rules (existing)
 - `actions:::search`: "Search"
 
@@ -58,14 +61,14 @@ Future migrations should follow the pattern established in BrowseNexusPage.tsx.
 
 1. **New features** (100% compliance required from day one)
 2. **Collections pages** (`extensions/collections/src/views/**/*.tsx`)
-   - Already has namespace defined
-   - ~350+ strings to migrate
+    - Already has namespace defined
+    - ~350+ strings to migrate
 3. **Extension manager** (`src/extensions/extension_manager/**/*.tsx`)
-   - Frequently used, high visibility
-   - ~70+ strings
+    - Frequently used, high visibility
+    - ~70+ strings
 4. **Mod management core** (`src/extensions/mod_management/**/*.tsx`)
-   - Critical functionality
-   - ~150+ strings
+    - Critical functionality
+    - ~150+ strings
 
 ### Migration Approach
 
@@ -95,6 +98,7 @@ Once fully migrated, this will enable:
 ## Reference
 
 **Russian translation example:** `C:/Users/insom/Downloads/ru/`
+
 - 28 namespace files
 - 1,159+ strings organized by feature
 - Proves the namespace structure works at scale

@@ -143,10 +143,7 @@ export class ESPFile {
       sizeOverride = 0;
 
       if (offset + payloadSize > buf.length) {
-        throw new InvalidRecordError(
-          "sub-record incomplete",
-          this._filePath,
-        );
+        throw new InvalidRecordError("sub-record incomplete", this._filePath);
       }
 
       switch (tag) {
@@ -160,9 +157,7 @@ export class ESPFile {
         }
         case TAG_MAST: {
           if (payloadSize > 0) {
-            this._masters.push(
-              readNullTermString(buf, offset, payloadSize),
-            );
+            this._masters.push(readNullTermString(buf, offset, payloadSize));
           }
           break;
         }
@@ -174,11 +169,7 @@ export class ESPFile {
         }
         case TAG_SNAM: {
           if (payloadSize > 0) {
-            this._description = readNullTermString(
-              buf,
-              offset,
-              payloadSize,
-            );
+            this._description = readNullTermString(buf, offset, payloadSize);
           }
           break;
         }

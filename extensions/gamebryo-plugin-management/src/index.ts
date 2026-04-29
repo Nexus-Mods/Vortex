@@ -680,12 +680,17 @@ function register(
     "Reset Plugin Rules",
     () => {
       context.api
-        .showDialog("question", "Reset Plugin Rules", {
-          text:
-            "This will remove ALL custom plugin rules, plugin group assignments, " +
-            "and custom groups. Only rules from the LOOT masterlist will remain.\n\n" +
-            "This cannot be undone.",
-        }, [{ label: "Cancel" }, { label: "Reset" }])
+        .showDialog(
+          "question",
+          "Reset Plugin Rules",
+          {
+            text:
+              "This will remove ALL custom plugin rules, plugin group assignments, " +
+              "and custom groups. Only rules from the LOOT masterlist will remain.\n\n" +
+              "This cannot be undone.",
+          },
+          [{ label: "Cancel" }, { label: "Reset" }],
+        )
         .then((result: types.IDialogResult) => {
           if (result.action === "Reset") {
             const state: IStateWithGamebryo = context.api.store.getState();
@@ -694,10 +699,10 @@ function register(
             const unsetGroups = (userlist?.plugins ?? [])
               .filter((plugin) => plugin.group !== undefined)
               .map((plugin) => setGroup(plugin.name, undefined));
-            util.batchDispatch(
-              context.api.store,
-              [...unsetGroups, clearUserlist()],
-            );
+            util.batchDispatch(context.api.store, [
+              ...unsetGroups,
+              clearUserlist(),
+            ]);
             context.api.sendNotification({
               type: "success",
               message: "Plugin rules have been reset to defaults",
@@ -942,7 +947,9 @@ async function swapUserlistForProfile(
     try {
       await fs.statAsync(getProfileFile(newProfile));
       // profile has a saved copy — restore it
-      await fs.copyAsync(getProfileFile(newProfile), activeFile, { noSelfCopy: true });
+      await fs.copyAsync(getProfileFile(newProfile), activeFile, {
+        noSelfCopy: true,
+      });
     } catch (err) {
       if (err.code === "ENOENT") {
         // first time: seed the profile dir from the current file
@@ -1626,18 +1633,21 @@ async function testBlueprintMasters(
     return Promise.resolve(undefined);
   }
 
-  const broken = pluginDetails.reduce((prev, plugin) => {
-    if (plugin.isBlueprint) {
+  const broken = pluginDetails.reduce(
+    (prev, plugin) => {
+      if (plugin.isBlueprint) {
+        return prev;
+      }
+      const offendingMasters = plugin.masterList.filter((master) =>
+        blueprintPlugins.has(master.toLowerCase()),
+      );
+      if (offendingMasters.length > 0) {
+        prev[plugin.name] = offendingMasters;
+      }
       return prev;
-    }
-    const offendingMasters = plugin.masterList.filter((master) =>
-      blueprintPlugins.has(master.toLowerCase()),
-    );
-    if (offendingMasters.length > 0) {
-      prev[plugin.name] = offendingMasters;
-    }
-    return prev;
-  }, {} as { [pluginName: string]: string[] });
+    },
+    {} as { [pluginName: string]: string[] },
+  );
 
   if (Object.keys(broken).length === 0) {
     return Promise.resolve(undefined);
@@ -2218,8 +2228,10 @@ function init(context: IExtensionContextExt) {
             if (activeProfileId === undefined) {
               return;
             }
-            const prevFeature = previous[activeProfileId]?.features?.local_loot_rules;
-            const currFeature = current[activeProfileId]?.features?.local_loot_rules;
+            const prevFeature =
+              previous[activeProfileId]?.features?.local_loot_rules;
+            const currFeature =
+              current[activeProfileId]?.features?.local_loot_rules;
             if (prevFeature === currFeature) {
               return;
             }
@@ -2228,9 +2240,22 @@ function init(context: IExtensionContextExt) {
               return;
             }
             const userDataPath = util.getVortexPath("userData");
-            const activeFile = path.join(userDataPath, profile.gameId, "userlist.yaml");
-            const globalBackup = path.join(userDataPath, profile.gameId, "userlist.yaml.global");
-            const profDir = path.join(userDataPath, profile.gameId, "profiles", profile.id);
+            const activeFile = path.join(
+              userDataPath,
+              profile.gameId,
+              "userlist.yaml",
+            );
+            const globalBackup = path.join(
+              userDataPath,
+              profile.gameId,
+              "userlist.yaml.global",
+            );
+            const profDir = path.join(
+              userDataPath,
+              profile.gameId,
+              "profiles",
+              profile.id,
+            );
             const profFile = path.join(profDir, "userlist.yaml");
 
             const copyIgnoringMissing = async (src: string, dest: string) => {
@@ -2250,7 +2275,11 @@ function init(context: IExtensionContextExt) {
                 await fs.ensureDirAsync(profDir);
                 await copyIgnoringMissing(activeFile, profFile);
               })().catch((err) => {
-                log("warn", "failed to initialize per-profile userlist", err.message);
+                log(
+                  "warn",
+                  "failed to initialize per-profile userlist",
+                  err.message,
+                );
               });
             } else if (!currFeature && prevFeature) {
               // toggled OFF: save profile state, restore global backup
@@ -2290,12 +2319,15 @@ function init(context: IExtensionContextExt) {
           ) => {
             const state = context.api.store.getState();
             const oldProfileId = util.getSafe(
-              state, ["settings", "profiles", "activeProfileId"], undefined,
+              state,
+              ["settings", "profiles", "activeProfileId"],
+              undefined,
             );
             const oldProfile = state.persistent.profiles[oldProfileId];
-            const nextProfile = nextProfileId !== undefined
-              ? selectors.profileById(state, nextProfileId)
-              : undefined;
+            const nextProfile =
+              nextProfileId !== undefined
+                ? selectors.profileById(state, nextProfileId)
+                : undefined;
 
             if (nextProfileId === undefined) {
               context.api.store.dispatch(setPluginList(undefined));
@@ -2317,7 +2349,8 @@ function init(context: IExtensionContextExt) {
                     .then(() => loot.wait())
                     .catch((err) => {
                       context.api.showErrorNotification(
-                        "Failed to change profile", err,
+                        "Failed to change profile",
+                        err,
                       );
                       return Promise.resolve();
                     }),
