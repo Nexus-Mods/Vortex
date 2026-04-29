@@ -2,13 +2,12 @@ import { setSettingsPage } from "../../../actions/session";
 import ErrorBoundary from "../../../controls/ErrorBoundary";
 import type { IState } from "../../../types/IState";
 import { ComponentEx, connect } from "../../../controls/ComponentEx";
-import { bytesToString, truthy } from "../../../util/util";
+import { bytesToString } from "../../../util/util";
 
 import { NUM_SPEED_DATA_POINTS } from "../reducers/state";
 
 import type { TFunction } from "i18next";
 import * as React from "react";
-import ResizeDetector from "react-resize-detector";
 import * as recharts from "recharts";
 
 interface IBaseProps {
@@ -30,6 +29,9 @@ interface IComponentState {
  * download speed dashlet
  */
 class DownloadGraph extends ComponentEx<IProps, IComponentState> {
+  private chartContainer?: HTMLDivElement;
+  private resizeObserver?: ResizeObserver;
+
   constructor(props: IProps) {
     super(props);
     this.initState({ width: 800 });
@@ -37,6 +39,16 @@ class DownloadGraph extends ComponentEx<IProps, IComponentState> {
 
   public componentDidMount() {
     this.forceUpdate();
+    if (this.chartContainer) {
+      this.resizeObserver = new ResizeObserver(([entry]) => {
+        this.onResize(entry.contentRect.width, entry.contentRect.height);
+      });
+      this.resizeObserver.observe(this.chartContainer);
+    }
+  }
+
+  public componentWillUnmount() {
+    this.resizeObserver?.disconnect();
   }
 
   public render(): JSX.Element {
@@ -102,9 +114,6 @@ class DownloadGraph extends ComponentEx<IProps, IComponentState> {
             }
           </AreaChart>
         </ErrorBoundary>
-        <ErrorBoundary>
-          <ResizeDetector handleWidth handleHeight onResize={this.onResize} />
-        </ErrorBoundary>
       </div>
     );
   }
@@ -130,8 +139,9 @@ class DownloadGraph extends ComponentEx<IProps, IComponentState> {
     return Math.ceil(input / roundVal) * roundVal;
   }
 
-  private setRef = (ref: HTMLDivElement) => {
-    if (truthy(ref)) {
+  private setRef = (ref: HTMLDivElement | null) => {
+    this.chartContainer = ref ?? undefined;
+    if (ref) {
       this.onResize(ref.clientWidth, ref.clientHeight);
     }
   };
