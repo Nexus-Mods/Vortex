@@ -969,14 +969,10 @@ importers:
         version: https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/3298c42e69e3220dc39694bc2f610c077c3e213a
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-<<<<<<< HEAD
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4192c0c9f34306c2167e258dd4fef773af406161
-=======
         version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4dd3460c2d02d93ba8f1bbeeeb2c5fa9af039a67
       '@types/jest':
         specifier: 'catalog:'
         version: 29.5.14
->>>>>>> 04cdaf20f (Merge pull request #22886 from Nexus-Mods/fix/app-410)
       '@types/lodash':
         specifier: 'catalog:'
         version: 4.17.24
