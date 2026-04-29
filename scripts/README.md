@@ -15,7 +15,7 @@ Repository management scripts for native module development.
 
 ## Filters
 
-- `cpp` - C++ modules: winapi-bindings, bsatk, loot, gamebryo-savegame, bsdiff-node
+- `cpp` - C++ modules: winapi-bindings, bsatk, loot, gamebryo-savegame
 - `csharp` - C# projects: fomod-installer, dotnetprobe
 - `nexus` - Nexus-Mods hosted repos
 - `all` - All managed repositories

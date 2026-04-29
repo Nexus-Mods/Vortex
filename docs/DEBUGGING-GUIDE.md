@@ -460,7 +460,6 @@ Production logs are in:
 - bsatk
 - loot
 - gamebryo-savegame
-- bsdiff-node
 
 **Debugging with Visual Studio:**
 

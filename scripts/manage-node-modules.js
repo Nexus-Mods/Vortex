@@ -84,13 +84,6 @@ const MODULE_CONFIG = {
     description: "Gamebryo savegame management library",
     type: "cpp",
   },
-  "bsdiff-node": {
-    path: "extensions/collections/node_modules/bsdiff-node",
-    repository: "https://github.com/Nexus-Mods/bsdiff-node.git",
-    sshRepository: "git@github.com:Nexus-Mods/bsdiff-node.git",
-    description: "Binary diff/patch library for Node.js",
-    type: "cpp",
-  },
 };
 
 class ModuleManager {
@@ -677,7 +670,6 @@ PROJECT TYPES MANAGED:
   - bsatk (BSA archive toolkit)
   - loot (Load order optimization)
   - gamebryo-savegame (Savegame management)
-  - bsdiff-node (Binary diff/patch)
 
 WORKFLOW INTEGRATION:
 These tools integrate seamlessly with the Visual Studio solution (vortex.sln).
