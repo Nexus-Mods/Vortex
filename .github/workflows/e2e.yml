@@ -75,12 +75,18 @@ jobs:
         if: runner.os == 'Windows'
         timeout-minutes: 30
         continue-on-error: true
+        env:
+          E2E_NEXUS_FREE_USER_USERNAME: ${{ secrets.E2E_NEXUS_FREE_USER_USERNAME }}
+          E2E_NEXUS_FREE_USER_PASSWORD: ${{ secrets.E2E_NEXUS_FREE_USER_PASSWORD }}
         run: pnpm e2e
 
       - name: Run E2E tests (Linux)
         if: runner.os == 'Linux'
         timeout-minutes: 30
         continue-on-error: true
+        env:
+          E2E_NEXUS_FREE_USER_USERNAME: ${{ secrets.E2E_NEXUS_FREE_USER_USERNAME }}
+          E2E_NEXUS_FREE_USER_PASSWORD: ${{ secrets.E2E_NEXUS_FREE_USER_PASSWORD }}
         run: xvfb-run pnpm e2e
 
       - name: Upload test report
