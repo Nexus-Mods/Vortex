@@ -23,7 +23,6 @@ The Vortex project includes multiple types of projects maintained as separate re
 - **bsatk** - BSA (Bethesda Softworks Archive) toolkit  
 - **loot** - LOOT (Load Order Optimization Tool) bindings
 - **gamebryo-savegame** - Gamebryo savegame management library
-- **bsdiff-node** - Binary diff/patch library for collections
 
 ## Quick Start
 
@@ -178,7 +177,6 @@ node scripts/manage-node-modules.js workflow "Vortex integration updates" nexus
 | bsatk | npm package | Git clone | Nexus-Mods repository |
 | loot | npm package | Git clone | Nexus-Mods repository |
 | gamebryo-savegame | npm package | Git clone | Nexus-Mods repository |
-| bsdiff-node | npm package | Git clone | Nexus-Mods repository |
 | fomod-installer | npm package | Git clone | Nexus-Mods repository |
 | dotnetprobe | N/A | N/A | Already local project |
 
@@ -382,7 +380,6 @@ yarn modules:workflow "Update Visual Studio integration"
 | bsatk | C++ | Nexus-Mods/node-bsatk | master |
 | loot | C++ | Nexus-Mods/node-loot | master |
 | gamebryo-savegame | C++ | Nexus-Mods/node-gamebryo-savegames | master |
-| bsdiff-node | C++ | Nexus-Mods/bsdiff-node | master |
 
 ### Visual Studio Integration
 
@@ -391,7 +388,7 @@ All projects are included in `vortex.sln`:
 - **Core Solution Folder**: dotnetprobe
 - **FOMOD Installer Folder**: 8 C# projects from fomod-installer
 - **Native Addons Folder**: winapi-bindings, xxhash-addon
-- **Gamebryo Extensions Folder**: bsatk, loot, gamebryo-savegame, bsdiff-node
+- **Gamebryo Extensions Folder**: bsatk, loot, gamebryo-savegame
 
 Changes to `.vcxproj`, `.csproj`, source files, and configurations are all managed through this system.
 

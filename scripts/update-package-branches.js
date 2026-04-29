@@ -147,7 +147,6 @@ class PackageUpdater {
       bsatk: "bsatk",
       loot: "loot",
       "gamebryo-savegame": "gamebryo-savegame",
-      "bsdiff-node": "bsdiff-node",
       "xxhash-addon": "xxhash-addon",
     };
     return keyMap[moduleName] || moduleName;

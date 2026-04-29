@@ -219,13 +219,6 @@
     },
     {
         "type": "file",
-        "url": "https://codeload.github.com/Nexus-Mods/bsdiff-node/tar.gz/a2bd60f5f96d172892b7f6708fb9a7a212b3b2e5",
-        "sha256": "660d5520183d74e57ec29a00561857c5a5442be43820b32da3908fdafbe4ae8f",
-        "dest-filename": "a2bd60f5f96d172892b7f6708fb9a7a212b3b2e5",
-        "dest": "flatpak-node/yarn-mirror"
-    },
-    {
-        "type": "file",
         "url": "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336",
         "sha256": "73971d7f83635634bcd183f2dcf80e2f76c6c77a35ceae34d3615bcc352683ac",
         "dest-filename": "daa8935b6e38e255ec192c908adfce35d47c0336",

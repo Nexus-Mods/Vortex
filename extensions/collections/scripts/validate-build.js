@@ -24,7 +24,8 @@ const requiredFiles = [
 
 const optionalFiles = [
   { path: "dist/info.json", description: "Extension info" },
-  { path: "dist/bsdiff.node", description: "Native bsdiff module" },
+  { path: "dist/hdiff.wasm", description: "bsdiff WASM module" },
+  { path: "dist/bsdiffWorker.cjs", description: "bsdiff worker bundle" },
 ];
 
 let hasErrors = false;
