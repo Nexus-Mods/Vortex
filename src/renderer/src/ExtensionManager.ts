@@ -134,6 +134,7 @@ import {
   wrapExtCBSync,
 } from "./util/util";
 import { webpackRequireHack } from "./util/webpack-hacks";
+import { isToastSystemDisabled } from "./views/layout/ToastContainer";
 
 const modmeta = lazyRequire<typeof modmetaT>(() => require("modmeta-db"));
 
@@ -1680,6 +1681,9 @@ class ExtensionManager {
   };
 
   private canBeToast = (notif: INotification) => {
+    if (isToastSystemDisabled()) {
+      return false;
+    }
     const invalidToastTypes = ["activity", "warning"];
     if (
       notif.displayMS != null &&
