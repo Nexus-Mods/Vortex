@@ -21,16 +21,12 @@ import type Nexus from "@nexusmods/nexus-api";
 import type { TFunction } from "i18next";
 import type * as Redux from "redux";
 
-<<<<<<< HEAD
-import { NexusError, RateLimitError, TimeoutError } from "@nexusmods/nexus-api";
-import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
-=======
 import { GraphError, NexusError, RateLimitError, TimeoutError } from "@nexusmods/nexus-api";
 import {
   getErrorMessageOrDefault,
   unknownToError,
 } from "@vortex/shared";
->>>>>>> 04cdaf20f (Merge pull request #22886 from Nexus-Mods/fix/app-410)
+import { AlreadyDownloaded, DownloadIsHTML } from "@vortex/shared/errors";
 import BluebirdPromise from "bluebird";
 import jwt from "jsonwebtoken";
 import * as _ from "lodash";
@@ -71,7 +67,6 @@ import { getPreloadApi, getWindowId } from "../../util/preloadAccess";
 import { activeGameId } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, toPromise, truthy } from "../../util/util";
-import { AlreadyDownloaded, DownloadIsHTML } from "@vortex/shared/errors";
 import { SITE_ID } from "../gamemode_management/constants";
 import { gameById, knownGames } from "../gamemode_management/selectors";
 import modName from "../mod_management/util/modName";
