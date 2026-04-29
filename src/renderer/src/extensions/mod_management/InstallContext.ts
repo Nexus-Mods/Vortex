@@ -219,7 +219,7 @@ class InstallContext implements IInstallContext {
     this.mDismissNotification("install_" + this.mIndicatorId);
     this.mStopActivity(`installing_${this.mIndicatorId}`);
 
-    new Promise(resolve => setTimeout(resolve, 50)).then(() => {
+    new Promise((resolve) => setTimeout(resolve, 50)).then(() => {
       if (!this.mDidReportError) {
         this.mDidReportError = true;
         const noti: INotification = this.outcomeNotification(

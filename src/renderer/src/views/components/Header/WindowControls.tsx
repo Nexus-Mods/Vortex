@@ -15,8 +15,7 @@ import {
 import { Icon } from "../../../ui/components/icon/Icon";
 import { joinClasses } from "../../../ui/utils/joinClasses";
 
-interface WindowControlButtonProps
-  extends ButtonHTMLAttributes<HTMLButtonElement> {
+interface WindowControlButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   className?: string;
   iconPath: string;
 }

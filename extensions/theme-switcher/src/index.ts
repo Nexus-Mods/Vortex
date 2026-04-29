@@ -47,7 +47,10 @@ function applyTheme(api: types.IExtensionApi, theme: string, initial: boolean) {
     });
 }
 
-function editStyle(api: types.IExtensionApi, themeName: string): Bluebird<void> {
+function editStyle(
+  api: types.IExtensionApi,
+  themeName: string,
+): Bluebird<void> {
   const stylePath = path.join(ops.themePath(themeName), "style.scss");
   return fs.ensureFileAsync(stylePath).then(() =>
     util

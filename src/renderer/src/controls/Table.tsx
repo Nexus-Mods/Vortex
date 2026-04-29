@@ -1799,7 +1799,11 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     // blur react-select inputs (and similar) on mouseup, which slams dropdown menus
     // shut before the user can pick an option.
     const target = evt.target as HTMLElement;
-    if (!target?.closest?.('input, select, textarea, [contenteditable="true"], .Select')) {
+    if (
+      !target?.closest?.(
+        'input, select, textarea, [contenteditable="true"], .Select',
+      )
+    ) {
       this.mScrollRef?.focus();
     }
   };

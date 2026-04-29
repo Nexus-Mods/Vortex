@@ -64,7 +64,9 @@ describe("staticChunker", () => {
     it("produces non-overlapping chunks", () => {
       const chunks = createChunks(100, 4);
       for (let i = 1; i < chunks.length; i++) {
-        expect(chunks[i]!.range.start).toBeGreaterThan(chunks[i - 1]!.range.end);
+        expect(chunks[i]!.range.start).toBeGreaterThan(
+          chunks[i - 1]!.range.end,
+        );
       }
     });
 

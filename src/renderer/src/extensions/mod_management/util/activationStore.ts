@@ -127,51 +127,53 @@ export function purgeDeployedFiles(
   basePath: string,
   files: IDeployedFile[],
 ): Promise<void> {
-  return Promise.all(files.map((file) => {
-    const fullPath = path.join(basePath, file.relPath);
-    return fs
-      .statAsync(fullPath)
-      .then((stats) => {
-        // the timestamp from stat has ms precision but the one from the manifest doesn't
-        return stats.mtime.getTime() - file.time < 1000
-          ? fs.unlinkAsync(fullPath)
-          : Promise.resolve();
-      })
-      .catch((err: unknown) => {
-        if (getErrorCode(err) !== "ENOENT") {
-          return Promise.reject(err);
-        } // otherwise ignore
-      });
-  })).then(() => undefined);
+  return Promise.all(
+    files.map((file) => {
+      const fullPath = path.join(basePath, file.relPath);
+      return fs
+        .statAsync(fullPath)
+        .then((stats) => {
+          // the timestamp from stat has ms precision but the one from the manifest doesn't
+          return stats.mtime.getTime() - file.time < 1000
+            ? fs.unlinkAsync(fullPath)
+            : Promise.resolve();
+        })
+        .catch((err: unknown) => {
+          if (getErrorCode(err) !== "ENOENT") {
+            return Promise.reject(err);
+          } // otherwise ignore
+        });
+    }),
+  ).then(() => undefined);
 }
 
 function queryPurgeTextSafe(t: TFunction) {
   return t(
     "IMPORTANT: This game was modded by another instance of Vortex.\n\n" +
-    "If you switch between different instances (or between shared and " +
-    "single-user mode) it's better if you purge mods before switching.\n\n" +
-    "Vortex can try to clean up now but this is less reliable (*) than doing it " +
-    "from the instance that deployed the files in the first place.\n\n" +
-    "If you modified any files in the game directory you should back them up " +
-    "before continuing.\n\n" +
-    "(*) This purge relies on a manifest of deployed files, created by that other " +
-    "instance. Files that have been changed since that manifest was created " +
-    "won't be removed to prevent data loss. If the manifest is damaged or " +
-    'outdated the purge may be incomplete. When purging from the "right" instance ' +
-    "the manifest isn't required, it can reliably deduce which files need to " +
-    "be removed.",
+      "If you switch between different instances (or between shared and " +
+      "single-user mode) it's better if you purge mods before switching.\n\n" +
+      "Vortex can try to clean up now but this is less reliable (*) than doing it " +
+      "from the instance that deployed the files in the first place.\n\n" +
+      "If you modified any files in the game directory you should back them up " +
+      "before continuing.\n\n" +
+      "(*) This purge relies on a manifest of deployed files, created by that other " +
+      "instance. Files that have been changed since that manifest was created " +
+      "won't be removed to prevent data loss. If the manifest is damaged or " +
+      'outdated the purge may be incomplete. When purging from the "right" instance ' +
+      "the manifest isn't required, it can reliably deduce which files need to " +
+      "be removed.",
   );
 }
 
 function queryPurgeTextUnsafe(t: TFunction) {
   return t(
     "IMPORTANT: This game was modded by another instance of Vortex.\n\n" +
-    "Vortex can only proceed by purging the mods from that other instance.\n\n" +
-    "This will irreversibly **destroy** the mod installations from that other " +
-    "instance!\n\n" +
-    "You should instead cancel now, open that other vortex instance and purge " +
-    "from there. This can also be caused by switching between shared and " +
-    "single-user mode.",
+      "Vortex can only proceed by purging the mods from that other instance.\n\n" +
+      "This will irreversibly **destroy** the mod installations from that other " +
+      "instance!\n\n" +
+      "You should instead cancel now, open that other vortex instance and purge " +
+      "from there. This can also be caused by switching between shared and " +
+      "single-user mode.",
   );
 }
 
@@ -183,8 +185,8 @@ function queryPurge(
 ): Promise<void> {
   const t = api.translate;
   const text = safe ? queryPurgeTextSafe(t) : queryPurgeTextUnsafe(t);
-  return Promise.resolve(api.store
-    .dispatch(
+  return Promise.resolve(
+    api.store.dispatch(
       showDialog(
         "info",
         t("Purge files from different instance?"),
@@ -193,27 +195,31 @@ function queryPurge(
         },
         [{ label: "Cancel" }, { label: "Purge" }],
       ),
-    ))
-    .then((result) => {
-      if (result.action === "Purge") {
-        return purgeDeployedFiles(basePath, files).catch((err: unknown) => {
-          api.showErrorNotification("Purging failed", err, {
-            allowReport: false,
-          });
-          return Promise.reject(new UserCanceled());
+    ),
+  ).then((result) => {
+    if (result.action === "Purge") {
+      return purgeDeployedFiles(basePath, files).catch((err: unknown) => {
+        api.showErrorNotification("Purging failed", err, {
+          allowReport: false,
         });
-      } else {
         return Promise.reject(new UserCanceled());
-      }
-    });
+      });
+    } else {
+      return Promise.reject(new UserCanceled());
+    }
+  });
 }
 
 function readManifestFile(filePath: string): Promise<any> {
-  return Promise.resolve(fs.readFileAsync(filePath, "utf8")).then((data) => readManifest(data));
+  return Promise.resolve(fs.readFileAsync(filePath, "utf8")).then((data) =>
+    readManifest(data),
+  );
 }
 
 function readManifestFileBinary(filePath: string): Promise<any> {
-  return Promise.resolve(fs.readFileAsync(filePath)).then((data) => readManifest(data));
+  return Promise.resolve(fs.readFileAsync(filePath)).then((data) =>
+    readManifest(data),
+  );
 }
 
 function getManifestImpl(
@@ -284,7 +290,8 @@ function getManifestImpl(
             }),
         )
         .catch((backupErr: unknown) => {
-          errObj.message += "\nBackup couldn't be read: " + unknownToError(backupErr).message;
+          errObj.message +=
+            "\nBackup couldn't be read: " + unknownToError(backupErr).message;
           return Promise.reject(errObj);
         });
     })
@@ -593,8 +600,7 @@ export function saveActivation(
 
   return activation.length === 0
     ? fs.removeAsync(tagFilePath).catch(() => undefined)
-    : writeFileAtomic(tagFilePath, dataJSON)
-      .then(() =>
+    : writeFileAtomic(tagFilePath, dataJSON).then(() =>
         fs
           .removeAsync(path.join(stagingPath, tagFileName))
           .catch((err: unknown) => {

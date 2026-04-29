@@ -114,10 +114,9 @@ parentPort!.on("message", (msg: BsdiffRequest) => {
       return;
     }
     const output = readOutput(wasm);
-    parentPort!.postMessage(
-      { id: msg.id, result: output } as BsdiffResponse,
-      [output.buffer as ArrayBuffer],
-    );
+    parentPort!.postMessage({ id: msg.id, result: output } as BsdiffResponse, [
+      output.buffer as ArrayBuffer,
+    ]);
   } catch (err: any) {
     parentPort!.postMessage({
       id: msg.id,

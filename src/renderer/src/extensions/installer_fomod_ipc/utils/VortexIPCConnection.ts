@@ -1,4 +1,7 @@
-import type { ConnectionStrategy, TimeoutOptions } from "@nexusmods/fomod-installer-ipc";
+import type {
+  ConnectionStrategy,
+  TimeoutOptions,
+} from "@nexusmods/fomod-installer-ipc";
 import { BaseIPCConnection } from "@nexusmods/fomod-installer-ipc";
 import type { ISupportedResult } from "../../mod_management/types/TestSupported";
 import type { IInstallResult } from "../../mod_management/types/IInstallResult";

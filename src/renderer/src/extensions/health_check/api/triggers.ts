@@ -1,4 +1,4 @@
-import { unknownToError } from '@vortex/shared';
+import { unknownToError } from "@vortex/shared";
 
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IHealthCheckResult } from "../../../types/IHealthCheck";
@@ -35,19 +35,31 @@ export function setupAutomaticTriggers(
     // Game changed trigger
     api.events.on("gamemode-activated", (gameMode: string) => {
       log("debug", "Triggering game change health checks", { gameMode });
-      void triggerHealthChecks(api, healthCheckApi, HealthCheckTrigger.GameChanged);
+      void triggerHealthChecks(
+        api,
+        healthCheckApi,
+        HealthCheckTrigger.GameChanged,
+      );
     });
 
     // Profile changed trigger
     api.events.on("profile-did-change", (profileId: string) => {
       log("debug", "Triggering profile change health checks", { profileId });
-      void triggerHealthChecks(api, healthCheckApi, HealthCheckTrigger.ProfileChanged);
+      void triggerHealthChecks(
+        api,
+        healthCheckApi,
+        HealthCheckTrigger.ProfileChanged,
+      );
     });
 
     // Settings changed trigger
     api.events.on("settings-changed", (path: string[]) => {
       log("debug", "Triggering settings change health checks", { path });
-      void triggerHealthChecks(api, healthCheckApi, HealthCheckTrigger.SettingsChanged);
+      void triggerHealthChecks(
+        api,
+        healthCheckApi,
+        HealthCheckTrigger.SettingsChanged,
+      );
     });
 
     // Mods changed triggers - debounced because did-install-mod and
@@ -56,7 +68,11 @@ export function setupAutomaticTriggers(
     // be updated when the first event fires.
     const modsChangedDebouncer = new Debouncer(
       () =>
-        void triggerHealthChecks(api, healthCheckApi, HealthCheckTrigger.ModsChanged),
+        void triggerHealthChecks(
+          api,
+          healthCheckApi,
+          HealthCheckTrigger.ModsChanged,
+        ),
       500,
     );
 
@@ -74,8 +90,15 @@ export function setupAutomaticTriggers(
     // Run health checks after collection post-processing finishes,
     // matching the pattern used by gamebryo-plugin-management for LOOT.
     api.events.on("collection-postprocess-complete", () => {
-      log("debug", "Collection post-processing complete, triggering health checks");
-      void triggerHealthChecks(api, healthCheckApi, HealthCheckTrigger.ModsChanged);
+      log(
+        "debug",
+        "Collection post-processing complete, triggering health checks",
+      );
+      void triggerHealthChecks(
+        api,
+        healthCheckApi,
+        HealthCheckTrigger.ModsChanged,
+      );
     });
 
     api.onStateChange?.(
@@ -84,7 +107,11 @@ export function setupAutomaticTriggers(
         log("debug", "Triggering requirements change health checks", {
           lastFullRun,
         });
-        void triggerHealthChecks(api, healthCheckApi, HealthCheckTrigger.ResultsChanged);
+        void triggerHealthChecks(
+          api,
+          healthCheckApi,
+          HealthCheckTrigger.ResultsChanged,
+        );
       },
     );
 

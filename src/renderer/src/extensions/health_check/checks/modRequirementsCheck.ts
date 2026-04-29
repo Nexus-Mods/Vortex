@@ -19,11 +19,7 @@ import type {
 
 import { setModAttribute } from "../../../actions";
 import { HealthCheckSeverity } from "../../../types/IHealthCheck";
-import {
-  getGame,
-  nexusGameId,
-  renderModName,
-} from "../../../util/api";
+import { getGame, nexusGameId, renderModName } from "../../../util/api";
 import { log } from "../../../util/log";
 import { getSafe } from "../../../util/storeHelper";
 import { batchDispatch } from "../../../util/util";

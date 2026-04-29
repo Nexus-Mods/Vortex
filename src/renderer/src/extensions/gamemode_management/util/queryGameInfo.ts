@@ -37,7 +37,9 @@ function queryGameInfo(
       };
     })
     .catch((err) => {
-      log("error", "failed to query game info", { err: unknownToError(err).message });
+      log("error", "failed to query game info", {
+        err: unknownToError(err).message,
+      });
       return {};
     });
 }

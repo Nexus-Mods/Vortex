@@ -15,9 +15,7 @@
     "saveNumber": 9,
     "creationTime": 1289678538,
     "playTime": "1 days, 1 hours",
-    "plugins": [
-      "Oblivion.esm"
-    ],
+    "plugins": ["Oblivion.esm"],
     "screenshotSize": {
       "width": 256,
       "height": 160

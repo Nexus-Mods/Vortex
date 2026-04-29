@@ -54,29 +54,35 @@ describe("WindowsPathProviderImpl.resolve", () => {
 describe("WindowsPathProviderImpl.fromBase", () => {
   const provider = new WindowsPathProviderImpl();
 
-  it.runIf(process.platform === "win32")("returns USERPROFILE (or homedir fallback) for 'home'", async () => {
-    const qp = await provider.fromBase("home");
-    expect(qp.scheme).toBe("windows");
-    // Round-trip: resolve back to native matches the source value (modulo
-    // drive-letter casing).
-    const native = await provider.resolve(qp);
-    const expected = (process.env["USERPROFILE"] ?? homedir()).replace(
-      /^([a-z]):/,
-      (_, c: string) => `${c.toUpperCase()}:`,
-    );
-    expect(native).toBe(expected);
-  });
+  it.runIf(process.platform === "win32")(
+    "returns USERPROFILE (or homedir fallback) for 'home'",
+    async () => {
+      const qp = await provider.fromBase("home");
+      expect(qp.scheme).toBe("windows");
+      // Round-trip: resolve back to native matches the source value (modulo
+      // drive-letter casing).
+      const native = await provider.resolve(qp);
+      const expected = (process.env["USERPROFILE"] ?? homedir()).replace(
+        /^([a-z]):/,
+        (_, c: string) => `${c.toUpperCase()}:`,
+      );
+      expect(native).toBe(expected);
+    },
+  );
 
-  it.runIf(process.platform === "win32")("returns tmpdir() for 'temp'", async () => {
-    const qp = await provider.fromBase("temp");
-    expect(qp.scheme).toBe("windows");
-    const native = await provider.resolve(qp);
-    const expected = tmpdir().replace(
-      /^([a-z]):/,
-      (_, c: string) => `${c.toUpperCase()}:`,
-    );
-    expect(native).toBe(expected);
-  });
+  it.runIf(process.platform === "win32")(
+    "returns tmpdir() for 'temp'",
+    async () => {
+      const qp = await provider.fromBase("temp");
+      expect(qp.scheme).toBe("windows");
+      const native = await provider.resolve(qp);
+      const expected = tmpdir().replace(
+        /^([a-z]):/,
+        (_, c: string) => `${c.toUpperCase()}:`,
+      );
+      expect(native).toBe(expected);
+    },
+  );
 
   it("rejects unknown bases", async () => {
     await expect(

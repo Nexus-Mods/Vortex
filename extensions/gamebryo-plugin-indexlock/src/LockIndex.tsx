@@ -87,7 +87,7 @@ class LockIndex extends ComponentEx<IProps, {}> {
           <ControlLabel style={{ maxWidth: 250 }}>
             {t(
               "Actual index differs. If this is the case after sorting it may be " +
-              "this index isn't possible.",
+                "this index isn't possible.",
             )}
           </ControlLabel>
         )}

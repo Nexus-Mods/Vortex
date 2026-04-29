@@ -7,10 +7,7 @@ import {
 } from "@mdi/js";
 import React, { type ButtonHTMLAttributes, type FC } from "react";
 
-import {
-  nxmElectronicArts,
-  nxmEpicGames,
-} from "../../../ui/icon-paths";
+import { nxmElectronicArts, nxmEpicGames } from "../../../ui/icon-paths";
 import { joinClasses } from "../../../ui/utils/joinClasses";
 import { useGameImage } from "./utils";
 
@@ -70,7 +67,10 @@ export const GameButton: FC<GameButtonProps> = ({
     <button
       className={joinClasses(
         "group relative size-12 shrink-0 overflow-hidden rounded-lg",
-        { "outline-2 outline-offset-2 outline-neutral-strong focus-visible:outline-info-subdued": isActive },
+        {
+          "outline-2 outline-offset-2 outline-neutral-strong focus-visible:outline-info-subdued":
+            isActive,
+        },
       )}
       title={title}
       {...props}

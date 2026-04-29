@@ -376,14 +376,20 @@ $navbar-collapse-max-height: 340px !default;
 
 $navbar-default-color: #777 !default;
 $navbar-default-bg: #f8f8f8 !default;
-$navbar-default-border: color.adjust($navbar-default-bg, $lightness: -6.5%) !default;
+$navbar-default-border: color.adjust(
+    $navbar-default-bg,
+    $lightness: -6.5%
+) !default;
 
 // Navbar links
 $navbar-default-link-color: #777 !default;
 $navbar-default-link-hover-color: #333 !default;
 $navbar-default-link-hover-bg: transparent !default;
 $navbar-default-link-active-color: #555 !default;
-$navbar-default-link-active-bg: color.adjust($navbar-default-bg, $lightness: -6.5%) !default;
+$navbar-default-link-active-bg: color.adjust(
+    $navbar-default-bg,
+    $lightness: -6.5%
+) !default;
 $navbar-default-link-disabled-color: #ccc !default;
 $navbar-default-link-disabled-bg: transparent !default;
 
@@ -404,14 +410,20 @@ $navbar-default-toggle-border-color: #ddd !default;
 // Reset inverted navbar basics
 $navbar-inverse-color: color.adjust($gray-light, $lightness: 15%) !default;
 $navbar-inverse-bg: #222 !default;
-$navbar-inverse-border: color.adjust($navbar-inverse-bg, $lightness: -10%) !default;
+$navbar-inverse-border: color.adjust(
+    $navbar-inverse-bg,
+    $lightness: -10%
+) !default;
 
 // Inverted navbar links
 $navbar-inverse-link-color: color.adjust($gray-light, $lightness: 15%) !default;
 $navbar-inverse-link-hover-color: #fff !default;
 $navbar-inverse-link-hover-bg: transparent !default;
 $navbar-inverse-link-active-color: $navbar-inverse-link-hover-color !default;
-$navbar-inverse-link-active-bg: color.adjust($navbar-inverse-bg, $lightness: -10%) !default;
+$navbar-inverse-link-active-bg: color.adjust(
+    $navbar-inverse-bg,
+    $lightness: -10%
+) !default;
 $navbar-inverse-link-disabled-color: #444 !default;
 $navbar-inverse-link-disabled-bg: transparent !default;
 
@@ -505,19 +517,31 @@ $jumbotron-heading-font-size: math.ceil(($font-size-base * 4.5)) !default;
 
 $state-success-text: #3c763d !default;
 $state-success-bg: #dff0d8 !default;
-$state-success-border: color.adjust(color.adjust($state-success-bg, $hue: -10), $lightness: -5%) !default;
+$state-success-border: color.adjust(
+    color.adjust($state-success-bg, $hue: -10),
+    $lightness: -5%
+) !default;
 
 $state-info-text: #31708f !default;
 $state-info-bg: #d9edf7 !default;
-$state-info-border: color.adjust(color.adjust($state-info-bg, $hue: -10), $lightness: -7%) !default;
+$state-info-border: color.adjust(
+    color.adjust($state-info-bg, $hue: -10),
+    $lightness: -7%
+) !default;
 
 $state-warning-text: #8a6d3b !default;
 $state-warning-bg: #fcf8e3 !default;
-$state-warning-border: color.adjust(color.adjust($state-warning-bg, $hue: -10), $lightness: -5%) !default;
+$state-warning-border: color.adjust(
+    color.adjust($state-warning-bg, $hue: -10),
+    $lightness: -5%
+) !default;
 
 $state-danger-text: #a94442 !default;
 $state-danger-bg: #f2dede !default;
-$state-danger-border: color.adjust(color.adjust($state-danger-bg, $hue: -10), $lightness: -5%) !default;
+$state-danger-border: color.adjust(
+    color.adjust($state-danger-bg, $hue: -10),
+    $lightness: -5%
+) !default;
 
 //== Tooltips
 //
@@ -560,7 +584,10 @@ $popover-arrow-color: $popover-bg !default;
 //** Popover outer arrow width
 $popover-arrow-outer-width: ($popover-arrow-width + 1) !default;
 //** Popover outer arrow color
-$popover-arrow-outer-color: color.adjust($popover-border-color, $alpha: 0.05) !default;
+$popover-arrow-outer-color: color.adjust(
+    $popover-border-color,
+    $alpha: 0.05
+) !default;
 //** Popover outer arrow fallback color
 $popover-arrow-outer-fallback-color: color.adjust(
     $popover-fallback-border-color,
@@ -687,7 +714,10 @@ $list-group-active-bg: $component-active-bg !default;
 //** Border color of active list elements
 $list-group-active-border: $list-group-active-bg !default;
 //** Text color for content within active list items
-$list-group-active-text-color: color.adjust($list-group-active-bg, $lightness: 40%) !default;
+$list-group-active-text-color: color.adjust(
+    $list-group-active-bg,
+    $lightness: 40%
+) !default;
 
 //** Text color of disabled list items
 $list-group-disabled-color: $gray-light !default;

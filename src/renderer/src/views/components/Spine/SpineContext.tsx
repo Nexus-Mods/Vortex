@@ -132,7 +132,13 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
           page.id !== "Downloads" &&
           isPageVisible(page),
       ),
-    [mainPages, isPageVisible, activeGameId, profilesVisible, pluginManagementEnabled],
+    [
+      mainPages,
+      isPageVisible,
+      activeGameId,
+      profilesVisible,
+      pluginManagementEnabled,
+    ],
   );
 
   const gamePages: IMainPage[] = useMemo(
@@ -143,7 +149,13 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
           page.id !== "game-downloads" &&
           isPageVisible(page),
       ),
-    [mainPages, isPageVisible, activeGameId, profilesVisible, pluginManagementEnabled],
+    [
+      mainPages,
+      isPageVisible,
+      activeGameId,
+      profilesVisible,
+      pluginManagementEnabled,
+    ],
   );
 
   const mainPage = useSelector(mainPageSelector);
@@ -292,7 +304,10 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
   // context so the page becomes visible
   useEffect(() => {
     const handler = (pageId: string) => {
-      if (gamePages.some((p) => p.id === pageId) && activeGameId !== undefined) {
+      if (
+        gamePages.some((p) => p.id === pageId) &&
+        activeGameId !== undefined
+      ) {
         setHomeForGameId(null);
         setIsDownloadsMode(false);
       }

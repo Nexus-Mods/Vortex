@@ -17,7 +17,7 @@ import type {
 } from "../../types/IExtensionContext";
 import type { IGame } from "../../types/IGame";
 import type { IGameStore } from "../../types/IGameStore";
-import type { NotificationDismiss } from '../../types/INotification';
+import type { NotificationDismiss } from "../../types/INotification";
 import type { IProfile, IRunningTool, IState } from "../../types/IState";
 import type { IEditChoice, ITableAttribute } from "../../types/ITableAttribute";
 import type { IModWithState } from "../mod_management/views/CheckModVersionsButton";
@@ -79,7 +79,7 @@ import {
 } from "./util/modTypeExtensions";
 import ProcessMonitor from "./util/ProcessMonitor";
 import queryGameInfo from "./util/queryGameInfo";
-import { } from "./views/GamePicker";
+import {} from "./views/GamePicker";
 import HideGameIcon from "./views/HideGameIcon";
 import ModTypeWidget from "./views/ModTypeWidget";
 import PathSelectionDialog from "./views/PathSelection";
@@ -275,7 +275,7 @@ function manualGameStoreSelection(
         {
           bbcode: api.translate(
             'The currently identified game store for your selected game directory is: "{{gameStore}}".[br][/br][br][/br]' +
-            "If this is not the correct game store, please choose below. (Games can have game store specific folder structures)[br][/br][br][/br]",
+              "If this is not the correct game store, please choose below. (Games can have game store specific folder structures)[br][/br][br][/br]",
             { replace: { gameStore: detectedStore?.name || "Unknown" } },
           ),
           choices: gameStores
@@ -384,28 +384,36 @@ function browseGameLocation(
             // discovery should still point to the old data at this point.
             const previousStore = discovery?.store;
             if (previousStore != null && previousStore !== store) {
-              const storeChangedDialog = async () => api.showDialog(
-                "info",
-                "Game Store Changed",
-                {
-                  text: api.translate(
-                    "The game store has changed from \"{{oldStore}}\" to \"{{newStore}}\".\n\n"
-                    + "Some mods, mod loaders, and tools such as UE4SS or Script Extenders "
-                    + "install files into store-specific directories (e.g. win64 for Steam "
-                    + "vs winGDK for Xbox). These may need to be re-installed for the game "
-                    + "to function correctly at the new location.",
-                    { replace: { oldStore: previousStore, newStore: store ?? "unknown" } },
-                  ),
-                },
-                [{ label: "Close" }],
-              );
+              const storeChangedDialog = async () =>
+                api.showDialog(
+                  "info",
+                  "Game Store Changed",
+                  {
+                    text: api.translate(
+                      'The game store has changed from "{{oldStore}}" to "{{newStore}}".\n\n' +
+                        "Some mods, mod loaders, and tools such as UE4SS or Script Extenders " +
+                        "install files into store-specific directories (e.g. win64 for Steam " +
+                        "vs winGDK for Xbox). These may need to be re-installed for the game " +
+                        "to function correctly at the new location.",
+                      {
+                        replace: {
+                          oldStore: previousStore,
+                          newStore: store ?? "unknown",
+                        },
+                      },
+                    ),
+                  },
+                  [{ label: "Close" }],
+                );
 
               api.sendNotification({
                 id: `game-store-changed-${game.id}`,
                 type: "warning",
                 allowSuppress: true,
-                message: api.translate("Game store changed - mod loaders and tools "
-                  + "(e.g. UE4SS) may need to be re-installed."),
+                message: api.translate(
+                  "Game store changed - mod loaders and tools " +
+                    "(e.g. UE4SS) may need to be re-installed.",
+                ),
                 actions: [
                   {
                     title: "More",
@@ -428,8 +436,8 @@ function browseGameLocation(
                 {
                   text: api.translate(
                     "This directory doesn't appear to contain the game.\n" +
-                    "Usually you need to select the top-level game directory, " +
-                    "containing the following files:\n{{ files }}",
+                      "Usually you need to select the top-level game directory, " +
+                      "containing the following files:\n{{ files }}",
                     { replace: { files: game.requiredFiles.join("\n") } },
                   ),
                 },
@@ -810,7 +818,7 @@ function init(context: IExtensionContext): boolean {
         );
         game.contributed =
           gameExtInfo.author === COMPANY_ID ||
-            gameExtInfo.author === NEXUSMODS_EXT_ID
+          gameExtInfo.author === NEXUSMODS_EXT_ID
             ? undefined
             : gameExtInfo.author;
         game.final = semver.gte(gameExtInfo.version, "1.0.0");
@@ -855,12 +863,12 @@ function init(context: IExtensionContext): boolean {
       game.path == null || typeof game.path !== "string"
         ? PromiseBB.resolve({})
         : PromiseBB.resolve({
-          path: {
-            title: "Path",
-            value: path.normalize(game.path),
-            type: "url",
-          },
-        }),
+            path: {
+              title: "Path",
+              value: path.normalize(game.path),
+              type: "url",
+            },
+          }),
   );
 
   context.registerGameInfoProvider(
@@ -1100,10 +1108,10 @@ function init(context: IExtensionContext): boolean {
           state.settings.gameMode.searchPaths.length > 0
             ? PromiseBB.resolve()
             : PromiseBB.resolve(getDriveList(context.api))
-              .catch(() => [])
-              .then((drives) => {
-                context.api.store.dispatch(setGameSearchPaths(drives));
-              });
+                .catch(() => [])
+                .then((drives) => {
+                  context.api.store.dispatch(setGameSearchPaths(drives));
+                });
 
         initPromise.then(() => {
           context.api.store.dispatch(setDialogVisible("game-search-paths"));
@@ -1200,14 +1208,14 @@ function init(context: IExtensionContext): boolean {
                         {
                           bbcode: context.api.translate(
                             "Vortex attempted to manage the game and has " +
-                            'encountered a missing file:[br][/br]"{{errPath}}".[br][/br][br][/br]' +
-                            "Depending on recent changes on your environment and/or the game store through " +
-                            "which the game has been purchased, this error could be due to several factors:[br][/br][list]" +
-                            "[*]The game might be only partially installed/uninstalled or in a corrupt state" +
-                            "[*]The game store through which you purchased the game might require additional steps " +
-                            "to enable modding capabilities" +
-                            "[*]You may have to run the game at least once for certain folders to be created/unlocked" +
-                            "[*]You might have installed an unrecognized game variant. Please inform the game extension developer[/list]",
+                              'encountered a missing file:[br][/br]"{{errPath}}".[br][/br][br][/br]' +
+                              "Depending on recent changes on your environment and/or the game store through " +
+                              "which the game has been purchased, this error could be due to several factors:[br][/br][list]" +
+                              "[*]The game might be only partially installed/uninstalled or in a corrupt state" +
+                              "[*]The game store through which you purchased the game might require additional steps " +
+                              "to enable modding capabilities" +
+                              "[*]You may have to run the game at least once for certain folders to be created/unlocked" +
+                              "[*]You might have installed an unrecognized game variant. Please inform the game extension developer[/list]",
                             { replace: { errPath: err.path } },
                           ),
                         },

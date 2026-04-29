@@ -48,4 +48,4 @@ export interface IModConfig {
   GameModContents?: IGameModContents;
 }
 
-export type LauncherConfig = Promise<{launcher: string; addInfo?: any; }>;
+export type LauncherConfig = Promise<{ launcher: string; addInfo?: any }>;

@@ -539,7 +539,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
         isGroupable: true,
         groupName: (required: "required" | false) => {
           const { t } = this.props;
-          return required ? t("Required") : t("Optional")
+          return required ? t("Required") : t("Optional");
         },
         filter: new OptionsFilter(
           [
@@ -580,7 +580,11 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
         isSortable: true,
         isGroupable: true,
         filter: new OptionsFilter(
-          () => Object.values(SOURCES).map((name) => ({ value: name, label: name })),
+          () =>
+            Object.values(SOURCES).map((name) => ({
+              value: name,
+              label: name,
+            })),
           false,
           false,
         ),
@@ -848,15 +852,14 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
         isGroupable: true,
         groupName: (instructions: string) => {
           const { t } = this.props;
-          return instructions ? t("Has Instructions") : t("<No Instructions>")
+          return instructions ? t("Has Instructions") : t("<No Instructions>");
         },
       },
       {
         id: "local_edits",
         name: "Binary Patching",
         icon: "edit",
-        help:
-          "With this option enabled, any changes you did to the files in this mods will also be included in the Collection.",
+        help: "With this option enabled, any changes you did to the files in this mods will also be included in the Collection.",
         placement: "table",
         calc: (entry: IModEntry) => {
           const { collection } = this.props;
@@ -959,7 +962,9 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
         isGroupable: true,
         groupName: (saveEdits: "" | true) => {
           const { t } = this.props;
-          return saveEdits ? t("Has Binary Patching") : t("<No Binary Patching>")
+          return saveEdits
+            ? t("Has Binary Patching")
+            : t("<No Binary Patching>");
         },
         filter: new OptionsFilter(
           [

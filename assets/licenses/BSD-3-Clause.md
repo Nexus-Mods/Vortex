@@ -1,5 +1,4 @@
-Modified BSD License
-====================
+# Modified BSD License
 
 _Copyright © `<year>`, `<copyright holder>`_  
 _All rights reserved._

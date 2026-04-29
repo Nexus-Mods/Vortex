@@ -99,7 +99,13 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
                 bsStyle="primary"
                 disabled={!nameValid}
                 id="__accept"
-                tooltip={nameValid ? t("Accept") : t("Profile name must be at least {{num}} characters", { num: MIN_PROFILE_NAME_LENGTH })}
+                tooltip={
+                  nameValid
+                    ? t("Accept")
+                    : t("Profile name must be at least {{num}} characters", {
+                        num: MIN_PROFILE_NAME_LENGTH,
+                      })
+                }
                 onClick={this.saveEdit}
               >
                 {t("Save")}

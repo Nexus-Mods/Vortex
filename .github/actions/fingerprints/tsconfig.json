@@ -14,7 +14,7 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "outDir": "lib",
-    "rootDir": "src",
+    "rootDir": "src"
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*"]
 }

@@ -48,16 +48,14 @@ export const useToolsData = () => {
     shallowEqual,
   );
   const toolsOrder = useSelector(
-    (state: IState) =>
-      state.settings.interface.tools?.order?.[gameMode] ?? [],
+    (state: IState) => state.settings.interface.tools?.order?.[gameMode] ?? [],
     shallowEqual,
   );
   const primaryTool = useSelector(
     (state: IState) => state.settings.interface.primaryTool?.[gameMode],
   );
   const pinnedToolsMap = useSelector(
-    (state: IState) =>
-      state.settings.interface.tools?.pinned?.[gameMode] ?? {},
+    (state: IState) => state.settings.interface.tools?.pinned?.[gameMode] ?? {},
     shallowEqual,
   );
   const toolsRunning = useSelector(

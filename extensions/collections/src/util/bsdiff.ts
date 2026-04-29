@@ -51,9 +51,7 @@ function getWorker(): Worker {
     workerData: { wasmPath: getWasmPath() },
     // When running the .ts source directly (tests), use Node's built-in
     // TypeScript stripping (available in Node >= 22.6).
-    ...(isTsSource
-      ? { execArgv: ["--experimental-strip-types"] }
-      : {}),
+    ...(isTsSource ? { execArgv: ["--experimental-strip-types"] } : {}),
   });
 
   worker.on("message", (msg: BsdiffResponse) => {
@@ -90,10 +88,10 @@ function postToWorker(
   return new Promise((resolve, reject) => {
     const id = nextId++;
     pending.set(id, { resolve, reject });
-    getWorker().postMessage(
-      { id, op, left, right } satisfies BsdiffRequest,
-      [left.buffer as ArrayBuffer, right.buffer as ArrayBuffer],
-    );
+    getWorker().postMessage({ id, op, left, right } satisfies BsdiffRequest, [
+      left.buffer as ArrayBuffer,
+      right.buffer as ArrayBuffer,
+    ]);
   });
 }
 
@@ -107,7 +105,11 @@ export async function createPatch(
   oldBuf: Uint8Array,
   newBuf: Uint8Array,
 ): Promise<Uint8Array> {
-  return postToWorker("create_patch", new Uint8Array(oldBuf), new Uint8Array(newBuf));
+  return postToWorker(
+    "create_patch",
+    new Uint8Array(oldBuf),
+    new Uint8Array(newBuf),
+  );
 }
 
 /**
@@ -118,7 +120,11 @@ export async function applyPatch(
   oldBuf: Uint8Array,
   patchBuf: Uint8Array,
 ): Promise<Uint8Array> {
-  return postToWorker("apply_patch", new Uint8Array(oldBuf), new Uint8Array(patchBuf));
+  return postToWorker(
+    "apply_patch",
+    new Uint8Array(oldBuf),
+    new Uint8Array(patchBuf),
+  );
 }
 
 /**

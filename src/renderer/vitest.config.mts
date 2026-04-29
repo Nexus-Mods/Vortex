@@ -16,9 +16,15 @@ export default defineConfig({
   resolve: {
     tsconfigPaths: true,
     alias: {
-      'original-fs': 'fs',
-      'vortex-api': path.resolve(__dirname, '../../packages/vortex-api/lib/api.js'),
-      'modmeta-db': path.resolve(__dirname, '../../extensions/nmm-import-tool/node_modules/modmeta-db/lib/index.js'),
+      "original-fs": "fs",
+      "vortex-api": path.resolve(
+        __dirname,
+        "../../packages/vortex-api/lib/api.js",
+      ),
+      "modmeta-db": path.resolve(
+        __dirname,
+        "../../extensions/nmm-import-tool/node_modules/modmeta-db/lib/index.js",
+      ),
     },
   },
 });

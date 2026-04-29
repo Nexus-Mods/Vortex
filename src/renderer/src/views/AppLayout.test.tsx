@@ -51,8 +51,7 @@ vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 vi.mock("react-redux", async () => {
-  const actual =
-    await vi.importActual<typeof ReactReduxTypes>("react-redux");
+  const actual = await vi.importActual<typeof ReactReduxTypes>("react-redux");
   return {
     ...actual,
     useDispatch: () => vi.fn(),

@@ -42,9 +42,7 @@ function processMenuTemplate(
 
     // Recursively process submenus
     if (item.submenu && Array.isArray(item.submenu)) {
-      processed.submenu = processMenuTemplate(
-        item.submenu,
-      );
+      processed.submenu = processMenuTemplate(item.submenu);
     }
 
     return processed as SerializableMenuItem;

@@ -494,52 +494,58 @@ function genOnProfileChange(
 
         sanitizeProfile(store, profile);
 
-        return PromiseBB.resolve(withTrackedActivity(
-          "vortex.profile-management",
-          "profile.switch",
-          {
-            "profile.from": prev,
-            "profile.to": current,
-            "profile.gameId": profile?.gameId,
-          },
-          () =>
-          queue
-            .then(() => {
-              log("debug", "starting refresh profile export");
-              return refreshProfile(store, profile, "export");
-            })
-            // ensure the old profile is synchronised before we switch, otherwise me might
-            // revert some changes
-            .then(() => {
-              log("info", "will deploy previously active profile", prev);
-              return deploy(api, prev);
-            })
-            .then(() => {
-              log("info", "did deploy previously active profile", prev);
-              log("info", "will deploy next active profile", current);
-              return deploy(api, current);
-            })
-            .then(() => {
-              log("info", "did deploy next active profile", current);
-              const prof = profileById(api.store.getState() as IState, current);
-              if (prof === undefined) {
-                return PromiseBB.reject(
-                  new ProcessCanceled(
-                    "Profile was deleted during deployment. " +
-                      "Why would you do something like that???",
-                  ),
-                );
-              }
+        return PromiseBB.resolve(
+          withTrackedActivity(
+            "vortex.profile-management",
+            "profile.switch",
+            {
+              "profile.from": prev,
+              "profile.to": current,
+              "profile.gameId": profile?.gameId,
+            },
+            () =>
+              queue
+                .then(() => {
+                  log("debug", "starting refresh profile export");
+                  return refreshProfile(store, profile, "export");
+                })
+                // ensure the old profile is synchronised before we switch, otherwise me might
+                // revert some changes
+                .then(() => {
+                  log("info", "will deploy previously active profile", prev);
+                  return deploy(api, prev);
+                })
+                .then(() => {
+                  log("info", "did deploy previously active profile", prev);
+                  log("info", "will deploy next active profile", current);
+                  return deploy(api, current);
+                })
+                .then(() => {
+                  log("info", "did deploy next active profile", current);
+                  const prof = profileById(
+                    api.store.getState() as IState,
+                    current,
+                  );
+                  if (prof === undefined) {
+                    return PromiseBB.reject(
+                      new ProcessCanceled(
+                        "Profile was deleted during deployment. " +
+                          "Why would you do something like that???",
+                      ),
+                    );
+                  }
 
-              api.store.dispatch(
-                setProgress("profile", "deploying", undefined, undefined),
-              );
-              const gameId = profile !== undefined ? profile.gameId : undefined;
-              log("info", "switched to profile", { gameId, current });
-              confirmProfile(gameId, current);
-              return null;
-            }),
-        ));
+                  api.store.dispatch(
+                    setProgress("profile", "deploying", undefined, undefined),
+                  );
+                  const gameId =
+                    profile !== undefined ? profile.gameId : undefined;
+                  log("info", "switched to profile", { gameId, current });
+                  confirmProfile(gameId, current);
+                  return null;
+                }),
+          ),
+        );
       })
       .catch((err) => {
         cancelSwitch();

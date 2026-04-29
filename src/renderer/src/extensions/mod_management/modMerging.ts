@@ -125,10 +125,9 @@ async function mergeArchive(
     await fs.removeAsync(outputPath);
   }
 
-  const finalArchive = await api.openArchive(
-    path.join(mergePath, relArcPath),
-    { gameId: game.id },
-  );
+  const finalArchive = await api.openArchive(path.join(mergePath, relArcPath), {
+    gameId: game.id,
+  });
   await finalArchive.create(resultPath);
   await fs.removeAsync(resultPath);
 }
@@ -182,13 +181,11 @@ async function mergeMods(
         filePath.toLowerCase(),
     ) !== undefined;
 
-  for (const mod of mods.filter(
-    (mod) => mod.installationPath !== undefined,
-  )) {
+  for (const mod of mods.filter((mod) => mod.installationPath !== undefined)) {
     const modPath = path.join(modBasePath, mod.installationPath);
     const allFiles = await getFileList(modPath);
-    const fileList = allFiles.filter(
-      (entry: IFileEntry) => entry.stats.isFile(),
+    const fileList = allFiles.filter((entry: IFileEntry) =>
+      entry.stats.isFile(),
     );
 
     for (const fileEntry of fileList) {

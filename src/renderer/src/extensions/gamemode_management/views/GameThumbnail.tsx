@@ -68,9 +68,10 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
     // For adaptor-registered games (no local logo), resolve a Nexus thumbnail
     if (logoPath == null) {
       const domain = nexusGameId(game);
-      const numericId = domain != null
-        ? nexusGames().find((g) => g.domain_name === domain)?.id
-        : undefined;
+      const numericId =
+        domain != null
+          ? nexusGames().find((g) => g.domain_name === domain)?.id
+          : undefined;
       if (numericId !== undefined) {
         logoPath = `https://images.nexusmods.com/images/games/v2/${numericId}/thumbnail.jpg`;
       }

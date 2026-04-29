@@ -34,7 +34,11 @@ interface GameConfig {
 }
 
 const GAMES: GameConfig[] = [
-  { gameId: "oblivion", nexusDomain: "oblivion", notes: "Oblivion-style format" },
+  {
+    gameId: "oblivion",
+    nexusDomain: "oblivion",
+    notes: "Oblivion-style format",
+  },
   { gameId: "fallout3", nexusDomain: "fallout3", notes: "Original format" },
   { gameId: "falloutnv", nexusDomain: "newvegas", notes: "Original format" },
   { gameId: "skyrim", nexusDomain: "skyrim", notes: "Original format" },
@@ -89,7 +93,9 @@ async function nexusGet<T>(endpoint: string): Promise<T> {
         res.on("end", () => {
           if (res.statusCode !== 200) {
             reject(
-              new Error(`${res.statusCode} ${res.statusMessage}: ${url}\n${data}`),
+              new Error(
+                `${res.statusCode} ${res.statusMessage}: ${url}\n${data}`,
+              ),
             );
             return;
           }
@@ -110,18 +116,24 @@ async function fetchJson<T>(url: string): Promise<T> {
   await sleep(100);
   return new Promise((resolve, reject) => {
     const protocol = url.startsWith("https") ? https : require("http");
-    protocol.get(url, { headers: { "User-Agent": "Vortex2-CorpusBuilder" } }, (res: any) => {
-      let data = "";
-      res.on("data", (chunk: string) => (data += chunk));
-      res.on("end", () => {
-        try {
-          resolve(JSON.parse(data));
-        } catch (e) {
-          reject(new Error(`JSON parse error for ${url}: ${e}`));
-        }
-      });
-      res.on("error", reject);
-    }).on("error", reject);
+    protocol
+      .get(
+        url,
+        { headers: { "User-Agent": "Vortex2-CorpusBuilder" } },
+        (res: any) => {
+          let data = "";
+          res.on("data", (chunk: string) => (data += chunk));
+          res.on("end", () => {
+            try {
+              resolve(JSON.parse(data));
+            } catch (e) {
+              reject(new Error(`JSON parse error for ${url}: ${e}`));
+            }
+          });
+          res.on("error", reject);
+        },
+      )
+      .on("error", reject);
   });
 }
 
@@ -129,34 +141,42 @@ async function downloadFile(url: string, dest: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const protocol = url.startsWith("https") ? https : require("http");
     const file = fs.createWriteStream(dest);
-    protocol.get(url, { headers: { "User-Agent": "Vortex2-CorpusBuilder" } }, (res: any) => {
-      // Follow redirects
-      if (res.statusCode === 301 || res.statusCode === 302) {
+    protocol
+      .get(
+        url,
+        { headers: { "User-Agent": "Vortex2-CorpusBuilder" } },
+        (res: any) => {
+          // Follow redirects
+          if (res.statusCode === 301 || res.statusCode === 302) {
+            file.close();
+            fs.unlinkSync(dest);
+            downloadFile(res.headers.location, dest).then(resolve, reject);
+            return;
+          }
+          if (res.statusCode !== 200) {
+            file.close();
+            fs.unlinkSync(dest);
+            reject(new Error(`Download failed: ${res.statusCode} ${url}`));
+            return;
+          }
+          res.pipe(file);
+          file.on("finish", () => {
+            file.close();
+            resolve();
+          });
+          file.on("error", (err: Error) => {
+            fs.unlinkSync(dest);
+            reject(err);
+          });
+        },
+      )
+      .on("error", (err: Error) => {
         file.close();
-        fs.unlinkSync(dest);
-        downloadFile(res.headers.location, dest).then(resolve, reject);
-        return;
-      }
-      if (res.statusCode !== 200) {
-        file.close();
-        fs.unlinkSync(dest);
-        reject(new Error(`Download failed: ${res.statusCode} ${url}`));
-        return;
-      }
-      res.pipe(file);
-      file.on("finish", () => {
-        file.close();
-        resolve();
-      });
-      file.on("error", (err: Error) => {
-        fs.unlinkSync(dest);
+        try {
+          fs.unlinkSync(dest);
+        } catch {}
         reject(err);
       });
-    }).on("error", (err: Error) => {
-      file.close();
-      try { fs.unlinkSync(dest); } catch {}
-      reject(err);
-    });
   });
 }
 
@@ -177,7 +197,8 @@ function findPluginFiles(
     node.path &&
     PLUGIN_EXTENSIONS.some((ext) => node.path!.toLowerCase().endsWith(ext))
   ) {
-    const sizeNum = typeof node.size === "string" ? parseFloat(node.size) : (node.size || 0);
+    const sizeNum =
+      typeof node.size === "string" ? parseFloat(node.size) : node.size || 0;
     results.push({ path: currentPath, size: sizeNum });
   }
 
@@ -199,7 +220,9 @@ function stripToHeader(filePath: string): number {
   const buf = fs.readFileSync(filePath);
 
   if (buf.length < 24) {
-    console.warn(`  File too small to be valid: ${filePath} (${buf.length} bytes)`);
+    console.warn(
+      `  File too small to be valid: ${filePath} (${buf.length} bytes)`,
+    );
     return buf.length;
   }
 
@@ -260,7 +283,10 @@ async function collectPluginsForGame(
       for (const file of filesResp.files) {
         if (collected.length >= TARGET_PLUGINS_PER_GAME) break;
         if (file.size_kb > MAX_ARCHIVE_SIZE_KB) continue;
-        if (file.category_name === "DELETED" || file.category_name === "OLD_VERSION")
+        if (
+          file.category_name === "DELETED" ||
+          file.category_name === "OLD_VERSION"
+        )
           continue;
 
         // Check archive contents via content preview

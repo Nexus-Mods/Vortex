@@ -27,10 +27,8 @@ class GoPremiumDashlet extends ComponentEx<WithTranslation, {}> {
         <div className="dashlet-premium-body">
           <span className="text-highlight">Upgrade to unlock</span> uncapped
           download speeds,
-          <span className="text-highlight">
-            {" "}
-            auto-install collections
-          </span> and <span className="text-highlight">no ads</span>.
+          <span className="text-highlight"> auto-install collections</span> and{" "}
+          <span className="text-highlight">no ads</span>.
         </div>
         <button className="dashlet-premium-button" onClick={this.goBuyPremium}>
           <FlexLayout type="row" className="dashlet-premium-button-content">

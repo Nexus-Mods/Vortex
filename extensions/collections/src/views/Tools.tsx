@@ -99,8 +99,8 @@ function Tools(props: IToolsProps) {
         <p>
           {t(
             "Obviously users will need to have these tools installed. If they aren't " +
-            "included in the game and not installed as a mod through this collection, " +
-            "you should include instructions for the user on how to get the tool.",
+              "included in the game and not installed as a mod through this collection, " +
+              "you should include instructions for the user on how to get the tool.",
           )}
         </p>
       </ControlLabel>

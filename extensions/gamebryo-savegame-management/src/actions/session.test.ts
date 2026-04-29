@@ -12,14 +12,16 @@ describe("setSavegames", () => {
       fileSize: 1024,
       attributes: {},
     };
-    expect(sessionActions.setSavegames({ savegame1: savegame }, false)).toEqual({
-      error: false,
-      type: "SET_SAVEGAMES",
-      payload: {
-        savegames: { savegame1: savegame },
-        truncated: false,
+    expect(sessionActions.setSavegames({ savegame1: savegame }, false)).toEqual(
+      {
+        error: false,
+        type: "SET_SAVEGAMES",
+        payload: {
+          savegames: { savegame1: savegame },
+          truncated: false,
+        },
       },
-    });
+    );
   });
 });
 

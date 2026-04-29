@@ -86,8 +86,8 @@ const settings = (props: IInstructionProps) => {
           name={t("Exclude plugin rules")}
         >
           {t(
-            "If enabled, custom LOOT plugin rules and groups will not be included when exporting this collection. "
-            + "This prevents inherited rules from spreading between collections.",
+            "If enabled, custom LOOT plugin rules and groups will not be included when exporting this collection. " +
+              "This prevents inherited rules from spreading between collections.",
           )}
         </More>
       </Toggle>

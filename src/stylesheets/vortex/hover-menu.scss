@@ -53,7 +53,10 @@
                 .btn {
                     transition: background-color 100ms;
                     &:hover {
-                        background-color: color.adjust($brand-primary, $lightness: -20%);
+                        background-color: color.adjust(
+                            $brand-primary,
+                            $lightness: -20%
+                        );
                         color: $gray-darker;
                     }
                 }

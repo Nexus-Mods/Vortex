@@ -33,10 +33,10 @@ export const install = async (
   const isFomodChoicesIn = (
     value: unknown,
   ): value is { type: string; options: IChoices } =>
-    typeof value === "object"
-    && value != null
-    && (value as { type?: unknown }).type === "fomod"
-    && Array.isArray((value as { options?: unknown }).options);
+    typeof value === "object" &&
+    value != null &&
+    (value as { type?: unknown }).type === "fomod" &&
+    Array.isArray((value as { options?: unknown }).options);
 
   const fomodChoices: IChoices = isFomodChoicesIn(choicesIn)
     ? choicesIn.options

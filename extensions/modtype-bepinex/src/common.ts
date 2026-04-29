@@ -85,9 +85,11 @@ export const resolveBixPackage = (
 export const addGameSupport = (gameConf: IBepInExGameConfig) => {
   const isIL2CPP = gameConf.unityBuild === "unityil2cpp";
 
-  if (isIL2CPP
-      && gameConf.bepinexVersion != null
-      && semver.lt(gameConf.bepinexVersion, "6.0.0")) {
+  if (
+    isIL2CPP &&
+    gameConf.bepinexVersion != null &&
+    semver.lt(gameConf.bepinexVersion, "6.0.0")
+  ) {
     throw new Error("IL2CPP builds require BepInEx 6.0.0 or above");
   }
 
@@ -105,8 +107,9 @@ export const addGameSupport = (gameConf: IBepInExGameConfig) => {
   }
 
   if (gameConf.bepinexVersion != null) {
-    gameConf.bepinexCoercedVersion =
-      util.semverCoerce(gameConf.bepinexVersion).version;
+    gameConf.bepinexCoercedVersion = util.semverCoerce(
+      gameConf.bepinexVersion,
+    ).version;
   }
 
   GAME_SUPPORT[gameConf.gameId] = gameConf;
@@ -193,7 +196,7 @@ export const getDownload = (
   const versionKey = `${gameConf.bepinexVersion}${arch}`;
   const download: INexusDownloadInfoExt =
     gameConf.bepinexVersion != null &&
-      Object.keys(AVAILABLE).includes(versionKey)
+    Object.keys(AVAILABLE).includes(versionKey)
       ? AVAILABLE[versionKey]
       : AVAILABLE[getLatestVersion(arch)];
   return {

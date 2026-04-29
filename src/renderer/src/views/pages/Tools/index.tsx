@@ -1,11 +1,11 @@
 import { mdiPin, mdiPlus, mdiFlash, mdiWrench } from "@mdi/js";
-import React, { type FC, type PropsWithChildren, type ReactNode } from 'react';
+import React, { type FC, type PropsWithChildren, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
-import { Button } from '@/ui/components/button/Button';
-import { Icon } from '@/ui/components/icon/Icon';
-import { Pictogram } from '@/ui/components/pictogram/Pictogram';
-import { Typography } from '@/ui/components/typography/Typography';
+import { Button } from "@/ui/components/button/Button";
+import { Icon } from "@/ui/components/icon/Icon";
+import { Pictogram } from "@/ui/components/pictogram/Pictogram";
+import { Typography } from "@/ui/components/typography/Typography";
 
 import EmptyPlaceholder from "../../../controls/EmptyPlaceholder";
 import ToolEditDialog from "../../../extensions/starter_dashlet/ToolEditDialog";
@@ -13,18 +13,26 @@ import MainPage from "../../MainPage";
 import { ToolRow } from "./ToolRow";
 import { useToolsPage } from "./useToolsPage";
 
-const Panel = ({ actions, children, heading, iconPath, tooltip }: PropsWithChildren<{ actions?: () => ReactNode; heading:string; iconPath: string; tooltip: string; }>) => (
+const Panel = ({
+  actions,
+  children,
+  heading,
+  iconPath,
+  tooltip,
+}: PropsWithChildren<{
+  actions?: () => ReactNode;
+  heading: string;
+  iconPath: string;
+  tooltip: string;
+}>) => (
   <div className="space-y-2">
-    <div
-      className="flex items-center gap-x-4"
-      title={tooltip}
-    >
-      <Typography appearance="subdued" className="flex grow items-center gap-x-2 font-semibold" typographyType="body-sm">
-        <Icon
-          className="shrink-0"
-          path={iconPath}
-          size="sm"
-        />
+    <div className="flex items-center gap-x-4" title={tooltip}>
+      <Typography
+        appearance="subdued"
+        className="flex grow items-center gap-x-2 font-semibold"
+        typographyType="body-sm"
+      >
+        <Icon className="shrink-0" path={iconPath} size="sm" />
 
         {heading}
       </Typography>
@@ -32,9 +40,7 @@ const Panel = ({ actions, children, heading, iconPath, tooltip }: PropsWithChild
       {actions?.()}
     </div>
 
-    <div className="space-y-2">
-      {children}
-    </div>
+    <div className="space-y-2">{children}</div>
   </div>
 );
 
@@ -71,7 +77,9 @@ export const ToolsPage: FC = () => {
             <EmptyPlaceholder
               fill={true}
               icon="game"
-              text={t("When you are managing a game, supported tools will appear here")}
+              text={t(
+                "When you are managing a game, supported tools will appear here",
+              )}
             />
           </div>
         </MainPage.Body>
@@ -93,7 +101,9 @@ export const ToolsPage: FC = () => {
               </Typography>
 
               <Typography appearance="moderate">
-                {t("Tools are external programs or launch options used alongside the game.")}
+                {t(
+                  "Tools are external programs or launch options used alongside the game.",
+                )}
               </Typography>
             </div>
           </div>
@@ -141,9 +151,14 @@ export const ToolsPage: FC = () => {
 
                 {/* Pinned tools section */}
                 <Panel
-                  heading={t("Pinned tools {{count}}/{{max}}", {count: pinnedCount, max: MAX_PINNED_TOOLS })}
+                  heading={t("Pinned tools {{count}}/{{max}}", {
+                    count: pinnedCount,
+                    max: MAX_PINNED_TOOLS,
+                  })}
                   iconPath={mdiPin}
-                  tooltip={t("Pin shortcuts to your most used tools in the left menu")}
+                  tooltip={t(
+                    "Pin shortcuts to your most used tools in the left menu",
+                  )}
                 >
                   {otherPinnedTools.length > 0 ? (
                     otherPinnedTools.map((starter, idx) => (
@@ -169,7 +184,9 @@ export const ToolsPage: FC = () => {
                     ))
                   ) : (
                     <Typography appearance="subdued" typographyType="body-sm">
-                      {t("Pin shortcuts to your most used tools in the left menu.")}
+                      {t(
+                        "Pin shortcuts to your most used tools in the left menu.",
+                      )}
                     </Typography>
                   )}
                 </Panel>

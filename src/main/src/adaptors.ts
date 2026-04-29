@@ -517,7 +517,9 @@ function registerIpcHandlers(): void {
         case "pe-header": {
           if (!exeVersionFn) {
             // eslint-disable-next-line @typescript-eslint/no-require-imports
-            const mod = require("exe-version") as { default: typeof exeVersionT };
+            const mod = require("exe-version") as {
+              default: typeof exeVersionT;
+            };
             exeVersionFn = mod.default;
           }
           try {

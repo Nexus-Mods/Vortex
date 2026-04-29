@@ -4,11 +4,11 @@ Only traces containing at least one ERROR-status span are exported. Non-error tr
 
 ## Process Model
 
-| `process.type` | Processor | Export strategy |
-|----------------|-----------|-----------------|
-| `main` | `RingBufferSpanProcessor` | Deferred; triggered on ERROR status |
-| `renderer` | `ForwardingSpanProcessor` | Immediate IPC forward to main |
-| `report` | `SimpleSpanProcessor` | Synchronous; `forceFlush()` on shutdown |
+| `process.type` | Processor                 | Export strategy                         |
+| -------------- | ------------------------- | --------------------------------------- |
+| `main`         | `RingBufferSpanProcessor` | Deferred; triggered on ERROR status     |
+| `renderer`     | `ForwardingSpanProcessor` | Immediate IPC forward to main           |
+| `report`       | `SimpleSpanProcessor`     | Synchronous; `forceFlush()` on shutdown |
 
 ## Main Process
 
@@ -21,10 +21,10 @@ Only traces containing at least one ERROR-status span are exported. Non-error tr
 - Maintains a circular buffer of up to 500 finished spans (configurable via `maxSpans`)
 - `onStart` — span added to the in-flight map
 - `onEnd`:
-  1. Span removed from in-flight map
-  2. If `traceId` already exported → export span immediately (late arrival)
-  3. Otherwise → add span to ring buffer
-  4. If `span.status.code === ERROR` → extract all buffered spans for this `traceId`, invoke `onExportSpans`
+    1. Span removed from in-flight map
+    2. If `traceId` already exported → export span immediately (late arrival)
+    3. Otherwise → add span to ring buffer
+    4. If `span.status.code === ERROR` → extract all buffered spans for this `traceId`, invoke `onExportSpans`
 
 `exportedTraceIds` is capped at 1000 entries (FIFO eviction) to prevent the set from growing unbounded.
 
@@ -32,9 +32,9 @@ Only traces containing at least one ERROR-status span are exported. Non-error tr
 
 ```typescript
 onExportSpans: (spans) => {
-  if (!isTelemetryEnabled()) return;
-  exporter.export(spans, () => {});
-}
+    if (!isTelemetryEnabled()) return;
+    exporter.export(spans, () => {});
+};
 ```
 
 - Default endpoint: `https://vortex-collector.nexusmods.com/v1/traces`
@@ -58,6 +58,7 @@ window.api.telemetry            betterIpcRenderer.send(   betterIpcMain.on(
 Spans are serialized to plain JSON (`SerializedSpan`) for IPC transfer.
 
 **Files**:
+
 - Renderer: `src/renderer/extensions/telemetry/index.ts`
 - Preload bridge: `src/preload/index.ts`
 - Main receiver: `src/main/telemetry/ipcHandler.ts`
@@ -102,20 +103,20 @@ Stable across machines; version-scoped so different releases produce different f
 
 ### Resource (every span)
 
-| Attribute | Value |
-|-----------|-------|
-| `service.name` | `"vortex"` |
-| `service.version` | `app.getVersion()` |
-| `process.type` | `"main"`, `"renderer"`, or `"report"` |
-| `process.pid` | Runtime PID |
-| `os.type` / `os.version` | OS info |
-| `host.arch` | CPU architecture |
+| Attribute                | Value                                 |
+| ------------------------ | ------------------------------------- |
+| `service.name`           | `"vortex"`                            |
+| `service.version`        | `app.getVersion()`                    |
+| `process.type`           | `"main"`, `"renderer"`, or `"report"` |
+| `process.pid`            | Runtime PID                           |
+| `os.type` / `os.version` | OS info                               |
+| `host.arch`              | CPU architecture                      |
 
 ### Error span
 
-| Attribute | Value |
-|-----------|-------|
-| `error.fingerprint` | FNV-1a hash |
-| `error.title` | Human-readable title if provided |
-| `exception.type` / `exception.message` / `exception.stacktrace` | Standard OTel exception fields |
-| `context.<key>` | Ambient context entries from `globalContext` |
+| Attribute                                                       | Value                                        |
+| --------------------------------------------------------------- | -------------------------------------------- |
+| `error.fingerprint`                                             | FNV-1a hash                                  |
+| `error.title`                                                   | Human-readable title if provided             |
+| `exception.type` / `exception.message` / `exception.stacktrace` | Standard OTel exception fields               |
+| `context.<key>`                                                 | Ambient context entries from `globalContext` |
