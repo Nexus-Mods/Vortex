@@ -48,8 +48,8 @@ export async function loginToNexus(
     }
 
     authBrowser = await chromium.launch({
-      channel: "chrome",
-      headless: false,
+      channel: "chromium",
+      headless: !process.env.PWDEBUG,
     });
     const authContext = await authBrowser.newContext();
     authPage = await authContext.newPage();
