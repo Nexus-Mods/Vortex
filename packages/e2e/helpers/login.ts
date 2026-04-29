@@ -1,4 +1,5 @@
 import {
+  type Browser,
   chromium,
   expect,
   type ElectronApplication,
@@ -16,7 +17,7 @@ export async function loginToNexus(
 ): Promise<void> {
   const { username, password } = user;
   let loginPage: Page | null = null;
-  let authBrowser: Awaited<ReturnType<typeof chromium.launch>> | null = null;
+  let authBrowser: Browser | null = null;
   let authPage: Page | null = null;
 
   const vortexLoginPage = new LoginPage(vortexWindow);
@@ -36,76 +37,80 @@ export async function loginToNexus(
     loginPage = (await popupPromise) ?? (await appWindowPromise);
   });
 
-  await test.step("Verify the browser has opened to the login page", async () => {
-    await expect(vortexLoginPage.oauthUrlField).toBeVisible();
+  try {
+    await test.step("Verify the browser has opened to the login page", async () => {
+      await expect(vortexLoginPage.oauthUrlField).toBeVisible();
 
-    const oauthUrl = await vortexLoginPage.oauthUrlField.inputValue();
-    expect(oauthUrl).toMatch(/^https?:\/\//i);
+      const oauthUrl = await vortexLoginPage.oauthUrlField.inputValue();
+      expect(oauthUrl).toMatch(/^https?:\/\//i);
 
-    if (loginPage !== null) {
-      await loginPage.waitForLoadState("domcontentloaded");
-      await expect(loginPage).toHaveURL(/nexusmods|users\./i);
-    }
+      if (loginPage !== null) {
+        await loginPage.waitForLoadState("domcontentloaded");
+        await expect(loginPage).toHaveURL(/nexusmods|users\./i);
+      }
 
-    authBrowser = await chromium.launch({
-      channel: "chromium",
-      headless: !process.env.PWDEBUG,
+      authBrowser = await chromium.launch({
+        channel: "chromium",
+        headless: !process.env.PWDEBUG,
+      });
+      const authContext = await authBrowser.newContext();
+      authPage = await authContext.newPage();
+
+      await authPage.goto(oauthUrl, {
+        waitUntil: "domcontentloaded",
+        timeout: 60000,
+      });
+      await expect(authPage).toHaveURL(/nexusmods|users\./i);
+
+      const nexusLoginPage = new LoginPage(authPage);
+      await expect(nexusLoginPage.authLoginHeading).toBeVisible();
     });
-    const authContext = await authBrowser.newContext();
-    authPage = await authContext.newPage();
 
-    await authPage.goto(oauthUrl, {
-      waitUntil: "domcontentloaded",
-      timeout: 60000,
+    await test.step("Login with FreeUser credentials", async () => {
+      if (authPage === null) {
+        throw new Error("Auth page was not available for login.");
+      }
+
+      const nexusLoginPage = new LoginPage(authPage);
+
+      await test.step("Enter username", async () => {
+        await nexusLoginPage.usernameInput.fill(username);
+        await expect(nexusLoginPage.usernameInput).toHaveValue(username);
+      });
+      await test.step("Enter password", async () => {
+        await nexusLoginPage.passwordInput.fill(password);
+        await expect(nexusLoginPage.passwordInput).toHaveValue(password);
+      });
+      await test.step("Submit login form", async () => {
+        await expect(nexusLoginPage.submitLoginButton).toBeEnabled();
+        await nexusLoginPage.submitLoginButton.click();
+      });
+      await test.step("Verify OAuth permission screen", async () => {
+        await expect(nexusLoginPage.oauthPermissionTitle).toBeVisible();
+      });
     });
-    await expect(authPage).toHaveURL(/nexusmods|users\./i);
 
-    const nexusLoginPage = new LoginPage(authPage);
-    await expect(nexusLoginPage.authLoginHeading).toBeVisible();
-  });
+    await test.step("Click Authorise", async () => {
+      if (authPage === null) {
+        throw new Error("Auth page was not available for authorisation.");
+      }
 
-  await test.step("Login with FreeUser credentials", async () => {
-    if (authPage === null) {
-      throw new Error("Auth page was not available for login.");
-    }
+      const nexusLoginPage = new LoginPage(authPage);
 
-    const nexusLoginPage = new LoginPage(authPage);
+      await expect(nexusLoginPage.authoriseButton).toBeVisible();
+      await nexusLoginPage.authoriseButton.click();
 
-    await test.step("Enter username", async () => {
-      await nexusLoginPage.usernameInput.fill(username);
-      await expect(nexusLoginPage.usernameInput).toHaveValue(username);
+      await expect(nexusLoginPage.authorisationSuccessTitle).toBeVisible();
     });
-    await test.step("Enter password", async () => {
-      await nexusLoginPage.passwordInput.fill(password);
-      await expect(nexusLoginPage.passwordInput).toHaveValue(password);
-    });
-    await test.step("Submit login form", async () => {
-      await expect(nexusLoginPage.submitLoginButton).toBeEnabled();
-      await nexusLoginPage.submitLoginButton.click();
-    });
-    await test.step("Verify OAuth permission screen", async () => {
-      await expect(nexusLoginPage.oauthPermissionTitle).toBeVisible();
-    });
-  });
-
-  await test.step("Click Authorise", async () => {
-    if (authPage === null) {
-      throw new Error("Auth page was not available for authorisation.");
-    }
-
-    const nexusLoginPage = new LoginPage(authPage);
-
-    await expect(nexusLoginPage.authoriseButton).toBeVisible();
-    await nexusLoginPage.authoriseButton.click();
-
-    await expect(nexusLoginPage.authorisationSuccessTitle).toBeVisible();
-
-    if (authBrowser !== null) {
-      await authBrowser.close();
-    }
+  } finally {
+    const browserToClose = authBrowser as Browser | null;
     authBrowser = null;
     authPage = null;
-  });
+
+    if (browserToClose !== null) {
+      await browserToClose.close();
+    }
+  }
 
   await test.step("Verify logged in state in Vortex", async () => {
     const vortexLoginPage = new LoginPage(vortexWindow);
