@@ -21,7 +21,12 @@ export const collectFromInput = (): CollectResult => {
   const releaseVersion = core.getInput("release-version");
 
   const fingerprints = [
-    ...new Set(fingerprintsInput.split(/[\s,]+/).filter(Boolean)),
+    ...new Set(
+      fingerprintsInput
+        .split(/[\s,]+/)
+        .filter(Boolean)
+        .map((fp) => fp.toLowerCase()),
+    ),
   ];
 
   if (fingerprints.length === 0) {

@@ -59,5 +59,12 @@ export interface CollectResult {
   dbMode: DbMode;
 }
 
-export const FINGERPRINT_RE = /^[a-f0-9]{8}$/;
-export const PR_FINGERPRINT_RE = /^Fixes fingerprint ([a-f0-9]{8})\b/gm;
+export const FINGERPRINT_RE = /^[a-f0-9]{8}$/i;
+
+/**
+ * Matches `Fixes fingerprint <hex>` and `Fixes fingerprints <hex>(, <hex>)*`
+ * lines. The capture group is the raw fingerprint list — split it on
+ * `[\s,]+` to get individual values.
+ */
+export const PR_FINGERPRINT_RE =
+  /^Fixes fingerprints? ([a-f0-9]{8}(?:[\s,]+[a-f0-9]{8})*)\b/gim;
