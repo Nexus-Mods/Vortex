@@ -17,7 +17,9 @@ const ctx = vi.hoisted(() => ({
 
 vi.mock("@actions/core", () => ({
   info: vi.fn(),
-  getInput: vi.fn((name: string) => (inputs as Record<string, string>)[name] ?? ""),
+  getInput: vi.fn(
+    (name: string) => (inputs as Record<string, string>)[name] ?? "",
+  ),
   getBooleanInput: vi.fn(
     (name: string) => (inputs as Record<string, string>)[name] === "true",
   ),
@@ -84,6 +86,12 @@ describe("collectFromInput", () => {
     inputs.fingerprints = "a1b2c3d4";
     inputs.status = "pending";
     expect(() => collectFromInput()).toThrow(/Invalid status/);
+  });
+
+  it("accepts uppercase hex and normalizes to lowercase", () => {
+    inputs.fingerprints = "A1B2C3D4,F0E1D2C3";
+    const r = collectFromInput();
+    expect(r.rows.map((x) => x.fingerprint)).toEqual(["a1b2c3d4", "f0e1d2c3"]);
   });
 
   it("stamps each row with the workflow run URL and the actor", () => {

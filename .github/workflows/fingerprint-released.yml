@@ -1,4 +1,4 @@
-name: Mark fingerprints as released
+name: Fingerprints - Mark as released
 on:
   push:
     tags:
@@ -16,7 +16,7 @@ jobs:
   sync:
     runs-on: [self-hosted]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/fingerprints
         with:
           mode: release
