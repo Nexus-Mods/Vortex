@@ -133,7 +133,11 @@ import {
   wrapExtCBSync,
 } from "./util/util";
 import { webpackRequireHack } from "./util/webpack-hacks";
+<<<<<<< HEAD
 import { IPCDownloadAdapter } from "./IPCDownloadAdapter";
+=======
+import { isToastSystemDisabled } from "./views/layout/ToastContainer";
+>>>>>>> d101d2ee8 (Merge pull request #22884 from Nexus-Mods/fix/409)
 
 const modmeta = lazyRequire<typeof modmetaT>(() => require("modmeta-db"));
 
@@ -1698,6 +1702,9 @@ class ExtensionManager {
   };
 
   private canBeToast = (notif: INotification) => {
+    if (isToastSystemDisabled()) {
+      return false;
+    }
     const invalidToastTypes = ["activity", "warning"];
     if (
       notif.displayMS != null &&
