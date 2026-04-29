@@ -44,6 +44,8 @@ import {
 import { setKnownGames } from "../gamemode_management/actions/session";
 
 import { log } from "../../util/log";
+import * as selectors from "../../util/selectors";
+import type { IState } from "../../types/IState";
 
 // ---------------------------------------------------------------------------
 // Type definitions for adaptor IPC responses
@@ -872,17 +874,15 @@ function init(context: IExtensionContext): boolean {
   );
 
   // Register a prelaunch start hook that runs adaptor prelaunch tasks
-  // before the game launches. Priority 90 runs after deployment checks
-  // (100) but before the actual launch. The hook queries the adaptor's
-  // prelaunch service, evaluates conditions, and runs qualifying tasks.
+  // before the game launches. Priority 90 runs before deployment checks
+  // (100). The hook queries the adaptor's prelaunch service, evaluates
+  // conditions, and runs qualifying tasks.
   context.registerStartHook?.(
     90,
     "adaptor-prelaunch",
     async (input) => {
-      const state = context.api.getState();
-      const profile = (state as any).settings?.profiles?.lastActiveProfile;
-      const profiles = (state as any).persistent?.profiles;
-      const gameId = profiles?.[profile]?.gameId as string | undefined;
+      const state: IState = context.api.getState();
+      const gameId = selectors.activeGameId(state);
       if (!gameId) return input;
 
       const info = prelaunchRegistry.get(gameId);
