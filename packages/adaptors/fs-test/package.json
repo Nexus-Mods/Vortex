@@ -14,11 +14,11 @@
     "vortex:host/filesystem"
   ],
   "devDependencies": {
-    "@vortex/adaptor-api": "workspace:*",
+    "@nexusmods/adaptor-api": "workspace:*",
     "@vortex/fs": "workspace:*"
   },
   "peerDependencies": {
-    "@vortex/adaptor-api": "workspace:*",
+    "@nexusmods/adaptor-api": "workspace:*",
     "@vortex/fs": "workspace:*"
   }
 }

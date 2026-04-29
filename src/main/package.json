@@ -38,7 +38,7 @@
     "@tailwindcss/cli": "catalog:",
     "@types/bluebird": "catalog:",
     "@types/uuid": "catalog:",
-    "@vortex/adaptor-api": "workspace:*",
+    "@nexusmods/adaptor-api": "workspace:*",
     "@vortex/fs": "workspace:*",
     "bbcode-to-react": "catalog:",
     "big.js": "catalog:",

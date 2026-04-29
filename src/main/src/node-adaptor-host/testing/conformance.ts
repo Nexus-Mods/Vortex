@@ -1,6 +1,6 @@
-import type { IMessageHandler } from "@vortex/adaptor-api";
+import type { IMessageHandler } from "@nexusmods/adaptor-api";
 
-import { adaptorName, semVer, uri } from "@vortex/adaptor-api";
+import { adaptorName, semVer, uri } from "@nexusmods/adaptor-api";
 import { describe, expect, it, beforeAll, afterAll } from "vitest";
 
 import { createTestHarness, type ITestHarness } from "./harness.js";

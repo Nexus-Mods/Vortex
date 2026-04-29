@@ -3802,7 +3802,7 @@ importers:
 
   packages/adaptors/cyberpunk2077:
     devDependencies:
-      '@vortex/adaptor-api':
+      '@nexusmods/adaptor-api':
         specifier: workspace:*
         version: link:../../adaptor-api
       '@vortex/fs':
@@ -3811,7 +3811,7 @@ importers:
 
   packages/adaptors/fs-test:
     devDependencies:
-      '@vortex/adaptor-api':
+      '@nexusmods/adaptor-api':
         specifier: workspace:*
         version: link:../../adaptor-api
       '@vortex/fs':
@@ -3820,7 +3820,7 @@ importers:
 
   packages/adaptors/ping-test:
     devDependencies:
-      '@vortex/adaptor-api':
+      '@nexusmods/adaptor-api':
         specifier: workspace:*
         version: link:../../adaptor-api
 
@@ -3956,6 +3956,9 @@ importers:
       '@msgpack/msgpack':
         specifier: 'catalog:'
         version: 2.8.0
+      '@nexusmods/adaptor-api':
+        specifier: workspace:*
+        version: link:../../packages/adaptor-api
       '@nexusmods/fomod-installer-ipc':
         specifier: 'catalog:'
         version: 0.13.1
@@ -3995,9 +3998,6 @@ importers:
       '@types/uuid':
         specifier: 'catalog:'
         version: 3.4.13
-      '@vortex/adaptor-api':
-        specifier: workspace:*
-        version: link:../../packages/adaptor-api
       '@vortex/fs':
         specifier: workspace:*
         version: link:../../packages/fs

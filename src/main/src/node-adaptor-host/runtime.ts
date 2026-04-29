@@ -1,8 +1,8 @@
-import type { IMethodMessage, MessageId, PID } from "@vortex/adaptor-api";
-import type { StorePathSnapshot } from "@vortex/adaptor-api/stores/lib";
+import type { IMethodMessage, MessageId, PID } from "@nexusmods/adaptor-api";
+import type { StorePathSnapshot } from "@nexusmods/adaptor-api/stores/lib";
 
-import { messageId, pid } from "@vortex/adaptor-api";
-import { createStorePathProvider } from "@vortex/adaptor-api/stores/lib";
+import { messageId, pid } from "@nexusmods/adaptor-api";
+import { createStorePathProvider } from "@nexusmods/adaptor-api/stores/lib";
 
 /**
  * Creates a closure-based PID allocator. Each call returns a unique PID.

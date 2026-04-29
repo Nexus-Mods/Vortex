@@ -1,4 +1,4 @@
-import type { IMethodMessage } from "@vortex/adaptor-api";
+import type { IMethodMessage } from "@nexusmods/adaptor-api";
 
 import { MessageChannel } from "node:worker_threads";
 import { describe, it, expect } from "vitest";

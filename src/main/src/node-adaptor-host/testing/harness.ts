@@ -3,9 +3,9 @@ import type {
   IMessageHandler,
   IMethodMessage,
   URI,
-} from "@vortex/adaptor-api";
+} from "@nexusmods/adaptor-api";
 
-import { uri } from "@vortex/adaptor-api";
+import { uri } from "@nexusmods/adaptor-api";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 

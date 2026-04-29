@@ -1,4 +1,4 @@
-import type { IMessage, IMessageHandler } from "@vortex/adaptor-api";
+import type { IMessage, IMessageHandler } from "@nexusmods/adaptor-api";
 import type { IFileSystem, Pattern, Status } from "@vortex/fs";
 
 import { QualifiedPath } from "@vortex/fs";

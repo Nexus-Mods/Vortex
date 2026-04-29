@@ -1,4 +1,4 @@
-import { provides } from "@vortex/adaptor-api";
+import { provides } from "@nexusmods/adaptor-api";
 import { QualifiedPath } from "@vortex/fs";
 import { fs } from "virtual:services";
 
