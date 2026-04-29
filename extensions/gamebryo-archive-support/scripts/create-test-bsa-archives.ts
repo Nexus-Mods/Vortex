@@ -11,10 +11,7 @@ import { join, resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 import { deflateSync } from "zlib";
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const lz4js = require("lz4js") as {
-  compress(src: Uint8Array): Uint8Array;
-};
+import * as lz4js from "lz4js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = resolve(__dirname, "..", "test-data");

@@ -1,10 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { inflateSync } from "zlib";
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const lz4js = require("lz4js") as {
-  decompress(src: Uint8Array, maxSize?: number): Uint8Array;
-};
+import * as lz4js from "lz4js";
 
 // LZ4 frame magic number
 const LZ4_FRAME_MAGIC = 0x184d2204;
