@@ -6,14 +6,15 @@
   "author": "Black Tree Gaming Ltd.",
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/language.json src/icons.svg src/collectionicon.svg style.scss src/assets/fallback_tile.png dist",
-    "_native": "node ../copy-native.mjs ./node_modules/bsdiff-node/build/Release/bsdiff.node",
-    "_build": "node build.mjs && pnpm run _assets && pnpm run _native && pnpm extractInfo",
+    "_wasm": "node -e \"require('fs').copyFileSync(require('path').resolve(__dirname,'node_modules/@hot-updater/bsdiff/assets/hdiff.wasm'), require('path').resolve(__dirname,'dist/hdiff.wasm'))\"",
+    "_build": "node build.mjs && pnpm run _assets && pnpm run _wasm && pnpm extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs out",
     "dist": "pnpm run _build && node ../copy-extension.mjs dist",
     "typecheck": "pnpm tsc"
   },
   "devDependencies": {
     "7z-bin": "catalog:",
+    "@hot-updater/bsdiff": "catalog:",
     "@nexusmods/nexus-api": "catalog:",
     "@types/lodash": "catalog:",
     "@types/node": "catalog:",
@@ -23,7 +24,6 @@
     "@types/react-redux": "catalog:",
     "@types/redux": "catalog:",
     "bluebird": "catalog:",
-    "bsdiff-node": "catalog:",
     "copyfiles": "catalog:",
     "crc-32": "catalog:",
     "i18next": "catalog:",

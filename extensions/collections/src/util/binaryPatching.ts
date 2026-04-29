@@ -1,11 +1,9 @@
 import Bluebird from "bluebird";
-import * as bsdiffT from "bsdiff-node";
 import * as crc32 from "crc-32";
 import * as path from "path";
 import { fs, log, selectors, types, util } from "vortex-api";
 import { MAX_PATCH_SIZE, PATCHES_PATH, PATCH_OVERHEAD } from "../constants";
-
-const bsdiff = util.lazyRequire<typeof bsdiffT>(() => require("bsdiff-node"));
+import { diffFiles, patchFiles } from "./bsdiff";
 
 function crcFromBuf(data: Buffer) {
   // >>> 0 converts signed to unsigned
@@ -114,14 +112,7 @@ export function scanForDiffs(
                     file.destination + ".diff",
                   );
                   await fs.ensureDirWritableAsync(path.dirname(patchPath));
-                  await bsdiff.diff(
-                    srcFilePath,
-                    dstFilePath,
-                    patchPath,
-                    (progress) => {
-                      // nop - currently not showing progress
-                    },
-                  );
+                  await diffFiles(srcFilePath, dstFilePath, patchPath);
                   try {
                     await validatePatch(srcFilePath, patchPath);
                     result[file.destination] = srcCRC;
@@ -193,7 +184,7 @@ export async function applyPatches(
       const srcDat = await fs.readFileAsync(srcPath);
       const srcCRC = crcFromBuf(srcDat);
       if (srcCRC === patches[filePath]) {
-        await bsdiff.patch(srcPath, srcPath + ".patched", diffPath);
+        await patchFiles(srcPath, srcPath + ".patched", diffPath);
         await fs.removeAsync(srcPath);
         await fs.renameAsync(srcPath + ".patched", srcPath);
         log("info", "patched", srcPath);
