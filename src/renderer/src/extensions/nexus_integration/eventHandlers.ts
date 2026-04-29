@@ -74,6 +74,7 @@ import {
   endorseDirectImpl,
   endorseThing,
   ensureLoggedIn,
+  graphErrorContext,
   nexusGamesProm,
   processErrorMessage,
   resolveGraphError,
@@ -1142,6 +1143,7 @@ export function onGetModRequirements(
           log("warn", "Failed to get mod requirements", {
             ...defaultDetails,
             ...detail,
+            ...graphErrorContext(err),
           });
         }
         return Bluebird.resolve({});

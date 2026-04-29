@@ -21,8 +21,12 @@ import type Nexus from "@nexusmods/nexus-api";
 import type { TFunction } from "i18next";
 import type * as Redux from "redux";
 
-import { NexusError, RateLimitError, TimeoutError } from "@nexusmods/nexus-api";
-import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import { GraphError, NexusError, RateLimitError, TimeoutError } from "@nexusmods/nexus-api";
+import {
+  getErrorMessageOrDefault,
+  unknownToError,
+} from "@vortex/shared";
+import { AlreadyDownloaded, DownloadIsHTML } from "@vortex/shared/errors";
 import BluebirdPromise from "bluebird";
 import jwt from "jsonwebtoken";
 import * as _ from "lodash";
@@ -63,7 +67,6 @@ import { getPreloadApi, getWindowId } from "../../util/preloadAccess";
 import { activeGameId } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, toPromise, truthy } from "../../util/util";
-import { AlreadyDownloaded, DownloadIsHTML } from "@vortex/shared/errors";
 import { SITE_ID } from "../gamemode_management/constants";
 import { gameById, knownGames } from "../gamemode_management/selectors";
 import modName from "../mod_management/util/modName";
@@ -1108,6 +1111,25 @@ export function processErrorMessage(err: NexusError): IRequestError {
       stack: err.stack,
     };
   }
+}
+
+/**
+ * Extract GraphQL diagnostic context (per-error path + line/column locations,
+ * the rendered query string) from a thrown error so it can be merged into
+ * structured logs. Returns an empty object for non-GraphQL errors. Logging
+ * the query alongside the locations lets us map e.g. "column 303" back to
+ * the failing token without having to repro the request.
+ */
+export function graphErrorContext(err: unknown): Record<string, unknown> {
+  if (!(err instanceof GraphError)) {
+    return {};
+  }
+  const ctx: Record<string, unknown> = {};
+  if (err.code !== undefined) ctx.graphCode = err.code;
+  if (err.call !== undefined) ctx.graphCall = err.call;
+  if (err.entries.length > 0) ctx.graphEntries = err.entries;
+  if (err.query !== undefined) ctx.graphQuery = err.query;
+  return ctx;
 }
 
 export function resolveGraphError(
