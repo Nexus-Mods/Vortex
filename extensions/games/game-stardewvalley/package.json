@@ -26,7 +26,7 @@
     "redux-act": "catalog:",
     "relaxed-json": "catalog:",
     "semver": "catalog:",
-    "turbowalk": "catalog:"
+    "turbowalk": "workspace:*"
   },
   "devDependencies": {
     "@nexusmods/nexus-api": "catalog:",

@@ -1,0 +1,14 @@
+{
+  "name": "turbowalk",
+  "version": "4.0.0",
+  "description": "Fast directory walking using koffi FFI on Windows, fs on Linux",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "private": true,
+  "type": "commonjs",
+  "devDependencies": {
+    "bluebird": "catalog:",
+    "@types/bluebird": "catalog:",
+    "koffi": "^2.9.0"
+  }
+}

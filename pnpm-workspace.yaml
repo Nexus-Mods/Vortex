@@ -20,6 +20,7 @@ allowBuilds:
   electron: true
   esbuild: true
 
+  koffi: true
   font-scanner: true
   gamebryo-savegame: true
   leveldown: true
@@ -261,7 +262,6 @@ catalog:
   ts-v-gen: ^1.0.1
   tsconfig-paths-webpack-plugin: ^4.2.0
   tsdown: 0.21.0-beta.1
-  turbowalk: git+https://github.com/Nexus-Mods/node-turbowalk#3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
   typed-binary: ^4.3.3
   typescript: 5.9.3
   typescript-eslint: 8.47.0

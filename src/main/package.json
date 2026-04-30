@@ -126,7 +126,7 @@
     "tailwindcss": "catalog:",
     "tmp": "catalog:",
     "tough-cookie": "catalog:",
-    "turbowalk": "catalog:",
+    "turbowalk": "workspace:*",
     "universal-analytics": "catalog:",
     "uuid": "catalog:",
     "vortex-parse-ini": "catalog:",
