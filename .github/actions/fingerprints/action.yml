@@ -16,7 +16,7 @@ inputs:
     required: false
     default: "false"
   status:
-    description: "mode=resolve: fixed | released. Used when adding."
+    description: "mode=resolve: fixed | released | ignored. Used when adding."
     required: false
     default: fixed
   release-version:
