@@ -317,13 +317,6 @@
     },
     {
         "type": "file",
-        "url": "https://codeload.github.com/Nexus-Mods/node-native-errors/tar.gz/51913db07e4c9b68a96ba7fcf741b32796758f18",
-        "sha256": "0b03c10d8d4d1627b6cd6634b4a3f6b14dd6837ff54129cdbe02c77b4cb9cee5",
-        "dest-filename": "51913db07e4c9b68a96ba7fcf741b32796758f18",
-        "dest": "flatpak-node/yarn-mirror"
-    },
-    {
-        "type": "file",
         "url": "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/3a8c20c7cf770c9684ce6eda58fe56b04d095906",
         "sha256": "5a7f2ae0e1af55c203db81dc68a03038404763c5e6c1ada0d0750a6f82a93dad",
         "dest-filename": "3a8c20c7cf770c9684ce6eda58fe56b04d095906",

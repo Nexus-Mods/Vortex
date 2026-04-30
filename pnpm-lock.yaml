@@ -526,9 +526,6 @@ catalogs:
     modmeta-db:
       specifier: git+https://github.com/Nexus-Mods/modmeta-db#daa8935b6e38e255ec192c908adfce35d47c0336
       version: 0.9.3
-    native-errors:
-      specifier: git+https://github.com/Nexus-Mods/node-native-errors#51913db07e4c9b68a96ba7fcf741b32796758f18
-      version: 2.0.3
     nexus-api:
       specifier: git+https://github.com/Nexus-Mods/node-nexus-api#4dd3460c2d02d93ba8f1bbeeeb2c5fa9af039a67
       version: 1.6.0
@@ -4142,9 +4139,6 @@ importers:
       modmeta-db:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@4.1.1)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
-      native-errors:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-native-errors/tar.gz/51913db07e4c9b68a96ba7fcf741b32796758f18(bluebird@3.7.2)
       node-7z:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/b75def8d0d7d81a03f4526c52b8ada9a34a06479
@@ -4786,9 +4780,6 @@ importers:
       modmeta-db:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@4.1.1)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
-      native-errors:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-native-errors/tar.gz/51913db07e4c9b68a96ba7fcf741b32796758f18(bluebird@3.7.2)
       node-7z:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/b75def8d0d7d81a03f4526c52b8ada9a34a06479
@@ -10654,10 +10645,6 @@ packages:
     resolution: {integrity: sha512-PHI5f1O0EP5xJ9gQmFGMS6IZcrVvTjpXjz7Na41gTE7eE2hK11lg04CECCYEEjdc17EV4DO+fkGEtt7TpTaTiQ==}
     engines: {node: ^12.20.0 || ^14.18.0 || >=16.0.0}
     hasBin: true
-
-  native-errors@https://codeload.github.com/Nexus-Mods/node-native-errors/tar.gz/51913db07e4c9b68a96ba7fcf741b32796758f18:
-    resolution: {tarball: https://codeload.github.com/Nexus-Mods/node-native-errors/tar.gz/51913db07e4c9b68a96ba7fcf741b32796758f18}
-    version: 2.0.3
 
   natural-compare@1.4.0:
     resolution: {integrity: sha512-OWND8ei3VtNC9h7V60qff3SVobHr996CTwgxubgyQYEpg290h9J0buyECNNJexkFm5sOajh5G116RYA1c8ZMSw==}
@@ -19299,16 +19286,6 @@ snapshots:
   napi-macros@2.0.0: {}
 
   napi-postinstall@0.3.4: {}
-
-  native-errors@https://codeload.github.com/Nexus-Mods/node-native-errors/tar.gz/51913db07e4c9b68a96ba7fcf741b32796758f18(bluebird@3.7.2):
-    dependencies:
-      autogypi: 0.2.2
-      node-addon-api: 8.5.0
-      node-gyp: 9.4.1(bluebird@3.7.2)
-      prebuild-install: 7.1.3
-    transitivePeerDependencies:
-      - bluebird
-      - supports-color
 
   natural-compare@1.4.0: {}
 
