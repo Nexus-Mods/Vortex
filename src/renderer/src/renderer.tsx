@@ -70,7 +70,6 @@ import {
 import Bluebird from "bluebird";
 import { ipcRenderer, webFrame } from "electron";
 import { EventEmitter } from "events";
-import * as nativeErr from "native-errors";
 import { readFile } from "node:fs/promises";
 import * as path from "path";
 import React from "react";
@@ -158,26 +157,17 @@ if (process.env.CRASH_REPORTING === "vortex") {
   });
 }
 
-// on windows, inject the native error code into "unknown" errors to help track those down
+// on windows, copy systemCode to nativeCode so downstream error handling
+// can read a consistent property name
 if (process.platform === "win32") {
-  nativeErr.InitHook();
   const oldPrep = Error.prepareStackTrace;
   Error.prepareStackTrace = (error, stack) => {
-    if (error["code"] === "UNKNOWN" && error["nativeCode"] === undefined) {
-      if (error["systemCode"] !== undefined) {
-        error["nativeCode"] = error["systemCode"];
-      } else {
-        const native = nativeErr.GetLastError();
-        // Only inject the native code if it's actually meaningful (non-zero).
-        // A code of 0 means ERROR_SUCCESS — the Win32 last-error was already
-        // cleared (e.g. by NAPI internals) before the stack trace was captured,
-        // so it doesn't reflect the real error. Injecting it would overwrite the
-        // original exception message with "The operation completed successfully."
-        if (native.code !== 0) {
-          error.message = `${native.message} (${native.code})`;
-          error["nativeCode"] = native.code;
-        }
-      }
+    if (
+      error["code"] === "UNKNOWN" &&
+      error["nativeCode"] === undefined &&
+      error["systemCode"] !== undefined
+    ) {
+      error["nativeCode"] = error["systemCode"];
     }
     return oldPrep !== undefined ? oldPrep(error, stack) : error.stack;
   };
