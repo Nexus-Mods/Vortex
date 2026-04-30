@@ -48,6 +48,11 @@ const TICKS_PER_SECOND = 10000000n;
 // Counterintuitively, smaller buffers are faster because koffi marshals the
 // entire buffer across the FFI boundary each call. 1KB minimizes that overhead
 // while still fitting multiple entries per call.
+//
+// A zero-copy approach using VirtualAlloc + koffi.view() with a 64KB buffer
+// was benchmarked and beats even the old C++ addon. However, Electron forbids
+// external ArrayBuffers (koffi.view throws), so we can't use it in production.
+// If that restriction is ever lifted, switch to the zero-copy path.
 const DIR_BUFFER_SIZE = 1024;
 
 // Max retries for sharing violations when opening directories
