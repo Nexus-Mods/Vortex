@@ -16,10 +16,10 @@ allowBuilds:
   bsatk: true
   core-js: true
   crash-dump: true
-  drivelist: true
   electron: true
   esbuild: true
 
+  koffi: true
   font-scanner: true
   gamebryo-savegame: true
   leveldown: true
@@ -154,7 +154,6 @@ catalog:
   dequal: ^2.0.3
   dnd-core: ^9.4.0
   draggabilly: ^2.2.0
-  drivelist: git+https://github.com/TanninOne/drivelist#720d1890db11482ec05fc0f6aa176cfa6e6844dd
   electron: 41.3.0
   electron-builder: 24.13.3
   electron-context-menu: ^3.1.1

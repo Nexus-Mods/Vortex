@@ -590,13 +590,6 @@
     },
     {
         "type": "file",
-        "url": "https://codeload.github.com/TanninOne/drivelist/tar.gz/720d1890db11482ec05fc0f6aa176cfa6e6844dd",
-        "sha256": "02a2297326e2198a3d3194ff5516a1d18a81d9cb25a797a58322d68ac1014d44",
-        "dest-filename": "720d1890db11482ec05fc0f6aa176cfa6e6844dd",
-        "dest": "flatpak-node/yarn-mirror"
-    },
-    {
-        "type": "file",
         "url": "https://codeload.github.com/TanninOne/electron-redux/tar.gz/66bbd9d389579806e8c4ebd87bd513a668cc64a8",
         "sha256": "d9a49ec0e4896c1c3f262274ae56d59199468a825a4280ecb029ebcf7a326336",
         "dest-filename": "66bbd9d389579806e8c4ebd87bd513a668cc64a8",
