@@ -94,6 +94,15 @@ describe("collectFromInput", () => {
     expect(r.rows.map((x) => x.fingerprint)).toEqual(["a1b2c3d4", "f0e1d2c3"]);
   });
 
+  it("accepts status=ignored without requiring release-version", () => {
+    inputs.fingerprints = "a1b2c3d4";
+    inputs.status = "ignored";
+    const r = collectFromInput();
+    expect(r.dbMode).toBe("insert");
+    expect(r.rows[0].status).toBe("ignored");
+    expect(r.rows[0].release_version).toBe("");
+  });
+
   it("stamps each row with the workflow run URL and the actor", () => {
     inputs.fingerprints = "a1b2c3d4";
     const r = collectFromInput();
