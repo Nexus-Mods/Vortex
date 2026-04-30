@@ -5,7 +5,7 @@ const config = defineConfig({
   input: "./src/index.ts",
   platform: "neutral",
   external: (id) =>
-    id.startsWith("@nexusmods/adaptor-api") || id.startsWith("@vortex/fs"),
+    id.startsWith("@nexusmods/adaptor-api") || id.startsWith("@nexusmods/adaptor-api/fs"),
   plugins: [
     vortexAdaptorPlugin({
       fs: "vortex:host/filesystem",

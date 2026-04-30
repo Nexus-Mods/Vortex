@@ -5,7 +5,7 @@ import type {
   StatResult,
   Status,
   WebFileSystem,
-} from "@vortex/fs";
+} from "@nexusmods/adaptor-api/fs";
 import type { ReadStream, WriteStream } from "node:fs";
 
 import { Readable, Writable } from "node:stream";

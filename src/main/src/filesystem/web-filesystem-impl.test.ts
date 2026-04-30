@@ -1,4 +1,4 @@
-import type { QualifiedPath } from "@vortex/fs";
+import type { QualifiedPath } from "@nexusmods/adaptor-api/fs";
 
 import * as nodeFs from "node:fs/promises";
 import { tmpdir } from "node:os";

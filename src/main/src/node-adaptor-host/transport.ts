@@ -21,7 +21,7 @@ interface ResultMessage {
  * classes it carries: the sender serialises `name`, `code`, and any extra
  * own enumerable properties (e.g. `FileSystemError.isTransient`); the
  * receiver rehydrates a generic `Error` with those fields copied back, so
- * contract-specific clients (like `@vortex/fs`'s client polyfill) can
+ * contract-specific clients (like `@nexusmods/adaptor-api/fs`'s client polyfill) can
  * branch on `err.name` and reconstruct their concrete error type.
  *
  * `cause` chains are serialised recursively up to {@link MAX_CAUSE_DEPTH}

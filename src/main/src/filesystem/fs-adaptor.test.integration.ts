@@ -4,7 +4,7 @@
  * `createTestHarness` flow used by `loader.test.integration.ts`, wires
  * `vortex:host/filesystem` to a real `NodeFileSystemImpl` over a tmpdir,
  * and calls the `fs-test` probe service to make the Worker exercise the
- * injected `IFileSystem`.
+ * injected `FileSystem`.
  *
  * Unlike `fs-service.test.integration.ts`, which talks to the host
  * handler directly over an in-process MessageChannel, this test pushes
@@ -78,7 +78,7 @@ describe("fs-test adaptor (Worker end-to-end)", () => {
     expect(harness.manifest.requires).toContain("vortex:host/filesystem");
   });
 
-  it("round-trips writeFile + readFile through the Worker via IFileSystem", async () => {
+  it("round-trips writeFile + readFile through the Worker via FileSystem", async () => {
     const target = serialize(rootQP.join("hello.txt"));
     const bytes = (await harness.call(PROBE_URI, "writeRead", [
       target,

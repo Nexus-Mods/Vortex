@@ -1,4 +1,4 @@
-import { FileSystemError, QualifiedPath } from "@vortex/fs";
+import { FileSystemError, QualifiedPath } from "@nexusmods/adaptor-api/fs";
 import * as nodeFs from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";

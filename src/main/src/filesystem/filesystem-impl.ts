@@ -7,10 +7,10 @@ import type {
   ResolvedPath,
   StatResult,
   Status,
-} from "@vortex/fs";
+} from "@nexusmods/adaptor-api/fs";
 import type { ReadStream, WriteStream } from "node:fs";
 
-import { FileSystemError } from "@vortex/fs";
+import { FileSystemError } from "@nexusmods/adaptor-api/fs";
 import { isAbsolute, relative, sep as pathSep } from "node:path";
 
 /**

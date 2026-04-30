@@ -23,11 +23,11 @@ import type {
   StatResult,
   Status,
   StatusTime,
-} from "@vortex/fs";
-import type { Pattern, ResolvedPath } from "@vortex/fs";
-import type { FileSystemBackend as NodeFileSystemBackend } from "@vortex/fs";
+} from "@nexusmods/adaptor-api/fs";
+import type { Pattern, ResolvedPath } from "@nexusmods/adaptor-api/fs";
+import type { FileSystemBackend as NodeFileSystemBackend } from "@nexusmods/adaptor-api/fs";
 
-import { FileSystemError, matches } from "@vortex/fs";
+import { FileSystemError, matches } from "@nexusmods/adaptor-api/fs";
 
 interface ParsedNodeError {
   code: FileSystemErrorCode;
@@ -94,7 +94,7 @@ function parseNodeError(err: unknown): ParsedNodeError {
 /**
  * Node-backed implementation of {@link NodeFileSystemBackend}. Operates on
  * native {@link ResolvedPath} values; path resolution from
- * {@link QualifiedPath} is the responsibility of the {@link IFileSystem}
+ * {@link QualifiedPath} is the responsibility of the {@link FileSystem}
  * that wraps this backend.
  *
  * @public

@@ -16,9 +16,9 @@ import { peHeader } from "@nexusmods/adaptor-api/contracts/game-version";
 import type { VersionSource } from "@nexusmods/adaptor-api/contracts/game-version";
 import type { IGameToolsService } from "@nexusmods/adaptor-api/contracts/game-tools";
 import { gameTools } from "@nexusmods/adaptor-api/contracts/game-tools";
-import type { StorePathProvider } from "@nexusmods/adaptor-api/stores/lib";
-import { Base } from "@nexusmods/adaptor-api/stores/lib";
-import type { RelativePath } from "@vortex/fs";
+import type { StorePathProvider } from "@nexusmods/adaptor-api";
+import { Base } from "@nexusmods/adaptor-api";
+import type { RelativePath } from "@nexusmods/adaptor-api/fs";
 
 type CyberpunkExtras = "saves" | "preferences";
 type CyberpunkPaths = GamePaths<"game" | CyberpunkExtras>;
