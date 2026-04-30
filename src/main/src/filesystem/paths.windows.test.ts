@@ -2,7 +2,7 @@ import {
   PathProviderError,
   PathResolverError,
   QualifiedPath,
-} from "@vortex/fs";
+} from "@nexusmods/adaptor-api/fs";
 import { homedir, tmpdir } from "node:os";
 import { describe, expect, it } from "vitest";
 

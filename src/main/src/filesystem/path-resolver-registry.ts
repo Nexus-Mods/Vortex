@@ -3,9 +3,9 @@ import type {
   PathResolverRegistry,
   QualifiedPath,
   ResolvedPath,
-} from "@vortex/fs";
+} from "@nexusmods/adaptor-api/fs";
 
-import { PathResolverError } from "@vortex/fs";
+import { PathResolverError } from "@nexusmods/adaptor-api/fs";
 
 /**
  * Default {@link PathResolverRegistry} implementation backed by a `Map`.

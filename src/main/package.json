@@ -39,7 +39,6 @@
     "@types/bluebird": "catalog:",
     "@types/uuid": "catalog:",
     "@nexusmods/adaptor-api": "workspace:*",
-    "@vortex/fs": "workspace:*",
     "bbcode-to-react": "catalog:",
     "big.js": "catalog:",
     "bluebird": "catalog:",

@@ -4,15 +4,14 @@ export default defineConfig({
   entry: {
     index: "./src/lib.ts",
     plugin: "./src/plugin.ts",
+    "fs/index": "./src/fs/lib.ts",
     "contracts/*": ["./src/contracts/*.ts", "!./src/contracts/*.test.ts"],
-    "stores/lib": "./src/stores/lib.ts",
   },
   format: ["esm", "cjs"],
-  dts: {
-    sourcemap: true,
-  },
+  platform: "neutral",
+  tsconfig: "./tsconfig.json",
+  dts: { sourcemap: true },
   exports: {
     devExports: "development",
   },
-  platform: "neutral",
 });

@@ -1,12 +1,12 @@
 import type {
   FileSystemErrorCode,
-  IFileSystem,
+  FileSystem,
   StatResult,
   Status,
-} from "@vortex/fs";
-import type { Pattern } from "@vortex/fs";
+} from "@nexusmods/adaptor-api/fs";
+import type { Pattern } from "@nexusmods/adaptor-api/fs";
 
-import { FileSystemError, QualifiedPath } from "@vortex/fs";
+import { FileSystemError, QualifiedPath } from "@nexusmods/adaptor-api/fs";
 
 /**
  * Send function shape used by the client polyfill. The caller provides a
@@ -26,7 +26,7 @@ export type FileSystemSendFn = (
 /**
  * Wire-level enumeration options. This is an implementation detail of
  * the RPC layer: the real consumer sees the options type declared on
- * `IFileSystem["enumerateDirectory"]`. Kept internal so callers are not
+ * `FileSystem["enumerateDirectory"]`. Kept internal so callers are not
  * tempted to program against it.
  */
 interface EnumerateWireOptions {
@@ -49,14 +49,14 @@ interface EnumerateNextResult {
 }
 
 /**
- * Creates an object that implements {@link IFileSystem} by routing every
+ * Creates an object that implements {@link FileSystem} by routing every
  * call through {@link FileSystemSendFn}. Intended for use inside
  * environments (adaptor Workers, renderers) that cannot touch the real
  * fs directly.
  *
  * @public
  */
-export function createFileSystemClient(send: FileSystemSendFn): IFileSystem {
+export function createFileSystemClient(send: FileSystemSendFn): FileSystem {
   const call = async <T>(
     method: string,
     args: readonly unknown[],
@@ -85,11 +85,18 @@ export function createFileSystemClient(send: FileSystemSendFn): IFileSystem {
     delete: (path) => call<void>("delete", [path]),
     deleteRecursive: (path) => call<void>("deleteRecursive", [path]),
     stat: (path, options) => call<StatResult>("stat", [path, options]),
-    // The three enumerateDirectory overloads on IFileSystem all funnel
+    // The three enumerateDirectory overloads on FileSystem all funnel
     // into the same polyfill; the cast is safe because each call site
     // narrows by `options.includeStatus` which the iterator forwards
     // unchanged to the host.
-    enumerateDirectory: enumerateDirectory as IFileSystem["enumerateDirectory"],
+    enumerateDirectory: enumerateDirectory as FileSystem["enumerateDirectory"],
+    createStream: ((..._args: unknown[]) => {
+      throw new Error(
+        "createStream is not yet supported over the RPC client polyfill",
+      );
+    }) as FileSystem["createStream"],
+    createLink: (from, to, type) =>
+      call<void>("createLink", [from, to, type]),
   };
 }
 

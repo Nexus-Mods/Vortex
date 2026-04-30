@@ -13,12 +13,7 @@
   "vortex:requires": [
     "vortex:host/filesystem"
   ],
-  "devDependencies": {
-    "@nexusmods/adaptor-api": "workspace:*",
-    "@vortex/fs": "workspace:*"
-  },
   "peerDependencies": {
-    "@nexusmods/adaptor-api": "workspace:*",
-    "@vortex/fs": "workspace:*"
+    "@nexusmods/adaptor-api": "workspace:*"
   }
 }

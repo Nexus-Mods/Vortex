@@ -226,7 +226,7 @@ interface SerializedQP {
  * for local drives, so the fallback is a defensive catch-all rather than
  * an expected code path.
  *
- * TODO: replace with `resolveAbsolutePath` from `@vortex/fs` once the
+ * TODO: replace with `resolveAbsolutePath` from `@nexusmods/adaptor-api/fs` once the
  * browser-side path resolver lands.
  */
 function qpPathToNative(qp: SerializedQP): string {
