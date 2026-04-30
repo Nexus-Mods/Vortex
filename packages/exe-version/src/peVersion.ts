@@ -3,6 +3,46 @@
  *
  * Reads VS_FIXEDFILEINFO and StringFileInfo from Windows PE executables
  * without native addons. Follows the PE/COFF spec and VS_VERSIONINFO layout.
+ *
+ * ## PE file layout (what we navigate)
+ *
+ * A Windows .exe/.dll is a PE (Portable Executable) file with this structure:
+ *
+ *   DOS Header (offset 0)
+ *     - Starts with "MZ" magic
+ *     - e_lfanew (offset 0x3C): pointer to the PE header
+ *
+ *   PE Header (at e_lfanew)
+ *     - PE signature "PE\0\0"
+ *     - COFF header: number of sections, size of optional header
+ *     - Optional header: PE32 (32-bit) or PE32+ (64-bit)
+ *       - Data directories array — index 2 is the Resource Directory (RVA + size)
+ *
+ *   Section Headers (after optional header)
+ *     - Each section maps an RVA range to a file offset
+ *     - We find which section contains the resource directory RVA
+ *
+ * ## Resource directory (what we search)
+ *
+ * The resource directory is a tree with three levels: Type → Name → Language.
+ * We look for type RT_VERSION (16), then take the first name and language
+ * entry to reach an IMAGE_RESOURCE_DATA_ENTRY that gives us the RVA and
+ * size of the actual version data blob.
+ *
+ * ## VS_VERSIONINFO (what we parse)
+ *
+ * The version data blob starts with a VS_VERSIONINFO header:
+ *   - wLength, wValueLength, wType
+ *   - Key: "VS_VERSION_INFO" (UTF-16, null-terminated)
+ *   - Padding to DWORD boundary
+ *   - VS_FIXEDFILEINFO (52 bytes, starts with signature 0xFEEF04BD):
+ *       dwFileVersionMS / dwFileVersionLS → 4-part file version (e.g. 10.0.22621.1)
+ *       dwProductVersionMS / dwProductVersionLS → 4-part product version
+ *   - Children:
+ *     - StringFileInfo → StringTable → String entries (key/value pairs)
+ *       We look for keys "FileVersion" and "ProductVersion" which contain
+ *       the human-readable localized version strings.
+ *     - VarFileInfo (ignored — contains translation code page info)
  */
 
 import * as fs from "fs";
