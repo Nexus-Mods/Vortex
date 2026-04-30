@@ -626,7 +626,7 @@ export class IPCDownloadAdapter {
       log("debug", "pausing download", { downloadId });
       const checkpoint = await window.api.downloader.pause(downloadId);
       this.#api.store.dispatch(setDownloadCheckpoint(downloadId, checkpoint));
-      this.#api.store.dispatch(pauseDownload(downloadId, true, []));
+      this.#api.store.dispatch(pauseDownload(downloadId, true));
       callback?.(null);
     } catch (err) {
       callback?.(unknownToError(err));
@@ -707,7 +707,6 @@ export class IPCDownloadAdapter {
             downloadId,
             state.bytesReceived,
             state.size ?? 0,
-            [],
             [],
           ),
         );
