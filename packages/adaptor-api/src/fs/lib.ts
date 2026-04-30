@@ -1,22 +1,18 @@
 export type {
   DirectoryStatus,
   FileStatus,
+  FileSystem,
+  FileSystemBackend,
   FileSystemErrorCode,
-  IFileSystem,
   StatResult,
   Status,
   StatusTime,
   SymLinkData,
   SymLinkStatus,
-  WebFileSystem as FileSystem,
-  WebFileSystemBackend as FileSystemBackend,
-  FileSystem as BaseFileSystem,
-  FileSystemBackend as BaseFileSystemBackend,
 } from "./filesystem";
 export { FileSystemError } from "./filesystem";
 
 export type { Pattern } from "./matcher";
-
 export { matches } from "./matcher";
 
 export type {
@@ -30,7 +26,6 @@ export type {
   OSPathBase,
   RelativePath,
 } from "./paths";
-
 export {
   QualifiedPath,
   qpath,

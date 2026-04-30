@@ -3785,10 +3785,6 @@ importers:
         version: link:../../packages/vortex-api
 
   packages/adaptor-api:
-    dependencies:
-      '@vortex/fs':
-        specifier: workspace:*
-        version: link:../fs
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -3796,24 +3792,21 @@ importers:
       rolldown:
         specifier: 'catalog:'
         version: 1.0.0-rc.9
+      vite-plugin-doctest:
+        specifier: 'catalog:'
+        version: 2.0.0(typescript@5.9.3)(vite@8.0.3)(vitest@4.1.2)
 
   packages/adaptors/cyberpunk2077:
-    devDependencies:
+    dependencies:
       '@nexusmods/adaptor-api':
         specifier: workspace:*
         version: link:../../adaptor-api
-      '@vortex/fs':
-        specifier: workspace:*
-        version: link:../../fs
 
   packages/adaptors/fs-test:
-    devDependencies:
+    dependencies:
       '@nexusmods/adaptor-api':
         specifier: workspace:*
         version: link:../../adaptor-api
-      '@vortex/fs':
-        specifier: workspace:*
-        version: link:../../fs
 
   packages/adaptors/ping-test:
     devDependencies:
@@ -3834,15 +3827,6 @@ importers:
         version: 1.58.2
 
   packages/exe-version: {}
-
-  packages/fs:
-    devDependencies:
-      '@types/node':
-        specifier: 'catalog:'
-        version: 24.12.2
-      vite-plugin-doctest:
-        specifier: 'catalog:'
-        version: 2.0.0(typescript@5.9.3)(vite@8.0.3)(vitest@4.1.2)
 
   packages/vortex-api:
     dependencies:
@@ -3997,9 +3981,6 @@ importers:
       '@types/uuid':
         specifier: 'catalog:'
         version: 3.4.13
-      '@vortex/fs':
-        specifier: workspace:*
-        version: link:../../packages/fs
       bbcode-to-react:
         specifier: 'catalog:'
         version: https://codeload.github.com/TanninOne/bbcode-to-react/tar.gz/c67356006470e5066ea447e04a3968dca367339d(react@16.14.0)

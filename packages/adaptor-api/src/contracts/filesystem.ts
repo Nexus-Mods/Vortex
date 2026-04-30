@@ -1,4 +1,4 @@
-import type { IFileSystem } from "@vortex/fs";
+import type { FileSystem } from "@nexusmods/adaptor-api";
 
 /**
  * Registers `vortex:host/filesystem` as the host filesystem service. The
@@ -15,6 +15,6 @@ import type { IFileSystem } from "@vortex/fs";
  */
 declare module "@nexusmods/adaptor-api" {
   interface ServiceRegistry {
-    "vortex:host/filesystem": IFileSystem;
+    "vortex:host/filesystem": FileSystem;
   }
 }

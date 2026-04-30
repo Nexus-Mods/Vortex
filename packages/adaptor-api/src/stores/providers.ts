@@ -1,4 +1,4 @@
-import type { QualifiedPath } from "@vortex/fs";
+import type { QualifiedPath } from "../fs/paths";
 
 /**
  * Storefronts Vortex can discover a game from.
