@@ -126,6 +126,9 @@ export async function loginToNexus(
     await expect(vortexLoginPage.vortexLoginDialog).toBeHidden();
     await expect(vortexLoginPage.profileButton).toBeVisible();
     await vortexLoginPage.profileButton.click();
-    await expect(vortexLoginPage.loggedInMenuItem).toBeVisible();
+    await expect(vortexLoginPage.logOutMenuItem).toBeVisible();
+
+    await vortexWindow.keyboard.press("Escape");
+    await expect(vortexLoginPage.logOutMenuItem).toBeHidden();
   });
 }

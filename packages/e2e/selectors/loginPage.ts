@@ -14,7 +14,7 @@ export class LoginPage {
   readonly authoriseButton: Locator;
   readonly authorisationSuccessTitle: Locator;
   readonly profileButton: Locator;
-  readonly loggedInMenuItem: Locator;
+  readonly logOutMenuItem: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -44,8 +44,6 @@ export class LoginPage {
         "button[title='Profile'], button[title='Log in'], button:has(img[alt])",
       )
       .first();
-    this.loggedInMenuItem = page
-      .getByText(/view profile on web|logout/i)
-      .first();
+    this.logOutMenuItem = page.getByText(/logout/i).first();
   }
 }
