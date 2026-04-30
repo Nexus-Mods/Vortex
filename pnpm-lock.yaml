@@ -3848,7 +3848,14 @@ importers:
         specifier: 'catalog:'
         version: 2.0.0(typescript@5.9.3)(vite@8.0.3)(vitest@4.1.2)
 
-  packages/turbowalk: {}
+  packages/turbowalk:
+    devDependencies:
+      '@types/bluebird':
+        specifier: 'catalog:'
+        version: 3.5.20
+      bluebird:
+        specifier: 'catalog:'
+        version: 3.7.2
 
   packages/vortex-api:
     dependencies:

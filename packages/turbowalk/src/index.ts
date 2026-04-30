@@ -1,3 +1,4 @@
+import Bluebird from "bluebird";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -33,6 +34,38 @@ const DEFAULTS: Required<IWalkOptions> = {
   skipInaccessible: true,
 };
 
+const STAT_CONCURRENCY = 64;
+
+async function statBatch(
+  paths: string[],
+  opts: Required<IWalkOptions>,
+): Promise<(fs.Stats | null)[]> {
+  const results: (fs.Stats | null)[] = new Array(paths.length);
+  let cursor = 0;
+
+  async function next(): Promise<void> {
+    while (cursor < paths.length) {
+      const idx = cursor++;
+      try {
+        results[idx] = await fs.promises.lstat(paths[idx]);
+      } catch (err: any) {
+        if (
+          opts.skipInaccessible &&
+          (err?.code === "EACCES" || err?.code === "EPERM" || err?.code === "ENOENT")
+        ) {
+          results[idx] = null;
+        } else {
+          throw err;
+        }
+      }
+    }
+  }
+
+  const workers = Math.min(STAT_CONCURRENCY, paths.length);
+  await Promise.all(Array.from({ length: workers }, () => next()));
+  return results;
+}
+
 async function walkDir(
   dirPath: string,
   progress: (entries: IEntry[]) => void,
@@ -47,23 +80,21 @@ async function walkDir(
     throw err;
   }
 
+  if (opts.skipHidden) {
+    names = names.filter((n) => !n.startsWith("."));
+  }
+
+  const fullPaths = names.map((n) => path.join(dirPath, n));
+  const statResults = await statBatch(fullPaths, opts);
+
   const entries: IEntry[] = [];
   const subDirs: string[] = [];
 
-  for (const name of names) {
-    if (opts.skipHidden && name.startsWith(".")) continue;
+  for (let i = 0; i < names.length; i++) {
+    const stats = statResults[i];
+    if (stats === null) continue;
 
-    const fullPath = path.join(dirPath, name);
-    let stats: fs.Stats;
-    try {
-      stats = await fs.promises.lstat(fullPath);
-    } catch (err: any) {
-      if (opts.skipInaccessible && (err?.code === "EACCES" || err?.code === "EPERM" || err?.code === "ENOENT")) {
-        continue;
-      }
-      throw err;
-    }
-
+    const fullPath = fullPaths[i];
     const isLink = stats.isSymbolicLink();
     const isDir = stats.isDirectory();
 
@@ -92,16 +123,16 @@ async function walkDir(
   }
 }
 
-async function turbowalk(
+function turbowalk(
   basePath: string,
   progress: (entries: IEntry[]) => void,
   options?: IWalkOptions,
-): Promise<void> {
+): Bluebird<void> {
   if (basePath === undefined) {
     throw new Error("expected at least one parameter");
   }
   const opts = { ...DEFAULTS, ...options };
-  await walkDir(path.normalize(basePath), progress, opts);
+  return Bluebird.resolve(walkDir(path.normalize(basePath), progress, opts));
 }
 
 export default turbowalk;
