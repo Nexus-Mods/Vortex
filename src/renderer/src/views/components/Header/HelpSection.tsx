@@ -51,6 +51,7 @@ export const HelpSection: FC = () => {
   return (
     <Dropdown>
       <Menu.Button
+        aria-label={t("Help")}
         as={IconButton}
         iconPath={mdiHelpCircleOutline}
         title={t("Help")}
