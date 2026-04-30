@@ -23,7 +23,7 @@
     "i18next": "catalog:",
     "react": "catalog:",
     "react-bootstrap": "catalog:",
-    "turbowalk": "catalog:",
+    "turbowalk": "workspace:*",
     "vortex-api": "workspace:*"
   }
 }

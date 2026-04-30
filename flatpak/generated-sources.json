@@ -352,20 +352,6 @@
     },
     {
         "type": "file",
-        "url": "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/314f2cdb904a9a075c35261e8a1de10b0af20295",
-        "sha256": "c2be72ccc8122002afa064561db4b0d22f39a960e75ddc2c5e3272c399838dc6",
-        "dest-filename": "314f2cdb904a9a075c35261e8a1de10b0af20295",
-        "dest": "flatpak-node/yarn-mirror"
-    },
-    {
-        "type": "file",
-        "url": "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/cf4238a4d192763c8133500ce9b366a71b262a33",
-        "sha256": "85c82bb0151739fec38aa48eb276987ac62a7a0984283d1b3b457019de7f6574",
-        "dest-filename": "cf4238a4d192763c8133500ce9b366a71b262a33",
-        "dest": "flatpak-node/yarn-mirror"
-    },
-    {
-        "type": "file",
         "url": "https://codeload.github.com/Nexus-Mods/node-vortexmt/tar.gz/5251ea012ce856742aeaf73a583073497aff773a",
         "sha256": "80dcea72e5c38b2ce2ec32c68caaf1f3abcd6aec1ed9c3ec9a5d19c90b4721e3",
         "dest-filename": "5251ea012ce856742aeaf73a583073497aff773a",

@@ -33,7 +33,7 @@
     "redux": "catalog:",
     "redux-act": "catalog:",
     "redux-thunk": "catalog:",
-    "turbowalk": "catalog:",
+    "turbowalk": "workspace:*",
     "vortex-api": "workspace:*",
     "vortex-parse-ini": "catalog:"
   },

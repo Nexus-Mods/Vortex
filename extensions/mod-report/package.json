@@ -15,7 +15,7 @@
     "bs58": "catalog:",
     "copyfiles": "catalog:",
     "electron": "catalog:",
-    "turbowalk": "catalog:",
+    "turbowalk": "workspace:*",
     "typescript": "catalog:",
     "vortex-api": "workspace:*"
   }

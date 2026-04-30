@@ -49,7 +49,7 @@
     "reselect": "catalog:",
     "semver": "catalog:",
     "shortid": "catalog:",
-    "turbowalk": "catalog:",
+    "turbowalk": "workspace:*",
     "vortex-api": "workspace:*"
   }
 }

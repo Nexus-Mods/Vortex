@@ -1,0 +1,9 @@
+{
+  "name": "turbowalk",
+  "version": "4.0.0",
+  "description": "Pure TypeScript directory walking (no native addons)",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "private": true,
+  "type": "commonjs"
+}
