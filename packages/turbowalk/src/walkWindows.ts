@@ -36,8 +36,11 @@ const FileFullDirectoryInformation = 2;
 const UNIX_EPOCH_TICKS = 0x019DB1DED53E8000n;
 const TICKS_PER_SECOND = 10000000n;
 
-// Buffer for NtQueryDirectoryFile — 64KB handles most directories in one call
-const DIR_BUFFER_SIZE = 65536;
+// Buffer for NtQueryDirectoryFile — 1KB matches the old C++ addon's buffer size.
+// Counterintuitively, smaller buffers are faster because koffi marshals the
+// entire buffer across the FFI boundary each call. 1KB minimizes that overhead
+// while still fitting multiple entries per call.
+const DIR_BUFFER_SIZE = 1024;
 
 // --- koffi function bindings ---
 
