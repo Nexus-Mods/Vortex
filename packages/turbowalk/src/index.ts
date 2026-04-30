@@ -47,7 +47,7 @@ async function statBatch(
     while (cursor < paths.length) {
       const idx = cursor++;
       try {
-        results[idx] = await fs.promises.lstat(paths[idx]);
+        results[idx] = await fs.promises.lstat(paths[idx]!);
       } catch (err: any) {
         if (
           opts.skipInaccessible &&
@@ -62,7 +62,9 @@ async function statBatch(
   }
 
   const workers = Math.min(STAT_CONCURRENCY, paths.length);
-  await Promise.all(Array.from({ length: workers }, () => next()));
+  const tasks: Promise<void>[] = [];
+  for (let i = 0; i < workers; i++) tasks.push(next());
+  await Promise.all(tasks);
   return results;
 }
 
@@ -91,10 +93,10 @@ async function walkDir(
   const subDirs: string[] = [];
 
   for (let i = 0; i < names.length; i++) {
-    const stats = statResults[i];
+    const stats = statResults[i]!;
     if (stats === null) continue;
 
-    const fullPath = fullPaths[i];
+    const fullPath = fullPaths[i]!;
     const isLink = stats.isSymbolicLink();
     const isDir = stats.isDirectory();
 
