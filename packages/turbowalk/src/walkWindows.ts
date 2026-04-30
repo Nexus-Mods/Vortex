@@ -1,9 +1,9 @@
 /**
  * Fast directory walking on Windows using koffi FFI.
  *
- * Calls FindFirstFileW / FindNextFileW / FindClose directly, which returns
- * file attributes, size, and timestamps in a single syscall per directory
- * entry — no separate lstat() needed.
+ * Calls NtQueryDirectoryFile (the same NT API the old C++ addon used) which
+ * returns multiple directory entries per syscall in a packed buffer. This
+ * avoids the per-entry syscall overhead of FindFirstFileW/FindNextFileW.
  */
 
 import * as path from "path";
@@ -12,149 +12,242 @@ import type { IEntry, IWalkOptions } from "./index";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const koffi = require("koffi");
 
-// --- Win32 constants ---
+// --- NT constants ---
 
-const INVALID_HANDLE_VALUE = -1n;
+const STATUS_SUCCESS = 0;
+const STATUS_NO_MORE_FILES = 0x80000006 | 0; // signed
 const FILE_ATTRIBUTE_DIRECTORY = 0x10;
 const FILE_ATTRIBUTE_HIDDEN = 0x2;
 const FILE_ATTRIBUTE_REPARSE_POINT = 0x400;
-const MAX_PATH = 260;
 
-// --- Win32 struct and function definitions ---
+// CreateFileW constants
+const GENERIC_READ = 0x80000000;
+const FILE_SHARE_READ = 1;
+const FILE_SHARE_WRITE = 2;
+const FILE_SHARE_DELETE = 4;
+const OPEN_EXISTING = 3;
+const FILE_FLAG_BACKUP_SEMANTICS = 0x02000000;
+const INVALID_HANDLE_VALUE = BigInt(-1);
 
-// FILETIME: two 32-bit values representing 100ns intervals since 1601-01-01
-const FILETIME = koffi.struct("FILETIME", {
-  dwLowDateTime: "uint32",
-  dwHighDateTime: "uint32",
-});
+// NtQueryDirectoryFile information class
+const FileFullDirectoryInformation = 2;
 
-// WIN32_FIND_DATAW: the struct returned by FindFirstFileW / FindNextFileW
-const WIN32_FIND_DATAW = koffi.struct("WIN32_FIND_DATAW", {
-  dwFileAttributes: "uint32",
-  ftCreationTime: FILETIME,
-  ftLastAccessTime: FILETIME,
-  ftLastWriteTime: FILETIME,
-  nFileSizeHigh: "uint32",
-  nFileSizeLow: "uint32",
-  dwReserved0: "uint32",
-  dwReserved1: "uint32",
-  cFileName: koffi.array("uint16", MAX_PATH),
-  cAlternateFileName: koffi.array("uint16", 14),
-});
+// FILETIME epoch offset: 100ns ticks between 1601-01-01 and 1970-01-01
+const UNIX_EPOCH_TICKS = 0x019DB1DED53E8000n;
+const TICKS_PER_SECOND = 10000000n;
+
+// Buffer for NtQueryDirectoryFile — 64KB handles most directories in one call
+const DIR_BUFFER_SIZE = 65536;
+
+// --- koffi function bindings ---
 
 const kernel32 = koffi.load("kernel32.dll");
+const ntdll = koffi.load("ntdll.dll");
 
-const FindFirstFileW = kernel32.func(
-  "intptr FindFirstFileW(const uint16 *lpFileName, _Out_ WIN32_FIND_DATAW *lpFindFileData)",
+// IO_STATUS_BLOCK — used by NtQueryDirectoryFile
+const IO_STATUS_BLOCK = koffi.struct("IO_STATUS_BLOCK", {
+  Status: "int32",
+  Information: "uintptr",
+});
+
+const CreateFileW = kernel32.func(
+  "intptr CreateFileW(const uint16 *lpFileName, uint32 dwDesiredAccess, uint32 dwShareMode, void *lpSecurityAttributes, uint32 dwCreationDisposition, uint32 dwFlagsAndAttributes, intptr hTemplateFile)",
 );
-const FindNextFileW = kernel32.func(
-  "bool FindNextFileW(intptr hFindFile, _Out_ WIN32_FIND_DATAW *lpFindFileData)",
+const CloseHandle = kernel32.func("bool CloseHandle(intptr hObject)");
+
+const NtQueryDirectoryFile = ntdll.func(
+  "int32 NtQueryDirectoryFile(intptr FileHandle, intptr Event, void *ApcRoutine, void *ApcContext, _Out_ IO_STATUS_BLOCK *IoStatusBlock, _Out_ uint8 *FileInformation, uint32 Length, int32 FileInformationClass, bool ReturnSingleEntry, void *FileName, bool RestartScan)",
 );
-const FindClose = kernel32.func("bool FindClose(intptr hFindFile)");
 
 // --- Helpers ---
 
-/** Convert a JS string to a null-terminated UTF-16LE buffer for Win32 wide APIs. */
-function toWideString(str: string): Buffer {
+/** Convert a JS string to a null-terminated UTF-16LE buffer. */
+function toWide(str: string): Buffer {
   const buf = Buffer.alloc((str.length + 1) * 2);
   for (let i = 0; i < str.length; i++) {
     buf.writeUInt16LE(str.charCodeAt(i), i * 2);
   }
-  // null terminator is already 0 from Buffer.alloc
   return buf;
 }
 
-/** Read a null-terminated UTF-16LE filename from the cFileName array. */
-function readFileName(arr: number[]): string {
-  const codes: number[] = [];
-  for (let i = 0; i < arr.length; i++) {
-    if (arr[i] === 0) break;
-    codes.push(arr[i]!);
+/** Open a directory handle for reading. */
+function openDirectory(dirPath: string): bigint {
+  // Use \\?\ prefix for long path support
+  const prefix =
+    dirPath.startsWith("\\\\") ? "" : "\\\\?\\";
+  const widePath = toWide(prefix + dirPath + (dirPath.endsWith("\\") ? "" : "\\"));
+  return CreateFileW(
+    widePath,
+    GENERIC_READ,
+    FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+    null,
+    OPEN_EXISTING,
+    FILE_FLAG_BACKUP_SEMANTICS,
+    0n,
+  ) as bigint;
+}
+
+/**
+ * Parse FILE_FULL_DIR_INFORMATION entries from the buffer returned by
+ * NtQueryDirectoryFile. Each entry is variable-length:
+ *
+ *   ULONG  NextEntryOffset     (0)
+ *   ULONG  FileIndex           (4)
+ *   INT64  CreationTime        (8)
+ *   INT64  LastAccessTime      (16)
+ *   INT64  LastWriteTime       (24)
+ *   INT64  ChangeTime          (32)
+ *   INT64  EndOfFile           (40)
+ *   INT64  AllocationSize      (48)
+ *   ULONG  FileAttributes      (56)
+ *   ULONG  FileNameLength      (60)
+ *   ULONG  EaSize              (64)
+ *   WCHAR  FileName[1]         (68)
+ */
+function parseEntries(
+  buf: Buffer,
+  dirPath: string,
+  opts: Required<IWalkOptions>,
+  entries: IEntry[],
+  subDirs: string[],
+): void {
+  let offset = 0;
+
+  while (true) {
+    const nextEntryOffset = buf.readUInt32LE(offset);
+    const fileAttributes = buf.readUInt32LE(offset + 56);
+    const fileNameLength = buf.readUInt32LE(offset + 60);
+
+    // Read the filename (UTF-16LE)
+    const nameStart = offset + 68;
+    const name = buf.toString("utf16le", nameStart, nameStart + fileNameLength);
+
+    // Skip . and ..
+    if (name !== "." && name !== "..") {
+      const isHidden = (fileAttributes & FILE_ATTRIBUTE_HIDDEN) !== 0;
+
+      if (!opts.skipHidden || !isHidden) {
+        const isDir = (fileAttributes & FILE_ATTRIBUTE_DIRECTORY) !== 0;
+        const isReparsePoint = (fileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) !== 0;
+
+        // EndOfFile (actual file size)
+        const sizeLow = buf.readUInt32LE(offset + 40);
+        const sizeHigh = buf.readUInt32LE(offset + 44);
+        const size = sizeHigh === 0 ? sizeLow : Number((BigInt(sizeHigh) << 32n) | BigInt(sizeLow >>> 0));
+
+        // LastWriteTime → Unix seconds
+        const wtLow = buf.readUInt32LE(offset + 24);
+        const wtHigh = buf.readUInt32LE(offset + 28);
+        const ticks = (BigInt(wtHigh) << 32n) | BigInt(wtLow >>> 0);
+        const mtime = Number((ticks - UNIX_EPOCH_TICKS) / TICKS_PER_SECOND);
+
+        const fullPath = dirPath + "\\" + name;
+
+        entries.push({
+          filePath: fullPath,
+          isDirectory: isDir,
+          isReparsePoint,
+          size,
+          mtime,
+        });
+
+        if (isDir && opts.recurse && !(opts.skipLinks && isReparsePoint)) {
+          subDirs.push(fullPath);
+        }
+      }
+    }
+
+    if (nextEntryOffset === 0) break;
+    offset += nextEntryOffset;
   }
-  return String.fromCharCode(...codes);
-}
-
-/** Convert FILETIME to Unix epoch seconds. */
-function filetimeToUnix(ft: { dwLowDateTime: number; dwHighDateTime: number }): number {
-  // FILETIME is 100ns intervals since 1601-01-01
-  // Unix epoch offset: 11644473600 seconds
-  const ticks = (BigInt(ft.dwHighDateTime) << 32n) | BigInt(ft.dwLowDateTime >>> 0);
-  return Number(ticks / 10000000n) - 11644473600;
-}
-
-/** Combine nFileSizeHigh and nFileSizeLow into a single number. */
-function combineSize(high: number, low: number): number {
-  if (high === 0) return low >>> 0;
-  return Number((BigInt(high) << 32n) | BigInt(low >>> 0));
 }
 
 // --- Walk implementation ---
+
+function walkDirInner(
+  dirPath: string,
+  entries: IEntry[],
+  subDirs: string[],
+  opts: Required<IWalkOptions>,
+): boolean {
+  const handle = openDirectory(dirPath);
+  if (handle === INVALID_HANDLE_VALUE) return true; // skip inaccessible
+
+  const ioStatus: Record<string, unknown> = {};
+  const buf = Buffer.alloc(DIR_BUFFER_SIZE);
+
+  try {
+    while (true) {
+      const status = NtQueryDirectoryFile(
+        handle,
+        0n, // Event
+        null, // ApcRoutine
+        null, // ApcContext
+        ioStatus,
+        buf,
+        DIR_BUFFER_SIZE,
+        FileFullDirectoryInformation,
+        false, // ReturnSingleEntry
+        null, // FileName (null = wildcard)
+        false, // RestartScan
+      ) as number;
+
+      if (status === STATUS_SUCCESS) {
+        parseEntries(buf, dirPath, opts, entries, subDirs);
+      } else {
+        // STATUS_NO_MORE_FILES or any error — done with this directory
+        break;
+      }
+    }
+  } finally {
+    CloseHandle(handle);
+  }
+
+  return true;
+}
 
 export function walkDirWindows(
   dirPath: string,
   progress: (entries: IEntry[]) => void,
   opts: Required<IWalkOptions>,
 ): void {
-  // Append \* for the search pattern
-  const searchPath = path.join(dirPath, "*");
-  const wideSearch = toWideString(searchPath);
+  const allEntries: IEntry[] = [];
 
-  const findData: Record<string, unknown> = {};
-  const handle = FindFirstFileW(wideSearch, findData) as bigint;
-
-  if (handle === INVALID_HANDLE_VALUE) {
-    // Directory doesn't exist or is inaccessible
-    return;
-  }
-
-  try {
+  function walkRecursive(dir: string): void {
     const entries: IEntry[] = [];
     const subDirs: string[] = [];
 
-    do {
-      const fd = findData as {
-        dwFileAttributes: number;
-        ftLastWriteTime: { dwLowDateTime: number; dwHighDateTime: number };
-        nFileSizeHigh: number;
-        nFileSizeLow: number;
-        cFileName: number[];
-      };
+    walkDirInner(dir, entries, subDirs, opts);
 
-      const name = readFileName(fd.cFileName);
+    // Accumulate entries and flush when threshold is reached (matching native behavior)
+    for (const entry of entries) {
+      allEntries.push(entry);
+    }
 
-      // Skip . and ..
-      if (name === "." || name === "..") continue;
-
-      const attrs = fd.dwFileAttributes;
-      const isHidden = (attrs & FILE_ATTRIBUTE_HIDDEN) !== 0;
-      const isDir = (attrs & FILE_ATTRIBUTE_DIRECTORY) !== 0;
-      const isReparsePoint = (attrs & FILE_ATTRIBUTE_REPARSE_POINT) !== 0;
-
-      if (opts.skipHidden && isHidden) continue;
-
-      const fullPath = path.join(dirPath, name);
-
-      entries.push({
-        filePath: fullPath,
-        isDirectory: isDir,
-        isReparsePoint,
-        size: combineSize(fd.nFileSizeHigh, fd.nFileSizeLow),
-        mtime: filetimeToUnix(fd.ftLastWriteTime),
-      });
-
-      if (isDir && opts.recurse && !(opts.skipLinks && isReparsePoint)) {
-        subDirs.push(fullPath);
-      }
-    } while (FindNextFileW(handle, findData));
-
-    if (entries.length > 0) {
-      progress(entries);
+    if (allEntries.length >= opts.threshold) {
+      progress(allEntries.splice(0));
     }
 
     for (const sub of subDirs) {
-      walkDirWindows(sub, progress, opts);
+      walkRecursive(sub);
     }
-  } finally {
-    FindClose(handle);
+
+    if (opts.terminators) {
+      allEntries.push({
+        filePath: dir,
+        isDirectory: true,
+        isReparsePoint: false,
+        size: 0,
+        mtime: 0,
+        isTerminator: true,
+      });
+    }
+  }
+
+  walkRecursive(dirPath);
+
+  // Flush remaining entries
+  if (allEntries.length > 0) {
+    progress(allEntries);
   }
 }
