@@ -177,7 +177,12 @@ test("settings loads", async ({ vortexWindow }) => {
 
 ## Fake Game Installations
 
-For tests that need a managed game, use the fake-game fixture instead of installing a real game:
+For tests that need a managed game, use the fake-game fixture instead of installing a real game.
+
+### Just the on-disk install — `setupFakeGame`
+
+When the test only needs the game's files to exist (e.g. asserting that
+discovery finds them), use `setupFakeGame` directly:
 
 ```typescript
 import {
@@ -185,10 +190,10 @@ import {
     cleanupFakeGame,
 } from "../fixtures/game-setup/fake-game";
 
-test("mods page loads with a managed game", async ({ vortexWindow }) => {
-    const { basePath } = setupFakeGame("stardewvalley");
+test("fake game has expected files", async () => {
+    const { basePath, gamePath } = setupFakeGame("stardewvalley");
     try {
-        // drive Vortex through the managed-game flow
+        // assertions against `gamePath` contents
     } finally {
         cleanupFakeGame(basePath);
     }
@@ -196,6 +201,43 @@ test("mods page loads with a managed game", async ({ vortexWindow }) => {
 ```
 
 Available configs: `stardewvalley`, `skyrimse`. Add more in `packages/e2e/fixtures/game-setup/fake-game.ts`.
+
+### Adding the game to Vortex's managed list — `manageGame`
+
+For tests that need Vortex itself to be **actively managing** a game
+(downloads, mod installs, profile state, etc.) call the `manageGame`
+helper. It wraps `setupFakeGame`, drives the Games page UI, and uses
+Vortex's built-in `__VORTEX_TEST_GAME_PATH__` test hook to bypass the
+native folder picker:
+
+```typescript
+import { manageGame, type ManagedGame } from "../helpers/games";
+import { cleanupFakeGame } from "../fixtures/game-setup/fake-game";
+
+test("mod download lands in the library", async ({
+    vortexApp,
+    vortexWindow,
+}) => {
+    let managed: ManagedGame | null = null;
+    try {
+        managed = await manageGame(vortexWindow, "stardewvalley");
+
+    } finally {
+        if (managed !== null) {
+            cleanupFakeGame(managed.basePath);
+        }
+    }
+});
+```
+
+Caller is responsible for calling `cleanupFakeGame(managed.basePath)` —
+typically in a `try/finally` or `test.afterEach`. The helper returns
+`{ basePath, gamePath }` so you can also reach the on-disk install if
+the test needs to inspect or seed mod files there.
+
+Currently only `"stardewvalley"` is supported — Skyrim SE goes through
+Vortex's manual-discovery dialog flow which our fake-game install isn't
+rich enough to satisfy yet (see TODO in `helpers/games.ts`).
 
 ---
 
@@ -299,14 +341,13 @@ pnpm -F @vortex/e2e run test:report
 
 Do not add code comments unless ABSOLUTELY needed for explaining vague code. If you want to add a comment, try to rewrite the code to be understandable without one.
 
-Run lint and tests on the e2e package before committing:
+Run formatter, lint, and tests on the e2e package before committing:
 
 ```bash
-# Lint
-pnpm -F @vortex/e2e exec eslint .
+# Format (oxfmt) — config at oxfmtrc.json. Run on the files you touched.
+pnpm oxfmt packages/e2e/<paths-you-changed>
 
-# Run the suite (or at least the affected files)
-pnpm e2e
-```
+# Or format every staged file in one shot:
+pnpm run format:staged
 
-CI runs the e2e suite on Windows (required, blocks PRs) and Linux (allowed to fail). Match Windows behaviour locally when in doubt.
+The repo formats with **oxfmt**, not prettier. There is no `.prettierrc`. oxfmt's default is double-quoted strings; some older files in this package still have single quotes from before the formatter switch — when you edit one of those files, oxfmt will convert it. Don't fight it.
