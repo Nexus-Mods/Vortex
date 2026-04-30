@@ -30,7 +30,7 @@
     "cytoscape-edgehandles": "catalog:",
     "date-fns": "catalog:",
     "electron": "catalog:",
-    "exe-version": "catalog:",
+    "exe-version": "workspace:*",
     "i18next": "catalog:",
     "immutability-helper": "catalog:",
     "js-yaml": "catalog:",

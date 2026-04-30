@@ -171,7 +171,6 @@ catalog:
   eslint-plugin-import: ^2.32.0
   eslint-plugin-perfectionist: ^5.4.0
 
-  exe-version: git+https://github.com/Nexus-Mods/node-exe-version#eded60fc0a0f3c234e1d586d2eb9952401945406
   feedparser: ^2.2.9
   font-scanner: ^0.2.1
   fork-ts-checker-webpack-plugin: ^9.0.2

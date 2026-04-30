@@ -105,7 +105,7 @@
     "encoding-down": "catalog:",
     "enzyme": "catalog:",
     "enzyme-adapter-react-16": "catalog:",
-    "exe-version": "catalog:",
+    "exe-version": "workspace:*",
     "feedparser": "catalog:",
     "@nexusmods/fomod-installer-ipc": "catalog:",
     "@nexusmods/fomod-installer-native": "catalog:",
