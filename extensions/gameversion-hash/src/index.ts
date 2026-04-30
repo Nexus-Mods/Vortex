@@ -18,8 +18,6 @@ import {
   WD_NAME,
 } from "./constants";
 
-import { fileMD5 } from "vortexmt";
-
 type GameHashCache = { [gameId: string]: string };
 const CACHE: GameHashCache = {};
 
@@ -58,24 +56,10 @@ async function insertCacheEntry(
   }
 }
 
-function nop() {
-  // nop
-}
-
-const fileMD5Async = (fileName: string) =>
-  new Promise<string>((resolve, reject) => {
-    fileMD5(
-      fileName,
-      (err: Error, result: string) =>
-        err !== null ? reject(err) : resolve(result),
-      nop,
-    );
-  });
-
 async function generateHash(filePaths: string[]): Promise<string> {
   const hashes: string[] = [];
   for (const filePath of filePaths) {
-    const fileHash = await fileMD5Async(filePath);
+    const fileHash = await util.fileMD5(filePath);
     hashes.push(fileHash);
   }
   const hash = crypto.createHash("md5");

@@ -114,6 +114,7 @@ import {
 } from "./eventHandlers";
 import InstallManager from "./InstallManager";
 import deployMods from "./modActivation";
+import { deriveModInstallName } from "./modIdManager";
 import mergeMods, { MERGED_PATH } from "./modMerging";
 import preStartDeployHook from "./preStartDeployHook";
 import { deploymentReducer } from "./reducers/deployment";
@@ -829,10 +830,11 @@ function genUpdateModDeployment(installManager: InstallManager) {
               await installManager.waitForIdle();
             }
 
-            // Consume the set of mod IDs that finished installing since the
-            // last deployment. Their external changes (refchange / srcdeleted)
-            // are expected and will be auto-resolved per-mod.
-            const recentInstalls = installManager.consumeRecentInstalls();
+            // Consume the set of installation paths whose mods finished
+            // installing or were removed since the last deployment. Their
+            // external changes (refchange / srcdeleted) are expected and
+            // will be auto-resolved per-mod.
+            const recentChanges = installManager.consumeRecentChanges();
 
             let mergeResult: { [modType: string]: IMergeResultByType };
             const lastDeployment: { [typeId: string]: IDeployedFile[] } = {};
@@ -883,7 +885,7 @@ function genUpdateModDeployment(installManager: InstallManager) {
               stagingPath,
               modPaths,
               lastDeployment,
-              recentInstalls,
+              recentChanges,
             );
 
             progress(t("Checking for mod incompatibilities"), 25);
@@ -1845,7 +1847,16 @@ function once(api: IExtensionApi) {
       modId: string,
       cb?: (error: Error) => void,
       options?: IRemoveModOptions,
-    ) => onRemoveMod(api, getAllActivators(), gameId, modId, cb, options),
+    ) =>
+      onRemoveMod(
+        api,
+        getAllActivators(),
+        installManager,
+        gameId,
+        modId,
+        cb,
+        options,
+      ),
   );
 
   api.events.on(
@@ -1856,7 +1867,15 @@ function once(api: IExtensionApi) {
       cb?: (error: Error) => void,
       options?: IRemoveModOptions,
     ) => {
-      onRemoveMods(api, getAllActivators(), gameId, modIds, cb, options);
+      onRemoveMods(
+        api,
+        getAllActivators(),
+        installManager,
+        gameId,
+        modIds,
+        cb,
+        options,
+      );
     },
   );
 
@@ -2215,6 +2234,17 @@ function init(context: IExtensionContext): boolean {
 
     const fileNames = filePaths.map((fp) => path.basename(fp)).join("\n");
 
+    let singleFolderPath: string | undefined;
+    if (filePaths.length === 1) {
+      try {
+        if (await fs.isDirectoryAsync(filePaths[0])) {
+          singleFolderPath = filePaths[0];
+        }
+      } catch {
+        // treat as not a folder
+      }
+    }
+
     const result = await api.showDialog(
       "question",
       "Not an archive",
@@ -2223,6 +2253,19 @@ function init(context: IExtensionContext): boolean {
           "The following files are not archives and can't be installed directly. " +
           "Would you like to create a mod containing these files instead?",
         message: fileNames,
+        ...(singleFolderPath !== undefined
+          ? {
+              checkboxes: [
+                {
+                  id: "useFolderContents",
+                  value: true,
+                  text:
+                    "Use the folder's contents as the mod " +
+                    "(folder name becomes the mod name)",
+                },
+              ],
+            }
+          : {}),
       },
       [{ label: "Cancel" }, { label: "Create Mod" }],
     );
@@ -2231,16 +2274,28 @@ function init(context: IExtensionContext): boolean {
       return;
     }
 
-    const modId = shortid();
+    const flatten =
+      singleFolderPath !== undefined
+      && result.input.useFolderContents === true;
+
+    const baseName = flatten
+      ? path.basename(singleFolderPath)
+      : filePaths.length === 1
+        ? path.basename(filePaths[0], path.extname(filePaths[0]))
+        : undefined;
+
+    const modName = baseName ?? "New Mod";
+    const modId = baseName !== undefined
+      ? deriveModInstallName(baseName, {})
+      : shortid();
+
     const mod: IMod = {
       id: modId,
       state: "installed",
       type: "",
       installationPath: modId,
       attributes: {
-        name: filePaths.length === 1
-          ? path.basename(filePaths[0], path.extname(filePaths[0]))
-          : "New Mod",
+        name: modName,
         installTime: new Date(),
       },
     };
@@ -2254,11 +2309,21 @@ function init(context: IExtensionContext): boolean {
         return;
       }
       try {
-        for (const filePath of filePaths) {
-          await fs.copyAsync(
-            filePath,
-            path.join(modPath, path.basename(filePath)),
-          );
+        if (flatten && singleFolderPath !== undefined) {
+          const children = await fs.readdirAsync(singleFolderPath);
+          for (const child of children) {
+            await fs.copyAsync(
+              path.join(singleFolderPath, child),
+              path.join(modPath, child),
+            );
+          }
+        } else {
+          for (const filePath of filePaths) {
+            await fs.copyAsync(
+              filePath,
+              path.join(modPath, path.basename(filePath)),
+            );
+          }
         }
       } catch (copyErr) {
         api.showErrorNotification("Failed to copy files to mod", copyErr);

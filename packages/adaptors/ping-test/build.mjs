@@ -1,10 +1,10 @@
 import { rolldown, defineConfig } from "rolldown";
-import { vortexAdaptorPlugin } from "@vortex/adaptor-api/plugin";
+import { vortexAdaptorPlugin } from "@nexusmods/adaptor-api/plugin";
 
 const config = defineConfig({
   input: "./src/index.ts",
   platform: "neutral",
-  external: (id) => id.startsWith("@vortex/adaptor-api"),
+  external: (id) => id.startsWith("@nexusmods/adaptor-api"),
   plugins: [
     vortexAdaptorPlugin({
       ping: "vortex:host/ping",

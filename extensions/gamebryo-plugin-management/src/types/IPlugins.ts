@@ -56,7 +56,7 @@ export interface IPlugins {
 }
 
 /**
- * details retrieved from the content of a plugin through esptk
+ * details retrieved from parsing the plugin's TES4 header record
  *
  * @export
  * @interface IPluginParsed

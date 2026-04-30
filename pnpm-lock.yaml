@@ -40,6 +40,9 @@ catalogs:
     '@headlessui/react':
       specifier: ^1.7.19
       version: 1.7.19
+    '@hot-updater/bsdiff':
+      specifier: ^0.30.6
+      version: 0.30.6
     '@iarna/toml':
       specifier: ^2.2.5
       version: 2.2.5
@@ -59,14 +62,17 @@ catalogs:
       specifier: ^0.13.1
       version: 0.13.1
     '@nexusmods/nexus-api':
-      specifier: git+https://github.com/Nexus-Mods/node-nexus-api#4192c0c9f34306c2167e258dd4fef773af406161
-      version: 1.5.2
+      specifier: git+https://github.com/Nexus-Mods/node-nexus-api#4dd3460c2d02d93ba8f1bbeeeb2c5fa9af039a67
+      version: 1.6.0
     '@opentelemetry/api':
       specifier: ^1.9.0
       version: 1.9.1
     '@opentelemetry/context-async-hooks':
       specifier: ^2.5.1
       version: 2.6.1
+    '@opentelemetry/context-zone':
+      specifier: ^2.5.1
+      version: 2.7.0
     '@opentelemetry/exporter-trace-otlp-http':
       specifier: ^0.57.0
       version: 0.57.2
@@ -176,8 +182,8 @@ catalogs:
       specifier: ~1.2.5
       version: 1.2.5
     '@types/node':
-      specifier: ^22
-      version: 22.19.15
+      specifier: ^24
+      version: 24.12.2
     '@types/node-7z':
       specifier: ~2.1.11
       version: 2.1.11
@@ -289,9 +295,6 @@ catalogs:
     '@welldone-software/why-did-you-render':
       specifier: ^10.0.1
       version: 10.0.1
-    ba2tk:
-      specifier: git+https://github.com/Nexus-Mods/node-ba2tk#762d8de841ca1c770a0925311fd626d71de67971
-      version: 2.0.9
     bbcode-to-react:
       specifier: git+https://github.com/TanninOne/bbcode-to-react#c67356006470e5066ea447e04a3968dca367339d
       version: 0.2.11
@@ -310,9 +313,6 @@ catalogs:
     bsatk:
       specifier: git+https://github.com/Nexus-Mods/node-bsatk#5a3d15fae2177bfb0a42b794d3afb21eda563c59
       version: 2.1.0
-    bsdiff-node:
-      specifier: git+https://github.com/Nexus-Mods/bsdiff-node#a2bd60f5f96d172892b7f6708fb9a7a212b3b2e5
-      version: 2.6.0
     classnames:
       specifier: ^2.2.6
       version: 2.5.1
@@ -380,8 +380,8 @@ catalogs:
       specifier: git+https://github.com/TanninOne/drivelist#720d1890db11482ec05fc0f6aa176cfa6e6844dd
       version: 10.0.2
     electron:
-      specifier: 39.8.0
-      version: 39.8.0
+      specifier: 41.3.0
+      version: 41.3.0
     electron-builder:
       specifier: 24.13.3
       version: 24.13.3
@@ -424,9 +424,6 @@ catalogs:
     eslint-plugin-perfectionist:
       specifier: ^5.4.0
       version: 5.7.0
-    esptk:
-      specifier: git+https://github.com/Nexus-Mods/node-esptk#7b7db98d2c69b6b6cad2cb3dcd7972143adaa7bd
-      version: 2.2.2
     exe-version:
       specifier: git+https://github.com/Nexus-Mods/node-exe-version#eded60fc0a0f3c234e1d586d2eb9952401945406
       version: 2.3.0
@@ -445,9 +442,6 @@ catalogs:
     fuzzball:
       specifier: ^1.3.0
       version: 1.4.0
-    gamebryo-savegame:
-      specifier: git+https://github.com/Nexus-Mods/node-gamebryo-savegames#9149445e798a632a38337229dd0b60b67efb74bd
-      version: 2.1.3
     glob:
       specifier: ^11.0.3
       version: 11.1.0
@@ -536,8 +530,8 @@ catalogs:
       specifier: git+https://github.com/Nexus-Mods/node-native-errors#51913db07e4c9b68a96ba7fcf741b32796758f18
       version: 2.0.3
     nexus-api:
-      specifier: git+https://github.com/Nexus-Mods/node-nexus-api#d16099d8c9def488dde7b545428d4d7a04668679
-      version: 1.5.1
+      specifier: git+https://github.com/Nexus-Mods/node-nexus-api#4dd3460c2d02d93ba8f1bbeeeb2c5fa9af039a67
+      version: 1.6.0
     node-7z:
       specifier: git+https://github.com/Nexus-Mods/node-7z#b75def8d0d7d81a03f4526c52b8ada9a34a06479
       version: 0.8.1
@@ -709,6 +703,9 @@ catalogs:
     turbowalk:
       specifier: git+https://github.com/Nexus-Mods/node-turbowalk#3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
       version: 3.1.1
+    typed-binary:
+      specifier: ^4.3.3
+      version: 4.3.3
     typescript:
       specifier: 5.9.3
       version: 5.9.3
@@ -733,9 +730,6 @@ catalogs:
     vortex-parse-ini:
       specifier: git+https://github.com/Nexus-Mods/vortex-parse-ini#2425af99d1cff2331ccf3aacfa892c314e99e18d
       version: 0.4.0
-    vortexmt:
-      specifier: git+https://github.com/Nexus-Mods/node-vortexmt#5251ea012ce856742aeaf73a583073497aff773a
-      version: 0.3.0
     webpack:
       specifier: ^5.94.0
       version: 5.105.4
@@ -795,7 +789,7 @@ importers:
         version: 9.39.1
       '@microsoft/api-extractor':
         specifier: 'catalog:'
-        version: 7.57.7(@types/node@22.19.15)
+        version: 7.57.7(@types/node@24.12.2)
       '@stylistic/eslint-plugin':
         specifier: 'catalog:'
         version: 5.10.0(eslint@9.39.1)
@@ -810,7 +804,7 @@ importers:
         version: 1.2.5
       '@types/node':
         specifier: 'catalog:'
-        version: 22.19.15
+        version: 24.12.2
       '@types/webpack-node-externals':
         specifier: 'catalog:'
         version: 3.0.4(webpack-cli@5.1.4)
@@ -903,10 +897,10 @@ importers:
         version: 8.47.0(eslint@9.39.1)(typescript@5.9.3)
       vite:
         specifier: 'catalog:'
-        version: 8.0.3(@types/node@22.19.15)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.1)
+        version: 8.0.3(@types/node@24.12.2)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.1)
       vitest:
         specifier: 'catalog:'
-        version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.19.15)(@vitest/ui@4.1.0)(happy-dom@20.8.8)(jsdom@20.0.3)(vite@8.0.3)
+        version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/ui@4.1.0)(happy-dom@20.8.8)(jsdom@20.0.3)(vite@8.0.3)
       webpack:
         specifier: 'catalog:'
         version: 5.105.4(webpack-cli@5.1.4)
@@ -973,15 +967,18 @@ importers:
       7z-bin:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/3298c42e69e3220dc39694bc2f610c077c3e213a
+      '@hot-updater/bsdiff':
+        specifier: 'catalog:'
+        version: 0.30.6
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4192c0c9f34306c2167e258dd4fef773af406161
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4dd3460c2d02d93ba8f1bbeeeb2c5fa9af039a67
       '@types/lodash':
         specifier: 'catalog:'
         version: 4.17.24
       '@types/node':
         specifier: 'catalog:'
-        version: 22.19.15
+        version: 24.12.2
       '@types/react':
         specifier: '16'
         version: 16.14.69
@@ -1000,9 +997,6 @@ importers:
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
-      bsdiff-node:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/bsdiff-node/tar.gz/a2bd60f5f96d172892b7f6708fb9a7a212b3b2e5
       copyfiles:
         specifier: 'catalog:'
         version: 2.4.1
@@ -1084,15 +1078,12 @@ importers:
       vortex-api:
         specifier: workspace:*
         version: link:../../packages/vortex-api
-      vortexmt:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-vortexmt/tar.gz/5251ea012ce856742aeaf73a583073497aff773a
 
   extensions/common-interpreters:
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
-        version: 22.19.15
+        version: 24.12.2
       '@types/react':
         specifier: '16'
         version: 16.14.69
@@ -1167,7 +1158,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
-        version: 22.19.15
+        version: 24.12.2
       '@types/react':
         specifier: '16'
         version: 16.14.69
@@ -1272,7 +1263,7 @@ importers:
         version: 3.5.20
       '@types/node':
         specifier: 'catalog:'
-        version: 22.19.15
+        version: 24.12.2
       '@types/react':
         specifier: '16'
         version: 16.14.69
@@ -1347,7 +1338,7 @@ importers:
         version: 12.1.0
       '@types/node':
         specifier: 'catalog:'
-        version: 22.19.15
+        version: 24.12.2
       '@types/redux':
         specifier: 'catalog:'
         version: 3.6.0
@@ -1436,7 +1427,7 @@ importers:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d
 
-  extensions/gamebryo-ba2-support:
+  extensions/gamebryo-archive-support:
     devDependencies:
       '@types/i18next':
         specifier: 'catalog:'
@@ -1444,18 +1435,21 @@ importers:
       '@types/rimraf':
         specifier: 'catalog:'
         version: 2.0.5
-      ba2tk:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-ba2tk/tar.gz/762d8de841ca1c770a0925311fd626d71de67971(bluebird@3.7.2)
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
       copyfiles:
         specifier: 'catalog:'
         version: 2.4.1
+      lz4js:
+        specifier: ^0.2.0
+        version: 0.2.0
       rimraf:
         specifier: 'catalog:'
         version: https://codeload.github.com/TanninOne/rimraf/tar.gz/7b8b70d4e8783cd233fca3283cf1f930af4e39c2
+      tmp:
+        specifier: 'catalog:'
+        version: 0.1.0
       vortex-api:
         specifier: workspace:*
         version: link:../../packages/vortex-api
@@ -1467,7 +1461,7 @@ importers:
         version: 12.1.0
       '@types/node':
         specifier: 'catalog:'
-        version: 22.19.15
+        version: 24.12.2
       '@types/rimraf':
         specifier: 'catalog:'
         version: 2.0.5
@@ -1596,7 +1590,7 @@ importers:
         version: 2.30.0
       electron:
         specifier: 'catalog:'
-        version: 39.8.0
+        version: 41.3.0
       exe-version:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-exe-version/tar.gz/eded60fc0a0f3c234e1d586d2eb9952401945406
@@ -1660,18 +1654,22 @@ importers:
       shortid:
         specifier: 'catalog:'
         version: 2.2.17
+      typed-binary:
+        specifier: 'catalog:'
+        version: 4.3.3
       vortex-api:
         specifier: workspace:*
         version: link:../../packages/vortex-api
     optionalDependencies:
-      esptk:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-esptk/tar.gz/7b7db98d2c69b6b6cad2cb3dcd7972143adaa7bd
       loot:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/7b6028fb2caeb3a2af6a0c3d68630c033cc01e8d
 
   extensions/gamebryo-savegame-management:
+    dependencies:
+      lz4js:
+        specifier: ^0.2.0
+        version: 0.2.0
     devDependencies:
       '@types/react':
         specifier: '16'
@@ -1745,10 +1743,6 @@ importers:
       vortex-parse-ini:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d
-    optionalDependencies:
-      gamebryo-savegame:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-gamebryo-savegames/tar.gz/9149445e798a632a38337229dd0b60b67efb74bd
 
   extensions/gamebryo-test-settings:
     devDependencies:
@@ -1840,6 +1834,9 @@ importers:
         specifier: 'catalog:'
         version: 11.2.7
     devDependencies:
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@25.5.0)(@vitest/ui@4.1.0)(happy-dom@20.8.8)(jsdom@20.0.3)(vite@8.0.3)
       vortex-api:
         specifier: workspace:*
         version: link:../../../packages/vortex-api
@@ -2133,7 +2130,7 @@ importers:
         version: 3.5.20
       '@types/node':
         specifier: 'catalog:'
-        version: 22.19.15
+        version: 24.12.2
       '@types/react':
         specifier: '16'
         version: 16.14.69
@@ -2163,7 +2160,7 @@ importers:
         version: 16.14.0
       react-dnd:
         specifier: 'catalog:'
-        version: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@22.19.15)(@types/react@16.14.69)(react@16.14.0)
+        version: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@24.12.2)(@types/react@16.14.69)(react@16.14.0)
       react-i18next:
         specifier: 'catalog:'
         version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0)(react@16.14.0)
@@ -2293,10 +2290,10 @@ importers:
     devDependencies:
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4192c0c9f34306c2167e258dd4fef773af406161
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4dd3460c2d02d93ba8f1bbeeeb2c5fa9af039a67
       '@types/node':
         specifier: 'catalog:'
-        version: 22.19.15
+        version: 24.12.2
       '@types/react':
         specifier: '16'
         version: 16.14.69
@@ -2317,7 +2314,7 @@ importers:
         version: 2.4.1
       electron:
         specifier: 'catalog:'
-        version: 39.8.0
+        version: 41.3.0
       modmeta-db:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@10.0.1)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
@@ -2326,7 +2323,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: 'catalog:'
-        version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.19.15)(@vitest/ui@4.1.0)(happy-dom@20.8.8)(jsdom@20.0.3)(vite@8.0.3)
+        version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/ui@4.1.0)(happy-dom@20.8.8)(jsdom@20.0.3)(vite@8.0.3)
       vortex-api:
         specifier: workspace:*
         version: link:../../../packages/vortex-api
@@ -2464,7 +2461,7 @@ importers:
         version: 3.5.20
       '@types/node':
         specifier: 'catalog:'
-        version: 22.19.15
+        version: 24.12.2
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
@@ -2518,7 +2515,7 @@ importers:
         version: 3.5.20
       '@types/node':
         specifier: 'catalog:'
-        version: 22.19.15
+        version: 24.12.2
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
@@ -2542,7 +2539,7 @@ importers:
         version: 3.5.20
       '@types/node':
         specifier: 'catalog:'
-        version: 22.19.15
+        version: 24.12.2
       '@types/redux':
         specifier: 'catalog:'
         version: 3.6.0
@@ -2582,7 +2579,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
-        version: 22.19.15
+        version: 24.12.2
       '@types/react':
         specifier: '16'
         version: 16.14.69
@@ -2613,21 +2610,18 @@ importers:
       vortex-api:
         specifier: workspace:*
         version: link:../../packages/vortex-api
-      vortexmt:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-vortexmt/tar.gz/5251ea012ce856742aeaf73a583073497aff773a
 
   extensions/issue-tracker:
     devDependencies:
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4192c0c9f34306c2167e258dd4fef773af406161
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4dd3460c2d02d93ba8f1bbeeeb2c5fa9af039a67
       '@types/bluebird':
         specifier: 'catalog:'
         version: 3.5.20
       '@types/node':
         specifier: 'catalog:'
-        version: 22.19.15
+        version: 24.12.2
       '@types/react':
         specifier: '16'
         version: 16.14.69
@@ -2720,7 +2714,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
-        version: 22.19.15
+        version: 24.12.2
       '@types/react':
         specifier: '16'
         version: 16.14.69
@@ -2849,7 +2843,7 @@ importers:
         version: 12.1.0
       '@types/node':
         specifier: 'catalog:'
-        version: 22.19.15
+        version: 24.12.2
       '@types/react':
         specifier: '16'
         version: 16.14.69
@@ -3050,7 +3044,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
-        version: 22.19.15
+        version: 24.12.2
       bs58:
         specifier: 'catalog:'
         version: 4.0.1
@@ -3059,7 +3053,7 @@ importers:
         version: 2.4.1
       electron:
         specifier: 'catalog:'
-        version: 39.8.0
+        version: 41.3.0
       turbowalk:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
@@ -3349,7 +3343,7 @@ importers:
         version: 3.5.20
       '@types/node':
         specifier: 'catalog:'
-        version: 22.19.15
+        version: 24.12.2
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
@@ -3373,7 +3367,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
-        version: 22.19.15
+        version: 24.12.2
       '@types/react':
         specifier: '16'
         version: 16.14.69
@@ -3523,7 +3517,7 @@ importers:
         version: 12.1.0
       '@types/node':
         specifier: 'catalog:'
-        version: 22.19.15
+        version: 24.12.2
       '@types/react':
         specifier: '16'
         version: 16.14.69
@@ -3566,7 +3560,7 @@ importers:
         version: https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/3298c42e69e3220dc39694bc2f610c077c3e213a
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4192c0c9f34306c2167e258dd4fef773af406161
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4dd3460c2d02d93ba8f1bbeeeb2c5fa9af039a67
       '@types/bluebird':
         specifier: 'catalog:'
         version: 3.5.20
@@ -3575,7 +3569,7 @@ importers:
         version: 4.17.24
       '@types/node':
         specifier: 'catalog:'
-        version: 22.19.15
+        version: 24.12.2
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
@@ -3584,7 +3578,7 @@ importers:
         version: 2.4.1
       electron:
         specifier: 'catalog:'
-        version: 39.8.0
+        version: 41.3.0
       exe-version:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-exe-version/tar.gz/eded60fc0a0f3c234e1d586d2eb9952401945406
@@ -3593,7 +3587,7 @@ importers:
         version: 4.17.23
       nexus-api:
         specifier: 'catalog:'
-        version: '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/d16099d8c9def488dde7b545428d4d7a04668679'
+        version: '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4dd3460c2d02d93ba8f1bbeeeb2c5fa9af039a67'
       react:
         specifier: 'catalog:'
         version: 16.14.0
@@ -3674,7 +3668,7 @@ importers:
         version: 12.1.0
       '@types/node':
         specifier: 'catalog:'
-        version: 22.19.15
+        version: 24.12.2
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
@@ -3773,7 +3767,7 @@ importers:
         version: https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/3298c42e69e3220dc39694bc2f610c077c3e213a
       '@types/node':
         specifier: 'catalog:'
-        version: 22.19.15
+        version: 24.12.2
       '@types/react':
         specifier: '16'
         version: 16.14.69
@@ -3813,14 +3807,23 @@ importers:
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
-        version: 22.19.15
+        version: 24.12.2
       rolldown:
         specifier: 'catalog:'
         version: 1.0.0-rc.9
 
   packages/adaptors/cyberpunk2077:
     devDependencies:
-      '@vortex/adaptor-api':
+      '@nexusmods/adaptor-api':
+        specifier: workspace:*
+        version: link:../../adaptor-api
+      '@vortex/fs':
+        specifier: workspace:*
+        version: link:../../fs
+
+  packages/adaptors/fs-test:
+    devDependencies:
+      '@nexusmods/adaptor-api':
         specifier: workspace:*
         version: link:../../adaptor-api
       '@vortex/fs':
@@ -3829,7 +3832,7 @@ importers:
 
   packages/adaptors/ping-test:
     devDependencies:
-      '@vortex/adaptor-api':
+      '@nexusmods/adaptor-api':
         specifier: workspace:*
         version: link:../../adaptor-api
 
@@ -3840,7 +3843,7 @@ importers:
         version: 1.58.2
       electron:
         specifier: 'catalog:'
-        version: 39.8.0
+        version: 41.3.0
       playwright:
         specifier: 'catalog:'
         version: 1.58.2
@@ -3849,7 +3852,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
-        version: 22.19.15
+        version: 24.12.2
       vite-plugin-doctest:
         specifier: 'catalog:'
         version: 2.0.0(typescript@5.9.3)(vite@8.0.3)(vitest@4.1.2)
@@ -3910,7 +3913,7 @@ importers:
     devDependencies:
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4192c0c9f34306c2167e258dd4fef773af406161
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4dd3460c2d02d93ba8f1bbeeeb2c5fa9af039a67
       '@types/react':
         specifier: '16'
         version: 16.14.69
@@ -3925,7 +3928,7 @@ importers:
         version: 2.30.0
       electron:
         specifier: 'catalog:'
-        version: 39.8.0
+        version: 41.3.0
       i18next:
         specifier: 'catalog:'
         version: 19.9.2
@@ -3955,7 +3958,7 @@ importers:
         version: 1.5.1-r.1
       '@electron/remote':
         specifier: 'catalog:'
-        version: 2.1.3(electron@39.8.0)
+        version: 2.1.3(electron@41.3.0)
       '@headlessui/react':
         specifier: 'catalog:'
         version: 1.7.19(react-dom@16.14.0)(react@16.14.0)
@@ -3965,6 +3968,9 @@ importers:
       '@msgpack/msgpack':
         specifier: 'catalog:'
         version: 2.8.0
+      '@nexusmods/adaptor-api':
+        specifier: workspace:*
+        version: link:../../packages/adaptor-api
       '@nexusmods/fomod-installer-ipc':
         specifier: 'catalog:'
         version: 0.13.1
@@ -3973,13 +3979,16 @@ importers:
         version: 0.13.1
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4192c0c9f34306c2167e258dd4fef773af406161
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4dd3460c2d02d93ba8f1bbeeeb2c5fa9af039a67
       '@opentelemetry/api':
         specifier: 'catalog:'
         version: 1.9.1
       '@opentelemetry/context-async-hooks':
         specifier: 'catalog:'
         version: 2.6.1(@opentelemetry/api@1.9.1)
+      '@opentelemetry/context-zone':
+        specifier: 'catalog:'
+        version: 2.7.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/exporter-trace-otlp-http':
         specifier: 'catalog:'
         version: 0.57.2(@opentelemetry/api@1.9.1)
@@ -4001,9 +4010,6 @@ importers:
       '@types/uuid':
         specifier: 'catalog:'
         version: 3.4.13
-      '@vortex/adaptor-api':
-        specifier: workspace:*
-        version: link:../../packages/adaptor-api
       '@vortex/fs':
         specifier: workspace:*
         version: link:../../packages/fs
@@ -4186,7 +4192,7 @@ importers:
         version: 3.8.0(react-dom@16.14.0)(react@16.14.0)
       react-dnd:
         specifier: 'catalog:'
-        version: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@22.19.15)(@types/react@16.14.69)(react@16.14.0)
+        version: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@24.12.2)(@types/react@16.14.69)(react@16.14.0)
       react-dnd-html5-backend:
         specifier: 'catalog:'
         version: 14.1.0
@@ -4283,9 +4289,6 @@ importers:
       vortex-parse-ini:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d
-      vortexmt:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-vortexmt/tar.gz/5251ea012ce856742aeaf73a583073497aff773a
       wholocks:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-wholocks/tar.gz/28da3bcf312312e577d7c636799a59011998b4af
@@ -4349,7 +4352,7 @@ importers:
         version: 4.17.24
       '@types/node':
         specifier: 'catalog:'
-        version: 22.19.15
+        version: 24.12.2
       '@types/node-7z':
         specifier: 'catalog:'
         version: 2.1.11
@@ -4407,6 +4410,9 @@ importers:
       '@types/xml2js':
         specifier: 'catalog:'
         version: 0.4.14
+      '@vortex/adaptor-cyberpunk2077':
+        specifier: workspace:*
+        version: link:../../packages/adaptors/cyberpunk2077
       '@vortex/shared':
         specifier: workspace:*
         version: link:../shared
@@ -4418,7 +4424,7 @@ importers:
         version: 10.1.0
       electron:
         specifier: 'catalog:'
-        version: 39.8.0
+        version: 41.3.0
       electron-builder:
         specifier: 'catalog:'
         version: 24.13.3(electron-builder-squirrel-windows@24.13.3)
@@ -4437,7 +4443,7 @@ importers:
     devDependencies:
       electron:
         specifier: 'catalog:'
-        version: 39.8.0
+        version: 41.3.0
 
   src/renderer:
     devDependencies:
@@ -4458,7 +4464,7 @@ importers:
         version: 7.16.8(@babel/core@7.29.0)
       '@electron/remote':
         specifier: 'catalog:'
-        version: 2.1.3(electron@39.8.0)
+        version: 2.1.3(electron@41.3.0)
       '@headlessui/react':
         specifier: 'catalog:'
         version: 1.7.19(react-dom@16.14.0)(react@16.14.0)
@@ -4479,13 +4485,13 @@ importers:
         version: 0.13.1
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4192c0c9f34306c2167e258dd4fef773af406161
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4dd3460c2d02d93ba8f1bbeeeb2c5fa9af039a67
       '@opentelemetry/api':
         specifier: 'catalog:'
         version: 1.9.1
-      '@opentelemetry/context-async-hooks':
+      '@opentelemetry/context-zone':
         specifier: 'catalog:'
-        version: 2.6.1(@opentelemetry/api@1.9.1)
+        version: 2.7.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/resources':
         specifier: 'catalog:'
         version: 1.30.1(@opentelemetry/api@1.9.1)
@@ -4704,7 +4710,7 @@ importers:
         version: https://codeload.github.com/TanninOne/drivelist/tar.gz/720d1890db11482ec05fc0f6aa176cfa6e6844dd
       electron:
         specifier: 'catalog:'
-        version: 39.8.0
+        version: 41.3.0
       electron-context-menu:
         specifier: 'catalog:'
         version: 3.6.1
@@ -4924,9 +4930,6 @@ importers:
       vortex-parse-ini:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d
-      vortexmt:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-vortexmt/tar.gz/5251ea012ce856742aeaf73a583073497aff773a
       wholocks:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-wholocks/tar.gz/28da3bcf312312e577d7c636799a59011998b4af
@@ -5736,6 +5739,9 @@ packages:
       react: ^16 || ^17 || ^18
       react-dom: ^16 || ^17 || ^18
 
+  '@hot-updater/bsdiff@0.30.6':
+    resolution: {integrity: sha512-Ux8WyYsYXlU13TahGCHHa3EQpfDQukGm0REFQEz7IxRXYFJf0+oOB0k8e+j+V9j53WXbUFdoRq+FIB+gMC2iLQ==}
+
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
     engines: {node: '>=18.18.0'}
@@ -5865,13 +5871,9 @@ packages:
     resolution: {integrity: sha512-6fcow0nDO8I4KFYG1ffa5z9FcKkZsW/D1Axjkb5ebmV47JKg10nJALv8sVkd0hCrKCW8oJZEEvgHKOkF2Pn9ww==}
     engines: {node: '>=22'}
 
-  '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4192c0c9f34306c2167e258dd4fef773af406161':
-    resolution: {tarball: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4192c0c9f34306c2167e258dd4fef773af406161}
-    version: 1.5.2
-
-  '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/d16099d8c9def488dde7b545428d4d7a04668679':
-    resolution: {tarball: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/d16099d8c9def488dde7b545428d4d7a04668679}
-    version: 1.5.1
+  '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4dd3460c2d02d93ba8f1bbeeeb2c5fa9af039a67':
+    resolution: {tarball: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4dd3460c2d02d93ba8f1bbeeeb2c5fa9af039a67}
+    version: 1.6.0
 
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
@@ -5915,6 +5917,17 @@ packages:
     engines: {node: ^18.19.0 || >=20.6.0}
     peerDependencies:
       '@opentelemetry/api': '>=1.0.0 <1.10.0'
+
+  '@opentelemetry/context-zone-peer-dep@2.7.0':
+    resolution: {integrity: sha512-DNcbXhV3G7ySz1HbHP0CdJpxE1WaTlzzY20Yzg7xFkitjxAagnYkpD2NfJ3+GBhNa91TuO92vu7jK1S4p+Yckw==}
+    engines: {node: ^18.19.0 || >=20.6.0}
+    peerDependencies:
+      '@opentelemetry/api': '>=1.0.0 <1.10.0'
+      zone.js: ^0.10.2 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^0.14.0 || ^0.15.0 || ^0.16.0
+
+  '@opentelemetry/context-zone@2.7.0':
+    resolution: {integrity: sha512-rPgJHtBIPX8Vcuo4wVmrwokt61nAGSs+i/ffDsE8Tpm4i5LI8LRMgm2lZ+gADuEdiHK77rbCvARuCBw6ZbHgUg==}
+    engines: {node: ^18.19.0 || >=20.6.0}
 
   '@opentelemetry/core@1.30.1':
     resolution: {integrity: sha512-OOCM2C/QIURhJMuKaekP3TRBxBKxG/TWWA0TL2J6nXUtDnuCtccy49LUJF8xPFXMX+0LMcxFpCo8M9cGY1W6rQ==}
@@ -7104,8 +7117,8 @@ packages:
   '@types/node@16.18.126':
     resolution: {integrity: sha512-OTcgaiwfGFBKacvfwuHzzn1KLxH/er8mluiy8/uM3sGXHaRe73RrSIj01jow9t4kJEW633Ov+cOexXeiApTyAw==}
 
-  '@types/node@22.19.15':
-    resolution: {integrity: sha512-F0R/h2+dsy5wJAUe3tAU6oqa2qbWY5TpNfL/RGmo1y38hiyO1w3x2jPtt76wmuaJI4DQnOBu21cNXQ2STIUUWg==}
+  '@types/node@24.12.2':
+    resolution: {integrity: sha512-A1sre26ke7HDIuY/M23nd9gfB+nrmhtYyMINbjI1zHJxYteKR6qSMX56FsmjMcDb3SMcjJg5BiRRgOCC/yBD0g==}
 
   '@types/node@25.5.0':
     resolution: {integrity: sha512-jp2P3tQMSxWugkCUKLRPVUpGaL5MVFwF8RDuSRztfwgN1wmqJeMSbKlnEtQqU8UrhTmzEmZdu2I6v2dpp7XIxw==}
@@ -7910,10 +7923,6 @@ packages:
   aws4@1.13.2:
     resolution: {integrity: sha512-lHe62zvbTB5eEABUVi/AwVh0ZKY9rMMDhmm+eeyuuUQbQ3+J+fONVQOZyj+DdrvD4BY33uYniyRJ4UJIaSKAfw==}
 
-  ba2tk@https://codeload.github.com/Nexus-Mods/node-ba2tk/tar.gz/762d8de841ca1c770a0925311fd626d71de67971:
-    resolution: {tarball: https://codeload.github.com/Nexus-Mods/node-ba2tk/tar.gz/762d8de841ca1c770a0925311fd626d71de67971}
-    version: 2.0.9
-
   babel-plugin-polyfill-corejs2@0.4.17:
     resolution: {integrity: sha512-aTyf30K/rqAsNwN76zYrdtx8obu0E4KoUME29B1xj+B3WxgvWkp943vYQ+z8Mv3lw9xHXMHpvSPOBxzAkIa94w==}
     peerDependencies:
@@ -8027,10 +8036,6 @@ packages:
     resolution: {tarball: https://codeload.github.com/Nexus-Mods/node-bsatk/tar.gz/5a3d15fae2177bfb0a42b794d3afb21eda563c59}
     version: 2.1.0
     os: [win32, linux]
-
-  bsdiff-node@https://codeload.github.com/Nexus-Mods/bsdiff-node/tar.gz/a2bd60f5f96d172892b7f6708fb9a7a212b3b2e5:
-    resolution: {tarball: https://codeload.github.com/Nexus-Mods/bsdiff-node/tar.gz/a2bd60f5f96d172892b7f6708fb9a7a212b3b2e5}
-    version: 2.6.0
 
   buffer-crc32@0.2.13:
     resolution: {integrity: sha512-VO9Ht/+p3SN7SKWqcrgEzjGbRSJYTx+Q1pTQC0wrWqHx0vpJraQ6GtHx8tvcg1rlK1byhU5gccxgOgj7B0TDkQ==}
@@ -8796,8 +8801,8 @@ packages:
   electron-updater@4.6.5:
     resolution: {integrity: sha512-kdTly8O9mSZfm9fslc1mnCY+mYOeaYRy7ERa2Fed240u01BKll3aiupzkd07qKw69KvhBSzuHroIW3mF0D8DWA==}
 
-  electron@39.8.0:
-    resolution: {integrity: sha512-K+f3YelSyh9Q4LgUXuIhLB4kq73LJrqnIbe8ih9vpWi+iSdPebj0w7FRYwILCMDoyBQMFC9LicYHuIPmZzdKlg==}
+  electron@41.3.0:
+    resolution: {integrity: sha512-2Q5aeocmFdeheZGDUTrAvSR3t+n0c3d104AJWWEnt7syJU0tE4VdibMYaPtQ47QuXSoUf0/xSsfUUvu/uSXIfg==}
     engines: {node: '>= 12.20.55'}
     hasBin: true
 
@@ -9104,10 +9109,6 @@ packages:
     engines: {node: '>=4'}
     hasBin: true
 
-  esptk@https://codeload.github.com/Nexus-Mods/node-esptk/tar.gz/7b7db98d2c69b6b6cad2cb3dcd7972143adaa7bd:
-    resolution: {tarball: https://codeload.github.com/Nexus-Mods/node-esptk/tar.gz/7b7db98d2c69b6b6cad2cb3dcd7972143adaa7bd}
-    version: 2.2.2
-
   esquery@1.7.0:
     resolution: {integrity: sha512-Ap6G0WQwcU/LHsvLwON1fAQX9Zp0A2Y6Y/cJBl9r/JbW90Zyg4/zbG6zzKa2OTALELarYHmKu0GhpM5EO+7T0g==}
     engines: {node: '>=0.10'}
@@ -9390,10 +9391,6 @@ packages:
 
   fuzzball@1.4.0:
     resolution: {integrity: sha512-ufKO0SHW65RSqZNu4rmLmraQVuwb8kVf8S/ICpkih/PfIff2YW3sa8zTvt7d7hJFXY1IvOOGJTeXxs69XLBd4Q==}
-
-  gamebryo-savegame@https://codeload.github.com/Nexus-Mods/node-gamebryo-savegames/tar.gz/9149445e798a632a38337229dd0b60b67efb74bd:
-    resolution: {tarball: https://codeload.github.com/Nexus-Mods/node-gamebryo-savegames/tar.gz/9149445e798a632a38337229dd0b60b67efb74bd}
-    version: 2.1.3
 
   gauge@2.7.4:
     resolution: {integrity: sha512-14x4kjc6lkD3ltw589k0NrPD6cCNTD6CWoVUNpB85+DrtONoZn+Rug6xZU5RvSC4+TZPxA5AnBibQYAvZn41Hg==}
@@ -10399,6 +10396,9 @@ packages:
     resolution: {integrity: sha512-h5bgJWpxJNswbU7qCrV0tIKQCaS3blPDrqKWx+QxzuzL1zGUzij9XCWLrSLsJPu5t+eWA/ycetzYAO5IOMcWAQ==}
     hasBin: true
 
+  lz4js@0.2.0:
+    resolution: {integrity: sha512-gY2Ia9Lm7Ep8qMiuGRhvUq0Q7qUereeldZPP1PMEJxPtEWHJLqw9pgX68oHajBH0nzJK4MaZEA/YNV3jT8u8Bg==}
+
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
 
@@ -10735,10 +10735,6 @@ packages:
   node-releases@2.0.36:
     resolution: {integrity: sha512-TdC8FSgHz8Mwtw9g5L4gR/Sh9XhSP/0DEkQxfEFXOpiul5IiHgHan2VhYYb6agDSfp4KuvltmGApc8HMgUrIkA==}
 
-  node-stream-zip@1.15.0:
-    resolution: {integrity: sha512-LN4fydt9TqhZhThkZIVQnF9cwjU3qmUH9h78Mx/K7d3VvfRqqwthLwJEUOEL0QPZ0XQmNN7be5Ggit5+4dq3Bw==}
-    engines: {node: '>=0.12.0'}
-
   noms@0.0.0:
     resolution: {integrity: sha512-lNDU9VJaOPxUmXcLb+HQFeUgQQPtMI24Gt6hgfuMHRJgMRHMF/qZ4HJD3GDru4sSw9IQl2jPjAYnQrdIeLbwow==}
 
@@ -10842,10 +10838,6 @@ packages:
   optionator@0.9.4:
     resolution: {integrity: sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g==}
     engines: {node: '>= 0.8.0'}
-
-  os-tmpdir@1.0.2:
-    resolution: {integrity: sha512-D2FR03Vir7FIu45XBY20mTb+/ZSWB00sjU9jdQXt83gDrI4Ztz5Fs7/yy74g2N5SVQY4xY1qDr4rNddwYRVX0g==}
-    engines: {node: '>=0.10.0'}
 
   outlayer@2.1.1:
     resolution: {integrity: sha512-+GplXsCQ3VrbGujAeHEzP9SXsBmJxzn/YdDSQZL0xqBmAWBmortu2Y9Gwdp9J0bgDQ8/YNIPMoBM13nTwZfAhw==}
@@ -12124,10 +12116,6 @@ packages:
   tmp-promise@3.0.3:
     resolution: {integrity: sha512-RwM7MoPojPxsOBYnyd2hy0bxtIlVrihNs9pj5SUvY8Zz1sQcQG2tG1hSr8PDxfgEB8RNKDhqbIlroIarSNDNsQ==}
 
-  tmp@0.0.29:
-    resolution: {integrity: sha512-89PTqMWGDva+GqClOqBV9s3SMh7MA3Mq0pJUdAoHuF65YoE7O0LermaZkVfT5/Ngfo18H4eYiyG7zKOtnEbxsw==}
-    engines: {node: '>=0.4.0'}
-
   tmp@0.1.0:
     resolution: {integrity: sha512-J7Z2K08jbGcdA1kkQpJSqLF6T0tdQqpR2pnSUXsIchbPdTI9v3e85cLW0d6WDhwuAleOV71j2xWs8qMPfK7nKw==}
     engines: {node: '>=6'}
@@ -12288,6 +12276,9 @@ packages:
     resolution: {integrity: sha512-3KS2b+kL7fsuk/eJZ7EQdnEmQoaho/r6KUef7hxvltNA5DR8NAUM+8wJMbJyZ4G9/7i3v5zPBIMN5aybAh2/Jg==}
     engines: {node: '>= 0.4'}
 
+  typed-binary@4.3.3:
+    resolution: {integrity: sha512-W2hLsSzt3k/tg38gDE4Fn/QiwcoqGuUHBc2cb3mXuH7KcYxe/GM57vzW14s2/bawB4R5knGgGq8Xb57vsaJ4Sg==}
+
   typed-emitter@1.4.0:
     resolution: {integrity: sha512-weBmoo3HhpKGgLBOYwe8EB31CzDFuaK7CCL+axXhUYhn4jo6DSkHnbefboCF5i4DQ2aMFe0C/FdTWcPdObgHyg==}
 
@@ -12345,8 +12336,8 @@ packages:
     peerDependencies:
       react: '>=15.0.0'
 
-  undici-types@6.21.0:
-    resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
+  undici-types@7.16.0:
+    resolution: {integrity: sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw==}
 
   undici-types@7.18.2:
     resolution: {integrity: sha512-AsuCzffGHJybSaRrmr5eHr81mwJU3kjw6M+uprWvCXiNeN9SOGwQ3Jn8jb8m3Z6izVgknn1R0FTCEAP2QrLY/w==}
@@ -12606,10 +12597,6 @@ packages:
     resolution: {tarball: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d}
     version: 0.4.0
 
-  vortexmt@https://codeload.github.com/Nexus-Mods/node-vortexmt/tar.gz/5251ea012ce856742aeaf73a583073497aff773a:
-    resolution: {tarball: https://codeload.github.com/Nexus-Mods/node-vortexmt/tar.gz/5251ea012ce856742aeaf73a583073497aff773a}
-    version: 0.3.0
-
   w3c-xmlserializer@4.0.0:
     resolution: {integrity: sha512-d+BFHzbiCx6zGfz0HyQ6Rg69w9k19nviJspaj4yNscGjrHu94sVP+aRm75yEbCh+r2/yR+7q6hux9LVtbuTGBw==}
     engines: {node: '>=14'}
@@ -12863,6 +12850,9 @@ packages:
 
   zod@4.3.6:
     resolution: {integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==}
+
+  zone.js@0.15.1:
+    resolution: {integrity: sha512-XE96n56IQpJM7NAoXswY3XRLcWFW83xe0BiAOeMD7K5k5xecOeul3Qcpx6GqEeeHNkW5DWL5zOyTbEfB4eti8w==}
 
 snapshots:
 
@@ -13721,9 +13711,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@electron/remote@2.1.3(electron@39.8.0)':
+  '@electron/remote@2.1.3(electron@41.3.0)':
     dependencies:
-      electron: 39.8.0
+      electron: 41.3.0
 
   '@electron/universal@1.5.1':
     dependencies:
@@ -13888,6 +13878,8 @@ snapshots:
       react: 16.14.0
       react-dom: 16.14.0(react@16.14.0)
 
+  '@hot-updater/bsdiff@0.30.6': {}
+
   '@humanfs/core@0.19.1': {}
 
   '@humanfs/node@0.16.7':
@@ -13972,11 +13964,11 @@ snapshots:
 
   '@mdi/js@7.4.47': {}
 
-  '@microsoft/api-extractor-model@7.33.4(@types/node@22.19.15)':
+  '@microsoft/api-extractor-model@7.33.4(@types/node@24.12.2)':
     dependencies:
       '@microsoft/tsdoc': 0.16.0
       '@microsoft/tsdoc-config': 0.18.1
-      '@rushstack/node-core-library': 5.20.3(@types/node@22.19.15)
+      '@rushstack/node-core-library': 5.20.3(@types/node@24.12.2)
     transitivePeerDependencies:
       - '@types/node'
 
@@ -13988,15 +13980,15 @@ snapshots:
     transitivePeerDependencies:
       - '@types/node'
 
-  '@microsoft/api-extractor@7.57.7(@types/node@22.19.15)':
+  '@microsoft/api-extractor@7.57.7(@types/node@24.12.2)':
     dependencies:
-      '@microsoft/api-extractor-model': 7.33.4(@types/node@22.19.15)
+      '@microsoft/api-extractor-model': 7.33.4(@types/node@24.12.2)
       '@microsoft/tsdoc': 0.16.0
       '@microsoft/tsdoc-config': 0.18.1
-      '@rushstack/node-core-library': 5.20.3(@types/node@22.19.15)
+      '@rushstack/node-core-library': 5.20.3(@types/node@24.12.2)
       '@rushstack/rig-package': 0.7.2
-      '@rushstack/terminal': 0.22.3(@types/node@22.19.15)
-      '@rushstack/ts-command-line': 5.3.3(@types/node@22.19.15)
+      '@rushstack/terminal': 0.22.3(@types/node@24.12.2)
+      '@rushstack/ts-command-line': 5.3.3(@types/node@24.12.2)
       diff: 8.0.4
       lodash: 4.17.23
       minimatch: 10.2.3
@@ -14085,16 +14077,7 @@ snapshots:
     dependencies:
       node-gyp-build: 4.8.4
 
-  '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4192c0c9f34306c2167e258dd4fef773af406161':
-    dependencies:
-      form-data: 4.0.5
-      jsonwebtoken: 9.0.3
-      request: 2.88.2
-      set-cookie-parser: 2.7.2
-      string-template: 1.0.0
-      typed-emitter: 1.4.0
-
-  '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/d16099d8c9def488dde7b545428d4d7a04668679':
+  '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4dd3460c2d02d93ba8f1bbeeeb2c5fa9af039a67':
     dependencies:
       form-data: 4.0.5
       jsonwebtoken: 9.0.3
@@ -14148,6 +14131,18 @@ snapshots:
   '@opentelemetry/context-async-hooks@2.6.1(@opentelemetry/api@1.9.1)':
     dependencies:
       '@opentelemetry/api': 1.9.1
+
+  '@opentelemetry/context-zone-peer-dep@2.7.0(@opentelemetry/api@1.9.1)(zone.js@0.15.1)':
+    dependencies:
+      '@opentelemetry/api': 1.9.1
+      zone.js: 0.15.1
+
+  '@opentelemetry/context-zone@2.7.0(@opentelemetry/api@1.9.1)':
+    dependencies:
+      '@opentelemetry/context-zone-peer-dep': 2.7.0(@opentelemetry/api@1.9.1)(zone.js@0.15.1)
+      zone.js: 0.15.1
+    transitivePeerDependencies:
+      - '@opentelemetry/api'
 
   '@opentelemetry/core@1.30.1(@opentelemetry/api@1.9.1)':
     dependencies:
@@ -14571,7 +14566,7 @@ snapshots:
 
   '@rtsao/scc@1.1.0': {}
 
-  '@rushstack/node-core-library@5.20.3(@types/node@22.19.15)':
+  '@rushstack/node-core-library@5.20.3(@types/node@24.12.2)':
     dependencies:
       ajv: 8.18.0
       ajv-draft-04: 1.0.0(ajv@8.18.0)
@@ -14582,7 +14577,7 @@ snapshots:
       resolve: 1.22.11
       semver: 7.5.4
     optionalDependencies:
-      '@types/node': 22.19.15
+      '@types/node': 24.12.2
 
   '@rushstack/node-core-library@5.20.3(@types/node@25.5.0)':
     dependencies:
@@ -14597,9 +14592,9 @@ snapshots:
     optionalDependencies:
       '@types/node': 25.5.0
 
-  '@rushstack/problem-matcher@0.2.1(@types/node@22.19.15)':
+  '@rushstack/problem-matcher@0.2.1(@types/node@24.12.2)':
     optionalDependencies:
-      '@types/node': 22.19.15
+      '@types/node': 24.12.2
 
   '@rushstack/problem-matcher@0.2.1(@types/node@25.5.0)':
     optionalDependencies:
@@ -14610,13 +14605,13 @@ snapshots:
       resolve: 1.22.11
       strip-json-comments: 3.1.1
 
-  '@rushstack/terminal@0.22.3(@types/node@22.19.15)':
+  '@rushstack/terminal@0.22.3(@types/node@24.12.2)':
     dependencies:
-      '@rushstack/node-core-library': 5.20.3(@types/node@22.19.15)
-      '@rushstack/problem-matcher': 0.2.1(@types/node@22.19.15)
+      '@rushstack/node-core-library': 5.20.3(@types/node@24.12.2)
+      '@rushstack/problem-matcher': 0.2.1(@types/node@24.12.2)
       supports-color: 8.1.1
     optionalDependencies:
-      '@types/node': 22.19.15
+      '@types/node': 24.12.2
 
   '@rushstack/terminal@0.22.3(@types/node@25.5.0)':
     dependencies:
@@ -14626,9 +14621,9 @@ snapshots:
     optionalDependencies:
       '@types/node': 25.5.0
 
-  '@rushstack/ts-command-line@5.3.3(@types/node@22.19.15)':
+  '@rushstack/ts-command-line@5.3.3(@types/node@24.12.2)':
     dependencies:
-      '@rushstack/terminal': 0.22.3(@types/node@22.19.15)
+      '@rushstack/terminal': 0.22.3(@types/node@24.12.2)
       '@types/argparse': 1.0.38
       argparse: 1.0.10
       string-argv: 0.3.2
@@ -15113,9 +15108,9 @@ snapshots:
 
   '@types/node@16.18.126': {}
 
-  '@types/node@22.19.15':
+  '@types/node@24.12.2':
     dependencies:
-      undici-types: 6.21.0
+      undici-types: 7.16.0
 
   '@types/node@25.5.0':
     dependencies:
@@ -15532,7 +15527,7 @@ snapshots:
       obug: 2.1.1
       std-env: 4.0.0
       tinyrainbow: 3.1.0
-      vitest: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.19.15)(@vitest/ui@4.1.0)(happy-dom@20.8.8)(jsdom@20.0.3)(vite@8.0.3)
+      vitest: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/ui@4.1.0)(happy-dom@20.8.8)(jsdom@20.0.3)(vite@8.0.3)
 
   '@vitest/expect@4.1.2':
     dependencies:
@@ -15549,7 +15544,7 @@ snapshots:
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      vite: 8.0.3(@types/node@22.19.15)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.1)
+      vite: 8.0.3(@types/node@25.5.0)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.1)
 
   '@vitest/pretty-format@4.1.0':
     dependencies:
@@ -15582,7 +15577,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 3.1.0
-      vitest: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.19.15)(@vitest/ui@4.1.0)(happy-dom@20.8.8)(jsdom@20.0.3)(vite@8.0.3)
+      vitest: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/ui@4.1.0)(happy-dom@20.8.8)(jsdom@20.0.3)(vite@8.0.3)
 
   '@vitest/utils@4.1.0':
     dependencies:
@@ -16061,17 +16056,6 @@ snapshots:
 
   aws4@1.13.2: {}
 
-  ba2tk@https://codeload.github.com/Nexus-Mods/node-ba2tk/tar.gz/762d8de841ca1c770a0925311fd626d71de67971(bluebird@3.7.2):
-    dependencies:
-      autogypi: 0.2.2
-      node-addon-api: 8.5.0
-      node-gyp: 9.4.1(bluebird@3.7.2)
-      prebuild-install: 7.1.0
-      tmp: 0.0.29
-    transitivePeerDependencies:
-      - bluebird
-      - supports-color
-
   babel-plugin-polyfill-corejs2@0.4.17(@babel/core@7.29.0):
     dependencies:
       '@babel/compat-data': 7.29.0
@@ -16205,10 +16189,6 @@ snapshots:
       prebuild-install: 7.1.3
     transitivePeerDependencies:
       - supports-color
-
-  bsdiff-node@https://codeload.github.com/Nexus-Mods/bsdiff-node/tar.gz/a2bd60f5f96d172892b7f6708fb9a7a212b3b2e5:
-    dependencies:
-      node-addon-api: 8.5.0
 
   buffer-crc32@0.2.13: {}
 
@@ -17173,10 +17153,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  electron@39.8.0:
+  electron@41.3.0:
     dependencies:
       '@electron/get': 2.0.3
-      '@types/node': 22.19.15
+      '@types/node': 24.12.2
       extract-zip: 2.0.1
     transitivePeerDependencies:
       - supports-color
@@ -17671,16 +17651,6 @@ snapshots:
   esprima@4.0.1:
     optional: true
 
-  esptk@https://codeload.github.com/Nexus-Mods/node-esptk/tar.gz/7b7db98d2c69b6b6cad2cb3dcd7972143adaa7bd:
-    dependencies:
-      autogypi: 0.2.2
-      node-addon-api: 8.5.0
-      node-gyp: 10.3.1
-      prebuild-install: 7.1.3
-    transitivePeerDependencies:
-      - supports-color
-    optional: true
-
   esquery@1.7.0:
     dependencies:
       estraverse: 5.3.0
@@ -18027,20 +17997,6 @@ snapshots:
       setimmediate: 1.0.5
       string.fromcodepoint: 0.2.1
       string.prototype.codepointat: 0.2.1
-
-  gamebryo-savegame@https://codeload.github.com/Nexus-Mods/node-gamebryo-savegames/tar.gz/9149445e798a632a38337229dd0b60b67efb74bd:
-    dependencies:
-      autogypi: 0.2.2
-      copyfiles: 2.4.1
-      cross-fetch: 3.2.0(encoding@0.1.13)
-      node-addon-api: 8.5.0
-      node-gyp: 10.3.1
-      node-stream-zip: 1.15.0
-      prebuild-install: 7.1.3
-    transitivePeerDependencies:
-      - encoding
-      - supports-color
-    optional: true
 
   gauge@2.7.4:
     dependencies:
@@ -19057,6 +19013,8 @@ snapshots:
 
   lz-string@1.5.0: {}
 
+  lz4js@0.2.0: {}
+
   magic-string@0.30.21:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
@@ -19434,9 +19392,6 @@ snapshots:
 
   node-releases@2.0.36: {}
 
-  node-stream-zip@1.15.0:
-    optional: true
-
   noms@0.0.0:
     dependencies:
       inherits: 2.0.4
@@ -19552,8 +19507,6 @@ snapshots:
       prelude-ls: 1.2.1
       type-check: 0.4.0
       word-wrap: 1.2.5
-
-  os-tmpdir@1.0.2: {}
 
   outlayer@2.1.1:
     dependencies:
@@ -20002,7 +19955,7 @@ snapshots:
     transitivePeerDependencies:
       - '@types/react'
 
-  react-dnd@14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@22.19.15)(@types/react@16.14.69)(react@16.14.0):
+  react-dnd@14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@24.12.2)(@types/react@16.14.69)(react@16.14.0):
     dependencies:
       '@react-dnd/invariant': 2.0.0
       '@react-dnd/shallowequal': 2.0.0
@@ -20012,7 +19965,7 @@ snapshots:
       react: 16.14.0
     optionalDependencies:
       '@types/hoist-non-react-statics': 3.3.7(@types/react@16.14.69)
-      '@types/node': 22.19.15
+      '@types/node': 24.12.2
       '@types/react': 16.14.69
 
   react-dnd@14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@25.5.0)(@types/react@16.14.69)(react@16.14.0):
@@ -21131,10 +21084,6 @@ snapshots:
     dependencies:
       tmp: 0.2.5
 
-  tmp@0.0.29:
-    dependencies:
-      os-tmpdir: 1.0.2
-
   tmp@0.1.0:
     dependencies:
       rimraf: 2.7.1
@@ -21332,6 +21281,8 @@ snapshots:
       possible-typed-array-names: 1.1.0
       reflect.getprototypeof: 1.0.10
 
+  typed-binary@4.3.3: {}
+
   typed-emitter@1.4.0: {}
 
   typed-styles@0.0.7: {}
@@ -21387,7 +21338,7 @@ snapshots:
       react: 16.14.0
       react-lifecycles-compat: 3.0.4
 
-  undici-types@6.21.0: {}
+  undici-types@7.16.0: {}
 
   undici-types@7.18.2: {}
 
@@ -21579,10 +21530,10 @@ snapshots:
   vite-plugin-doctest@2.0.0(typescript@5.9.3)(vite@8.0.3)(vitest@4.1.2):
     dependencies:
       typescript: 5.9.3
-      vite: 8.0.3(@types/node@22.19.15)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.1)
-      vitest: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.19.15)(@vitest/ui@4.1.0)(happy-dom@20.8.8)(jsdom@20.0.3)(vite@8.0.3)
+      vite: 8.0.3(@types/node@24.12.2)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.1)
+      vitest: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/ui@4.1.0)(happy-dom@20.8.8)(jsdom@20.0.3)(vite@8.0.3)
 
-  vite@8.0.3(@types/node@22.19.15)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.1):
+  vite@8.0.3(@types/node@24.12.2)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.1):
     dependencies:
       lightningcss: 1.32.0
       picomatch: 4.0.4
@@ -21590,7 +21541,7 @@ snapshots:
       rolldown: 1.0.0-rc.12
       tinyglobby: 0.2.15
     optionalDependencies:
-      '@types/node': 22.19.15
+      '@types/node': 24.12.2
       fsevents: 2.3.3
       jiti: 2.6.1
       sass: 1.97.3
@@ -21610,7 +21561,7 @@ snapshots:
       sass: 1.97.3
       terser: 5.46.1
 
-  vitest@4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.19.15)(@vitest/ui@4.1.0)(happy-dom@20.8.8)(jsdom@20.0.3)(vite@8.0.3):
+  vitest@4.1.2(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/ui@4.1.0)(happy-dom@20.8.8)(jsdom@20.0.3)(vite@8.0.3):
     dependencies:
       '@vitest/expect': 4.1.2
       '@vitest/mocker': 4.1.2(vite@8.0.3)
@@ -21630,11 +21581,42 @@ snapshots:
       tinyexec: 1.0.4
       tinyglobby: 0.2.15
       tinyrainbow: 3.1.0
-      vite: 8.0.3(@types/node@22.19.15)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.1)
+      vite: 8.0.3(@types/node@24.12.2)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.1)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@opentelemetry/api': 1.9.1
-      '@types/node': 22.19.15
+      '@types/node': 24.12.2
+      '@vitest/ui': 4.1.0(vitest@4.1.2)
+      happy-dom: 20.8.8
+      jsdom: 20.0.3
+    transitivePeerDependencies:
+      - msw
+
+  vitest@4.1.2(@opentelemetry/api@1.9.1)(@types/node@25.5.0)(@vitest/ui@4.1.0)(happy-dom@20.8.8)(jsdom@20.0.3)(vite@8.0.3):
+    dependencies:
+      '@vitest/expect': 4.1.2
+      '@vitest/mocker': 4.1.2(vite@8.0.3)
+      '@vitest/pretty-format': 4.1.2
+      '@vitest/runner': 4.1.2
+      '@vitest/snapshot': 4.1.2
+      '@vitest/spy': 4.1.2
+      '@vitest/utils': 4.1.2
+      es-module-lexer: 2.0.0
+      expect-type: 1.3.0
+      magic-string: 0.30.21
+      obug: 2.1.1
+      pathe: 2.0.3
+      picomatch: 4.0.4
+      std-env: 4.0.0
+      tinybench: 2.9.0
+      tinyexec: 1.0.4
+      tinyglobby: 0.2.15
+      tinyrainbow: 3.1.0
+      vite: 8.0.3(@types/node@25.5.0)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.1)
+      why-is-node-running: 2.3.0
+    optionalDependencies:
+      '@opentelemetry/api': 1.9.1
+      '@types/node': 25.5.0
       '@vitest/ui': 4.1.0(vitest@4.1.2)
       happy-dom: 20.8.8
       jsdom: 20.0.3
@@ -21647,15 +21629,6 @@ snapshots:
     dependencies:
       lodash: 4.17.23
       winapi-bindings: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
-    transitivePeerDependencies:
-      - supports-color
-
-  vortexmt@https://codeload.github.com/Nexus-Mods/node-vortexmt/tar.gz/5251ea012ce856742aeaf73a583073497aff773a:
-    dependencies:
-      autogypi: 0.2.2
-      node-addon-api: 8.5.0
-      node-gyp: 10.3.1
-      prebuild-install: 7.1.3
     transitivePeerDependencies:
       - supports-color
 
@@ -21951,3 +21924,5 @@ snapshots:
       readable-stream: 3.6.2
 
   zod@4.3.6: {}
+
+  zone.js@0.15.1: {}

@@ -1,0 +1,42 @@
+name: Update resolved fingerprints
+description: >-
+  Collect fingerprints (from a PR body, release tags, or manual inputs) and
+  write to vortex.resolved_fingerprints in ClickHouse.
+
+inputs:
+  mode:
+    description: "pr | release | resolve"
+    required: true
+  fingerprints:
+    description: "mode=resolve: comma- or whitespace-separated list of 8-hex-char fingerprints."
+    required: false
+    default: ""
+  remove:
+    description: "mode=resolve: remove from the table instead of adding (true/false)."
+    required: false
+    default: "false"
+  status:
+    description: "mode=resolve: fixed | released | ignored. Used when adding."
+    required: false
+    default: fixed
+  release-version:
+    description: "mode=resolve: required when status=released and remove=false."
+    required: false
+    default: ""
+  github-token:
+    description: "GITHUB_TOKEN for API calls (used by mode=release)."
+    required: false
+    default: ${{ github.token }}
+  clickhouse-url:
+    description: ClickHouse HTTP endpoint.
+    required: true
+  clickhouse-user:
+    description: ClickHouse username.
+    required: true
+  clickhouse-password:
+    description: ClickHouse password.
+    required: true
+
+runs:
+  using: node24
+  main: dist/index.js

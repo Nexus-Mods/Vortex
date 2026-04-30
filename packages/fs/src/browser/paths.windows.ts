@@ -20,6 +20,7 @@ export type WindowsPathBase =
 /** @public */
 export interface WindowsPathProvider extends PathProvider<WindowsPathBase> {
   readonly platform: "windows";
+  readonly scheme: "windows";
 
   enumerateDrives(): Promise<QualifiedPath[]>;
 }

@@ -1,6 +1,7 @@
 import { QualifiedPath } from "@vortex/fs";
 
 import type { StorePathProvider } from "../stores/providers.js";
+import type { VersionSource } from "./game-version.js";
 
 /**
  * Path-map returned by an adaptor's {@link IGamePathService.paths}.
@@ -47,6 +48,22 @@ export interface IGamePathService<T extends string = never> {
    * ```
    */
   paths(provider: StorePathProvider): Promise<GamePaths<"game" | T>>;
+
+  /**
+   * Declares how to detect the installed game version. The returned
+   * {@link VersionSource} is a strategy descriptor executed by the
+   * host, not the adaptor. This keeps adaptors OS-agnostic while
+   * supporting common patterns like PE header reads or version files.
+   *
+   * @example
+   * ```ts
+   * async getVersionSource(paths) {
+   *   const rehydrated = rehydrateGamePaths(paths);
+   *   return peHeader(rehydrated.game.join("bin", "x64", "Game.exe"));
+   * }
+   * ```
+   */
+  getVersionSource?(paths: GamePaths<"game" | T>): Promise<VersionSource>;
 }
 
 /**

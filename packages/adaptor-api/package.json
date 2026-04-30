@@ -1,6 +1,6 @@
 {
   "$schema": "https://www.schemastore.org/package.json",
-  "name": "@vortex/adaptor-api",
+  "name": "@nexusmods/adaptor-api",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -28,6 +28,11 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
+    "./contracts/filesystem": {
+      "development": "./src/contracts/filesystem.ts",
+      "import": "./dist/contracts/filesystem.js",
+      "require": "./dist/contracts/filesystem.cjs"
+    },
     "./contracts/game-info": {
       "development": "./src/contracts/game-info.ts",
       "import": "./dist/contracts/game-info.js",
@@ -47,6 +52,11 @@
       "development": "./src/contracts/game-tools.ts",
       "import": "./dist/contracts/game-tools.js",
       "require": "./dist/contracts/game-tools.cjs"
+    },
+    "./contracts/game-version": {
+      "development": "./src/contracts/game-version.ts",
+      "import": "./dist/contracts/game-version.js",
+      "require": "./dist/contracts/game-version.cjs"
     },
     "./contracts/glob": {
       "development": "./src/contracts/glob.ts",
@@ -76,6 +86,10 @@
         "import": "./dist/index.js",
         "require": "./dist/index.cjs"
       },
+      "./contracts/filesystem": {
+        "import": "./dist/contracts/filesystem.js",
+        "require": "./dist/contracts/filesystem.cjs"
+      },
       "./contracts/game-info": {
         "import": "./dist/contracts/game-info.js",
         "require": "./dist/contracts/game-info.cjs"
@@ -91,6 +105,10 @@
       "./contracts/game-tools": {
         "import": "./dist/contracts/game-tools.js",
         "require": "./dist/contracts/game-tools.cjs"
+      },
+      "./contracts/game-version": {
+        "import": "./dist/contracts/game-version.js",
+        "require": "./dist/contracts/game-version.cjs"
       },
       "./contracts/glob": {
         "import": "./dist/contracts/glob.js",

@@ -1,0 +1,29 @@
+{
+  "fileName": "fallout4_1.fos",
+  "quick": {
+    "characterName": "Lucy",
+    "characterLevel": 1,
+    "location": "Commonwealth",
+    "saveNumber": 3,
+    "creationTime": 1716309042,
+    "playTime": "0d.2h.1m.0 days.2 hours.1 minutes"
+  },
+  "full": {
+    "characterName": "Lucy",
+    "characterLevel": 1,
+    "location": "Commonwealth",
+    "saveNumber": 3,
+    "creationTime": 1716309042,
+    "playTime": "0d.2h.1m.0 days.2 hours.1 minutes",
+    "plugins": [
+      "Fallout4.esm"
+    ],
+    "screenshotSize": {
+      "width": 640,
+      "height": 384
+    },
+    "screenshotHash": "91a217abe3028d42569ad0cb9e3109b1aebfbfb33fe7313f9e6831994dae54cf",
+    "screenshotLength": 983040,
+    "screenshotHead": "JCks/x8jJP8cHx//HyQk/yEmJv8aHiL/Gh8i/yIqMP8mLzb/JS80/yIqMP8tNz7/Ki4z/youM/8tMzr/LDA1/ycuNf8nLjT/Jiwz/yUrMv8jJy3/Iygt/yUsNP8lLDP/Ji00/yUsMv8lLDL/JSwy/yQrMP8mLDH/Jiwx/yYsMf8mLDL/Jiwy/yctM/8nLTP/Jiwx/yYsMf8mLDD/KCww/yYrL/8mKy3/JCUm/yctL/8mKyv/Jisu/yYrLv8mLDH/JyMj/yoqLf8wMjb/Jiov/ygmKP8qKSv/LC0w/ycmKP8sLC7/KSYo/yklJv8pJSf/LSkq/zU2Ov81OD3/NDY7/w=="
+  }
+}

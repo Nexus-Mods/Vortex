@@ -6,6 +6,7 @@
 - [non-critical-errors.md](non-critical-errors.md) - Recoverable errors: filtering logic, OTel recording
 - [critical-errors.md](critical-errors.md) - Fatal errors: terminate paths, crash reporter subprocess
 - [telemetry-otel.md](telemetry-otel.md) - OTel architecture: ring buffer, IPC forwarding, export
+- [fingerprint-resolution.md](fingerprint-resolution.md) - GitHub workflows that mark error fingerprints as fixed/released in ClickHouse
 
 ## Key Files
 

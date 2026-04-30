@@ -109,7 +109,7 @@ export const useNotificationFiltering = ({
       if (item?.id === undefined) {
         continue;
       }
-      const ref = notis.find((n) => n.id === item.id);
+      const ref = notis.find((n) => n?.id === item.id);
       if (
         ref !== undefined &&
         (item.message !== ref.message || item.progress !== ref.progress)

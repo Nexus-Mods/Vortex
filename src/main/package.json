@@ -30,6 +30,7 @@
     "@nexusmods/nexus-api": "catalog:",
     "@opentelemetry/api": "catalog:",
     "@opentelemetry/context-async-hooks": "catalog:",
+    "@opentelemetry/context-zone": "catalog:",
     "@opentelemetry/exporter-trace-otlp-http": "catalog:",
     "@opentelemetry/resources": "catalog:",
     "@opentelemetry/sdk-trace-base": "catalog:",
@@ -37,7 +38,7 @@
     "@tailwindcss/cli": "catalog:",
     "@types/bluebird": "catalog:",
     "@types/uuid": "catalog:",
-    "@vortex/adaptor-api": "workspace:*",
+    "@nexusmods/adaptor-api": "workspace:*",
     "@vortex/fs": "workspace:*",
     "bbcode-to-react": "catalog:",
     "big.js": "catalog:",
@@ -131,7 +132,6 @@
     "universal-analytics": "catalog:",
     "uuid": "catalog:",
     "vortex-parse-ini": "catalog:",
-    "vortexmt": "catalog:",
     "wholocks": "catalog:",
     "winapi-bindings": "catalog:",
     "winston": "catalog:",
@@ -142,6 +142,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@vortex/adaptor-cyberpunk2077": "workspace:*",
     "@types/bbcode-to-react": "catalog:",
     "@types/big.js": "catalog:",
     "@types/content-disposition": "catalog:",

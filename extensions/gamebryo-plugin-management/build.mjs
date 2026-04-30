@@ -7,7 +7,6 @@ const output = path.resolve(extensionPath, "dist", "index.cjs");
 
 const remapPlugin = nativeRemapPlugin({
   "./build/Release/node-loot": "./node-loot.node",
-  "./build/Release/esptk": "./esptk.node",
 });
 
 const config = createConfig(entryPoint, output, [remapPlugin]);

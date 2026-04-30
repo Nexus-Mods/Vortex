@@ -1,17 +1,10 @@
 import turbowalk, { IEntry, IWalkOptions } from "turbowalk";
-import { fileMD5 } from "vortexmt";
+import { util } from "vortex-api";
 
 import { IEntryEx } from "../types/IEntryEx";
 
 export async function fileMD5Async(fileName: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    fileMD5(
-      fileName,
-      (err: Error, result: string) =>
-        err !== null ? reject(err) : resolve(result),
-      () => null,
-    );
-  });
+  return util.fileMD5(fileName);
 }
 
 export async function walkPath(

@@ -1,0 +1,29 @@
+name: Fingerprints - Mark as fixed
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - master
+      - "v*"
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  sync:
+    # Skip the auto-cherry-pick PRs created by .github/scripts/cherry-pick.sh
+    # (head branches always start with `cherry-pick/`); the original PR is
+    # what fixes the fingerprint, the cherry-pick is just propagation.
+    if: >-
+      github.event.pull_request.merged == true &&
+      !startsWith(github.event.pull_request.head.ref, 'cherry-pick/')
+    runs-on: [self-hosted]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/fingerprints
+        with:
+          mode: pr
+          clickhouse-url: ${{ secrets.CLICKHOUSE_URL }}
+          clickhouse-user: ${{ secrets.CLICKHOUSE_USER }}
+          clickhouse-password: ${{ secrets.CLICKHOUSE_PASSWORD }}

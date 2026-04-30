@@ -1,0 +1,34 @@
+{
+  "fileName": "fallout3_1.fos",
+  "quick": {
+    "characterName": "Athena Blackmore",
+    "characterLevel": 1,
+    "location": "Vault 101 Entrance",
+    "saveNumber": 2928,
+    "creationTime": 1570645161,
+    "playTime": "001.33.29"
+  },
+  "full": {
+    "characterName": "Athena Blackmore",
+    "characterLevel": 1,
+    "location": "Vault 101 Entrance",
+    "saveNumber": 2928,
+    "creationTime": 1570645161,
+    "playTime": "001.33.29",
+    "plugins": [
+      "Fallout3.esm",
+      "Anchorage.esm",
+      "ThePitt.esm",
+      "BrokenSteel.esm",
+      "PointLookout.esm",
+      "Zeta.esm"
+    ],
+    "screenshotSize": {
+      "width": 512,
+      "height": 288
+    },
+    "screenshotHash": "f4afec5344f17a62ae56e8b1cc522fb9906d3de66a2a623b4278afe7666f10e3",
+    "screenshotLength": 589824,
+    "screenshotHead": "DxMS/w0REP8KDg3/ERYU/xceG/8dJCD/HCMf/xohHf8cIh7/ISYh/ysyKv9CSz3/WmNQ/15oU/9MVUL/T1hF/2ZyW/9zf2b/OEAz/xofGP8MDwz/FhkV/zQ5L/8/RDj/LTIo/yYrIv9JUED/cnxl/1VdS/8wNCr/IScg/yAlH/8cIRz/GR0Z/xsgG/8jKSL/LDIp/zE3Lf8yNi3/ICQd/w8SDv8YGxb/Jywk/0pRQ/9XYFD/SVBB/ywxJ/8hJR3/Iykh/yEmH/8tMin/R09B/1dgTv9WX0z/X2lU/2BqVf9UXEn/XGVR/2ZwWv9pc1z/Y2tV/1lgTP8HBwP/MDMn/w=="
+  }
+}

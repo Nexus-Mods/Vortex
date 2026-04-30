@@ -90,7 +90,7 @@ export interface IAdaptorManifest {
  *
  * @example
  * ```ts
- * declare module "@vortex/adaptor-api" {
+ * declare module "@nexusmods/adaptor-api" {
  *   interface ServiceRegistry {
  *     "vortex:host/ping": PingService;
  *   }

@@ -70,13 +70,6 @@ const MODULE_CONFIG = {
     description: "BSA (Bethesda Softworks Archive) toolkit",
     type: "cpp",
   },
-  esptk: {
-    path: "extensions/gamebryo-plugin-management/node_modules/esptk",
-    repository: "https://github.com/Nexus-Mods/node-esptk.git",
-    sshRepository: "git@github.com:Nexus-Mods/node-esptk.git",
-    description: "ESP (Elder Scrolls Plugin) toolkit",
-    type: "cpp",
-  },
   loot: {
     path: "extensions/gamebryo-plugin-management/node_modules/loot",
     repository: "https://github.com/Nexus-Mods/node-loot.git",
@@ -89,13 +82,6 @@ const MODULE_CONFIG = {
     repository: "https://github.com/Nexus-Mods/node-gamebryo-savegames.git",
     sshRepository: "git@github.com:Nexus-Mods/node-gamebryo-savegames.git",
     description: "Gamebryo savegame management library",
-    type: "cpp",
-  },
-  "bsdiff-node": {
-    path: "extensions/collections/node_modules/bsdiff-node",
-    repository: "https://github.com/Nexus-Mods/bsdiff-node.git",
-    sshRepository: "git@github.com:Nexus-Mods/bsdiff-node.git",
-    description: "Binary diff/patch library for Node.js",
     type: "cpp",
   },
 };
@@ -682,10 +668,8 @@ PROJECT TYPES MANAGED:
 
 • Gamebryo Extension C++ Projects:
   - bsatk (BSA archive toolkit)
-  - esptk (ESP plugin toolkit)  
   - loot (Load order optimization)
   - gamebryo-savegame (Savegame management)
-  - bsdiff-node (Binary diff/patch)
 
 WORKFLOW INTEGRATION:
 These tools integrate seamlessly with the Visual Studio solution (vortex.sln).

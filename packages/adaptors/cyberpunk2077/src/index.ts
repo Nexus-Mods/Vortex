@@ -1,21 +1,23 @@
-import { provides } from "@vortex/adaptor-api";
-import type { IGameInfoService } from "@vortex/adaptor-api/contracts/game-info";
-import { gameInfo } from "@vortex/adaptor-api/contracts/game-info";
+import { provides } from "@nexusmods/adaptor-api";
+import type { IGameInfoService } from "@nexusmods/adaptor-api/contracts/game-info";
+import { gameInfo } from "@nexusmods/adaptor-api/contracts/game-info";
 import type {
   IGameInstallerService,
   InstallMapping,
   StopPattern,
-} from "@vortex/adaptor-api/contracts/game-installer";
-import { resolveStopPatterns } from "@vortex/adaptor-api/contracts/game-installer";
+} from "@nexusmods/adaptor-api/contracts/game-installer";
+import { resolveStopPatterns } from "@nexusmods/adaptor-api/contracts/game-installer";
 import type {
   GamePaths,
   IGamePathService,
-} from "@vortex/adaptor-api/contracts/game-paths";
-import { rehydrateGamePaths } from "@vortex/adaptor-api/contracts/game-paths";
-import type { IGameToolsService } from "@vortex/adaptor-api/contracts/game-tools";
-import { gameTools } from "@vortex/adaptor-api/contracts/game-tools";
-import type { StorePathProvider } from "@vortex/adaptor-api/stores/lib";
-import { Base } from "@vortex/adaptor-api/stores/lib";
+} from "@nexusmods/adaptor-api/contracts/game-paths";
+import { rehydrateGamePaths } from "@nexusmods/adaptor-api/contracts/game-paths";
+import { peHeader } from "@nexusmods/adaptor-api/contracts/game-version";
+import type { VersionSource } from "@nexusmods/adaptor-api/contracts/game-version";
+import type { IGameToolsService } from "@nexusmods/adaptor-api/contracts/game-tools";
+import { gameTools } from "@nexusmods/adaptor-api/contracts/game-tools";
+import type { StorePathProvider } from "@nexusmods/adaptor-api/stores/lib";
+import { Base } from "@nexusmods/adaptor-api/stores/lib";
 import type { RelativePath } from "@vortex/fs";
 
 type CyberpunkExtras = "saves" | "preferences";
@@ -62,6 +64,11 @@ export class GamePathService implements IGamePathService<CyberpunkExtras> {
     );
 
     return { game, saves, preferences };
+  }
+
+  async getVersionSource(paths: CyberpunkPaths): Promise<VersionSource> {
+    const rehydrated = rehydrateGamePaths(paths);
+    return peHeader(rehydrated.game.join("bin", "x64", "Cyberpunk2077.exe"));
   }
 }
 
@@ -141,6 +148,18 @@ const CYBERPUNK_STOP_PATTERNS: readonly StopPattern<CyberpunkExtras>[] = [
 
   // REDmod packages (self-contained mod directories under mods/).
   { match: "**/mods/**", anchor: Base.Game },
+
+  // ASI plugins (distinct from Red4Ext -- lives in bin/x64/plugins/).
+  { match: "**/bin/x64/plugins/**/*.asi", anchor: Base.Game },
+
+  // Input Loader XML configs.
+  { match: "**/r6/input/**/*.xml", anchor: Base.Game },
+
+  // Cache files (InputContexts, UserMappings, modded cache).
+  { match: "**/r6/cache/**", anchor: Base.Game },
+
+  // Character preset files (ACU, CyberCAT).
+  { match: "**/*.preset", anchor: Base.Game },
 
   // Engine config and tool files.
   { match: "**/engine/config/**/*.{ini,json,xml}", anchor: Base.Game },

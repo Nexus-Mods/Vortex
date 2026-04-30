@@ -391,6 +391,18 @@ export interface AdaptorsApi {
       requires: string[];
     }>
   >;
+  /**
+   * Synchronous version of `list` that also includes pre-fetched game info.
+   * Used by the adaptor bridge during extension init where only synchronous
+   * work is allowed (registerGame must be called before endRegistration).
+   */
+  listWithInfoSync(): Array<{
+    name: string;
+    pid: string;
+    provides: string[];
+    requires: string[];
+    gameInfo: unknown;
+  }>;
   /** Calls a service method on a loaded adaptor. */
   call(
     adaptorName: string,
@@ -400,11 +412,21 @@ export interface AdaptorsApi {
   ): Promise<unknown>;
   /**
    * Builds a store-path snapshot for a discovered game. The returned
-   * value is a `StorePathSnapshot` from `@vortex/adaptor-api/stores/lib`
+   * value is a `StorePathSnapshot` from `@nexusmods/adaptor-api/stores/lib`
    * (the renderer sees it as `unknown` to avoid dragging the adaptor-api
    * types into the preload surface; the bridge casts locally).
    */
   buildSnapshot(store: string, gamePath: string): Promise<unknown>;
+  /**
+   * Executes a declarative version detection strategy on the main
+   * process side. The source describes what to read (PE header, text
+   * file, etc.) and where.
+   */
+  detectVersion(source: {
+    type: string;
+    path: { value: string };
+    regex?: string;
+  }): Promise<string>;
 }
 
 /** API for querying update status from main process */

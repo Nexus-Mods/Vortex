@@ -1,5 +1,6 @@
-import type { RedownloadMode } from "../DownloadManager";
 import type { IChunk } from "./IChunk";
+
+export type RedownloadMode = "always" | "never" | "ask" | "replace";
 
 export type DownloadState =
   | "init"

@@ -104,6 +104,8 @@ export type DownloadStatus =
 export type DownloadProgress = Progress & {
   /** Size of the file being downloaded. This can be null when the server returns no size. */
   size: number | null;
+  /** Filename from Content-Disposition header. Null until the probe response is received. */
+  fileName: string | null;
 } & ({ isChunked: false } | { isChunked: true; chunks: ChunkProgress[] });
 
 export type DownloadCheckpoint<T = unknown> = {

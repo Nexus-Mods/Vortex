@@ -1,13 +1,17 @@
 import type * as Redux from "redux";
 
 import { mdiDownload } from "@mdi/js";
-import { unknownToError } from "@vortex/shared";
+import {
+  getErrorCode,
+  getErrorMessageOrDefault,
+  unknownToError,
+} from "@vortex/shared";
 import PromiseBB from "bluebird";
 import * as _ from "lodash";
 import Zip from "node-7z";
 import * as path from "path";
 import { generate as shortid } from "shortid";
-import { fileMD5 } from "vortexmt";
+import { fileMD5 } from "../../util/checksum";
 import winapi from "winapi-bindings";
 
 import type {
@@ -17,15 +21,11 @@ import type {
 import type { IState } from "../../types/IState";
 import type { ITestResult } from "../../types/ITestResult";
 import type { Normalize } from "../../util/getNormalizeFunc";
-import type DownloadManager from "./DownloadManager";
-import type { DownloadObserver } from "./DownloadObserver";
-import type observe from "./DownloadObserver";
 import type { DownloadState, IDownload } from "./types/IDownload";
 import type { IProtocolHandlers, IResolvedURL } from "./types/ProtocolHandlers";
 import type { IDownloadViewProps } from "./views/DownloadView";
 
 import ReduxProp from "../../ReduxProp";
-import { getApplication } from "../../util/application";
 import {
   DataInvalid,
   ProcessCanceled,
@@ -40,12 +40,7 @@ import * as selectors from "../../util/selectors";
 import { knownGames } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, sum, toPromise, truthy } from "../../util/util";
-import NXMUrl from "../nexus_integration/NXMUrl";
-import { ensureLoggedIn } from "../nexus_integration/util";
-import {
-  convertNXMIdReverse,
-  convertGameIdReverse,
-} from "../nexus_integration/util/convertGameId";
+import { convertGameIdReverse } from "../nexus_integration/util/convertGameId";
 import {
   addLocalDownload,
   downloadProgress,
@@ -55,8 +50,6 @@ import {
   setDownloadHashByFile,
   setDownloadInterrupted,
   setDownloadModInfo,
-  setDownloadSpeed,
-  setDownloadSpeeds,
 } from "./actions/state";
 import { setTransferDownloads } from "./actions/transactions";
 import downloadAttributes from "./downloadAttributes";
@@ -74,8 +67,6 @@ import Settings from "./views/Settings";
 import ShutdownButton from "./views/ShutdownButton";
 import SpeedOMeter from "./views/SpeedOMeter";
 
-let observer: DownloadObserver;
-let manager: DownloadManager;
 let updateDebouncer: Debouncer;
 
 const protocolHandlers: IProtocolHandlers = {};
@@ -447,7 +438,6 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
         });
     })
     .then(() => {
-      manager.setDownloadPath(currentDownloadPath);
       watchDownloads(api, currentDownloadPath, downloadChangeHandler);
       api.events.emit("downloads-refreshed");
     })
@@ -938,20 +928,18 @@ function checkForUnfinalized(
                     })
                     .finally(() => ++completed);
                 } else {
-                  return toPromise<string>((cb) =>
-                    fileMD5(filePath, cb, () => {}),
-                  )
+                  return fileMD5(filePath)
                     .then((md5sum) => {
                       api.store.dispatch(setDownloadHash(id, md5sum));
                     })
-                    .catch((err) => {
-                      if (err.code === "ENOENT") {
+                    .catch((err: unknown) => {
+                      if (getErrorCode(err) === "ENOENT") {
                         // file doesn't exist, remove invalid download entry
                         api.store.dispatch(removeDownload(id));
                       } else {
                         log("error", "failed to calculate hash for download", {
                           file: downloads[id].localPath,
-                          error: err.message,
+                          error: getErrorMessageOrDefault(err),
                         });
                       }
                     })
@@ -1236,9 +1224,6 @@ function init(context: IExtensionContext): boolean {
 
   context.once(() => {
     Object.assign(context.api.ext, extendAPI(context.api));
-    const DownloadManagerImpl: typeof DownloadManager =
-      require("./DownloadManager").default;
-    const observeImpl: typeof observe = require("./DownloadObserver").default;
 
     const store = context.api.store;
 
@@ -1319,7 +1304,10 @@ function init(context: IExtensionContext): boolean {
 
         const activeDls = selectors.activeDownloads(state);
         updateShutdown(activeDls);
-        setErrorContext("active_downloads", String(Object.keys(activeDls).length));
+        setErrorContext(
+          "active_downloads",
+          String(Object.keys(activeDls).length),
+        );
 
         PromiseBB.map(filtered, (dlId) => {
           const rawGameId = getDownloadGames(cur[dlId])[0];
@@ -1428,130 +1416,22 @@ function init(context: IExtensionContext): boolean {
       return updateDownloadPath(context.api);
     }, 1000);
 
-    {
-      let powerTimer: NodeJS.Timeout;
-      let powerBlockerId: number;
-      const stopTimer = async () => {
-        if (powerBlockerId !== undefined) {
-          const isStarted =
-            await window.api.powerSaveBlocker.isStarted(powerBlockerId);
-          if (isStarted) {
-            await window.api.powerSaveBlocker.stop(powerBlockerId);
-          }
-        }
-        powerBlockerId = undefined;
-        powerTimer = undefined;
-      };
+    const state = context.api.getState();
+    const downloads = state.persistent.downloads?.files ?? {};
+    const gameMode = selectors.activeGameId(state);
 
-      const speedsDebouncer = new Debouncer(
-        () => {
-          store.dispatch(
-            setDownloadSpeeds(
-              store.getState().persistent.downloads.speedHistory,
-            ),
-          );
-          return null;
-        },
-        5000,
-        false,
-      );
+    processInterruptedDownloads(context.api, downloads, gameMode);
+    checkForUnfinalized(context.api, downloads, gameMode);
+    removeDownloadsWithoutFile(store, downloads);
 
-      const maxWorkersDebouncer = new Debouncer(
-        (newValue: number) => {
-          manager.setMaxConcurrentDownloads(newValue);
-          return null;
-        },
-        500,
-        true,
-      );
+    processCommandline(context.api);
 
-      context.api.onStateChange<number>(
-        ["settings", "downloads", "maxParallelDownloads"],
-        (old, newValue: number) => {
-          maxWorkersDebouncer.schedule(undefined, newValue);
-        },
-      );
-
-      const state = context.api.getState();
-
-      const maxParallelDownloads =
-        state.persistent["nexus"]?.userInfo?.isPremium === true
-          ? state.settings.downloads.maxParallelDownloads
-          : 1;
-
-      manager = new DownloadManagerImpl(
-        context.api,
-        selectors.downloadPath(store.getState()),
-        maxParallelDownloads,
-        store.getState().settings.downloads.maxChunks,
-        (speed: number) => {
-          if (process.env.VORTEX_USE_IPC_DOWNLOADER === "1") return;
-          if (
-            speed !== 0 ||
-            store.getState().persistent.downloads.speed !== 0
-          ) {
-            // this first call is only applied in the renderer for performance reasons
-            store.dispatch(setDownloadSpeed(Math.round(speed)));
-            // this schedules the main progress to be updated
-            speedsDebouncer.schedule();
-            if (powerTimer !== undefined) {
-              clearTimeout(powerTimer);
-            }
-            if (powerBlockerId === undefined) {
-              // Start power save blocker asynchronously
-              window.api.powerSaveBlocker
-                .start("prevent-app-suspension")
-                .then((id) => {
-                  powerBlockerId = id;
-                });
-            }
-            powerTimer = setTimeout(stopTimer, 60000);
-          }
-        },
-        `Nexus Client v2.${getApplication().version}`,
-        protocolHandlers,
-        () => context.api.getState().settings.downloads.maxBandwidth * 8,
-      );
-      manager.setFileExistsCB((fileName) => {
-        return context.api
-          .showDialog(
-            "question",
-            "File already exists",
-            {
-              text:
-                'You\'ve already downloaded the file "{{fileName}}", do you want to ' +
-                "download it again?",
-              parameters: {
-                fileName,
-              },
-            },
-            [{ label: "Cancel" }, { label: "Continue" }],
-          )
-          .then((result) => result.action === "Continue");
-      });
-      observer = observeImpl(context.api, manager);
-
-      const downloads = state.persistent.downloads?.files ?? {};
-      const gameMode = selectors.activeGameId(state);
-
-      processInterruptedDownloads(context.api, downloads, gameMode);
-      checkForUnfinalized(context.api, downloads, gameMode);
-      removeDownloadsWithoutFile(store, downloads);
-
-      processCommandline(context.api);
-
-      // Expose download manager free slots to other extensions
-      context.api.events.on(
-        "get-download-free-slots",
-        (callback: (freeSlots: number) => void) => {
-          if (manager) {
-            callback(manager.getFreeSlots());
-          } else {
-            callback(0);
-          }
-        },
-      );
-    }
+    context.api.events.on(
+      "get-download-free-slots",
+      (callback: (freeSlots: number) => void) => {
+        callback(0);
+      },
+    );
   });
 
   return true;

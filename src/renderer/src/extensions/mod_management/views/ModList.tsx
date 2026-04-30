@@ -1,18 +1,15 @@
-import { showDialog } from "../../../actions/notifications";
-import CollapseIcon from "../../../controls/CollapseIcon";
-import DropdownButton from "../../../controls/DropdownButton";
+import type { TFunction } from "i18next";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
+
+import * as _ from "lodash";
+import path from "path";
+import * as React from "react";
+import { Button, ButtonGroup, MenuItem, Panel } from "react-bootstrap";
+import * as semver from "semver";
+
 import type { DropType } from "../../../controls/Dropzone";
-import Dropzone from "../../../controls/Dropzone";
-import EmptyPlaceholder from "../../../controls/EmptyPlaceholder";
-import FlexLayout from "../../../controls/FlexLayout";
-import Icon from "../../../controls/Icon";
-import IconBar from "../../../controls/IconBar";
 import type { ITableRowAction } from "../../../controls/Table";
-import SuperTable from "../../../controls/Table";
-import OptionsFilter from "../../../controls/table/OptionsFilter";
-import TextFilter from "../../../controls/table/TextFilter";
-import { IconButton } from "../../../controls/TooltipControls";
-import ZoomableImage from "../../../controls/ZoomableImage";
 import type { IActionDefinition } from "../../../types/IActionDefinition";
 import type {
   DialogActions,
@@ -22,8 +19,30 @@ import type {
 } from "../../../types/IDialog";
 import type { IState } from "../../../types/IState";
 import type { ITableAttribute } from "../../../types/ITableAttribute";
-import { withBatchContext } from "../../../util/BatchContext";
+import type { IProfileMod } from "../../profile_management/types/IProfile";
+import type { IInstallOptions } from "../types/IInstallOptions";
+import type { IMod } from "../types/IMod";
+import type { IModProps } from "../types/IModProps";
+import type { IModSource } from "../types/IModSource";
+import type { UpdateState } from "../util/modUpdateState";
+
+import { showDialog } from "../../../actions/notifications";
+import CollapseIcon from "../../../controls/CollapseIcon";
 import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
+import DropdownButton from "../../../controls/DropdownButton";
+import Dropzone from "../../../controls/Dropzone";
+import EmptyPlaceholder from "../../../controls/EmptyPlaceholder";
+import FlexLayout from "../../../controls/FlexLayout";
+import Icon from "../../../controls/Icon";
+import IconBar from "../../../controls/IconBar";
+import SuperTable from "../../../controls/Table";
+import OptionsFilter from "../../../controls/table/OptionsFilter";
+import TextFilter from "../../../controls/table/TextFilter";
+import { IconButton } from "../../../controls/TooltipControls";
+import ZoomableImage from "../../../controls/ZoomableImage";
+import { knownArchiveExt } from "../../../util/archives";
+import { withBatchContext } from "../../../util/BatchContext";
+import calculateFolderSize from "../../../util/calculateFolderSize";
 import { ProcessCanceled, UserCanceled } from "../../../util/CustomErrors";
 import Debouncer from "../../../util/Debouncer";
 import * as selectors from "../../../util/selectors";
@@ -31,55 +50,34 @@ import { getSafe } from "../../../util/storeHelper";
 import {
   batchDispatch,
   bytesToString,
+  isFilenameValid,
   toPromise,
   truthy,
 } from "../../../util/util";
 import MainPage from "../../../views/MainPage";
-
-import calculateFolderSize from "../../../util/calculateFolderSize";
-
 import getDownloadGames from "../../download_management/util/getDownloadGames";
 import {
   setModEnabled,
   setModsEnabled,
 } from "../../profile_management/actions/profiles";
-import type { IProfileMod } from "../../profile_management/types/IProfile";
-
 import { removeMod, setModAttribute } from "../actions/mods";
 import { setShowModDropzone } from "../actions/settings";
-import type { IInstallOptions } from "../types/IInstallOptions";
-import type { IMod } from "../types/IMod";
-import type { IModProps } from "../types/IModProps";
-import type { IModSource } from "../types/IModSource";
-import { knownArchiveExt } from "../../../util/archives";
+import { DOWNLOAD_TIME, ENABLED_TIME, INSTALL_TIME } from "../modAttributes";
+import getText from "../texts";
 import combineMods from "../util/combine";
 import filterModInfo from "../util/filterModInfo";
 import groupMods from "../util/modGrouping";
 import modName from "../util/modName";
-import type { UpdateState } from "../util/modUpdateState";
 import modUpdateState, { isIdValid } from "../util/modUpdateState";
+import updateState from "../util/modUpdateState";
 import { removeMods } from "../util/removeMods";
 import VersionFilter from "../util/VersionFilter";
-import VersionChangelogButton from "./VersionChangelogButton";
-import VersionIconButton from "./VersionIconButton";
-
-import { DOWNLOAD_TIME, ENABLED_TIME, INSTALL_TIME } from "../modAttributes";
-import getText from "../texts";
-
 import Author from "./Author";
 import CheckModVersionsButton from "./CheckModVersionsButton";
 import Description from "./Description";
 import InstallArchiveButton from "./InstallArchiveButton";
-
-import type { TFunction } from "i18next";
-import * as _ from "lodash";
-import path from "path";
-import * as React from "react";
-import { Button, ButtonGroup, MenuItem, Panel } from "react-bootstrap";
-import type * as Redux from "redux";
-import type { ThunkDispatch } from "redux-thunk";
-import * as semver from "semver";
-import updateState from "../util/modUpdateState";
+import VersionChangelogButton from "./VersionChangelogButton";
+import VersionIconButton from "./VersionIconButton";
 
 type IModWithState = IMod & IProfileMod;
 
@@ -104,12 +102,14 @@ class VersionOption extends React.PureComponent<IVersionOptionProps, {}> {
       <a className="version-option">
         <div>
           {getSafe(mod.attributes, ["version"], "")}
+
           {variant !== undefined ? ` (${variant})` : ` (${t("default")})`}
         </div>
+
         <IconButton
-          id={`btn-remove-${modId}-${altId}`}
           className="btn-embed"
           icon="remove"
+          id={`btn-remove-${modId}-${altId}`}
           tooltip={t("remove")}
           onClick={this.remove}
         />
@@ -288,7 +288,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
               : instanceId.find(cond) !== undefined;
           return res
             ? true
-            : (this.props.t("No associated archive.") as string);
+            : (this.props.t("No associated archive."));
         },
         position: 60,
       },
@@ -393,10 +393,10 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         <div className="panel">
           <div className="panel-body">
             <EmptyPlaceholder
-              icon="folder-download"
               fill={true}
-              text={t("You don't have any installed mods")}
+              icon="folder-download"
               subtext={this.renderMoreModsLink(modSources)}
+              text={t("You don't have any installed mods")}
             />
           </div>
         </div>
@@ -406,11 +406,11 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         <Panel>
           <Panel.Body>
             <SuperTable
-              tableId="mods"
-              detailsTitle={t("Mod Attributes")}
-              data={this.state.primaryMods}
-              staticElements={this.mAttributes}
               actions={this.modActions}
+              data={this.state.primaryMods}
+              detailsTitle={t("Mod Attributes")}
+              staticElements={this.mAttributes}
+              tableId="mods"
             >
               <div id="more-mods-container">
                 {this.renderMoreMods(modSources)}
@@ -425,17 +425,19 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       <MainPage domRef={this.setBoundsRef}>
         <MainPage.Header>
           <IconBar
+            className="menubar"
             group="mod-icons"
             staticElements={this.staticButtons}
-            className="menubar"
             t={t}
           />
         </MainPage.Header>
+
         <MainPage.Body>
           <FlexLayout type="column">
             <FlexLayout.Flex className="mod-list-container">
               {content}
             </FlexLayout.Flex>
+
             <FlexLayout.Fixed className="mod-drop-container">
               <Panel
                 className="mod-drop-panel"
@@ -446,16 +448,17 @@ class ModList extends ComponentEx<IProps, IComponentState> {
                   <Panel.Body>
                     <Dropzone
                       accept={["files"]}
+                      clickable={false}
                       drop={this.dropMod}
                       icon="folder-download"
-                      clickable={false}
                     />
                   </Panel.Body>
                 </Panel.Collapse>
+
                 <CollapseIcon
                   position="topright"
-                  onClick={this.toggleDropzone}
                   visible={showDropzone}
+                  onClick={this.toggleDropzone}
                 />
               </Panel>
             </FlexLayout.Fixed>
@@ -493,6 +496,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       return (
         <Button id="btn-more-mods" onClick={onGetMoreMods}>
           {this.sourceIcon(filtered[0])}
+
           {t("Get more mods")}
         </Button>
       );
@@ -500,9 +504,9 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
     return (
       <DropdownButton
+        container={this.mRef}
         id="btn-more-mods"
         title={t("Get more mods")}
-        container={this.mRef}
         onClick={onGetMoreMods}
       >
         {filtered.map(this.renderModSource)}
@@ -531,10 +535,10 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
     return (
       <DropdownButton
+        bsStyle="link"
+        container={this.mRef}
         id="btn-more-mods"
         title={text}
-        container={this.mRef}
-        bsStyle="link"
       >
         {filtered.map(this.renderModSource)}
       </DropdownButton>
@@ -551,6 +555,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     return (
       <MenuItem key={source.id} onSelect={source.onBrowse}>
         {this.sourceIcon(source)}
+
         {source.name}
       </MenuItem>
     );
@@ -600,12 +605,12 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       alternatives.length > 1 ? (
         <DropdownButton
           className="dropdown-version"
+          container={this.mRef}
+          id={`version-dropdown-${mod.id}`}
           title={
             (getSafe(mod.attributes, ["version"], undefined) || "") +
             (variant !== undefined ? ` (${variant})` : ` (${t("default")})`)
           }
-          id={`version-dropdown-${mod.id}`}
-          container={this.mRef}
         >
           {alternatives.map((altId) =>
             this.renderVersionOptions(mod.id, altId),
@@ -622,18 +627,21 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         {alternatives.length === 1
           ? getSafe(mod.attributes, ["version"], null)
           : null}
-        <ButtonGroup id={`btngroup-${mod.id}`} className="btngroup-version">
+
+        <ButtonGroup className="btngroup-version" id={`btngroup-${mod.id}`}>
           {versionDropdown}
+
           <VersionIconButton
-            t={t}
-            mod={mod}
-            gameMode={gameMode}
-            state={updateState}
-            downloads={downloads}
-            mods={mods}
             downloadPath={downloadPath}
+            downloads={downloads}
+            gameMode={gameMode}
+            mod={mod}
+            mods={mods}
+            state={updateState}
+            t={t}
           />
-          <VersionChangelogButton t={t} mod={mod} />
+
+          <VersionChangelogButton mod={mod} t={t} />
         </ButtonGroup>
       </div>
     );
@@ -664,18 +672,18 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     const { t } = this.props;
     return (
       <li
-        role="presentation"
-        key={altId}
-        data-modid={modId}
         data-altid={altId}
+        data-modid={modId}
+        key={altId}
+        role="presentation"
         onClick={this.selectVersionClick}
       >
         <VersionOption
-          t={t}
-          key={altId}
-          modId={modId}
           altId={altId}
+          key={altId}
           mod={this.state.modsWithState[altId]}
+          modId={modId}
+          t={t}
           onRemove={this.removeSelectedMod}
         />
       </li>
@@ -730,13 +738,13 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         return (
           <ZoomableImage className="mod-picture" url={url}>
             <Description
-              t={t}
-              long={long}
-              short={short}
-              modId={mod.id}
-              source={mod.attributes?.source}
               installed={mod.state === "installed"}
+              long={long}
+              modId={mod.id}
+              short={short}
+              source={mod.attributes?.source}
               startEditDescription={this.editDescription}
+              t={t}
             />
           </ZoomableImage>
         );
@@ -899,6 +907,8 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       isToggleable: false,
       edit: {
         readOnly: (mod: IModWithState) => mod.state === "downloaded",
+        validate: (input: string) => input.length === 0 ||
+          isFilenameValid(input) ? "success" : "error",
         onChangeValue: (mod: IModWithState, value: any) =>
           this.props.onSetModAttribute(
             this.props.gameMode,
@@ -933,9 +943,9 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         return (
           <a
             className="control-label"
-            onClick={this.setModSize}
             data-modid={mod.id}
             title="Click to calculate"
+            onClick={this.setModSize}
           >
             {value}
           </a>
@@ -976,7 +986,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         t: TFunction,
       ) =>
         detailCell ? (
-          <Author t={t} gameId={this.props.gameMode} mod={mod} />
+          <Author gameId={this.props.gameMode} mod={mod} t={t} />
         ) : (
           <>{mod.attributes?.author || ""}</>
         ),

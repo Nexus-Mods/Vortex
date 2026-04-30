@@ -11,7 +11,7 @@
   },
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
   "workspaceFolder": "/workspace",
-  "postCreateCommand": "volta install node@22 yarn@v1 && npm install --global corepack@latest && corepack install",
+  "postCreateCommand": "volta install node@24 yarn@v1 && npm install --global corepack@latest && corepack install",
   "postStartCommand": "git config --global --add safe.directory /workspace",
   "remoteUser": "root",
   "containerEnv": {
