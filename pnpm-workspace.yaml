@@ -19,6 +19,7 @@ allowBuilds:
   electron: true
   esbuild: true
 
+  koffi: true
   font-scanner: true
   gamebryo-savegame: true
   leveldown: true

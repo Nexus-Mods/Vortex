@@ -119,6 +119,7 @@
     "immutability-helper": "catalog:",
     "interweave": "catalog:",
     "is-admin": "catalog:",
+    "koffi": "^2.9.0",
     "json-loader": "catalog:",
     "json-socket": "catalog:",
     "jsonwebtoken": "catalog:",
