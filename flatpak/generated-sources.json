@@ -639,13 +639,6 @@
     },
     {
         "type": "file",
-        "url": "https://codeload.github.com/TanninOne/node-diskusage/tar.gz/eb52fd176b2c311dd3ae5f0e68ff7488c08a179d",
-        "sha256": "f0fb199589c451d184daf60011d4f5caaf29c179dcfed7b9af29f2934492b2ed",
-        "dest-filename": "eb52fd176b2c311dd3ae5f0e68ff7488c08a179d",
-        "dest": "flatpak-node/yarn-mirror"
-    },
-    {
-        "type": "file",
         "url": "https://codeload.github.com/TanninOne/rimraf/tar.gz/7b8b70d4e8783cd233fca3283cf1f930af4e39c2",
         "sha256": "1b6a9cd18170ff3060e65143fdb582b55bbe294e3d26f592210151b5a928ed4f",
         "dest-filename": "7b8b70d4e8783cd233fca3283cf1f930af4e39c2",
