@@ -50,9 +50,11 @@ const TICKS_PER_SECOND = 10000000n;
 // while still fitting multiple entries per call.
 //
 // A zero-copy approach using VirtualAlloc + koffi.view() with a 64KB buffer
-// was benchmarked and beats even the old C++ addon. However, Electron forbids
-// external ArrayBuffers (koffi.view throws), so we can't use it in production.
-// If that restriction is ever lifted, switch to the zero-copy path.
+// was benchmarked and beats even the old C++ addon (~367ms vs 383ms on 89k
+// entries). However, Electron's V8 sandbox (v8_enable_sandbox, compile-time
+// flag since Electron 21) blocks external ArrayBuffers — koffi.view() throws.
+// No runtime flag can disable this. If Vortex ever moves off Electron or the
+// sandbox is lifted, switch to VirtualAlloc + koffi.view() + 64KB buffer.
 const DIR_BUFFER_SIZE = 1024;
 
 // Max retries for sharing violations when opening directories
