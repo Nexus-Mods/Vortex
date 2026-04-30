@@ -34,7 +34,7 @@ const DEFAULTS: Required<IWalkOptions> = {
   skipInaccessible: true,
 };
 
-// --- Windows: koffi FFI using FindFirstFileW/FindNextFileW ---
+// --- Windows: koffi FFI using NtQueryDirectoryFile ---
 
 let walkDirWindows: ((
   dirPath: string,
