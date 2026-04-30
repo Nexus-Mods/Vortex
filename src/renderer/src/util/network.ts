@@ -1,4 +1,4 @@
-import type { IncomingMessage, ClientRequest } from "http";
+import type { IncomingMessage, IncomingHttpHeaders, ClientRequest } from "http";
 import { get as getHTTP, request as requestHTTP } from "http";
 import { get as getHTTPS, request as requestHTTPS } from "https";
 import type { Readable } from "stream";
@@ -164,6 +164,105 @@ export function upload(
     req.on("error", (err) => {
       return reject(err);
     });
+    dataStream.pipe(req, {
+      end: true,
+    });
+  });
+}
+
+export interface IUploadResult {
+  body: Buffer;
+  headers: IncomingHttpHeaders;
+  statusCode: number;
+}
+
+export class HttpUploadError extends Error {
+  public readonly statusCode: number;
+  constructor(message: string, statusCode: number) {
+    super(message);
+    this.name = "HttpUploadError";
+    this.statusCode = statusCode;
+  }
+}
+
+function toAbortError(signal: AbortSignal | undefined): Error {
+  const reason: unknown = signal?.reason;
+  if (reason instanceof Error) return reason;
+  if (typeof reason === "string") return new Error(reason);
+  return new Error("Upload aborted");
+}
+
+export function uploadWithHeaders(
+  targetUrl: string,
+  dataStream: Readable,
+  dataSize: number,
+  extraHeaders?: Record<string, string>,
+  signal?: AbortSignal,
+): Promise<IUploadResult> {
+  return new Promise((resolve, reject) => {
+    log("debug", "uploading file (with headers)", { targetUrl, dataSize });
+    const started = Date.now();
+
+    if (signal?.aborted) {
+      return reject(toAbortError(signal));
+    }
+
+    const req = request(
+      "PUT",
+      targetUrl,
+      {
+        "Content-Type": "application/octet-stream",
+        "Content-Length": dataSize.toString(),
+        ...extraHeaders,
+      },
+      (res) => {
+        const { statusCode } = res;
+        log("debug", "upload complete", {
+          targetUrl,
+          dataSize,
+          statusCode,
+          elapsed: Date.now() - started,
+        });
+
+        let rawData: Buffer = Buffer.alloc(0);
+        res
+          .on("data", (chunk) => {
+            rawData = Buffer.concat([rawData, chunk]);
+          })
+          .on("end", () => {
+            if (statusCode !== 200) {
+              return reject(
+                new HttpUploadError(
+                  `Upload failed. Status Code: ${statusCode}`,
+                  statusCode ?? 0,
+                ),
+              );
+            }
+            resolve({
+              body: rawData,
+              headers: res.headers,
+              statusCode,
+            });
+          })
+          .on("error", (reqErr: Error) => {
+            return reject(reqErr);
+          });
+      },
+    );
+    req.on("error", (err) => {
+      return reject(err);
+    });
+
+    const onAbort = () => {
+      const reason = toAbortError(signal);
+      req.destroy(reason);
+      dataStream.destroy(reason);
+    };
+    signal?.addEventListener("abort", onAbort, { once: true });
+    req.on("close", () => {
+      signal?.removeEventListener("abort", onAbort);
+    });
+
     dataStream.pipe(req, {
       end: true,
     });

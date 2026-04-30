@@ -77,6 +77,7 @@ export interface INexusAPIExtension {
     collectionInfo: ICollectionManifest,
     assetFilePath: string,
     collectionId: number,
+    signal: AbortSignal | undefined,
     callback: (err: Error, response?: any) => void,
   ) => void;
   nexusModUpdate?: (

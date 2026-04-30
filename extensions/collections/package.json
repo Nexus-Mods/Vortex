@@ -16,6 +16,7 @@
     "7z-bin": "catalog:",
     "@hot-updater/bsdiff": "catalog:",
     "@nexusmods/nexus-api": "catalog:",
+    "@vortex/nexus-api-v3": "workspace:*",
     "@types/lodash": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
