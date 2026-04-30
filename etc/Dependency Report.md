@@ -43,7 +43,6 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | dequal | 2.0.3 |
 | dnd-core | 9.5.1 |
 | draggabilly | 2.4.1 |
-| drivelist | 10.0.2 |
 | electron-context-menu | 3.6.1 |
 | electron-redux | 1.4.9-sync |
 | electron-updater | 4.6.5 |
