@@ -61,7 +61,7 @@
     "electron-redux": "catalog:",
     "electron-updater": "catalog:",
     "encoding-down": "catalog:",
-    "exe-version": "catalog:",
+    "exe-version": "workspace:*",
     "feedparser": "catalog:",
     "fs-extra": "catalog:",
     "fuzzball": "catalog:",

@@ -1,0 +1,9 @@
+{
+  "name": "exe-version",
+  "version": "3.0.0",
+  "description": "Read version info from Windows PE executables via pure TS parsing",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "private": true,
+  "type": "commonjs"
+}

@@ -282,27 +282,6 @@
     },
     {
         "type": "file",
-        "url": "https://codeload.github.com/Nexus-Mods/node-exe-version/tar.gz/893a394c9e113f9b5c797acb32f93e172829ae00",
-        "sha256": "c6a6ffeed02fa017a940bae9f5b2a677d6bc2d4a72c8fe2330618932fa9275c2",
-        "dest-filename": "893a394c9e113f9b5c797acb32f93e172829ae00",
-        "dest": "flatpak-node/yarn-mirror"
-    },
-    {
-        "type": "file",
-        "url": "https://codeload.github.com/Nexus-Mods/node-exe-version/tar.gz/bd5ef39efe9a14f652ba4af1bcfa7b64d99aaca9",
-        "sha256": "d220582082ec599209a7e3ba9d218efee1532bf5c75dc2ade8bae45a6d02ab62",
-        "dest-filename": "bd5ef39efe9a14f652ba4af1bcfa7b64d99aaca9",
-        "dest": "flatpak-node/yarn-mirror"
-    },
-    {
-        "type": "file",
-        "url": "https://codeload.github.com/Nexus-Mods/node-exe-version/tar.gz/eded60fc0a0f3c234e1d586d2eb9952401945406",
-        "sha256": "c872213a63b2ee86274c5570b00118456c970b2530ae55375ca4240c64be0aa4",
-        "dest-filename": "eded60fc0a0f3c234e1d586d2eb9952401945406",
-        "dest": "flatpak-node/yarn-mirror"
-    },
-    {
-        "type": "file",
         "url": "https://codeload.github.com/Nexus-Mods/node-gamebryo-savegames/tar.gz/0f4f5bf5293fe6ed8f0da226c67fb79b3c877739",
         "sha256": "24a58fcb78801748427127afca5ade551111d933e5a8cf63c5a0ea8929d058f4",
         "dest-filename": "0f4f5bf5293fe6ed8f0da226c67fb79b3c877739",

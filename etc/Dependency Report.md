@@ -49,7 +49,6 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | electron-redux | 1.4.9-sync |
 | electron-updater | 4.6.5 |
 | encoding-down | 6.3.0 |
-| exe-version | 2.3.0 |
 | feedparser | 2.3.0 |
 | fs-extra | 9.1.0 |
 | fuzzball | 1.4.0 |
