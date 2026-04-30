@@ -90,6 +90,13 @@ export function createFileSystemClient(send: FileSystemSendFn): FileSystem {
     // narrows by `options.includeStatus` which the iterator forwards
     // unchanged to the host.
     enumerateDirectory: enumerateDirectory as FileSystem["enumerateDirectory"],
+    createStream: ((..._args: unknown[]) => {
+      throw new Error(
+        "createStream is not yet supported over the RPC client polyfill",
+      );
+    }) as FileSystem["createStream"],
+    createLink: (from, to, type) =>
+      call<void>("createLink", [from, to, type]),
   };
 }
 

@@ -1,4 +1,4 @@
-import type { BigIntStats, ReadStream, WriteStream } from "node:fs";
+import type { BigIntStats } from "node:fs";
 
 import {
   cp,
@@ -15,6 +15,7 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { join, dirname } from "node:path";
+import { Readable, Writable } from "node:stream";
 
 import type {
   DirectoryStatus,
@@ -285,22 +286,22 @@ export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
     path: ResolvedPath,
     mode: "r",
     options?: { start?: number; end?: number },
-  ): Promise<ReadStream>;
+  ): Promise<ReadableStream>;
   createStream(
     path: ResolvedPath,
     mode: "w",
     options?: { start?: number },
-  ): Promise<WriteStream>;
+  ): Promise<WritableStream>;
   createStream(
     path: ResolvedPath,
     mode: string,
     options?: { start?: number; end?: number },
-  ): Promise<ReadStream | WriteStream>;
+  ): Promise<ReadableStream | WritableStream>;
   async createStream(
     path: ResolvedPath,
     mode: string,
     options?: { start?: number; end?: number },
-  ): Promise<ReadStream | WriteStream> {
+  ): Promise<ReadableStream | WritableStream> {
     if (mode === "w") {
       await this.createDirectory(dirname(path));
     }
@@ -309,18 +310,20 @@ export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
       if (mode === "r") {
         // 'r': Open file for reading. An exception occurs if the file does not exist.
         const fd = await open(path, "r");
-        return fd.createReadStream({
+        const node = fd.createReadStream({
           autoClose: true,
           start: options?.start,
           end: options?.end,
         });
+        return Readable.toWeb(node) as ReadableStream;
       } else if (mode === "w") {
         // 'w': Open file for writing. The file is created (if it does not exist) or truncated (if it exists).
         const fd = await open(path, "w");
-        return fd.createWriteStream({
+        const node = fd.createWriteStream({
           autoClose: true,
           start: options?.start,
         });
+        return Writable.toWeb(node) as WritableStream;
       }
     } catch (err) {
       const { code, isTransient } = parseNodeError(err);

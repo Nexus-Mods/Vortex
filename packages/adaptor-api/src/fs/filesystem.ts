@@ -175,6 +175,17 @@ export interface FileSystem {
     mode: string,
     options?: { start?: number; end?: number },
   ): Promise<ReadableStream | WritableStream>;
+
+  /**
+   * Creates a hardlink or symlink at `to` pointing to `from`.
+   *
+   * @throws {@link FileSystemError}
+   * */
+  createLink(
+    from: QualifiedPath,
+    to: QualifiedPath,
+    type: "hardlink" | "symlink",
+  ): Promise<void>;
 }
 
 /** @public */
@@ -253,6 +264,12 @@ export interface FileSystemBackend {
     mode: string,
     options?: { start?: number; end?: number },
   ): Promise<ReadableStream | WritableStream>;
+
+  createLink(
+    from: ResolvedPath,
+    to: ResolvedPath,
+    type: "hardlink" | "symlink",
+  ): Promise<void>;
 }
 
 /** @public */

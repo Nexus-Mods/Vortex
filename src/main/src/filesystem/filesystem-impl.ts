@@ -8,8 +8,6 @@ import type {
   StatResult,
   Status,
 } from "@nexusmods/adaptor-api/fs";
-import type { ReadStream, WriteStream } from "node:fs";
-
 import { FileSystemError } from "@nexusmods/adaptor-api/fs";
 import { isAbsolute, relative, sep as pathSep } from "node:path";
 
@@ -139,22 +137,22 @@ export class NodeFileSystemImpl implements NodeFileSystem {
     path: QualifiedPath,
     mode: "r",
     options?: { start?: number; end?: number },
-  ): Promise<ReadStream>;
+  ): Promise<ReadableStream>;
   createStream(
     path: QualifiedPath,
     mode: "w",
     options?: { start?: number },
-  ): Promise<WriteStream>;
+  ): Promise<WritableStream>;
   createStream(
     path: QualifiedPath,
     mode: string,
     options?: { start?: number; end?: number },
-  ): Promise<ReadStream | WriteStream>;
+  ): Promise<ReadableStream | WritableStream>;
   async createStream(
     path: QualifiedPath,
     mode: string,
     options?: { start?: number; end?: number },
-  ): Promise<ReadStream | WriteStream> {
+  ): Promise<ReadableStream | WritableStream> {
     return this.#backend.createStream(
       await this.#resolvers.resolve(path),
       mode,
