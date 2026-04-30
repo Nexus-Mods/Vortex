@@ -1,14 +1,12 @@
 /* eslint-disable */
 import { MOD_TYPE } from "./constants";
-import {
-  createCollectionFromProfile,
-  showQuickCollectionRestrictionsDialog,
-} from "./util/transformCollection";
+import { createCollectionFromProfile } from "./util/createCollectionFromProfile";
+import { showQuickCollectionRestrictionsDialog } from "./util/showQuickCollectionRestrictionsDialog";
 
 import * as Redux from "redux";
 import { actions, selectors, types, util } from "vortex-api";
 
-import { uploadCollection } from "./util/util";
+import { uploadCollection } from "./util/uploadCollection";
 
 export async function initFromProfile(
   api: types.IExtensionApi,

@@ -23,11 +23,11 @@ import { describe, it, expect, vi } from "vitest";
 
 import type { IMod, IModAttributes, IModReference } from "../types/IMod";
 
+import { coerceToSemver } from "./coerceToSemver";
+import { isFuzzyVersion } from "./isFuzzyVersion";
 import {
   testModReference,
-  isFuzzyVersion,
   sanitizeExpression,
-  coerceToSemver,
 } from "./testModReference";
 
 // Mock the log function to avoid console output during tests

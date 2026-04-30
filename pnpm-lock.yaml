@@ -1003,9 +1003,15 @@ importers:
       crc-32:
         specifier: 'catalog:'
         version: 1.2.2
+      happy-dom:
+        specifier: 'catalog:'
+        version: 20.8.8
       i18next:
         specifier: 'catalog:'
         version: 19.9.2
+      immutability-helper:
+        specifier: 'catalog:'
+        version: 3.1.1
       lodash:
         specifier: 'catalog:'
         version: 4.17.23

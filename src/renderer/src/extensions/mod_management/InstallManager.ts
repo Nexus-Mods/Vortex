@@ -189,17 +189,17 @@ import { NotificationAggregator } from "./NotificationAggregator";
 import { getCSharpScriptAllowListForGame } from "./util/cSharpScriptAllowList";
 import gatherDependencies, {
   findDownloadByRef,
-  findModByRef,
   lookupFromDownload,
 } from "./util/dependencies";
 import filterModInfo from "./util/filterModInfo";
+import { findModByRef } from "./util/findModByRef";
+import { isFuzzyVersion } from "./util/isFuzzyVersion";
 import metaLookupMatch from "./util/metaLookupMatch";
 import modName, { renderModReference } from "./util/modName";
 import queryGameId from "./util/queryGameId";
 import testModReference, {
   downloadToModRef,
   idOnlyRef,
-  isFuzzyVersion,
   referenceEqual,
   testRefByIdentifiers,
 } from "./util/testModReference";

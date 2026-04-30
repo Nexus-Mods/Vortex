@@ -1,6 +1,7 @@
 import { truthy } from "../../../util/util";
 import type { IMod, IReference } from "../types/IMod";
-import { sanitizeExpression, coerceToSemver } from "./testModReference";
+import { coerceToSemver } from "./coerceToSemver";
+import { sanitizeExpression } from "./testModReference";
 
 export function makeModReference(mod: IMod): IReference {
   if (

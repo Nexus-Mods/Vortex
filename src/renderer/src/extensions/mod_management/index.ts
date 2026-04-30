@@ -132,7 +132,7 @@ import {
 import allTypesSupported from "./util/allTypesSupported";
 import * as basicInstaller from "./util/basicInstaller";
 import BlacklistSet from "./util/BlacklistSet";
-import { findModByRef } from "./util/dependencies";
+import { findModByRef } from "./util/findModByRef";
 import { genSubDirFunc, purgeMods, purgeModsInPath } from "./util/deploy";
 import {
   getAllActivators,
