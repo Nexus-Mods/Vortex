@@ -1,7 +1,5 @@
 import { createAction } from "redux-act";
 
-import type { IChunk } from "../types/IChunk";
-
 import { log } from "../../../logging";
 
 export interface IDictionary {
@@ -26,13 +24,12 @@ export const initDownload = createAction(
  */
 export const downloadProgress = createAction(
   "DOWNLOAD_PROGRESS",
-  (
-    id: string,
-    received: number,
-    total: number,
-    chunks: IChunk[],
-    urls: string[],
-  ) => ({ id, received, total, chunks, urls }),
+  (id: string, received: number, total: number, urls: string[]) => ({
+    id,
+    received,
+    total,
+    urls,
+  }),
 );
 
 export const finalizingProgress = createAction(
@@ -103,7 +100,7 @@ export const setDownloadHashByFile = createAction(
  */
 export const pauseDownload = createAction(
   "PAUSE_DOWNLOAD",
-  (id: string, paused: boolean, chunks: IChunk[]) => ({ id, paused, chunks }),
+  (id: string, paused: boolean) => ({ id, paused }),
 );
 
 export const setDownloadInterrupted = createAction(
