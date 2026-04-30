@@ -16,7 +16,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | @nexusmods/adaptor-api | link:../../packages/adaptor-api |
 | @nexusmods/fomod-installer-ipc | 0.13.1 |
 | @nexusmods/fomod-installer-native | 0.13.1 |
-| @nexusmods/nexus-api | 1.5.2 |
+| @nexusmods/nexus-api | 1.6.0 |
 | @opentelemetry/api | 1.9.1 |
 | @opentelemetry/context-async-hooks | 2.6.1 |
 | @opentelemetry/context-zone | 2.7.0 |
