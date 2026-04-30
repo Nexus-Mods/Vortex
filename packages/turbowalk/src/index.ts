@@ -34,6 +34,28 @@ const DEFAULTS: Required<IWalkOptions> = {
   skipInaccessible: true,
 };
 
+// --- Windows: koffi FFI using FindFirstFileW/FindNextFileW ---
+
+let walkDirWindows: ((
+  dirPath: string,
+  progress: (entries: IEntry[]) => void,
+  opts: Required<IWalkOptions>,
+) => void) | undefined;
+
+if (process.platform === "win32") {
+  try {
+    // Dynamic require so it doesn't fail on Linux
+    const mod = require("./walkWindows") as {
+      walkDirWindows: typeof walkDirWindows;
+    };
+    walkDirWindows = mod.walkDirWindows;
+  } catch {
+    // koffi not available — fall through to TS fallback
+  }
+}
+
+// --- Linux/fallback: async fs.readdir + concurrent lstat ---
+
 const STAT_CONCURRENCY = 64;
 
 async function statBatch(
@@ -68,7 +90,7 @@ async function statBatch(
   return results;
 }
 
-async function walkDir(
+async function walkDirFallback(
   dirPath: string,
   progress: (entries: IEntry[]) => void,
   opts: Required<IWalkOptions>,
@@ -121,9 +143,11 @@ async function walkDir(
   }
 
   for (const sub of subDirs) {
-    await walkDir(sub, progress, opts);
+    await walkDirFallback(sub, progress, opts);
   }
 }
+
+// --- Public API ---
 
 function turbowalk(
   basePath: string,
@@ -134,7 +158,18 @@ function turbowalk(
     throw new Error("expected at least one parameter");
   }
   const opts = { ...DEFAULTS, ...options };
-  return Bluebird.resolve(walkDir(path.normalize(basePath), progress, opts));
+  const normalized = path.normalize(basePath);
+
+  if (walkDirWindows !== undefined) {
+    try {
+      walkDirWindows(normalized, progress, opts);
+      return Bluebird.resolve();
+    } catch (err) {
+      return Bluebird.reject(err);
+    }
+  }
+
+  return Bluebird.resolve(walkDirFallback(normalized, progress, opts));
 }
 
 export default turbowalk;
