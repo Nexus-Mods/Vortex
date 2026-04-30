@@ -16,7 +16,6 @@ allowBuilds:
   bsatk: true
   core-js: true
   crash-dump: true
-  diskusage: true
   drivelist: true
   electron: true
   esbuild: true
@@ -154,7 +153,6 @@ catalog:
   date-fns: ^2.8.0
   dayjs: ^1.11.10
   dequal: ^2.0.3
-  diskusage: git+https://github.com/TanninOne/node-diskusage#eb52fd176b2c311dd3ae5f0e68ff7488c08a179d
   dnd-core: ^9.4.0
   draggabilly: ^2.2.0
   drivelist: git+https://github.com/TanninOne/drivelist#720d1890db11482ec05fc0f6aa176cfa6e6844dd

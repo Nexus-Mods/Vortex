@@ -41,7 +41,6 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | date-fns | 2.30.0 |
 | dayjs | 1.11.20 |
 | dequal | 2.0.3 |
-| diskusage | 2.0.1 |
 | dnd-core | 9.5.1 |
 | draggabilly | 2.4.1 |
 | drivelist | 10.0.2 |
