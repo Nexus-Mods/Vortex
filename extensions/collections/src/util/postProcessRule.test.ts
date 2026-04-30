@@ -1,44 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isFuzzyVersion, postProcessRule } from "./importCollection";
-
-// ---------------------------------------------------------------------------
-// isFuzzyVersion
-// ---------------------------------------------------------------------------
-
-describe("isFuzzyVersion", () => {
-  it("returns true for wildcard *", () => {
-    expect(isFuzzyVersion("*")).toBe(true);
-  });
-
-  it("returns true for +prefer suffix", () => {
-    expect(isFuzzyVersion(">=1.0.0+prefer")).toBe(true);
-  });
-
-  it("returns false for an exact version", () => {
-    expect(isFuzzyVersion("1.2.3")).toBe(false);
-  });
-
-  it("returns false for undefined", () => {
-    expect(isFuzzyVersion(undefined as any)).toBe(false);
-  });
-
-  it("returns false for null", () => {
-    expect(isFuzzyVersion(null as any)).toBe(false);
-  });
-
-  it("returns false for empty string", () => {
-    expect(isFuzzyVersion("")).toBe(false);
-  });
-
-  it("returns false for >= without +prefer", () => {
-    expect(isFuzzyVersion(">=1.0.0")).toBe(false);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// postProcessRule
-// ---------------------------------------------------------------------------
+import { postProcessRule } from "./postProcessRule";
 
 describe("postProcessRule", () => {
   const makeModRef = (overrides: Record<string, any> = {}): any => ({

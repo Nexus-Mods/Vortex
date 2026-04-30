@@ -8,6 +8,9 @@ import type {
 } from "../types/IMod";
 import type { IDownload } from "../../download_management/types/IDownload";
 
+import { coerceToSemver, safeCoerce } from "./coerceToSemver";
+import { isFuzzyVersion } from "./isFuzzyVersion";
+
 import * as _ from "lodash";
 import minimatch from "minimatch";
 import * as path from "path";
@@ -143,73 +146,6 @@ export function sanitizeExpression(fileName: string): string {
     .basename(fileName, path.extname(fileName))
     .replace(/\.\d+$/, "")
     .replace(/ \(\d+\)$/, "");
-}
-
-const fuzzyVersionCache: { [input: string]: boolean } = {};
-
-const coerceableRE = /^v?[0-9.]+$/;
-
-export function safeCoerce(input: string): string {
-  return coerceableRE.test(input) ? (coerceToSemver(input) ?? input) : input;
-}
-
-export function coerceToSemver(version: string): string {
-  version = version?.trim?.();
-  if (!version) {
-    return undefined;
-  }
-  const match = version.match(/^(\d+)\.(\d+)\.(\d+)(.*)$/);
-  if (match) {
-    const major = match[1];
-    const minor = match[2];
-    const patch = match[3];
-    let preRelease = match[4].trim();
-
-    // If there's something after the first three segments, treat it as pre-release
-    if (preRelease) {
-      // Remove leading punctuation from the pre-release part
-      preRelease = preRelease.replace(/^[\.\-\+]/, "");
-      return `${major}.${minor}.${patch}-${preRelease}`;
-    } else {
-      return `${major}.${minor}.${patch}`;
-    }
-  } else {
-    if (coerceableRE.test(version)) {
-      // Remove leading 0's from the version segments as that's
-      //  an illegal semantic versioning format/pattern
-      const sanitizedVersion = version.replace(/\b0+(\d)/g, "$1");
-      const coerced = semver.coerce(sanitizedVersion);
-      if (coerced) {
-        return coerced.version;
-      }
-      return version;
-    }
-  }
-}
-
-export function isFuzzyVersion(input: string) {
-  const cachedRes: boolean = fuzzyVersionCache[input];
-  if (cachedRes !== undefined) {
-    return cachedRes;
-  }
-
-  if (!truthy(input) || typeof input !== "string") {
-    fuzzyVersionCache[input] = false;
-  } else if (input.endsWith("+prefer") || input === "*") {
-    // +prefer can be used with non-semver versions as well
-    fuzzyVersionCache[input] = true;
-  } else {
-    // semver.validRange accepts partial versions as ranges, e.g. "1.5" is equivalent
-    // to "1.5.x" but we can't accept that because then we can't distinguish them from
-    // non-semantic versions where 1.5 should match exactly 1.5
-    const coerced = safeCoerce(input);
-
-    const valRange = semver.validRange(coerced);
-
-    fuzzyVersionCache[input] = valRange !== null && valRange !== coerced;
-  }
-
-  return fuzzyVersionCache[input];
 }
 
 function hasIdentifyingMarker(

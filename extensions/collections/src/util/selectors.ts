@@ -1,5 +1,5 @@
 import { createSelector } from "reselect";
-import { types } from "vortex-api";
+import type { types } from "vortex-api";
 
 const getCollectionInstallState = (
   state: types.IState,

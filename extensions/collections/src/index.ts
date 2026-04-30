@@ -9,11 +9,9 @@ import { IExtendedInterfaceProps } from "./types/IExtendedInterfaceProps";
 import { genDefaultsAction } from "./util/defaults";
 import { addExtension } from "./util/extension";
 import InstallDriver from "./util/InstallDriver";
-import {
-  cloneCollection,
-  createCollection,
-  makeCollectionId,
-} from "./util/transformCollection";
+import { cloneCollection } from "./util/cloneCollection";
+import { createCollection } from "./util/createCollection";
+import { makeCollectionId } from "./util/transformCollection";
 import { bbProm, getUnfulfilledNotificationId } from "./util/util";
 import AddModsDialog from "./views/AddModsDialog";
 import HealthDownvoteDialog from "./views/CollectionPageView/HealthDownvoteDialog";
@@ -38,11 +36,9 @@ import {
   removeCollectionAction,
   removeCollectionCondition,
 } from "./collectionCreate";
-import {
-  makeInstall,
-  postprocessCollection,
-  testSupported,
-} from "./collectionInstall";
+import { makeInstall } from "./makeInstall";
+import { postprocessCollection } from "./postprocessCollection";
+import { testSupported } from "./testSupported";
 import {
   DELAY_FIRST_VOTE_REQUEST,
   INSTALLING_NOTIFICATION_ID,
@@ -71,7 +67,7 @@ import {
   util,
 } from "vortex-api";
 import { IRevision } from "@nexusmods/nexus-api";
-import { readCollection } from "./util/importCollection";
+import { readCollection } from "./util/readCollection";
 
 // TODO: Import from vortex-api once the dependency is updated
 /** Collection icon (single) - stacked triangles */

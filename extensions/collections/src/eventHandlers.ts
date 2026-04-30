@@ -3,7 +3,7 @@ import Bluebird from "bluebird";
 import * as path from "path";
 import { actions, fs, selectors, types, util } from "vortex-api";
 import InstallDriver from "./util/InstallDriver";
-import { readCollection } from "./util/importCollection";
+import { readCollection } from "./util/readCollection";
 import { collectionModToRule } from "./util/transformCollection";
 import showChangelog from "./views/InstallDialog/InstallChangelogDialog";
 

@@ -7,15 +7,13 @@ const mock = (name: string) =>
 export default defineConfig({
   resolve: {
     alias: {
+      "original-fs": "fs",
       "vortex-api": mock("vortex-api"),
-      vortexmt: mock("vortexmt"),
-      turbowalk: mock("turbowalk"),
-      "node-7z": mock("node-7z"),
-      tmp: mock("tmp"),
     },
   },
   test: {
-    environment: "node",
+    environment: "happy-dom",
+    setupFiles: ["./test-setup.ts"],
     include: ["src/**/*.test.ts"],
   },
 });

@@ -34,7 +34,8 @@ import {
   types,
   util,
 } from "vortex-api";
-import { hasEditPermissions, uploadCollection } from "../../util/util";
+import { hasEditPermissions } from "../../util/util";
+import { uploadCollection } from "../../util/uploadCollection";
 
 export interface ICollectionsMainPageBaseProps extends WithTranslation {
   active: boolean;

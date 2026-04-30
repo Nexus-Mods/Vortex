@@ -6,7 +6,8 @@ import { downloadPathForGame } from "../../download_management/selectors";
 
 import type { IMod } from "../types/IMod";
 
-import testModReference, { isFuzzyVersion } from "./testModReference";
+import { isFuzzyVersion } from "./isFuzzyVersion";
+import testModReference from "./testModReference";
 
 import { alg, Graph } from "graphlib";
 import * as _ from "lodash";

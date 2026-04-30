@@ -679,7 +679,11 @@ describe("makeTransferrable", () => {
   });
 
   it("promotes versionMatch to * when collection rule is wildcard", () => {
-    const mods = { "target-mod": makeMod("target-mod") };
+    // mod.fileMD5 must match the rule's reference.fileMD5 for testModReference
+    // to recognise it as the same mod
+    const mods = {
+      "target-mod": makeMod("target-mod", { fileMD5: "def456" }),
+    };
     const collection = makeCollection([
       { reference: { id: "target-mod", versionMatch: "*" } },
     ]);
@@ -690,7 +694,9 @@ describe("makeTransferrable", () => {
   });
 
   it("promotes versionMatch to * when collection rule starts with >=", () => {
-    const mods = { "target-mod": makeMod("target-mod") };
+    const mods = {
+      "target-mod": makeMod("target-mod", { fileMD5: "def456" }),
+    };
     const collection = makeCollection([
       { reference: { id: "target-mod", versionMatch: ">=1.0.0" } },
     ]);

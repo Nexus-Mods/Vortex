@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { testSupported } from "./collectionInstall";
+import { testSupported } from "./testSupported";
 
 // ---------------------------------------------------------------------------
 // testSupported

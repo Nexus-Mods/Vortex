@@ -4,8 +4,9 @@ import {
   ICollectionMod,
   ICollectionSourceInfo,
 } from "./types/ICollection";
-import { modToCollection as modToCollection } from "./util/transformCollection";
-import { hasEditPermissions, makeProgressFunction } from "./util/util";
+import { modToCollection } from "./util/modToCollection";
+import { makeProgressFunction } from "./util/makeProgressFunction";
+import { hasEditPermissions } from "./util/util";
 
 import {
   ICreateCollectionResult,

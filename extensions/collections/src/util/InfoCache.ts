@@ -2,10 +2,11 @@ import {
   updateCollectionInfo,
   updateRevisionInfo,
 } from "../actions/persistent";
-import { CACHE_EXPIRE_MS, CACHE_LRU_COUNT, MOD_TYPE } from "../constants";
+import { CACHE_EXPIRE_MS, MOD_TYPE } from "../constants";
 import { ICollectionModRule } from "../types/ICollection";
 import { IStateEx } from "../types/IStateEx";
-import { readCollection } from "./importCollection";
+import { computeCacheEvictions } from "./cacheEvictions";
+import { readCollection } from "./readCollection";
 
 import { ICollection, IRevision } from "@nexusmods/nexus-api";
 import * as path from "path";
@@ -73,62 +74,33 @@ class InfoCache {
     const { store } = this.mApi;
     const state = this.mApi.getState<IStateEx>();
 
-    const cutOffTime = Date.now() - CACHE_EXPIRE_MS;
+    const { collectionDrops, revisionDrops } = computeCacheEvictions(
+      state.persistent.collections,
+      Date.now(),
+    );
 
-    // remove collection infos
-    {
-      const { collections } = state.persistent.collections;
-      const collectionsToDrop: string[] = Object.keys(collections)
-        .sort(
-          (lhs, rhs) => collections[rhs].timestamp - collections[lhs].timestamp,
-        )
-        .reduce((prev, iter, idx) => {
-          if (
-            idx >= CACHE_LRU_COUNT ||
-            collections[iter].timestamp < cutOffTime
-          ) {
-            prev.push(iter);
-          }
-          return prev;
-        }, []);
-      if (collectionsToDrop.length > 0) {
-        log("debug", "dropping outdated collections cache", {
-          ids: collectionsToDrop,
-        });
-        util.batchDispatch(
-          store,
-          collectionsToDrop.map((coll) =>
-            updateCollectionInfo(coll, undefined, undefined),
-          ),
-        );
-      }
+    if (collectionDrops.length > 0) {
+      log("debug", "dropping outdated collections cache", {
+        ids: collectionDrops,
+      });
+      util.batchDispatch(
+        store,
+        collectionDrops.map((coll) =>
+          updateCollectionInfo(coll, undefined, undefined),
+        ),
+      );
     }
 
-    // remove revision infos
-    {
-      const { revisions } = state.persistent.collections;
-      const revisionsToDrop: number[] = Object.keys(revisions)
-        .sort((lhs, rhs) => revisions[rhs].timestamp - revisions[lhs].timestamp)
-        .reduce((prev, iter, idx) => {
-          if (
-            idx >= CACHE_LRU_COUNT ||
-            revisions[iter].timestamp < cutOffTime
-          ) {
-            prev.push(iter);
-          }
-          return prev;
-        }, []);
-      if (revisionsToDrop.length > 0) {
-        log("debug", "dropping outdated revision cache", {
-          ids: revisionsToDrop,
-        });
-        util.batchDispatch(
-          store,
-          revisionsToDrop.map((rev) =>
-            updateRevisionInfo(rev, undefined, undefined),
-          ),
-        );
-      }
+    if (revisionDrops.length > 0) {
+      log("debug", "dropping outdated revision cache", {
+        ids: revisionDrops,
+      });
+      util.batchDispatch(
+        store,
+        revisionDrops.map((rev) =>
+          updateRevisionInfo(Number(rev), undefined, undefined),
+        ),
+      );
     }
   }
 

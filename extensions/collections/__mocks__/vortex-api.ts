@@ -1,231 +1,43 @@
 /**
  * Minimal vortex-api mock for collections extension unit tests.
  *
- * Prefer re-exporting real implementations from the Vortex sources.
- * Only fall back to stubs for things that would transitively pull in
- * runtime dependencies that aren't available in the test environment
- * (electron app paths, child_process, native modules, etc).
+ * Every entry below re-exports a real implementation directly from the renderer
+ * source. The mock's only purpose is to break the dependency on the heavy
+ * `vortex-api` barrel (which transitively loads electron/native/UI modules) so
+ * tests can call the genuine logic in a Node test environment.
+ * 
+ * Please do not mock any logic here - use real implementations from the source files.
  */
 
 import {
-  getSafe as realGetSafe,
-  setSafe as realSetSafe,
-  merge as realMerge,
-  deleteOrNop as realDeleteOrNop,
+  setSafe,
+  merge,
 } from "../../../src/renderer/src/util/storeHelper";
-import {
-  UserCanceled as RealUserCanceled,
-  ProcessCanceled as RealProcessCanceled,
-  DataInvalid as RealDataInvalid,
-} from "../../../src/shared/src/types/errors";
-import { generateCollectionSessionId as realGenerateCollectionSessionId } from "../../../src/renderer/src/extensions/collections_integration/util";
+import { generateCollectionSessionId } from "../../../src/renderer/src/extensions/collections_integration/util";
+import renderModName from "../../../src/renderer/src/extensions/mod_management/util/modName";
+import { coerceToSemver } from "../../../src/renderer/src/extensions/mod_management/util/coerceToSemver";
+import { findModByRef } from "../../../src/renderer/src/extensions/mod_management/util/findModByRef";
+import { isFuzzyVersion } from "../../../src/renderer/src/extensions/mod_management/util/isFuzzyVersion";
+import { makeModReference } from "../../../src/renderer/src/extensions/mod_management/util/modReference";
+import testModReference from "../../../src/renderer/src/extensions/mod_management/util/testModReference";
+import { convertGameIdReverse } from "../../../src/renderer/src/extensions/nexus_integration/util/convertGameId";
+import { log } from "../../../src/renderer/src/logging";
 
-// ---------------------------------------------------------------------------
-// Stubs for utilities whose real implementations transitively pull in
-// electron / native modules (util/util.ts, getVortexPath, logging, etc).
-// These stubs intentionally implement only the behaviour the tests exercise.
-// ---------------------------------------------------------------------------
-
-function renderModName(mod: any): string {
-  return (
-    mod?.attributes?.customFileName ??
-    mod?.attributes?.logicalFileName ??
-    mod?.attributes?.name ??
-    mod?.id ??
-    "<unknown>"
-  );
-}
-
-function renderModReference(ref: any): string {
-  return (
-    ref?.description ??
-    ref?.logicalFileName ??
-    ref?.fileExpression ??
-    "<unknown ref>"
-  );
-}
-
-function findModByRef(ref: any, mods: Record<string, any>): any | undefined {
-  if (ref?.id && mods[ref.id]) {
-    return mods[ref.id];
-  }
-  return undefined;
-}
-
-function makeModReference(mod: any) {
-  return {
-    id: mod.id,
-    fileMD5: mod.attributes?.fileMD5,
-    logicalFileName: mod.attributes?.logicalFileName,
-    versionMatch: mod.attributes?.version,
-    description: renderModName(mod),
-  };
-}
-
-function testModReference(mod: any, ref: any): boolean {
-  return !!(ref?.id && mod?.id === ref.id);
-}
-
-function coerceToSemver(version: string): string {
-  if (!version?.trim) return undefined as any;
-  version = version.trim();
-  if (!version) return undefined as any;
-  const match = version.match(/^(\d+)\.(\d+)\.(\d+)(.*)$/);
-  if (match) {
-    return `${match[1]}.${match[2]}.${match[3]}`;
-  }
-  const twoPartMatch = version.match(/^(\d+)\.(\d+)$/);
-  if (twoPartMatch) {
-    return `${twoPartMatch[1]}.${twoPartMatch[2]}.0`;
-  }
-  return undefined as any;
-}
-
-function convertGameIdReverse(knownGames: any[], domainName: string): string {
-  const game = knownGames?.find?.((g: any) => g.domainName === domainName);
-  return game?.id ?? domainName;
-}
-
-function lazyRequire<T>(factory: () => T): () => T {
-  let cached: T | undefined;
-  const proxy = (() => {
-    if (cached === undefined) {
-      try {
-        cached = factory();
-      } catch {
-        cached = {} as T;
-      }
-    }
-    return cached;
-  }) as any;
-  return new Proxy(proxy, {
-    get(_target, prop) {
-      const obj = proxy();
-      return (obj as any)?.[prop];
-    },
-  });
-}
-
-// ---------------------------------------------------------------------------
-// util
-// ---------------------------------------------------------------------------
+export { log };
 
 export const util = {
-  getSafe: realGetSafe,
-  setSafe: realSetSafe,
-  merge: realMerge,
-  deleteOrNop: realDeleteOrNop,
-  generateCollectionSessionId: realGenerateCollectionSessionId,
-  UserCanceled: RealUserCanceled,
-  ProcessCanceled: RealProcessCanceled,
-  DataInvalid: RealDataInvalid,
+  setSafe,
+  merge,
+  generateCollectionSessionId,
   renderModName,
-  renderModReference,
   findModByRef,
+  isFuzzyVersion,
   makeModReference,
   testModReference,
   coerceToSemver,
   convertGameIdReverse,
-  lazyRequire,
-  opn: async () => {},
-  nexusModsURL: (..._args: any[]) => "https://example.com",
-  nexusGameId: (game: any) => game?.id ?? "",
-  Campaign: { GeneralNavigation: "navigation" },
-  Section: { Collections: "collections" },
-  SevenZip: class SevenZip {
-    async list() {}
-    async extract() {}
-  },
-  walk: async () => {},
-  Debouncer: class Debouncer {
-    constructor(
-      _fn: any,
-      _delay?: number,
-      _reset?: boolean,
-      _immediate?: boolean,
-    ) {}
-    schedule() {}
-  },
-  batchDispatch: (_store: any, _actions: any[]) => {},
-  toPromise: (fn: any) => new Promise((resolve) => fn(resolve)),
-  makeQueue: () => {
-    const fn = (cb: () => any, _parallel?: boolean) => cb();
-    return fn;
-  },
 };
 
-// ---------------------------------------------------------------------------
-// selectors
-// ---------------------------------------------------------------------------
-
-export const selectors = {
-  activeGameId: (state: any) => state?.settings?.profiles?.activeProfileId,
-  activeProfile: (state: any) => state?.settings?.profiles?.activeProfile,
-  installPathForGame: (_state: any, _gameId: string) => "/mock/staging",
-  downloadPathForGame: (_state: any, _gameId: string) => "/mock/downloads",
-  profileById: (_state: any, _id: string) => ({}),
-  knownGames: (_state: any) => [],
-  gameById: (_state: any, _id: string) => ({}),
-};
-
-// ---------------------------------------------------------------------------
-// types (re-exported as namespace)
-// ---------------------------------------------------------------------------
-
+// `types` is type-only at the source level but production files still do
+// `import { types, util } from "vortex-api"`, so we need a runtime binding.
 export const types = {};
-
-// ---------------------------------------------------------------------------
-// React component base classes (needed by transitive imports)
-// ---------------------------------------------------------------------------
-
-let React: any;
-try {
-  React = require("react");
-} catch {
-  React = { Component: class {}, PureComponent: class {} };
-}
-
-export class ComponentEx extends React.Component {
-  context: any = {};
-}
-
-export class PureComponentEx extends React.PureComponent {
-  context: any = {};
-}
-
-// Stub UI components
-export const ActionDropdown = () => null;
-export const FlexLayout = Object.assign(() => null, {
-  Flex: () => null,
-  Fixed: () => null,
-});
-export const Icon = () => null;
-export const More = () => null;
-export const Usage = () => null;
-export const MainPage = Object.assign(() => null, {
-  Body: () => null,
-  Header: () => null,
-});
-export const Toggle = () => null;
-export const Spinner = () => null;
-export const tooltip = { Button: () => null, IconButton: () => null };
-
-// ---------------------------------------------------------------------------
-// other
-// ---------------------------------------------------------------------------
-
-export const actions = {
-  setINITweakEnabled: () => ({}),
-};
-export const fs = {
-  statAsync: async () => ({ isDirectory: () => false }),
-  readFileAsync: async () => "",
-  writeFileAsync: async () => {},
-  ensureDirAsync: async () => {},
-  ensureDirWritableAsync: async () => {},
-  removeAsync: async () => {},
-  renameAsync: async () => {},
-  copyAsync: async () => {},
-  createReadStream: () => ({ on: () => ({}) }),
-};
-export const log = (..._args: any[]) => {};

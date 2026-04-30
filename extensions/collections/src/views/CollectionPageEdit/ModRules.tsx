@@ -7,7 +7,8 @@ import {
   ICollectionModRule,
   ICollectionModRuleEx,
 } from "../../types/ICollection";
-import { renderReference, ruleId } from "../../util/util";
+import { ruleId } from "../../util/util";
+import { renderReference } from "../../util/renderReference";
 
 export interface IModsPageProps {
   t: TFunction;

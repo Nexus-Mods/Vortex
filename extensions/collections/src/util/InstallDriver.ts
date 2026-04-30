@@ -4,18 +4,17 @@ import Bluebird from "bluebird";
 import * as path from "path";
 import { actions, log, selectors, types, util } from "vortex-api";
 import { setPendingVote } from "../actions/persistent";
-import { postprocessCollection } from "../collectionInstall";
+import { postprocessCollection } from "../postprocessCollection";
 import { INSTALLING_NOTIFICATION_ID, MOD_TYPE } from "../constants";
 import { ICollection } from "../types/ICollection";
 import { IRevisionEx } from "../types/IRevisionEx";
 import { applyPatches } from "./binaryPatching";
-import { readCollection } from "./importCollection";
+import { readCollection } from "./readCollection";
 import InfoCache from "./InfoCache";
 import {
   calculateCollectionSize,
   getUnfulfilledNotificationId,
   isRelevant,
-  walkPath,
 } from "./util";
 import * as installActions from "../actions/installTracking";
 
