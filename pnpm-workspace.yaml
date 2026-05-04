@@ -24,6 +24,7 @@ allowBuilds:
   gamebryo-savegame: true
   leveldown: true
   loot: true
+  node: true
   protobufjs: true
   unrs-resolver: true
   winapi-bindings: true
@@ -302,10 +303,3 @@ overrides:
   node-addon-api: 8.5.0
 patchedDependencies:
   playwright-core@1.58.2: patches/playwright-core@1.58.2.patch
-
-pnpm_config_arch: x64
-pnpm_config_disturl: https://electronjs.org/headers
-pnpm_config_msvs_version: 2022
-pnpm_config_runtime: electron
-pnpm_config_target: 41.3.0
-pnpm_config_target_arch: x64

@@ -129,6 +129,9 @@ jobs:
           node-version: ${{ steps.node-version.outputs.NODE_VERSION }}
           cache: "pnpm"
 
+      - name: Configure node-gyp for Electron
+        run: node scripts/setup-electron-env.mjs
+
       - name: Configure node-gyp for VS 2022
         shell: pwsh
         run: |

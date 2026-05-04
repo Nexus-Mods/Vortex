@@ -39,6 +39,9 @@ jobs:
         with:
           cache: true
 
+      - name: Configure node-gyp for Electron
+        run: node scripts/setup-electron-env.mjs
+
       - name: Configure node-gyp for VS 2022
         if: runner.os == 'Windows'
         shell: pwsh
