@@ -17,7 +17,6 @@ import { ComplexActionCreator1 } from 'redux-act';
 import { ComplexActionCreator2 } from 'redux-act';
 import { ComplexActionCreator3 } from 'redux-act';
 import { ComplexActionCreator4 } from 'redux-act';
-import { ComplexActionCreator5 } from 'redux-act';
 import { ComplexActionCreator6 } from 'redux-act';
 import { constants } from 'fs';
 import { createReadStream } from 'original-fs';
@@ -875,14 +874,11 @@ const downloadPath: (state: IState) => string;
 // @public (undocumented)
 function downloadPathForGame(state: IState, gameId?: string): string;
 
-// Warning: (ae-forgotten-export) The symbol "IChunk" needs to be exported by the entry point api.d.ts
-//
 // @public
-const downloadProgress: ComplexActionCreator5<string, number, number, IChunk[], string[], {
+const downloadProgress: ComplexActionCreator4<string, number, number, string[], {
 id: string;
 received: number;
 total: number;
-chunks: IChunk[];
 urls: string[];
 }, {}>;
 
@@ -2015,7 +2011,6 @@ interface IDiscoveryState {
 
 // @public
 interface IDownload {
-    chunks?: IChunk[];
     // Warning: (ae-forgotten-export) The symbol "IDownloadFailCause" needs to be exported by the entry point api.d.ts
     failCause?: IDownloadFailCause;
     fileMD5?: string;
@@ -4493,10 +4488,9 @@ export class OverlayTrigger extends React_2.Component<IProps_7, {
 function pad(value: number, padding: string, width: number): string;
 
 // @public
-const pauseDownload: ComplexActionCreator3<string, boolean, IChunk[], {
+const pauseDownload: ComplexActionCreator2<string, boolean, {
 id: string;
 paused: boolean;
-chunks: IChunk[];
 }, {}>;
 
 // @public (undocumented)

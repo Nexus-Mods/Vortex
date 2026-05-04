@@ -28,8 +28,11 @@ Before you start, make sure you have:
 
 After you have finished the setup steps:
 
-1. `pnpm run build:all`
-2. `pnpm run start`
+1. Set environment variables required for compiling native modules against Electron headers:
+    - **Linux/macOS:** `eval $(node scripts/setup-electron-env.mjs)`
+    - **Windows (PowerShell):** `node scripts/setup-electron-env.mjs | ForEach-Object { $k,$v = $_ -split '='; [System.Environment]::SetEnvironmentVariable($k, $v, 'Process') }`
+2. `pnpm run build:all`
+3. `pnpm run start`
 
 ## Debugging
 
