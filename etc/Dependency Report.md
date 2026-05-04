@@ -16,7 +16,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | @nexusmods/adaptor-api | link:../../packages/adaptor-api |
 | @nexusmods/fomod-installer-ipc | 0.13.1 |
 | @nexusmods/fomod-installer-native | 0.13.1 |
-| @nexusmods/nexus-api | 1.5.2 |
+| @nexusmods/nexus-api | 1.6.0 |
 | @opentelemetry/api | 1.9.1 |
 | @opentelemetry/context-async-hooks | 2.6.1 |
 | @opentelemetry/context-zone | 2.7.0 |
@@ -48,6 +48,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | electron-redux | 1.4.9-sync |
 | electron-updater | 4.6.5 |
 | encoding-down | 6.3.0 |
+| exe-version | link:../../packages/exe-version |
 | feedparser | 2.3.0 |
 | fs-extra | 9.1.0 |
 | fuzzball | 1.4.0 |

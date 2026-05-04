@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "commonjs",
-  "packageManager": "pnpm@10.33.0+sha512.10568bb4a6afb58c9eb3630da90cc9516417abebd3fabbe6739f0ae795728da1491e9db5a544c76ad8eb7570f5c4bb3d6c637b2cb41bfdcdb47fa823c8649319",
+  "packageManager": "pnpm@11.0.4+sha512.0a397165007a014ed52919a61e5f46c48b9bca88404c303ecaecc63f62def563898d3c6b8a5d5ea5811eb398cfe03ab05da1a5ce963f126d5ead4c02f93b83c3",
   "engines": {
     "node": "24"
   },
@@ -68,6 +68,7 @@
     "glob": "catalog:",
     "globals": "catalog:",
     "minimist": "catalog:",
+    "node": "catalog:",
     "oxfmt": "catalog:",
     "p-limit": "catalog:",
     "rimraf": "catalog:",
@@ -86,5 +87,12 @@
     "webpack": "catalog:",
     "webpack-cli": "catalog:",
     "webpack-node-externals": "catalog:"
+  },
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "24.15.0",
+      "onFail": "download"
+    }
   }
 }

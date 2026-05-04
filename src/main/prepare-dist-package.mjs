@@ -1,5 +1,5 @@
-import { readFile, writeFile, mkdir } from "node:fs/promises";
-import { resolve, dirname, isAbsolute } from "node:path";
+import { readFile, writeFile, mkdir, readdir } from "node:fs/promises";
+import { resolve, dirname, isAbsolute, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -18,7 +18,7 @@ const DIST_PACKAGE_PATH = resolve(DIST_DIR, "package.json");
  * @returns {Record<string, string>}
  */
 function parseCatalog(yamlText) {
-  const match = yamlText.match(/^catalog:[ \t]*\n((?:[ \t]+\S.*\n?)*)/m);
+  const match = yamlText.match(/^catalog:[ \t]*\n((?:(?!^[A-Za-z"']).*\n)*)/m);
   if (!match) return {};
 
   const catalog = {};
@@ -128,17 +128,45 @@ function extractWorkspacePackageGlobs(yamlText) {
 }
 
 /**
+ * Expands a single glob pattern (supports only trailing "*") to concrete paths.
+ * @param {string} pattern
+ * @returns {Promise<string[]>}
+ */
+async function expandGlobPattern(pattern) {
+  const starIdx = pattern.indexOf("*");
+  const baseDir = pattern.slice(0, starIdx);
+  const suffix = pattern.slice(starIdx + 1);
+
+  try {
+    const entries = await readdir(resolve(ROOT_DIR, baseDir), {
+      withFileTypes: true,
+    });
+    return entries
+      .filter((e) => e.isDirectory())
+      .map((e) => baseDir + e.name + suffix);
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Builds a map from workspace package name to absolute directory path.
- * Glob patterns containing "*" are skipped.
  * @param {string[]} packagePaths
  * @returns {Promise<Record<string, string>>}
  */
 async function buildWorkspacePackageMap(packagePaths) {
   const map = {};
 
+  const expandedPaths = [];
   for (const pkgPath of packagePaths) {
-    if (pkgPath.includes("*")) continue;
+    if (pkgPath.includes("*")) {
+      expandedPaths.push(...(await expandGlobPattern(pkgPath)));
+    } else {
+      expandedPaths.push(pkgPath);
+    }
+  }
 
+  for (const pkgPath of expandedPaths) {
     const pkgDir = resolve(ROOT_DIR, pkgPath);
     const pkgJsonPath = resolve(pkgDir, "package.json");
 
@@ -175,6 +203,7 @@ async function createMinimalPackageJson(workspacePackageMap, catalog) {
     packageManager: rootPkg.packageManager,
     engines: rootPkg.engines,
     volta: rootPkg.volta,
+    devEngines: rootPkg.devEngines,
   };
 
   if (mainPkg.dependencies && Object.keys(mainPkg.dependencies).length > 0) {
@@ -202,7 +231,7 @@ async function createMinimalPackageJson(workspacePackageMap, catalog) {
  * @returns {string | null}
  */
 function extractOverridesBlock(yamlText) {
-  const match = yamlText.match(/^overrides:[ \t]*\n((?:[ \t]+\S.*\n?)*)/m);
+  const match = yamlText.match(/^overrides:[ \t]*\n((?:(?!^[A-Za-z"']).*\n)*)/m);
   if (!match) return null;
   return "overrides:\n" + match[1];
 }
@@ -213,7 +242,7 @@ function extractOverridesBlock(yamlText) {
  * @returns {string | null}
  */
 function extractCatalogBlock(yamlText) {
-  const match = yamlText.match(/^catalog:[ \t]*\n((?:[ \t]+\S.*\n?)*)/m);
+  const match = yamlText.match(/^catalog:[ \t]*\n((?:(?!^[A-Za-z"']).*\n)*)/m);
   if (!match) return null;
   return "catalog:\n" + match[1];
 }
@@ -222,23 +251,51 @@ function extractCatalogBlock(yamlText) {
  * Extracts "allowBuilds" from a pnpm-workspace.yaml file
  * @param {string} yamlText  */
 function extractAllowBuildsBlock(yamlText) {
-  const match = yamlText.match(/^allowBuilds:[ \t]*\n((?:[ \t]+\S.*\n?)*)/m);
+  const match = yamlText.match(/^allowBuilds:[ \t]*\n((?:(?!^[A-Za-z"']).*\n)*)/m);
   if (!match) return null;
   return "allowBuilds:\n" + match[1];
 }
 
-/** Prepares all PNPM related files */
-async function preparePNPM(rawWorkspaceYaml) {
-  const npmrc = ["node-linker=hoisted", "shamefully-hoist=true"].join("\n");
-  await writeFile(resolve(DIST_DIR, ".npmrc"), npmrc);
-  console.log("✔  Created dist/.npmrc");
+/**
+ * Extracts a top-level scalar key from a pnpm-workspace.yaml file
+ * @param {string} yamlText
+ * @param {string} key
+ * @returns {string | null}
+ */
+function extractScalarSetting(yamlText, key) {
+  const match = yamlText.match(new RegExp(`^${key}:[ \\t]*(.+)`, "m"));
+  if (!match) return null;
+  return `${key}: ${match[1].trim()}`;
+}
 
+/** Prepares all PNPM related files */
+async function preparePNPM(rawWorkspaceYaml, workspacePackageMap) {
   const allowBuilds = extractAllowBuildsBlock(rawWorkspaceYaml);
   const catalog = extractCatalogBlock(rawWorkspaceYaml);
   const overrides = extractOverridesBlock(rawWorkspaceYaml);
+  const blockExoticSubdeps = extractScalarSetting(
+    rawWorkspaceYaml,
+    "blockExoticSubdeps",
+  );
+
+  const hoistSettings =
+    'nodeLinker: "hoisted"' + "\n" + "shamefullyHoist: true";
+
+  const packageEntries = Object.values(workspacePackageMap)
+    .map((absPath) => "  - " + relative(DIST_DIR, absPath))
+    .join("\n");
+  const packagesBlock = "packages:\n" + packageEntries;
 
   const minimalYaml =
-    (overrides ? overrides + "\n" : "") + catalog + "\n" + allowBuilds + "\n";
+    packagesBlock +
+    "\n\n" +
+    (overrides ? overrides + "\n" : "") +
+    catalog +
+    "\n" +
+    allowBuilds +
+    "\n" +
+    (blockExoticSubdeps ? blockExoticSubdeps + "\n" : "") +
+    hoistSettings;
 
   await writeFile(resolve(DIST_DIR, "pnpm-workspace.yaml"), minimalYaml);
   console.log("✔  Created dist/pnpm-workspace.yaml");
@@ -251,7 +308,7 @@ async function main() {
   const catalog = parseCatalog(rawWorkspaceYaml);
 
   await createMinimalPackageJson(workspacePackageMap, catalog);
-  await preparePNPM(rawWorkspaceYaml);
+  await preparePNPM(rawWorkspaceYaml, workspacePackageMap);
 }
 
 main().catch((err) => {

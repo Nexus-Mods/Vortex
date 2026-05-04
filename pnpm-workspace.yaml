@@ -28,6 +28,7 @@ allowBuilds:
   unrs-resolver: true
   winapi-bindings: true
   xxhash-addon: true
+blockExoticSubdeps: false
 
 catalog:
   7z-bin: git+https://github.com/Nexus-Mods/7z-bin#3298c42e69e3220dc39694bc2f610c077c3e213a
@@ -41,7 +42,7 @@ catalog:
   "@eslint-react/eslint-plugin": 2.3.7
   "@eslint/js": 9.39.1
   "@headlessui/react": ^1.7.19
-  '@hot-updater/bsdiff': ^0.30.6
+  "@hot-updater/bsdiff": ^0.30.6
   "@iarna/toml": ^2.2.5
   "@mdi/js": 7.4.47
   "@microsoft/api-extractor": ^7.57.6
@@ -170,7 +171,6 @@ catalog:
   eslint-plugin-better-tailwindcss: ^4.0.2
   eslint-plugin-import: ^2.32.0
   eslint-plugin-perfectionist: ^5.4.0
-
   feedparser: ^2.2.9
   font-scanner: ^0.2.1
   fork-ts-checker-webpack-plugin: ^9.0.2
@@ -205,6 +205,7 @@ catalog:
   mixpanel-browser: ^2.71.0
   modmeta-db: git+https://github.com/Nexus-Mods/modmeta-db#daa8935b6e38e255ec192c908adfce35d47c0336
   nexus-api: git+https://github.com/Nexus-Mods/node-nexus-api#4dd3460c2d02d93ba8f1bbeeeb2c5fa9af039a67
+  node: runtime:^24.15.0
   node-7z: git+https://github.com/Nexus-Mods/node-7z#b75def8d0d7d81a03f4526c52b8ada9a34a06479
   normalize-url: ^6.0.1
   numeral: ^2.0.6
@@ -292,9 +293,19 @@ dedupePeers: true
 engineStrict: true
 failIfNoMatch: true
 
+minimumReleaseAge: 2880
+minimumReleaseAgeIgnoreMissingTime: true
+
 overrides:
   "@types/react": "16"
   "@types/react-dom": "16"
   node-addon-api: 8.5.0
 patchedDependencies:
   playwright-core@1.58.2: patches/playwright-core@1.58.2.patch
+
+pnpm_config_arch: x64
+pnpm_config_disturl: https://electronjs.org/headers
+pnpm_config_msvs_version: 2022
+pnpm_config_runtime: electron
+pnpm_config_target: 41.3.0
+pnpm_config_target_arch: x64
