@@ -1,6 +1,10 @@
 {
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
-  "printWidth": 80,
   "sortPackageJson": false,
-  "ignorePatterns": ["extensions/fomod-installer/**", "./etc/**"]
+  "sortImports": {},
+  "sortTailwindcss": {
+    "stylesheet": "./src/stylesheets/tailwind-v4.css"
+  },
+  "ignorePatterns": ["./etc/**"],
+  "embeddedLanguageFormatting": "auto"
 }
