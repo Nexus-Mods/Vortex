@@ -28,8 +28,7 @@ function getDriveList(api: IExtensionApi): Promise<string[]> {
  * DRIVE_FIXED (3) is what we want.
  */
 function getFixedDrivesWindows(): Promise<string[]> {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const koffi = require("koffi");
+  const koffi = await import("koffi");
   const kernel32 = koffi.load("kernel32.dll");
 
   const GetLogicalDriveStringsW = kernel32.func(
