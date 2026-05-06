@@ -14,7 +14,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - Fixed failed to find matching update error message
 - Fixed BepInEx mod entry getting disabled during update checks
 
-
 ## [0.2.5] - 2024-08-19
 
 - Fixed attempts to check Github for BepInEx updates; when game extension specified a mandatory BIX version.

@@ -145,10 +145,10 @@ function shouldAllowReport(
 }
 
 const hasStringStack = (v: unknown): v is { stack: string } =>
-  typeof v === "object"
-  && v != null
-  && "stack" in v
-  && typeof (v as { stack: unknown }).stack === "string";
+  typeof v === "object" &&
+  v != null &&
+  "stack" in v &&
+  typeof (v as { stack: unknown }).stack === "string";
 
 /**
  * show an error notification with an optional "more" button that displays further details
@@ -433,10 +433,9 @@ function prettifyNodeErrorMessageInner(
     };
   } else if (err.code === "EPERM") {
     const filePath = err.path || err.filename || undefined;
-    const firstLine =
-      filePath
-        ? 'Vortex needs to access "{{filePath}}" but it\'s write protected.\n'
-        : "Vortex needs to access a file that is write protected.\n";
+    const firstLine = filePath
+      ? 'Vortex needs to access "{{filePath}}" but it\'s write protected.\n'
+      : "Vortex needs to access a file that is write protected.\n";
     return {
       message:
         firstLine +

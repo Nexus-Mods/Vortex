@@ -18,7 +18,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - Improved error handling
 - Improved path validation for the xbox custom directory
 
-
 ## [0.2.0] - 2023-11-10
 
 - Fixed xbox game discovery - now using .GamingRoot to find moddable game paths

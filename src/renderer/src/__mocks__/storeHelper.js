@@ -5,9 +5,9 @@
 // Import actual utility functions from the real storeHelper for proper behavior
 let actualStoreHelper;
 try {
-  actualStoreHelper = jest.requireActual('../util/storeHelper');
+  actualStoreHelper = jest.requireActual("../util/storeHelper");
 } catch (error) {
-  // If we can't load the actual module due to circular dependencies, 
+  // If we can't load the actual module due to circular dependencies,
   // provide basic fallback implementations
   actualStoreHelper = null;
 }
@@ -40,7 +40,7 @@ if (actualStoreHelper) {
   function setSafe(obj, path, value) {
     const result = JSON.parse(JSON.stringify(obj || {}));
     let current = result;
-    
+
     for (let i = 0; i < path.length - 1; i++) {
       const key = path[i];
       if (current[key] === undefined || current[key] === null) {
@@ -48,17 +48,17 @@ if (actualStoreHelper) {
       }
       current = current[key];
     }
-    
+
     current[path[path.length - 1]] = value;
     return result;
   }
 
   function deleteOrNop(obj, path) {
     if (!obj) return obj;
-    
+
     const result = JSON.parse(JSON.stringify(obj));
     let current = result;
-    
+
     for (let i = 0; i < path.length - 1; i++) {
       const key = path[i];
       if (current[key] === undefined) {
@@ -66,19 +66,19 @@ if (actualStoreHelper) {
       }
       current = current[key];
     }
-    
+
     const lastKey = path[path.length - 1];
     if (current && current.hasOwnProperty(lastKey)) {
       delete current[lastKey];
     }
-    
+
     return result;
   }
 
   function merge(obj, path, value) {
     const result = JSON.parse(JSON.stringify(obj || {}));
     let current = result;
-    
+
     for (let i = 0; i < path.length - 1; i++) {
       const key = path[i];
       if (current[key] === undefined || current[key] === null) {
@@ -86,12 +86,12 @@ if (actualStoreHelper) {
       }
       current = current[key];
     }
-    
+
     const lastKey = path[path.length - 1];
     if (current[lastKey] === undefined) {
       current[lastKey] = {};
     }
-    
+
     current[lastKey] = { ...current[lastKey], ...value };
     return result;
   }
@@ -99,7 +99,7 @@ if (actualStoreHelper) {
   function removeValue(obj, path, value) {
     const result = JSON.parse(JSON.stringify(obj || {}));
     let current = result;
-    
+
     for (let i = 0; i < path.length - 1; i++) {
       const key = path[i];
       if (current[key] === undefined) {
@@ -107,19 +107,19 @@ if (actualStoreHelper) {
       }
       current = current[key];
     }
-    
+
     const lastKey = path[path.length - 1];
     if (Array.isArray(current[lastKey])) {
-      current[lastKey] = current[lastKey].filter(item => item !== value);
+      current[lastKey] = current[lastKey].filter((item) => item !== value);
     }
-    
+
     return result;
   }
 
   function pushSafe(obj, path, value) {
     const result = JSON.parse(JSON.stringify(obj || {}));
     let current = result;
-    
+
     for (let i = 0; i < path.length - 1; i++) {
       const key = path[i];
       if (current[key] === undefined || current[key] === null) {
@@ -127,12 +127,12 @@ if (actualStoreHelper) {
       }
       current = current[key];
     }
-    
+
     const lastKey = path[path.length - 1];
     if (!Array.isArray(current[lastKey])) {
       current[lastKey] = [];
     }
-    
+
     current[lastKey].push(value);
     return result;
   }

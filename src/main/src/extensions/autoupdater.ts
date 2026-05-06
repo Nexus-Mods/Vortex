@@ -6,10 +6,7 @@
  */
 
 import type { UpdateStatus } from "@vortex/shared/ipc";
-import type {
-  CancellationToken,
-  UpdateInfo,
-} from "electron-updater";
+import type { CancellationToken, UpdateInfo } from "electron-updater";
 
 import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import { app, dialog } from "electron";
@@ -171,10 +168,10 @@ export function setupAutoUpdater(installType: string): void {
         // Auto-download patch updates for regular installs;
         // minor/major updates require user-initiated download via renderer
         if (
-          installType === "regular"
-          && currentVersion != null
-          && updateVersion != null
-          && semver.satisfies(updateVersion, `~${currentVersion.version}`, {
+          installType === "regular" &&
+          currentVersion != null &&
+          updateVersion != null &&
+          semver.satisfies(updateVersion, `~${currentVersion.version}`, {
             includePrerelease: true,
           })
         ) {

@@ -5,12 +5,12 @@ module.exports = {
       each: jest.fn(),
       text: jest.fn(),
       attr: jest.fn(),
-      length: 0
+      length: 0,
     })),
     text: jest.fn(),
     html: jest.fn(),
-    attr: jest.fn()
+    attr: jest.fn(),
   })),
   contains: jest.fn(),
-  merge: jest.fn()
+  merge: jest.fn(),
 };

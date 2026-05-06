@@ -111,9 +111,7 @@ export const ToolsSection: FC<ToolsSectionProps> = ({ isAnimating }) => {
           className={joinClasses([
             "flex flex-wrap items-center gap-1.5 transition-[translate,opacity]",
             menuIsCollapsed ? "w-8" : "w-46",
-            isAnimating
-              ? "translate-y-6 opacity-0 duration-0"
-              : "duration-200",
+            isAnimating ? "translate-y-6 opacity-0 duration-0" : "duration-200",
           ])}
         >
           {visibleTools.map((starter) => (

@@ -73,7 +73,10 @@ export function setupHydrationListener(
   });
 
   window.api.persist.onPush((hive, operations) => {
-    log("debug", "Received state push from main", { hive, count: operations.length });
+    log("debug", "Received state push from main", {
+      hive,
+      count: operations.length,
+    });
     dispatch({
       type: "__persist_push",
       payload: { hive, operations },

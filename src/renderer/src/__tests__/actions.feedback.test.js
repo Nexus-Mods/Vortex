@@ -1,32 +1,31 @@
-import * as sessionActions from '../../../../extensions/feedback/src/actions/session';
+import * as sessionActions from "../../../../extensions/feedback/src/actions/session";
 
-describe('addFeedbackFile', () => {
-  it('creates the correct action', () => {
-    expect(sessionActions.addFeedbackFile('feedbackFile1')).toEqual({
+describe("addFeedbackFile", () => {
+  it("creates the correct action", () => {
+    expect(sessionActions.addFeedbackFile("feedbackFile1")).toEqual({
       error: false,
-      type: 'ADD_FEEDBACK_FILE',
-      payload: { feedbackFile: 'feedbackFile1' },
+      type: "ADD_FEEDBACK_FILE",
+      payload: { feedbackFile: "feedbackFile1" },
     });
   });
 });
 
-describe('removeFeedbackFile', () => {
-  it('creates the correct action', () => {
-    expect(sessionActions.removeFeedbackFile('feedbackFileId1')).toEqual({
+describe("removeFeedbackFile", () => {
+  it("creates the correct action", () => {
+    expect(sessionActions.removeFeedbackFile("feedbackFileId1")).toEqual({
       error: false,
-      type: 'REMOVE_FEEDBACK_FILE',
-      payload: { feedbackFileId: 'feedbackFileId1' },
+      type: "REMOVE_FEEDBACK_FILE",
+      payload: { feedbackFileId: "feedbackFileId1" },
     });
   });
 });
 
-describe('clearFeedbackFiles', () => {
-  it('creates the correct action', () => {
+describe("clearFeedbackFiles", () => {
+  it("creates the correct action", () => {
     expect(sessionActions.clearFeedbackFiles({})).toEqual({
       error: false,
-      type: 'CLEAR_FEEDBACK_FILES',
-      payload: { },
+      type: "CLEAR_FEEDBACK_FILES",
+      payload: {},
     });
   });
 });
-

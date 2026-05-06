@@ -118,7 +118,6 @@ function InstallFinishedDialog(props: IInstallFinishedDialogProps) {
         <Modal.Title>{t("Collection installation complete")}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
-
         <div
           className="collection-finished-body"
           style={
@@ -159,9 +158,9 @@ function InstallFinishedDialog(props: IInstallFinishedDialogProps) {
             <p>
               {t(
                 "This collection has {{count}} optional mods which are not required to " +
-                "complete the installation but may provide additional features or options. " +
-                "You can view these mods before installing as they may change the default " +
-                "behavior of the collection or have additional requirements.",
+                  "complete the installation but may provide additional features or options. " +
+                  "You can view these mods before installing as they may change the default " +
+                  "behavior of the collection or have additional requirements.",
                 {
                   count: optionals.length,
                   ns: NAMESPACE,
@@ -175,7 +174,7 @@ function InstallFinishedDialog(props: IInstallFinishedDialogProps) {
             <YouCuratedTag t={t} />
             {t(
               "You now have the whole collection installed, you can start editing " +
-              "your collection by cloning it.",
+                "your collection by cloning it.",
             )}
             <tooltip.IconButton
               icon="clone"
@@ -187,16 +186,21 @@ function InstallFinishedDialog(props: IInstallFinishedDialogProps) {
           </div>
         ) : null}
         {finalizing ? (
-          <div className="collection-finished-finalizing" style={{
-            display: "flex",
-            gap: "8px",
-            margin: "8px 0px",
-            alignItems: "center"
-          }}>
+          <div
+            className="collection-finished-finalizing"
+            style={{
+              display: "flex",
+              gap: "8px",
+              margin: "8px 0px",
+              alignItems: "center",
+            }}
+          >
             <Spinner />
-            <p>{t(
-              "Finalizing installation - deploying mods and applying collection rules...",
-            )}</p>
+            <p>
+              {t(
+                "Finalizing installation - deploying mods and applying collection rules...",
+              )}
+            </p>
           </div>
         ) : null}
       </Modal.Body>

@@ -15,7 +15,15 @@ import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import * as Redux from "redux";
 import { ThunkDispatch } from "redux-thunk";
-import { actions, ComponentEx, log, Toggle, tooltip, types, util } from "vortex-api";
+import {
+  actions,
+  ComponentEx,
+  log,
+  Toggle,
+  tooltip,
+  types,
+  util,
+} from "vortex-api";
 
 export interface ISettingsThemeProps {
   readThemes: () => Promise<string[]>;
@@ -128,8 +136,12 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
             </InputGroup>
             <HelpBlock>
               {isLegacy
-                ? t("Some community themes were designed for the new UI and may not display correctly in the legacy one.")
-                : t("Some community themes were designed for the old UI and may not display correctly in the new one.")}
+                ? t(
+                    "Some community themes were designed for the new UI and may not display correctly in the legacy one.",
+                  )
+                : t(
+                    "Some community themes were designed for the old UI and may not display correctly in the new one.",
+                  )}
             </HelpBlock>
             {editable ? null : (
               <Alert bsStyle="info">

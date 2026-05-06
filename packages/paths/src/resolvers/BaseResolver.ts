@@ -361,9 +361,10 @@ export abstract class BaseResolver<
     const comparableBase = trimTrailingSeparator(normalizedBase, sepCode);
 
     // Ensure base ends with separator for proper prefix matching
-    const baseWithSep = comparableBase.charCodeAt(comparableBase.length - 1) === sepCode
-      ? comparableBase
-      : comparableBase + fs.sep;
+    const baseWithSep =
+      comparableBase.charCodeAt(comparableBase.length - 1) === sepCode
+        ? comparableBase
+        : comparableBase + fs.sep;
     return (
       comparableChild.startsWith(baseWithSep) ||
       comparableChild === comparableBase

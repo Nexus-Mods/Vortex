@@ -24,8 +24,7 @@ export enum IAccountStatus {
 }
 
 export interface IValidateKeyDataV2
-  extends IValidateKeyData,
-    Partial<IPreference> {
+  extends IValidateKeyData, Partial<IPreference> {
   isLifetime?: boolean;
   isBanned?: boolean;
   isClosed?: boolean;

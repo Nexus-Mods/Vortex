@@ -17,7 +17,7 @@ npm install @vortex/paths-node
 ## Quick start
 
 ```typescript
-import { NodeFilesystem, UnixResolver } from '@vortex/paths-node';
+import { NodeFilesystem, UnixResolver } from "@vortex/paths-node";
 
 // Create the Node.js filesystem
 const fs = new NodeFilesystem();
@@ -26,14 +26,14 @@ const fs = new NodeFilesystem();
 const resolver = new UnixResolver(undefined /* parent */, fs /* filesystem */);
 
 // Create a FilePath using the resolver's PathFor helper
-const configPath = resolver.PathFor('root', 'home/user/config.json');
+const configPath = resolver.PathFor("root", "home/user/config.json");
 
 // Resolve to an actual OS path (returns a Promise<ResolvedPath>)
 const realPath = await configPath.resolve();
 // -> '/home/user/config.json'
 
 // Read the file using the filesystem
-const content = await fs.readFile(realPath, 'utf-8');
+const content = await fs.readFile(realPath, "utf-8");
 console.log(content);
 ```
 
@@ -48,20 +48,20 @@ So you can import everything from one place:
 
 ```typescript
 import {
-  NodeFilesystem,
-  FilePath,
-  RelativePath,
-  ResolvedPath,
-  Anchor,
-  Extension,
-  UnixResolver,
-  WindowsResolver,
-  BaseResolver,
-  MappingResolver,
-  IFilesystem,
-  IResolverBase,
-  // ... everything else
-} from '@vortex/paths-node';
+    NodeFilesystem,
+    FilePath,
+    RelativePath,
+    ResolvedPath,
+    Anchor,
+    Extension,
+    UnixResolver,
+    WindowsResolver,
+    BaseResolver,
+    MappingResolver,
+    IFilesystem,
+    IResolverBase,
+    // ... everything else
+} from "@vortex/paths-node";
 ```
 
 ## NodeFilesystem
@@ -72,21 +72,21 @@ The bridge to Node.js's filesystem:
 const fs = new NodeFilesystem();
 
 // Platform info
-console.log(fs.platform);       // 'windows' or 'unix'
-console.log(fs.caseSensitive);  // false on Windows, true elsewhere
-console.log(fs.sep);            // '\\' on Windows, '/' on Unix
+console.log(fs.platform); // 'windows' or 'unix'
+console.log(fs.caseSensitive); // false on Windows, true elsewhere
+console.log(fs.sep); // '\\' on Windows, '/' on Unix
 
 // Read operations
-const content = await fs.readFile(path, 'utf-8');
+const content = await fs.readFile(path, "utf-8");
 const entries = await fs.readdir(path);
 const stats = await fs.stat(path);
 
 // Write operations
-await fs.writeFile(path, 'content', 'utf-8');
+await fs.writeFile(path, "content", "utf-8");
 await fs.mkdir(path, { recursive: true });
 
 // Copy and move (overwrite is true by default!)
-await fs.copy(src, dest);                    // Will overwrite if exists
+await fs.copy(src, dest); // Will overwrite if exists
 await fs.copy(src, dest, { overwrite: false }); // Skip if exists
 await fs.rename(src, dest);
 
@@ -102,7 +102,7 @@ This package re-exports everything from `@vortex/paths`. See the
 `@vortex/paths` package for full documentation on:
 
 - `FilePath`, `RelativePath`, `ResolvedPath` - Path types and manipulation
-- Anchors and Extensions - Path components  
+- Anchors and Extensions - Path components
 - Creating custom resolvers - Build your own resolvers
 - Platform resolvers - Unix and Windows resolvers
 - Reverse resolution - Convert OS paths back to FilePaths

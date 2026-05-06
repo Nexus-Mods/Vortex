@@ -35,10 +35,7 @@ import type * as stream from "stream";
 import * as zlib from "zlib";
 import type { IExtensionApi } from "../../types/api";
 
-import {
-  getErrorMessageOrDefault,
-  unknownToError,
-} from "@vortex/shared";
+import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import { getPreloadApi } from "../../util/preloadAccess";
 
 function getCookies(

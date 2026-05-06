@@ -26,9 +26,9 @@ const getBlacklist = (() => {
       const filterList = (item) => typeof item === "string";
       lastBlacklist = customBlacklist
         ? [].concat(
-          blacklist,
-          (game?.details?.ignoreConflicts || []).filter(filterList),
-        )
+            blacklist,
+            (game?.details?.ignoreConflicts || []).filter(filterList),
+          )
         : blacklist;
     }
 
@@ -38,7 +38,7 @@ const getBlacklist = (() => {
 
 function isBlacklisted(filePath: string, game: types.IGame): boolean {
   // TODO: this could become reaaaaly slow as the blacklist gets larger...
-  return getBlacklist(game).some(pattern => {
+  return getBlacklist(game).some((pattern) => {
     try {
       return minimatch(filePath, pattern, { nocase: true });
     } catch (err) {

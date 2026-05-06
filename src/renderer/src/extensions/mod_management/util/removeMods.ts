@@ -1,4 +1,4 @@
-import { unknownToError } from '@vortex/shared';
+import { unknownToError } from "@vortex/shared";
 
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { INotification } from "../../../types/INotification";
@@ -49,9 +49,11 @@ export function removeMods(
     });
   };
 
-  return Promise.resolve(toPromise((cb) =>
-    api.events.emit("remove-mods", gameId, modIds, cb, { progressCB }),
-  ))
+  return Promise.resolve(
+    toPromise((cb) =>
+      api.events.emit("remove-mods", gameId, modIds, cb, { progressCB }),
+    ),
+  )
     .then(() => {
       api.events.emit("mods-enabled", modIds, false, gameId);
     })

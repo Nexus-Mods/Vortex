@@ -1,13 +1,13 @@
-const bsdiff = require('bsdiff-node');
-const fs = require('fs');
-const path = require('path');
+const bsdiff = require("bsdiff-node");
+const fs = require("fs");
+const path = require("path");
 
-describe('bsdiff-node', () => {
-  const tmpDir = path.join(__dirname, 'tmp_bsdiff');
-  const fileA = path.join(tmpDir, 'a.bin');
-  const fileB = path.join(tmpDir, 'b.bin');
-  const patchFile = path.join(tmpDir, 'patch.diff');
-  const patchedFile = path.join(tmpDir, 'patched.bin');
+describe("bsdiff-node", () => {
+  const tmpDir = path.join(__dirname, "tmp_bsdiff");
+  const fileA = path.join(tmpDir, "a.bin");
+  const fileB = path.join(tmpDir, "b.bin");
+  const patchFile = path.join(tmpDir, "patch.diff");
+  const patchedFile = path.join(tmpDir, "patched.bin");
 
   beforeAll(() => {
     if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir);
@@ -16,13 +16,13 @@ describe('bsdiff-node', () => {
   });
 
   afterAll(() => {
-    [fileA, fileB, patchFile, patchedFile].forEach(f => {
+    [fileA, fileB, patchFile, patchedFile].forEach((f) => {
       if (fs.existsSync(f)) fs.unlinkSync(f);
     });
     if (fs.existsSync(tmpDir)) fs.rmdirSync(tmpDir);
   });
 
-  it('creates and applies a binary patch', async () => {
+  it("creates and applies a binary patch", async () => {
     await new Promise((resolve, reject) => {
       bsdiff.diff(fileA, fileB, patchFile, () => {});
       setTimeout(resolve, 500); // Wait for file to be written

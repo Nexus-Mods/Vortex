@@ -94,7 +94,9 @@ describe("Reverse Resolution", () => {
     });
 
     it("should return null for paths not under any anchor", async () => {
-      const osPath = ResolvedPath.make(makeAbsolutePath("unix", "other", "path"));
+      const osPath = ResolvedPath.make(
+        makeAbsolutePath("unix", "other", "path"),
+      );
       const result = await resolver.tryReverse(osPath);
 
       expect(result).toBeNull();
@@ -187,7 +189,10 @@ describe("Reverse Resolution", () => {
 
     beforeEach(() => {
       parentResolver = new TestResolver();
-      childResolver = new TestResolver(new MockUnixFilesystem(), parentResolver);
+      childResolver = new TestResolver(
+        new MockUnixFilesystem(),
+        parentResolver,
+      );
 
       // Give them different names
       (parentResolver as any).name = "parent";
@@ -529,7 +534,9 @@ describe("Reverse Resolution", () => {
       const child = resolver.PathFor("test1", "mods/skyui/file.txt");
       const parentPath = await parent.resolve();
 
-      const relative = await child.relativeTo((parentPath as string).toLowerCase());
+      const relative = await child.relativeTo(
+        (parentPath as string).toLowerCase(),
+      );
 
       expect(relative).not.toBeNull();
     });

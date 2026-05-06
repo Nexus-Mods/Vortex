@@ -4,10 +4,7 @@ import { useSelector } from "react-redux";
 
 import { useWindowContext } from "../../../contexts";
 import { Typography } from "../../../ui/components/typography/Typography";
-import {
-  nxmPanelClose,
-  nxmPanelOpen,
-} from "../../../ui/icon-paths";
+import { nxmPanelClose, nxmPanelOpen } from "../../../ui/icon-paths";
 import {
   activeProfile as activeProfileSelector,
   gameProfiles as gameProfilesSelector,

@@ -33,9 +33,8 @@ function makeListInstaller(
   extractList: IFileListItem[],
   basePath: string,
 ): Promise<ISupportedInstaller> {
-  let lookupFunc: (filePath: string) => Promise<string> = (
-    filePath: string,
-  ) => Promise.resolve(fileMD5(filePath));
+  let lookupFunc: (filePath: string) => Promise<string> = (filePath: string) =>
+    Promise.resolve(fileMD5(filePath));
 
   let idxId = "md5";
 

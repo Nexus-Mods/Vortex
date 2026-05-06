@@ -264,8 +264,8 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
 
     const { downloadGameFilter, useModernLayout } = this.props;
     if (useModernLayout && downloadGameFilter !== null) {
-      filteredIds = filteredIds.filter(
-        (dlId) => (downloads[dlId].game ?? []).includes(downloadGameFilter),
+      filteredIds = filteredIds.filter((dlId) =>
+        (downloads[dlId].game ?? []).includes(downloadGameFilter),
       );
     }
 

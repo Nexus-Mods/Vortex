@@ -126,9 +126,8 @@ async function applyFileActions(
   const testFileOverrides: { [modId: string]: string[] } = {};
   fileActions.forEach((action) => {
     if (
-      ["import", "newest", "nop", "delete", "drop"].indexOf(
-        action.action,
-      ) !== -1
+      ["import", "newest", "nop", "delete", "drop"].indexOf(action.action) !==
+      -1
     ) {
       affectedMods.add(action.source);
     }
@@ -292,8 +291,7 @@ export function dealWithExternalChanges(
               prevInner.merged.push(change);
               return prevInner;
             }
-            if (isInstallingCollection
-                || recentChanges?.has(change.source)) {
+            if (isInstallingCollection || recentChanges?.has(change.source)) {
               prevInner.autoResolved.push(change);
               return prevInner;
             }

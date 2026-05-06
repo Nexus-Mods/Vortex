@@ -29,11 +29,10 @@ import { clearInterval } from "timers";
 
 const RESIZE_EVENTS = ["scroll", "resize"];
 
-export interface IWebView
-  extends React.DetailedHTMLProps<
-    React.WebViewHTMLAttributes<HTMLWebViewElement>,
-    HTMLWebViewElement
-  > {
+export interface IWebView extends React.DetailedHTMLProps<
+  React.WebViewHTMLAttributes<HTMLWebViewElement>,
+  HTMLWebViewElement
+> {
   src?: string;
   style?: any;
   autosize?: boolean;

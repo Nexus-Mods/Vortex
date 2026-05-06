@@ -418,11 +418,7 @@ function win32Basename(p: string, ext?: string): string {
   if (end < 0) return "";
 
   // Drive root or drive-relative root: C:\, C:/, C:
-  if (
-    end === 1 &&
-    isDriveLetter(p.charCodeAt(0)) &&
-    p.charCodeAt(1) === 0x3a
-  ) {
+  if (end === 1 && isDriveLetter(p.charCodeAt(0)) && p.charCodeAt(1) === 0x3a) {
     return "";
   }
 

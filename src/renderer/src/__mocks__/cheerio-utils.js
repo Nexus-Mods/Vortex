@@ -7,5 +7,5 @@ module.exports = {
   cssCase: jest.fn(),
   domEach: jest.fn(),
   cloneDom: jest.fn(),
-  isSubset: jest.fn()
+  isSubset: jest.fn(),
 };

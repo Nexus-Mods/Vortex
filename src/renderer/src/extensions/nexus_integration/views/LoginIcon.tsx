@@ -68,7 +68,8 @@ class LoginIcon extends ComponentEx<IProps, {}> {
   }
 
   private logOut = () => {
-    const { onClearOAuthCredentials, onSetAPIKey, onClearUserInfo } = this.props;
+    const { onClearOAuthCredentials, onSetAPIKey, onClearUserInfo } =
+      this.props;
     onSetAPIKey(undefined);
     onClearOAuthCredentials();
     onClearUserInfo();

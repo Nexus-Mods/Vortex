@@ -14,10 +14,7 @@ import type { TFunction } from "i18next";
 import type { Action } from "redux";
 
 import { NexusError, RateLimitError, TimeoutError } from "@nexusmods/nexus-api";
-import {
-  getErrorMessageOrDefault,
-  unknownToError,
-} from "@vortex/shared";
+import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import PromiseBB from "bluebird";
 import { app } from "electron";
 import * as fuzz from "fuzzball";
@@ -1475,15 +1472,11 @@ function toolbarBanner(t: TFunction): React.FunctionComponent<any> {
 
                 <div className="nexus-header-ad-body">
                   Save time with{" "}
-
                   <span className="ad-body-highlight">max download speeds</span>
-
                   ,{" "}
-
                   <span className="ad-body-highlight">
                     auto-install collections
                   </span>
-
                   , and <span className="ad-body-highlight">no ads</span>.
                 </div>
               </FlexLayout>
@@ -1928,7 +1921,6 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
       url.gameId !== SITE_ID &&
       url.key === undefined
     ) {
-
       const games = knownGames(state);
       const gameId = convertNXMIdReverse(games, url.gameId);
       const pageId = nexusGameId(gameById(state, gameId), url.gameId);
@@ -2369,11 +2361,8 @@ function init(context: IExtensionContextExt): boolean {
         <div id="nexus-download-banner">
           <div className="banner-text">
             Free users are{" "}
-
             <span className="text-highlight">capped at 3MB/s</span> (1.5 MB/s
-
             with AdBlock). Play your modded games{" "}
-
             <span className="text-highlight">faster with premium</span>.
           </div>
 

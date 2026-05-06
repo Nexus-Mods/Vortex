@@ -318,7 +318,12 @@ export function init() {
       const updateBounds = () => {
         if (window && !window.isDestroyed()) {
           const bounds = window.getContentBounds();
-          view.setBounds({ x: 0, y: 0, width: bounds.width, height: bounds.height });
+          view.setBounds({
+            x: 0,
+            y: 0,
+            width: bounds.width,
+            height: bounds.height,
+          });
         }
       };
       window?.on("resize", updateBounds);

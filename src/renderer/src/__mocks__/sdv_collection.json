@@ -6,9 +6,7 @@
     "description": "",
     "installInstructions": "**⚠️ IMPORTANT!** Always install **Optional Mods** unless you're combining **Stardew Valley VERY Expanded** + **Aesthetic Valley**. \n*See [Combining Collections](https://jenna-juffuffles.gitbook.io/svve/combining).*\n\n**UPDATING**\nTo keep everything running smoothly, check for updates in the Collections tab of Vortex:\n• 💡 You’ll see an Update button when something’s ready.\n• 🧩 Follow the prompts. If it asks, always select **Remove All**.\n• 🌟 Skip updating individual mods and just update the whole Collection.\n\n**LET US HELP**\n🌱 Need a hand or have questions? We’ve got you covered:\n• **Community Discord**: 👉 [Join Here](https://discord.com/invite/de2NrHXuty) – Find us in the Stardew Valley channel.\n• **Collection Documentation**: [View Here](https://jenna-juffuffles.gitbook.io/svve/)\n\n**VORTEX SUPPORT**\nIf you run into Vortex-specific issues, these resources are a great place to start:\n• **Official Vortex Discord**: [Join Here](https://discord.com/invite/nexusmods)\n• **Support Hours**: 9 AM – 5 PM GMT, Monday–Thursday\n• **Vortex Wiki**: [Read Here](https://wiki.nexusmods.com/index.php/Category:Vortex)\n• **Stardew Setup Guide**: [Read Here](https://wiki.nexusmods.com/index.php/Modding_Stardew_Valley_with_Vortex)\n🚫 The **official Stardew Valley Discord** does *not* support Vortex, so please follow their guidelines and use the links above for help.",
     "domainName": "stardewvalley",
-    "gameVersions": [
-      "1.6.15.24356"
-    ]
+    "gameVersions": ["1.6.15.24356"]
   },
   "mods": [
     {

@@ -160,8 +160,7 @@ describe("Path Normalization and Cross-Platform Handling", () => {
           "userData",
           "mods/skyui/interface/skyui.swf",
         );
-        const basePath =
-          "c:\\users\\testuser\\appdata\\roaming\\vortex\\mods";
+        const basePath = "c:\\users\\testuser\\appdata\\roaming\\vortex\\mods";
 
         const relative = await child.relativeTo(basePath);
 
@@ -171,8 +170,7 @@ describe("Path Normalization and Cross-Platform Handling", () => {
 
       test("should handle case-insensitive exact match", async () => {
         const child = resolver.PathFor("userData", "mods");
-        const basePath =
-          "c:\\users\\testuser\\appdata\\roaming\\vortex\\mods";
+        const basePath = "c:\\users\\testuser\\appdata\\roaming\\vortex\\mods";
 
         const relative = await child.relativeTo(basePath);
 
@@ -181,8 +179,7 @@ describe("Path Normalization and Cross-Platform Handling", () => {
 
       test("should handle case-insensitive partial match", async () => {
         const child = resolver.PathFor("userData", "mods/SKYUI");
-        const basePath =
-          "c:\\users\\testuser\\appdata\\roaming\\vortex\\mods";
+        const basePath = "c:\\users\\testuser\\appdata\\roaming\\vortex\\mods";
 
         const relative = await child.relativeTo(basePath);
 
@@ -479,7 +476,9 @@ describe("Path Normalization and Cross-Platform Handling", () => {
   describe("Reverse resolution with trailing-separator bases", () => {
     test("should reverse-resolve an exact match when the anchor base keeps a trailing separator", async () => {
       const resolver = new TrailingBaseResolver();
-      const result = await resolver.tryReverse(ResolvedPath.make("/home/user/mods"));
+      const result = await resolver.tryReverse(
+        ResolvedPath.make("/home/user/mods"),
+      );
 
       expect(result).not.toBeNull();
       expect(Anchor.name(result.anchor)).toBe("mods");

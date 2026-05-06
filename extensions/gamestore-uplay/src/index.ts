@@ -96,7 +96,9 @@ class UPlayLauncher implements types.IGameStore {
       );
   }
 
-  public findByAppId(appId: string | string[]): Bluebird<types.IGameStoreEntry> {
+  public findByAppId(
+    appId: string | string[],
+  ): Bluebird<types.IGameStoreEntry> {
     const matcher = Array.isArray(appId)
       ? (entry: types.IGameStoreEntry) => appId.includes(entry.appid)
       : (entry: types.IGameStoreEntry) => appId === entry.appid;
@@ -126,50 +128,50 @@ class UPlayLauncher implements types.IGameStore {
     return this.mClientPath === undefined // Can't find the client? don't continue.
       ? Bluebird.resolve([])
       : new Bluebird<types.IGameStoreEntry[]>((resolve, reject) => {
-        try {
-          winapi.WithRegOpen(
-            "HKEY_LOCAL_MACHINE",
-            REG_UPLAY_INSTALLS,
-            (hkey) => {
-              let keys = [];
-              try {
-                keys = winapi.RegEnumKeys(hkey);
-              } catch (err) {
-                // Can't open the hive tree... weird.
-                log("error", "gamestore-uplay: registry query failed", hkey);
-                return resolve([]);
-              }
-              const gameEntries: types.IGameStoreEntry[] = keys.map((key) => {
+          try {
+            winapi.WithRegOpen(
+              "HKEY_LOCAL_MACHINE",
+              REG_UPLAY_INSTALLS,
+              (hkey) => {
+                let keys = [];
                 try {
-                  const gameEntry: types.IGameStoreEntry = {
-                    appid: key.key,
-                    gamePath: winapi.RegGetValue(hkey, key.key, "InstallDir")
-                      .value as string,
-                    // Unfortunately the name of this game is stored elsewhere.
-                    name: winapi.RegGetValue(
-                      "HKEY_LOCAL_MACHINE",
-                      REG_UPLAY_NAME_LOCATION + key.key,
-                      "DisplayName",
-                    ).value as string,
-                    gameStoreId: STORE_ID,
-                  };
-                  return gameEntry;
+                  keys = winapi.RegEnumKeys(hkey);
                 } catch (err) {
-                  log(
-                    "info",
-                    "gamestore-uplay: registry query failed",
-                    key.key,
-                  );
-                  return undefined;
+                  // Can't open the hive tree... weird.
+                  log("error", "gamestore-uplay: registry query failed", hkey);
+                  return resolve([]);
                 }
-              });
-              return resolve(gameEntries.filter((entry) => !!entry));
-            },
-          );
-        } catch (err) {
-          return err.code === "ENOENT" ? resolve([]) : reject(err);
-        }
-      });
+                const gameEntries: types.IGameStoreEntry[] = keys.map((key) => {
+                  try {
+                    const gameEntry: types.IGameStoreEntry = {
+                      appid: key.key,
+                      gamePath: winapi.RegGetValue(hkey, key.key, "InstallDir")
+                        .value as string,
+                      // Unfortunately the name of this game is stored elsewhere.
+                      name: winapi.RegGetValue(
+                        "HKEY_LOCAL_MACHINE",
+                        REG_UPLAY_NAME_LOCATION + key.key,
+                        "DisplayName",
+                      ).value as string,
+                      gameStoreId: STORE_ID,
+                    };
+                    return gameEntry;
+                  } catch (err) {
+                    log(
+                      "info",
+                      "gamestore-uplay: registry query failed",
+                      key.key,
+                    );
+                    return undefined;
+                  }
+                });
+                return resolve(gameEntries.filter((entry) => !!entry));
+              },
+            );
+          } catch (err) {
+            return err.code === "ENOENT" ? resolve([]) : reject(err);
+          }
+        });
   }
 }
 

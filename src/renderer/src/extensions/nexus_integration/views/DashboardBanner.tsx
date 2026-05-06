@@ -145,7 +145,8 @@ class DashboardBanner extends ComponentEx<IProps, { requested: boolean }> {
   };
 
   private logout = () => {
-    const { onClearOAuthCredentials, onClearUserInfo, onSetAPIKey } = this.props;
+    const { onClearOAuthCredentials, onClearUserInfo, onSetAPIKey } =
+      this.props;
     onSetAPIKey(undefined);
     onClearOAuthCredentials();
     onClearUserInfo();
