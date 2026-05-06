@@ -7,6 +7,7 @@
  */
 
 import * as path from "path";
+
 import type { IEntry, IWalkOptions } from "./index";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -41,7 +42,7 @@ const FileFullDirectoryInformation = 2;
 const FileAllInformation = 18;
 
 // FILETIME epoch offset: 100ns ticks between 1601-01-01 and 1970-01-01
-const UNIX_EPOCH_TICKS = 0x019DB1DED53E8000n;
+const UNIX_EPOCH_TICKS = 0x019db1ded53e8000n;
 const TICKS_PER_SECOND = 10000000n;
 
 // Buffer for NtQueryDirectoryFile — 1KB matches the old C++ addon's buffer size.
@@ -248,9 +249,7 @@ function parseEntries(
         const sizeLow = buf.readUInt32LE(offset + 40);
         const sizeHigh = buf.readUInt32LE(offset + 44);
         const size =
-          sizeHigh === 0
-            ? sizeLow
-            : Number((BigInt(sizeHigh) << 32n) | BigInt(sizeLow >>> 0));
+          sizeHigh === 0 ? sizeLow : Number((BigInt(sizeHigh) << 32n) | BigInt(sizeLow >>> 0));
 
         // LastWriteTime → Unix seconds
         const wtLow = buf.readUInt32LE(offset + 24);

@@ -1,6 +1,7 @@
-import Bluebird from "bluebird";
 import * as fs from "fs";
 import * as path from "path";
+
+import Bluebird from "bluebird";
 
 export interface IEntry {
   filePath: string;
@@ -36,11 +37,9 @@ const DEFAULTS: Required<IWalkOptions> = {
 
 // --- Windows: koffi FFI using NtQueryDirectoryFile ---
 
-let walkDirWindows: ((
-  dirPath: string,
-  progress: (entries: IEntry[]) => void,
-  opts: Required<IWalkOptions>,
-) => void) | undefined;
+let walkDirWindows:
+  | ((dirPath: string, progress: (entries: IEntry[]) => void, opts: Required<IWalkOptions>) => void)
+  | undefined;
 
 if (process.platform === "win32") {
   try {
@@ -128,9 +127,7 @@ async function walkDirFallback(
       isReparsePoint: isLink,
       size: stats.size,
       mtime: Math.floor(stats.mtimeMs / 1000),
-      ...(opts.details
-        ? { id: stats.ino, idStr: String(stats.ino), linkCount: stats.nlink }
-        : {}),
+      ...(opts.details ? { id: stats.ino, idStr: String(stats.ino), linkCount: stats.nlink } : {}),
     });
 
     if (isDir && opts.recurse && !(opts.skipLinks && isLink)) {

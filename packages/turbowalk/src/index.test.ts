@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
+
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 
 import turbowalk, { type IEntry } from "./index";
 
@@ -36,7 +37,13 @@ afterAll(() => {
 
 function collect(dir: string, options?: Parameters<typeof turbowalk>[2]): Promise<IEntry[]> {
   const all: IEntry[] = [];
-  return turbowalk(dir, (entries) => { all.push(...entries); }, options).then(() => all);
+  return turbowalk(
+    dir,
+    (entries) => {
+      all.push(...entries);
+    },
+    options,
+  ).then(() => all);
 }
 
 describe("turbowalk", () => {
@@ -44,8 +51,14 @@ describe("turbowalk", () => {
     const entries = await collect(tmpDir, { skipHidden: false });
     const names = entries.map((e) => path.basename(e.filePath)).sort();
     expect(names).toEqual([
-      ".hidden", ".hiddendir", "emptydir", "file1.txt", "file2.dat",
-      "inside.txt", "nested.txt", "subdir",
+      ".hidden",
+      ".hiddendir",
+      "emptydir",
+      "file1.txt",
+      "file2.dat",
+      "inside.txt",
+      "nested.txt",
+      "subdir",
     ]);
   });
 
@@ -58,8 +71,14 @@ describe("turbowalk", () => {
 
   it("reports correct isDirectory flag", async () => {
     const entries = await collect(tmpDir, { skipHidden: false });
-    const dirs = entries.filter((e) => e.isDirectory).map((e) => path.basename(e.filePath)).sort();
-    const files = entries.filter((e) => !e.isDirectory).map((e) => path.basename(e.filePath)).sort();
+    const dirs = entries
+      .filter((e) => e.isDirectory)
+      .map((e) => path.basename(e.filePath))
+      .sort();
+    const files = entries
+      .filter((e) => !e.isDirectory)
+      .map((e) => path.basename(e.filePath))
+      .sort();
     expect(dirs).toEqual([".hiddendir", "emptydir", "subdir"]);
     expect(files).toEqual([".hidden", "file1.txt", "file2.dat", "inside.txt", "nested.txt"]);
   });
@@ -86,7 +105,14 @@ describe("turbowalk", () => {
     const entries = await collect(tmpDir, { recurse: false, skipHidden: false });
     const names = entries.map((e) => path.basename(e.filePath)).sort();
     // Should only include top-level entries, not nested.txt or inside.txt
-    expect(names).toEqual([".hidden", ".hiddendir", "emptydir", "file1.txt", "file2.dat", "subdir"]);
+    expect(names).toEqual([
+      ".hidden",
+      ".hiddendir",
+      "emptydir",
+      "file1.txt",
+      "file2.dat",
+      "subdir",
+    ]);
   });
 
   it("handles non-existent directory gracefully", async () => {
@@ -96,7 +122,13 @@ describe("turbowalk", () => {
 
   it("calls progress callback with batched entries", async () => {
     const calls: number[] = [];
-    await turbowalk(tmpDir, (entries) => { calls.push(entries.length); }, { skipHidden: false });
+    await turbowalk(
+      tmpDir,
+      (entries) => {
+        calls.push(entries.length);
+      },
+      { skipHidden: false },
+    );
     // At least one call should have been made
     expect(calls.length).toBeGreaterThan(0);
     // Total entries across all calls should match
