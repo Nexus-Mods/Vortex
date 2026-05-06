@@ -111,3 +111,7 @@ export function getInterface(
     return gameSupport[gameId].interface;
   }
 }
+
+export function isGamebryoGame(gameId: string): boolean {
+  return gameSupport[gameId] !== undefined;
+}
