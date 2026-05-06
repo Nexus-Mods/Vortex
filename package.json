@@ -42,7 +42,7 @@
     "generate:query-types": "npx tsx scripts/generate-query-types.ts"
   },
   "lint-staged": {
-    "*": "pnpm oxfmt"
+    "*": "pnpm oxfmt --no-error-on-unmatched-pattern"
   },
   "devDependencies": {
     "@eslint-react/eslint-plugin": "catalog:",
