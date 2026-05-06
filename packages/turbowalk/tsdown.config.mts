@@ -5,5 +5,5 @@ export default defineConfig({
   format: ["cjs"],
   platform: "node",
   dts: true,
-  external: ["koffi"],
+  deps: { neverBundle: ["koffi"] },
 });
