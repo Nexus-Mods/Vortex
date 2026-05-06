@@ -4,10 +4,7 @@ import { useSelector } from "react-redux";
 
 import { useWindowContext } from "../../../contexts";
 import { Typography } from "../../../ui/components/typography/Typography";
-import {
-  nxmPanelClose,
-  nxmPanelOpen,
-} from "../../../ui/icon-paths";
+import { nxmPanelClose, nxmPanelOpen } from "../../../ui/icon-paths";
 import {
   activeProfile as activeProfileSelector,
   gameProfiles as gameProfilesSelector,
@@ -53,16 +50,14 @@ export const Header: FC = () => {
 
   return (
     <div
-      className="flex h-11 items-center justify-between overflow-hidden pl-4.5"
+      className="flex h-11 items-center justify-between pl-4.5"
       style={{ WebkitAppRegion: "drag" }}
     >
-      <div
-        className="flex min-w-0 flex-1 items-center gap-x-1 overflow-hidden"
-        style={{ WebkitAppRegion: "no-drag" }}
-      >
+      <div className="flex min-w-0 flex-1 items-center gap-x-1 overflow-hidden">
         <IconButton
           appearance="secondary"
           iconPath={menuIsCollapsed ? nxmPanelOpen : nxmPanelClose}
+          style={{ WebkitAppRegion: "no-drag" }}
           title={menuIsCollapsed ? "Open menu" : "Collapse menu"}
           onClick={handleToggleMenu}
         />
@@ -74,7 +69,9 @@ export const Header: FC = () => {
           <span className="shrink-0 text-neutral-strong">{title}</span>
 
           {profileName && (
-            <span className="min-w-0 max-w-[33%] truncate text-neutral-subdued">{profileName}</span>
+            <span className="max-w-[33%] min-w-0 truncate text-neutral-subdued">
+              {profileName}
+            </span>
           )}
         </Typography>
       </div>

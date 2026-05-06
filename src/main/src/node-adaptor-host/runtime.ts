@@ -1,8 +1,8 @@
 import type { IMethodMessage, MessageId, PID } from "@nexusmods/adaptor-api";
-import type { StorePathSnapshot } from "@nexusmods/adaptor-api/stores/lib";
+import type { StorePathSnapshot } from "@nexusmods/adaptor-api";
 
 import { messageId, pid } from "@nexusmods/adaptor-api";
-import { createStorePathProvider } from "@nexusmods/adaptor-api/stores/lib";
+import { createStorePathProvider } from "@nexusmods/adaptor-api";
 
 /**
  * Creates a closure-based PID allocator. Each call returns a unique PID.

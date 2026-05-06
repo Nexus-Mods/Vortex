@@ -1,18 +1,17 @@
-import type { RelativePath } from "@vortex/fs";
-
-import { relativePath } from "@vortex/fs";
 import { describe, expect, expectTypeOf, it } from "vitest";
 
-import type { StorePathProvider } from "../stores/providers.js";
+import type { RelativePath } from "../fs/paths";
+import type { StorePathProvider } from "../stores/providers";
 import type {
   IGameInstallerService,
   InstallMapping,
   StopPattern,
-} from "./game-installer.js";
-import type { GamePaths } from "./game-paths.js";
+} from "./game-installer";
+import type { GamePaths } from "./game-paths";
 
-import { Base } from "../stores/providers.js";
-import { resolveStopPatterns } from "./game-installer.js";
+import { relativePath } from "../fs/paths";
+import { Base } from "../stores/providers";
+import { resolveStopPatterns } from "./game-installer";
 
 /** Helper to build a RelativePath[] from raw strings in tests. */
 const rel = (...parts: string[]): readonly RelativePath[] =>

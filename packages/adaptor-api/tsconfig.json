@@ -1,20 +1,18 @@
 {
   "$schema": "https://www.schemastore.org/tsconfig.json",
   "extends": "../../tsconfig.strict.json",
-  "include": ["src/**/*"],
+  "include": ["./src/**/*.ts", "../../typings.custom/promise.d.ts"],
   "compilerOptions": {
+    "composite": true,
+    "noEmit": true,
     "target": "esnext",
     "module": "esnext",
     "moduleResolution": "bundler",
-    "allowJs": false,
-    "composite": true,
-    "declaration": true,
-    "noEmit": true,
-    "types": [],
+    "customConditions": ["development"],
     "lib": ["ESNext"],
+    "types": [],
+    "allowJs": false,
     "isolatedDeclarations": true,
-    "paths": {
-      "@nexusmods/adaptor-api": ["./src/lib.ts"]
-    }
-  }
+    "noUncheckedSideEffectImports": true,
+  },
 }

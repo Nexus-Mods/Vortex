@@ -1,15 +1,7 @@
+/// <reference lib="webworker" />
+
 import type { Pattern } from "./matcher";
 import type { QualifiedPath, ResolvedPath } from "./paths";
-
-/**
- * Interface-only alias for {@link FileSystem}. The `I`-prefixed name
- * matches the convention used by `@nexusmods/adaptor-api` service
- * contracts, so a contract file can declare the host filesystem
- * service with `ServiceRegistry["vortex:host/filesystem"]: IFileSystem`
- * without introducing a parallel duplicate interface.
- *
- * @public */
-export type IFileSystem = FileSystem;
 
 /**
  * Filesystem operations.
@@ -150,12 +142,7 @@ export interface FileSystem {
       exclude?: Pattern;
     },
   ): Promise<AsyncIterator<QualifiedPath | [QualifiedPath, Status]>>;
-}
 
-/**
- * Filesystem APIs extended with Web-safe methods and types.
- * @public */
-export interface WebFileSystem extends FileSystem {
   /**
    * Creates a readable stream.
    *
@@ -188,6 +175,17 @@ export interface WebFileSystem extends FileSystem {
     mode: string,
     options?: { start?: number; end?: number },
   ): Promise<ReadableStream | WritableStream>;
+
+  /**
+   * Creates a hardlink or symlink at `to` pointing to `from`.
+   *
+   * @throws {@link FileSystemError}
+   * */
+  createLink(
+    from: QualifiedPath,
+    to: QualifiedPath,
+    type: "hardlink" | "symlink",
+  ): Promise<void>;
 }
 
 /** @public */
@@ -249,10 +247,7 @@ export interface FileSystemBackend {
       exclude?: Pattern;
     },
   ): Promise<AsyncIterator<ResolvedPath | [ResolvedPath, Status]>>;
-}
 
-/** @public */
-export interface WebFileSystemBackend extends FileSystemBackend {
   createStream(
     path: ResolvedPath,
     mode: "r",
@@ -269,6 +264,12 @@ export interface WebFileSystemBackend extends FileSystemBackend {
     mode: string,
     options?: { start?: number; end?: number },
   ): Promise<ReadableStream | WritableStream>;
+
+  createLink(
+    from: ResolvedPath,
+    to: ResolvedPath,
+    type: "hardlink" | "symlink",
+  ): Promise<void>;
 }
 
 /** @public */

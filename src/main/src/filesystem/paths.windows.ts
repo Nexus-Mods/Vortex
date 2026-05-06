@@ -3,13 +3,13 @@ import type {
   ResolvedPath,
   WindowsPathBase,
   WindowsPathProvider,
-} from "@vortex/fs";
+} from "@nexusmods/adaptor-api/fs";
 
 import {
   PathProviderError,
   PathResolverError,
   QualifiedPath as QP,
-} from "@vortex/fs";
+} from "@nexusmods/adaptor-api/fs";
 import { access } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import { win32 as pathWin32 } from "node:path";

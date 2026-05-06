@@ -1,13 +1,13 @@
-import { PathProviderError, QualifiedPath } from "@vortex/fs";
-
-import {
-  OS,
-  type Base,
-  type LinuxStorePathProvider,
-  type StorePathProvider,
-  type StorePathSnapshot,
-  type WindowsStorePathProvider,
+import type {
+  Base,
+  LinuxStorePathProvider,
+  StorePathProvider,
+  StorePathSnapshot,
+  WindowsStorePathProvider,
 } from "./providers";
+
+import { PathProviderError, QualifiedPath } from "../fs/paths";
+import { OS } from "./providers";
 
 /**
  * Wraps a {@link StorePathSnapshot} received over IPC into a

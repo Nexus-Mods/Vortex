@@ -1,5 +1,6 @@
 import { DEFAULT_INSTRUCTIONS, NAMESPACE } from "../../constants";
 import InstallDriver from "../../util/InstallDriver";
+import { isGamebryoGame } from "../../util/gameSupport";
 
 import CollectionThumbnail from "../CollectionTile";
 
@@ -310,22 +311,24 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
           >
             {t("Install mods during collection downloads")}
           </Toggle>
-          <Toggle
-            checked={this.state.skipPluginRules}
-            onToggle={this.toggleSkipPluginRules}
-          >
-            {t("Skip plugin rules")}
-            <More
-              id="install-skip-plugin-rules"
-              name={t("Skip plugin rules")}
+          {isGamebryoGame(profile.gameId) ? (
+            <Toggle
+              checked={this.state.skipPluginRules}
+              onToggle={this.toggleSkipPluginRules}
             >
-              {t(
-                "If enabled, custom LOOT plugin rules and groups included in this collection "
-                + "will not be applied. This can help prevent inherited plugin rules from "
-                + "causing conflicts.",
-              )}
-            </More>
-          </Toggle>
+              {t("Skip plugin rules")}
+              <More
+                id="install-skip-plugin-rules"
+                name={t("Skip plugin rules")}
+              >
+                {t(
+                  "If enabled, custom LOOT plugin rules and groups included in this collection "
+                  + "will not be applied. This can help prevent inherited plugin rules from "
+                  + "causing conflicts.",
+                )}
+              </More>
+            </Toggle>
+          ) : null}
         </Modal.Body>
         <Modal.Footer>
           {this.state.confirmProfile ? (

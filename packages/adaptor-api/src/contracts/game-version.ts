@@ -1,4 +1,4 @@
-import type { QualifiedPath } from "@vortex/fs";
+import type { QualifiedPath } from "../fs/paths";
 
 /**
  * Declarative version detection strategies. The adaptor declares which
@@ -7,9 +7,7 @@ import type { QualifiedPath } from "@vortex/fs";
  *
  * @public
  */
-export type VersionSource =
-  | PEHeaderVersionSource
-  | TextFileVersionSource;
+export type VersionSource = PEHeaderVersionSource | TextFileVersionSource;
 
 /** Reads the version resource embedded in a Windows PE executable. */
 export interface PEHeaderVersionSource {

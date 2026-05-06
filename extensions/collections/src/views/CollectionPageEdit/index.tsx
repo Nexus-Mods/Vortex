@@ -289,6 +289,7 @@ class CollectionEdit extends ComponentEx<
             >
               <Panel>
                 <CollectionGeneralPage
+                  gameId={profile.gameId}
                   collection={collection}
                   onSetCollectionAttribute={this.setCollectionAttribute}
                 />

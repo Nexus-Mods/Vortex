@@ -1,6 +1,6 @@
-import { PathProviderError, QualifiedPath } from "@vortex/fs";
 import { describe, expect, expectTypeOf, it } from "vitest";
 
+import { PathProviderError, QualifiedPath } from "../fs/paths";
 import {
   Base,
   OS,

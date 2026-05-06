@@ -65,7 +65,7 @@ export async function loginToNexus(
       await expect(nexusLoginPage.authLoginHeading).toBeVisible();
     });
 
-    await test.step("Login with FreeUser credentials", async () => {
+    await test.step("Login with Nexus Mods credentials", async () => {
       if (authPage === null) {
         throw new Error("Auth page was not available for login.");
       }

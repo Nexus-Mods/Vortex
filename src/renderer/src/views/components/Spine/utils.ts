@@ -14,6 +14,19 @@ import { ensureDirWritableAsync, writeFileAsync } from "../../../util/fs";
 import getVortexPath from "../../../util/getVortexPath";
 
 // ---------------------------------------------------------------------------
+// Display formatting
+// ---------------------------------------------------------------------------
+
+/**
+ * Some game extensions embed a tab in their `name` (e.g. `'Fallout:\tNew Vegas'`)
+ * as a separator after the colon. DOM text rendering collapses this to a single
+ * space, but HTML `title=` tooltips render whitespace literally, producing a
+ * visible gap. Normalize for display.
+ */
+export const formatGameDisplayName = (name: string): string =>
+  name.replace(/\s+/g, " ").trim();
+
+// ---------------------------------------------------------------------------
 // Image cache — persisted to disk, keyed by game ID
 // ---------------------------------------------------------------------------
 

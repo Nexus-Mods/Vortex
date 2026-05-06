@@ -1,12 +1,12 @@
 import type { IMessageHandler } from "@nexusmods/adaptor-api";
 import type { GameInfo } from "@nexusmods/adaptor-api/contracts/game-info";
 import type { IPingService } from "@nexusmods/adaptor-api/contracts/ping";
-import type { StorePathSnapshot } from "@nexusmods/adaptor-api/stores/lib";
-import type { IFileSystem, PathResolver } from "@vortex/fs";
+import type { StorePathSnapshot } from "@nexusmods/adaptor-api";
+import type { FileSystem, PathResolver } from "@nexusmods/adaptor-api/fs";
 import type { Serializable } from "@vortex/shared/ipc";
 
-import { Base, OS, Store } from "@nexusmods/adaptor-api/stores/lib";
-import { QualifiedPath } from "@vortex/fs";
+import { Base, OS, Store } from "@nexusmods/adaptor-api";
+import { QualifiedPath } from "@nexusmods/adaptor-api/fs";
 import type exeVersionT from "exe-version";
 import { ipcMain } from "electron";
 import * as fs from "node:fs";
@@ -83,7 +83,7 @@ function registerFilesystemService(): void {
 
   const backend = new NodeFileSystemBackendImpl();
   const registry = new PathResolverRegistryImpl([resolver]);
-  const filesystem: IFileSystem = new NodeFileSystemImpl(backend, registry);
+  const filesystem: FileSystem = new NodeFileSystemImpl(backend, registry);
 
   HOST_SERVICES["vortex:host/filesystem"] = {
     perWorker() {
