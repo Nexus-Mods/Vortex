@@ -18,7 +18,7 @@ import { DownloadButton } from "./DownloadButton";
 import { GameButton } from "./GameButton";
 import { SpineButton } from "./SpineButton";
 import { useSpineContext } from "./SpineContext";
-import { getGameImageUrls } from "./utils";
+import { formatGameDisplayName, getGameImageUrls } from "./utils";
 
 export const Spine: FC = () => {
   const { selection, selectHome, selectGame, selectGlobalPage } = useSpineContext();
@@ -106,7 +106,7 @@ export const Spine: FC = () => {
                   preferred={preferred}
                   sources={sources}
                   store={discoveredGames[game.id]?.store}
-                  title={game.name}
+                  title={formatGameDisplayName(game.name)}
                   onClick={() => selectGame(game.id)}
                 />
               );
