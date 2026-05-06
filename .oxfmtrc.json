@@ -5,6 +5,6 @@
   "sortTailwindcss": {
     "stylesheet": "./src/stylesheets/tailwind-v4.css"
   },
-  "ignorePatterns": ["./etc/**"],
+  "ignorePatterns": ["etc/**", "src/renderer/src/index.html"],
   "embeddedLanguageFormatting": "auto"
 }
