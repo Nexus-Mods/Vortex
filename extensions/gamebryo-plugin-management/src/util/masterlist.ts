@@ -1,4 +1,5 @@
 import * as path from "path";
+
 import { fs, types, util } from "vortex-api";
 
 const LOOT_LIST_REVISION = "v0.26";
@@ -67,10 +68,5 @@ export async function masterlistExists(gameId: string) {
 }
 
 export function masterlistFilePath(gameMode: string) {
-  return path.join(
-    util.getVortexPath("userData"),
-    gameMode,
-    "masterlist",
-    "masterlist.yaml",
-  );
+  return path.join(util.getVortexPath("userData"), gameMode, "masterlist", "masterlist.yaml");
 }

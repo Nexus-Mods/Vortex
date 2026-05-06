@@ -3,14 +3,7 @@
  * Demonstrates the Icon component sizes and accessibility features
  */
 
-import {
-  mdiAccount,
-  mdiCog,
-  mdiDownload,
-  mdiHeart,
-  mdiMagnify,
-  mdiStar,
-} from "@mdi/js";
+import { mdiAccount, mdiCog, mdiDownload, mdiHeart, mdiMagnify, mdiStar } from "@mdi/js";
 import React from "react";
 
 import {
@@ -115,8 +108,7 @@ export const IconDemo = () => (
       </Typography>
 
       <Typography appearance="subdued" typographyType="body-sm">
-        Without a title, the icon gets role="presentation" and is hidden from
-        screen readers.
+        Without a title, the icon gets role="presentation" and is hidden from screen readers.
       </Typography>
 
       <div className="flex flex-wrap items-center gap-6">

@@ -1,10 +1,11 @@
+import type Nexus from "@nexusmods/nexus-api";
+import type { TFunction } from "i18next";
+import * as React from "react";
+import { useSelector } from "react-redux";
+import type * as Redux from "redux";
+
 import { setModAttribute } from "../../actions";
-import type {
-  IExtensionApi,
-  IMod,
-  IState,
-  ITableAttribute,
-} from "../../types/api";
+import type { IExtensionApi, IMod, IState, ITableAttribute } from "../../types/api";
 import { laterT } from "../../util/i18n";
 import {
   activeGameId,
@@ -20,16 +21,10 @@ import NXMUrl from "./NXMUrl";
 import { nexusGames } from "./util";
 import { checkModVersion } from "./util/checkModsVersion";
 import { convertGameIdReverse, nexusGameId } from "./util/convertGameId";
+import { fillNexusIdByMD5, queryResetSource } from "./util/guessModID";
 import EndorsementFilter from "./views/EndorsementFilter";
 import EndorseModButton from "./views/EndorseModButton";
 import NexusModIdDetail from "./views/NexusModIdDetail";
-
-import type Nexus from "@nexusmods/nexus-api";
-import type { TFunction } from "i18next";
-import * as React from "react";
-import { useSelector } from "react-redux";
-import type * as Redux from "redux";
-import { fillNexusIdByMD5, queryResetSource } from "./util/guessModID";
 
 interface INexusIdProps {
   api: IExtensionApi;
@@ -48,36 +43,19 @@ function NexusId(props: INexusIdProps) {
 
   const fileGameId = mod.attributes?.downloadGame || gameMode;
 
-  const downloadPath = useSelector((state: IState) =>
-    downloadPathForGame(state, fileGameId),
-  );
-  const downloads = useSelector(
-    (state: IState) => state.persistent.downloads.files ?? {},
-  );
+  const downloadPath = useSelector((state: IState) => downloadPathForGame(state, fileGameId));
+  const downloads = useSelector((state: IState) => state.persistent.downloads.files ?? {});
 
-  const hasArchive =
-    mod.archiveId !== undefined && downloads[mod.archiveId] !== undefined;
+  const hasArchive = mod.archiveId !== undefined && downloads[mod.archiveId] !== undefined;
 
   const updateByMD5 = React.useCallback(() => {
-    fillNexusIdByMD5(
-      api,
-      gameMode,
-      mod,
-      fileName,
-      downloadPath,
-      hasArchive,
-    ).catch((err) => {
+    fillNexusIdByMD5(api, gameMode, mod, fileName, downloadPath, hasArchive).catch((err) => {
       api.showErrorNotification("Query failed", err, { allowReport: false });
     });
   }, [mod]);
 
   const openURL = React.useCallback(() => {
-    api.events.emit(
-      "open-mod-page",
-      fileGameId,
-      mod.attributes?.modId,
-      mod.attributes.source,
-    );
+    api.events.emit("open-mod-page", fileGameId, mod.attributes?.modId, mod.attributes.source);
   }, []);
 
   const checkForUpdate = React.useCallback(() => {
@@ -109,11 +87,7 @@ function NexusId(props: INexusIdProps) {
   );
 }
 
-export type EndorseMod = (
-  gameId: string,
-  modId: string,
-  endorsedStatus: string,
-) => void;
+export type EndorseMod = (gameId: string, modId: string, endorsedStatus: string) => void;
 export type TrackMod = (gameId: string, modId: string, track: boolean) => void;
 const noOp = () => null;
 function createEndorsedIcon(
@@ -123,16 +97,13 @@ function createEndorsedIcon(
   t: TFunction,
 ) {
   const nexusModId: string =
-    mod.attributes?.modId?.toString() ??
-    mod.attributes?.collectionId?.toString();
+    mod.attributes?.modId?.toString() ?? mod.attributes?.collectionId?.toString();
   const version: string = mod.attributes?.version;
   const state: string = getSafe(mod, ["state"], undefined);
 
   // TODO: this is not a reliable way to determine if the mod is from nexus
   const isNexusMod: boolean =
-    nexusModId !== undefined &&
-    version !== undefined &&
-    !isNaN(parseInt(nexusModId, 10));
+    nexusModId !== undefined && version !== undefined && !isNaN(parseInt(nexusModId, 10));
 
   let endorsed: string = mod.attributes?.endorsed;
   if (endorsed === undefined && state === "downloaded") {
@@ -155,11 +126,7 @@ function createEndorsedIcon(
 
   if (
     getSafe(mod.attributes, ["author"], undefined) ===
-    getSafe(
-      store.getState(),
-      ["persistent", "nexus", "userInfo", "name"],
-      undefined,
-    )
+    getSafe(store.getState(), ["persistent", "nexus", "userInfo", "name"], undefined)
   ) {
     endorsed = undefined;
   }
@@ -167,16 +134,13 @@ function createEndorsedIcon(
   let endorseFunc = onEndorse;
   if (mod.attributes?.collectionId) {
     const collectionInfo =
-      store.getState().persistent.collections?.collections?.[
-        mod.attributes.collectionId
-      ]?.info;
+      store.getState().persistent.collections?.collections?.[mod.attributes.collectionId]?.info;
     endorsed = collectionInfo?.viewerIsBlocked ? "Blocked" : endorsed;
     endorseFunc = noOp;
   }
 
   const gameId =
-    getSafe(mod.attributes, ["downloadGame"], undefined) ||
-    activeGameId(store.getState());
+    getSafe(mod.attributes, ["downloadGame"], undefined) || activeGameId(store.getState());
   if (endorsed !== undefined) {
     return (
       <EndorseModButton
@@ -245,10 +209,7 @@ export function genModIdAttribute(
   };
 }
 
-export function genCollectionIdAttribute(
-  api: IExtensionApi,
-  nexus: () => Nexus,
-): ITableAttribute {
+export function genCollectionIdAttribute(api: IExtensionApi, nexus: () => Nexus): ITableAttribute {
   return {
     id: "nexusCollectionId",
     name: laterT("Nexus Collection ID"),
@@ -282,11 +243,7 @@ export function genGameAttribute(api: IExtensionApi): ITableAttribute<IMod> {
       if (getSafe(mod.attributes, ["source"], undefined) !== "nexus") {
         return undefined;
       }
-      let downloadGame: string | string[] = getSafe(
-        mod.attributes,
-        ["downloadGame"],
-        undefined,
-      );
+      let downloadGame: string | string[] = getSafe(mod.attributes, ["downloadGame"], undefined);
       if (Array.isArray(downloadGame)) {
         downloadGame = downloadGame[0];
       }
@@ -295,9 +252,7 @@ export function genGameAttribute(api: IExtensionApi): ITableAttribute<IMod> {
           ? gameById(api.store.getState(), downloadGame)
           : currentGame(api.store.getState());
       const nexusId = nexusGameId(game) || downloadGame;
-      const gameEntry = nexusGames().find(
-        (iter) => iter.domain_name === nexusId,
-      );
+      const gameEntry = nexusGames().find((iter) => iter.domain_name === nexusId);
       return gameEntry !== undefined ? gameEntry.name : nexusId;
     },
     placement: "detail",

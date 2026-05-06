@@ -1,20 +1,20 @@
-import More from "../../../controls/More";
-import { ComponentEx, translate } from "../../../controls/ComponentEx";
-import github from "../../../util/github";
-import { log } from "../../../util/log";
-import MainPage from "../../../views/MainPage";
-
-import type { ILicense } from "../types/ILicense";
-
 import * as fs from "fs";
-import I18next from "i18next";
 import * as path from "path";
+
+import { getErrorMessageOrDefault } from "@vortex/shared";
+import I18next from "i18next";
 import * as React from "react";
 import { Image, Media, Panel } from "react-bootstrap";
 import ReactMarkdown from "react-markdown";
+
+import { ComponentEx, translate } from "../../../controls/ComponentEx";
+import More from "../../../controls/More";
 import { getApplication } from "../../../util/application";
 import getVortexPath from "../../../util/getVortexPath";
-import { getErrorMessageOrDefault } from "@vortex/shared";
+import github from "../../../util/github";
+import { log } from "../../../util/log";
+import MainPage from "../../../views/MainPage";
+import type { ILicense } from "../types/ILicense";
 
 let modules = {};
 let ownLicenseText: string = "";
@@ -77,9 +77,7 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
         if (this.mMounted) {
           try {
             const thisVersion = "v" + this.mVersion;
-            const thisRelease = releases.find(
-              (rel) => rel.tag_name === thisVersion,
-            );
+            const thisRelease = releases.find((rel) => rel.tag_name === thisVersion);
             if (thisRelease !== undefined) {
               this.nextState.releaseDate = new Date(thisRelease.published_at);
               this.nextState.changelog = thisRelease.body;
@@ -90,20 +88,12 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
               this.nextState.tag = "Preview";
             }
           } catch (err) {
-            log(
-              "warn",
-              "Failed to parse release info",
-              getErrorMessageOrDefault(err),
-            );
+            log("warn", "Failed to parse release info", getErrorMessageOrDefault(err));
           }
         }
       })
       .catch((err) => {
-        log(
-          "warn",
-          "Failed to look up current Vortex releases",
-          getErrorMessageOrDefault(err),
-        );
+        log("warn", "Failed to look up current Vortex releases", getErrorMessageOrDefault(err));
       });
   }
 
@@ -120,11 +110,7 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
       ...modules[key],
     }));
 
-    const imgPath = path.resolve(
-      getVortexPath("assets"),
-      "images",
-      "vortex.png",
-    );
+    const imgPath = path.resolve(getVortexPath("assets"), "images", "vortex.png");
 
     let body = null;
 
@@ -159,8 +145,7 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
                 </h2>
                 <p>&#169;2026 Black Tree Gaming Ltd.</p>
                 <p>
-                  {t("Released under")}{" "}
-                  <a onClick={this.showOwnLicense}>GPL-3</a> {t("License")}
+                  {t("Released under")} <a onClick={this.showOwnLicense}>GPL-3</a> {t("License")}
                 </p>
               </Media.Body>
             </Media>
@@ -198,8 +183,7 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
     this.nextState.selectedLicense = modKey;
 
     const mod: ILicense = modules[modKey];
-    const license =
-      typeof mod.licenses === "string" ? mod.licenses : mod.licenses[0];
+    const license = typeof mod.licenses === "string" ? mod.licenses : mod.licenses[0];
     const licenseFile =
       mod.licenseFile !== undefined
         ? path.resolve(getVortexPath("modules"), "..", ...mod.licenseFile)
@@ -245,6 +229,4 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
   };
 }
 
-export default translate(["common"])(
-  AboutPage,
-) as React.ComponentClass<IBaseProps>;
+export default translate(["common"])(AboutPage) as React.ComponentClass<IBaseProps>;

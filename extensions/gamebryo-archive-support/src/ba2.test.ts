@@ -1,14 +1,13 @@
-import { describe, it, expect, beforeAll, afterEach } from "vitest";
-import * as path from "path";
 import * as fs from "fs";
 import * as os from "os";
+import * as path from "path";
+
+import { describe, it, expect, beforeAll, afterEach } from "vitest";
 
 import { loadBA2 } from "./ba2";
 
 const TEST_DATA = path.resolve(__dirname, "..", "test-data");
-const EXPECTED = JSON.parse(
-  fs.readFileSync(path.join(TEST_DATA, "expected.json"), "utf8"),
-);
+const EXPECTED = JSON.parse(fs.readFileSync(path.join(TEST_DATA, "expected.json"), "utf8"));
 
 describe("BA2 parser", () => {
   describe("GNRL archive", () => {

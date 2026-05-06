@@ -4,10 +4,10 @@
 import PromiseBB from "bluebird";
 
 import * as actions from "./actions/index";
+import { log } from "./logging";
 import * as types from "./types/api";
 import * as util from "./util/api";
 import * as fs from "./util/fs";
-import { log } from "./logging";
 import * as selectors from "./util/selectors";
 
 export * from "./controls/api";

@@ -34,10 +34,7 @@ export function matches(input: ResolvedPath, pattern: Pattern): boolean {
       const remaining = pattern.slice(posPattern);
 
       if (input.length - remaining.length < posInput) return false;
-      return startsWith(
-        input.slice(input.length - remaining.length),
-        remaining,
-      );
+      return startsWith(input.slice(input.length - remaining.length), remaining);
     }
 
     const part = pattern.slice(posPattern, indexStar);
@@ -55,8 +52,7 @@ export function matches(input: ResolvedPath, pattern: Pattern): boolean {
 
     posPattern = indexStar + 1;
 
-    while (posPattern < pattern.length && pattern[posPattern] === "*")
-      posPattern++;
+    while (posPattern < pattern.length && pattern[posPattern] === "*") posPattern++;
   }
 
   return true;

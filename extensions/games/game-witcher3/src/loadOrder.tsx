@@ -1,22 +1,23 @@
-/* eslint-disable */
-import React from 'react';
-import path from 'path';
-import { actions, fs, selectors, types, util } from 'vortex-api';
+import path from "path";
 
-import { ACTIVITY_ID_IMPORTING_LOADORDER, GAME_ID, LOCKED_PREFIX, UNI_PATCH } from './common';
-import InfoComponent from './views/InfoComponent';
-import IniStructure from './iniParser';
-import { PriorityManager } from './priorityManager';
-import { getPersistentLoadOrder } from './migrations';
-import { forceRefresh } from './util';
-import ItemRenderer from './views/ItemRenderer';
-import { IItemRendererProps } from './types';
+/* eslint-disable */
+import React from "react";
+import { actions, fs, selectors, types, util } from "vortex-api";
+
+import { ACTIVITY_ID_IMPORTING_LOADORDER, GAME_ID, LOCKED_PREFIX, UNI_PATCH } from "./common";
+import IniStructure from "./iniParser";
+import { getPersistentLoadOrder } from "./migrations";
+import { PriorityManager } from "./priorityManager";
+import { IItemRendererProps } from "./types";
+import { forceRefresh } from "./util";
+import InfoComponent from "./views/InfoComponent";
+import ItemRenderer from "./views/ItemRenderer";
 
 export interface IBaseProps {
   api: types.IExtensionApi;
   getPriorityManager: () => PriorityManager;
   onToggleModsState: (enable: boolean) => void;
-};
+}
 
 class TW3LoadOrder implements types.ILoadOrderGameInfo {
   public gameId: string;
@@ -24,7 +25,11 @@ class TW3LoadOrder implements types.ILoadOrderGameInfo {
   public clearStateOnPurge?: boolean | undefined;
   public usageInstructions?: React.ComponentType<{}>;
   public noCollectionGeneration?: boolean | undefined;
-  public customItemRenderer?: React.ComponentType<{ className?: string, item: IItemRendererProps, forwardedRef?: (ref: any) => void }>;
+  public customItemRenderer?: React.ComponentType<{
+    className?: string;
+    item: IItemRendererProps;
+    forwardedRef?: (ref: any) => void;
+  }>;
 
   private mApi: types.IExtensionApi;
   private mPriorityManager: PriorityManager;
@@ -34,9 +39,9 @@ class TW3LoadOrder implements types.ILoadOrderGameInfo {
     this.clearStateOnPurge = true;
     this.toggleableEntries = true;
     this.noCollectionGeneration = true;
-    this.usageInstructions = () => (<InfoComponent onToggleModsState={props.onToggleModsState} />);
+    this.usageInstructions = () => <InfoComponent onToggleModsState={props.onToggleModsState} />;
     this.customItemRenderer = (props) => {
-      return (<ItemRenderer className={props.className} item={props.item} />)
+      return <ItemRenderer className={props.className} item={props.item} />;
     };
     this.mApi = props.api;
     this.mPriorityManager = props.getPriorityManager();
@@ -46,18 +51,17 @@ class TW3LoadOrder implements types.ILoadOrderGameInfo {
   }
 
   public async serializeLoadOrder(loadOrder: types.LoadOrder): Promise<void> {
-    return IniStructure.getInstance(this.mApi, () => this.mPriorityManager)
-      .setINIStruct(loadOrder);
+    return IniStructure.getInstance(this.mApi, () => this.mPriorityManager).setINIStruct(loadOrder);
   }
 
-  private readableNames = { [UNI_PATCH]: 'Unification/Community Patch' };
+  private readableNames = { [UNI_PATCH]: "Unification/Community Patch" };
   public async deserializeLoadOrder(): Promise<types.LoadOrder> {
     const state = this.mApi.getState();
     const activeProfile = selectors.activeProfile(state);
     if (activeProfile?.id === undefined) {
       return Promise.resolve([]);
     }
-    const findName = (entry: { name: string, VK?: string }) => {
+    const findName = (entry: { name: string; VK?: string }) => {
       if (this.readableNames?.[entry.name] !== undefined) {
         return this.readableNames[entry.name];
       }
@@ -67,7 +71,11 @@ class TW3LoadOrder implements types.ILoadOrderGameInfo {
       }
 
       const state = this.mApi.getState();
-      const mods: { [modId: string]: types.IMod } = util.getSafe(state, ['persistent', 'mods', GAME_ID], {});
+      const mods: { [modId: string]: types.IMod } = util.getSafe(
+        state,
+        ["persistent", "mods", GAME_ID],
+        {},
+      );
       const mod: types.IMod = mods[entry.VK];
       if (mod === undefined) {
         return entry.name;
@@ -77,21 +85,31 @@ class TW3LoadOrder implements types.ILoadOrderGameInfo {
     };
 
     try {
-      const unsorted: { [key: string]: any } = await IniStructure.getInstance(this.mApi, () => this.mPriorityManager).readStructure();
-      const entries = Object.keys(unsorted).sort((a, b) => unsorted[a].Priority - unsorted[b].Priority).reduce((accum, iter, idx) => {
-        const entry = unsorted[iter];
-        accum[iter.startsWith(LOCKED_PREFIX) ? 'locked' : 'regular'].push({
-          id: iter,
-          name: findName({ name: iter, VK: entry.VK }),
-          enabled: entry.Enabled === '1',
-          modId: entry?.VK ?? iter,
-          locked: iter.startsWith(LOCKED_PREFIX),
-          data: {
-            prefix: iter.startsWith(LOCKED_PREFIX) ? accum.locked.length : entry?.Priority ?? idx + 1,
-          }
-        })
-        return accum;
-      }, { locked: [], regular: [] });
+      const unsorted: { [key: string]: any } = await IniStructure.getInstance(
+        this.mApi,
+        () => this.mPriorityManager,
+      ).readStructure();
+      const entries = Object.keys(unsorted)
+        .sort((a, b) => unsorted[a].Priority - unsorted[b].Priority)
+        .reduce(
+          (accum, iter, idx) => {
+            const entry = unsorted[iter];
+            accum[iter.startsWith(LOCKED_PREFIX) ? "locked" : "regular"].push({
+              id: iter,
+              name: findName({ name: iter, VK: entry.VK }),
+              enabled: entry.Enabled === "1",
+              modId: entry?.VK ?? iter,
+              locked: iter.startsWith(LOCKED_PREFIX),
+              data: {
+                prefix: iter.startsWith(LOCKED_PREFIX)
+                  ? accum.locked.length
+                  : (entry?.Priority ?? idx + 1),
+              },
+            });
+            return accum;
+          },
+          { locked: [], regular: [] },
+        );
       const finalEntries = [].concat(entries.locked, entries.regular);
       return Promise.resolve(finalEntries);
     } catch (err) {
@@ -99,49 +117,62 @@ class TW3LoadOrder implements types.ILoadOrderGameInfo {
     }
   }
 
-  public async validate(prev: types.LoadOrder, current: types.LoadOrder): Promise<types.IValidationResult> {
+  public async validate(
+    prev: types.LoadOrder,
+    current: types.LoadOrder,
+  ): Promise<types.IValidationResult> {
     return Promise.resolve(undefined);
   }
 }
 
-export async function importLoadOrder(api: types.IExtensionApi, collectionId: string): Promise<void> {
+export async function importLoadOrder(
+  api: types.IExtensionApi,
+  collectionId: string,
+): Promise<void> {
   // import load order from collection.
   const state = api.getState();
   api.sendNotification({
-    type: 'activity',
+    type: "activity",
     id: ACTIVITY_ID_IMPORTING_LOADORDER,
-    title: 'Importing Load Order',
-    message: 'Parsing collection data',
+    title: "Importing Load Order",
+    message: "Parsing collection data",
     allowSuppress: false,
     noDismiss: true,
   });
 
-  const mods: { [modId: string]: types.IMod } = util.getSafe(state, ['persistent', 'mods', GAME_ID], {});
+  const mods: { [modId: string]: types.IMod } = util.getSafe(
+    state,
+    ["persistent", "mods", GAME_ID],
+    {},
+  );
   const collectionMod = mods[collectionId];
   if (collectionMod?.installationPath === undefined) {
     api.dismissNotification(ACTIVITY_ID_IMPORTING_LOADORDER);
-    api.showErrorNotification('collection mod is missing', collectionId);
+    api.showErrorNotification("collection mod is missing", collectionId);
     return;
   }
 
   const stagingFolder = selectors.installPathForGame(state, GAME_ID);
   try {
     api.sendNotification({
-      type: 'activity',
+      type: "activity",
       id: ACTIVITY_ID_IMPORTING_LOADORDER,
-      title: 'Importing Load Order',
-      message: 'Ensuring mods are deployed...',
+      title: "Importing Load Order",
+      message: "Ensuring mods are deployed...",
       allowSuppress: false,
       noDismiss: true,
     });
-    await util.toPromise(cb => api.events.emit('deploy-mods', cb));
-    const fileData = await fs.readFileAsync(path.join(stagingFolder, collectionMod.installationPath, 'collection.json'), { encoding: 'utf8' });
+    await util.toPromise((cb) => api.events.emit("deploy-mods", cb));
+    const fileData = await fs.readFileAsync(
+      path.join(stagingFolder, collectionMod.installationPath, "collection.json"),
+      { encoding: "utf8" },
+    );
     const collection = JSON.parse(fileData);
     const loadOrder = collection?.loadOrder || {};
     if (Object.keys(loadOrder).length === 0) {
       api.sendNotification({
-        type: 'success',
-        message: 'Collection does not include load order to import',
+        type: "success",
+        message: "Collection does not include load order to import",
         displayMS: 3000,
       });
       return;
@@ -149,23 +180,24 @@ export async function importLoadOrder(api: types.IExtensionApi, collectionId: st
 
     const converted = getPersistentLoadOrder(api, loadOrder);
     api.sendNotification({
-      type: 'activity',
+      type: "activity",
       id: ACTIVITY_ID_IMPORTING_LOADORDER,
-      title: 'Importing Load Order',
-      message: 'Writing Load Order...',
+      title: "Importing Load Order",
+      message: "Writing Load Order...",
       allowSuppress: false,
       noDismiss: true,
     });
-    await IniStructure.getInstance().setINIStruct(converted)
+    await IniStructure.getInstance()
+      .setINIStruct(converted)
       .then(() => forceRefresh(api));
     api.sendNotification({
-      type: 'success',
-      message: 'Collection load order has been imported',
+      type: "success",
+      message: "Collection load order has been imported",
       displayMS: 3000,
     });
     return;
   } catch (err) {
-    api.showErrorNotification('Failed to import load order', err);
+    api.showErrorNotification("Failed to import load order", err);
     return;
   } finally {
     api.dismissNotification(ACTIVITY_ID_IMPORTING_LOADORDER);

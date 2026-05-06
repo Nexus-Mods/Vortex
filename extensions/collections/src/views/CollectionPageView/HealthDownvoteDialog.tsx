@@ -1,21 +1,16 @@
 import { IRevision } from "@nexusmods/nexus-api";
-import { useTranslation } from "react-i18next";
+import * as nexus from "@nexusmods/nexus-api";
 import * as React from "react";
 import { Button, Checkbox, FormGroup } from "react-bootstrap";
-import {
-  MainContext,
-  types,
-  Modal,
-  selectors,
-  util,
-} from "vortex-api";
-import { NAMESPACE } from "../../constants";
+import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { healthDownvoteDialog } from "../../actions/session";
-import { updateSuccessRate } from "../../actions/persistent";
-import * as nexus from "@nexusmods/nexus-api";
+import { MainContext, types, Modal, selectors, util } from "vortex-api";
 
-export interface IHealthDownvoteDialogProps { }
+import { updateSuccessRate } from "../../actions/persistent";
+import { healthDownvoteDialog } from "../../actions/session";
+import { NAMESPACE } from "../../constants";
+
+export interface IHealthDownvoteDialogProps {}
 
 function HealthDownvoteDialog(props: IHealthDownvoteDialogProps) {
   const [optionValue, setOptionValue] = React.useState(undefined);
@@ -33,9 +28,7 @@ function HealthDownvoteDialog(props: IHealthDownvoteDialogProps) {
   );
 
   const collection: types.IMod =
-    collectionId !== undefined
-      ? state.persistent.mods[gameId]?.[collectionId]
-      : undefined;
+    collectionId !== undefined ? state.persistent.mods[gameId]?.[collectionId] : undefined;
 
   let revisionInfo: IRevision;
   let collectionInfo;
@@ -43,14 +36,10 @@ function HealthDownvoteDialog(props: IHealthDownvoteDialogProps) {
   let bugLink = "#";
 
   if (collection?.attributes?.revisionId !== undefined) {
-    revisionInfo =
-      state.persistent.collections.revisions?.[collection.attributes.revisionId]
-        ?.info;
+    revisionInfo = state.persistent.collections.revisions?.[collection.attributes.revisionId]?.info;
 
     if (revisionInfo?.collection !== undefined) {
-      collectionInfo =
-        state.persistent.collections.collections?.[revisionInfo.collection.id]
-          ?.info;
+      collectionInfo = state.persistent.collections.collections?.[revisionInfo.collection.id]?.info;
       commentLink = collectionInfo?.["commentLink"] ?? "#";
       bugLink = !!collectionInfo
         ? `https://next.nexusmods.com/${collectionInfo.game.domainName}/collections/${collectionInfo.slug}?tab=Bugs`
@@ -76,20 +65,11 @@ function HealthDownvoteDialog(props: IHealthDownvoteDialogProps) {
     const revisionId = collection?.attributes?.revisionId ?? undefined;
     const vote = success ? "positive" : "negative";
     const voted: { success: boolean; averageRating?: nexus.IRating } = (
-      await context.api.emitAndAwait(
-        "rate-nexus-collection-revision",
-        revisionId,
-        vote,
-      )
+      await context.api.emitAndAwait("rate-nexus-collection-revision", revisionId, vote)
     )[0];
     if (voted.success) {
       dispatch(
-        updateSuccessRate(
-          revisionId,
-          vote,
-          voted.averageRating.average,
-          voted.averageRating.total,
-        ),
+        updateSuccessRate(revisionId, vote, voted.averageRating.average, voted.averageRating.total),
       );
     }
   };
@@ -112,20 +92,16 @@ function HealthDownvoteDialog(props: IHealthDownvoteDialogProps) {
         </p>
         <ol>
           <li>
-            Make sure your game version matches the game version the collection
-            was created for.
+            Make sure your game version matches the game version the collection was created for.
+          </li>
+          <li>Read the collection instructions and check if you've missed any steps.</li>
+          <li>
+            <a href={commentLink}>Check comments on Nexus Mods</a> for advice and to reach out to
+            the collection curator.
           </li>
           <li>
-            Read the collection instructions and check if you've missed any
-            steps.
-          </li>
-          <li>
-            <a href={commentLink}>Check comments on Nexus Mods</a> for advice
-            and to reach out to the collection curator.
-          </li>
-          <li>
-            <a href={bugLink}>View bug reports on Nexus Mods</a> or report a new
-            bug to help the curator fix the issue.
+            <a href={bugLink}>View bug reports on Nexus Mods</a> or report a new bug to help the
+            curator fix the issue.
           </li>
         </ol>
         <h5>
@@ -135,9 +111,7 @@ function HealthDownvoteDialog(props: IHealthDownvoteDialogProps) {
         </h5>
         <FormGroup>
           <Checkbox onChange={onChecked}>
-            {t(
-              "I have tried the above steps and confirm this collection does not work.",
-            )}
+            {t("I have tried the above steps and confirm this collection does not work.")}
           </Checkbox>
         </FormGroup>
       </Modal.Body>

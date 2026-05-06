@@ -15,10 +15,7 @@
     "saveNumber": 1,
     "creationTime": 1721758210,
     "playTime": "000.10.35",
-    "plugins": [
-      "FalloutNV.esm",
-      "FalloutNV_lang.esp"
-    ],
+    "plugins": ["FalloutNV.esm", "FalloutNV_lang.esp"],
     "screenshotSize": {
       "width": 512,
       "height": 320

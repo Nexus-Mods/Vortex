@@ -36,17 +36,13 @@ fs.stat(dlPath, (err) => {
   };
 
   if (err) {
-    download(
-      "http://www.fluffyquack.com/tools/ARCtool.rar",
-      dlPath,
-      (error) => {
-        if (error) {
-          console.error(error.message);
-          return;
-        }
-        extract();
-      },
-    );
+    download("http://www.fluffyquack.com/tools/ARCtool.rar", dlPath, (error) => {
+      if (error) {
+        console.error(error.message);
+        return;
+      }
+      extract();
+    });
   } else {
     extract();
   }

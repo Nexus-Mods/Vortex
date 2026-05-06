@@ -68,10 +68,9 @@ export const PickerDemo = () => {
         </Typography>
 
         <Typography appearance="subdued">
-          Single-value selection built on Headless UI Listbox. Use Picker when
-          the user needs to choose one value from a list, with the selected
-          option shown in the trigger button. Unlike Dropdown which triggers
-          actions, Picker manages selection state.
+          Single-value selection built on Headless UI Listbox. Use Picker when the user needs to
+          choose one value from a list, with the selected option shown in the trigger button. Unlike
+          Dropdown which triggers actions, Picker manages selection state.
         </Typography>
       </div>
 
@@ -81,12 +80,7 @@ export const PickerDemo = () => {
         </Typography>
 
         <div className="flex flex-wrap gap-4">
-          <Picker
-            options={colorOptions}
-            placement="left"
-            value={color}
-            onChange={setColor}
-          />
+          <Picker options={colorOptions} placement="left" value={color} onChange={setColor} />
         </div>
       </div>
 
@@ -96,17 +90,12 @@ export const PickerDemo = () => {
         </Typography>
 
         <Typography appearance="subdued" typographyType="body-sm">
-          Options can include icons via the iconPath prop. Multiple pickers can
-          be used together for related selections.
+          Options can include icons via the iconPath prop. Multiple pickers can be used together for
+          related selections.
         </Typography>
 
         <div className="flex flex-wrap gap-4">
-          <Picker
-            options={themeOptions}
-            placement="left"
-            value={theme}
-            onChange={setTheme}
-          />
+          <Picker options={themeOptions} placement="left" value={theme} onChange={setTheme} />
 
           <Picker
             options={languageOptions}
@@ -123,17 +112,12 @@ export const PickerDemo = () => {
         </Typography>
 
         <Typography appearance="subdued" typographyType="body-sm">
-          The value prop is generic and can be any type, including objects. Here
-          each sort option carries both a field name and direction.
+          The value prop is generic and can be any type, including objects. Here each sort option
+          carries both a field name and direction.
         </Typography>
 
         <div className="flex flex-wrap gap-4">
-          <Picker
-            options={sortOptions}
-            placement="left"
-            value={sortBy}
-            onChange={setSortBy}
-          />
+          <Picker options={sortOptions} placement="left" value={sortBy} onChange={setSortBy} />
         </div>
       </div>
 
@@ -142,24 +126,12 @@ export const PickerDemo = () => {
           Design Notes
         </Typography>
 
-        <Typography
-          appearance="subdued"
-          as="ul"
-          className="list-inside list-disc space-y-2"
-        >
-          <li>
-            The value prop accepts any type via generics — strings, numbers, or
-            objects
-          </li>
+        <Typography appearance="subdued" as="ul" className="list-inside list-disc space-y-2">
+          <li>The value prop accepts any type via generics — strings, numbers, or objects</li>
 
-          <li>
-            Selected option is shown in the trigger button with an unfold
-            chevron
-          </li>
+          <li>Selected option is shown in the trigger button with an unfold chevron</li>
 
-          <li>
-            A checkmark icon appears next to the currently selected option
-          </li>
+          <li>A checkmark icon appears next to the currently selected option</li>
 
           <li>Options can include icons via the iconPath or icon props</li>
         </Typography>

@@ -13,9 +13,7 @@ export const WindowsPath = {
 } as const;
 
 /** @public */
-export type WindowsPathBase =
-  | OSPathBase
-  | (typeof WindowsPath)[keyof typeof WindowsPath];
+export type WindowsPathBase = OSPathBase | (typeof WindowsPath)[keyof typeof WindowsPath];
 
 /** @public */
 export interface WindowsPathProvider extends PathProvider<WindowsPathBase> {

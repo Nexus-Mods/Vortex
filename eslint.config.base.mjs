@@ -8,13 +8,7 @@ import tseslint from "typescript-eslint";
 export const baseConfig = (tsconfigRootDir) =>
   defineConfig([
     {
-      ignores: [
-        "node_modules/**",
-        "dist/**",
-        "out/**",
-        "temp/**",
-        "coverage/**",
-      ],
+      ignores: ["node_modules/**", "dist/**", "out/**", "temp/**", "coverage/**"],
     },
 
     {
@@ -57,11 +51,7 @@ export const baseConfig = (tsconfigRootDir) =>
 
     {
       files: ["*.mjs"],
-      extends: [
-        eslint.configs.recommended,
-        tseslint.configs.recommended,
-        prettierConfig,
-      ],
+      extends: [eslint.configs.recommended, tseslint.configs.recommended, prettierConfig],
       languageOptions: {
         globals: { ...globals.node },
       },

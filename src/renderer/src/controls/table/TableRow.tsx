@@ -1,7 +1,10 @@
+import * as _ from "lodash";
+import * as React from "react";
+import { MenuItem } from "react-bootstrap";
+
 import type { IEditChoice, ITableAttribute } from "../../types/ITableAttribute";
 import type { TFunction } from "../../util/i18n";
 import { preT } from "../../util/i18n";
-
 import ContextMenu from "../ActionContextMenu";
 import ActionDropdown from "../ActionDropdown";
 import Dropdown, { DummyMenu } from "../Dropdown";
@@ -14,12 +17,7 @@ import type { ITableRowAction } from "../Table";
 import Toggle from "../Toggle";
 import { Button, IconButton } from "../TooltipControls";
 import VisibilityProxy from "../VisibilityProxy";
-
 import { TD, TR } from "./MyTable";
-
-import * as _ from "lodash";
-import * as React from "react";
-import { MenuItem } from "react-bootstrap";
 
 const ValueComponent = (props) => (
   <div className="Select-value" title={props.value.text}>
@@ -50,10 +48,7 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
     };
   }
 
-  public shouldComponentUpdate(
-    newProps: ICellProps,
-    newState: { isOpen: boolean },
-  ) {
+  public shouldComponentUpdate(newProps: ICellProps, newState: { isOpen: boolean }) {
     return (
       (newProps.attribute.customRenderer !== undefined &&
         this.props.rawData !== newProps.rawData) ||
@@ -79,19 +74,14 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
         }) || null;
       content =
         attrControl !== null ? (
-          <ExtensionGate id={`extension-${rowId}-${attribute.id}`}>
-            {attrControl}
-          </ExtensionGate>
+          <ExtensionGate id={`extension-${rowId}-${attribute.id}`}>{attrControl}</ExtensionGate>
         ) : null;
     } else {
       content = this.renderDefault();
     }
 
     return attribute.isExtensible ? (
-      <ExtensibleControl
-        group={`${tableId}-${attribute.id}`}
-        wrapperProps={{ rowId }}
-      >
+      <ExtensibleControl group={`${tableId}-${attribute.id}`} wrapperProps={{ rowId }}>
         {content}
       </ExtensibleControl>
     ) : (
@@ -104,10 +94,7 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
 
     if (data === undefined || data === null) {
       return <span> </span>;
-    } else if (
-      attribute.edit.onChangeValue !== undefined &&
-      attribute.edit.inline
-    ) {
+    } else if (attribute.edit.onChangeValue !== undefined && attribute.edit.inline) {
       if (attribute.edit.choices !== undefined) {
         return this.renderChoices(data);
       }
@@ -115,10 +102,7 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
       const cellType = typeof data;
       if (cellType === "string") {
         return <span>{data}</span>;
-      } else if (
-        cellType === "number" &&
-        attribute.edit.onChangeValue !== undefined
-      ) {
+      } else if (cellType === "number" && attribute.edit.onChangeValue !== undefined) {
         return (
           <FormInput
             value={data}
@@ -152,11 +136,7 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
         }
       } else if (cellType === "object" && data instanceof Date) {
         return (
-          <span>
-            {data !== undefined
-              ? data.toLocaleString(language)
-              : t("Not installed")}
-          </span>
+          <span>{data !== undefined ? data.toLocaleString(language) : t("Not installed")}</span>
         );
       }
     }
@@ -200,15 +180,12 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
         </Button>
         <Dropdown.Toggle
           className={
-            `toggle-${tableId}-${attribute.id} ` +
-            `toggle-${tableId}-${attribute.id}-${key}`
+            `toggle-${tableId}-${attribute.id} ` + `toggle-${tableId}-${attribute.id}-${key}`
           }
         />
         {this.state.isOpen ? (
           <Dropdown.Menu onSelect={this.changeCell}>
-            {choices
-              .filter((choice) => choice.visible !== false)
-              .map(this.renderChoice)}
+            {choices.filter((choice) => choice.visible !== false).map(this.renderChoice)}
           </Dropdown.Menu>
         ) : (
           <DummyMenu />
@@ -222,15 +199,9 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
 
     const choices = attribute.edit.choices(rawData);
 
-    if (
-      choices.length === 2 &&
-      choices[0].bool !== undefined &&
-      choices[1].bool !== undefined
-    ) {
+    if (choices.length === 2 && choices[0].bool !== undefined && choices[1].bool !== undefined) {
       // special case where we have exactly two choices: true and false
-      const currentChoice: IEditChoice = choices.find(
-        (choice) => choice.bool === data,
-      );
+      const currentChoice: IEditChoice = choices.find((choice) => choice.bool === data);
 
       return (
         <Toggle
@@ -239,12 +210,9 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
         />
       );
     } else {
-      const currentChoice: IEditChoice = choices.find(
-        (choice) => choice.text === data,
-      );
+      const currentChoice: IEditChoice = choices.find((choice) => choice.text === data);
 
-      const choiceKey =
-        currentChoice !== undefined ? currentChoice.key : undefined;
+      const choiceKey = currentChoice !== undefined ? currentChoice.key : undefined;
       return (
         <SelectUpDown
           options={choices}
@@ -418,9 +386,7 @@ class TableRow extends React.Component<IRowProps, IRowState> {
     if (this.props.visible) {
       inlines.forEach((extra) => {
         res.push(
-          <tr key={data.__id + "_extra_" + extra.id}>
-            {this.renderAttributeExtra(extra)}
-          </tr>,
+          <tr key={data.__id + "_extra_" + extra.id}>{this.renderAttributeExtra(extra)}</tr>,
         );
       });
     }
@@ -501,13 +467,7 @@ class TableRow extends React.Component<IRowProps, IRowState> {
 
     return (
       <TD className={classes.join(" ")} key={attribute.id}>
-        {this.renderCell(
-          attribute,
-          rawData,
-          data[attribute.id],
-          t,
-          index >= arr.length / 2,
-        )}
+        {this.renderCell(attribute, rawData, data[attribute.id], t, index >= arr.length / 2)}
       </TD>
     );
   };

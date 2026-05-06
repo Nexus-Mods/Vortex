@@ -1,16 +1,10 @@
 import * as Redux from "redux";
 import { actions, types, util } from "vortex-api";
 
-function applyDefaultInstallMode(
-  prev: { [attrId: string]: any },
-  mod: types.IMod,
-) {
+function applyDefaultInstallMode(prev: { [attrId: string]: any }, mod: types.IMod) {
   if (prev?.installMode?.[mod.id] === undefined) {
     const { installerChoices } = mod?.attributes ?? {};
-    if (
-      installerChoices?.type === "fomod" &&
-      installerChoices?.options?.length > 0
-    ) {
+    if (installerChoices?.type === "fomod" && installerChoices?.options?.length > 0) {
       prev = util.setSafe(prev, ["installMode", mod.id], "choices");
     }
   }
@@ -45,19 +39,12 @@ export function genDefaultsAction(
     return undefined;
   }
   const state = api.getState();
-  const collection = util.getSafe(
-    state,
-    ["persistent", "mods", gameId, collectionId],
-    undefined,
-  );
+  const collection = util.getSafe(state, ["persistent", "mods", gameId, collectionId], undefined);
   if (collection === undefined) {
     const error = new util.ProcessCanceled("Unable to find collection mod", {
       collectionId: collection.id,
     });
-    api.showErrorNotification(
-      "Failed to ascertain default install mode",
-      error,
-    );
+    api.showErrorNotification("Failed to ascertain default install mode", error);
     return undefined;
   }
 

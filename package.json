@@ -13,6 +13,7 @@
     "yarn": "1.22.19"
   },
   "scripts": {
+    "prepare": "husky",
     "preinstall": "npx only-allow pnpm",
     "start": "pnpm -F @vortex/main run start",
     "build": "pnpm run typecheck && pnpm --filter \"@vortex/*\" --filter \"@nexusmods/*\" -r run build",
@@ -42,6 +43,9 @@
     "e2e:debug": "pnpm -F @vortex/e2e run test:debug",
     "generate:query-types": "npx tsx scripts/generate-query-types.ts"
   },
+  "lint-staged": {
+    "*": "pnpm oxfmt --no-error-on-unmatched-pattern"
+  },
   "devDependencies": {
     "@eslint-react/eslint-plugin": "catalog:",
     "@eslint/js": "catalog:",
@@ -67,6 +71,8 @@
     "fork-ts-checker-webpack-plugin": "catalog:",
     "glob": "catalog:",
     "globals": "catalog:",
+    "husky": "catalog:",
+    "lint-staged": "catalog:",
     "minimist": "catalog:",
     "oxfmt": "catalog:",
     "p-limit": "catalog:",

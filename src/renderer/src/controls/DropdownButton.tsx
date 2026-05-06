@@ -66,13 +66,7 @@ function MyDropdownButton(props: IProps) {
     node.current = ReactDOM.findDOMNode(newRef) as Element;
   }, []);
 
-  const relayProps: any = _.omit(props, [
-    "container",
-    "dropup",
-    "onToggle",
-    "split",
-    "children",
-  ]);
+  const relayProps: any = _.omit(props, ["container", "dropup", "onToggle", "split", "children"]);
 
   const Comp: any = props.split ? SplitButton : DropdownButton;
 

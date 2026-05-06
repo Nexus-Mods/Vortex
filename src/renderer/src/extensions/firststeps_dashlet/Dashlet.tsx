@@ -1,17 +1,16 @@
-import Dashlet from "../../controls/Dashlet";
-import Icon from "../../controls/Icon";
-import { IconButton } from "../../controls/TooltipControls";
-import type { II18NProps } from "../../types/II18NProps";
-import { ComponentEx, connect, translate } from "../../controls/ComponentEx";
-
-import { dismissStep } from "./actions";
-import type { IToDo } from "./IToDo";
-
 import type { TFunction } from "i18next";
 import * as _ from "lodash";
 import * as React from "react";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
+
+import { ComponentEx, connect, translate } from "../../controls/ComponentEx";
+import Dashlet from "../../controls/Dashlet";
+import Icon from "../../controls/Icon";
+import { IconButton } from "../../controls/TooltipControls";
+import type { II18NProps } from "../../types/II18NProps";
+import { dismissStep } from "./actions";
+import type { IToDo } from "./IToDo";
 
 interface ITodoProps {
   t: TFunction;
@@ -23,27 +22,13 @@ interface ITodoProps {
 class Todo extends React.PureComponent<ITodoProps, {}> {
   public render(): JSX.Element {
     const { t, extensionProps, todo } = this.props;
-    const text: JSX.Element = this.resolveElement(
-      todo.text as string,
-      "todo-text",
-    );
-    const value: JSX.Element = this.resolveElement(
-      todo.value as string,
-      "todo-value",
-    );
+    const text: JSX.Element = this.resolveElement(todo.text as string, "todo-text");
+    const value: JSX.Element = this.resolveElement(todo.value as string, "todo-value");
     const icon =
-      typeof todo.icon === "string" ? (
-        <Icon name={todo.icon} />
-      ) : (
-        todo.icon(extensionProps)
-      );
+      typeof todo.icon === "string" ? <Icon name={todo.icon} /> : todo.icon(extensionProps);
 
     return (
-      <div
-        key={todo.id}
-        className={`todo todo-${todo.type}`}
-        onClick={this.action}
-      >
+      <div key={todo.id} className={`todo todo-${todo.type}`} onClick={this.action}>
         {icon}
         {text}
         {value}
@@ -130,9 +115,7 @@ class TodoDashlet extends ComponentEx<IProps, {}> {
       }
     });
 
-    visibleSteps.sort(
-      (lhs, rhs) => (lhs.priority || 100) - (rhs.priority || 100),
-    );
+    visibleSteps.sort((lhs, rhs) => (lhs.priority || 100) - (rhs.priority || 100));
 
     return (
       <Dashlet title={t("Let's get you set up")} className="dashlet-todo">
@@ -170,9 +153,7 @@ function mapStateToProps(state: any, ownProps: IBaseProps): IConnectedState {
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, null, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onDismissStep: (step: string) => dispatch(dismissStep(step)),
   };

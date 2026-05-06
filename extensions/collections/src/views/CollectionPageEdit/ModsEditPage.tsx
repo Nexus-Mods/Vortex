@@ -1,13 +1,9 @@
-import { ICollectionSourceInfo, SourceType } from "../../types/ICollection";
+import * as path from "path";
 
 import type { TFunction } from "i18next";
 import * as _ from "lodash";
-import * as path from "path";
 import * as React from "react";
 import { Button } from "react-bootstrap";
-
-import InstallModeRenderer from "./InstallModeRenderer";
-
 import {
   ComponentEx,
   EmptyPlaceholder,
@@ -23,7 +19,10 @@ import {
   Usage,
   util,
 } from "vortex-api";
+
 import { ADULT_CONTENT_URL, INSTRUCTIONS_PLACEHOLDER } from "../../constants";
+import { ICollectionSourceInfo, SourceType } from "../../types/ICollection";
+import InstallModeRenderer from "./InstallModeRenderer";
 
 export interface IModsPageProps {
   t: TFunction;
@@ -132,9 +131,7 @@ function sortCategories(
 const coerceableRE = /^v?[0-9.]+$/;
 
 function safeCoerce(input: string): string {
-  return coerceableRE.test(input)
-    ? (util.coerceToSemver(input) ?? input)
-    : input;
+  return coerceableRE.test(input) ? (util.coerceToSemver(input) ?? input) : input;
 }
 
 class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
@@ -150,9 +147,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
       singleRowAction: false,
       multiRowAction: true,
       condition: (instanceIds: string[]) =>
-        instanceIds.find(
-          (id) => this.state.entries[id]?.rule?.type === "recommends",
-        ) !== undefined,
+        instanceIds.find((id) => this.state.entries[id]?.rule?.type === "recommends") !== undefined,
       action: (instanceIds: string[]) => {
         const { onAddRule, onRemoveRule } = this.props;
         const { entries } = this.state;
@@ -172,9 +167,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
       singleRowAction: false,
       multiRowAction: true,
       condition: (instanceIds: string[]) =>
-        instanceIds.find(
-          (id) => this.state.entries[id]?.rule?.type === "requires",
-        ) !== undefined,
+        instanceIds.find((id) => this.state.entries[id]?.rule?.type === "requires") !== undefined,
       action: (instanceIds: string[]) => {
         const { onAddRule, onRemoveRule } = this.props;
         const { entries } = this.state;
@@ -196,9 +189,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
       action: (instanceIds: string[]) => {
         const { onSetCollectionAttribute, collection } = this.props;
 
-        const refMode =
-          collection.attributes?.collection?.installMode?.[instanceIds[0]] ??
-          "fresh";
+        const refMode = collection.attributes?.collection?.installMode?.[instanceIds[0]] ?? "fresh";
 
         this.context.api
           .showDialog(
@@ -224,9 +215,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
           )
           .then((result) => {
             if (result.action === "Apply") {
-              const selected = Object.keys(result.input).find(
-                (iter) => result.input[iter],
-              );
+              const selected = Object.keys(result.input).find((iter) => result.input[iter]);
               instanceIds.forEach((modId) => {
                 onSetCollectionAttribute(["installMode", modId], selected);
               });
@@ -263,9 +252,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
               const { onAddRule, onRemoveRule } = this.props;
               const { entries } = this.state;
 
-              const selected = Object.keys(result.input).find(
-                (iter) => result.input[iter],
-              );
+              const selected = Object.keys(result.input).find((iter) => result.input[iter]);
               instanceIds.forEach((modId) => {
                 const entry = entries[modId];
                 if (entry.mod !== undefined) {
@@ -292,9 +279,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
       multiRowAction: true,
       action: (instanceIds: string[]) => {
         const { entries } = this.state;
-        const filteredIds = instanceIds.filter(
-          (id) => entries[id] !== undefined,
-        );
+        const filteredIds = instanceIds.filter((id) => entries[id] !== undefined);
 
         this.context.api.showDialog(
           "question",
@@ -423,10 +408,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
             <>
               {hasHighlight ? (
                 <Icon
-                  className={
-                    "highlight-base " +
-                    (color !== "" ? color : "highlight-default")
-                  }
+                  className={"highlight-base " + (color !== "" ? color : "highlight-default")}
                   name={icon !== "" ? icon : "highlight"}
                 />
               ) : null}
@@ -452,19 +434,11 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
           const icon = entry.mod.attributes?.icon ?? "";
           const problems = this.state.problems[entry.mod.id] || [];
 
-          return [
-            color,
-            icon,
-            problems.length > 0 ? "has-problems" : "no-problems",
-          ];
+          return [color, icon, problems.length > 0 ? "has-problems" : "no-problems"];
         },
         placement: "table",
         edit: {},
-        filter: new OptionsFilter(
-          [{ value: "has-problems", label: "Has Problems" }],
-          false,
-          false,
-        ),
+        filter: new OptionsFilter([{ value: "has-problems", label: "Has Problems" }], false, false),
       },
       {
         id: "category",
@@ -515,8 +489,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
       {
         id: "required",
         name: "Required",
-        description:
-          "Whether the entire collection will fail if this mod is missing",
+        description: "Whether the entire collection will fail if this mod is missing",
         calc: (mod: IModEntry) => {
           return mod.rule.type === "requires" ? true : false;
         },
@@ -539,7 +512,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
         isGroupable: true,
         groupName: (required: "required" | false) => {
           const { t } = this.props;
-          return required ? t("Required") : t("Optional")
+          return required ? t("Required") : t("Optional");
         },
         filter: new OptionsFilter(
           [
@@ -568,8 +541,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
         edit: {
           inline: true,
           actions: false,
-          choices: () =>
-            Object.keys(SOURCES).map((key) => ({ key, text: SOURCES[key] })),
+          choices: () => Object.keys(SOURCES).map((key) => ({ key, text: SOURCES[key] })),
           onChangeValue: (entry: IModEntry, value: any) => {
             const id = entry.mod?.id ?? entry.rule?.reference?.id;
             if (id !== undefined) {
@@ -611,9 +583,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
           return (
             <tooltip.IconButton
               icon="edit"
-              disabled={
-                entry.mod === undefined || ["nexus", "bundle"].includes(type)
-              }
+              disabled={entry.mod === undefined || ["nexus", "bundle"].includes(type)}
               tooltip={t("Edit Source")}
               data-modid={id}
               onClick={this.onQuerySource}
@@ -630,17 +600,13 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
           const id = entry.mod?.id ?? entry.rule?.reference?.id;
           const version = entry.mod?.attributes?.["version"] ?? t("N/A");
 
-          if (
-            collection.attributes?.collection?.source?.[id]?.type === "bundle"
-          ) {
+          if (collection.attributes?.collection?.source?.[id]?.type === "bundle") {
             return t("Exact only ({{version}})", { replace: { version } });
           }
 
           if (entry.rule.reference.versionMatch === "*") {
             return t("Latest");
-          } else if (
-            (entry.rule.reference.versionMatch || "").endsWith("+prefer")
-          ) {
+          } else if ((entry.rule.reference.versionMatch || "").endsWith("+prefer")) {
             return t("Prefer exact ({{version}})", { replace: { version } });
           } else {
             return t("Exact only ({{version}})", { replace: { version } });
@@ -655,9 +621,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
             const id = entry.mod?.id ?? entry.rule?.reference?.id;
             const version = entry.mod?.attributes?.["version"] ?? t("N/A");
 
-            if (
-              collection.attributes?.collection?.source?.[id]?.type === "bundle"
-            ) {
+            if (collection.attributes?.collection?.source?.[id]?.type === "bundle") {
               return [
                 {
                   key: "exact",
@@ -699,17 +663,13 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
           const { t, collection } = this.props;
           const id = entry.mod?.id ?? entry.rule?.reference?.id;
 
-          if (
-            collection.attributes?.collection?.source?.[id]?.type === "bundle"
-          ) {
+          if (collection.attributes?.collection?.source?.[id]?.type === "bundle") {
             return t("Exact only");
           }
 
           if (entry.rule.reference.versionMatch === "*") {
             return t("Latest");
-          } else if (
-            (entry.rule.reference.versionMatch || "").endsWith("+prefer")
-          ) {
+          } else if ((entry.rule.reference.versionMatch || "").endsWith("+prefer")) {
             return t("Prefer exact");
           } else {
             return t("Exact only");
@@ -729,9 +689,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
           const { collection } = this.props;
           const id = entry.mod?.id ?? entry.rule?.reference?.id;
 
-          if (
-            collection.attributes?.collection?.source?.[id]?.type === "bundle"
-          ) {
+          if (collection.attributes?.collection?.source?.[id]?.type === "bundle") {
             return INSTALL_MODES["clone"];
           }
 
@@ -805,23 +763,16 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
             return null;
           }
 
-          return collection.attributes?.collection?.instructions?.[
-            entry.mod.id
-          ];
+          return collection.attributes?.collection?.instructions?.[entry.mod.id];
         },
-        customRenderer: (
-          entry: IModEntry,
-          detailCell: boolean,
-          t: types.TFunction,
-        ) => {
+        customRenderer: (entry: IModEntry, detailCell: boolean, t: types.TFunction) => {
           const { collection } = this.props;
 
           if (entry.mod === undefined) {
             return null;
           }
 
-          const instructions =
-            collection.attributes?.collection?.instructions?.[entry.mod.id];
+          const instructions = collection.attributes?.collection?.instructions?.[entry.mod.id];
           return instructions ? (
             <tooltip.IconButton
               icon="edit"
@@ -848,15 +799,14 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
         isGroupable: true,
         groupName: (instructions: string) => {
           const { t } = this.props;
-          return instructions ? t("Has Instructions") : t("<No Instructions>")
+          return instructions ? t("Has Instructions") : t("<No Instructions>");
         },
       },
       {
         id: "local_edits",
         name: "Binary Patching",
         icon: "edit",
-        help:
-          "With this option enabled, any changes you did to the files in this mods will also be included in the Collection.",
+        help: "With this option enabled, any changes you did to the files in this mods will also be included in the Collection.",
         placement: "table",
         calc: (entry: IModEntry) => {
           const { collection } = this.props;
@@ -865,10 +815,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
             return false;
           }
 
-          return (
-            collection.attributes?.collection?.saveEdits?.[entry.mod.id] ??
-            false
-          );
+          return collection.attributes?.collection?.saveEdits?.[entry.mod.id] ?? false;
         },
         edit: {
           choices: () => [
@@ -918,17 +865,13 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
                   }
 
                   const gameMode = selectors.activeGameId(state);
-                  const archive =
-                    state.persistent.downloads.files[source.mod.archiveId];
+                  const archive = state.persistent.downloads.files[source.mod.archiveId];
                   const dlPath = selectors.downloadPathForGame(state, gameMode);
                   if (archive !== undefined) {
                     try {
                       await fs.statAsync(path.join(dlPath, archive.localPath));
                       // await scanForDiffs(this.context.api, gameMode, source.mod.id);
-                      this.props.onSetCollectionAttribute(
-                        ["saveEdits", source.mod.id],
-                        value,
-                      );
+                      this.props.onSetCollectionAttribute(["saveEdits", source.mod.id], value);
                     } catch (err) {
                       if (err.code === "ENOENT") {
                         this.context.api.showErrorNotification(
@@ -947,10 +890,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
                   }
                 }
               } else {
-                this.props.onSetCollectionAttribute(
-                  ["saveEdits", source.mod.id],
-                  value,
-                );
+                this.props.onSetCollectionAttribute(["saveEdits", source.mod.id], value);
               }
             })();
           },
@@ -959,7 +899,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
         isGroupable: true,
         groupName: (saveEdits: "" | true) => {
           const { t } = this.props;
-          return saveEdits ? t("Has Binary Patching") : t("<No Binary Patching>")
+          return saveEdits ? t("Has Binary Patching") : t("<No Binary Patching>");
         },
         filter: new OptionsFilter(
           [
@@ -995,10 +935,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
   }
 
   public UNSAFE_componentWillReceiveProps(newProps: IProps) {
-    if (
-      newProps.mods !== this.props.mods ||
-      newProps.collection !== this.props.collection
-    ) {
+    if (newProps.mods !== this.props.mods || newProps.collection !== this.props.collection) {
       const entries = this.generateEntries(newProps);
       this.nextState.entries = entries;
       this.nextState.problems = this.checkProblems(newProps, entries);
@@ -1011,11 +948,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
 
     const addModsButton = () => {
       return (
-        <Button
-          id="btn-more-mods"
-          className="collection-add-mods-btn"
-          onClick={this.addMods}
-        >
+        <Button id="btn-more-mods" className="collection-add-mods-btn" onClick={this.addMods}>
           <Icon name="add" />
           {t("Add more mods")}
         </Button>
@@ -1087,10 +1020,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
 
   private categorySort() {
     const state: types.IState = this.context.api.getState();
-    return (
-      state.settings.tables.mods.attributes?.["category"]?.sortDirection ??
-      "none"
-    );
+    return state.settings.tables.mods.attributes?.["category"]?.sortDirection ?? "none";
   }
 
   private addMods = () => {
@@ -1108,10 +1038,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
     return Object.values(collection.rules)
       .filter((rule) => ["requires", "recommends"].indexOf(rule.type) !== -1)
       .reduce((prev, rule) => {
-        const mod = util.findModByRef(
-          _.omit(rule.reference, ["versionMatch"]),
-          mods,
-        );
+        const mod = util.findModByRef(_.omit(rule.reference, ["versionMatch"]), mods);
         const id = mod?.id ?? rule.reference.id ?? rule.reference.idHint;
         if (id !== undefined) {
           prev[id] = { rule, mod };
@@ -1125,8 +1052,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
     entries: { [modId: string]: IModEntry },
   ): { [modId: string]: IProblem[] } {
     return Object.values(entries).reduce((prev, entry) => {
-      const id =
-        entry.mod?.id ?? entry.rule.reference.id ?? entry.rule.reference.idHint;
+      const id = entry.mod?.id ?? entry.rule.reference.id ?? entry.rule.reference.idHint;
       if (id !== undefined) {
         prev[id] = this.updateProblems(props, entry);
       }
@@ -1147,16 +1073,14 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
 
     const source = attributes?.source?.[entry.mod.id];
     const sourceType: string = source?.type ?? "nexus";
-    const installMode: string =
-      attributes?.installMode?.[entry.mod.id] ?? "fresh";
+    const installMode: string = attributes?.installMode?.[entry.mod.id] ?? "fresh";
     const saveEdits: boolean = attributes?.saveEdits?.[entry.mod.id] ?? false;
 
     const { versionMatch } = entry.rule.reference;
 
     if (
       sourceType === "nexus" &&
-      (isNaN(entry.mod.attributes?.modId) ||
-        isNaN(entry.mod.attributes?.fileId))
+      (isNaN(entry.mod.attributes?.modId) || isNaN(entry.mod.attributes?.fileId))
     ) {
       res.push({
         type: "invalid-ids",
@@ -1171,10 +1095,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
       });
     }
 
-    if (
-      (versionMatch === "*" || versionMatch?.endsWith?.("+prefer")) &&
-      installMode === "clone"
-    ) {
+    if ((versionMatch === "*" || versionMatch?.endsWith?.("+prefer")) && installMode === "clone") {
       res.push({
         type: "replicate-fuzzy-version",
         summary: t('"Replicate" requires "Exact only" as the version'),
@@ -1188,9 +1109,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
     if (versionMatch === "*" && installMode === "choices") {
       res.push({
         type: "choices-fuzzy-version",
-        summary: t(
-          '"Same Installer Options" should not be used with "Latest" version',
-        ),
+        summary: t('"Same Installer Options" should not be used with "Latest" version'),
         message: t(
           'Installing with "Same Installer Options" may break if the mod gets updated. ' +
             'You may want to switch to "Exact only" to be safe.',
@@ -1198,10 +1117,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
       });
     }
 
-    if (
-      sourceType === "bundle" &&
-      (versionMatch === "*" || versionMatch?.endsWith?.("+prefer"))
-    ) {
+    if (sourceType === "bundle" && (versionMatch === "*" || versionMatch?.endsWith?.("+prefer"))) {
       res.push({
         type: "bundled-fuzzy-version",
         summary: t('Version choice has no effect on "Bundled" mod'),
@@ -1214,9 +1130,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
       if (versionMatch?.endsWith?.("+prefer")) {
         res.push({
           type: "web-fuzzy-version",
-          summary: t(
-            "Version choice has no effect on mods using generic download.",
-          ),
+          summary: t("Version choice has no effect on mods using generic download."),
           message: t(
             'The option to "prefer exact" version only works with sources that ' +
               "support mod updates (Nexus Mods). For other sources your options " +
@@ -1254,9 +1168,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
       if (sourceType === "bundle") {
         res.push({
           type: "local-edits-bundle",
-          summary: t(
-            "Combining the option to save edits and bundling makes no sense.",
-          ),
+          summary: t("Combining the option to save edits and bundling makes no sense."),
           message: t(
             'The option to "bundle" already bundles the edited files, storing ' +
               "the edits separately would not be useful as they can't and " +
@@ -1268,9 +1180,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
       if (installMode === "clone") {
         res.push({
           type: "replicate-vs-binpatch",
-          summary: t(
-            '"Replicate" installation can\'t be combined with "Binary patching"',
-          ),
+          summary: t('"Replicate" installation can\'t be combined with "Binary patching"'),
           message: t(
             '"Replicate" depends on files being unchanged ' +
               "from the originals in the archive. If you modified mod files " +
@@ -1293,9 +1203,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
     } else if (sourceType === "direct") {
       res.push({
         type: "direct-download",
-        summary: t(
-          "Please verify you are allowed to do direct downloads on this site",
-        ),
+        summary: t("Please verify you are allowed to do direct downloads on this site"),
         message: t(
           "Most websites don't allow direct downloads. Please make sure you are " +
             "allowed to use direct links to the specified page.",
@@ -1390,18 +1298,12 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
   private setPreferVersion(entry: IModEntry) {
     this.props.onRemoveRule(entry.rule);
     const newRule = _.cloneDeep(entry.rule);
-    newRule.reference.versionMatch =
-      ">=" + safeCoerce(entry.mod.attributes["version"]) + "+prefer";
+    newRule.reference.versionMatch = ">=" + safeCoerce(entry.mod.attributes["version"]) + "+prefer";
     this.props.onAddRule(newRule);
   }
 
   private setPhase = (mod: IModEntry, phase: number) => {
-    const {
-      onAddRule,
-      onDismissPhaseUsage,
-      onShowPhaseColumn,
-      showPhaseUsage,
-    } = this.props;
+    const { onAddRule, onDismissPhaseUsage, onShowPhaseColumn, showPhaseUsage } = this.props;
 
     const impl = async () => {
       const newRule = _.cloneDeep(mod.rule);
@@ -1459,14 +1361,8 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
     const solutions: Map<ProblemType, () => void> = new Map([
       ["invalid-ids", () => this.fixInvalidIds(api, mod)],
       ["no-version-set", () => this.fixMissingVersion(api, mod)],
-      [
-        "replicate-fuzzy-version",
-        () => this.setCurrentVersion(this.state.entries[modId]),
-      ],
-      [
-        "choices-fuzzy-version",
-        () => this.setPreferVersion(this.state.entries[modId]),
-      ],
+      ["replicate-fuzzy-version", () => this.setCurrentVersion(this.state.entries[modId])],
+      ["choices-fuzzy-version", () => this.setPreferVersion(this.state.entries[modId])],
     ]);
 
     const modName = util.renderModName(mod);
@@ -1586,8 +1482,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
     const { collection, onSetCollectionAttribute } = this.props;
     const modId = evt.currentTarget.getAttribute("data-modid");
 
-    const value =
-      collection.attributes?.collection?.instructions?.[modId] ?? "";
+    const value = collection.attributes?.collection?.instructions?.[modId] ?? "";
 
     this.context.api
       .showDialog(
@@ -1614,10 +1509,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
       )
       .then((result) => {
         if (result.action === "Save") {
-          onSetCollectionAttribute(
-            ["instructions", modId],
-            result.input["instructions"],
-          );
+          onSetCollectionAttribute(["instructions", modId], result.input["instructions"]);
         }
       });
   };
@@ -1625,8 +1517,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
   private onQuerySource = (evt: React.MouseEvent<any>) => {
     const { collection } = this.props;
     const modId = evt.currentTarget.getAttribute("data-modid");
-    const type =
-      collection.attributes?.collection?.source?.[modId]?.type ?? "nexus";
+    const type = collection.attributes?.collection?.source?.[modId]?.type ?? "nexus";
 
     return this.querySource(modId, type);
   };

@@ -1,7 +1,6 @@
 import type { IExtensionContext } from "../../types/IExtensionContext";
 import local from "../../util/local";
 import { wrapExtCBAsync } from "../../util/util";
-
 import GameVersionManager from "./GameVersionManager";
 import type {
   GameVersionProviderFunc,
@@ -42,13 +41,9 @@ function init(context: IExtensionContext): boolean {
       getGameVersion,
     });
     if (errors !== null) {
-      context.api.showErrorNotification(
-        "Invalid game version provider",
-        errors,
-        {
-          message: "A game version provider has failed to initialize",
-        },
-      );
+      context.api.showErrorNotification("Invalid game version provider", errors, {
+        message: "A game version provider has failed to initialize",
+      });
       return;
     }
     gameVersionProviders.push({
@@ -61,12 +56,7 @@ function init(context: IExtensionContext): boolean {
     gameVersionProviders.sort((lhs, rhs) => lhs.priority - rhs.priority);
   }) as any;
 
-  context.registerGameVersionProvider(
-    "ext-version-check",
-    20,
-    testExtProvider,
-    getExtGameVersion,
-  );
+  context.registerGameVersionProvider("ext-version-check", 20, testExtProvider, getExtGameVersion);
   context.registerGameVersionProvider(
     "exec-version-check",
     100,
@@ -81,10 +71,7 @@ function init(context: IExtensionContext): boolean {
   );
 
   context.once(() => {
-    $.gameVersionManager = new GameVersionManager(
-      context.api,
-      gameVersionProviders,
-    );
+    $.gameVersionManager = new GameVersionManager(context.api, gameVersionProviders);
   });
 
   return true;

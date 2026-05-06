@@ -1,6 +1,5 @@
 import type { IMessage, IMessageHandler } from "@nexusmods/adaptor-api";
 import type { FileSystem, Pattern, Status } from "@nexusmods/adaptor-api/fs";
-
 import { QualifiedPath } from "@nexusmods/adaptor-api/fs";
 
 interface EnumerateOptions {
@@ -65,10 +64,7 @@ export function createFileSystemServiceHandler(
   const cursors = new Map<string, CursorEntry>();
   let cursorCounter = 0;
 
-  async function dispatchFlat(
-    method: string,
-    args: unknown[],
-  ): Promise<unknown> {
+  async function dispatchFlat(method: string, args: unknown[]): Promise<unknown> {
     switch (method) {
       case "copy": {
         const [s, d, o] = args as [unknown, unknown, { overwrite: boolean }?];
@@ -95,19 +91,13 @@ export function createFileSystemServiceHandler(
         await fs.deleteRecursive(rehydrate(args[0]));
         return;
       case "stat":
-        return fs.stat(
-          rehydrate(args[0]),
-          args[1] as { parseSymLink: boolean } | undefined,
-        );
+        return fs.stat(rehydrate(args[0]), args[1] as { parseSymLink: boolean } | undefined);
       default:
         throw new Error(`Unknown filesystem method: ${method}`);
     }
   }
 
-  async function dispatchCursor(
-    method: string,
-    args: unknown[],
-  ): Promise<unknown> {
+  async function dispatchCursor(method: string, args: unknown[]): Promise<unknown> {
     if (method === "enumerateOpen") {
       const [pathArg, opts] = args as [unknown, EnumerateOptions?];
       const iterator = await fs.enumerateDirectory(
@@ -146,16 +136,13 @@ export function createFileSystemServiceHandler(
     return dispatchFlat(method, args);
   };
 
-  const handler: IMessageHandler = (msg: IMessage<unknown>) =>
-    dispatch(msg.payload as FsPayload);
+  const handler: IMessageHandler = (msg: IMessage<unknown>) => dispatch(msg.payload as FsPayload);
 
   const closeAll = async (): Promise<void> => {
     const entries = [...cursors.values()];
     cursors.clear();
     await Promise.all(
-      entries.map((e) =>
-        Promise.resolve(e.iterator.return?.(undefined)).catch(() => undefined),
-      ),
+      entries.map((e) => Promise.resolve(e.iterator.return?.(undefined)).catch(() => undefined)),
     );
   };
 

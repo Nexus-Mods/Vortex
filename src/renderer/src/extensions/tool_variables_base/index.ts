@@ -1,9 +1,7 @@
 import * as os from "os";
 import * as path from "path";
-import type {
-  IExtensionContext,
-  IRunParameters,
-} from "../../types/IExtensionContext";
+
+import type { IExtensionContext, IRunParameters } from "../../types/IExtensionContext";
 import type { IProfile, IState } from "../../types/IState";
 import getVortexPath from "../../util/getVortexPath";
 import { log } from "../../util/log";
@@ -23,10 +21,7 @@ function init(context: IExtensionContext): boolean {
     }
 
     let res: any = {
-      ...Object.keys(env).reduce(
-        (prev, key) => ({ ...prev, [key.toUpperCase()]: env[key] }),
-        {},
-      ),
+      ...Object.keys(env).reduce((prev, key) => ({ ...prev, [key.toUpperCase()]: env[key] }), {}),
       APPDATA: getVortexPath("appData"),
       HOME: os.homedir(),
     };
@@ -36,12 +31,7 @@ function init(context: IExtensionContext): boolean {
         ...res,
         PROFILE_ID: profile.id,
         PROFILE_NAME: profile.name,
-        PROFILE_PATH: path.join(
-          getVortexPath("userData"),
-          profile.gameId,
-          "profiles",
-          profile.id,
-        ),
+        PROFILE_PATH: path.join(getVortexPath("userData"), profile.gameId, "profiles", profile.id),
       };
     }
 

@@ -1,7 +1,7 @@
 import { expect, type Page } from "@playwright/test";
 
-import { test } from "../fixtures/vortex-app";
 import { setupFakeGame, GAME_CONFIGS } from "../fixtures/game-setup/fake-game";
+import { test } from "../fixtures/vortex-app";
 import { GamesPage } from "../selectors/games";
 import { NavBar } from "../selectors/navbar";
 
@@ -16,10 +16,7 @@ export interface ManagedGame {
   gamePath: string;
 }
 
-export async function manageGame(
-  vortexWindow: Page,
-  gameId: ManagedGameId,
-): Promise<ManagedGame> {
+export async function manageGame(vortexWindow: Page, gameId: ManagedGameId): Promise<ManagedGame> {
   const fakeGame = setupFakeGame(gameId);
   const gameName = GAME_CONFIGS[gameId]!.gameName;
 
@@ -45,9 +42,7 @@ export async function manageGame(
     await expect(row).toBeVisible({ timeout: 30_000 });
     await row.scrollIntoViewIfNeeded();
     await row.hover();
-    await gamesPage
-      .manageButton(gameName)
-      .click({ timeout: 15_000, force: true });
+    await gamesPage.manageButton(gameName).click({ timeout: 15_000, force: true });
 
     await expect(navbar.modsLink).toBeVisible({ timeout: 60_000 });
   });

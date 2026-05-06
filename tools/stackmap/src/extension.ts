@@ -1,13 +1,15 @@
-import { paste } from "copy-paste";
 import * as fs from "fs";
 import * as path from "path";
+
+import { paste } from "copy-paste";
 import * as semver from "semver";
+import type { NullableMappedPosition } from "source-map";
+import { Position } from "source-map";
 import type { StackFrame } from "stack-trace";
 import { parse } from "stack-trace";
 import * as vscode from "vscode";
+
 import SourceMap from "./SourceMap";
-import type { NullableMappedPosition } from "source-map";
-import { Position } from "source-map";
 
 let sourcemap: SourceMap;
 
@@ -33,8 +35,7 @@ export class StackItem extends vscode.TreeItem {
       arguments: [this.mFrame.source, this.mFrame.line, this.mFrame.column],
     };
 
-    this.mIsExtension =
-      (this.mFrame.source || "").indexOf("bundledPlugins") !== -1;
+    this.mIsExtension = (this.mFrame.source || "").indexOf("bundledPlugins") !== -1;
 
     this.updateLabel();
 
@@ -47,9 +48,7 @@ export class StackItem extends vscode.TreeItem {
           onChanged();
         },
         (err) => {
-          vscode.window.showErrorMessage(
-            `Failed to resolve "${this.mFrame}": ${err}`,
-          );
+          vscode.window.showErrorMessage(`Failed to resolve "${this.mFrame}": ${err}`);
         },
       );
     }
@@ -99,9 +98,7 @@ export class StackProvider implements vscode.TreeDataProvider<StackItem> {
           }
           refreshDebounce = setTimeout(() => {
             this.refresh();
-            vscode.window.showInformationMessage(
-              `Resolved with ${version} sourcemap`,
-            );
+            vscode.window.showInformationMessage(`Resolved with ${version} sourcemap`);
           }, 100);
         }),
     );
@@ -127,8 +124,7 @@ export function activate(context: vscode.ExtensionContext) {
   const provider = new StackProvider();
   vscode.window.registerTreeDataProvider("stackmap", provider);
 
-  let workspaceFolders: readonly vscode.WorkspaceFolder[] | undefined =
-    undefined;
+  let workspaceFolders: readonly vscode.WorkspaceFolder[] | undefined = undefined;
 
   let updateWSFolders = () => {
     workspaceFolders = vscode.workspace.workspaceFolders;
@@ -163,9 +159,7 @@ export function activate(context: vscode.ExtensionContext) {
           (doc) => {
             vscode.window.showTextDocument(doc, 1, false).then(
               (editor) => {
-                editor.revealRange(
-                  new vscode.Range(line - 10, 0, line + 10, 0),
-                );
+                editor.revealRange(new vscode.Range(line - 10, 0, line + 10, 0));
                 const pos = new vscode.Position(line - 1, col);
                 editor.selection = new vscode.Selection(pos, pos);
               },
@@ -177,9 +171,7 @@ export function activate(context: vscode.ExtensionContext) {
             );
           },
           (err) => {
-            vscode.window.showErrorMessage(
-              `failed to open "${fullPath}": ${err.message}`,
-            );
+            vscode.window.showErrorMessage(`failed to open "${fullPath}": ${err.message}`);
           },
         );
       },
@@ -189,50 +181,42 @@ export function activate(context: vscode.ExtensionContext) {
   }
 
   {
-    const disposable = vscode.commands.registerCommand(
-      "stackmap.selectVersion",
-      () => {
-        if (workspaceFolders === undefined) {
+    const disposable = vscode.commands.registerCommand("stackmap.selectVersion", () => {
+      if (workspaceFolders === undefined) {
+        return;
+      }
+
+      const workspacePath = workspaceFolders[0].uri.fsPath;
+      const sourcemapsPath = path.join(workspacePath, "sourcemaps");
+      fs.readdir(sourcemapsPath, (err, files) => {
+        if (err !== null) {
+          vscode.window.showErrorMessage(`Failed to read "${sourcemapsPath}": ${err.message}`);
           return;
         }
+        let items: vscode.QuickPickItem[] = files.map((filePath) => ({
+          label: filePath,
+        }));
 
-        const workspacePath = workspaceFolders[0].uri.fsPath;
-        const sourcemapsPath = path.join(workspacePath, "sourcemaps");
-        fs.readdir(sourcemapsPath, (err, files) => {
-          if (err !== null) {
-            vscode.window.showErrorMessage(
-              `Failed to read "${sourcemapsPath}": ${err.message}`,
-            );
+        vscode.window.showQuickPick(items).then((selection) => {
+          if (!selection) {
             return;
           }
-          let items: vscode.QuickPickItem[] = files.map((filePath) => ({
-            label: filePath,
-          }));
 
-          vscode.window.showQuickPick(items).then((selection) => {
-            if (!selection) {
-              return;
-            }
-
-            version = selection.label;
-            sourcemap = new SourceMap(workspacePath);
-          });
+          version = selection.label;
+          sourcemap = new SourceMap(workspacePath);
         });
-      },
-    );
+      });
+    });
 
     context.subscriptions.push(disposable);
   }
 
   {
-    const disposable = vscode.commands.registerCommand(
-      "stackmap.fromClipboard",
-      () => {
-        paste((err, text) => {
-          provider.setStack(text);
-        });
-      },
-    );
+    const disposable = vscode.commands.registerCommand("stackmap.fromClipboard", () => {
+      paste((err, text) => {
+        provider.setStack(text);
+      });
+    });
 
     context.subscriptions.push(disposable);
   }

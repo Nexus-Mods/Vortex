@@ -1,9 +1,8 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 
+import { QualifiedPath } from "../fs/paths";
 import type { StorePathProvider } from "../stores/providers";
 import type { GamePaths, IGamePathService } from "./game-paths";
-
-import { QualifiedPath } from "../fs/paths";
 import { rehydrateGamePaths } from "./game-paths";
 
 describe("GamePaths<T>", () => {
@@ -30,16 +29,12 @@ describe("IGamePathService", () => {
   });
 
   it("takes a single StorePathProvider argument", () => {
-    expectTypeOf<IGamePathService["paths"]>().parameters.toEqualTypeOf<
-      [StorePathProvider]
-    >();
+    expectTypeOf<IGamePathService["paths"]>().parameters.toEqualTypeOf<[StorePathProvider]>();
   });
 
   it("threads T into the return type alongside 'game'", () => {
     type Svc = IGamePathService<"saves">;
-    expectTypeOf<Svc["paths"]>().returns.resolves.toEqualTypeOf<
-      GamePaths<"game" | "saves">
-    >();
+    expectTypeOf<Svc["paths"]>().returns.resolves.toEqualTypeOf<GamePaths<"game" | "saves">>();
   });
 });
 

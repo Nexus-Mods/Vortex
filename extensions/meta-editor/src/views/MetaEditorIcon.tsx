@@ -1,9 +1,8 @@
-import { setShowMetaEditor } from "../actions";
-
-import { ComponentEx, selectors, ToolbarIcon, types } from "vortex-api";
-
 import * as React from "react";
 import { connect } from "react-redux";
+import { ComponentEx, selectors, ToolbarIcon, types } from "vortex-api";
+
+import { setShowMetaEditor } from "../actions";
 
 export interface IBaseProps {
   t: types.TFunction;
@@ -26,12 +25,7 @@ class MetaEditorIcon extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
     const { t, instanceId } = this.props;
     return (
-      <ToolbarIcon
-        key={instanceId}
-        icon="edit"
-        text={t("View Meta Data")}
-        onClick={this.open}
-      />
+      <ToolbarIcon key={instanceId} icon="edit" text={t("View Meta Data")} onClick={this.open} />
     );
   }
 
@@ -51,8 +45,7 @@ function mapStateToProps(state): IConnectedProps {
 
 function mapDispatchToProps(dispatch): IActionProps {
   return {
-    onShowDialog: (downloadId: string) =>
-      dispatch(setShowMetaEditor(downloadId)),
+    onShowDialog: (downloadId: string) => dispatch(setShowMetaEditor(downloadId)),
   };
 }
 

@@ -1,5 +1,3 @@
-import { setAutoRun } from "./actions";
-
 import I18next from "i18next";
 import * as React from "react";
 import { withTranslation } from "react-i18next";
@@ -7,6 +5,8 @@ import { connect } from "react-redux";
 import * as Redux from "redux";
 import { ThunkDispatch } from "redux-thunk";
 import { More, Toggle, types } from "vortex-api";
+
+import { setAutoRun } from "./actions";
 
 interface IBaseProps {
   t: typeof I18next.t;

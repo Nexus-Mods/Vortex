@@ -1,13 +1,10 @@
-import { types } from "vortex-api";
-
 import * as React from "react";
 import Select from "react-select";
+import { types } from "vortex-api";
+
 import { NAMESPACE } from "../statics";
 
-export class PluginFlagFilterComponent extends React.Component<
-  types.IFilterProps,
-  {}
-> {
+export class PluginFlagFilterComponent extends React.Component<types.IFilterProps, {}> {
   public render(): JSX.Element {
     const { t, filter } = this.props;
 

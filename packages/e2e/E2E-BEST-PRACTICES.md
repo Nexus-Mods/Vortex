@@ -185,10 +185,7 @@ When the test only needs the game's files to exist (e.g. asserting that
 discovery finds them), use `setupFakeGame` directly:
 
 ```typescript
-import {
-    setupFakeGame,
-    cleanupFakeGame,
-} from "../fixtures/game-setup/fake-game";
+import { setupFakeGame, cleanupFakeGame } from "../fixtures/game-setup/fake-game";
 
 test("fake game has expected files", async () => {
     const { basePath, gamePath } = setupFakeGame("stardewvalley");
@@ -214,14 +211,10 @@ native folder picker:
 import { manageGame, type ManagedGame } from "../helpers/games";
 import { cleanupFakeGame } from "../fixtures/game-setup/fake-game";
 
-test("mod download lands in the library", async ({
-    vortexApp,
-    vortexWindow,
-}) => {
+test("mod download lands in the library", async ({ vortexApp, vortexWindow }) => {
     let managed: ManagedGame | null = null;
     try {
         managed = await manageGame(vortexWindow, "stardewvalley");
-
     } finally {
         if (managed !== null) {
             cleanupFakeGame(managed.basePath);
@@ -275,9 +268,7 @@ Vortex's renderer ships with a strict Content Security Policy: `script-src 'self
 await vortexWindow.waitForFunction("document.body?.innerText?.length > 0");
 
 // GOOD - function predicate, no eval
-await vortexWindow.waitForFunction(
-    () => (document.body?.innerText?.length ?? 0) > 0,
-);
+await vortexWindow.waitForFunction(() => (document.body?.innerText?.length ?? 0) > 0);
 
 // BETTER - locator-based, no DOM types needed in test code
 await expect(vortexWindow.locator("body")).not.toHaveText("");
@@ -351,3 +342,4 @@ pnpm oxfmt packages/e2e/<paths-you-changed>
 pnpm run format:staged
 
 The repo formats with **oxfmt**, not prettier. There is no `.prettierrc`. oxfmt's default is double-quoted strings; some older files in this package still have single quotes from before the formatter switch — when you edit one of those files, oxfmt will convert it. Don't fight it.
+```

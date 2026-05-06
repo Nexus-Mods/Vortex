@@ -14,13 +14,6 @@ export default class Debouncer extends GenericDebouncer<
     const boundSetTimeout = window.setTimeout.bind(window);
     const boundClearTimeout = window.clearTimeout.bind(window);
 
-    super(
-      boundSetTimeout,
-      boundClearTimeout,
-      func,
-      debounceMS,
-      reset,
-      triggerImmediately,
-    );
+    super(boundSetTimeout, boundClearTimeout, func, debounceMS, reset, triggerImmediately);
   }
 }

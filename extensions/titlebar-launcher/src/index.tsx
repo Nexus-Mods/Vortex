@@ -1,13 +1,12 @@
-import memoize from "memoize-one";
 import * as path from "path";
+
+import memoize from "memoize-one";
 import * as React from "react";
 import { fs, selectors, types, util } from "vortex-api";
 
 import settingsReducer from "./reducers";
-
-import ToolStarter from "./ToolStarter";
 import TitleBarToggle from "./TitlebarToggle";
-
+import ToolStarter from "./ToolStarter";
 import { starterMemoizer } from "./util";
 
 const toStarters = memoize(starterMemoizer);
@@ -57,30 +56,21 @@ function init(context: types.IExtensionContext) {
     },
   });
 
-  (context as any).registerDynDiv(
-    "starter-dashlet-tools-controls",
-    TitleBarToggle,
-    {
-      condition: (props: any): boolean => {
-        return (
-          selectors.activeGameId(context.api.store.getState()) !== undefined
-        );
-      },
-      props: {
-        onGetValidStarters: (
-          game: types.IGameStored,
-          discovery: types.IDiscoveryResult,
-          tools: types.IDiscoveredTool[],
-        ) => getValidStarters(game, discovery, tools),
-      },
+  (context as any).registerDynDiv("starter-dashlet-tools-controls", TitleBarToggle, {
+    condition: (props: any): boolean => {
+      return selectors.activeGameId(context.api.store.getState()) !== undefined;
     },
-  );
+    props: {
+      onGetValidStarters: (
+        game: types.IGameStored,
+        discovery: types.IDiscoveryResult,
+        tools: types.IDiscoveredTool[],
+      ) => getValidStarters(game, discovery, tools),
+    },
+  });
 
   context.once(() => {
-    context.api.setStylesheet(
-      "titlebar-launcher",
-      path.join(__dirname, "titlebar-launcher.scss"),
-    );
+    context.api.setStylesheet("titlebar-launcher", path.join(__dirname, "titlebar-launcher.scss"));
   });
 
   return true;

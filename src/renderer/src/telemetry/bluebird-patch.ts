@@ -22,10 +22,7 @@ export const patchBluebirdContext = (): void => {
     // Bluebird's "only accepts functions" warning, but only for the
     // "no handlers" case. Let Bluebird validate and warn on any other
     // non-function handlers.
-    if (
-      arguments.length === 0 ||
-      (onFulfilled === undefined && onRejected === undefined)
-    ) {
+    if (arguments.length === 0 || (onFulfilled === undefined && onRejected === undefined)) {
       return originalThen.apply(this, arguments as any);
     }
     const ctx = context.active();

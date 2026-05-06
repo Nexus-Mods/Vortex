@@ -1,11 +1,10 @@
+import update from "immutability-helper";
+import { generate as shortid } from "shortid";
+
 import * as actions from "../actions/notifications";
 import type { IReducerSpec } from "../types/IExtensionContext";
 import type { INotification } from "../types/INotification";
-
 import { getSafe, pushSafe, removeValueIf, setSafe } from "../util/storeHelper";
-
-import update from "immutability-helper";
-import { generate as shortid } from "shortid";
 
 /**
  * reducer for changes to notifications
@@ -17,10 +16,7 @@ export const notificationsReducer: IReducerSpec = {
         return state;
       }
       let temp = state;
-      const statePath =
-        payload.type === "global"
-          ? ["global_notifications"]
-          : ["notifications"];
+      const statePath = payload.type === "global" ? ["global_notifications"] : ["notifications"];
       if (payload.id === undefined) {
         payload.id = shortid();
       } else {
@@ -30,11 +26,7 @@ export const notificationsReducer: IReducerSpec = {
         if (existing !== undefined) {
           // don't update creation time if we're updating an existing notification
           payload.createdTime = existing.createdTime;
-          temp = removeValueIf(
-            state,
-            statePath,
-            (noti) => noti.id === payload.id,
-          );
+          temp = removeValueIf(state, statePath, (noti) => noti.id === payload.id);
         } else {
           temp = state;
         }
@@ -45,9 +37,7 @@ export const notificationsReducer: IReducerSpec = {
       if (payload?.id == null) {
         return state;
       }
-      const idx = state.notifications.findIndex(
-        (noti) => noti.id === payload.id,
-      );
+      const idx = state.notifications.findIndex((noti) => noti.id === payload.id);
       if (idx === -1) {
         return state;
       }
@@ -75,11 +65,7 @@ export const notificationsReducer: IReducerSpec = {
       return update(state, { dialogs: { $unshift: [payload] } });
     },
     [actions.dismissDialog as any]: (state, payload) => {
-      return removeValueIf(
-        state,
-        ["dialogs"],
-        (dialog) => dialog.id === payload,
-      );
+      return removeValueIf(state, ["dialogs"], (dialog) => dialog.id === payload);
     },
   },
   defaults: {

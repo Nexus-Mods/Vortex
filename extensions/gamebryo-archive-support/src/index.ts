@@ -1,6 +1,7 @@
-import PromiseBB from "bluebird";
 import * as path from "path";
 import { PassThrough } from "stream";
+
+import PromiseBB from "bluebird";
 import { fs, types, util } from "vortex-api";
 
 import { BA2Archive, loadBA2 } from "./ba2";
@@ -30,9 +31,7 @@ class BA2Handler implements types.IArchiveHandler {
         if (nextBS === -1) {
           files.push(fileName.substr(query.length));
         } else {
-          subDirs.add(
-            fileName.substr(query.length, nextBS - query.length).toLowerCase(),
-          );
+          subDirs.add(fileName.substr(query.length, nextBS - query.length).toLowerCase());
         }
       });
       resolve([].concat(Array.from(subDirs), files));
@@ -80,9 +79,7 @@ class BSAHandler implements types.IArchiveHandler {
       return PromiseBB.reject(new Error("Archive opened in create mode"));
     }
     const file = this.mBSA.fileList.find(
-      (f) =>
-        f.fullPath.toLowerCase() ===
-        filePath.toLowerCase().replace(/\//g, "\\"),
+      (f) => f.fullPath.toLowerCase() === filePath.toLowerCase().replace(/\//g, "\\"),
     );
     if (!file) {
       return PromiseBB.reject(new Error("file not found " + filePath));
@@ -106,18 +103,14 @@ class BSAHandler implements types.IArchiveHandler {
     }
 
     const file = this.mBSA.fileList.find(
-      (f) =>
-        f.fullPath.toLowerCase() ===
-        filePath.toLowerCase().replace(/\//g, "\\"),
+      (f) => f.fullPath.toLowerCase() === filePath.toLowerCase().replace(/\//g, "\\"),
     );
     if (!file) {
       pass.emit("error", new Error("file not found " + filePath));
       return pass;
     }
 
-    const tmpDir = require("tmp").dir as (
-      cb: (err: any, name: string) => void,
-    ) => void;
+    const tmpDir = require("tmp").dir as (cb: (err: any, name: string) => void) => void;
     tmpDir((tmpErr: any, tmpPath: string) => {
       if (tmpErr !== null) {
         return pass.emit("error", tmpErr);
@@ -125,9 +118,7 @@ class BSAHandler implements types.IArchiveHandler {
       this.mBSA
         .extractFile(file, tmpPath)
         .then(() => {
-          const fileStream = fs.createReadStream(
-            path.join(tmpPath, path.basename(filePath)),
-          );
+          const fileStream = fs.createReadStream(path.join(tmpPath, path.basename(filePath)));
           fileStream.on("data", (data: Buffer) => pass.write(data));
           fileStream.on("end", () => {
             pass.end();
@@ -193,9 +184,7 @@ function createBA2Handler(
   fileName: string,
   options: types.IArchiveOptions,
 ): PromiseBB<types.IArchiveHandler> {
-  return PromiseBB.resolve(
-    loadBA2(fileName).then((archive) => new BA2Handler(archive)),
-  );
+  return PromiseBB.resolve(loadBA2(fileName).then((archive) => new BA2Handler(archive)));
 }
 
 function createBSAHandler(
@@ -213,9 +202,7 @@ function createBSAHandler(
     return PromiseBB.resolve(new BSAHandler(writer));
   }
   return PromiseBB.resolve(
-    loadBSA(fileName, options.verify === true).then(
-      (archive) => new BSAHandler(archive),
-    ),
+    loadBSA(fileName, options.verify === true).then((archive) => new BSAHandler(archive)),
   );
 }
 

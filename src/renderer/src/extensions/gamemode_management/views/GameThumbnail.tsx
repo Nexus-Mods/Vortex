@@ -1,26 +1,25 @@
+import * as path from "path";
+import * as url from "url";
+
+import type PromiseBB from "bluebird";
+import type { TFunction } from "i18next";
+import * as React from "react";
+import { Button, Panel, Popover } from "react-bootstrap";
+import { Provider } from "react-redux";
+
+import { connect, PureComponentEx } from "../../../controls/ComponentEx";
 import Icon from "../../../controls/Icon";
 import IconBar from "../../../controls/IconBar";
 import OverlayTrigger from "../../../controls/OverlayTrigger";
 import { IconButton } from "../../../controls/TooltipControls";
-import type { IActionDefinition } from "../../../types/api";
-import type { IMod, IProfile, IState } from "../../../types/IState";
-import { connect, PureComponentEx } from "../../../controls/ComponentEx";
-import { getSafe } from "../../../util/storeHelper";
-import { countIf } from "../../../util/util";
-
-import type { IGameStored } from "../types/IGameStored";
-
 import { nexusGames } from "../../../extensions/nexus_integration/util";
 import { nexusGameId } from "../../../extensions/nexus_integration/util/convertGameId";
+import type { IActionDefinition } from "../../../types/api";
+import type { IMod, IProfile, IState } from "../../../types/IState";
+import { getSafe } from "../../../util/storeHelper";
+import { countIf } from "../../../util/util";
+import type { IGameStored } from "../types/IGameStored";
 import GameInfoPopover from "./GameInfoPopover";
-
-import type PromiseBB from "bluebird";
-import type { TFunction } from "i18next";
-import * as path from "path";
-import * as React from "react";
-import { Button, Panel, Popover } from "react-bootstrap";
-import { Provider } from "react-redux";
-import * as url from "url";
 
 export interface IBaseProps {
   t: TFunction;
@@ -68,9 +67,8 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
     // For adaptor-registered games (no local logo), resolve a Nexus thumbnail
     if (logoPath == null) {
       const domain = nexusGameId(game);
-      const numericId = domain != null
-        ? nexusGames().find((g) => g.domain_name === domain)?.id
-        : undefined;
+      const numericId =
+        domain != null ? nexusGames().find((g) => g.domain_name === domain)?.id : undefined;
       if (numericId !== undefined) {
         logoPath = `https://images.nexusmods.com/images/games/v2/${numericId}/thumbnail.jpg`;
       }
@@ -109,10 +107,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
     }
 
     return (
-      <Panel
-        className={classes.join(" ")}
-        bsStyle={active ? "primary" : "default"}
-      >
+      <Panel className={classes.join(" ")} bsStyle={active ? "primary" : "default"}>
         <Panel.Body className="game-thumbnail-body">
           <img className={"thumbnail-img"} src={imgurl} />
           <div className="bottom">
@@ -152,11 +147,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
     const { onLaunch } = this.props;
     return (
       <div className="hover-content hover-launcher">
-        <Button
-          style={{ width: "100%", height: "100%" }}
-          onClick={onLaunch}
-          className="btn-embed"
-        >
+        <Button style={{ width: "100%", height: "100%" }} onClick={onLaunch} className="btn-embed">
           <Icon name="launch-application" />
         </Button>
       </div>
@@ -164,8 +155,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
   }
 
   private renderMenu(): JSX.Element[] {
-    const { t, container, game, getBounds, onRefreshGameInfo, type } =
-      this.props;
+    const { t, container, game, getBounds, onRefreshGameInfo, type } = this.props;
     const gameInfoPopover = (
       <Popover id={`popover-info-${game.id}`} className="popover-game-info">
         <Provider store={this.context.api.store}>
@@ -228,11 +218,9 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
     ];
   }
 
-  private priorityButtons = (action: IActionDefinition) =>
-    action.position < 100;
+  private priorityButtons = (action: IActionDefinition) => action.position < 100;
 
-  private lowPriorityButtons = (action: IActionDefinition) =>
-    action.position >= 100;
+  private lowPriorityButtons = (action: IActionDefinition) => action.position >= 100;
 
   private getWindowBounds = (): DOMRect => {
     return {
@@ -263,22 +251,14 @@ function mapStateToProps(state: IState, ownProps: IBaseProps): IConnectedProps {
 
   const lastActiveProfile =
     ownProps.game !== undefined
-      ? getSafe(
-          state.settings.profiles,
-          ["lastActiveProfile", ownProps.game.id],
-          undefined,
-        )
+      ? getSafe(state.settings.profiles, ["lastActiveProfile", ownProps.game.id], undefined)
       : undefined;
 
-  const profile =
-    lastActiveProfile !== undefined ? profiles[lastActiveProfile] : undefined;
+  const profile = lastActiveProfile !== undefined ? profiles[lastActiveProfile] : undefined;
 
   return {
     profile,
-    mods:
-      (profile !== undefined
-        ? state.persistent.mods[profile.gameId]
-        : emptyObj) || emptyObj,
+    mods: (profile !== undefined ? state.persistent.mods[profile.gameId] : emptyObj) || emptyObj,
   };
 }
 

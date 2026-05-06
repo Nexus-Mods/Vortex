@@ -136,11 +136,7 @@ $typography: (
 
     &:hover {
         background:
-            linear-gradient(
-                0deg,
-                rgba(255, 255, 255, 0.2) 0%,
-                rgba(255, 255, 255, 0.2) 100%
-            ),
+            linear-gradient(0deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.2) 100%),
             var(--Premium-600);
     }
 
@@ -189,11 +185,7 @@ $typography: (
                 border: none;
                 border-radius: var(--Border-radius-rounded, 4px);
                 background:
-                    linear-gradient(
-                        0deg,
-                        rgba(0, 0, 0, 0.2) 0%,
-                        rgba(0, 0, 0, 0.2) 100%
-                    ),
+                    linear-gradient(0deg, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.2) 100%),
                     var(--Neutral-Strong, #f4f4f5);
             }
         }
@@ -246,10 +238,7 @@ $typography: (
         margin: 8px 0;
         border: none;
         height: 1px;
-        background: var(
-            --Stroke-Neutral-Translucent-Weak,
-            rgba(255, 255, 255, 0.1)
-        );
+        background: var(--Stroke-Neutral-Translucent-Weak, rgba(255, 255, 255, 0.1));
     }
 
     .modal-dialog {
@@ -299,10 +288,7 @@ $typography: (
             padding: 24px;
 
             border-radius: 8px;
-            background: var(
-                --Surface-Translucent-Low,
-                rgba(255, 255, 255, 0.05)
-            );
+            background: var(--Surface-Translucent-Low, rgba(255, 255, 255, 0.05));
             backdrop-filter: blur(6px);
 
             img.free-pictogram {
@@ -337,10 +323,7 @@ $typography: (
             ul {
                 list-style: none;
                 padding-left: 0;
-                color: var(
-                    --Neutral-Translucent-Strong,
-                    rgba(255, 255, 255, 0.95)
-                );
+                color: var(--Neutral-Translucent-Strong, rgba(255, 255, 255, 0.95));
 
                 li {
                     display: flex;
@@ -354,8 +337,7 @@ $typography: (
                     display: inline-block;
                     width: 16px;
                     height: 16px;
-                    background: url("assets/icons/check.svg") no-repeat center
-                        center;
+                    background: url("assets/icons/check.svg") no-repeat center center;
                     background-size: contain;
                     flex-shrink: 0;
                 }
@@ -385,8 +367,7 @@ $typography: (
 }
 
 #nexus-header-ad {
-    background: url("assets/images/premium-pattern-background.webp") no-repeat
-        center center;
+    background: url("assets/images/premium-pattern-background.webp") no-repeat center center;
     border: 1px solid rgba(196, 181, 253, 0.4);
     width: 368px;
     height: 104px;
@@ -426,8 +407,7 @@ $typography: (
                     display: inline-block;
                     width: 16px;
                     height: 16px;
-                    background: url("assets/icons/arrow-forward.svg") no-repeat
-                        center center;
+                    background: url("assets/icons/arrow-forward.svg") no-repeat center center;
                     background-size: contain;
                     flex-shrink: 0;
                 }
@@ -499,8 +479,7 @@ $typography: (
 .dashlet-go-premium {
     padding: 16px;
 
-    background: url("assets/images/premium-pattern-background.webp") no-repeat
-        center center;
+    background: url("assets/images/premium-pattern-background.webp") no-repeat center center;
     // background: linear-gradient(0deg, rgba(46, 16, 101, 0.25) 25.42%, rgba(92, 32, 203, 0.25) 74.58%);
     backdrop-filter: blur(6px);
 
@@ -552,8 +531,7 @@ $typography: (
             display: inline-block;
             width: 16px;
             height: 16px;
-            background: url("assets/icons/arrow-forward.svg") no-repeat center
-                center;
+            background: url("assets/icons/arrow-forward.svg") no-repeat center center;
             background-size: contain;
             flex-shrink: 0;
         }

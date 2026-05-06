@@ -17,11 +17,9 @@ export function makeModReference(mod: IMod): IReference {
   const fileName = mod.attributes["fileName"];
 
   return {
-    fileExpression:
-      fileName !== undefined ? sanitizeExpression(fileName) : undefined,
+    fileExpression: fileName !== undefined ? sanitizeExpression(fileName) : undefined,
     fileMD5: mod.attributes["fileMD5"],
-    versionMatch:
-      coerceToSemver(mod.attributes["version"]) ?? mod.attributes["version"],
+    versionMatch: coerceToSemver(mod.attributes["version"]) ?? mod.attributes["version"],
     logicalFileName: mod.attributes["logicalFileName"],
   };
 }

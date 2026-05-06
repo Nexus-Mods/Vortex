@@ -17,9 +17,7 @@ export default function Settings(props: IBaseProps): JSX.Element {
   const { onSetModTypeConflicts } = props;
   const connectedProps: IConnectedProps = useSelector(mapStateToProps);
   const modTypeConflictsEnabled = connectedProps.modTypeConflictsEnabled;
-  const [modTypeConflicts, setModTypeConflicts] = React.useState(
-    modTypeConflictsEnabled,
-  );
+  const [modTypeConflicts, setModTypeConflicts] = React.useState(modTypeConflictsEnabled);
 
   const onToggle = React.useCallback(
     (newVal) => {
@@ -54,9 +52,7 @@ export default function Settings(props: IBaseProps): JSX.Element {
           </Alert>
         )}
         <Toggle checked={modTypeConflicts} onToggle={onToggle}>
-          {t(
-            "Enable/Disable Cross-ModType conflict detection (A purge will execute upon change)",
-          )}
+          {t("Enable/Disable Cross-ModType conflict detection (A purge will execute upon change)")}
         </Toggle>
       </FormGroup>
     </form>

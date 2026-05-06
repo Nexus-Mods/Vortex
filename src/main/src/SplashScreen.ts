@@ -1,6 +1,7 @@
-import { BrowserWindow } from "electron";
 import * as path from "path";
 import { pathToFileURL } from "url";
+
+import { BrowserWindow } from "electron";
 
 import { getVortexPath } from "./getVortexPath";
 import { log } from "./logging";
@@ -86,9 +87,7 @@ class SplashScreen {
           pathToFileURL(path.join(getVortexPath("base"), "splash.html")).href +
             `?disableGPU=${disableGPU ? 1 : 0}`,
         )
-        .catch((err: unknown) =>
-          log("error", "failed to load splash screen URL", err),
-        );
+        .catch((err: unknown) => log("error", "failed to load splash screen URL", err));
     });
   }
 

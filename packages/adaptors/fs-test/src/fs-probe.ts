@@ -26,10 +26,7 @@ export interface IFsProbe {
 
 @provides("vortex:adaptor/fs-test/probe")
 export class FsProbeService implements IFsProbe {
-  async writeRead(
-    rawPath: QualifiedPath,
-    contents: number[],
-  ): Promise<number[]> {
+  async writeRead(rawPath: QualifiedPath, contents: number[]): Promise<number[]> {
     const path = rehydrate(rawPath);
     await fs.writeFile(path, new Uint8Array(contents));
     const bytes = await fs.readFile(path);

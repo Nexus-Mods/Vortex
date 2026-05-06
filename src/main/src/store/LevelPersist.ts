@@ -1,14 +1,12 @@
-import type { IPersistor } from "@vortex/shared/state";
-
-import type { DuckDBConnection } from "@duckdb/node-api";
-
-import { unknownToError } from "@vortex/shared";
-import { DataInvalid } from "@vortex/shared/errors";
-
 import * as path from "node:path";
 
-import { log } from "../logging";
+import type { DuckDBConnection } from "@duckdb/node-api";
+import { unknownToError } from "@vortex/shared";
+import { DataInvalid } from "@vortex/shared/errors";
+import type { IPersistor } from "@vortex/shared/state";
+
 import { getVortexPath } from "../getVortexPath";
+import { log } from "../logging";
 import DuckDBSingleton from "./DuckDBSingleton";
 
 const SEPARATOR: string = "###";
@@ -58,10 +56,7 @@ class LevelPersist implements IPersistor {
     }
     try {
       const singleton = DuckDBSingleton.getInstance();
-      const extensionDir = path.join(
-        getVortexPath("base_unpacked"),
-        "duckdb-extensions",
-      );
+      const extensionDir = path.join(getVortexPath("base_unpacked"), "duckdb-extensions");
       await singleton.initialize(extensionDir);
 
       const alias = singleton.nextAlias();
@@ -138,9 +133,7 @@ class LevelPersist implements IPersistor {
   }
 
   public async getAllKeys(): Promise<string[][]> {
-    const reader = await this.#mConnection.runAndReadAll(
-      `SELECT key FROM ${this.#mAlias}.kv`,
-    );
+    const reader = await this.#mConnection.runAndReadAll(`SELECT key FROM ${this.#mAlias}.kv`);
     const rows = reader.getRows();
     return rows.map((row) => (row[0] as string).split(SEPARATOR));
   }
@@ -162,14 +155,10 @@ class LevelPersist implements IPersistor {
     return rows.map((row) => row[0] as string);
   }
 
-  public async getAllKVs(
-    prefix?: string,
-  ): Promise<Array<{ key: string[]; value: string }>> {
+  public async getAllKVs(prefix?: string): Promise<Array<{ key: string[]; value: string }>> {
     let reader;
     if (prefix === undefined) {
-      reader = await this.#mConnection.runAndReadAll(
-        `SELECT key, value FROM ${this.#mAlias}.kv`,
-      );
+      reader = await this.#mConnection.runAndReadAll(`SELECT key, value FROM ${this.#mAlias}.kv`);
     } else {
       reader = await this.#mConnection.runAndReadAll(
         `SELECT key, value FROM ${this.#mAlias}.kv WHERE key > $1 AND key < $2`,
@@ -202,15 +191,15 @@ class LevelPersist implements IPersistor {
         [key],
       );
       if (exists.getRows().length > 0) {
-        await this.#mConnection.run(
-          `UPDATE ${this.#mAlias}.kv SET value = $2 WHERE key = $1`,
-          [key, newState],
-        );
+        await this.#mConnection.run(`UPDATE ${this.#mAlias}.kv SET value = $2 WHERE key = $1`, [
+          key,
+          newState,
+        ]);
       } else {
-        await this.#mConnection.run(
-          `INSERT INTO ${this.#mAlias}.kv VALUES ($1, $2)`,
-          [key, newState],
-        );
+        await this.#mConnection.run(`INSERT INTO ${this.#mAlias}.kv VALUES ($1, $2)`, [
+          key,
+          newState,
+        ]);
       }
       if (ownTransaction) {
         await this.commitTransaction();
@@ -224,10 +213,9 @@ class LevelPersist implements IPersistor {
   }
 
   public async removeItem(statePath: string[]): Promise<void> {
-    await this.#mConnection.run(
-      `DELETE FROM ${this.#mAlias}.kv WHERE key = $1`,
-      [statePath.join(SEPARATOR)],
-    );
+    await this.#mConnection.run(`DELETE FROM ${this.#mAlias}.kv WHERE key = $1`, [
+      statePath.join(SEPARATOR),
+    ]);
   }
 
   /**
@@ -258,9 +246,7 @@ class LevelPersist implements IPersistor {
    * Get dirty tables from level_pivot (tables modified in the current transaction).
    * Returns array of {database, table, type} tuples.
    */
-  public async getDirtyTables(): Promise<
-    Array<{ database: string; table: string; type: string }>
-  > {
+  public async getDirtyTables(): Promise<Array<{ database: string; table: string; type: string }>> {
     const reader = await this.#mConnection.runAndReadAll(
       "SELECT * FROM level_pivot_dirty_tables()",
     );

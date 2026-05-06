@@ -1,5 +1,5 @@
-import type { IFOMODState, IPluginState } from "../types/interface";
 import type { IState } from "../../../types/api";
+import type { IFOMODState, IPluginState } from "../types/interface";
 
 type IStateSession = IState["session"];
 
@@ -29,5 +29,4 @@ interface IStateWithLoadOrder extends IState {
   };
 }
 
-export const hasLoadOrder = (state: IState): state is IStateWithLoadOrder =>
-  "loadOrder" in state;
+export const hasLoadOrder = (state: IState): state is IStateWithLoadOrder => "loadOrder" in state;

@@ -14,13 +14,8 @@ function CollectionReleaseStatus(props: ICollectionReleaseStatusProps) {
   const { t, active, collection, enabled, incomplete } = props;
   if (active) {
     if (incomplete) {
-      return (
-        <div className="collection-status incomplete">{t("Incomplete")}</div>
-      );
-    } else if (
-      collection.attributes?.collectionId &&
-      collection.attributes?.editable
-    ) {
+      return <div className="collection-status incomplete">{t("Incomplete")}</div>;
+    } else if (collection.attributes?.collectionId && collection.attributes?.editable) {
       const revisionStatus = collection.attributes?.revisionStatus;
       const isPublished = revisionStatus === "published";
       return isPublished ? (

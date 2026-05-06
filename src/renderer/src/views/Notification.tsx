@@ -2,17 +2,12 @@ import React, { useCallback, useRef, useState, type FC, type JSX } from "react";
 import { Button, MenuItem } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 
-import type {
-  INotification,
-  INotificationAction,
-  NotificationType,
-} from "../types/INotification";
-
 import Dropdown from "../controls/Dropdown";
 import Icon from "../controls/Icon";
 import PortalMenu from "../controls/PortalMenu";
 import Spinner from "../controls/Spinner";
 import { IconButton } from "../controls/TooltipControls";
+import type { INotification, INotificationAction, NotificationType } from "../types/INotification";
 
 interface IActionProps {
   icon: string;
@@ -31,9 +26,7 @@ const Action: FC<IActionProps> = (props) => {
   }, [onTrigger, title]);
 
   if (icon !== undefined) {
-    return (
-      <IconButton icon={icon} tooltip={t(title, { count })} onClick={trigger} />
-    );
+    return <IconButton icon={icon} tooltip={t(title, { count })} onClick={trigger} />;
   } else {
     return <Button onClick={trigger}>{t(title, { count })}</Button>;
   }
@@ -83,14 +76,7 @@ const typeToIcon = (type: NotificationType): JSX.Element | null => {
 };
 
 export const Notification: FC<IProps> = (props) => {
-  const {
-    collapsed,
-    onDismiss,
-    onExpand,
-    onSuppress,
-    onTriggerAction,
-    params,
-  } = props;
+  const { collapsed, onDismiss, onExpand, onSuppress, onTriggerAction, params } = props;
   const { actions, id, message, noDismiss, progress, title, type } = params;
 
   const { t } = useTranslation(["common"]);
@@ -183,28 +169,15 @@ export const Notification: FC<IProps> = (props) => {
   const styleName = typeToStyle(type);
 
   return (
-    <div
-      className={`
-        notification
-        alert-${styleName}
-      `}
-      role="alert"
-    >
+    <div className={`notification alert-${styleName} `} role="alert">
       {progress !== undefined ? (
-        <span
-          className="notification-progress"
-          style={{ left: `${progress}%` }}
-        />
+        <span className="notification-progress" style={{ left: `${progress}%` }} />
       ) : null}
 
-      <div className="btn btn-default btn-embed no-hover">
-        {typeToIcon(type)}{" "}
-      </div>
+      <div className="btn btn-default btn-embed no-hover">{typeToIcon(type)} </div>
 
       <div className="notification-textbox">
-        {title !== undefined ? (
-          <div className="notification-title">{title}</div>
-        ) : null}
+        {title !== undefined ? <div className="notification-title">{title}</div> : null}
 
         <div className="notification-message hover-expand">
           {lines.map((line) => (
@@ -227,9 +200,7 @@ export const Notification: FC<IProps> = (props) => {
         ) : null}
 
         {collapsed > 1 && onExpand !== undefined ? (
-          <Button onClick={expand}>
-            {t("{{ count }} More", { count: collapsed - 1 })}
-          </Button>
+          <Button onClick={expand}>{t("{{ count }} More", { count: collapsed - 1 })}</Button>
         ) : null}
 
         {id !== undefined ? renderExtraOptions() : null}

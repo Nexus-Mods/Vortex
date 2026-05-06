@@ -1,14 +1,12 @@
 import Bluebird from "bluebird";
-import { fs, selectors, types, log } from "vortex-api";
-import supportData from "./gameSupport";
-import { IGameSupport } from "./types";
 import getVersion from "exe-version";
 import * as semver from "semver";
+import { fs, selectors, types, log } from "vortex-api";
 
-const getGameStore = (
-  gameId: string,
-  api: types.IExtensionApi,
-): string | undefined =>
+import supportData from "./gameSupport";
+import { IGameSupport } from "./types";
+
+const getGameStore = (gameId: string, api: types.IExtensionApi): string | undefined =>
   selectors.discoveryByGame(api.getState(), gameId)["store"];
 
 const getScriptExtenderVersion = (extenderPath: string): Promise<string> => {
@@ -41,16 +39,11 @@ const getGamePath = (gameId: string, api): string => {
   }
 };
 
-function toBlue<T>(
-  func: (...args: any[]) => Promise<T>,
-): (...args: any[]) => Bluebird<T> {
+function toBlue<T>(func: (...args: any[]) => Promise<T>): (...args: any[]) => Bluebird<T> {
   return (...args: any[]) => Bluebird.resolve(func(...args));
 }
 
-function clearNotifications(
-  api: types.IExtensionApi,
-  preserveMissing?: boolean,
-) {
+function clearNotifications(api: types.IExtensionApi, preserveMissing?: boolean) {
   Object.keys(supportData).forEach((key) => {
     if (!preserveMissing) {
       api.dismissNotification(`scriptextender-missing-${key}`);
@@ -61,9 +54,7 @@ function clearNotifications(
 
 function ignoreNotifications(gameSupport: IGameSupport) {
   // Allows the github downloader to set the ignore flag.
-  const match = Object.keys(supportData).find(
-    (key) => key === gameSupport.gameId,
-  );
+  const match = Object.keys(supportData).find((key) => key === gameSupport.gameId);
   supportData[match].ignore = true;
 }
 

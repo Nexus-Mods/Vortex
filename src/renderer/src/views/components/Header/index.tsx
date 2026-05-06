@@ -69,17 +69,12 @@ export const Header: FC = () => {
           <span className="shrink-0 text-neutral-strong">{title}</span>
 
           {profileName && (
-            <span className="max-w-[33%] min-w-0 truncate text-neutral-subdued">
-              {profileName}
-            </span>
+            <span className="max-w-[33%] min-w-0 truncate text-neutral-subdued">{profileName}</span>
           )}
         </Typography>
       </div>
 
-      <div
-        className="flex shrink-0 items-center gap-x-4"
-        style={{ WebkitAppRegion: "no-drag" }}
-      >
+      <div className="flex shrink-0 items-center gap-x-4" style={{ WebkitAppRegion: "no-drag" }}>
         <PremiumIndicator />
 
         <div className="flex gap-x-2">

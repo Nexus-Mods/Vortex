@@ -1,14 +1,13 @@
 import * as path from "path";
+
 import { selectors, types } from "vortex-api";
+
 import { setPluginEnabled } from "../actions/loadOrder";
 import { GHOST_EXT } from "../statics";
 import { ILoadOrder } from "../types/ILoadOrder";
 import { IStateWithGamebryo } from "../types/IStateWithGamebryo";
 
-export type EventTypes =
-  | "plugin-enabled"
-  | "plugin-disabled"
-  | "plugins-sorted";
+export type EventTypes = "plugin-enabled" | "plugin-disabled" | "plugins-sorted";
 
 interface IEventType {
   describe: (evt: types.IHistoryEvent) => string;
@@ -25,31 +24,21 @@ class PluginHistory implements types.IHistoryStack {
 
   constructor(
     api: types.IExtensionApi,
-    setPluginGhost: (
-      pluginId: string,
-      gameId: string,
-      ghosted: boolean,
-      enabled: boolean,
-    ) => void,
+    setPluginGhost: (pluginId: string, gameId: string, ghosted: boolean, enabled: boolean) => void,
     setPluginLight: (pluginId: string, enable: boolean) => void,
   ) {
     this.mApi = api;
 
     const renderAct = (data) => {
-      return data.oldState === true
-        ? "Enable"
-        : data.wasGhost === "ghost"
-          ? "Ghost"
-          : "Disable";
+      return data.oldState === true ? "Enable" : data.wasGhost === "ghost" ? "Ghost" : "Disable";
     };
 
     this.mEventTypes = {
       "plugin-enabled": {
         describe: (evt) =>
-          api.translate(
-            "Plugin was enabled: {{ name }} (Profile: {{ profileName }})",
-            { replace: evt.data },
-          ),
+          api.translate("Plugin was enabled: {{ name }} (Profile: {{ profileName }})", {
+            replace: evt.data,
+          }),
         revert: {
           describe: (evt) =>
             api.translate("{{oldState}} plugin", {
@@ -71,9 +60,7 @@ class PluginHistory implements types.IHistoryStack {
               const profile = selectors.activeProfile(state);
               setPluginGhost(evt.data.id, profile.gameId, true, false);
             } else {
-              api.store.dispatch(
-                setPluginEnabled(evt.data.id, evt.data.oldState),
-              );
+              api.store.dispatch(setPluginEnabled(evt.data.id, evt.data.oldState));
             }
             return Promise.resolve();
           },
@@ -81,10 +68,9 @@ class PluginHistory implements types.IHistoryStack {
       },
       "plugin-disabled": {
         describe: (evt) =>
-          api.translate(
-            "Plugin was disabled: {{ name }} (Profile: {{ profileName }})",
-            { replace: evt.data },
-          ),
+          api.translate("Plugin was disabled: {{ name }} (Profile: {{ profileName }})", {
+            replace: evt.data,
+          }),
         revert: {
           describe: (evt) =>
             api.translate("{{oldState}} plugin", {
@@ -106,9 +92,7 @@ class PluginHistory implements types.IHistoryStack {
               const profile = selectors.activeProfile(state);
               setPluginGhost(evt.data.id, profile.gameId, true, false);
             } else {
-              api.store.dispatch(
-                setPluginEnabled(evt.data.id, evt.data.oldState),
-              );
+              api.store.dispatch(setPluginEnabled(evt.data.id, evt.data.oldState));
             }
             return Promise.resolve();
           },
@@ -116,10 +100,9 @@ class PluginHistory implements types.IHistoryStack {
       },
       "plugin-ghosted": {
         describe: (evt) =>
-          api.translate(
-            "Plugin was ghosted: {{ name }} (Profile: {{ profileName }})",
-            { replace: evt.data },
-          ),
+          api.translate("Plugin was ghosted: {{ name }} (Profile: {{ profileName }})", {
+            replace: evt.data,
+          }),
         revert: {
           describe: (evt) =>
             api.translate("{{oldState}} plugin", {
@@ -149,15 +132,12 @@ class PluginHistory implements types.IHistoryStack {
       },
       "plugin-eslified": {
         describe: (evt) =>
-          api.translate(
-            "Plugin was converted to {{ conversion }}: {{ name }}",
-            {
-              replace: {
-                name: evt.data.id,
-                conversion: evt.data.enable ? "light" : "regular",
-              },
+          api.translate("Plugin was converted to {{ conversion }}: {{ name }}", {
+            replace: {
+              name: evt.data.id,
+              conversion: evt.data.enable ? "light" : "regular",
             },
-          ),
+          }),
         revert: {
           describe: (evt) =>
             api.translate("Convert to {{ conversion }}", {
@@ -208,49 +188,42 @@ class PluginHistory implements types.IHistoryStack {
       [pluginId: string]: ILoadOrder;
     }
 
-    this.mApi.onStateChange(
-      ["loadOrder"],
-      (prev: IPluginMap, current: IPluginMap) => {
-        const allIds = Array.from(
-          new Set<string>([].concat(Object.keys(prev), Object.keys(current))),
-        );
+    this.mApi.onStateChange(["loadOrder"], (prev: IPluginMap, current: IPluginMap) => {
+      const allIds = Array.from(
+        new Set<string>([].concat(Object.keys(prev), Object.keys(current))),
+      );
 
-        const state: IStateWithGamebryo = this.mApi.getState();
-        const gameMode = selectors.activeGameId(state);
-        const profile = selectors.activeProfile(state);
+      const state: IStateWithGamebryo = this.mApi.getState();
+      const gameMode = selectors.activeGameId(state);
+      const profile = selectors.activeProfile(state);
 
-        if (profile !== undefined) {
-          allIds.forEach((id) => {
-            if (
-              prev[id]?.enabled !== undefined &&
-              prev[id]?.enabled !== current[id]?.enabled
-            ) {
-              const plugin = state.session.plugins.pluginList?.[id];
-              const ghost =
-                plugin !== undefined &&
-                path.extname(plugin.filePath).toLowerCase() === GHOST_EXT;
-              addToHistory("plugins", {
-                type:
-                  current[id]?.enabled === true
-                    ? "plugin-enabled"
-                    : ghost
-                      ? "plugin-ghosted"
-                      : "plugin-disabled",
-                gameId: gameMode,
-                data: {
-                  id,
-                  oldState: prev[id]?.enabled ?? false,
-                  name: path.basename(plugin?.filePath ?? id, GHOST_EXT),
-                  wasGhost: ghost,
-                  profileId: profile.id,
-                  profileName: profile.name,
-                },
-              });
-            }
-          });
-        }
-      },
-    );
+      if (profile !== undefined) {
+        allIds.forEach((id) => {
+          if (prev[id]?.enabled !== undefined && prev[id]?.enabled !== current[id]?.enabled) {
+            const plugin = state.session.plugins.pluginList?.[id];
+            const ghost =
+              plugin !== undefined && path.extname(plugin.filePath).toLowerCase() === GHOST_EXT;
+            addToHistory("plugins", {
+              type:
+                current[id]?.enabled === true
+                  ? "plugin-enabled"
+                  : ghost
+                    ? "plugin-ghosted"
+                    : "plugin-disabled",
+              gameId: gameMode,
+              data: {
+                id,
+                oldState: prev[id]?.enabled ?? false,
+                name: path.basename(plugin?.filePath ?? id, GHOST_EXT),
+                wasGhost: ghost,
+                profileId: profile.id,
+                profileName: profile.name,
+              },
+            });
+          }
+        });
+      }
+    });
 
     this.mApi.events.on("autosort-plugins", () => {
       const state: IStateWithGamebryo = this.mApi.getState();

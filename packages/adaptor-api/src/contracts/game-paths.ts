@@ -1,7 +1,6 @@
+import { QualifiedPath } from "../fs/paths";
 import type { StorePathProvider } from "../stores/providers";
 import type { VersionSource } from "./game-version";
-
-import { QualifiedPath } from "../fs/paths";
 
 /**
  * Path-map returned by an adaptor's {@link IGamePathService.paths}.
@@ -76,9 +75,7 @@ export interface IGamePathService<T extends string = never> {
  * back from the host (e.g. {@link IGameToolsService.getGameTools}).
  *
  * @public */
-export function rehydrateGamePaths<T extends string>(
-  raw: GamePaths<T>,
-): GamePaths<T> {
+export function rehydrateGamePaths<T extends string>(raw: GamePaths<T>): GamePaths<T> {
   const out: Record<string, QualifiedPath> = {};
   for (const [key, value] of Object.entries(raw)) {
     if (value instanceof QualifiedPath) {
@@ -87,9 +84,7 @@ export function rehydrateGamePaths<T extends string>(
     }
     const str = (value as { value?: string }).value;
     if (typeof str !== "string") {
-      throw new Error(
-        `rehydrateGamePaths: entry "${key}" is not a QualifiedPath`,
-      );
+      throw new Error(`rehydrateGamePaths: entry "${key}" is not a QualifiedPath`);
     }
     out[key] = QualifiedPath.parse(str);
   }

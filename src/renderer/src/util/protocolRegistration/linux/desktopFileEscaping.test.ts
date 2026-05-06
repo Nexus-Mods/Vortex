@@ -1,9 +1,6 @@
 import { describe, test, expect } from "vitest";
 
-import {
-  escapeDesktopExecFilePath,
-  escapeDesktopFilePath,
-} from "./desktopFileEscaping";
+import { escapeDesktopExecFilePath, escapeDesktopFilePath } from "./desktopFileEscaping";
 
 // Note(sewer)
 // Source (ported from code I wrote in NMA originally):

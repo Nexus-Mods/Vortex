@@ -2,16 +2,15 @@ import { useCallback, useContext, useState } from "react";
 import { useDispatch } from "react-redux";
 import { generate as shortid } from "shortid";
 
-import type { IGameStored } from "../../../types/IState";
-import type { IStarterInfo } from "../../../util/StarterInfo";
-
 import { setToolVisible } from "../../../extensions/gamemode_management/actions/settings";
 import {
   setPrimaryTool,
   setToolOrder,
   setToolPinned,
 } from "../../../extensions/starter_dashlet/actions";
+import type { IGameStored } from "../../../types/IState";
 import { showError } from "../../../util/message";
+import type { IStarterInfo } from "../../../util/StarterInfo";
 import StarterInfo from "../../../util/StarterInfo";
 import { MainContext } from "../../MainWindow";
 import { useToolsData } from "./useToolsData";
@@ -38,8 +37,7 @@ export const useToolsPage = () => {
   } = data;
 
   // ── Edit dialog state ─────────────────────────────────────────────────
-  const [toolBeingEdited, setToolBeingEdited] =
-    useState<StarterInfo>(undefined);
+  const [toolBeingEdited, setToolBeingEdited] = useState<StarterInfo>(undefined);
   const [counter, setCounter] = useState(1);
 
   const closeEditDialog = useCallback(() => {
@@ -87,11 +85,7 @@ export const useToolsPage = () => {
         );
         return;
       }
-      context.api.events.emit(
-        "analytics-track-click-event",
-        "Tools",
-        "Manually ran tool",
-      );
+      context.api.events.emit("analytics-track-click-event", "Tools", "Manually ran tool");
       StarterInfo.run(info, context.api, onShowError);
     },
     [onShowError],
@@ -107,9 +101,7 @@ export const useToolsPage = () => {
           "Tools",
           "Selected new primary tool",
         );
-        reduxDispatch(
-          setPrimaryTool(starter.gameId, starter.isGame ? null : starter.id),
-        );
+        reduxDispatch(setPrimaryTool(starter.gameId, starter.isGame ? null : starter.id));
       }
     },
     [reduxDispatch, primaryTool],
@@ -117,11 +109,7 @@ export const useToolsPage = () => {
 
   const removeTool = useCallback(
     (starter: StarterInfo) => {
-      context.api.events.emit(
-        "analytics-track-click-event",
-        "Tools",
-        "Removed tool",
-      );
+      context.api.events.emit("analytics-track-click-event", "Tools", "Removed tool");
       reduxDispatch(setToolVisible(gameMode, starter.id, false));
     },
     [reduxDispatch, gameMode],
@@ -129,9 +117,7 @@ export const useToolsPage = () => {
 
   const togglePin = useCallback(
     (starter: IStarterInfo) => {
-      const currentlyPinned = data.otherPinnedTools.some(
-        (s) => s.id === starter.id,
-      );
+      const currentlyPinned = data.otherPinnedTools.some((s) => s.id === starter.id);
       reduxDispatch(setToolPinned(gameMode, starter.id, !currentlyPinned));
     },
     [reduxDispatch, gameMode, data.otherPinnedTools],
@@ -141,9 +127,7 @@ export const useToolsPage = () => {
 
   const applyOrder = useCallback(
     (ordered: string[]) => {
-      const names = ordered
-        .map((id) => tools.find((t) => t.id === id)?.name)
-        .filter(Boolean);
+      const names = ordered.map((id) => tools.find((t) => t.id === id)?.name).filter(Boolean);
       context.api.events.emit(
         "analytics-track-event",
         "Tools",
@@ -158,10 +142,7 @@ export const useToolsPage = () => {
 
   const getVisibleIds = useCallback(() => {
     return tools
-      .filter(
-        (s) =>
-          s.isGame || discoveredTools[s.id] === undefined || !isToolHidden(s),
-      )
+      .filter((s) => s.isGame || discoveredTools[s.id] === undefined || !isToolHidden(s))
       .map((s) => s.id);
   }, [tools, discoveredTools, isToolHidden]);
 

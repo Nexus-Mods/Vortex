@@ -1,18 +1,18 @@
+import { homedir, tmpdir } from "node:os";
+import { join } from "node:path/posix";
+
 import type {
   ResolvedPath,
   LinuxPathProvider,
   LinuxPathBase,
   XDGBase,
 } from "@nexusmods/adaptor-api/fs";
-
 import {
   QualifiedPath,
   PathResolverError,
   PathProviderError,
   XDG,
 } from "@nexusmods/adaptor-api/fs";
-import { homedir, tmpdir } from "node:os";
-import { join } from "node:path/posix";
 
 export class LinuxPathProviderImpl implements LinuxPathProvider {
   readonly platform = "linux" as const;
@@ -39,9 +39,7 @@ export class LinuxPathProviderImpl implements LinuxPathProvider {
     }
 
     const exhausted: never = base;
-    return Promise.reject(
-      new PathProviderError(`Unknown base '${exhausted as string}'`),
-    );
+    return Promise.reject(new PathProviderError(`Unknown base '${exhausted as string}'`));
   }
 
   fromXDGBase(base: XDGBase): Promise<QualifiedPath> {
@@ -61,15 +59,10 @@ export class LinuxPathProviderImpl implements LinuxPathProvider {
     }
 
     const exhausted: never = base;
-    return Promise.reject(
-      new PathProviderError(`Unknown base '${exhausted as string}'`),
-    );
+    return Promise.reject(new PathProviderError(`Unknown base '${exhausted as string}'`));
   }
 
-  #getXDGBaseDirectory(
-    envName: string,
-    relative: string,
-  ): Promise<QualifiedPath> {
+  #getXDGBaseDirectory(envName: string, relative: string): Promise<QualifiedPath> {
     const envValue = process.env[envName];
     if (envValue) return this.#create(envValue);
 
@@ -79,9 +72,7 @@ export class LinuxPathProviderImpl implements LinuxPathProvider {
 
   resolve(path: QualifiedPath): Promise<ResolvedPath> {
     if (path.scheme !== this.scheme)
-      return Promise.reject(
-        new PathResolverError(`Unsupported scheme '${path.scheme}'`),
-      );
+      return Promise.reject(new PathResolverError(`Unsupported scheme '${path.scheme}'`));
     return Promise.resolve(path.path);
   }
 }

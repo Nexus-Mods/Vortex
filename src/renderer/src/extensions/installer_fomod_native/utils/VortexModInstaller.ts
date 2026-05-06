@@ -1,10 +1,10 @@
+import type * as fomodT from "@nexusmods/fomod-installer-native";
+
 import type { IExtensionApi } from "../../../types/api";
 import lazyRequire from "../../../util/lazyRequire";
 import { log } from "../../../util/log";
-import { DialogManager } from "./DialogManager";
 import { SharedDelegates } from "../../installer_fomod_shared/delegates/SharedDelegates";
-
-import type * as fomodT from "@nexusmods/fomod-installer-native";
+import { DialogManager } from "./DialogManager";
 
 export class VortexModInstaller {
   public static async create(
@@ -13,12 +13,7 @@ export class VortexModInstaller {
     gameId: string,
     unattended: boolean = false,
   ): Promise<VortexModInstaller> {
-    const delegates = new VortexModInstaller(
-      api,
-      instanceId,
-      gameId,
-      unattended,
-    );
+    const delegates = new VortexModInstaller(api, instanceId, gameId, unattended);
     await delegates.initialize();
     return delegates;
   }
@@ -44,9 +39,7 @@ export class VortexModInstaller {
     gameId: string,
     unattended: boolean = false,
   ) {
-    this.fomod = lazyRequire<typeof fomodT>(() =>
-      require("@nexusmods/fomod-installer-native"),
-    );
+    this.fomod = lazyRequire<typeof fomodT>(() => require("@nexusmods/fomod-installer-native"));
     this.mModInstaller = new this.fomod.NativeModInstaller(
       this.pluginsGetAllAsync,
       this.contextGetAppVersionAsync,
@@ -64,10 +57,7 @@ export class VortexModInstaller {
   }
 
   private async initialize(): Promise<void> {
-    this.mSharedDelegates = await SharedDelegates.create(
-      this.mApi,
-      this.mGameId,
-    );
+    this.mSharedDelegates = await SharedDelegates.create(this.mApi, this.mGameId);
   }
 
   public dispose() {
@@ -145,11 +135,7 @@ export class VortexModInstaller {
       return;
     }
     log("debug", "Starting FOMOD dialog", { instanceId: this.mInstanceId });
-    this.mDialogManager = new DialogManager(
-      this.mApi,
-      this.mInstanceId,
-      this.mScriptPath,
-    );
+    this.mDialogManager = new DialogManager(this.mApi, this.mInstanceId, this.mScriptPath);
     this.mDialogManager.enqueueDialog(
       moduleName,
       image,

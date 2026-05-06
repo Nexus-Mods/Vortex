@@ -1,9 +1,11 @@
 import path from "path";
+
 import { SecurityLevel } from "@nexusmods/fomod-installer-ipc";
-import { CSharpDelegates } from "./delegates/CSharpDelegates";
-import { VortexIPCConnection } from "./utils/VortexIPCConnection";
-import { createConnectionStrategies } from "./utils/connectionStrategy";
-import type { IInstallationDetails } from "../mod_management/types/InstallFunc";
+
+import type { IExtensionApi, IInstallResult } from "../../types/api";
+import { UserCanceled } from "../../util/CustomErrors";
+import { log } from "../../util/log";
+import { getGame } from "../gamemode_management/util/getGame";
 import { SharedDelegates } from "../installer_fomod_shared/delegates/SharedDelegates";
 import type { IChoices } from "../installer_fomod_shared/types/interface";
 import {
@@ -11,10 +13,10 @@ import {
   getStopPatterns,
   uniPatterns,
 } from "../installer_fomod_shared/utils/gameSupport";
-import { getGame } from "../gamemode_management/util/getGame";
-import { log } from "../../util/log";
-import type { IExtensionApi, IInstallResult } from "../../types/api";
-import { UserCanceled } from "../../util/CustomErrors";
+import type { IInstallationDetails } from "../mod_management/types/InstallFunc";
+import { CSharpDelegates } from "./delegates/CSharpDelegates";
+import { createConnectionStrategies } from "./utils/connectionStrategy";
+import { VortexIPCConnection } from "./utils/VortexIPCConnection";
 
 /**
  * Install a FOMOD mod
@@ -36,9 +38,7 @@ export const install = async (
     // If we have fomod choices, automatically bypass the dialog regardless of unattended flag
     const shouldBypassDialog = canBeUnattended && unattended === true;
 
-    const hasScript = files.some(
-      (file) => path.basename(file).toLowerCase() === "script.cs",
-    );
+    const hasScript = files.some((file) => path.basename(file).toLowerCase() === "script.cs");
     if (hasScript && !shouldBypassDialog) {
       // This mod will require user interaction, we need to make sure
       // the the previous phase is deployed.
@@ -58,16 +58,13 @@ export const install = async (
       allowFallback: true,
     });
     const modName =
-      details?.modReference?.id ||
-      path.basename(archivePath, path.extname(archivePath));
+      details?.modReference?.id || path.basename(archivePath, path.extname(archivePath));
     connection = new VortexIPCConnection(api, strategies, 30000, modName);
     await connection.initialize();
 
     // Register core delegates
     const sharedDelegates = await SharedDelegates.create(api, gameId);
-    connection.registerCallback("getAppVersion", () =>
-      sharedDelegates.getAppVersion(),
-    );
+    connection.registerCallback("getAppVersion", () => sharedDelegates.getAppVersion());
     connection.registerCallback("getCurrentGameVersion", () =>
       sharedDelegates.getCurrentGameVersion(),
     );
@@ -79,9 +76,7 @@ export const install = async (
     );
 
     const csharpDelegates = new CSharpDelegates(api);
-    connection.registerCallback("isExtenderPresent", () =>
-      csharpDelegates.isExtenderPresent(),
-    );
+    connection.registerCallback("isExtenderPresent", () => csharpDelegates.isExtenderPresent());
     connection.registerCallback("checkIfFileExists", (fileName: string) =>
       csharpDelegates.checkIfFileExists(fileName),
     );
@@ -91,33 +86,20 @@ export const install = async (
     connection.registerCallback(
       "getExistingDataFileList",
       (folderPath: string, searchFilter: string, isRecursive: boolean) =>
-        csharpDelegates.getExistingDataFileList(
-          folderPath,
-          searchFilter,
-          isRecursive,
-        ),
+        csharpDelegates.getExistingDataFileList(folderPath, searchFilter, isRecursive),
     );
     connection.registerCallback(
       "getIniString",
       (iniFileName: string, section: string, key: string) =>
         csharpDelegates.getIniString(iniFileName, section, key),
     );
-    connection.registerCallback(
-      "getIniInt",
-      (iniFileName: string, section: string, key: string) =>
-        csharpDelegates.getIniInt(iniFileName, section, key),
+    connection.registerCallback("getIniInt", (iniFileName: string, section: string, key: string) =>
+      csharpDelegates.getIniInt(iniFileName, section, key),
     );
     connection.registerCallback(
       "reportError",
-      ({
-        title,
-        message,
-        details,
-      }: {
-        title: string;
-        message: string;
-        details: string;
-      }) => csharpDelegates.reportError(title, message, details),
+      ({ title, message, details }: { title: string; message: string; details: string }) =>
+        csharpDelegates.reportError(title, message, details),
     );
 
     // When override instructions file is present, use only the universal stop patterns and null pluginPath
@@ -125,14 +107,10 @@ export const install = async (
     const stopPatterns = details?.hasInstructionsOverrideFile
       ? uniPatterns
       : getStopPatterns(gameId, getGame(gameId));
-    const pluginPath = details?.hasInstructionsOverrideFile
-      ? null
-      : getPluginPath(gameId);
+    const pluginPath = details?.hasInstructionsOverrideFile ? null : getPluginPath(gameId);
 
     const fomodChoices: IChoices =
-      choices !== undefined && choices.type === "fomod"
-        ? (choices.options ?? {})
-        : undefined;
+      choices !== undefined && choices.type === "fomod" ? (choices.options ?? {}) : undefined;
 
     const validate = true;
 
@@ -151,18 +129,11 @@ export const install = async (
 
     log("info", "FOMOD installation completed", { gameId });
 
-    if (
-      result.instructions !== undefined &&
-      Array.isArray(result.instructions)
-    ) {
+    if (result.instructions !== undefined && Array.isArray(result.instructions)) {
       for (const instruction of result.instructions) {
         if (instruction.type === "generatefile") {
           var json = instruction.data as any;
-          if (
-            json.type &&
-            json.type === "Buffer" &&
-            typeof json.data === "string"
-          ) {
+          if (json.type && json.type === "Buffer" && typeof json.data === "string") {
             instruction.data = Buffer.from(json.data, "base64");
           }
         }
@@ -190,8 +161,7 @@ export const install = async (
     // Provide context-aware error messages based on error type
     const errorName = err.name || "Error";
     const isTimeout = errorName === "IPCTimeoutError";
-    const isConnectionError =
-      errorName === "ProcessExitError" || errorName === "ProcessError";
+    const isConnectionError = errorName === "ProcessExitError" || errorName === "ProcessError";
 
     log("error", "FOMOD installation failed", {
       errorName,

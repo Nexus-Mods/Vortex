@@ -5,7 +5,6 @@ import { useSelector } from "react-redux";
 
 import type { IGameStored } from "../../../extensions/gamemode_management/types/IGameStored";
 import type { IState } from "../../../types/IState";
-
 import { Typography } from "../../../ui/components/typography/Typography";
 import { joinClasses } from "../../../ui/utils/joinClasses";
 import { discovered as discoveredGamesSelector } from "../../../util/selectors";
@@ -25,9 +24,7 @@ function stringToHue(str: string): number {
 /** Returns a sorted list of all managed game IDs. */
 function useManagedGameIds(): string[] {
   const discoveredGames = useSelector(discoveredGamesSelector);
-  const allProfiles = useSelector(
-    (state: IState) => state.persistent.profiles ?? {},
-  );
+  const allProfiles = useSelector((state: IState) => state.persistent.profiles ?? {});
 
   return useMemo(() => {
     const managedIds = new Set<string>();
@@ -47,23 +44,14 @@ const GameMenuEntry: FC<{
   onClick: () => void;
 }> = ({ game, isActive, onClick }) => {
   const discoveredGames = useSelector(discoveredGamesSelector);
-  const { cacheKey, sources, preferred } = getGameImageUrls(
-    game,
-    discoveredGames[game.id],
-  );
-  const { src, exhausted, onError, onLoad } = useGameImage(
-    cacheKey,
-    sources,
-    preferred,
-  );
+  const { cacheKey, sources, preferred } = getGameImageUrls(game, discoveredGames[game.id]);
+  const { src, exhausted, onError, onLoad } = useGameImage(cacheKey, sources, preferred);
 
   return (
     <button
       className={joinClasses([
         "flex h-10 items-center gap-x-3 rounded-lg px-3 transition-colors hover:bg-surface-mid hover:text-neutral-moderate",
-        isActive
-          ? "bg-surface-low text-neutral-moderate"
-          : "text-neutral-subdued",
+        isActive ? "bg-surface-low text-neutral-moderate" : "text-neutral-subdued",
       ])}
       title={formatGameDisplayName(game.name)}
       onClick={onClick}

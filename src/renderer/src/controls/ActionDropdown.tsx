@@ -1,20 +1,19 @@
+import * as _ from "lodash";
+import * as React from "react";
+import { Button, Dropdown, MenuItem } from "react-bootstrap";
+import * as ReactDOM from "react-dom";
+
 import type { IActionDefinition } from "../types/IActionDefinition";
 import type { IExtensibleProps } from "../types/IExtensionProvider";
 import type { TFunction } from "../util/i18n";
 import { log } from "../util/log";
 import { truthy } from "../util/util";
-
 import type { IActionControlProps, IActionDefinitionEx } from "./ActionControl";
 import ActionControl from "./ActionControl";
 import { HOVER_DELAY } from "./constants";
 import ContextMenu from "./ContextMenu";
 import Icon from "./Icon";
 import PortalMenu from "./PortalMenu";
-
-import * as _ from "lodash";
-import * as React from "react";
-import { Button, Dropdown, MenuItem } from "react-bootstrap";
-import * as ReactDOM from "react-dom";
 
 export type ButtonType = "text" | "icon" | "both" | "menu";
 
@@ -50,8 +49,7 @@ interface IMenuActionProps {
 function MenuAction(props: IMenuActionProps) {
   const { t, action, instanceId, onSelect, id } = props;
 
-  const instanceIds =
-    typeof instanceId === "string" ? [instanceId] : instanceId;
+  const instanceIds = typeof instanceId === "string" ? [instanceId] : instanceId;
 
   const [open, setOpenMenu] = React.useState(false);
   const [subMenus, setSubMenus] = React.useState([]);
@@ -174,10 +172,7 @@ class DropdownMenu extends React.PureComponent<IProps, { open: boolean }> {
     rest.splice(defaultIdx, 1);
 
     const title: any = (
-      <div
-        title={genTooltip(actions[defaultIdx].show)}
-        style={{ width: "100%", height: "100%" }}
-      >
+      <div title={genTooltip(actions[defaultIdx].show)} style={{ width: "100%", height: "100%" }}>
         <Icon name={actions[defaultIdx].icon} />
         {t(actions[defaultIdx].title)}
       </div>
@@ -240,15 +235,7 @@ class DropdownMenu extends React.PureComponent<IProps, { open: boolean }> {
     }
 
     if (action.icon !== undefined) {
-      return (
-        <MenuAction
-          t={t}
-          key={id}
-          id={id}
-          action={action}
-          instanceId={instanceId}
-        />
-      );
+      return <MenuAction t={t} key={id} id={id} action={action} instanceId={instanceId} />;
     } else {
       return (
         <MenuItem
@@ -276,19 +263,16 @@ class DropdownMenu extends React.PureComponent<IProps, { open: boolean }> {
       "objects",
       "children",
     ];
-    const unknownProps = Object.keys(this.props).reduce(
-      (prev: any, current: string) => {
-        if (knownProps.indexOf(current) === -1) {
-          return {
-            ...prev,
-            [current]: this.props[current],
-          };
-        } else {
-          return prev;
-        }
-      },
-      {},
-    );
+    const unknownProps = Object.keys(this.props).reduce((prev: any, current: string) => {
+      if (knownProps.indexOf(current) === -1) {
+        return {
+          ...prev,
+          [current]: this.props[current],
+        };
+      } else {
+        return prev;
+      }
+    }, {});
     const staticProps = {
       ...unknownProps,
       key: id,
@@ -297,13 +281,7 @@ class DropdownMenu extends React.PureComponent<IProps, { open: boolean }> {
     };
     if (action.props !== undefined) {
       const addProps = action.props();
-      return (
-        <action.component
-          {...staticProps}
-          {...addProps}
-          parentType="dropdown"
-        />
-      );
+      return <action.component {...staticProps} {...addProps} parentType="dropdown" />;
     } else {
       return <action.component {...staticProps} parentType="dropdown" />;
     }
@@ -319,34 +297,22 @@ class DropdownMenu extends React.PureComponent<IProps, { open: boolean }> {
     const title = data.value;
     const action = actions.find((iter) => iter.title === title);
     if (action !== undefined) {
-      const instanceIds =
-        typeof instanceId === "string" ? [instanceId] : instanceId;
+      const instanceIds = typeof instanceId === "string" ? [instanceId] : instanceId;
       action.action?.(instanceIds);
     }
   };
 }
 
-type ExportType = IBaseProps &
-  IActionControlProps &
-  IExtensibleProps &
-  React.HTMLAttributes<any>;
+type ExportType = IBaseProps & IActionControlProps & IExtensibleProps & React.HTMLAttributes<any>;
 
 class ActionDropdown extends React.Component<ExportType> {
-  private static ACTION_PROPS = [
-    "filter",
-    "group",
-    "instanceId",
-    "staticElements",
-  ];
+  private static ACTION_PROPS = ["filter", "group", "instanceId", "staticElements"];
   public render() {
     const actionProps: IActionControlProps = _.pick(
       this.props,
       ActionDropdown.ACTION_PROPS,
     ) as IActionControlProps;
-    const menuProps: IBaseProps = _.omit(
-      this.props,
-      ActionDropdown.ACTION_PROPS,
-    ) as any;
+    const menuProps: IBaseProps = _.omit(this.props, ActionDropdown.ACTION_PROPS) as any;
     return (
       <ActionControl {...actionProps}>
         <DropdownMenu {...menuProps} />

@@ -1,3 +1,9 @@
+import * as path from "path";
+
+import PromiseBB from "bluebird";
+import * as Redux from "redux";
+import { fs, log, selectors, types, util } from "vortex-api";
+
 import {
   backupPath,
   gameSettingsFiles,
@@ -8,11 +14,6 @@ import {
   profilePath,
 } from "./util/gameSupport";
 
-import PromiseBB from "bluebird";
-import * as path from "path";
-import * as Redux from "redux";
-import { fs, log, selectors, types, util } from "vortex-api";
-
 function copyGameSettings(
   sourcePath: string,
   destinationPath: string,
@@ -21,10 +22,7 @@ function copyGameSettings(
 ): PromiseBB<void> {
   return PromiseBB.map(files, (gameSetting) => {
     let source = path.join(sourcePath, gameSetting.name);
-    let destination = path.join(
-      destinationPath,
-      path.basename(gameSetting.name),
-    );
+    let destination = path.join(destinationPath, path.basename(gameSetting.name));
     const destinationOrig = destination;
 
     if (copyType.startsWith("Glo")) {
@@ -56,15 +54,15 @@ function copyGameSettings(
       .then(() =>
         copyType.endsWith("Glo")
           ? fs
-            .copyAsync(source, destinationOrig, { noSelfCopy: true })
-            .then(() =>
-              fs.copyAsync(source, destinationOrig + ".baked", {
-                noSelfCopy: true,
-              }),
-            )
-            .catch({ code: "ENOENT" }, (err) =>
-              gameSetting.optional ? PromiseBB.resolve() : PromiseBB.reject(err),
-            )
+              .copyAsync(source, destinationOrig, { noSelfCopy: true })
+              .then(() =>
+                fs.copyAsync(source, destinationOrig + ".baked", {
+                  noSelfCopy: true,
+                }),
+              )
+              .catch({ code: "ENOENT" }, (err) =>
+                gameSetting.optional ? PromiseBB.resolve() : PromiseBB.reject(err),
+              )
           : PromiseBB.resolve(),
       );
   }).then(() => undefined);
@@ -94,9 +92,9 @@ function checkGlobalFiles(
     file.optional
       ? PromiseBB.resolve(false)
       : fs
-        .statAsync(file.name)
-        .then(() => false)
-        .catch(() => true),
+          .statAsync(file.name)
+          .then(() => false)
+          .catch(() => true),
   ).then((missingFiles: ISettingsFile[]) => {
     if (missingFiles.length > 0) {
       return PromiseBB.resolve(missingFiles);
@@ -127,22 +125,10 @@ function updateLocalGameSettings(
       .then(() =>
         (oldProfile as any).pendingRemove === true
           ? PromiseBB.resolve()
-          : copyGameSettings(
-            myGames,
-            profilePath(oldProfile),
-            gameSettings,
-            "GloPro",
-          ),
+          : copyGameSettings(myGames, profilePath(oldProfile), gameSettings, "GloPro"),
       )
       // restore backup
-      .then(() =>
-        copyGameSettings(
-          backupPath(oldProfile),
-          myGames,
-          gameSettings,
-          "BacGlo",
-        ),
-      );
+      .then(() => copyGameSettings(backupPath(oldProfile), myGames, gameSettings, "BacGlo"));
   }
 
   if (
@@ -157,23 +143,9 @@ function updateLocalGameSettings(
 
     copyFiles = copyFiles
       // backup global files
-      .then(() =>
-        copyGameSettings(
-          myGames,
-          backupPath(newProfile),
-          gameSettings,
-          "GloBac",
-        ),
-      )
+      .then(() => copyGameSettings(myGames, backupPath(newProfile), gameSettings, "GloBac"))
       // install profile files
-      .then(() =>
-        copyGameSettings(
-          profilePath(newProfile),
-          myGames,
-          gameSettings,
-          "ProGlo",
-        ),
-      );
+      .then(() => copyGameSettings(profilePath(newProfile), myGames, gameSettings, "ProGlo"));
   }
 
   return PromiseBB.resolve(copyFiles);
@@ -186,41 +158,31 @@ function onSwitchGameProfile(
 ): PromiseBB<boolean> {
   return checkGlobalFiles(oldProfile, newProfile).then((missingFiles) => {
     if (missingFiles !== undefined && missingFiles !== null) {
-      const fileList = missingFiles
-        .map((fileName) => `"${fileName.name}"`)
-        .join("\n");
+      const fileList = missingFiles.map((fileName) => `"${fileName.name}"`).join("\n");
       util.showError(
         store.dispatch,
         "An error occurred activating profile",
         "Files are missing or not writeable:\n" +
-        fileList +
-        "\n\n" +
-        "Some games need to be run at least once before they can be modded.",
+          fileList +
+          "\n\n" +
+          "Some games need to be run at least once before they can be modded.",
         { allowReport: false },
       );
       return false;
     }
 
-    return updateLocalGameSettings(
-      "local_game_settings",
-      oldProfile,
-      newProfile,
-    )
+    return updateLocalGameSettings("local_game_settings", oldProfile, newProfile)
       .then(() => true)
       .catch(util.UserCanceled, (err) => {
         log("info", "User canceled game settings update", err);
         return false;
       })
       .catch((err) => {
-        util.showError(
-          store.dispatch,
-          "An error occurred applying game settings",
-          {
-            error: err,
-            "Old Game": (oldProfile || { gameId: "none" }).gameId,
-            "New Game": (newProfile || { gameId: "none" }).gameId,
-          },
-        );
+        util.showError(store.dispatch, "An error occurred applying game settings", {
+          error: err,
+          "Old Game": (oldProfile || { gameId: "none" }).gameId,
+          "New Game": (newProfile || { gameId: "none" }).gameId,
+        });
         return false;
       });
   });
@@ -238,16 +200,14 @@ function onDeselectGameProfile(
   return checkGlobalFiles(undefined, profile)
     .then((missingFiles) => {
       if (missingFiles !== undefined && missingFiles !== null) {
-        const fileList = missingFiles
-          .map((fileName) => `"${fileName.name}"`)
-          .join("\n");
+        const fileList = missingFiles.map((fileName) => `"${fileName.name}"`).join("\n");
         util.showError(
           store.dispatch,
           "An error occurred activating profile",
           "Files are missing or not writeable:\n" +
-          fileList +
-          "\n\n" +
-          "Some games need to be run at least once before they can be modded.",
+            fileList +
+            "\n\n" +
+            "Some games need to be run at least once before they can be modded.",
           { allowReport: false },
         );
         return false;
@@ -257,19 +217,13 @@ function onDeselectGameProfile(
       const myGames = mygamesPath(profile.gameId);
       const gameSettings = gameSettingsFiles(profile.gameId, null);
 
-      return copyGameSettings(
-        myGames,
-        profilePath(profile),
-        gameSettings,
-        "GloPro",
-      ).then(() => true);
+      return copyGameSettings(myGames, profilePath(profile), gameSettings, "GloPro").then(
+        () => true,
+      );
     });
 }
 
-function bakeSettings(
-  api: types.IExtensionApi,
-  profile: types.IProfile,
-): PromiseBB<void> {
+function bakeSettings(api: types.IExtensionApi, profile: types.IProfile): PromiseBB<void> {
   if (profile === undefined) {
     return PromiseBB.resolve();
   }
@@ -279,11 +233,11 @@ function bakeSettings(
     .filter((key) => util.getSafe(profile, ["modState", key, "enabled"], false))
     .map((key) => gameMods[key]);
 
-  return PromiseBB.resolve(util
-    .sortMods(profile.gameId, mods, api)
-    .then((sortedMods) =>
-      api.emitAndAwait("bake-settings", profile.gameId, sortedMods, profile),
-    ));
+  return PromiseBB.resolve(
+    util
+      .sortMods(profile.gameId, mods, api)
+      .then((sortedMods) => api.emitAndAwait("bake-settings", profile.gameId, sortedMods, profile)),
+  );
 }
 
 function testGlobalFiles(api: types.IExtensionApi): PromiseBB<types.ITestResult> {
@@ -300,9 +254,7 @@ function testGlobalFiles(api: types.IExtensionApi): PromiseBB<types.ITestResult>
     if (missingFiles == null || missingFiles.length === 0) {
       return PromiseBB.resolve(undefined);
     }
-    const fileList = missingFiles
-      .map((fileName) => `"${fileName.name}"`)
-      .join("\n");
+    const fileList = missingFiles.map((fileName) => `"${fileName.name}"`).join("\n");
     return PromiseBB.resolve<types.ITestResult>({
       description: {
         short: "Missing or not writeable game files",
@@ -317,8 +269,7 @@ function testGlobalFiles(api: types.IExtensionApi): PromiseBB<types.ITestResult>
         const state = api.getState();
         activeProfile = selectors.activeProfile(state);
         return checkGlobalFiles(undefined, activeProfile).then(
-          (recheckMissingFiles) =>
-            !recheckMissingFiles || recheckMissingFiles.length === 0,
+          (recheckMissingFiles) => !recheckMissingFiles || recheckMissingFiles.length === 0,
         )
           ? PromiseBB.resolve(undefined)
           : PromiseBB.resolve(testGlobalFiles(api));
@@ -376,9 +327,7 @@ function init(context: types.IExtensionContext): boolean {
               ? selectors.lastActiveProfileForGame(state, newProfile.gameId)
               : undefined;
           const lastActiveProfile =
-            newProfile !== undefined
-              ? state.persistent.profiles[lastActiveProfileId]
-              : undefined;
+            newProfile !== undefined ? state.persistent.profiles[lastActiveProfileId] : undefined;
           enqueue(() =>
             bakeSettings(context.api, oldProfile)
               .then(() => onDeselectGameProfile(store, oldProfile))
@@ -395,19 +344,13 @@ function init(context: types.IExtensionContext): boolean {
               .then(() => bakeSettings(context.api, newProfile))
               .catch(util.CycleError, (err) => {
                 // this should be reported to the user elsewhere
-                log(
-                  "warn",
-                  "settings couldn't be baked because mod rules contain cycles",
-                  err,
-                );
+                log("warn", "settings couldn't be baked because mod rules contain cycles", err);
               })
               .catch((err) => {
                 const usercanceled = err instanceof util.UserCanceled;
-                context.api.showErrorNotification(
-                  "failed to swap game settings file",
-                  err,
-                  { allowReport: !usercanceled },
-                );
+                context.api.showErrorNotification("failed to swap game settings file", err, {
+                  allowReport: !usercanceled,
+                });
               })
               .then(() => null),
           );

@@ -1,6 +1,7 @@
-import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import * as fs from "fs";
 import * as path from "path";
+
+import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import * as tmp from "tmp";
 import * as winapi from "winapi-bindings";
 
@@ -104,86 +105,75 @@ export function runElevated(
   args?: Record<string, unknown>,
 ): Promise<string> {
   return new Promise((resolve, reject) => {
-    tmp.file(
-      { postfix: ".js" },
-      (err: Error, tmpPath: string, fd: number, cleanup: () => void) => {
-        if (err) {
-          return reject(err);
-        }
+    tmp.file({ postfix: ".js" }, (err: Error, tmpPath: string, fd: number, cleanup: () => void) => {
+      if (err) {
+        return reject(err);
+      }
 
-        const modulePaths = getRealNodeModulePaths(process.cwd())
-          .map((p) => p.split("\\").join("/"));
+      const modulePaths = getRealNodeModulePaths(process.cwd()).map((p) => p.split("\\").join("/"));
 
-        let mainBody = elevatedMain.toString();
-        mainBody = mainBody.slice(
-          mainBody.indexOf("{") + 1,
-          mainBody.lastIndexOf("}"),
-        );
+      let mainBody = elevatedMain.toString();
+      mainBody = mainBody.slice(mainBody.indexOf("{") + 1, mainBody.lastIndexOf("}"));
 
-        // The elevatedMain function body is serialized via .toString() and executed
-        // in a separate Node process. We use __non_webpack_require__ in the function
-        // so webpack doesn't transform the calls, but that global doesn't exist in
-        // plain Node — so we alias it here. __webpack_require__ is also aliased in
-        // case the caller's serialized func callback contains webpack-transformed requires.
-        let prog = `
+      // The elevatedMain function body is serialized via .toString() and executed
+      // in a separate Node process. We use __non_webpack_require__ in the function
+      // so webpack doesn't transform the calls, but that global doesn't exist in
+      // plain Node — so we alias it here. __webpack_require__ is also aliased in
+      // case the caller's serialized func callback contains webpack-transformed requires.
+      let prog = `
         const __non_webpack_require__ = require;\n
         const __webpack_require__ = require;\n
         let moduleRoot = ${JSON.stringify(modulePaths)};\n
         let ipcPath = '${ipcPath}';\n
       `;
 
-        if (args !== undefined) {
-          for (const argKey of Object.keys(args)) {
-            if (Object.prototype.hasOwnProperty.call(args, argKey)) {
-              prog += `let ${argKey} = ${JSON.stringify(args[argKey])};\n`;
-            }
+      if (args !== undefined) {
+        for (const argKey of Object.keys(args)) {
+          if (Object.prototype.hasOwnProperty.call(args, argKey)) {
+            prog += `let ${argKey} = ${JSON.stringify(args[argKey])};\n`;
           }
         }
+      }
 
-        prog += `
+      prog += `
         let main = ${func.toString()};\n
         ${mainBody}\n
       `;
 
-        fs.write(fd, prog, (writeErr: Error, _written: number, _str: string) => {
-          if (writeErr) {
-            try {
-              cleanup();
-            } catch (cleanupErr) {
-              const errorMessage = getErrorMessageOrDefault(cleanupErr);
-              console.error(
-                "failed to clean up temporary script",
-                errorMessage,
-              );
-            }
-            return reject(writeErr);
-          }
-
+      fs.write(fd, prog, (writeErr: Error, _written: number, _str: string) => {
+        if (writeErr) {
           try {
-            fs.closeSync(fd);
-          } catch (closeErr) {
-            const err = unknownToError(closeErr);
-            const errCode = getErrorCode(err);
-            if (errCode !== "EBADF") {
-              return reject(err);
-            }
+            cleanup();
+          } catch (cleanupErr) {
+            const errorMessage = getErrorMessageOrDefault(cleanupErr);
+            console.error("failed to clean up temporary script", errorMessage);
           }
+          return reject(writeErr);
+        }
 
-          try {
-            winapi.ShellExecuteEx({
-              verb: "runas",
-              file: process.execPath,
-              parameters: `--run ${tmpPath}`,
-              directory: path.dirname(process.execPath),
-              show: "shownormal",
-            });
-            return resolve(tmpPath);
-          } catch (shellErr) {
-            return reject(unknownToError(shellErr));
+        try {
+          fs.closeSync(fd);
+        } catch (closeErr) {
+          const err = unknownToError(closeErr);
+          const errCode = getErrorCode(err);
+          if (errCode !== "EBADF") {
+            return reject(err);
           }
-        });
-      },
-    );
+        }
+
+        try {
+          winapi.ShellExecuteEx({
+            verb: "runas",
+            file: process.execPath,
+            parameters: `--run ${tmpPath}`,
+            directory: path.dirname(process.execPath),
+            show: "shownormal",
+          });
+          return resolve(tmpPath);
+        } catch (shellErr) {
+          return reject(unknownToError(shellErr));
+        }
+      });
+    });
   });
 }
-

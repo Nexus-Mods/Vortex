@@ -1,28 +1,21 @@
-import type PromiseBB from "bluebird";
-import type { BrowserWindow } from "electron";
+import * as path from "path";
+import { inspect } from "util";
 
-import {
-  type Span,
-  context,
-  ROOT_CONTEXT,
-  SpanStatusCode,
-  trace,
-} from "@opentelemetry/api";
+import { type Span, context, ROOT_CONTEXT, SpanStatusCode, trace } from "@opentelemetry/api";
 import { unknownToError } from "@vortex/shared";
 import { recordErrorOnSpan } from "@vortex/shared/telemetry";
+import type PromiseBB from "bluebird";
+import type { BrowserWindow } from "electron";
 import { ipcRenderer } from "electron";
 import * as fs from "fs-extra";
 import I18next from "i18next";
-import * as path from "path";
 import * as semver from "semver";
-import { inspect } from "util";
 import {} from "uuid";
-
-import type { IErrorOptions, IExtensionApi, IState } from "../types/api";
-import type { IError } from "../types/IError";
 
 import { hasPersistentWithNexus } from "../extensions/nexus_integration/guards";
 import { isTelemetryEnabled } from "../telemetry/selectors";
+import type { IErrorOptions, IExtensionApi, IState } from "../types/api";
+import type { IError } from "../types/IError";
 import { getApplication } from "./application";
 import { COMPANY_ID } from "./constants";
 import { UserCanceled } from "./CustomErrors";
@@ -83,21 +76,15 @@ export function setOutdated(api: IExtensionApi) {
   if (hasPersistentWithNexus(state.persistent)) {
     if (state.persistent.nexus?.newestVersion !== undefined) {
       try {
-        outdated = semver.lt(
-          version,
-          state.persistent.nexus.newestVersion ?? "0.0.0",
-        );
+        outdated = semver.lt(version, state.persistent.nexus.newestVersion ?? "0.0.0");
       } catch (err) {
         // not really a big issue
         log("warn", "failed to update outdated status", err);
       }
     }
-    api.onStateChange?.<string>(
-      ["persistent", "nexus", "newestVersion"],
-      (prev, next) => {
-        outdated = semver.lt(version, next ?? "0.0.0");
-      },
-    );
+    api.onStateChange?.<string>(["persistent", "nexus", "newestVersion"], (prev, next) => {
+      outdated = semver.lt(version, next ?? "0.0.0");
+    });
   }
 }
 
@@ -142,9 +129,7 @@ function getCurrentWindow(): BrowserWindow | null {
   return currentWindow;
 }
 
-export function getVisibleWindow(
-  win?: BrowserWindow | null,
-): BrowserWindow | null {
+export function getVisibleWindow(win?: BrowserWindow | null): BrowserWindow | null {
   if (!win) {
     win = getCurrentWindow() ?? getWindow();
   }
@@ -270,10 +255,7 @@ export function terminate(
           });
           // can't access the store at this point because we won't be waiting for the store
           // to be persisted
-          fs.writeFileSync(
-            path.join(getVortexPath("temp"), "__disable_" + error.extension),
-            "",
-          );
+          fs.writeFileSync(path.join(getVortexPath("temp"), "__disable_" + error.extension), "");
         }
       }
     } catch (err) {
@@ -378,9 +360,7 @@ export function toError(
 
       const flatErr = flatten(input);
 
-      let attributes = Object.keys(flatErr || {}).filter(
-        (key) => key[0].toUpperCase() === key[0],
-      );
+      let attributes = Object.keys(flatErr || {}).filter((key) => key[0].toUpperCase() === key[0]);
       // if there are upper case characters, this is a custom, not properly typed, error object
       // with upper case attributes, intended to be displayed to the user.
       // Otherwise, who knows what this is, just send everything.
@@ -437,18 +417,10 @@ export function clearErrorContext(id: string) {
  * @param value context value
  * @param fun the function to set
  */
-export function withContext(
-  id: string,
-  value: string,
-  fun: () => PromiseBB<any>,
-) {
-  return withTrackedActivity(
-    "vortex.context",
-    id,
-    { "context.value": value },
-    () => fun(),
-    { root: true },
-  );
+export function withContext(id: string, value: string, fun: () => PromiseBB<any>) {
+  return withTrackedActivity("vortex.context", id, { "context.value": value }, () => fun(), {
+    root: true,
+  });
 }
 
 /**
@@ -464,10 +436,7 @@ export function getErrorContext(): IErrorContext {
   return { ...globalContext };
 }
 
-export type SetAttribute = (
-  key: string,
-  value: string | number | boolean,
-) => void;
+export type SetAttribute = (key: string, value: string | number | boolean) => void;
 
 export type SetError = (error: Error) => void;
 
@@ -548,13 +517,7 @@ function applyErrorToSpan(
   attributes?: Record<string, string | number | boolean>,
 ): void {
   span.setAttribute("error.title", title);
-  recordErrorOnSpan(
-    span,
-    error,
-    getApplication().version,
-    globalContext,
-    attributes,
-  );
+  recordErrorOnSpan(span, error, getApplication().version, globalContext, attributes);
 }
 
 /**

@@ -32,9 +32,6 @@ export function peHeader(path: QualifiedPath): PEHeaderVersionSource {
 }
 
 /** Shorthand: detect version from a text file, optionally with a regex. */
-export function textFile(
-  path: QualifiedPath,
-  regex?: string,
-): TextFileVersionSource {
+export function textFile(path: QualifiedPath, regex?: string): TextFileVersionSource {
   return { type: "text-file", path, regex };
 }

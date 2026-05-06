@@ -1,94 +1,62 @@
-import { appDataPath, initGameSupport, settingsPath } from "./gameSupport";
+import * as path from "path";
 
 import Promise from "bluebird";
-import * as path from "path";
 import { fs, selectors, types, util } from "vortex-api";
+
+import { appDataPath, initGameSupport, settingsPath } from "./gameSupport";
 
 function init(context: types.IExtensionContext) {
   initGameSupport(context.api);
-  context.registerAction(
-    "mod-icons",
-    300,
-    "open-ext",
-    {},
-    "Open Mod Staging Folder",
-    () => {
-      const store = context.api.store;
-      util
-        .opn(selectors.installPath(store.getState()))
-        .catch((err) => undefined);
-    },
-  );
+  context.registerAction("mod-icons", 300, "open-ext", {}, "Open Mod Staging Folder", () => {
+    const store = context.api.store;
+    util.opn(selectors.installPath(store.getState())).catch((err) => undefined);
+  });
 
-  context.registerAction(
-    "mod-icons",
-    300,
-    "open-ext",
-    {},
-    "Open Game Folder",
-    () => {
-      const state = context.api.store.getState();
-      const gameId: string = selectors.activeGameId(state);
-      getGameInstallPath(state, gameId)
-        .then((installPath) => {
-          openPath(installPath);
-        })
-        .catch((e) => {
-          context.api.showErrorNotification("Failed to open game folder", e);
-        });
-    },
-  );
+  context.registerAction("mod-icons", 300, "open-ext", {}, "Open Game Folder", () => {
+    const state = context.api.store.getState();
+    const gameId: string = selectors.activeGameId(state);
+    getGameInstallPath(state, gameId)
+      .then((installPath) => {
+        openPath(installPath);
+      })
+      .catch((e) => {
+        context.api.showErrorNotification("Failed to open game folder", e);
+      });
+  });
 
-  context.registerAction(
-    "download-actions",
-    100,
-    "open-ext",
-    {},
-    "Open Folder",
-    () => {
-      const state = context.api.getState();
-      const dlPath = selectors.downloadPath(state);
-      util.opn(dlPath).catch(() => undefined);
-    },
-  );
+  context.registerAction("download-actions", 100, "open-ext", {}, "Open Folder", () => {
+    const state = context.api.getState();
+    const dlPath = selectors.downloadPath(state);
+    util.opn(dlPath).catch(() => undefined);
+  });
 
-  context.registerAction(
-    "mod-icons",
-    300,
-    "open-ext",
-    {},
-    "Open Game Mods Folder",
-    () => {
-      const state = context.api.store.getState();
-      const gameRef: types.IGame = util.getGame(selectors.activeGameId(state));
-      getGameInstallPath(state, gameRef.id)
-        .then((installPath) => {
-          // Check if the extension provided us with a "custom" directory
-          //  to open when the button is clicked - otherwise assume we
-          //  just need to use the default queryModPath value.
-          let modPath =
-            !!gameRef.details && !!gameRef.details.customOpenModsPath
-              ? gameRef.details.customOpenModsPath
-              : gameRef.queryModPath(installPath);
-          if (!path.isAbsolute(modPath)) {
-            // We add a path separator at the end to avoid running executables
-            //  instead of opening file explorer. This happens when the
-            //  a game's mods folder is named like its executable.
-            //  e.g. Vampire the Masquerade's default modding folder is ../Vampire/
-            //  and within the same directory ../Vampire.exe exists as well.
-            modPath = path.join(installPath, modPath) + path.sep;
-          }
+  context.registerAction("mod-icons", 300, "open-ext", {}, "Open Game Mods Folder", () => {
+    const state = context.api.store.getState();
+    const gameRef: types.IGame = util.getGame(selectors.activeGameId(state));
+    getGameInstallPath(state, gameRef.id)
+      .then((installPath) => {
+        // Check if the extension provided us with a "custom" directory
+        //  to open when the button is clicked - otherwise assume we
+        //  just need to use the default queryModPath value.
+        let modPath =
+          !!gameRef.details && !!gameRef.details.customOpenModsPath
+            ? gameRef.details.customOpenModsPath
+            : gameRef.queryModPath(installPath);
+        if (!path.isAbsolute(modPath)) {
+          // We add a path separator at the end to avoid running executables
+          //  instead of opening file explorer. This happens when the
+          //  a game's mods folder is named like its executable.
+          //  e.g. Vampire the Masquerade's default modding folder is ../Vampire/
+          //  and within the same directory ../Vampire.exe exists as well.
+          modPath = path.join(installPath, modPath) + path.sep;
+        }
 
-          openPath(modPath, installPath);
-        })
-        .catch((e) => {
-          context.api.showErrorNotification(
-            "Failed to open the game mods folder",
-            e,
-          );
-        });
-    },
-  );
+        openPath(modPath, installPath);
+      })
+      .catch((e) => {
+        context.api.showErrorNotification("Failed to open the game mods folder", e);
+      });
+  });
 
   context.registerAction(
     "mod-icons",
@@ -152,11 +120,7 @@ function init(context: types.IExtensionContext) {
       const state: types.IState = context.api.store.getState();
       const gameMode = selectors.activeGameId(state);
       return (
-        util.getSafe(
-          state.persistent.mods,
-          [gameMode, instanceIds[0]],
-          undefined,
-        ) !== undefined
+        util.getSafe(state.persistent.mods, [gameMode, instanceIds[0]], undefined) !== undefined
       );
     },
   );
@@ -195,35 +159,16 @@ function init(context: types.IExtensionContext) {
     (instanceIds) => {
       const state: types.IState = context.api.store.getState();
       const gameMode = selectors.activeGameId(state);
-      const mod = util.getSafe(
-        state.persistent.mods,
-        [gameMode, instanceIds[0]],
-        undefined,
-      );
+      const mod = util.getSafe(state.persistent.mods, [gameMode, instanceIds[0]], undefined);
       const downloadId = mod?.archiveId ?? instanceIds[0];
-      return (
-        util.getSafe(
-          state.persistent.downloads.files,
-          [downloadId],
-          undefined,
-        ) !== undefined
-      );
+      return util.getSafe(state.persistent.downloads.files, [downloadId], undefined) !== undefined;
     },
   );
 
-  context.registerAction(
-    "download-icons",
-    300,
-    "open-ext",
-    {},
-    "Open in File Manager",
-    () => {
-      const store = context.api.store;
-      util
-        .opn(selectors.downloadPath(store.getState()))
-        .catch((err) => undefined);
-    },
-  );
+  context.registerAction("download-icons", 300, "open-ext", {}, "Open in File Manager", () => {
+    const store = context.api.store;
+    util.opn(selectors.downloadPath(store.getState())).catch((err) => undefined);
+  });
 
   return true;
 }
@@ -247,9 +192,7 @@ function openPath(mainPath: string, fallbackPath?: string) {
   fs.statAsync(mainPath)
     .then(() => util.opn(mainPath).catch(() => undefined))
     .catch(() =>
-      fallbackPath !== undefined
-        ? util.opn(fallbackPath).catch(() => undefined)
-        : undefined,
+      fallbackPath !== undefined ? util.opn(fallbackPath).catch(() => undefined) : undefined,
     )
     .then(() => null);
 }

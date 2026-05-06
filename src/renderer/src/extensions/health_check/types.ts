@@ -4,10 +4,7 @@
 
 import type { IModRequiring, IModRequirement } from "@nexusmods/nexus-api";
 
-import type {
-  HealthCheckTrigger,
-  IHealthCheckResult,
-} from "../../types/IHealthCheck";
+import type { HealthCheckTrigger, IHealthCheckResult } from "../../types/IHealthCheck";
 import type { ICustomCheckApi, ILegacyApi, IResultsApi } from "./api";
 
 /**
@@ -19,10 +16,7 @@ export type HealthCheckId = "check-nexus-mod-requirements";
  * A subset of IModRequiring representing the mod that requires a missing mod.
  * Picks only modId and modName, and converts modId to number.
  */
-export type RequiringMod = Omit<
-  Pick<IModRequiring, "modId" | "modName">,
-  "modId"
-> & {
+export type RequiringMod = Omit<Pick<IModRequiring, "modId" | "modName">, "modId"> & {
   modId: number;
   modUrl?: string;
 };
@@ -30,8 +24,7 @@ export type RequiringMod = Omit<
 /**
  * A required mod that is missing
  */
-export interface IModRequirementExt
-  extends Omit<IModRequirement, "modId" | "gameId"> {
+export interface IModRequirementExt extends Omit<IModRequirement, "modId" | "gameId"> {
   /** Unique DB identifier */
   uid: string;
   /** The mod that requires this mod */
@@ -161,7 +154,5 @@ export interface IHealthCheckApi {
   runAll: () => Promise<IHealthCheckResult[]>;
 
   /** Run checks by trigger type */
-  runChecksByTrigger?: (
-    trigger: HealthCheckTrigger,
-  ) => Promise<IHealthCheckResult[]>;
+  runChecksByTrigger?: (trigger: HealthCheckTrigger) => Promise<IHealthCheckResult[]>;
 }

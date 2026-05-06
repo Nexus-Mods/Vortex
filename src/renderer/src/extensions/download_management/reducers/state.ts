@@ -1,19 +1,13 @@
-import { objDiff, flatten } from "../../../util/util";
+import { inspect } from "util";
+
+import * as _ from "lodash";
+
 import type { IReducerSpec } from "../../../types/IExtensionContext";
 import { VerifierDropParent } from "../../../types/IExtensionContext";
 import { terminate } from "../../../util/errorHandling";
-import {
-  deleteOrNop,
-  getSafe,
-  merge,
-  setOrNop,
-  setSafe,
-} from "../../../util/storeHelper";
-
+import { deleteOrNop, getSafe, merge, setOrNop, setSafe } from "../../../util/storeHelper";
+import { objDiff, flatten } from "../../../util/util";
 import * as action from "../actions/state";
-
-import * as _ from "lodash";
-import { inspect } from "util";
 
 export const NUM_SPEED_DATA_POINTS = 30;
 
@@ -92,11 +86,7 @@ export const stateReducer: IReducerSpec = {
       if (state.files[payload.id] === undefined) {
         return state;
       }
-      return setSafe(
-        state,
-        ["files", payload.id, "verified"],
-        payload.progress,
-      );
+      return setSafe(state, ["files", payload.id, "verified"], payload.progress);
     },
     [action.setDownloadFilePath as any]: (state, payload) =>
       setOrNop(state, ["files", payload.id, "localPath"], payload.filePath),
@@ -135,10 +125,7 @@ export const stateReducer: IReducerSpec = {
       if (typeof payload.id !== "string") {
         throw new Error("invalid download id");
       }
-      if (
-        getSafe<string>(state, ["files", payload.id, "state"], "unknown") !==
-        "init"
-      ) {
+      if (getSafe<string>(state, ["files", payload.id, "state"], "unknown") !== "init") {
         return state;
       }
       return merge(state, ["files", payload.id], {
@@ -189,9 +176,7 @@ export const stateReducer: IReducerSpec = {
     },
     [action.setDownloadSpeed as any]: (state, payload) => {
       const temp = setSafe(state, ["speed"], payload);
-      let speeds = Array.isArray(state.speedHistory)
-        ? state.speedHistory.slice()
-        : [];
+      let speeds = Array.isArray(state.speedHistory) ? state.speedHistory.slice() : [];
       speeds.push(payload);
       if (speeds.length > NUM_SPEED_DATA_POINTS) {
         speeds = speeds.slice(speeds.length - NUM_SPEED_DATA_POINTS);
@@ -202,8 +187,7 @@ export const stateReducer: IReducerSpec = {
       const temp = setSafe(state, ["speed"], payload[payload.length - 1]);
       return setSafe(temp, ["speedHistory"], payload);
     },
-    [action.removeDownload as any]: (state, payload) =>
-      deleteOrNop(state, ["files", payload.id]),
+    [action.removeDownload as any]: (state, payload) => deleteOrNop(state, ["files", payload.id]),
     [action.removeDownloadSilent as any]: (state, payload) =>
       deleteOrNop(state, ["files", payload.id]),
     [action.addLocalDownload as any]: (state, payload) =>
@@ -271,8 +255,7 @@ export const stateReducer: IReducerSpec = {
           description: () => "Invalid download",
           elements: {
             game: {
-              description: () =>
-                "Download to game assignment stored incorrectly will be repaired.",
+              description: () => "Download to game assignment stored incorrectly will be repaired.",
               required: true,
               type: "array",
               noNull: true,

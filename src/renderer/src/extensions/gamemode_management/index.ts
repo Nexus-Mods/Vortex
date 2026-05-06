@@ -1,14 +1,20 @@
-import type * as Redux from "redux";
+import * as path from "path";
 
 import { mdiGamepadSquare } from "@mdi/js";
 import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
 import PromiseBB from "bluebird";
 import { clipboard } from "electron";
 import * as fsExtra from "fs-extra";
-import * as path from "path";
 import React from "react";
+import type * as Redux from "redux";
 import * as semver from "semver";
 
+import { showDialog } from "../../actions/notifications";
+import { setDialogVisible } from "../../actions/session";
+import LazyComponent from "../../controls/LazyComponent";
+import OptionsFilter, { type ISelectOption } from "../../controls/table/OptionsFilter";
+import { log } from "../../logging";
+import ReduxProp from "../../ReduxProp";
 import type { IExtensionDownloadInfo } from "../../types/extensions";
 import type {
   GameInfoQuery,
@@ -17,30 +23,11 @@ import type {
 } from "../../types/IExtensionContext";
 import type { IGame } from "../../types/IGame";
 import type { IGameStore } from "../../types/IGameStore";
-import type { NotificationDismiss } from '../../types/INotification';
+import type { NotificationDismiss } from "../../types/INotification";
 import type { IProfile, IRunningTool, IState } from "../../types/IState";
 import type { IEditChoice, ITableAttribute } from "../../types/ITableAttribute";
-import type { IModWithState } from "../mod_management/views/CheckModVersionsButton";
-import type GameModeManager from "./GameModeManager";
-import type { IDiscoveryResult } from "./types/IDiscoveryResult";
-import type { IGameStored } from "./types/IGameStored";
-import type { IModType } from "./types/IModType";
-
-import { showDialog } from "../../actions/notifications";
-import { setDialogVisible } from "../../actions/session";
-import LazyComponent from "../../controls/LazyComponent";
-import OptionsFilter, {
-  type ISelectOption,
-} from "../../controls/table/OptionsFilter";
-import { log } from "../../logging";
-import ReduxProp from "../../ReduxProp";
 import { COMPANY_ID, NEXUSMODS_EXT_ID } from "../../util/constants";
-import {
-  DataInvalid,
-  ProcessCanceled,
-  SetupError,
-  UserCanceled,
-} from "../../util/CustomErrors";
+import { DataInvalid, ProcessCanceled, SetupError, UserCanceled } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
 import GameStoreHelper from "../../util/GameStoreHelper";
 import local from "../../util/local";
@@ -50,6 +37,7 @@ import { activeGameId, activeProfile } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch } from "../../util/util";
 import { setModType } from "../mod_management/actions/mods";
+import type { IModWithState } from "../mod_management/views/CheckModVersionsButton";
 import { nexusGames } from "../nexus_integration/util";
 import { setNextProfile } from "../profile_management/actions/settings";
 import { setGameInfo } from "./actions/persistent";
@@ -59,27 +47,22 @@ import {
   setGamePath,
   setGameSearchPaths,
 } from "./actions/settings";
+import type GameModeManager from "./GameModeManager";
 import { type IGameStub } from "./GameModeManager";
 import { discoveryReducer } from "./reducers/discovery";
 import { persistentReducer } from "./reducers/persistent";
 import { sessionReducer } from "./reducers/session";
 import { settingsReducer } from "./reducers/settings";
-import {
-  currentGame,
-  currentGameDiscovery,
-  discoveryByGame,
-  gameById,
-} from "./selectors";
+import { currentGame, currentGameDiscovery, discoveryByGame, gameById } from "./selectors";
+import type { IDiscoveryResult } from "./types/IDiscoveryResult";
+import type { IGameStored } from "./types/IGameStored";
+import type { IModType } from "./types/IModType";
 import getDriveList from "./util/getDriveList";
 import { getGame, getGameStore, getGameStores } from "./util/getGame";
-import {
-  getModType,
-  getModTypeExtensions,
-  registerModType,
-} from "./util/modTypeExtensions";
+import { getModType, getModTypeExtensions, registerModType } from "./util/modTypeExtensions";
 import ProcessMonitor from "./util/ProcessMonitor";
 import queryGameInfo from "./util/queryGameInfo";
-import { } from "./views/GamePicker";
+import {} from "./views/GamePicker";
 import HideGameIcon from "./views/HideGameIcon";
 import ModTypeWidget from "./views/ModTypeWidget";
 import PathSelectionDialog from "./views/PathSelection";
@@ -108,32 +91,25 @@ interface IProvider {
 
 const gameInfoProviders: IProvider[] = [];
 
-function refreshGameInfo(
-  store: Redux.Store<IState>,
-  gameId: string,
-): PromiseBB<void> {
+function refreshGameInfo(store: Redux.Store<IState>, gameId: string): PromiseBB<void> {
   interface IKeyProvider {
     [key: string]: { priority: number; provider: string };
   }
 
   // determine a dictionary of which keys we should have for the game
-  const expectedKeys = gameInfoProviders.reduce(
-    (prev: IKeyProvider, value: IProvider) => {
-      value.keys.forEach((key) => {
-        if (prev[key] === undefined || prev[key].priority < value.priority) {
-          prev[key] = {
-            priority: value.priority,
-            provider: value.id,
-          };
-        }
-      });
-      return prev;
-    },
-    {},
-  );
+  const expectedKeys = gameInfoProviders.reduce((prev: IKeyProvider, value: IProvider) => {
+    value.keys.forEach((key) => {
+      if (prev[key] === undefined || prev[key].priority < value.priority) {
+        prev[key] = {
+          priority: value.priority,
+          provider: value.id,
+        };
+      }
+    });
+    return prev;
+  }, {});
 
-  const gameInfo =
-    store.getState().persistent.gameMode.gameInfo?.[gameId] || {};
+  const gameInfo = store.getState().persistent.gameMode.gameInfo?.[gameId] || {};
 
   const now = Date.now();
 
@@ -144,9 +120,7 @@ function refreshGameInfo(
   const providersToQuery = Array.from(
     new Set(
       missingKeys.map((key) =>
-        gameInfoProviders.find(
-          (prov) => prov.id === expectedKeys[key].provider,
-        ),
+        gameInfoProviders.find((prov) => prov.id === expectedKeys[key].provider),
       ),
     ),
   );
@@ -155,21 +129,16 @@ function refreshGameInfo(
   const game: IGameStored = store
     .getState()
     .session.gameMode.known.find((iter) => iter.id === gameId);
-  const gameDiscovery: IDiscoveryResult =
-    store.getState().settings.gameMode.discovered[gameId];
+  const gameDiscovery: IDiscoveryResult = store.getState().settings.gameMode.discovered[gameId];
 
   const filterResult = (key: string, provider: IProvider) => {
     if (expectedKeys[key] !== undefined) {
-      return (
-        getSafe(expectedKeys, [key, "provider"], undefined) === provider.id
-      );
+      return getSafe(expectedKeys, [key, "provider"], undefined) === provider.id;
     } else {
       // for unexpected keys, use the result if the key wasn't provided before or
       // if this provider has higher priority
       const provId = getSafe(gameInfo, [key, "provider"], provider.id);
-      const previousProvider = gameInfoProviders.find(
-        (prov) => prov.id === provId,
-      );
+      const previousProvider = gameInfoProviders.find((prov) => prov.id === provId);
       return previousProvider.priority <= provider.priority;
     }
   };
@@ -200,9 +169,7 @@ function refreshGameInfo(
           }
         });
         if (values.length > 0) {
-          store.dispatch(
-            setGameInfo(gameId, prov.id, prov.priority, expires, values),
-          );
+          store.dispatch(setGameInfo(gameId, prov.id, prov.priority, expires, values));
         }
       })
       .catch((err) => {
@@ -275,7 +242,7 @@ function manualGameStoreSelection(
         {
           bbcode: api.translate(
             'The currently identified game store for your selected game directory is: "{{gameStore}}".[br][/br][br][/br]' +
-            "If this is not the correct game store, please choose below. (Games can have game store specific folder structures)[br][/br][br][/br]",
+              "If this is not the correct game store, please choose below. (Games can have game store specific folder structures)[br][/br][br][/br]",
             { replace: { gameStore: detectedStore?.name || "Unknown" } },
           ),
           choices: gameStores
@@ -306,10 +273,7 @@ function manualGameStoreSelection(
   });
 }
 
-function browseGameLocation(
-  api: IExtensionApi,
-  gameId: string,
-): PromiseBB<void> {
+function browseGameLocation(api: IExtensionApi, gameId: string): PromiseBB<void> {
   const state: IState = api.store.getState();
 
   if (gameById(state, gameId) === undefined) {
@@ -364,9 +328,7 @@ function browseGameLocation(
             // different paths depending on whether the game was previously detected
             // or not so that we don't overwrite user settings
             if (defaultPath !== undefined) {
-              api.store.dispatch(
-                setGamePath(game.id, corrected, store, executable),
-              );
+              api.store.dispatch(setGamePath(game.id, corrected, store, executable));
             } else {
               api.store.dispatch(
                 addDiscoveredGame(game.id, {
@@ -384,28 +346,31 @@ function browseGameLocation(
             // discovery should still point to the old data at this point.
             const previousStore = discovery?.store;
             if (previousStore != null && previousStore !== store) {
-              const storeChangedDialog = async () => api.showDialog(
-                "info",
-                "Game Store Changed",
-                {
-                  text: api.translate(
-                    "The game store has changed from \"{{oldStore}}\" to \"{{newStore}}\".\n\n"
-                    + "Some mods, mod loaders, and tools such as UE4SS or Script Extenders "
-                    + "install files into store-specific directories (e.g. win64 for Steam "
-                    + "vs winGDK for Xbox). These may need to be re-installed for the game "
-                    + "to function correctly at the new location.",
-                    { replace: { oldStore: previousStore, newStore: store ?? "unknown" } },
-                  ),
-                },
-                [{ label: "Close" }],
-              );
+              const storeChangedDialog = async () =>
+                api.showDialog(
+                  "info",
+                  "Game Store Changed",
+                  {
+                    text: api.translate(
+                      'The game store has changed from "{{oldStore}}" to "{{newStore}}".\n\n' +
+                        "Some mods, mod loaders, and tools such as UE4SS or Script Extenders " +
+                        "install files into store-specific directories (e.g. win64 for Steam " +
+                        "vs winGDK for Xbox). These may need to be re-installed for the game " +
+                        "to function correctly at the new location.",
+                      { replace: { oldStore: previousStore, newStore: store ?? "unknown" } },
+                    ),
+                  },
+                  [{ label: "Close" }],
+                );
 
               api.sendNotification({
                 id: `game-store-changed-${game.id}`,
                 type: "warning",
                 allowSuppress: true,
-                message: api.translate("Game store changed - mod loaders and tools "
-                  + "(e.g. UE4SS) may need to be re-installed."),
+                message: api.translate(
+                  "Game store changed - mod loaders and tools " +
+                    "(e.g. UE4SS) may need to be re-installed.",
+                ),
                 actions: [
                   {
                     title: "More",
@@ -428,8 +393,8 @@ function browseGameLocation(
                 {
                   text: api.translate(
                     "This directory doesn't appear to contain the game.\n" +
-                    "Usually you need to select the top-level game directory, " +
-                    "containing the following files:\n{{ files }}",
+                      "Usually you need to select the top-level game directory, " +
+                      "containing the following files:\n{{ files }}",
                     { replace: { files: game.requiredFiles.join("\n") } },
                   ),
                 },
@@ -437,8 +402,7 @@ function browseGameLocation(
                   { label: "Cancel", action: () => resolve() },
                   {
                     label: "Try Again",
-                    action: () =>
-                      browseGameLocation(api, gameId).then(() => resolve()),
+                    action: () => browseGameLocation(api, gameId).then(() => resolve()),
                   },
                 ],
               ),
@@ -476,21 +440,13 @@ function installGameExtension(
             name,
           },
         },
-        [
-          { label: "Ask later" },
-          { label: "Stop managing" },
-          { label: "Install" },
-        ],
+        [{ label: "Ask later" }, { label: "Stop managing" }, { label: "Install" }],
       )
       .then((result) => {
         if (result.action === "Install") {
           return api.emitAndAwait("install-extension", dlInfo);
         } else if (result.action === "Stop managing") {
-          api.events.emit(
-            "analytics-track-click-event",
-            "Games",
-            "Stop managing game",
-          );
+          api.events.emit("analytics-track-click-event", "Games", "Stop managing game");
           return api.ext.unmanageGame?.(gameId, dlInfo.name);
         } else {
           return PromiseBB.resolve(false);
@@ -514,9 +470,7 @@ function awaitProfileSwitch(api: IExtensionApi): PromiseBB<string> {
     activeProfileId,
   });
   if (activeProfileId !== nextProfileId) {
-    return new PromiseBB((resolve) =>
-      api.events.once("profile-did-change", resolve),
-    );
+    return new PromiseBB((resolve) => api.events.once("profile-did-change", resolve));
   } else {
     return PromiseBB.resolve(activeProfileId);
   }
@@ -531,16 +485,11 @@ function removeDisappearedGames(
   const discovered = state.settings.gameMode.discovered;
   const known = state.session.gameMode.known;
   let gameMode = activeGameId(state);
-  const managedGames = new Set(
-    Object.values(state.persistent.profiles).map((prof) => prof.gameId),
-  );
+  const managedGames = new Set(Object.values(state.persistent.profiles).map((prof) => prof.gameId));
 
   log("info", "remove disappeared games");
 
-  const assertRequiredFiles = (
-    requiredFiles: string[],
-    gameId: string,
-  ): PromiseBB<void> => {
+  const assertRequiredFiles = (requiredFiles: string[], gameId: string): PromiseBB<void> => {
     if (requiredFiles === undefined) {
       return PromiseBB.resolve();
     }
@@ -558,9 +507,7 @@ function removeDisappearedGames(
   };
 
   return PromiseBB.map(
-    Object.keys(discovered).filter(
-      (gameId) => discovered[gameId].path !== undefined,
-    ),
+    Object.keys(discovered).filter((gameId) => discovered[gameId].path !== undefined),
     (gameId) => {
       const stored = known.find((iter) => iter.id === gameId);
       return fsExtra
@@ -637,9 +584,7 @@ function removeDisappearedGames(
     });
 }
 
-function genModTypeAttribute(
-  api: IExtensionApi,
-): ITableAttribute<IModWithState> {
+function genModTypeAttribute(api: IExtensionApi): ITableAttribute<IModWithState> {
   const modTypes = (): ISelectOption[] => {
     const gameMode = activeGameId(api.store.getState());
     return getModTypeExtensions()
@@ -684,8 +629,7 @@ function genModTypeAttribute(
       detailCell
         ? React.createElement(ModTypeWidget, { mods, copyToClipboard })
         : React.createElement("span", {}, [modTypeCalc(mods)]),
-    cssClass: (mod) =>
-      mod.type !== "" ? `mod-modtype-${mod.type}` : undefined,
+    cssClass: (mod) => (mod.type !== "" ? `mod-modtype-${mod.type}` : undefined),
     help:
       "The mod type controls where (and maybe even how) a mod gets deployed. " +
       "Leave empty (default) unless you know what you're doing.",
@@ -735,10 +679,8 @@ function init(context: IExtensionContext): boolean {
     (discovery: any) => discovery.running,
   );
 
-  const onRefreshGameInfo = (gameId: string) =>
-    refreshGameInfo(context.api.store, gameId);
-  const onBrowseGameLocation = (gameId: string) =>
-    browseGameLocation(context.api, gameId);
+  const onRefreshGameInfo = (gameId: string) => refreshGameInfo(context.api.store, gameId);
+  const onBrowseGameLocation = (gameId: string) => browseGameLocation(context.api, gameId);
 
   context.registerReducer(["session", "discovery"], discoveryReducer);
   context.registerReducer(["session", "gameMode"], sessionReducer);
@@ -768,14 +710,10 @@ function init(context: IExtensionContext): boolean {
 
   context.registerGameStore = ((gameStore: IGameStore) => {
     if (gameStore === undefined) {
-      context.api.showErrorNotification(
-        "Invalid game store extension not loaded",
-        undefined,
-        {
-          allowReport: false,
-          message: "A game store extension failed to initialize",
-        },
-      );
+      context.api.showErrorNotification("Invalid game store extension not loaded", undefined, {
+        allowReport: false,
+        message: "A game store extension failed to initialize",
+      });
       return;
     }
 
@@ -785,14 +723,10 @@ function init(context: IExtensionContext): boolean {
       }
       gameStoreLaunchers.push(gameStore);
     } catch (err) {
-      context.api.showErrorNotification(
-        "Game store launcher extension not loaded",
-        err,
-        {
-          allowReport: false,
-          message: gameStore.id,
-        },
-      );
+      context.api.showErrorNotification("Game store launcher extension not loaded", err, {
+        allowReport: false,
+        message: gameStore.id,
+      });
     }
   }) as any;
 
@@ -809,8 +743,7 @@ function init(context: IExtensionContext): boolean {
           }),
         );
         game.contributed =
-          gameExtInfo.author === COMPANY_ID ||
-            gameExtInfo.author === NEXUSMODS_EXT_ID
+          gameExtInfo.author === COMPANY_ID || gameExtInfo.author === NEXUSMODS_EXT_ID
             ? undefined
             : gameExtInfo.author;
         game.final = semver.gte(gameExtInfo.version, "1.0.0");
@@ -855,12 +788,12 @@ function init(context: IExtensionContext): boolean {
       game.path == null || typeof game.path !== "string"
         ? PromiseBB.resolve({})
         : PromiseBB.resolve({
-          path: {
-            title: "Path",
-            value: path.normalize(game.path),
-            type: "url",
-          },
-        }),
+            path: {
+              title: "Path",
+              value: path.normalize(game.path),
+              type: "url",
+            },
+          }),
   );
 
   context.registerGameInfoProvider(
@@ -872,29 +805,17 @@ function init(context: IExtensionContext): boolean {
       PromiseBB.resolve({
         store: {
           title: "Game Store",
-          value:
-            getGameStore(game.store)?.name ?? context.api.translate("Unknown"),
+          value: getGameStore(game.store)?.name ?? context.api.translate("Unknown"),
           type: "string",
         },
       }),
   );
 
-  context.registerGameInfoProvider(
-    "main",
-    30,
-    86400000,
-    ["size", "size_nolinks"],
-    queryGameInfo,
-  );
+  context.registerGameInfoProvider("main", 30, 86400000, ["size", "size_nolinks"], queryGameInfo);
 
   const openGameFolder = (instanceIds: string[]) => {
-    const discoveredGames =
-      context.api.store.getState().settings.gameMode.discovered;
-    let gamePath = getSafe(
-      discoveredGames,
-      [instanceIds[0], "path"],
-      undefined,
-    );
+    const discoveredGames = context.api.store.getState().settings.gameMode.discovered;
+    let gamePath = getSafe(discoveredGames, [instanceIds[0], "path"], undefined);
 
     if (gamePath != null) {
       if (!gamePath.endsWith(path.sep)) {
@@ -905,31 +826,23 @@ function init(context: IExtensionContext): boolean {
   };
 
   const openModFolder = (instanceIds: string[]) => {
-    const discoveredGames =
-      context.api.store.getState().settings.gameMode.discovered;
+    const discoveredGames = context.api.store.getState().settings.gameMode.discovered;
     const discovered = getSafe(discoveredGames, [instanceIds[0]], undefined);
     if (discovered !== undefined) {
       try {
-        let targetPath = getGame(instanceIds[0]).getModPaths(discovered.path)[
-          ""
-        ];
+        let targetPath = getGame(instanceIds[0]).getModPaths(discovered.path)[""];
         if (!targetPath.endsWith(path.sep)) {
           targetPath += path.sep;
         }
         opn(targetPath).catch(() => undefined);
       } catch (err) {
-        log(
-          "warn",
-          "failed to open mod directory",
-          getErrorMessageOrDefault(err),
-        );
+        log("warn", "failed to open mod directory", getErrorMessageOrDefault(err));
       }
     }
   };
 
   const gameIsDiscovered = (gameIds: string[]) =>
-    context.api.getState().settings.gameMode.discovered[gameIds[0]]?.path !==
-    undefined;
+    context.api.getState().settings.gameMode.discovered[gameIds[0]]?.path !== undefined;
 
   context.registerAction("game-managed-buttons", 100, HideGameIcon, {});
   context.registerAction("game-unmanaged-buttons", 100, HideGameIcon, {});
@@ -1000,8 +913,7 @@ function init(context: IExtensionContext): boolean {
     undefined,
   );
 
-  const onScan = (paths: string[]) =>
-    $.gameModeManager.startSearchDiscovery(paths);
+  const onScan = (paths: string[]) => $.gameModeManager.startSearchDiscovery(paths);
   const onSelectPath = (basePath: string): PromiseBB<string> =>
     PromiseBB.resolve(
       context.api.selectDir({
@@ -1018,11 +930,9 @@ function init(context: IExtensionContext): boolean {
     const store: Redux.Store<IState> = context.api.store;
     const events = context.api.events;
 
-    const GameModeManagerImpl: typeof GameModeManager =
-      require("./GameModeManager").default;
+    const GameModeManagerImpl: typeof GameModeManager = require("./GameModeManager").default;
 
-    context.api.ext["awaitProfileSwitch"] = () =>
-      awaitProfileSwitch(context.api);
+    context.api.ext["awaitProfileSwitch"] = () => awaitProfileSwitch(context.api);
 
     $.gameModeManager = new GameModeManagerImpl(
       context.api,
@@ -1038,9 +948,7 @@ function init(context: IExtensionContext): boolean {
     {
       const { discovered } = store.getState().settings.gameMode;
       const discoveredGames = new Set(
-        Object.keys(discovered).filter(
-          (gameId) => discovered[gameId].path !== undefined,
-        ),
+        Object.keys(discovered).filter((gameId) => discovered[gameId].path !== undefined),
       );
       $.gameModeManager.startQuickDiscovery().then(() =>
         removeDisappearedGames(
@@ -1068,21 +976,17 @@ function init(context: IExtensionContext): boolean {
     events.on("start-quick-discovery", (cb?: (gameIds: string[]) => void) => {
       const { discovered } = store.getState().settings.gameMode;
       const discoveredGames = new Set(
-        Object.keys(discovered).filter(
-          (gameId) => discovered[gameId].path !== undefined,
-        ),
+        Object.keys(discovered).filter((gameId) => discovered[gameId].path !== undefined),
       );
 
       $.gameModeManager
         .startQuickDiscovery()
         .then((gameIds: string[]) => {
-          return removeDisappearedGames(context.api, discoveredGames).then(
-            () => {
-              if (cb !== undefined) {
-                cb(gameIds);
-              }
-            },
-          );
+          return removeDisappearedGames(context.api, discoveredGames).then(() => {
+            if (cb !== undefined) {
+              cb(gameIds);
+            }
+          });
         })
         .catch((err) => {
           err["attachLogOnReport"] = true;
@@ -1100,10 +1004,10 @@ function init(context: IExtensionContext): boolean {
           state.settings.gameMode.searchPaths.length > 0
             ? PromiseBB.resolve()
             : PromiseBB.resolve(getDriveList(context.api))
-              .catch(() => [])
-              .then((drives) => {
-                context.api.store.dispatch(setGameSearchPaths(drives));
-              });
+                .catch(() => [])
+                .then((drives) => {
+                  context.api.store.dispatch(setGameSearchPaths(drives));
+                });
 
         initPromise.then(() => {
           context.api.store.dispatch(setDialogVisible("game-search-paths"));
@@ -1117,23 +1021,17 @@ function init(context: IExtensionContext): boolean {
       $.gameModeManager.stopSearchDiscovery();
     });
 
-    events.on(
-      "refresh-game-info",
-      (gameId: string, callback: (err: Error) => void) => {
-        refreshGameInfo(store, gameId)
-          .then(() => callback(null))
-          .catch((err) => callback(err));
-      },
-    );
+    events.on("refresh-game-info", (gameId: string, callback: (err: Error) => void) => {
+      refreshGameInfo(store, gameId)
+        .then(() => callback(null))
+        .catch((err) => callback(err));
+    });
 
-    events.on(
-      "manually-set-game-location",
-      (gameId: string, callback: (err: Error) => void) => {
-        browseGameLocation(context.api, gameId)
-          .then(() => callback(null))
-          .catch((err) => callback(err));
-      },
-    );
+    events.on("manually-set-game-location", (gameId: string, callback: (err: Error) => void) => {
+      browseGameLocation(context.api, gameId)
+        .then(() => callback(null))
+        .catch((err) => callback(err));
+    });
 
     const changeGameMode = (
       oldGameId: string,
@@ -1146,9 +1044,7 @@ function init(context: IExtensionContext): boolean {
       log("debug", "change game mode", { oldGameId, newGameId });
 
       if (getGame(newGameId) === undefined) {
-        return PromiseBB.reject(
-          new Error(`Attempt to switch to unknown game "${newGameId}"`),
-        );
+        return PromiseBB.reject(new Error(`Attempt to switch to unknown game "${newGameId}"`));
       }
 
       const id = context.api.sendNotification({
@@ -1167,15 +1063,11 @@ function init(context: IExtensionContext): boolean {
           // a setup-error when trying to resolve the mod path
           const discovery = discoveryByGame(store.getState(), newGameId);
           if (discovery === undefined || discovery.path === undefined) {
-            return PromiseBB.reject(
-              new ProcessCanceled("The game is no longer discovered"),
-            );
+            return PromiseBB.reject(new ProcessCanceled("The game is no longer discovered"));
           }
           getGame(newGameId).getModPaths(discovery.path);
         })
-        .then(() =>
-          $.gameModeManager.setGameMode(oldGameId, newGameId, currentProfileId),
-        )
+        .then(() => $.gameModeManager.setGameMode(oldGameId, newGameId, currentProfileId))
         .catch((err) => {
           if (err instanceof UserCanceled || err instanceof ProcessCanceled) {
             // nop
@@ -1200,14 +1092,14 @@ function init(context: IExtensionContext): boolean {
                         {
                           bbcode: context.api.translate(
                             "Vortex attempted to manage the game and has " +
-                            'encountered a missing file:[br][/br]"{{errPath}}".[br][/br][br][/br]' +
-                            "Depending on recent changes on your environment and/or the game store through " +
-                            "which the game has been purchased, this error could be due to several factors:[br][/br][list]" +
-                            "[*]The game might be only partially installed/uninstalled or in a corrupt state" +
-                            "[*]The game store through which you purchased the game might require additional steps " +
-                            "to enable modding capabilities" +
-                            "[*]You may have to run the game at least once for certain folders to be created/unlocked" +
-                            "[*]You might have installed an unrecognized game variant. Please inform the game extension developer[/list]",
+                              'encountered a missing file:[br][/br]"{{errPath}}".[br][/br][br][/br]' +
+                              "Depending on recent changes on your environment and/or the game store through " +
+                              "which the game has been purchased, this error could be due to several factors:[br][/br][list]" +
+                              "[*]The game might be only partially installed/uninstalled or in a corrupt state" +
+                              "[*]The game store through which you purchased the game might require additional steps " +
+                              "to enable modding capabilities" +
+                              "[*]You may have to run the game at least once for certain folders to be created/unlocked" +
+                              "[*]You might have installed an unrecognized game variant. Please inform the game extension developer[/list]",
                             { replace: { errPath: err.path } },
                           ),
                         },
@@ -1237,16 +1129,8 @@ function init(context: IExtensionContext): boolean {
       ["settings", "profiles", "activeProfileId"],
       (prev: string, current: string) => {
         const state = store.getState();
-        const oldGameId = getSafe(
-          state,
-          ["persistent", "profiles", prev, "gameId"],
-          undefined,
-        );
-        const newGameId = getSafe(
-          state,
-          ["persistent", "profiles", current, "gameId"],
-          undefined,
-        );
+        const oldGameId = getSafe(state, ["persistent", "profiles", prev, "gameId"], undefined);
+        const newGameId = getSafe(state, ["persistent", "profiles", current, "gameId"], undefined);
         log("debug", "active profile id changed", {
           prev,
           current,
@@ -1305,8 +1189,7 @@ function init(context: IExtensionContext): boolean {
         commandLine.profile === undefined
       ) {
         const gameMode = profile.gameId;
-        const discovery =
-          store.getState().settings.gameMode.discovered[gameMode];
+        const discovery = store.getState().settings.gameMode.discovered[gameMode];
         if (
           discovery !== undefined &&
           discovery.path !== undefined &&

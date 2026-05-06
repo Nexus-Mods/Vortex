@@ -1,8 +1,8 @@
-import ToolbarIcon from "../../../controls/ToolbarIcon";
-import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
-
 import type { TFunction } from "i18next";
 import * as React from "react";
+
+import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
+import ToolbarIcon from "../../../controls/ToolbarIcon";
 
 export interface IBaseProps {
   toggleHidden: () => void;

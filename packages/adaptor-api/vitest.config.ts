@@ -1,5 +1,5 @@
-import { defineConfig, type ViteUserConfig } from "vitest/config";
 import { doctest } from "vite-plugin-doctest";
+import { defineConfig, type ViteUserConfig } from "vitest/config";
 
 const config: ViteUserConfig = defineConfig({
   plugins: [doctest()],

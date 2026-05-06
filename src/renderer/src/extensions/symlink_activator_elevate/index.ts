@@ -1,39 +1,40 @@
-import type { TFunction } from "i18next";
-import type * as os from "os";
-
-import { getErrorCode, getErrorMessageOrDefault, getErrorNativeCode, unknownToError } from "@vortex/shared";
-import PromiseBB from "bluebird";
-import JsonSocket from "json-socket";
 import * as net from "net";
+import type * as os from "os";
 import * as path from "path";
+
+import {
+  getErrorCode,
+  getErrorMessageOrDefault,
+  getErrorNativeCode,
+  unknownToError,
+} from "@vortex/shared";
+import PromiseBB from "bluebird";
+import type { TFunction } from "i18next";
+import JsonSocket from "json-socket";
 import * as semver from "semver";
 import { generate as shortid } from "shortid";
 import * as winapi from "winapi-bindings";
 
-import type {
-  IExtensionApi,
-  IExtensionContext,
-} from "../../types/IExtensionContext";
-import type { IGame } from "../../types/IGame";
-import type { IState } from "../../types/IState";
-import type { Normalize } from "../../util/getNormalizeFunc";
-import type {
-  IDeployedFile,
-  IDeploymentMethod,
-  IUnavailableReason,
-} from "../mod_management/types/IDeploymentMethod";
-
 import { clearUIBlocker, setUIBlocker } from "../../actions";
 import { log } from "../../logging";
+import type { IExtensionApi, IExtensionContext } from "../../types/IExtensionContext";
+import type { IGame } from "../../types/IGame";
+import type { IState } from "../../types/IState";
 import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
 import { runElevated } from "../../util/elevated";
 import * as fs from "../../util/fs";
+import type { Normalize } from "../../util/getNormalizeFunc";
 import getVortexPath from "../../util/getVortexPath";
 import makeReactive from "../../util/makeReactive";
 import { activeGameId, gameName } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { getGame } from "../gamemode_management/util/getGame";
 import LinkingDeployment from "../mod_management/LinkingDeployment";
+import type {
+  IDeployedFile,
+  IDeploymentMethod,
+  IUnavailableReason,
+} from "../mod_management/types/IDeploymentMethod";
 import { enableUserSymlinks } from "./actions";
 import reducer from "./reducers";
 import { remoteCode } from "./remoteCode";
@@ -51,9 +52,7 @@ function monitorConsent(onDisappeared: () => void): () => void {
   }
 
   const doCheck = () => {
-    const consentExe = winapi
-      .GetProcessList()
-      .find((proc) => proc.exeFile === "consent.exe");
+    const consentExe = winapi.GetProcessList().find((proc) => proc.exeFile === "consent.exe");
     if (consentExe === undefined) {
       // no consent.exe, assume it finished
       // still, wait a bit longer before doing anything so the "success" code has a chance to run
@@ -247,10 +246,7 @@ class DeploymentMethod extends LinkingDeployment {
 
     const game: IGame = getGame(gameId);
 
-    if (
-      game.details?.supportsSymlinks === false ||
-      game.compatible?.symlinks === false
-    ) {
+    if (game.details?.supportsSymlinks === false || game.compatible?.symlinks === false) {
       return { description: (t) => t("Game doesn't support symlinks") };
     }
 
@@ -265,15 +261,10 @@ class DeploymentMethod extends LinkingDeployment {
           }),
       };
     }
-    if (
-      this.ensureAdmin() &&
-      process.env["FORCE_ALLOW_ELEVATED_SYMLINKING"] !== "true"
-    ) {
+    if (this.ensureAdmin() && process.env["FORCE_ALLOW_ELEVATED_SYMLINKING"] !== "true") {
       return {
         description: (t) =>
-          t(
-            "No need to use the elevated variant, use the regular symlink deployment",
-          ),
+          t("No need to use the elevated variant, use the regular symlink deployment"),
       };
     }
 
@@ -283,11 +274,7 @@ class DeploymentMethod extends LinkingDeployment {
     return undefined;
   }
 
-  protected linkFile(
-    linkPath: string,
-    sourcePath: string,
-    dirTags?: boolean,
-  ): Promise<void> {
+  protected linkFile(linkPath: string, sourcePath: string, dirTags?: boolean): Promise<void> {
     const dirName = path.dirname(linkPath);
     return this.ensureDir(dirName, dirTags)
       .then((created) =>
@@ -304,10 +291,12 @@ class DeploymentMethod extends LinkingDeployment {
           : Promise.resolve(),
       )
       .then(() =>
-        Promise.resolve(this.emitOperation("link-file", {
-          source: sourcePath,
-          destination: linkPath,
-        })),
+        Promise.resolve(
+          this.emitOperation("link-file", {
+            source: sourcePath,
+            destination: linkPath,
+          }),
+        ),
       );
   }
 
@@ -353,9 +342,7 @@ class DeploymentMethod extends LinkingDeployment {
       .then(() => this.stopElevated())
       .then(() => {
         if (hadErrors) {
-          const err = new Error(
-            "Some files could not be purged, please check the log file",
-          );
+          const err = new Error("Some files could not be purged, please check the log file");
           err["attachLogOnReport"] = true;
           return PromiseBB.reject(err);
         } else {
@@ -431,11 +418,7 @@ class DeploymentMethod extends LinkingDeployment {
     });
   }
 
-  private emitOperation(
-    command: string,
-    args: any,
-    tries: number = 3,
-  ): PromiseBB<void> {
+  private emitOperation(command: string, args: any, tries: number = 3): PromiseBB<void> {
     const requestNum = this.mCounter++;
     return this.emitAsync(command, args, requestNum)
       .timeout(5000)
@@ -507,10 +490,7 @@ class DeploymentMethod extends LinkingDeployment {
             } else {
               log("debug", "unexpected operation completed");
             }
-            if (
-              Object.keys(this.mOpenRequests).length === 0 &&
-              this.mDone !== null
-            ) {
+            if (Object.keys(this.mOpenRequests).length === 0 && this.mDone !== null) {
               this.finish();
             }
           } else if (message === "log") {
@@ -642,8 +622,8 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   private hasActiveCollectionSession(): boolean {
-      const state = this.api.store.getState() as IState;
-      return state.session?.collections?.activeSession != null;
+    const state = this.api.store.getState() as IState;
+    return state.session?.collections?.activeSession != null;
   }
 
   private finish() {
@@ -766,8 +746,7 @@ function makeScript(args: any): string {
 
   let funcBody = baseFunc.toString();
   funcBody =
-    "const __req = require;" +
-    funcBody.slice(funcBody.indexOf("{") + 1, funcBody.lastIndexOf("}"));
+    "const __req = require;" + funcBody.slice(funcBody.indexOf("{") + 1, funcBody.lastIndexOf("}"));
   let prog: string = `
         let moduleRoot = '${projectRoot}';\n
         let ipcPath = '${IPC_ID}';\n
@@ -793,25 +772,20 @@ function installTask(scriptPath: string) {
 
   const ipcPath = `ipc_${shortid()}`;
 
-  const ipcServer: net.Server = startIPCServer(
-    ipcPath,
-    (conn, message: string, payload) => {
-      if (message === "log") {
-        log(payload.level, payload.message, payload.meta);
-      } else if (message === "quit") {
-        ipcServer.close((err) => {
-          if (err) {
-            log("warn", "failed to close ipc connection", err);
-          }
-        });
-      }
-    },
-  );
+  const ipcServer: net.Server = startIPCServer(ipcPath, (conn, message: string, payload) => {
+    if (message === "log") {
+      log(payload.level, payload.message, payload.meta);
+    } else if (message === "quit") {
+      ipcServer.close((err) => {
+        if (err) {
+          log("warn", "failed to close ipc connection", err);
+        }
+      });
+    }
+  });
 
   const exePath = process.execPath;
-  const exeArgs = exePath.endsWith("electron.exe")
-    ? getVortexPath("package")
-    : "";
+  const exeArgs = exePath.endsWith("electron.exe") ? getVortexPath("package") : "";
 
   return runElevated(
     ipcPath,
@@ -850,9 +824,7 @@ function installTask(scriptPath: string) {
     },
     { scriptPath, taskName, exePath, exeArgs },
   ).catch((err) =>
-    getErrorNativeCode(err) === 1223
-      ? PromiseBB.reject(new UserCanceled())
-      : PromiseBB.reject(err),
+    getErrorNativeCode(err) === 1223 ? PromiseBB.reject(new UserCanceled()) : PromiseBB.reject(err),
   );
 }
 
@@ -920,20 +892,17 @@ function findTask() {
 
 function removeTask(): Promise<void> {
   const ipcPath = `ipc_${shortid()}`;
-  const ipcServer: net.Server = startIPCServer(
-    ipcPath,
-    (conn, message: string, payload) => {
-      if (message === "log") {
-        log(payload.level, payload.message, payload.meta);
-      } else if (message === "quit") {
-        ipcServer.close((err) => {
-          if (err) {
-            log("warn", "failed to close ipc connection", err);
-          }
-        });
-      }
-    },
-  );
+  const ipcServer: net.Server = startIPCServer(ipcPath, (conn, message: string, payload) => {
+    if (message === "log") {
+      log(payload.level, payload.message, payload.meta);
+    } else if (message === "quit") {
+      ipcServer.close((err) => {
+        if (err) {
+          log("warn", "failed to close ipc connection", err);
+        }
+      });
+    }
+  });
 
   const taskName = TASK_NAME;
 
@@ -948,16 +917,11 @@ function removeTask(): Promise<void> {
   )
     .then(() => undefined)
     .catch((err) => {
-      throw getErrorNativeCode(err) === 1223
-        ? new UserCanceled()
-        : err;
+      throw getErrorNativeCode(err) === 1223 ? new UserCanceled() : err;
     });
 }
 
-async function ensureTaskDeleted(
-  api: IExtensionApi,
-  delayed: boolean,
-): Promise<void> {
+async function ensureTaskDeleted(api: IExtensionApi, delayed: boolean): Promise<void> {
   if (findTask() === undefined) {
     return;
   }
@@ -988,11 +952,7 @@ async function ensureTaskDeleted(
   }
 }
 
-async function ensureTask(
-  api: IExtensionApi,
-  enabled: boolean,
-  delayed: boolean,
-): Promise<void> {
+async function ensureTask(api: IExtensionApi, enabled: boolean, delayed: boolean): Promise<void> {
   if (enabled) {
     try {
       await ensureTaskEnabled(api, delayed);
@@ -1046,23 +1006,20 @@ function giveSymlinkRight(enable: boolean) {
   });
   localState.symlinkRight = enable;
 
-  const ipcServer: net.Server = startIPCServer(
-    ipcPath,
-    (conn, message: string, payload) => {
-      if (message === "log") {
-        log(payload.level, payload.message, payload.meta);
-      } else if (message === "quit") {
-        ipcServer.close((err) => {
-          if (err) {
-            log("warn", "failed to close ipc connection", err);
-          }
-        });
-        if (payload !== undefined) {
-          localState.symlinkRight = payload;
+  const ipcServer: net.Server = startIPCServer(ipcPath, (conn, message: string, payload) => {
+    if (message === "log") {
+      log(payload.level, payload.message, payload.meta);
+    } else if (message === "quit") {
+      ipcServer.close((err) => {
+        if (err) {
+          log("warn", "failed to close ipc connection", err);
         }
+      });
+      if (payload !== undefined) {
+        localState.symlinkRight = payload;
       }
-    },
-  );
+    }
+  });
 
   runElevated(
     ipcPath,
@@ -1076,9 +1033,7 @@ function giveSymlinkRight(enable: boolean) {
         },
       });
 
-      const func = enable
-        ? winapiRemote.AddUserPrivilege
-        : winapiRemote.RemoveUserPrivilege;
+      const func = enable ? winapiRemote.AddUserPrivilege : winapiRemote.RemoveUserPrivilege;
       try {
         func(sid, "SeCreateSymbolicLinkPrivilege");
         ipc.sendMessage({
@@ -1090,9 +1045,7 @@ function giveSymlinkRight(enable: boolean) {
         });
         let enabled: boolean;
         try {
-          enabled = winapiRemote
-            .GetUserPrivilege(sid)
-            .includes("SeCreateSymbolicLinkPrivilege");
+          enabled = winapiRemote.GetUserPrivilege(sid).includes("SeCreateSymbolicLinkPrivilege");
         } catch {
           // When removing the last privilege, Windows deletes the account's
           // LSA policy entry entirely, so GetUserPrivilege (LsaEnumerateAccountRights)
@@ -1124,9 +1077,7 @@ function giveSymlinkRight(enable: boolean) {
     },
     { sid, enable },
   ).catch((err) =>
-    getErrorNativeCode(err) === 1223
-      ? PromiseBB.reject(new UserCanceled())
-      : PromiseBB.reject(err),
+    getErrorNativeCode(err) === 1223 ? PromiseBB.reject(new UserCanceled()) : PromiseBB.reject(err),
   );
 }
 
@@ -1151,9 +1102,7 @@ function init(context: IExtensionContextEx): boolean {
 
     if (process.platform === "win32") {
       const privileges: winapi.Privilege[] = winapi.CheckYourPrivilege();
-      localState.symlinkRight = privileges.includes(
-        "SeCreateSymbolicLinkPrivilege",
-      );
+      localState.symlinkRight = privileges.includes("SeCreateSymbolicLinkPrivilege");
 
       const userSymlinksPath = ["settings", "workarounds", "userSymlinks"];
       context.api.onStateChange(userSymlinksPath, (prev, current) => {

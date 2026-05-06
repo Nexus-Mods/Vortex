@@ -66,11 +66,7 @@
         $start-color,
         $end-color
     ); // Safari 5.1-6, Chrome 10+
-    background-image: -o-linear-gradient(
-        $deg,
-        $start-color,
-        $end-color
-    ); // Opera 12
+    background-image: -o-linear-gradient($deg, $start-color, $end-color); // Opera 12
     background-image: linear-gradient(
         $deg,
         $start-color,
@@ -89,18 +85,8 @@
         $mid-color $color-stop,
         $end-color
     );
-    background-image: -o-linear-gradient(
-        left,
-        $start-color,
-        $mid-color $color-stop,
-        $end-color
-    );
-    background-image: linear-gradient(
-        to right,
-        $start-color,
-        $mid-color $color-stop,
-        $end-color
-    );
+    background-image: -o-linear-gradient(left, $start-color, $mid-color $color-stop, $end-color);
+    background-image: linear-gradient(to right, $start-color, $mid-color $color-stop, $end-color);
     background-repeat: no-repeat;
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#{color.ie-hex-str($start-color)}', endColorstr='#{color.ie-hex-str($end-color)}', GradientType=1); // IE9 and down, gets no color-stop at all for proper fallback
 }
@@ -110,30 +96,14 @@
     $color-stop: 50%,
     $end-color: #c3325f
 ) {
-    background-image: -webkit-linear-gradient(
-        $start-color,
-        $mid-color $color-stop,
-        $end-color
-    );
-    background-image: -o-linear-gradient(
-        $start-color,
-        $mid-color $color-stop,
-        $end-color
-    );
-    background-image: linear-gradient(
-        $start-color,
-        $mid-color $color-stop,
-        $end-color
-    );
+    background-image: -webkit-linear-gradient($start-color, $mid-color $color-stop, $end-color);
+    background-image: -o-linear-gradient($start-color, $mid-color $color-stop, $end-color);
+    background-image: linear-gradient($start-color, $mid-color $color-stop, $end-color);
     background-repeat: no-repeat;
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#{color.ie-hex-str($start-color)}', endColorstr='#{color.ie-hex-str($end-color)}', GradientType=0); // IE9 and down, gets no color-stop at all for proper fallback
 }
 @mixin gradient-radial($inner-color: #555, $outer-color: #333) {
-    background-image: -webkit-radial-gradient(
-        circle,
-        $inner-color,
-        $outer-color
-    );
+    background-image: -webkit-radial-gradient(circle, $inner-color, $outer-color);
     background-image: radial-gradient(circle, $inner-color, $outer-color);
     background-repeat: no-repeat;
 }

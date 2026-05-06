@@ -59,6 +59,24 @@ pnpm run start
 - Start VS Code from a shell activated by `direnv`
 - Use `Debug Electron (System Electron)`
 
+## Troubleshooting
+
+### Git GUI clients and formatting hooks
+
+The pre-commit hook runs formatting through `pnpm`. On NixOS, `pnpm` is
+provided by the repository dev shell. If you start a Git GUI client such as
+GitKraken outside the repository, the hook may fail because the client cannot
+find `pnpm`.
+
+You can fix this in either of these ways:
+
+- Install `pnpm` globally so your GUI client can find it.
+- Restart the GUI client from inside the repository after `direnv allow`:
+
+```bash
+gitkraken .
+```
+
 ## Extra Resources
 
 - [Nix flake]

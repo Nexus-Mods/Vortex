@@ -1,11 +1,14 @@
-import type PromiseBB from "bluebird";
 import * as path from "path";
+
+import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
+import type PromiseBB from "bluebird";
 import * as React from "react";
 import { Button, ControlLabel, FormGroup, HelpBlock } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
+
 import type {
   DialogActions,
   DialogType,
@@ -14,15 +17,14 @@ import type {
   IDialogResult,
 } from "../../actions";
 import { showDialog } from "../../actions";
-import type { IState } from "../../types/IState";
 import { ComponentEx } from "../../controls/ComponentEx";
+import { FULL_BACKUP_PATH } from "../../store/store";
+import type { IState } from "../../types/IState";
+import { relaunch } from "../../util/commandLine";
 import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
 import { log } from "../../util/log";
 import relativeTime from "../../util/relativeTime";
-import { FULL_BACKUP_PATH } from "../../store/store";
-import { relaunch } from "../../util/commandLine";
-import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
 
 export interface IBaseProps {
   onCreateManualBackup: () => void;
@@ -52,14 +54,10 @@ class Settings extends ComponentEx<IProps, {}> {
           <FormGroup id="database-backups" controlId="restore-backup">
             <ControlLabel>{t("Database backup")}</ControlLabel>
             <div className="button-container">
-              <Button onClick={this.onSelectBackup}>
-                {t("Restore") + "..."}
-              </Button>
+              <Button onClick={this.onSelectBackup}>{t("Restore") + "..."}</Button>
             </div>
             <div className="button-container">
-              <Button onClick={onCreateManualBackup}>
-                {t("Create Backup")}
-              </Button>
+              <Button onClick={onCreateManualBackup}>{t("Create Backup")}</Button>
             </div>
             <HelpBlock>
               <div>
@@ -145,9 +143,7 @@ class Settings extends ComponentEx<IProps, {}> {
         return;
       }
 
-      const selected = Object.keys(choice.input).find(
-        (key) => choice.input[key] === true,
-      );
+      const selected = Object.keys(choice.input).find((key) => choice.input[key] === true);
       const paragraph = (text: string) => `${text}<br/><br/>`;
 
       let filePath: string;
@@ -210,8 +206,7 @@ class Settings extends ComponentEx<IProps, {}> {
         "There are no backups to restore",
         {
           text: "Found no backup to restore",
-          message:
-            code === "ENOENT" ? undefined : getErrorMessageOrDefault(err),
+          message: code === "ENOENT" ? undefined : getErrorMessageOrDefault(err),
         },
         [{ label: "Close" }],
       );
@@ -223,9 +218,7 @@ function mapStateToProps(state: IState): IConnectedProps {
   return {};
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, null, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onShowDialog: (
       type: DialogType,

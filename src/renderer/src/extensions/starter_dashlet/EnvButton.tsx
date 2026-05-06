@@ -1,6 +1,7 @@
 import React from "react";
-import { IconButton } from "../../controls/TooltipControls";
 import { FormControl, InputGroup } from "react-bootstrap";
+
+import { IconButton } from "../../controls/TooltipControls";
 import type { TFunction } from "../../util/i18n";
 import { getSafe } from "../../util/storeHelper";
 
@@ -82,14 +83,7 @@ export default function EnvButton(props: IEnvButtonProps) {
     );
   } else {
     if (variable?.key === undefined) {
-      return (
-        <IconButton
-          id="btn-add-env"
-          icon="add"
-          tooltip={t("Add")}
-          onClick={openClick}
-        />
-      );
+      return <IconButton id="btn-add-env" icon="add" tooltip={t("Add")} onClick={openClick} />;
     } else {
       return (
         <div className="env-kvpair">

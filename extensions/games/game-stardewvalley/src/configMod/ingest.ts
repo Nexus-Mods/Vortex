@@ -14,8 +14,8 @@ import { GAME_ID, MOD_CONFIG, NOTIF_ACTIVITY_CONFIG_MOD } from "../common";
 import { findSMAPITool } from "../smapi/selectors";
 import { selectMergeConfigsEnabled } from "../state/selectors";
 import type { IFileEntry } from "../types";
-import { addModConfig } from "./sync";
 import { isModCandidateValid, isSmapiInternalPath } from "./policy";
+import { addModConfig } from "./sync";
 
 /** Handles SDV `added-files` events and routes config vs regular file ingestion. */
 export async function onAddedFilesImpl(
@@ -77,10 +77,7 @@ async function addConfigFiles(
   await addModConfig(api, files, profileId);
 }
 
-async function addRegularFiles(
-  api: types.IExtensionApi,
-  files: IFileEntry[],
-): Promise<void> {
+async function addRegularFiles(api: types.IExtensionApi, files: IFileEntry[]): Promise<void> {
   if (files.length === 0) {
     return;
   }
@@ -105,11 +102,9 @@ async function addRegularFiles(
       continue;
     }
 
-    const mod = util.getSafe(
-      state.persistent.mods,
-      [GAME_ID, candidateId],
-      undefined,
-    ) as types.IMod | undefined;
+    const mod = util.getSafe(state.persistent.mods, [GAME_ID, candidateId], undefined) as
+      | types.IMod
+      | undefined;
     if (!isModCandidateValid(mod, entry)) {
       continue;
     }

@@ -9,10 +9,7 @@ import type { IInstallerTestResult } from "../types";
 import { classifyArchive, makeInstallerTestResult } from "./archiveClassifier";
 
 /** Tests whether an archive should be handled as a root-folder install. */
-export function testRootFolder(
-  files: string[],
-  gameId: string,
-): PromiseLike<IInstallerTestResult> {
+export function testRootFolder(files: string[], gameId: string): PromiseLike<IInstallerTestResult> {
   const archiveInfo = classifyArchive(files, gameId);
   const supported = archiveInfo.isGameArchive && archiveInfo.hasContentFolder;
 
@@ -29,9 +26,7 @@ export function installRootFolder(
   //  Will be deployed     => ../SomeMod/Content/
   //  Will be deployed     => ../SomeMod/Mods/
   //  Will NOT be deployed => ../Readme.doc
-  const contentFile = files.find((file) =>
-    path.join("fakeDir", file).endsWith(PTRN_CONTENT),
-  );
+  const contentFile = files.find((file) => path.join("fakeDir", file).endsWith(PTRN_CONTENT));
   if (contentFile === undefined) {
     return Promise.resolve<types.IInstallResult>({ instructions: [] });
   }
@@ -39,9 +34,7 @@ export function installRootFolder(
   const rootDir = path.basename(contentFile.substring(0, idx));
   const filtered = files.filter(
     (file) =>
-      !file.endsWith(path.sep) &&
-      file.indexOf(rootDir) !== -1 &&
-      path.extname(file) !== ".txt",
+      !file.endsWith(path.sep) && file.indexOf(rootDir) !== -1 && path.extname(file) !== ".txt",
   );
   const instructions: types.IInstruction[] = filtered.map((file) => {
     return {

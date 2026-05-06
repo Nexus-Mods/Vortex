@@ -59,12 +59,12 @@ describe("createStorePathProvider", () => {
   it("rejects when the base is absent for the requested OS", async () => {
     const provider = createStorePathProvider(steamSnapshot());
     // XdgData is a Linux base, not present under Windows gameOS
-    await expect(
-      provider.fromBase(Base.XdgData as never),
-    ).rejects.toBeInstanceOf(PathProviderError);
-    await expect(
-      provider.fromBase(Base.Documents as never, OS.Linux),
-    ).rejects.toBeInstanceOf(PathProviderError);
+    await expect(provider.fromBase(Base.XdgData as never)).rejects.toBeInstanceOf(
+      PathProviderError,
+    );
+    await expect(provider.fromBase(Base.Documents as never, OS.Linux)).rejects.toBeInstanceOf(
+      PathProviderError,
+    );
   });
 
   it("rejects when the OS has no bases resolved", async () => {
@@ -82,9 +82,7 @@ describe("createStorePathProvider", () => {
       ]),
     };
     const provider = createStorePathProvider(snapshot);
-    await expect(provider.fromBase(Base.Game, OS.Linux)).rejects.toBeInstanceOf(
-      PathProviderError,
-    );
+    await expect(provider.fromBase(Base.Game, OS.Linux)).rejects.toBeInstanceOf(PathProviderError);
   });
 
   it("reparses QualifiedPaths that crossed an IPC boundary (no prototype)", async () => {
@@ -109,9 +107,7 @@ describe("createStorePathProvider", () => {
         ]),
       ),
     };
-    expect(stripped.bases.get(OS.Windows)?.get(Base.Game)).not.toBeInstanceOf(
-      QualifiedPath,
-    );
+    expect(stripped.bases.get(OS.Windows)?.get(Base.Game)).not.toBeInstanceOf(QualifiedPath);
 
     const provider = createStorePathProvider(stripped);
     const game = await provider.fromBase(Base.Game);
@@ -141,9 +137,7 @@ describe("isWindows discriminant", () => {
   });
 
   it("narrows to WindowsStorePathProvider when isWindows is checked", () => {
-    const provider: StorePathProvider = createStorePathProvider(
-      steamSnapshot(OS.Windows),
-    );
+    const provider: StorePathProvider = createStorePathProvider(steamSnapshot(OS.Windows));
     if (provider.isWindows) {
       expectTypeOf(provider).toEqualTypeOf<WindowsStorePathProvider>();
     } else {

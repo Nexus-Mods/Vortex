@@ -8,12 +8,7 @@ export class ApplicationData {
 
   static #instance: ApplicationData | null;
 
-  private constructor(
-    name: string,
-    windowId: number,
-    version: string,
-    paths: VortexPaths,
-  ) {
+  private constructor(name: string, windowId: number, version: string, paths: VortexPaths) {
     this.#name = name;
     this.#windowId = windowId;
     this.#version = version;

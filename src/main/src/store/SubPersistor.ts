@@ -1,9 +1,8 @@
 import type { IPersistor, PersistorKey } from "@vortex/shared/state";
 
 class SubPersistor implements IPersistor {
-  public getAllKVs:
-    | (() => PromiseLike<Array<{ key: string[]; value: string }>>)
-    | undefined = undefined;
+  public getAllKVs: (() => PromiseLike<Array<{ key: string[]; value: string }>>) | undefined =
+    undefined;
 
   private mWrapped: IPersistor;
   private mHive: string;
@@ -16,9 +15,7 @@ class SubPersistor implements IPersistor {
       this.getAllKVs = () =>
         this.mWrapped.getAllKVs?.(hive).then((kvs) =>
           kvs
-            .filter(
-              (kv: { key: PersistorKey; value: string }) => kv.key[0] === hive,
-            )
+            .filter((kv: { key: PersistorKey; value: string }) => kv.key[0] === hive)
             .map((kv: { key: PersistorKey; value: string }) => ({
               key: kv.key.slice(1),
               value: kv.value,
@@ -46,9 +43,7 @@ class SubPersistor implements IPersistor {
   public getAllKeys(): PromiseLike<string[][]> {
     return this.mWrapped
       .getAllKeys()
-      .then((keys) =>
-        keys.filter((key) => key[0] === this.mHive).map((key) => key.slice(1)),
-      );
+      .then((keys) => keys.filter((key) => key[0] === this.mHive).map((key) => key.slice(1)));
   }
 }
 

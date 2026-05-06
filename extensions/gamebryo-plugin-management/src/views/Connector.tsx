@@ -1,8 +1,8 @@
-import Line from "./Line";
-
 import * as React from "react";
 import { connect } from "react-redux";
 import { ComponentEx, util } from "vortex-api";
+
+import Line from "./Line";
 
 interface ICoord {
   x: number;

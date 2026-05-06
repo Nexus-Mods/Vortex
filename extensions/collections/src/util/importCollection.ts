@@ -2,6 +2,7 @@
 /// to maintain backwards compatibility if things change on our end
 
 import { fs, types, util } from "vortex-api";
+
 import { ICollection, ICollectionModRule } from "../types/ICollection";
 import { validateICollection } from "../validationCode/validation";
 
@@ -29,16 +30,10 @@ function postProcessRule(rule: ICollectionModRule): ICollectionModRule {
   // because with an md5 hash it's generally the case it will only match one version whereas
   // fileExpression supports matching multiple versions, it's simply that we have no automated
   // way of generating glob patterns that ignore the version and date field in the file names
-  if (
-    isFuzzyVersion(result.reference.versionMatch) &&
-    !!result.reference.logicalFileName
-  ) {
+  if (isFuzzyVersion(result.reference.versionMatch) && !!result.reference.logicalFileName) {
     delete result.reference.fileExpression;
   }
-  if (
-    isFuzzyVersion(result.source.versionMatch) &&
-    !!result.source.logicalFileName
-  ) {
+  if (isFuzzyVersion(result.source.versionMatch) && !!result.source.logicalFileName) {
     delete result.source.fileExpression;
   }
   return result;
@@ -73,9 +68,7 @@ export async function readCollection(
       readErrors.map(validationMessage));
     */
   }
-  collection.modRules = (collection.modRules ?? []).map((rule) =>
-    postProcessRule(rule),
-  );
+  collection.modRules = (collection.modRules ?? []).map((rule) => postProcessRule(rule));
 
   return collection;
 }

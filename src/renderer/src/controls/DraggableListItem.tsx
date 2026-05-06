@@ -49,19 +49,12 @@ const DraggableItem: React.FC<IDraggableListItemProps> = ({
   const itemRef = useRef<HTMLDivElement | null>(null);
   const [startedDrag, setStartedDrag] = React.useState(false);
 
-  const sortByIndex = (list: any[]) =>
-    list.sort((a, b) => findItemIndex(a) - findItemIndex(b));
+  const sortByIndex = (list: any[]) => list.sort((a, b) => findItemIndex(a) - findItemIndex(b));
 
-  const isDraggedItem = React.useCallback(
-    () => findItemIndex(item) !== -1,
-    [draggedItems],
-  );
+  const isDraggedItem = React.useCallback(() => findItemIndex(item) !== -1, [draggedItems]);
   const classes = isSelected ? ["selected"] : [];
 
-  const sortedSelected = React.useMemo(
-    () => sortByIndex(selectedItems),
-    [selectedItems],
-  );
+  const sortedSelected = React.useMemo(() => sortByIndex(selectedItems), [selectedItems]);
 
   const [{ isDraggingItem, draggedStyle }, drag, dragPreview] = useDrag(
     {
@@ -104,18 +97,9 @@ const DraggableItem: React.FC<IDraggableListItemProps> = ({
   const [, drop] = useDrop({
     accept: containerId,
     hover: (draggedItem: any, monitor) => {
-      const {
-        index: dragIndex,
-        items,
-        containerId: sourceContainerId,
-      } = draggedItem;
+      const { index: dragIndex, items, containerId: sourceContainerId } = draggedItem;
       const hoverIndex = index;
-      if (
-        dragIndex === hoverIndex ||
-        isLocked ||
-        disabled ||
-        monitor.isOver({ shallow: true })
-      ) {
+      if (dragIndex === hoverIndex || isLocked || disabled || monitor.isOver({ shallow: true })) {
         return;
       }
 
@@ -125,19 +109,15 @@ const DraggableItem: React.FC<IDraggableListItemProps> = ({
       const clientOffset = monitor.getClientOffset();
       if (!clientOffset) return;
 
-      const hoverMiddleY =
-        (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
+      const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
       const hoverActualY = clientOffset.y - hoverBoundingRect.top;
       // if dragging down, continue only when hover is smaller than middle Y
       if (index < hoverIndex && hoverActualY < hoverMiddleY) return;
       // if dragging up, continue only when hover is bigger than middle Y
       if (index > hoverIndex && hoverActualY > hoverMiddleY) return;
 
-      onChangeIndex(
-        dragIndex,
-        hoverIndex,
-        sourceContainerId !== containerId,
-        (list) => items.map((item) => take(item, list)),
+      onChangeIndex(dragIndex, hoverIndex, sourceContainerId !== containerId, (list) =>
+        items.map((item) => take(item, list)),
       );
 
       draggedItem.index = hoverIndex;

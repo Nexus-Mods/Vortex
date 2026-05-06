@@ -11,11 +11,7 @@ function step(startTime: number, endTime: number, time: number) {
 
 const scrollJobs: { [elementId: string]: () => void } = {};
 
-function smoothScroll(
-  element: HTMLElement,
-  targetPos: number,
-  duration: number,
-): Promise<boolean> {
+function smoothScroll(element: HTMLElement, targetPos: number, duration: number): Promise<boolean> {
   targetPos = Math.round(targetPos);
   duration = Math.max(Math.round(duration), 0);
 
@@ -52,11 +48,7 @@ function smoothScroll(
       }
       element.scrollTop = newPos;
 
-      if (
-        now >= endTime ||
-        element.scrollTop !== newPos ||
-        newPos === targetPos
-      ) {
+      if (now >= endTime || element.scrollTop !== newPos || newPos === targetPos) {
         // done or failed to scroll all the way to the destination pos,
         // in which case we probably hit bounds
         scrollJobs[element.id] = undefined;

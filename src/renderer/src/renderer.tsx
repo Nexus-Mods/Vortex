@@ -17,10 +17,7 @@ requireRemap();
 const earlyErrHandler = (evt: ErrorEvent) => {
   const error = evt.error as Error | undefined;
   // Use preload API for dialog and app access
-  void window.api.dialog.showErrorBox(
-    "Unhandled error",
-    error?.stack ?? String(evt.error),
-  );
+  void window.api.dialog.showErrorBox("Unhandled error", error?.stack ?? String(evt.error));
   void window.api.app.exit(1);
 };
 
@@ -56,22 +53,17 @@ if (SetProcessPreferredUILanguages !== undefined) {
   SetProcessPreferredUILanguages(["en-US"]);
 }
 
-import type { IParameters } from "@vortex/shared/cli";
-import type { AppInitMetadata } from "@vortex/shared/ipc";
-import type crashDumpT from "crash-dump";
-
-import "./util/application.electron";
-
-import {
-  getErrorCode,
-  getErrorMessageOrDefault,
-  unknownToError,
-} from "@vortex/shared";
-import Bluebird from "bluebird";
-import { ipcRenderer, webFrame } from "electron";
 import { EventEmitter } from "events";
 import { readFile } from "node:fs/promises";
 import * as path from "path";
+
+import "./util/application.electron";
+import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import type { IParameters } from "@vortex/shared/cli";
+import type { AppInitMetadata } from "@vortex/shared/ipc";
+import Bluebird from "bluebird";
+import type crashDumpT from "crash-dump";
+import { ipcRenderer, webFrame } from "electron";
 import React from "react";
 
 import "./util/monkeyPatching";
@@ -84,10 +76,6 @@ import { applyMiddleware, compose, createStore } from "redux";
 import thunkMiddleware from "redux-thunk";
 import { generate as shortid } from "shortid";
 
-import type { IExtensionReducer } from "./types/extensions";
-import type { ThunkStore } from "./types/IExtensionContext";
-import type { IState } from "./types/IState";
-
 import { setCommandLine, setLanguage, setNetworkConnected } from "./actions";
 import {
   setApplicationVersion,
@@ -95,25 +83,14 @@ import {
   setInstanceId,
   setWarnedAdmin,
 } from "./actions/app";
-import {
-  addNotification,
-  setupNotificationSuppression,
-} from "./actions/notifications";
-import {
-  setMaximized,
-  setWindowPosition,
-  setWindowSize,
-} from "./actions/window";
+import { addNotification, setupNotificationSuppression } from "./actions/notifications";
+import { setMaximized, setWindowPosition, setWindowSize } from "./actions/window";
 import { ApplicationData } from "./applicationData";
 import ExtensionManager from "./ExtensionManager";
 import { ExtensionContext } from "./ExtensionProvider";
 import { log } from "./logging";
 import { initApplicationMenu } from "./menu";
-import reducer, {
-  buildReducerTree,
-  Decision,
-  sanitizeHydrationState,
-} from "./reducers/index";
+import reducer, { buildReducerTree, Decision, sanitizeHydrationState } from "./reducers/index";
 import { fetchHydrationState } from "./store/hydration";
 import { persistDiffMiddleware } from "./store/persistDiffMiddleware";
 import { reduxLogger } from "./store/reduxLogger";
@@ -121,23 +98,17 @@ import { reduxSanity, type StateError } from "./store/reduxSanity";
 import { computeStateDiff } from "./store/stateDiff";
 import StyleManager from "./StyleManager";
 import { createRendererTelemetryProvider } from "./telemetry/setup";
+import type { IExtensionReducer } from "./types/extensions";
+import type { ThunkStore } from "./types/IExtensionContext";
 import { GameEntryNotFound } from "./types/IGameStore";
+import type { IState } from "./types/IState";
 import { relaunch } from "./util/commandLine";
 import { ProcessCanceled, UserCanceled } from "./util/CustomErrors";
-import {
-  recordErrorSpan,
-  setOutdated,
-  terminate,
-  toError,
-} from "./util/errorHandling";
+import { recordErrorSpan, setOutdated, terminate, toError } from "./util/errorHandling";
 import {} from "./util/extensionRequire";
 import { setTFunction } from "./util/fs";
 import GlobalNotifications from "./util/GlobalNotifications";
-import getI18n, {
-  changeLanguage,
-  fallbackTFunc,
-  type TFunction,
-} from "./util/i18n";
+import getI18n, { changeLanguage, fallbackTFunc, type TFunction } from "./util/i18n";
 import { showError } from "./util/message";
 import { getSafe } from "./util/storeHelper";
 import { bytesToString, getAllPropertyNames } from "./util/util";
@@ -151,9 +122,7 @@ let deinitCrashDump: () => void;
 if (process.env.CRASH_REPORTING === "vortex") {
   void window.api.app.getPath("temp").then((tempPath: string) => {
     const crashDump: typeof crashDumpT = require("crash-dump").default;
-    deinitCrashDump = crashDump(
-      path.join(tempPath, "dumps", `crash-renderer-${Date.now()}.dmp`),
-    );
+    deinitCrashDump = crashDump(path.join(tempPath, "dumps", `crash-renderer-${Date.now()}.dmp`));
   });
 }
 
@@ -335,16 +304,12 @@ function errorHandler(evt: any) {
     return;
   }
 
-  const dynPaths = ExtensionManager.getExtensionPaths().filter(
-    (extPath) => !extPath.bundled,
-  );
+  const dynPaths = ExtensionManager.getExtensionPaths().filter((extPath) => !extPath.bundled);
 
   if (dynPaths.length > 0) {
     if (error.stack.includes(`at ${dynPaths[0].path}`)) {
       const extPath = (dynPaths[0].path + path.sep).replace(/[\\]/g, "\\\\");
-      const re = new RegExp(
-        `at ${extPath}(Vortex Extension Update - )?([^/\\\\]*)`,
-      );
+      const re = new RegExp(`at ${extPath}(Vortex Extension Update - )?([^/\\\\]*)`);
       const reMatch = error.stack.match(re);
       const extName = reMatch?.[2] ?? "unknown";
 
@@ -354,27 +319,20 @@ function errorHandler(evt: any) {
         name: extName,
         error: error.stack,
       });
-      recordErrorSpan(
-        "Unhandled exception in extension",
-        unknownToError(error),
-        {
-          "extension.name": extName,
-        },
-      );
-      extensions
-        ?.getApi()
-        ?.showErrorNotification?.("Unhandled exception in extension", error, {
-          message: extName,
-          allowReport: false,
-        });
+      recordErrorSpan("Unhandled exception in extension", unknownToError(error), {
+        "extension.name": extName,
+      });
+      extensions?.getApi()?.showErrorNotification?.("Unhandled exception in extension", error, {
+        message: extName,
+        allowReport: false,
+      });
       return;
     }
   }
 
   if (
     error.message === "Cannot read property 'parentNode' of undefined" ||
-    error.message ===
-      "Cannot read properties of undefined (reading 'parentNode')"
+    error.message === "Cannot read properties of undefined (reading 'parentNode')"
   ) {
     // thrown by packery - seemingly at random
     return;
@@ -391,10 +349,7 @@ function errorHandler(evt: any) {
     return;
   }
 
-  if (
-    error.stack !== undefined &&
-    error.stack.includes("finishClassComponent")
-  ) {
+  if (error.stack !== undefined && error.stack.includes("finishClassComponent")) {
     // don't report errors from react components because they will be handled (usually),
     // for some reason the "unhandled" callback is invoked before reacts componentDidCatch
     // handler.
@@ -407,20 +362,14 @@ function errorHandler(evt: any) {
     // the main offender here is electron-builder. Unfortunately newer versions that may
     // have fixed this have even more significant bugs.
     (error.message === "socket hang up" ||
-      (error.message !== undefined &&
-        error.message.includes("Error invoking remote method")) ||
+      (error.message !== undefined && error.message.includes("Error invoking remote method")) ||
       error.stack.indexOf("net::ERR_CONNECTION_RESET") !== -1 ||
       error.stack.indexOf("net::ERR_ABORTED") !== -1 ||
       error.stack.indexOf("PackeryItem.proto.positionDropPlaceholder") !== -1 ||
       (error.syscall === "getaddrinfo" && error.code === "ENOTFOUND") ||
-      [
-        "ETIMEDOUT",
-        "ECONNRESET",
-        "EPIPE",
-        "ECONNABORTED",
-        "ECONNREFUSED",
-        "EHOSTUNREACH",
-      ].includes(error.code))
+      ["ETIMEDOUT", "ECONNRESET", "EPIPE", "ECONNABORTED", "ECONNREFUSED", "EHOSTUNREACH"].includes(
+        error.code,
+      ))
   ) {
     log("warn", "suppressing error message", {
       message: error.message,
@@ -461,10 +410,7 @@ if (process.env.NODE_ENV === "development") {
     autoPause: true,
     shouldHotReload: false,
   });
-  enhancer = compose(
-    applyMiddleware(...middleware, freeze),
-    devtool || ((id) => id),
-  );
+  enhancer = compose(applyMiddleware(...middleware, freeze), devtool || ((id) => id));
 } else {
   enhancer = compose(applyMiddleware(...middleware));
 }
@@ -539,9 +485,7 @@ async function init(): Promise<ExtensionManager | null> {
   const extReducers = extensions.getReducers();
 
   const reportReducerError = (err) =>
-    extensions
-      .getApi()
-      .showErrorNotification("Failed to update application state", err);
+    extensions.getApi().showErrorNotification("Failed to update application state", err);
 
   // Pre-sanitize hydration state: verify integrity and show dialog if needed
   const tree = buildReducerTree(extReducers);
@@ -559,9 +503,7 @@ async function init(): Promise<ExtensionManager | null> {
         defaultId: 2,
         cancelId: 0,
       });
-      return [Decision.QUIT, Decision.IGNORE, Decision.SANITIZE][
-        result.response
-      ];
+      return [Decision.QUIT, Decision.IGNORE, Decision.SANITIZE][result.response];
     },
   );
 
@@ -649,10 +591,7 @@ async function init(): Promise<ExtensionManager | null> {
       });
     }
     highUsageReport = heapPerc > 0.75;
-    if (
-      lastHeapSize > 0 &&
-      stat.totalHeapSize - lastHeapSize > REPORT_HEAP_INCREASE
-    ) {
+    if (lastHeapSize > 0 && stat.totalHeapSize - lastHeapSize > REPORT_HEAP_INCREASE) {
       log("info", "memory usage growing fast", {
         usage: bytesToString(stat.totalHeapSize * 1024),
         previous: bytesToString(lastHeapSize * 1024),
@@ -662,9 +601,7 @@ async function init(): Promise<ExtensionManager | null> {
     lastHeapSize = stat.totalHeapSize;
   }, 5000);
 
-  const startupPromise = new Promise<void>(
-    (resolve) => (startupFinished = resolve),
-  );
+  const startupPromise = new Promise<void>((resolve) => (startupFinished = resolve));
 
   const api = extensions.getApi();
 
@@ -704,34 +641,25 @@ async function init(): Promise<ExtensionManager | null> {
       store.dispatch(
         addNotification({
           type: "info",
-          message: tFunc(
-            "Vortex isn't set up to handle this protocol: {{url}}",
-            {
-              replace: { url },
-            },
-          ),
+          message: tFunc("Vortex isn't set up to handle this protocol: {{url}}", {
+            replace: { url },
+          }),
         }),
       );
     }
   }
 
-  eventEmitter.on(
-    "start-download-url",
-    (url: string, fileName?: string, install?: boolean) => {
-      startDownloadFromURL(url, fileName, install);
-    },
-  );
+  eventEmitter.on("start-download-url", (url: string, fileName?: string, install?: boolean) => {
+    startDownloadFromURL(url, fileName, install);
+  });
 
   eventEmitter.on("relaunch-application", (gameId: string) => {
     relaunch(["--game", gameId]);
   });
 
-  ipcRenderer.on(
-    "external-url",
-    (event, url: string, fileName?: string, install?: boolean) => {
-      startDownloadFromURL(url, fileName, install);
-    },
-  );
+  ipcRenderer.on("external-url", (event, url: string, fileName?: string, install?: boolean) => {
+    startDownloadFromURL(url, fileName, install);
+  });
 
   ipcRenderer.on("install-archive", (event, filePath: string) => {
     startinstallFromArchive(filePath);
@@ -765,9 +693,7 @@ async function init(): Promise<ExtensionManager | null> {
   });
 
   ipcRenderer.on("register-relay-listener", (sender, event, ...noArgs) => {
-    eventEmitter.on(event, (...args) =>
-      ipcRenderer.send("relay-event", event, ...args),
-    );
+    eventEmitter.on(event, (...args) => ipcRenderer.send("relay-event", event, ...args));
   });
 
   let currentLanguage: string = store.getState().settings.interface.language;
@@ -886,14 +812,9 @@ function renderer(extensions: ExtensionManager | null) {
     return;
   }
 
-  webFrame.setZoomFactor(
-    getSafe(store.getState(), ["settings", "window", "zoomFactor"], 1),
-  );
+  webFrame.setZoomFactor(getSafe(store.getState(), ["settings", "window", "zoomFactor"], 1));
 
-  ReactDOM.render(
-    <LoadingScreen extensions={extensions} />,
-    document.getElementById("content"),
-  );
+  ReactDOM.render(<LoadingScreen extensions={extensions} />, document.getElementById("content"));
   ipcRenderer.send("show-window");
 
   store.dispatch(setNetworkConnected(navigator.onLine));
@@ -909,9 +830,7 @@ function renderer(extensions: ExtensionManager | null) {
     ev.preventDefault();
   };
 
-  load(extensions).catch((err) =>
-    log("error", "error setting up renderer", err),
-  );
+  load(extensions).catch((err) => log("error", "error setting up renderer", err));
 }
 
 initGlobals()

@@ -55,9 +55,7 @@ export interface IPersistor {
   setItem(key: PersistorKey, value: string): PromiseLike<void>;
   removeItem(key: PersistorKey): PromiseLike<void>;
   getAllKeys(): PromiseLike<PersistorKey[]>;
-  getAllKVs?(
-    prefix?: string,
-  ): PromiseLike<Array<{ key: PersistorKey; value: string }>>;
+  getAllKVs?(prefix?: string): PromiseLike<Array<{ key: PersistorKey; value: string }>>;
 }
 
 export interface IPosition {

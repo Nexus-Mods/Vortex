@@ -1,9 +1,9 @@
-import Line from "./Line";
-
 import * as _ from "lodash";
 import * as React from "react";
 import { connect } from "react-redux";
 import { ComponentEx, util } from "vortex-api";
+
+import Line from "./Line";
 
 interface ICoord {
   x: number;
@@ -45,19 +45,9 @@ class ConnectorImpl extends ComponentEx<IConnectorProps, {}> {
 
 function mapStateToProps(state: any): IConnectorProps {
   return {
-    source: util.getSafe(
-      state,
-      ["session", "dependencies", "connection", "source"],
-      undefined,
-    ),
-    target: util.getSafe(
-      state,
-      ["session", "dependencies", "connection", "target"],
-      undefined,
-    ),
+    source: util.getSafe(state, ["session", "dependencies", "connection", "source"], undefined),
+    target: util.getSafe(state, ["session", "dependencies", "connection", "target"], undefined),
   };
 }
 
-export default connect(mapStateToProps)(
-  ConnectorImpl,
-) as React.ComponentType<{}>;
+export default connect(mapStateToProps)(ConnectorImpl) as React.ComponentType<{}>;

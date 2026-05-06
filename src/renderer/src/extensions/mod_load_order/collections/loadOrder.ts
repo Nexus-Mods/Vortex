@@ -1,23 +1,17 @@
 import * as React from "react";
+
+import { setLoadOrder } from "../../../actions/loadOrder";
 import type * as types from "../../../types/api";
 import * as util from "../../../util/api";
 import * as selectors from "../../../util/selectors";
-
-import { setLoadOrder } from "../../../actions/loadOrder";
-
 import type {
   ICollection,
   ICollectionLoadOrder,
   IGameSpecificInterfaceProps,
 } from "../types/collections";
-import {
-  CollectionGenerateError,
-  CollectionParseError,
-} from "../types/collections";
+import { CollectionGenerateError, CollectionParseError } from "../types/collections";
 import type { ILoadOrder } from "../types/types";
-
 import { genCollectionLoadOrder } from "../util";
-
 import LoadOrderCollections from "../views/LoadOrderCollections";
 
 export async function generate(
@@ -54,10 +48,7 @@ export async function generate(
     }
     return accum;
   }, {});
-  const filteredLO: ILoadOrder = genCollectionLoadOrder(
-    loadOrder,
-    includedMods,
-  );
+  const filteredLO: ILoadOrder = genCollectionLoadOrder(loadOrder, includedMods);
   return Promise.resolve({ loadOrder: filteredLO });
 }
 
@@ -70,9 +61,7 @@ export async function parser(
 
   const profileId = selectors.lastActiveProfileForGame(state, gameId);
   if (profileId === undefined) {
-    return Promise.reject(
-      new CollectionParseError(collection, "Invalid profile id"),
-    );
+    return Promise.reject(new CollectionParseError(collection, "Invalid profile id"));
   }
 
   api.store.dispatch(setLoadOrder(profileId, collection.loadOrder as any));

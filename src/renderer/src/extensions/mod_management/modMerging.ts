@@ -1,24 +1,21 @@
-import { getErrorCode, unknownToError } from "@vortex/shared";
 import * as crypto from "crypto";
 import * as path from "path";
 
-import type {
-  IDeployedFile,
-  IExtensionApi,
-} from "../../types/IExtensionContext";
-import type { IGame } from "../../types/IGame";
-import type { IFileEntry } from "../../util/getFileList";
-import type { Normalize } from "../../util/getNormalizeFunc";
-import type { IMod } from "./types/IMod";
-import type { IResolvedMerger } from "./types/IResolvedMerger";
+import { getErrorCode, unknownToError } from "@vortex/shared";
 
 import { log } from "../../logging";
+import type { IDeployedFile, IExtensionApi } from "../../types/IExtensionContext";
+import type { IGame } from "../../types/IGame";
 import * as fs from "../../util/fs";
+import type { IFileEntry } from "../../util/getFileList";
 import getFileList from "../../util/getFileList";
+import type { Normalize } from "../../util/getNormalizeFunc";
 import getNormalizeFunc from "../../util/getNormalizeFunc";
 import { setdefault, truthy } from "../../util/util";
 import walk from "../../util/walk";
 import { BACKUP_TAG } from "./LinkingDeployment";
+import type { IMod } from "./types/IMod";
+import type { IResolvedMerger } from "./types/IResolvedMerger";
 
 export const MERGED_PATH = "__merged";
 
@@ -104,15 +101,10 @@ async function mergeArchive(
       }
       const relPath = path.relative(outputPath, iterPath);
       let isDifferentProm: Promise<boolean>;
-      if (
-        baseContent[relPath] === undefined ||
-        stats.size !== baseContent[relPath].size
-      ) {
+      if (baseContent[relPath] === undefined || stats.size !== baseContent[relPath].size) {
         isDifferentProm = Promise.resolve(true);
       } else {
-        isDifferentProm = calcHash(iterPath).then(
-          (hash) => hash !== baseContent[relPath].hash,
-        );
+        isDifferentProm = calcHash(iterPath).then((hash) => hash !== baseContent[relPath].hash);
       }
       return isDifferentProm.then((different) =>
         different
@@ -125,10 +117,7 @@ async function mergeArchive(
     await fs.removeAsync(outputPath);
   }
 
-  const finalArchive = await api.openArchive(
-    path.join(mergePath, relArcPath),
-    { gameId: game.id },
-  );
+  const finalArchive = await api.openArchive(path.join(mergePath, relArcPath), { gameId: game.id });
   await finalArchive.create(resultPath);
   await fs.removeAsync(resultPath);
 }
@@ -177,25 +166,16 @@ async function mergeMods(
 
   const isDeployed = (filePath: string) =>
     deployedFiles.find(
-      (file) =>
-        path.join(destinationPath, file.relPath).toLowerCase() ===
-        filePath.toLowerCase(),
+      (file) => path.join(destinationPath, file.relPath).toLowerCase() === filePath.toLowerCase(),
     ) !== undefined;
 
-  for (const mod of mods.filter(
-    (mod) => mod.installationPath !== undefined,
-  )) {
+  for (const mod of mods.filter((mod) => mod.installationPath !== undefined)) {
     const modPath = path.join(modBasePath, mod.installationPath);
     const allFiles = await getFileList(modPath);
-    const fileList = allFiles.filter(
-      (entry: IFileEntry) => entry.stats.isFile(),
-    );
+    const fileList = allFiles.filter((entry: IFileEntry) => entry.stats.isFile());
 
     for (const fileEntry of fileList) {
-      if (
-        game.mergeArchive !== undefined &&
-        game.mergeArchive(fileEntry.filePath)
-      ) {
+      if (game.mergeArchive !== undefined && game.mergeArchive(fileEntry.filePath)) {
         const relPath = path.relative(modPath, fileEntry.filePath);
         res.usedInMerge.push(relPath);
         setdefault(archiveMerges, relPath, []).push({
@@ -203,13 +183,9 @@ async function mergeMods(
           id: mod.id,
         });
       } else {
-        const merger = mergers.find((iter) =>
-          iter.match.filter(fileEntry.filePath),
-        );
+        const merger = mergers.find((iter) => iter.match.filter(fileEntry.filePath));
         if (merger !== undefined) {
-          const realDest = truthy(merger.modType)
-            ? mergeDest + "." + merger.modType
-            : mergeDest;
+          const realDest = truthy(merger.modType) ? mergeDest + "." + merger.modType : mergeDest;
           const relPath = path.relative(modPath, fileEntry.filePath);
           res.usedInMerge.push(relPath);
           const normalize: Normalize = await getNormalizeFunc(modPath);
@@ -232,10 +208,7 @@ async function mergeMods(
             ]);
 
             if (statRes[1]) {
-              await fs.copyAsync(
-                file.in + BACKUP_TAG,
-                path.join(realDest, file.out),
-              );
+              await fs.copyAsync(file.in + BACKUP_TAG, path.join(realDest, file.out));
             } else if (statRes[0]) {
               if (isDeployed(file.in)) {
                 await fs.removeAsync(file.in);
@@ -251,14 +224,10 @@ async function mergeMods(
                   await fs.copyAsync(file.in, outPath);
                 } catch (err) {
                   if (getErrorCode(err) === "ENOENT") {
-                    log(
-                      "error",
-                      "file not found upon copying merge base file",
-                      {
-                        source: file.in,
-                        destination: outPath,
-                      },
-                    );
+                    log("error", "file not found upon copying merge base file", {
+                      source: file.in,
+                      destination: outPath,
+                    });
                   }
                   throw err;
                 }

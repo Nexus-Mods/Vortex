@@ -1,7 +1,8 @@
-import SourceMap from "./SourceMap";
+import * as path from "path";
 
 import * as fs from "fs-extra";
-import * as path from "path";
+
+import SourceMap from "./SourceMap";
 
 const stackRE = /( *at [A-Za-z._\- \[\]]+) \((.*)\)$/;
 const sourceRE = /^(.*):([0-9]+):([0-9]+)$/;
@@ -39,16 +40,12 @@ function transformLine(sourceMap: SourceMap, input: string): Promise<string> {
     );
 }
 
-function translate(
-  sourcePath: string,
-  basePath: string,
-  data: string,
-): Promise<string> {
+function translate(sourcePath: string, basePath: string, data: string): Promise<string> {
   const sourceMap = new SourceMap(sourcePath, basePath);
 
-  return Promise.all(
-    data.split("\n").map((line) => transformLine(sourceMap, line)),
-  ).then((lines) => lines.join("\n"));
+  return Promise.all(data.split("\n").map((line) => transformLine(sourceMap, line))).then((lines) =>
+    lines.join("\n"),
+  );
 }
 
 export default translate;

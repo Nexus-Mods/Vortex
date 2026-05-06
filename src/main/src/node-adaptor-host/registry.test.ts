@@ -1,5 +1,4 @@
 import type { IAdaptorManifest } from "@nexusmods/adaptor-api";
-
 import { adaptorName, pid, semVer, uri } from "@nexusmods/adaptor-api";
 import { describe, expect, it } from "vitest";
 

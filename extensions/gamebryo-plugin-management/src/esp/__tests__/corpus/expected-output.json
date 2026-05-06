@@ -9,9 +9,7 @@
     "isDummy": false,
     "author": "DEFAULT",
     "description": "",
-    "masterList": [
-      "Oblivion.esm"
-    ],
+    "masterList": ["Oblivion.esm"],
     "revision": 1380205896
   },
   {
@@ -24,9 +22,7 @@
     "isDummy": false,
     "author": "Mad Mike",
     "description": "Enter the Cube of Confusion if you dare! You can think of this as a demo, a beta test, or just a fun half finished thing. Anyways to get to the Cube look for a large glowing portal near the sewer entrance in the Market District!",
-    "masterList": [
-      "Oblivion.esm"
-    ],
+    "masterList": ["Oblivion.esm"],
     "revision": 1380205896
   },
   {
@@ -39,9 +35,7 @@
     "isDummy": false,
     "author": "DEFAULT",
     "description": "",
-    "masterList": [
-      "Oblivion.esm"
-    ],
+    "masterList": ["Oblivion.esm"],
     "revision": 1380205896
   },
   {
@@ -54,9 +48,7 @@
     "isDummy": false,
     "author": "DEFAULT",
     "description": "",
-    "masterList": [
-      "Oblivion.esm"
-    ],
+    "masterList": ["Oblivion.esm"],
     "revision": 1380205896
   },
   {
@@ -69,9 +61,7 @@
     "isDummy": false,
     "author": "bananasplit",
     "description": "Bravil Barrowfields improves the area around Bravil and the Larsius River.\r\n\r\nVersion 2\r\n{{BASH:C.Water}}",
-    "masterList": [
-      "Oblivion.esm"
-    ],
+    "masterList": ["Oblivion.esm"],
     "revision": 1380205896
   },
   {
@@ -84,12 +74,7 @@
     "isDummy": false,
     "author": "WrinklyNinja",
     "description": "Prevents Gates To Aesgaard 2 from starting before you complete Gates To Aesgaard 1.\r\n\r\nVersion: 1.0",
-    "masterList": [
-      "GTAesgaard.esp",
-      "GTAesgaard_2.esm",
-      "GTAesgaard_2.esp",
-      "Oblivion.esm"
-    ],
+    "masterList": ["GTAesgaard.esp", "GTAesgaard_2.esm", "GTAesgaard_2.esp", "Oblivion.esm"],
     "revision": 1380205896
   },
   {
@@ -102,9 +87,7 @@
     "isDummy": false,
     "author": "Scot",
     "description": "Beta 1.0",
-    "masterList": [
-      "Oblivion.esm"
-    ],
+    "masterList": ["Oblivion.esm"],
     "revision": 1380205896
   },
   {
@@ -117,9 +100,7 @@
     "isDummy": false,
     "author": "Scot",
     "description": "{{BASH: C.Light, C.Water}}",
-    "masterList": [
-      "Oblivion.esm"
-    ],
+    "masterList": ["Oblivion.esm"],
     "revision": 1380205896
   },
   {
@@ -132,9 +113,7 @@
     "isDummy": false,
     "author": "DEFAULT",
     "description": "",
-    "masterList": [
-      "Fallout3.esm"
-    ],
+    "masterList": ["Fallout3.esm"],
     "revision": 15
   },
   {
@@ -147,9 +126,7 @@
     "isDummy": false,
     "author": "DEFAULT",
     "description": "",
-    "masterList": [
-      "Fallout3.esm"
-    ],
+    "masterList": ["Fallout3.esm"],
     "revision": 15
   },
   {
@@ -162,9 +139,7 @@
     "isDummy": false,
     "author": "Earthbind",
     "description": "This mod turns Lucy West into a companion with voice and lip synced dialog. She can be hired after completing the \"Blood Ties\" quest.",
-    "masterList": [
-      "Fallout3.esm"
-    ],
+    "masterList": ["Fallout3.esm"],
     "revision": 15
   },
   {
@@ -177,9 +152,7 @@
     "isDummy": false,
     "author": "Earthbind",
     "description": "This mod turns Lucy West into a companion with voice and lip synced dialog. She can be hired after completing the \"Blood Ties\" quest.",
-    "masterList": [
-      "Fallout3.esm"
-    ],
+    "masterList": ["Fallout3.esm"],
     "revision": 15
   },
   {
@@ -192,9 +165,7 @@
     "isDummy": false,
     "author": "Earthbind",
     "description": "This mod turns Lucy West into a companion with voice and lip synced dialog. She can be hired after completing the \"Blood Ties\" quest.",
-    "masterList": [
-      "Fallout3.esm"
-    ],
+    "masterList": ["Fallout3.esm"],
     "revision": 15
   },
   {
@@ -207,9 +178,7 @@
     "isDummy": false,
     "author": "Earthbind",
     "description": "This mod turns Lucy West into a companion with voice and lip synced dialog. She can be hired after completing the \"Blood Ties\" quest.",
-    "masterList": [
-      "Fallout3.esm"
-    ],
+    "masterList": ["Fallout3.esm"],
     "revision": 15
   },
   {
@@ -222,9 +191,7 @@
     "isDummy": false,
     "author": "Earthbind",
     "description": "This mod turns Lucy West into a companion with voice and lip synced dialog. She can be hired after completing the \"Blood Ties\" quest.",
-    "masterList": [
-      "Fallout3.esm"
-    ],
+    "masterList": ["Fallout3.esm"],
     "revision": 15
   },
   {
@@ -237,9 +204,7 @@
     "isDummy": false,
     "author": "Earthbind",
     "description": "This mod turns Lucy West into a companion with voice and lip synced dialog. She can be hired after completing the \"Blood Ties\" quest.",
-    "masterList": [
-      "Fallout3.esm"
-    ],
+    "masterList": ["Fallout3.esm"],
     "revision": 15
   },
   {
@@ -252,9 +217,7 @@
     "isDummy": false,
     "author": "DEFAULT",
     "description": "",
-    "masterList": [
-      "FalloutNV.esm"
-    ],
+    "masterList": ["FalloutNV.esm"],
     "revision": 15
   },
   {
@@ -267,9 +230,7 @@
     "isDummy": false,
     "author": "DEFAULT",
     "description": "",
-    "masterList": [
-      "FalloutNV.esm"
-    ],
+    "masterList": ["FalloutNV.esm"],
     "revision": 15
   },
   {
@@ -282,9 +243,7 @@
     "isDummy": false,
     "author": "DEFAULT",
     "description": "",
-    "masterList": [
-      "FalloutNV.esm"
-    ],
+    "masterList": ["FalloutNV.esm"],
     "revision": 15
   },
   {
@@ -321,9 +280,7 @@
     "isDummy": false,
     "author": "sandbox6",
     "description": "Undoes YUP's texture fixes to the Hunting Rifle, for compatibility with retexture mods that haven't fixed the texture paths.",
-    "masterList": [
-      "FalloutNV.esm"
-    ],
+    "masterList": ["FalloutNV.esm"],
     "revision": 15
   },
   {
@@ -409,9 +366,7 @@
     "isDummy": false,
     "author": "Expired6978",
     "description": "Extensible Follower Framework",
-    "masterList": [
-      "Skyrim.esm"
-    ],
+    "masterList": ["Skyrim.esm"],
     "revision": 43
   },
   {
@@ -450,9 +405,7 @@
     "isDummy": false,
     "author": "Gabriel Mailhot (LogRaam)",
     "description": "The Eyes Of Beauty - Elves Edition feature new eyes textures for elves:\r\n\r\nWood Elves\r\nDark Elves\r\nHigh Elves\r\n\r\nThe textures are Lore Friendly.\r\n\r\nThese high resolution textures are lore friendly.\r\n\r\n",
-    "masterList": [
-      "Skyrim.esm"
-    ],
+    "masterList": ["Skyrim.esm"],
     "revision": 43
   },
   {
@@ -465,12 +418,7 @@
     "isDummy": false,
     "author": "DidymusEi",
     "description": "- Adds a simple power for Vampire Lords that turns them into a cloud of bats and takes them to a major city of their choosing. Good for \"No Fast Travel\" playthroughs.",
-    "masterList": [
-      "Dawnguard.esm",
-      "Dragonborn.esm",
-      "Skyrim.esm",
-      "Update.esm"
-    ],
+    "masterList": ["Dawnguard.esm", "Dragonborn.esm", "Skyrim.esm", "Update.esm"],
     "revision": 43
   },
   {
@@ -483,11 +431,7 @@
     "isDummy": false,
     "author": "Didymus Ei",
     "description": "",
-    "masterList": [
-      "Dawnguard.esm",
-      "Skyrim.esm",
-      "Update.esm"
-    ],
+    "masterList": ["Dawnguard.esm", "Skyrim.esm", "Update.esm"],
     "revision": 43
   },
   {
@@ -500,11 +444,7 @@
     "isDummy": false,
     "author": "DidymusEi",
     "description": "",
-    "masterList": [
-      "Dawnguard.esm",
-      "Skyrim.esm",
-      "Update.esm"
-    ],
+    "masterList": ["Dawnguard.esm", "Skyrim.esm", "Update.esm"],
     "revision": 43
   },
   {
@@ -537,9 +477,7 @@
     "isDummy": false,
     "author": "William Imm",
     "description": "A very small optional file to move the recurring quest after the Dark Brotherhood questline to be a misc. quest. Currently, the game places it in the Dark Brotherhood section - since it's not a major quest, it shouldn't be treated like one.",
-    "masterList": [
-      "Skyrim.esm"
-    ],
+    "masterList": ["Skyrim.esm"],
     "revision": 43
   },
   {
@@ -649,12 +587,7 @@
     "isDummy": false,
     "author": "OutLaw666",
     "description": "This patch changes the speed and gravity values of all Elemental Arrows to match the values introduced by \"ScopedBows_ArrowTweaks.esp\".",
-    "masterList": [
-      "Dawnguard.esm",
-      "Dragonborn.esm",
-      "Skyrim.esm",
-      "Update.esm"
-    ],
+    "masterList": ["Dawnguard.esm", "Dragonborn.esm", "Skyrim.esm", "Update.esm"],
     "revision": 44
   },
   {
@@ -667,9 +600,7 @@
     "isDummy": false,
     "author": "DEFAULT",
     "description": "",
-    "masterList": [
-      "Fallout4.esm"
-    ],
+    "masterList": ["Fallout4.esm"],
     "revision": 131
   },
   {
@@ -682,11 +613,7 @@
     "isDummy": false,
     "author": "Krazyman999",
     "description": "A patch for the realistic needs mod, Hardcore mode [on]... I love this mod, and now my food works with it as well... It fills the eat and drink needs, as well as adding salty dehydration to salty foods...",
-    "masterList": [
-      "Fallout4.esm",
-      "HardcoreMode_ON.esm",
-      "NewFood.esp"
-    ],
+    "masterList": ["Fallout4.esm", "HardcoreMode_ON.esm", "NewFood.esp"],
     "revision": 131
   },
   {
@@ -699,11 +626,7 @@
     "isDummy": false,
     "author": "Krazyman999 aka KP",
     "description": "A patch for Milk That Brahmin, so it works with New Food mod",
-    "masterList": [
-      "Fallout4.esm",
-      "MilkThatBrahmin.esp",
-      "NewFood.esp"
-    ],
+    "masterList": ["Fallout4.esm", "MilkThatBrahmin.esp", "NewFood.esp"],
     "revision": 131
   },
   {
@@ -741,10 +664,7 @@
     "isDummy": false,
     "author": "Feyawen A. R-R.",
     "description": "Cartographers Map Markers\r\nNuka-World\r\n",
-    "masterList": [
-      "DLCNukaWorld.esm",
-      "Fallout4.esm"
-    ],
+    "masterList": ["DLCNukaWorld.esm", "Fallout4.esm"],
     "revision": 131
   },
   {
@@ -757,10 +677,7 @@
     "isDummy": false,
     "author": "Feyawen A. R-R.",
     "description": "Cartographers Map Markers\r\nNuka-World\r\n",
-    "masterList": [
-      "DLCNukaWorld.esm",
-      "Fallout4.esm"
-    ],
+    "masterList": ["DLCNukaWorld.esm", "Fallout4.esm"],
     "revision": 131
   },
   {
@@ -773,10 +690,7 @@
     "isDummy": false,
     "author": "Feyawen A. R-R.",
     "description": "Cartographers Map Markers\r\nNuka-World\r\n",
-    "masterList": [
-      "DLCNukaWorld.esm",
-      "Fallout4.esm"
-    ],
+    "masterList": ["DLCNukaWorld.esm", "Fallout4.esm"],
     "revision": 131
   },
   {
@@ -789,9 +703,7 @@
     "isDummy": false,
     "author": "Feyawen A. R-R.",
     "description": "Cartographers Map Markers\r\nCommonwealth\r\nv4.5\r\n\r\n",
-    "masterList": [
-      "Fallout4.esm"
-    ],
+    "masterList": ["Fallout4.esm"],
     "revision": 131
   },
   {
@@ -804,10 +716,7 @@
     "isDummy": false,
     "author": "Unofficial Patch Project Team",
     "description": "Unofficial Shattered Space Patch\r\n\r\nVersion 1.0.4\r\n\r\nRequires Starfield version 1.16.236 or higher.",
-    "masterList": [
-      "ShatteredSpace.esm",
-      "Starfield.esm"
-    ],
+    "masterList": ["ShatteredSpace.esm", "Starfield.esm"],
     "revision": 582
   },
   {
@@ -820,9 +729,7 @@
     "isDummy": false,
     "author": "Samantha Says",
     "description": "Increases your walking speed.",
-    "masterList": [
-      "Starfield.esm"
-    ],
+    "masterList": ["Starfield.esm"],
     "revision": 559
   },
   {
@@ -835,9 +742,7 @@
     "isDummy": false,
     "author": "Samantha Says",
     "description": "Increases your walking speed from 1.09 to 1.49..",
-    "masterList": [
-      "Starfield.esm"
-    ],
+    "masterList": ["Starfield.esm"],
     "revision": 559
   },
   {
@@ -850,9 +755,7 @@
     "isDummy": false,
     "author": "Samantha Says",
     "description": "Increases your walking speed from 1.09 to 1.49..",
-    "masterList": [
-      "Starfield.esm"
-    ],
+    "masterList": ["Starfield.esm"],
     "revision": 559
   },
   {
@@ -865,9 +768,7 @@
     "isDummy": false,
     "author": "Samantha Says",
     "description": "Changes many American English words into British English.\r\n\r\nAluminum => Aluminium\r\n\r\nFiber => Fibre\r\n\r\nSoccer => Football",
-    "masterList": [
-      "Starfield.esm"
-    ],
+    "masterList": ["Starfield.esm"],
     "revision": 559
   },
   {
@@ -880,9 +781,7 @@
     "isDummy": false,
     "author": "Samantha Says",
     "description": "Changes many American English words into British English.\r\n\r\nAluminum => Aluminium\r\n\r\nFiber => Fibre\r\n\r\nSoccer => Football",
-    "masterList": [
-      "Starfield.esm"
-    ],
+    "masterList": ["Starfield.esm"],
     "revision": 559
   },
   {
@@ -895,9 +794,7 @@
     "isDummy": false,
     "author": "DEFAULT",
     "description": "",
-    "masterList": [
-      "Starfield.esm"
-    ],
+    "masterList": ["Starfield.esm"],
     "revision": 576
   },
   {

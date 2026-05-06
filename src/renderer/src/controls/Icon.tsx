@@ -2,11 +2,8 @@
 // we need the electron-fs hook here
 import * as fs from "fs/promises";
 import * as path from "path";
-import React, {
-  type CSSProperties,
-  type FC,
-  type MouseEventHandler,
-} from "react";
+
+import React, { type CSSProperties, type FC, type MouseEventHandler } from "react";
 
 import getVortexPath from "../util/getVortexPath";
 import { log } from "../util/log";
@@ -50,10 +47,7 @@ export interface IIconProps {
 /**
  * Install a custom icon set from a given path (for extensions).
  */
-export const installIconSet = (
-  set: string,
-  setPath: string,
-): Promise<Set<string>> => {
+export const installIconSet = (set: string, setPath: string): Promise<Set<string>> => {
   const promises = getIconSetPromises();
 
   if (promises.has(set)) {
@@ -175,11 +169,7 @@ export const Icon: FC<IIconProps> = ({
       <use
         className="svg-use"
         transform={
-          flip === "horizontal"
-            ? "scale(-1, 1)"
-            : flip === "vertical"
-              ? "scale(1, -1)"
-              : undefined
+          flip === "horizontal" ? "scale(-1, 1)" : flip === "vertical" ? "scale(1, -1)" : undefined
         }
         xlinkHref={`#icon-${name}`}
       />

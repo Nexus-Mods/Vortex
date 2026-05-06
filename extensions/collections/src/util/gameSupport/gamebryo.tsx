@@ -1,9 +1,11 @@
-import React from "react";
 import * as path from "node:path";
+
+import React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { ControlLabel, ListGroup, ListGroupItem, Panel } from "react-bootstrap";
 import { useSelector, useStore } from "react-redux";
 import { fs, log, selectors, Spinner, tooltip, types, util } from "vortex-api";
+
 import { ICollection } from "../../types/ICollection";
 import { IExtendedInterfaceProps } from "../../types/IExtendedInterfaceProps";
 
@@ -23,9 +25,7 @@ function getEnabledPlugins(
       ...gamebryoLO[pluginName.toLowerCase()],
       name: pluginName,
     }))
-    .filter(
-      (lo) => lo !== undefined && lo.name !== undefined && lo.enabled === true,
-    )
+    .filter((lo) => lo !== undefined && lo.name !== undefined && lo.enabled === true)
     .sort((lhs, rhs) => lhs.loadOrder - rhs.loadOrder)
     .map((lo) => ({ name: lo.name, enabled: lo.enabled }));
 }
@@ -41,13 +41,8 @@ interface IGamebryoRules {
   groups?: IUserlistEntry[];
 }
 
-function extractPluginRules(
-  state: IStateWithLootLists,
-  plugins: string[],
-): IGamebryoRules {
-  const installedPlugins: Set<string> = new Set(
-    plugins.map((name) => name.toLowerCase()),
-  );
+function extractPluginRules(state: IStateWithLootLists, plugins: string[]): IGamebryoRules {
+  const installedPlugins: Set<string> = new Set(plugins.map((name) => name.toLowerCase()));
   const customisedPlugins = (state.userlist?.plugins ?? []).filter(
     (plug: IUserlistEntry) =>
       installedPlugins.has(plug.name.toLowerCase()) &&
@@ -84,9 +79,7 @@ async function getIncludedPlugins(
     modIds.map(async (modId) => {
       if (mods[modId] !== undefined) {
         try {
-          const files = await fs.readdirAsync(
-            path.join(stagingPath, mods[modId].installationPath),
-          );
+          const files = await fs.readdirAsync(path.join(stagingPath, mods[modId].installationPath));
           const plugins = files.filter((fileName) =>
             extensions.has(path.extname(fileName).toLowerCase()),
           );
@@ -112,12 +105,7 @@ export async function generate(
   modIds: string[],
   mods: { [modId: string]: types.IMod },
 ): Promise<ICollectionGamebryo> {
-  const includedPlugins: string[] = await getIncludedPlugins(
-    gameId,
-    stagingPath,
-    mods,
-    modIds,
-  );
+  const includedPlugins: string[] = await getIncludedPlugins(gameId, stagingPath, mods, modIds);
 
   return {
     plugins: getEnabledPlugins(state, includedPlugins),
@@ -168,27 +156,32 @@ export async function parser(
 
   // set up groups and their rules (skipped if user opted out)
   if (!skipPluginRules && Array.isArray(collection.pluginRules?.groups)) {
-    util.batchDispatch(api.store, collection.pluginRules.groups.reduce((prev, group) => {
-      const isNew = userlist.groups.find(
-        (g) => g.name.toUpperCase() === group.name.toUpperCase(),
-      ) === undefined;
-      if (isNew) {
-        prev.push({
-          type: 'ADD_PLUGIN_GROUP', payload: {
-            group: group.name,
-          },
+    util.batchDispatch(
+      api.store,
+      collection.pluginRules.groups.reduce((prev, group) => {
+        const isNew =
+          userlist.groups.find((g) => g.name.toUpperCase() === group.name.toUpperCase()) ===
+          undefined;
+        if (isNew) {
+          prev.push({
+            type: "ADD_PLUGIN_GROUP",
+            payload: {
+              group: group.name,
+            },
+          });
+        }
+        (group.after ?? []).forEach((after) => {
+          prev.push({
+            type: "ADD_GROUP_RULE",
+            payload: {
+              groupId: group.name,
+              reference: after,
+            },
+          });
         });
-      }
-      (group.after ?? []).forEach(after => {
-        prev.push({
-          type: 'ADD_GROUP_RULE', payload: {
-            groupId: group.name,
-            reference: after,
-          },
-        });
-      });
-      return prev;
-    }, []));
+        return prev;
+      }, []),
+    );
   }
 
   const collectionModIds = collectionMod.rules
@@ -198,16 +191,9 @@ export async function parser(
     .map((mod) => mod.id);
 
   const stagingPath = selectors.installPathForGame(state, gameId);
-  const includedPlugins = await getIncludedPlugins(
-    gameId,
-    stagingPath,
-    mods,
-    collectionModIds,
-  );
+  const includedPlugins = await getIncludedPlugins(gameId, stagingPath, mods, collectionModIds);
   const isEnabled = (pluginName: string) =>
-    collection.plugins.find(
-      (plugin) => plugin.name === pluginName && plugin.enabled,
-    ) !== undefined;
+    collection.plugins.find((plugin) => plugin.name === pluginName && plugin.enabled) !== undefined;
 
   // set up plugins and their rules
   util.batchDispatch(
@@ -256,12 +242,9 @@ export async function parser(
       ["requires", "incompatible", "after"].forEach((type) => {
         const lootType = toLootType(type);
         (plugin[type] || []).forEach((ref) => {
-          const match = (iter) =>
-            refName(iter).toUpperCase() === ref.toUpperCase();
+          const match = (iter) => refName(iter).toUpperCase() === ref.toUpperCase();
 
-          if (
-            util.getSafe(existing, [lootType], []).find(match) === undefined
-          ) {
+          if (util.getSafe(existing, [lootType], []).find(match) === undefined) {
             prev.push({
               type: "ADD_USERLIST_RULE",
               payload: {
@@ -343,7 +326,6 @@ type IStateWithLootLists = types.IState & {
   userlist?: ILOOTList;
   masterlist?: ILOOTList;
 };
-
 
 function ruleName(rule: string | ILootReference): string {
   if (typeof rule === "string") {
@@ -436,9 +418,7 @@ export function Interface(props: IExtendedInterfaceProps): JSX.Element {
   }>(null);
   const store = useStore();
   const gameId = useSelector(selectors.activeGameId);
-  const mods = useSelector(
-    (selState: types.IState) => selState.persistent.mods[gameId],
-  );
+  const mods = useSelector((selState: types.IState) => selState.persistent.mods[gameId]);
   const userlist: ILOOTList = useSelector((selState: any) => selState.userlist);
 
   const state = store.getState();
@@ -461,8 +441,7 @@ export function Interface(props: IExtendedInterfaceProps): JSX.Element {
           (iter) => iter.name.toLowerCase() === plugin.toLowerCase(),
         );
 
-        const byRef = (name: string | ILootReference): boolean =>
-          pluginsL.includes(ruleId(name));
+        const byRef = (name: string | ILootReference): boolean => pluginsL.includes(ruleId(name));
         const toRule = (ref: string | ILootReference, type: string) => ({
           name: plugin,
           ref,
@@ -470,21 +449,9 @@ export function Interface(props: IExtendedInterfaceProps): JSX.Element {
         });
 
         if (plug !== undefined) {
-          rules.push(
-            ...(plug.after ?? [])
-              .filter(byRef)
-              .map((aft) => toRule(aft, "after")),
-          );
-          rules.push(
-            ...(plug.req ?? [])
-              .filter(byRef)
-              .map((req) => toRule(req, "requires")),
-          );
-          rules.push(
-            ...(plug.inc ?? [])
-              .filter(byRef)
-              .map((inc) => toRule(inc, "incompatible")),
-          );
+          rules.push(...(plug.after ?? []).filter(byRef).map((aft) => toRule(aft, "after")));
+          rules.push(...(plug.req ?? []).filter(byRef).map((req) => toRule(req, "requires")));
+          rules.push(...(plug.inc ?? []).filter(byRef).map((inc) => toRule(inc, "incompatible")));
 
           if (plug.group !== undefined) {
             assignments[plug.name] = plug.group;
@@ -540,22 +507,17 @@ export function Interface(props: IExtendedInterfaceProps): JSX.Element {
     // early out if no userlist loaded
     return (
       <Panel>
-        {t(
-          "No userlist loaded, is the gamebryo-plugin-management extension disabled?",
-        )}
+        {t("No userlist loaded, is the gamebryo-plugin-management extension disabled?")}
       </Panel>
     );
   }
 
-  const grpsFlattened: IRule[] = (userlist?.groups ?? []).reduce(
-    (prev: IRule[], grp) => {
-      (grp.after ?? []).forEach((aft) => {
-        prev.push({ name: grp.name, ref: aft, type: "after" });
-      });
-      return prev;
-    },
-    [],
-  );
+  const grpsFlattened: IRule[] = (userlist?.groups ?? []).reduce((prev: IRule[], grp) => {
+    (grp.after ?? []).forEach((aft) => {
+      prev.push({ name: grp.name, ref: aft, type: "after" });
+    });
+    return prev;
+  }, []);
 
   return (
     <div className="collection-rules-edit collection-scrollable">
@@ -563,7 +525,7 @@ export function Interface(props: IExtendedInterfaceProps): JSX.Element {
         <p>
           {t(
             "The collection will include your custom load order rules so that " +
-            "users of your collection will get the same load order.",
+              "users of your collection will get the same load order.",
           )}
           <br />
           {t("Rules you remove here are also removed from your actual setup.")}

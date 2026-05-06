@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { inflateSync } from "zlib";
+
 import * as lz4js from "lz4js";
 
 // LZ4 frame magic number
@@ -8,10 +9,7 @@ const LZ4_FRAME_MAGIC = 0x184d2204;
 
 function decompressBSA(compressedBuf: Buffer): Buffer {
   // Detect compression format from magic bytes
-  if (
-    compressedBuf.length >= 4 &&
-    compressedBuf.readUInt32LE(0) === LZ4_FRAME_MAGIC
-  ) {
+  if (compressedBuf.length >= 4 && compressedBuf.readUInt32LE(0) === LZ4_FRAME_MAGIC) {
     // LZ4 frame format (Skyrim SE)
     const result = lz4js.decompress(new Uint8Array(compressedBuf));
     return Buffer.from(result);
@@ -173,10 +171,7 @@ export class BSAArchive {
   }
 
   private namePrefixed(): boolean {
-    return (
-      this.version !== VERSION_OBLIVION &&
-      (this.archiveFlags & FLAG_NAMEPREFIXED) !== 0
-    );
+    return this.version !== VERSION_OBLIVION && (this.archiveFlags & FLAG_NAMEPREFIXED) !== 0;
   }
 
   private isCompressed(file: BSAFileEntry): boolean {
@@ -285,10 +280,7 @@ export class BSAArchive {
 
 // --- Loading ---
 
-export async function loadBSA(
-  fileName: string,
-  verify: boolean = false,
-): Promise<BSAArchive> {
+export async function loadBSA(fileName: string, verify: boolean = false): Promise<BSAArchive> {
   const fd = await fs.promises.open(fileName, "r");
   try {
     // Read header
@@ -386,9 +378,7 @@ export async function loadBSA(
       const nameLen = folderDataBuf[off];
       off += 1;
       // The name includes the null terminator in the length count
-      const name = folderDataBuf
-        .toString("ascii", off, off + nameLen - 1)
-        .replace(/\0/g, "");
+      const name = folderDataBuf.toString("ascii", off, off + nameLen - 1).replace(/\0/g, "");
       off += nameLen;
 
       // Read file records
@@ -415,12 +405,7 @@ export async function loadBSA(
 
     // Read file names block (starts right after the last folder data)
     const fileNamesBuf = Buffer.alloc(header.totalFileNameLength);
-    await fd.read(
-      fileNamesBuf,
-      0,
-      header.totalFileNameLength,
-      fileNameBlockOffset,
-    );
+    await fd.read(fileNamesBuf, 0, header.totalFileNameLength, fileNameBlockOffset);
 
     // Parse file names (null-terminated strings)
     const fileNames: string[] = [];
@@ -501,9 +486,7 @@ function insertFolderIntoTree(
 
   let current = root;
   for (let i = 0; i < parts.length - 1; i++) {
-    let found = current.subFolders.find(
-      (sf) => sf.name.toLowerCase() === parts[i].toLowerCase(),
-    );
+    let found = current.subFolders.find((sf) => sf.name.toLowerCase() === parts[i].toLowerCase());
     if (!found) {
       found = { name: parts[i], files: [], subFolders: [] };
       current.subFolders.push(found);
@@ -513,9 +496,7 @@ function insertFolderIntoTree(
 
   // The last part is the actual folder name
   const lastPart = parts[parts.length - 1];
-  let existing = current.subFolders.find(
-    (sf) => sf.name.toLowerCase() === lastPart.toLowerCase(),
-  );
+  let existing = current.subFolders.find((sf) => sf.name.toLowerCase() === lastPart.toLowerCase());
   if (existing) {
     existing.files.push(...folderNode.files);
   } else {
@@ -673,10 +654,7 @@ export class BSAWriter {
       buf.writeBigUInt64LE(folderHash, folderRecordOff);
       buf.writeUInt32LE(f.files.length, folderRecordOff + 8);
       // Offset points to the folder data including the totalFileNameLength
-      buf.writeUInt32LE(
-        folderDataOff + totalFileNameLength,
-        folderRecordOff + 12,
-      );
+      buf.writeUInt32LE(folderDataOff + totalFileNameLength, folderRecordOff + 12);
       folderRecordOff += folderRecordSize;
 
       // Write folder data: B-string name

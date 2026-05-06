@@ -1,16 +1,13 @@
 import * as path from "path";
+
 import { selectors, types, util } from "vortex-api";
 
-import { validateIUMMGameConfig } from "./validationCode/validation";
-
 import { addGameSupport, getSupportMap, UMM_EXE, UMM_ID } from "./common";
+import { InvalidAPICallError, NotPremiumError } from "./Errors";
 import { IUMMGameConfig } from "./types";
 import { ensureUMM } from "./ummDownloader";
-
-import { InvalidAPICallError, NotPremiumError } from "./Errors";
-
 import { isUMMExecPred, setUMMPath, toBlue } from "./util";
-
+import { validateIUMMGameConfig } from "./validationCode/validation";
 import AttribDashlet from "./views/AttribDashlet";
 
 // List of games which are supported by this modtype.
@@ -48,10 +45,7 @@ function installUMM(
   const execFile = files.find((file) => isUMMExecPred(file));
   const idx = execFile.indexOf(UMM_EXE);
   const installDir = selectors.installPathForGame(api.store.getState(), gameId);
-  const expectedDestination = path.join(
-    installDir,
-    path.basename(destinationPath, ".installing"),
-  );
+  const expectedDestination = path.join(installDir, path.basename(destinationPath, ".installing"));
   const fileInstructions: types.IInstruction[] = files.map((file) => {
     return {
       type: "copy",
@@ -70,19 +64,12 @@ function installUMM(
     value: "Unity Mod Manager",
   };
 
-  const instructions = [].concat(
-    fileInstructions,
-    modTypeInstruction,
-    attribInstr,
-  );
+  const instructions = [].concat(fileInstructions, modTypeInstruction, attribInstr);
   setUMMPath(api, expectedDestination, gameId);
   return Promise.resolve({ instructions });
 }
 
-async function genOnGameModeActivated(
-  api: types.IExtensionApi,
-  gameId: string,
-) {
+async function genOnGameModeActivated(api: types.IExtensionApi, gameId: string) {
   if (!isSupported(gameId)) {
     return;
   }
@@ -129,23 +116,14 @@ function init(context: types.IExtensionContext) {
     "umm-installer",
     15,
     toBlue((files, gameId) => testUmmApp(files, gameId)),
-    toBlue((files, dest, gameId) =>
-      installUMM(context.api, files, dest, gameId),
-    ),
+    toBlue((files, dest, gameId) => installUMM(context.api, files, dest, gameId)),
   );
 
-  context.registerModType(
-    "umm",
-    15,
-    isSupported,
-    () => undefined,
-    modTypeTest,
-    {
-      mergeMods: true,
-      name: "Unity Mod Manager",
-      deploymentEssential: false,
-    },
-  );
+  context.registerModType("umm", 15, isSupported, () => undefined, modTypeTest, {
+    mergeMods: true,
+    name: "Unity Mod Manager",
+    deploymentEssential: false,
+  });
 
   context.registerAPI(
     "ummAddGame",
@@ -154,17 +132,13 @@ function init(context: types.IExtensionContext) {
       if (validationErrors.length === 0) {
         addGameSupport(gameConf);
       } else {
-        const error: InvalidAPICallError = new InvalidAPICallError(
-          validationErrors,
-        );
+        const error: InvalidAPICallError = new InvalidAPICallError(validationErrors);
         if (callback !== undefined) {
           callback(error);
         } else {
-          context.api.showErrorNotification(
-            "Failed to register UMM game",
-            error,
-            { allowReport: false },
-          );
+          context.api.showErrorNotification("Failed to register UMM game", error, {
+            allowReport: false,
+          });
         }
       }
     },

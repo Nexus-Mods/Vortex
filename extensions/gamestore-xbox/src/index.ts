@@ -1,11 +1,11 @@
-import PromiseBB from "bluebird";
 import { spawn } from "child_process";
 import * as path from "path";
+
+import PromiseBB from "bluebird";
 import { fs, log, types, util } from "vortex-api";
 import * as winapi from "winapi-bindings";
 import { parseStringPromise } from "xml2js";
-import { findInstalledGames } from "./util";
-import { GamePathMap, IXboxEntry } from "./types";
+
 import {
   IGNORABLE,
   MUTABLE_LOCATION_PATH,
@@ -17,6 +17,8 @@ import {
   STORE_NAME,
   STORE_PRIORITY,
 } from "./common";
+import { GamePathMap, IXboxEntry } from "./types";
+import { findInstalledGames } from "./util";
 
 /**
  * base class to interact with local xbox game store.
@@ -30,19 +32,12 @@ function gameStoreDetection(silent?: boolean): boolean {
     // No Windows, no xbox launcher!
     try {
       winapi.WithRegOpen("HKEY_CLASSES_ROOT", REPOSITORY_PATH, (hkey) => {
-        const keys = winapi
-          .RegEnumKeys(hkey)
-          .map((key) => key.key.toLowerCase());
+        const keys = winapi.RegEnumKeys(hkey).map((key) => key.key.toLowerCase());
         isXboxInstalled =
-          keys.find(
-            (key) =>
-              XBOXAPP_NAMES.findIndex((name) => key.startsWith(name)) !== -1,
-          ) !== undefined;
+          keys.find((key) => XBOXAPP_NAMES.findIndex((name) => key.startsWith(name)) !== -1) !==
+          undefined;
         if (!isXboxInstalled) {
-          logFunc(
-            "info",
-            "xbox launcher not installed: microsoft.xboxapp missing",
-          );
+          logFunc("info", "xbox launcher not installed: microsoft.xboxapp missing");
         }
       });
     } catch (err) {
@@ -81,9 +76,7 @@ class XboxLauncher implements types.IGameStore {
   // e.g. explorer.exe shell:appsFolder\\SystemEraSoftworks.29415440E1269_ftk5pbg2rayv2!ASTRONEER
   public launchGame(appInfo: any, api?: types.IExtensionApi): PromiseBB<void> {
     if (!appInfo) {
-      return PromiseBB.reject(
-        new util.ArgumentInvalid("appInfo is undefined/null"),
-      );
+      return PromiseBB.reject(new util.ArgumentInvalid("appInfo is undefined/null"));
     }
 
     const isCustomExecObject = () => {
@@ -132,10 +125,7 @@ class XboxLauncher implements types.IGameStore {
       const gameEntry = entries.find(matcher);
       if (gameEntry === undefined) {
         return PromiseBB.reject(
-          new types.GameEntryNotFound(
-            Array.isArray(appId) ? appId.join(", ") : appId,
-            STORE_ID,
-          ),
+          new types.GameEntryNotFound(Array.isArray(appId) ? appId.join(", ") : appId, STORE_ID),
         );
       } else {
         return PromiseBB.resolve(gameEntry);
@@ -178,10 +168,7 @@ class XboxLauncher implements types.IGameStore {
     return PromiseBB.resolve(this.isXboxInstalled);
   }
 
-  public launchGameStore(
-    api: types.IExtensionApi,
-    parameters?: string[],
-  ): PromiseBB<void> {
+  public launchGameStore(api: types.IExtensionApi, parameters?: string[]): PromiseBB<void> {
     const execName = !!parameters ? parameters.join("") : "Microsoft.Xbox.App";
     const launchCommand = `shell:appsFolder\\Microsoft.GamingApp_8wekyb3d8bbwe!${execName}`;
     return this.oneShotLaunch(launchCommand);
@@ -191,19 +178,14 @@ class XboxLauncher implements types.IGameStore {
     gamePath: string,
     fallback: (gamePath: string) => PromiseLike<boolean>,
   ): PromiseBB<boolean> {
-    if (
-      gamePath.toLowerCase().split(path.sep).includes("modifiablewindowsapps")
-    ) {
+    if (gamePath.toLowerCase().split(path.sep).includes("modifiablewindowsapps")) {
       return PromiseBB.resolve(true);
     } else {
       return PromiseBB.resolve(fallback(gamePath));
     }
   }
 
-  private getFirstKeyName(
-    rootKey: winapi.REGISTRY_HIVE,
-    keyPath: string,
-  ): string {
+  private getFirstKeyName(rootKey: winapi.REGISTRY_HIVE, keyPath: string): string {
     const keyNames = this.getKeyNames(rootKey, keyPath);
     return keyNames.length > 0 ? keyNames[0] : undefined;
   }
@@ -221,11 +203,9 @@ class XboxLauncher implements types.IGameStore {
         keyNames = (
           !!filterList
             ? names.filter(
-              (key) =>
-                filterList.find((ign) =>
-                  key.key.toLowerCase().startsWith(ign),
-                ) === undefined,
-            )
+                (key) =>
+                  filterList.find((ign) => key.key.toLowerCase().startsWith(ign)) === undefined,
+              )
             : names
         ).map((key) => key.key);
       });
@@ -260,43 +240,31 @@ class XboxLauncher implements types.IGameStore {
   private mutableLinkMap(): { [link: string]: string } {
     const result: { [link: string]: string } = {};
     try {
-      winapi.WithRegOpen(
-        "HKEY_LOCAL_MACHINE",
-        MUTABLE_LOCATION_PATH,
-        (firsthkey) => {
-          const keys: string[] = winapi
-            .RegEnumKeys(firsthkey)
-            .map((key) => key.key);
-          for (const key of keys) {
-            const hivePath = path.join(MUTABLE_LOCATION_PATH, key);
-            winapi.WithRegOpen("HKEY_LOCAL_MACHINE", hivePath, (secondhkey) => {
-              // We only care for string values.
-              const values: string[] = winapi
-                .RegEnumValues(secondhkey)
-                .filter((val) => val.type === "REG_SZ")
-                .map((val) => val.key);
+      winapi.WithRegOpen("HKEY_LOCAL_MACHINE", MUTABLE_LOCATION_PATH, (firsthkey) => {
+        const keys: string[] = winapi.RegEnumKeys(firsthkey).map((key) => key.key);
+        for (const key of keys) {
+          const hivePath = path.join(MUTABLE_LOCATION_PATH, key);
+          winapi.WithRegOpen("HKEY_LOCAL_MACHINE", hivePath, (secondhkey) => {
+            // We only care for string values.
+            const values: string[] = winapi
+              .RegEnumValues(secondhkey)
+              .filter((val) => val.type === "REG_SZ")
+              .map((val) => val.key);
 
-              if (
-                values.includes("MutableLink") &&
-                values.includes("MutableLocation")
-              ) {
-                try {
-                  // So we confirmed that we have the mutable values in, but there have been occurences
-                  //  where we couldn't retrieve them which is odd. https://github.com/Nexus-Mods/Vortex/issues/8824
-                  const link = winapi.RegGetValue(
-                    "HKEY_LOCAL_MACHINE",
-                    hivePath,
-                    "MutableLink",
-                  ).value as string;
-                  result[link] = hivePath;
-                } catch (err) {
-                  return;
-                }
+            if (values.includes("MutableLink") && values.includes("MutableLocation")) {
+              try {
+                // So we confirmed that we have the mutable values in, but there have been occurences
+                //  where we couldn't retrieve them which is odd. https://github.com/Nexus-Mods/Vortex/issues/8824
+                const link = winapi.RegGetValue("HKEY_LOCAL_MACHINE", hivePath, "MutableLink")
+                  .value as string;
+                result[link] = hivePath;
+              } catch (err) {
+                return;
               }
-            });
-          }
-        },
-      );
+            }
+          });
+        }
+      });
       return result;
     } catch (err) {
       log("debug", "failed to resolve mutable location", err);
@@ -304,10 +272,7 @@ class XboxLauncher implements types.IGameStore {
     }
   }
 
-  private resolveMutableLocation(
-    packagePath: string,
-    linkMap: { [link: string]: string },
-  ): string {
+  private resolveMutableLocation(packagePath: string, linkMap: { [link: string]: string }): string {
     let mutableLocation: string;
     try {
       if (linkMap[packagePath] !== undefined) {
@@ -326,14 +291,8 @@ class XboxLauncher implements types.IGameStore {
 
   private resolveRef(packageId: string, displayName: string): string {
     // Lets try and resolve this nightmare.
-    const cachePath: string = RESOURCES_PATH.replace(
-      "{{PACKAGE_ID}}",
-      packageId,
-    );
-    const firstKey: string = this.getFirstKeyName(
-      "HKEY_CLASSES_ROOT",
-      cachePath,
-    );
+    const cachePath: string = RESOURCES_PATH.replace("{{PACKAGE_ID}}", packageId);
+    const firstKey: string = this.getFirstKeyName("HKEY_CLASSES_ROOT", cachePath);
     if (!firstKey) {
       return undefined;
     }
@@ -350,15 +309,9 @@ class XboxLauncher implements types.IGameStore {
       try {
         const namePath: string = path.join(hivesPath, hive);
         winapi.WithRegOpen("HKEY_CLASSES_ROOT", namePath, (secondhkey) => {
-          const values: string[] = winapi
-            .RegEnumValues(secondhkey)
-            .map((val) => val.key);
+          const values: string[] = winapi.RegEnumValues(secondhkey).map((val) => val.key);
           if (values.indexOf(displayName) !== -1) {
-            name = winapi.RegGetValue(
-              "HKEY_CLASSES_ROOT",
-              namePath,
-              displayName,
-            ).value as string;
+            name = winapi.RegGetValue("HKEY_CLASSES_ROOT", namePath, displayName).value as string;
           }
         });
       } catch (err) {
@@ -385,106 +338,98 @@ class XboxLauncher implements types.IGameStore {
     return PromiseBB.resolve(findInstalledGames(this.mApi))
       .then((gameMap: GamePathMap) => {
         return new PromiseBB<IXboxEntry[]>((resolve, reject) => {
-          winapi.WithRegOpen(
-            "HKEY_CLASSES_ROOT",
-            REPOSITORY_PATH,
-            (hkey) => {
-              const keys: string[] = winapi
-                .RegEnumKeys(hkey)
-                .filter(
-                  (key) =>
-                    IGNORABLE.find((ign) =>
-                      key.key.toLowerCase().startsWith(ign),
-                    ) === undefined,
-                )
-                .map((key) => key.key);
-
-              log("info", "xbox store unignored entries:", keys.length);
-
-              PromiseBB.reduce(
-                keys,
-                (accum: IXboxEntry[], key: string) => {
-                  const packageId = key;
-
-                  let executionName: string;
-                  const firstKeyName: string = this.getFirstKeyName(
-                    "HKEY_CLASSES_ROOT",
-                    path.join(REPOSITORY_PATH2, key),
-                  );
-                  if (!!firstKeyName) {
-                    const split = firstKeyName.split("!");
-                    executionName =
-                      split.length > 1 ? split[split.length - 1] : "App";
-                  } else {
-                    executionName = "App";
-                  }
-
-                  const publisherId: string = key.substr(key.lastIndexOf("_") + 1);
-                  const appid: string = key.substring(0, key.indexOf("_"));
-
-                  let displayName: string;
-                  try {
-                    displayName = winapi.RegGetValue(
-                      "HKEY_CLASSES_ROOT",
-                      REPOSITORY_PATH + "\\" + key,
-                      "DisplayName",
-                    ).value as string;
-                  } catch (err) {
-                    log("info", "gamestore-xbox: unable to query app display name", key);
-                    return PromiseBB.resolve(accum);
-                  }
-
-                  const name: string = displayName.startsWith("@")
-                    ? this.resolveRef(packageId, displayName)
-                    : displayName;
-
-                  let gamePath: string;
-                  try {
-                    gamePath = winapi.RegGetValue(hkey, key, "PackageRootFolder")
-                      .value as string;
-                  } catch (err) {
-                    gamePath = gameMap?.[appid];
-                    if (gamePath === undefined) {
-                      return PromiseBB.resolve(accum);
-                    }
-                  }
-
-                  const mutableLocation =
-                    gameMap[appid] !== undefined
-                      ? gameMap[appid]
-                      : this.resolveMutableLocation(gamePath, mutableLinkMap);
-
-                  const gameEntry: IXboxEntry = {
-                    appid,
-                    publisherId,
-                    packageId,
-                    executionName,
-                    gamePath: mutableLocation !== undefined ? mutableLocation : gamePath,
-                    name,
-                    gameStoreId: STORE_ID,
-                  };
-
-                  if (!gameEntry?.gamePath) {
-                    accum.push(gameEntry);
-                    return PromiseBB.resolve(accum);
-                  }
-
-                  return PromiseBB.resolve(this.getAppManifestData(gameEntry.gamePath))
-                    .then((manifestData) => {
-                      accum.push({ ...gameEntry, manifestData });
-                      return accum;
-                    })
-                    .catch((err) => {
-                      log("error", "gamestore-xbox: unable to query the app game path", key);
-                      return accum;
-                    });
-                },
-                [],
+          winapi.WithRegOpen("HKEY_CLASSES_ROOT", REPOSITORY_PATH, (hkey) => {
+            const keys: string[] = winapi
+              .RegEnumKeys(hkey)
+              .filter(
+                (key) =>
+                  IGNORABLE.find((ign) => key.key.toLowerCase().startsWith(ign)) === undefined,
               )
-                .then(resolve)
-                .catch(reject);
-            },
-          );
+              .map((key) => key.key);
+
+            log("info", "xbox store unignored entries:", keys.length);
+
+            PromiseBB.reduce(
+              keys,
+              (accum: IXboxEntry[], key: string) => {
+                const packageId = key;
+
+                let executionName: string;
+                const firstKeyName: string = this.getFirstKeyName(
+                  "HKEY_CLASSES_ROOT",
+                  path.join(REPOSITORY_PATH2, key),
+                );
+                if (!!firstKeyName) {
+                  const split = firstKeyName.split("!");
+                  executionName = split.length > 1 ? split[split.length - 1] : "App";
+                } else {
+                  executionName = "App";
+                }
+
+                const publisherId: string = key.substr(key.lastIndexOf("_") + 1);
+                const appid: string = key.substring(0, key.indexOf("_"));
+
+                let displayName: string;
+                try {
+                  displayName = winapi.RegGetValue(
+                    "HKEY_CLASSES_ROOT",
+                    REPOSITORY_PATH + "\\" + key,
+                    "DisplayName",
+                  ).value as string;
+                } catch (err) {
+                  log("info", "gamestore-xbox: unable to query app display name", key);
+                  return PromiseBB.resolve(accum);
+                }
+
+                const name: string = displayName.startsWith("@")
+                  ? this.resolveRef(packageId, displayName)
+                  : displayName;
+
+                let gamePath: string;
+                try {
+                  gamePath = winapi.RegGetValue(hkey, key, "PackageRootFolder").value as string;
+                } catch (err) {
+                  gamePath = gameMap?.[appid];
+                  if (gamePath === undefined) {
+                    return PromiseBB.resolve(accum);
+                  }
+                }
+
+                const mutableLocation =
+                  gameMap[appid] !== undefined
+                    ? gameMap[appid]
+                    : this.resolveMutableLocation(gamePath, mutableLinkMap);
+
+                const gameEntry: IXboxEntry = {
+                  appid,
+                  publisherId,
+                  packageId,
+                  executionName,
+                  gamePath: mutableLocation !== undefined ? mutableLocation : gamePath,
+                  name,
+                  gameStoreId: STORE_ID,
+                };
+
+                if (!gameEntry?.gamePath) {
+                  accum.push(gameEntry);
+                  return PromiseBB.resolve(accum);
+                }
+
+                return PromiseBB.resolve(this.getAppManifestData(gameEntry.gamePath))
+                  .then((manifestData) => {
+                    accum.push({ ...gameEntry, manifestData });
+                    return accum;
+                  })
+                  .catch((err) => {
+                    log("error", "gamestore-xbox: unable to query the app game path", key);
+                    return accum;
+                  });
+              },
+              [],
+            )
+              .then(resolve)
+              .catch(reject);
+          });
         });
       })
       .catch((err) => {

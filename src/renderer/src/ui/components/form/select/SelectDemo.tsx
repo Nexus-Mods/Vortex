@@ -21,8 +21,7 @@ export const SelectDemo = () => {
         </Typography>
 
         <Typography appearance="subdued">
-          Dropdown select inputs with support for grouped options, validation,
-          and hints.
+          Dropdown select inputs with support for grouped options, validation, and hints.
         </Typography>
       </div>
 
@@ -121,11 +120,7 @@ export const SelectDemo = () => {
             <option value="2">Option 2</option>
           </Select>
 
-          <Select
-            defaultValue="option2"
-            id="preselected-select"
-            label="Pre-selected Value"
-          >
+          <Select defaultValue="option2" id="preselected-select" label="Pre-selected Value">
             <option value="option1">Option 1</option>
 
             <option value="option2">Option 2 (Selected)</option>

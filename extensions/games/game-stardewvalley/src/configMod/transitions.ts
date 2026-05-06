@@ -7,18 +7,18 @@
  */
 import path from "path";
 
+import type { IEntry } from "turbowalk";
 import { fs, selectors } from "vortex-api";
 import type { types } from "vortex-api";
-import type { IEntry } from "turbowalk";
 
 import { GAME_ID, MOD_CONFIG, MOD_MANIFEST } from "../common";
 import { selectSdvMods } from "../state/selectors";
+import { deleteFolder, walkPath } from "./filesystem";
 import {
   extractConfigModAttributes,
   initializeConfigMod,
   removeConfigModAttributes,
 } from "./lifecycle";
-import { deleteFolder, walkPath } from "./filesystem";
 import { onSyncModConfigurations } from "./sync";
 
 /**
@@ -80,19 +80,13 @@ export async function onWillEnableModsImpl(
       skipHidden: true,
       skipInaccessible: true,
     });
-    const manifestFile = files.find(
-      (file) => path.basename(file.filePath) === MOD_MANIFEST,
-    );
+    const manifestFile = files.find((file) => path.basename(file.filePath) === MOD_MANIFEST);
     if (manifestFile === undefined) {
       continue;
     }
 
     const relPath = path.relative(modPath, path.dirname(manifestFile.filePath));
-    const modConfigFilePath = path.join(
-      configMod.configModPath,
-      relPath,
-      MOD_CONFIG,
-    );
+    const modConfigFilePath = path.join(configMod.configModPath, relPath, MOD_CONFIG);
     await fs
       .copyAsync(modConfigFilePath, path.join(modPath, relPath, MOD_CONFIG), {
         overwrite: true,
@@ -100,9 +94,7 @@ export async function onWillEnableModsImpl(
       .catch(() => null);
 
     try {
-      await applyToConfigMod(api, profileId, () =>
-        deleteFolder(path.dirname(modConfigFilePath)),
-      );
+      await applyToConfigMod(api, profileId, () => deleteFolder(path.dirname(modConfigFilePath)));
     } catch (err) {
       api.showErrorNotification?.("Failed to write mod config", err);
       return;
@@ -148,19 +140,9 @@ async function applyToConfigMod(
     }
 
     // Re-deploy around edits so deployment metadata stays consistent.
-    await api.emitAndAwait(
-      "deploy-single-mod",
-      GAME_ID,
-      configMod.mod.id,
-      false,
-    );
+    await api.emitAndAwait("deploy-single-mod", GAME_ID, configMod.mod.id, false);
     await cb();
-    await api.emitAndAwait(
-      "deploy-single-mod",
-      GAME_ID,
-      configMod.mod.id,
-      true,
-    );
+    await api.emitAndAwait("deploy-single-mod", GAME_ID, configMod.mod.id, true);
   } catch (err) {
     api.showErrorNotification?.("Failed to write mod config", err);
   }

@@ -80,12 +80,9 @@ describe("matches", () => {
     it.each([
       ["foo/bar/baz.txt", "**.txt"],
       ["foo/bar/baz.txt", "***.txt"],
-    ])(
-      '"%s" matches "%s" (consecutive stars treated as one)',
-      (input, pattern) => {
-        expect(matches(input, pattern)).toBe(true);
-      },
-    );
+    ])('"%s" matches "%s" (consecutive stars treated as one)', (input, pattern) => {
+      expect(matches(input, pattern)).toBe(true);
+    });
   });
 
   describe("edge cases", () => {

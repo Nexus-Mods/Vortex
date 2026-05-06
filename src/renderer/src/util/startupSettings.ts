@@ -1,8 +1,8 @@
 import * as path from "path";
 
+import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
 import type { IParameters } from "@vortex/shared/cli";
 
-import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
 import { getApplication } from "./application";
 import Debouncer from "./Debouncer";
 import * as fs from "./fs";
@@ -27,13 +27,11 @@ function read(): IParameters {
 }
 
 const updateDebouncer = new Debouncer(() => {
-  return writeFileAtomic(startupPath(), JSON.stringify(settings)).catch(
-    (err) => {
-      log("error", "failed to write startup.json", {
-        error: getErrorMessageOrDefault(err),
-      });
-    },
-  );
+  return writeFileAtomic(startupPath(), JSON.stringify(settings)).catch((err) => {
+    log("error", "failed to write startup.json", {
+      error: getErrorMessageOrDefault(err),
+    });
+  });
 }, 100);
 
 const settings: IParameters = read();

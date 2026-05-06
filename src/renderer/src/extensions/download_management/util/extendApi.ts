@@ -1,16 +1,13 @@
 import type { IExtensionApi } from "../../../types/IExtensionContext";
-import type { IDownloadsAPIExtension } from "../types/IDownloadsAPIExtension";
+import type { RedownloadMode } from "../types/IDownload";
 import type { IDownloadRemoveOptions } from "../types/IDownloadRemoveOptions";
 import type { IDownloadResult } from "../types/IDownloadResult";
-import type { RedownloadMode } from "../types/IDownload";
+import type { IDownloadsAPIExtension } from "../types/IDownloadsAPIExtension";
 import type { IStartDownloadOptions } from "../types/IStartDownloadOptions";
 
 function extendAPI(api: IExtensionApi): IDownloadsAPIExtension {
   return {
-    removeDownload: async (
-      downloadId: string,
-      options?: IDownloadRemoveOptions,
-    ): Promise<void> => {
+    removeDownload: async (downloadId: string, options?: IDownloadRemoveOptions): Promise<void> => {
       return new Promise((resolve, reject) => {
         api.events.emit(
           "remove-download",
@@ -37,10 +34,7 @@ function extendAPI(api: IExtensionApi): IDownloadsAPIExtension {
         });
       });
     },
-    resumeDownload: async (
-      downloadId: string,
-      options?: IStartDownloadOptions,
-    ): Promise<void> => {
+    resumeDownload: async (downloadId: string, options?: IStartDownloadOptions): Promise<void> => {
       return new Promise((resolve, reject) => {
         api.events.emit(
           "resume-download",

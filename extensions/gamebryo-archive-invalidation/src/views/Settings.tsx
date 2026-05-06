@@ -1,14 +1,13 @@
-import { bsaVersion, isSupported } from "../util/gameSupport";
-
-import { toggleInvalidation } from "../bsaRedirection";
-import { REDIRECTION_MOD } from "../constants";
-
 import * as React from "react";
 import { ControlLabel, FormGroup, HelpBlock } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import * as Redux from "redux";
 import { ComponentEx, selectors, Toggle, types } from "vortex-api";
+
+import { toggleInvalidation } from "../bsaRedirection";
+import { REDIRECTION_MOD } from "../constants";
+import { bsaVersion, isSupported } from "../util/gameSupport";
 
 export interface IBaseProps {}
 

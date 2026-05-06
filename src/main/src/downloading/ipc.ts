@@ -1,8 +1,5 @@
-import type {
-  DownloadState,
-  ResolvedEndpoint,
-  ResolvedResource,
-} from "@vortex/shared/download";
+import type { DownloadState, ResolvedEndpoint, ResolvedResource } from "@vortex/shared/download";
+import { staticChunker } from "@vortex/shared/download";
 import type { DownloadError } from "@vortex/shared/errors";
 import type {
   WireDownloadCheckpoint,
@@ -12,19 +9,14 @@ import type {
 } from "@vortex/shared/ipc";
 import type { WebContents } from "electron";
 
-import { staticChunker } from "@vortex/shared/download";
-
-import type { DownloadManager } from "./manager";
-
 import { betterIpcMain } from "../ipc";
 import { log } from "../logging";
+import type { DownloadManager } from "./manager";
 
 function downloadErrorToWire(err: DownloadError): WireDownloadError {
   const { payload } = err;
   const wirePayload =
-    "url" in payload
-      ? { ...payload, url: payload.url.toString() }
-      : { ...payload };
+    "url" in payload ? { ...payload, url: payload.url.toString() } : { ...payload };
   return { payload: wirePayload, message: err.message };
 }
 
@@ -39,9 +31,7 @@ function wireToResolvedResource(wire: WireResolvedResource): ResolvedResource {
     probeEndpoint: probe,
     chunkEndpoint: (chunk) =>
       Promise.resolve(
-        wireToResolvedEndpoint(
-          wire.chunkEndpoints[chunk.index] ?? wire.probeEndpoint,
-        ),
+        wireToResolvedEndpoint(wire.chunkEndpoints[chunk.index] ?? wire.probeEndpoint),
       ),
   };
 }
@@ -81,9 +71,7 @@ export function init(manager: DownloadManager): void {
   betterIpcMain.handle("download:pause", async (_event, downloadId) => {
     const result = await manager.pause(downloadId);
     if (result.status !== "paused") {
-      throw new Error(
-        `Download ${downloadId} is not paused: status is ${result.status}`,
-      );
+      throw new Error(`Download ${downloadId} is not paused: status is ${result.status}`);
     }
     const { checkpoint } = result;
     const resource = resourceToUrl(checkpoint.resource as ResolvedResource);
@@ -119,8 +107,7 @@ export function init(manager: DownloadManager): void {
 
   betterIpcMain.handle("download:getState", (_event, downloadId) => {
     const handle = manager.get(downloadId);
-    if (handle === undefined)
-      throw new Error(`Unknown download: ${downloadId}`);
+    if (handle === undefined) throw new Error(`Unknown download: ${downloadId}`);
     return stateToWire(handle.getState());
   });
 

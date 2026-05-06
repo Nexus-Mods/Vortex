@@ -1,12 +1,11 @@
+import { getErrorMessageOrDefault } from "@vortex/shared";
 import React, { memo, useMemo, type FC } from "react";
 import { Nav } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 
-import type { IMainPage } from "../../types/IMainPage";
-
-import { getErrorMessageOrDefault } from "@vortex/shared";
 import { NavItem } from "../../controls/TooltipControls";
 import { log } from "../../logging";
+import type { IMainPage } from "../../types/IMainPage";
 import { PageButton } from "../PageButton";
 
 export interface IPageGroupProps {
@@ -24,15 +23,7 @@ export interface IPageGroupProps {
  * For Classic layout.
  */
 export const PageGroup: FC<IPageGroupProps> = memo((props) => {
-  const {
-    title,
-    groupKey,
-    pages,
-    mainPage,
-    secondaryPage,
-    tabsMinimized,
-    onClickPage,
-  } = props;
+  const { title, groupKey, pages, mainPage, secondaryPage, tabsMinimized, onClickPage } = props;
 
   const { t } = useTranslation();
 
@@ -60,12 +51,7 @@ export const PageGroup: FC<IPageGroupProps> = memo((props) => {
     <div key={groupKey}>
       {showTitle ? <p className="main-nav-group-title">{t(title)}</p> : null}
 
-      <Nav
-        activeKey={mainPage}
-        bsStyle="pills"
-        className="main-nav-group"
-        stacked={true}
-      >
+      <Nav activeKey={mainPage} bsStyle="pills" className="main-nav-group" stacked={true}>
         {visiblePages.map((page) => (
           <NavItem
             className={secondaryPage === page.id ? "secondary" : undefined}

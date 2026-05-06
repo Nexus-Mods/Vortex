@@ -37,12 +37,7 @@ describe("finishDownload", () => {
 
 describe("initDownload", () => {
   it("creates the action", () => {
-    const action = actions.initDownload(
-      "id",
-      ["url1", "url2"],
-      { key: "value" },
-      ["game"],
-    );
+    const action = actions.initDownload("id", ["url1", "url2"], { key: "value" }, ["game"]);
     expect(action).toEqual({
       error: false,
       type: "INIT_DOWNLOAD",

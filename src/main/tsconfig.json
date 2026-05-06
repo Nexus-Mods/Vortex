@@ -4,7 +4,7 @@
   "include": [
     "src/**/*",
     "../../typings.custom/electron.d.ts",
-    "../../typings.custom/promise.d.ts",
+    "../../typings.custom/promise.d.ts"
   ],
   "compilerOptions": {
     "composite": true,
@@ -13,6 +13,6 @@
     "module": "esnext",
     "moduleResolution": "bundler",
     "customConditions": ["node", "development"],
-    "types": ["node"],
-  },
+    "types": ["node"]
+  }
 }

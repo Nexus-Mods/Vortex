@@ -1,13 +1,13 @@
-import { ILOOTList, ILOOTPlugin } from "../types/ILOOTList";
-
-import { gameSupported } from "./gameSupport";
+import * as path from "path";
 
 import Promise from "bluebird";
 import { dialog as dialogIn } from "electron";
 import { dump, load } from "js-yaml";
 import * as _ from "lodash";
-import * as path from "path";
 import { fs, types, util } from "vortex-api";
+
+import { ILOOTList, ILOOTPlugin } from "../types/ILOOTList";
+import { gameSupported } from "./gameSupport";
 
 /**
  * persistor syncing to and from the loot userlist.yaml file
@@ -24,16 +24,9 @@ class UserlistPersistor implements types.IPersistor {
   private mFailed: boolean = false;
   private mLoadedPromise: Promise<void>;
   private mMode: "userlist" | "masterlist";
-  private mOnError: (
-    message: string,
-    details: Error,
-    options?: types.IErrorOptions,
-  ) => void;
+  private mOnError: (message: string, details: Error, options?: types.IErrorOptions) => void;
 
-  constructor(
-    mode: "userlist" | "masterlist",
-    onError: (message: string, details: Error) => void,
-  ) {
+  constructor(mode: "userlist" | "masterlist", onError: (message: string, details: Error) => void) {
     this.mUserlist = {
       globals: [],
       plugins: [],
@@ -79,12 +72,7 @@ class UserlistPersistor implements types.IPersistor {
     this.mUserlistPath =
       this.mMode === "userlist"
         ? path.join(util.getVortexPath("userData"), gameMode, "userlist.yaml")
-        : path.join(
-            util.getVortexPath("userData"),
-            gameMode,
-            "masterlist",
-            "masterlist.yaml",
-          );
+        : path.join(util.getVortexPath("userData"), gameMode, "masterlist", "masterlist.yaml");
 
     // read the files now and update the store
     return this.deserialize();
@@ -113,9 +101,7 @@ class UserlistPersistor implements types.IPersistor {
 
   public getAllKeys(): Promise<string[][]> {
     return Promise.resolve(
-      []
-        .concat(["__isLoaded"], Object.keys(this.mUserlist))
-        .map((key) => [key]),
+      [].concat(["__isLoaded"], Object.keys(this.mUserlist)).map((key) => [key]),
     );
   }
 
@@ -126,11 +112,7 @@ class UserlistPersistor implements types.IPersistor {
     return this.mSerializeQueue;
   }
 
-  private reportError(
-    message: string,
-    detail: Error,
-    options?: types.IErrorOptions,
-  ) {
+  private reportError(message: string, detail: Error, options?: types.IErrorOptions) {
     if (!this.mFailed) {
       this.mOnError(message, detail, options);
       this.mFailed = true;
@@ -160,10 +142,7 @@ class UserlistPersistor implements types.IPersistor {
     const userlistPath = this.mUserlistPath;
 
     return fs
-      .writeFileAsync(
-        userlistPath + ".tmp",
-        dump(_.omit(this.mUserlist, ["__isLoaded"])),
-      )
+      .writeFileAsync(userlistPath + ".tmp", dump(_.omit(this.mUserlist, ["__isLoaded"])))
       .then(() => fs.renameAsync(userlistPath + ".tmp", userlistPath))
       .then(() => {
         this.mFailed = false;

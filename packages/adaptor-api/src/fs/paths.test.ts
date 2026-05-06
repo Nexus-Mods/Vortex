@@ -16,12 +16,9 @@ describe("QualifiedPath.parse", () => {
     expect(qp.path).toBe(path);
   });
 
-  it.each([["no-separator"], ["foo/bar/baz"]])(
-    'throws on invalid input "%s"',
-    (input) => {
-      expect(() => QualifiedPath.parse(input)).toThrow();
-    },
-  );
+  it.each([["no-separator"], ["foo/bar/baz"]])('throws on invalid input "%s"', (input) => {
+    expect(() => QualifiedPath.parse(input)).toThrow();
+  });
 });
 
 describe("QualifiedPath.extension", () => {
@@ -94,23 +91,15 @@ describe("QualifiedPath.components", () => {
   describe("QualifiedPath.join", () => {
     it.each([
       ["foo://bar//baz", ["qux"], "foo://bar//baz/qux", "baz/qux"],
-      [
-        "foo://bar//baz",
-        ["qux", "quux"],
-        "foo://bar//baz/qux/quux",
-        "baz/qux/quux",
-      ],
+      ["foo://bar//baz", ["qux", "quux"], "foo://bar//baz/qux/quux", "baz/qux/quux"],
       ["foo://bar//", ["baz"], "foo://bar//baz", "baz"],
       ["foo://", ["baz"], "foo://baz", "baz"],
       ["foo://baz", ["qux"], "foo://baz/qux", "baz/qux"],
-    ])(
-      '"%s".join(%j) → "%s"',
-      (input, components, expectedValue, expectedPath) => {
-        const qp = QualifiedPath.parse(input).join(...components);
-        expect(qp.value).toBe(expectedValue);
-        expect(qp.path).toBe(expectedPath);
-      },
-    );
+    ])('"%s".join(%j) → "%s"', (input, components, expectedValue, expectedPath) => {
+      const qp = QualifiedPath.parse(input).join(...components);
+      expect(qp.value).toBe(expectedValue);
+      expect(qp.path).toBe(expectedPath);
+    });
 
     it("returns same instance with no components", () => {
       const qp = QualifiedPath.parse("foo://bar//baz");
@@ -126,27 +115,15 @@ describe("QualifiedPath.components", () => {
       ["foo://bar//baz/qux", { extension: "ts" }, "foo://bar//baz/qux.ts"],
 
       // change basename
-      [
-        "foo://bar//baz/qux.ts",
-        { basename: "quux.ts" },
-        "foo://bar//baz/quux.ts",
-      ],
+      ["foo://bar//baz/qux.ts", { basename: "quux.ts" }, "foo://bar//baz/quux.ts"],
       ["foo://bar//baz/qux", { basename: "quux" }, "foo://bar//baz/quux"],
 
       // change dirname
-      [
-        "foo://bar//baz/qux.ts",
-        { dirname: "other" },
-        "foo://bar//other/qux.ts",
-      ],
+      ["foo://bar//baz/qux.ts", { dirname: "other" }, "foo://bar//other/qux.ts"],
       ["foo://bar//baz/qux.ts", { dirname: "" }, "foo://bar//qux.ts"],
 
       // change multiple
-      [
-        "foo://bar//baz/qux.ts",
-        { basename: "quux", extension: "js" },
-        "foo://bar//baz/quux.js",
-      ],
+      ["foo://bar//baz/qux.ts", { basename: "quux", extension: "js" }, "foo://bar//baz/quux.js"],
       [
         "foo://bar//baz/qux.ts",
         { dirname: "other", basename: "quux.ts" },

@@ -3,10 +3,10 @@ import { Alert, ControlLabel, FormGroup } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
-import { setInstallerSandbox } from "../actions/sandbox";
+import Toggle from "../../../controls/Toggle";
 import type { IState } from "../../../types/IState";
 import { MainContext } from "../../../views/MainWindow";
-import Toggle from "../../../controls/Toggle";
+import { setInstallerSandbox } from "../actions/sandbox";
 
 export interface IWorkaroundsProps {
   osSupportsAppContainer: boolean;

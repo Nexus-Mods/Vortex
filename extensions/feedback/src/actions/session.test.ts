@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 
 import type { IFeedbackFile } from "../types/IFeedbackFile";
-
 import * as sessionActions from "./session";
 
 describe("addFeedbackFile", () => {

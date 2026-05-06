@@ -15,9 +15,7 @@
     "saveNumber": 1,
     "creationTime": 1604362940,
     "playTime": "000.21.58",
-    "plugins": [
-      "Fallout3.esm"
-    ],
+    "plugins": ["Fallout3.esm"],
     "screenshotSize": {
       "width": 512,
       "height": 288

@@ -9,9 +9,7 @@ const config = defineConfig({
   // bundled in, because the adaptor sandbox only exposes the root
   // `@nexusmods/adaptor-api` and `@nexusmods/adaptor-api/fs` specifiers at runtime.
   external: (id) => id === "@nexusmods/adaptor-api" || id === "@nexusmods/adaptor-api/fs",
-  plugins: [
-    vortexAdaptorPlugin({}),
-  ],
+  plugins: [vortexAdaptorPlugin({})],
 });
 
 const bundle = await rolldown(config);

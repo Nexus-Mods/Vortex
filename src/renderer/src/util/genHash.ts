@@ -1,12 +1,11 @@
 import { createHash } from "node:crypto";
+
 import type { IError } from "../types/IError";
 import { getApplication } from "./application";
 
 // remove the file names from stack lines because they contain local paths
 function removeFileNames(input: string): string {
-  return input
-    .replace(/(at [^\(]*)\(.*\)$/, "$1")
-    .replace(/at [A-Z]:\\.*\\([^\\]*)/, "at $1");
+  return input.replace(/(at [^\(]*)\(.*\)$/, "$1").replace(/at [A-Z]:\\.*\\([^\\]*)/, "at $1");
 }
 
 // remove everything in quotes to get file names and such out of the error message
@@ -26,10 +25,7 @@ function sanitizeKnownMessages(input: string): string {
       // reported from loot, the rest of these errors is localized
       .replace(/(boost::filesystem::file_size:) .*/, "$1")
       .replace(/.*(contains invalid WIN32 path characters.)/, "... $1")
-      .replace(
-        /(Error: Cannot get property '[^']*' on missing remote object) [0-9]+/,
-        "$1",
-      )
+      .replace(/(Error: Cannot get property '[^']*' on missing remote object) [0-9]+/, "$1")
       .replace(/.*(Cipher functions:OPENSSL_internal).*/, "$1")
       .replace(/\\\\?\\.*(\\Vortex\\resources)/i, "$1")
       // archive broken errors contain dynamic file names and 7z error details that
@@ -62,9 +58,7 @@ function replaceFuncName(input: string): string {
 // this attempts to remove everything "dynamic" about the error message so that
 // the hash is only calculated on the static part so we can group them
 function sanitizeStackLine(input: string): string {
-  return replaceFuncName(
-    removeKnownVariable(removeQuoted(removeFileNames(input))),
-  );
+  return replaceFuncName(removeKnownVariable(removeQuoted(removeFileNames(input))));
 }
 
 export function extractToken(error: IError): string {
@@ -80,9 +74,7 @@ export function extractToken(error: IError): string {
   }
 
   hashStack = [
-    removeQuoted(
-      sanitizeKnownMessages(hashStack.slice(0, messageLineCount).join(" ")),
-    ),
+    removeQuoted(sanitizeKnownMessages(hashStack.slice(0, messageLineCount).join(" "))),
     ...hashStack.slice(messageLineCount).map(sanitizeStackLine),
   ];
 
@@ -119,10 +111,7 @@ export function computeErrorFingerprint(
 }
 
 export function genHash(error: IError) {
-  const fingerprint = computeErrorFingerprint(
-    error.stack,
-    getApplication().version,
-  );
+  const fingerprint = computeErrorFingerprint(error.stack, getApplication().version);
   if (fingerprint !== undefined) {
     return fingerprint;
   }

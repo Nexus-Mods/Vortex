@@ -1,3 +1,9 @@
+import * as path from "path";
+
+import Bluebird from "bluebird";
+import { actions, fs, selectors, types, util } from "vortex-api";
+import IniParser, { WinapiFormat } from "vortex-parse-ini";
+
 import { REDIRECTION_FILE, REDIRECTION_MOD } from "./constants";
 import {
   archiveListKey,
@@ -8,21 +14,13 @@ import {
   isSupported,
 } from "./util/gameSupport";
 
-import Bluebird from "bluebird";
-import * as path from "path";
-import { actions, fs, selectors, types, util } from "vortex-api";
-import IniParser, { WinapiFormat } from "vortex-parse-ini";
-
 function genIniTweaksIni(api: types.IExtensionApi): Bluebird<string> {
   const gameId = selectors.activeGameId(api.store.getState());
   const parser = new IniParser(new WinapiFormat() as any);
   const archivesKey = archiveListKey(gameId);
   const nativePromise = parser.read(iniPath(gameId)).then((ini) => {
     let archives = defaultArchives(gameId);
-    if (
-      ini.data["Archive"] !== undefined &&
-      ini.data["Archive"][archivesKey] !== undefined
-    ) {
+    if (ini.data["Archive"] !== undefined && ini.data["Archive"][archivesKey] !== undefined) {
       archives = ini.data["Archive"][archivesKey];
     }
     return `[Archive]
@@ -69,25 +67,15 @@ function enableBSARedirection(api: types.IExtensionApi): Bluebird<void> {
   const installPath = selectors.installPath(store.getState());
   const iniTweaksPath = path.join(installPath, REDIRECTION_MOD, "Ini Tweaks");
 
-  const invalidationPath = path.join(
-    installPath,
-    REDIRECTION_MOD,
-    REDIRECTION_FILE,
-  );
-  const dummyFile = path.join(
-    path.dirname(invalidationPath),
-    "dummy",
-    "dummy.dds",
-  );
+  const invalidationPath = path.join(installPath, REDIRECTION_MOD, REDIRECTION_FILE);
+  const dummyFile = path.join(path.dirname(invalidationPath), "dummy", "dummy.dds");
   const createDummy = () =>
     fs
       .ensureDirWritableAsync(path.dirname(dummyFile))
       .then(() =>
         fs
           .writeFileAsync(dummyFile, "", { encoding: "utf8" })
-          .catch((err) =>
-            err.code !== "EEXIST" ? Bluebird.reject(err) : Bluebird.resolve(),
-          ),
+          .catch((err) => (err.code !== "EEXIST" ? Bluebird.reject(err) : Bluebird.resolve())),
       );
   const cleanupDummy = () =>
     Bluebird.mapSeries([dummyFile, path.dirname(dummyFile)], (iter) =>
@@ -115,10 +103,7 @@ function enableBSARedirection(api: types.IExtensionApi): Bluebird<void> {
             })
             .then((archive) =>
               archive
-                .addFile(
-                  path.join("dummy", path.basename(dummyFile)),
-                  dummyFile,
-                )
+                .addFile(path.join("dummy", path.basename(dummyFile)), dummyFile)
                 .then(() => archive.write()),
             );
         },
@@ -127,20 +112,11 @@ function enableBSARedirection(api: types.IExtensionApi): Bluebird<void> {
     )
     .then(() => cleanupDummy())
     .then(() => genIniTweaksIni(api))
-    .then((data) =>
-      fs.writeFileAsync(path.join(iniTweaksPath, redirectionIni), data),
-    )
+    .then((data) => fs.writeFileAsync(path.join(iniTweaksPath, redirectionIni), data))
     .then(() => {
       const profile = selectors.activeProfile(store.getState());
       store.dispatch(actions.setModEnabled(profile.id, REDIRECTION_MOD, true));
-      store.dispatch(
-        actions.setINITweakEnabled(
-          gameMode,
-          REDIRECTION_MOD,
-          redirectionIni,
-          true,
-        ),
-      );
+      store.dispatch(actions.setINITweakEnabled(gameMode, REDIRECTION_MOD, redirectionIni, true));
     })
     .catch((err) => {
       if (err["path"] === undefined) {
@@ -150,15 +126,8 @@ function enableBSARedirection(api: types.IExtensionApi): Bluebird<void> {
     });
 }
 
-export function toggleInvalidation(
-  api: types.IExtensionApi,
-  gameMode: string,
-): Bluebird<void> {
-  const mods = util.getSafe(
-    api.store.getState(),
-    ["persistent", "mods", gameMode],
-    {},
-  );
+export function toggleInvalidation(api: types.IExtensionApi, gameMode: string): Bluebird<void> {
+  const mods = util.getSafe(api.store.getState(), ["persistent", "mods", gameMode], {});
   if (mods[REDIRECTION_MOD] !== undefined) {
     api.events.emit("remove-mod", gameMode, REDIRECTION_MOD);
     return Bluebird.resolve();
@@ -168,7 +137,7 @@ export function toggleInvalidation(
         api.showErrorNotification(
           "Failed to add invalidation mod",
           "The extension providing BSA support has been disabled or removed. " +
-          "Without it, Vortex can't provide BSA redirection.",
+            "Without it, Vortex can't provide BSA redirection.",
           {
             allowReport: false,
           },

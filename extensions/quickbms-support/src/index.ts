@@ -1,5 +1,7 @@
 import path from "path";
 
+import { fs, log, selectors, types, util } from "vortex-api";
+
 import AttribDashlet from "./AttribDashlet";
 import {
   IAttachmentData,
@@ -10,8 +12,6 @@ import {
   QuickBMSError,
   UnregisteredGameError,
 } from "./types";
-
-import { fs, log, selectors, types, util } from "vortex-api";
 
 const GAME_SUPPORT: string[] = [];
 const DEPRECATED_NOTIF_ID = "deprecated-qbms-call";
@@ -30,22 +30,11 @@ function queryAttachment(data: IAttachmentData) {
     .catch((err) => Promise.resolve(undefined));
 }
 
-async function successfulOp(
-  context: types.IExtensionContext,
-  props: IQBMSOpProps,
-  data?: any,
-) {
+async function successfulOp(context: types.IExtensionContext, props: IQBMSOpProps, data?: any) {
   const id = "qbms-success-notif";
   const state = context.api.store.getState();
-  const notifications = util.getSafe(
-    state,
-    ["session", "notifications", "notifications"],
-    [],
-  );
-  if (
-    props.quiet !== true &&
-    notifications.find((notif) => notif.id === id) === undefined
-  ) {
+  const notifications = util.getSafe(state, ["session", "notifications", "notifications"], []);
+  if (props.quiet !== true && notifications.find((notif) => notif.id === id) === undefined) {
     context.api.sendNotification({
       id,
       type: "success",
@@ -99,11 +88,7 @@ async function errorHandler(
     err["message"] += "\n\n" + (err as QuickBMSError).errorLines;
   }
 
-  return Promise.all(
-    [qbmsLog, vortexLog, ...addedAttachments].map((file) =>
-      queryAttachment(file),
-    ),
-  )
+  return Promise.all([qbmsLog, vortexLog, ...addedAttachments].map((file) => queryAttachment(file)))
     .then((files) => {
       const validAttachments = files.filter((file) => !!file);
       validAttachments.forEach((att) => {
@@ -130,10 +115,7 @@ async function errorHandler(
       } else {
         if (callback) {
           log("info", "qbms encountered an error", err.message);
-          callback(
-            new util.ProcessCanceled("[QBMS] " + err.message),
-            undefined,
-          );
+          callback(new util.ProcessCanceled("[QBMS] " + err.message), undefined);
         }
       }
     });
@@ -145,10 +127,7 @@ function testGameRegistered(props: IQBMSOpProps): Promise<void> {
     : Promise.resolve();
 }
 
-function sanitizeProps(
-  props: IQBMSOpProps,
-  opType: QBMSOperationType,
-): IQBMSOpProps {
+function sanitizeProps(props: IQBMSOpProps, opType: QBMSOperationType): IQBMSOpProps {
   if (props.qbmsOptions === undefined) {
     props.qbmsOptions = {
       wildCards: ["{}"],
@@ -165,10 +144,7 @@ function sanitizeProps(
     props.operationPath !== undefined &&
     props.operationPath.endsWith(path.sep)
   ) {
-    props.operationPath = props.operationPath.substr(
-      0,
-      props.operationPath.length - 1,
-    );
+    props.operationPath = props.operationPath.substr(0, props.operationPath.length - 1);
   }
 
   return props;
@@ -179,9 +155,7 @@ function list(context: types.IExtensionContext, props: IQBMSOpProps) {
   return require("./quickbms")
     .list(props)
     .then((listEntries) =>
-      props.callback !== undefined
-        ? successfulOp(context, props, listEntries)
-        : Promise.resolve(),
+      props.callback !== undefined ? successfulOp(context, props, listEntries) : Promise.resolve(),
     )
     .catch((err) => errorHandler(context.api, props, err));
 }
@@ -190,11 +164,7 @@ function extract(context: types.IExtensionContext, props: IQBMSOpProps) {
   props = sanitizeProps(props, "extract");
   return require("./quickbms")
     .extract(props)
-    .then(() =>
-      props.callback !== undefined
-        ? successfulOp(context, props)
-        : Promise.resolve(),
-    )
+    .then(() => (props.callback !== undefined ? successfulOp(context, props) : Promise.resolve()))
     .catch((err) => errorHandler(context.api, props, err));
 }
 
@@ -202,11 +172,7 @@ function write(context: types.IExtensionContext, props: IQBMSOpProps) {
   props = sanitizeProps(props, "write");
   return require("./quickbms")
     .write(props)
-    .then(() =>
-      props.callback !== undefined
-        ? successfulOp(context, props)
-        : Promise.resolve(),
-    )
+    .then(() => (props.callback !== undefined ? successfulOp(context, props) : Promise.resolve()))
     .catch((err) => errorHandler(context.api, props, err));
 }
 
@@ -214,24 +180,14 @@ function reImport(context: types.IExtensionContext, props: IQBMSOpProps) {
   props = sanitizeProps(props, "reimport");
   return require("./quickbms")
     .reImport(props)
-    .then(() =>
-      props.callback !== undefined
-        ? successfulOp(context, props)
-        : Promise.resolve(),
-    )
+    .then(() => (props.callback !== undefined ? successfulOp(context, props) : Promise.resolve()))
     .catch((err) => errorHandler(context.api, props, err));
 }
 
 function raiseDeprecatedAPINotification(context: types.IExtensionContext) {
   const state = context.api.store.getState();
-  const notifications = util.getSafe(
-    state,
-    ["session", "notifications", "notifications"],
-    [],
-  );
-  if (
-    notifications.find((not) => not.id === DEPRECATED_NOTIF_ID) === undefined
-  ) {
+  const notifications = util.getSafe(state, ["session", "notifications", "notifications"], []);
+  if (notifications.find((not) => not.id === DEPRECATED_NOTIF_ID) === undefined) {
     context.api.sendNotification({
       id: DEPRECATED_NOTIF_ID,
       message: "Game extension is using deprecated QBMS API calls",
@@ -277,26 +233,18 @@ function init(context: types.IExtensionContext) {
     { minArguments: 1 },
   );
 
-  context.registerAPI(
-    "qbmsList",
-    (props: IQBMSOpProps) => list(context, props),
-    { minArguments: 1 },
-  );
-  context.registerAPI(
-    "qbmsExtract",
-    (props: IQBMSOpProps) => extract(context, props),
-    { minArguments: 1 },
-  );
-  context.registerAPI(
-    "qbmsWrite",
-    (props: IQBMSOpProps) => write(context, props),
-    { minArguments: 1 },
-  );
-  context.registerAPI(
-    "qbmsReimport",
-    (props: IQBMSOpProps) => reImport(context, props),
-    { minArguments: 1 },
-  );
+  context.registerAPI("qbmsList", (props: IQBMSOpProps) => list(context, props), {
+    minArguments: 1,
+  });
+  context.registerAPI("qbmsExtract", (props: IQBMSOpProps) => extract(context, props), {
+    minArguments: 1,
+  });
+  context.registerAPI("qbmsWrite", (props: IQBMSOpProps) => write(context, props), {
+    minArguments: 1,
+  });
+  context.registerAPI("qbmsReimport", (props: IQBMSOpProps) => reImport(context, props), {
+    minArguments: 1,
+  });
 
   context.once(() => {
     context.api.events.on("gamemode-activated", (gameMode: string) => {
@@ -329,9 +277,7 @@ function init(context: types.IExtensionContext) {
 
         if (!GAME_SUPPORT.includes(activeGameId)) {
           // Not a registered game.
-          return testGameRegistered(props).catch((err) =>
-            errorHandler(context.api, props, err),
-          );
+          return testGameRegistered(props).catch((err) => errorHandler(context.api, props, err));
         }
 
         switch (opType) {

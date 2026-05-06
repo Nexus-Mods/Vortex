@@ -1,20 +1,16 @@
-import type { AddressInfo } from "node:net";
-
-import { unknownToError } from "@vortex/shared";
 import crypto from "crypto";
 import * as http from "node:http";
 import * as https from "node:https";
+import type { AddressInfo } from "node:net";
 import * as querystring from "node:querystring";
 import * as url from "node:url";
+
+import { unknownToError } from "@vortex/shared";
 import { v1 as uuidv1 } from "uuid";
 
 import { ArgumentInvalid } from "../../../util/CustomErrors";
 import { log } from "../../../util/log";
-import {
-  OAUTH_REDIRECT_URL,
-  OAUTH_REDIRECT_BASE,
-  getOAuthRedirectUrl,
-} from "../constants";
+import { OAUTH_REDIRECT_URL, OAUTH_REDIRECT_BASE, getOAuthRedirectUrl } from "../constants";
 import NEXUSMODS_LOGO from "./nexusmodslogo";
 
 type TokenType = "Bearer";
@@ -117,10 +113,7 @@ class OAuth {
     // see https://www.rfc-editor.org/rfc/rfc7636#section-4.1
     this.mVerifier = Buffer.from(uuidv1().replace(/-/g, "")).toString("base64");
     // see https://www.rfc-editor.org/rfc/rfc7636#section-4.2
-    const challenge = crypto
-      .createHash("sha256")
-      .update(this.mVerifier)
-      .digest("base64");
+    const challenge = crypto.createHash("sha256").update(this.mVerifier).digest("base64");
 
     try {
       this.mLastServerPort = this.mLocalhost ? await this.ensureServer() : -1;
@@ -146,7 +139,7 @@ class OAuth {
         // State token not found — the callback arrived after the login flow was
         // already completed or abandoned (e.g. the user clicked login twice).
         // Silently ignore, matching the behavior of the local HTTP server path.
-        log('debug', 'ignoring OAuth callback with unknown state token', { state });
+        log("debug", "ignoring OAuth callback with unknown state token", { state });
         return;
       }
       try {
@@ -236,9 +229,7 @@ class OAuth {
 
       this.checkServerStillRequired();
     } else if (error !== undefined) {
-      const err = new Error(
-        (error_description) ?? "Description missing",
-      );
+      const err = new Error(error_description ?? "Description missing");
       err["code"] = error;
       this.mStates[state]?.(err, undefined);
       resp.write(makeResultPage(false));
@@ -277,9 +268,7 @@ class OAuth {
               } else if (res.statusCode !== 200) {
                 try {
                   const errDetails = JSON.parse(responseStr);
-                  const err = new Error(
-                    `Invalid request: "${errDetails?.error}"`,
-                  );
+                  const err = new Error(`Invalid request: "${errDetails?.error}"`);
                   err["code"] = errDetails?.error;
                   // these details are explicitly intended for the developer, not for the user
                   err["details"] = errDetails?.error_description;
@@ -308,9 +297,7 @@ class OAuth {
       "+": "-",
       "/": "_",
     };
-    return input
-      .replace(/[+/]/g, (char) => replacements[char])
-      .replace(/=*$/, "");
+    return input.replace(/[+/]/g, (char) => replacements[char]).replace(/=*$/, "");
   }
 
   private authorizeUrl(challenge: string, state: string): string {
@@ -321,10 +308,7 @@ class OAuth {
       client_id: this.mServerSettings.clientId,
       redirect_uri: this.mServerSettings.getRedirectUrl
         ? this.mServerSettings.getRedirectUrl(this.mLastServerPort)
-        : this.mServerSettings.redirectUrl.replace(
-          "PORT",
-          this.mLastServerPort.toString(),
-        ),
+        : this.mServerSettings.redirectUrl.replace("PORT", this.mLastServerPort.toString()),
       state,
       code_challenge: OAuth.sanitizeBase64(challenge),
     };
@@ -337,10 +321,7 @@ class OAuth {
       client_id: this.mServerSettings.clientId,
       redirect_uri: this.mServerSettings.getRedirectUrl
         ? this.mServerSettings.getRedirectUrl(this.mLastServerPort)
-        : this.mServerSettings.redirectUrl.replace(
-          "PORT",
-          this.mLastServerPort.toString(),
-        ),
+        : this.mServerSettings.redirectUrl.replace("PORT", this.mLastServerPort.toString()),
       code,
       code_verifier: this.mVerifier,
     };

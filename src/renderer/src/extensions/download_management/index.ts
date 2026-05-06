@@ -1,38 +1,24 @@
-import type * as Redux from "redux";
+import * as path from "path";
 
 import { mdiDownload } from "@mdi/js";
-import {
-  getErrorCode,
-  getErrorMessageOrDefault,
-  unknownToError,
-} from "@vortex/shared";
+import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import PromiseBB from "bluebird";
 import * as _ from "lodash";
 import Zip from "node-7z";
-import * as path from "path";
+import type * as Redux from "redux";
 import { generate as shortid } from "shortid";
-import { fileMD5 } from "../../util/checksum";
 import winapi from "winapi-bindings";
 
-import type {
-  IExtensionApi,
-  IExtensionContext,
-} from "../../types/IExtensionContext";
+import ReduxProp from "../../ReduxProp";
+import type { IExtensionApi, IExtensionContext } from "../../types/IExtensionContext";
 import type { IState } from "../../types/IState";
 import type { ITestResult } from "../../types/ITestResult";
-import type { Normalize } from "../../util/getNormalizeFunc";
-import type { DownloadState, IDownload } from "./types/IDownload";
-import type { IDownloadViewProps } from "./views/DownloadView";
-
-import ReduxProp from "../../ReduxProp";
-import {
-  DataInvalid,
-  ProcessCanceled,
-  UserCanceled,
-} from "../../util/CustomErrors";
+import { fileMD5 } from "../../util/checksum";
+import { DataInvalid, ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
 import Debouncer from "../../util/Debouncer";
 import { setErrorContext } from "../../util/errorHandling";
 import * as fs from "../../util/fs";
+import type { Normalize } from "../../util/getNormalizeFunc";
 import getNormalizeFunc from "../../util/getNormalizeFunc";
 import { log } from "../../util/log";
 import * as selectors from "../../util/selectors";
@@ -54,12 +40,14 @@ import downloadAttributes from "./downloadAttributes";
 import { settingsReducer } from "./reducers/settings";
 import { stateReducer } from "./reducers/state";
 import { transactionsReducer } from "./reducers/transactions";
+import type { DownloadState, IDownload } from "./types/IDownload";
 import { ensureDownloadsDirectory } from "./util/downloadDirectory";
 import extendAPI from "./util/extendApi";
 import getDownloadGames from "./util/getDownloadGames";
 import { finalizeDownload } from "./util/postprocessDownload";
 import queryInfo from "./util/queryDLInfo";
 import setDownloadGames from "./util/setDownloadGames";
+import type { IDownloadViewProps } from "./views/DownloadView";
 import DownloadView from "./views/DownloadView";
 import Settings from "./views/Settings";
 import ShutdownButton from "./views/ShutdownButton";
@@ -71,10 +59,7 @@ import { knownArchiveExt } from "../../util/archives";
 
 const addLocalInProgress = new Set<string>();
 
-function withAddInProgress(
-  fileName: string,
-  cb: () => PromiseLike<void>,
-): PromiseLike<void> {
+function withAddInProgress(fileName: string, cb: () => PromiseLike<void>): PromiseLike<void> {
   addLocalInProgress.add(fileName);
   return PromiseBB.resolve(cb()).finally(() => {
     addLocalInProgress.delete(fileName);
@@ -102,12 +87,9 @@ function refreshDownloads(
     .then((downloadNames: string[]) => {
       const dlsNormalized = downloadNames.map(normalize);
       const addedDLs = downloadNames.filter(
-        (name: string, idx: number) =>
-          knownDLs.indexOf(dlsNormalized[idx]) === -1,
+        (name: string, idx: number) => knownDLs.indexOf(dlsNormalized[idx]) === -1,
       );
-      const removedDLs = knownDLs.filter(
-        (name: string) => dlsNormalized.indexOf(name) === -1,
-      );
+      const removedDLs = knownDLs.filter((name: string) => dlsNormalized.indexOf(name) === -1);
 
       return PromiseBB.map(addedDLs, onAddDownload).then(() =>
         PromiseBB.map(removedDLs, onRemoveDownload),
@@ -116,16 +98,11 @@ function refreshDownloads(
 }
 
 function attributeExtractor(input: any) {
-  let downloadGame: string | string[] = getSafe(
-    input,
-    ["download", "game"],
-    [],
-  );
+  let downloadGame: string | string[] = getSafe(input, ["download", "game"], []);
   if (Array.isArray(downloadGame)) {
     downloadGame = downloadGame[0];
   }
-  const logicalFileName =
-    input?.meta?.logicalFileName || input?.download?.modInfo?.name;
+  const logicalFileName = input?.meta?.logicalFileName || input?.download?.modInfo?.name;
   return PromiseBB.resolve({
     fileName: getSafe(input, ["download", "localPath"], undefined),
     fileMD5: getSafe(input, ["download", "fileMD5"], undefined),
@@ -159,8 +136,7 @@ function genDownloadChangeHandler(
   const findDownload = (fileName: string): string => {
     const state = store.getState();
     return Object.keys(state.persistent.downloads.files).find(
-      (iterId) =>
-        state.persistent.downloads.files[iterId].localPath === fileName,
+      (iterId) => state.persistent.downloads.files[iterId].localPath === fileName,
     );
   };
 
@@ -173,16 +149,12 @@ function genDownloadChangeHandler(
       if (updateTimers[fileName] !== undefined) {
         clearTimeout(updateTimers[fileName]);
         setTimeout(() => {
-          fs.statAsync(path.join(currentDownloadPath, fileName)).then(
-            (stats) => {
-              const dlId = findDownload(fileName);
-              if (dlId !== undefined) {
-                store.dispatch(
-                  downloadProgress(dlId, stats.size, stats.size, undefined),
-                );
-              }
-            },
-          );
+          fs.statAsync(path.join(currentDownloadPath, fileName)).then((stats) => {
+            const dlId = findDownload(fileName);
+            if (dlId !== undefined) {
+              store.dispatch(downloadProgress(dlId, stats.size, stats.size, undefined));
+            }
+          });
         }, 1000);
       }
     } else if (evt === "rename") {
@@ -198,14 +170,8 @@ function genDownloadChangeHandler(
           let dlId = findDownload(fileName);
           if (dlId === undefined) {
             dlId = shortid();
-            log(
-              "debug",
-              "file added to download directory at runtime",
-              fileName,
-            );
-            store.dispatch(
-              addLocalDownload(dlId, gameId, fileName, stats.size),
-            );
+            log("debug", "file added to download directory at runtime", fileName);
+            store.dispatch(addLocalDownload(dlId, gameId, fileName, stats.size));
             api.events.emit("did-import-downloads", [dlId]);
           }
           nameIdMap[normalize(fileName)] = dlId;
@@ -247,13 +213,9 @@ function watchDownloads(
       log("warn", "failed to watch mod directory", { downloadPath, error });
     });
   } catch (err) {
-    api.showErrorNotification(
-      "Can't watch the download directory for changes",
-      err,
-      {
-        allowReport: false,
-      },
-    );
+    api.showErrorNotification("Can't watch the download directory for changes", err, {
+      allowReport: false,
+    });
   }
 }
 
@@ -264,19 +226,15 @@ async function removeInvalidDownloads(api: IExtensionApi, gameId?: string) {
     return;
   }
   const downloadPath = selectors.downloadPathForGame(state, gameId);
-  const downloads: { [id: string]: IDownload } =
-    state.persistent.downloads.files;
+  const downloads: { [id: string]: IDownload } = state.persistent.downloads.files;
 
   const incomplete = Object.keys(downloads).filter(
     (dlId) =>
       ["finished", "paused", "failed"].includes(downloads[dlId].state) &&
-      (!downloads[dlId].localPath ||
-        downloads[dlId].received === 0 ||
-        downloads[dlId].size === 0),
+      (!downloads[dlId].localPath || downloads[dlId].received === 0 || downloads[dlId].size === 0),
   );
   const invalid = Object.keys(downloads).filter(
-    (dlId) =>
-      downloads[dlId].localPath && !path.extname(downloads[dlId].localPath),
+    (dlId) => downloads[dlId].localPath && !path.extname(downloads[dlId].localPath),
   );
   const removeSet = new Set<string>(incomplete.concat(invalid));
 
@@ -293,9 +251,7 @@ async function removeInvalidDownloads(api: IExtensionApi, gameId?: string) {
       const stats = await fs.statAsync(filePath).catch(() => undefined);
       if (stats?.size > 0) {
         // file exists and is valid on disk - repair the state instead of deleting
-        repairActions.push(
-          downloadProgress(dlId, stats.size, stats.size, undefined),
-        );
+        repairActions.push(downloadProgress(dlId, stats.size, stats.size, undefined));
       } else {
         // file genuinely missing or empty - safe to clean up
         await fs.removeAsync(filePath).catch(() => null);
@@ -322,9 +278,7 @@ function removeInvalidFileExts(api: IExtensionApi, gameId?: string) {
       return PromiseBB.all(
         files.map((fileName) => {
           if (!knownArchiveExt(fileName)) {
-            return fs
-              .removeAsync(path.join(downloadPath, fileName))
-              .catch(() => null);
+            return fs.removeAsync(path.join(downloadPath, fileName)).catch(() => null);
           }
         }),
       );
@@ -383,16 +337,12 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
         knownDLs,
         normalize,
         (fileName: string) =>
-          fs
-            .statAsync(path.join(currentDownloadPath, fileName))
-            .then((stats: fs.Stats) => {
-              const dlId = shortid();
-              log("debug", "registering previously unknown archive", fileName);
-              api.store.dispatch(
-                addLocalDownload(dlId, gameId, fileName, stats.size),
-              );
-              nameIdMap[normalize(fileName)] = dlId;
-            }),
+          fs.statAsync(path.join(currentDownloadPath, fileName)).then((stats: fs.Stats) => {
+            const dlId = shortid();
+            log("debug", "registering previously unknown archive", fileName);
+            api.store.dispatch(addLocalDownload(dlId, gameId, fileName, stats.size));
+            nameIdMap[normalize(fileName)] = dlId;
+          }),
         (fileName: string) => {
           // the fileName here is already normalized
           api.store.dispatch(removeDownload(nameIdMap[fileName]));
@@ -418,13 +368,9 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
       )
         .catch(UserCanceled, () => null)
         .catch((err) => {
-          api.showErrorNotification(
-            "Failed to refresh download directory",
-            err,
-            {
-              allowReport: err.code !== "EPERM",
-            },
-          );
+          api.showErrorNotification("Failed to refresh download directory", err, {
+            allowReport: err.code !== "EPERM",
+          });
         });
     })
     .then(() => {
@@ -444,10 +390,7 @@ function testDownloadPath(api: IExtensionApi): PromiseBB<void> {
     .catch(ProcessCanceled, () => PromiseBB.resolve())
     .catch(UserCanceled, () => PromiseBB.resolve())
     .catch((err) => {
-      const errTitle =
-        err.code === "EPERM"
-          ? "Insufficient permissions"
-          : "Downloads folder error";
+      const errTitle = err.code === "EPERM" ? "Insufficient permissions" : "Downloads folder error";
 
       return new PromiseBB<void>((resolve) => {
         api.showDialog(
@@ -512,8 +455,7 @@ function processInstallError(
   //  the installManager's error handling is not sufficient or is unable
   //  to relay certain pieces of information to the user.
   if (error instanceof DataInvalid) {
-    const downloadExists =
-      api.getState().persistent.downloads.files[downloadId] !== undefined;
+    const downloadExists = api.getState().persistent.downloads.files[downloadId] !== undefined;
     if (!downloadExists) {
       error["message"] =
         "Vortex attempted to install a mod archive which is no longer available " +
@@ -550,9 +492,7 @@ function postImport(
     .statAsync(destination)
     .then((stats) => {
       store.dispatch(downloadProgress(dlId, stats.size, stats.size, undefined));
-      return toPromise((cb) =>
-        api.events.emit("did-import-downloads", [dlId], cb),
-      );
+      return toPromise((cb) => api.events.emit("did-import-downloads", [dlId], cb));
     })
     .then(() => {
       if (!silent) {
@@ -566,16 +506,11 @@ function postImport(
             {
               title: "Install All",
               action: (dismiss) => {
-                api.events.emit(
-                  "start-install-download",
-                  dlId,
-                  undefined,
-                  (err, mId) => {
-                    if (err) {
-                      processInstallError(api, err, dlId, fileName);
-                    }
-                  },
-                );
+                api.events.emit("start-install-download", dlId, undefined, (err, mId) => {
+                  if (err) {
+                    processInstallError(api, err, dlId, fileName);
+                  }
+                });
                 dismiss();
               },
             },
@@ -632,12 +567,7 @@ function move(
     });
 }
 
-function importDirectory(
-  api: IExtensionApi,
-  source: string,
-  destination: string,
-  silent: boolean,
-) {
+function importDirectory(api: IExtensionApi, source: string, destination: string, silent: boolean) {
   const zipper = new Zip();
 
   const notiId = silent
@@ -675,20 +605,12 @@ function importDirectory(
 }
 
 function genImportDownloadsHandler(api: IExtensionApi) {
-  return (
-    downloadPaths: string[],
-    cb?: (dlIds: string[]) => void,
-    silent?: boolean,
-  ) => {
+  return (downloadPaths: string[], cb?: (dlIds: string[]) => void, silent?: boolean) => {
     const state = api.getState();
     const gameMode = selectors.activeGameId(state);
 
     if (gameMode === undefined) {
-      log(
-        "warn",
-        "can't import download(s) when no game is active",
-        downloadPaths,
-      );
+      log("warn", "can't import download(s) when no game is active", downloadPaths);
       return;
     }
 
@@ -733,12 +655,7 @@ function checkPendingTransfer(api: IExtensionApi): PromiseBB<ITestResult> {
     return PromiseBB.resolve(result);
   }
 
-  const pendingTransfer: string[] = [
-    "persistent",
-    "transactions",
-    "transfer",
-    "downloads",
-  ];
+  const pendingTransfer: string[] = ["persistent", "transactions", "transfer", "downloads"];
   const transferDestination = getSafe(state, pendingTransfer, undefined);
   if (transferDestination === undefined) {
     return PromiseBB.resolve(result);
@@ -796,27 +713,15 @@ let shutdownInitiated: boolean = false;
  * canceled when new downloads are started
  */
 function updateShutdown(downloads: { [key: string]: IDownload }) {
-  if (
-    shutdownInitiated &&
-    (Object.keys(downloads).length > 0 || !shutdownPending)
-  ) {
+  if (shutdownInitiated && (Object.keys(downloads).length > 0 || !shutdownPending)) {
     // cancel shutdown if the conditions for it are no longer met
     winapi.AbortSystemShutdown();
     shutdownInitiated = false;
   }
 
-  if (
-    !shutdownInitiated &&
-    shutdownPending &&
-    Object.keys(downloads).length === 0
-  ) {
+  if (!shutdownInitiated && shutdownPending && Object.keys(downloads).length === 0) {
     // schedule shutdown if conditions are met
-    winapi.InitiateSystemShutdown(
-      "Vortex downloads finished",
-      30,
-      false,
-      false,
-    );
+    winapi.InitiateSystemShutdown("Vortex downloads finished", 30, false, false);
     shutdownInitiated = true;
   }
 }
@@ -857,8 +762,7 @@ function checkForUnfinalized(
   const unfinalized = Object.keys(downloads).filter(
     (id) =>
       (downloads[id].state === "finalizing" ||
-        (downloads[id].state === "finished" &&
-          downloads[id].fileMD5 === undefined)) &&
+        (downloads[id].state === "finished" && downloads[id].fileMD5 === undefined)) &&
       downloads[id].localPath !== undefined,
   );
 
@@ -892,19 +796,10 @@ function checkForUnfinalized(
               unfinalized,
               (id) => {
                 const gameId = Array.isArray(downloads[id].game)
-                  ? convertGameIdReverse(
-                      knownGames(api.getState()),
-                      downloads[id].game[0],
-                    )
+                  ? convertGameIdReverse(knownGames(api.getState()), downloads[id].game[0])
                   : gameMode;
-                const downloadPath = selectors.downloadPathForGame(
-                  api.getState(),
-                  gameId,
-                );
-                const filePath = path.join(
-                  downloadPath,
-                  downloads[id].localPath,
-                );
+                const downloadPath = selectors.downloadPathForGame(api.getState(), gameId);
+                const filePath = path.join(downloadPath, downloads[id].localPath);
                 progress(downloads[id].localPath);
                 if (downloads[id].state === "finalizing") {
                   return finalizeDownload(api, id, filePath)
@@ -945,10 +840,7 @@ function checkForUnfinalized(
   }
 }
 
-function removeDownloadsWithoutFile(
-  store: Redux.Store,
-  downloads: { [id: string]: IDownload },
-) {
+function removeDownloadsWithoutFile(store: Redux.Store, downloads: { [id: string]: IDownload }) {
   // remove downloads that have no localPath set because they just cause trouble. They shouldn't
   // exist at all
   Object.keys(downloads)
@@ -981,12 +873,7 @@ function processCommandline(api: IExtensionApi) {
 
   const cliUrl = commandLine.download ?? commandLine.install;
   if (cliUrl) {
-    api.events.emit(
-      "start-download-url",
-      cliUrl,
-      undefined,
-      commandLine.install !== undefined,
-    );
+    api.events.emit("start-download-url", cliUrl, undefined, commandLine.install !== undefined);
   }
 
   const arcPath = commandLine.installArchive;
@@ -1041,11 +928,8 @@ function init(context: IExtensionContext): boolean {
     const state: IState = context.api.store.getState();
     const incomplete = instanceIds.find(
       (instanceId) =>
-        getSafe<DownloadState>(
-          state.persistent.downloads.files,
-          [instanceId, "state"],
-          "init",
-        ) !== "finished",
+        getSafe<DownloadState>(state.persistent.downloads.files, [instanceId, "state"], "init") !==
+        "finished",
     );
     return incomplete === undefined
       ? true
@@ -1092,16 +976,13 @@ function init(context: IExtensionContext): boolean {
     return undefined;
   });
 
-  context.registerActionCheck(
-    "ADD_LOCAL_DOWNLOAD",
-    (state: IState, action: any) => {
-      const { game } = action.payload;
-      if (!truthy(game) || typeof game !== "string") {
-        return "No game associated with download";
-      }
-      return undefined;
-    },
-  );
+  context.registerActionCheck("ADD_LOCAL_DOWNLOAD", (state: IState, action: any) => {
+    const { game } = action.payload;
+    if (!truthy(game) || typeof game !== "string") {
+      return "No game associated with download";
+    }
+    return undefined;
+  });
 
   context.registerActionCheck("SET_COMPATIBLE_GAMES", (state, action: any) => {
     const { games } = action.payload;
@@ -1126,18 +1007,15 @@ function init(context: IExtensionContext): boolean {
     false,
   );
 
-  context.registerActionCheck(
-    "REMOVE_DOWNLOAD",
-    (state: IState, action: any) => {
-      // Uncomment to help debug unexpected download removal
-      // const stack = new Error().stack;
-      // if (stack !== undefined) {
-      //   log('debug', 'download removed', { id: action.payload, stack });
-      // }
-      removeToastDebouncer.schedule();
-      return undefined;
-    },
-  );
+  context.registerActionCheck("REMOVE_DOWNLOAD", (state: IState, action: any) => {
+    // Uncomment to help debug unexpected download removal
+    // const stack = new Error().stack;
+    // if (stack !== undefined) {
+    //   log('debug', 'download removed', { id: action.payload, stack });
+    // }
+    removeToastDebouncer.schedule();
+    return undefined;
+  });
 
   context.registerAction(
     "download-actions",
@@ -1205,44 +1083,30 @@ function init(context: IExtensionContext): boolean {
       }
     });
 
-    context.api.events.on(
-      "did-import-downloads",
-      (dlIds: string[], cb?: (err?: Error) => void) => {
-        queryInfo(context.api, dlIds, false)
-          .then(() => cb?.())
-          .catch((err) => cb?.(unknownToError(err)));
-      },
-    );
+    context.api.events.on("did-import-downloads", (dlIds: string[], cb?: (err?: Error) => void) => {
+      queryInfo(context.api, dlIds, false)
+        .then(() => cb?.())
+        .catch((err) => cb?.(unknownToError(err)));
+    });
 
-    context.api.onStateChange(
-      ["settings", "downloads", "path"],
-      (prev, cur) => {
-        updateDebouncer.schedule();
-      },
-    );
+    context.api.onStateChange(["settings", "downloads", "path"], (prev, cur) => {
+      updateDebouncer.schedule();
+    });
 
     context.api.onStateChange(
       ["persistent", "downloads", "files"],
-      (
-        prev: { [dlId: string]: IDownload },
-        cur: { [dlId: string]: IDownload },
-      ) => {
+      (prev: { [dlId: string]: IDownload }, cur: { [dlId: string]: IDownload }) => {
         // when files are added without mod info, query the meta database
         const added = _.difference(Object.keys(cur), Object.keys(prev));
         const filtered = added.filter(
-          (dlId) =>
-            cur[dlId].state === "finished" &&
-            Object.keys(cur[dlId].modInfo).length === 0,
+          (dlId) => cur[dlId].state === "finished" && Object.keys(cur[dlId].modInfo).length === 0,
         );
 
         const state: IState = context.api.store.getState();
 
         const activeDls = selectors.activeDownloads(state);
         updateShutdown(activeDls);
-        setErrorContext(
-          "active_downloads",
-          String(Object.keys(activeDls).length),
-        );
+        setErrorContext("active_downloads", String(Object.keys(activeDls).length));
 
         PromiseBB.map(filtered, (dlId) => {
           const rawGameId = getDownloadGames(cur[dlId])[0];
@@ -1262,10 +1126,7 @@ function init(context: IExtensionContext): boolean {
           context.api
             .lookupModMeta({
               filePath: path.join(downloadPath, cur[dlId].localPath),
-              gameId: convertGameIdReverse(
-                knownGames(context.api.getState()),
-                cur[dlId].game[0],
-              ),
+              gameId: convertGameIdReverse(knownGames(context.api.getState()), cur[dlId].game[0]),
             })
             .then((result) => {
               if (result.length > 0) {
@@ -1283,10 +1144,7 @@ function init(context: IExtensionContext): boolean {
       },
     );
 
-    context.api.events.on(
-      "gamemode-activated",
-      genGameModeActivated(context.api),
-    );
+    context.api.events.on("gamemode-activated", genGameModeActivated(context.api));
 
     context.api.events.on(
       "filehash-calculated",
@@ -1306,27 +1164,21 @@ function init(context: IExtensionContext): boolean {
       watchEnabled = enabled;
     });
 
-    context.api.events.on(
-      "refresh-downloads",
-      (gameId: string, callback: (err) => void) => {
-        updateDownloadPath(context.api, gameId)
-          .then(() => {
-            if (callback !== undefined) {
-              callback(null);
-            }
-          })
-          .catch((err) => {
-            if (callback !== undefined) {
-              callback(err);
-            }
-          });
-      },
-    );
+    context.api.events.on("refresh-downloads", (gameId: string, callback: (err) => void) => {
+      updateDownloadPath(context.api, gameId)
+        .then(() => {
+          if (callback !== undefined) {
+            callback(null);
+          }
+        })
+        .catch((err) => {
+          if (callback !== undefined) {
+            callback(err);
+          }
+        });
+    });
 
-    context.api.events.on(
-      "import-downloads",
-      genImportDownloadsHandler(context.api),
-    );
+    context.api.events.on("import-downloads", genImportDownloadsHandler(context.api));
 
     context.api.onAsync(
       "set-download-games",

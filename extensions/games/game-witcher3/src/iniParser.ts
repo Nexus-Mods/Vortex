@@ -1,19 +1,22 @@
 /* eslint-disable */
-import path from 'path';
-import IniParser, { IniFile, WinapiFormat } from 'vortex-parse-ini';
-import { fs, selectors, types, util } from 'vortex-api';
+import path from "path";
 
-import { forceRefresh, isLockedEntry, getAllMods, getManuallyAddedMods } from './util';
-import { PriorityManager } from './priorityManager';
+import { fs, selectors, types, util } from "vortex-api";
+import IniParser, { IniFile, WinapiFormat } from "vortex-parse-ini";
 
-import { GAME_ID, ResourceInaccessibleError, getLoadOrderFilePath } from './common';
+import { GAME_ID, ResourceInaccessibleError, getLoadOrderFilePath } from "./common";
+import { PriorityManager } from "./priorityManager";
+import { forceRefresh, isLockedEntry, getAllMods, getManuallyAddedMods } from "./util";
 
 export default class IniStructure {
   private static instance: IniStructure = null;
-  public static getInstance(api?: types.IExtensionApi, priorityManager?: () => PriorityManager): IniStructure {
+  public static getInstance(
+    api?: types.IExtensionApi,
+    priorityManager?: () => PriorityManager,
+  ): IniStructure {
     if (!IniStructure.instance) {
       if (api === undefined || priorityManager === undefined) {
-        throw new Error('IniStructure is not context aware');
+        throw new Error("IniStructure is not context aware");
       }
       IniStructure.instance = new IniStructure(api, priorityManager);
     }
@@ -39,13 +42,13 @@ export default class IniStructure {
     const mods = [].concat(modMap.merged, modMap.managed, modMap.manual);
     const manualLocked = modMap.manual.filter(isLockedEntry);
     const managedLocked = modMap.managed
-      .filter(entry => isLockedEntry(entry.name))
-      .map(entry => entry.name);
+      .filter((entry) => isLockedEntry(entry.name))
+      .map((entry) => entry.name);
     const totalLocked = [].concat(modMap.merged, manualLocked, managedLocked);
     this.mIniStruct = mods.reduce((accum, mod, idx) => {
       let name;
       let key;
-      if (typeof(mod) === 'object' && !!mod) {
+      if (typeof mod === "object" && !!mod) {
         name = mod.name;
         key = mod.id;
       } else {
@@ -53,18 +56,18 @@ export default class IniStructure {
         key = mod;
       }
 
-      if (name.toLowerCase().startsWith('dlc')) {
+      if (name.toLowerCase().startsWith("dlc")) {
         return accum;
       }
 
-      const idxOfEntry = (loadOrder || []).findIndex(iter => iter.id === name);
+      const idxOfEntry = (loadOrder || []).findIndex((iter) => iter.id === name);
       const LOEntry = loadOrder.at(idxOfEntry);
       if (idx === 0) {
         this.mPriorityManager?.resetMaxPriority(totalLocked.length);
       }
       accum[name] = {
         // The INI file's enabled attribute expects 1 or 0
-        Enabled: (LOEntry !== undefined) ? LOEntry.enabled ? 1 : 0 : 1,
+        Enabled: LOEntry !== undefined ? (LOEntry.enabled ? 1 : 0) : 1,
         Priority: totalLocked.includes(name)
           ? totalLocked.indexOf(name) + 1
           : idxOfEntry === -1
@@ -80,7 +83,7 @@ export default class IniStructure {
   public async revertLOFile() {
     const state = this.mApi.getState();
     const profile = selectors.activeProfile(state);
-    if (!!profile && (profile.gameId === GAME_ID)) {
+    if (!!profile && profile.gameId === GAME_ID) {
       const manuallyAdded = await getManuallyAddedMods(this.mApi);
       if (manuallyAdded.length > 0) {
         const newStruct = {};
@@ -97,12 +100,16 @@ export default class IniStructure {
             forceRefresh(this.mApi);
             return Promise.resolve();
           })
-          .catch(err => this.modSettingsErrorHandler(err, 'Failed to cleanup load order file'));
+          .catch((err) => this.modSettingsErrorHandler(err, "Failed to cleanup load order file"));
       } else {
         const filePath = getLoadOrderFilePath();
-        await fs.removeAsync(filePath).catch(err => (err.code !== 'ENOENT')
-          ? this.mApi.showErrorNotification('Failed to cleanup load order file', err)
-          : null);
+        await fs
+          .removeAsync(filePath)
+          .catch((err) =>
+            err.code !== "ENOENT"
+              ? this.mApi.showErrorNotification("Failed to cleanup load order file", err)
+              : null,
+          );
         forceRefresh(this.mApi);
         return Promise.resolve();
       }
@@ -112,12 +119,14 @@ export default class IniStructure {
   public async ensureModSettings() {
     const filePath = getLoadOrderFilePath();
     const parser = new IniParser(new WinapiFormat());
-    return fs.statAsync(filePath)
+    return fs
+      .statAsync(filePath)
       .then(() => parser.read(filePath))
-      .catch(err => (err.code === 'ENOENT')
-        ? this.createModSettings()
-              .then(() => parser.read(filePath))
-        : Promise.reject(err));
+      .catch((err) =>
+        err.code === "ENOENT"
+          ? this.createModSettings().then(() => parser.read(filePath))
+          : Promise.reject(err),
+      );
   }
 
   private async createModSettings() {
@@ -126,8 +135,9 @@ export default class IniStructure {
     //  created at this point (either by us or the game) but
     //  just in case it got removed somehow, we re-instate it
     //  yet again... https://github.com/Nexus-Mods/Vortex/issues/7058
-    return fs.ensureDirWritableAsync(path.dirname(filePath))
-      .then(() => fs.writeFileAsync(filePath, '', { encoding: 'utf8' }));
+    return fs
+      .ensureDirWritableAsync(path.dirname(filePath))
+      .then(() => fs.writeFileAsync(filePath, "", { encoding: "utf8" }));
   }
 
   public modSettingsErrorHandler(err: any, errMessage: string) {
@@ -141,7 +151,7 @@ export default class IniStructure {
       allowReport = err.allowReport;
       err.message = err.errorMessage;
     }
-  
+
     this.mApi.showErrorNotification(errMessage, err, { allowReport });
     return;
   }
@@ -152,12 +162,12 @@ export default class IniStructure {
     if (activeProfile?.id === undefined) {
       return Promise.resolve(null);
     }
-  
+
     const filePath = getLoadOrderFilePath();
     const parser = new IniParser(new WinapiFormat());
     const ini = await parser.read(filePath);
     const data = Object.entries(ini.data).reduce((accum, [key, value]) => {
-      if (key.toLowerCase().startsWith('dlc')) {
+      if (key.toLowerCase().startsWith("dlc")) {
         return accum;
       }
       accum[key] = value;
@@ -171,9 +181,11 @@ export default class IniStructure {
     const parser = new IniParser(new WinapiFormat());
     try {
       await fs.removeAsync(filePath);
-      await fs.writeFileAsync(filePath, '', { encoding: 'utf8' });
+      await fs.writeFileAsync(filePath, "", { encoding: "utf8" });
       const ini = await this.ensureModSettings();
-      const struct = Object.keys(this.mIniStruct).sort((a, b) => this.mIniStruct[a].Priority - this.mIniStruct[b].Priority);
+      const struct = Object.keys(this.mIniStruct).sort(
+        (a, b) => this.mIniStruct[a].Priority - this.mIniStruct[b].Priority,
+      );
       for (const key of struct) {
         if (this.mIniStruct?.[key]?.Enabled === undefined) {
           // It's possible for the user to run multiple operations at once,
@@ -193,10 +205,10 @@ export default class IniStructure {
       }
       await parser.write(filePath, ini);
       return Promise.resolve();
-    } catch(err) {
-      return (err.path !== undefined && ['EPERM', 'EBUSY'].includes(err.code))
+    } catch (err) {
+      return err.path !== undefined && ["EPERM", "EBUSY"].includes(err.code)
         ? Promise.reject(new ResourceInaccessibleError(err.path))
-        : Promise.reject(err)
-    } 
+        : Promise.reject(err);
+    }
   }
 }

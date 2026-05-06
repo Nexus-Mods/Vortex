@@ -1,22 +1,18 @@
+import { createHash } from "crypto";
+
+import { ICollectionPermission, CollectionPermission, ICollection } from "@nexusmods/nexus-api";
 /* eslint-disable */
 import Bluebird from "bluebird";
-import { createHash } from "crypto";
-import {
-  ICollectionPermission,
-  CollectionPermission,
-  ICollection,
-} from "@nexusmods/nexus-api";
+import turbowalk, { IEntry, IWalkOptions } from "turbowalk";
 import { selectors, types, util } from "vortex-api";
+
 import { doExportToAPI } from "../collectionExport";
+import { TOS_URL } from "../constants";
 import { ICollectionModRuleEx } from "../types/ICollection";
 import { IEntryEx } from "../types/IEntryEx";
 import { IModEx } from "../types/IModEx";
-import turbowalk, { IEntry, IWalkOptions } from "turbowalk";
-import { TOS_URL } from "../constants";
 
-export function hasEditPermissions(
-  permissions: ICollectionPermission[],
-): boolean {
+export function hasEditPermissions(permissions: ICollectionPermission[]): boolean {
   if (!permissions) {
     return false;
   }
@@ -84,9 +80,7 @@ export function makeProgressFunction(api: types.IExtensionApi) {
   return { progress, progressEnd };
 }
 
-export function bbProm<T>(
-  func: (...args: any[]) => Promise<T>,
-): (...args: any[]) => Bluebird<T> {
+export function bbProm<T>(func: (...args: any[]) => Promise<T>): (...args: any[]) => Bluebird<T> {
   return (...args: any[]) => Bluebird.resolve(func(...args));
 }
 
@@ -131,15 +125,12 @@ export function isRelevant(mod: IModEx) {
 
 export type IModWithRule = types.IMod & { collectionRule: types.IModRule };
 
-export function calculateCollectionSize(mods: {
-  [id: string]: IModWithRule;
-}): number {
+export function calculateCollectionSize(mods: { [id: string]: IModWithRule }): number {
   return Object.values(mods).reduce((prev: number, mod: IModEx) => {
     if (!isRelevant(mod)) {
       return prev;
     }
-    const size =
-      mod.attributes?.fileSize ?? mod.collectionRule.reference.fileSize ?? 0;
+    const size = mod.attributes?.fileSize ?? mod.collectionRule.reference.fileSize ?? 0;
     return prev + size;
   }, 0);
 }
@@ -148,10 +139,7 @@ export async function fileMD5Async(fileName: string): Promise<string> {
   return util.fileMD5(fileName);
 }
 
-export async function walkPath(
-  dirPath: string,
-  walkOptions?: IWalkOptions,
-): Promise<IEntryEx[]> {
+export async function walkPath(dirPath: string, walkOptions?: IWalkOptions): Promise<IEntryEx[]> {
   walkOptions = walkOptions || {
     skipLinks: true,
     skipHidden: true,
@@ -170,9 +158,7 @@ export async function walkPath(
         return Promise.resolve();
       },
       walkOptions,
-    ).catch((err) =>
-      err.code === "ENOENT" ? Promise.resolve() : Promise.reject(err),
-    );
+    ).catch((err) => (err.code === "ENOENT" ? Promise.resolve() : Promise.reject(err)));
     return resolve(walkResults);
   });
 }
@@ -195,11 +181,7 @@ export async function uploadCollection(
   }
   const state = api.getState();
   const profile = selectors.profileById(state, profileId);
-  const userInfo = util.getSafe(
-    state,
-    ["persistent", "nexus", "userInfo"],
-    undefined,
-  );
+  const userInfo = util.getSafe(state, ["persistent", "nexus", "userInfo"], undefined);
   if (userInfo === undefined) {
     api.showErrorNotification(
       "Not logged in",
@@ -237,11 +219,7 @@ export async function uploadCollection(
     return;
   }
 
-  api.events.emit(
-    "analytics-track-click-event",
-    "Collections",
-    "Upload collection",
-  );
+  api.events.emit("analytics-track-click-event", "Collections", "Upload collection");
 
   const missing = (mods[collectionId]?.rules ?? []).filter(
     (rule) =>
@@ -258,9 +236,7 @@ export async function uploadCollection(
           "If you have removed mods that were part of this collection you may want to remove " +
           "them from the collection as well. If this collection is connected to a " +
           "profile you can simply update from that.",
-        message: missing
-          .map((rule) => util.renderModReference(rule.reference))
-          .join("\n"),
+        message: missing.map((rule) => util.renderModReference(rule.reference)).join("\n"),
       },
       [{ label: "Close" }],
     );
@@ -304,13 +280,7 @@ export async function uploadCollection(
                 const game = selectors.gameById(api.getState(), profile.gameId);
                 const domainName = util.nexusGameId(game);
                 const url = util.nexusModsURL(
-                  [
-                    domainName,
-                    "collections",
-                    slug,
-                    "revisions",
-                    revisionNumber.toString(),
-                  ],
+                  [domainName, "collections", slug, "revisions", revisionNumber.toString()],
                   {
                     campaign: util.Campaign.GeneralNavigation,
                     section: util.Section.Collections,
@@ -323,10 +293,7 @@ export async function uploadCollection(
         });
       }
     } catch (err) {
-      if (
-        !(err instanceof util.UserCanceled) &&
-        !(err instanceof util.ProcessCanceled)
-      ) {
+      if (!(err instanceof util.UserCanceled) && !(err instanceof util.ProcessCanceled)) {
         api.showErrorNotification("Failed to upload to API", err, {
           allowReport: false,
         });

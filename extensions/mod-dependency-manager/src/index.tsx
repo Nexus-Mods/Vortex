@@ -2,11 +2,37 @@
  * Extension for editing and visualising mod dependencies
  */
 
+import * as path from "path";
+
+import Bluebird from "bluebird";
+import I18next, { WithT } from "i18next";
+import * as _ from "lodash";
+import { ILookupResult, IModInfo, IReference, IRule, RuleType } from "modmeta-db";
+import * as React from "react";
+import { withTranslation } from "react-i18next";
+import { connect } from "react-redux";
+import * as Redux from "redux";
+import {} from "redux-thunk";
+import shortid from "shortid";
+import { actions, fs, log, PureComponentEx, selectors, ToolbarIcon, types, util } from "vortex-api";
+
+import {
+  setConflictDialog,
+  setConflictInfo,
+  setEditCycle,
+  setFileOverrideDialog,
+  setHasUnsolvedConflicts,
+  setModTypeConflictsSetting,
+} from "./actions";
+import { sessionReducer as connectionReducer, settingsReducer } from "./reducers";
+import { enabledModKeys, enabledModsWithOverrides, modsWithOverrides } from "./selectors";
 import { IBiDirRule } from "./types/IBiDirRule";
 import { IConflict } from "./types/IConflict";
 import { IModLookupInfo } from "./types/IModLookupInfo";
+import unsolvedConflictsCheck from "./unsolvedConflictsCheck";
 import determineConflicts from "./util/conflicts";
 import DependenciesFilter from "./util/DependenciesFilter";
+import { disableModTypeConflictsDialog } from "./util/disableModTypeConflicts";
 import { findRuleBiDir, isConflictResolved } from "./util/findRule";
 import renderModLookup from "./util/renderModLookup";
 import ruleFulfilled from "./util/ruleFulfilled";
@@ -20,55 +46,6 @@ import Editor from "./views/Editor";
 import ModNameWrapper from "./views/ModNameWrapper";
 import OverrideEditor, { IPathTools } from "./views/OverrideEditor";
 import Settings from "./views/Settings";
-
-import {
-  setConflictDialog,
-  setConflictInfo,
-  setEditCycle,
-  setFileOverrideDialog,
-  setHasUnsolvedConflicts,
-  setModTypeConflictsSetting,
-} from "./actions";
-import {
-  sessionReducer as connectionReducer,
-  settingsReducer,
-} from "./reducers";
-import {
-  enabledModKeys,
-  enabledModsWithOverrides,
-  modsWithOverrides,
-} from "./selectors";
-import unsolvedConflictsCheck from "./unsolvedConflictsCheck";
-
-import { disableModTypeConflictsDialog } from "./util/disableModTypeConflicts";
-
-import Bluebird from "bluebird";
-import I18next, { WithT } from "i18next";
-import * as _ from "lodash";
-import {
-  ILookupResult,
-  IModInfo,
-  IReference,
-  IRule,
-  RuleType,
-} from "modmeta-db";
-import * as path from "path";
-import * as React from "react";
-import { withTranslation } from "react-i18next";
-import { connect } from "react-redux";
-import * as Redux from "redux";
-import { } from "redux-thunk";
-import shortid from "shortid";
-import {
-  actions,
-  fs,
-  log,
-  PureComponentEx,
-  selectors,
-  ToolbarIcon,
-  types,
-  util,
-} from "vortex-api";
 
 const CONFLICT_NOTIFICATION_ID = "mod-file-conflict";
 const UNFULFILLED_NOTIFICATION_ID = "mod-rule-unfulfilled";
@@ -170,8 +147,7 @@ function updateMetaRules(
     const state = api.store.getState();
     const downloadPath = selectors.downloadPathForGame(state, downloadGame);
     const fileName = mod.attributes?.fileName;
-    const filePath =
-      fileName !== undefined ? path.join(downloadPath, fileName) : undefined;
+    const filePath = fileName !== undefined ? path.join(downloadPath, fileName) : undefined;
 
     return api
       .lookupModMeta({
@@ -182,17 +158,10 @@ function updateMetaRules(
       })
       .then((meta: ILookupResult[]) => {
         if (meta.length > 0 && meta[0].value !== undefined) {
-          rules = rules.concat(
-            mapRules(makeReference(meta[0].value), meta[0].value.rules),
-          );
+          rules = rules.concat(mapRules(makeReference(meta[0].value), meta[0].value.rules));
           if (mod.attributes?.fileMD5 === undefined) {
             api.store.dispatch(
-              actions.setModAttribute(
-                gameId,
-                mod.id,
-                "fileMD5",
-                meta[0].value.fileMD5,
-              ),
+              actions.setModAttribute(gameId, mod.id, "fileMD5", meta[0].value.fileMD5),
             );
           }
         }
@@ -225,18 +194,10 @@ function findOverridenByFile(
 
 const hasOverrides = (mod: types.IMod) =>
   mod?.fileOverrides !== undefined && mod.fileOverrides.length > 0;
-const hasSameModType = (lhs: types.IMod, rhs: types.IMod) =>
-  lhs.type === rhs.type;
-const purgeSingleMod = (
-  api: types.IExtensionApi,
-  gameMode: string,
-  modId: string,
-) => api.emitAndAwait("deploy-single-mod", gameMode, modId, false);
-const purgeModList = (
-  api: types.IExtensionApi,
-  modIds: string[],
-  gameMode: string,
-) =>
+const hasSameModType = (lhs: types.IMod, rhs: types.IMod) => lhs.type === rhs.type;
+const purgeSingleMod = (api: types.IExtensionApi, gameMode: string, modId: string) =>
+  api.emitAndAwait("deploy-single-mod", gameMode, modId, false);
+const purgeModList = (api: types.IExtensionApi, modIds: string[], gameMode: string) =>
   new Promise<void>(async (resolve, reject) => {
     for (const modId of modIds) {
       await purgeSingleMod(api, gameMode, modId).catch((err) => reject(err));
@@ -245,9 +206,7 @@ const purgeModList = (
   });
 const purgeAllMods = (api: types.IExtensionApi) =>
   new Promise<void>((resolve, reject) => {
-    api.events.emit("purge-mods", false, (err) =>
-      err !== null ? reject(err) : resolve(),
-    );
+    api.events.emit("purge-mods", false, (err) => (err !== null ? reject(err) : resolve()));
   });
 
 type OverrideByMod = { [modId: string]: string[] };
@@ -272,12 +231,8 @@ function addFileOverrides(api: types.IExtensionApi) {
       return;
     }
     if (!hasSameModType(lhs, rhs)) {
-      batchedActions.push(
-        actions.setFileOverride(gameId, modId, conflict.files),
-      );
-      batchedActions.push(
-        actions.setFileOverride(gameId, conflict.otherMod.id, conflict.files),
-      );
+      batchedActions.push(actions.setFileOverride(gameId, modId, conflict.files));
+      batchedActions.push(actions.setFileOverride(gameId, conflict.otherMod.id, conflict.files));
     }
   };
 
@@ -287,10 +242,7 @@ function addFileOverrides(api: types.IExtensionApi) {
       continue;
     }
     for (const conflict of conflicts) {
-      if (
-        !hasOverrides(enabled[modId]) &&
-        !hasOverrides(enabled[conflict.otherMod.id])
-      ) {
+      if (!hasOverrides(enabled[modId]) && !hasOverrides(enabled[conflict.otherMod.id])) {
         addOverrides(modId, conflict);
       }
     }
@@ -364,25 +316,17 @@ async function updateOverrides(
         if (solved.has(fileName)) {
           continue;
         }
-        const conflicting = findOverridenByFile(
-          conflicts,
-          Object.values(enabled),
-          fileName,
-        );
+        const conflicting = findOverridenByFile(conflicts, Object.values(enabled), fileName);
 
         // Check if the file is being deployed by any of the other mods in the conflict.
         const isDeploying =
           conflicting.length > 1
-            ? conflicting.find((c) =>
-              (c.fileOverrides ?? []).includes(fileName),
-            ) === undefined
+            ? conflicting.find((c) => (c.fileOverrides ?? []).includes(fileName)) === undefined
             : true;
 
         if (conflicting.length === 1 && !isDeploying) {
           // None of the conflicting mods have this file override. no point in keeping the override for this file!
-          const overrides = (mod.fileOverrides || []).filter(
-            (over) => over !== fileName,
-          );
+          const overrides = (mod.fileOverrides || []).filter((over) => over !== fileName);
           accum[modId] = ensureUnique(overrides);
           solved.add(fileName);
           continue;
@@ -400,10 +344,7 @@ async function updateOverrides(
         );
         for (const iter of sorted.slice(1)) {
           // All other mods should have this file override.
-          const overrides = (
-            accum[iter] ||
-            (mods[iter]?.fileOverrides ?? [])
-          ).concat(fileName);
+          const overrides = (accum[iter] || (mods[iter]?.fileOverrides ?? [])).concat(fileName);
           accum[iter] = ensureUnique(overrides);
         }
       }
@@ -463,16 +404,13 @@ function removeFileOverrideRedundancies(
   );
   const modsWithRedundancies = (modsWithOverrides(state) ?? []).filter(
     (mod) =>
-      (mod?.fileOverrides ?? []).find((filePath) =>
-        (data?.[mod.id] ?? []).includes(filePath),
-      ) !== undefined,
+      (mod?.fileOverrides ?? []).find((filePath) => (data?.[mod.id] ?? []).includes(filePath)) !==
+      undefined,
   );
   const batchedActions = modsWithRedundancies.reduce((accum, iter) => {
     const currentFileOverrides = mods[iter.id]?.fileOverrides || [];
     const removedFiles = data[iter.id] ?? [];
-    const newOverrides = currentFileOverrides.filter(
-      (over) => !removedFiles.includes(over),
-    );
+    const newOverrides = currentFileOverrides.filter((over) => !removedFiles.includes(over));
     accum.push(actions.setFileOverride(gameMode, iter.id, newOverrides));
     return accum;
   }, []);
@@ -522,11 +460,7 @@ async function updateConflictInfo(
       encountered.add(encKey);
       return (
         !isConflictResolved(mods, modId, conflict.otherMod) &&
-        findRuleBiDir(
-          dependencyState.modRules,
-          mods[modId],
-          conflict.otherMod,
-        ) === undefined
+        findRuleBiDir(dependencyState.modRules, mods[modId], conflict.otherMod) === undefined
       );
     });
 
@@ -542,8 +476,8 @@ async function updateConflictInfo(
     const message: string[] = [
       t(
         "There are unresolved file conflicts. This just means that two or more mods contain the " +
-        "same files and you need to decide which of them loads last and thus provides " +
-        "the files.\n",
+          "same files and you need to decide which of them loads last and thus provides " +
+          "the files.\n",
       ),
       "[table][tbody]",
     ].concat(
@@ -552,8 +486,8 @@ async function updateConflictInfo(
           "[tr]" +
           t(
             "[td]{{modName}}[/td]" +
-            '[td][color="red"][svg]conflict[/svg][/color][/td]' +
-            "[td][list]{{conflicts}}[/list][/td][/tr]",
+              '[td][color="red"][svg]conflict[/svg][/color][/td]' +
+              "[td][list]{{conflicts}}[/list][/td][/tr]",
             {
               replace: {
                 modName: util.renderModName(mods[modId]),
@@ -580,12 +514,7 @@ async function updateConflictInfo(
             {
               label: "Show",
               action: () => {
-                showUnsolvedConflictsDialog(
-                  api,
-                  dependencyState.modRules,
-                  undefined,
-                  gameId,
-                );
+                showUnsolvedConflictsDialog(api, dependencyState.modRules, undefined, gameId);
               },
             },
           ],
@@ -644,8 +573,7 @@ function checkRulesFulfilled(api: types.IExtensionApi): Bluebird<void> {
 
     const downloadPath = selectors.downloadPathForGame(state, downloadGame);
     const fileName = mod.attributes?.fileName;
-    const filePath =
-      fileName !== undefined ? path.join(downloadPath, fileName) : undefined;
+    const filePath = fileName !== undefined ? path.join(downloadPath, fileName) : undefined;
 
     return api
       .lookupModMeta({
@@ -657,19 +585,12 @@ function checkRulesFulfilled(api: types.IExtensionApi): Bluebird<void> {
       .then((meta: ILookupResult[]) => {
         if (meta.length > 0 && mod.attributes?.fileMD5 === undefined) {
           api.store.dispatch(
-            actions.setModAttribute(
-              gameMode,
-              mod.id,
-              "fileMD5",
-              meta[0].value.fileMD5,
-            ),
+            actions.setModAttribute(gameMode, mod.id, "fileMD5", meta[0].value.fileMD5),
           );
         }
         // get both the rules from the meta server and the ones stored with the mod
         const rules: IRule[] = [].concat(
-          meta.length > 0 && meta[0].value !== undefined
-            ? meta[0].value.rules || []
-            : [],
+          meta.length > 0 && meta[0].value !== undefined ? meta[0].value.rules || [] : [],
           util.getSafe(mods[modLookup.id], ["rules"], []),
         );
         const rulesUnfulfilled = rules.filter(
@@ -683,21 +604,13 @@ function checkRulesFulfilled(api: types.IExtensionApi): Bluebird<void> {
           rulesUnfulfilled.length === 0
             ? null
             : {
-              modId: mod.id,
-              rules: rulesUnfulfilled,
-            };
+                modId: mod.id,
+                rules: rulesUnfulfilled,
+              };
 
-        if (
-          mod.attributes?.fileMD5 === undefined &&
-          meta?.[0]?.value !== undefined
-        ) {
+        if (mod.attributes?.fileMD5 === undefined && meta?.[0]?.value !== undefined) {
           store.dispatch(
-            actions.setModAttribute(
-              gameMode,
-              mod.id,
-              "fileMD5",
-              meta[0].value.fileMD5,
-            ),
+            actions.setModAttribute(gameMode, mod.id, "fileMD5", meta[0].value.fileMD5),
           );
         }
 
@@ -711,24 +624,15 @@ function checkRulesFulfilled(api: types.IExtensionApi): Bluebird<void> {
         unfulfilled.filter((iter) => iter !== null),
         (iter) =>
           api
-            .emitAndAwait(
-              "unfulfilled-rules",
-              activeProfile.id,
-              iter.modId,
-              iter.rules,
-            )
-            .then((result: boolean[]) =>
-              Promise.resolve(result[0] ? undefined : iter),
-            ),
+            .emitAndAwait("unfulfilled-rules", activeProfile.id, iter.modId, iter.rules)
+            .then((result: boolean[]) => Promise.resolve(result[0] ? undefined : iter)),
       ).filter((iter) => iter !== undefined);
     })
     .then((unfulfilled: Array<{ modId: string; rules: types.IModRule[] }>) => {
       const modsUnfulfilled = unfulfilled.filter((iter) => iter !== null);
 
       if (modsUnfulfilled.length === 0) {
-        store.dispatch(
-          actions.dismissNotification(UNFULFILLED_NOTIFICATION_ID),
-        );
+        store.dispatch(actions.dismissNotification(UNFULFILLED_NOTIFICATION_ID));
       } else {
         const hasRequired: Set<string> = new Set([]);
 
@@ -806,18 +710,10 @@ function checkRulesFulfilled(api: types.IExtensionApi): Bluebird<void> {
 
 const shouldSuppressUpdate = (api: types.IExtensionApi) => {
   const state = api.getState();
-  const suppressOnActivities = [
-    "conflicts",
-    "installing_dependencies",
-    "deployment",
-    "purging",
-  ];
+  const suppressOnActivities = ["conflicts", "installing_dependencies", "deployment", "purging"];
   const isActivityRunning = (activity: string) =>
-    util
-      .getSafe(state, ["session", "base", "activity", "mods"], [])
-      .includes(activity) || // purge/deploy
-    util.getSafe(state, ["session", "base", "activity", activity], []).length >
-    0; // installing_dependencies
+    util.getSafe(state, ["session", "base", "activity", "mods"], []).includes(activity) || // purge/deploy
+    util.getSafe(state, ["session", "base", "activity", activity], []).length > 0; // installing_dependencies
   const suppressingActivities = suppressOnActivities.filter((activity) =>
     isActivityRunning(activity),
   );
@@ -859,11 +755,7 @@ function checkConflictsAndRules(api: types.IExtensionApi): Promise<void> {
   const gameMods = state.persistent.mods[gameMode] ?? {};
   const mods = Object.keys(gameMods)
     .filter((modId) => util.getSafe(modState, [modId, "enabled"], false))
-    .filter(
-      (modId) =>
-        util.getModType(gameMods[modId].type)?.options?.["noConflicts"] !==
-        true,
-    )
+    .filter((modId) => util.getModType(gameMods[modId].type)?.options?.["noConflicts"] !== true)
     .map((modId) => state.persistent.mods[gameMode][modId]);
   const activator = util.getCurrentActivator(state, gameMode, true);
 
@@ -911,9 +803,7 @@ function checkRedundantFileOverrides(api: types.IExtensionApi) {
           .statAsync(filePath)
           .then(() => Bluebird.resolve(true))
           .catch((err) =>
-            err.code !== "ENOENT"
-              ? Bluebird.resolve(true)
-              : Bluebird.resolve(false),
+            err.code !== "ENOENT" ? Bluebird.resolve(true) : Bluebird.resolve(false),
           );
 
       const game: types.IGame = util.getGame(gameId);
@@ -961,11 +851,7 @@ function checkRedundantFileOverrides(api: types.IExtensionApi) {
     });
 }
 
-function showCycles(
-  api: types.IExtensionApi,
-  cycles: string[][],
-  gameId: string,
-) {
+function showCycles(api: types.IExtensionApi, cycles: string[][], gameId: string) {
   const state: types.IState = api.store.getState();
   const mods = state.persistent.mods[gameId];
   const id = shortid();
@@ -980,9 +866,7 @@ function showCycles(
         "applied in the right order.",
       links: cycles.map((cycle, idx) => ({
         label: cycle
-          .map((modId) =>
-            mods[modId] !== undefined ? util.renderModName(mods[modId]) : modId,
-          )
+          .map((modId) => (mods[modId] !== undefined ? util.renderModName(mods[modId]) : modId))
           .map((name) => `[${name}]`)
           .join(" --> "),
         action: () => {
@@ -1000,9 +884,7 @@ function updateCycles(api: types.IExtensionApi, cycles: string[][]) {
   const state = api.store.getState();
   if (state.session.dependencies.editCycle !== undefined) {
     // if we're already showing a cycle, update it if necessary
-    const displayed = new Set<string>(
-      state.session.dependencies.editCycle.modIds,
-    );
+    const displayed = new Set<string>(state.session.dependencies.editCycle.modIds);
     // there could be multiple clusters so we have to find the one that corresponds
     // to the one being shown currently, it should be sufficient to find the cycle that
     // has one mod in common with the one being displayed.
@@ -1010,9 +892,7 @@ function updateCycles(api: types.IExtensionApi, cycles: string[][]) {
       (cycle) => cycle.find((modId) => displayed.has(modId)) !== undefined,
     );
     const gameId = selectors.activeGameId(state);
-    api.store.dispatch(
-      setEditCycle(update !== undefined ? gameId : undefined, update),
-    );
+    api.store.dispatch(setEditCycle(update !== undefined ? gameId : undefined, update));
   }
 }
 
@@ -1058,19 +938,14 @@ function generateLoadOrder(api: types.IExtensionApi): Bluebird<void> {
     })
     .then((sortedMods: types.IMod[]) => {
       loadOrder = sortedMods
-        .filter((mod: types.IMod) =>
-          util.getSafe(profile.modState, [mod.id, "enabled"], false),
-        )
-        .reduce(
-          (prev: { [id: string]: number }, mod: types.IMod, idx: number) => {
-            prev[mod.id] = idx;
-            return prev;
-          },
-          {},
-        );
+        .filter((mod: types.IMod) => util.getSafe(profile.modState, [mod.id, "enabled"], false))
+        .reduce((prev: { [id: string]: number }, mod: types.IMod, idx: number) => {
+          prev[mod.id] = idx;
+          return prev;
+        }, {});
       loadOrderChanged();
     })
-    .catch(err => {
+    .catch((err) => {
       if (!(err instanceof util.CycleError)) return;
 
       api.sendNotification({
@@ -1083,10 +958,7 @@ function generateLoadOrder(api: types.IExtensionApi): Bluebird<void> {
     });
 }
 
-function changeMayAffectOverrides(
-  before: types.IMod,
-  after: types.IMod,
-): boolean {
+function changeMayAffectOverrides(before: types.IMod, after: types.IMod): boolean {
   const overrideSort = (mod: types.IMod) =>
     mod.fileOverrides !== undefined ? [...mod.fileOverrides].sort() : [];
   if (
@@ -1119,14 +991,11 @@ function changeMayAffectRules(before: types.IMod, after: types.IMod): boolean {
   }
 
   return (
-    before.rules !== after.rules ||
-    before.attributes["version"] !== after.attributes["version"]
+    before.rules !== after.rules || before.attributes["version"] !== after.attributes["version"]
   );
 }
 
-function makeLoadOrderAttribute(
-  api: types.IExtensionApi,
-): types.ITableAttribute<types.IMod> {
+function makeLoadOrderAttribute(api: types.IExtensionApi): types.ITableAttribute<types.IMod> {
   return {
     id: "loadOrder",
     name: "Deploy Order",
@@ -1151,9 +1020,7 @@ function makeLoadOrderAttribute(
   };
 }
 
-function makeDependenciesAttribute(
-  api: types.IExtensionApi,
-): types.ITableAttribute<types.IMod> {
+function makeDependenciesAttribute(api: types.IExtensionApi): types.ITableAttribute<types.IMod> {
   const res: types.ITableAttribute<types.IMod> = {
     id: "dependencies",
     name: "Dependencies",
@@ -1183,8 +1050,7 @@ function makeDependenciesAttribute(
     isSortable: true,
     isVolatile: true,
     sortFuncRaw: (lhs, rhs, locale) => {
-      const filter =
-        api.getState().settings.tables["mods"].filter?.["dependencies"] ?? [];
+      const filter = api.getState().settings.tables["mods"].filter?.["dependencies"] ?? [];
 
       if (filter.length >= 2 && filter[0] === "depends") {
         if (filter[1] === lhs.id) {
@@ -1208,18 +1074,9 @@ function makeDependenciesAttribute(
       dependencyState,
       () => {
         const state = api.store.getState();
-        return util.getSafe(
-          state,
-          ["persistent", "mods", selectors.activeGameId(state)],
-          {},
-        );
+        return util.getSafe(state, ["persistent", "mods", selectors.activeGameId(state)], {});
       },
-      () =>
-        util.getSafe(
-          api.store.getState(),
-          ["session", "dependencies", "conflicts"],
-          {},
-        ),
+      () => util.getSafe(api.store.getState(), ["session", "dependencies", "conflicts"], {}),
     ),
   };
 
@@ -1232,12 +1089,10 @@ function nothingNeeds(
   among: types.IMod[],
   except: types.IMod,
 ) {
-  const isEnabled = (modId) =>
-    util.getSafe(profile, ["modState", modId, "enabled"], false);
+  const isEnabled = (modId) => util.getSafe(profile, ["modState", modId, "enabled"], false);
 
   const matchesMod = (rule) =>
-    ["requires", "recommends"].includes(rule.type) &&
-    util.testModReference(mod, rule.reference);
+    ["requires", "recommends"].includes(rule.type) && util.testModReference(mod, rule.reference);
 
   return (
     among.find((dependent) => {
@@ -1264,10 +1119,7 @@ function setDependenciesEnabled(
     .filter((rule) => filter.includes(rule.type))
     .map((rule) => {
       const mod = util.findModByRef(rule.reference, mods);
-      if (
-        mod !== undefined &&
-        (enabled || nothingNeeds(profile, mod, allDependents, dependent))
-      ) {
+      if (mod !== undefined && (enabled || nothingNeeds(profile, mod, allDependents, dependent))) {
         return actions.setModEnabled(profile.id, mod.id, enabled);
       } else {
         return undefined;
@@ -1320,10 +1172,7 @@ function queryEnableDependencies(
     .filter((ic) => ic.count > 0);
 
   if (dependents.length > 0) {
-    const dialogActions = [
-      { label: "Close" },
-      { label: enabled ? "Enable" : "Disable" },
-    ];
+    const dialogActions = [{ label: "Close" }, { label: enabled ? "Enable" : "Disable" }];
     // review option only available if it's a single mod with dependencies
     if (dependents.length === 1) {
       dialogActions.splice(1, 0, { label: "Review" });
@@ -1332,7 +1181,7 @@ function queryEnableDependencies(
     let md =
       t(
         "The mod you {{enabled}} depends on other mods, do you want to {{enable}} those " +
-        "as well?",
+          "as well?",
         {
           replace: {
             enabled: enabled ? t("enabled") : t("disabled"),
@@ -1346,7 +1195,7 @@ function queryEnableDependencies(
       md +=
         t(
           "This will only disable mods not required by something else but it may disable " +
-          "ones you had already enabled manually.",
+            "ones you had already enabled manually.",
         ) + "\n";
     }
 
@@ -1396,9 +1245,7 @@ function queryEnableDependencies(
 
           // all mods that have any dependencies
           const allDependents = Object.values(mods).filter((mod) =>
-            (mod.rules ?? []).find((rule) =>
-              ["requires", "recommends"].includes(rule.type),
-            ),
+            (mod.rules ?? []).find((rule) => ["requires", "recommends"].includes(rule.type)),
           );
 
           const batch: Redux.Action[] = dependents.reduce((prev, ic) => {
@@ -1431,21 +1278,13 @@ function once(api: types.IExtensionApi) {
     const state = store.getState();
     gameMode = gameMode || selectors.activeGameId(state);
     return generateLoadOrder(api)
-      .then(() =>
-        updateMetaRules(api, gameMode, state.persistent.mods[gameMode]),
-      )
+      .then(() => updateMetaRules(api, gameMode, state.persistent.mods[gameMode]))
       .then((rules) => {
         dependencyState.modRules = rules;
         // need to manually update any open conflict dialog - that's not pretty...
         const { conflictDialog } = store.getState().session.dependencies;
         if (!!conflictDialog) {
-          store.dispatch(
-            setConflictDialog(
-              conflictDialog.gameId,
-              conflictDialog.modIds,
-              rules,
-            ),
-          );
+          store.dispatch(setConflictDialog(conflictDialog.gameId, conflictDialog.modIds, rules));
         }
         dependenciesChanged();
         return null;
@@ -1456,11 +1295,7 @@ function once(api: types.IExtensionApi) {
   }, 200);
 
   updateConflictDebouncer = new util.Debouncer(
-    async (
-      calculateOverrides: boolean,
-      batched?: Redux.Action[],
-      force?: boolean,
-    ) =>
+    async (calculateOverrides: boolean, batched?: Redux.Action[], force?: boolean) =>
       (!force && shouldSuppressUpdate(api)
         ? Promise.reject(new util.ProcessCanceled("suppressed"))
         : checkConflictsAndRules(api)
@@ -1482,66 +1317,44 @@ function once(api: types.IExtensionApi) {
             .then(() => {
               const endTime = new Date().getTime();
               const elapsedTime = (endTime - startTime) / 1000;
-              log(
-                "info",
-                "Updated file overrides in " + elapsedTime + " seconds",
-              );
+              log("info", "Updated file overrides in " + elapsedTime + " seconds");
             })
             .catch((err) => {
               // If the user canceled the update (probably during the purge), we don't want to
               //  throw this error as it will be reportable. Reporting this error instead of the
               //  error that led to the user canceling the update obfuscates the actual issue.
               log("warn", "Failed to update file overrides", err);
-              return err instanceof util.UserCanceled
-                ? Promise.resolve()
-                : Promise.reject(err);
+              return err instanceof util.UserCanceled ? Promise.resolve() : Promise.reject(err);
             });
         })
         .catch((err) => {
-          if (
-            err instanceof util.ProcessCanceled &&
-            err.message === "suppressed"
-          ) {
+          if (err instanceof util.ProcessCanceled && err.message === "suppressed") {
             return Promise.resolve();
           }
           api.showErrorNotification("Failed to determine mod conflicts", err);
         })
-        .finally(() =>
-          api.store.dispatch(actions.stopActivity("mods", "conflicts")),
-        ),
+        .finally(() => api.store.dispatch(actions.stopActivity("mods", "conflicts"))),
     2000,
     false,
     true,
   );
 
-  api.setStylesheet(
-    "dependency-manager",
-    path.join(__dirname, "dependency-manager.scss"),
-  );
+  api.setStylesheet("dependency-manager", path.join(__dirname, "dependency-manager.scss"));
 
   api.events.on(
     "will-install-dependencies",
-    (
-      profileId: string,
-      modId: string,
-      recommendations: boolean,
-      onCancel: () => void,
-    ) => {
+    (profileId: string, modId: string, recommendations: boolean, onCancel: () => void) => {
       api.dismissNotification(UNFULFILLED_NOTIFICATION_ID);
     },
   );
 
-  api.onAsync(
-    "did-deploy",
-    (profileId: string, deployment: types.IDeploymentManifest) => {
-      const hasActiveCollectionSession =
-        selectors.getCollectionActiveSession(api.getState()) != null;
-      if (!hasActiveCollectionSession) {
-        updateConflictDebouncer.schedule(undefined, false, [], true);
-      }
-      return Promise.resolve();
-    },
-  );
+  api.onAsync("did-deploy", (profileId: string, deployment: types.IDeploymentManifest) => {
+    const hasActiveCollectionSession = selectors.getCollectionActiveSession(api.getState()) != null;
+    if (!hasActiveCollectionSession) {
+      updateConflictDebouncer.schedule(undefined, false, [], true);
+    }
+    return Promise.resolve();
+  });
 
   api.onAsync("will-deploy", (_profileId: string) => {
     // During collection installation we suppress continuous sort/rules updates (see state-change
@@ -1628,8 +1441,7 @@ function once(api: types.IExtensionApi) {
         return Promise.resolve();
       }
       const state = api.getState();
-      const mods: { [modId: string]: types.IMod } =
-        state.persistent.mods[gameMode] ?? {};
+      const mods: { [modId: string]: types.IMod } = state.persistent.mods[gameMode] ?? {};
       const batched = [];
       Object.keys(mods).forEach((id) => {
         // remove all locally defined rules referring to that mod
@@ -1656,8 +1468,7 @@ function once(api: types.IExtensionApi) {
     if (oldState[gameMode] !== newState[gameMode]) {
       const relevantChange = Object.keys(newState[gameMode]).find(
         (modId) =>
-          util.getSafe(oldState, [gameMode, modId], undefined) !==
-          newState[gameMode][modId] &&
+          util.getSafe(oldState, [gameMode, modId], undefined) !== newState[gameMode][modId] &&
           changeMayAffectRules(
             util.getSafe(oldState, [gameMode, modId], undefined),
             newState[gameMode][modId],
@@ -1691,12 +1502,7 @@ function once(api: types.IExtensionApi) {
         return Promise.resolve();
       }
       const profile = selectors.profileById(api.getState(), profileId);
-      return queryEnableDependencies(
-        api,
-        modIds,
-        profile.gameId,
-        enabled,
-      ).catch((err) => {
+      return queryEnableDependencies(api, modIds, profile.gameId, enabled).catch((err) => {
         api.showErrorNotification("Failed to test for dependencies", err);
       });
     },
@@ -1727,15 +1533,10 @@ interface IManageRuleButtonProps {
   onClick: () => void;
 }
 
-class ManageRuleButtonImpl extends PureComponentEx<
-  IManageRuleButtonProps & WithT,
-  {}
-> {
+class ManageRuleButtonImpl extends PureComponentEx<IManageRuleButtonProps & WithT, {}> {
   public render() {
     const { t, onClick, notifications } = this.props;
-    const hasConflicts = notifications.find(
-      (iter) => iter.id === CONFLICT_NOTIFICATION_ID,
-    );
+    const hasConflicts = notifications.find((iter) => iter.id === CONFLICT_NOTIFICATION_ID);
     return (
       <ToolbarIcon
         id="manage-mod-rules-button"
@@ -1770,20 +1571,12 @@ function main(context: types.IExtensionContext) {
   context.registerReducer(["settings", "workarounds"], settingsReducer);
   context.registerReducer(["session", "dependencies"], connectionReducer);
   context.registerTableAttribute("mods", makeLoadOrderAttribute(context.api));
-  context.registerTableAttribute(
-    "mods",
-    makeDependenciesAttribute(context.api),
-  );
+  context.registerTableAttribute("mods", makeDependenciesAttribute(context.api));
   context.registerAction("mod-icons", 90, ManageRuleButton, {}, () => {
     const state: types.IState = context.api.store.getState();
     return {
       notifications: state.session.notifications.notifications,
-      onClick: () =>
-        showUnsolvedConflictsDialog(
-          context.api,
-          dependencyState.modRules,
-          true,
-        ),
+      onClick: () => showUnsolvedConflictsDialog(context.api, dependencyState.modRules, true),
     };
   });
   context.registerDialog("mod-dependencies-connector", Connector);
@@ -1865,9 +1658,7 @@ function main(context: types.IExtensionContext) {
 
   context.registerSettings("Workarounds", Settings, () => ({
     onSetModTypeConflicts: async (enable: boolean) => {
-      await util.toPromise((cb) =>
-        context.api.events.emit("purge-mods", true, cb),
-      );
+      await util.toPromise((cb) => context.api.events.emit("purge-mods", true, cb));
       if (enable) {
         context.api.store.dispatch(setModTypeConflictsSetting(enable));
       } else {
@@ -1875,10 +1666,7 @@ function main(context: types.IExtensionContext) {
           await disableModTypeConflictsDialog(context.api);
         } catch (err) {
           if (!(err instanceof util.UserCanceled)) {
-            context.api.showErrorNotification(
-              "Failed to disable mod type conflicts",
-              err,
-            );
+            context.api.showErrorNotification("Failed to disable mod type conflicts", err);
           }
           return;
         }
@@ -1887,13 +1675,10 @@ function main(context: types.IExtensionContext) {
       updateConflictDebouncer.schedule(undefined, true);
     },
   }));
-  context.registerStartHook(
-    50,
-    "check-unsolved-conflicts",
-    (input: types.IRunParameters) =>
-      input.options.suggestDeploy !== false
-        ? unsolvedConflictsCheck(context.api, dependencyState.modRules, input)
-        : Bluebird.resolve(input),
+  context.registerStartHook(50, "check-unsolved-conflicts", (input: types.IRunParameters) =>
+    input.options.suggestDeploy !== false
+      ? unsolvedConflictsCheck(context.api, dependencyState.modRules, input)
+      : Bluebird.resolve(input),
   );
 
   context.once(() => once(context.api));

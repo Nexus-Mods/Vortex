@@ -3,12 +3,7 @@ import { Button, Popover, ControlLabel, FormGroup } from "react-bootstrap";
 import { ComponentEx, Icon, tooltip } from "vortex-api";
 
 export interface IBaseActionProps {
-  onSetModAttribute: (
-    gameMode: string,
-    modId: string,
-    attributeId: string,
-    value: any,
-  ) => void;
+  onSetModAttribute: (gameMode: string, modId: string, attributeId: string, value: any) => void;
 }
 
 export interface IBaseConnectedProps {
@@ -22,10 +17,7 @@ export interface IPopoverProps {
 
 export class HighlightBase<P, S extends object> extends ComponentEx<P, S> {
   protected mRef: any;
-  protected renderHighlightColor(
-    highlightColor: string,
-    onClick: (evt: any) => void,
-  ): JSX.Element {
+  protected renderHighlightColor(highlightColor: string, onClick: (evt: any) => void): JSX.Element {
     return (
       <Button
         type="button"
@@ -35,9 +27,7 @@ export class HighlightBase<P, S extends object> extends ComponentEx<P, S> {
         value={highlightColor}
         onClick={onClick}
       >
-        <Icon
-          name={highlightColor === "highlight-default" ? "remove" : "add"}
-        />
+        <Icon name={highlightColor === "highlight-default" ? "remove" : "add"} />
       </Button>
     );
   }
@@ -63,10 +53,7 @@ export class HighlightBase<P, S extends object> extends ComponentEx<P, S> {
     );
   }
 
-  protected renderIcons(
-    icon: string,
-    onClick: (evt: any) => void,
-  ): JSX.Element {
+  protected renderIcons(icon: string, onClick: (evt: any) => void): JSX.Element {
     return (
       <Button
         type="button"

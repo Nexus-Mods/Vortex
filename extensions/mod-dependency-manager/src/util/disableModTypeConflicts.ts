@@ -1,14 +1,13 @@
 /* eslint-disable */
 import { actions, selectors, types, util } from "vortex-api";
+
 import { setModTypeConflictsSetting } from "../actions";
 
 const getNonDefaultModTypes = (mod: types.IMod) => {
   return mod?.type !== "";
 };
 
-const allRules = (
-  graph: types.IMod[],
-): { [sourceId: string]: types.IModRule[] } => {
+const allRules = (graph: types.IMod[]): { [sourceId: string]: types.IModRule[] } => {
   return graph.reduce((accum, val) => {
     if (val.rules !== undefined && val.rules.length > 0) {
       accum[val.id] = val.rules;
@@ -20,10 +19,7 @@ const allRules = (
 const findModsByRules = (mod, modsMap) => {
   const mods = (mod.rules ?? []).reduce((accum, iter) => {
     const modByRef = modsMap[iter.reference.id];
-    if (
-      modByRef !== undefined &&
-      util.testModReference(modByRef, iter.reference)
-    ) {
+    if (modByRef !== undefined && util.testModReference(modByRef, iter.reference)) {
       accum.push(iter);
     }
     return accum;
@@ -44,18 +40,13 @@ async function findAffectedMods(api: types.IExtensionApi, gameId: string) {
   const affectedMods = nonDefaultMods.reduce((accum, mod) => {
     for (const [sourceId, rules] of Object.entries(graphRules)) {
       const matchingRules = rules.filter(
-        (rule) =>
-          mods[sourceId].type !== mod.type &&
-          util.testModReference(mod, rule.reference),
+        (rule) => mods[sourceId].type !== mod.type && util.testModReference(mod, rule.reference),
       );
       if (matchingRules.length > 0) {
         if ((mod.fileOverrides ?? []).length > 0) {
           accum[mod.id] = util.renderModName(mod);
         }
-        if (
-          sourceId !== mod.id &&
-          (mods[sourceId]?.fileOverrides ?? []).length > 0
-        ) {
+        if (sourceId !== mod.id && (mods[sourceId]?.fileOverrides ?? []).length > 0) {
           accum[sourceId] = util.renderModName(mod);
         }
       }

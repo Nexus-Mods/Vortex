@@ -1,12 +1,6 @@
-import {
-  INI_TWEAKS_PATH,
-  NAMESPACE,
-  OPTIONAL_TWEAK_PREFIX,
-} from "../constants";
-import { IExtendedInterfaceProps } from "../types/IExtendedInterfaceProps";
+import * as path from "path";
 
 import type { TFunction } from "i18next";
-import * as path from "path";
 import * as React from "react";
 import { Button, ControlLabel, Table } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
@@ -28,6 +22,8 @@ import {
   util,
 } from "vortex-api";
 
+import { INI_TWEAKS_PATH, NAMESPACE, OPTIONAL_TWEAK_PREFIX } from "../constants";
+import { IExtendedInterfaceProps } from "../types/IExtendedInterfaceProps";
 import { IINITweak, TweakArray } from "../types/IINITweak";
 
 export interface IBaseProps extends IExtendedInterfaceProps {
@@ -42,12 +38,7 @@ interface IConnectedProps {
 }
 
 interface IActionProps {
-  onSetINITweakEnabled: (
-    gameId: string,
-    modId: string,
-    tweak: string,
-    enabled: boolean,
-  ) => void;
+  onSetINITweakEnabled: (gameId: string, modId: string, tweak: string, enabled: boolean) => void;
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
@@ -236,27 +227,19 @@ class TweakList extends ComponentEx<IProps, IComponentState> {
     const { collection, modsPath, onRefreshTweaks } = this.props;
     if (collection?.installationPath && modsPath) {
       const modPath = path.join(modsPath, collection.installationPath);
-      onRefreshTweaks(modPath).then(
-        (newTweaks) => (this.nextState.tweaks = newTweaks),
-      );
+      onRefreshTweaks(modPath).then((newTweaks) => (this.nextState.tweaks = newTweaks));
     }
   };
 
   private renderTweak = (tweak: IINITweak): JSX.Element => {
     const { t, collection, modsPath } = this.props;
     const { fileName } = tweak;
-    const isEnabled =
-      util.getSafe(collection, ["enabledINITweaks"], []).indexOf(fileName) !==
-      -1;
+    const isEnabled = util.getSafe(collection, ["enabledINITweaks"], []).indexOf(fileName) !== -1;
     return (
       <Tweak
         t={t}
         key={`tweak-${fileName}`}
-        tweaksPath={path.join(
-          modsPath,
-          collection.installationPath,
-          INI_TWEAKS_PATH,
-        )}
+        tweaksPath={path.join(modsPath, collection.installationPath, INI_TWEAKS_PATH)}
         fileName={fileName}
         enabled={isEnabled}
         onToggle={this.toggle}
@@ -279,10 +262,7 @@ class TweakList extends ComponentEx<IProps, IComponentState> {
   };
 }
 
-function mapStateToProps(
-  state: types.IState,
-  ownProps: IExtendedInterfaceProps,
-): IConnectedProps {
+function mapStateToProps(state: types.IState, ownProps: IExtendedInterfaceProps): IConnectedProps {
   return {
     modsPath: selectors.installPath(state),
   };
@@ -292,12 +272,7 @@ function mapDispatchToProps(
   dispatch: ThunkDispatch<types.IState, null, Redux.Action>,
 ): IActionProps {
   return {
-    onSetINITweakEnabled: (
-      gameId: string,
-      modId: string,
-      tweak: string,
-      enabled: boolean,
-    ) => {
+    onSetINITweakEnabled: (gameId: string, modId: string, tweak: string, enabled: boolean) => {
       dispatch(actions.setINITweakEnabled(gameId, modId, tweak, enabled));
     },
   };

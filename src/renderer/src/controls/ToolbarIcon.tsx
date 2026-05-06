@@ -1,7 +1,7 @@
+import * as React from "react";
+
 import Icon from "./Icon";
 import { Button } from "./TooltipControls";
-
-import * as React from "react";
 
 export interface IToolbarIconProps {
   id?: string;
@@ -22,19 +22,8 @@ export interface IToolbarIconProps {
 
 class ToolbarIcon extends React.PureComponent<IToolbarIconProps, {}> {
   public render(): JSX.Element {
-    const {
-      className,
-      id,
-      text,
-      tooltip,
-      icon,
-      iconSet,
-      pulse,
-      spin,
-      stroke,
-      hollow,
-      disabled,
-    } = this.props;
+    const { className, id, text, tooltip, icon, iconSet, pulse, spin, stroke, hollow, disabled } =
+      this.props;
     const placement = this.props.placement || "bottom";
     return (
       <Button

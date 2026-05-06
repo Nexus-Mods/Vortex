@@ -3,7 +3,6 @@ import { describe, it, expect } from "vitest";
 import type { IDiscoveredTool } from "../../../types/IDiscoveredTool";
 import type { ISettingsGameMode } from "../../../types/IState";
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
-
 import { settingsReducer } from "./settings";
 
 function makeTool(overrides: Partial<IDiscoveredTool> = {}): IDiscoveredTool {
@@ -23,9 +22,7 @@ function makeGame(overrides: Partial<IDiscoveryResult> = {}): IDiscoveryResult {
   return { ...overrides };
 }
 
-function makeSettings(
-  discovered: Record<string, IDiscoveryResult>,
-): ISettingsGameMode {
+function makeSettings(discovered: Record<string, IDiscoveryResult>): ISettingsGameMode {
   return {
     discovered,
     searchPaths: [],

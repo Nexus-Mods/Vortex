@@ -1,12 +1,11 @@
-import IconBar from "../../controls/IconBar";
-import type { TFunction } from "../../util/i18n";
-import StarterInfo from "../../util/StarterInfo";
-import ToolIcon from "../../controls/ToolIcon";
-
-import type { IStarterInfo } from "../../util/StarterInfo";
-
 import React from "react";
 import { useDrop } from "react-dnd";
+
+import IconBar from "../../controls/IconBar";
+import ToolIcon from "../../controls/ToolIcon";
+import type { TFunction } from "../../util/i18n";
+import StarterInfo from "../../util/StarterInfo";
+import type { IStarterInfo } from "../../util/StarterInfo";
 
 export type RemoveTool = (gameId: string, toolId: string) => void;
 
@@ -25,18 +24,8 @@ export interface IToolButtonProps {
 }
 
 function ToolButton(props: IToolButtonProps) {
-  const {
-    t,
-    counter,
-    item,
-    primary,
-    running,
-    onRun,
-    onMakePrimary,
-    onRemove,
-    onEdit,
-    valid,
-  } = props;
+  const { t, counter, item, primary, running, onRun, onMakePrimary, onRemove, onEdit, valid } =
+    props;
 
   let imageSrc;
   const starter = item as StarterInfo;
@@ -75,8 +64,7 @@ function ToolButton(props: IToolButtonProps) {
       title: primary ? "Unset as primary" : "Set as primary",
       icon: "plugin-master",
       action: setPrimaryTool,
-      condition: () =>
-        primary || valid ? true : (t("Not configured") as string),
+      condition: () => (primary || valid ? true : (t("Not configured") as string)),
     },
     {
       title: "Edit",
@@ -119,9 +107,7 @@ function ToolButton(props: IToolButtonProps) {
         </div>
         <div className="tool-icon-text">
           <div className="tool-icon-name">{starter.name}</div>
-          {running ? (
-            <div className="tool-icon-running">{t("Running...")}</div>
-          ) : null}
+          {running ? <div className="tool-icon-running">{t("Running...")}</div> : null}
         </div>
       </div>
       <IconBar

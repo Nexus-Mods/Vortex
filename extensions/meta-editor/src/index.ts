@@ -1,20 +1,17 @@
-import MetaEditorDialog from "./views/MetaEditorDialog";
+import * as path from "path";
+import * as url from "url";
+import { inspect } from "util";
+
+import type { ILookupResult, IModInfo } from "modmeta-db";
+import semver from "semver";
+import { log, selectors, types } from "vortex-api";
 
 import { setShowMetaEditor } from "./actions";
 import sessionReducer from "./reducers";
-
-import type { ILookupResult, IModInfo } from "modmeta-db";
-import * as path from "path";
-import semver from "semver";
-import * as url from "url";
-import { inspect } from "util";
-import { log, selectors, types } from "vortex-api";
+import MetaEditorDialog from "./views/MetaEditorDialog";
 
 function getEmptyData(filePath?: string, fileInfo?: any): IModInfo {
-  const fileName =
-    filePath !== undefined
-      ? path.basename(filePath, path.extname(filePath))
-      : "";
+  const fileName = filePath !== undefined ? path.basename(filePath, path.extname(filePath)) : "";
   return {
     fileName,
     fileSizeBytes: fileInfo !== undefined ? fileInfo.size : 0,
@@ -27,10 +24,7 @@ function getEmptyData(filePath?: string, fileInfo?: any): IModInfo {
   };
 }
 
-async function retrieveInfoImpl(
-  api: types.IExtensionApi,
-  downloadId: string,
-): Promise<IModInfo> {
+async function retrieveInfoImpl(api: types.IExtensionApi, downloadId: string): Promise<IModInfo> {
   if (downloadId === undefined) {
     return undefined;
   }
@@ -95,8 +89,7 @@ function validateURI(uri: string) {
 function main(context: types.IExtensionContext) {
   context.registerReducer(["session", "metaEditor"], sessionReducer);
 
-  const retrieveInfo = (visibleId: string) =>
-    retrieveInfoImpl(context.api, visibleId);
+  const retrieveInfo = (visibleId: string) => retrieveInfoImpl(context.api, visibleId);
 
   context.registerDialog("meta-editor-dialog", MetaEditorDialog, () => ({
     retrieveInfo,
@@ -115,17 +108,12 @@ function main(context: types.IExtensionContext) {
     },
     (instanceIds: string[]): boolean => {
       const state: types.IState = context.api.store.getState();
-      return (
-        state.persistent.downloads.files[instanceIds[0]].state === "finished"
-      );
+      return state.persistent.downloads.files[instanceIds[0]].state === "finished";
     },
   );
 
   context.once(() => {
-    context.api.setStylesheet(
-      "meta-editor",
-      path.join(__dirname, "metaeditor.scss"),
-    );
+    context.api.setStylesheet("meta-editor", path.join(__dirname, "metaeditor.scss"));
   });
 
   return true;

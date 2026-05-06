@@ -1,5 +1,6 @@
-import * as fs from "fs-extra";
 import * as path from "path";
+
+import * as fs from "fs-extra";
 import type { NullableMappedPosition } from "source-map";
 import { SourceMapConsumer } from "source-map";
 
@@ -18,9 +19,7 @@ class SourceMap {
     }
   }
 
-  public lookup(
-    position: NullableMappedPosition,
-  ): Promise<NullableMappedPosition> {
+  public lookup(position: NullableMappedPosition): Promise<NullableMappedPosition> {
     return this.getConsumer(position.source).then((consumer) =>
       consumer === null
         ? Promise.resolve(position)
@@ -37,16 +36,11 @@ class SourceMap {
       .split("\n")
       .reverse()
       .find((line) => line.match(sourceMappingRE) !== null);
-    const match =
-      sourceMappingLine !== undefined
-        ? sourceMappingLine.match(sourceMappingRE)
-        : null;
+    const match = sourceMappingLine !== undefined ? sourceMappingLine.match(sourceMappingRE) : null;
     return match !== null ? match[1] : "";
   }
 
-  private getConsumer(
-    filePath: string | null,
-  ): Promise<SourceMapConsumer | null> {
+  private getConsumer(filePath: string | null): Promise<SourceMapConsumer | null> {
     if (filePath === null) {
       return Promise.resolve(null);
     }

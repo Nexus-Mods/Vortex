@@ -1,9 +1,9 @@
 import * as React from "react";
 import { Button } from "react-bootstrap";
-import { types, util } from "vortex-api";
-import { DEFAULT_INSTRUCTIONS } from "../../constants";
 import ReactMarkdown from "react-markdown";
+import { types, util } from "vortex-api";
 
+import { DEFAULT_INSTRUCTIONS } from "../../constants";
 import { isEmpty } from "../../util/util";
 
 export interface IInstructionsProps {
@@ -26,10 +26,7 @@ function Instructions(props: IInstructionsProps) {
   const { required, optional } = React.useMemo(() => {
     return (collection.rules ?? []).reduce(
       (prev, rule) => {
-        if (
-          isEmpty(rule.extra?.instructions) ||
-          !["requires", "recommends"].includes(rule.type)
-        ) {
+        if (isEmpty(rule.extra?.instructions) || !["requires", "recommends"].includes(rule.type)) {
           return prev;
         }
 
@@ -95,10 +92,7 @@ function Instructions(props: IInstructionsProps) {
                       </ReactMarkdown>
                     </td>
                     <td className="collection-mod-actions">
-                      <Button
-                        data-modid={iter.mod?.id}
-                        onClick={onToggleInstructions}
-                      >
+                      <Button data-modid={iter.mod?.id} onClick={onToggleInstructions}>
                         {t("Open instructions")}
                       </Button>
                     </td>
@@ -127,10 +121,7 @@ function Instructions(props: IInstructionsProps) {
                       </ReactMarkdown>
                     </td>
                     <td className="collection-mod-actions">
-                      <Button
-                        data-modid={iter.mod?.id}
-                        onClick={onToggleInstructions}
-                      >
+                      <Button data-modid={iter.mod?.id} onClick={onToggleInstructions}>
                         {t("Open instructions")}
                       </Button>
                     </td>

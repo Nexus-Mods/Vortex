@@ -1,17 +1,12 @@
-import { IListEntry, IQBMSOpProps, IQBMSOptions, QuickBMSError } from "./types";
-
-import Promise from "bluebird";
 import { spawn } from "child_process";
 import * as path from "path";
 
+import Promise from "bluebird";
 import { fs, log, util } from "vortex-api";
 
-const FILTER_FILE_PATH = path.join(
-  util.getVortexPath("userData"),
-  "temp",
-  "qbms",
-  "filters.txt",
-);
+import { IListEntry, IQBMSOpProps, IQBMSOptions, QuickBMSError } from "./types";
+
+const FILTER_FILE_PATH = path.join(util.getVortexPath("userData"), "temp", "qbms", "filters.txt");
 const LOG_FILE_PATH = path.join(util.getVortexPath("userData"), "quickbms.log");
 const TIMEOUT_MSEC = 15000;
 const CHECK_TIME_MSEC = 5000;
@@ -63,9 +58,7 @@ function parseList(input: string, wildCards: string[]): IListEntry[] {
 
     return matched;
   };
-  const filtered: string[] = lines.filter(
-    (line) => !!line && !line.includes("- filter"),
-  );
+  const filtered: string[] = lines.filter((line) => !!line && !line.includes("- filter"));
   const res: IListEntry[] = filtered.reduce((accum, line) => {
     const arr = line
       .trim()
@@ -105,11 +98,7 @@ function validateArguments(
   return Promise.resolve();
 }
 
-function run(
-  command: string,
-  parameters: string[],
-  options: IQBMSOptions,
-): Promise<void> {
+function run(command: string, parameters: string[], options: IQBMSOptions): Promise<void> {
   let timer: NodeJS.Timeout;
   let isClosed: boolean = false;
   let lastMessageReceived: number;
@@ -122,11 +111,7 @@ function run(
   return new Promise<void>((resolve, reject) => {
     let args = [
       !!command ? " -" + command : undefined,
-      options.allowResize !== undefined
-        ? !options.allowResize
-          ? "-r"
-          : "-r -r"
-        : undefined,
+      options.allowResize !== undefined ? (!options.allowResize ? "-r" : "-r -r") : undefined,
       !!options.quiet ? "-q" : undefined,
       !!options.overwrite ? "-o" : undefined,
       !!options.caseSensitive ? "-I" : undefined,
@@ -138,13 +123,9 @@ function run(
     let process;
     // const theCommand = path.join(__dirname, 'quickbms_4gb_files.exe') + args.join(' ');
     try {
-      process = spawn(
-        quote(path.join(__dirname, "quickbms_4gb_files.exe")),
-        args,
-        {
-          shell: true,
-        },
-      );
+      process = spawn(quote(path.join(__dirname, "quickbms_4gb_files.exe")), args, {
+        shell: true,
+      });
     } catch (err) {
       return reject(err);
     }
@@ -209,22 +190,14 @@ function run(
           //  the create log switch has been provided!
           wstream = fs.createWriteStream(LOG_FILE_PATH);
         }
-        const timeoutDump = [].concat(
-          ["QBMS has timed out!"],
-          stdErrLines,
-          stdOutLines,
-          stdInErrs,
-        );
+        const timeoutDump = [].concat(["QBMS has timed out!"], stdErrLines, stdOutLines, stdInErrs);
         timeoutDump.forEach((line) => wstream.write(line + "\n"));
 
         wstream.close();
         wstream = undefined;
         // tslint:disable-next-line: max-line-length
         return reject(
-          new QuickBMSError(
-            `quickbms(${signal}) - ${QUICK_BMS_ERRORMSG[14]}`,
-            stdErrLines,
-          ),
+          new QuickBMSError(`quickbms(${signal}) - ${QUICK_BMS_ERRORMSG[14]}`, stdErrLines),
         );
       }
 
@@ -235,16 +208,11 @@ function run(
 
       if (code !== 0) {
         const errorMsg =
-          code > QUICK_BMS_ERRORMSG.length - 1
-            ? QUICK_BMS_ERRORMSG[1]
-            : QUICK_BMS_ERRORMSG[code];
-        return reject(
-          new QuickBMSError(`quickbms(${code}) - ` + errorMsg, stdErrLines),
-        );
+          code > QUICK_BMS_ERRORMSG.length - 1 ? QUICK_BMS_ERRORMSG[1] : QUICK_BMS_ERRORMSG[code];
+        return reject(new QuickBMSError(`quickbms(${code}) - ` + errorMsg, stdErrLines));
       }
 
-      const hasErrors =
-        stdErrLines.find((line) => line.indexOf("Error:") !== -1) !== undefined;
+      const hasErrors = stdErrLines.find((line) => line.indexOf("Error:") !== -1) !== undefined;
       if (hasErrors) {
         return reject(new Error(stdErrLines.join("\n")));
       }
@@ -286,83 +254,44 @@ function removeFiltersFile(): Promise<void> {
   return fs
     .statAsync(FILTER_FILE_PATH)
     .then(() => fs.removeAsync(FILTER_FILE_PATH))
-    .catch((err) =>
-      err.code === "ENOENT" ? Promise.resolve() : Promise.reject(err),
-    );
+    .catch((err) => (err.code === "ENOENT" ? Promise.resolve() : Promise.reject(err)));
 }
 
 function reImport(props: IQBMSOpProps): Promise<void> {
   const { archivePath, bmsScriptPath, qbmsOptions, operationPath } = props;
-  return validateArguments(
-    archivePath,
-    bmsScriptPath,
-    operationPath,
-    qbmsOptions,
-  )
+  return validateArguments(archivePath, bmsScriptPath, operationPath, qbmsOptions)
     .then(() =>
-      !!qbmsOptions.wildCards
-        ? createFiltersFile(qbmsOptions.wildCards)
-        : Promise.resolve(),
+      !!qbmsOptions.wildCards ? createFiltersFile(qbmsOptions.wildCards) : Promise.resolve(),
     )
     .then(() =>
       qbmsOptions.allowResize !== undefined
         ? Promise.resolve()
-        : Promise.reject(
-            new util.ArgumentInvalid("Re-import version was not specified"),
-          ),
+        : Promise.reject(new util.ArgumentInvalid("Re-import version was not specified")),
     )
     .then(() =>
-      run(
-        "w",
-        [quote(bmsScriptPath), quote(archivePath), quote(operationPath)],
-        qbmsOptions,
-      ),
+      run("w", [quote(bmsScriptPath), quote(archivePath), quote(operationPath)], qbmsOptions),
     )
     .then(() => removeFiltersFile());
 }
 
 function extract(props: IQBMSOpProps): Promise<void> {
   const { archivePath, bmsScriptPath, qbmsOptions, operationPath } = props;
-  return validateArguments(
-    archivePath,
-    bmsScriptPath,
-    operationPath,
-    qbmsOptions,
-  )
+  return validateArguments(archivePath, bmsScriptPath, operationPath, qbmsOptions)
+    .then(() => (!!qbmsOptions.wildCards ? createFiltersFile(qbmsOptions.wildCards) : undefined))
     .then(() =>
-      !!qbmsOptions.wildCards
-        ? createFiltersFile(qbmsOptions.wildCards)
-        : undefined,
-    )
-    .then(() =>
-      run(
-        undefined,
-        [quote(bmsScriptPath), quote(archivePath), quote(operationPath)],
-        qbmsOptions,
-      ),
+      run(undefined, [quote(bmsScriptPath), quote(archivePath), quote(operationPath)], qbmsOptions),
     )
     .then(() => removeFiltersFile());
 }
 
 function list(props: IQBMSOpProps): Promise<IListEntry[]> {
   const { archivePath, bmsScriptPath, qbmsOptions, operationPath } = props;
-  return validateArguments(
-    archivePath,
-    bmsScriptPath,
-    operationPath,
-    qbmsOptions,
-  )
+  return validateArguments(archivePath, bmsScriptPath, operationPath, qbmsOptions)
     .then(() =>
-      !!qbmsOptions.wildCards
-        ? createFiltersFile(qbmsOptions.wildCards)
-        : Promise.resolve(),
+      !!qbmsOptions.wildCards ? createFiltersFile(qbmsOptions.wildCards) : Promise.resolve(),
     )
     .then(() =>
-      run(
-        "l",
-        [quote(bmsScriptPath), quote(archivePath), quote(operationPath)],
-        qbmsOptions,
-      ),
+      run("l", [quote(bmsScriptPath), quote(archivePath), quote(operationPath)], qbmsOptions),
     )
     .then(() => removeFiltersFile())
     .then(() => fs.readFileAsync(LOG_FILE_PATH, { encoding: "utf-8" }))
@@ -374,17 +303,8 @@ function list(props: IQBMSOpProps): Promise<IListEntry[]> {
 
 function write(props: IQBMSOpProps): Promise<void> {
   const { archivePath, bmsScriptPath, qbmsOptions, operationPath } = props;
-  return validateArguments(
-    archivePath,
-    bmsScriptPath,
-    operationPath,
-    qbmsOptions,
-  ).then(() =>
-    run(
-      "w",
-      [quote(bmsScriptPath), quote(archivePath), quote(operationPath)],
-      qbmsOptions,
-    ),
+  return validateArguments(archivePath, bmsScriptPath, operationPath, qbmsOptions).then(() =>
+    run("w", [quote(bmsScriptPath), quote(archivePath), quote(operationPath)], qbmsOptions),
   );
 }
 

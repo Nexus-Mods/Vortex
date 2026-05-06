@@ -69,9 +69,7 @@ describe("nexusIdsFromDownloadId", () => {
       });
 
       const result = nexusIdsFromDownloadId(state, "dl1");
-      const isCollection =
-        result?.collectionSlug !== undefined &&
-        result?.revisionId !== undefined;
+      const isCollection = result?.collectionSlug !== undefined && result?.revisionId !== undefined;
 
       expect(isCollection).toBe(true);
     });

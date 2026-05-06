@@ -1,5 +1,6 @@
-import * as fs from "fs-extra";
 import * as path from "path";
+
+import * as fs from "fs-extra";
 import { SourceMapConsumer } from "source-map";
 
 interface IPosition {
@@ -43,8 +44,7 @@ class SourceMap {
   }
 
   private getConsumer(file: string): Promise<SourceMapConsumer> {
-    const relPath =
-      this.mBasePath !== undefined ? path.relative(this.mBasePath, file) : file;
+    const relPath = this.mBasePath !== undefined ? path.relative(this.mBasePath, file) : file;
 
     if (this.mConsumers[relPath] === undefined) {
       const correctedPath = path.join(this.mSourcePath, relPath);
@@ -57,11 +57,7 @@ class SourceMap {
           }
           const fullPath: string = sourceMapPath.startsWith("/")
             ? this.mSourcePath + sourceMapPath
-            : path.resolve(
-                this.mSourcePath,
-                path.dirname(relPath),
-                sourceMapPath,
-              );
+            : path.resolve(this.mSourcePath, path.dirname(relPath), sourceMapPath);
           return fs.readFile(fullPath);
         })
         .then((data: Buffer) => new SourceMapConsumer(data.toString()))

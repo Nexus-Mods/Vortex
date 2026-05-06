@@ -1,4 +1,5 @@
 import * as path from "path";
+
 import * as Redux from "redux";
 import { selectors, types, util } from "vortex-api";
 
@@ -12,8 +13,7 @@ const localAppData: () => string = (() => {
   return () => {
     if (cached === undefined) {
       cached =
-        process.env.LOCALAPPDATA ||
-        path.resolve(util.getVortexPath("appData"), "..", "Local");
+        process.env.LOCALAPPDATA || path.resolve(util.getVortexPath("appData"), "..", "Local");
     }
     return cached;
   };
@@ -22,52 +22,40 @@ const localAppData: () => string = (() => {
 const gameSupport = util.makeOverlayableDictionary<string, IGameSupport>(
   {
     fallout3: {
-      settingsPath: () =>
-        path.join(util.getVortexPath("documents"), "My Games", "Fallout3"),
+      settingsPath: () => path.join(util.getVortexPath("documents"), "My Games", "Fallout3"),
       appDataPath: () => path.join(localAppData(), "Fallout3"),
     },
     falloutnv: {
-      settingsPath: () =>
-        path.join(util.getVortexPath("documents"), "My Games", "FalloutNV"),
+      settingsPath: () => path.join(util.getVortexPath("documents"), "My Games", "FalloutNV"),
       appDataPath: () => path.join(localAppData(), "FalloutNV"),
     },
     fallout4: {
-      settingsPath: () =>
-        path.join(util.getVortexPath("documents"), "My Games", "Fallout4"),
+      settingsPath: () => path.join(util.getVortexPath("documents"), "My Games", "Fallout4"),
       appDataPath: () => path.join(localAppData(), "Fallout4"),
     },
     fallout4vr: {
-      settingsPath: () =>
-        path.join(util.getVortexPath("documents"), "My Games", "Fallout4VR"),
+      settingsPath: () => path.join(util.getVortexPath("documents"), "My Games", "Fallout4VR"),
       appDataPath: () => path.join(localAppData(), "Fallout4VR"),
     },
     starfield: {
-      settingsPath: () =>
-        path.join(util.getVortexPath("documents"), "My Games", "Starfield"),
+      settingsPath: () => path.join(util.getVortexPath("documents"), "My Games", "Starfield"),
       appDataPath: () => path.join(localAppData(), "Starfield"),
     },
     oblivion: {
-      settingsPath: () =>
-        path.join(util.getVortexPath("documents"), "My Games", "Oblivion"),
+      settingsPath: () => path.join(util.getVortexPath("documents"), "My Games", "Oblivion"),
       appDataPath: () => path.join(localAppData(), "Oblivion"),
     },
     skyrim: {
-      settingsPath: () =>
-        path.join(util.getVortexPath("documents"), "My Games", "Skyrim"),
+      settingsPath: () => path.join(util.getVortexPath("documents"), "My Games", "Skyrim"),
       appDataPath: () => path.join(localAppData(), "Skyrim"),
     },
     skyrimse: {
       settingsPath: () =>
-        path.join(
-          util.getVortexPath("documents"),
-          "My Games",
-          "Skyrim Special Edition",
-        ),
+        path.join(util.getVortexPath("documents"), "My Games", "Skyrim Special Edition"),
       appDataPath: () => path.join(localAppData(), "Skyrim Special Edition"),
     },
     skyrimvr: {
-      settingsPath: () =>
-        path.join(util.getVortexPath("documents"), "My Games", "SkyrimVR"),
+      settingsPath: () => path.join(util.getVortexPath("documents"), "My Games", "SkyrimVR"),
       appDataPath: () => path.join(localAppData(), "SkyrimVR"),
     },
   },
@@ -75,60 +63,34 @@ const gameSupport = util.makeOverlayableDictionary<string, IGameSupport>(
     xbox: {
       skyrimse: {
         settingsPath: () =>
-          path.join(
-            util.getVortexPath("documents"),
-            "My Games",
-            "Skyrim Special Edition MS",
-          ),
-        appDataPath: () =>
-          path.join(localAppData(), "Skyrim Special Edition MS"),
+          path.join(util.getVortexPath("documents"), "My Games", "Skyrim Special Edition MS"),
+        appDataPath: () => path.join(localAppData(), "Skyrim Special Edition MS"),
       },
       fallout4: {
-        settingsPath: () =>
-          path.join(util.getVortexPath("documents"), "My Games", "Fallout4 MS"),
+        settingsPath: () => path.join(util.getVortexPath("documents"), "My Games", "Fallout4 MS"),
         appDataPath: () => path.join(localAppData(), "Fallout4 MS"),
       },
     },
     gog: {
       skyrimse: {
         settingsPath: () =>
-          path.join(
-            util.getVortexPath("documents"),
-            "My Games",
-            "Skyrim Special Edition GOG",
-          ),
-        appDataPath: () =>
-          path.join(localAppData(), "Skyrim Special Edition GOG"),
+          path.join(util.getVortexPath("documents"), "My Games", "Skyrim Special Edition GOG"),
+        appDataPath: () => path.join(localAppData(), "Skyrim Special Edition GOG"),
       },
       enderalspecialedition: {
         settingsPath: () =>
-          path.join(
-            util.getVortexPath("documents"),
-            "My Games",
-            "Enderal Special Edition GOG",
-          ),
-        appDataPath: () =>
-          path.join(localAppData(), "Enderal Special Edition GOG"),
+          path.join(util.getVortexPath("documents"), "My Games", "Enderal Special Edition GOG"),
+        appDataPath: () => path.join(localAppData(), "Enderal Special Edition GOG"),
       },
     },
     epic: {
       skyrimse: {
         settingsPath: () =>
-          path.join(
-            util.getVortexPath("documents"),
-            "My Games",
-            "Skyrim Special Edition EPIC",
-          ),
-        appDataPath: () =>
-          path.join(localAppData(), "Skyrim Special Edition EPIC"),
+          path.join(util.getVortexPath("documents"), "My Games", "Skyrim Special Edition EPIC"),
+        appDataPath: () => path.join(localAppData(), "Skyrim Special Edition EPIC"),
       },
       fallout4: {
-        settingsPath: () =>
-          path.join(
-            util.getVortexPath("documents"),
-            "My Games",
-            "Fallout4 EPIC",
-          ),
+        settingsPath: () => path.join(util.getVortexPath("documents"), "My Games", "Fallout4 EPIC"),
         appDataPath: () => path.join(localAppData(), "Fallout4 EPIC"),
       },
     },
@@ -144,14 +106,9 @@ export function initGameSupport(api: types.IExtensionApi) {
 }
 
 export function settingsPath(game: types.IGame): string {
-  return (
-    gameSupport.get(game.id, "settingsPath")?.() ??
-    game.details?.settingsPath?.()
-  );
+  return gameSupport.get(game.id, "settingsPath")?.() ?? game.details?.settingsPath?.();
 }
 
 export function appDataPath(game: types.IGame): string {
-  return (
-    gameSupport.get(game.id, "appDataPath")?.() ?? game.details?.appDataPath?.()
-  );
+  return gameSupport.get(game.id, "appDataPath")?.() ?? game.details?.appDataPath?.();
 }

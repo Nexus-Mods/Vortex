@@ -1,6 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
+
 import bbcode, { stripBBCode } from "../../controls/bbcode";
 import { MainContext } from "../../views/MainWindow";
 import { activeGameId } from "../profile_management/selectors";
@@ -44,8 +45,7 @@ function transformMod(encoding: string, input: IModListItem): IListItem {
   }
 
   if (res.summary.length > MAX_SUMMARY_LENGTH) {
-    res.summary =
-      (res.summary as string).substring(0, MAX_SUMMARY_LENGTH) + "...";
+    res.summary = (res.summary as string).substring(0, MAX_SUMMARY_LENGTH) + "...";
   }
 
   if (encoding === "bbcode") {
@@ -74,16 +74,10 @@ function APIDashlet(props: ILatestModsDashletProps) {
         encoding: string;
         mods: IModListItem[];
       }
-      const results = await context.api.emitAndAwait<IEvtRes[]>(
-        eventName,
-        gameMode,
-      );
+      const results = await context.api.emitAndAwait<IEvtRes[]>(eventName, gameMode);
       setItems(
         results.reduce(
-          (prev, res) => [
-            ...prev,
-            ...res.mods.map((info) => transformMod(res.encoding, info)),
-          ],
+          (prev, res) => [...prev, ...res.mods.map((info) => transformMod(res.encoding, info))],
           [],
         ),
       );
@@ -95,13 +89,7 @@ function APIDashlet(props: ILatestModsDashletProps) {
   }, [gameMode]);
 
   return (
-    <BaseDashlet
-      t={t}
-      title={title}
-      items={items}
-      emptyText={emptyText}
-      onRefresh={refresh}
-    />
+    <BaseDashlet t={t} title={title} items={items} emptyText={emptyText} onRefresh={refresh} />
   );
 }
 

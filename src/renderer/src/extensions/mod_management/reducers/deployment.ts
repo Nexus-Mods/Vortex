@@ -1,7 +1,8 @@
+import { createAction } from "redux-act";
+
 import type { IReducerSpec } from "../../../types/IExtensionContext";
 import { setSafe } from "../../../util/storeHelper";
 import * as actions from "../actions/deployment";
-import { createAction } from "redux-act";
 
 // Action to increment deployment counter after deployment completes
 export const incrementDeploymentCounter = createAction(

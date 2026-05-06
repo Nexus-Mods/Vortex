@@ -1,25 +1,6 @@
-/* eslint-disable */
-import { IBiDirRule } from "../types/IBiDirRule";
-import { IConflict } from "../types/IConflict";
-
-import { setConflictDialog, setFileOverrideDialog } from "../actions";
-
-import { RuleChoice } from "../util/getRuleTypes";
-
-import ConflictEditorTips from "./ConflictEditorTips";
-
-import { NAMESPACE } from "../statics";
-
 import memoizeOne from "memoize-one";
 import * as React from "react";
-import {
-  Button,
-  FormControl,
-  Modal,
-  OverlayTrigger,
-  Popover,
-  Table,
-} from "react-bootstrap";
+import { Button, FormControl, Modal, OverlayTrigger, Popover, Table } from "react-bootstrap";
 import { withTranslation, WithTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import * as Redux from "redux";
@@ -39,6 +20,14 @@ import {
   util,
   VisibilityProxy,
 } from "vortex-api";
+
+import { setConflictDialog, setFileOverrideDialog } from "../actions";
+import { NAMESPACE } from "../statics";
+/* eslint-disable */
+import { IBiDirRule } from "../types/IBiDirRule";
+import { IConflict } from "../types/IConflict";
+import { RuleChoice } from "../util/getRuleTypes";
+import ConflictEditorTips from "./ConflictEditorTips";
 import { IPathTools } from "./OverrideEditor";
 
 interface IBaseProps {
@@ -106,9 +95,9 @@ function getRuleSpec(
     res[conflict.otherMod.id] =
       existingRule !== undefined
         ? {
-          type: existingRule.type as any,
-          version: importVersion(existingRule.reference.versionMatch),
-        }
+            type: existingRule.type as any,
+            version: importVersion(existingRule.reference.versionMatch),
+          }
         : { type: undefined, version: "any" };
   });
   return res;
@@ -120,11 +109,7 @@ function nop() {
 
 interface IVisibilityProxyWrapProps {
   entry: { id: string; name: string; numConflicts: number };
-  content: (
-    modId: string,
-    name: string,
-    ref: React.RefObject<HTMLDivElement>,
-  ) => JSX.Element;
+  content: (modId: string, name: string, ref: React.RefObject<HTMLDivElement>) => JSX.Element;
   container: HTMLElement;
 }
 
@@ -247,10 +232,7 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
       ) : hasConflicts ? (
         this.renderConflicts()
       ) : (
-        <EmptyPlaceholder
-          icon="conflict"
-          text={t("You have no file conflicts. Wow!")}
-        />
+        <EmptyPlaceholder icon="conflict" text={t("You have no file conflicts. Wow!")} />
       );
 
     const renderButton = (clickFunc: () => void, text: string) =>
@@ -270,22 +252,12 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
 
     const tips = <ConflictEditorTips />;
     return (
-      <Modal
-        id="conflict-editor-dialog"
-        show={modIds !== undefined}
-        onHide={nop}
-      >
+      <Modal id="conflict-editor-dialog" show={modIds !== undefined} onHide={nop}>
         <Modal.Header>
           <FlexLayout type="column">
-            <FlexLayout.Fixed
-              style={{ justifyContent: "space-between", display: "flex" }}
-            >
+            <FlexLayout.Fixed style={{ justifyContent: "space-between", display: "flex" }}>
               <Modal.Title>{modName}</Modal.Title>
-              <tooltip.Icon
-                id="dialog-info"
-                name="dialog-info"
-                tooltip={tips}
-              />
+              <tooltip.Icon id="dialog-info" name="dialog-info" tooltip={tips} />
             </FlexLayout.Fixed>
           </FlexLayout>
         </Modal.Header>
@@ -314,10 +286,7 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
     const currentRules = this.state.rules;
     const baselineRules = this.mBaselineRules;
     this.nextState.rules = (props.modIds || []).reduce(
-      (
-        prev: { [modId: string]: { [refId: string]: IRuleSpec } },
-        modId: string,
-      ) => {
+      (prev: { [modId: string]: { [refId: string]: IRuleSpec } }, modId: string) => {
         const persisted = getRuleSpec(modId, props.mods, props.conflicts?.[modId]);
         if (currentRules[modId] !== undefined && baselineRules[modId] !== undefined) {
           // preserve local edits: if the user changed a rule from its baseline,
@@ -326,8 +295,10 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
           for (const refId of Object.keys(persisted)) {
             const baseline = baselineRules[modId]?.[refId];
             const local = currentRules[modId]?.[refId];
-            const wasEdited = local !== undefined && baseline !== undefined
-              && (local.type !== baseline.type || local.version !== baseline.version);
+            const wasEdited =
+              local !== undefined &&
+              baseline !== undefined &&
+              (local.type !== baseline.type || local.version !== baseline.version);
             merged[refId] = wasEdited ? local : persisted[refId];
           }
           prev[modId] = merged;
@@ -339,10 +310,7 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
       {},
     );
     this.mBaselineRules = (props.modIds || []).reduce(
-      (
-        prev: { [modId: string]: { [refId: string]: IRuleSpec } },
-        modId: string,
-      ) => {
+      (prev: { [modId: string]: { [refId: string]: IRuleSpec } }, modId: string) => {
         prev[modId] = getRuleSpec(modId, props.mods, props.conflicts?.[modId]);
         return prev;
       },
@@ -358,8 +326,8 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
       {
         text: t(
           'This change will only be applied once you choose to "Save" the change in the main ' +
-          "dialogue window. Please be aware that once saved, this action cannot be undone and the " +
-          "mod rules and file overrides will have to be set again.",
+            "dialogue window. Please be aware that once saved, this action cannot be undone and the " +
+            "mod rules and file overrides will have to be set again.",
         ),
       },
       [
@@ -370,19 +338,14 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
             const batchedActions: Redux.Action[] = [];
             for (const modId of modIds || []) {
               if (Array.isArray(this.props.mods[modId]?.fileOverrides)) {
-                batchedActions.push(
-                  vortexActions.setFileOverride(this.props.gameId, modId, []),
-                );
+                batchedActions.push(vortexActions.setFileOverride(this.props.gameId, modId, []));
               }
             }
             if (batchedActions.length > 0) {
               this.props.onBatchDispatch(batchedActions);
             }
             this.nextState.rules = (modIds || []).reduce(
-              (
-                prev: { [modId: string]: { [refId: string]: IRuleSpec } },
-                modId: string,
-              ) => {
+              (prev: { [modId: string]: { [refId: string]: IRuleSpec } }, modId: string) => {
                 const res: { [modId: string]: IRuleSpec } = {};
                 (conflicts[modId] || []).forEach((conflict) => {
                   res[conflict.otherMod.id] = {
@@ -413,15 +376,15 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
       {
         bbcode: t(
           "Vortex can set some of the rules automatically based on the last modified date. " +
-          "Mods with newer files will be loaded after mods with older files, effectively overriding " +
-          "older mods. While this is a quick way to resolve mod conflicts with generally decent results, " +
-          "it is no guarantee for a working mod load order.[br][/br][br][/br]" +
-          "Please note: Vortex will be unable to suggest rules for mods with files " +
-          "that are both older than some and newer than others from a conflicting mod.[br][/br][br][/br]" +
-          "Loading mods in the incorrect order can lead to in-game errors such as:[br][/br][br][/br]" +
-          "[list][*]Mods not having an effect on the game[*]Incorrect textures or models showing up " +
-          "[*]The game crashing[/list][br][/br]If you find that your mods don't work correctly " +
-          "you can always come here and change their order.",
+            "Mods with newer files will be loaded after mods with older files, effectively overriding " +
+            "older mods. While this is a quick way to resolve mod conflicts with generally decent results, " +
+            "it is no guarantee for a working mod load order.[br][/br][br][/br]" +
+            "Please note: Vortex will be unable to suggest rules for mods with files " +
+            "that are both older than some and newer than others from a conflicting mod.[br][/br][br][/br]" +
+            "Loading mods in the incorrect order can lead to in-game errors such as:[br][/br][br][/br]" +
+            "[list][*]Mods not having an effect on the game[*]Incorrect textures or models showing up " +
+            "[*]The game crashing[/list][br][/br]If you find that your mods don't work correctly " +
+            "you can always come here and change their order.",
         ),
       },
       [
@@ -430,19 +393,14 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
           label: "Use Suggested",
           action: () => {
             this.nextState.rules = (modIds || []).reduce(
-              (
-                prev: { [modId: string]: { [refId: string]: IRuleSpec } },
-                modId: string,
-              ) => {
-                const modRules =
-                  mods[modId] !== undefined ? mods[modId].rules || [] : [];
+              (prev: { [modId: string]: { [refId: string]: IRuleSpec } }, modId: string) => {
+                const modRules = mods[modId] !== undefined ? mods[modId].rules || [] : [];
 
                 const res: { [modId: string]: IRuleSpec } = {};
                 (conflicts[modId] || []).forEach((conflict) => {
                   const existingRule = modRules.find(
                     (rule) =>
-                      ["before", "after", "conflicts"].indexOf(rule.type) !==
-                      -1 &&
+                      ["before", "after", "conflicts"].indexOf(rule.type) !== -1 &&
                       util.testModReference(conflict.otherMod, rule.reference),
                   );
 
@@ -453,10 +411,7 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
                         : "after"
                       : undefined;
 
-                  if (
-                    prev[conflict.otherMod.id]?.[modId]?.type ===
-                    reverseSuggestion
-                  ) {
+                  if (prev[conflict.otherMod.id]?.[modId]?.type === reverseSuggestion) {
                     // This rule is already set on the other mod.
                     res[conflict.otherMod.id] = {
                       type: undefined,
@@ -466,21 +421,17 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
                     res[conflict.otherMod.id] =
                       conflict.suggestion !== null
                         ? {
-                          type: conflict.suggestion,
-                          version:
-                            existingRule !== undefined
-                              ? importVersion(
-                                existingRule.reference.versionMatch,
-                              )
-                              : "any",
-                        }
+                            type: conflict.suggestion,
+                            version:
+                              existingRule !== undefined
+                                ? importVersion(existingRule.reference.versionMatch)
+                                : "any",
+                          }
                         : existingRule !== undefined
                           ? {
-                            type: existingRule.type as any,
-                            version: importVersion(
-                              existingRule.reference.versionMatch,
-                            ),
-                          }
+                              type: existingRule.type as any,
+                              version: importVersion(existingRule.reference.versionMatch),
+                            }
                           : { type: undefined, version: "any" };
                   }
                 });
@@ -509,10 +460,10 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
     const isRuleSet: boolean =
       rules[otherModId]?.[modId] === undefined
         ? (mods[otherModId]?.rules ?? []).find(
-          (rule) =>
-            ["before", "after", "conflicts"].includes(rule.type) &&
-            util.testModReference(mods[modId], rule.reference),
-        ) !== undefined
+            (rule) =>
+              ["before", "after", "conflicts"].includes(rule.type) &&
+              util.testModReference(mods[modId], rule.reference),
+          ) !== undefined
         : rules[otherModId][modId].type !== undefined;
 
     return hideResolved
@@ -538,16 +489,13 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
       return false;
     }
 
-    const isMatch = (val: string) =>
-      val.toLowerCase().includes(filterValue.toLowerCase());
+    const isMatch = (val: string) => val.toLowerCase().includes(filterValue.toLowerCase());
     const modName: string = util.renderModName(mods[modId]);
     const otherModName: string = util.renderModName(mods[conflict.otherMod.id]);
-    const testFilterMatch = () =>
-      filterValue ? isMatch(modName) || isMatch(otherModName) : true;
+    const testFilterMatch = () => (filterValue ? isMatch(modName) || isMatch(otherModName) : true);
 
     return (
-      testFilterMatch() &&
-      this.isUnresolved(mods, modId, conflict.otherMod.id, rules, hideResolved)
+      testFilterMatch() && this.isUnresolved(mods, modId, conflict.otherMod.id, rules, hideResolved)
     );
   };
 
@@ -561,14 +509,7 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
   ): { [modId: string]: IConflict[] } {
     return modEntries.reduce((prev, entry) => {
       prev[entry.id] = (conflicts[entry.id] || []).filter((conflict) =>
-        this.applyFilter(
-          conflict,
-          mods,
-          entry.id,
-          filterValue,
-          rules,
-          hideResolved,
-        ),
+        this.applyFilter(conflict, mods, entry.id, filterValue, rules, hideResolved),
       );
       return prev;
     }, {});
@@ -617,41 +558,23 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
         />
       ) : null;
 
-    const renderModEntry = (
-      modId: string,
-      name: string,
-      ref: React.RefObject<HTMLDivElement>,
-    ) => {
+    const renderModEntry = (modId: string, name: string, ref: React.RefObject<HTMLDivElement>) => {
       const filtered = filteredEntries[modId];
       return filtered.length > 0 ? (
-        <div
-          id={`content-${modId}`}
-          key={`mod-conflict-element-${modId}`}
-          ref={ref}
-        >
+        <div id={`content-${modId}`} key={`mod-conflict-element-${modId}`} ref={ref}>
           <div className="mod-conflict-group-header">
             <label>{util.renderModName(mods[modId])}</label>
-            <a
-              data-modid={modId}
-              data-action="before_all"
-              onClick={this.applyGroupRule}
-            >
+            <a data-modid={modId} data-action="before_all" onClick={this.applyGroupRule}>
               {t("Before All")}
             </a>
             <span className="link-action-seperator">&nbsp; | &nbsp;</span>
-            <a
-              data-modid={modId}
-              data-action="after_all"
-              onClick={this.applyGroupRule}
-            >
+            <a data-modid={modId} data-action="after_all" onClick={this.applyGroupRule}>
               {t("After All")}
             </a>
           </div>
           <Table className="mod-conflict-list">
             <tbody>
-              {filtered.map((conf: IConflict) =>
-                this.renderConflict(modId, name, conf),
-              )}
+              {filtered.map((conf: IConflict) => this.renderConflict(modId, name, conf))}
             </tbody>
           </Table>
         </div>
@@ -673,11 +596,7 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
     ) : null;
   };
 
-  private confirmGroupRule = (
-    modId: string,
-    refIds: string[],
-    apply: () => void,
-  ) => {
+  private confirmGroupRule = (modId: string, refIds: string[], apply: () => void) => {
     const { t } = this.props;
     this.context.api.showDialog(
       "question",
@@ -685,7 +604,7 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
       {
         bbcode: t(
           "You are about to apply a group rule (before/after all), to the following " +
-          "mods: [br][/br][br][/br]{{mods}}[br][/br][br][/br]",
+            "mods: [br][/br][br][/br]{{mods}}[br][/br][br][/br]",
           { replace: { mods: [modId].concat(refIds).join("[br][/br]") } },
         ),
       },
@@ -705,10 +624,7 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
     const { rules, hideResolved, filterValue } = this.state;
     const action = evt.currentTarget.getAttribute("data-action");
     const modId = evt.currentTarget.getAttribute("data-modid");
-    if (
-      ["after_all", "before_all"].indexOf(action) === -1 ||
-      conflicts === undefined
-    ) {
+    if (["after_all", "before_all"].indexOf(action) === -1 || conflicts === undefined) {
       return;
     }
 
@@ -716,21 +632,20 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
     const hasAppliedFilters = hideResolved || !!filterValue;
     const refIds = hasAppliedFilters
       ? Object.keys(rules[modId]).filter((refId) => {
-        if (mods[refId] === undefined) {
-          return false;
-        }
-        const modName = util.renderModName(mods[refId]);
-        let matchesFilter = false;
-        if (modName !== undefined) {
-          const refModName = modName.toLowerCase();
-          matchesFilter = refModName.includes(filterValue.toLowerCase());
-        }
-        return (
-          (!!filterValue && matchesFilter) ||
-          (hideResolved &&
-            this.isUnresolved(mods, modId, refId, rules, hideResolved))
-        );
-      })
+          if (mods[refId] === undefined) {
+            return false;
+          }
+          const modName = util.renderModName(mods[refId]);
+          let matchesFilter = false;
+          if (modName !== undefined) {
+            const refModName = modName.toLowerCase();
+            matchesFilter = refModName.includes(filterValue.toLowerCase());
+          }
+          return (
+            (!!filterValue && matchesFilter) ||
+            (hideResolved && this.isUnresolved(mods, modId, refId, rules, hideResolved))
+          );
+        })
       : Object.keys(rules[modId]);
     const unassignedRefIds = refIds.filter((refId) => {
       const currentModRule = rules[modId]?.[refId]?.type;
@@ -742,29 +657,25 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
     const removeRefRule = (refId: string) =>
       rules[refId]?.[modId] === undefined
         ? (newRules = {
-          ...newRules,
-          [refId]: {
-            [modId]: {
-              version: "any",
-              type: undefined,
+            ...newRules,
+            [refId]: {
+              [modId]: {
+                version: "any",
+                type: undefined,
+              },
             },
-          },
-        })
+          })
         : (newRules[refId][modId] = {
-          version: "any",
-          type: undefined,
-        });
+            version: "any",
+            type: undefined,
+          });
 
     const applyRule = () => {
-      const refrencedModIds =
-        unassignedRefIds.length > 0 ? unassignedRefIds : refIds;
+      const refrencedModIds = unassignedRefIds.length > 0 ? unassignedRefIds : refIds;
       refrencedModIds.forEach((refId) => {
         // Remove any existing rules from the referenced modIds.
         const refRules = getRuleSpec(refId, mods, conflicts[refId]);
-        if (
-          refRules?.[modId]?.type !== undefined ||
-          rules[refId]?.[modId]?.type !== undefined
-        ) {
+        if (refRules?.[modId]?.type !== undefined || rules[refId]?.[modId]?.type !== undefined) {
           removeRefRule(refId);
         }
 
@@ -782,11 +693,7 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
     }
   };
 
-  private renderConflict = (
-    modId: string,
-    name: string,
-    conflict: IConflict,
-  ) => {
+  private renderConflict = (modId: string, name: string, conflict: IConflict) => {
     const { t, modRules, mods, pathTool, discovery } = this.props;
     const { rules } = this.state;
 
@@ -801,10 +708,7 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
 
     const toRelPath = (lhs: string, rhs: string) => pathTool.relative(lhs, rhs);
     const popover = (
-      <Popover
-        className="conflict-popover"
-        id={`conflict-popover-${conflict.otherMod.id}`}
-      >
+      <Popover className="conflict-popover" id={`conflict-popover-${conflict.otherMod.id}`}>
         {conflict.files
           .slice(0)
           .sort()
@@ -874,14 +778,10 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
           >
             <option value="norule">???</option>
             <option value="before">
-              {conflict.suggestion === "before"
-                ? t("before (suggested)")
-                : t("before")}
+              {conflict.suggestion === "before" ? t("before (suggested)") : t("before")}
             </option>
             <option value="after">
-              {conflict.suggestion === "after"
-                ? t("after (suggested)")
-                : t("after")}
+              {conflict.suggestion === "after" ? t("after (suggested)") : t("after")}
             </option>
             <option value="conflicts">{t("never together with")}</option>
           </FormControl>
@@ -894,12 +794,7 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
                   version: true,
                 })}
               </div>
-              <OverlayTrigger
-                trigger="click"
-                rootClose
-                placement="right"
-                overlay={popover}
-              >
+              <OverlayTrigger trigger="click" rootClose placement="right" overlay={popover}>
                 <a>
                   {t("{{ count }} conflicting file", {
                     count: conflict.files.length,
@@ -921,8 +816,7 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
             disabled={reverseRule !== undefined}
           >
             <option value="any">{t("Any version")}</option>
-            {conflict.otherMod.version &&
-              semver.valid(conflict.otherMod.version) ? (
+            {conflict.otherMod.version && semver.valid(conflict.otherMod.version) ? (
               <option value="compatible">{t("Compatible version")}</option>
             ) : null}
             {conflict.otherMod.version ? (
@@ -930,9 +824,7 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
             ) : null}
           </FormControl>
         </td>
-        <td style={{ width: "5em" }}>
-          {this.renderReverseRule(modId, reverseRule)}
-        </td>
+        <td style={{ width: "5em" }}>{this.renderReverseRule(modId, reverseRule)}</td>
       </tr>
     );
   };
@@ -947,10 +839,7 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
       <div>
         {t("{{ otherMod }} has a rule referencing {{ thisMod }}", {
           replace: {
-            otherMod: util.renderModReference(
-              rule.reference,
-              mods[rule.reference.id],
-            ),
+            otherMod: util.renderModReference(rule.reference, mods[rule.reference.id]),
             thisMod: util.renderModReference(rule.source, mods[rule.source.id]),
           },
         })}
@@ -980,9 +869,7 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
       "question",
       t("Confirm"),
       {
-        text: t(
-          "This will remove the existing rule so you can set a new one on this mod.",
-        ),
+        text: t("This will remove the existing rule so you can set a new one on this mod."),
       },
       [
         { label: "Cancel" },
@@ -1015,9 +902,7 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
     const refId = evt.currentTarget.getAttribute("data-refid");
     if (this.nextState.rules[modId][refId] !== undefined) {
       this.nextState.rules[modId][refId].type =
-        evt.currentTarget.value === "norule"
-          ? undefined
-          : evt.currentTarget.value;
+        evt.currentTarget.value === "norule" ? undefined : evt.currentTarget.value;
     }
   };
 
@@ -1097,33 +982,21 @@ const emptyObj = {};
 function mapStateToProps(state): IConnectedProps {
   const dialog = state.session.dependencies.conflictDialog || emptyObj;
   const discovery =
-    dialog?.gameId !== undefined
-      ? selectors.discoveryByGame(state, dialog.gameId)
-      : emptyObj;
+    dialog?.gameId !== undefined ? selectors.discoveryByGame(state, dialog.gameId) : emptyObj;
   return {
     gameId: dialog.gameId,
     modIds: dialog.modIds,
-    conflicts: util.getSafe(
-      state,
-      ["session", "dependencies", "conflicts"],
-      undefined,
-    ),
-    mods:
-      dialog.gameId !== undefined
-        ? state.persistent.mods[dialog.gameId]
-        : emptyObj,
+    conflicts: util.getSafe(state, ["session", "dependencies", "conflicts"], undefined),
+    mods: dialog.gameId !== undefined ? state.persistent.mods[dialog.gameId] : emptyObj,
     modRules: dialog.modRules,
     discovery,
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, null, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onClose: () => dispatch(setConflictDialog(undefined, undefined, undefined)),
-    onAddRule: (gameId, modId, rule) =>
-      dispatch(vortexActions.addModRule(gameId, modId, rule)),
+    onAddRule: (gameId, modId, rule) => dispatch(vortexActions.addModRule(gameId, modId, rule)),
     onOverrideDialog: (gameId: string, modId: string) =>
       dispatch(setFileOverrideDialog(gameId, modId)),
     onBatchDispatch: (actions: Redux.Action[]) => dispatch(batch(actions)),

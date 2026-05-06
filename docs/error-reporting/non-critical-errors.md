@@ -8,15 +8,15 @@
 
 `shouldAllowReport()` returns `false` (suppressed) when any of these is true:
 
-| Condition | Reason |
-|-----------|--------|
-| `options.allowReport === false` | Explicit opt-out by caller |
-| `options.warning === true` | Warnings are not bugs |
-| `err instanceof ThirdPartyError` | Extension errors aren't Vortex's to report |
-| `err instanceof UserCanceled` | User-initiated, not a bug |
-| `err.code` in `noReportErrors` | Transient network error (`ETIMEDOUT`, `ECONNREFUSED`, `ECONNABORTED`, `ENETUNREACH`) |
-| `isOutdated()` | Running version is behind latest release |
-| `didIgnoreError()` | User clicked "Ignore" on a previous terminal error |
+| Condition                        | Reason                                                                               |
+| -------------------------------- | ------------------------------------------------------------------------------------ |
+| `options.allowReport === false`  | Explicit opt-out by caller                                                           |
+| `options.warning === true`       | Warnings are not bugs                                                                |
+| `err instanceof ThirdPartyError` | Extension errors aren't Vortex's to report                                           |
+| `err instanceof UserCanceled`    | User-initiated, not a bug                                                            |
+| `err.code` in `noReportErrors`   | Transient network error (`ETIMEDOUT`, `ECONNREFUSED`, `ECONNABORTED`, `ENETUNREACH`) |
+| `isOutdated()`                   | Running version is behind latest release                                             |
+| `didIgnoreError()`               | User clicked "Ignore" on a previous terminal error                                   |
 
 Even when `shouldAllowReport()` returns `true`, the span is only exported if `isTelemetryEnabled()` is true in the main process (user has analytics on).
 
@@ -48,10 +48,10 @@ setErrorContext("gameId", "skyrimse");
 
 ## State Flags
 
-| Flag | Set by | Effect |
-|------|--------|--------|
-| `outdated` | `setOutdated(api)` — watches `persistent.nexus.newestVersion` | Suppresses reporting when Vortex is behind latest |
-| `errorIgnored` | `disableErrorReport()` or `did-ignore-error` IPC from main | Suppresses reporting after user ignores a terminal error |
+| Flag           | Set by                                                        | Effect                                                   |
+| -------------- | ------------------------------------------------------------- | -------------------------------------------------------- |
+| `outdated`     | `setOutdated(api)` — watches `persistent.nexus.newestVersion` | Suppresses reporting when Vortex is behind latest        |
+| `errorIgnored` | `disableErrorReport()` or `did-ignore-error` IPC from main    | Suppresses reporting after user ignores a terminal error |
 
 ## `withTrackedActivity`
 

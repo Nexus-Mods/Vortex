@@ -51,11 +51,7 @@ export default class StyleManager {
     await StyleManager.render(this.getDefaultPartials());
   }
 
-  private static addStylesheet(
-    partials: Partial[],
-    key: string,
-    filePath: string,
-  ): Partial[] {
+  private static addStylesheet(partials: Partial[], key: string, filePath: string): Partial[] {
     const partial: Partial = { type: "extendable", key: key, file: filePath };
 
     const index = partials.findIndex(
@@ -75,9 +71,7 @@ export default class StyleManager {
   }
 
   private static async render(partials: Partial[]): Promise<void> {
-    const filePaths = partials
-      .filter((partial) => partial.file)
-      .map((partial) => partial.file);
+    const filePaths = partials.filter((partial) => partial.file).map((partial) => partial.file);
 
     const css = await window.api.compileStylesheets(filePaths);
     this.applyCSS(css);

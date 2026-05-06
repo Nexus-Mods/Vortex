@@ -1,12 +1,9 @@
 import { types, util } from "vortex-api";
+
 import { IBiDirRule } from "../types/IBiDirRule";
 import { IModLookupInfo } from "../types/IModLookupInfo";
 
-function findRule(
-  modRules: IBiDirRule[],
-  source: types.IMod,
-  ref: IModLookupInfo,
-): IBiDirRule {
+function findRule(modRules: IBiDirRule[], source: types.IMod, ref: IModLookupInfo): IBiDirRule {
   return modRules.find(
     (rule) =>
       (source === undefined || util.testModReference(source, rule.source)) &&
@@ -28,8 +25,7 @@ export function findRuleBiDir(
       ((source === undefined || util.testModReference(source, rule.source)) &&
         util.testModReference(ref, rule.reference)) ||
       (util.testModReference(ref, rule.source) &&
-        (source === undefined ||
-          util.testModReference(source, rule.reference))),
+        (source === undefined || util.testModReference(source, rule.reference))),
   );
 }
 
@@ -52,8 +48,7 @@ export function isConflictResolved(
   if (
     modRules.some(
       (rule) =>
-        CONFLICT_RULE_TYPES.includes(rule.type) &&
-        util.testModReference(otherMod, rule.reference),
+        CONFLICT_RULE_TYPES.includes(rule.type) && util.testModReference(otherMod, rule.reference),
     )
   ) {
     return true;

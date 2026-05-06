@@ -1,11 +1,3 @@
-import {
-  addFeedbackFile,
-  clearFeedbackFiles,
-  removeFeedbackFile,
-} from "../actions/session";
-import type { FeedbackTopic, FeedbackType } from "../types/feedbackTypes";
-import type { IFeedbackFile } from "../types/IFeedbackFile";
-
 import { partial_ratio } from "fuzzball";
 import * as React from "react";
 import {
@@ -39,14 +31,15 @@ import {
   util,
 } from "vortex-api";
 
+import { addFeedbackFile, clearFeedbackFiles, removeFeedbackFile } from "../actions/session";
+import type { FeedbackTopic, FeedbackType } from "../types/feedbackTypes";
+import type { IFeedbackFile } from "../types/IFeedbackFile";
+
 type ControlMode = "urls" | "files";
 
 interface IFeedbackViewProps {
   readReferenceIssues: () => Promise<IPreviewIssue[]>;
-  identifyAttachment: (
-    filePath: string,
-    type?: string,
-  ) => Promise<IFeedbackFile>;
+  identifyAttachment: (filePath: string, type?: string) => Promise<IFeedbackFile>;
   logPath: (fileName: string) => string;
   dumpStateToFile: (stateKey: string, name: string) => Promise<IFeedbackFile>;
   dumpReduxActionsToFile: (name: string) => Promise<IFeedbackFile>;
@@ -165,9 +158,7 @@ class FeedbackPage extends ComponentEx<IProps, IComponentState> {
     const { t } = this.props;
     const { feedbackType } = this.state;
 
-    const content = this.context.api.isOutdated()
-      ? this.renderOutdated()
-      : this.renderContent();
+    const content = this.context.api.isOutdated() ? this.renderOutdated() : this.renderContent();
 
     if (!feedbackType) {
       return this.renderStartScreen();
@@ -181,15 +172,9 @@ class FeedbackPage extends ComponentEx<IProps, IComponentState> {
             title={t(this.renderType(this.state.feedbackType))}
             onSelect={this.handleChangeType}
           >
-            <MenuItem eventKey="bugreport">
-              {t(this.renderType("bugreport"))}
-            </MenuItem>
-            <MenuItem eventKey="suggestion">
-              {t(this.renderType("suggestion"))}
-            </MenuItem>
-            <MenuItem eventKey="question">
-              {t(this.renderType("question"))}
-            </MenuItem>
+            <MenuItem eventKey="bugreport">{t(this.renderType("bugreport"))}</MenuItem>
+            <MenuItem eventKey="suggestion">{t(this.renderType("suggestion"))}</MenuItem>
+            <MenuItem eventKey="question">{t(this.renderType("question"))}</MenuItem>
           </DropdownButton>
           {content}
         </FlexLayout>
@@ -323,15 +308,12 @@ class FeedbackPage extends ComponentEx<IProps, IComponentState> {
     const T: any = Trans;
 
     return (
-      <T
-        i18nKey="feedback-instructions-question"
-        className="feedback-instructions-notype"
-      >
+      <T i18nKey="feedback-instructions-question" className="feedback-instructions-notype">
         <p>
-          Sorry but this is not the right way to ask for help with Vortex. The
-          feedback system is intended to inform us about problems or possible
-          improvement and we can only reply to ask for further information. To
-          get help, please consult the knowledge base or visit the forum at
+          Sorry but this is not the right way to ask for help with Vortex. The feedback system is
+          intended to inform us about problems or possible improvement and we can only reply to ask
+          for further information. To get help, please consult the knowledge base or visit the forum
+          at
         </p>
         <a onClick={this.openSupportForum}>
           https://forums.nexusmods.com/index.php?/forum/4306-vortex-support/
@@ -344,18 +326,12 @@ class FeedbackPage extends ComponentEx<IProps, IComponentState> {
   private renderContentSuggestion = () => {
     const T: any = Trans;
     return (
-      <T
-        i18nKey="feedback-instructions-suggestion"
-        className="feedback-instructions-notype"
-      >
+      <T i18nKey="feedback-instructions-suggestion" className="feedback-instructions-notype">
         <p>
-          Share your ideas and feature requests, discuss them with the
-          community, and cast your vote on feedback provided by others using our
-          Feedback board at
+          Share your ideas and feature requests, discuss them with the community, and cast your vote
+          on feedback provided by others using our Feedback board at
         </p>
-        <a onClick={this.openFeedbackPage}>
-          https://feedback.nexusmods.com/?tags=vortex
-        </a>
+        <a onClick={this.openFeedbackPage}>https://feedback.nexusmods.com/?tags=vortex</a>
       </T>
     );
   };
@@ -367,17 +343,13 @@ class FeedbackPage extends ComponentEx<IProps, IComponentState> {
     const titleValid = this.validateTitle();
     const messageValid = this.validateMessage();
 
-    const maySend =
-      (titleValid === undefined || titleValid.valid) &&
-      messageValid === undefined;
+    const maySend = (titleValid === undefined || titleValid.valid) && messageValid === undefined;
 
     const fields = [
       <FlexLayout.Fixed key="title-label" className="hide-when-small">
         <h4>{t("Title")}</h4>
       </FlexLayout.Fixed>,
-      <FlexLayout.Fixed key="title-input">
-        {this.renderTitleInput(titleValid)}
-      </FlexLayout.Fixed>,
+      <FlexLayout.Fixed key="title-input">{this.renderTitleInput(titleValid)}</FlexLayout.Fixed>,
       <FlexLayout.Fixed key="sysinfo-label" className="hide-when-small">
         <h4>{t("System Information")}</h4>
       </FlexLayout.Fixed>,
@@ -387,9 +359,7 @@ class FeedbackPage extends ComponentEx<IProps, IComponentState> {
       <FlexLayout.Fixed key="message-label" className="hide-when-small">
         <h4>{t("Your Message")}</h4>
       </FlexLayout.Fixed>,
-      <FlexLayout.Flex key="message-input">
-        {this.renderMessageArea(messageValid)}
-      </FlexLayout.Flex>,
+      <FlexLayout.Flex key="message-input">{this.renderMessageArea(messageValid)}</FlexLayout.Flex>,
       <FlexLayout.Flex className="feedback-file-drop-flex" key="files-dropzone">
         <Dropzone
           accept={["files"]}
@@ -430,24 +400,23 @@ class FeedbackPage extends ComponentEx<IProps, IComponentState> {
               <li>use punctuation and linebreaks,</li>
               <li>use English,</li>
               <li>
-                be precise and to the point. You don&apos;t have to form
-                sentences. A bug report is a technical document, not prose,
+                be precise and to the point. You don&apos;t have to form sentences. A bug report is
+                a technical document, not prose,
               </li>
               <li>report only one thing per message,</li>
               <li>
-                avoid making assumptions or your own conclusions, just report
-                what you saw and what you expected to see,
+                avoid making assumptions or your own conclusions, just report what you saw and what
+                you expected to see,
               </li>
               <li>
-                include an example of how to reproduce the error if you can.
-                Even if its a general problem (&quot;fomods using feature x zig
-                when they should zag&quot;) include one sequence of actions that
-                expose the problem.
+                include an example of how to reproduce the error if you can. Even if its a general
+                problem (&quot;fomods using feature x zig when they should zag&quot;) include one
+                sequence of actions that expose the problem.
               </li>
             </ul>
-            Trying to reproduce a bug is usually what takes the most amount of
-            time in bug fixing and the less time we spend on it, the more time
-            we can spend creating great new features!
+            Trying to reproduce a bug is usually what takes the most amount of time in bug fixing
+            and the less time we spend on it, the more time we can spend creating great new
+            features!
           </T>
         </Usage>
       </FlexLayout.Fixed>,
@@ -466,25 +435,19 @@ class FeedbackPage extends ComponentEx<IProps, IComponentState> {
                       title={t(this.renderTopic(feedbackTopic))}
                       onSelect={this.handleChangeTopic}
                     >
-                      <MenuItem eventKey="crash">
-                        {t(this.renderTopic("crash"))}
-                      </MenuItem>
+                      <MenuItem eventKey="crash">{t(this.renderTopic("crash"))}</MenuItem>
                       <MenuItem eventKey="login_problems">
                         {t(this.renderTopic("login_problems"))}
                       </MenuItem>
                       <MenuItem eventKey="slow_downloads">
                         {t(this.renderTopic("slow_downloads"))}
                       </MenuItem>
-                      <MenuItem eventKey="other">
-                        {t(this.renderTopic("other"))}
-                      </MenuItem>
+                      <MenuItem eventKey="other">{t(this.renderTopic("other"))}</MenuItem>
                     </DropdownButton>
                   </FlexLayout.Fixed>
                   <FlexLayout.Flex>
                     {this.renderTopicComment()}
-                    {feedbackTopic === undefined ? (
-                      <div>{t("Please select a topic")}</div>
-                    ) : null}
+                    {feedbackTopic === undefined ? <div>{t("Please select a topic")}</div> : null}
                   </FlexLayout.Flex>
                 </FlexLayout>
               </FlexLayout.Fixed>
@@ -534,9 +497,7 @@ class FeedbackPage extends ComponentEx<IProps, IComponentState> {
     const { t, feedbackFiles } = this.props;
     return (
       <ListGroupItem key={feedbackFiles[feedbackFile].filename}>
-        <p style={{ display: "inline" }}>
-          {feedbackFiles[feedbackFile].filename}
-        </p>
+        <p style={{ display: "inline" }}>{feedbackFiles[feedbackFile].filename}</p>
         <p style={{ display: "inline" }}>
           {" "}
           ({util.bytesToString(feedbackFiles[feedbackFile].size)})
@@ -558,9 +519,7 @@ class FeedbackPage extends ComponentEx<IProps, IComponentState> {
   };
 
   private openSupportForum = () => {
-    util
-      .opn("https://forums.nexusmods.com/index.php?/forum/4306-vortex-support")
-      .catch(() => null);
+    util.opn("https://forums.nexusmods.com/index.php?/forum/4306-vortex-support").catch(() => null);
   };
 
   private openFeedbackPage = () => {
@@ -571,10 +530,7 @@ class FeedbackPage extends ComponentEx<IProps, IComponentState> {
     const { t } = this.props;
     const { feedbackTitle, filteredIssues } = this.state;
 
-    if (
-      feedbackTitle.length > 0 &&
-      feedbackTitle.length < FeedbackPage.MIN_TITLE_LENGTH
-    ) {
+    if (feedbackTitle.length > 0 && feedbackTitle.length < FeedbackPage.MIN_TITLE_LENGTH) {
       return {
         valid: false,
         text: t("The title needs to be at least {{minLength}} characters", {
@@ -586,9 +542,7 @@ class FeedbackPage extends ComponentEx<IProps, IComponentState> {
     if (filteredIssues.length > 0) {
       return {
         valid: true,
-        text: t(
-          "This may be a known issue, please click the title again to see similar issues.",
-        ),
+        text: t("This may be a known issue, please click the title again to see similar issues."),
       };
     }
 
@@ -599,14 +553,10 @@ class FeedbackPage extends ComponentEx<IProps, IComponentState> {
     const { t } = this.props;
     const { feedbackMessage } = this.state;
 
-    if (
-      feedbackMessage.length > 0 &&
-      feedbackMessage.length < FeedbackPage.MIN_TEXT_LENGTH
-    ) {
-      return t(
-        "Please provide a meaningful description of at least {{minLength}} characters",
-        { replace: { minLength: FeedbackPage.MIN_TEXT_LENGTH } },
-      );
+    if (feedbackMessage.length > 0 && feedbackMessage.length < FeedbackPage.MIN_TEXT_LENGTH) {
+      return t("Please provide a meaningful description of at least {{minLength}} characters", {
+        replace: { minLength: FeedbackPage.MIN_TEXT_LENGTH },
+      });
     }
 
     return undefined;
@@ -678,19 +628,12 @@ class FeedbackPage extends ComponentEx<IProps, IComponentState> {
     util.opn(url).catch(() => null);
   };
 
-  private renderTitleInput = (validationMessage: {
-    valid: boolean;
-    text: string;
-  }) => {
+  private renderTitleInput = (validationMessage: { valid: boolean; text: string }) => {
     const { t } = this.props;
     const { feedbackTitle, filteredIssues, titleFocused } = this.state;
 
     const validationState =
-      validationMessage === undefined
-        ? null
-        : validationMessage.valid
-          ? "warning"
-          : "error";
+      validationMessage === undefined ? null : validationMessage.valid ? "warning" : "error";
 
     return (
       <FormGroup validationState={validationState}>
@@ -705,9 +648,7 @@ class FeedbackPage extends ComponentEx<IProps, IComponentState> {
         />
         {filteredIssues.length > 0 && titleFocused ? (
           <div className="feedback-search-result">
-            {filteredIssues.map((issue, idx) =>
-              this.renderSearchResult(issue, idx),
-            )}
+            {filteredIssues.map((issue, idx) => this.renderSearchResult(issue, idx))}
           </div>
         ) : null}
         {validationMessage === undefined ? null : (
@@ -734,9 +675,7 @@ class FeedbackPage extends ComponentEx<IProps, IComponentState> {
               className="textarea-feedback"
               onChange={this.handleChange}
               placeholder={t(
-                feedbackType === "suggestion"
-                  ? SAMPLE_REPORT_SUGGESTION
-                  : SAMPLE_REPORT_BUG,
+                feedbackType === "suggestion" ? SAMPLE_REPORT_SUGGESTION : SAMPLE_REPORT_BUG,
               )}
             />
           </FlexLayout.Flex>
@@ -778,11 +717,7 @@ class FeedbackPage extends ComponentEx<IProps, IComponentState> {
     return (
       <FlexLayout fill={false} type="row" className="feedback-controls">
         <FlexLayout.Fixed>
-          <Toggle
-            checked={anon}
-            onToggle={this.setAnonymous}
-            disabled={!loggedIn}
-          >
+          <Toggle checked={anon} onToggle={this.setAnonymous} disabled={!loggedIn}>
             {t("Send anonymously")}
           </Toggle>
           {!loggedIn ? (
@@ -808,10 +743,7 @@ class FeedbackPage extends ComponentEx<IProps, IComponentState> {
             tooltip={t("Submit Feedback")}
             onClick={this.submitFeedback}
             disabled={
-              sending ||
-              feedbackTitle.length === 0 ||
-              feedbackMessage.length === 0 ||
-              !valid
+              sending || feedbackTitle.length === 0 || feedbackMessage.length === 0 || !valid
             }
           >
             {t("Submit Feedback")}
@@ -893,8 +825,7 @@ class FeedbackPage extends ComponentEx<IProps, IComponentState> {
   private systemInfo() {
     return [
       "Vortex Version: " + util["getApplication"]().version,
-      "Memory: " +
-        util.bytesToString((process as any).getSystemMemoryInfo().total * 1024),
+      "Memory: " + util.bytesToString((process as any).getSystemMemoryInfo().total * 1024),
       "System: " +
         `${util.getApplication()["platform"]} ${process.arch} (${util.getApplication()["platformVersion"]})`,
     ].join("\n");
@@ -950,10 +881,7 @@ class FeedbackPage extends ComponentEx<IProps, IComponentState> {
     this.sanityCheckFeedback()
       .then(() => this.doSubmitFeedback())
       .catch((err) => {
-        if (
-          !(err instanceof util.UserCanceled) &&
-          !(err instanceof util.ProcessCanceled)
-        ) {
+        if (!(err instanceof util.UserCanceled) && !(err instanceof util.ProcessCanceled)) {
           onShowError("Failed to send feedback", err, undefined, false);
         }
       });
@@ -964,9 +892,7 @@ class FeedbackPage extends ComponentEx<IProps, IComponentState> {
     const { feedbackTopic, feedbackType } = this.state;
     let sane = Promise.resolve();
 
-    const logFile = Object.values(feedbackFiles).find(
-      (file) => file.type === "log",
-    );
+    const logFile = Object.values(feedbackFiles).find((file) => file.type === "log");
 
     if (feedbackType === "bugreport" && logFile === undefined) {
       sane = sane.then(() =>
@@ -983,11 +909,7 @@ class FeedbackPage extends ComponentEx<IProps, IComponentState> {
                 "If you proceed, please understand that we may overlook your report " +
                 "if we can't tell what went wrong from the error message alone.",
             },
-            [
-              { label: "Cancel" },
-              { label: "Continue without log" },
-              { label: "Send with log" },
-            ],
+            [{ label: "Cancel" }, { label: "Continue without log" }, { label: "Send with log" }],
           )
           .then((result) => {
             if (result.action === "Cancel") {
@@ -1052,13 +974,7 @@ class FeedbackPage extends ComponentEx<IProps, IComponentState> {
       onShowDialog,
       onShowError,
     } = this.props;
-    const {
-      anonymous,
-      feedbackType,
-      feedbackTopic,
-      feedbackTitle,
-      feedbackMessage,
-    } = this.state;
+    const { anonymous, feedbackType, feedbackTopic, feedbackTitle, feedbackMessage } = this.state;
 
     const notificationId = "submit-feedback";
     onShowActivity("Submitting feedback", notificationId);
@@ -1089,12 +1005,7 @@ class FeedbackPage extends ComponentEx<IProps, IComponentState> {
         this.nextState.sending = false;
         if (err !== null) {
           if (err.name === "ParameterInvalid") {
-            onShowError(
-              "Failed to send feedback",
-              err.message,
-              notificationId,
-              false,
-            );
+            onShowError("Failed to send feedback", err.message, notificationId, false);
           } else if ((err as any).body !== undefined) {
             onShowError(
               "Failed to send feedback",
@@ -1127,10 +1038,7 @@ class FeedbackPage extends ComponentEx<IProps, IComponentState> {
         if (feedbackFiles !== undefined) {
           removeFiles = Object.keys(feedbackFiles)
             .filter(
-              (fileId) =>
-                ["State", "Dump", "LogCopy"].indexOf(
-                  feedbackFiles[fileId].type,
-                ) !== -1,
+              (fileId) => ["State", "Dump", "LogCopy"].indexOf(feedbackFiles[fileId].type) !== -1,
             )
             .map((fileId) => feedbackFiles[fileId].filePath);
         }
@@ -1143,11 +1051,7 @@ class FeedbackPage extends ComponentEx<IProps, IComponentState> {
               onDismissNotification(notificationId);
             })
             .catch((innerErr) => {
-              onShowError(
-                "An error occurred removing a file",
-                innerErr,
-                notificationId,
-              );
+              onShowError("An error occurred removing a file", innerErr, notificationId);
             });
         }
       },
@@ -1209,10 +1113,8 @@ function mapDispatchToProps(
   dispatch: ThunkDispatch<types.IState, null, Redux.Action>,
 ): IActionProps {
   return {
-    onShowActivity: (message: string, id?: string) =>
-      util.showActivity(dispatch, message, id),
-    onRemoveFeedbackFile: (feedbackFileId: string) =>
-      dispatch(removeFeedbackFile(feedbackFileId)),
+    onShowActivity: (message: string, id?: string) => util.showActivity(dispatch, message, id),
+    onRemoveFeedbackFile: (feedbackFileId: string) => dispatch(removeFeedbackFile(feedbackFileId)),
     onShowDialog: (type, title, content, dialogActions) =>
       dispatch(actions.showDialog(type, title, content, dialogActions)),
     onShowError: (
@@ -1225,11 +1127,9 @@ function mapDispatchToProps(
         id: notificationId,
         allowReport,
       }),
-    onDismissNotification: (id: string) =>
-      dispatch(actions.dismissNotification(id)),
+    onDismissNotification: (id: string) => dispatch(actions.dismissNotification(id)),
     onClearFeedbackFiles: () => dispatch(clearFeedbackFiles()),
-    onAddFeedbackFile: (feedbackFile) =>
-      dispatch(addFeedbackFile(feedbackFile)),
+    onAddFeedbackFile: (feedbackFile) => dispatch(addFeedbackFile(feedbackFile)),
   };
 }
 

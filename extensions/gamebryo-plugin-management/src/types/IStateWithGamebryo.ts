@@ -1,8 +1,8 @@
+import { types } from "vortex-api";
+
 import { ILoadOrder } from "./ILoadOrder";
 import { ILOOTList } from "./ILOOTList";
 import { IPluginCombined, IPluginDependencies, IPlugins } from "./IPlugins";
-
-import { types } from "vortex-api";
 
 // No idea what we need to do with this,
 // do we keep the ex type here or move it somewhere?

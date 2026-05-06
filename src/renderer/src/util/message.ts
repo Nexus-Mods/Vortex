@@ -1,18 +1,17 @@
-import type * as Redux from "redux";
-import type { ThunkDispatch } from "redux-thunk";
-
-import * as _ from "lodash";
 import * as os from "os";
 import * as path from "path";
 
+import * as _ from "lodash";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
+
 /* disable-eslint */
 import type { IDialogAction, IDialogContent } from "../actions/notifications";
+import { addNotification, showDialog } from "../actions/notifications";
+import { NoDeployment } from "../extensions/mod_management/util/exceptions";
 import type { IErrorOptions } from "../types/IExtensionContext";
 import type { IState } from "../types/IState";
 import type { HTTPError } from "./CustomErrors";
-
-import { addNotification, showDialog } from "../actions/notifications";
-import { NoDeployment } from "../extensions/mod_management/util/exceptions";
 import {
   StalledError,
   TemporaryError,
@@ -116,17 +115,9 @@ export function showInfo<S>(
   );
 }
 
-const noReportErrors = [
-  "ETIMEDOUT",
-  "ECONNREFUSED",
-  "ECONNABORTED",
-  "ENETUNREACH",
-];
+const noReportErrors = ["ETIMEDOUT", "ECONNREFUSED", "ECONNABORTED", "ENETUNREACH"];
 
-function shouldAllowReport(
-  err: string | Error | any,
-  options?: IErrorOptions,
-): boolean {
+function shouldAllowReport(err: string | Error | any, options?: IErrorOptions): boolean {
   if (
     options?.allowReport === false ||
     options?.warning === true ||
@@ -145,10 +136,10 @@ function shouldAllowReport(
 }
 
 const hasStringStack = (v: unknown): v is { stack: string } =>
-  typeof v === "object"
-  && v != null
-  && "stack" in v
-  && typeof (v as { stack: unknown }).stack === "string";
+  typeof v === "object" &&
+  v != null &&
+  "stack" in v &&
+  typeof (v as { stack: unknown }).stack === "string";
 
 /**
  * show an error notification with an optional "more" button that displays further details
@@ -171,19 +162,14 @@ export function showError(
     options = {};
   }
 
-  if (
-    options.extensionName === undefined &&
-    details?.["extensionName"] !== undefined
-  ) {
+  if (options.extensionName === undefined && details?.["extensionName"] !== undefined) {
     options.extensionName = details["extensionName"];
   }
 
   const err = renderError(details, options);
 
   const allowReport =
-    err.allowReport !== undefined
-      ? err.allowReport
-      : shouldAllowReport(details, options);
+    err.allowReport !== undefined ? err.allowReport : shouldAllowReport(details, options);
 
   log(allowReport ? "error" : "warn", title, err);
 
@@ -237,13 +223,11 @@ export function showError(
   if (options.extension?.info?.issueTrackerURL !== undefined) {
     extIssueTrackerURL = options.extension.info.issueTrackerURL;
   } else if (options.extension?.info?.modId !== undefined) {
-    extIssueTrackerURL = nexusModsURL(
-      ["site", "mods", options.extension.info.modId.toString()],
-      { parameters: ["tab=bugs"] },
-    );
+    extIssueTrackerURL = nexusModsURL(["site", "mods", options.extension.info.modId.toString()], {
+      parameters: ["tab=bugs"],
+    });
   } else if (options.extensionRemote?.github !== undefined) {
-    extIssueTrackerURL =
-      "https://github.com/" + options.extensionRemote?.github + "/issues";
+    extIssueTrackerURL = "https://github.com/" + options.extensionRemote?.github + "/issues";
   }
 
   if (
@@ -433,10 +417,9 @@ function prettifyNodeErrorMessageInner(
     };
   } else if (err.code === "EPERM") {
     const filePath = err.path || err.filename || undefined;
-    const firstLine =
-      filePath
-        ? 'Vortex needs to access "{{filePath}}" but it\'s write protected.\n'
-        : "Vortex needs to access a file that is write protected.\n";
+    const firstLine = filePath
+      ? 'Vortex needs to access "{{filePath}}" but it\'s write protected.\n'
+      : "Vortex needs to access a file that is write protected.\n";
     return {
       message:
         firstLine +
@@ -469,15 +452,13 @@ function prettifyNodeErrorMessageInner(
     };
   } else if (err.code === "EACCES" || err.port !== undefined) {
     return {
-      message:
-        "Network connect was not permitted, please check your firewall settings",
+      message: "Network connect was not permitted, please check your firewall settings",
       allowReport: false,
     };
   } else if (err.code === "EPROTO") {
     return {
       message:
-        "Network protocol error. This is usually a temporary error, " +
-        "please try again later.",
+        "Network protocol error. This is usually a temporary error, " + "please try again later.",
       allowReport: false,
     };
   } else if (err.code === "ENETUNREACH") {
@@ -502,8 +483,7 @@ function prettifyNodeErrorMessageInner(
     };
   } else if (["ETIMEDOUT", "ESOCKETTIMEDOUT"].includes(err.code)) {
     return {
-      message:
-        'Network connection to "{{address}}" timed out, please try again.',
+      message: 'Network connection to "{{address}}" timed out, please try again.',
       replace: { address: err.address },
       allowReport: false,
     };
@@ -543,9 +523,7 @@ function prettifyNodeErrorMessageInner(
       allowReport: false,
     };
   } else if (
-    ["ERR_SSL_WRONG_VERSION_NUMBER", "ERR_SSL_BAD_DECRYPT"].includes(
-      err.code,
-    ) ||
+    ["ERR_SSL_WRONG_VERSION_NUMBER", "ERR_SSL_BAD_DECRYPT"].includes(err.code) ||
     err.message.startsWith("Hostname/IP does not match certificate's altnames")
   ) {
     return {
@@ -683,9 +661,7 @@ function renderCustomError(err: any) {
     res.text = err.message || "An error occurred";
   }
 
-  let attributes = Object.keys(err || {}).filter(
-    (key) => key[0].toUpperCase() === key[0],
-  );
+  let attributes = Object.keys(err || {}).filter((key) => key[0].toUpperCase() === key[0]);
   if (attributes.length === 0) {
     attributes = Object.keys(err || {}).filter(
       (key) => !isPrivateField(key) && !HIDE_ATTRIBUTES.has(key),
@@ -762,10 +738,7 @@ export interface IErrorRendered {
  * render error message for display to the user
  * @param err
  */
-export function renderError(
-  err: string | Error | any,
-  options?: IErrorOptions,
-): IErrorRendered {
+export function renderError(err: string | Error | any, options?: IErrorOptions): IErrorRendered {
   if (Array.isArray(err)) {
     err = err[0];
   } else if (err === undefined || err === null) {
@@ -799,9 +772,7 @@ export function renderError(
     const flatErr = flatten(err || {}, { maxLength: 5 });
     delete flatErr["allowReport"];
 
-    let attributes = Object.keys(flatErr || {}).filter(
-      (key) => key[0].toUpperCase() === key[0],
-    );
+    let attributes = Object.keys(flatErr || {}).filter((key) => key[0].toUpperCase() === key[0]);
     if (attributes.length === 0) {
       attributes = Object.keys(flatErr || {}).filter(
         (key) => !isPrivateField(key) && !HIDE_ATTRIBUTES.has(key),
@@ -809,9 +780,7 @@ export function renderError(
     }
     if (attributes.length > 0) {
       const old = errMessage.message;
-      errMessage.message = attributes
-        .map((key) => key + ":\t" + flatErr[key])
-        .join("\n");
+      errMessage.message = attributes.map((key) => key + ":\t" + flatErr[key]).join("\n");
       if (old !== undefined) {
         errMessage.message = old + "\n" + errMessage.message;
       }

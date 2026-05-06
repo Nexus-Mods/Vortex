@@ -10,11 +10,7 @@ const CODE_SIGN_TOOL_DIR = path.join(PROJECT_ROOT, "CodeSignTool");
 // These were being incorrectly flagged by esigner as malware
 // We don't need to resign MS redist files
 // Make sure these are lowercase
-const ignoreFileList = [
-    "arctool.exe",
-    "vc_redist.x64.exe",
-    "windowsdesktop-runtime-win-x64.exe",
-];
+const ignoreFileList = ["arctool.exe", "vc_redist.x64.exe", "windowsdesktop-runtime-win-x64.exe"];
 
 if (!fs.existsSync(TEMP_DIR)) {
     fs.mkdirSync(TEMP_DIR, { recursive: true });
@@ -27,12 +23,8 @@ async function sign(configuration) {
     const ES_CREDENTIAL_ID = process.env.ES_CREDENTIAL_ID;
     const ES_TOTP_SECRET = process.env.ES_TOTP_SECRET;
 
-    if (
-        ignoreFileList.includes(path.basename(configuration.path.toLowerCase()))
-    ) {
-        console.log(
-            `Ignoring ${configuration.path} as the file is in the ignore list`,
-        );
+    if (ignoreFileList.includes(path.basename(configuration.path.toLowerCase()))) {
+        console.log(`Ignoring ${configuration.path} as the file is in the ignore list`);
         return;
     }
 

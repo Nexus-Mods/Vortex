@@ -1,16 +1,6 @@
 import { Menu } from "@headlessui/react";
-import {
-  mdiAccountCircle,
-  mdiLogout,
-  mdiMessageReplyText,
-  mdiRefresh,
-} from "@mdi/js";
-import React, {
-  forwardRef,
-  type ButtonHTMLAttributes,
-  type FC,
-  useCallback,
-} from "react";
+import { mdiAccountCircle, mdiLogout, mdiMessageReplyText, mdiRefresh } from "@mdi/js";
+import React, { forwardRef, type ButtonHTMLAttributes, type FC, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -48,11 +38,7 @@ const ActionButton = forwardRef<HTMLButtonElement, ActionButtonProps>(
       {imageSrc ? (
         <img alt={username} className="size-6 rounded-full" src={imageSrc} />
       ) : (
-        <Icon
-          className="size-6 text-neutral-moderate"
-          path={mdiAccountCircle}
-          size="none"
-        />
+        <Icon className="size-6 text-neutral-moderate" path={mdiAccountCircle} size="none" />
       )}
     </button>
   ),
@@ -111,10 +97,7 @@ export const ProfileSection: FC = () => {
       />
 
       <DropdownItems>
-        <DropdownItem
-          leftIconPath={mdiAccountCircle}
-          onClick={handleProfileClick}
-        >
+        <DropdownItem leftIconPath={mdiAccountCircle} onClick={handleProfileClick}>
           {t("View profile on web")}
         </DropdownItem>
 
@@ -124,10 +107,7 @@ export const ProfileSection: FC = () => {
           {t("Refresh user info")}
         </DropdownItem>
 
-        <DropdownItem
-          leftIconPath={mdiMessageReplyText}
-          onClick={handleSendFeedback}
-        >
+        <DropdownItem leftIconPath={mdiMessageReplyText} onClick={handleSendFeedback}>
           {t("Send feedback")}
         </DropdownItem>
 

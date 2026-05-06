@@ -1,6 +1,5 @@
 import type { IReducerSpec } from "../../types/IExtensionContext";
 import { setSafe } from "../../util/storeHelper";
-
 import * as actions from "./actions";
 
 /**
@@ -8,8 +7,7 @@ import * as actions from "./actions";
  */
 const settingsReducer: IReducerSpec = {
   reducers: {
-    [actions.completeStep as any]: (state, payload) =>
-      setSafe(state, ["steps", payload], true),
+    [actions.completeStep as any]: (state, payload) => setSafe(state, ["steps", payload], true),
     [actions.resetSteps as any]: (state) => setSafe(state, ["steps"], {}),
   },
   defaults: {

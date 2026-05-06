@@ -3,6 +3,9 @@
  * These handlers respond to requests from the renderer process via preload.
  */
 
+import { writeFile } from "node:fs/promises";
+import path from "node:path";
+
 import type { VortexPaths } from "@vortex/shared/ipc";
 import type { SerializableMenuItem } from "@vortex/shared/preload";
 import type {
@@ -14,7 +17,6 @@ import type {
   TraceConfig,
   TraceCategoriesAndOptions,
 } from "electron";
-
 import {
   app,
   BrowserWindow,
@@ -25,8 +27,6 @@ import {
   powerSaveBlocker,
   WebContentsView,
 } from "electron";
-import { writeFile } from "node:fs/promises";
-import path from "node:path";
 
 import { relaunch } from "./cli";
 import { getVortexPath } from "./getVortexPath";
@@ -99,17 +99,10 @@ export function init() {
       const appPath = path.resolve(process.argv[1]);
       return [
         process.execPath,
-        [
-          appPath,
-          ...(udPath !== undefined ? ["--userData", udPath] : []),
-          "-d",
-        ],
+        [appPath, ...(udPath !== undefined ? ["--userData", udPath] : []), "-d"],
       ];
     } else {
-      return [
-        process.execPath,
-        [...(udPath !== undefined ? ["--userData", udPath] : []), "-d"],
-      ];
+      return [process.execPath, [...(udPath !== undefined ? ["--userData", udPath] : []), "-d"]];
     }
   }
 
@@ -155,11 +148,7 @@ export function init() {
 
   betterIpcMain.handle(
     "app:setProtocolClient",
-    (
-      _event: IpcMainInvokeEvent,
-      protocol: string,
-      udPath: string | undefined,
-    ) => {
+    (_event: IpcMainInvokeEvent, protocol: string, udPath: string | undefined) => {
       const [execPath, args] = selfCL(udPath);
       app.setAsDefaultProtocolClient(protocol, execPath, args);
     },
@@ -167,11 +156,7 @@ export function init() {
 
   betterIpcMain.handle(
     "app:isProtocolClient",
-    (
-      _event: IpcMainInvokeEvent,
-      protocol: string,
-      udPath: string | undefined,
-    ) => {
+    (_event: IpcMainInvokeEvent, protocol: string, udPath: string | undefined) => {
       const [execPath, args] = selfCL(udPath);
       return app.isDefaultProtocolClient(protocol, execPath, args);
     },
@@ -179,22 +164,15 @@ export function init() {
 
   betterIpcMain.handle(
     "app:removeProtocolClient",
-    (
-      _event: IpcMainInvokeEvent,
-      protocol: string,
-      udPath: string | undefined,
-    ) => {
+    (_event: IpcMainInvokeEvent, protocol: string, udPath: string | undefined) => {
       const [execPath, args] = selfCL(udPath);
       app.removeAsDefaultProtocolClient(protocol, execPath, args);
     },
   );
 
-  betterIpcMain.handle(
-    "app:exit",
-    (_event: IpcMainInvokeEvent, exitCode: number) => {
-      app.exit(exitCode);
-    },
-  );
+  betterIpcMain.handle("app:exit", (_event: IpcMainInvokeEvent, exitCode: number) => {
+    app.exit(exitCode);
+  });
 
   // Shell
   betterIpcMain.on("shell:openUrl", (_event, url) => {
@@ -247,12 +225,7 @@ export function init() {
 
   betterIpcMain.handle(
     "browserView:create",
-    async (
-      event: IpcMainInvokeEvent,
-      src: string,
-      partition: string,
-      _isNexus: boolean,
-    ) => {
+    async (event: IpcMainInvokeEvent, src: string, partition: string, _isNexus: boolean) => {
       const window = BrowserWindow.fromWebContents(event.sender);
       const contentsId = event.sender.id;
 
@@ -336,10 +309,7 @@ export function init() {
         view.webContents.on(
           eventId as Parameters<typeof view.webContents.on>[0],
           (evt, ...args) => {
-            event.sender.send(
-              `view-${viewId}-${eventId}`,
-              JSON.stringify(args),
-            );
+            event.sender.send(`view-${viewId}-${eventId}`, JSON.stringify(args));
             evt.preventDefault();
           },
         );
@@ -349,17 +319,14 @@ export function init() {
     },
   );
 
-  betterIpcMain.handle(
-    "browserView:close",
-    (event: IpcMainInvokeEvent, viewId: string) => {
-      const contentsId = event.sender.id;
-      if (extraWebViews[contentsId]?.[viewId] !== undefined) {
-        const window = BrowserWindow.fromWebContents(event.sender);
-        window?.contentView.removeChildView(extraWebViews[contentsId][viewId]);
-        delete extraWebViews[contentsId][viewId];
-      }
-    },
-  );
+  betterIpcMain.handle("browserView:close", (event: IpcMainInvokeEvent, viewId: string) => {
+    const contentsId = event.sender.id;
+    if (extraWebViews[contentsId]?.[viewId] !== undefined) {
+      const window = BrowserWindow.fromWebContents(event.sender);
+      window?.contentView.removeChildView(extraWebViews[contentsId][viewId]);
+      delete extraWebViews[contentsId][viewId];
+    }
+  });
 
   betterIpcMain.handle(
     "browserView:position",
@@ -412,95 +379,62 @@ export function init() {
     return window?.id ?? -1;
   });
 
-  betterIpcMain.handle(
-    "window:minimize",
-    (_event: IpcMainInvokeEvent, windowId: number) => {
-      const window = BrowserWindow.fromId(windowId);
-      window?.minimize();
-    },
-  );
+  betterIpcMain.handle("window:minimize", (_event: IpcMainInvokeEvent, windowId: number) => {
+    const window = BrowserWindow.fromId(windowId);
+    window?.minimize();
+  });
 
-  betterIpcMain.handle(
-    "window:maximize",
-    (_event: IpcMainInvokeEvent, windowId: number) => {
-      const window = BrowserWindow.fromId(windowId);
-      window?.maximize();
-    },
-  );
+  betterIpcMain.handle("window:maximize", (_event: IpcMainInvokeEvent, windowId: number) => {
+    const window = BrowserWindow.fromId(windowId);
+    window?.maximize();
+  });
 
-  betterIpcMain.handle(
-    "window:unmaximize",
-    (_event: IpcMainInvokeEvent, windowId: number) => {
-      const window = BrowserWindow.fromId(windowId);
-      window?.unmaximize();
-    },
-  );
+  betterIpcMain.handle("window:unmaximize", (_event: IpcMainInvokeEvent, windowId: number) => {
+    const window = BrowserWindow.fromId(windowId);
+    window?.unmaximize();
+  });
 
-  betterIpcMain.handle(
-    "window:restore",
-    (_event: IpcMainInvokeEvent, windowId: number) => {
-      const window = BrowserWindow.fromId(windowId);
-      window?.restore();
-    },
-  );
+  betterIpcMain.handle("window:restore", (_event: IpcMainInvokeEvent, windowId: number) => {
+    const window = BrowserWindow.fromId(windowId);
+    window?.restore();
+  });
 
-  betterIpcMain.handle(
-    "window:close",
-    (_event: IpcMainInvokeEvent, windowId: number) => {
-      const window = BrowserWindow.fromId(windowId);
-      window?.close();
-    },
-  );
+  betterIpcMain.handle("window:close", (_event: IpcMainInvokeEvent, windowId: number) => {
+    const window = BrowserWindow.fromId(windowId);
+    window?.close();
+  });
 
-  betterIpcMain.handle(
-    "window:focus",
-    (_event: IpcMainInvokeEvent, windowId: number) => {
-      const window = BrowserWindow.fromId(windowId);
-      window?.focus();
-    },
-  );
+  betterIpcMain.handle("window:focus", (_event: IpcMainInvokeEvent, windowId: number) => {
+    const window = BrowserWindow.fromId(windowId);
+    window?.focus();
+  });
 
-  betterIpcMain.handle(
-    "window:show",
-    (_event: IpcMainInvokeEvent, windowId: number) => {
-      if (process.env.VORTEX_E2E_HEADLESS !== "1") {
-        const window = BrowserWindow.fromId(windowId);
-        window?.show();
-      }
-    },
-  );
-
-  betterIpcMain.handle(
-    "window:hide",
-    (_event: IpcMainInvokeEvent, windowId: number) => {
+  betterIpcMain.handle("window:show", (_event: IpcMainInvokeEvent, windowId: number) => {
+    if (process.env.VORTEX_E2E_HEADLESS !== "1") {
       const window = BrowserWindow.fromId(windowId);
-      window?.hide();
-    },
-  );
+      window?.show();
+    }
+  });
 
-  betterIpcMain.handle(
-    "window:isMaximized",
-    (_event: IpcMainInvokeEvent, windowId: number) => {
-      const window = BrowserWindow.fromId(windowId);
-      return window?.isMaximized() ?? false;
-    },
-  );
+  betterIpcMain.handle("window:hide", (_event: IpcMainInvokeEvent, windowId: number) => {
+    const window = BrowserWindow.fromId(windowId);
+    window?.hide();
+  });
 
-  betterIpcMain.handle(
-    "window:isMinimized",
-    (_event: IpcMainInvokeEvent, windowId: number) => {
-      const window = BrowserWindow.fromId(windowId);
-      return window?.isMinimized() ?? false;
-    },
-  );
+  betterIpcMain.handle("window:isMaximized", (_event: IpcMainInvokeEvent, windowId: number) => {
+    const window = BrowserWindow.fromId(windowId);
+    return window?.isMaximized() ?? false;
+  });
 
-  betterIpcMain.handle(
-    "window:isFocused",
-    (_event: IpcMainInvokeEvent, windowId: number) => {
-      const window = BrowserWindow.fromId(windowId);
-      return window?.isFocused() ?? false;
-    },
-  );
+  betterIpcMain.handle("window:isMinimized", (_event: IpcMainInvokeEvent, windowId: number) => {
+    const window = BrowserWindow.fromId(windowId);
+    return window?.isMinimized() ?? false;
+  });
+
+  betterIpcMain.handle("window:isFocused", (_event: IpcMainInvokeEvent, windowId: number) => {
+    const window = BrowserWindow.fromId(windowId);
+    return window?.isFocused() ?? false;
+  });
 
   betterIpcMain.handle(
     "window:setAlwaysOnTop",
@@ -510,21 +444,15 @@ export function init() {
     },
   );
 
-  betterIpcMain.handle(
-    "window:moveTop",
-    (_event: IpcMainInvokeEvent, windowId: number) => {
-      const window = BrowserWindow.fromId(windowId);
-      window?.moveTop();
-    },
-  );
+  betterIpcMain.handle("window:moveTop", (_event: IpcMainInvokeEvent, windowId: number) => {
+    const window = BrowserWindow.fromId(windowId);
+    window?.moveTop();
+  });
 
-  betterIpcMain.handle(
-    "window:getPosition",
-    (_event: IpcMainInvokeEvent, windowId: number) => {
-      const win = BrowserWindow.fromId(windowId);
-      return (win?.getPosition() ?? [0, 0]) as [number, number];
-    },
-  );
+  betterIpcMain.handle("window:getPosition", (_event: IpcMainInvokeEvent, windowId: number) => {
+    const win = BrowserWindow.fromId(windowId);
+    return (win?.getPosition() ?? [0, 0]) as [number, number];
+  });
 
   betterIpcMain.handle(
     "window:setPosition",
@@ -534,42 +462,28 @@ export function init() {
     },
   );
 
-  betterIpcMain.handle(
-    "window:getSize",
-    (_event: IpcMainInvokeEvent, windowId: number) => {
-      const win = BrowserWindow.fromId(windowId);
-      return (win?.getSize() ?? [0, 0]) as [number, number];
-    },
-  );
+  betterIpcMain.handle("window:getSize", (_event: IpcMainInvokeEvent, windowId: number) => {
+    const win = BrowserWindow.fromId(windowId);
+    return (win?.getSize() ?? [0, 0]) as [number, number];
+  });
 
   betterIpcMain.handle(
     "window:setSize",
-    (
-      _event: IpcMainInvokeEvent,
-      windowId: number,
-      width: number,
-      height: number,
-    ) => {
+    (_event: IpcMainInvokeEvent, windowId: number, width: number, height: number) => {
       const win = BrowserWindow.fromId(windowId);
       win?.setSize(width, height);
     },
   );
 
-  betterIpcMain.handle(
-    "window:isVisible",
-    (_event: IpcMainInvokeEvent, windowId: number) => {
-      const win = BrowserWindow.fromId(windowId);
-      return win?.isVisible() ?? false;
-    },
-  );
+  betterIpcMain.handle("window:isVisible", (_event: IpcMainInvokeEvent, windowId: number) => {
+    const win = BrowserWindow.fromId(windowId);
+    return win?.isVisible() ?? false;
+  });
 
-  betterIpcMain.handle(
-    "window:toggleDevTools",
-    (_event: IpcMainInvokeEvent, windowId: number) => {
-      const win = BrowserWindow.fromId(windowId);
-      win?.webContents.toggleDevTools();
-    },
-  );
+  betterIpcMain.handle("window:toggleDevTools", (_event: IpcMainInvokeEvent, windowId: number) => {
+    const win = BrowserWindow.fromId(windowId);
+    win?.webContents.toggleDevTools();
+  });
 
   // ============================================================================
   // Content tracing operations
@@ -577,10 +491,7 @@ export function init() {
 
   betterIpcMain.handle(
     "contentTracing:startRecording",
-    async (
-      _event: IpcMainInvokeEvent,
-      options: TraceConfig | TraceCategoriesAndOptions,
-    ) => {
+    async (_event: IpcMainInvokeEvent, options: TraceConfig | TraceCategoriesAndOptions) => {
       return await contentTracing.startRecording(options);
     },
   );
@@ -604,17 +515,13 @@ export function init() {
     return undefined;
   });
 
-  betterIpcMain.handle(
-    "redux:getStateMsgpack",
-    (_event: IpcMainInvokeEvent, idx: number) => {
-      const getReduxStateMsgpack = (global as GlobalWithRedux)
-        .getReduxStateMsgpack;
-      if (typeof getReduxStateMsgpack === "function") {
-        return getReduxStateMsgpack(idx ?? 0);
-      }
-      return undefined;
-    },
-  );
+  betterIpcMain.handle("redux:getStateMsgpack", (_event: IpcMainInvokeEvent, idx: number) => {
+    const getReduxStateMsgpack = (global as GlobalWithRedux).getReduxStateMsgpack;
+    if (typeof getReduxStateMsgpack === "function") {
+      return getReduxStateMsgpack(idx ?? 0);
+    }
+    return undefined;
+  });
 
   // ============================================================================
   // Login item settings
@@ -635,12 +542,9 @@ export function init() {
   // Clipboard operations
   // ============================================================================
 
-  betterIpcMain.handle(
-    "clipboard:writeText",
-    (_event: IpcMainInvokeEvent, text: string) => {
-      clipboard.writeText(text);
-    },
-  );
+  betterIpcMain.handle("clipboard:writeText", (_event: IpcMainInvokeEvent, text: string) => {
+    clipboard.writeText(text);
+  });
 
   betterIpcMain.handle("clipboard:readText", () => {
     return clipboard.readText();
@@ -686,25 +590,16 @@ export function init() {
 
   betterIpcMain.handle(
     "powerSaveBlocker:start",
-    (
-      _event: IpcMainInvokeEvent,
-      type: "prevent-app-suspension" | "prevent-display-sleep",
-    ) => {
+    (_event: IpcMainInvokeEvent, type: "prevent-app-suspension" | "prevent-display-sleep") => {
       return powerSaveBlocker.start(type);
     },
   );
 
-  betterIpcMain.handle(
-    "powerSaveBlocker:stop",
-    (_event: IpcMainInvokeEvent, id: number) => {
-      powerSaveBlocker.stop(id);
-    },
-  );
+  betterIpcMain.handle("powerSaveBlocker:stop", (_event: IpcMainInvokeEvent, id: number) => {
+    powerSaveBlocker.stop(id);
+  });
 
-  betterIpcMain.handle(
-    "powerSaveBlocker:isStarted",
-    (_event: IpcMainInvokeEvent, id: number) => {
-      return powerSaveBlocker.isStarted(id);
-    },
-  );
+  betterIpcMain.handle("powerSaveBlocker:isStarted", (_event: IpcMainInvokeEvent, id: number) => {
+    return powerSaveBlocker.isStarted(id);
+  });
 }

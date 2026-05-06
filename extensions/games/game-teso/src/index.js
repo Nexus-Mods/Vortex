@@ -1,55 +1,50 @@
-const { log, util } = require('vortex-api');
+const { log, util } = require("vortex-api");
 
-const { remote } = require('electron');
-const path = require('path');
-const winapi = require('winapi-bindings');
+const { remote } = require("electron");
+const path = require("path");
+const winapi = require("winapi-bindings");
 
 function findGame() {
   try {
-    let regKey = (process.arch === 'x32')
-      ? 'Software\\Zenimax_Online\\Launcher'
-      : 'Software\\Wow6432Node\\Zenimax_Online\\Launcher';
+    let regKey =
+      process.arch === "x32"
+        ? "Software\\Zenimax_Online\\Launcher"
+        : "Software\\Wow6432Node\\Zenimax_Online\\Launcher";
 
-    const instPath = winapi.RegGetValue(
-      'HKEY_LOCAL_MACHINE',
-      regKey,
-      'InstallPath');
+    const instPath = winapi.RegGetValue("HKEY_LOCAL_MACHINE", regKey, "InstallPath");
     if (!instPath) {
-      throw new Error('empty registry key');
+      throw new Error("empty registry key");
     }
-    return Promise.resolve(path.join(instPath.value, 'Launcher'));
+    return Promise.resolve(path.join(instPath.value, "Launcher"));
   } catch (err) {
-    return util.steam.findByName('The Elder Scrolls Online')
-      .then(game => game.gamePath);
+    return util.steam.findByName("The Elder Scrolls Online").then((game) => game.gamePath);
   }
 }
 
 function modPath() {
-  return path.join(remote.app.getPath('documents'), 'Elder Scrolls Online', 'live', 'Addons');
+  return path.join(remote.app.getPath("documents"), "Elder Scrolls Online", "live", "Addons");
 }
 
 function main(context) {
   context.registerGame({
-    id: 'teso',
-    name: 'The Elder Scrolls Online',
+    id: "teso",
+    name: "The Elder Scrolls Online",
     mergeMods: true,
     queryPath: findGame,
     queryModPath: modPath,
-    logo: 'gameart.jpg',
-    executable: () => 'Bethesda.net_Launcher.exe',
-    requiredFiles: [
-      'Bethesda.net_Launcher.exe',
-    ],
+    logo: "gameart.jpg",
+    executable: () => "Bethesda.net_Launcher.exe",
+    requiredFiles: ["Bethesda.net_Launcher.exe"],
     environment: {
-      SteamAPPId: '306130',
+      SteamAPPId: "306130",
     },
     details: {
       steamAppId: 306130,
-      nexusPageId: 'elderscrollsonline',
+      nexusPageId: "elderscrollsonline",
       hashFiles: [
-        '../The Elder Scrolls Online/game/game_player.version',
-        '../The Elder Scrolls Online/depot/depot.version',
-        'Bethesda.net_Launcher.version',
+        "../The Elder Scrolls Online/game/game_player.version",
+        "../The Elder Scrolls Online/depot/depot.version",
+        "Bethesda.net_Launcher.version",
       ],
     },
   });

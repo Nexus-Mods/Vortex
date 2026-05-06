@@ -30,10 +30,7 @@ export interface IGraphViewProps {
 }
 
 function san(input: string): string {
-  return input.replace(
-    /[^a-zA-Z0-9_-]/g,
-    (invalid) => `_${invalid.charCodeAt(0)}_`,
-  );
+  return input.replace(/[^a-zA-Z0-9_-]/g, (invalid) => `_${invalid.charCodeAt(0)}_`);
 }
 
 class GraphView extends React.Component<IGraphViewProps, {}> {
@@ -86,9 +83,7 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
                 targetOrig: id.slice(1),
               },
               classes:
-                newProps.elements[id] !== undefined
-                  ? newProps.elements[id].class
-                  : undefined,
+                newProps.elements[id] !== undefined ? newProps.elements[id].class : undefined,
             });
           });
         } else if (id[0] === "-") {
@@ -129,9 +124,7 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
                     targetOrig: id,
                   },
                   classes:
-                    newProps.elements[id] !== undefined
-                      ? newProps.elements[id].class
-                      : undefined,
+                    newProps.elements[id] !== undefined ? newProps.elements[id].class : undefined,
                 });
               }
             });
@@ -145,10 +138,7 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
         }
       });
 
-      this.mGraph
-        .elements()
-        .removeClass("cycle-hidden")
-        .removeClass("cycle-highlight");
+      this.mGraph.elements().removeClass("cycle-hidden").removeClass("cycle-highlight");
     }
   }
 
@@ -196,10 +186,7 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
 
     if (firstCycle !== undefined) {
       // unhighlight previous cycle if necessary
-      this.mGraph
-        .elements()
-        .addClass("cycle-hidden")
-        .removeClass("cycle-highlight");
+      this.mGraph.elements().addClass("cycle-hidden").removeClass("cycle-highlight");
 
       // highlight edge to the node from which the cycle starts
       this.mGraph
@@ -267,11 +254,7 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
           : { id: data.originalId, readonly: data.readonly };
     }
     this.mMousePos = evt.position;
-    this.props.onContext(
-      evt.renderedPosition.x,
-      evt.renderedPosition.y,
-      selection,
-    );
+    this.props.onContext(evt.renderedPosition.x, evt.renderedPosition.y, selection);
   };
 
   private addElements(elements: { [id: string]: IGraphElement }) {

@@ -7,8 +7,8 @@ import {
 } from "@playwright/test";
 
 import { test } from "../fixtures/vortex-app";
-import { freeUser, type NexusUser } from "./users";
 import { LoginPage } from "../selectors/loginPage";
+import { freeUser, type NexusUser } from "./users";
 
 export async function loginToNexus(
   vortexApp: ElectronApplication,
@@ -117,9 +117,7 @@ export async function loginToNexus(
 
     await vortexWindow.bringToFront();
 
-    if (
-      await vortexLoginPage.vortexLoginDialog.isVisible().catch(() => false)
-    ) {
+    if (await vortexLoginPage.vortexLoginDialog.isVisible().catch(() => false)) {
       await vortexWindow.keyboard.press("Escape").catch(() => undefined);
     }
 

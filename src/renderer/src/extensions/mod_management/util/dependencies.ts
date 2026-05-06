@@ -1,37 +1,22 @@
-import type { ILookupResult, IReference, IRule } from "modmeta-db";
-
 import { unknownToError } from "@vortex/shared";
 import * as _ from "lodash";
 import minimatch from "minimatch";
+import type { ILookupResult, IReference, IRule } from "modmeta-db";
 import normalizeUrl from "normalize-url";
 import * as semver from "semver";
 
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IDownload } from "../../../types/IState";
-import type { IDependency, ILookupResultEx } from "../types/IDependency";
-import type {
-  IDownloadHint,
-  IFileListItem,
-  IMod,
-  IModReference,
-  IModRule,
-} from "../types/IMod";
-import type { IModLookupInfo } from "./testModReference";
-
 import ConcurrencyLimiter from "../../../util/ConcurrencyLimiter";
-import {
-  NotFound,
-  ProcessCanceled,
-  UserCanceled,
-} from "../../../util/CustomErrors";
+import { NotFound, ProcessCanceled, UserCanceled } from "../../../util/CustomErrors";
 import { log } from "../../../util/log";
 import { activeGameId } from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
 import { semverCoerce, truthy } from "../../../util/util";
-import testModReference, {
-  isFuzzyVersion,
-  testRefByIdentifiers,
-} from "./testModReference";
+import type { IDependency, ILookupResultEx } from "../types/IDependency";
+import type { IDownloadHint, IFileListItem, IMod, IModReference, IModRule } from "../types/IMod";
+import type { IModLookupInfo } from "./testModReference";
+import testModReference, { isFuzzyVersion, testRefByIdentifiers } from "./testModReference";
 
 interface IBrowserResult {
   url: string | (() => PromiseLike<string>);
@@ -63,8 +48,7 @@ export function findModByRef(
     reference.versionMatch !== undefined &&
     isFuzzyVersion(reference.versionMatch) &&
     reference.fileMD5 !== undefined &&
-    (reference.logicalFileName !== undefined ||
-      reference.fileExpression !== undefined)
+    (reference.logicalFileName !== undefined || reference.fileExpression !== undefined)
   ) {
     reference = {
       md5Hint: reference.fileMD5,
@@ -93,12 +77,8 @@ export function findModByRef(
 }
 
 function newerSort(lhs: IDownload, rhs: IDownload): number {
-  const lVersion = semver.coerce(
-    getSafe(lhs, ["modInfo", "version"], undefined),
-  );
-  const rVersion = semver.coerce(
-    getSafe(rhs, ["modInfo", "version"], undefined),
-  );
+  const lVersion = semver.coerce(getSafe(lhs, ["modInfo", "version"], undefined));
+  const rVersion = semver.coerce(getSafe(rhs, ["modInfo", "version"], undefined));
 
   if (lVersion !== null && rVersion !== null) {
     return semver.compare(rVersion, lVersion);
@@ -146,10 +126,7 @@ function browseForDownload(
   });
 }
 
-function lookupDownloadHint(
-  api: IExtensionApi,
-  input: IDownloadHint,
-): Promise<IBrowserResult> {
+function lookupDownloadHint(api: IExtensionApi, input: IDownloadHint): Promise<IBrowserResult> {
   if (input === undefined) {
     return Promise.resolve(undefined);
   }
@@ -160,32 +137,23 @@ function lookupDownloadHint(
       urlNorm = normalizeUrl(input.url ?? "", { defaultProtocol: "https:" });
     } catch (err) {
       return Promise.reject(
-        new NotFound(
-          `Invalid url set for external dependency: "${input.url ?? "<unset>"}"`,
-        ),
+        new NotFound(`Invalid url set for external dependency: "${input.url ?? "<unset>"}"`),
       );
     }
     return Promise.resolve({ url: urlNorm });
-  } else if (
-    input.mode === "browse" ||
-    (input.mode === "manual" && input.url)
-  ) {
+  } else if (input.mode === "browse" || (input.mode === "manual" && input.url)) {
     let urlNorm: string = "";
     try {
       urlNorm = normalizeUrl(input.url ?? "", { defaultProtocol: "https:" });
     } catch (err) {
       return Promise.reject(
-        new NotFound(
-          `Invalid url set for external dependency: "${input.url ?? "<unset>"}"`,
-        ),
+        new NotFound(`Invalid url set for external dependency: "${input.url ?? "<unset>"}"`),
       );
     }
     return browseForDownload(api, urlNorm, input.instructions)
       .then((result) => {
         if (result === undefined) {
-          return Promise.reject(
-            new NotFound("No download found browsing url"),
-          );
+          return Promise.reject(new NotFound("No download found browsing url"));
         } else {
           return Promise.resolve(result);
         }
@@ -202,10 +170,7 @@ function lookupDownloadHint(
   }
 }
 
-function makeLookupResult(
-  lookup: ILookupResult,
-  fromHint: IBrowserResult,
-): ILookupResultEx {
+function makeLookupResult(lookup: ILookupResult, fromHint: IBrowserResult): ILookupResultEx {
   if (fromHint === undefined) {
     return lookup;
   }
@@ -219,14 +184,7 @@ function makeLookupResult(
 }
 
 function lookupFulfills(lookup: ILookupResult, reference: IReference) {
-  const {
-    fileExpression,
-    fileMD5,
-    fileSize,
-    gameId,
-    logicalFileName,
-    versionMatch,
-  } = reference;
+  const { fileExpression, fileMD5, fileSize, gameId, logicalFileName, versionMatch } = reference;
   if (lookup === undefined) {
     return false;
   }
@@ -247,13 +205,10 @@ function lookupFulfills(lookup: ILookupResult, reference: IReference) {
     (gameId === undefined || gameId === value.gameId) &&
     (fileMD5 === undefined || fileMD5 === value.fileMD5) &&
     (fileSize === undefined || fileSize === value.fileSizeBytes) &&
-    (logicalFileName === undefined ||
-      logicalFileName === value.logicalFileName) &&
+    (logicalFileName === undefined || logicalFileName === value.logicalFileName) &&
     (fileExpression === undefined ||
-      (value.fileName !== undefined &&
-        minimatch(value.fileName, fileExpression))) &&
-    (versionMatch === undefined ||
-      semver.satisfies(semver.coerce(value.fileVersion), versionMatch))
+      (value.fileName !== undefined && minimatch(value.fileName, fileExpression))) &&
+    (versionMatch === undefined || semver.satisfies(semver.coerce(value.fileVersion), versionMatch))
   );
 }
 
@@ -265,19 +220,15 @@ function tagDuplicates(input: IDependencyNode[]): Promise<IDependencyNode[]> {
     .map((dep) => ({
       dep,
       collateral: input.filter(
-        (inner) =>
-          inner !== dep &&
-          lookupFulfills(dep.lookupResults[0], inner.reference),
+        (inner) => inner !== dep && lookupFulfills(dep.lookupResults[0], inner.reference),
       ),
     }))
     .sort((lhs, rhs) => {
       if (lhs.collateral.length !== rhs.collateral.length) {
         return rhs.collateral.length - lhs.collateral.length;
       } else {
-        const fileVerL =
-          lhs.dep.lookupResults[0]?.value?.fileVersion ?? "0.0.1";
-        const fileVerR =
-          rhs.dep.lookupResults[0]?.value?.fileVersion ?? "0.0.1";
+        const fileVerL = lhs.dep.lookupResults[0]?.value?.fileVersion ?? "0.0.1";
+        const fileVerR = rhs.dep.lookupResults[0]?.value?.fileVersion ?? "0.0.1";
         try {
           // within blocks of equal number of collaterals, consider the newer versions
           // before the ones with lower version
@@ -306,9 +257,7 @@ function tagDuplicates(input: IDependencyNode[]): Promise<IDependencyNode[]> {
       temp[i].collateral.forEach((collateralItem) => {
         // we can't store the index before because the list got sorted in the meantime
         // so we have to go searching for each collateral again
-        const collateralIdx = temp.findIndex(
-          (iter) => iter.dep === collateralItem,
-        );
+        const collateralIdx = temp.findIndex((iter) => iter.dep === collateralItem);
         // tag items as redundant, this way they will get filtered out later, including
         // their own dependencies
         temp[collateralIdx].dep.redundant = true;
@@ -316,9 +265,7 @@ function tagDuplicates(input: IDependencyNode[]): Promise<IDependencyNode[]> {
     }
   }
 
-  return Promise.resolve(
-    temp.filter((iter) => iter !== null).map((iter) => iter.dep),
-  );
+  return Promise.resolve(temp.filter((iter) => iter !== null).map((iter) => iter.dep));
 }
 
 export function lookupFromDownload(download: IDownload): IModLookupInfo {
@@ -340,8 +287,7 @@ export function lookupFromDownload(download: IDownload): IModLookupInfo {
     fileName: download.localPath,
     fileSizeBytes: download.size,
     version: download.modInfo?.version ?? download.modInfo?.meta?.fileVersion,
-    logicalFileName:
-      download.modInfo?.name ?? download.modInfo?.meta?.logicalFileName,
+    logicalFileName: download.modInfo?.name ?? download.modInfo?.meta?.logicalFileName,
     game: download.game,
     source: download.modInfo?.source,
     referenceTag: download.modInfo?.referenceTag,
@@ -369,8 +315,7 @@ export function findDownloadByRef(
   if (
     isFuzzyVersion(reference.versionMatch) &&
     reference.fileMD5 !== undefined &&
-    (reference.logicalFileName !== undefined ||
-      reference.fileExpression !== undefined)
+    (reference.logicalFileName !== undefined || reference.fileExpression !== undefined)
   ) {
     reference = _.omit(reference, ["fileMD5"]);
   }
@@ -381,17 +326,14 @@ export function findDownloadByRef(
 
   try {
     const fuzzy = isFuzzyVersion(reference.versionMatch);
-    const fileExpression =
-      reference?.fileExpression || reference?.logicalFileName;
-    const bundled =
-      fileExpression && fileExpression.toLowerCase().startsWith("bundled");
+    const fileExpression = reference?.fileExpression || reference?.logicalFileName;
+    const bundled = fileExpression && fileExpression.toLowerCase().startsWith("bundled");
 
     const existing: string[] = Object.keys(downloads)
       .filter((dlId: string): boolean => {
         const download: IDownload = downloads[dlId];
         const isRelevantDownload =
-          download.game.includes(reference.gameId) &&
-          !download.modInfo?.collectionSlug;
+          download.game.includes(reference.gameId) && !download.modInfo?.collectionSlug;
         if (download.state === "failed" || !isRelevantDownload) {
           return false;
         }
@@ -488,23 +430,14 @@ async function gatherDependenciesGraph(
       ...(rule.extra?.["rules"] ?? []),
       ...(lookupResults?.[0]?.value?.rules ?? []),
     ].filter(
-      (iter) =>
-        iter.type === (recommendations ? "recommends" : "requires") &&
-        !iter["ignored"],
+      (iter) => iter.type === (recommendations ? "recommends" : "requires") && !iter["ignored"],
     );
 
     const dependencies =
       subRules.length > 0
         ? await Promise.all(
             subRules.map((subRule) =>
-              limit.do(() =>
-                gatherDependenciesGraph(
-                  subRule,
-                  api,
-                  gameMode,
-                  recommendations,
-                ),
-              ),
+              limit.do(() => gatherDependenciesGraph(subRule, api, gameMode, recommendations)),
             ),
           )
         : [];
@@ -513,9 +446,7 @@ async function gatherDependenciesGraph(
       download: downloadId,
       mod,
       reference: rule.reference,
-      lookupResults: lookupResults.map((iter) =>
-        makeLookupResult(iter, urlFromHint),
-      ),
+      lookupResults: lookupResults.map((iter) => makeLookupResult(iter, urlFromHint)),
       dependencies: dependencies.filter(Boolean),
       redundant: false,
       extra: rule.extra,
@@ -562,8 +493,7 @@ async function gatherDependenciesGraph(
     if (!(unknownErr instanceof ProcessCanceled)) {
       api.showErrorNotification("Failed to look up dependency", unknownErr, {
         allowReport: false,
-        message:
-          rule.downloadHint?.url ?? rule.comment ?? rule.reference.description,
+        message: rule.downloadHint?.url ?? rule.comment ?? rule.reference.description,
       });
       const err = unknownToError(unknownErr);
       log("error", "failed to look up", {
@@ -605,10 +535,7 @@ function gatherDependencies(
   const requirements: IModRule[] =
     rules === undefined
       ? []
-      : rules.filter(
-          (rule: IRule) =>
-            rule.type === (recommendations ? "recommends" : "requires"),
-        );
+      : rules.filter((rule: IRule) => rule.type === (recommendations ? "recommends" : "requires"));
 
   let numCompleted = 0;
   const onProgress = () => {
@@ -625,15 +552,7 @@ function gatherDependencies(
     Promise.all(
       requirements.map((rule: IModRule) =>
         Promise.resolve(
-          limit.do(() =>
-            gatherDependenciesGraph(
-              rule,
-              api,
-              gameMode,
-              recommendations,
-              addToCache,
-            ),
-          ),
+          limit.do(() => gatherDependenciesGraph(rule, api, gameMode, recommendations, addToCache)),
         )
           .then((node: IDependencyNode) => {
             onProgress();
@@ -648,15 +567,11 @@ function gatherDependencies(
       ),
     )
       // tag duplicates
-      .then((nodes: IDependencyNode[]) =>
-        tagDuplicates(flatten(nodes)).then(() => nodes),
-      )
+      .then((nodes: IDependencyNode[]) => tagDuplicates(flatten(nodes)).then(() => nodes))
       .then((nodes: IDependencyNode[]) =>
         // this filters out the duplicates including their subtrees,
         // then converts IDependencyNodes to IDependencies
-        flatten(nodes).map((node) =>
-          _.omit(node, ["dependencies", "redundant"]),
-        ),
+        flatten(nodes).map((node) => _.omit(node, ["dependencies", "redundant"])),
       )
   );
 }

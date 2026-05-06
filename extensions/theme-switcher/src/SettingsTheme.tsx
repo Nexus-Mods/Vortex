@@ -1,6 +1,4 @@
-import ThemeEditor from "./ThemeEditor";
 import Bluebird from "bluebird";
-
 import * as React from "react";
 import {
   Alert,
@@ -17,14 +15,13 @@ import * as Redux from "redux";
 import { ThunkDispatch } from "redux-thunk";
 import { actions, ComponentEx, log, Toggle, tooltip, types, util } from "vortex-api";
 
+import ThemeEditor from "./ThemeEditor";
+
 export interface ISettingsThemeProps {
   readThemes: () => Promise<string[]>;
   onCloneTheme: (themeName: string, newName: string) => Promise<void>;
   onSelectTheme: (themeName: string) => void;
-  onSaveTheme: (
-    themeName: string,
-    variables: { [name: string]: string },
-  ) => Promise<void>;
+  onSaveTheme: (themeName: string, variables: { [name: string]: string }) => Promise<void>;
   onRemoveTheme: (themeName: string) => Promise<void>;
   readThemeVariables: (themeName: string) => Promise<{ [key: string]: string }>;
   locationToName: (location: string) => string;
@@ -105,11 +102,7 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
           <FormGroup controlId="themeSelect">
             <ControlLabel>{t("Theme")}</ControlLabel>
             <InputGroup style={{ width: 300 }}>
-              <FormControl
-                componentClass="select"
-                onChange={this.selectTheme}
-                value={currentTheme}
-              >
+              <FormControl componentClass="select" onChange={this.selectTheme} value={currentTheme}>
                 {themes.map((iter) => {
                   const theme = this.props.locationToName(iter);
                   return this.renderTheme(theme, theme);
@@ -128,13 +121,15 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
             </InputGroup>
             <HelpBlock>
               {isLegacy
-                ? t("Some community themes were designed for the new UI and may not display correctly in the legacy one.")
-                : t("Some community themes were designed for the old UI and may not display correctly in the new one.")}
+                ? t(
+                    "Some community themes were designed for the new UI and may not display correctly in the legacy one.",
+                  )
+                : t(
+                    "Some community themes were designed for the old UI and may not display correctly in the new one.",
+                  )}
             </HelpBlock>
             {editable ? null : (
-              <Alert bsStyle="info">
-                {t("Please clone this theme to modify it.")}
-              </Alert>
+              <Alert bsStyle="info">{t("Please clone this theme to modify it.")}</Alert>
             )}
           </FormGroup>
         </form>
@@ -193,17 +188,14 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
     //   meaning that on a case-sensitive file system (linux), we would have allowed two themes to be named
     //   "same" and "SAME".
     //   I don't feel like that's actually desireable - much less worth making the code more complex over
-    const existing = new Set(
-      themes.map((theme) => this.props.locationToName(theme).toUpperCase()),
-    );
+    const existing = new Set(themes.map((theme) => this.props.locationToName(theme).toUpperCase()));
 
     return this.props
       .onShowDialog(
         "question",
         "Enter a name",
         {
-          bbcode:
-            error !== undefined ? `[color=red]${t(error)}[/color]` : undefined,
+          bbcode: error !== undefined ? `[color=red]${t(error)}[/color]` : undefined,
           input: [
             {
               id: "name",
@@ -274,20 +266,12 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
   };
 
   private toggleLegacyUI = (useLegacy: boolean) => {
-    this.context.api.events.emit(
-      "analytics-track-click-event",
-      "Themes",
-      "Toggle legacy UI",
-    );
+    this.context.api.events.emit("analytics-track-click-event", "Themes", "Toggle legacy UI");
     this.props.onSetUseModernLayout(!useLegacy);
   };
 
   private selectTheme = (evt) => {
-    this.context.api.events.emit(
-      "analytics-track-click-event",
-      "Themes",
-      "Select theme",
-    );
+    this.context.api.events.emit("analytics-track-click-event", "Themes", "Select theme");
     this.props.onSelectTheme(evt.currentTarget.value);
   };
 
@@ -303,16 +287,12 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, any, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, any, Redux.Action>): IActionProps {
   return {
-    onShowError: (title: string, details: any) =>
-      util.showError(dispatch, title, details),
+    onShowError: (title: string, details: any) => util.showError(dispatch, title, details),
     onShowDialog: (type, title, content, dialogActions) =>
       dispatch(actions.showDialog(type, title, content, dialogActions)),
-    onSetUseModernLayout: (useModern: boolean) =>
-      dispatch(actions.setUseModernLayout(useModern)),
+    onSetUseModernLayout: (useModern: boolean) => dispatch(actions.setUseModernLayout(useModern)),
   };
 }
 

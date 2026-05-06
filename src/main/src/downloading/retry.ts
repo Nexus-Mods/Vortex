@@ -1,9 +1,4 @@
-import type {
-  RetryContext,
-  RetryStrategy,
-  RetryVerdict,
-} from "@vortex/shared/download";
-
+import type { RetryContext, RetryStrategy, RetryVerdict } from "@vortex/shared/download";
 import { DownloadError } from "@vortex/shared/errors";
 import { HTTPError } from "got";
 
@@ -50,20 +45,13 @@ export function defaultRetryStrategy(
     }
 
     const jitter = Math.floor(Math.random() * 200) - 100;
-    const delay = Math.min(
-      baseDelayMs * 2 ** (attempt - 1) + jitter,
-      maxDelayMs,
-    );
+    const delay = Math.min(baseDelayMs * 2 ** (attempt - 1) + jitter, maxDelayMs);
 
     return { retry: true, delayMs: delay };
   };
 }
 
-function isRetryableError(
-  err: Error,
-  codes: Set<string>,
-  statusCodes: Set<number>,
-): boolean {
+function isRetryableError(err: Error, codes: Set<string>, statusCodes: Set<number>): boolean {
   if (err instanceof DownloadError) {
     if (
       err.code === "fs-error" ||
@@ -74,9 +62,7 @@ function isRetryableError(
     }
 
     // For resolver or network errors, inspect the cause
-    return err.cause instanceof Error
-      ? isRetryableError(err.cause, codes, statusCodes)
-      : false;
+    return err.cause instanceof Error ? isRetryableError(err.cause, codes, statusCodes) : false;
   }
 
   if (err instanceof HTTPError) {
@@ -109,9 +95,7 @@ export function sleep(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
     if (signal.aborted) {
       reject(
-        signal.reason instanceof Error
-          ? signal.reason
-          : new DOMException("Aborted", "AbortError"),
+        signal.reason instanceof Error ? signal.reason : new DOMException("Aborted", "AbortError"),
       );
       return;
     }
@@ -124,9 +108,7 @@ export function sleep(ms: number, signal?: AbortSignal): Promise<void> {
     const onAbort = () => {
       clearTimeout(timer);
       reject(
-        signal.reason instanceof Error
-          ? signal.reason
-          : new DOMException("Aborted", "AbortError"),
+        signal.reason instanceof Error ? signal.reason : new DOMException("Aborted", "AbortError"),
       );
     };
 

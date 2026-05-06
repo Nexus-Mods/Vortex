@@ -1,3 +1,7 @@
+import Bluebird from "bluebird";
+import { selectors, types, util } from "vortex-api";
+
+import { setGameVersion } from "./actions";
 import {
   getGameVersion,
   updateInvalidatesMods,
@@ -6,20 +10,12 @@ import {
 } from "./gamesupport";
 import persistentReducer from "./reducers";
 
-import Bluebird from "bluebird";
-import { selectors, types, util } from "vortex-api";
-import { setGameVersion } from "./actions";
-
 const ONE_SECOND = 1000;
 const ONE_MINUTE = 60 * ONE_SECOND;
 const ONE_HOUR = 60 * ONE_MINUTE;
 const ONE_DAY = 24 * ONE_HOUR;
 
-function isCompatible(
-  gameId: string,
-  mod: types.IMod,
-  version: string,
-): boolean {
+function isCompatible(gameId: string, mod: types.IMod, version: string): boolean {
   if (mod.attributes === undefined) {
     return true;
   }
@@ -39,9 +35,7 @@ function isCompatible(
   return true;
 }
 
-async function testGameVersions(
-  api: types.IExtensionApi,
-): Promise<types.ITestResult> {
+async function testGameVersions(api: types.IExtensionApi): Promise<types.ITestResult> {
   const t = api.translate;
   const state: types.IState = api.store.getState();
   const gameMode = selectors.activeGameId(state);
@@ -90,8 +84,7 @@ async function testGameVersions(
     if (invalidates === "some") {
       text += "<br/><br/>You may have to update mods to be compatible.";
     } else if (invalidates === "always") {
-      text +=
-        "<br/><br/>With this game mods need to be updated with every game update.";
+      text += "<br/><br/>With this game mods need to be updated with every game update.";
     }
     const add = updateInvalidationText(gameMode);
     if (add !== undefined) {
@@ -140,12 +133,8 @@ function init(context: types.IExtensionContext) {
     Bluebird.resolve(testGameVersions(context.api)),
   );
 
-  context.registerGameInfoProvider(
-    "game-version",
-    15,
-    5 * ONE_MINUTE,
-    ["game_version"],
-    (game) => Bluebird.resolve(queryGameInfo(context.api, game)),
+  context.registerGameInfoProvider("game-version", 15, 5 * ONE_MINUTE, ["game_version"], (game) =>
+    Bluebird.resolve(queryGameInfo(context.api, game)),
   );
 }
 

@@ -13,10 +13,7 @@ import type {
   GameVersionProviderTest,
   IGameVersionProviderOptions,
 } from "../extensions/gameversion_management/types/IGameVersionProvider";
-import type {
-  IHistoryEvent,
-  IHistoryStack,
-} from "../extensions/history_management/types";
+import type { IHistoryEvent, IHistoryStack } from "../extensions/history_management/types";
 import type { IGameLoadOrderEntry } from "../extensions/mod_load_order/types/types";
 import type {
   IDeployedFile,
@@ -29,10 +26,7 @@ import type {
   InstructionType,
 } from "../extensions/mod_management/types/IInstallResult";
 import type { IModsAPIExtension } from "../extensions/mod_management/types/IModsAPIExtension";
-import type {
-  InstallFunc,
-  ProgressDelegate,
-} from "../extensions/mod_management/types/InstallFunc";
+import type { InstallFunc, ProgressDelegate } from "../extensions/mod_management/types/InstallFunc";
 import type {
   ISupportedResult,
   TestSupported,
@@ -375,16 +369,12 @@ export interface IErrorOptions {
  * field that doesn't exist in both IGameStored and IDiscoveryResult, please assume
  * it may be undefined.
  */
-export type GameInfoQuery = (
-  game: any,
-) => PromiseLike<{ [key: string]: IGameDetail }>;
+export type GameInfoQuery = (game: any) => PromiseLike<{ [key: string]: IGameDetail }>;
 
 export interface IMergeFilter {
   // files to use as basis for merge, will be copied to the merge
   // directory during deployment (from in (absolute) to out (relative to working directory)
-  baseFiles: (
-    deployedFiles: IDeployedFile[],
-  ) => Array<{ in: string; out: string }>;
+  baseFiles: (deployedFiles: IDeployedFile[]) => Array<{ in: string; out: string }>;
   // filter function, needs to match all files (relative paths) in the mod to consider
   // for merging
   filter: (fileName: string) => boolean;
@@ -394,17 +384,11 @@ export interface IMergeFilter {
  * callback to determine if a merge function applies to a game. If so, return an
  * object that describes what files to merge, otherwise return undefined
  */
-export type MergeTest = (
-  game: IGame,
-  gameDiscovery: IDiscoveryResult,
-) => IMergeFilter;
+export type MergeTest = (game: IGame, gameDiscovery: IDiscoveryResult) => IMergeFilter;
 /**
  * callback to do the actual merging
  */
-export type MergeFunc = (
-  filePath: string,
-  mergePath: string,
-) => PromiseLike<void>;
+export type MergeFunc = (filePath: string, mergePath: string) => PromiseLike<void>;
 
 /**
  * options used when starting an external application through runExecutable
@@ -460,9 +444,7 @@ export interface IApiFuncOptions {
 }
 
 export interface IExtensionApiExtension
-  extends INexusAPIExtension,
-    IModsAPIExtension,
-    IDownloadsAPIExtension {
+  extends INexusAPIExtension, IModsAPIExtension, IDownloadsAPIExtension {
   ensureLoggedIn?: () => PromiseBB<void>;
   awaitProfileSwitch?: () => PromiseBB<string>;
   showOverlay?: (
@@ -649,10 +631,7 @@ export interface IExtensionApi {
    *
    * @memberOf IExtensionApi
    */
-  onStateChange?: <T = any>(
-    path: string[],
-    callback: StateChangeCallback<T>,
-  ) => void;
+  onStateChange?: <T = any>(path: string[], callback: StateChangeCallback<T>) => void;
 
   /**
    * registers an uri protocol to be handled by this application. If the "def"ault parameter
@@ -720,10 +699,7 @@ export interface IExtensionApi {
    *
    * @memberOf IExtensionApi
    */
-  lookupModMeta: (
-    details: ILookupDetails,
-    ignoreCache?: boolean,
-  ) => PromiseBB<ILookupResult[]>;
+  lookupModMeta: (details: ILookupDetails, ignoreCache?: boolean) => PromiseBB<ILookupResult[]>;
 
   /**
    * save meta information about a mod
@@ -780,11 +756,7 @@ export interface IExtensionApi {
    * The returned promise is resolved when the started process has run to completion.
    * IRunOptions.onSpawned can be used to react to when the process has been started.
    */
-  runExecutable: (
-    executable: string,
-    args: string[],
-    options: IRunOptions,
-  ) => PromiseBB<void>;
+  runExecutable: (executable: string, args: string[], options: IRunOptions) => PromiseBB<void>;
 
   /**
    * emit an event and allow every receiver to return a Promise. This call will only return
@@ -800,10 +772,7 @@ export interface IExtensionApi {
    * returns a rejected promise.
    * If errors do need to be reported they have to be part of the resolved valued
    */
-  onAsync: (
-    eventName: string,
-    listener: (...args: any[]) => PromiseLike<any>,
-  ) => void;
+  onAsync: (eventName: string, listener: (...args: any[]) => PromiseLike<any>) => void;
 
   /**
    * wraps a function such that it will emitAndAwait will-eventName and did-eventName events
@@ -911,8 +880,7 @@ export class VerifierDropParent extends Error {
   }
 }
 
-export type PayloadT<Type> =
-  Type extends ComplexActionCreator<infer X> ? X : never;
+export type PayloadT<Type> = Type extends ComplexActionCreator<infer X> ? X : never;
 
 export function addReducer<ActionT, StateT>(
   action: ActionT,
@@ -1195,11 +1163,7 @@ export interface IExtensionContext {
    *
    * @memberOf IExtensionContext
    */
-  registerPersistor: (
-    hive: string,
-    persistor: IPersistor,
-    debounce?: number,
-  ) => void;
+  registerPersistor: (hive: string, persistor: IPersistor, debounce?: number) => void;
 
   /**
    * add an attribute to a table. An attribute can appear as a column inside the table or as a
@@ -1226,10 +1190,7 @@ export interface IExtensionContext {
    *
    * @memberOf IExtensionContext
    */
-  registerArchiveType: (
-    extension: string,
-    handler: ArchiveHandlerCreator,
-  ) => void;
+  registerArchiveType: (extension: string, handler: ArchiveHandlerCreator) => void;
 
   /**
    * registers support for a game
@@ -1285,10 +1246,7 @@ export interface IExtensionContext {
    *                          the meta database have priority 100.
    * @param {AttributeExtractor} extractor the function producing mod attributes
    */
-  registerAttributeExtractor: (
-    priority: number,
-    extractor: AttributeExtractor,
-  ) => void;
+  registerAttributeExtractor: (priority: number, extractor: AttributeExtractor) => void;
 
   /**
    * register a mod type
@@ -1376,10 +1334,7 @@ export interface IExtensionContext {
    *                       If the interpreter is not installed/found, please throw a
    *                       "MissingInterpreter" exception so Vortex can show a nicer error message
    */
-  registerInterpreter: (
-    extension: string,
-    apply: (call: IRunParameters) => IRunParameters,
-  ) => void;
+  registerInterpreter: (extension: string, apply: (call: IRunParameters) => IRunParameters) => void;
 
   /**
    * register a hook to be called before Vortex starts any tool and is allowed to replace parameter
@@ -1432,10 +1387,7 @@ export interface IExtensionContext {
    * filePath can either be a static string or a function returning a promise that resolves
    * to the actual file path. The latter allows for the path to be determined dynamically
    */
-  registerProfileFile?: (
-    gameId: string,
-    filePath: string | (() => PromiseLike<string[]>),
-  ) => void;
+  registerProfileFile?: (gameId: string, filePath: string | (() => PromiseLike<string[]>)) => void;
 
   /**
    * register a profile feature that can be toggled/configured on the profiles screen.
@@ -1490,10 +1442,7 @@ export interface IExtensionContext {
    */
   registerPreview?: (
     priority: number,
-    handler: (
-      files: IPreviewFile[],
-      allowPick: boolean,
-    ) => PromiseBB<IPreviewFile>,
+    handler: (files: IPreviewFile[], allowPick: boolean) => PromiseBB<IPreviewFile>,
   ) => void;
 
   /**
@@ -1529,19 +1478,13 @@ export interface IExtensionContext {
   /**
    * Allows extensions to define additional data to add to a collection
    */
-  registerGameSpecificCollectionsData: (
-    data: ICollectionsGameSupportEntry,
-  ) => void;
+  registerGameSpecificCollectionsData: (data: ICollectionsGameSupportEntry) => void;
 
   /**
    * add a function to the IExtensionApi object that is made available to all other extensions
    * in the api.ext object.
    */
-  registerAPI: (
-    name: string,
-    func: (...args: any[]) => any,
-    options: IApiFuncOptions,
-  ) => void;
+  registerAPI: (name: string, func: (...args: any[]) => any, options: IApiFuncOptions) => void;
 
   /**
    * specify that a certain range of versions of vortex is required
@@ -1556,11 +1499,7 @@ export interface IExtensionContext {
    * @param {string} version a semver version range that the mod is compatible with
    * @param {boolean} optional if set to true, the extension will not fail if the dependency is not found
    */
-  requireExtension: (
-    extId: string,
-    version?: string,
-    optional?: boolean,
-  ) => void;
+  requireExtension: (extId: string, version?: string, optional?: boolean) => void;
 
   /**
    * called once after the store has been set up and after all extensions have been initialized

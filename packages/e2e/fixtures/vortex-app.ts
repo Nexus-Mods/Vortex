@@ -1,3 +1,8 @@
+import fs from "node:fs";
+import { createRequire } from "node:module";
+import os from "node:os";
+import path from "node:path";
+
 import {
   test as base,
   _electron as electron,
@@ -5,10 +10,6 @@ import {
   type ElectronApplication,
   type Page,
 } from "@playwright/test";
-import path from "node:path";
-import fs from "node:fs";
-import os from "node:os";
-import { createRequire } from "node:module";
 
 /** Package root (packages/e2e/) — used for resolving node_modules. */
 const PACKAGE_ROOT = path.resolve(import.meta.dirname, "..");
@@ -62,9 +63,7 @@ function buildElectronEnv(userDataDir: string): Record<string, string> {
 /**
  * Wait for the main window (index.html) to appear, skipping the splash screen.
  */
-async function waitForMainWindow(
-  vortexApp: ElectronApplication,
-): Promise<Page> {
+async function waitForMainWindow(vortexApp: ElectronApplication): Promise<Page> {
   const isMainWindow = (win: Page): boolean => {
     try {
       return win.url().includes("index.html");
@@ -129,9 +128,7 @@ async function waitForMainWindow(
       if (lastWindow) {
         resolve(lastWindow);
       } else {
-        reject(
-          new Error("Timed out waiting for the Vortex main window to appear."),
-        );
+        reject(new Error("Timed out waiting for the Vortex main window to appear."));
       }
     }, 120_000);
   });
@@ -207,10 +204,9 @@ export const test = base.extend<VortexTestFixtures, VortexWorkerFixtures>({
 
       // Wait for the app to actually render — domcontentloaded fires before
       // React renders anything. On CI with multiple workers this can be slow.
-      await mainWindow.waitForFunction(
-        () => (document.body?.innerText?.length ?? 0) > 0,
-        { timeout: 60_000 },
-      );
+      await mainWindow.waitForFunction(() => (document.body?.innerText?.length ?? 0) > 0, {
+        timeout: 60_000,
+      });
 
       await use(mainWindow);
     },

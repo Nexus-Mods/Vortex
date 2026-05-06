@@ -1,12 +1,11 @@
+import * as React from "react";
+import { FormGroup } from "react-bootstrap";
+
 import type { ValidationState } from "../types/ITableAttribute";
 import Debouncer from "../util/Debouncer";
 import { isFunction } from "../util/util";
-
-import { IconButton } from "./TooltipControls";
-
-import * as React from "react";
-import { FormGroup } from "react-bootstrap";
 import FormFeedback from "./FormFeedback";
+import { IconButton } from "./TooltipControls";
 
 export interface IProps {
   className?: string;
@@ -59,10 +58,7 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
   }
 
   public UNSAFE_componentWillReceiveProps(newProps: IProps) {
-    if (
-      newProps.value !== this.props.value &&
-      this.mLastCommitted !== newProps.value
-    ) {
+    if (newProps.value !== this.props.value && this.mLastCommitted !== newProps.value) {
       this.mLastCommitted = newProps.value;
       this.setState({ cachedValue: newProps.value });
     }
@@ -154,11 +150,7 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
 
   private renderIcon(iconName: string) {
     return (
-      <IconButton
-        className="form-input-clear btn-embed"
-        icon={iconName}
-        tooltip={undefined}
-      />
+      <IconButton className="form-input-clear btn-embed" icon={iconName} tooltip={undefined} />
     );
   }
 

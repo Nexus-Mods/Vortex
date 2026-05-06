@@ -1,4 +1,5 @@
 import * as path from "path";
+
 import * as Redux from "redux";
 import { selectors, types, util } from "vortex-api";
 
@@ -75,12 +76,7 @@ const gameSupport = util.makeOverlayableDictionary<string, IGameSupportEntry>(
       gameSettingsFiles: ["Oblivion.ini"],
     },
     oblivionremastered: {
-      mygamesPath: path.join(
-        "Oblivion Remastered",
-        "Saved",
-        "Config",
-        "Windows",
-      ),
+      mygamesPath: path.join("Oblivion Remastered", "Saved", "Config", "Windows"),
       gameSettingsFiles: ["Altar.ini"],
     },
   },
@@ -134,12 +130,10 @@ const gameSupport = util.makeOverlayableDictionary<string, IGameSupportEntry>(
   },
 );
 
-let discoveryForGame: (gameId: string) => types.IDiscoveryResult = () =>
-  undefined;
+let discoveryForGame: (gameId: string) => types.IDiscoveryResult = () => undefined;
 
 export function initGameSupport(api: types.IExtensionApi) {
-  discoveryForGame = (gameId: string) =>
-    selectors.discoveryByGame(api.store.getState(), gameId);
+  discoveryForGame = (gameId: string) => selectors.discoveryByGame(api.store.getState(), gameId);
 }
 
 export function gameSupported(gameMode: string): boolean {
@@ -154,10 +148,7 @@ export function mygamesPath(gameMode: string): string {
   );
 }
 
-export function gameSettingsFiles(
-  gameMode: string,
-  customPath: string,
-): ISettingsFile[] {
+export function gameSettingsFiles(gameMode: string, customPath: string): ISettingsFile[] {
   const fileNames = gameSupport.get(gameMode, "gameSettingsFiles");
 
   const mapFile = (input: string | ISettingsFile): ISettingsFile =>
@@ -174,12 +165,7 @@ export function gameSettingsFiles(
 }
 
 export function profilePath(profile: types.IProfile): string {
-  return path.join(
-    util.getVortexPath("userData"),
-    profile.gameId,
-    "profiles",
-    profile.id,
-  );
+  return path.join(util.getVortexPath("userData"), profile.gameId, "profiles", profile.id);
 }
 
 export function backupPath(profile: types.IProfile): string {

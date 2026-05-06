@@ -17,6 +17,7 @@ import type {
   IModRequirements,
   IModInfo,
 } from "@nexusmods/nexus-api";
+
 import type { IMod } from "../../mod_management/types/IMod";
 import type { IValidateKeyDataV2 } from "./IValidateKeyData";
 
@@ -48,10 +49,7 @@ export interface INexusAPIExtension {
     collectionSlug: string,
     revisionNumber: number,
   ) => PromiseLike<IRevision>;
-  nexusRateCollectionRevision?: (
-    revisionId: number,
-    rating: number,
-  ) => PromiseLike<any>;
+  nexusRateCollectionRevision?: (revisionId: number, rating: number) => PromiseLike<any>;
   nexusGetLatestMods?: (gameId: string) => PromiseLike<any>;
   nexusGetTrendingMods?: (gameId: string) => PromiseLike<any>;
   nexusEndorseDirect?: (
@@ -60,11 +58,7 @@ export interface INexusAPIExtension {
     version: string,
     endorsedStatus: EndorsedStatus,
   ) => PromiseLike<EndorsedStatus>;
-  nexusEndorseMod?: (
-    gameId: string,
-    modId: string,
-    endorsedStatus: EndorsedStatus,
-  ) => void;
+  nexusEndorseMod?: (gameId: string, modId: string, endorsedStatus: EndorsedStatus) => void;
   nexusSubmitFeedback?: (
     title: string,
     message: string,
@@ -79,12 +73,7 @@ export interface INexusAPIExtension {
     collectionId: number,
     callback: (err: Error, response?: any) => void,
   ) => void;
-  nexusModUpdate?: (
-    gameId: string,
-    modId: number,
-    fileId: number,
-    source: string,
-  ) => void;
+  nexusModUpdate?: (gameId: string, modId: number, fileId: number, source: string) => void;
   nexusOpenCollectionPage?: (
     gameId: string,
     collectionSlug: string,
@@ -95,10 +84,7 @@ export interface INexusAPIExtension {
   nexusRequestNexusLogin?: (callback: any) => void;
   nexusRequestOwnIssues?: (cb: (err: Error, issues?: IIssue[]) => void) => void;
   nexusRetrieveCategoryList?: (isUpdate: boolean) => void;
-  nexusGetModFiles?: (
-    gameId: string,
-    modId: number,
-  ) => PromiseLike<IFileInfo[]>;
+  nexusGetModFiles?: (gameId: string, modId: number) => PromiseLike<IFileInfo[]>;
   nexusDownloadUpdate?: (
     source: string,
     gameId: string,
@@ -114,14 +100,9 @@ export interface INexusAPIExtension {
     offset?: number,
     count?: number,
   ) => PromiseLike<Partial<IModFileContentPage>>;
-  nexusGetPreferences?: (
-    query: IPreferenceQuery,
-  ) => PromiseLike<Partial<IPreference>>;
+  nexusGetPreferences?: (query: IPreferenceQuery) => PromiseLike<Partial<IPreference>>;
 
-  nexusGetModInfo?: (
-    gameId: string,
-    modId: number,
-  ) => PromiseLike<Partial<IModInfo>>;
+  nexusGetModInfo?: (gameId: string, modId: number) => PromiseLike<Partial<IModInfo>>;
 
   nexusGetModRequirements?: (
     gameId: string,

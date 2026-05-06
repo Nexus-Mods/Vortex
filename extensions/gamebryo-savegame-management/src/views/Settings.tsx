@@ -5,6 +5,7 @@ import { connect } from "react-redux";
 import * as Redux from "redux";
 import { ThunkDispatch } from "redux-thunk";
 import { ComponentEx, selectors, Toggle } from "vortex-api";
+
 import { enableMonitor } from "../actions/settings";
 import { gameSupported } from "../util/gameSupport";
 
@@ -39,9 +40,7 @@ class Settings extends ComponentEx<IProps, {}> {
             {t("Monitor Savegame directory for changes")}
           </Toggle>
           <HelpBlock>
-            {t(
-              "If your games take very long to save when Vortex is running, try disabling this.",
-            )}
+            {t("If your games take very long to save when Vortex is running, try disabling this.")}
           </HelpBlock>
         </FormGroup>
       </form>
@@ -61,9 +60,7 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, null, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     enableMonitor: (enabled: boolean) => dispatch(enableMonitor(enabled)),
   };

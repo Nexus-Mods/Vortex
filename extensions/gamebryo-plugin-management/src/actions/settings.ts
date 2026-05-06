@@ -8,10 +8,7 @@ export const setAutoSortEnabled = createAction(
   (enabled) => enabled,
 );
 
-export const setAutoEnable = createAction(
-  "GAMEBRYO_SET_AUTO_ENABLE",
-  (enable) => enable,
-);
+export const setAutoEnable = createAction("GAMEBRYO_SET_AUTO_ENABLE", (enable) => enable);
 
 export const setPluginManagementEnabled = createAction(
   "GAMEBRYO_SET_PLUGIN_MANAGEMENT_ENABLED",

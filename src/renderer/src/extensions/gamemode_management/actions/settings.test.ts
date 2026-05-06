@@ -2,7 +2,6 @@ import { describe, it, expect } from "vitest";
 
 import type { IDiscoveredTool } from "../../../types/IDiscoveredTool";
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
-
 import * as actions from "./settings";
 
 function makeTool(overrides: Partial<IDiscoveredTool> = {}): IDiscoveredTool {
@@ -81,9 +80,7 @@ describe("addDiscoveredTool", () => {
       workingDirectory: "C:",
     });
 
-    expect(
-      actions.addDiscoveredTool("gameId1", "toolId1", result, false),
-    ).toEqual({
+    expect(actions.addDiscoveredTool("gameId1", "toolId1", result, false)).toEqual({
       error: false,
       type: "ADD_DISCOVERED_TOOL",
       payload: { gameId: "gameId1", toolId: "toolId1", result, manual: false },

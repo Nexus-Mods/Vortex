@@ -62,26 +62,18 @@ export function relativePath(raw: string): RelativePath {
   const normalized = raw.replace(/\\/g, "/");
 
   if (normalized.startsWith("/")) {
-    throw new RelativePathError(
-      `RelativePath must not start with '/': "${raw}"`,
-    );
+    throw new RelativePathError(`RelativePath must not start with '/': "${raw}"`);
   }
   if (/^[A-Za-z]:/.test(normalized)) {
-    throw new RelativePathError(
-      `RelativePath must not include a drive letter: "${raw}"`,
-    );
+    throw new RelativePathError(`RelativePath must not include a drive letter: "${raw}"`);
   }
 
   const trimmed =
-    normalized.endsWith("/") && normalized.length > 1
-      ? normalized.slice(0, -1)
-      : normalized;
+    normalized.endsWith("/") && normalized.length > 1 ? normalized.slice(0, -1) : normalized;
 
   const segments = trimmed.split("/").filter((s) => s.length > 0);
   if (segments.some((s) => s === "..")) {
-    throw new RelativePathError(
-      `RelativePath must not contain '..' segments: "${raw}"`,
-    );
+    throw new RelativePathError(`RelativePath must not contain '..' segments: "${raw}"`);
   }
 
   return segments.join("/") as RelativePath;
@@ -226,12 +218,7 @@ export class QualifiedPath {
    * */
   readonly path: string;
 
-  private constructor(
-    value: string,
-    scheme: string,
-    data: string,
-    path: string,
-  ) {
+  private constructor(value: string, scheme: string, data: string, path: string) {
     this.value = value;
     this.scheme = scheme;
     this.data = data;
@@ -322,29 +309,20 @@ export class QualifiedPath {
     const parentPath = slash === -1 ? "" : this.path.slice(0, slash);
 
     const pathStart = this.value.length - this.path.length;
-    const parentValue = this.value.slice(
-      0,
-      pathStart + (slash === -1 ? 0 : slash),
-    );
+    const parentValue = this.value.slice(0, pathStart + (slash === -1 ? 0 : slash));
     return new QualifiedPath(parentValue, this.scheme, this.data, parentPath);
   }
 
   join(...components: PathComponent[]): QualifiedPath {
     if (components.length === 0) return this;
-    const joinedPath = this.path
-      ? `${this.path}/${components.join("/")}`
-      : components.join("/");
+    const joinedPath = this.path ? `${this.path}/${components.join("/")}` : components.join("/");
     const joinedValue = this.path
       ? `${this.value}/${components.join("/")}`
       : `${this.value}${components.join("/")}`;
     return new QualifiedPath(joinedValue, this.scheme, this.data, joinedPath);
   }
 
-  with(change: {
-    extension?: string;
-    basename?: string;
-    dirname?: string;
-  }): QualifiedPath {
+  with(change: { extension?: string; basename?: string; dirname?: string }): QualifiedPath {
     if (
       change.extension === undefined &&
       change.basename === undefined &&
@@ -357,9 +335,7 @@ export class QualifiedPath {
     let filename: string;
     if (change.extension !== undefined) {
       const base = change.basename ?? this.basename;
-      const baseExt = base.includes(".")
-        ? base.slice(base.lastIndexOf(".") + 1)
-        : "";
+      const baseExt = base.includes(".") ? base.slice(base.lastIndexOf(".") + 1) : "";
       const stem = baseExt ? base.slice(0, -(baseExt.length + 1)) : base;
       filename = change.extension ? `${stem}.${change.extension}` : stem;
     } else {
@@ -437,8 +413,7 @@ export function qpath(
     let tail = strings[0] ?? ""; // text before the QualifiedPath (should be empty)
     for (let i = 1; i <= values.length; i++) {
       const v = i < values.length ? values[i] : undefined;
-      const val =
-        v instanceof QualifiedPath ? v.value : v !== undefined ? String(v) : "";
+      const val = v instanceof QualifiedPath ? v.value : v !== undefined ? String(v) : "";
       tail += (strings[i] ?? "") + val;
     }
     // Split on / and filter empties to get clean path components
@@ -450,9 +425,7 @@ export function qpath(
   let result = strings[0] ?? "";
   for (let i = 0; i < values.length; i++) {
     const v = values[i];
-    result +=
-      (v instanceof QualifiedPath ? v.value : String(v)) +
-      (strings[i + 1] ?? "");
+    result += (v instanceof QualifiedPath ? v.value : String(v)) + (strings[i + 1] ?? "");
   }
   return QualifiedPath.parse(result);
 }

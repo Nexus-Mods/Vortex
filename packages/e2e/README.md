@@ -5,16 +5,17 @@ Automated E2E tests for Vortex using [Playwright for Electron](https://playwrigh
 ## Prerequisites
 
 1. **Build Vortex for development**:
-   ```bash
-   pnpm run build
-   pnpm run build:assets
-   pnpm run build:extensions  # optional, needed for extension-dependent tests
-   ```
+
+    ```bash
+    pnpm run build
+    pnpm run build:assets
+    pnpm run build:extensions  # optional, needed for extension-dependent tests
+    ```
 
 2. **Install Playwright browsers** (one-time):
-   ```bash
-   pnpm -F @vortex/e2e exec playwright install chromium
-   ```
+    ```bash
+    pnpm -F @vortex/e2e exec playwright install chromium
+    ```
 
 ## Running Tests
 
@@ -68,13 +69,13 @@ packages/e2e/
 Selectors are encapsulated in POM classes under `selectors/`. Tests import POMs instead of using raw locators:
 
 ```ts
-import { DashboardPage } from '../selectors/dashboard';
+import { DashboardPage } from "../selectors/dashboard";
 
-test('customise button works', async ({ vortexWindow }) => {
-  const dashboard = new DashboardPage(vortexWindow);
-  await expect(dashboard.customiseButton).toBeVisible();
-  await dashboard.customiseButton.click();
-  await expect(dashboard.doneButton).toBeVisible();
+test("customise button works", async ({ vortexWindow }) => {
+    const dashboard = new DashboardPage(vortexWindow);
+    await expect(dashboard.customiseButton).toBeVisible();
+    await dashboard.customiseButton.click();
+    await expect(dashboard.doneButton).toBeVisible();
 });
 ```
 
@@ -83,11 +84,11 @@ test('customise button works', async ({ vortexWindow }) => {
 Shared utilities live in `helpers/`. Navigation, session management, and common operations go here:
 
 ```ts
-import { navigateToSettings } from '../helpers/navigation';
+import { navigateToSettings } from "../helpers/navigation";
 
-test('settings page loads', async ({ vortexWindow }) => {
-  await navigateToSettings(vortexWindow);
-  // ...
+test("settings page loads", async ({ vortexWindow }) => {
+    await navigateToSettings(vortexWindow);
+    // ...
 });
 ```
 
@@ -96,15 +97,15 @@ test('settings page loads', async ({ vortexWindow }) => {
 Use `test.step()` to group actions within a test for better reporting:
 
 ```ts
-test('my test', async ({ vortexWindow }) => {
-  await test.step('Navigate to settings', async () => {
-    await navigateToSettings(vortexWindow);
-  });
+test("my test", async ({ vortexWindow }) => {
+    await test.step("Navigate to settings", async () => {
+        await navigateToSettings(vortexWindow);
+    });
 
-  await test.step('Verify language is English', async () => {
-    const settings = new SettingsPage(vortexWindow);
-    await expect(settings.englishOption).toBeVisible();
-  });
+    await test.step("Verify language is English", async () => {
+        const settings = new SettingsPage(vortexWindow);
+        await expect(settings.englishOption).toBeVisible();
+    });
 });
 ```
 
@@ -115,11 +116,13 @@ The `vortex-app.ts` fixture launches one Electron instance per worker (worker-sc
 ### Diagnostics
 
 No inline `page.screenshot()` in tests. Diagnostics are handled by the Playwright config:
+
 - **Screenshots**: captured automatically on test failure
 - **Traces**: recorded on first retry
 - **Video**: recorded on first retry
 
 View reports after a run:
+
 ```bash
 pnpm -F @vortex/e2e run test:report
 ```
@@ -129,9 +132,9 @@ pnpm -F @vortex/e2e run test:report
 For tests that need a managed game without installing real games:
 
 ```ts
-import { setupFakeGame, cleanupFakeGame } from '../fixtures/game-setup/fake-game';
+import { setupFakeGame, cleanupFakeGame } from "../fixtures/game-setup/fake-game";
 
-const { basePath, gamePath } = setupFakeGame('stardewvalley');
+const { basePath, gamePath } = setupFakeGame("stardewvalley");
 // ... run tests ...
 cleanupFakeGame(basePath);
 ```
@@ -141,6 +144,7 @@ Available configs: `stardewvalley`, `skyrimse`. Add more in `fixtures/game-setup
 ## CI
 
 E2E tests run as part of the `e2e.yml` GitHub Actions workflow:
+
 - **Windows**: required (blocks PRs on failure)
 - **Linux**: allowed to fail (`continue-on-error: true`)
 - Linux uses `xvfb-run` for a virtual display
