@@ -3,8 +3,10 @@ import { useTranslation } from "react-i18next";
 import { ControlLabel, FormControl } from "react-bootstrap";
 import { FlexLayout, More, Toggle, tooltip, types } from "vortex-api";
 import { INSTRUCTIONS_PLACEHOLDER, NAMESPACE } from "../../constants";
+import { isGamebryoGame } from "../../util/gameSupport";
 
 export interface IInstructionProps {
+  gameId: string;
   collection: types.IMod;
   onSetCollectionAttribute: (path: string[], value: any) => void;
 }
@@ -20,7 +22,8 @@ function CollectionGeneralInfo(props: IInstructionProps) {
 
 const settings = (props: IInstructionProps) => {
   const [t] = useTranslation([NAMESPACE, "common"]);
-  const { onSetCollectionAttribute, collection } = props;
+  const { gameId, onSetCollectionAttribute, collection } = props;
+  const showExcludePluginRules = isGamebryoGame(gameId);
   const [recommendNewProfile, setRecommendNewProfile] = React.useState(
     collection.attributes?.collection?.collectionConfig?.recommendNewProfile,
   );
@@ -75,22 +78,24 @@ const settings = (props: IInstructionProps) => {
         </More>
       </Toggle>
 
-      <Toggle
-        id={"settings-exclude-plugin-rules"}
-        onToggle={toggleExcludePluginRules}
-        checked={excludePluginRules}
-      >
-        {t("Exclude plugin rules")}
-        <More
-          id="collection-settings-excludepluginrules"
-          name={t("Exclude plugin rules")}
+      {showExcludePluginRules ? (
+        <Toggle
+          id={"settings-exclude-plugin-rules"}
+          onToggle={toggleExcludePluginRules}
+          checked={excludePluginRules}
         >
-          {t(
-            "If enabled, custom LOOT plugin rules and groups will not be included when exporting this collection. "
-            + "This prevents inherited rules from spreading between collections.",
-          )}
-        </More>
-      </Toggle>
+          {t("Exclude plugin rules")}
+          <More
+            id="collection-settings-excludepluginrules"
+            name={t("Exclude plugin rules")}
+          >
+            {t(
+              "If enabled, custom LOOT plugin rules and groups will not be included when exporting this collection. "
+              + "This prevents inherited rules from spreading between collections.",
+            )}
+          </More>
+        </Toggle>
+      ) : null}
     </FlexLayout>
   );
 };
