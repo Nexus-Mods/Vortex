@@ -36051,6 +36051,14 @@ const Status = {
      * appear in users running that version or later.
      */
     Released: "released",
+    /**
+     * The error fingerprint is being ignored on purpose: it represents a
+     * non-bug (false positive, expected error in some user environments,
+     * out-of-our-control third-party failure, etc.). The dashboard should
+     * filter it out the same way as `released`, but there is no fix and no
+     * `release_version`. Terminal state — only set via `mode: resolve`.
+     */
+    Ignored: "ignored",
 };
 const STATUSES = Object.values(Status);
 const isStatus = (s) => STATUSES.some((v) => v === s);
@@ -36210,7 +36218,10 @@ const collectFromPR = () => {
     }
     const body = pr.body ?? "";
     const fingerprints = [
-        ...new Set([...body.matchAll(PR_FINGERPRINT_RE)].flatMap((m) => m[1].split(/[\s,]+/).filter(Boolean).map((fp) => fp.toLowerCase()))),
+        ...new Set([...body.matchAll(PR_FINGERPRINT_RE)].flatMap((m) => m[1]
+            .split(/[\s,]+/)
+            .filter(Boolean)
+            .map((fp) => fp.toLowerCase()))),
     ];
     const rows = fingerprints.map((fingerprint) => ({
         fingerprint,
@@ -36280,7 +36291,10 @@ const collectFingerprintRowsSince = async (octokit, ctx, sinceDate, version) => 
             mergedCount++;
             const body = pr.body ?? "";
             const fingerprints = [
-                ...new Set([...body.matchAll(PR_FINGERPRINT_RE)].flatMap((m) => m[1].split(/[\s,]+/).filter(Boolean).map((fp) => fp.toLowerCase()))),
+                ...new Set([...body.matchAll(PR_FINGERPRINT_RE)].flatMap((m) => m[1]
+                    .split(/[\s,]+/)
+                    .filter(Boolean)
+                    .map((fp) => fp.toLowerCase()))),
             ];
             for (const fingerprint of fingerprints) {
                 if (seen.has(fingerprint))

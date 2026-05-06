@@ -1,4 +1,4 @@
-import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { readFile, writeFile, mkdir, glob } from "node:fs/promises";
 import { resolve, dirname, isAbsolute } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -136,9 +136,21 @@ function extractWorkspacePackageGlobs(yamlText) {
 async function buildWorkspacePackageMap(packagePaths) {
   const map = {};
 
+  const resolvedPaths = [];
   for (const pkgPath of packagePaths) {
-    if (pkgPath.includes("*")) continue;
+    if (pkgPath.includes("*")) {
+      const matches = await Array.fromAsync(
+        glob(pkgPath, { cwd: ROOT_DIR }),
+      );
+      for (const match of matches) {
+        resolvedPaths.push(match);
+      }
+    } else {
+      resolvedPaths.push(pkgPath);
+    }
+  }
 
+  for (const pkgPath of resolvedPaths) {
     const pkgDir = resolve(ROOT_DIR, pkgPath);
     const pkgJsonPath = resolve(pkgDir, "package.json");
 

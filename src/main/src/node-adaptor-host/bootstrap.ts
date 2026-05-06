@@ -7,7 +7,7 @@ import {
   adaptorName,
   semVer,
 } from "@nexusmods/adaptor-api";
-import * as fsApi from "@vortex/fs";
+import * as fsApi from "@nexusmods/adaptor-api/fs";
 import vm from "node:vm";
 import { parentPort } from "node:worker_threads";
 
@@ -38,14 +38,14 @@ const { bundle, config } = init;
 
 const allowedModules: Record<string, unknown> = {
   "@nexusmods/adaptor-api": adaptorApi,
-  "@vortex/fs": fsApi,
+  "@nexusmods/adaptor-api/fs": fsApi,
 };
 
 // Step 2: Create a service container with proxies for each required URI.
 // Most URIs get a bare Proxy that forwards every method call over RPC;
 // `vortex:host/filesystem` is special-cased because its surface includes
 // AsyncIterator and FileSystemError semantics that do not survive a naive
-// Proxy. The `@vortex/fs` client polyfill fronts the wire contract with
+// Proxy. The `@nexusmods/adaptor-api/fs` client polyfill fronts the wire contract with
 // a real FileSystem instance.
 const container = new Map<string, unknown>();
 for (const requiresUri of config.requires) {

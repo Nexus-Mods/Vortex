@@ -1,6 +1,6 @@
-import type { PathResolver, ResolvedPath } from "@vortex/fs";
+import type { PathResolver, ResolvedPath } from "@nexusmods/adaptor-api/fs";
 
-import { PathResolverError, QualifiedPath } from "@vortex/fs";
+import { PathResolverError, QualifiedPath } from "@nexusmods/adaptor-api/fs";
 import { describe, expect, it } from "vitest";
 
 import { PathResolverRegistryImpl } from "./path-resolver-registry";

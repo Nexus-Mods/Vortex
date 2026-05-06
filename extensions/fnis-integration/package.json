@@ -26,7 +26,7 @@
     "@types/semver": "catalog:",
     "bluebird": "catalog:",
     "copyfiles": "catalog:",
-    "exe-version": "catalog:",
+    "exe-version": "workspace:*",
     "i18next": "catalog:",
     "modmeta-db": "catalog:",
     "react": "catalog:",

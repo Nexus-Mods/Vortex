@@ -7,8 +7,8 @@ const config = defineConfig({
   // Only the two host-provided root modules are externalized. Subpath
   // imports like `@nexusmods/adaptor-api/contracts/game-installer` are
   // bundled in, because the adaptor sandbox only exposes the root
-  // `@nexusmods/adaptor-api` and `@vortex/fs` specifiers at runtime.
-  external: (id) => id === "@nexusmods/adaptor-api" || id === "@vortex/fs",
+  // `@nexusmods/adaptor-api` and `@nexusmods/adaptor-api/fs` specifiers at runtime.
+  external: (id) => id === "@nexusmods/adaptor-api" || id === "@nexusmods/adaptor-api/fs",
   plugins: [
     vortexAdaptorPlugin({}),
   ],

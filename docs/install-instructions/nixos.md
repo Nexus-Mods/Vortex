@@ -1,7 +1,7 @@
 # NixOS Setup
 
-NixOS `flake.nix` provides all the dependencies you need out of the box,
-skipping the Volta and Corepack flow.
+NixOS `flake.nix` provides all deps out of box, matching repo Node/Electron.
+It skips Volta/Corepack flow.
 
 Validated on 13 April 2026. If any step is out of date, please open a [PR] or [issue].
 

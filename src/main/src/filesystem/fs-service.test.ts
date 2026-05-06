@@ -1,5 +1,5 @@
 import type { IMessage, IMessageHandler } from "@nexusmods/adaptor-api";
-import type { StatResult } from "@vortex/fs";
+import type { StatResult } from "@nexusmods/adaptor-api/fs";
 
 import * as fs from "node:fs/promises";
 import { tmpdir } from "node:os";

@@ -15,7 +15,7 @@
     "@types/redux": "catalog:",
     "bluebird": "catalog:",
     "copyfiles": "catalog:",
-    "exe-version": "catalog:",
+    "exe-version": "workspace:*",
     "i18next": "catalog:",
     "immutability-helper": "catalog:",
     "json-loader": "catalog:",

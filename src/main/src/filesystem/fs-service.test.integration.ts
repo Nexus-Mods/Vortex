@@ -1,6 +1,6 @@
 /**
  * End-to-end test for the filesystem RPC path: the real
- * `createFileSystemClient` polyfill from `@vortex/fs` talks through the
+ * `createFileSystemClient` polyfill from `@nexusmods/adaptor-api/fs` talks through the
  * real `createRpcTransport` from the adaptor host over a `MessageChannel`,
  * against the real `createFileSystemServiceHandler` wrapping a real
  * `FileSystemBackendImpl`. No Worker, no bundle — just the same wiring
@@ -9,7 +9,7 @@
 
 import type { IMethodMessage } from "@nexusmods/adaptor-api";
 
-import { FileSystemError, QualifiedPath } from "@vortex/fs";
+import { FileSystemError, QualifiedPath } from "@nexusmods/adaptor-api/fs";
 import * as fs from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";

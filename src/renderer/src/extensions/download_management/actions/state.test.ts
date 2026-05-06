@@ -15,11 +15,11 @@ describe("addLocalDownload", () => {
 
 describe("downloadProgress", () => {
   it("creates the action", () => {
-    const action = actions.downloadProgress("id", 42, 43, [], []);
+    const action = actions.downloadProgress("id", 42, 43, []);
     expect(action).toEqual({
       error: false,
       type: "DOWNLOAD_PROGRESS",
-      payload: { id: "id", received: 42, total: 43, chunks: [], urls: [] },
+      payload: { id: "id", received: 42, total: 43, urls: [] },
     });
   });
 });
@@ -58,11 +58,11 @@ describe("initDownload", () => {
 
 describe("pauseDownload", () => {
   it("creates the action", () => {
-    const action = actions.pauseDownload("id", true, []);
+    const action = actions.pauseDownload("id", true);
     expect(action).toEqual({
       error: false,
       type: "PAUSE_DOWNLOAD",
-      payload: { id: "id", paused: true, chunks: [] },
+      payload: { id: "id", paused: true },
     });
   });
 });

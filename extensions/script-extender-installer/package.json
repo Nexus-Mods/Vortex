@@ -19,7 +19,7 @@
     "bluebird": "catalog:",
     "copyfiles": "catalog:",
     "electron": "catalog:",
-    "exe-version": "catalog:",
+    "exe-version": "workspace:*",
     "lodash": "catalog:",
     "nexus-api": "catalog:",
     "react": "catalog:",

@@ -634,6 +634,26 @@ async function readPAKs(api: types.IExtensionApi) : Promise<Array<ICacheEntry>> 
     return [];
   }
 
+  // Pre-check: if divine.exe is missing on disk (corrupted install, AV
+  // quarantine), bail with a single notification rather than fanning out one
+  // failed call per pak through the retry-on-error concurrency limiter.
+  const stagingFolder = selectors.installPathForGame(state, GAME_ID);
+  const divineExePath = path.join(stagingFolder, lsLib.installationPath, 'tools', 'divine.exe');
+  try {
+    await fs.statAsync(divineExePath);
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+      api.showErrorNotification('Divine executable is missing',
+        'The installed copy of LSLib/Divine is corrupted - please '
+        + 'delete the existing LSLib mod entry and re-install it. Make sure to '
+        + 'disable or add any necessary exceptions to your security software to '
+        + 'ensure it does not interfere with Vortex/LSLib file operations.',
+        { id: 'bg3-divine-missing', allowReport: false });
+      return [];
+    }
+    throw err;
+  }
+
   const paks = await readPAKList(api);
 
   // logDebug('paks', paks);
@@ -662,7 +682,9 @@ async function readPAKs(api: types.IExtensionApi) : Promise<Array<ICacheEntry>> 
             : undefined;
 
           const pakPath = path.join(modsPath(), fileName);
-          return cache.getCacheEntry(api, pakPath, mod);
+          // `return await` (not bare `return`) so this try/catch sees the
+          // promise rejection — without await, the catch is dead code.
+          return await cache.getCacheEntry(api, pakPath, mod);
         } catch (err) {
           // Game switched (or similar) while we were reading paks — bail out
           // without notifying the user; the new game context will re-scan.
@@ -681,8 +703,9 @@ async function readPAKs(api: types.IExtensionApi) : Promise<Array<ICacheEntry>> 
               + 'delete the existing LSLib mod entry and re-install it. Make sure to '
               + 'disable or add any necessary exceptions to your security software to '
               + 'ensure it does not interfere with Vortex/LSLib file operations.';
+            // Stable id so parallel pak failures collapse into one notification.
             api.showErrorNotification('Divine executable is missing', message,
-              { allowReport: false });
+              { id: 'bg3-divine-missing', allowReport: false });
             return undefined;
           }
           api.showErrorNotification('Failed to read pak. Please make sure you are using the latest version of LSLib by using the "Re-install LSLib/Divine" toolbar button on the Mods page.', err, {

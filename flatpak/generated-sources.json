@@ -282,27 +282,6 @@
     },
     {
         "type": "file",
-        "url": "https://codeload.github.com/Nexus-Mods/node-exe-version/tar.gz/893a394c9e113f9b5c797acb32f93e172829ae00",
-        "sha256": "c6a6ffeed02fa017a940bae9f5b2a677d6bc2d4a72c8fe2330618932fa9275c2",
-        "dest-filename": "893a394c9e113f9b5c797acb32f93e172829ae00",
-        "dest": "flatpak-node/yarn-mirror"
-    },
-    {
-        "type": "file",
-        "url": "https://codeload.github.com/Nexus-Mods/node-exe-version/tar.gz/bd5ef39efe9a14f652ba4af1bcfa7b64d99aaca9",
-        "sha256": "d220582082ec599209a7e3ba9d218efee1532bf5c75dc2ade8bae45a6d02ab62",
-        "dest-filename": "bd5ef39efe9a14f652ba4af1bcfa7b64d99aaca9",
-        "dest": "flatpak-node/yarn-mirror"
-    },
-    {
-        "type": "file",
-        "url": "https://codeload.github.com/Nexus-Mods/node-exe-version/tar.gz/eded60fc0a0f3c234e1d586d2eb9952401945406",
-        "sha256": "c872213a63b2ee86274c5570b00118456c970b2530ae55375ca4240c64be0aa4",
-        "dest-filename": "eded60fc0a0f3c234e1d586d2eb9952401945406",
-        "dest": "flatpak-node/yarn-mirror"
-    },
-    {
-        "type": "file",
         "url": "https://codeload.github.com/Nexus-Mods/node-gamebryo-savegames/tar.gz/0f4f5bf5293fe6ed8f0da226c67fb79b3c877739",
         "sha256": "24a58fcb78801748427127afca5ade551111d933e5a8cf63c5a0ea8929d058f4",
         "dest-filename": "0f4f5bf5293fe6ed8f0da226c67fb79b3c877739",
@@ -313,13 +292,6 @@
         "url": "https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/c4f6d3dbae7bc2e19b8cb2d4cd387fffd90c87ec",
         "sha256": "9d86ab17fcb7a3d8e2ad72df0659a956c73656d9991bc924f7f5f6ee3f76ecd1",
         "dest-filename": "c4f6d3dbae7bc2e19b8cb2d4cd387fffd90c87ec",
-        "dest": "flatpak-node/yarn-mirror"
-    },
-    {
-        "type": "file",
-        "url": "https://codeload.github.com/Nexus-Mods/node-native-errors/tar.gz/51913db07e4c9b68a96ba7fcf741b32796758f18",
-        "sha256": "0b03c10d8d4d1627b6cd6634b4a3f6b14dd6837ff54129cdbe02c77b4cb9cee5",
-        "dest-filename": "51913db07e4c9b68a96ba7fcf741b32796758f18",
         "dest": "flatpak-node/yarn-mirror"
     },
     {
@@ -614,13 +586,6 @@
         "url": "https://codeload.github.com/TanninOne/electron-redux/tar.gz/66bbd9d389579806e8c4ebd87bd513a668cc64a8",
         "sha256": "d9a49ec0e4896c1c3f262274ae56d59199468a825a4280ecb029ebcf7a326336",
         "dest-filename": "66bbd9d389579806e8c4ebd87bd513a668cc64a8",
-        "dest": "flatpak-node/yarn-mirror"
-    },
-    {
-        "type": "file",
-        "url": "https://codeload.github.com/TanninOne/node-diskusage/tar.gz/eb52fd176b2c311dd3ae5f0e68ff7488c08a179d",
-        "sha256": "f0fb199589c451d184daf60011d4f5caaf29c179dcfed7b9af29f2934492b2ed",
-        "dest-filename": "eb52fd176b2c311dd3ae5f0e68ff7488c08a179d",
         "dest": "flatpak-node/yarn-mirror"
     },
     {

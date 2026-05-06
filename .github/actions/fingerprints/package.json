@@ -6,6 +6,7 @@
   "main": "src/index.ts",
   "scripts": {
     "preinstall": "npx only-allow pnpm",
+    "prebuild": "tsc --noEmit",
     "build": "ncc build src/index.ts -o dist --license LICENSES.txt",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"

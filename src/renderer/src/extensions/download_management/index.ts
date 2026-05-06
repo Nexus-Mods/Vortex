@@ -22,7 +22,6 @@ import type { IState } from "../../types/IState";
 import type { ITestResult } from "../../types/ITestResult";
 import type { Normalize } from "../../util/getNormalizeFunc";
 import type { DownloadState, IDownload } from "./types/IDownload";
-import type { IProtocolHandlers, IResolvedURL } from "./types/ProtocolHandlers";
 import type { IDownloadViewProps } from "./views/DownloadView";
 
 import ReduxProp from "../../ReduxProp";
@@ -39,7 +38,7 @@ import { log } from "../../util/log";
 import * as selectors from "../../util/selectors";
 import { knownGames } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
-import { batchDispatch, sum, toPromise, truthy } from "../../util/util";
+import { batchDispatch, toPromise, truthy } from "../../util/util";
 import { convertGameIdReverse } from "../nexus_integration/util/convertGameId";
 import {
   addLocalDownload,
@@ -48,7 +47,6 @@ import {
   removeDownloadSilent,
   setDownloadHash,
   setDownloadHashByFile,
-  setDownloadInterrupted,
   setDownloadModInfo,
 } from "./actions/state";
 import { setTransferDownloads } from "./actions/transactions";
@@ -68,8 +66,6 @@ import ShutdownButton from "./views/ShutdownButton";
 import SpeedOMeter from "./views/SpeedOMeter";
 
 let updateDebouncer: Debouncer;
-
-const protocolHandlers: IProtocolHandlers = {};
 
 import { knownArchiveExt } from "../../util/archives";
 
@@ -118,12 +114,6 @@ function refreshDownloads(
       );
     });
 }
-
-export type ProtocolHandler = (
-  inputUrl: string,
-  name: string,
-  friendlyName: string,
-) => PromiseBB<IResolvedURL>;
 
 function attributeExtractor(input: any) {
   let downloadGame: string | string[] = getSafe(
@@ -188,7 +178,7 @@ function genDownloadChangeHandler(
               const dlId = findDownload(fileName);
               if (dlId !== undefined) {
                 store.dispatch(
-                  downloadProgress(dlId, stats.size, stats.size, [], undefined),
+                  downloadProgress(dlId, stats.size, stats.size, undefined),
                 );
               }
             },
@@ -304,7 +294,7 @@ async function removeInvalidDownloads(api: IExtensionApi, gameId?: string) {
       if (stats?.size > 0) {
         // file exists and is valid on disk - repair the state instead of deleting
         repairActions.push(
-          downloadProgress(dlId, stats.size, stats.size, [], undefined),
+          downloadProgress(dlId, stats.size, stats.size, undefined),
         );
       } else {
         // file genuinely missing or empty - safe to clean up
@@ -559,9 +549,7 @@ function postImport(
   return fs
     .statAsync(destination)
     .then((stats) => {
-      store.dispatch(
-        downloadProgress(dlId, stats.size, stats.size, [], undefined),
-      );
+      store.dispatch(downloadProgress(dlId, stats.size, stats.size, undefined));
       return toPromise((cb) =>
         api.events.emit("did-import-downloads", [dlId], cb),
       );
@@ -970,52 +958,6 @@ function removeDownloadsWithoutFile(
     });
 }
 
-function processInterruptedDownloads(
-  api: IExtensionApi,
-  downloads: { [dlId: string]: IDownload },
-  gameMode: string,
-) {
-  const interruptedDownloads = Object.keys(downloads).filter((id) =>
-    ["init", "started", "pending"].includes(downloads[id].state),
-  );
-  interruptedDownloads.forEach((id) => {
-    if (!truthy(downloads[id].urls)) {
-      // download was interrupted before receiving urls, has to be canceled
-      log("info", "download removed because urls were never retrieved", { id });
-      const gameId = Array.isArray(downloads[id].game)
-        ? convertGameIdReverse(
-            knownGames(api.getState()),
-            downloads[id].game[0],
-          )
-        : gameMode;
-
-      const downloadPath = selectors.downloadPathForGame(
-        api.getState(),
-        gameId,
-      );
-      if (downloadPath !== undefined && downloads[id].localPath !== undefined) {
-        fs.removeAsync(path.join(downloadPath, downloads[id].localPath)).then(
-          () => {
-            api.store.dispatch(removeDownloadSilent(id));
-          },
-        );
-      } else {
-        api.store.dispatch(removeDownloadSilent(id));
-      }
-    } else {
-      let realSize =
-        downloads[id].size !== 0
-          ? downloads[id].size -
-            sum((downloads[id].chunks || []).map((chunk) => chunk.size))
-          : 0;
-      if (isNaN(realSize)) {
-        realSize = 0;
-      }
-      api.store.dispatch(setDownloadInterrupted(id, realSize));
-    }
-  });
-}
-
 function checkDownloadsWithMissingMeta(api: IExtensionApi) {
   const state = api.getState();
   const downloads = state.persistent.downloads.files ?? {};
@@ -1094,13 +1036,6 @@ function init(context: IExtensionContext): boolean {
   context.registerSettings("Download", Settings, undefined, undefined, 75);
 
   context.registerFooter("speed-o-meter", SpeedOMeter);
-
-  context.registerDownloadProtocol = (
-    schema: string,
-    handler: ProtocolHandler,
-  ) => {
-    protocolHandlers[schema] = handler;
-  };
 
   const queryCondition = (instanceIds: string[]) => {
     const state: IState = context.api.store.getState();
@@ -1420,18 +1355,10 @@ function init(context: IExtensionContext): boolean {
     const downloads = state.persistent.downloads?.files ?? {};
     const gameMode = selectors.activeGameId(state);
 
-    processInterruptedDownloads(context.api, downloads, gameMode);
     checkForUnfinalized(context.api, downloads, gameMode);
     removeDownloadsWithoutFile(store, downloads);
 
     processCommandline(context.api);
-
-    context.api.events.on(
-      "get-download-free-slots",
-      (callback: (freeSlots: number) => void) => {
-        callback(0);
-      },
-    );
   });
 
   return true;

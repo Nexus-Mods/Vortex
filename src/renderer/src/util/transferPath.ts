@@ -6,7 +6,7 @@ import {
   unknownToError,
 } from "@vortex/shared";
 import PromiseBB from "bluebird";
-import * as diskusage from "diskusage";
+import * as nodeFs from "fs";
 import * as path from "path";
 import turbowalk from "turbowalk";
 import * as winapi from "winapi-bindings";
@@ -107,7 +107,8 @@ export function testPathTransfer(
     .then((totalSize) => {
       totalNeededBytes = totalSize;
       try {
-        return diskusage.check(destinationRoot);
+        const stats = nodeFs.statfsSync(destinationRoot);
+        return PromiseBB.resolve({ free: stats.bavail * stats.bsize });
       } catch (err) {
         // don't report an error just because this check failed
         return PromiseBB.resolve({ free: Number.MAX_VALUE });

@@ -3,14 +3,14 @@ import type {
   LinuxPathProvider,
   LinuxPathBase,
   XDGBase,
-} from "@vortex/fs";
+} from "@nexusmods/adaptor-api/fs";
 
 import {
   QualifiedPath,
   PathResolverError,
   PathProviderError,
   XDG,
-} from "@vortex/fs";
+} from "@nexusmods/adaptor-api/fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path/posix";
 

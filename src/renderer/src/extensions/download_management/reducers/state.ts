@@ -32,7 +32,6 @@ export const stateReducer: IReducerSpec = {
         game: payload.games,
         urls: payload.urls,
         modInfo: payload.modInfo,
-        chunks: [],
         fileTime: Date.now(),
       };
       if (state.files[payload.id] != null) {
@@ -83,9 +82,6 @@ export const stateReducer: IReducerSpec = {
       };
       if (state.files[payload.id].state === "init") {
         update["state"] = payload.received > 0 ? "started" : "init";
-      }
-      if (payload.chunks !== undefined) {
-        update["chunks"] = payload.chunks;
       }
       if (payload.urls !== undefined) {
         update["urls"] = payload.urls;
@@ -161,7 +157,6 @@ export const stateReducer: IReducerSpec = {
         state: payload.state,
         failCause: payload.failCause,
         fileTime: Date.now(),
-        chunks: [],
       });
     },
     [action.finalizingDownload as any]: (state, payload) => {
@@ -175,7 +170,7 @@ export const stateReducer: IReducerSpec = {
         fileTime: payload.time,
       }),
     [action.pauseDownload as any]: (state, payload) => {
-      const { id, paused, chunks } = payload;
+      const { id, paused } = payload;
       const oldDLState = state.files?.[id]?.state;
       if (
         ["finished", "finalizing", undefined].includes(oldDLState) ||
@@ -184,9 +179,6 @@ export const stateReducer: IReducerSpec = {
         // failed downloads can be retried, otherwise we only allow resuming paused and pausing
         // active downloads
         return state;
-      }
-      if (chunks !== undefined) {
-        state = setOrNop(state, ["files", id, "chunks"], chunks);
       }
       const newState = paused
         ? "paused"
@@ -197,8 +189,9 @@ export const stateReducer: IReducerSpec = {
     },
     [action.setDownloadSpeed as any]: (state, payload) => {
       const temp = setSafe(state, ["speed"], payload);
-      let speeds =
-        Array.isArray(state.speedHistory) ? state.speedHistory.slice() : [];
+      let speeds = Array.isArray(state.speedHistory)
+        ? state.speedHistory.slice()
+        : [];
       speeds.push(payload);
       if (speeds.length > NUM_SPEED_DATA_POINTS) {
         speeds = speeds.slice(speeds.length - NUM_SPEED_DATA_POINTS);
@@ -223,7 +216,6 @@ export const stateReducer: IReducerSpec = {
         fileTime: Date.now(),
         urls: [],
         modInfo: {},
-        chunks: [],
       }),
     [action.setDownloadModInfo as any]: (state, payload) => {
       if (typeof payload.id !== "string") {

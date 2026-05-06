@@ -1,6 +1,7 @@
 {
   "recommendations": [
     "esbenp.prettier-vscode",
-    "oxc.oxc-vscode"
-  ]
+    "oxc.oxc-vscode",
+    "mermaidchart.vscode-mermaid-chart",
+  ],
 }

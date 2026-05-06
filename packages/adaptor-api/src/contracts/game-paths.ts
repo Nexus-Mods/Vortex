@@ -1,7 +1,7 @@
-import { QualifiedPath } from "@vortex/fs";
+import type { StorePathProvider } from "../stores/providers";
+import type { VersionSource } from "./game-version";
 
-import type { StorePathProvider } from "../stores/providers.js";
-import type { VersionSource } from "./game-version.js";
+import { QualifiedPath } from "../fs/paths";
 
 /**
  * Path-map returned by an adaptor's {@link IGamePathService.paths}.

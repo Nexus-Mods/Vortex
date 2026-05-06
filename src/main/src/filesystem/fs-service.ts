@@ -1,7 +1,7 @@
 import type { IMessage, IMessageHandler } from "@nexusmods/adaptor-api";
-import type { IFileSystem, Pattern, Status } from "@vortex/fs";
+import type { FileSystem, Pattern, Status } from "@nexusmods/adaptor-api/fs";
 
-import { QualifiedPath } from "@vortex/fs";
+import { QualifiedPath } from "@nexusmods/adaptor-api/fs";
 
 interface EnumerateOptions {
   includeStatus?: boolean | "symlink";
@@ -45,7 +45,7 @@ function rehydrate(value: unknown): QualifiedPath {
  * Handler for the `vortex:host/filesystem` URI. Rehydrates
  * {@link QualifiedPath} arguments (structured-cloned across the worker
  * boundary), delegates every operation to the supplied
- * {@link IFileSystem}, and batches directory enumeration through a cursor
+ * {@link FileSystem}, and batches directory enumeration through a cursor
  * protocol because `AsyncIterator` is not serialisable.
  *
  * Open cursors can be released in bulk via the returned {@link closeAll}
@@ -58,7 +58,7 @@ export interface FileSystemServiceHandler {
 }
 
 export function createFileSystemServiceHandler(
-  fs: IFileSystem,
+  fs: FileSystem,
   options?: { batchSize?: number },
 ): FileSystemServiceHandler {
   const batchSize = options?.batchSize ?? DEFAULT_BATCH_SIZE;
@@ -112,7 +112,7 @@ export function createFileSystemServiceHandler(
       const [pathArg, opts] = args as [unknown, EnumerateOptions?];
       const iterator = await fs.enumerateDirectory(
         rehydrate(pathArg),
-        (opts ?? {}) as Parameters<IFileSystem["enumerateDirectory"]>[1],
+        (opts ?? {}) as Parameters<FileSystem["enumerateDirectory"]>[1],
       );
       const cursorId = `fs-cur:${++cursorCounter}`;
       cursors.set(cursorId, { iterator });

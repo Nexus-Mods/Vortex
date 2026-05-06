@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-05-06
+
+_Stable 2.0 release. See the alpha and beta entries below for the full list of changes since 1.16._
+
+### Changed
+
+- GraphQL error path, locations, and query now surfaced in Nexus API warning logs for easier diagnosis ([#22886](https://github.com/Nexus-Mods/Vortex/pull/22886))
+
+### Fixed
+
+- Restored ability to import a single nested folder by dropping it onto the mods page (with confirmation prompt) ([#22866](https://github.com/Nexus-Mods/Vortex/pull/22866))
+- Updater notification never dismissing after the download was kicked off in the background ([#22826](https://github.com/Nexus-Mods/Vortex/pull/22826))
+- Health check "Open mod page" crash and improved Nexus URL fallback ([#22812](https://github.com/Nexus-Mods/Vortex/pull/22812))
+- Variant name accepting filesystem-illegal characters, breaking staging folder creation ([#22827](https://github.com/Nexus-Mods/Vortex/pull/22827))
+- Non-actionable mod-requirements failure shown as a user-facing toast ([#22841](https://github.com/Nexus-Mods/Vortex/pull/22841))
+- Spurious "external changes" dialog after replacing or removing a mod; removed mods' manifest entries now auto-resolve on the next deploy ([#22854](https://github.com/Nexus-Mods/Vortex/pull/22854))
+- File description shown by the UAC elevation dialog (backport from master that had not reached v2.0) ([#22858](https://github.com/Nexus-Mods/Vortex/pull/22858))
+- `react-hot-toast` render crash now contained by an error boundary; toast system disables itself on persistent failure instead of crashing the renderer ([#22884](https://github.com/Nexus-Mods/Vortex/pull/22884))
+
 ## [2.0.0-beta.2] - 2026-04-27
 
 ### Added
@@ -1730,6 +1749,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[2.0.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.0.0
 [2.0.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.0.0-beta.2
 [2.0.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/v2.0.0-beta.1
 [2.0.0-alpha.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/v2.0.0-alpha.4

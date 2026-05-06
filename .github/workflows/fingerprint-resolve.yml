@@ -18,6 +18,7 @@ on:
         options:
           - fixed
           - released
+          - ignored
       release_version:
         description: "Release version (required when status is released and remove is false)"
         required: false

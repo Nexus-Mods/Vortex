@@ -7,20 +7,18 @@
   "scripts": {
     "build": "pnpm tsdown",
     "dist": "pnpm tsdown",
-    "typecheck": "pnpm tsc",
+    "typecheck": "pnpm tsc -p ./tsconfig.json",
     "test": "pnpm vitest run",
     "lint": "pnpm eslint --concurrency auto .",
     "lint:quiet": "pnpm eslint --concurrency auto --quiet ."
-  },
-  "dependencies": {
-    "@vortex/fs": "workspace:*"
   },
   "peerDependencies": {
     "rolldown": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
-    "rolldown": "catalog:"
+    "rolldown": "catalog:",
+    "vite-plugin-doctest": "catalog:"
   },
   "exports": {
     ".": {
@@ -68,15 +66,15 @@
       "import": "./dist/contracts/ping.js",
       "require": "./dist/contracts/ping.cjs"
     },
+    "./fs": {
+      "development": "./src/fs/lib.ts",
+      "import": "./dist/fs/index.js",
+      "require": "./dist/fs/index.cjs"
+    },
     "./plugin": {
       "development": "./src/plugin.ts",
       "import": "./dist/plugin.js",
       "require": "./dist/plugin.cjs"
-    },
-    "./stores/lib": {
-      "development": "./src/stores/lib.ts",
-      "import": "./dist/stores/lib.js",
-      "require": "./dist/stores/lib.cjs"
     },
     "./package.json": "./package.json"
   },
@@ -118,13 +116,13 @@
         "import": "./dist/contracts/ping.js",
         "require": "./dist/contracts/ping.cjs"
       },
+      "./fs": {
+        "import": "./dist/fs/index.js",
+        "require": "./dist/fs/index.cjs"
+      },
       "./plugin": {
         "import": "./dist/plugin.js",
         "require": "./dist/plugin.cjs"
-      },
-      "./stores/lib": {
-        "import": "./dist/stores/lib.js",
-        "require": "./dist/stores/lib.cjs"
       },
       "./package.json": "./package.json"
     }

@@ -38,9 +38,11 @@ const diskCheckResults: Record<string, { free: number }> = {
   "": { free: 42 },
 };
 
-vi.mock("diskusage", () => ({
-  check: (checkPath: string) =>
-    diskCheckResults[checkPath] ?? diskCheckResults[""],
+vi.mock("fs", () => ({
+  statfsSync: (checkPath: string) => {
+    const result = diskCheckResults[checkPath] ?? diskCheckResults[""];
+    return { bavail: result.free, bsize: 1 };
+  },
 }));
 
 vi.mock("winapi-bindings", () => ({

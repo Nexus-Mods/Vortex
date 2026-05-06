@@ -24,9 +24,6 @@
       "path": "./tsconfig.node.json",
     },
     {
-      "path": "./packages/fs/tsconfig.json",
-    },
-    {
       "path": "./src/shared/tsconfig.json",
     },
     {
