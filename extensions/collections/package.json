@@ -46,7 +46,7 @@
     "shortid": "catalog:",
     "tmp": "catalog:",
     "ts-v-gen": "catalog:",
-    "turbowalk": "catalog:",
+    "turbowalk": "workspace:*",
     "typescript": "catalog:",
     "vortex-api": "workspace:*"
   }

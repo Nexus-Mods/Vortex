@@ -17,7 +17,7 @@
     "bluebird": "catalog:",
     "copyfiles": "catalog:",
     "redux": "catalog:",
-    "turbowalk": "catalog:",
+    "turbowalk": "workspace:*",
     "typescript": "catalog:",
     "vortex-api": "workspace:*"
   }

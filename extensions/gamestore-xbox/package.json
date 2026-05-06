@@ -23,7 +23,7 @@
     "copyfiles": "catalog:",
     "redux": "catalog:",
     "redux-thunk": "catalog:",
-    "turbowalk": "catalog:",
+    "turbowalk": "workspace:*",
     "typescript": "catalog:",
     "vortex-api": "workspace:*",
     "winapi-bindings": "catalog:",

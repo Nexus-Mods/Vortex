@@ -20,7 +20,7 @@
     "@types/libxmljs": "catalog:",
     "bluebird": "catalog:",
     "copyfiles": "catalog:",
-    "turbowalk": "catalog:",
+    "turbowalk": "workspace:*",
     "typescript": "catalog:",
     "vortex-api": "workspace:*",
     "winapi-bindings": "catalog:",

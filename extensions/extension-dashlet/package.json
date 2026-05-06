@@ -27,7 +27,7 @@
     "react-i18next": "catalog:",
     "redux": "catalog:",
     "redux-thunk": "catalog:",
-    "turbowalk": "catalog:",
+    "turbowalk": "workspace:*",
     "typescript": "catalog:",
     "vortex-api": "workspace:*"
   }

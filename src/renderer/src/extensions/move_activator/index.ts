@@ -252,7 +252,9 @@ class DeploymentMethod extends LinkingDeployment {
       {
         details: true,
       },
-    ).then(() => PromiseBB.map(links, (entry) => this.restoreLink(entry.filePath)));
+    )
+      .then(() => PromiseBB.map(links, (entry) => this.restoreLink(entry.filePath)))
+      .then(() => {});
   }
 
   protected linkFile(linkPath: string, sourcePath: string, dirTags?: boolean): Promise<void> {
