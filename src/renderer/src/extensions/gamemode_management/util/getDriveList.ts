@@ -1,4 +1,5 @@
 import { readFile } from "fs/promises";
+
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 
 /**
@@ -6,8 +7,7 @@ import type { IExtensionApi } from "../../../types/IExtensionContext";
  * Uses koffi FFI to call Win32 APIs on Windows, /proc/mounts on Linux.
  */
 function getDriveList(api: IExtensionApi): Promise<string[]> {
-  const impl =
-    process.platform === "win32" ? getFixedDrivesWindows : getFixedDrivesLinux;
+  const impl = process.platform === "win32" ? getFixedDrivesWindows : getFixedDrivesLinux;
 
   return impl().catch((err) => {
     api.showErrorNotification(
@@ -27,16 +27,14 @@ function getDriveList(api: IExtensionApi): Promise<string[]> {
  * root paths ("C:\\\0D:\\\0\0"). GetDriveTypeW returns the type for each;
  * DRIVE_FIXED (3) is what we want.
  */
-function getFixedDrivesWindows(): Promise<string[]> {
+async function getFixedDrivesWindows(): Promise<string[]> {
   const koffi = await import("koffi");
   const kernel32 = koffi.load("kernel32.dll");
 
   const GetLogicalDriveStringsW = kernel32.func(
     "uint32 GetLogicalDriveStringsW(uint32 nBufferLength, uint16 *lpBuffer)",
   );
-  const GetDriveTypeW = kernel32.func(
-    "uint32 GetDriveTypeW(const uint16 *lpRootPathName)",
-  );
+  const GetDriveTypeW = kernel32.func("uint32 GetDriveTypeW(const uint16 *lpRootPathName)");
 
   const DRIVE_FIXED = 3;
 
@@ -93,15 +91,11 @@ async function getFixedDrivesLinux(): Promise<string[]> {
       ({ device, fstype }) =>
         device.startsWith("/dev/") &&
         !device.startsWith("/dev/loop") &&
-        ["ext4", "btrfs", "xfs", "zfs", "ext3", "ext2", "f2fs"].includes(
-          fstype,
-        ),
+        ["ext4", "btrfs", "xfs", "zfs", "ext3", "ext2", "f2fs"].includes(fstype),
     )
     .map(({ mountpoint }) =>
       // Unescape octal sequences in mount paths (e.g. \040 for space)
-      mountpoint.replace(/\\([0-7]{3})/g, (_, oct) =>
-        String.fromCharCode(parseInt(oct, 8)),
-      ),
+      mountpoint.replace(/\\([0-7]{3})/g, (_, oct) => String.fromCharCode(parseInt(oct, 8))),
     );
 
   return drives.length > 0 ? drives : ["/"];
