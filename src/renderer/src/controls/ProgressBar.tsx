@@ -1,4 +1,5 @@
 import * as React from "react";
+
 import { timeToString } from "../util/util";
 
 export interface IBaseProps {
@@ -39,15 +40,8 @@ class ProgressBar extends React.PureComponent<IBaseProps, IProgressBarState> {
   }
 
   public render(): JSX.Element {
-    const {
-      className,
-      labelLeft,
-      labelRight,
-      showPercentage,
-      showTimeLeft,
-      style,
-      now,
-    } = this.props;
+    const { className, labelLeft, labelRight, showPercentage, showTimeLeft, style, now } =
+      this.props;
 
     const min = this.props.min || 0;
     const max = this.props.max || 100;
@@ -60,10 +54,7 @@ class ProgressBar extends React.PureComponent<IBaseProps, IProgressBarState> {
         <div className="progressbar-container">
           {hasLabel ? this.renderLabels() : null}
           <div className="progressbar-track">
-            <div
-              className="progressbar-progress"
-              style={{ width: `${percent}%` }}
-            />
+            <div className="progressbar-progress" style={{ width: `${percent}%` }} />
           </div>
         </div>
         {showPercentage ? this.renderPercentage(percent) : null}
@@ -96,8 +87,7 @@ class ProgressBar extends React.PureComponent<IBaseProps, IProgressBarState> {
     }
 
     const expected = elapsed / (percent / 100);
-    const timeString =
-      elapsed < expected ? timeToString((expected - elapsed) / 1000) : "???";
+    const timeString = elapsed < expected ? timeToString((expected - elapsed) / 1000) : "???";
 
     return <div className="progressbar-timeleft">{timeString}</div>;
   }

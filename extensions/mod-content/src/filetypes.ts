@@ -1,4 +1,5 @@
 import * as path from "path";
+
 import { IEntry } from "turbowalk";
 
 interface ITypeDescription {
@@ -26,13 +27,10 @@ export const typeDescription: { [id: string]: ITypeDescription } = {
   },
 };
 
-export const typeIndices = Object.keys(typeDescription).reduce(
-  (prev, type, idx) => {
-    prev[type] = idx;
-    return prev;
-  },
-  {},
-);
+export const typeIndices = Object.keys(typeDescription).reduce((prev, type, idx) => {
+  prev[type] = idx;
+  return prev;
+}, {});
 
 export function byTypeIndex(lhs: string, rhs: string): number {
   return typeIndices[lhs] - typeIndices[rhs];
@@ -64,11 +62,7 @@ const gamesUsingPythonScripting = new Set(["thesims4"]);
 
 const gamesUsingDLLPlugins = new Set(["stardewvalley"]);
 
-const gamesUsingImagesAsTextures = new Set([
-  "stardewvalley",
-  "darksouls2",
-  "intothebreach",
-]);
+const gamesUsingImagesAsTextures = new Set(["stardewvalley", "darksouls2", "intothebreach"]);
 
 export const fileTypes: { [ext: string]: IFileType[] } = {
   ".dds": [{ type: "texture" }],
@@ -92,8 +86,7 @@ export const fileTypes: { [ext: string]: IFileType[] } = {
   ".json": [
     {
       type: "config",
-      condition: (gameId, entry) =>
-        path.basename(entry.filePath) !== "manifest.json",
+      condition: (gameId, entry) => path.basename(entry.filePath) !== "manifest.json",
     },
   ],
   ".ini": [{ type: "config" }],

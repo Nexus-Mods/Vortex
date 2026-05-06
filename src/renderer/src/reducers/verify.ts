@@ -1,7 +1,6 @@
 import update from "immutability-helper";
 
 import type { IStateVerifier } from "../types/IExtensionContext";
-
 import { VerifierDrop, VerifierDropParent } from "../types/IExtensionContext";
 
 function deleteKey(obj: any, key: string): any {
@@ -56,19 +55,9 @@ export function verify(
   let res = input;
 
   const recurse = (key: string, mapKey: string) => {
-    const sane = verify(
-      statePath,
-      verifiers[key].elements,
-      res[mapKey],
-      {},
-      emitDescription,
-      log,
-    );
+    const sane = verify(statePath, verifiers[key].elements, res[mapKey], {}, emitDescription, log);
     if (sane !== res[mapKey]) {
-      res =
-        sane === undefined
-          ? deleteKey(res, mapKey)
-          : update(res, { [mapKey]: { $set: sane } });
+      res = sane === undefined ? deleteKey(res, mapKey) : update(res, { [mapKey]: { $set: sane } });
     }
   };
 
@@ -85,16 +74,10 @@ export function verify(
       });
       emitDescription(verifiers[key].description(input));
       if (verifiers[key].deleteBroken !== undefined) {
-        res =
-          verifiers[key].deleteBroken === "parent"
-            ? undefined
-            : deleteKey(res, realKey);
+        res = verifiers[key].deleteBroken === "parent" ? undefined : deleteKey(res, realKey);
       } else if (verifiers[key].repair !== undefined) {
         try {
-          const fixed = verifiers[key].repair(
-            input[realKey],
-            defaults[realKey],
-          );
+          const fixed = verifiers[key].repair(input[realKey], defaults[realKey]);
           res = update(res, { [realKey]: { $set: fixed } });
         } catch (err) {
           if (err instanceof VerifierDrop) {

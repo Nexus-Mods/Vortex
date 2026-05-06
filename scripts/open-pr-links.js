@@ -22,9 +22,7 @@ class PRLinkOpener {
    */
   isGitRepo(modulePath) {
     const fullPath = path.join(this.rootDir, modulePath);
-    return (
-      fs.existsSync(fullPath) && fs.existsSync(path.join(fullPath, ".git"))
-    );
+    return fs.existsSync(fullPath) && fs.existsSync(path.join(fullPath, ".git"));
   }
 
   /**
@@ -62,11 +60,9 @@ class PRLinkOpener {
       filters.some((f) => {
         if (f === "git") return config.repository !== null;
         if (f === "local") return config.type === "local-csharp";
-        if (f === "csharp")
-          return config.type === "csharp" || config.type === "local-csharp";
+        if (f === "csharp") return config.type === "csharp" || config.type === "local-csharp";
         if (f === "cpp") return config.type === "cpp";
-        if (f === "nexus")
-          return config.repository && config.repository.includes("Nexus-Mods");
+        if (f === "nexus") return config.repository && config.repository.includes("Nexus-Mods");
         if (f === "third-party") return config.thirdParty === true;
         return config.type === f;
       }),
@@ -146,9 +142,7 @@ class PRLinkOpener {
    * Open PR creation links for repositories with changes
    */
   openPRLinks(branchName, filter = "git", options = {}) {
-    console.log(
-      `🔍 Checking for repositories with changes on branch: ${branchName}\n`,
-    );
+    console.log(`🔍 Checking for repositories with changes on branch: ${branchName}\n`);
 
     const modules = this.getFilteredModules(filter);
     const linksToOpen = [];
@@ -180,9 +174,7 @@ class PRLinkOpener {
     }
 
     if (linksToOpen.length === 0) {
-      console.log(
-        `\n⚠️  No repositories found with changes on branch '${branchName}'`,
-      );
+      console.log(`\n⚠️  No repositories found with changes on branch '${branchName}'`);
       return;
     }
 
@@ -192,9 +184,7 @@ class PRLinkOpener {
     }
 
     if (dryRun) {
-      console.log(
-        `\n🔍 Dry run mode - links not opened. Use --open to actually open them.`,
-      );
+      console.log(`\n🔍 Dry run mode - links not opened. Use --open to actually open them.`);
       return;
     }
 
@@ -259,27 +249,17 @@ function main() {
   const args = process.argv.slice(2);
   const branchName = args[0];
 
-  if (
-    !branchName ||
-    branchName === "help" ||
-    branchName === "--help" ||
-    branchName === "-h"
-  ) {
+  if (!branchName || branchName === "help" || branchName === "--help" || branchName === "-h") {
     new PRLinkOpener().showHelp();
     return;
   }
 
   const filter =
-    args.find((arg) => !arg.startsWith("--")) && args[1] !== branchName
-      ? args[1]
-      : "git";
+    args.find((arg) => !arg.startsWith("--")) && args[1] !== branchName ? args[1] : "git";
   const dryRun = args.includes("--dry-run");
   const shouldOpen = args.includes("--open") || !dryRun;
   const delayIndex = args.indexOf("--delay");
-  const delay =
-    delayIndex !== -1 && args[delayIndex + 1]
-      ? parseInt(args[delayIndex + 1])
-      : 2000;
+  const delay = delayIndex !== -1 && args[delayIndex + 1] ? parseInt(args[delayIndex + 1]) : 2000;
 
   const opener = new PRLinkOpener();
   opener.openPRLinks(branchName, filter, {

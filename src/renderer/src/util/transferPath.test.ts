@@ -1,4 +1,5 @@
 import * as path from "path";
+
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 interface WalkEntry {
@@ -167,8 +168,7 @@ const MB = 1024 * 1024;
 const baseA = path.sep + "drivea";
 const baseB = path.sep + "driveb";
 
-const describeOnWindows =
-  process.platform === "win32" ? describe : describe.skip;
+const describeOnWindows = process.platform === "win32" ? describe : describe.skip;
 
 describeOnWindows("testPathTransfer", () => {
   beforeEach(() => {
@@ -182,31 +182,20 @@ describeOnWindows("testPathTransfer", () => {
   it("reports success if there is enough space", async () => {
     diskCheckResults[baseB] = { free: 2000 * MB };
     await expect(
-      testPathTransfer(
-        path.join(baseA, "source"),
-        path.join(baseB, "destination"),
-      ),
+      testPathTransfer(path.join(baseA, "source"), path.join(baseB, "destination")),
     ).resolves.toBeUndefined();
   });
   it("reports success if on same drive, independent of free size", async () => {
     diskCheckResults[baseA] = { free: 1 * MB };
     await expect(
-      testPathTransfer(
-        path.join(baseA, "source"),
-        path.join(baseA, "destination"),
-      ),
+      testPathTransfer(path.join(baseA, "source"), path.join(baseA, "destination")),
     ).resolves.toBeUndefined();
   });
   it("fails if there is less than 512 MB free", async () => {
     diskCheckResults[baseB] = { free: 256 * MB };
     await expect(
-      testPathTransfer(
-        path.join(baseA, "source"),
-        path.join(baseB, "destination"),
-      ),
-    ).rejects.toThrow(
-      `The partition "${path.sep}driveb" has insufficient space.`,
-    );
+      testPathTransfer(path.join(baseA, "source"), path.join(baseB, "destination")),
+    ).rejects.toThrow(`The partition "${path.sep}driveb" has insufficient space.`);
   });
 });
 
@@ -238,11 +227,7 @@ describe("transferPath", () => {
 
   it("transfers all files with copy between drives", async () => {
     await expect(
-      transferPath(
-        path.join(baseA, "source"),
-        path.join(baseB, "destination"),
-        () => undefined,
-      ),
+      transferPath(path.join(baseA, "source"), path.join(baseB, "destination"), () => undefined),
     ).resolves.toBeUndefined();
     expect(fakeFS).toEqual({
       "": {
@@ -258,11 +243,7 @@ describe("transferPath", () => {
   });
   it("transfers all files with link on the same drive", async () => {
     await expect(
-      transferPath(
-        path.join(baseA, "source"),
-        path.join(baseA, "destination"),
-        () => undefined,
-      ),
+      transferPath(path.join(baseA, "source"), path.join(baseA, "destination"), () => undefined),
     ).resolves.toBeUndefined();
     expect(fakeFS).toEqual({
       "": {

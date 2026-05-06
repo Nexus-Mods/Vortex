@@ -1,14 +1,14 @@
-import { IModEx } from "../../types/IModEx";
-import CollectionModDetails from "./CollectionModDetails";
-import CollectionReleaseStatus from "../CollectionReleaseStatus";
-import SlideshowControls from "./SlideshowControls";
-
 import { ICollectionRevisionMod } from "@nexusmods/nexus-api";
 import type { TFunction } from "i18next";
 import * as _ from "lodash";
 import * as React from "react";
 import { Image as BSImage, Media, Panel } from "react-bootstrap";
 import { ComponentEx, tooltip, types, util } from "vortex-api";
+
+import { IModEx } from "../../types/IModEx";
+import CollectionReleaseStatus from "../CollectionReleaseStatus";
+import CollectionModDetails from "./CollectionModDetails";
+import SlideshowControls from "./SlideshowControls";
 
 interface ICollectionOverviewProps {
   t: TFunction;
@@ -19,10 +19,7 @@ interface ICollectionOverviewProps {
   onDeselectMods?: () => void;
 }
 
-class CollectionOverview extends ComponentEx<
-  ICollectionOverviewProps,
-  { selIdx: number }
-> {
+class CollectionOverview extends ComponentEx<ICollectionOverviewProps, { selIdx: number }> {
   constructor(props: ICollectionOverviewProps) {
     super(props);
 
@@ -47,9 +44,7 @@ class CollectionOverview extends ComponentEx<
     return (
       <Panel className={classes.join(" ")}>
         <div className="collection-overview-title">
-          <div className="collection-title">
-            {util.renderModName(collection)}
-          </div>
+          <div className="collection-title">{util.renderModName(collection)}</div>
           <CollectionReleaseStatus
             t={t}
             active={true}
@@ -87,9 +82,7 @@ class CollectionOverview extends ComponentEx<
 
   private setSelection = (idx: number) => {
     this.nextState.selIdx =
-      this.props.modSelection.length === 0
-        ? 0
-        : idx % this.props.modSelection.length;
+      this.props.modSelection.length === 0 ? 0 : idx % this.props.modSelection.length;
   };
 }
 

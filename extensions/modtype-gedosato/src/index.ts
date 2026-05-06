@@ -1,10 +1,11 @@
-import { gameSupported, getPath } from "./gameSupport";
+import * as path from "path";
 
 import Promise from "bluebird";
-import * as path from "path";
 import {} from "redux-thunk";
 import { actions, fs, log, types, util } from "vortex-api";
 import * as winapi from "winapi-bindings";
+
+import { gameSupported, getPath } from "./gameSupport";
 
 let gedosatoPath: string;
 
@@ -18,19 +19,14 @@ function getLocation(): Promise<string> {
     if (!instPath) {
       throw new Error("empty registry key");
     }
-    return fs
-      .statAsync(instPath.value as string)
-      .then(() => instPath.value as string);
+    return fs.statAsync(instPath.value as string).then(() => instPath.value as string);
   } catch (err) {
     return Promise.reject(err);
   }
 }
 
 function isTexture(file: string) {
-  return (
-    file.endsWith(path.sep) ||
-    [".dds", ".png"].includes(path.extname(file).toLowerCase())
-  );
+  return file.endsWith(path.sep) || [".dds", ".png"].includes(path.extname(file).toLowerCase());
 }
 
 function allTextures(files: string[]): boolean {
@@ -39,15 +35,10 @@ function allTextures(files: string[]): boolean {
 
 let askGeDoSaTo: () => Promise<boolean>;
 
-function testSupported(
-  files: string[],
-  gameId: string,
-): Promise<types.ISupportedResult> {
+function testSupported(files: string[], gameId: string): Promise<types.ISupportedResult> {
   const isGeDoSaTo = gameSupported(gameId) && allTextures(files);
   const prom =
-    !isGeDoSaTo || gedosatoPath !== undefined
-      ? Promise.resolve(isGeDoSaTo)
-      : askGeDoSaTo();
+    !isGeDoSaTo || gedosatoPath !== undefined ? Promise.resolve(isGeDoSaTo) : askGeDoSaTo();
 
   return prom.then((choice) =>
     Promise.resolve({
@@ -61,8 +52,7 @@ function makeCopy(basePath: string, filePath: string): types.IInstruction {
   return {
     type: "copy",
     source: filePath,
-    destination:
-      basePath !== "." ? filePath.substring(basePath.length + 1) : filePath,
+    destination: basePath !== "." ? filePath.substring(basePath.length + 1) : filePath,
   };
 }
 
@@ -106,19 +96,8 @@ function init(context: types.IExtensionContext) {
       ),
     );
 
-  context.registerModType(
-    "gedosato",
-    50,
-    isSupported,
-    getOutputPath,
-    testGeDoSaTo as any,
-  );
-  context.registerInstaller(
-    "gedosato",
-    50,
-    testSupported as any,
-    install as any,
-  );
+  context.registerModType("gedosato", 50, isSupported, getOutputPath, testGeDoSaTo as any);
+  context.registerInstaller("gedosato", 50, testSupported as any, install as any);
 
   askGeDoSaTo = (): Promise<boolean> => {
     return context.api.store

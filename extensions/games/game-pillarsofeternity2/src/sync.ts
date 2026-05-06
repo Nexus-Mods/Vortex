@@ -1,8 +1,9 @@
-import { ILoadOrder } from "./types";
+import * as path from "path";
 
 import Promise from "bluebird";
-import * as path from "path";
 import { fs, log, types, util } from "vortex-api";
+
+import { ILoadOrder } from "./types";
 
 const poe2Path = path.resolve(
   util.getVortexPath("appData"),
@@ -63,11 +64,9 @@ export function setLoadOrder(order: ILoadOrder) {
           prev.push({ FolderName: key, Enabled: loadOrder[key].enabled });
           return prev;
         }, []);
-      return fs.writeFileAsync(
-        modConfig(),
-        JSON.stringify(data, undefined, 2),
-        { encoding: "utf-8" },
-      );
+      return fs.writeFileAsync(modConfig(), JSON.stringify(data, undefined, 2), {
+        encoding: "utf-8",
+      });
     });
 }
 

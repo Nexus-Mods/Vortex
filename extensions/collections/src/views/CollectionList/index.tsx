@@ -1,22 +1,6 @@
+import { IRating, IRevision } from "@nexusmods/nexus-api";
 /* eslint-disable */
 import Bluebird from "bluebird";
-import { updateSuccessRate } from "../../actions/persistent";
-import { doExportToAPI } from "../../collectionExport";
-import {
-  INSTALLING_NOTIFICATION_ID,
-  MOD_TYPE,
-  NAMESPACE,
-  TOS_URL,
-} from "../../constants";
-import { findExtensions, IExtensionFeature } from "../../util/extension";
-import InstallDriver from "../../util/InstallDriver";
-
-import { IPathTools } from "../CollectionPageEdit/FileOverrides";
-import CollectionEdit from "../CollectionPageEdit";
-import CollectionPage from "../CollectionPageView";
-import StartPage from "./StartPage";
-
-import { IRating, IRevision } from "@nexusmods/nexus-api";
 import type { TFunction } from "i18next";
 import * as React from "react";
 import { WithTranslation, withTranslation } from "react-i18next";
@@ -34,7 +18,17 @@ import {
   types,
   util,
 } from "vortex-api";
+
+import { updateSuccessRate } from "../../actions/persistent";
+import { doExportToAPI } from "../../collectionExport";
+import { INSTALLING_NOTIFICATION_ID, MOD_TYPE, NAMESPACE, TOS_URL } from "../../constants";
+import { findExtensions, IExtensionFeature } from "../../util/extension";
+import InstallDriver from "../../util/InstallDriver";
 import { hasEditPermissions, uploadCollection } from "../../util/util";
+import CollectionEdit from "../CollectionPageEdit";
+import { IPathTools } from "../CollectionPageEdit/FileOverrides";
+import CollectionPage from "../CollectionPageView";
+import StartPage from "./StartPage";
 
 export interface ICollectionsMainPageBaseProps extends WithTranslation {
   active: boolean;
@@ -44,11 +38,7 @@ export interface ICollectionsMainPageBaseProps extends WithTranslation {
   driver: InstallDriver;
   onAddCallback: (cbName: string, cb: (...args: any[]) => void) => void;
   onCloneCollection: (collectionId: string) => Promise<string>;
-  onRemoveCollection: (
-    gameId: string,
-    modId: string,
-    cancel: boolean,
-  ) => Promise<void>;
+  onRemoveCollection: (gameId: string, modId: string, cancel: boolean) => Promise<void>;
   onCreateCollection: (profile: types.IProfile, name: string) => void;
   onInstallCollection: (revision: IRevision) => Promise<void>;
   onUpdateMeta: () => void;
@@ -84,10 +74,7 @@ interface IComponentState {
 const emptyObj = {};
 const emptyArr = [];
 
-class CollectionsMainPage extends ComponentEx<
-  ICollectionsMainPageProps,
-  IComponentState
-> {
+class CollectionsMainPage extends ComponentEx<ICollectionsMainPageProps, IComponentState> {
   private mMatchRefDebouncer: util.Debouncer;
   constructor(props: ICollectionsMainPageProps) {
     super(props);
@@ -103,17 +90,15 @@ class CollectionsMainPage extends ComponentEx<
         this.showPage("view", collectionId);
       });
 
-      props.onAddCallback('editCollection', (collectionId: string) => {
-        this.showPage('edit', collectionId);
+      props.onAddCallback("editCollection", (collectionId: string) => {
+        this.showPage("edit", collectionId);
       });
     }
 
     props.resetCB?.(this.resetMainPage);
 
     this.mMatchRefDebouncer = new util.Debouncer(() => {
-      this.nextState.matchedReferences = this.updateMatchedReferences(
-        this.props,
-      );
+      this.nextState.matchedReferences = this.updateMatchedReferences(this.props);
       return Promise.resolve();
     }, 2000);
   }
@@ -129,27 +114,16 @@ class CollectionsMainPage extends ComponentEx<
   }
 
   public render(): JSX.Element {
-    const {
-      t,
-      downloads,
-      driver,
-      game,
-      localState,
-      mods,
-      notifications,
-      profile,
-      pathTool,
-    } = this.props;
+    const { t, downloads, driver, game, localState, mods, notifications, profile, pathTool } =
+      this.props;
 
-    const { activeTab, matchedReferences, selectedCollection, viewMode } =
-      this.state;
+    const { activeTab, matchedReferences, selectedCollection, viewMode } = this.state;
 
     if (profile === undefined) {
       return null;
     }
 
-    const collection =
-      selectedCollection !== undefined ? mods[selectedCollection] : undefined;
+    const collection = selectedCollection !== undefined ? mods[selectedCollection] : undefined;
 
     let content = null;
 
@@ -255,11 +229,7 @@ class CollectionsMainPage extends ComponentEx<
 
   private onUpdateMeta = () => {
     this.props.onUpdateMeta();
-    this.context.api.events.emit(
-      "analytics-track-click-event",
-      "Collections",
-      "Refresh",
-    );
+    this.context.api.events.emit("analytics-track-click-event", "Collections", "Refresh");
   };
 
   private setActiveTab = (tabId: string) => {
@@ -292,15 +262,9 @@ class CollectionsMainPage extends ComponentEx<
     }
 
     const author = mods[modId].attributes?.["uploaderId"];
-    const canContribute = hasEditPermissions(
-      mods[modId].attributes?.permissions,
-    );
+    const canContribute = hasEditPermissions(mods[modId].attributes?.permissions);
 
-    if (
-      author !== undefined &&
-      author !== userInfo?.userId &&
-      !canContribute
-    ) {
+    if (author !== undefined && author !== userInfo?.userId && !canContribute) {
       const result = await api.showDialog(
         "question",
         "Edit Collection",
@@ -419,21 +383,14 @@ class CollectionsMainPage extends ComponentEx<
     )[0];
     if (voted.success) {
       api.store.dispatch(
-        updateSuccessRate(
-          revisionId,
-          vote,
-          voted.averageRating.average,
-          voted.averageRating.total,
-        ),
+        updateSuccessRate(revisionId, vote, voted.averageRating.average, voted.averageRating.total),
       );
     }
   };
 
   private updateMatchedReferences(props: ICollectionsMainPageProps) {
     const { mods, profile } = props;
-    const collections = Object.values(mods).filter(
-      (mod) => mod.type === MOD_TYPE,
-    );
+    const collections = Object.values(mods).filter((mod) => mod.type === MOD_TYPE);
     return collections.reduce((prev, collection) => {
       prev[collection.id] = (collection.rules || [])
         .filter((rule) => rule.type === "requires" && !rule["ignored"])
@@ -458,11 +415,7 @@ class CollectionsMainPage extends ComponentEx<
 
     try {
       if (mods[modId]?.attributes?.editable) {
-        api.events.emit(
-          "analytics-track-click-event",
-          "Collections",
-          "Remove Workshop Collection",
-        );
+        api.events.emit("analytics-track-click-event", "Collections", "Remove Workshop Collection");
         return this.removeWorkshop(modId).catch((err) => {
           const allowReport =
             !["EPERM"].includes(err.code) &&
@@ -473,11 +426,7 @@ class CollectionsMainPage extends ComponentEx<
           });
         });
       } else {
-        api.events.emit(
-          "analytics-track-click-event",
-          "Collections",
-          "Remove Added Collection",
-        );
+        api.events.emit("analytics-track-click-event", "Collections", "Remove Added Collection");
         return this.cancel(modId, false).catch((err) => {
           api.showErrorNotification("Failed to remove collection", err, {
             allowReport: !["EPERM"].includes(err.code),
@@ -510,16 +459,8 @@ class CollectionsMainPage extends ComponentEx<
       return;
     }
 
-    const downloadGame = util.getSafe(
-      mod.attributes,
-      ["downloadGame"],
-      gameMode,
-    );
-    const newestFileId = util.getSafe(
-      mod.attributes,
-      ["newestVersion"],
-      undefined,
-    );
+    const downloadGame = util.getSafe(mod.attributes, ["downloadGame"], gameMode);
+    const newestFileId = util.getSafe(mod.attributes, ["newestVersion"], undefined);
     await util.toPromise((cb) =>
       this.context.api.events.emit(
         "collection-update",
@@ -559,12 +500,7 @@ class CollectionsMainPage extends ComponentEx<
       if (ruleList.length === 0) {
         return Bluebird.resolve();
       } else {
-        return api.emitAndAwait(
-          "install-from-dependencies",
-          collectionId,
-          ruleList,
-          recommended,
-        );
+        return api.emitAndAwait("install-from-dependencies", collectionId, ruleList, recommended);
       }
     };
 
@@ -605,31 +541,21 @@ class CollectionsMainPage extends ComponentEx<
 
 function mapStateToProps(state: types.IState): IConnectedProps {
   const profile = selectors.activeProfile(state);
-  const game =
-    profile !== undefined
-      ? selectors.gameById(state, profile.gameId)
-      : undefined;
+  const game = profile !== undefined ? selectors.gameById(state, profile.gameId) : undefined;
   return {
     game,
     profile,
-    mods:
-      profile !== undefined
-        ? (state.persistent.mods[profile.gameId] ?? emptyObj)
-        : emptyObj,
+    mods: profile !== undefined ? (state.persistent.mods[profile.gameId] ?? emptyObj) : emptyObj,
     notifications: state.session.notifications.notifications,
     downloads: state.persistent.downloads.files,
     userInfo: state.persistent["nexus"]?.userInfo,
-    exts:
-      profile !== undefined ? findExtensions(state, profile.gameId) : emptyArr,
+    exts: profile !== undefined ? findExtensions(state, profile.gameId) : emptyArr,
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, null, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
-    removeMod: (gameId: string, modId: string) =>
-      dispatch(actions.removeMod(gameId, modId)),
+    removeMod: (gameId: string, modId: string) => dispatch(actions.removeMod(gameId, modId)),
   };
 }
 

@@ -54,9 +54,7 @@ for (const file of optionalFiles) {
     const stats = fs.statSync(filePath);
     console.log(`✅ ${file.description}: ${file.path} (${stats.size} bytes)`);
   } else {
-    console.warn(
-      `⚠️  ${file.description}: ${file.path} - FILE MISSING (optional)`,
-    );
+    console.warn(`⚠️  ${file.description}: ${file.path} - FILE MISSING (optional)`);
     warningCount++;
   }
 }
@@ -86,9 +84,7 @@ try {
     // Check bundle size
     const bundleSize = bundleContent.length;
     if (bundleSize < 1000) {
-      console.error(
-        `❌ Bundle seems too small (${bundleSize} bytes) - possible build issue`,
-      );
+      console.error(`❌ Bundle seems too small (${bundleSize} bytes) - possible build issue`);
       hasErrors = true;
     } else {
       console.log(`✅ Bundle size looks reasonable (${bundleSize} bytes)`);
@@ -115,10 +111,7 @@ try {
     }
 
     // Check for module structure
-    if (
-      outputContent.includes("exports.") ||
-      outputContent.includes("module.exports")
-    ) {
+    if (outputContent.includes("exports.") || outputContent.includes("module.exports")) {
       console.log("✅ CommonJS exports found");
     } else {
       console.error("❌ No exports found in TypeScript output");

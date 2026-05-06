@@ -1,11 +1,5 @@
 import { execSync } from "node:child_process";
-import {
-  existsSync,
-  cpSync,
-  rmSync,
-  readFileSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, cpSync, rmSync, readFileSync, writeFileSync } from "node:fs";
 import * as path from "node:path";
 
 const API_REPO = process.env.API_REPO;
@@ -17,13 +11,7 @@ const DEST_DIR = path.join(import.meta.dirname, "api-repo");
 const LIB_SRC = path.join(import.meta.dirname, "lib");
 const LIB_DEST = path.join(DEST_DIR, "lib");
 
-const API_EXTRACTOR_SRC = path.resolve(
-  import.meta.dirname,
-  "..",
-  "..",
-  "etc",
-  "vortex.api.md",
-);
+const API_EXTRACTOR_SRC = path.resolve(import.meta.dirname, "..", "..", "etc", "vortex.api.md");
 const API_EXTRACTOR_DEST = path.join(DEST_DIR, "etc", "api.md");
 
 const API_PACKAGE = path.join(DEST_DIR, "package.json");
@@ -72,16 +60,13 @@ console.log(`Copying ${LIB_SRC} to ${LIB_DEST}...`);
 cpSync(LIB_SRC, LIB_DEST, { recursive: true });
 console.log("Copy complete.");
 
-const dependencyJson = JSON.parse(
-  execSync("pnpm -F vortex-api list --json").toString().trim(),
-);
+const dependencyJson = JSON.parse(execSync("pnpm -F vortex-api list --json").toString().trim());
 
 const peerDependencies = dependencyJson[0].dependencies;
 const peerDependenciesToSync = {};
 
 for (const dependencyName in peerDependencies) {
-  peerDependenciesToSync[dependencyName] =
-    peerDependencies[dependencyName].version;
+  peerDependenciesToSync[dependencyName] = peerDependencies[dependencyName].version;
 }
 
 const rawDevDependencies = dependencyJson[0].devDependencies ?? {};
@@ -102,9 +87,7 @@ writeFileSync(API_PACKAGE, JSON.stringify(packageJson, null, 2) + "\n");
 console.log("Staging changes...");
 run("git add -A", DEST_DIR);
 
-const status = execSync("git status --porcelain", { cwd: DEST_DIR })
-  .toString()
-  .trim();
+const status = execSync("git status --porcelain", { cwd: DEST_DIR }).toString().trim();
 if (!status) {
   console.log("No changes to commit.");
   process.exit(0);
@@ -114,10 +97,7 @@ const sha = execSync("git rev-parse HEAD").toString().trim();
 const shortSha = execSync("git rev-parse --short HEAD").toString().trim();
 const commitUrl = `https://github.com/${MAIN_REPO}/commit/${sha}`;
 console.log("Committing changes...");
-run(
-  `git commit -m "chore: update API to ${shortSha}" -m "${commitUrl}"`,
-  DEST_DIR,
-);
+run(`git commit -m "chore: update API to ${shortSha}" -m "${commitUrl}"`, DEST_DIR);
 
 if (!PUSH_BRANCH) {
   console.log("PUSH_BRANCH not set — skipping push.");

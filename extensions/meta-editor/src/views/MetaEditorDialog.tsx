@@ -1,7 +1,3 @@
-import { setShowMetaEditor } from "../actions";
-
-import RuleEditor from "./RuleEditor";
-
 import update from "immutability-helper";
 import type { IModInfo, IReference, IRule, RuleType } from "modmeta-db";
 import * as React from "react";
@@ -15,15 +11,10 @@ import {
 } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
-import {
-  ComponentEx,
-  FormFeedback,
-  Icon,
-  selectors,
-  tooltip,
-  types,
-  util,
-} from "vortex-api";
+import { ComponentEx, FormFeedback, Icon, selectors, tooltip, types, util } from "vortex-api";
+
+import { setShowMetaEditor } from "../actions";
+import RuleEditor from "./RuleEditor";
 
 interface IBaseProps {
   retrieveInfo: (downloadId: string) => Promise<IModInfo>;
@@ -39,11 +30,7 @@ interface IConnectedProps {
 
 interface IActionProps {
   onHide: () => void;
-  onShowError: (
-    title: string,
-    details: any,
-    options?: types.IErrorOptions,
-  ) => void;
+  onShowError: (title: string, details: any, options?: types.IErrorOptions) => void;
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
@@ -105,20 +92,12 @@ class MetaEditorDialog extends ComponentEx<IProps, IComponentState> {
             </FormGroup>
             <FormGroup validationState={fvState as "error" | "success"}>
               <ControlLabel>{t("File Version")}</ControlLabel>
-              <FormControl
-                type="text"
-                value={info.fileVersion}
-                onChange={this.changeFileVersion}
-              />
+              <FormControl type="text" value={info.fileVersion} onChange={this.changeFileVersion} />
               <FormFeedback />
             </FormGroup>
             <FormGroup validationState={urlState as "error" | "success"}>
               <ControlLabel>{t("Source URL")}</ControlLabel>
-              <FormControl
-                type="text"
-                value={info.sourceURI}
-                onChange={this.changeSourceURI}
-              />
+              <FormControl type="text" value={info.sourceURI} onChange={this.changeSourceURI} />
               <FormFeedback />
             </FormGroup>
             <FormGroup>
@@ -134,9 +113,7 @@ class MetaEditorDialog extends ComponentEx<IProps, IComponentState> {
                 </tooltip.Button>
               </ControlLabel>
               <ListGroup>
-                {info.rules !== undefined
-                  ? info.rules.map(this.renderRule)
-                  : null}
+                {info.rules !== undefined ? info.rules.map(this.renderRule) : null}
               </ListGroup>
             </FormGroup>
           </form>
@@ -148,18 +125,10 @@ class MetaEditorDialog extends ComponentEx<IProps, IComponentState> {
           />
         </Modal.Body>
         <Modal.Footer>
-          <tooltip.Button
-            id="cancel-meta-btn"
-            tooltip={t("Cancel")}
-            onClick={this.cancel}
-          >
+          <tooltip.Button id="cancel-meta-btn" tooltip={t("Cancel")} onClick={this.cancel}>
             {t("Cancel")}
           </tooltip.Button>
-          <tooltip.Button
-            id="save-meta-btn"
-            tooltip={t("Save in local DB")}
-            onClick={this.save}
-          >
+          <tooltip.Button id="save-meta-btn" tooltip={t("Save in local DB")} onClick={this.save}>
             {t("Save")}
           </tooltip.Button>
         </Modal.Footer>
@@ -173,11 +142,7 @@ class MetaEditorDialog extends ComponentEx<IProps, IComponentState> {
       <ListGroupItem key={`rule-${index}`}>
         {rule.type} - {this.renderReference(rule.reference)}
         <div className="rule-actions pull-right">
-          <tooltip.Button
-            id={`rule-${index}`}
-            tooltip={t("Remove")}
-            onClick={this.removeRule}
-          >
+          <tooltip.Button id={`rule-${index}`} tooltip={t("Remove")} onClick={this.removeRule}>
             <Icon name="remove" />
           </tooltip.Button>
         </div>

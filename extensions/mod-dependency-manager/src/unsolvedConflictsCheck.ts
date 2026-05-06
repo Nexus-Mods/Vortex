@@ -1,5 +1,6 @@
 import Promise from "bluebird";
 import { selectors, types, util } from "vortex-api";
+
 import { IBiDirRule } from "./types/IBiDirRule";
 import { IConflict } from "./types/IConflict";
 import { findRuleBiDir, isConflictResolved } from "./util/findRule";
@@ -60,9 +61,7 @@ function unsolvedConflictsCheck(
         if (result.action === "Show") {
           showUnsolvedConflictsDialog(api, modRules, undefined, gameMode);
         }
-        return Promise.reject(
-          new util.ProcessCanceled("Unresolved File conflicts"),
-        );
+        return Promise.reject(new util.ProcessCanceled("Unresolved File conflicts"));
       });
   } else {
     return Promise.resolve(input);

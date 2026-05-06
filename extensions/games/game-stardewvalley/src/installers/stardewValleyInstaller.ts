@@ -2,28 +2,20 @@
  * Detects and installs manifest-based Stardew Valley mod archives.
  */
 import path from "path";
+
 import { log } from "vortex-api";
 import type { types } from "vortex-api";
 
 import { MOD_MANIFEST } from "../common";
-import { classifyArchive, makeInstallerTestResult } from "./archiveClassifier";
 import { parseManifest } from "../manifests/parseManifest";
-import type {
-  IInstallerTestResult,
-  ISDVDependency,
-  ISDVModManifest,
-} from "../types";
+import type { IInstallerTestResult, ISDVDependency, ISDVModManifest } from "../types";
+import { classifyArchive, makeInstallerTestResult } from "./archiveClassifier";
 
 /** Tests whether an archive should be handled by the manifest-based installer. */
-export function testSupported(
-  files: string[],
-  gameId: string,
-): PromiseLike<IInstallerTestResult> {
+export function testSupported(files: string[], gameId: string): PromiseLike<IInstallerTestResult> {
   const archiveInfo = classifyArchive(files, gameId);
   const supported =
-    archiveInfo.isGameArchive &&
-    archiveInfo.hasManifest &&
-    !archiveInfo.hasContentFolder;
+    archiveInfo.isGameArchive && archiveInfo.hasManifest && !archiveInfo.hasContentFolder;
   return Promise.resolve(makeInstallerTestResult(supported));
 }
 
@@ -52,13 +44,11 @@ export async function installStardewValley(
       const rootSegments = rootFolder.toLowerCase().split(path.sep);
       const manifestIndex = manifestFile.toLowerCase().indexOf(MOD_MANIFEST);
       const filterFunc = (file: string) => {
-        const isFile =
-          !file.endsWith(path.sep) && path.extname(path.basename(file)) !== "";
+        const isFile = !file.endsWith(path.sep) && path.extname(path.basename(file)) !== "";
         const fileSegments = file.toLowerCase().split(path.sep);
         const isInRootFolder =
           rootSegments.length > 0
-            ? fileSegments?.[rootSegments.length - 1] ===
-              rootSegments[rootSegments.length - 1]
+            ? fileSegments?.[rootSegments.length - 1] === rootSegments[rootSegments.length - 1]
             : true;
         return isInRootFolder && isFile;
       };
@@ -86,9 +76,7 @@ export async function installStardewValley(
     }),
   );
 
-  const mods: IModInfo[] = scannedMods.filter(
-    (mod): mod is IModInfo => mod !== undefined,
-  );
+  const mods: IModInfo[] = scannedMods.filter((mod): mod is IModInfo => mod !== undefined);
 
   if (mods.length === 0) {
     api.showErrorNotification?.(
@@ -105,9 +93,7 @@ export async function installStardewValley(
       // TODO: we might get here with a mod that has a manifest.json file but wasn't intended for Stardew Valley, all
       //  thunderstore mods will contain a manifest.json file
       const modName =
-        mod.rootFolder !== "."
-          ? mod.rootFolder
-          : (mod.manifest.Name ?? mod.rootFolder);
+        mod.rootFolder !== "." ? mod.rootFolder : (mod.manifest.Name ?? mod.rootFolder);
 
       if (modName === undefined) {
         return [];
@@ -132,8 +118,7 @@ export async function installStardewValley(
           return;
         }
 
-        const versionMatch =
-          dep.MinimumVersion !== undefined ? `>=${dep.MinimumVersion}` : "*";
+        const versionMatch = dep.MinimumVersion !== undefined ? `>=${dep.MinimumVersion}` : "*";
         const rule = {
           // treating all dependencies as recommendations because the dependency information
           // provided by some mod authors is a bit hit-and-miss and Vortex fairly aggressively
@@ -168,10 +153,7 @@ export async function installStardewValley(
     }),
   );
 
-  const instructions = data.reduce<types.IInstruction[]>(
-    (accum, iter) => accum.concat(iter),
-    [],
-  );
+  const instructions = data.reduce<types.IInstruction[]>((accum, iter) => accum.concat(iter), []);
   return { instructions };
 }
 

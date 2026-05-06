@@ -69,9 +69,7 @@ function calculateBSAHash(fileName: string): bigint {
     const h2b = genHashInt(bytes, extStart, bytes.length);
     const hash2 = ((h2a + h2b) & 0xffffffff) >>> 0;
 
-    return (
-      (BigInt(hash1 >>> 0) | (BigInt(hash2) << 32n)) & 0xffffffffffffffffn
-    );
+    return (BigInt(hash1 >>> 0) | (BigInt(hash2) << 32n)) & 0xffffffffffffffffn;
   }
 
   return BigInt(hash1 >>> 0);
@@ -250,17 +248,11 @@ function buildBSA(
       buf.writeBigUInt64LE(folderHash, folderRecordOff);
       buf.writeUInt32LE(f.files.length, folderRecordOff + 8);
       buf.writeUInt32LE(0, folderRecordOff + 12); // padding
-      buf.writeBigUInt64LE(
-        BigInt(folderDataOff + totalFileNameLength),
-        folderRecordOff + 16,
-      );
+      buf.writeBigUInt64LE(BigInt(folderDataOff + totalFileNameLength), folderRecordOff + 16);
     } else {
       buf.writeBigUInt64LE(folderHash, folderRecordOff);
       buf.writeUInt32LE(f.files.length, folderRecordOff + 8);
-      buf.writeUInt32LE(
-        folderDataOff + totalFileNameLength,
-        folderRecordOff + 12,
-      );
+      buf.writeUInt32LE(folderDataOff + totalFileNameLength, folderRecordOff + 12);
     }
     folderRecordOff += folderRecordSize;
 
@@ -349,10 +341,7 @@ for (const [key, ver] of [
   expected[key] = { version: ver, files };
 }
 
-writeFileSync(
-  join(OUT_DIR, "expected-bsa.json"),
-  JSON.stringify(expected, null, 2) + "\n",
-);
+writeFileSync(join(OUT_DIR, "expected-bsa.json"), JSON.stringify(expected, null, 2) + "\n");
 
 console.log("Created BSA test archives:");
 console.log(`  test-v103.bsa: ${v103.length} bytes (Oblivion, uncompressed)`);

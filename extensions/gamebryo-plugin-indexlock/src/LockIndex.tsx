@@ -1,12 +1,12 @@
-import { lockPluginIndex } from "./actions";
-import { IPlugin } from "./types";
-
 import * as React from "react";
 import { ControlLabel, FormControl, FormGroup, Radio } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import * as Redux from "redux";
 import { ComponentEx, FlexLayout, Toggle, types, util } from "vortex-api";
+
+import { lockPluginIndex } from "./actions";
+import { IPlugin } from "./types";
 
 function toHex(input: number) {
   if (input === undefined) {
@@ -29,11 +29,7 @@ interface IConnectedProps {
 }
 
 interface IActionProps {
-  onLockPluginIndex: (
-    gameId: string,
-    pluginName: string,
-    modIndex: number,
-  ) => void;
+  onLockPluginIndex: (gameId: string, pluginName: string, modIndex: number) => void;
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
@@ -71,8 +67,7 @@ class LockIndex extends ComponentEx<IProps, {}> {
   private renderIndex(): JSX.Element {
     const { t, lockedIndex, plugin } = this.props;
 
-    const matched =
-      lockedIndex === undefined || plugin.modIndex === lockedIndex;
+    const matched = lockedIndex === undefined || plugin.modIndex === lockedIndex;
 
     return (
       <FormGroup validationState={matched ? "success" : "error"}>
@@ -87,7 +82,7 @@ class LockIndex extends ComponentEx<IProps, {}> {
           <ControlLabel style={{ maxWidth: 250 }}>
             {t(
               "Actual index differs. If this is the case after sorting it may be " +
-              "this index isn't possible.",
+                "this index isn't possible.",
             )}
           </ControlLabel>
         )}
@@ -97,11 +92,7 @@ class LockIndex extends ComponentEx<IProps, {}> {
 
   private onToggle = (newValue: boolean, dataId?: string) => {
     const { gameMode, onLockPluginIndex, plugin } = this.props;
-    onLockPluginIndex(
-      gameMode,
-      plugin.name.toLowerCase(),
-      newValue ? plugin.modIndex : undefined,
-    );
+    onLockPluginIndex(gameMode, plugin.name.toLowerCase(), newValue ? plugin.modIndex : undefined);
     this.forceUpdate();
   };
 
@@ -119,10 +110,7 @@ class LockIndex extends ComponentEx<IProps, {}> {
   };
 }
 
-function mapStateToProps(
-  state: types.IState,
-  ownProps: IBaseProps,
-): IConnectedProps {
+function mapStateToProps(state: types.IState, ownProps: IBaseProps): IConnectedProps {
   const statePath = [
     "persistent",
     "plugins",

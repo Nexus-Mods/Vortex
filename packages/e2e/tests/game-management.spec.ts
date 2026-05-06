@@ -1,14 +1,10 @@
+import { setupFakeGame, cleanupFakeGame, GAME_CONFIGS } from "../fixtures/game-setup/fake-game";
 /**
  * Game management tests.
  * Uses fake game installations to avoid requiring real game installs.
  * Covers test cases: #8.1A, #8.8A
  */
 import { test, expect } from "../fixtures/vortex-app";
-import {
-  setupFakeGame,
-  cleanupFakeGame,
-  GAME_CONFIGS,
-} from "../fixtures/game-setup/fake-game";
 import { manageGame, type ManagedGame } from "../helpers/games";
 import { navigateToGames } from "../helpers/navigation";
 import { NavBar } from "../selectors/navbar";

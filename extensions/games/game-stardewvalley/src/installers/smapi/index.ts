@@ -7,6 +7,7 @@
  * - macos.ts (stubbed darwin variant)
  */
 import path from "path";
+
 import { fs, log, util } from "vortex-api";
 import type { types } from "vortex-api";
 
@@ -36,9 +37,7 @@ export function resolveSMAPIPlatform(
     case "darwin":
       return macosSMAPIPlatform;
     default:
-      throw new Error(
-        `Unsupported platform for SMAPI installer: ${nodePlatform}`,
-      );
+      throw new Error(`Unsupported platform for SMAPI installer: ${nodePlatform}`);
   }
 }
 
@@ -70,13 +69,9 @@ export function isSMAPIModType(
 }
 
 /** Tests whether an archive contains the SMAPI installer payload. */
-export function testSMAPI(
-  files: string[],
-  gameId: string,
-): PromiseLike<IInstallerTestResult> {
+export function testSMAPI(files: string[], gameId: string): PromiseLike<IInstallerTestResult> {
   const archiveInfo = classifyArchive(files, gameId);
-  const supported =
-    archiveInfo.isGameArchive && archiveInfo.hasSmapiInstallerDll;
+  const supported = archiveInfo.isGameArchive && archiveInfo.hasSmapiInstallerDll;
   return Promise.resolve(makeInstallerTestResult(supported));
 }
 
@@ -100,9 +95,7 @@ export async function installSMAPI(
     );
   }
 
-  const platformDataFiles = new Set(
-    platform.dataFiles.map((fileName) => fileName.toLowerCase()),
-  );
+  const platformDataFiles = new Set(platform.dataFiles.map((fileName) => fileName.toLowerCase()));
   const dataFile = files.find(
     (file) =>
       isCorrectPlatformPath(file, platform.archiveFolder) &&
@@ -118,10 +111,9 @@ export async function installSMAPI(
 
   let data = "";
   try {
-    data = await fs.readFileAsync(
-      path.join(getGameInstallPath(), "Stardew Valley.deps.json"),
-      { encoding: "utf8" },
-    );
+    data = await fs.readFileAsync(path.join(getGameInstallPath(), "Stardew Valley.deps.json"), {
+      encoding: "utf8",
+    });
   } catch (err) {
     log("error", "failed to parse SDV dependencies", err);
   }
@@ -133,16 +125,10 @@ export async function installSMAPI(
   await szip.extractFull(path.join(destinationPath, dataFile), destinationPath);
 
   await util.walk(destinationPath, (iter, stats) => {
-    const relPath = normalizePathSeparators(
-      path.relative(destinationPath, iter),
-    );
+    const relPath = normalizePathSeparators(path.relative(destinationPath, iter));
 
     // Filter out files from the original install as they're no longer required.
-    if (
-      !files.includes(relPath) &&
-      stats.isFile() &&
-      !files.includes(relPath + "/")
-    ) {
+    if (!files.includes(relPath) && stats.isFile() && !files.includes(relPath + "/")) {
       updatedFiles.push(relPath);
     }
 
@@ -230,10 +216,7 @@ function archiveFileName(filePath: string): string {
  * - `internal/windows/install.dat`, `windows` -> `true`
  * - `internal/linux/install.dat`, `windows` -> `false`
  */
-function isCorrectPlatformPath(
-  filePath: string,
-  platformFolder: string,
-): boolean {
+function isCorrectPlatformPath(filePath: string, platformFolder: string): boolean {
   const segments = splitArchivePath(filePath).map((seg) => seg.toLowerCase());
   return segments.includes(platformFolder.toLowerCase());
 }

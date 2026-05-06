@@ -1,12 +1,12 @@
+import * as fs from "node:fs/promises";
+
 import type {
   IAdaptorManifest,
   IMessageHandler,
   IMethodMessage,
   PID,
 } from "@nexusmods/adaptor-api";
-
 import { uri, messageId } from "@nexusmods/adaptor-api";
-import * as fs from "node:fs/promises";
 
 import { AdaptorRegistry, NameService } from "./registry.js";
 import { createMessageIdAllocator, createPidAllocator } from "./runtime.js";
@@ -21,10 +21,7 @@ export interface ILoadedAdaptor {
 }
 
 /** Optional logger callback for adaptor host events. */
-export type AdaptorHostLogger = (
-  level: "info" | "warn" | "error",
-  message: string,
-) => void;
+export type AdaptorHostLogger = (level: "info" | "warn" | "error", message: string) => void;
 
 /**
  * Host-side orchestrator for loading and managing isolated adaptor Workers.
@@ -90,9 +87,7 @@ export function createAdaptorHost(
   const registry = new AdaptorRegistry();
   const nextPid = createPidAllocator();
   const nextMsgId = createMessageIdAllocator();
-  const serviceDefs = new Map<string, HostService>(
-    Object.entries(hostHandlers ?? {}),
-  );
+  const serviceDefs = new Map<string, HostService>(Object.entries(hostHandlers ?? {}));
   const workers = new Map<PID, WorkerEntry>();
 
   const log: AdaptorHostLogger =
@@ -133,10 +128,7 @@ export function createAdaptorHost(
 
     // Register crash/exit handlers immediately so errors during init aren't lost
     handle.worker.on("error", (err: Error) => {
-      log(
-        "error",
-        `[adaptor-host] Worker ${config.name} (${adaptorPid}) error: ${err.message}`,
-      );
+      log("error", `[adaptor-host] Worker ${config.name} (${adaptorPid}) error: ${err.message}`);
       cleanupWorker(adaptorPid);
     });
     handle.worker.on("exit", (code: number) => {
@@ -192,11 +184,7 @@ export function createAdaptorHost(
     return {
       manifest,
       pid: adaptorPid,
-      call(
-        serviceUri: string,
-        method: string,
-        args: unknown[],
-      ): Promise<unknown> {
+      call(serviceUri: string, method: string, args: unknown[]): Promise<unknown> {
         return transport.call({ uri: serviceUri, method, args });
       },
     };

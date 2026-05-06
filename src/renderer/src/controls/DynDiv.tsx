@@ -1,9 +1,9 @@
-import type { IDynDivOptions } from "../types/IDynDivOptions";
-import { connect } from "./ComponentEx";
-import { extend } from "../ExtensionProvider";
-
 import * as React from "react";
+
+import { extend } from "../ExtensionProvider";
+import type { IDynDivOptions } from "../types/IDynDivOptions";
 import type { IExtensibleProps } from "../types/IExtensionProvider";
+import { connect } from "./ComponentEx";
 
 interface IDynDivDefinition {
   component: React.ComponentClass<any>;
@@ -21,10 +21,7 @@ interface IExtensionProps {
 
 interface IConnectedProps {}
 
-type IProps = IDynDivProps &
-  IConnectedProps &
-  IExtensionProps &
-  React.HTMLAttributes<any>;
+type IProps = IDynDivProps & IConnectedProps & IExtensionProps & React.HTMLAttributes<any>;
 
 /**
  * A control to contain arbitrary controls added through extensions.
@@ -34,8 +31,7 @@ class DynDiv extends React.Component<IProps, {}> {
     const { group, objects, orientation } = this.props;
 
     const visible = objects.filter(
-      (obj, idx) =>
-        obj.options?.condition === undefined || obj.options.condition({}),
+      (obj, idx) => obj.options?.condition === undefined || obj.options.condition({}),
     );
 
     const classes = ["dyndiv"];
@@ -76,10 +72,7 @@ function mapStateToProps(): IConnectedProps {
   return {};
 }
 
-export type ExportType = IDynDivProps &
-  IExtensibleProps &
-  React.HTMLAttributes<any> &
-  any;
+export type ExportType = IDynDivProps & IExtensibleProps & React.HTMLAttributes<any> & any;
 
 export default extend(
   registerDynDiv,

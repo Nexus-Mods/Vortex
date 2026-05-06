@@ -1,5 +1,5 @@
-import { IRevision } from '@nexusmods/nexus-api';
-import { types } from 'vortex-api';
+import { IRevision } from "@nexusmods/nexus-api";
+import { types } from "vortex-api";
 
 export interface IMorrowindData {
   loadOrder: ILoadOrderEntry[];

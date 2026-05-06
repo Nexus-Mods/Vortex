@@ -1,40 +1,46 @@
-import type { PreloadWindow } from "@vortex/shared/preload";
 import type { SpawnOptions } from "child_process";
-import type { OpenDialogOptions, SaveDialogOptions } from "electron";
-import type { IHashResult, ILookupResult, IModInfo } from "modmeta-db";
-import type * as modmetaT from "modmeta-db";
-import type { ToastOptions } from "react-hot-toast";
-
-import { VCREDIST_URL } from "@vortex/shared";
-import {
-  getErrorCode,
-  getErrorMessageOrDefault,
-  unknownToError,
-} from "@vortex/shared";
-import PromiseBB from "bluebird";
 import { spawn } from "child_process";
 import { EventEmitter } from "events";
+import * as net from "net";
+import * as path from "path";
+
+import { VCREDIST_URL } from "@vortex/shared";
+import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import type { PreloadWindow } from "@vortex/shared/preload";
+import PromiseBB from "bluebird";
+import type { OpenDialogOptions, SaveDialogOptions } from "electron";
 import * as fs from "fs-extra";
 import * as fuzz from "fuzzball";
 import JsonSocket from "json-socket";
 import * as _ from "lodash";
-import * as net from "net";
-import * as path from "path";
+import type { IHashResult, ILookupResult, IModInfo } from "modmeta-db";
+import type * as modmetaT from "modmeta-db";
+import type { ToastOptions } from "react-hot-toast";
 import { toast } from "react-hot-toast";
 import * as semver from "semver";
 import { generate as shortid } from "shortid";
 import stringFormat from "string-template";
 
-import type {
-  DialogActions,
-  DialogType,
-  IDialogContent,
+import { forgetExtension, setExtensionEnabled, setExtensionVersion } from "./actions/app";
+import type { DialogActions, DialogType, IDialogContent } from "./actions/notifications";
+import {
+  addNotification,
+  closeDialog,
+  dismissAllNotifications,
+  dismissNotification,
+  showDialog,
 } from "./actions/notifications";
-import type {
-  IModReference,
-  IModRepoId,
-} from "./extensions/mod_management/types/IMod";
+import { suppressNotification } from "./actions/notificationSettings";
+import { setExtensionLoadFailures } from "./actions/session";
+import { setOptionalExtensions } from "./extensions/extension_manager/actions";
+import type { IModReference, IModRepoId } from "./extensions/mod_management/types/IMod";
+import { IPCDownloadAdapter } from "./IPCDownloadAdapter";
+import { log } from "./logging";
 import type { SanityCheck } from "./store/reduxSanity";
+import { registerSanityCheck } from "./store/reduxSanity";
+import ReduxWatcher from "./store/ReduxWatcher";
+import { computeStateDiff } from "./store/stateDiff";
+import StyleManager from "./StyleManager";
 import type {
   ExtensionInit,
   IAvailableExtension,
@@ -60,10 +66,7 @@ import type {
   ThunkStore,
   ToolParameterCB,
 } from "./types/IExtensionContext";
-import type {
-  ILookupOptions,
-  IModLookupResult,
-} from "./types/IModLookupResult";
+import type { ILookupOptions, IModLookupResult } from "./types/IModLookupResult";
 import type { INotification } from "./types/INotification";
 import type {
   IExtensionLoadFailure,
@@ -71,29 +74,6 @@ import type {
   IExtensionState,
   IState,
 } from "./types/IState";
-import type { i18n } from "./util/i18n";
-
-import {
-  forgetExtension,
-  setExtensionEnabled,
-  setExtensionVersion,
-} from "./actions/app";
-import {
-  addNotification,
-  closeDialog,
-  dismissAllNotifications,
-  dismissNotification,
-  showDialog,
-} from "./actions/notifications";
-import { suppressNotification } from "./actions/notificationSettings";
-import { setExtensionLoadFailures } from "./actions/session";
-import { setOptionalExtensions } from "./extensions/extension_manager/actions";
-import { IPCDownloadAdapter } from "./IPCDownloadAdapter";
-import { log } from "./logging";
-import { registerSanityCheck } from "./store/reduxSanity";
-import ReduxWatcher from "./store/ReduxWatcher";
-import { computeStateDiff } from "./store/stateDiff";
-import StyleManager from "./StyleManager";
 import { getApplication } from "./util/application";
 import { Archive } from "./util/archives";
 import { fileMD5 } from "./util/checksum";
@@ -107,20 +87,14 @@ import {
   UserCanceled,
 } from "./util/CustomErrors";
 import { runElevated } from "./util/elevated";
-import {
-  disableErrorReport,
-  isOutdated,
-  recordErrorSpan,
-} from "./util/errorHandling";
+import { disableErrorReport, isOutdated, recordErrorSpan } from "./util/errorHandling";
 import * as fsVortex from "./util/fs";
 import getVortexPath from "./util/getVortexPath";
+import type { i18n } from "./util/i18n";
 import { TString } from "./util/i18n";
 import lazyRequire from "./util/lazyRequire";
 import { showError } from "./util/message";
-import {
-  deregisterProtocolHandler,
-  registerProtocolHandler,
-} from "./util/protocolRegistration";
+import { deregisterProtocolHandler, registerProtocolHandler } from "./util/protocolRegistration";
 import runElevatedCustomTool from "./util/runElevatedCustomTool";
 import { activeGameId } from "./util/selectors";
 import { getSafe } from "./util/storeHelper";
@@ -138,10 +112,7 @@ import { isToastSystemDisabled } from "./views/layout/ToastContainer";
 
 const modmeta = lazyRequire<typeof modmetaT>(() => require("modmeta-db"));
 
-export function isExtSame(
-  installed: IExtension,
-  remote: IAvailableExtension,
-): boolean {
+export function isExtSame(installed: IExtension, remote: IAvailableExtension): boolean {
   if (installed.modId !== undefined) {
     return installed.modId === remote.modId;
   }
@@ -202,10 +173,7 @@ function applyVariables(arg: string, variables: { [key: string]: string }) {
 class ExtEventHandler extends EventEmitter {
   private mWrappee: EventEmitter;
   private mExtension: IRegisteredExtension;
-  private mFuncMap: Map<
-    string | symbol,
-    Array<{ orig: CBFunc; wrapped: CBFunc }>
-  > = new Map();
+  private mFuncMap: Map<string | symbol, Array<{ orig: CBFunc; wrapped: CBFunc }>> = new Map();
 
   constructor(wrappee: EventEmitter, extension: IRegisteredExtension) {
     super();
@@ -213,10 +181,7 @@ class ExtEventHandler extends EventEmitter {
     this.mExtension = extension;
   }
 
-  public addListener(
-    event: string | symbol,
-    listener: (...args: any[]) => void,
-  ): this {
+  public addListener(event: string | symbol, listener: (...args: any[]) => void): this {
     this.mWrappee.addListener(event, this.makeWrapped(event, listener));
     return this;
   }
@@ -226,37 +191,22 @@ class ExtEventHandler extends EventEmitter {
     return this.addListener(event, listener);
   }
 
-  public once(
-    event: string | symbol,
-    listener: (...args: any[]) => void,
-  ): this {
+  public once(event: string | symbol, listener: (...args: any[]) => void): this {
     this.mWrappee.once(event, this.makeOnceWrapped(event, listener));
     return this;
   }
 
-  public prependListener(
-    event: string | symbol,
-    listener: (...args: any[]) => void,
-  ): this {
+  public prependListener(event: string | symbol, listener: (...args: any[]) => void): this {
     this.mWrappee.prependListener(event, this.makeWrapped(event, listener));
     return this;
   }
 
-  public prependOnceListener(
-    event: string | symbol,
-    listener: (...args: any[]) => void,
-  ): this {
-    this.mWrappee.prependOnceListener(
-      event,
-      this.makeOnceWrapped(event, listener),
-    );
+  public prependOnceListener(event: string | symbol, listener: (...args: any[]) => void): this {
+    this.mWrappee.prependOnceListener(event, this.makeOnceWrapped(event, listener));
     return this;
   }
 
-  public removeListener(
-    event: string | symbol,
-    listener: (...args: any[]) => void,
-  ): this {
+  public removeListener(event: string | symbol, listener: (...args: any[]) => void): this {
     if (this.mFuncMap.has(event)) {
       const listeners = this.mFuncMap.get(event);
       const idx = listeners.findIndex((iter) => iter.orig === listener);
@@ -349,11 +299,7 @@ class APIProxyHandler implements ProxyHandler<any> {
   private mEnabled: boolean;
   private mEvents: EventEmitter;
 
-  constructor(
-    extension: IRegisteredExtension,
-    enable: boolean,
-    events: EventEmitter,
-  ) {
+  constructor(extension: IRegisteredExtension, enable: boolean, events: EventEmitter) {
     this.mExtension = extension;
     this.mEnabled = enable;
     this.mEvents = new ExtEventHandler(events, this.mExtension);
@@ -369,23 +315,15 @@ class APIProxyHandler implements ProxyHandler<any> {
     } else if (key === "translate") {
       return target[key];
     } else if (key === "onAsync") {
-      return (
-        eventName: string,
-        listener: (...args: any[]) => PromiseLike<any>,
-      ) =>
-        (target["onAsync"] as any)(
-          eventName,
-          listener,
-          convertExtInfo(this.mExtension),
-        );
+      return (eventName: string, listener: (...args: any[]) => PromiseLike<any>) =>
+        (target["onAsync"] as any)(eventName, listener, convertExtInfo(this.mExtension));
     } else if (key === "onStateChange") {
       return (statePath: string[], callback: StateChangeCallback) =>
         (target[key] as any)(statePath, callback, this.mExtension);
     } else if (key === "events") {
       return this.mEvents;
     } else if (key === "laterT") {
-      return (input, options?) =>
-        new TString(input, options, this.mExtension.namespace);
+      return (input, options?) => new TString(input, options, this.mExtension.namespace);
     } else if (key === "NAMESPACE") {
       return this.mExtension.namespace;
     }
@@ -418,11 +356,7 @@ class APIProxyCreator implements ProxyHandler<any> {
   public get(target, key: PropertyKey): any {
     if (key === "api") {
       if (this.mProxy === undefined) {
-        this.mProxyHandler = new APIProxyHandler(
-          this.mExtension,
-          this.mAPIEnabled,
-          this.mEvents,
-        );
+        this.mProxyHandler = new APIProxyHandler(this.mExtension, this.mAPIEnabled, this.mEvents);
         this.mProxy = new Proxy(target[key], this.mProxyHandler);
       }
       return this.mProxy;
@@ -455,14 +389,10 @@ class ContextProxyHandler implements ProxyHandler<any> {
         get(target, key: PropertyKey): any {
           return (...args) => {
             if (!that.mMayRegister) {
-              log(
-                "warn",
-                "extension tries to use register call outside init function",
-                {
-                  extension: that.mCurrentExtension,
-                  call: key,
-                },
-              );
+              log("warn", "extension tries to use register call outside init function", {
+                extension: that.mCurrentExtension,
+                call: key,
+              });
               return;
             }
 
@@ -491,9 +421,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
   }
 
   public dropCalls(extNames: string) {
-    this.mInitCalls = this.mInitCalls.filter(
-      (iter) => iter.extension !== extNames,
-    );
+    this.mInitCalls = this.mInitCalls.filter((iter) => iter.extension !== extNames);
   }
 
   public invokeAdditions(extensions: IRegisteredExtension[]) {
@@ -544,13 +472,10 @@ class ContextProxyHandler implements ProxyHandler<any> {
     furtherAPIs: Set<string>,
     allExtensions: IRegisteredExtension[],
   ): { [extId: string]: IExtensionLoadFailure[] } {
-    const addAPIs: string[] = this.mApiAdditions.map(
-      (addition: IApiAddition) => addition.key,
-    );
+    const addAPIs: string[] = this.mApiAdditions.map((addition: IApiAddition) => addition.key);
     const fullAPI = new Set([...furtherAPIs, ...this.staticAPIs, ...addAPIs]);
 
-    const incompatibleExtensions: { [extId: string]: IExtensionLoadFailure[] } =
-      {};
+    const incompatibleExtensions: { [extId: string]: IExtensionLoadFailure[] } = {};
 
     this.mInitCalls
       .filter((call: IInitCall) => !call.optional && !fullAPI.has(call.key))
@@ -577,10 +502,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
             id: "dependency",
             args: { dependencyId: requiredId },
           });
-        } else if (
-          version !== undefined &&
-          !semver.satisfies(req.info?.version, version)
-        ) {
+        } else if (version !== undefined && !semver.satisfies(req.info?.version, version)) {
           setdefault(incompatibleExtensions, extId, []).push({
             id: "dependency",
             args: { dependencyId: requiredId, version },
@@ -611,8 +533,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
         extensions: Object.keys(incompatibleExtensions).join(", "),
       });
       this.mInitCalls = this.mInitCalls.filter(
-        (call: IInitCall) =>
-          incompatibleExtensions[call.extension] === undefined,
+        (call: IInitCall) => incompatibleExtensions[call.extension] === undefined,
       );
     } else {
       log("debug", "all extensions compatible");
@@ -644,14 +565,10 @@ class ContextProxyHandler implements ProxyHandler<any> {
       ? this.mContext[key]
       : (...args) => {
           if (!this.mMayRegister) {
-            log(
-              "warn",
-              "extension tries to use register call outside init function",
-              {
-                extension: this.mCurrentExtension,
-                call: key,
-              },
-            );
+            log("warn", "extension tries to use register call outside init function", {
+              extension: this.mCurrentExtension,
+              call: key,
+            });
             return;
           }
 
@@ -817,8 +734,7 @@ class ExtensionManager {
   // Previous state for extension persistor diff computation
   private mPersistorPrevState: { [hive: string]: unknown } = {};
   // Debounce timers for extension persistors
-  private mPersistorTimers: { [hive: string]: ReturnType<typeof setTimeout> } =
-    {};
+  private mPersistorTimers: { [hive: string]: ReturnType<typeof setTimeout> } = {};
 
   /**
    * Create ExtensionManager.
@@ -875,8 +791,7 @@ class ExtensionManager {
       locale: () => this.mTranslator.language,
       getI18n: () => this.mTranslator,
       getPath: this.getPath,
-      onStateChange: (statePath: string[], callback: StateChangeCallback) =>
-        undefined,
+      onStateChange: (statePath: string[], callback: StateChangeCallback) => undefined,
       registerProtocol: this.registerProtocol,
       registerRepositoryLookup: this.registerRepositoryLookup,
       deregisterProtocol: this.deregisterProtocol,
@@ -888,8 +803,7 @@ class ExtensionManager {
       clearStylesheet: () => {
         /** NOTE(erri120): no-op */
       },
-      setStylesheet: (key, filePath) =>
-        this.mStyleManager.addStylesheet(key, filePath),
+      setStylesheet: (key, filePath) => this.mStyleManager.addStylesheet(key, filePath),
       runExecutable: this.runExecutable,
       emitAndAwait: this.emitAndAwait,
       withPrePost: this.withPrePost,
@@ -950,11 +864,10 @@ class ExtensionManager {
           // file handles yet despite waitForRendererExit in the main process.
           // Log and continue — the remove flag stays in state so it retries on
           // next startup.
-          log(
-            "warn",
-            "failed to remove extension, will retry on next startup",
-            { extId, error: getErrorMessageOrDefault(err) },
-          );
+          log("warn", "failed to remove extension, will retry on next startup", {
+            extId,
+            error: getErrorMessageOrDefault(err),
+          });
         }
       });
 
@@ -1083,11 +996,8 @@ class ExtensionManager {
         if (options.allowReport !== false) {
           options.extensionName = extension.info.name;
 
-          const remoteExtensions = (this.getState() as IState).session
-            .extensions.available;
-          options.extensionRemote = remoteExtensions.find((ext) =>
-            isExtSame(extension.info, ext),
-          );
+          const remoteExtensions = (this.getState() as IState).session.extensions.available;
+          options.extensionRemote = remoteExtensions.find((ext) => isExtSame(extension.info, ext));
         }
         options.extension = extension;
       }
@@ -1103,10 +1013,8 @@ class ExtensionManager {
     ) => store.dispatch(showDialog(type, title, content, actions, id));
     this.mApi.closeDialog = (id: string, actionKey: string, input: any) =>
       store.dispatch(closeDialog(id, actionKey, input));
-    this.mApi.dismissNotification = (id: string) =>
-      store.dispatch(dismissNotification(id));
-    this.mApi.dismissAllNotifications = () =>
-      store.dispatch(dismissAllNotifications());
+    this.mApi.dismissNotification = (id: string) => store.dispatch(dismissNotification(id));
+    this.mApi.dismissAllNotifications = () => store.dispatch(dismissAllNotifications());
     this.mApi.suppressNotification = (id: string, suppress: boolean) => {
       if (suppress !== false) {
         store.dispatch(dismissNotification(id));
@@ -1114,8 +1022,7 @@ class ExtensionManager {
       store.dispatch(suppressNotification(id, suppress !== false));
     };
     this.mApi.store = store;
-    this.mApi.getState = <T extends IState>() =>
-      this.mApi.store.getState() as T;
+    this.mApi.getState = <T extends IState>() => this.mApi.store.getState() as T;
     this.mApi.onStateChange = this.stateChangeHandler;
 
     this.mDownloadAdapter.processInterruptedDownloads();
@@ -1135,10 +1042,7 @@ class ExtensionManager {
       .flat(1)
       .find((_) => {
         const msg = _.args?.message ?? "";
-        return (
-          msg.includes("The specified module could not be found.") &&
-          msg.includes(".node")
-        );
+        return msg.includes("The specified module could not be found.") && msg.includes(".node");
       });
     if (nodeLoadErr !== undefined) {
       this.mApi.store?.dispatch?.(
@@ -1194,18 +1098,12 @@ class ExtensionManager {
    */
   public getReducers(): IExtensionReducer[] {
     const reducers: IExtensionReducer[] = [];
-    this.apply(
-      "registerReducer",
-      (statePath: string[], reducer: IReducerSpec) => {
-        reducers.push({ path: statePath, reducer });
-      },
-    );
-    this.apply(
-      "registerActionCheck",
-      (actionType: string, check: SanityCheck) => {
-        registerSanityCheck(actionType, check);
-      },
-    );
+    this.apply("registerReducer", (statePath: string[], reducer: IReducerSpec) => {
+      reducers.push({ path: statePath, reducer });
+    });
+    this.apply("registerActionCheck", (actionType: string, check: SanityCheck) => {
+      registerSanityCheck(actionType, check);
+    });
     this.apply(
       "registerInterpreter",
       (extension: string, apply: (input: IRunParameters) => IRunParameters) => {
@@ -1238,15 +1136,13 @@ class ExtensionManager {
    */
   public applyExtensionsOfExtensions() {
     this.mContextProxyHandler.invokeAdditions(this.mExtensions);
-    this.mContextProxyHandler
-      .getCalls("registerDownloadProtocol")
-      .forEach((call) => {
-        const [scheme, handler] = call.arguments as [
-          string,
-          Parameters<IPCDownloadAdapter["registerProtocol"]>[1],
-        ];
-        this.mDownloadAdapter.registerProtocol(scheme, handler);
-      });
+    this.mContextProxyHandler.getCalls("registerDownloadProtocol").forEach((call) => {
+      const [scheme, handler] = call.arguments as [
+        string,
+        Parameters<IPCDownloadAdapter["registerProtocol"]>[1],
+      ];
+      this.mDownloadAdapter.registerProtocol(scheme, handler);
+    });
   }
 
   /**
@@ -1257,26 +1153,21 @@ class ExtensionManager {
    */
   public initExtensionPersistors<S extends IState>(store: ThunkStore<S>) {
     // Collect all persistor registrations from extensions
-    this.apply(
-      "registerPersistor",
-      (hive: string, persistor: IPersistor, debounce?: number) => {
-        log("info", "Registering extension persistor", { hive });
-        this.mExtensionPersistors[hive] = {
-          persistor,
-          debounce: debounce ?? 200,
-        };
-        // Initialize previous state for this hive
-        this.mPersistorPrevState[hive] = (store.getState() as IState)[
-          hive as keyof IState
-        ];
+    this.apply("registerPersistor", (hive: string, persistor: IPersistor, debounce?: number) => {
+      log("info", "Registering extension persistor", { hive });
+      this.mExtensionPersistors[hive] = {
+        persistor,
+        debounce: debounce ?? 200,
+      };
+      // Initialize previous state for this hive
+      this.mPersistorPrevState[hive] = (store.getState() as IState)[hive as keyof IState];
 
-        // Set up the reset callback - called when persistor loads data from file
-        // This hydrates the Redux state from the persistor's data
-        persistor.setResetCallback(() => {
-          return this.hydrateFromPersistor(hive, persistor, store);
-        });
-      },
-    );
+      // Set up the reset callback - called when persistor loads data from file
+      // This hydrates the Redux state from the persistor's data
+      persistor.setResetCallback(() => {
+        return this.hydrateFromPersistor(hive, persistor, store);
+      });
+    });
 
     // Subscribe to store changes to notify extension persistors
     if (Object.keys(this.mExtensionPersistors).length > 0) {
@@ -1343,10 +1234,7 @@ class ExtensionManager {
         keyCount: Object.keys(hydrationData).length,
       });
     } catch (err) {
-      recordErrorSpan(
-        "Failed to hydrate from extension persistor",
-        unknownToError(err),
-      );
+      recordErrorSpan("Failed to hydrate from extension persistor", unknownToError(err));
       log("error", "Failed to hydrate from extension persistor", {
         hive,
         error: getErrorMessageOrDefault(err),
@@ -1357,11 +1245,7 @@ class ExtensionManager {
   /**
    * Insert a value at a nested path in an object.
    */
-  private insertAtPath(
-    target: Record<string, unknown>,
-    path: string[],
-    value: unknown,
-  ): void {
+  private insertAtPath(target: Record<string, unknown>, path: string[], value: unknown): void {
     let current: Record<string, unknown> = target;
     for (let i = 0; i < path.length - 1; i++) {
       if (current[path[i]] === undefined) {
@@ -1393,9 +1277,7 @@ class ExtensionManager {
    * Computes diffs and calls setItem/removeItem on each persistor.
    */
   private notifyExtensionPersistors(newState: IState) {
-    for (const [hive, { persistor, debounce }] of Object.entries(
-      this.mExtensionPersistors,
-    )) {
+    for (const [hive, { persistor, debounce }] of Object.entries(this.mExtensionPersistors)) {
       const newHive = newState[hive as keyof IState];
 
       // Skip if hive hasn't changed from the last PERSISTED state
@@ -1435,25 +1317,23 @@ class ExtensionManager {
 
       for (const op of operations) {
         if (op.type === "set") {
-          Promise.resolve(
-            persistor.setItem(op.path, JSON.stringify(op.value)),
-          ).catch((err: unknown) => {
-            log("error", "Extension persistor setItem failed", {
-              hive,
-              path: op.path.join("."),
-              error: getErrorMessageOrDefault(err),
-            });
-          });
-        } else {
-          Promise.resolve(persistor.removeItem(op.path)).catch(
+          Promise.resolve(persistor.setItem(op.path, JSON.stringify(op.value))).catch(
             (err: unknown) => {
-              log("error", "Extension persistor removeItem failed", {
+              log("error", "Extension persistor setItem failed", {
                 hive,
                 path: op.path.join("."),
                 error: getErrorMessageOrDefault(err),
               });
             },
           );
+        } else {
+          Promise.resolve(persistor.removeItem(op.path)).catch((err: unknown) => {
+            log("error", "Extension persistor removeItem failed", {
+              hive,
+              path: op.path.join("."),
+              error: getErrorMessageOrDefault(err),
+            });
+          });
         }
       }
     } catch (err) {
@@ -1481,9 +1361,7 @@ class ExtensionManager {
     this.mContextProxyHandler.getCalls(funcName).forEach((call) => {
       try {
         if (addExtInfo === true) {
-          const ext = this.mExtensions.find(
-            (iter) => iter.name === call.extension,
-          );
+          const ext = this.mExtensions.find((iter) => iter.name === call.extension);
           const extInfo = _.pick(ext, ["name", "namespace", "path"]);
           func(extInfo, ...call.arguments);
         } else {
@@ -1515,11 +1393,7 @@ class ExtensionManager {
     const onceMainCalls = this.mContextProxyHandler.getCalls("onceMain");
     const allCalls = [...onceCalls, ...onceMainCalls];
 
-    const reportError = (
-      err: unknown,
-      call: IInitCall,
-      allowReport: boolean = true,
-    ) => {
+    const reportError = (err: unknown, call: IInitCall, allowReport: boolean = true) => {
       if (err instanceof Error) {
         log("warn", "failed to call once", {
           err: err.message,
@@ -1576,11 +1450,7 @@ class ExtensionManager {
             }
           })
           .catch(TimeoutError, () => {
-            reportError(
-              new Error("Initialization didn't finish in time."),
-              call,
-              false,
-            );
+            reportError(new Error("Initialization didn't finish in time."), call, false);
           })
           .catch((err) => {
             reportError(err, call);
@@ -1730,17 +1600,9 @@ class ExtensionManager {
       .sort((lhs, rhs) => (lhs.priority ?? 100) - (rhs.priority ?? 100));
   }
 
-  private connectMetaDB(
-    gameId: string,
-    apiKey: string,
-  ): PromiseBB<modmetaT.ModDB> {
+  private connectMetaDB(gameId: string, apiKey: string): PromiseBB<modmetaT.ModDB> {
     const dbPath = path.join(getVortexPath("userData"), "metadb");
-    return modmeta.ModDB.create(
-      dbPath,
-      gameId,
-      this.getMetaServerList(),
-      log,
-    ).catch((err) => {
+    return modmeta.ModDB.create(dbPath, gameId, this.getMetaServerList(), log).catch((err) => {
       return this.mApi
         .showDialog(
           "error",
@@ -1858,9 +1720,7 @@ class ExtensionManager {
         // make sure we're not calling any of the register calls if the extension
         // isn't fully initialized
         this.mContextProxyHandler.dropCalls(ext.name);
-        this.mLoadFailures[ext.name] = [
-          { id: "exception", args: { message: err.message } },
-        ];
+        this.mLoadFailures[ext.name] = [{ id: "exception", args: { message: err.message } }];
         recordErrorSpan("Extension initialization failed", err);
         log("warn", "couldn't initialize extension", {
           name: ext.name,
@@ -1873,15 +1733,10 @@ class ExtensionManager {
     // need to store them locally for now because the store isn't loaded at this time
     this.mLoadFailures = {
       ...this.mLoadFailures,
-      ...this.mContextProxyHandler.unloadIncompatible(
-        ExtensionManager.sUIAPIs,
-        this.mExtensions,
-      ),
+      ...this.mContextProxyHandler.unloadIncompatible(ExtensionManager.sUIAPIs, this.mExtensions),
     };
 
-    this.mOptionalExtensions = this.mContextProxyHandler.getOptionalExtensions(
-      this.mExtensions,
-    );
+    this.mOptionalExtensions = this.mContextProxyHandler.getOptionalExtensions(this.mExtensions);
 
     // apply api extensions immediately after all extensions are loaded so they
     // become available asap
@@ -1909,11 +1764,7 @@ class ExtensionManager {
       .filter((ext) => ext.dynamic)
       .forEach((ext) => {
         try {
-          let oldVersion = getSafe(
-            state.app,
-            ["extensions", ext.name, "version"],
-            "0.0.0",
-          );
+          let oldVersion = getSafe(state.app, ["extensions", ext.name, "version"], "0.0.0");
           if (!semver.valid(oldVersion)) {
             log("error", "invalid version stored for extension", {
               extension: ext.name,
@@ -1923,32 +1774,22 @@ class ExtensionManager {
           }
           if (oldVersion !== ext.info.version) {
             if (migrations[ext.name] === undefined) {
-              this.mApi.store.dispatch(
-                setExtensionVersion(ext.name, ext.info.version),
-              );
+              this.mApi.store.dispatch(setExtensionVersion(ext.name, ext.info.version));
             } else {
-              PromiseBB.mapSeries(migrations[ext.name], (mig) =>
-                mig(oldVersion),
-              )
+              PromiseBB.mapSeries(migrations[ext.name], (mig) => mig(oldVersion))
                 .then(() => {
                   log("info", "set extension version", {
                     name: ext.name,
                     info: JSON.stringify(ext.info),
                   });
-                  this.mApi.store.dispatch(
-                    setExtensionVersion(ext.name, ext.info.version),
-                  );
+                  this.mApi.store.dispatch(setExtensionVersion(ext.name, ext.info.version));
                 })
                 .catch((err) => {
                   const error = unknownToError(err);
                   recordErrorSpan("Extension failed to migrate", error);
-                  this.mApi.showErrorNotification(
-                    "Extension failed to migrate",
-                    error,
-                    {
-                      allowReport: ext.info.author === COMPANY_ID,
-                    },
-                  );
+                  this.mApi.showErrorNotification("Extension failed to migrate", error, {
+                    allowReport: ext.info.author === COMPANY_ID,
+                  });
                 })
                 .then(() => null);
             }
@@ -2030,8 +1871,7 @@ class ExtensionManager {
     );
   }
 
-  private commandLineUserData = () =>
-    this.mApi.getState().session.base.commandLine?.userData;
+  private commandLineUserData = () => this.mApi.getState().session.base.commandLine?.userData;
 
   private registerProtocol = async (
     protocol: string,
@@ -2056,10 +1896,7 @@ class ExtensionManager {
     this.mRepositoryLookup[repository] = { preferOverMD5, func };
   };
 
-  private registerArchiveHandler = (
-    extension: string,
-    handler: ArchiveHandlerCreator,
-  ) => {
+  private registerArchiveHandler = (extension: string, handler: ArchiveHandlerCreator) => {
     this.mArchiveHandlers[extension] = handler;
   };
 
@@ -2124,14 +1961,8 @@ class ExtensionManager {
             } else {
               return results.sort(
                 (lhs, rhs) =>
-                  fuzz.ratio(
-                    rhs.value.logicalFileName,
-                    reference.logicalFileName,
-                  ) -
-                  fuzz.ratio(
-                    lhs.value.logicalFileName,
-                    reference.logicalFileName,
-                  ),
+                  fuzz.ratio(rhs.value.logicalFileName, reference.logicalFileName) -
+                  fuzz.ratio(lhs.value.logicalFileName, reference.logicalFileName),
               );
             }
           } else {
@@ -2155,9 +1986,7 @@ class ExtensionManager {
         : detail.fileName !== undefined
           ? san(detail.fileName)
           : undefined;
-    return (
-      `${detail.fileMD5}_${fileName}` + `_${detail.fileSize}_${detail.gameId}`
-    );
+    return `${detail.fileMD5}_${fileName}` + `_${detail.fileSize}_${detail.gameId}`;
   }
 
   private lookupModMeta = (
@@ -2169,9 +1998,7 @@ class ExtensionManager {
         name: detail.fileName,
         trace: new Error().stack,
       });
-      const err = new ProcessCanceled(
-        "trying to calculate hash for an empty file",
-      );
+      const err = new ProcessCanceled("trying to calculate hash for an empty file");
       err["fileName"] = detail.fileName;
       return PromiseBB.reject(err);
     }
@@ -2237,13 +2064,8 @@ class ExtensionManager {
       });
   };
 
-  private makeSorter(
-    detail: ILookupDetails,
-  ): (lhs: ILookupResult, rhs: ILookupResult) => number {
-    const fileName =
-      detail.filePath !== undefined
-        ? path.basename(detail.filePath)
-        : undefined;
+  private makeSorter(detail: ILookupDetails): (lhs: ILookupResult, rhs: ILookupResult) => number {
+    const fileName = detail.filePath !== undefined ? path.basename(detail.filePath) : undefined;
 
     const hasAttribute = (
       attribute: string,
@@ -2350,8 +2172,8 @@ class ExtensionManager {
     if (creator === undefined) {
       return PromiseBB.reject(new NotSupportedError());
     }
-    return creator(archivePath, options || {}).then(
-      (handler: IArchiveHandler) => PromiseBB.resolve(new Archive(handler)),
+    return creator(archivePath, options || {}).then((handler: IArchiveHandler) =>
+      PromiseBB.resolve(new Archive(handler)),
     );
   };
 
@@ -2392,8 +2214,7 @@ class ExtensionManager {
     if (!truthy(executable)) {
       return PromiseBB.reject(new ProcessCanceled("Executable not set"));
     }
-    const interpreter =
-      this.mInterpreters[path.extname(executable).toLowerCase()];
+    const interpreter = this.mInterpreters[path.extname(executable).toLowerCase()];
     if (interpreter !== undefined) {
       try {
         ({ executable, args, options } = interpreter({
@@ -2422,9 +2243,7 @@ class ExtensionManager {
     // process.env is case insensitive (on windows at least?), but the spawn parameter isn't.
     // I think the key is called "Path" on windows but I'm not willing to bet this is consistent
     // across all language variants and versions
-    const pathEnvName = Object.keys(process.env).find(
-      (key) => key.toLowerCase() === "path",
-    );
+    const pathEnvName = Object.keys(process.env).find((key) => key.toLowerCase() === "path");
     const env = {
       ...filteredEnvironment(),
       [pathEnvName]: process.env["PATH_ORIG"] || process.env["PATH"],
@@ -2468,19 +2287,13 @@ class ExtensionManager {
 
                 const child = spawn(
                   runExe,
-                  options.shell
-                    ? args
-                    : args.map((arg) => arg.replace(/"/g, "")),
+                  options.shell ? args : args.map((arg) => arg.replace(/"/g, "")),
                   spawnOptions,
                 );
                 if (truthy(child["exitCode"])) {
                   // brilliant, apparently there is no way for me to get at the stdout/stderr when running
                   // through a shell if starting the application fails immediately
-                  return reject(
-                    new Error(
-                      `Failed to start (exit code ${child["exitCode"]})`,
-                    ),
-                  );
+                  return reject(new Error(`Failed to start (exit code ${child["exitCode"]})`));
                 }
                 if (options.onSpawned !== undefined) {
                   options.onSpawned(child.pid);
@@ -2531,18 +2344,12 @@ class ExtensionManager {
                         return reject(new ProcessCanceled(".NET error"));
                       }
                     } else if (code === 0xc000026b) {
-                      return reject(
-                        new ProcessCanceled("Windows shutting down"),
-                      );
+                      return reject(new ProcessCanceled("Windows shutting down"));
                     } else if (code !== 0) {
                       // TODO: the child process returns an exit code of 53 for SSE and
                       // FO4, and an exit code of 1 for Skyrim. We don't know why but it
                       // doesn't seem to affect anything
-                      log(
-                        "warn",
-                        "child process exited with code: " + code.toString(16),
-                        {},
-                      );
+                      log("warn", "child process exited with code: " + code.toString(16), {});
                       if (errOut !== undefined) {
                         log("warn", "child output", errOut.trim());
                       }
@@ -2558,10 +2365,7 @@ class ExtensionManager {
                         }
 
                         // Sanitize the error message to prevent crashpad issues
-                        const sanitizedExecutable = executable.replace(
-                          /[^\x20-\x7E]/g,
-                          "?",
-                        );
+                        const sanitizedExecutable = executable.replace(/[^\x20-\x7E]/g, "?");
                         const sanitizedLastLine = lastLine
                           .replace(/[^\x20-\x7E]/g, "?")
                           .substring(0, 500);
@@ -2584,11 +2388,9 @@ class ExtensionManager {
                     try {
                       errOut += chunk.toString();
                     } catch (err) {
-                      log(
-                        "warn",
-                        "error output from external process couldn't be processed",
-                        { executable },
-                      );
+                      log("warn", "error output from external process couldn't be processed", {
+                        executable,
+                      });
                     }
                   });
                 }
@@ -2600,11 +2402,9 @@ class ExtensionManager {
                     try {
                       stdOut += chunk.toString();
                     } catch (err) {
-                      log(
-                        "warn",
-                        "output from external process couldn't be processed",
-                        { executable },
-                      );
+                      log("warn", "output from external process couldn't be processed", {
+                        executable,
+                      });
                     }
                   });
                 }
@@ -2629,27 +2429,15 @@ class ExtensionManager {
           if (process.platform !== "win32") {
             return PromiseBB.reject(err);
           }
-          return this.runElevated(
-            executable,
-            cwd,
-            args,
-            env,
-            options.onSpawned,
-          );
+          return this.runElevated(executable, cwd, args, env, options.onSpawned);
         })
-        .catch({ code: "ECANCELED" }, () =>
-          PromiseBB.reject(new UserCanceled()),
-        )
+        .catch({ code: "ECANCELED" }, () => PromiseBB.reject(new UserCanceled()))
         .catch({ systemCode: 1223 }, () => PromiseBB.reject(new UserCanceled()))
         // Is errno still used ? looks like shellEx call returns systemCode instead
         .catch({ errno: 1223 }, () => PromiseBB.reject(new UserCanceled()))
         .catch((unknownErr) => {
           const err = unknownToError(unknownErr);
-          if (
-            err.message
-              .toLowerCase()
-              .indexOf("the operation was canceled by the user") !== -1
-          ) {
+          if (err.message.toLowerCase().indexOf("the operation was canceled by the user") !== -1) {
             // This is more of a sanity check than anything else as one user report
             //  contained none of the properties we rely on to detect when a user
             //  cancels the UAC dialog.
@@ -2717,10 +2505,7 @@ class ExtensionManager {
               }
             })
             .catch((err) => {
-              this.mApi.showErrorNotification(
-                `Unhandled error in event "${event}"`,
-                err,
-              );
+              this.mApi.showErrorNotification(`Unhandled error in event "${event}"`, err);
             }),
         );
       }
@@ -2749,10 +2534,7 @@ class ExtensionManager {
         const prom = effectiveListener(...args);
         if (prom["catch"] !== undefined) {
           prom["catch"]((err) => {
-            this.mApi.showErrorNotification(
-              `Failed to call event ${event}`,
-              err,
-            );
+            this.mApi.showErrorNotification(`Failed to call event ${event}`, err);
           });
         }
       } else {
@@ -2761,16 +2543,11 @@ class ExtensionManager {
     });
   };
 
-  private withPrePost = <T>(
-    eventName: string,
-    cb: (...args: any[]) => PromiseBB<T>,
-  ) => {
+  private withPrePost = <T>(eventName: string, cb: (...args: any[]) => PromiseBB<T>) => {
     return (...args: any[]) => {
       return this.emitAndAwait(`will-${eventName}`, ...args)
         .then(() => cb(...args))
-        .then((res: T) =>
-          this.emitAndAwait(`did-${eventName}`, res, ...args).then(() => res),
-        );
+        .then((res: T) => this.emitAndAwait(`did-${eventName}`, res, ...args).then(() => res));
     };
   };
 
@@ -2797,13 +2574,9 @@ class ExtensionManager {
               highlightCSS = rule;
             } else if (rule.selectorText === "#highlight-control-dummy-alt") {
               highlightCSSAlt = rule;
-            } else if (
-              rule.selectorText === "#highlight-control-dummy::after"
-            ) {
+            } else if (rule.selectorText === "#highlight-control-dummy::after") {
               highlightAfterCSS = rule;
-            } else if (
-              rule.selectorText === "#highlight-control-dummy-alt::before"
-            ) {
+            } else if (rule.selectorText === "#highlight-control-dummy-alt::before") {
               highlightBeforeCSSAlt = rule;
             }
           });
@@ -2817,9 +2590,7 @@ class ExtensionManager {
 
       const css = altStyle ? highlightCSSAlt : highlightCSS;
       const afterCSS = highlightAfterCSS;
-      const dummySelector = altStyle
-        ? "#highlight-control-dummy-alt"
-        : "#highlight-control-dummy";
+      const dummySelector = altStyle ? "#highlight-control-dummy-alt" : "#highlight-control-dummy";
 
       // adding a new css rule matching the selector when we could just as well add
       // the highlight class to the control.
@@ -2835,10 +2606,7 @@ class ExtensionManager {
       } else {
         result += css.cssText.replace(dummySelector, selector);
         if (altStyle) {
-          result += highlightBeforeCSSAlt.cssText.replace(
-            dummySelector,
-            selector,
-          );
+          result += highlightBeforeCSSAlt.cssText.replace(dummySelector, selector);
         }
         if (text !== undefined) {
           result += afterCSS.cssText
@@ -2962,9 +2730,7 @@ class ExtensionManager {
       const pathName = path.basename(extensionPath);
       const name = info.id || pathName;
       const namespace =
-        info.namespace ??
-        info.id ??
-        (bundled ? pathName : this.idify(info.name, pathName));
+        info.namespace ?? info.id ?? (bundled ? pathName : this.idify(info.name, pathName));
 
       const existing = alreadyLoaded.find((reg) => reg.name === name);
 
@@ -3013,9 +2779,7 @@ class ExtensionManager {
     if (typeof mod !== "object") return undefined;
 
     // NOTE(erri120): interop hacks because of jank...
-    const fn: unknown = mod["__esModule"]
-      ? mod["default"]
-      : (mod["default"] ?? mod);
+    const fn: unknown = mod["__esModule"] ? mod["default"] : (mod["default"] ?? mod);
     return typeof fn === "function" ? (fn as ExtensionInit) : undefined;
   }
 
@@ -3025,11 +2789,7 @@ class ExtensionManager {
     alreadyLoaded: IRegisteredExtension[],
   ): IRegisteredExtension[] {
     if (!fs.existsSync(extension.path)) {
-      log(
-        "info",
-        "failed to load dynamic extensions, path doesn't exist",
-        extension.path,
-      );
+      log("info", "failed to load dynamic extensions, path doesn't exist", extension.path);
       try {
         fs.mkdirSync(extension.path);
       } catch (err) {
@@ -3043,9 +2803,7 @@ class ExtensionManager {
 
     const res = fs
       .readdirSync(extension.path)
-      .filter((name) =>
-        fs.statSync(path.join(extension.path, name)).isDirectory(),
-      )
+      .filter((name) => fs.statSync(path.join(extension.path, name)).isDirectory())
       .reduce((prev: { [id: string]: IRegisteredExtension }, name: string) => {
         if (!getSafe(this.mExtensionState, [name, "enabled"], true)) {
           log("debug", "extension disabled", { name });
@@ -3107,9 +2865,7 @@ class ExtensionManager {
             error: err.message,
             stack: err.stack,
           });
-          this.mLoadFailures[name] = [
-            { id: "exception", args: { message: err.message } },
-          ];
+          this.mLoadFailures[name] = [{ id: "exception", args: { message: err.message } }];
         }
         return prev;
       }, {});
@@ -3126,81 +2882,53 @@ class ExtensionManager {
       about_dialog: () => require("./extensions/about_dialog/index.ts"),
       adaptor_bridge: () => require("./extensions/adaptor_bridge/index.ts"),
       analytics: () => require("./extensions/analytics/index.ts"),
-      announcement_dashlet: () =>
-        require("./extensions/announcement_dashlet/index.ts"),
+      announcement_dashlet: () => require("./extensions/announcement_dashlet/index.ts"),
       browse_nexus: () => require("./extensions/browse_nexus/index.ts"),
       browser: () => require("./extensions/browser/index.ts"),
-      category_management: () =>
-        require("./extensions/category_management/index.ts"),
-      collections_integration: () =>
-        require("./extensions/collections_integration/index.ts"),
+      category_management: () => require("./extensions/category_management/index.ts"),
+      collections_integration: () => require("./extensions/collections_integration/index.ts"),
       dashboard: () => require("./extensions/dashboard/index.ts"),
-      design_system_dev: () =>
-        require("./extensions/design_system_dev/index.ts"),
-      diagnostics_files: () =>
-        require("./extensions/diagnostics_files/index.ts"),
-      download_management: () =>
-        require("./extensions/download_management/index.ts"),
-      extension_manager: () =>
-        require("./extensions/extension_manager/index.ts"),
-      file_based_loadorder: () =>
-        require("./extensions/file_based_loadorder/index.ts"),
+      design_system_dev: () => require("./extensions/design_system_dev/index.ts"),
+      diagnostics_files: () => require("./extensions/diagnostics_files/index.ts"),
+      download_management: () => require("./extensions/download_management/index.ts"),
+      extension_manager: () => require("./extensions/extension_manager/index.ts"),
+      file_based_loadorder: () => require("./extensions/file_based_loadorder/index.ts"),
       file_preview: () => require("./extensions/file_preview/index.ts"),
-      firststeps_dashlet: () =>
-        require("./extensions/firststeps_dashlet/index.ts"),
+      firststeps_dashlet: () => require("./extensions/firststeps_dashlet/index.ts"),
       // gameversion_management must be listed before gamemode_management so that
       // GameVersionManager is initialized before gamemode_management's once()
       // calls setupGameMode -> getInstalledVersion
-      gameversion_management: () =>
-        require("./extensions/gameversion_management/index.ts"),
-      gamemode_management: () =>
-        require("./extensions/gamemode_management/index.ts"),
-      hardlink_activator: () =>
-        require("./extensions/hardlink_activator/index.ts"),
+      gameversion_management: () => require("./extensions/gameversion_management/index.ts"),
+      gamemode_management: () => require("./extensions/gamemode_management/index.ts"),
+      hardlink_activator: () => require("./extensions/hardlink_activator/index.ts"),
       health_check: () => require("./extensions/health_check/index.ts"),
-      history_management: () =>
-        require("./extensions/history_management/index.ts"),
+      history_management: () => require("./extensions/history_management/index.ts"),
       ini_prep: () => require("./extensions/ini_prep/index.ts"),
       installer_dotnet: () => require("./extensions/installer_dotnet/index.ts"),
-      installer_fomod_ipc: () =>
-        require("./extensions/installer_fomod_ipc/index.ts"),
-      installer_fomod_native: () =>
-        require("./extensions/installer_fomod_native/index.ts"),
-      installer_fomod_shared: () =>
-        require("./extensions/installer_fomod_shared/index.ts"),
-      installer_nested_fomod: () =>
-        require("./extensions/installer_nested_fomod/index.ts"),
-      instructions_overlay: () =>
-        require("./extensions/instructions_overlay/index.ts"),
+      installer_fomod_ipc: () => require("./extensions/installer_fomod_ipc/index.ts"),
+      installer_fomod_native: () => require("./extensions/installer_fomod_native/index.ts"),
+      installer_fomod_shared: () => require("./extensions/installer_fomod_shared/index.ts"),
+      installer_nested_fomod: () => require("./extensions/installer_nested_fomod/index.ts"),
+      instructions_overlay: () => require("./extensions/instructions_overlay/index.ts"),
       mod_load_order: () => require("./extensions/mod_load_order/index.ts"),
       mod_management: () => require("./extensions/mod_management/index.ts"),
-      mod_spotlights_dashlet: () =>
-        require("./extensions/mod_spotlights_dashlet/index.ts"),
+      mod_spotlights_dashlet: () => require("./extensions/mod_spotlights_dashlet/index.ts"),
       move_activator: () => require("./extensions/move_activator/index.ts"),
       news_dashlet: () => require("./extensions/news_dashlet/index.ts"),
-      nexus_integration: () =>
-        require("./extensions/nexus_integration/index.tsx"),
+      nexus_integration: () => require("./extensions/nexus_integration/index.tsx"),
       null_activator: () => require("./extensions/null_activator/index.ts"),
-      onboarding_dashlet: () =>
-        require("./extensions/onboarding_dashlet/index.ts"),
-      profile_management: () =>
-        require("./extensions/profile_management/index.ts"),
+      onboarding_dashlet: () => require("./extensions/onboarding_dashlet/index.ts"),
+      profile_management: () => require("./extensions/profile_management/index.ts"),
       recovery: () => require("./extensions/recovery/index.ts"),
-      settings_application: () =>
-        require("./extensions/settings_application/index.ts"),
-      settings_interface: () =>
-        require("./extensions/settings_interface/index.ts"),
-      settings_metaserver: () =>
-        require("./extensions/settings_metaserver/index.ts"),
+      settings_application: () => require("./extensions/settings_application/index.ts"),
+      settings_interface: () => require("./extensions/settings_interface/index.ts"),
+      settings_metaserver: () => require("./extensions/settings_metaserver/index.ts"),
       starter_dashlet: () => require("./extensions/starter_dashlet/index.ts"),
       sticky_mods: () => require("./extensions/sticky_mods/index.ts"),
-      symlink_activator: () =>
-        require("./extensions/symlink_activator/index.ts"),
-      symlink_activator_elevate: () =>
-        require("./extensions/symlink_activator_elevate/index.ts"),
+      symlink_activator: () => require("./extensions/symlink_activator/index.ts"),
+      symlink_activator_elevate: () => require("./extensions/symlink_activator_elevate/index.ts"),
       test_runner: () => require("./extensions/test_runner/index.ts"),
-      tool_variables_base: () =>
-        require("./extensions/tool_variables_base/index.ts"),
+      tool_variables_base: () => require("./extensions/tool_variables_base/index.ts"),
       updater: () => require("./extensions/updater/index.ts"),
     };
 

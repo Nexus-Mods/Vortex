@@ -34,10 +34,8 @@ export function registerModTypes(
   getSMAPIPath: (game: types.IGame) => string,
 ): void {
   const isSMAPIModTypeBoundary = isSMAPIModType as unknown as ModTypeTest;
-  const isConfigModTypeBoundary = (() =>
-    Promise.resolve(false)) as unknown as ModTypeTest;
-  const isSdvRootFolderModTypeBoundary =
-    isSdvRootFolderModType as unknown as ModTypeTest;
+  const isConfigModTypeBoundary = (() => Promise.resolve(false)) as unknown as ModTypeTest;
+  const isSdvRootFolderModTypeBoundary = isSdvRootFolderModType as unknown as ModTypeTest;
 
   context.registerModType(
     MOD_TYPE_SMAPI,

@@ -11,6 +11,6 @@
     "experimentalDecorators": true,
     "types": [],
     "lib": ["ESNext"],
-    "customConditions": ["development"],
-  },
+    "customConditions": ["development"]
+  }
 }

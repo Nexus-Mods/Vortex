@@ -1,17 +1,17 @@
-import { describe, it, expect } from "vitest";
 import * as fs from "fs";
 import * as path from "path";
 
-import { readVersionInfo } from "./peVersion";
+import { describe, it, expect } from "vitest";
+
 import exeVersion, {
   getFileVersion,
   getProductVersion,
   getFileVersionLocalized,
   getProductVersionLocalized,
 } from "./index";
+import { readVersionInfo } from "./peVersion";
 
-const describeOnWindows =
-  process.platform === "win32" ? describe : describe.skip;
+const describeOnWindows = process.platform === "win32" ? describe : describe.skip;
 
 describeOnWindows("readVersionInfo", () => {
   it("reads notepad.exe version info", () => {
@@ -42,10 +42,7 @@ describeOnWindows("readVersionInfo", () => {
 
   it("returns undefined for non-PE file", () => {
     // Create a temp text file
-    const tmp = path.join(
-      fs.mkdtempSync(path.join(require("os").tmpdir(), "exever-")),
-      "test.txt",
-    );
+    const tmp = path.join(fs.mkdtempSync(path.join(require("os").tmpdir(), "exever-")), "test.txt");
     fs.writeFileSync(tmp, "not a PE file");
     expect(readVersionInfo(tmp)).toBeUndefined();
     fs.rmSync(path.dirname(tmp), { recursive: true, force: true });
@@ -121,9 +118,7 @@ describeOnWindows("cross-validation with native module", () => {
       const native = nativeGetInfo(file);
 
       expect(tsInfo.fileVersion.join(".")).toBe(native.fileVersion.join("."));
-      expect(tsInfo.productVersion.join(".")).toBe(
-        native.productVersion.join("."),
-      );
+      expect(tsInfo.productVersion.join(".")).toBe(native.productVersion.join("."));
     });
   }
 });

@@ -1,19 +1,19 @@
-import { actions, selectors, types, util } from 'vortex-api';
-import { GAME_ID } from '../common';
-import { IW3CollectionsData } from './types';
+import { actions, selectors, types, util } from "vortex-api";
 
-import { CollectionGenerateError, CollectionParseError,
-  genCollectionLoadOrder } from './util';
-import { getPersistentLoadOrder } from '../migrations';
+import { GAME_ID } from "../common";
+import { getPersistentLoadOrder } from "../migrations";
+import { IW3CollectionsData } from "./types";
+import { CollectionGenerateError, CollectionParseError, genCollectionLoadOrder } from "./util";
 
-export async function exportLoadOrder(api: types.IExtensionApi,
-                                      modIds: string[],
-                                      mods: { [modId: string]: types.IMod })
-                                      : Promise<types.LoadOrder> {
+export async function exportLoadOrder(
+  api: types.IExtensionApi,
+  modIds: string[],
+  mods: { [modId: string]: types.IMod },
+): Promise<types.LoadOrder> {
   const state = api.getState();
   const profileId = selectors.lastActiveProfileForGame(state, GAME_ID);
   if (profileId === undefined) {
-    return Promise.reject(new CollectionGenerateError('Invalid profile id'));
+    return Promise.reject(new CollectionGenerateError("Invalid profile id"));
   }
 
   const loadOrder: types.LoadOrder = getPersistentLoadOrder(api);
@@ -37,13 +37,17 @@ export async function exportLoadOrder(api: types.IExtensionApi,
   return Promise.resolve(filteredLO);
 }
 
-export async function importLoadOrder(api: types.IExtensionApi,
-                                      collection: IW3CollectionsData): Promise<void> {
+export async function importLoadOrder(
+  api: types.IExtensionApi,
+  collection: IW3CollectionsData,
+): Promise<void> {
   const state = api.getState();
 
   const profileId = selectors.lastActiveProfileForGame(state, GAME_ID);
   if (profileId === undefined) {
-    return Promise.reject(new CollectionParseError(collection?.['info']?.['name'] || '', 'Invalid profile id'));
+    return Promise.reject(
+      new CollectionParseError(collection?.["info"]?.["name"] || "", "Invalid profile id"),
+    );
   }
 
   const converted = getPersistentLoadOrder(api, collection.loadOrder as any);

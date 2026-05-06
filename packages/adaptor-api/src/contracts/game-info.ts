@@ -7,7 +7,6 @@ import type {
   NexusModsDomain,
   RegistryKey,
 } from "../types/store-ids.js";
-
 import {
   steamAppId,
   epicCatalogNamespace,
@@ -138,9 +137,7 @@ function normSteam(input: SteamInput): SteamEntry {
 }
 
 function normEpic(input: EpicInput): EpicEntry {
-  return typeof input === "string"
-    ? { catalogNamespace: epicCatalogNamespace(input) }
-    : input;
+  return typeof input === "string" ? { catalogNamespace: epicCatalogNamespace(input) } : input;
 }
 
 function normGOG(input: GOGInput): GOGEntry {
@@ -148,9 +145,7 @@ function normGOG(input: GOGInput): GOGEntry {
 }
 
 function normXbox(input: XboxInput): XboxEntry {
-  return typeof input === "string"
-    ? { packageFamilyName: xboxPackageFamilyName(input) }
-    : input;
+  return typeof input === "string" ? { packageFamilyName: xboxPackageFamilyName(input) } : input;
 }
 
 function normNexus(input: NexusModsInput): NexusModsEntry {

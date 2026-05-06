@@ -1,10 +1,11 @@
-import { ArcGame } from "./types";
-
-import Promise from "bluebird";
 import { spawn } from "child_process";
 import * as path from "path";
+
+import Promise from "bluebird";
 import { generate as shortid } from "shortid";
 import { fs, log, types, util } from "vortex-api";
+
+import { ArcGame } from "./types";
 
 export interface IARCOptions {
   compression?: boolean;
@@ -48,11 +49,7 @@ class ARCWrapper {
       .then(() => output);
   }
 
-  public extract(
-    archivePath: string,
-    outputPath: string,
-    options?: IARCOptions,
-  ): Promise<void> {
+  public extract(archivePath: string, outputPath: string, options?: IARCOptions): Promise<void> {
     const ext = path.extname(archivePath);
     const baseName = path.basename(archivePath, ext);
     const id = shortid();
@@ -63,9 +60,7 @@ class ARCWrapper {
     return (
       fs
         .moveAsync(archivePath, tempPath + ext)
-        .then(() =>
-          this.run("x", ["-txt", quote(tempPath + ext)], options || {}),
-        )
+        .then(() => this.run("x", ["-txt", quote(tempPath + ext)], options || {}))
         .then(() => fs.moveAsync(tempPath + ext, archivePath))
         .then(() => fs.moveAsync(tempPath, outputPath, { overwrite: true }))
         // extracting generates a file order file we need to repackage correctly (in Dragon's Dogma at least).
@@ -81,11 +76,7 @@ class ARCWrapper {
     );
   }
 
-  public create(
-    archivePath: string,
-    source: string,
-    options?: IARCOptions,
-  ): Promise<void> {
+  public create(archivePath: string, source: string, options?: IARCOptions): Promise<void> {
     const args: string[] = [];
 
     return fs
@@ -100,9 +91,7 @@ class ARCWrapper {
         log("warn", "file order file missing", { source, error: err.message });
       })
       .then(() => this.run("c", [...args, quote(source)], options || {}))
-      .then(() =>
-        fs.moveAsync(source + ".arc", archivePath, { overwrite: true }),
-      );
+      .then(() => fs.moveAsync(source + ".arc", archivePath, { overwrite: true }));
   }
 
   private parseList(input: string): IListEntry[] {
@@ -129,11 +118,7 @@ class ARCWrapper {
     return res;
   }
 
-  private run(
-    command: string,
-    parameters: string[],
-    options: IARCOptions,
-  ): Promise<void> {
+  private run(command: string, parameters: string[], options: IARCOptions): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       let args = [
         "-" + command,
@@ -178,11 +163,7 @@ class ARCWrapper {
               allowReport: false,
             },
           );
-          return reject(
-            new util.ProcessCanceled(
-              "ARCtool.exe failed with status code " + code,
-            ),
-          );
+          return reject(new util.ProcessCanceled("ARCtool.exe failed with status code " + code));
         }
 
         // unfortunately ARCtool returns 0 even in error cases

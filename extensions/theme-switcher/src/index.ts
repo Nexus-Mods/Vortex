@@ -1,11 +1,12 @@
+import * as path from "path";
+
+import Bluebird from "bluebird";
+import { fs, log, types, util } from "vortex-api";
+
 import * as ops from "./operations";
 import settingsReducer from "./reducers";
 import SettingsTheme from "./SettingsTheme";
 import { getAvailableFonts, themesPath } from "./util";
-import Bluebird from "bluebird";
-
-import * as path from "path";
-import { fs, log, types, util } from "vortex-api";
 
 function applyTheme(api: types.IExtensionApi, theme: string, initial: boolean) {
   if (!initial) {
@@ -29,14 +30,10 @@ function applyTheme(api: types.IExtensionApi, theme: string, initial: boolean) {
 
       return fs
         .statAsync(path.join(selected, "variables.scss"))
-        .then(() =>
-          api.setStylesheet("variables", path.join(selected, "variables")),
-        )
+        .then(() => api.setStylesheet("variables", path.join(selected, "variables")))
         .catch(() => api.setStylesheet("variables", undefined))
         .then(() => fs.statAsync(path.join(selected, "details.scss")))
-        .then(() =>
-          api.setStylesheet("details", path.join(selected, "details")),
-        )
+        .then(() => api.setStylesheet("details", path.join(selected, "details")))
         .catch(() => api.setStylesheet("details", undefined))
         .then(() => fs.statAsync(path.join(selected, "fonts.scss")))
         .then(() => api.setStylesheet("fonts", path.join(selected, "fonts")))
@@ -79,12 +76,9 @@ function init(context: types.IExtensionContext) {
   const onCloneTheme = (themeName: string, newName: string) =>
     ops.cloneTheme(context.api, themeName, newName);
   const onSelectTheme = (theme: string) => ops.selectTheme(context.api, theme);
-  const saveTheme = (
-    themeName: string,
-    variables: { [name: string]: string },
-  ) => ops.saveTheme(context.api, themeName, variables);
-  const removeTheme = (themeName: string) =>
-    ops.removeTheme(context.api, themeName);
+  const saveTheme = (themeName: string, variables: { [name: string]: string }) =>
+    ops.saveTheme(context.api, themeName, variables);
+  const removeTheme = (themeName: string) => ops.removeTheme(context.api, themeName);
   const onEditStyle = (themeName: string) => editStyle(context.api, themeName);
 
   context.registerSettings("Theme", SettingsTheme, () => ({
@@ -104,20 +98,13 @@ function init(context: types.IExtensionContext) {
   context.once(() => {
     const store = context.api.store;
 
-    context.api.setStylesheet(
-      "theme-switcher",
-      path.join(__dirname, "theme_switcher.scss"),
-    );
+    context.api.setStylesheet("theme-switcher", path.join(__dirname, "theme_switcher.scss"));
 
     context.api.events.on("select-theme", (selectedThemePath: string) => {
       applyTheme(context.api, selectedThemePath, false);
     });
 
-    return applyTheme(
-      context.api,
-      store.getState().settings.interface.currentTheme,
-      true,
-    );
+    return applyTheme(context.api, store.getState().settings.interface.currentTheme, true);
   });
 
   return true;

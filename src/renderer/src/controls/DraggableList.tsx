@@ -8,6 +8,7 @@ import {
   type DropTargetMonitor,
   type DropTargetSpec,
 } from "react-dnd";
+
 import { ComponentEx } from "./ComponentEx";
 import DraggableItem from "./DraggableListItem";
 
@@ -60,11 +61,9 @@ class DraggableList extends ComponentEx<IProps, IDraggableListState> {
   }
 
   public render(): JSX.Element {
-    const { connectDropTarget, id, itemRenderer, style, className } =
-      this.props;
+    const { connectDropTarget, id, itemRenderer, style, className } = this.props;
     const { ordered, selectedItems, draggedItems } = this.state;
-    const isSelected = (item) =>
-      selectedItems.some((it) => this.itemId(item) === this.itemId(it));
+    const isSelected = (item) => selectedItems.some((it) => this.itemId(item) === this.itemId(it));
 
     return connectDropTarget(
       <div style={style} className={className}>
@@ -176,9 +175,7 @@ class DraggableList extends ComponentEx<IProps, IDraggableListState> {
   }
 
   private findItemIndex = (item: any) => {
-    return this.nextState.ordered.findIndex(
-      (iter) => this.itemId(iter) === this.itemId(item),
-    );
+    return this.nextState.ordered.findIndex((iter) => this.itemId(iter) === this.itemId(item));
   };
 
   private take = (item: any, list: any[]) => {
@@ -229,16 +226,12 @@ const containerTarget: DropTargetSpec<IProps> = {
 
       (monitor.getItem() as any).index = 0;
       (monitor.getItem() as any).containerId = props.id;
-      (monitor.getItem() as any).take = (list) =>
-        (component as any).take(item, list);
+      (monitor.getItem() as any).take = (list) => (component as any).take(item, list);
     }
   },
 };
 
-function containerCollect(
-  connect: DropTargetConnector,
-  monitor: DropTargetMonitor,
-) {
+function containerCollect(connect: DropTargetConnector, monitor: DropTargetMonitor) {
   return {
     connectDropTarget: connect.dropTarget(),
   };

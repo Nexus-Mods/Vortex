@@ -3,40 +3,40 @@
   "files": [],
   "references": [
     {
-      "path": "./packages/adaptor-api/tsconfig.json",
+      "path": "./packages/adaptor-api/tsconfig.json"
     },
     {
-      "path": "./packages/adaptors/ping-test/tsconfig.json",
+      "path": "./packages/adaptors/ping-test/tsconfig.json"
     },
     {
-      "path": "./src/shared/tsconfig.json",
+      "path": "./src/shared/tsconfig.json"
     },
     {
-      "path": "./src/preload/tsconfig.json",
+      "path": "./src/preload/tsconfig.json"
     },
     {
-      "path": "./src/main/tsconfig.json",
+      "path": "./src/main/tsconfig.json"
     },
     {
-      "path": "./src/renderer/tsconfig.json",
+      "path": "./src/renderer/tsconfig.json"
     },
     {
-      "path": "./tsconfig.node.json",
+      "path": "./tsconfig.node.json"
     },
     {
-      "path": "./src/shared/tsconfig.json",
+      "path": "./src/shared/tsconfig.json"
     },
     {
-      "path": "./src/preload/tsconfig.json",
+      "path": "./src/preload/tsconfig.json"
     },
     {
-      "path": "./src/main/tsconfig.json",
+      "path": "./src/main/tsconfig.json"
     },
     {
-      "path": "./src/renderer/tsconfig.json",
+      "path": "./src/renderer/tsconfig.json"
     },
     {
-      "path": "./tsconfig.node.json",
-    },
-  ],
+      "path": "./tsconfig.node.json"
+    }
+  ]
 }

@@ -1,3 +1,4 @@
+import { unknownToError } from "@vortex/shared";
 /* eslint-disable */
 import * as _ from "lodash";
 import * as React from "react";
@@ -14,26 +15,23 @@ import {
   Spinner,
   ToolbarIcon,
 } from "../../../controls/api";
+import { ComponentEx } from "../../../controls/ComponentEx";
+import ToolbarDropdown from "../../../controls/ToolbarDropdown";
 import * as types from "../../../types/api";
 import * as util from "../../../util/api";
-import { ComponentEx } from "../../../controls/ComponentEx";
 import * as selectors from "../../../util/selectors";
 import { DNDContainer, MainPage } from "../../../views/api";
-import FilterBox from "./FilterBox";
-
+import { setFBForceUpdate } from "../actions/session";
+import { currentLoadOrderForProfile } from "../selectors";
 import {
   type IItemRendererProps,
   type ILoadOrderGameInfo,
   type LoadOrder,
   LoadOrderValidationError,
 } from "../types/types";
+import FilterBox from "./FilterBox";
 import InfoPanel from "./InfoPanel";
 import ItemRenderer from "./ItemRenderer";
-import { setFBForceUpdate } from "../actions/session";
-import ToolbarDropdown from "../../../controls/ToolbarDropdown";
-
-import { currentLoadOrderForProfile } from "../selectors";
-import { unknownToError } from "@vortex/shared";
 
 const PanelX: any = Panel;
 
@@ -49,18 +47,11 @@ export interface IBaseProps {
   getGameEntry: (gameId: string) => ILoadOrderGameInfo;
   onImportList: () => void;
   onExportList: () => void;
-  onSetOrder: (
-    profileId: string,
-    loadOrder: LoadOrder,
-    refresh?: boolean,
-  ) => void;
+  onSetOrder: (profileId: string, loadOrder: LoadOrder, refresh?: boolean) => void;
   onSortByDeployOrder: (profileId: string) => void;
   onStartUp: (gameMode: string) => Promise<LoadOrder>;
   onShowError: (gameId: string, error: Error) => void;
-  validateLoadOrder: (
-    profile: types.IProfile,
-    newLO: LoadOrder,
-  ) => Promise<void>;
+  validateLoadOrder: (profile: types.IProfile, newLO: LoadOrder) => Promise<void>;
 }
 
 interface IConnectedProps {
@@ -113,16 +104,10 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
             key: "btn-deploy",
             icon: "deploy",
             text: "Deploy Mods",
-            className: this.props.needToDeploy
-              ? "toolbar-flash-button"
-              : undefined,
+            className: this.props.needToDeploy ? "toolbar-flash-button" : undefined,
             onClick: async () => {
-              await util.toPromise((cb) =>
-                this.context.api.events.emit("deploy-mods", cb),
-              );
-              const gameId = selectors.activeGameId(
-                this.context.api.getState(),
-              );
+              await util.toPromise((cb) => this.context.api.events.emit("deploy-mods", cb));
+              const gameId = selectors.activeGameId(this.context.api.getState());
               this.props.onSetDeploymentNecessary(gameId, false);
             },
           };
@@ -138,12 +123,8 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
             text: "Purge Mods",
             className: "load-order-purge-list",
             onClick: async () => {
-              await util.toPromise((cb) =>
-                this.context.api.events.emit("purge-mods", false, cb),
-              );
-              const gameId = selectors.activeGameId(
-                this.context.api.getState(),
-              );
+              await util.toPromise((cb) => this.context.api.events.emit("purge-mods", false, cb));
+              const gameId = selectors.activeGameId(this.context.api.getState());
               this.props.onSetDeploymentNecessary(gameId, true);
             },
           };
@@ -172,19 +153,13 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
             instanceId: [],
             icons: [
               {
-                icon:
-                  this.state.updating || this.props.disabled
-                    ? "spinner"
-                    : "import",
+                icon: this.state.updating || this.props.disabled ? "spinner" : "import",
                 title: "Load Order Import",
                 action: this.props.onImportList,
                 default: true,
               },
               {
-                icon:
-                  this.state.updating || this.props.disabled
-                    ? "spinner"
-                    : "import",
+                icon: this.state.updating || this.props.disabled ? "spinner" : "import",
                 title: "Load Order Export",
                 action: this.props.onExportList,
               },
@@ -202,9 +177,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
             text: "Sort by Deploy Order",
             className: "load-order-sort-deploy-order",
             onClick: () =>
-              this.state.updating
-                ? null
-                : this.props.onSortByDeployOrder(this.props.profile.id),
+              this.state.updating ? null : this.props.onSortByDeployOrder(this.props.profile.id),
           };
         },
       },
@@ -213,26 +186,19 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
 
   public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     // Zuckerberg isn't going to like this...
-    if (
-      !!newProps.refreshId &&
-      this.state.currentRefreshId !== newProps.refreshId
-    ) {
+    if (!!newProps.refreshId && this.state.currentRefreshId !== newProps.refreshId) {
       this.nextState.currentRefreshId = newProps.refreshId;
       this.onRefreshList();
       return;
     }
 
-    if (
-      this.state.validationError !== undefined &&
-      newProps.validationResult === undefined
-    ) {
+    if (this.state.validationError !== undefined && newProps.validationResult === undefined) {
       this.nextState.validationError = undefined;
       return;
     }
 
     if (
-      this.state.validationError?.validationResult?.invalid !==
-      newProps.validationResult?.invalid
+      this.state.validationError?.validationResult?.invalid !== newProps.validationResult?.invalid
     ) {
       this.nextState.validationError = new LoadOrderValidationError(
         newProps.validationResult,
@@ -284,11 +250,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
             if (!entryName) {
               return accum; // Skip entries without a name
             }
-            if (
-              entryName
-                .toLowerCase()
-                .includes(this.state.filterText.toLowerCase())
-            ) {
+            if (entryName.toLowerCase().includes(this.state.filterText.toLowerCase())) {
               accum.push(rendOps);
             }
             return accum;
@@ -296,10 +258,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
         : [];
 
     const infoPanel = () => (
-      <InfoPanel
-        validationError={validationError}
-        info={gameEntry?.usageInstructions}
-      />
+      <InfoPanel validationError={validationError} info={gameEntry?.usageInstructions} />
     );
 
     const draggableList = () =>
@@ -307,11 +266,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
         this.renderWait()
       ) : enabled.length > 0 ? (
         <DraggableList
-          disabled={
-            this.props.disabled ||
-            this.state.loading ||
-            this.state.filterText !== ""
-          }
+          disabled={this.props.disabled || this.state.loading || this.state.filterText !== ""}
           itemTypeId="file-based-lo-draggable-entry"
           id="mod-loadorder-draggable-list"
           items={enabled}
@@ -344,15 +299,9 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
         <MainPage.Body>
           <Panel>
             <PanelX.Body>
-              <FilterBox
-                currentFilterValue={this.state.filterText}
-                setFilter={this.onFilter}
-              />
+              <FilterBox currentFilterValue={this.state.filterText} setFilter={this.onFilter} />
               <DNDContainer style={{ height: "95%" }}>
-                <FlexLayout
-                  type="row"
-                  className="file-based-load-order-container"
-                >
+                <FlexLayout type="row" className="file-based-load-order-container">
                   <FlexLayout.Flex className={listClasses.join(" ")}>
                     {draggableList()}
                   </FlexLayout.Flex>
@@ -371,8 +320,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
     this.nextState.validationError = undefined;
   }
 
-  private onFilter = (filterText: string) =>
-    (this.nextState.filterText = filterText);
+  private onFilter = (filterText: string) => (this.nextState.filterText = filterText);
 
   private renderWait() {
     return (
@@ -399,8 +347,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
       });
       return;
     }
-    const { onSetOrder, onShowError, loadOrder, profile, validateLoadOrder } =
-      this.props;
+    const { onSetOrder, onShowError, loadOrder, profile, validateLoadOrder } = this.props;
     const newLO = ordered.map((item) => item.loEntry);
     validateLoadOrder(profile, newLO)
       .then(() => (this.nextState.validationError = undefined))
@@ -435,23 +382,14 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
   };
 }
 
-function mapStateToProps(
-  state: types.IState,
-  ownProps: IProps,
-): IConnectedProps {
+function mapStateToProps(state: types.IState, ownProps: IProps): IConnectedProps {
   const profile = selectors.activeProfile(state) || undefined;
-  let loadOrder = profile?.id
-    ? currentLoadOrderForProfile(state, profile.id)
-    : [];
+  let loadOrder = profile?.id ? currentLoadOrderForProfile(state, profile.id) : [];
   return {
     loadOrder,
     profile,
     needToDeploy: selectors.needToDeploy(state),
-    refreshId: util.getSafe(
-      state,
-      ["session", "fblo", "refresh", profile?.id],
-      "",
-    ),
+    refreshId: util.getSafe(state, ["session", "fblo", "refresh", profile?.id], ""),
     validationResult: util.getSafe(
       state,
       ["session", "fblo", "validationResult", profile?.id],
@@ -472,17 +410,10 @@ function mapDispatchToProps(dispatch: any): IActionProps {
 }
 
 function shouldSuppressUpdate(state: types.IState) {
-  const suppressOnActivities = [
-    "deployment",
-    "purging",
-    "installing_dependencies",
-  ];
+  const suppressOnActivities = ["deployment", "purging", "installing_dependencies"];
   const isActivityRunning = (activity: string) =>
-    util
-      .getSafe(state, ["session", "base", "activity", "mods"], [])
-      .includes(activity) || // purge/deploy
-    util.getSafe(state, ["session", "base", "activity", activity], []).length >
-      0; // installing_dependencies
+    util.getSafe(state, ["session", "base", "activity", "mods"], []).includes(activity) || // purge/deploy
+    util.getSafe(state, ["session", "base", "activity", activity], []).length > 0; // installing_dependencies
   return suppressOnActivities.some((activity) => isActivityRunning(activity));
 }
 

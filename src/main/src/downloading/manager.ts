@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import type {
   ByteRange,
   Chunker,
@@ -7,17 +9,14 @@ import type {
   Resolver,
   RetryStrategy,
 } from "@vortex/shared/download";
-import type { CookieJar } from "tough-cookie";
-
 import { staticChunker } from "@vortex/shared/download";
 import { DownloadError } from "@vortex/shared/errors";
 import { RateLimiter } from "limiter";
-import { randomUUID } from "node:crypto";
 import PQueue from "p-queue";
-
-import type { TimeoutOptions } from "./downloader";
+import type { CookieJar } from "tough-cookie";
 
 import { log } from "../logging";
+import type { TimeoutOptions } from "./downloader";
 import { download } from "./downloader";
 import { ProgressReporter } from "./progress";
 import { defaultRetryStrategy } from "./retry";
@@ -131,8 +130,7 @@ export class DownloadManager {
    */
   cancel(downloadId: string): DownloadState {
     const handle = this.#downloads.get(downloadId);
-    if (handle === undefined)
-      throw new Error(`Unknown download: ${downloadId}`);
+    if (handle === undefined) throw new Error(`Unknown download: ${downloadId}`);
     return handle.cancel();
   }
 
@@ -142,8 +140,7 @@ export class DownloadManager {
    */
   pause(downloadId: string): Promise<PauseResult<unknown>> {
     const handle = this.#downloads.get(downloadId);
-    if (handle === undefined)
-      throw new Error(`Unknown download: ${downloadId}`);
+    if (handle === undefined) throw new Error(`Unknown download: ${downloadId}`);
     return handle.pause();
   }
 
@@ -315,8 +312,7 @@ export class DownloadManager {
       },
       (err) => {
         if (progressReporter.status !== "running") return;
-        const isCancellation =
-          err instanceof DownloadError && err.code === "cancellation";
+        const isCancellation = err instanceof DownloadError && err.code === "cancellation";
         progressReporter.status = isCancellation ? "canceled" : "failed";
         if (err instanceof DownloadError) terminalError = err;
         if (!isCancellation) {

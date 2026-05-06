@@ -1,8 +1,9 @@
-import translate from "./translate";
+import * as path from "path";
 
 import { command, Command } from "commander";
 import * as fs from "fs-extra";
-import * as path from "path";
+
+import translate from "./translate";
 
 interface IParameters {
   source?: string;
@@ -16,10 +17,7 @@ function commandLine(): IParameters {
   return command("sourcemap")
     .usage("-s <SOURCE> [-b <BASE>] <file>")
     .version(version)
-    .option(
-      "-s, --source <SOURCE>",
-      "base directory of source files on this system",
-    )
+    .option("-s, --source <SOURCE>", "base directory of source files on this system")
     .option(
       "-b, --base <BASE>",
       "base directory of source files in the system where the stack was created",

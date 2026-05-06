@@ -76,18 +76,8 @@ function Timer(props: ITimerProps) {
   }, [setTimer, setElapsed, paused, started]);
 
   return (
-    <svg
-      className={className}
-      viewBox={`0 0 ${width} ${width}`}
-      style={{ strokeWidth: stroke }}
-    >
-      <circle
-        className="timer-background"
-        fill="none"
-        cx={center}
-        cy={center}
-        r={radius}
-      />
+    <svg className={className} viewBox={`0 0 ${width} ${width}`} style={{ strokeWidth: stroke }}>
+      <circle className="timer-background" fill="none" cx={center} cy={center} r={radius} />
       <circle
         className="timer-circle"
         style={{

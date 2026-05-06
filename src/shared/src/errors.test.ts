@@ -7,8 +7,7 @@ import { computeErrorFingerprint, sanitizeFramePath } from "./errors";
 // ---------------------------------------------------------------------------
 
 /** Build a minimal stack string from an array of "at ..." frame strings. */
-const stack = (...frames: string[]) =>
-  `Error: test\n${frames.map((f) => `  ${f}`).join("\n")}`;
+const stack = (...frames: string[]) => `Error: test\n${frames.map((f) => `  ${f}`).join("\n")}`;
 
 const VERSION = "1.2.3";
 
@@ -39,28 +38,22 @@ describe("sanitizeFramePath", () => {
 
   describe("node_modules/ anchor", () => {
     it("strips Windows prefix before node_modules/ and normalizes separators", () => {
-      expect(
-        sanitizeFramePath(
-          `at f (D:\\Dev\\Vortex\\node_modules\\lib\\index.js:5:10)`,
-        ),
-      ).toBe(`at f (node_modules/lib/index.js:5:10)`);
+      expect(sanitizeFramePath(`at f (D:\\Dev\\Vortex\\node_modules\\lib\\index.js:5:10)`)).toBe(
+        `at f (node_modules/lib/index.js:5:10)`,
+      );
     });
 
     it("strips Unix prefix before node_modules/", () => {
-      expect(
-        sanitizeFramePath(
-          `at f (/home/alice/app/node_modules/lib/index.js:5:10)`,
-        ),
-      ).toBe(`at f (node_modules/lib/index.js:5:10)`);
+      expect(sanitizeFramePath(`at f (/home/alice/app/node_modules/lib/index.js:5:10)`)).toBe(
+        `at f (node_modules/lib/index.js:5:10)`,
+      );
     });
   });
 
   describe("app.asar anchor", () => {
     it("strips Windows prefix before app.asar/ and normalizes separators", () => {
       expect(
-        sanitizeFramePath(
-          `at f (C:\\Program Files\\Vortex\\resources\\app.asar\\renderer.js:1:2)`,
-        ),
+        sanitizeFramePath(`at f (C:\\Program Files\\Vortex\\resources\\app.asar\\renderer.js:1:2)`),
       ).toBe(`at f (app.asar/renderer.js:1:2)`);
     });
 
@@ -73,11 +66,9 @@ describe("sanitizeFramePath", () => {
     });
 
     it("strips Unix prefix before app.asar/", () => {
-      expect(
-        sanitizeFramePath(
-          `at f (/usr/lib/vortex/resources/app.asar/renderer.js:1:2)`,
-        ),
-      ).toBe(`at f (app.asar/renderer.js:1:2)`);
+      expect(sanitizeFramePath(`at f (/usr/lib/vortex/resources/app.asar/renderer.js:1:2)`)).toBe(
+        `at f (app.asar/renderer.js:1:2)`,
+      );
     });
   });
 
@@ -91,11 +82,9 @@ describe("sanitizeFramePath", () => {
     });
 
     it("strips Unix prefix before plugins/", () => {
-      expect(
-        sanitizeFramePath(
-          `at f (/home/alice/.config/Vortex/plugins/x/index.js:1:2)`,
-        ),
-      ).toBe(`at f (plugins/x/index.js:1:2)`);
+      expect(sanitizeFramePath(`at f (/home/alice/.config/Vortex/plugins/x/index.js:1:2)`)).toBe(
+        `at f (plugins/x/index.js:1:2)`,
+      );
     });
   });
 
@@ -143,9 +132,7 @@ describe("sanitizeFramePath", () => {
         sanitizeFramePath(
           `C:\\Users\\user\\AppData\\Local\\Larian Studios\\Baldur's Gate 3\\Mods\\foo.pak`,
         ),
-      ).toBe(
-        `C:/Users/<USER>/AppData/Local/Larian Studios/Baldur's Gate 3/Mods/foo.pak`,
-      );
+      ).toBe(`C:/Users/<USER>/AppData/Local/Larian Studios/Baldur's Gate 3/Mods/foo.pak`);
     });
 
     it("redacts the username inside an ENOENT message body", () => {
@@ -206,9 +193,7 @@ describe("sanitizeFramePath", () => {
 
     it("redacts every occurrence in a single string", () => {
       const input = `C:\\Users\\user\\a.txt and C:\\Users\\user\\b.txt`;
-      expect(sanitizeFramePath(input)).toBe(
-        `C:/Users/<USER>/a.txt and C:/Users/<USER>/b.txt`,
-      );
+      expect(sanitizeFramePath(input)).toBe(`C:/Users/<USER>/a.txt and C:/Users/<USER>/b.txt`);
     });
 
     it("is idempotent — running twice gives the same result", () => {
@@ -252,9 +237,7 @@ describe("computeErrorFingerprint", () => {
     });
 
     it("returns undefined when stack has no 'at ' frames", () => {
-      expect(
-        computeErrorFingerprint("Error: something went wrong", VERSION),
-      ).toBeUndefined();
+      expect(computeErrorFingerprint("Error: something went wrong", VERSION)).toBeUndefined();
     });
 
     it("returns undefined for an empty string", () => {
@@ -264,10 +247,7 @@ describe("computeErrorFingerprint", () => {
 
   describe("return value shape", () => {
     it("returns an 8-character hex string", () => {
-      const result = computeErrorFingerprint(
-        stack(`at f (src/foo.ts:1:2)`),
-        VERSION,
-      );
+      const result = computeErrorFingerprint(stack(`at f (src/foo.ts:1:2)`), VERSION);
       expect(result).toMatch(/^[0-9a-f]{8}$/);
     });
   });
@@ -275,9 +255,7 @@ describe("computeErrorFingerprint", () => {
   describe("determinism", () => {
     it("returns the same hash for identical inputs", () => {
       const s = stack(`at f (src/foo.ts:1:2)`, `at g (src/bar.ts:3:4)`);
-      expect(computeErrorFingerprint(s, VERSION)).toBe(
-        computeErrorFingerprint(s, VERSION),
-      );
+      expect(computeErrorFingerprint(s, VERSION)).toBe(computeErrorFingerprint(s, VERSION));
     });
   });
 
@@ -303,32 +281,24 @@ describe("computeErrorFingerprint", () => {
     it("produces different hashes for different frame sets", () => {
       const a = stack(`at f (src/foo.ts:1:2)`);
       const b = stack(`at g (src/bar.ts:9:1)`);
-      expect(computeErrorFingerprint(a, VERSION)).not.toBe(
-        computeErrorFingerprint(b, VERSION),
-      );
+      expect(computeErrorFingerprint(a, VERSION)).not.toBe(computeErrorFingerprint(b, VERSION));
     });
 
     it("produces different hashes for different line numbers", () => {
       const a = stack(`at f (src/foo.ts:1:2)`);
       const b = stack(`at f (src/foo.ts:2:2)`);
-      expect(computeErrorFingerprint(a, VERSION)).not.toBe(
-        computeErrorFingerprint(b, VERSION),
-      );
+      expect(computeErrorFingerprint(a, VERSION)).not.toBe(computeErrorFingerprint(b, VERSION));
     });
 
     it("produces different hashes for different app versions", () => {
       const s = stack(`at f (src/foo.ts:1:2)`);
-      expect(computeErrorFingerprint(s, "1.0.0")).not.toBe(
-        computeErrorFingerprint(s, "2.0.0"),
-      );
+      expect(computeErrorFingerprint(s, "1.0.0")).not.toBe(computeErrorFingerprint(s, "2.0.0"));
     });
 
     it("produces different hashes for different frame order", () => {
       const a = stack(`at f (src/foo.ts:1:2)`, `at g (src/bar.ts:3:4)`);
       const b = stack(`at g (src/bar.ts:3:4)`, `at f (src/foo.ts:1:2)`);
-      expect(computeErrorFingerprint(a, VERSION)).not.toBe(
-        computeErrorFingerprint(b, VERSION),
-      );
+      expect(computeErrorFingerprint(a, VERSION)).not.toBe(computeErrorFingerprint(b, VERSION));
     });
   });
 

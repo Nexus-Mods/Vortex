@@ -1,6 +1,7 @@
 import * as path from "path";
-import * as React from "react";
 import * as url from "url";
+
+import * as React from "react";
 import { actions, fs, log, selectors, tooltip, types, util } from "vortex-api";
 
 import BooleanFilter from "./BooleanFilter";
@@ -12,15 +13,7 @@ const ONE_HOUR = 60 * ONE_MINUTE;
 // https://github.com/ModOrganizer2/modorganizer-script_extender_plugin_checker
 // by Silarn.
 const compatibleGames = {
-  skyrim: [
-    path.join(
-      util.getVortexPath("documents"),
-      "My Games",
-      "Skyrim",
-      "SKSE",
-      "skse.log",
-    ),
-  ],
+  skyrim: [path.join(util.getVortexPath("documents"), "My Games", "Skyrim", "SKSE", "skse.log")],
   skyrimse: [
     path.join(
       util.getVortexPath("documents"),
@@ -31,44 +24,15 @@ const compatibleGames = {
     ),
   ],
   skyrimvr: [
-    path.join(
-      util.getVortexPath("documents"),
-      "My Games",
-      "Skyrim VR",
-      "SKSE",
-      "sksevr.log",
-    ),
+    path.join(util.getVortexPath("documents"), "My Games", "Skyrim VR", "SKSE", "sksevr.log"),
   ],
-  enderal: [
-    path.join(
-      util.getVortexPath("documents"),
-      "My Games",
-      "Skyrim",
-      "SKSE",
-      "skse.log",
-    ),
-  ],
+  enderal: [path.join(util.getVortexPath("documents"), "My Games", "Skyrim", "SKSE", "skse.log")],
   fallout4: [
-    path.join(
-      util.getVortexPath("documents"),
-      "My Games",
-      "Fallout 4",
-      "F4SE",
-      "f4se.log",
-    ),
+    path.join(util.getVortexPath("documents"), "My Games", "Fallout 4", "F4SE", "f4se.log"),
   ],
-  oblivion: [
-    path.join("{GamePath}", "obse.log"),
-    path.join("{GamePath}", "obse_editor.log"),
-  ],
-  falloutnv: [
-    path.join("{GamePath}", "nvse.log"),
-    path.join("{GamePath}", "nvse_editor.log"),
-  ],
-  fallout3: [
-    path.join("{GamePath}", "fose.log"),
-    path.join("{GamePath}", "fose_editor.log"),
-  ],
+  oblivion: [path.join("{GamePath}", "obse.log"), path.join("{GamePath}", "obse_editor.log")],
+  falloutnv: [path.join("{GamePath}", "nvse.log"), path.join("{GamePath}", "nvse_editor.log")],
+  fallout3: [path.join("{GamePath}", "fose.log"), path.join("{GamePath}", "fose_editor.log")],
 };
 
 let errorState: { [modId: string]: IErrorLine } = util.makeReactive({});
@@ -86,19 +50,13 @@ interface IErrorLine {
   message: string;
 }
 
-function getModId(
-  manifest: any,
-  modLookup: { [modPath: string]: string },
-  dllName: string,
-) {
+function getModId(manifest: any, modLookup: { [modPath: string]: string }, dllName: string) {
   if (manifest === undefined) {
     return undefined;
   }
 
   const dllNameNorm = path.join("skse", "plugins", dllName).toLowerCase();
-  const deployedFile = manifest.files.find(
-    (file) => file.relPath.toLowerCase() === dllNameNorm,
-  );
+  const deployedFile = manifest.files.find((file) => file.relPath.toLowerCase() === dllNameNorm);
   if (deployedFile !== undefined) {
     return modLookup[deployedFile.source];
   }
@@ -151,10 +109,7 @@ async function checkForErrors(api: types.IExtensionApi) {
             errorInstances.push({ errLogFile, errLogTime, errors });
           }
         } else {
-          log(
-            "debug",
-            "Script extender log file was not updated this session.",
-          );
+          log("debug", "Script extender log file was not updated this session.");
         }
       } catch (err) {
         log(
@@ -175,8 +130,7 @@ async function checkForErrors(api: types.IExtensionApi) {
       //  retrieve the manifest file - I suppose that's plausible
       //  if the file has been removed. We log as info or error
       //  depending on whether it's our responsibility to fix it.
-      const isNonActionable =
-        ["ENOENT", "EIO", "EPERM"].indexOf(err.code) !== -1;
+      const isNonActionable = ["ENOENT", "EIO", "EPERM"].indexOf(err.code) !== -1;
       log(
         isNonActionable ? "info" : "error",
         "Failed to retrieve manifest information",
@@ -191,13 +145,10 @@ async function checkForErrors(api: types.IExtensionApi) {
     }, []);
 
     const mods = state.persistent.mods[gameMode] || {};
-    const modLookup: { [modPath: string]: string } = Object.keys(mods).reduce(
-      (prev, modId) => {
-        prev[mods[modId].installationPath] = modId;
-        return prev;
-      },
-      {},
-    );
+    const modLookup: { [modPath: string]: string } = Object.keys(mods).reduce((prev, modId) => {
+      prev[mods[modId].installationPath] = modId;
+      return prev;
+    }, {});
 
     errors.forEach((iter) => {
       iter.modId = getModId(manifest, modLookup, iter.dllName);
@@ -264,8 +215,7 @@ async function checkForErrors(api: types.IExtensionApi) {
                       "<br/>",
                     {
                       replace: {
-                        errorInformation:
-                          errorInstances.map(buildLogErrorString),
+                        errorInformation: errorInstances.map(buildLogErrorString),
                       },
                     },
                   ) + errors.map(renderError).join("<br/>"),
@@ -292,11 +242,7 @@ async function checkForErrors(api: types.IExtensionApi) {
           title: "Dismiss",
           action: (dismiss) => {
             api.store.dispatch(
-              actions.setAttributeVisible(
-                "mods",
-                "script-extender-error-check",
-                false,
-              ),
+              actions.setAttributeVisible("mods", "script-extender-error-check", false),
             );
             dismiss();
           },
@@ -332,9 +278,7 @@ function parseSELog(input: string) {
   const lines: string[] = input.split(/\r*\n/);
 
   lines.forEach((line) => {
-    const message = loadStatusMessages.find(
-      (iter) => line.indexOf(iter) !== -1,
-    );
+    const message = loadStatusMessages.find((iter) => line.indexOf(iter) !== -1);
     if (message !== undefined) {
       // matched lines look like this:
       // tslint:disable-next-line:max-line-length
@@ -396,10 +340,7 @@ function main(context: types.IExtensionContext) {
   });
 
   context.once(() => {
-    context.api.setStylesheet(
-      "script-extender-error-check",
-      path.join(__dirname, "style.scss"),
-    );
+    context.api.setStylesheet("script-extender-error-check", path.join(__dirname, "style.scss"));
 
     // let launchTime = 0;
 
@@ -408,38 +349,21 @@ function main(context: types.IExtensionContext) {
       context.api.dismissNotification("script-extender-errors");
       const hasErrors = await checkForErrors(context.api);
       context.api.store.dispatch(
-        actions.setAttributeVisible(
-          "mods",
-          "script-extender-error-check",
-          hasErrors,
-        ),
+        actions.setAttributeVisible("mods", "script-extender-error-check", hasErrors),
       );
     });
 
-    context.api.onStateChange(
-      ["session", "base", "toolsRunning"],
-      async (previous, current) => {
-        if (
-          Object.keys(previous).length === 0 &&
-          Object.keys(current).length > 0
-        ) {
-          launchTime = Math.round(Date.now() / 1000);
-        }
-        if (
-          Object.keys(previous).length > 0 &&
-          Object.keys(current).length === 0
-        ) {
-          const hasErrors = await checkForErrors(context.api);
-          context.api.store.dispatch(
-            actions.setAttributeVisible(
-              "mods",
-              "script-extender-error-check",
-              hasErrors,
-            ),
-          );
-        }
-      },
-    );
+    context.api.onStateChange(["session", "base", "toolsRunning"], async (previous, current) => {
+      if (Object.keys(previous).length === 0 && Object.keys(current).length > 0) {
+        launchTime = Math.round(Date.now() / 1000);
+      }
+      if (Object.keys(previous).length > 0 && Object.keys(current).length === 0) {
+        const hasErrors = await checkForErrors(context.api);
+        context.api.store.dispatch(
+          actions.setAttributeVisible("mods", "script-extender-error-check", hasErrors),
+        );
+      }
+    });
   });
 }
 

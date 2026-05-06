@@ -17,24 +17,21 @@ let initialized = false;
  * Should be called once during application startup.
  */
 export function setupMainExtensions(): void {
-  betterIpcMain.on(
-    "extensions:init-all-main",
-    (_event, installType: string) => {
-      if (initialized) {
-        log("debug", "Main extensions already initialized");
-        return;
-      }
+  betterIpcMain.on("extensions:init-all-main", (_event, installType: string) => {
+    if (initialized) {
+      log("debug", "Main extensions already initialized");
+      return;
+    }
 
-      log("info", "Initializing main process extensions", { installType });
+    log("info", "Initializing main process extensions", { installType });
 
-      // Initialize extensions
-      initUpdater(installType);
-      initNexusIntegration();
+    // Initialize extensions
+    initUpdater(installType);
+    initNexusIntegration();
 
-      initialized = true;
-      log("info", "Main process extensions initialized");
-    },
-  );
+    initialized = true;
+    log("info", "Main process extensions initialized");
+  });
 
   log("info", "Main process extensions IPC handler registered");
 }

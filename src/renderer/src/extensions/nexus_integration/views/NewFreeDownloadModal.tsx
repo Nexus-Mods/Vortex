@@ -1,7 +1,8 @@
-import * as React from "react";
 import type { TFunction } from "i18next";
-import FlexLayout from "../../../controls/FlexLayout";
+import * as React from "react";
 import { Button, Panel } from "react-bootstrap";
+
+import FlexLayout from "../../../controls/FlexLayout";
 import Image from "../../../controls/Image";
 import { IconButton } from "../../../controls/TooltipControls";
 
@@ -19,8 +20,7 @@ export interface INewFreeDownloadModal {
 }
 
 function NewFreeDownloadModal(props: INewFreeDownloadModal) {
-  const { t, fileInfo, openModPage, goPremium, onDownload, positionText } =
-    props;
+  const { t, fileInfo, openModPage, goPremium, onDownload, positionText } = props;
 
   return (
     <div>
@@ -75,10 +75,7 @@ function NewFreeDownloadModal(props: INewFreeDownloadModal) {
 
             <FlexLayout.Flex>
               <FlexLayout type="column" id="premium-container">
-                <Image
-                  className="premium-pictogram"
-                  srcs={[premiumPictogramPath]}
-                />
+                <Image className="premium-pictogram" srcs={[premiumPictogramPath]} />
                 <div className="membership-type">Premium</div>
                 <div className="title">Get all your mods fast</div>
                 <hr />

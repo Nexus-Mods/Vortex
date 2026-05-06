@@ -4,7 +4,6 @@ import type {
   QualifiedPath,
   ResolvedPath,
 } from "@nexusmods/adaptor-api/fs";
-
 import { PathResolverError } from "@nexusmods/adaptor-api/fs";
 
 /**
@@ -32,9 +31,7 @@ export class PathResolverRegistryImpl implements PathResolverRegistry {
     const resolver = this.#byScheme.get(path.scheme);
     if (!resolver) {
       return Promise.reject(
-        new PathResolverError(
-          `No resolver registered for scheme '${path.scheme}'`,
-        ),
+        new PathResolverError(`No resolver registered for scheme '${path.scheme}'`),
       );
     }
     return resolver.resolve(path);

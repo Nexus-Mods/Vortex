@@ -1,14 +1,7 @@
 import { IGameVersion, RatingOptions } from "@nexusmods/nexus-api";
 import type { TFunction } from "i18next";
 import * as React from "react";
-import {
-  FlexLayout,
-  Icon,
-  RadialProgress,
-  tooltip,
-  MainContext,
-  More,
-} from "vortex-api";
+import { FlexLayout, Icon, RadialProgress, tooltip, MainContext, More } from "vortex-api";
 
 export interface IHealthIndicatorProps {
   t: TFunction;
@@ -91,10 +84,7 @@ function HealthIndicator(props: IHealthIndicatorProps) {
           {t("Game Version: ")}
           <span className={gameVersionClassName}>{collectionGameVersion}</span>
           {versionMismatch ? (
-            <More
-              id="collection-health-version-mismatch"
-              name={t("Version Mismatch")}
-            >
+            <More id="collection-health-version-mismatch" name={t("Version Mismatch")}>
               {t(
                 "This collection was created using a different version of the game than you have and is the most common reason why a collection doesn't work correctly.\n\n" +
                   "Your version: {{gameVersion}}\n\n" +
@@ -114,9 +104,7 @@ function HealthIndicator(props: IHealthIndicatorProps) {
         <FlexLayout.Fixed className="collection-revition-rating-parent">
           <div className="collection-revision-rating-container">
             <RadialProgressT
-              data={[
-                { class: cssClass, min: 0, max: 100, value: value.average },
-              ]}
+              data={[{ class: cssClass, min: 0, max: 100, value: value.average }]}
               totalRadius={32}
               innerGap={10}
               restOverlap={false}
@@ -143,8 +131,7 @@ function HealthIndicator(props: IHealthIndicatorProps) {
                     <FlexLayout.Fixed>
                       <tooltip.Button
                         className={
-                          "collection-ghost-button " +
-                          (ownSuccess === "positive" ? "voted" : "")
+                          "collection-ghost-button " + (ownSuccess === "positive" ? "voted" : "")
                         }
                         tooltip={
                           voteAllowed
@@ -163,8 +150,7 @@ function HealthIndicator(props: IHealthIndicatorProps) {
                     <FlexLayout.Fixed>
                       <tooltip.Button
                         className={
-                          "collection-ghost-button " +
-                          (ownSuccess === "negative" ? "voted" : "")
+                          "collection-ghost-button " + (ownSuccess === "negative" ? "voted" : "")
                         }
                         tooltip={
                           voteAllowed

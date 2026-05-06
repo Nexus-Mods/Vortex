@@ -15,20 +15,14 @@ vi.mock("fs-extra", async (importOriginal) => {
           return Promise.resolve(mockData);
         }
         // callback style
-        (args[args.length - 1] as (err: null, data: Buffer) => void)(
-          null,
-          mockData,
-        );
+        (args[args.length - 1] as (err: null, data: Buffer) => void)(null, mockData);
       },
     },
     readFile: (...args: unknown[]) => {
       if (args.length <= 1 || typeof args[args.length - 1] !== "function") {
         return Promise.resolve(mockData);
       }
-      (args[args.length - 1] as (err: null, data: Buffer) => void)(
-        null,
-        mockData,
-      );
+      (args[args.length - 1] as (err: null, data: Buffer) => void)(null, mockData);
     },
   };
 });
@@ -55,15 +49,15 @@ describe("readFileBOM", () => {
   });
   it("supports utf32 big endian BOM", async () => {
     mockData = Buffer.from([
-      0x00, 0x00, 0xfe, 0xff, 0x00, 0x00, 0x00, 0x66, 0x00, 0x00, 0x00, 0x6f,
-      0x00, 0x00, 0x00, 0x6f,
+      0x00, 0x00, 0xfe, 0xff, 0x00, 0x00, 0x00, 0x66, 0x00, 0x00, 0x00, 0x6f, 0x00, 0x00, 0x00,
+      0x6f,
     ]);
     await expect(fs.readFileBOM("", "utf8")).resolves.toBe("foo");
   });
   it("supports utf32 little endian BOM", async () => {
     mockData = Buffer.from([
-      0xff, 0xfe, 0x00, 0x00, 0x66, 0x00, 0x00, 0x00, 0x6f, 0x00, 0x00, 0x00,
-      0x6f, 0x00, 0x00, 0x00,
+      0xff, 0xfe, 0x00, 0x00, 0x66, 0x00, 0x00, 0x00, 0x6f, 0x00, 0x00, 0x00, 0x6f, 0x00, 0x00,
+      0x00,
     ]);
     await expect(fs.readFileBOM("", "utf8")).resolves.toBe("foo");
   });

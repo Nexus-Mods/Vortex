@@ -1,9 +1,10 @@
-import type { TFunction } from "i18next";
 import * as path from "path";
+import { pathToFileURL } from "url";
+
+import type { TFunction } from "i18next";
 import * as React from "react";
 import { ControlLabel, Image, Table } from "react-bootstrap";
 import { useSelector, useStore } from "react-redux";
-import { pathToFileURL } from "url";
 import { actions, Icon, selectors, Toggle, types, util } from "vortex-api";
 
 function ToolIcon(props: { gameId: string; imageUrl: string }) {
@@ -64,17 +65,15 @@ function Tools(props: IToolsProps) {
 
   const includedTools: string[] = useSelector<types.IState, string[]>(
     (state) =>
-      state.persistent.mods[gameMode][collection.id].attributes?.collection
-        ?.includedTools ?? emptyArray,
+      state.persistent.mods[gameMode][collection.id].attributes?.collection?.includedTools ??
+      emptyArray,
   );
 
   const toggleCB = React.useCallback(
     (newValue: boolean, toolId: string) => {
       onSetCollectionAttribute(
         ["includedTools"],
-        newValue
-          ? [].concat(includedTools, [toolId])
-          : includedTools.filter((id) => id !== toolId),
+        newValue ? [].concat(includedTools, [toolId]) : includedTools.filter((id) => id !== toolId),
       );
     },
     [includedTools, onSetCollectionAttribute],
@@ -84,23 +83,19 @@ function Tools(props: IToolsProps) {
     (state: types.IState) => state.settings.gameMode.discovered[gameMode].tools,
   );
 
-  const custom = Object.values(tools ?? {}).filter(
-    (tool) => tool.custom && !tool.hidden,
-  );
+  const custom = Object.values(tools ?? {}).filter((tool) => tool.custom && !tool.hidden);
 
   return (
     <div className="collection-scrollable">
       <ControlLabel>
         <p>
-          {t(
-            "This screen lets you include tools you manually configured to be run from Vortex.",
-          )}
+          {t("This screen lets you include tools you manually configured to be run from Vortex.")}
         </p>
         <p>
           {t(
             "Obviously users will need to have these tools installed. If they aren't " +
-            "included in the game and not installed as a mod through this collection, " +
-            "you should include instructions for the user on how to get the tool.",
+              "included in the game and not installed as a mod through this collection, " +
+              "you should include instructions for the user on how to get the tool.",
           )}
         </p>
       </ControlLabel>

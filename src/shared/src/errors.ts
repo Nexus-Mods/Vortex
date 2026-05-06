@@ -83,9 +83,7 @@ export function getErrorNativeCode(err: unknown): number | bigint | null {
 type ErrorWithSystemCode = Error & { systemCode: number | bigint };
 
 /** Extracts the system code property from a potential error object */
-export function isErrorWithSystemCode(
-  err: unknown,
-): err is ErrorWithSystemCode {
+export function isErrorWithSystemCode(err: unknown): err is ErrorWithSystemCode {
   if (!(err instanceof Error)) {
     return false;
   }
@@ -124,10 +122,7 @@ export function isErrorWithSystemCode(
  *   "at f (chrome-extension://id/page.js:1:2)" → unchanged
  */
 export const sanitizeFramePath = (frame: string): string =>
-  frame
-    .replace(INSTALL_PATH_RE, "")
-    .replace(/\\/g, "/")
-    .replace(USER_HOME_RE, "$1<USER>");
+  frame.replace(INSTALL_PATH_RE, "").replace(/\\/g, "/").replace(USER_HOME_RE, "$1<USER>");
 
 const _SEP = String.raw`[/\\]`;
 const _WIN = String.raw`[A-Za-z]:${_SEP}`; // C:\ or C:/

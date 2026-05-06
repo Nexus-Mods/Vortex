@@ -150,9 +150,7 @@ function createDx10Archive(): { buf: Buffer; files: string[] } {
       height: 128,
       numMips: 8,
       dxgiFormat: 77,
-      chunks: [
-        Buffer.from("fake normal map chunk data for testing the dx10 parser"),
-      ],
+      chunks: [Buffer.from("fake normal map chunk data for testing the dx10 parser")],
     },
   ];
 

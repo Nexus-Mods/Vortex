@@ -1,4 +1,5 @@
 import * as path from "path";
+
 import { util } from "vortex-api";
 
 export function themesPath(): string {

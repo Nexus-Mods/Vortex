@@ -1,3 +1,6 @@
+import * as path from "node:path";
+
+import { getErrorMessageOrDefault } from "@vortex/shared";
 /**
  * Main process persistence setup.
  *
@@ -14,26 +17,22 @@
  */
 import type { DiffOperation, Serializable } from "@vortex/shared/ipc";
 import type { PersistedHive } from "@vortex/shared/state";
-
-import { getErrorMessageOrDefault } from "@vortex/shared";
 import { BrowserWindow } from "electron";
-import * as path from "node:path";
 
-import type LevelPersist from "./LevelPersist";
-
-import { log } from "../logging";
-import DuckDBSingleton from "./DuckDBSingleton";
-import QueryInvalidator from "./QueryInvalidator";
-import QueryRegistry from "./QueryRegistry";
-import QueryWatcher from "./QueryWatcher";
-import { setupPersistenceIPC } from "./persistenceIPC";
-import type { ParsedQuery } from "./queryParser";
-import { parseAllQueries } from "./queryParser";
-import ReduxPersistorIPC from "./ReduxPersistorIPC";
-import SubPersistor from "./SubPersistor";
-import { Database } from "./Database";
 import { getVortexPath } from "../getVortexPath";
 import { betterIpcMain } from "../ipc";
+import { log } from "../logging";
+import { Database } from "./Database";
+import DuckDBSingleton from "./DuckDBSingleton";
+import type LevelPersist from "./LevelPersist";
+import { setupPersistenceIPC } from "./persistenceIPC";
+import QueryInvalidator from "./QueryInvalidator";
+import type { ParsedQuery } from "./queryParser";
+import { parseAllQueries } from "./queryParser";
+import QueryRegistry from "./QueryRegistry";
+import QueryWatcher from "./QueryWatcher";
+import ReduxPersistorIPC from "./ReduxPersistorIPC";
+import SubPersistor from "./SubPersistor";
 
 let mainPersistor: ReduxPersistorIPC | undefined;
 let levelPersist: LevelPersist | undefined;
@@ -54,9 +53,7 @@ export function getDatabase(): Database | undefined {
  *
  * @param levelPersistor - The LevelPersist instance connected to the state database
  */
-export function initMainPersistence(
-  levelPersistor: LevelPersist,
-): ReduxPersistorIPC {
+export function initMainPersistence(levelPersistor: LevelPersist): ReduxPersistorIPC {
   if (mainPersistor !== undefined) {
     return mainPersistor;
   }
@@ -145,14 +142,10 @@ async function initQuerySystem(levelPersistor: LevelPersist): Promise<void> {
  * @param hive - The hive name (e.g., "settings", "persistent")
  * @returns Promise resolving to the hydration data for this hive
  */
-export function registerHive(
-  hive: string,
-): Promise<{ [key: string]: Serializable }> {
+export function registerHive(hive: string): Promise<{ [key: string]: Serializable }> {
   if (mainPersistor === undefined || levelPersist === undefined) {
     return Promise.reject(
-      new Error(
-        "Main persistence not initialized. Call initMainPersistence() first.",
-      ),
+      new Error("Main persistence not initialized. Call initMainPersistence() first."),
     );
   }
 
@@ -230,10 +223,7 @@ export async function closeMainPersistence(): Promise<void> {
  * @param path - The path within the hive (e.g., ["window"])
  * @returns Promise resolving to the value, or undefined if not found
  */
-export async function readPersistedValue<T>(
-  hive: string,
-  path: string[],
-): Promise<T | undefined> {
+export async function readPersistedValue<T>(hive: string, path: string[]): Promise<T | undefined> {
   if (levelPersist === undefined) {
     return undefined;
   }
@@ -332,9 +322,7 @@ export async function writePersistedValue<T>(
  * @param hive - The hive name
  * @returns Promise resolving to the hive data, or empty object if not found
  */
-export async function readHiveData(
-  hive: string,
-): Promise<{ [key: string]: Serializable }> {
+export async function readHiveData(hive: string): Promise<{ [key: string]: Serializable }> {
   if (mainPersistor === undefined) {
     return {};
   }

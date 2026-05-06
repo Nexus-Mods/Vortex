@@ -1,9 +1,9 @@
-import lazyRequire from "../../../util/lazyRequire";
-
 import * as _ from "lodash";
 import type * as PackeryT from "packery";
 import * as React from "react";
 import { generate as shortid } from "shortid";
+
+import lazyRequire from "../../../util/lazyRequire";
 
 const PackeryLib = lazyRequire<typeof PackeryT>(() => ({
   Packery: require("packery"),
@@ -50,9 +50,7 @@ class Packery extends React.Component<IProps, {}> {
 
   constructor(props: typeof Packery.prototype.props) {
     super(props);
-    this.mChildren = new Set(
-      React.Children.map(props.children, (child: any) => child.key),
-    );
+    this.mChildren = new Set(React.Children.map(props.children, (child: any) => child.key));
   }
 
   public componentDidUpdate() {
@@ -69,16 +67,11 @@ class Packery extends React.Component<IProps, {}> {
     this.mMounted = Date.now();
   }
 
-  public UNSAFE_componentWillReceiveProps(
-    nextProps: typeof Packery.prototype.props,
-  ) {
+  public UNSAFE_componentWillReceiveProps(nextProps: typeof Packery.prototype.props) {
     const nextChildren = new Set<string>(
       React.Children.map(nextProps.children, (child: any) => child.key),
     );
-    if (
-      nextProps.totalWidth !== this.props.totalWidth ||
-      !setEqual(this.mChildren, nextChildren)
-    ) {
+    if (nextProps.totalWidth !== this.props.totalWidth || !setEqual(this.mChildren, nextChildren)) {
       this.mChildren = nextChildren;
       this.scheduleRefresh();
     }

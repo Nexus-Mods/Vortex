@@ -1,7 +1,8 @@
-import type {
-  WireDownloadState,
-  WireResolvedResource,
-} from "@vortex/shared/ipc";
+import { createHash } from "node:crypto";
+import { createReadStream } from "node:fs";
+import { access, rename, rm } from "node:fs/promises";
+import * as path from "node:path";
+import { pipeline } from "node:stream/promises";
 
 import { unknownToError } from "@vortex/shared";
 import {
@@ -11,19 +12,10 @@ import {
   UserCanceled,
   DownloadError,
 } from "@vortex/shared/errors";
-import { createHash } from "node:crypto";
-import { createReadStream } from "node:fs";
-import { access, rename, rm } from "node:fs/promises";
-import * as path from "node:path";
-import { pipeline } from "node:stream/promises";
+import type { WireDownloadState, WireResolvedResource } from "@vortex/shared/ipc";
 import { z } from "zod";
 
-import type { IExtensionApi } from "./types/IExtensionContext";
-
-import {
-  clearDownloadCheckpoint,
-  setDownloadCheckpoint,
-} from "./actions/downloads";
+import { clearDownloadCheckpoint, setDownloadCheckpoint } from "./actions/downloads";
 import {
   CollectionsDownloadCancelledEvent,
   CollectionsDownloadCompletedEvent,
@@ -51,6 +43,7 @@ import { nexusIdsFromDownloadId } from "./extensions/nexus_integration/selectors
 import { makeModAndFileUIDs } from "./extensions/nexus_integration/util/UIDs";
 import { activeGameId } from "./extensions/profile_management/selectors";
 import { log } from "./logging";
+import type { IExtensionApi } from "./types/IExtensionContext";
 import { batchDispatch, flatten } from "./util/util";
 
 function rehydrateDownloadError(state: WireDownloadState): Error | null {
@@ -64,9 +57,7 @@ function rehydrateDownloadError(state: WireDownloadState): Error | null {
       return new HTTPError(payload.statusCode, message, payload.url);
     default:
       return new DownloadError(
-        "url" in payload
-          ? { ...payload, url: new URL(payload.url) }
-          : { ...payload },
+        "url" in payload ? { ...payload, url: new URL(payload.url) } : { ...payload },
         message,
       );
   }
@@ -126,9 +117,7 @@ export class IPCDownloadAdapter {
       /* ignored */
     });
 
-    window.api.downloader.onResolve((collationId) =>
-      this.#resolve(collationId),
-    );
+    window.api.downloader.onResolve((collationId) => this.#resolve(collationId));
 
     api.events.on("start-download", (...args: unknown[]) => {
       const parsed = startDownloadArgsSchema.safeParse(args);
@@ -139,19 +128,13 @@ export class IPCDownloadAdapter {
         return;
       }
 
-      const [urls, modInfo, fileName, callback, redownload, options] =
-        parsed.data;
+      const [urls, modInfo, fileName, callback, redownload, options] = parsed.data;
 
-      this.#handleStartDownload(
-        urls,
-        modInfo,
-        fileName,
-        callback,
-        redownload,
-        options,
-      ).catch((err) => {
-        log("error", "failed to start download", err);
-      });
+      this.#handleStartDownload(urls, modInfo, fileName, callback, redownload, options).catch(
+        (err) => {
+          log("error", "failed to start download", err);
+        },
+      );
     });
 
     api.events.on("remove-download", (...args: unknown[]) => {
@@ -224,9 +207,7 @@ export class IPCDownloadAdapter {
         window.api.downloader.resume(checkpoint).catch((err) => {
           log("error", "failed to auto-resume download", { id, err });
           this.#activeDownloads.delete(id);
-          this.#api.store.dispatch(
-            setDownloadInterrupted(id, download.received),
-          );
+          this.#api.store.dispatch(setDownloadInterrupted(id, download.received));
         });
       } else {
         log("debug", "interrupted download has no checkpoint, marking paused", {
@@ -247,17 +228,10 @@ export class IPCDownloadAdapter {
     if (!nexusIds?.numericGameId || isNaN(nexusIds.numericGameId)) return;
 
     const download = state.persistent.downloads.files?.[downloadId];
-    const isCollection =
-      nexusIds.collectionSlug !== undefined &&
-      nexusIds.revisionId !== undefined;
+    const isCollection = nexusIds.collectionSlug !== undefined && nexusIds.revisionId !== undefined;
 
     if (eventType === "started") {
-      if (
-        isCollection ||
-        nexusIds.modId === undefined ||
-        nexusIds.fileId === undefined
-      )
-        return;
+      if (isCollection || nexusIds.modId === undefined || nexusIds.fileId === undefined) return;
       const { modUID, fileUID } = makeModAndFileUIDs(
         nexusIds.numericGameId.toString(),
         nexusIds.modId,
@@ -290,10 +264,7 @@ export class IPCDownloadAdapter {
             duration_ms,
           ),
         );
-      } else if (
-        nexusIds.modId !== undefined &&
-        nexusIds.fileId !== undefined
-      ) {
+      } else if (nexusIds.modId !== undefined && nexusIds.fileId !== undefined) {
         const { modUID, fileUID } = makeModAndFileUIDs(
           nexusIds.numericGameId.toString(),
           nexusIds.modId,
@@ -325,10 +296,7 @@ export class IPCDownloadAdapter {
             nexusIds.numericGameId,
           ),
         );
-      } else if (
-        nexusIds.modId !== undefined &&
-        nexusIds.fileId !== undefined
-      ) {
+      } else if (nexusIds.modId !== undefined && nexusIds.fileId !== undefined) {
         const { modUID, fileUID } = makeModAndFileUIDs(
           nexusIds.numericGameId.toString(),
           nexusIds.modId,
@@ -361,10 +329,7 @@ export class IPCDownloadAdapter {
             message,
           ),
         );
-      } else if (
-        nexusIds.modId !== undefined &&
-        nexusIds.fileId !== undefined
-      ) {
+      } else if (nexusIds.modId !== undefined && nexusIds.fileId !== undefined) {
         const { modUID, fileUID } = makeModAndFileUIDs(
           nexusIds.numericGameId.toString(),
           nexusIds.modId,
@@ -425,9 +390,7 @@ export class IPCDownloadAdapter {
         // reverse ModDB lookups for files that lack Nexus IDs (e.g. non-NXM downloads).
         const hash = createHash("md5");
         await pipeline(createReadStream(finalPath), hash);
-        this.#api.store.dispatch(
-          setDownloadHash(downloadId, hash.digest("hex")),
-        );
+        this.#api.store.dispatch(setDownloadHash(downloadId, hash.digest("hex")));
       } catch (err) {
         log("warn", "failed to compute MD5 for download", { downloadId, err });
       }
@@ -447,13 +410,11 @@ export class IPCDownloadAdapter {
     const allowInstall = activeDownload?.allowInstall;
 
     const autoInstall =
-      reduxState.settings.automation?.install ||
-      download?.modInfo?.["startedAsUpdate"] === true;
+      reduxState.settings.automation?.install || download?.modInfo?.["startedAsUpdate"] === true;
 
     // Trigger auto-install respecting the per-download allowInstall override.
     // "force" (stored as true) → always install; false → never; undefined → automation setting.
-    const shouldInstall =
-      allowInstall || (allowInstall !== false && autoInstall);
+    const shouldInstall = allowInstall || (allowInstall !== false && autoInstall);
     if (shouldInstall) {
       this.#api.events.emit("start-install-download", downloadId);
     }
@@ -473,10 +434,7 @@ export class IPCDownloadAdapter {
     const encodedUrl = parseEncodedUrl(rawUrl.toString());
 
     const state = this.#api.getState();
-    const dlPath = downloadPathForGame(
-      state,
-      modInfo.game ?? activeGameId(state),
-    );
+    const dlPath = downloadPathForGame(state, modInfo.game ?? activeGameId(state));
 
     // Check for an existing file using the caller-supplied name before queuing.
     // We can only do this when a name is provided; temp-named downloads are always new.
@@ -538,10 +496,7 @@ export class IPCDownloadAdapter {
         collationId,
       });
 
-      const { downloadId } = await window.api.downloader.start(
-        dest,
-        collationId,
-      );
+      const { downloadId } = await window.api.downloader.start(dest, collationId);
 
       const allowInstall =
         options?.allowInstall === false
@@ -563,9 +518,7 @@ export class IPCDownloadAdapter {
       const gameId = modInfo.game ?? activeGameId(state);
       // Create the Redux record. nexus_integration's onChangeDownloads watches
       // downloads.files and triggers metadata enrichment when nexus.ids is present.
-      this.#api.store.dispatch(
-        initDownload(downloadId, rawUrls, modInfo, [gameId]),
-      );
+      this.#api.store.dispatch(initDownload(downloadId, rawUrls, modInfo, [gameId]));
       // Set localPath to the temp name so the UI has something to display.
       this.#api.store.dispatch(setDownloadFilePath(downloadId, tempName));
       // All IPC downloads support pause via checkpoint. DownloadView checks
@@ -638,8 +591,7 @@ export class IPCDownloadAdapter {
     callback?: (err: Error | null, id?: string) => void,
   ): Promise<void> {
     try {
-      const checkpoint =
-        this.#api.getState().persistent.downloads.checkpoints[downloadId];
+      const checkpoint = this.#api.getState().persistent.downloads.checkpoints[downloadId];
       if (checkpoint === undefined) {
         throw new Error(`No checkpoint stored for download ${downloadId}`);
       }
@@ -675,58 +627,43 @@ export class IPCDownloadAdapter {
       const activeDownload = this.#activeDownloads.get(downloadId);
       if (activeDownload === undefined) continue;
 
-      const delta = Math.max(
-        0,
-        state.bytesReceived - activeDownload.lastBytesReceived,
-      );
+      const delta = Math.max(0, state.bytesReceived - activeDownload.lastBytesReceived);
       totalDeltaBytes += delta;
       activeDownload.lastBytesReceived = state.bytesReceived;
 
       const isTerminal =
-        state.status === "completed" ||
-        state.status === "failed" ||
-        state.status === "canceled";
+        state.status === "completed" || state.status === "failed" || state.status === "canceled";
 
       if (delta > 0 && !activeDownload.startedEventEmitted) {
-        const reduxDownload =
-          this.#api.getState().persistent.downloads.files?.[downloadId];
+        const reduxDownload = this.#api.getState().persistent.downloads.files?.[downloadId];
         if ((reduxDownload?.received ?? 0) === 0) {
           this.#emitAnalytics(downloadId, "started");
         }
         activeDownload.startedEventEmitted = true;
       }
 
-      const secSinceProgress =
-        (now - activeDownload.lastProgressDispatch) / 1000;
+      const secSinceProgress = (now - activeDownload.lastProgressDispatch) / 1000;
       if (delta > 0 && (secSinceProgress >= 1 || isTerminal)) {
         activeDownload.lastProgressDispatch = now;
         // Update received/total bytes. The reducer transitions state from
         // "init" to "started" on first non-zero received, driving the progress bar.
         this.#api.store.dispatch(
-          downloadProgress(
-            downloadId,
-            state.bytesReceived,
-            state.size ?? 0,
-            [],
-          ),
+          downloadProgress(downloadId, state.bytesReceived, state.size ?? 0, []),
         );
       }
 
       if (!isTerminal) continue;
 
       const err = rehydrateDownloadError(state);
-      if (err !== null)
-        log("warn", "download ended with error", { downloadId, err });
+      if (err !== null) log("warn", "download ended with error", { downloadId, err });
       this.#activeDownloads.delete(downloadId);
       this.#api.store.dispatch(clearDownloadCheckpoint(downloadId));
 
       if (state.status === "completed") {
         this.#emitAnalytics(downloadId, "completed");
-        this.#completeDownload(downloadId, state, activeDownload).catch(
-          (err) => {
-            log("error", "failed to finalize download", { downloadId, err });
-          },
-        );
+        this.#completeDownload(downloadId, state, activeDownload).catch((err) => {
+          log("error", "failed to finalize download", { downloadId, err });
+        });
       } else if (state.status === "canceled") {
         this.#emitAnalytics(downloadId, "canceled");
         // User canceled - remove the record entirely, no file to keep.
@@ -737,10 +674,7 @@ export class IPCDownloadAdapter {
         // Mark record as failed so the UI can show an error state.
         this.#api.store.dispatch(finishDownload(downloadId, "failed", err));
         this.#api.events.emit("did-finish-download", downloadId, "failed");
-        activeDownload.callback?.(
-          err ?? new Error("download failed"),
-          downloadId,
-        );
+        activeDownload.callback?.(err ?? new Error("download failed"), downloadId);
       }
     }
 
@@ -753,8 +687,7 @@ export class IPCDownloadAdapter {
     if (this.#lastSpeedDispatch !== null) {
       const secSinceDispatch = (now - this.#lastSpeedDispatch) / 1000;
       if (secSinceDispatch >= 1 || this.#activeDownloads.size === 0) {
-        const speed =
-          secSinceDispatch > 0 ? this.#speedAccumBytes / secSinceDispatch : 0;
+        const speed = secSinceDispatch > 0 ? this.#speedAccumBytes / secSinceDispatch : 0;
         this.#speedAccumBytes = 0;
         this.#lastSpeedDispatch = this.#activeDownloads.size > 0 ? now : null;
         if (speed > 0 || this.#activeDownloads.size === 0) {
@@ -788,9 +721,7 @@ export class IPCDownloadAdapter {
         encodedUrl,
       });
 
-      const resolved = await Promise.resolve(
-        handler(encodedUrl.url.toString()),
-      );
+      const resolved = await Promise.resolve(handler(encodedUrl.url.toString()));
 
       // Stash resolver meta so #handleStartDownload can merge it into modInfo.
       if (resolved.meta !== undefined && resolved.meta !== null) {
@@ -829,9 +760,7 @@ const startDownloadArgsSchema = z
     z.array(urlStringSchema),
     modInfoSchema,
     z.string().optional(),
-    z
-      .function({ input: [z.unknown().nullable(), z.string().optional()] })
-      .optional(),
+    z.function({ input: [z.unknown().nullable(), z.string().optional()] }).optional(),
     z.enum(["never", "ask", "replace", "always"]).optional(),
     z
       .object({
@@ -853,17 +782,12 @@ const removeDownloadArgsSchema = z
   .rest(z.unknown());
 
 const pauseDownloadArgsSchema = z
-  .tuple([
-    z.string(),
-    z.function({ input: [z.unknown().nullable()] }).optional(),
-  ])
+  .tuple([z.string(), z.function({ input: [z.unknown().nullable()] }).optional()])
   .rest(z.unknown());
 
 const resumeDownloadArgsSchema = z
   .tuple([
     z.string(),
-    z
-      .function({ input: [z.unknown().nullable(), z.string().optional()] })
-      .optional(),
+    z.function({ input: [z.unknown().nullable(), z.string().optional()] }).optional(),
   ])
   .rest(z.unknown());

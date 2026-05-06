@@ -1,20 +1,14 @@
-import { IconButton } from "../../../controls/TooltipControls";
-import { ComponentEx } from "../../../controls/ComponentEx";
-import { getSafe } from "../../../util/storeHelper";
-import { truthy } from "../../../util/util";
-
-import type { IMod } from "../types/IMod";
-
 import type { TFunction } from "i18next";
-import * as React from "react";
-import {
-  ControlLabel,
-  FormGroup,
-  OverlayTrigger,
-  Popover,
-} from "react-bootstrap";
 import type { ElementAttributes } from "interweave";
 import Interweave, { Filter } from "interweave";
+import * as React from "react";
+import { ControlLabel, FormGroup, OverlayTrigger, Popover } from "react-bootstrap";
+
+import { ComponentEx } from "../../../controls/ComponentEx";
+import { IconButton } from "../../../controls/TooltipControls";
+import { getSafe } from "../../../util/storeHelper";
+import { truthy } from "../../../util/util";
+import type { IMod } from "../types/IMod";
 
 class LinkFilter extends Filter {
   public attribute<K extends keyof ElementAttributes>(
@@ -56,11 +50,7 @@ class VersionChangelogButton extends ComponentEx<IProps, {}> {
     const { mod, t } = this.props;
 
     const changelog = getSafe(mod.attributes, ["changelog"], undefined);
-    const newestChangelog = getSafe(
-      mod.attributes,
-      ["newestChangelog"],
-      undefined,
-    );
+    const newestChangelog = getSafe(mod.attributes, ["newestChangelog"], undefined);
 
     if (!truthy(changelog) && !truthy(newestChangelog)) {
       return null;
@@ -86,12 +76,7 @@ class VersionChangelogButton extends ComponentEx<IProps, {}> {
     );
 
     return (
-      <OverlayTrigger
-        trigger="click"
-        rootClose
-        placement="right"
-        overlay={popoverBottom}
-      >
+      <OverlayTrigger trigger="click" rootClose placement="right" overlay={popoverBottom}>
         <IconButton
           className="btn-embed"
           icon="changelog"
@@ -102,22 +87,14 @@ class VersionChangelogButton extends ComponentEx<IProps, {}> {
     );
   }
 
-  private renderChangelog(changelog: {
-    format: "html" | "text";
-    content: string;
-  }): JSX.Element {
+  private renderChangelog(changelog: { format: "html" | "text"; content: string }): JSX.Element {
     const { t } = this.props;
     if (changelog === undefined) {
       return null;
     }
     if (changelog.format === "html") {
       try {
-        return (
-          <Interweave
-            content={changelog.content}
-            filters={[new LinkFilter()]}
-          />
-        );
+        return <Interweave content={changelog.content} filters={[new LinkFilter()]} />;
       } catch (err) {
         // probably caused by an odd, very very rare bug loading included modules
         return <p>{t("Parsing the changelog failed")}</p>;

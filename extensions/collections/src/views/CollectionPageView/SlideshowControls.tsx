@@ -1,5 +1,6 @@
 import * as React from "react";
 import { tooltip, types } from "vortex-api";
+
 import Timer from "./Timer";
 
 export interface ISlideshowControlsProps {

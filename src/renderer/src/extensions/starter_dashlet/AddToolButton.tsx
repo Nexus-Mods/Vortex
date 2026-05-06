@@ -1,24 +1,18 @@
-import type { IStarterInfo } from "../../util/StarterInfo";
-
-import { useTranslation } from "react-i18next";
-
-import Icon from "../../controls/Icon";
-import { getSafe } from "../../util/storeHelper";
-
 import React from "react";
-import * as ReactDOM from "react-dom";
 import { MenuItem } from "react-bootstrap";
+import * as ReactDOM from "react-dom";
+import { useTranslation } from "react-i18next";
 import { useSelector, useStore } from "react-redux";
 
 import Dropdown from "../../controls/Dropdown";
+import Icon from "../../controls/Icon";
 import PortalMenu from "../../controls/PortalMenu";
-
-import { setToolVisible } from "../gamemode_management/actions/settings";
-
 import type { IDiscoveredTool } from "../../types/IDiscoveredTool";
 import type { IState } from "../../types/IState";
 import * as selectors from "../../util/selectors";
-
+import type { IStarterInfo } from "../../util/StarterInfo";
+import { getSafe } from "../../util/storeHelper";
+import { setToolVisible } from "../gamemode_management/actions/settings";
 import type { IGameStored } from "../gamemode_management/types/IGameStored";
 
 interface IBaseProps {
@@ -36,14 +30,12 @@ interface IConnectedProps {
 
 export default function AddToolButton(props: IBaseProps) {
   const [t] = useTranslation();
-  const { gameMode, discoveredTools, toolsOrder } =
-    useSelector(mapStateToProps);
+  const { gameMode, discoveredTools, toolsOrder } = useSelector(mapStateToProps);
   const { tools, onAddNewTool, onSetToolOrder } = props;
   const store = useStore();
   const hidden = tools.filter(
     (starter) =>
-      discoveredTools[starter.id] !== undefined &&
-      discoveredTools[starter.id].hidden === true,
+      discoveredTools[starter.id] !== undefined && discoveredTools[starter.id].hidden === true,
   );
 
   const dropRef = React.useRef();
@@ -102,11 +94,7 @@ export default function AddToolButton(props: IBaseProps) {
   }, [setOpen]);
 
   return (
-    <Dropdown
-      id="add-tool-button-menu"
-      className={classes.join(" ")}
-      ref={setRef}
-    >
+    <Dropdown id="add-tool-button-menu" className={classes.join(" ")} ref={setRef}>
       <Dropdown.Toggle
         noCaret
         className="btn-add-tool-dropdown-toggle"
@@ -150,21 +138,13 @@ function mapStateToProps(state: IState): IConnectedProps {
 
   return {
     gameMode: game.id,
-    toolsOrder: getSafe(
-      state,
-      ["settings", "interface", "tools", "order", game.id],
-      [],
-    ),
+    toolsOrder: getSafe(state, ["settings", "interface", "tools", "order", game.id], []),
     discoveredTools: getSafe(
       state,
       ["settings", "gameMode", "discovered", game.id, "tools"],
       emptyObj,
     ),
-    primaryTool: getSafe(
-      state,
-      ["settings", "interface", "primaryTool", game.id],
-      undefined,
-    ),
+    primaryTool: getSafe(state, ["settings", "interface", "primaryTool", game.id], undefined),
   };
 }
 

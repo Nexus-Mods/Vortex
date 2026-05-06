@@ -2,8 +2,8 @@ import * as _ from "lodash";
 import * as React from "react";
 import { Panel } from "react-bootstrap";
 import * as ReactDOM from "react-dom";
-import { connect } from "react-redux";
 import { withTranslation } from "react-i18next";
+import { connect } from "react-redux";
 import {
   actions,
   ComponentEx,
@@ -16,6 +16,7 @@ import {
   util,
   Webview,
 } from "vortex-api";
+
 import { ThemeToCSS } from "../ThemeToCSS";
 
 // Default documentation webview "landing".
@@ -66,20 +67,14 @@ class DocumentationView extends ComponentEx<IProps, IComponentState> {
           util.opn(newUrl).catch(() => null);
           return;
         }
-        const isAllowed = ALLOWED_DOMAINS.some((domain) =>
-          newUrl.toLowerCase().startsWith(domain),
-        );
+        const isAllowed = ALLOWED_DOMAINS.some((domain) => newUrl.toLowerCase().startsWith(domain));
         if (!isAllowed) {
           this.onExternalLink(newUrl);
           return;
         }
 
         if (newUrl !== this.nextState.history[this.nextState.historyIdx]) {
-          this.nextState.history.splice(
-            this.nextState.historyIdx + 1,
-            9999,
-            newUrl,
-          );
+          this.nextState.history.splice(this.nextState.historyIdx + 1, 9999, newUrl);
           ++this.nextState.historyIdx;
         }
 
@@ -95,10 +90,7 @@ class DocumentationView extends ComponentEx<IProps, IComponentState> {
   }
 
   public componentWillUnmount() {
-    this.context.api.events.removeListener(
-      "navigate-knowledgebase",
-      this.navigate,
-    );
+    this.context.api.events.removeListener("navigate-knowledgebase", this.navigate);
     this.mMounted = false;
   }
 
@@ -175,10 +167,7 @@ class DocumentationView extends ComponentEx<IProps, IComponentState> {
           "in your default browser.",
         message: link,
       },
-      [
-        { label: "Cancel" },
-        { label: "Continue", action: () => util.opn(link).catch(() => null) },
-      ],
+      [{ label: "Cancel" }, { label: "Continue", action: () => util.opn(link).catch(() => null) }],
     );
   };
 
@@ -282,8 +271,4 @@ function mapDispatchToProps(dispatch: any): IActionProps {
 export default connect(
   mapStateToProps,
   mapDispatchToProps,
-)(
-  withTranslation(["common"])(
-    DocumentationView as any,
-  ) as React.ComponentClass<IProps>,
-);
+)(withTranslation(["common"])(DocumentationView as any) as React.ComponentClass<IProps>);

@@ -9,11 +9,9 @@
     --z-index-toast: 1090;
 
     --shadow-sm:
-        0px 2px 4px rgb(0 0 0 / 14%), 0px 3px 4px rgb(0 0 0 / 12%),
-        0px 1px 5px rgb(0 0 0 / 20%);
+        0px 2px 4px rgb(0 0 0 / 14%), 0px 3px 4px rgb(0 0 0 / 12%), 0px 1px 5px rgb(0 0 0 / 20%);
     --shadow-md:
-        0px 6px 10px rgb(0 0 0 / 14%), 0px 1px 18px rgb(0 0 0 / 12%),
-        0px 3px 5px rgb(0 0 0 / 20%);
+        0px 6px 10px rgb(0 0 0 / 14%), 0px 1px 18px rgb(0 0 0 / 12%), 0px 3px 5px rgb(0 0 0 / 20%);
     --shadow-lg:
         0px 9px 12px 1px rgb(0 0 0 / 14%), 0px 3px 16px 2px rgb(0 0 0 / 12%),
         0px 5px 6px rgb(0 0 0 / 20%);

@@ -1,3 +1,6 @@
+import * as bbcode from "bbcode-to-react";
+import type * as React from "react";
+
 import BrTag from "./BrTag";
 import FontTag from "./FontTag";
 import HeadingTag from "./HeadingTag";
@@ -11,9 +14,6 @@ import StyleTag from "./StyleTag";
 import SvgTag from "./SvgTag";
 import TooltipTag from "./TooltipTag";
 import YoutubeTag from "./YoutubeTag";
-
-import * as bbcode from "bbcode-to-react";
-import type * as React from "react";
 
 /**
  * options that can be passed into the bbcode parser to configure how bbcode
@@ -82,9 +82,7 @@ function transformSymbol(fullMatch, symbol: string): string {
 }
 
 export function preProcess(input: string): string {
-  return input
-    .replace(/<br *\/?>/g, "[br][/br]")
-    .replace(/(&[^;]+;)/g, transformSymbol);
+  return input.replace(/<br *\/?>/g, "[br][/br]").replace(/(&[^;]+;)/g, transformSymbol);
 }
 
 function renderBBCode(input: string, context?: unknown): React.ReactChild[] {
@@ -93,9 +91,7 @@ function renderBBCode(input: string, context?: unknown): React.ReactChild[] {
   }
 
   if (context !== undefined) {
-    return fullParser["renderer"].context(context, () =>
-      fullParser.toReact(preProcess(input)),
-    );
+    return fullParser["renderer"].context(context, () => fullParser.toReact(preProcess(input)));
   } else {
     return fullParser.toReact(preProcess(input));
   }
@@ -107,11 +103,7 @@ export function stripBBCode(input: string): string {
   }
 
   return stripParser
-    .toReact(
-      input
-        .replace(/<br *\/?>/g, "[br][/br]")
-        .replace(/(&[^;]+;)/g, transformSymbol),
-    )
+    .toReact(input.replace(/<br *\/?>/g, "[br][/br]").replace(/(&[^;]+;)/g, transformSymbol))
     .filter((line) => typeof line === "string")
     .join("");
 }

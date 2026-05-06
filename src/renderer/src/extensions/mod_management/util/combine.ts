@@ -1,9 +1,9 @@
 import * as path from "path";
+
+import { getErrorMessageOrDefault } from "@vortex/shared";
 import { generate as shortid } from "shortid";
-import type {
-  IDeploymentMethod,
-  IExtensionApi,
-} from "../../../types/IExtensionContext";
+
+import type { IDeploymentMethod, IExtensionApi } from "../../../types/IExtensionContext";
 import { ProcessCanceled, UserCanceled } from "../../../util/CustomErrors";
 import * as fs from "../../../util/fs";
 import { log } from "../../../util/log";
@@ -16,13 +16,8 @@ import { getAllActivators } from "./deploymentMethods";
 import modName from "./modName";
 import { removeMod, removeMods } from "./removeMods";
 import sortMods, { CycleError } from "./sort";
-import { getErrorMessageOrDefault } from "@vortex/shared";
 
-async function combineMods(
-  api: IExtensionApi,
-  gameId: string,
-  modIds: string[],
-) {
+async function combineMods(api: IExtensionApi, gameId: string, modIds: string[]) {
   const state = api.getState();
   const mods = state.persistent.mods[gameId];
   const stagingPath = installPathForGame(state, gameId);
@@ -38,11 +33,7 @@ async function combineMods(
     );
   }
 
-  const activatorId: string = getSafe(
-    state,
-    ["settings", "mods", "activator", gameId],
-    undefined,
-  );
+  const activatorId: string = getSafe(state, ["settings", "mods", "activator", gameId], undefined);
   const activators = getAllActivators();
   const modTypes = new Set(modIds.map((modId) => mods[modId]?.type));
 
@@ -65,9 +56,7 @@ async function combineMods(
     activatorId !== undefined
       ? activators.find((act) => act.id === activatorId)
       : activators.find(
-          (act) =>
-            allTypesSupported(act, state, gameId, Array.from(modTypes)).errors
-              .length === 0,
+          (act) => allTypesSupported(act, state, gameId, Array.from(modTypes)).errors.length === 0,
         );
 
   if (activator === undefined) {
@@ -104,8 +93,7 @@ async function combineMods(
           "the order specified by mod rules (same way as deployment would have).",
         choices: sorted.map((mod, idx) => ({
           id: mod.id,
-          text:
-            modName(mod, { version: true }) + " - " + mod.attributes?.fileType,
+          text: modName(mod, { version: true }) + " - " + mod.attributes?.fileType,
           value: idx === 0,
         })),
       },
@@ -120,9 +108,7 @@ async function combineMods(
     const targetId = keys.find((id) => result.input[id]);
     const targetIdx = sorted.findIndex((mod) => mod.id === targetId);
     const target = mods[targetId];
-    const sourceIds = Object.keys(result.input).filter(
-      (id) => !result.input[id],
-    );
+    const sourceIds = Object.keys(result.input).filter((id) => !result.input[id]);
 
     await toPromise<void>((cb) =>
       onAddMod(

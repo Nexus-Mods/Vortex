@@ -133,10 +133,7 @@ function findResourceSection(
 }
 
 /** Navigate the resource directory tree to find RT_VERSION data. */
-function findVersionResource(
-  buf: Buffer,
-  baseOffset: number,
-): Buffer | undefined {
+function findVersionResource(buf: Buffer, baseOffset: number): Buffer | undefined {
   // Parse IMAGE_RESOURCE_DIRECTORY at baseOffset
   const numberOfNamedEntries = buf.readUInt16LE(baseOffset + 12);
   const numberOfIdEntries = buf.readUInt16LE(baseOffset + 14);
@@ -160,10 +157,7 @@ function findVersionResource(
 }
 
 /** Recursively descend resource tree until we reach a data entry. */
-function findFirstDataEntry(
-  buf: Buffer,
-  dirOffset: number,
-): Buffer | undefined {
+function findFirstDataEntry(buf: Buffer, dirOffset: number): Buffer | undefined {
   const numberOfNamedEntries = buf.readUInt16LE(dirOffset + 12);
   const numberOfIdEntries = buf.readUInt16LE(dirOffset + 14);
   const totalEntries = numberOfNamedEntries + numberOfIdEntries;
@@ -186,10 +180,7 @@ function findFirstDataEntry(
 
 // --- VS_VERSIONINFO parsing ---
 
-function readWideString(
-  buf: Buffer,
-  offset: number,
-): { str: string; end: number } {
+function readWideString(buf: Buffer, offset: number): { str: string; end: number } {
   const codes: number[] = [];
   let pos = offset;
   while (pos + 1 < buf.length) {
@@ -241,8 +232,7 @@ function parseStringFileInfo(
   offset: number,
   endOffset: number,
 ): { fileVersionString?: string; productVersionString?: string } {
-  const result: { fileVersionString?: string; productVersionString?: string } =
-    {};
+  const result: { fileVersionString?: string; productVersionString?: string } = {};
 
   // Skip past VS_VERSIONINFO header + VS_FIXEDFILEINFO to reach children
   let pos = offset;
@@ -258,12 +248,7 @@ function parseStringFileInfo(
     const { str: childKey } = readWideString(buf, pos + 6);
 
     if (childKey === "StringFileInfo") {
-      parseStringTables(
-        buf,
-        align(pos + 6 + (childKey.length + 1) * 2, 4),
-        childEnd,
-        result,
-      );
+      parseStringTables(buf, align(pos + 6 + (childKey.length + 1) * 2, 4), childEnd, result);
     }
 
     pos = childEnd;
@@ -342,8 +327,7 @@ export function readVersionInfo(filePath: string): VersionInfo | undefined {
     const dataSize = dataEntryBuf.readUInt32LE(4);
     const dataOffset = dataRVA - sectionVA;
 
-    if (dataOffset < 0 || dataOffset + dataSize > sectionBuf.length)
-      return undefined;
+    if (dataOffset < 0 || dataOffset + dataSize > sectionBuf.length) return undefined;
 
     const versionBuf = sectionBuf.subarray(dataOffset, dataOffset + dataSize);
 

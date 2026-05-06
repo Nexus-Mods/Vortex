@@ -1,5 +1,6 @@
-import { getErrorCode, unknownToError } from "@vortex/shared";
 import * as path from "path";
+
+import { getErrorCode, unknownToError } from "@vortex/shared";
 
 import type {
   IDeployedFile,
@@ -7,8 +8,6 @@ import type {
   IExtensionApi,
   IFileChange,
 } from "../../../types/IExtensionContext";
-import type { FileAction, IFileEntry } from "../types/IFileEntry";
-
 import { ProcessCanceled } from "../../../util/CustomErrors";
 import * as fs from "../../../util/fs";
 import { log } from "../../../util/log";
@@ -22,6 +21,7 @@ import { getSafe } from "../../../util/storeHelper";
 import { setdefault, truthy } from "../../../util/util";
 import { showExternalChanges } from "../actions/session";
 import { MERGED_PATH } from "../modMerging";
+import type { FileAction, IFileEntry } from "../types/IFileEntry";
 
 /**
  * look at the file actions and act accordingly. Depending on the action this can
@@ -117,19 +117,13 @@ async function applyFileActions(
       (actionGroups["import"] || []).map((entry) => entry.filePath),
     ),
   );
-  const newDeployment = lastDeployment.filter(
-    (entry) => !dropSet.has(entry.relPath),
-  );
+  const newDeployment = lastDeployment.filter((entry) => !dropSet.has(entry.relPath));
   lastDeployment = newDeployment;
 
   const affectedMods = new Set<string>();
   const testFileOverrides: { [modId: string]: string[] } = {};
   fileActions.forEach((action) => {
-    if (
-      ["import", "newest", "nop", "delete", "drop"].indexOf(
-        action.action,
-      ) !== -1
-    ) {
+    if (["import", "newest", "nop", "delete", "drop"].indexOf(action.action) !== -1) {
       affectedMods.add(action.source);
     }
 
@@ -156,11 +150,7 @@ async function applyFileActions(
   }
 
   if (Object.keys(testFileOverrides).length > 0) {
-    api.events.emit(
-      "check-file-override-redundancies",
-      gameId,
-      testFileOverrides,
-    );
+    api.events.emit("check-file-override-redundancies", gameId, testFileOverrides);
   }
 
   affectedMods.forEach((affected) => {
@@ -185,10 +175,7 @@ function defaultAction(changeType: string): FileAction {
   }
 }
 
-export function changeToEntry(
-  modTypeId: string,
-  change: IFileChange,
-): IFileEntry {
+export function changeToEntry(modTypeId: string, change: IFileChange): IFileEntry {
   return {
     modTypeId,
     filePath: change.filePath,
@@ -270,30 +257,19 @@ export function dealWithExternalChanges(
   // the update-via-replace flow.
   recentChanges?: Set<string>,
 ) {
-  return checkForExternalChanges(
-    api,
-    activator,
-    profileId,
-    stagingPath,
-    modPaths,
-    lastDeployment,
-  )
+  return checkForExternalChanges(api, activator, profileId, stagingPath, modPaths, lastDeployment)
     .then((changes: { [typeId: string]: IFileChange[] }) => {
       const automaticActions: IFileEntry[] = [];
-      const isInstallingCollection =
-        getCollectionActiveSession(api.store.getState()) !== undefined;
+      const isInstallingCollection = getCollectionActiveSession(api.store.getState()) !== undefined;
       const userChanges = Object.keys(changes).reduce((prev, typeId) => {
         const { merged, rest, autoResolved } = changes[typeId].reduce(
           (prevInner, change) => {
-            const isMerged = path
-              .basename(change.source)
-              .startsWith(MERGED_PATH);
+            const isMerged = path.basename(change.source).startsWith(MERGED_PATH);
             if (isMerged) {
               prevInner.merged.push(change);
               return prevInner;
             }
-            if (isInstallingCollection
-                || recentChanges?.has(change.source)) {
+            if (isInstallingCollection || recentChanges?.has(change.source)) {
               prevInner.autoResolved.push(change);
               return prevInner;
             }
@@ -306,9 +282,7 @@ export function dealWithExternalChanges(
         );
 
         if (merged.length > 0) {
-          merged.forEach((change) =>
-            automaticActions.push(defaultInternalAction(typeId, change)),
-          );
+          merged.forEach((change) => automaticActions.push(defaultInternalAction(typeId, change)));
         }
 
         if (autoResolved.length > 0) {

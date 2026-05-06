@@ -1,7 +1,9 @@
+import * as path from "path";
+
 import Bluebird from "bluebird";
 import * as crc32 from "crc-32";
-import * as path from "path";
 import { fs, log, selectors, types, util } from "vortex-api";
+
 import { MAX_PATCH_SIZE, PATCHES_PATH, PATCH_OVERHEAD } from "../constants";
 import { diffFiles, patchFiles } from "./bsdiff";
 
@@ -51,14 +53,9 @@ export function scanForDiffs(
           { choices },
           async (instRes: types.IInstallResult, tempPath: string) => {
             try {
-              const rawGame = Array.isArray(archive.game)
-                ? archive.game[0]
-                : archive.game;
+              const rawGame = Array.isArray(archive.game) ? archive.game[0] : archive.game;
               const internalId = rawGame
-                ? util.convertGameIdReverse(
-                    selectors.knownGames(state),
-                    rawGame,
-                  ) || rawGame
+                ? util.convertGameIdReverse(selectors.knownGames(state), rawGame) || rawGame
                 : rawGame;
               const dlPath = selectors.downloadPathForGame(state, internalId);
               const archivePath = path.join(dlPath, archive.localPath);
@@ -71,13 +68,9 @@ export function scanForDiffs(
                     try {
                       sourceChecksums[entry.name] = entry["crc"].toUpperCase();
                     } catch (err) {
-                      api.showErrorNotification(
-                        "Failed to determine checksum for file",
-                        err,
-                        {
-                          message: entry.name,
-                        },
-                      );
+                      api.showErrorNotification("Failed to determine checksum for file", err, {
+                        message: entry.name,
+                      });
                     }
                   }
                 }
@@ -85,9 +78,7 @@ export function scanForDiffs(
 
               const result: { [filePath: string]: string } = {};
 
-              for (const file of instRes.instructions.filter(
-                (instr) => instr.type === "copy",
-              )) {
+              for (const file of instRes.instructions.filter((instr) => instr.type === "copy")) {
                 const srcCRC = sourceChecksums[file.source];
                 const dstFilePath = path.join(localPath, file.destination);
                 const dat = await fs.readFileAsync(dstFilePath);
@@ -107,10 +98,7 @@ export function scanForDiffs(
                     dstCRC,
                   });
                   const srcFilePath = path.join(tempPath, file.source);
-                  const patchPath = path.join(
-                    destPath,
-                    file.destination + ".diff",
-                  );
+                  const patchPath = path.join(destPath, file.destination + ".diff");
                   await fs.ensureDirWritableAsync(path.dirname(patchPath));
                   await diffFiles(srcFilePath, dstFilePath, patchPath);
                   try {
@@ -167,12 +155,7 @@ export async function applyPatches(
   const installPath = selectors.installPathForGame(state, gameId);
   const mod = state.persistent.mods[gameId][modId];
   const modPath = path.join(installPath, mod.installationPath);
-  const patchesPath = path.join(
-    installPath,
-    collection.installationPath,
-    PATCHES_PATH,
-    modName,
-  );
+  const patchesPath = path.join(installPath, collection.installationPath, PATCHES_PATH, modName);
 
   for (const filePath of Object.keys(patches ?? {})) {
     try {

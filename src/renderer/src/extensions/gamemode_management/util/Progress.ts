@@ -69,20 +69,14 @@ class Progress {
   public derive(): Progress {
     const childMag = this.mMagnitude / this.mStepCount;
     return childMag > 0.9
-      ? new Progress(
-          this.currentProgress(),
-          childMag,
-          this.mCallback,
-          this.mDepth + 1,
-        )
+      ? new Progress(this.currentProgress(), childMag, this.mCallback, this.mDepth + 1)
       : null;
   }
 
   private currentProgress() {
     const newProgress = Math.min(
       Math.max(
-        this.mBaseValue +
-          (this.mMagnitude * this.mStepsCompleted) / this.mStepCount,
+        this.mBaseValue + (this.mMagnitude * this.mStepsCompleted) / this.mStepCount,
         this.mLastProgress,
       ),
       this.mMagnitude,

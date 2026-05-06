@@ -1,5 +1,6 @@
-import Bluebird from "bluebird";
 import * as path from "path";
+
+import Bluebird from "bluebird";
 import { actions, fs, log, selectors, types, util } from "vortex-api";
 
 import { IDataArchive, IGameData, IIncompatibleArchive } from "./types";
@@ -69,11 +70,7 @@ const archiveData: IGameData[] = [
 
 function runTest(context: types.IExtensionContext) {
   const state = context.api.getState();
-  const plugInfo = util.getSafe(
-    state,
-    ["session", "plugins", "pluginInfo"],
-    {},
-  );
+  const plugInfo = util.getSafe(state, ["session", "plugins", "pluginInfo"], {});
   return checkForErrors(context.api, plugInfo) as any;
 }
 
@@ -95,9 +92,7 @@ async function checkForErrors(api: types.IExtensionApi, pluginsObj: any) {
   // Check this is a game we want to run this check on.
   const state = api.getState();
   const activeGameId = selectors.activeGameId(state);
-  const gameData: IGameData = archiveData.find(
-    (g) => g.gameId === activeGameId,
-  );
+  const gameData: IGameData = archiveData.find((g) => g.gameId === activeGameId);
   if (!gameData) {
     return Bluebird.resolve(undefined);
   }
@@ -114,9 +109,7 @@ async function checkForErrors(api: types.IExtensionApi, pluginsObj: any) {
   // We want only enabled plugins that load archives, but aren't base game files.
   const archiveLoaders = plugins.filter(
     (p) =>
-      !p.isNative &&
-      p.loadsArchive &&
-      util.getSafe(state, ["loadOrder", p.id, "enabled"], false),
+      !p.isNative && p.loadsArchive && util.getSafe(state, ["loadOrder", p.id, "enabled"], false),
   );
 
   // Get the list of mods and the data folder path.
@@ -137,20 +130,15 @@ async function checkForErrors(api: types.IExtensionApi, pluginsObj: any) {
   const checkNotifId = "checking-archives-all";
   try {
     const dataFiles = await fs.readdirAsync(dataFolder);
-    const dataArchives = dataFiles.filter((f) =>
-      [".ba2", ".bsa"].includes(path.extname(f)),
-    );
-    const archivesToCheck: IDataArchive[] = archiveLoaders.reduce(
-      (accum, plugin) => {
-        const arcs: IDataArchive[] = dataArchives
-          .filter((a) => normalize(a).startsWith(normalize(plugin.name)))
-          .map((a) => ({ name: a, plugin: plugin.name }));
+    const dataArchives = dataFiles.filter((f) => [".ba2", ".bsa"].includes(path.extname(f)));
+    const archivesToCheck: IDataArchive[] = archiveLoaders.reduce((accum, plugin) => {
+      const arcs: IDataArchive[] = dataArchives
+        .filter((a) => normalize(a).startsWith(normalize(plugin.name)))
+        .map((a) => ({ name: a, plugin: plugin.name }));
 
-        accum = accum.concat(arcs);
-        return accum;
-      },
-      [],
-    );
+      accum = accum.concat(arcs);
+      return accum;
+    }, []);
 
     // If there's nothing to check, we can exit here.
     if (!archivesToCheck.length) {
@@ -173,41 +161,34 @@ async function checkForErrors(api: types.IExtensionApi, pluginsObj: any) {
       ++pos;
     };
 
-    const issues: IIncompatibleArchive[] = await archivesToCheck.reduce(
-      async (accumP, archive) => {
-        const accum = await accumP;
-        progress(archive.name);
-        try {
-          const version = await streamArchiveVersion(
-            path.join(dataFolder, archive.name),
-          );
-          if (gameData.version.includes(version)) {
-            return accum;
-          }
-
-          const plugin = plugins.find((p) => p.name === archive.plugin);
-          const mod = plugin ? mods[plugin.modId] : undefined;
-          accum.push({
-            name: archive.name,
-            version,
-            validVersion: gameData.version.join("/"),
-            plugin,
-            mod,
-          });
-          return accum;
-        } catch (err) {
-          log("error", "Error checking archive versions", err);
+    const issues: IIncompatibleArchive[] = await archivesToCheck.reduce(async (accumP, archive) => {
+      const accum = await accumP;
+      progress(archive.name);
+      try {
+        const version = await streamArchiveVersion(path.join(dataFolder, archive.name));
+        if (gameData.version.includes(version)) {
           return accum;
         }
-      },
-      Promise.resolve([]),
-    );
+
+        const plugin = plugins.find((p) => p.name === archive.plugin);
+        const mod = plugin ? mods[plugin.modId] : undefined;
+        accum.push({
+          name: archive.name,
+          version,
+          validVersion: gameData.version.join("/"),
+          plugin,
+          mod,
+        });
+        return accum;
+      } catch (err) {
+        log("error", "Error checking archive versions", err);
+        return accum;
+      }
+    }, Promise.resolve([]));
 
     api.dismissNotification(checkNotifId);
 
-    return issues?.length > 0
-      ? genTestResult(api, issues, gameData)
-      : Bluebird.resolve(undefined);
+    return issues?.length > 0 ? genTestResult(api, issues, gameData) : Bluebird.resolve(undefined);
   } catch (err) {
     api.dismissNotification(checkNotifId);
     api.showErrorNotification("Error checking for archive errors", err);
@@ -238,8 +219,7 @@ function genTestResult(
     const group = groupedErrors[key];
     const mod = key !== "noMod" ? group[0].mod : { id: "", attributes: {} };
     const attr = mod.attributes;
-    const modName =
-      attr.customName || attr.logicalFileName || attr.name || mod.id;
+    const modName = attr.customName || attr.logicalFileName || attr.name || mod.id;
 
     if (!group.length) {
       return "";
@@ -252,10 +232,9 @@ function genTestResult(
           .join("/") || t("an unknown game");
 
       const plugin = a.plugin.name;
-      const errMsg = t(
-        "Is loaded by {{plugin}}, but is intended for use in {{games}}.",
-        { replace: { plugin, games } },
-      );
+      const errMsg = t("Is loaded by {{plugin}}, but is intended for use in {{games}}.", {
+        replace: { plugin, games },
+      });
       return `[*][b]${a.name}[/b] - ${errMsg}`;
     });
 
@@ -307,10 +286,7 @@ async function streamArchiveVersion(filePath: string): Promise<any> {
         data.fill(chunk);
         // Resolve to the archive version number.
         const versionBytes = data.slice(4, 8);
-        const version = versionBytes.reduce(
-          (accum, entry) => (accum += entry),
-          0,
-        );
+        const version = versionBytes.reduce((accum, entry) => (accum += entry), 0);
         resolve(version);
       });
 

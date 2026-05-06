@@ -14,7 +14,14 @@ import ReactMarkdown from "react-markdown";
 import { useDispatch, useSelector } from "react-redux";
 
 import type { ILink } from "../actions";
+import { triggerDialogLink } from "../actions";
 import type { DialogContentItem } from "../actions/notifications";
+import { closeDialog, closeDialogs } from "../actions/notifications";
+import bbcode from "../controls/bbcode";
+import Collapse from "../controls/Collapse";
+import ErrorBoundary from "../controls/ErrorBoundary";
+import Icon from "../controls/Icon";
+import Webview from "../controls/Webview";
 import type {
   ConditionResults,
   DialogType,
@@ -25,14 +32,6 @@ import type {
 } from "../types/IDialog";
 import type { IState } from "../types/IState";
 import type { TFunction } from "../util/i18n";
-
-import { triggerDialogLink } from "../actions";
-import { closeDialog, closeDialogs } from "../actions/notifications";
-import bbcode from "../controls/bbcode";
-import Collapse from "../controls/Collapse";
-import ErrorBoundary from "../controls/ErrorBoundary";
-import Icon from "../controls/Icon";
-import Webview from "../controls/Webview";
 import { MutexWrapper } from "../util/MutexContext";
 import { getPreloadApi, getWindowId } from "../util/preloadAccess";
 
@@ -75,19 +74,12 @@ export const Dialog: React.FC = () => {
   const dispatch = useDispatch();
 
   // Redux state
-  const dialogs = useSelector(
-    (state: IState) => state.session.notifications.dialogs,
-  );
+  const dialogs = useSelector((state: IState) => state.session.notifications.dialogs);
 
   // Local state
-  const [currentDialogId, setCurrentDialogId] = React.useState<
-    string | undefined
-  >(undefined);
-  const [dialogState, setDialogState] = React.useState<
-    IDialogContent | undefined
-  >(undefined);
-  const [conditionResults, setConditionResults] =
-    React.useState<ConditionResults>([]);
+  const [currentDialogId, setCurrentDialogId] = React.useState<string | undefined>(undefined);
+  const [dialogState, setDialogState] = React.useState<IDialogContent | undefined>(undefined);
+  const [conditionResults, setConditionResults] = React.useState<ConditionResults>([]);
 
   // Refs for callbacks
   const stateRef = React.useRef({
@@ -130,11 +122,7 @@ export const Dialog: React.FC = () => {
   );
 
   const translateParts = React.useCallback(
-    (
-      message: string,
-      tFunc: TFunction,
-      parameters?: Record<string, unknown>,
-    ) => {
+    (message: string, tFunc: TFunction, parameters?: Record<string, unknown>) => {
       return (message || "")
         .split("\n")
         .map((line: string) =>
@@ -175,13 +163,10 @@ export const Dialog: React.FC = () => {
     }
   }, []);
 
-  const getValidationResult = React.useCallback(
-    (input: IInput): IConditionResult[] => {
-      const { conditionResults: results } = stateRef.current;
-      return results.filter((res) => res.id === input.id);
-    },
-    [],
-  );
+  const getValidationResult = React.useCallback((input: IInput): IConditionResult[] => {
+    const { conditionResults: results } = stateRef.current;
+    return results.filter((res) => res.id === input.id);
+  }, []);
 
   // Event handlers
   const changeInput = React.useCallback(
@@ -213,9 +198,7 @@ export const Dialog: React.FC = () => {
       const { dialogState: state } = stateRef.current;
       if (!state) return;
 
-      const idx = state.checkboxes.findIndex(
-        (box: ICheckbox) => box.id === checkboxId,
-      );
+      const idx = state.checkboxes.findIndex((box: ICheckbox) => box.id === checkboxId);
 
       if (idx === -1) {
         return;
@@ -246,9 +229,7 @@ export const Dialog: React.FC = () => {
       if (!state) return;
 
       const newCheckboxes = (
-        JSON.parse(
-          JSON.stringify(state.checkboxes.slice(0)),
-        ) as typeof state.checkboxes
+        JSON.parse(JSON.stringify(state.checkboxes.slice(0))) as typeof state.checkboxes
       ).map((box: ICheckbox) => ({ ...box, value: enabled }));
 
       const newDialogState = update(state, {
@@ -278,9 +259,7 @@ export const Dialog: React.FC = () => {
       const { dialogState: state } = stateRef.current;
       if (!state) return;
 
-      const idx = state.choices.findIndex(
-        (box: ICheckbox) => box.id === radioId,
-      );
+      const idx = state.choices.findIndex((box: ICheckbox) => box.id === radioId);
 
       if (idx < 0) {
         return;
@@ -369,8 +348,7 @@ export const Dialog: React.FC = () => {
             evt.preventDefault();
 
             const filterFunc = (res: IConditionResult) =>
-              res.actions.find((act) => act === dialog.defaultAction) !==
-              undefined;
+              res.actions.find((act) => act === dialog.defaultAction) !== undefined;
             const isDisabled = results.find(filterFunc) !== undefined;
             if (!isDisabled) {
               dismiss(dialog.defaultAction);
@@ -392,11 +370,7 @@ export const Dialog: React.FC = () => {
       }
 
       const validationState =
-        valRes !== undefined
-          ? valRes.length !== 0
-            ? "error"
-            : "success"
-          : null;
+        valRes !== undefined ? (valRes.length !== 0 ? "error" : "success") : null;
 
       let effectiveType = input.type || "text";
       if (input.type === "multiline") {
@@ -416,19 +390,14 @@ export const Dialog: React.FC = () => {
             type={effectiveType}
             value={input.value || ""}
             onChange={(e: React.FormEvent<FormControl>) => {
-              if (
-                e.target instanceof HTMLInputElement ||
-                e.target instanceof HTMLTextAreaElement
-              ) {
+              if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
                 changeInput(input.id, e.target.value);
               }
             }}
           />
 
           {valRes !== undefined && valRes.length !== 0 ? (
-            <label className="control-label">
-              {valRes.map((res) => res.errorText).join("\n")}
-            </label>
+            <label className="control-label">{valRes.map((res) => res.errorText).join("\n")}</label>
           ) : null}
         </FormGroup>
       );
@@ -542,8 +511,7 @@ export const Dialog: React.FC = () => {
           t(input, { ...options, lngs: [] })) as typeof t;
       }
 
-      const controls: Array<{ id: DialogContentItem; control: JSX.Element }> =
-        [];
+      const controls: Array<{ id: DialogContentItem; control: JSX.Element }> = [];
 
       if (content.text) {
         controls.push({
@@ -568,10 +536,7 @@ export const Dialog: React.FC = () => {
         if (content.parameters) {
           Object.keys(content.parameters).forEach((key) => {
             const regex = new RegExp(`\\{\\{${key}\\}\\}`, "g");
-            bbcodeContent = bbcodeContent.replace(
-              regex,
-              String(content.parameters[key]),
-            );
+            bbcodeContent = bbcodeContent.replace(regex, String(content.parameters[key]));
           });
         }
 
@@ -589,10 +554,7 @@ export const Dialog: React.FC = () => {
         controls.push({
           id: "md",
           control: (
-            <div
-              className="dialog-content-markdown"
-              key="dialog-content-markdown"
-            >
+            <div className="dialog-content-markdown" key="dialog-content-markdown">
               <ReactMarkdown>
                 {tFunc(content.md, {
                   replace: content.parameters,
@@ -605,10 +567,7 @@ export const Dialog: React.FC = () => {
       }
 
       if (content.message !== undefined) {
-        const wrap =
-          content.options !== undefined && content.options.wrap === true
-            ? "on"
-            : "off";
+        const wrap = content.options !== undefined && content.options.wrap === true ? "on" : "off";
         const ctrl = (
           <textarea
             key="dialog-content-message"
@@ -617,10 +576,7 @@ export const Dialog: React.FC = () => {
             wrap={wrap}
           />
         );
-        if (
-          content.options !== undefined &&
-          content.options.hideMessage === true
-        ) {
+        if (content.options !== undefined && content.options.hideMessage === true) {
           controls.push({
             id: "message",
             control: (
@@ -678,10 +634,7 @@ export const Dialog: React.FC = () => {
         controls.push({
           id: "checkboxes",
           control: (
-            <div
-              className="dialog-content-choices"
-              key="dialog-content-checkboxes"
-            >
+            <div className="dialog-content-choices" key="dialog-content-checkboxes">
               {content.checkboxes.length > 3 ? (
                 <div className="dialog-apply-all-btns">
                   <a onClick={enableAll}>{t("Enable all")}</a>
@@ -690,11 +643,7 @@ export const Dialog: React.FC = () => {
                 </div>
               ) : null}
 
-              <div>
-                {content.checkboxes.map((checkbox) =>
-                  renderCheckbox(checkbox, content),
-                )}
-              </div>
+              <div>{content.checkboxes.map((checkbox) => renderCheckbox(checkbox, content))}</div>
             </div>
           ),
         });
@@ -704,10 +653,7 @@ export const Dialog: React.FC = () => {
         controls.push({
           id: "choices",
           control: (
-            <div
-              className="dialog-content-choices"
-              key="dialog-content-choices"
-            >
+            <div className="dialog-content-choices" key="dialog-content-choices">
               <div>{content.choices.map(renderRadiobutton)}</div>
             </div>
           ),
@@ -719,9 +665,7 @@ export const Dialog: React.FC = () => {
           id: "links",
           control: (
             <div key="dialog-form-links">
-              {content.links.map(
-                content.options?.linksAsButtons ? renderButton : renderLink,
-              )}
+              {content.links.map(content.options?.linksAsButtons ? renderButton : renderLink)}
             </div>
           ),
         });
@@ -730,21 +674,13 @@ export const Dialog: React.FC = () => {
       if (content.options?.order !== undefined) {
         const { order } = content.options;
         controls.sort((lhs, rhs) => {
-          const lIdx = order.includes(lhs.id)
-            ? 100 + order.indexOf(lhs.id)
-            : controls.indexOf(lhs);
-          const rIdx = order.includes(rhs.id)
-            ? 100 + order.indexOf(rhs.id)
-            : controls.indexOf(rhs);
+          const lIdx = order.includes(lhs.id) ? 100 + order.indexOf(lhs.id) : controls.indexOf(lhs);
+          const rIdx = order.includes(rhs.id) ? 100 + order.indexOf(rhs.id) : controls.indexOf(rhs);
           return lIdx - rIdx;
         });
       }
 
-      return (
-        <div className="dialog-container">
-          {controls.map((iter) => iter.control)}
-        </div>
-      );
+      return <div className="dialog-container">{controls.map((iter) => iter.control)}</div>;
     },
     [
       t,
@@ -763,9 +699,8 @@ export const Dialog: React.FC = () => {
     (action: string, isDefault: boolean): JSX.Element => {
       const { conditionResults: results } = stateRef.current;
       const isDisabled =
-        results.find(
-          (res) => res.actions.find((act) => act === action) !== undefined,
-        ) !== undefined;
+        results.find((res) => res.actions.find((act) => act === action) !== undefined) !==
+        undefined;
       return (
         <Action
           action={action}
@@ -833,17 +768,14 @@ export const Dialog: React.FC = () => {
   }
 
   const type =
-    dialog.content.htmlFile !== undefined ||
-    dialog.content.htmlText !== undefined
+    dialog.content.htmlFile !== undefined || dialog.content.htmlText !== undefined
       ? "wide"
       : "regular";
 
   return (
     <MutexWrapper show={dialog !== undefined}>
       <Modal
-        className={`
-          common-dialog-${type}
-        `}
+        className={` common-dialog-${type} `}
         id={dialog.id}
         show={dialog !== undefined}
         onHide={nop}
@@ -860,15 +792,11 @@ export const Dialog: React.FC = () => {
         </Modal.Header>
 
         <Modal.Body>
-          <ErrorBoundary visible={true}>
-            {renderContent(dialogState)}
-          </ErrorBoundary>
+          <ErrorBoundary visible={true}>{renderContent(dialogState)}</ErrorBoundary>
         </Modal.Body>
 
         <Modal.Footer>
-          {dialog.actions.map((action) =>
-            renderAction(action, action === dialog.defaultAction),
-          )}
+          {dialog.actions.map((action) => renderAction(action, action === dialog.defaultAction))}
         </Modal.Footer>
       </Modal>
     </MutexWrapper>

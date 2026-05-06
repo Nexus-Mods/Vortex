@@ -15,10 +15,7 @@
     "saveNumber": 2,
     "creationTime": 1761177894,
     "playTime": "000.14.38",
-    "plugins": [
-      "Skyrim.esm",
-      "Update.esm"
-    ],
+    "plugins": ["Skyrim.esm", "Update.esm"],
     "screenshotSize": {
       "width": 320,
       "height": 192

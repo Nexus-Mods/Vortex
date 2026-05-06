@@ -1,5 +1,5 @@
-import { rolldown, defineConfig } from "rolldown";
 import { vortexAdaptorPlugin } from "@nexusmods/adaptor-api/plugin";
+import { rolldown, defineConfig } from "rolldown";
 
 const config = defineConfig({
   input: "./src/index.ts",

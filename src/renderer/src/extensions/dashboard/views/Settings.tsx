@@ -1,16 +1,15 @@
-import Toggle from "../../../controls/Toggle";
-import type { IDashletSettings, IState } from "../../../types/IState";
-import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
-import { getSafe } from "../../../util/storeHelper";
-
-import { setDashletEnabled } from "../actions";
-import type { IDashletProps } from "../types/IDashletProps";
-
 import type { TFunction } from "i18next";
 import * as React from "react";
 import { ControlLabel, FormGroup, HelpBlock } from "react-bootstrap";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
+
+import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
+import Toggle from "../../../controls/Toggle";
+import type { IDashletSettings, IState } from "../../../types/IState";
+import { getSafe } from "../../../util/storeHelper";
+import { setDashletEnabled } from "../actions";
+import type { IDashletProps } from "../types/IDashletProps";
 
 interface IDashletToggleProps {
   t: TFunction;
@@ -65,11 +64,7 @@ class Settings extends ComponentEx<IProps, {}> {
                 t={t}
                 key={dashlet.title}
                 dashlet={dashlet}
-                enabled={getSafe(
-                  dashletSettings,
-                  [dashlet.title, "enabled"],
-                  true,
-                )}
+                enabled={getSafe(dashletSettings, [dashlet.title, "enabled"], true)}
                 onToggle={onSetDashletEnabled}
               />
             ))}
@@ -85,9 +80,7 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, null, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetDashletEnabled: (dashletId: string, enabled: boolean) =>
       dispatch(setDashletEnabled(dashletId, enabled)),

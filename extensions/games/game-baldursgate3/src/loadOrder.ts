@@ -1,55 +1,63 @@
+import path from "path";
+
+import Bluebird from "bluebird";
+import * as semver from "semver";
 /* eslint-disable */
-import { actions, fs, log, selectors, types, util } from 'vortex-api';
-import path from 'path';
-import * as semver from 'semver';
-import Bluebird from 'bluebird';
+import { actions, fs, log, selectors, types, util } from "vortex-api";
+import { LockedState } from "vortex-api/lib/extensions/file_based_loadorder/types/types";
+import { IOpenOptions, ISaveOptions } from "vortex-api/lib/types/IExtensionContext";
+import { Builder, parseStringPromise, RenderOptions } from "xml2js";
 
-import { GAME_ID, LO_FILE_NAME, NOTIF_IMPORT_ACTIVITY } from './common';
-import { BG3Pak, IModNode, IModSettings, IProps, IRootNode } from './types';
-import { Builder, parseStringPromise, RenderOptions } from 'xml2js';
-import { LockedState } from 'vortex-api/lib/extensions/file_based_loadorder/types/types';
-import { IOpenOptions, ISaveOptions } from 'vortex-api/lib/types/IExtensionContext';
+import PakInfoCache, { ICacheEntry } from "./cache";
+import { GAME_ID, LO_FILE_NAME, NOTIF_IMPORT_ACTIVITY } from "./common";
+import { DivineAborted, DivineExecMissing, DivinePakInvalid } from "./divineCore";
+import { BG3Pak, IModNode, IModSettings, IProps, IRootNode } from "./types";
+import {
+  findNode,
+  forceRefresh,
+  getActivePlayerProfile,
+  getDefaultModSettingsFormat,
+  getPlayerProfiles,
+  logDebug,
+  modsPath,
+  profilesPath,
+} from "./util";
 
-import { DivineAborted, DivineExecMissing, DivinePakInvalid } from './divineCore';
-import { findNode, forceRefresh, getActivePlayerProfile, getDefaultModSettingsFormat, getPlayerProfiles, logDebug, modsPath, profilesPath } from './util';
-
-import PakInfoCache, { ICacheEntry } from './cache';
-
-export async function serialize(context: types.IExtensionContext,
-                                loadOrder: types.LoadOrder,
-                                profileId?: string): Promise<void> {
+export async function serialize(
+  context: types.IExtensionContext,
+  loadOrder: types.LoadOrder,
+  profileId?: string,
+): Promise<void> {
   const props: IProps = genProps(context);
   if (props === undefined) {
-    return Promise.reject(new util.ProcessCanceled('invalid props'));
+    return Promise.reject(new util.ProcessCanceled("invalid props"));
   }
-  
+
   const state = context.api.getState();
 
   // Make sure the LO file is created and ready to be written to.
   const loFilePath = await ensureLOFile(context, profileId, props);
   //const filteredLO = loadOrder.filter(lo => (!INVALID_LO_MOD_TYPES.includes(props.mods?.[lo?.modId]?.type)));
 
-  logDebug('serialize loadOrder=', loadOrder);
+  logDebug("serialize loadOrder=", loadOrder);
 
   // Write the prefixed LO to file.
-  await fs.removeAsync(loFilePath).catch({ code: 'ENOENT' }, () => Promise.resolve());
-  await fs.writeFileAsync(loFilePath, JSON.stringify(loadOrder), { encoding: 'utf8' });
+  await fs.removeAsync(loFilePath).catch({ code: "ENOENT" }, () => Promise.resolve());
+  await fs.writeFileAsync(loFilePath, JSON.stringify(loadOrder), { encoding: "utf8" });
 
   // check the state for if we are keeping the game one in sync
   // if we are writing vortex's load order, then we will also write the games one
 
-  const autoExportToGame:boolean = state.settings['baldursgate3'].autoExportLoadOrder ?? false;
+  const autoExportToGame: boolean = state.settings["baldursgate3"].autoExportLoadOrder ?? false;
 
-  logDebug('serialize autoExportToGame=', autoExportToGame);
+  logDebug("serialize autoExportToGame=", autoExportToGame);
 
-  if(autoExportToGame) 
-    await exportToGame(context.api);
+  if (autoExportToGame) await exportToGame(context.api);
 
   return Promise.resolve();
 }
 
 export async function deserialize(context: types.IExtensionContext): Promise<types.LoadOrder> {
-  
   // genProps is a small utility function which returns often re-used objects
   //  such as the current list of installed Mods, Vortex's application state,
   //  the currently active profile, etc.
@@ -58,88 +66,101 @@ export async function deserialize(context: types.IExtensionContext): Promise<typ
     // Why are we deserializing when the profile is invalid or belongs to another game ?
     return [];
   }
-  
+
   const paks = await readPAKs(context.api);
 
-  // create if necessary, but load the load order from file    
+  // create if necessary, but load the load order from file
   const loFilePath = await ensureLOFile(context);
-  const fileData = await fs.readFileAsync(loFilePath, { encoding: 'utf8' });
+  const fileData = await fs.readFileAsync(loFilePath, { encoding: "utf8" });
 
   let loadOrder: types.ILoadOrderEntry[] = [];
 
   try {
-    
     try {
       loadOrder = JSON.parse(fileData);
     } catch (err) {
-      log('error', 'Corrupt load order file', err);
+      log("error", "Corrupt load order file", err);
       await new Promise<void>((resolve, reject) => {
-        props.api.showDialog('error', 'Corrupt load order file', {
-          bbcode: props.api.translate('The load order file is in a corrupt state. You can try to fix it yourself '
-                                    + 'or Vortex can regenerate the file for you, but that may result in loss of data ' +
-                                      '(Will only affect load order items you added manually, if any).')
-        }, [
-          { label: 'Cancel', action: () => reject(err) },
-          { label: 'Regenerate File', action: async () => {
-              await fs.removeAsync(loFilePath).catch({ code: 'ENOENT' }, () => Promise.resolve());
-              loadOrder = [];
-              return resolve();
-            }
-          }
-        ])
-      })
+        props.api.showDialog(
+          "error",
+          "Corrupt load order file",
+          {
+            bbcode: props.api.translate(
+              "The load order file is in a corrupt state. You can try to fix it yourself " +
+                "or Vortex can regenerate the file for you, but that may result in loss of data " +
+                "(Will only affect load order items you added manually, if any).",
+            ),
+          },
+          [
+            { label: "Cancel", action: () => reject(err) },
+            {
+              label: "Regenerate File",
+              action: async () => {
+                await fs.removeAsync(loFilePath).catch({ code: "ENOENT" }, () => Promise.resolve());
+                loadOrder = [];
+                return resolve();
+              },
+            },
+          ],
+        );
+      });
     }
 
-    
-    logDebug('deserialize loadOrder=', loadOrder);
+    logDebug("deserialize loadOrder=", loadOrder);
 
     // filter out any pak files that no longer exist
-    const filteredLoadOrder: types.LoadOrder = loadOrder.filter(entry => paks.find(pak => pak.fileName === entry.id));
+    const filteredLoadOrder: types.LoadOrder = loadOrder.filter((entry) =>
+      paks.find((pak) => pak.fileName === entry.id),
+    );
 
-    logDebug('deserialize filteredLoadOrder=', filteredLoadOrder);
+    logDebug("deserialize filteredLoadOrder=", filteredLoadOrder);
 
     // filter out pak files that don't have a corresponding mod (which means Vortex didn't install it/isn't aware of it)
     //const paksWithMods:BG3Pak[] = paks.filter(pak => pak.mod !== undefined);
 
-      // go through each pak file in the Mods folder...
-    const processedPaks = paks.reduce((acc, curr) => {            
-      acc.valid.push(curr);
-      return acc;
-    }, { valid: [], invalid: [] });
+    // go through each pak file in the Mods folder...
+    const processedPaks = paks.reduce(
+      (acc, curr) => {
+        acc.valid.push(curr);
+        return acc;
+      },
+      { valid: [], invalid: [] },
+    );
 
-    logDebug('deserialize processedPaks=', processedPaks);
+    logDebug("deserialize processedPaks=", processedPaks);
 
     // get any pak files that aren't in the filteredLoadOrder
-    const addedMods: BG3Pak[] = processedPaks.valid.filter(pak => filteredLoadOrder.find(entry => entry.id === pak.fileName) === undefined);
+    const addedMods: BG3Pak[] = processedPaks.valid.filter(
+      (pak) => filteredLoadOrder.find((entry) => entry.id === pak.fileName) === undefined,
+    );
 
-    logDebug('deserialize addedMods=', addedMods);
-    
+    logDebug("deserialize addedMods=", addedMods);
+
     // Check if the user added any new mods.
     //const diff = enabledModIds.filter(id => (!INVALID_LO_MOD_TYPES.includes(mods[id]?.type))
     //  && (filteredData.find(loEntry => loEntry.id === id) === undefined));
 
-    logDebug('deserialize paks=', paks);
-
+    logDebug("deserialize paks=", paks);
 
     // Add any newly added mods to the bottom of the loadOrder.
-    addedMods.forEach(pak => {
+    addedMods.forEach((pak) => {
       filteredLoadOrder.push({
         id: pak.fileName,
         modId: pak.mod?.id,
-        enabled: true,  // not using load order for enabling/disabling      
-        name: pak.info?.name || path.basename(pak.fileName, '.pak'),
+        enabled: true, // not using load order for enabling/disabling
+        name: pak.info?.name || path.basename(pak.fileName, ".pak"),
         data: pak.info,
-        locked: pak.info.isListed as LockedState        
-      })      
-    });       
+        locked: pak.info.isListed as LockedState,
+      });
+    });
 
     //logDebug('deserialize filteredData=', filteredData);
 
     // sorted so that any mods that are locked appear at the top
-    //const sortedAndFilteredData = 
-    
+    //const sortedAndFilteredData =
+
     // return
-    return filteredLoadOrder.sort((a, b) => (+b.locked - +a.locked));
+    return filteredLoadOrder.sort((a, b) => +b.locked - +a.locked);
   } catch (err) {
     return Promise.reject(err);
   }
@@ -148,77 +169,78 @@ export async function deserialize(context: types.IExtensionContext): Promise<typ
 export async function importFromBG3MM(context: types.IExtensionContext): Promise<void> {
   const api = context.api;
   const options: IOpenOptions = {
-    title: api.translate('Please choose a BG3MM .json load order file to import from'),
-    filters: [{ name: 'BG3MM Load Order', extensions: ['json'] }]
+    title: api.translate("Please choose a BG3MM .json load order file to import from"),
+    filters: [{ name: "BG3MM Load Order", extensions: ["json"] }],
   };
 
-  const selectedPath:string = await api.selectFile(options);
+  const selectedPath: string = await api.selectFile(options);
 
-  logDebug('importFromBG3MM selectedPath=', selectedPath);
-  
+  logDebug("importFromBG3MM selectedPath=", selectedPath);
+
   // if no path selected, then cancel probably pressed
-  if(selectedPath === undefined) {
+  if (selectedPath === undefined) {
     return;
   }
 
   try {
-    const data = await fs.readFileAsync(selectedPath, { encoding: 'utf8' });
+    const data = await fs.readFileAsync(selectedPath, { encoding: "utf8" });
     const loadOrder: any[] = JSON.parse(data);
-    logDebug('importFromBG3MM loadOrder=', loadOrder);
+    logDebug("importFromBG3MM loadOrder=", loadOrder);
 
     const getIndex = (uuid: string): number => {
-      const index = loadOrder.findIndex(entry => entry.UUID !== undefined && entry.UUID === uuid);
+      const index = loadOrder.findIndex((entry) => entry.UUID !== undefined && entry.UUID === uuid);
       return index !== -1 ? index : Infinity; // If UUID not found, put it at the end
     };
 
     const state = api.getState();
     const profileId = selectors.activeProfile(state)?.id;
-    const currentLoadOrder = util.getSafe(state, ['persistent', 'loadOrder', profileId], []);
-    const newLO = [...currentLoadOrder].sort((a, b) => getIndex(a.data?.uuid) - getIndex(b.data?.uuid));
+    const currentLoadOrder = util.getSafe(state, ["persistent", "loadOrder", profileId], []);
+    const newLO = [...currentLoadOrder].sort(
+      (a, b) => getIndex(a.data?.uuid) - getIndex(b.data?.uuid),
+    );
     await serialize(context, newLO, profileId);
   } catch (err) {
-    api.showErrorNotification('Failed to import BG3MM load order file', err, { allowReport: false });
+    api.showErrorNotification("Failed to import BG3MM load order file", err, {
+      allowReport: false,
+    });
   } finally {
     forceRefresh(context.api);
   }
 }
 
 export async function importModSettingsFile(api: types.IExtensionApi): Promise<boolean | void> {
-
   const state = api.getState();
   const profileId = selectors.activeProfile(state)?.id;
 
   const options: IOpenOptions = {
-    title: api.translate('Please choose a BG3 .lsx file to import from'),
-    filters: [{ name: 'BG3 Load Order', extensions: ['lsx'] }]
+    title: api.translate("Please choose a BG3 .lsx file to import from"),
+    filters: [{ name: "BG3 Load Order", extensions: ["lsx"] }],
   };
 
-  const selectedPath:string = await api.selectFile(options);
+  const selectedPath: string = await api.selectFile(options);
 
-  logDebug('importModSettingsFile selectedPath=', selectedPath);
-  
+  logDebug("importModSettingsFile selectedPath=", selectedPath);
+
   // if no path selected, then cancel probably pressed
-  if(selectedPath === undefined)
-    return;
+  if (selectedPath === undefined) return;
 
   processLsxFile(api, selectedPath);
 }
 
 export async function importModSettingsGame(api: types.IExtensionApi): Promise<boolean | void> {
-
   const bg3ProfileId = await getActivePlayerProfile(api);
-  const gameSettingsPath: string = path.join(profilesPath(), bg3ProfileId, 'modsettings.lsx');
+  const gameSettingsPath: string = path.join(profilesPath(), bg3ProfileId, "modsettings.lsx");
 
-  logDebug('importModSettingsGame gameSettingsPath=', gameSettingsPath);
+  logDebug("importModSettingsGame gameSettingsPath=", gameSettingsPath);
 
   processLsxFile(api, gameSettingsPath);
 }
 
 function checkIfDuplicateExists(arr) {
-  return new Set(arr).size !== arr.length
+  return new Set(arr).size !== arr.length;
 }
 
-function getAttribute(node: IModNode, name: string, fallback?: string):string {
+function getAttribute(node: IModNode, name: string, fallback?: string): string {
   return findNode(node?.attribute, name)?.$?.value ?? fallback;
 }
 
@@ -228,17 +250,15 @@ async function processBG3MMFile(api: types.IExtensionApi, jsonPath: string) {
 
   api.sendNotification({
     id: NOTIF_IMPORT_ACTIVITY,
-    title: 'Importing JSON File',
+    title: "Importing JSON File",
     message: jsonPath,
-    type: 'activity',
+    type: "activity",
     noDismiss: true,
     allowSuppress: false,
   });
 
   try {
-
   } catch (err) {
-
   } finally {
     api.dismissNotification(NOTIF_IMPORT_ACTIVITY);
   }
@@ -246,61 +266,68 @@ async function processBG3MMFile(api: types.IExtensionApi, jsonPath: string) {
 
 export async function getNodes(lsxPath: string): Promise<any> {
   const lsxLoadOrder: IModSettings = await readLsxFile(lsxPath);
-    logDebug('processLsxFile lsxPath=', lsxPath);
+  logDebug("processLsxFile lsxPath=", lsxPath);
 
-    // buildup object from xml
-    const region = findNode(lsxLoadOrder?.save?.region, 'ModuleSettings');
-    const root = findNode(region?.node, 'root');
-    const modsNode = findNode(root?.children?.[0]?.node, 'Mods');
-    const modsOrderNode = findNode(root?.children?.[0]?.node, 'ModOrder');
+  // buildup object from xml
+  const region = findNode(lsxLoadOrder?.save?.region, "ModuleSettings");
+  const root = findNode(region?.node, "root");
+  const modsNode = findNode(root?.children?.[0]?.node, "Mods");
+  const modsOrderNode = findNode(root?.children?.[0]?.node, "ModOrder");
 
-    return { region, root, modsNode, modsOrderNode };
+  return { region, root, modsNode, modsOrderNode };
 }
 
-export async function processLsxFile(api: types.IExtensionApi, lsxPath:string) {  
-
+export async function processLsxFile(api: types.IExtensionApi, lsxPath: string) {
   const state = api.getState();
   const profileId = selectors.activeProfile(state)?.id;
 
   api.sendNotification({
     id: NOTIF_IMPORT_ACTIVITY,
-    title: 'Importing LSX File',
+    title: "Importing LSX File",
     message: lsxPath,
-    type: 'activity',
+    type: "activity",
     noDismiss: true,
     allowSuppress: false,
   });
 
   try {
     const { modsNode, modsOrderNode } = await getNodes(lsxPath);
-    if ((modsNode?.children === undefined) || ((modsNode?.children[0] as any) === '')) {
+    if (modsNode?.children === undefined || (modsNode?.children[0] as any) === "") {
       modsNode.children = [{ node: [] }];
     }
 
     const format = await getDefaultModSettingsFormat(api);
-    let loNode = ['v7', 'v8'].includes(format) ? modsNode : modsOrderNode !== undefined ? modsOrderNode : modsNode;
+    let loNode = ["v7", "v8"].includes(format)
+      ? modsNode
+      : modsOrderNode !== undefined
+        ? modsOrderNode
+        : modsNode;
 
     // get nice string array, in order, of mods from the load order section
-    let uuidArray:string[] = loNode?.children !== undefined
-      ? loNode.children[0].node.map((loEntry) => loEntry.attribute.find(attr => (attr.$.id === 'UUID')).$.value)
-      : [];
+    let uuidArray: string[] =
+      loNode?.children !== undefined
+        ? loNode.children[0].node.map(
+            (loEntry) => loEntry.attribute.find((attr) => attr.$.id === "UUID").$.value,
+          )
+        : [];
 
     logDebug(`processLsxFile uuidArray=`, uuidArray);
 
     // are there any duplicates? if so...
-    if(checkIfDuplicateExists(uuidArray)) {
+    if (checkIfDuplicateExists(uuidArray)) {
       api.sendNotification({
-        type: 'warning',
-        id: 'bg3-loadorder-imported-duplicate',
-        title: 'Duplicate Entries',
-        message: 'Duplicate UUIDs found in the ModOrder section of the .lsx file being imported. This sometimes can cause issues with the load order.',
-        
+        type: "warning",
+        id: "bg3-loadorder-imported-duplicate",
+        title: "Duplicate Entries",
+        message:
+          "Duplicate UUIDs found in the ModOrder section of the .lsx file being imported. This sometimes can cause issues with the load order.",
+
         //displayMS: 3000
-      }); 
-      
+      });
+
       // remove these duplicates after the first one
       uuidArray = Array.from(new Set(uuidArray));
-    }   
+    }
 
     const lsxModNodes: IModNode[] = modsNode.children[0].node;
 
@@ -318,22 +345,27 @@ export async function processLsxFile(api: types.IExtensionApi, lsxPath:string) {
     const paks = await readPAKs(api);
 
     // are there any pak files not in the lsx file?
-    const missing = paks.reduce((acc, curr) => {  
-
+    const missing = paks.reduce((acc, curr) => {
       // if current pak has no associated pak, then we skip. we defintely aren't adding this pak if vortex hasn't managed it.
-      if(curr.mod === undefined) {
+      if (curr.mod === undefined) {
         return acc;
       }
 
       // if current pak, which vortex has definately managed, isn't already in the lsx file, then this is missing and we need to load order
-      if(lsxModNodes.find(lsxEntry => lsxEntry.attribute.find(attr => (attr.$.id === 'Name') && (attr.$.value === curr.info.name))) === undefined) 
+      if (
+        lsxModNodes.find((lsxEntry) =>
+          lsxEntry.attribute.find(
+            (attr) => attr.$.id === "Name" && attr.$.value === curr.info.name,
+          ),
+        ) === undefined
+      )
         acc.push(curr);
 
-      // skip this 
+      // skip this
       return acc;
     }, []);
 
-    logDebug('processLsxFile - missing pak files that have associated mods =', missing);
+    logDebug("processLsxFile - missing pak files that have associated mods =", missing);
 
     // build a load order from the lsx file and add any missing paks at the end?
 
@@ -342,44 +374,45 @@ export async function processLsxFile(api: types.IExtensionApi, lsxPath:string) {
     // loop through lsx mod nodes and find the pak they are associated with
 
     let newLoadOrder: types.ILoadOrderEntry[] = lsxModNodes.reduce((acc, curr) => {
-      
       // find the bg3Pak this is refering too as it's easier to get all the information
-      const pak = paks.find((pak) => pak.info.name === curr.attribute.find(attr => (attr.$.id === 'Name')).$.value);
+      const pak = paks.find(
+        (pak) => pak.info.name === curr.attribute.find((attr) => attr.$.id === "Name").$.value,
+      );
 
       // if the pak is found, then we add a load order entry. if it isn't, then its prob been deleted in vortex and lsx has an extra entry
       if (pak !== undefined) {
         acc.push({
           id: pak.fileName,
           modId: pak?.mod?.id,
-          enabled: true,        
-          name: pak.info?.name || path.basename(pak.fileName, '.pak'),
+          enabled: true,
+          name: pak.info?.name || path.basename(pak.fileName, ".pak"),
           data: pak.info,
-          locked: pak.info.isListed as LockedState        
+          locked: pak.info.isListed as LockedState,
         });
       }
 
       return acc;
-    }, []);   
+    }, []);
 
-    logDebug('processLsxFile (before adding missing) newLoadOrder=', newLoadOrder);
+    logDebug("processLsxFile (before adding missing) newLoadOrder=", newLoadOrder);
 
     // Add any newly added mods to the bottom of the loadOrder.
-    missing.forEach(pak => {
+    missing.forEach((pak) => {
       newLoadOrder.push({
         id: pak.fileName,
-        modId:  pak?.mod?.id,
-        enabled: true,        
-        name: pak.info?.name || path.basename(pak.fileName, '.pak'),
+        modId: pak?.mod?.id,
+        enabled: true,
+        name: pak.info?.name || path.basename(pak.fileName, ".pak"),
         data: pak.info,
-        locked: pak.info.isListed as LockedState        
-      })      
-    });   
+        locked: pak.info.isListed as LockedState,
+      });
+    });
 
-    logDebug('processLsxFile (after adding missing) newLoadOrder=', newLoadOrder);
+    logDebug("processLsxFile (after adding missing) newLoadOrder=", newLoadOrder);
 
-    newLoadOrder.sort((a, b) => (+b.locked - +a.locked));
+    newLoadOrder.sort((a, b) => +b.locked - +a.locked);
 
-    logDebug('processLsxFile (after sorting) newLoadOrder=', newLoadOrder);
+    logDebug("processLsxFile (after sorting) newLoadOrder=", newLoadOrder);
 
     // get load order
     //let loadOrder:types.LoadOrder = util.getSafe(api.getState(), ['persistent', 'loadOrder', profileId], []);
@@ -394,38 +427,38 @@ export async function processLsxFile(api: types.IExtensionApi, lsxPath:string) {
     //loadOrder = util.getSafe(api.getState(), ['persistent', 'loadOrder', profileId], []);
     //logDebug('processLsxFile loadOrder=', loadOrder);
 
-    api.dismissNotification('bg3-loadorder-import-activity');
+    api.dismissNotification("bg3-loadorder-import-activity");
 
     api.sendNotification({
-      type: 'success',
-      id: 'bg3-loadorder-imported',
-      title: 'Load Order Imported',
+      type: "success",
+      id: "bg3-loadorder-imported",
+      title: "Load Order Imported",
       message: lsxPath,
-      displayMS: 3000
+      displayMS: 3000,
     });
 
-    logDebug('processLsxFile finished');
-
+    logDebug("processLsxFile finished");
   } catch (err) {
-    
     api.dismissNotification(NOTIF_IMPORT_ACTIVITY);
 
-    api.showErrorNotification('Failed to import load order', err, {
-      allowReport: false
+    api.showErrorNotification("Failed to import load order", err, {
+      allowReport: false,
     });
   }
-
 }
 
 async function exportTo(api: types.IExtensionApi, filepath: string) {
-
   const state = api.getState();
   const profileId = selectors.activeProfile(state)?.id;
 
   // get load order from state
-  const loadOrder:types.LoadOrder = util.getSafe(api.getState(), ['persistent', 'loadOrder', profileId], []);
+  const loadOrder: types.LoadOrder = util.getSafe(
+    api.getState(),
+    ["persistent", "loadOrder", profileId],
+    [],
+  );
 
-  logDebug('exportTo loadOrder=', loadOrder);
+  logDebug("exportTo loadOrder=", loadOrder);
 
   try {
     // read the game bg3 modsettings.lsx so that we get the default game gustav thing?
@@ -433,23 +466,25 @@ async function exportTo(api: types.IExtensionApi, filepath: string) {
     const modSettingsFormat = await getDefaultModSettingsFormat(api);
 
     // buildup object from xml
-    const region = findNode(modSettings?.save?.region, 'ModuleSettings');
-    const root = findNode(region?.node, 'root');
-    const modsNode = findNode(root?.children?.[0]?.node, 'Mods');
+    const region = findNode(modSettings?.save?.region, "ModuleSettings");
+    const root = findNode(region?.node, "root");
+    const modsNode = findNode(root?.children?.[0]?.node, "Mods");
 
-    if ((modsNode.children === undefined) || ((modsNode.children[0] as any) === '')) {
+    if (modsNode.children === undefined || (modsNode.children[0] as any) === "") {
       modsNode.children = [{ node: [] }];
     }
 
     // drop all nodes except for the game entry
-    const descriptionNodes = modsNode?.children?.[0]?.node?.filter?.(iter =>
-      iter.attribute.find(attr => (attr.$.id === 'Name') && (attr.$.value.startsWith('Gustav')))) ?? [];
+    const descriptionNodes =
+      modsNode?.children?.[0]?.node?.filter?.((iter) =>
+        iter.attribute.find((attr) => attr.$.id === "Name" && attr.$.value.startsWith("Gustav")),
+      ) ?? [];
 
-    const filteredPaks = loadOrder.filter(entry => !!entry.data?.uuid
-                    && entry.enabled
-                    && !entry.data?.isListed);
+    const filteredPaks = loadOrder.filter(
+      (entry) => !!entry.data?.uuid && entry.enabled && !entry.data?.isListed,
+    );
 
-    logDebug('exportTo filteredPaks=', filteredPaks);
+    logDebug("exportTo filteredPaks=", filteredPaks);
 
     // add new nodes for the enabled mods
     for (const entry of filteredPaks) {
@@ -464,46 +499,56 @@ async function exportTo(api: types.IExtensionApi, filepath: string) {
         <attribute id="Version64" type="int64" value="36028797018963970"/>
       */
 
-      const attributeOrder = ['Folder', 'MD5', 'Name', 'PublishHandle', 'UUID', 'Version64', 'Version'];
-      const attributes = (['v7', 'v8'].includes(modSettingsFormat))
+      const attributeOrder = [
+        "Folder",
+        "MD5",
+        "Name",
+        "PublishHandle",
+        "UUID",
+        "Version64",
+        "Version",
+      ];
+      const attributes = ["v7", "v8"].includes(modSettingsFormat)
         ? [
-          { $: { id: 'Folder', type: 'LSString', value: entry.data.folder } },
-          { $: { id: 'Name', type: 'LSString', value: entry.data.name } },
-          { $: { id: 'PublishHandle', type: 'uint64', value: 0 } },
-          { $: { id: 'Version64', type: 'int64', value: entry.data.version } },
-          { $: { id: 'UUID', type: 'guid', value: entry.data.uuid } },
-        ] : [
-          { $: { id: 'Folder', type: 'LSWString', value: entry.data.folder } },
-          { $: { id: 'Name', type: 'FixedString', value: entry.data.name } },
-          { $: { id: 'UUID', type: 'FixedString', value: entry.data.uuid } },
-          { $: { id: 'Version', type: 'int32', value: entry.data.version } },
-        ];
+            { $: { id: "Folder", type: "LSString", value: entry.data.folder } },
+            { $: { id: "Name", type: "LSString", value: entry.data.name } },
+            { $: { id: "PublishHandle", type: "uint64", value: 0 } },
+            { $: { id: "Version64", type: "int64", value: entry.data.version } },
+            { $: { id: "UUID", type: "guid", value: entry.data.uuid } },
+          ]
+        : [
+            { $: { id: "Folder", type: "LSWString", value: entry.data.folder } },
+            { $: { id: "Name", type: "FixedString", value: entry.data.name } },
+            { $: { id: "UUID", type: "FixedString", value: entry.data.uuid } },
+            { $: { id: "Version", type: "int32", value: entry.data.version } },
+          ];
 
       descriptionNodes.push({
-        $: { id: 'ModuleShortDesc' },
-        attribute: [].concat(attributes, [{ $: { id: 'MD5', type: 'LSString', value: entry.data.md5 } }])
-          .sort( (a, b) => attributeOrder.indexOf(a.$.id) - attributeOrder.indexOf(b.$.id)),
+        $: { id: "ModuleShortDesc" },
+        attribute: []
+          .concat(attributes, [{ $: { id: "MD5", type: "LSString", value: entry.data.md5 } }])
+          .sort((a, b) => attributeOrder.indexOf(a.$.id) - attributeOrder.indexOf(b.$.id)),
       });
     }
 
     const loadOrderNodes = filteredPaks
       //.sort((lhs, rhs) => lhs.pos - rhs.pos) // don't know if we need this now
-      .map((entry): IModNode => ({
-        $: { id: 'Module' },
-        attribute: [
-          { $: { id: 'UUID', type: 'FixedString', value: entry.data.uuid } },
-        ],
-      }));
+      .map(
+        (entry): IModNode => ({
+          $: { id: "Module" },
+          attribute: [{ $: { id: "UUID", type: "FixedString", value: entry.data.uuid } }],
+        }),
+      );
 
     modsNode.children[0].node = descriptionNodes;
-    if (!['v7', 'v8'].includes(modSettingsFormat)) {
-      let modOrderNode: IRootNode = findNode(root?.children?.[0]?.node, 'ModOrder');
+    if (!["v7", "v8"].includes(modSettingsFormat)) {
+      let modOrderNode: IRootNode = findNode(root?.children?.[0]?.node, "ModOrder");
       let insertNode = false;
       if (!modOrderNode) {
         insertNode = true;
-        modOrderNode = { $: { id: 'ModOrder' }, children: [{ node: [] }] }
+        modOrderNode = { $: { id: "ModOrder" }, children: [{ node: [] }] };
       }
-      if ((modOrderNode.children === undefined) || ((modOrderNode.children[0] as any) === '')) {
+      if (modOrderNode.children === undefined || (modOrderNode.children[0] as any) === "") {
         modOrderNode.children = [{ node: [] }];
       }
       modOrderNode.children[0].node = loadOrderNodes;
@@ -513,46 +558,40 @@ async function exportTo(api: types.IExtensionApi, filepath: string) {
     }
 
     writeModSettings(api, modSettings, filepath);
-    
+
     api.sendNotification({
-      type: 'success',
-      id: 'bg3-loadorder-exported',
-      title: 'Load Order Exported',
+      type: "success",
+      id: "bg3-loadorder-exported",
+      title: "Load Order Exported",
       message: filepath,
-      displayMS: 3000
+      displayMS: 3000,
     });
-
   } catch (err) {
-    api.showErrorNotification('Failed to write load order', err, {
+    api.showErrorNotification("Failed to write load order", err, {
       allowReport: false,
-      message: 'Please run the game at least once and create a profile in-game',
+      message: "Please run the game at least once and create a profile in-game",
     });
-  }  
-
+  }
 }
 
 export async function exportToFile(api: types.IExtensionApi): Promise<boolean | void> {
-
-  let selectedPath:string;
+  let selectedPath: string;
 
   // an older version of Vortex might not have the updated api.saveFile function so will fallback
   // to the previous hack job of selectFile but actually writes
-  
-  if(api.saveFile !== undefined) {
 
+  if (api.saveFile !== undefined) {
     const options: ISaveOptions = {
-      title: api.translate('Please choose a BG3 .lsx file to export to'),
-      filters: [{ name: 'BG3 Load Order', extensions: ['lsx'] }],      
+      title: api.translate("Please choose a BG3 .lsx file to export to"),
+      filters: [{ name: "BG3 Load Order", extensions: ["lsx"] }],
     };
 
-    selectedPath = await api.saveFile(options);    
-
+    selectedPath = await api.saveFile(options);
   } else {
-
     const options: IOpenOptions = {
-      title: api.translate('Please choose a BG3 .lsx file to export to'),
-      filters: [{ name: 'BG3 Load Order', extensions: ['lsx'] }],
-      create: true
+      title: api.translate("Please choose a BG3 .lsx file to export to"),
+      filters: [{ name: "BG3 Load Order", extensions: ["lsx"] }],
+      create: true,
     };
 
     selectedPath = await api.selectFile(options);
@@ -561,16 +600,14 @@ export async function exportToFile(api: types.IExtensionApi): Promise<boolean | 
   logDebug(`exportToFile ${selectedPath}`);
 
   // if no path selected, then cancel probably pressed
-  if(selectedPath === undefined)
-    return;
+  if (selectedPath === undefined) return;
 
   exportTo(api, selectedPath);
 }
-  
-export async function exportToGame(api: types.IExtensionApi): Promise<boolean | void> {
 
+export async function exportToGame(api: types.IExtensionApi): Promise<boolean | void> {
   const bg3ProfileId = await getActivePlayerProfile(api);
-  const settingsPath: string = path.join(profilesPath(), bg3ProfileId, 'modsettings.lsx');
+  const settingsPath: string = path.join(profilesPath(), bg3ProfileId, "modsettings.lsx");
 
   logDebug(`exportToGame ${settingsPath}`);
 
@@ -578,56 +615,61 @@ export async function exportToGame(api: types.IExtensionApi): Promise<boolean | 
 }
 
 export async function deepRefresh(api: types.IExtensionApi): Promise<boolean | void> {
-
   const state = api.getState();
   const profileId = selectors.activeProfile(state)?.id;
 
   // get load order from state
-  const loadOrder:types.LoadOrder = util.getSafe(api.getState(), ['persistent', 'loadOrder', profileId], []);
+  const loadOrder: types.LoadOrder = util.getSafe(
+    api.getState(),
+    ["persistent", "loadOrder", profileId],
+    [],
+  );
 
-  logDebug('deepRefresh', loadOrder);
+  logDebug("deepRefresh", loadOrder);
 }
 
 async function readModSettings(api: types.IExtensionApi): Promise<IModSettings> {
   const bg3ProfileId = await getActivePlayerProfile(api);
-  const settingsPath: string = path.join(profilesPath(), bg3ProfileId, 'modsettings.lsx');
-  const dat = await fs.readFileAsync(settingsPath, { encoding: 'utf8' });
-  logDebug('readModSettings', dat);
+  const settingsPath: string = path.join(profilesPath(), bg3ProfileId, "modsettings.lsx");
+  const dat = await fs.readFileAsync(settingsPath, { encoding: "utf8" });
+  logDebug("readModSettings", dat);
   return parseStringPromise(dat);
 }
 
 async function readLsxFile(lsxPath: string): Promise<IModSettings> {
-  
   //const settingsPath = path.join(profilesPath(), 'Public', 'modsettings.lsx');
   const dat = await fs.readFileAsync(lsxPath);
-  logDebug('lsxPath', dat);
+  logDebug("lsxPath", dat);
   return parseStringPromise(dat);
 }
 
-async function writeModSettings(api: types.IExtensionApi, data: IModSettings, filepath: string): Promise<void> {
+async function writeModSettings(
+  api: types.IExtensionApi,
+  data: IModSettings,
+  filepath: string,
+): Promise<void> {
   const format = await getDefaultModSettingsFormat(api);
-  const builder = (['v7', 'v8'].includes(format))
-    ? new Builder({ renderOpts: { pretty: true, indent: '    ' }})
+  const builder = ["v7", "v8"].includes(format)
+    ? new Builder({ renderOpts: { pretty: true, indent: "    " } })
     : new Builder();
   const xml = builder.buildObject(data);
   try {
     await fs.ensureDirWritableAsync(path.dirname(filepath));
     await fs.writeFileAsync(filepath, xml);
   } catch (err) {
-    api.showErrorNotification('Failed to write mod settings', err);
+    api.showErrorNotification("Failed to write mod settings", err);
     return;
   }
 }
 
-export async function validate(prev: types.LoadOrder,
-                               current: types.LoadOrder): Promise<any> {
+export async function validate(prev: types.LoadOrder, current: types.LoadOrder): Promise<any> {
   // Nothing to validate really - the game does not read our load order file
   //  and we don't want to apply any restrictions either, so we just
   //  return.
   return undefined;
 }
 
-async function readPAKs(api: types.IExtensionApi) : Promise<Array<ICacheEntry>> {
+async function readPAKs(api: types.IExtensionApi): Promise<Array<ICacheEntry>> {
   const state = api.getState();
   const lsLib = getLatestLSLibMod(api);
   if (lsLib === undefined) {
@@ -638,17 +680,19 @@ async function readPAKs(api: types.IExtensionApi) : Promise<Array<ICacheEntry>> 
   // quarantine), bail with a single notification rather than fanning out one
   // failed call per pak through the retry-on-error concurrency limiter.
   const stagingFolder = selectors.installPathForGame(state, GAME_ID);
-  const divineExePath = path.join(stagingFolder, lsLib.installationPath, 'tools', 'divine.exe');
+  const divineExePath = path.join(stagingFolder, lsLib.installationPath, "tools", "divine.exe");
   try {
     await fs.statAsync(divineExePath);
   } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
-      api.showErrorNotification('Divine executable is missing',
-        'The installed copy of LSLib/Divine is corrupted - please '
-        + 'delete the existing LSLib mod entry and re-install it. Make sure to '
-        + 'disable or add any necessary exceptions to your security software to '
-        + 'ensure it does not interfere with Vortex/LSLib file operations.',
-        { id: 'bg3-divine-missing', allowReport: false });
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+      api.showErrorNotification(
+        "Divine executable is missing",
+        "The installed copy of LSLib/Divine is corrupted - please " +
+          "delete the existing LSLib mod entry and re-install it. Make sure to " +
+          "disable or add any necessary exceptions to your security software to " +
+          "ensure it does not interfere with Vortex/LSLib file operations.",
+        { id: "bg3-divine-missing", allowReport: false },
+      );
       return [];
     }
     throw err;
@@ -660,65 +704,75 @@ async function readPAKs(api: types.IExtensionApi) : Promise<Array<ICacheEntry>> 
 
   let manifest;
   try {
-    manifest = await util.getManifest(api, '', GAME_ID);
+    manifest = await util.getManifest(api, "", GAME_ID);
   } catch (err) {
-    const allowReport = !['EPERM'].includes(err.code);
-    api.showErrorNotification('Failed to read deployment manifest', err, { allowReport });
+    const allowReport = !["EPERM"].includes(err.code);
+    api.showErrorNotification("Failed to read deployment manifest", err, { allowReport });
     return [];
   }
   api.sendNotification({
-    type: 'activity',
-    id: 'bg3-reading-paks-activity',
-    message: 'Reading PAK files. This might take a while...',
-  })
+    type: "activity",
+    id: "bg3-reading-paks-activity",
+    message: "Reading PAK files. This might take a while...",
+  });
   const cache: PakInfoCache = PakInfoCache.getInstance(api);
-  const res = await Promise.all(paks.map(async (fileName, idx) => {
-    return util.withErrorContext('reading pak', fileName, () => {
-      const func = async () => {
-        try {
-          const manifestEntry = manifest.files.find(entry => entry.relPath === fileName);
-          const mod = (manifestEntry !== undefined)
-            ? state.persistent.mods[GAME_ID]?.[manifestEntry.source]
-            : undefined;
+  const res = await Promise.all(
+    paks.map(async (fileName, idx) => {
+      return util.withErrorContext("reading pak", fileName, () => {
+        const func = async () => {
+          try {
+            const manifestEntry = manifest.files.find((entry) => entry.relPath === fileName);
+            const mod =
+              manifestEntry !== undefined
+                ? state.persistent.mods[GAME_ID]?.[manifestEntry.source]
+                : undefined;
 
-          const pakPath = path.join(modsPath(), fileName);
-          // `return await` (not bare `return`) so this try/catch sees the
-          // promise rejection — without await, the catch is dead code.
-          return await cache.getCacheEntry(api, pakPath, mod);
-        } catch (err) {
-          // Game switched (or similar) while we were reading paks — bail out
-          // without notifying the user; the new game context will re-scan.
-          if (err instanceof DivineAborted) {
+            const pakPath = path.join(modsPath(), fileName);
+            // `return await` (not bare `return`) so this try/catch sees the
+            // promise rejection — without await, the catch is dead code.
+            return await cache.getCacheEntry(api, pakPath, mod);
+          } catch (err) {
+            // Game switched (or similar) while we were reading paks — bail out
+            // without notifying the user; the new game context will re-scan.
+            if (err instanceof DivineAborted) {
+              return undefined;
+            }
+            // The pak itself is malformed — common with third-party mods and
+            // not actionable by the user. Log it and move on rather than
+            // spamming a notification per bad pak.
+            if (err instanceof DivinePakInvalid) {
+              log("warn", "pak is invalid", { fileName, details: err.details });
+              return undefined;
+            }
+            if (err instanceof DivineExecMissing) {
+              const message =
+                "The installed copy of LSLib/Divine is corrupted - please " +
+                "delete the existing LSLib mod entry and re-install it. Make sure to " +
+                "disable or add any necessary exceptions to your security software to " +
+                "ensure it does not interfere with Vortex/LSLib file operations.";
+              // Stable id so parallel pak failures collapse into one notification.
+              api.showErrorNotification("Divine executable is missing", message, {
+                id: "bg3-divine-missing",
+                allowReport: false,
+              });
+              return undefined;
+            }
+            api.showErrorNotification(
+              'Failed to read pak. Please make sure you are using the latest version of LSLib by using the "Re-install LSLib/Divine" toolbar button on the Mods page.',
+              err,
+              {
+                allowReport: false,
+                message: fileName,
+              },
+            );
             return undefined;
           }
-          // The pak itself is malformed — common with third-party mods and
-          // not actionable by the user. Log it and move on rather than
-          // spamming a notification per bad pak.
-          if (err instanceof DivinePakInvalid) {
-            log('warn', 'pak is invalid', { fileName, details: err.details });
-            return undefined;
-          }
-          if (err instanceof DivineExecMissing) {
-            const message = 'The installed copy of LSLib/Divine is corrupted - please '
-              + 'delete the existing LSLib mod entry and re-install it. Make sure to '
-              + 'disable or add any necessary exceptions to your security software to '
-              + 'ensure it does not interfere with Vortex/LSLib file operations.';
-            // Stable id so parallel pak failures collapse into one notification.
-            api.showErrorNotification('Divine executable is missing', message,
-              { id: 'bg3-divine-missing', allowReport: false });
-            return undefined;
-          }
-          api.showErrorNotification('Failed to read pak. Please make sure you are using the latest version of LSLib by using the "Re-install LSLib/Divine" toolbar button on the Mods page.', err, {
-            allowReport: false,
-            message: fileName,
-          });
-          return undefined;
-        }
-      };
-      return Bluebird.resolve(func());
-    });
-  }));
-  api.dismissNotification('bg3-reading-paks-activity');
+        };
+        return Bluebird.resolve(func());
+      });
+    }),
+  );
+  api.dismissNotification("bg3-reading-paks-activity");
 
   return res.filter((iter): iter is ICacheEntry => iter !== undefined);
 }
@@ -726,18 +780,19 @@ async function readPAKs(api: types.IExtensionApi) : Promise<Array<ICacheEntry>> 
 async function readPAKList(api: types.IExtensionApi) {
   let paks: string[];
   try {
-    paks = (await fs.readdirAsync(modsPath()))
-      .filter(fileName => path.extname(fileName).toLowerCase() === '.pak');
+    paks = (await fs.readdirAsync(modsPath())).filter(
+      (fileName) => path.extname(fileName).toLowerCase() === ".pak",
+    );
   } catch (err) {
-    if (err.code === 'ENOENT') {
+    if (err.code === "ENOENT") {
       try {
         await fs.ensureDirWritableAsync(modsPath(), () => Promise.resolve());
       } catch (err) {
         // nop
       }
     } else {
-      api.showErrorNotification('Failed to read mods directory', err, {
-        id: 'bg3-failed-read-mods',
+      api.showErrorNotification("Failed to read mods directory", err, {
+        id: "bg3-failed-read-mods",
         message: modsPath(),
       });
     }
@@ -751,26 +806,26 @@ function getLatestLSLibMod(api: types.IExtensionApi) {
   const state = api.getState();
   const mods: { [modId: string]: types.IMod } = state.persistent.mods[GAME_ID];
   if (mods === undefined) {
-    log('warn', 'LSLib is not installed');
+    log("warn", "LSLib is not installed");
     return undefined;
   }
   const lsLib: types.IMod = Object.keys(mods).reduce((prev: types.IMod, id: string) => {
-    if (mods[id].type === 'bg3-lslib-divine-tool') {
-      const latestVer = util.getSafe(prev, ['attributes', 'version'], '0.0.0');
-      const currentVer = util.getSafe(mods[id], ['attributes', 'version'], '0.0.0');
+    if (mods[id].type === "bg3-lslib-divine-tool") {
+      const latestVer = util.getSafe(prev, ["attributes", "version"], "0.0.0");
+      const currentVer = util.getSafe(mods[id], ["attributes", "version"], "0.0.0");
       try {
         if (semver.gt(currentVer, latestVer)) {
           prev = mods[id];
         }
       } catch (err) {
-        log('warn', 'invalid mod version', { modId: id, version: currentVer });
+        log("warn", "invalid mod version", { modId: id, version: currentVer });
       }
     }
     return prev;
   }, undefined);
 
   if (lsLib === undefined) {
-    log('warn', 'LSLib is not installed');
+    log("warn", "LSLib is not installed");
     return undefined;
   }
 
@@ -780,33 +835,39 @@ function getLatestLSLibMod(api: types.IExtensionApi) {
 export function genProps(context: types.IExtensionContext, profileId?: string): IProps {
   const api = context.api;
   const state = api.getState();
-  const profile: types.IProfile = (profileId !== undefined)
-    ? selectors.profileById(state, profileId)
-    : selectors.activeProfile(state);
+  const profile: types.IProfile =
+    profileId !== undefined
+      ? selectors.profileById(state, profileId)
+      : selectors.activeProfile(state);
 
   if (profile?.gameId !== GAME_ID) {
     return undefined;
   }
 
-  const discovery: types.IDiscoveryResult = util.getSafe(state,
-    ['settings', 'gameMode', 'discovered', GAME_ID], undefined);
+  const discovery: types.IDiscoveryResult = util.getSafe(
+    state,
+    ["settings", "gameMode", "discovered", GAME_ID],
+    undefined,
+  );
   if (discovery?.path === undefined) {
     return undefined;
   }
 
-  const mods = util.getSafe(state, ['persistent', 'mods', GAME_ID], {});
+  const mods = util.getSafe(state, ["persistent", "mods", GAME_ID], {});
   return { api, state, profile, mods, discovery };
 }
 
-export async function ensureLOFile(context: types.IExtensionContext,
-                                   profileId?: string,
-                                   props?: IProps): Promise<string> {
+export async function ensureLOFile(
+  context: types.IExtensionContext,
+  profileId?: string,
+  props?: IProps,
+): Promise<string> {
   if (props === undefined) {
     props = genProps(context, profileId);
   }
 
   if (props === undefined) {
-    return Promise.reject(new util.ProcessCanceled('failed to generate game props'));
+    return Promise.reject(new util.ProcessCanceled("failed to generate game props"));
   }
 
   const targetPath = loadOrderFilePath(props.profile.id);
@@ -814,17 +875,15 @@ export async function ensureLOFile(context: types.IExtensionContext,
     try {
       await fs.statAsync(targetPath);
     } catch (err) {
-      await fs.writeFileAsync(targetPath, JSON.stringify([]), { encoding: 'utf8' });
+      await fs.writeFileAsync(targetPath, JSON.stringify([]), { encoding: "utf8" });
     }
   } catch (err) {
     return Promise.reject(err);
-  }    
-  
-  
+  }
+
   return targetPath;
 }
 
 export function loadOrderFilePath(profileId: string): string {
-  return path.join(util.getVortexPath('userData'), GAME_ID, profileId + '_' + LO_FILE_NAME);
+  return path.join(util.getVortexPath("userData"), GAME_ID, profileId + "_" + LO_FILE_NAME);
 }
-

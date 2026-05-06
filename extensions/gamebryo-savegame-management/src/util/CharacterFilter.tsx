@@ -1,9 +1,9 @@
-import { ISavegame } from "../types/ISavegame";
-
 import * as React from "react";
 import { connect } from "react-redux";
 import Select from "react-select";
 import { types } from "vortex-api";
+
+import { ISavegame } from "../types/ISavegame";
 
 type SGListCB = () => { [saveId: string]: ISavegame };
 
@@ -24,9 +24,7 @@ export class CharacterFilterComponent extends React.Component<IProps, {}> {
     const savegames = getSGList();
 
     const characters = new Set(
-      Object.keys(savegames).map(
-        (saveId) => (savegames[saveId].attributes as any).name as string,
-      ),
+      Object.keys(savegames).map((saveId) => (savegames[saveId].attributes as any).name as string),
     );
 
     const options = Array.from(characters).map((name) => ({

@@ -2,13 +2,8 @@
 // Everything in here is compile-time only, meaning the interfaces you find here
 // are never used to create an object. They are only used for type inferrence.
 
-import type {
-  DownloadCheckpoint,
-  DownloadProgress,
-  DownloadStatus,
-} from "./download";
-import type { DownloadErrorPayload } from "./errors";
 import type { SerializedSpan } from "../telemetry/types";
+import type { DownloadCheckpoint, DownloadProgress, DownloadStatus } from "./download";
 import type {
   BrowserViewConstructorOptions,
   Cookie,
@@ -25,6 +20,7 @@ import type {
   TraceConfig,
   TraceCategoriesAndOptions,
 } from "./electron";
+import type { DownloadErrorPayload } from "./errors";
 import type { Level } from "./logging";
 import type { PersistedHive, PersistedState } from "./state";
 
@@ -233,27 +229,15 @@ export interface InvokeChannels {
   // Updater: Query current update status from main process
   "updater:get-status": () => Promise<UpdateStatus>;
   // Dialog channels
-  "dialog:showOpen": (
-    options: OpenDialogOptions,
-  ) => Promise<OpenDialogReturnValue>;
-  "dialog:showSave": (
-    options: SaveDialogOptions,
-  ) => Promise<SaveDialogReturnValue>;
-  "dialog:showMessageBox": (
-    options: MessageBoxOptions,
-  ) => Promise<MessageBoxReturnValue>;
+  "dialog:showOpen": (options: OpenDialogOptions) => Promise<OpenDialogReturnValue>;
+  "dialog:showSave": (options: SaveDialogOptions) => Promise<SaveDialogReturnValue>;
+  "dialog:showMessageBox": (options: MessageBoxOptions) => Promise<MessageBoxReturnValue>;
   "dialog:showErrorBox": (title: string, content: string) => Promise<void>;
 
   // App protocol client channels
   "app:setProtocolClient": (protocol: string, udPath: string) => Promise<void>;
-  "app:isProtocolClient": (
-    protocol: string,
-    udPath: string,
-  ) => Promise<boolean>;
-  "app:removeProtocolClient": (
-    protocol: string,
-    udPath: string,
-  ) => Promise<void>;
+  "app:isProtocolClient": (protocol: string, udPath: string) => Promise<boolean>;
+  "app:removeProtocolClient": (protocol: string, udPath: string) => Promise<void>;
   "app:exit": (exitCode?: number) => Promise<void>;
   "app:getName": () => Promise<string>;
   "app:getInitMetadata": () => Promise<AppInitMetadata>;
@@ -266,11 +250,7 @@ export interface InvokeChannels {
   "app:extractFileIcon": (exePath: string, iconPath: string) => Promise<void>;
 
   // BrowserView channels
-  "browserView:create": (
-    src: string,
-    partition: string,
-    isNexus: boolean,
-  ) => Promise<string>;
+  "browserView:create": (src: string, partition: string, isNexus: boolean) => Promise<string>;
   "browserView:createWithEvents": (
     src: string,
     forwardEvents: string[],
@@ -345,17 +325,9 @@ export interface InvokeChannels {
 
   // Additional window operations
   "window:getPosition": (windowId: number) => Promise<[number, number]>;
-  "window:setPosition": (
-    windowId: number,
-    x: number,
-    y: number,
-  ) => Promise<void>;
+  "window:setPosition": (windowId: number, x: number, y: number) => Promise<void>;
   "window:getSize": (windowId: number) => Promise<[number, number]>;
-  "window:setSize": (
-    windowId: number,
-    width: number,
-    height: number,
-  ) => Promise<void>;
+  "window:setSize": (windowId: number, width: number, height: number) => Promise<void>;
   "window:isVisible": (windowId: number) => Promise<boolean>;
   "window:toggleDevTools": (windowId: number) => Promise<void>;
 
@@ -368,17 +340,12 @@ export interface InvokeChannels {
   "styles:compile": (filePaths: string[]) => Promise<string>;
 
   // Download channels
-  "download:start": (
-    dest: string,
-    collationId: number,
-  ) => Promise<{ downloadId: string }>;
+  "download:start": (dest: string, collationId: number) => Promise<{ downloadId: string }>;
   "download:pause": (downloadId: string) => Promise<WireDownloadCheckpoint>;
   "download:resume": (checkpoint: WireDownloadCheckpoint) => Promise<void>;
   "download:cancel": (downloadId: string) => Promise<void>;
   "download:getState": (downloadId: string) => Promise<WireDownloadState>;
-  "download:getStates": (
-    downloadIds: string[],
-  ) => Promise<Record<string, WireDownloadState>>;
+  "download:getStates": (downloadIds: string[]) => Promise<Record<string, WireDownloadState>>;
 
   // Adaptor host — renderer queries adaptor services through these
   "adaptors:list": () => Promise<
@@ -400,10 +367,7 @@ export interface InvokeChannels {
    * renderer uses this instead of constructing path bases itself so the
    * adaptor can be handed a fully-resolved {@link StorePathProvider}.
    */
-  "adaptors:build-snapshot": (
-    store: string,
-    gamePath: string,
-  ) => Promise<Serializable>;
+  "adaptors:build-snapshot": (store: string, gamePath: string) => Promise<Serializable>;
 
   /**
    * Executes a declarative version detection strategy on the main

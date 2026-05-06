@@ -27,9 +27,8 @@ export const ModalDemo = () => {
         </Typography>
 
         <Typography appearance="subdued">
-          Dialog component built on Headless UI. Use Modal for the common case,
-          or ModalWrapper and ModalPanel separately for custom layouts. Closes
-          on overlay click and Escape key.
+          Dialog component built on Headless UI. Use Modal for the common case, or ModalWrapper and
+          ModalPanel separately for custom layouts. Closes on overlay click and Escape key.
         </Typography>
       </div>
 
@@ -44,14 +43,10 @@ export const ModalDemo = () => {
           </Button>
         </div>
 
-        <Modal
-          isOpen={basicOpen}
-          title="Basic Modal"
-          onClose={() => setBasicOpen(false)}
-        >
+        <Modal isOpen={basicOpen} title="Basic Modal" onClose={() => setBasicOpen(false)}>
           <Typography appearance="moderate">
-            This is a basic modal with a title and close button. Click the
-            overlay or press Escape to close.
+            This is a basic modal with a title and close button. Click the overlay or press Escape
+            to close.
           </Typography>
 
           <div className="mt-4 flex justify-end gap-2">
@@ -89,9 +84,7 @@ export const ModalDemo = () => {
           title="Small Modal"
           onClose={() => setSizeSmOpen(false)}
         >
-          <Typography appearance="moderate">
-            A small modal for simple confirmations.
-          </Typography>
+          <Typography appearance="moderate">A small modal for simple confirmations.</Typography>
 
           <div className="mt-4 flex justify-end">
             <Button onClick={() => setSizeSmOpen(false)}>OK</Button>
@@ -105,8 +98,8 @@ export const ModalDemo = () => {
           onClose={() => setSizeLgOpen(false)}
         >
           <Typography appearance="moderate">
-            A large modal for more detailed content. This gives more space for
-            forms, lists, or other complex layouts.
+            A large modal for more detailed content. This gives more space for forms, lists, or
+            other complex layouts.
           </Typography>
 
           <div className="mt-4 flex justify-end gap-2">
@@ -125,8 +118,7 @@ export const ModalDemo = () => {
           onClose={() => setSizeXlOpen(false)}
         >
           <Typography appearance="moderate">
-            An extra large modal for content-heavy views like detail pages or
-            multi-column layouts.
+            An extra large modal for content-heavy views like detail pages or multi-column layouts.
           </Typography>
 
           <div className="mt-4 flex justify-end gap-2">
@@ -143,8 +135,7 @@ export const ModalDemo = () => {
         </Typography>
 
         <Typography appearance="subdued" typographyType="body-sm">
-          Modal without the close button. Can still be closed via overlay click
-          or Escape.
+          Modal without the close button. Can still be closed via overlay click or Escape.
         </Typography>
 
         <div className="flex flex-wrap gap-4">
@@ -160,8 +151,8 @@ export const ModalDemo = () => {
           onClose={() => setNoCloseOpen(false)}
         >
           <Typography appearance="moderate">
-            This modal has no close button in the corner. Use the button below
-            or click the overlay to dismiss.
+            This modal has no close button in the corner. Use the button below or click the overlay
+            to dismiss.
           </Typography>
 
           <div className="mt-4 flex justify-end">
@@ -176,8 +167,7 @@ export const ModalDemo = () => {
         </Typography>
 
         <Typography appearance="subdued" typographyType="body-sm">
-          Pass an initialFocusRef to control which element receives focus when
-          the modal opens.
+          Pass an initialFocusRef to control which element receives focus when the modal opens.
         </Typography>
 
         <div className="flex flex-wrap gap-4">
@@ -193,8 +183,7 @@ export const ModalDemo = () => {
           onClose={() => setFocusOpen(false)}
         >
           <Typography appearance="moderate">
-            The &quot;Focused Button&quot; below should receive focus when the
-            modal opens.
+            The &quot;Focused Button&quot; below should receive focus when the modal opens.
           </Typography>
 
           <div className="mt-4 flex justify-end gap-2">
@@ -215,8 +204,7 @@ export const ModalDemo = () => {
         </Typography>
 
         <Typography appearance="subdued" typographyType="body-sm">
-          Use ModalWrapper and ModalPanel separately for custom layouts or
-          multiple panels.
+          Use ModalWrapper and ModalPanel separately for custom layouts or multiple panels.
         </Typography>
 
         <div className="flex flex-wrap gap-4">
@@ -225,25 +213,15 @@ export const ModalDemo = () => {
           </Button>
         </div>
 
-        <ModalWrapper
-          isOpen={customOpen}
-          size="lg"
-          onClose={() => setCustomOpen(false)}
-        >
-          <ModalPanel
-            title="Custom Layout"
-            onClose={() => setCustomOpen(false)}
-          >
+        <ModalWrapper isOpen={customOpen} size="lg" onClose={() => setCustomOpen(false)}>
+          <ModalPanel title="Custom Layout" onClose={() => setCustomOpen(false)}>
             <Typography appearance="moderate">
-              This uses ModalWrapper and ModalPanel separately, allowing full
-              control over the layout between the overlay and the panel content.
+              This uses ModalWrapper and ModalPanel separately, allowing full control over the
+              layout between the overlay and the panel content.
             </Typography>
 
             <div className="mt-4 flex justify-end gap-2">
-              <Button
-                buttonType="secondary"
-                onClick={() => setCustomOpen(false)}
-              >
+              <Button buttonType="secondary" onClick={() => setCustomOpen(false)}>
                 Close
               </Button>
             </div>

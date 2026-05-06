@@ -1,11 +1,12 @@
-import { ICollection, ICollectionTool } from "./types/ICollection";
-import { IExtendedInterfaceProps } from "./types/IExtendedInterfaceProps";
-import ToolList from "./views/Tools";
-
 import * as path from "path";
+
 import * as React from "react";
 import { generate as shortid } from "shortid";
 import { actions, fs, log, selectors, types, util } from "vortex-api";
+
+import { ICollection, ICollectionTool } from "./types/ICollection";
+import { IExtendedInterfaceProps } from "./types/IExtendedInterfaceProps";
+import ToolList from "./views/Tools";
 
 function ToolsListWrap(prop: IExtendedInterfaceProps): JSX.Element {
   return React.createElement(ToolList, {
@@ -44,17 +45,9 @@ function convertTools(
     });
 }
 
-function generateTools(
-  api: types.IExtensionApi,
-  gameId: string,
-  mod: types.IMod,
-) {
+function generateTools(api: types.IExtensionApi, gameId: string, mod: types.IMod) {
   return {
-    tools: convertTools(
-      api.getState(),
-      gameId,
-      mod.attributes?.collection?.includedTools,
-    ),
+    tools: convertTools(api.getState(), gameId, mod.attributes?.collection?.includedTools),
   };
 }
 
@@ -89,9 +82,7 @@ function isSameTool(
     return false;
   }
 
-  const samePath =
-    normalizePath(lhs.path) ===
-    normalizePath(path.resolve(discovery.path, rhs.exe));
+  const samePath = normalizePath(lhs.path) === normalizePath(path.resolve(discovery.path, rhs.exe));
   const sameName = lhs.name === rhs.name;
 
   if (samePath) {
@@ -131,14 +122,8 @@ async function cloneTools(
     })
     .filter((iter) => iter !== undefined);
 
-  const attributes = util.setSafe(
-    to.attributes.collection,
-    ["includedTools"],
-    includedTools,
-  );
-  api.store.dispatch(
-    actions.setModAttribute(gameId, to.id, "collection", attributes),
-  );
+  const attributes = util.setSafe(to.attributes.collection, ["includedTools"], includedTools);
+  api.store.dispatch(actions.setModAttribute(gameId, to.id, "collection", attributes));
 }
 
 async function setUpTools(
@@ -157,9 +142,8 @@ async function setUpTools(
     .map((tool) => updatePaths(tool, discovery.path))
     .filter(
       (tool) =>
-        Object.values(knownTools ?? {}).find((iter) =>
-          isSameTool(discovery, iter, tool),
-        ) === undefined,
+        Object.values(knownTools ?? {}).find((iter) => isSameTool(discovery, iter, tool)) ===
+        undefined,
     );
 
   const addActions = addTools.map((tool) => {
@@ -203,9 +187,7 @@ async function setUpTools(
 
       if (path.extname(tool.exe) === ".exe") {
         const iconPath = util.StarterInfo.toolIconRW(gameId, tool.id);
-        await fs.ensureDirWritableAsync(path.dirname(iconPath), () =>
-          Promise.resolve(),
-        );
+        await fs.ensureDirWritableAsync(path.dirname(iconPath), () => Promise.resolve());
         try {
           await util["extractExeIcon"](tool.exe, iconPath);
         } catch (err) {
@@ -253,12 +235,8 @@ function init(context: types.IExtensionContext) {
       generateTools(context.api, gameId, mod),
     (gameId: string, collection: ICollection, mod: types.IMod) =>
       setUpTools(context.api, gameId, collection["tools"]),
-    (
-      gameId: string,
-      collection: ICollection,
-      from: types.IMod,
-      to: types.IMod,
-    ) => cloneTools(context.api, gameId, collection["tools"], from, to),
+    (gameId: string, collection: ICollection, from: types.IMod, to: types.IMod) =>
+      cloneTools(context.api, gameId, collection["tools"], from, to),
     () => "Tools",
     (state: types.IState, gameId: string) => true,
     ToolsListWrap,

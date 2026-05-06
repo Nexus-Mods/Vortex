@@ -1,27 +1,23 @@
-import type { IParameters, ISetItem } from "@vortex/shared/cli";
-import type { AppInitMetadata } from "@vortex/shared/ipc";
-import type { IWindow } from "@vortex/shared/state";
+import { mkdirSync, statSync } from "node:fs";
+import { readFile, writeFile, rm, stat } from "node:fs/promises";
+import path from "node:path";
 
-import {
-  getErrorCode,
-  getErrorMessageOrDefault,
-  unknownToError,
-} from "@vortex/shared";
+import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import type { IParameters, ISetItem } from "@vortex/shared/cli";
 import {
   DataInvalid,
   DocumentsPathMissing,
   ProcessCanceled,
   UserCanceled,
 } from "@vortex/shared/errors";
+import type { AppInitMetadata } from "@vortex/shared/ipc";
+import type { IWindow } from "@vortex/shared/state";
 import { currentStatePath } from "@vortex/shared/state";
 import crashDump from "crash-dump";
 import { app, dialog, ipcMain, protocol, shell } from "electron";
 import contextMenu from "electron-context-menu";
 import isAdmin from "is-admin";
 import * as _ from "lodash";
-import { mkdirSync, statSync } from "node:fs";
-import { readFile, writeFile, rm, stat } from "node:fs/promises";
-import path from "node:path";
 import permissions from "permissions";
 import * as semver from "semver";
 import uuidpkg from "uuid";
@@ -86,11 +82,7 @@ class Application {
 
     // this error message appears to happen as the result of some other problem crashing the
     // renderer process, so all this may do is obfuscate what's actually going on.
-    if (
-      err.message.includes(
-        "Error processing argument at index 0, conversion failure from",
-      )
-    ) {
+    if (err.message.includes("Error processing argument at index 0, conversion failure from")) {
       return true;
     }
 
@@ -136,10 +128,7 @@ class Application {
     setupMainExtensions();
 
     ipcMain.on("show-window", () => this.showMainWindow(args?.startMinimized));
-    app.commandLine.appendSwitch(
-      "js-flags",
-      `--max-old-space-size=${args.maxMemory || 4096}`,
-    );
+    app.commandLine.appendSwitch("js-flags", `--max-old-space-size=${args.maxMemory || 4096}`);
 
     this.mBasePath = app.getPath("userData");
     mkdirSync(this.mBasePath, { recursive: true });
@@ -163,8 +152,7 @@ class Application {
     );
 
     const enableLogging =
-      process.env.NODE_ENV === "development" ||
-      process.env.VORTEX_ENABLE_LOGGING === "1";
+      process.env.NODE_ENV === "development" || process.env.VORTEX_ENABLE_LOGGING === "1";
     setupLogging(app.getPath("userData"), enableLogging);
     this.setupAppEvents(args);
   }
@@ -176,10 +164,7 @@ class Application {
       showSaveImageAs: false,
       showInspectElement: false,
       showSearchWithGoogle: false,
-      shouldShowMenu: (
-        _event: Electron.Event,
-        params: Electron.ContextMenuParams,
-      ) => {
+      shouldShowMenu: (_event: Electron.Event, params: Electron.ContextMenuParams) => {
         // currently only offer menu on selected text
         return params.selectionText.length > 0;
       },
@@ -187,9 +172,7 @@ class Application {
   }
 
   private async initMainWindow(): Promise<void> {
-    const windowSettings = await readPersistedValue<IWindow>("settings", [
-      "window",
-    ]);
+    const windowSettings = await readPersistedValue<IWindow>("settings", ["window"]);
 
     this.mMainWindow = new MainWindow(this.mArgs.inspector, windowSettings);
     log("debug", "creating main window");
@@ -209,9 +192,7 @@ class Application {
     log("debug", "window ready");
   }
 
-  private showDialog(
-    options: Electron.MessageBoxOptions,
-  ): Promise<Electron.MessageBoxReturnValue> {
+  private showDialog(options: Electron.MessageBoxOptions): Promise<Electron.MessageBoxReturnValue> {
     const parent = this.mMainWindow?.getHandle();
     if (parent) {
       return dialog.showMessageBox(parent, options);
@@ -266,23 +247,19 @@ class Application {
 
     app.on("second-instance", (_event: Event, secondaryArgv: string[]) => {
       log("debug", "getting arguments from second instance", secondaryArgv);
-      this.applyArguments(parseCommandline(secondaryArgv, true)).catch(
-        (err: unknown) =>
-          log("error", "error applying arguments", unknownToError(err)),
+      this.applyArguments(parseCommandline(secondaryArgv, true)).catch((err: unknown) =>
+        log("error", "error applying arguments", unknownToError(err)),
       );
     });
 
     const onReady = () => {
-      const vortexPath =
-        process.env.NODE_ENV === "development" ? "vortex_devel" : "vortex";
+      const vortexPath = process.env.NODE_ENV === "development" ? "vortex_devel" : "vortex";
 
       // if userData specified, use it
       let userData =
         args.userData ??
         // (only on windows) use ProgramData from environment
-        (args.shared &&
-        process.platform === "win32" &&
-        process.env.ProgramData !== undefined
+        (args.shared && process.platform === "win32" && process.env.ProgramData !== undefined
           ? path.join(process.env.ProgramData, "vortex")
           : // this allows the development build to access data from the
             // production version and vice versa
@@ -322,16 +299,11 @@ class Application {
     app
       .whenReady()
       .then(onReady)
-      .catch((err: unknown) =>
-        log("error", "error starting application", unknownToError(err)),
-      );
+      .catch((err: unknown) => log("error", "error starting application", unknownToError(err)));
 
-    app.on(
-      "web-contents-created",
-      (_event: Electron.Event, contents: Electron.WebContents) => {
-        contents.on("will-attach-webview", this.attachWebView);
-      },
-    );
+    app.on("web-contents-created", (_event: Electron.Event, contents: Electron.WebContents) => {
+      contents.on("will-attach-webview", this.attachWebView);
+    });
 
     // Enable F12 to toggle DevTools in all builds
     app.on("browser-window-created", (_, window) => {
@@ -563,15 +535,10 @@ class Application {
       }
     };
 
-    const promptBehaviorAdmin = getSystemPolicyValue(
-      "ConsentPromptBehaviorAdmin",
-    );
+    const promptBehaviorAdmin = getSystemPolicyValue("ConsentPromptBehaviorAdmin");
 
     if (!promptBehaviorAdmin) return true;
-    return (
-      promptBehaviorAdmin.type === "REG_DWORD" &&
-      promptBehaviorAdmin.value === 1
-    );
+    return promptBehaviorAdmin.type === "REG_DWORD" && promptBehaviorAdmin.value === 1;
   }
 
   private async identifyInstallType(): Promise<void> {
@@ -596,9 +563,7 @@ class Application {
      */
 
     try {
-      await stat(
-        path.join(getVortexPath("application"), "Uninstall Vortex.exe"),
-      );
+      await stat(path.join(getVortexPath("application"), "Uninstall Vortex.exe"));
       // Collect metadata - renderer will dispatch the action
       this.mAppMetadata.installType = "regular";
     } catch {
@@ -608,9 +573,7 @@ class Application {
 
   private async warnAdmin(): Promise<void> {
     // Read warnedAdmin from persistence since we don't have the store yet
-    const warnedAdmin = await readPersistedValue<number>("app", [
-      "warnedAdmin",
-    ]);
+    const warnedAdmin = await readPersistedValue<number>("app", ["warnedAdmin"]);
 
     const timeout = new Promise<void>((resolve) => {
       setTimeout(() => {
@@ -652,9 +615,7 @@ class Application {
 
   private async migrateIfNecessary(currentVersion: string): Promise<void> {
     // Read appVersion from persistence since we don't have the store
-    const lastVersionPersisted = await readPersistedValue<string>("app", [
-      "appVersion",
-    ]);
+    const lastVersionPersisted = await readPersistedValue<string>("app", ["appVersion"]);
     const lastVersion = lastVersionPersisted || "0.0.0";
 
     if (this.mFirstStart || process.env.NODE_ENV === "development") {
@@ -685,11 +646,7 @@ class Application {
   }
 
   private splitPath(statePath: string): string[] {
-    return (
-      statePath
-        .match(/(\\.|[^.])+/g)
-        ?.map((input) => input.replace(/\\(.)/g, "$1")) ?? []
-    );
+    return statePath.match(/(\\.|[^.])+/g)?.map((input) => input.replace(/\\(.)/g, "$1")) ?? [];
   }
 
   private async handleGet(getPaths: string[], dbPath: string): Promise<void> {
@@ -699,9 +656,7 @@ class Application {
     try {
       const promises = getPaths.map(async (getPath) => {
         const pathArray = this.splitPath(getPath);
-        const matches = keys.filter((key) =>
-          _.isEqual(key.slice(0, pathArray.length), pathArray),
-        );
+        const matches = keys.filter((key) => _.isEqual(key.slice(0, pathArray.length), pathArray));
 
         try {
           const output = await Promise.all(
@@ -725,10 +680,7 @@ class Application {
     }
   }
 
-  private async handleSet(
-    setParameters: ISetItem[],
-    dbPath: string,
-  ): Promise<void> {
+  private async handleSet(setParameters: ISetItem[], dbPath: string): Promise<void> {
     const persist = await LevelPersist.create(dbPath);
 
     try {
@@ -755,9 +707,7 @@ class Application {
     try {
       const promises = delPaths.map(async (getPath) => {
         const pathArray = this.splitPath(getPath);
-        const matches = keys.filter((key) =>
-          _.isEqual(key.slice(0, pathArray.length), pathArray),
-        );
+        const matches = keys.filter((key) => _.isEqual(key.slice(0, pathArray.length), pathArray));
 
         try {
           await Promise.all(
@@ -788,14 +738,10 @@ class Application {
 
     let backupData: Record<string, unknown>;
     try {
-      backupData = JSON.parse(
-        await readFile(backupPath, "utf-8"),
-      ) as Record<string, unknown>;
+      backupData = JSON.parse(await readFile(backupPath, "utf-8")) as Record<string, unknown>;
     } catch (err) {
       log("error", "failed to parse state backup", { backupPath, error: err });
-      throw new DataInvalid(
-        `The state backup file is invalid: ${getErrorMessageOrDefault(err)}`,
-      );
+      throw new DataInvalid(`The state backup file is invalid: ${getErrorMessageOrDefault(err)}`);
     }
 
     // Wrap all operations in a single transaction to avoid concurrent
@@ -826,10 +772,7 @@ class Application {
     log("info", "state backup imported");
   }
 
-  private flattenState(
-    obj: unknown,
-    prefix: string[],
-  ): Array<{ key: string[]; value: unknown }> {
+  private flattenState(obj: unknown, prefix: string[]): Array<{ key: string[]; value: unknown }> {
     if (obj === null || obj === undefined || typeof obj !== "object") {
       return [{ key: prefix, value: obj }];
     }
@@ -938,25 +881,15 @@ class Application {
         const sharedPath = this.multiUserPath();
         const sharedStatePath = path.join(sharedPath, currentStatePath);
         try {
-          const tempPersistor = await LevelPersist.create(
-            sharedStatePath,
-            undefined,
-            false,
-          );
+          const tempPersistor = await LevelPersist.create(sharedStatePath, undefined, false);
           try {
             const sharedSub = new SubPersistor(tempPersistor, "user");
             const val = await sharedSub.getItem(["multiUser"]);
             if (!JSON.parse(val)) {
               // User toggled back to per-user while in shared mode
-              log(
-                "info",
-                "shared database has multiUser disabled, reverting to per-user",
-              );
+              log("info", "shared database has multiUser disabled, reverting to per-user");
               multiUser = false;
-              await baseSubPersistor.setItem(
-                ["multiUser"],
-                JSON.stringify(false),
-              );
+              await baseSubPersistor.setItem(["multiUser"], JSON.stringify(false));
               // Remove the stale flag from the shared DB so it doesn't
               // block future switches back to shared mode
               await sharedSub.removeItem(["multiUser"]);
@@ -999,9 +932,7 @@ class Application {
       if (multiUser && created) {
         permissions
           .allow(dataPath, "group", "rwx")
-          .catch((err) =>
-            log("error", `failed to set permissions on ${dataPath}`, err),
-          );
+          .catch((err) => log("error", `failed to set permissions on ${dataPath}`, err));
       }
       mkdirSync(path.join(dataPath, "temp"), { recursive: true });
 
@@ -1010,11 +941,7 @@ class Application {
       // 4. If multi-user or custom userData, create new LevelPersist for actual data path
       let finalPersistor = levelPersistor;
       if (multiUser || this.mArgs.userData !== undefined) {
-        log(
-          "info",
-          "all further logging will happen in",
-          path.join(dataPath, "vortex.log"),
-        );
+        log("info", "all further logging will happen in", path.join(dataPath, "vortex.log"));
         changeLogPath(dataPath);
         log("info", "--------------------------");
         log("info", "Vortex Version", app.getVersion());
@@ -1056,9 +983,7 @@ class Application {
       ]);
 
       // 7. Read instanceId from persistence for metadata
-      const instanceId = await readPersistedValue<string>("app", [
-        "instanceId",
-      ]);
+      const instanceId = await readPersistedValue<string>("app", ["instanceId"]);
       if (instanceId === undefined) {
         this.mFirstStart = true;
         const newId = uuidv4();
@@ -1126,11 +1051,7 @@ class Application {
         }
       })
       .catch((err) => {
-        log(
-          "error",
-          "failed to read window settings",
-          getErrorMessageOrDefault(err),
-        );
+        log("error", "failed to read window settings", getErrorMessageOrDefault(err));
         // Fall back to non-maximized
         this.mMainWindow?.show(false, startMinimized);
       });
@@ -1191,8 +1112,7 @@ class Application {
 
   private async validateFiles(): Promise<void> {
     const validation = await validateFiles(getVortexPath("assets_unpacked"));
-    if (validation.changed.length === 0 && validation.missing.length === 0)
-      return;
+    if (validation.changed.length === 0 && validation.missing.length === 0) return;
 
     const { response } = await dialog.showMessageBox(null, {
       type: "error",
@@ -1245,10 +1165,7 @@ class Application {
     }
 
     if (args.download || args.install) {
-      this.mMainWindow.sendExternalURL(
-        args.download || args.install,
-        args.install !== undefined,
-      );
+      this.mMainWindow.sendExternalURL(args.download || args.install, args.install !== undefined);
     }
 
     if (args.installArchive) {

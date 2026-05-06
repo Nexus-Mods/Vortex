@@ -56,11 +56,7 @@ function parseCatalog(yamlText) {
 
 /** Rewrite relative file dependencies to absolute file dependencies,
  *  and resolve workspace: dependencies to absolute file dependencies */
-function rewriteFileDependencies(
-  deps = {},
-  workspacePackageMap = {},
-  catalog = {},
-) {
+function rewriteFileDependencies(deps = {}, workspacePackageMap = {}, catalog = {}) {
   const rewritten = {};
 
   for (const [name, version] of Object.entries(deps)) {
@@ -139,9 +135,7 @@ async function buildWorkspacePackageMap(packagePaths) {
   const resolvedPaths = [];
   for (const pkgPath of packagePaths) {
     if (pkgPath.includes("*")) {
-      const matches = await Array.fromAsync(
-        glob(pkgPath, { cwd: ROOT_DIR }),
-      );
+      const matches = await Array.fromAsync(glob(pkgPath, { cwd: ROOT_DIR }));
       for (const match of matches) {
         resolvedPaths.push(match);
       }
@@ -199,11 +193,7 @@ async function createMinimalPackageJson(workspacePackageMap, catalog) {
 
   await mkdir(DIST_DIR, { recursive: true });
 
-  await writeFile(
-    DIST_PACKAGE_PATH,
-    JSON.stringify(minimal, null, 2) + "\n",
-    "utf8",
-  );
+  await writeFile(DIST_PACKAGE_PATH, JSON.stringify(minimal, null, 2) + "\n", "utf8");
 
   console.log("✔  Created dist/package.json");
 }
@@ -249,8 +239,7 @@ async function preparePNPM(rawWorkspaceYaml) {
   const catalog = extractCatalogBlock(rawWorkspaceYaml);
   const overrides = extractOverridesBlock(rawWorkspaceYaml);
 
-  const minimalYaml =
-    (overrides ? overrides + "\n" : "") + catalog + "\n" + allowBuilds + "\n";
+  const minimalYaml = (overrides ? overrides + "\n" : "") + catalog + "\n" + allowBuilds + "\n";
 
   await writeFile(resolve(DIST_DIR, "pnpm-workspace.yaml"), minimalYaml);
   console.log("✔  Created dist/pnpm-workspace.yaml");

@@ -1,9 +1,10 @@
-import { NAMESPACE } from "./globals";
+import * as path from "path";
 
 import Bluebird from "bluebird";
-import * as path from "path";
 import turbowalk, { IEntry } from "turbowalk";
 import { fs, log, selectors, types, util } from "vortex-api";
+
+import { NAMESPACE } from "./globals";
 
 interface IDeployment {
   [typeId: string]: types.IDeployedFile[];
@@ -15,11 +16,7 @@ interface ITree {
   files: { [name: string]: types.IDeployedFile };
 }
 
-function addToTree(
-  tree: ITree,
-  filePath: string,
-  entry?: types.IDeployedFile,
-): ITree {
+function addToTree(tree: ITree, filePath: string, entry?: types.IDeployedFile): ITree {
   if (entry !== undefined) {
     tree.owners.add(entry.source);
   }
@@ -74,10 +71,7 @@ function getFileList(basePath: string, tree: ITree): string[] {
   );
 }
 
-async function snapshot(
-  basePath: string,
-  deployment: ITree,
-): Promise<string[]> {
+async function snapshot(basePath: string, deployment: ITree): Promise<string[]> {
   const tree = getTree(deployment, basePath, true);
   const deploymentSet = new Set<string>(getFileList(basePath, tree));
 
@@ -89,10 +83,7 @@ async function snapshot(
         vanillaFiles = [].concat(
           vanillaFiles,
           entries
-            .filter(
-              (entry) =>
-                !entry.isDirectory && !deploymentSet.has(entry.filePath),
-            )
+            .filter((entry) => !entry.isDirectory && !deploymentSet.has(entry.filePath))
             .map((entry) => path.relative(basePath, entry.filePath)),
         );
       },
@@ -115,23 +106,15 @@ async function snapshot(
 async function saveSnapshot(filePath: string, data: any) {
   await fs.ensureDirWritableAsync(path.dirname(filePath));
   const before = Date.now();
-  await (util as any).writeFileAtomic(
-    filePath,
-    JSON.stringify(data, undefined, 2),
-  );
+  await (util as any).writeFileAtomic(filePath, JSON.stringify(data, undefined, 2));
   log("info", "file list snapshot saved", {
     filePath,
     duration: Date.now() - before,
   });
 }
 
-function compareEntries(
-  normalize: (input: string) => string,
-  before: string[],
-  after: string[],
-) {
-  const normCompare = (lhs, rhs) =>
-    normalize(lhs).localeCompare(normalize(rhs));
+function compareEntries(normalize: (input: string) => string, before: string[], after: string[]) {
+  const normCompare = (lhs, rhs) => normalize(lhs).localeCompare(normalize(rhs));
 
   // we could be using _.differenceWith here but I think we can get better performance using the
   // knowledge that the lists are already sorted
@@ -216,9 +199,7 @@ function figureOutBasePaths(tree: ITree): string[] {
     }
 
     return Object.keys(current.directories).reduce((agg, dirName) => {
-      agg.push(
-        ...getBases(current.directories[dirName], [].concat(basePath, dirName)),
-      );
+      agg.push(...getBases(current.directories[dirName], [].concat(basePath, dirName)));
       return agg;
     }, []);
   };
@@ -303,15 +284,11 @@ async function checkForFileChanges(
   const roots: Array<{ basePath: string; entries: string[] }> = [];
 
   try {
-    const oldSnapshot = JSON.parse(
-      await fs.readFileAsync(snapshotPath, { encoding: "utf-8" }),
-    );
+    const oldSnapshot = JSON.parse(await fs.readFileAsync(snapshotPath, { encoding: "utf-8" }));
 
     await Promise.all(
       basePaths.map(async (basePath) => {
-        const oldEntries = oldSnapshot.find(
-          (iter) => iter.basePath === basePath,
-        );
+        const oldEntries = oldSnapshot.find((iter) => iter.basePath === basePath);
         const entries = await snapshot(basePath, fullDeployment);
 
         if (oldEntries === undefined) {
@@ -322,11 +299,7 @@ async function checkForFileChanges(
             separators: false,
             unicode: false,
           });
-          const { added, removed } = compareEntries(
-            normalize,
-            oldEntries.entries,
-            entries,
-          );
+          const { added, removed } = compareEntries(normalize, oldEntries.entries, entries);
           const normTree = util.makeNormalizingDict(fullDeployment, normalize);
           const baseTree = getTree(normTree, basePath, true);
           if (added.length > 0) {
@@ -334,11 +307,7 @@ async function checkForFileChanges(
               "added-files",
               profileId,
               added.map((filePath) => {
-                const treeEntry = getTree(
-                  baseTree,
-                  path.dirname(filePath),
-                  false,
-                );
+                const treeEntry = getTree(baseTree, path.dirname(filePath), false);
                 return {
                   filePath: path.join(basePath, filePath),
                   candidates: Array.from(treeEntry.owners),
@@ -351,11 +320,7 @@ async function checkForFileChanges(
               "removed-files",
               profileId,
               removed.map((filePath) => {
-                const treeEntry = getTree(
-                  baseTree,
-                  path.dirname(filePath),
-                  false,
-                );
+                const treeEntry = getTree(baseTree, path.dirname(filePath), false);
                 return {
                   filePath: path.join(basePath, filePath),
                   candidates: Array.from(treeEntry.owners),
@@ -379,17 +344,9 @@ async function checkForFileChanges(
   }
 }
 
-async function doPreRemoveModCheck(
-  api: types.IExtensionApi,
-  gameId: string,
-  modIds: string[],
-) {
+async function doPreRemoveModCheck(api: types.IExtensionApi, gameId: string, modIds: string[]) {
   const state = api.store.getState();
-  const discovery = util.getSafe(
-    state,
-    ["settings", "gameMode", "discovered", gameId],
-    undefined,
-  );
+  const discovery = util.getSafe(state, ["settings", "gameMode", "discovered", gameId], undefined);
   const game = util.getGame(gameId);
   if (game === undefined || discovery?.path === undefined) {
     // How?
@@ -411,9 +368,7 @@ async function doPreRemoveModCheck(
 
   let oldSnap;
   try {
-    oldSnap = JSON.parse(
-      await fs.readFileAsync(snapshotPath, { encoding: "utf-8" }),
-    );
+    oldSnap = JSON.parse(await fs.readFileAsync(snapshotPath, { encoding: "utf-8" }));
   } catch (err) {
     if (err.code !== "ENOENT") {
       log("error", "Failed to check for added files", err.message);
@@ -465,11 +420,7 @@ function makeOnWillPurge(api: types.IExtensionApi) {
 function makeOnDidDeploy(api: types.IExtensionApi) {
   const t = api.translate;
 
-  return async (
-    profileId: string,
-    deployment: IDeployment,
-    setTitle: (title: string) => void,
-  ) => {
+  return async (profileId: string, deployment: IDeployment, setTitle: (title: string) => void) => {
     setTitle(t("Creating snapshots", { ns: NAMESPACE }));
 
     const profile = selectors.profileById(api.store.getState(), profileId);

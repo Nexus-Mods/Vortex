@@ -1,6 +1,6 @@
-import type { IMethodMessage } from "@nexusmods/adaptor-api";
-
 import { MessageChannel } from "node:worker_threads";
+
+import type { IMethodMessage } from "@nexusmods/adaptor-api";
 import { describe, it, expect } from "vitest";
 
 import { createRpcTransport } from "./transport.js";
@@ -34,9 +34,9 @@ describe("createRpcTransport", () => {
       return Promise.reject(new Error("remote failure"));
     });
 
-    await expect(
-      a.call({ uri: "test:svc", method: "fail", args: [] }),
-    ).rejects.toThrow("remote failure");
+    await expect(a.call({ uri: "test:svc", method: "fail", args: [] })).rejects.toThrow(
+      "remote failure",
+    );
 
     a.dispose();
     b.dispose();
@@ -178,17 +178,15 @@ describe("createRpcTransport", () => {
       return Promise.reject(l0);
     });
 
-    await a
-      .call({ uri: "test:svc", method: "fail", args: [] })
-      .catch((err: unknown) => {
-        const chain: string[] = [];
-        let cur: unknown = err;
-        while (cur instanceof Error) {
-          chain.push(cur.message);
-          cur = (cur as Error & { cause?: unknown }).cause;
-        }
-        expect(chain).toEqual(["l0", "l1", "l2", "l3"]);
-      });
+    await a.call({ uri: "test:svc", method: "fail", args: [] }).catch((err: unknown) => {
+      const chain: string[] = [];
+      let cur: unknown = err;
+      while (cur instanceof Error) {
+        chain.push(cur.message);
+        cur = (cur as Error & { cause?: unknown }).cause;
+      }
+      expect(chain).toEqual(["l0", "l1", "l2", "l3"]);
+    });
 
     a.dispose();
     b.dispose();
@@ -199,9 +197,10 @@ describe("createRpcTransport", () => {
 
     b.onCall(() => Promise.reject(new Error("plain")));
 
-    await expect(
-      a.call({ uri: "test:svc", method: "fail", args: [] }),
-    ).rejects.toMatchObject({ name: "Error", message: "plain" });
+    await expect(a.call({ uri: "test:svc", method: "fail", args: [] })).rejects.toMatchObject({
+      name: "Error",
+      message: "plain",
+    });
 
     a.dispose();
     b.dispose();

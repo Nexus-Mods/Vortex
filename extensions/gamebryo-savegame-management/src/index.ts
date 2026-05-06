@@ -1,3 +1,11 @@
+import * as path from "path";
+
+import Promise from "bluebird";
+import * as _ from "lodash";
+import * as Redux from "redux";
+import { actions, fs, log, selectors, types, util } from "vortex-api";
+import { IniFile } from "vortex-parse-ini";
+
 import {
   clearSavegames,
   removeSavegame,
@@ -5,6 +13,7 @@ import {
   setSavegames,
   showTransferDialog,
 } from "./actions/session";
+import { CORRUPTED_NAME } from "./constants";
 import { sessionReducer } from "./reducers/session";
 import { settingsReducer } from "./reducers/settings";
 import { ISavegame } from "./types/ISavegame";
@@ -17,19 +26,9 @@ import {
 } from "./util/gameSupport";
 import { profileSavePath } from "./util/profileSavePath";
 import { refreshSavegames } from "./util/refreshSavegames";
-import restoreSavegamePlugins, {
-  MissingPluginsError,
-} from "./util/restoreSavegamePlugins";
+import restoreSavegamePlugins, { MissingPluginsError } from "./util/restoreSavegamePlugins";
 import transferSavegames from "./util/transferSavegames";
 import SavegameList from "./views/SavegameList";
-
-import Promise from "bluebird";
-import * as _ from "lodash";
-import * as path from "path";
-import * as Redux from "redux";
-import { actions, fs, log, selectors, types, util } from "vortex-api";
-import { IniFile } from "vortex-parse-ini";
-import { CORRUPTED_NAME } from "./constants";
 
 function applySaveSettings(
   api: types.IExtensionApi,
@@ -76,10 +75,7 @@ function saveDictEqual(
   return Object.keys(lhs).find((key) => !compareDate(key)) === undefined;
 }
 
-function updateSaves(
-  store: Redux.Store<any>,
-  savesPath: string,
-): Promise<string[]> {
+function updateSaves(store: Redux.Store<any>, savesPath: string): Promise<string[]> {
   const newSavegames: ISavegame[] = [];
 
   return refreshSavegames(
@@ -91,29 +87,21 @@ function updateSaves(
     },
     true,
   )
-    .then(({ failedReads, truncated }) =>
-      Promise.resolve({ newSavegames, failedReads, truncated }),
-    )
-    .then(
-      (result: {
-        newSavegames: ISavegame[];
-        failedReads: string[];
-        truncated: boolean;
-      }) => {
-        const savesDict: { [id: string]: ISavegame } = {};
-        result.newSavegames.forEach((save: ISavegame) => {
-          savesDict[save.id] = save;
-        });
+    .then(({ failedReads, truncated }) => Promise.resolve({ newSavegames, failedReads, truncated }))
+    .then((result: { newSavegames: ISavegame[]; failedReads: string[]; truncated: boolean }) => {
+      const savesDict: { [id: string]: ISavegame } = {};
+      result.newSavegames.forEach((save: ISavegame) => {
+        savesDict[save.id] = save;
+      });
 
-        const state = store.getState();
-        const oldSaves: { [id: string]: ISavegame } = state.session.saves.saves;
+      const state = store.getState();
+      const oldSaves: { [id: string]: ISavegame } = state.session.saves.saves;
 
-        if (!saveDictEqual(oldSaves, savesDict)) {
-          store.dispatch(setSavegames(savesDict, result.truncated));
-        }
-        return Promise.resolve(result.failedReads);
-      },
-    );
+      if (!saveDictEqual(oldSaves, savesDict)) {
+        store.dispatch(setSavegames(savesDict, result.truncated));
+      }
+      return Promise.resolve(result.failedReads);
+    });
 }
 
 function genUpdateSavegameHandler(api: types.IExtensionApi) {
@@ -137,11 +125,7 @@ function genUpdateSavegameHandler(api: types.IExtensionApi) {
                 action: () => {
                   api.events.emit("show-main-page", "gamebryo-savegames");
                   api.store.dispatch(
-                    actions.setAttributeFilter(
-                      "savegames",
-                      "name",
-                      CORRUPTED_NAME,
-                    ),
+                    actions.setAttributeFilter("savegames", "name", CORRUPTED_NAME),
                   );
                 },
               },
@@ -172,11 +156,7 @@ function openSavegamesDirectory(api: types.IExtensionApi, profileId?: string) {
     profileId = selectors.activeProfile(state).id;
   }
   const profile = state.persistent.profiles[profileId];
-  const hasLocalSaves = util.getSafe(
-    profile,
-    ["features", "local_saves"],
-    false,
-  );
+  const hasLocalSaves = util.getSafe(profile, ["features", "local_saves"], false);
   const profileSavesPath = hasLocalSaves
     ? path.join(mygamesPath(profile.gameId), "Saves", profile.id)
     : path.join(mygamesPath(profile.gameId), "Saves");
@@ -217,11 +197,7 @@ function updateSavegames(api: types.IExtensionApi, update: util.Debouncer) {
   update.schedule(undefined, profile.id, savesPath);
 }
 
-function onProfileChange(
-  api: types.IExtensionApi,
-  profileId: string,
-  update: util.Debouncer,
-) {
+function onProfileChange(api: types.IExtensionApi, profileId: string, update: util.Debouncer) {
   const { store } = api;
   const state = store.getState();
 
@@ -249,16 +225,8 @@ function onProfilesModified(
     return;
   }
 
-  const localSavesBefore = util.getSafe(
-    oldProfiles,
-    [prof.id, "features", "local_saves"],
-    false,
-  );
-  const localSavesAfter = util.getSafe(
-    newProfiles,
-    [prof.id, "features", "local_saves"],
-    false,
-  );
+  const localSavesBefore = util.getSafe(oldProfiles, [prof.id, "features", "local_saves"], false);
+  const localSavesAfter = util.getSafe(newProfiles, [prof.id, "features", "local_saves"], false);
 
   if (localSavesBefore !== localSavesAfter) {
     store.dispatch(clearSavegames());
@@ -287,12 +255,9 @@ function once(context: types.IExtensionContext, update: util.Debouncer) {
     },
   );
 
-  context.api.onStateChange(
-    ["settings", "gameMode", "discovered"],
-    (previous, current) => {
-      updateSavegames(context.api, update);
-    },
-  );
+  context.api.onStateChange(["settings", "gameMode", "discovered"], (previous, current) => {
+    updateSavegames(context.api, update);
+  });
 
   context.api.onAsync(
     "apply-settings",
@@ -315,60 +280,50 @@ function once(context: types.IExtensionContext, update: util.Debouncer) {
     },
   );
 
-  context.api.onAsync(
-    "did-remove-profile",
-    (res: undefined, profile: types.IProfile) => {
-      if (
-        gameSupported(profile.gameId) &&
-        (profile.features?.["local_saves"] ?? false)
-      ) {
-        const savePath = profileSavePath(profile);
-        const savesPath = path.join(mygamesPath(profile.gameId), savePath);
-        context.api
-          .showDialog(
-            "question",
-            "Profile deleted",
-            {
-              text:
-                "The profile you just deleted had savegames associated with it. " +
-                "Do you want to remove those savegames now? If you don't, they " +
-                "will still be on disk in {{savesPath}} but they won't show up " +
-                "in the game until you move them.",
-              parameters: {
-                savesPath,
-              },
-              links: [
-                {
-                  label: "Open Directory",
-                  action: () => {
-                    util.opn(savesPath);
-                  },
-                },
-              ],
+  context.api.onAsync("did-remove-profile", (res: undefined, profile: types.IProfile) => {
+    if (gameSupported(profile.gameId) && (profile.features?.["local_saves"] ?? false)) {
+      const savePath = profileSavePath(profile);
+      const savesPath = path.join(mygamesPath(profile.gameId), savePath);
+      context.api
+        .showDialog(
+          "question",
+          "Profile deleted",
+          {
+            text:
+              "The profile you just deleted had savegames associated with it. " +
+              "Do you want to remove those savegames now? If you don't, they " +
+              "will still be on disk in {{savesPath}} but they won't show up " +
+              "in the game until you move them.",
+            parameters: {
+              savesPath,
             },
-            [{ label: "Cancel" }, { label: "Remove" }],
-          )
-          .then((result) => {
-            if (result.action === "Remove") {
-              return fs.removeAsync(savesPath).catch((err) => {
-                if (err instanceof util.UserCanceled) {
-                  return;
-                }
-                context.api.showErrorNotification(
-                  "Failed to remove savegame",
-                  err,
-                  {
-                    allowReport: false,
-                  },
-                );
+            links: [
+              {
+                label: "Open Directory",
+                action: () => {
+                  util.opn(savesPath);
+                },
+              },
+            ],
+          },
+          [{ label: "Cancel" }, { label: "Remove" }],
+        )
+        .then((result) => {
+          if (result.action === "Remove") {
+            return fs.removeAsync(savesPath).catch((err) => {
+              if (err instanceof util.UserCanceled) {
+                return;
+              }
+              context.api.showErrorNotification("Failed to remove savegame", err, {
+                allowReport: false,
               });
-            }
-          });
-      } else {
-        return Promise.resolve();
-      }
-    },
-  );
+            });
+          }
+        });
+    } else {
+      return Promise.resolve();
+    }
+  });
 
   context.api.events.on("profile-did-change", (profileId: string) =>
     onProfileChange(context.api, profileId, update),
@@ -391,10 +346,7 @@ function once(context: types.IExtensionContext, update: util.Debouncer) {
   }
 }
 
-function onLoadSaves(
-  api: types.IExtensionApi,
-  profileId: string,
-): Promise<ISavegame[]> {
+function onLoadSaves(api: types.IExtensionApi, profileId: string): Promise<ISavegame[]> {
   const state = api.getState();
   const { profiles } = state.persistent;
   const currentProfile = selectors.activeProfile(state);
@@ -431,18 +383,14 @@ function onRestorePlugins(api: types.IExtensionApi, savegame: ISavegame) {
 
   const discovery = util.getSafe(discovered, [gameMode], undefined);
 
-  if (
-    game === undefined ||
-    discovery === undefined ||
-    discovery.path === undefined
-  ) {
+  if (game === undefined || discovery === undefined || discovery.path === undefined) {
     // How is this even possible ?
     util.showError(
       dispatch,
       "Failed to restore plugins",
       "Your active game is no longer discovered by Vortex; " +
-      "please manually add your game, or run the discovery " +
-      "scan on the games page.",
+        "please manually add your game, or run the discovery " +
+        "scan on the games page.",
       { allowReport: true },
     );
     return;
@@ -464,14 +412,11 @@ function onRestorePlugins(api: types.IExtensionApi, savegame: ISavegame) {
           "question",
           t("Restore plugins"),
           {
-            message: t(
-              "Some plugins are missing and can't be enabled.\n\n{{missingPlugins}}",
-              {
-                replace: {
-                  missingPlugins: err.missingPlugins.join("\n"),
-                },
+            message: t("Some plugins are missing and can't be enabled.\n\n{{missingPlugins}}", {
+              replace: {
+                missingPlugins: err.missingPlugins.join("\n"),
               },
-            ),
+            }),
             options: {
               translated: true,
             },
@@ -482,11 +427,7 @@ function onRestorePlugins(api: types.IExtensionApi, savegame: ISavegame) {
           restorePlugins = result.action === "Continue";
           if (restorePlugins) {
             api.events.emit("set-plugin-list", savegame.attributes.plugins);
-            util.showSuccess(
-              dispatch,
-              "Restored plugins for savegame",
-              notificationId,
-            );
+            util.showSuccess(dispatch, "Restored plugins for savegame", notificationId);
           } else {
             api.dismissNotification(notificationId);
           }
@@ -499,11 +440,7 @@ function onRestorePlugins(api: types.IExtensionApi, savegame: ISavegame) {
     });
 }
 
-function onRemoveSavegames(
-  api: types.IExtensionApi,
-  profileId: string,
-  savegameIds: string[],
-) {
+function onRemoveSavegames(api: types.IExtensionApi, profileId: string, savegameIds: string[]) {
   const state = api.getState();
   const { dispatch } = api.store;
 
@@ -522,7 +459,7 @@ function onRemoveSavegames(
         dispatch,
         "Failed to delete savegame",
         "The profile attached to the savegame you're trying to remove no longer exists. " +
-        "Please delete the file manually.",
+          "Please delete the file manually.",
         { allowReport: false },
       );
       return Promise.resolve();
@@ -540,28 +477,28 @@ function onRemoveSavegames(
   return Promise.map(savegameIds, (id) =>
     !!id
       ? Promise.map(saveFiles(currentProfile.gameId, id), (filePath) =>
-        fs
-          .removeAsync(path.join(sourceSavePath, filePath))
-          .catch(util.UserCanceled, () => undefined)
-          .catch((err) => {
-            // We're not checking for 'ENOENT' at this point given that
-            //  fs.removeAsync wrapper will resolve whenever these are
-            //  encountered.
-            if (err.code === "EPERM") {
-              util.showError(
-                dispatch,
-                "Failed to delete savegame",
-                "The file is write protected.",
-                { allowReport: false },
-              );
-              return Promise.resolve();
-            }
-            return Promise.reject(err);
-          })
-          .then(() => {
-            dispatch(removeSavegame(id));
-          }),
-      )
+          fs
+            .removeAsync(path.join(sourceSavePath, filePath))
+            .catch(util.UserCanceled, () => undefined)
+            .catch((err) => {
+              // We're not checking for 'ENOENT' at this point given that
+              //  fs.removeAsync wrapper will resolve whenever these are
+              //  encountered.
+              if (err.code === "EPERM") {
+                util.showError(
+                  dispatch,
+                  "Failed to delete savegame",
+                  "The file is write protected.",
+                  { allowReport: false },
+                );
+                return Promise.resolve();
+              }
+              return Promise.reject(err);
+            })
+            .then(() => {
+              dispatch(removeSavegame(id));
+            }),
+        )
       : Promise.reject(new Error("invalid savegame id")),
   )
     .then(() => updateSaves(api.store, sourceSavePath))
@@ -608,24 +545,13 @@ function onTransferSavegames(
       : profileSavePath(currentProfile, true),
   );
 
-  const destSavePath = path.resolve(
-    mygamesPath(gameId),
-    profileSavePath(currentProfile),
-  );
+  const destSavePath = path.resolve(mygamesPath(gameId), profileSavePath(currentProfile));
 
   let allowErrorReport = true;
 
   return fs
     .ensureDirAsync(destSavePath)
-    .then(() =>
-      transferSavegames(
-        gameId,
-        fileNames,
-        sourceSavePath,
-        destSavePath,
-        keepSource,
-      ),
-    )
+    .then(() => transferSavegames(gameId, fileNames, sourceSavePath, destSavePath, keepSource))
     .catch((err) => {
       allowErrorReport = ["EPERM", "ENOSPC"].includes(err.code);
       const logLevel = allowErrorReport ? "error" : "warn";
@@ -634,7 +560,7 @@ function onTransferSavegames(
       return [
         t(
           "Unable to create save game directory: {{dest}}\\ (Please ensure you have " +
-          "enough space and/or full write permissions to the destination folder)",
+            "enough space and/or full write permissions to the destination folder)",
           {
             replace: { dest: destSavePath },
           },
@@ -676,44 +602,25 @@ function init(context: IExtensionContextExt): boolean {
   context.registerReducer(["session", "saves"], sessionReducer);
   context.registerReducer(["settings", "saves"], settingsReducer);
 
-  context.registerAction(
-    "savegames-icons",
-    200,
-    "transfer",
-    {},
-    "Transfer Save Games",
-    () => {
-      context.api.store.dispatch(showTransferDialog(true));
-    },
-  );
+  context.registerAction("savegames-icons", 200, "transfer", {}, "Transfer Save Games", () => {
+    context.api.store.dispatch(showTransferDialog(true));
+  });
 
-  context.registerAction(
-    "savegames-icons",
-    100,
-    "refresh",
-    {},
-    "Refresh",
-    () => {
-      const profile = selectors.activeProfile(context.api.store.getState());
-      update.runNow(undefined, profile.id, getSavesPath(profile));
-    },
-  );
+  context.registerAction("savegames-icons", 100, "refresh", {}, "Refresh", () => {
+    const profile = selectors.activeProfile(context.api.store.getState());
+    update.runNow(undefined, profile.id, getSavesPath(profile));
+  });
 
   const onRefresh = () => {
     const profile = selectors.activeProfile(context.api.store.getState());
     update.schedule(undefined, profile.id, getSavesPath(profile));
   };
-  const onLoadSavesProp = (profileId: string) =>
-    onLoadSaves(context.api, profileId);
-  const onRestorePluginsProp = (savegame: ISavegame) =>
-    onRestorePlugins(context.api, savegame);
+  const onLoadSavesProp = (profileId: string) => onLoadSaves(context.api, profileId);
+  const onRestorePluginsProp = (savegame: ISavegame) => onRestorePlugins(context.api, savegame);
   const onRemoveSavegamesProp = (profileId: string, savegameIds: string[]) =>
     onRemoveSavegames(context.api, profileId, savegameIds);
-  const onTransferSavegamesProp = (
-    profileId: string,
-    fileNames: string[],
-    keepSource: boolean,
-  ) => onTransferSavegames(context.api, profileId, fileNames, keepSource);
+  const onTransferSavegamesProp = (profileId: string, fileNames: string[], keepSource: boolean) =>
+    onTransferSavegames(context.api, profileId, fileNames, keepSource);
   const getInstalledPluginsProp = () => getInstalledPlugins(context.api);
 
   context.registerMainPage("savegame", "Save games", SavegameList, {
@@ -721,8 +628,7 @@ function init(context: IExtensionContextExt): boolean {
     id: "gamebryo-savegames",
     hotkey: "A",
     group: "per-game",
-    visible: () =>
-      gameSupported(selectors.activeGameId(context.api.store.getState())),
+    visible: () => gameSupported(selectors.activeGameId(context.api.store.getState())),
     props: () => ({
       onRefresh,
       onLoadSaves: onLoadSavesProp,
@@ -733,10 +639,7 @@ function init(context: IExtensionContextExt): boolean {
     }),
   });
 
-  const update = new util.Debouncer(
-    genUpdateSavegameHandler(context.api),
-    1000,
-  );
+  const update = new util.Debouncer(genUpdateSavegameHandler(context.api), 1000);
 
   context.registerProfileFeature(
     "local_saves",
@@ -763,16 +666,9 @@ function init(context: IExtensionContextExt): boolean {
     },
   );
 
-  context.registerAction(
-    "savegames-icons",
-    150,
-    "open-ext",
-    {},
-    "Open Save Games",
-    () => {
-      openSavegamesDirectory(context.api);
-    },
-  );
+  context.registerAction("savegames-icons", 150, "open-ext", {}, "Open Save Games", () => {
+    openSavegamesDirectory(context.api);
+  });
 
   context.once(() => once(context, update));
 

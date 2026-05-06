@@ -1,4 +1,5 @@
 import * as path from "path";
+
 import * as Redux from "redux";
 import { selectors, types, util } from "vortex-api";
 
@@ -74,8 +75,7 @@ const gameSupport = util.makeOverlayableDictionary<string, IGameSupport>(
     },
     skyrimse: {
       fileFilter: (fileName: string) =>
-        fileName.startsWith("Skyrim - ") &&
-        path.extname(fileName).toLowerCase() === ".bsa",
+        fileName.startsWith("Skyrim - ") && path.extname(fileName).toLowerCase() === ".bsa",
       targetAge: new Date(2008, 10, 1),
       mygamesPath: "Skyrim Special Edition",
       iniName: "Skyrim.ini",
@@ -92,8 +92,7 @@ const gameSupport = util.makeOverlayableDictionary<string, IGameSupport>(
     },
     skyrimvr: {
       fileFilter: (fileName: string) =>
-        fileName.startsWith("Skyrim - ") &&
-        path.extname(fileName).toLowerCase() === ".bsa",
+        fileName.startsWith("Skyrim - ") && path.extname(fileName).toLowerCase() === ".bsa",
       targetAge: new Date(2008, 10, 1),
       mygamesPath: "Skyrim VR",
       iniName: "SkyrimVR.ini",
@@ -135,8 +134,7 @@ const gameSupport = util.makeOverlayableDictionary<string, IGameSupport>(
     },
     fallout4vr: {
       fileFilter: (fileName: string) =>
-        (fileName.startsWith("Fallout4 - ") ||
-          fileName.startsWith("Fallout4_VR - ")) &&
+        (fileName.startsWith("Fallout4 - ") || fileName.startsWith("Fallout4_VR - ")) &&
         path.extname(fileName).toLowerCase() === ".ba2",
       targetAge: new Date(2008, 10, 1),
       mygamesPath: "Fallout4VR",
@@ -203,8 +201,7 @@ const gameSupport = util.makeOverlayableDictionary<string, IGameSupport>(
     },
     starfield: {
       fileFilter: (fileName: string) =>
-        fileName.match(/(starfield - |sfbgs)/) &&
-        path.extname(fileName).toLowerCase() === ".ba2",
+        fileName.match(/(starfield - |sfbgs)/) && path.extname(fileName).toLowerCase() === ".ba2",
       targetAge: new Date(2008, 10, 1),
       mygamesPath: "Starfield",
       iniName: "StarfieldCustom.ini",

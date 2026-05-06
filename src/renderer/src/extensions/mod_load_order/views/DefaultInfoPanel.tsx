@@ -1,5 +1,6 @@
 import * as React from "react";
 import { withTranslation } from "react-i18next";
+
 import { ComponentEx } from "../../../controls/ComponentEx";
 
 interface IProps {
@@ -23,6 +24,6 @@ class DefaultInfoPanel extends ComponentEx<IProps, {}> {
   }
 }
 
-export default withTranslation(["common"])(
-  DefaultInfoPanel as any,
-) as React.ComponentClass<{ infoText: string }>;
+export default withTranslation(["common"])(DefaultInfoPanel as any) as React.ComponentClass<{
+  infoText: string;
+}>;

@@ -23,10 +23,7 @@ export interface ISettingsDebugProps {
   readThemes: () => Promise<string[]>;
   onCloneTheme: (themeName: string, newName: string) => Promise<void>;
   onSelectTheme: (themeName: string) => void;
-  onSaveTheme: (
-    themeName: string,
-    variables: { [name: string]: string },
-  ) => Promise<void>;
+  onSaveTheme: (themeName: string, variables: { [name: string]: string }) => Promise<void>;
   onRemoveTheme: (themeName: string) => Promise<void>;
   readThemeVariables: (themeName: string) => Promise<{ [key: string]: string }>;
   locationToName: (location: string) => string;
@@ -158,24 +155,12 @@ class SettingsDebug extends ComponentEx<IProps, IComponentState> {
     this.h5Styles = window.getComputedStyle(this.h5Ref.current!);
     this.h6Styles = window.getComputedStyle(this.h6Ref.current!);
 
-    this.heading2xlSemiStyles = window.getComputedStyle(
-      this.heading2xlSemiRef.current!,
-    );
-    this.headingXlSemiStyles = window.getComputedStyle(
-      this.headingXlSemiRef.current!,
-    );
-    this.headingLgSemiStyles = window.getComputedStyle(
-      this.headingLgSemiRef.current!,
-    );
-    this.headingMdSemiStyles = window.getComputedStyle(
-      this.headingMdSemiRef.current!,
-    );
-    this.headingSmSemiStyles = window.getComputedStyle(
-      this.headingSmSemiRef.current!,
-    );
-    this.headingXsSemiStyles = window.getComputedStyle(
-      this.headingXsSemiRef.current!,
-    );
+    this.heading2xlSemiStyles = window.getComputedStyle(this.heading2xlSemiRef.current!);
+    this.headingXlSemiStyles = window.getComputedStyle(this.headingXlSemiRef.current!);
+    this.headingLgSemiStyles = window.getComputedStyle(this.headingLgSemiRef.current!);
+    this.headingMdSemiStyles = window.getComputedStyle(this.headingMdSemiRef.current!);
+    this.headingSmSemiStyles = window.getComputedStyle(this.headingSmSemiRef.current!);
+    this.headingXsSemiStyles = window.getComputedStyle(this.headingXsSemiRef.current!);
   }
 
   public render(): JSX.Element {
@@ -185,8 +170,7 @@ class SettingsDebug extends ComponentEx<IProps, IComponentState> {
     return (
       <Grid fluid key={lastUpdated}>
         <Row>
-          <Button onClick={this.refresh}>Refresh Theme</Button>{" "}
-          {new Date(lastUpdated).toString()}
+          <Button onClick={this.refresh}>Refresh Theme</Button> {new Date(lastUpdated).toString()}
         </Row>
 
         <Row>
@@ -202,10 +186,7 @@ class SettingsDebug extends ComponentEx<IProps, IComponentState> {
             <tbody>
               <tr>
                 <td>
-                  <div
-                    ref={this.heading2xlSemiRef}
-                    className="heading-2xl-semi"
-                  >
+                  <div ref={this.heading2xlSemiRef} className="heading-2xl-semi">
                     heading-2xl-semi
                   </div>
                 </td>
@@ -282,14 +263,14 @@ class SettingsDebug extends ComponentEx<IProps, IComponentState> {
             <form>
               <FormGroup
                 controlId="formBasicText"
-              //validationState={this.getValidationState()}
+                //validationState={this.getValidationState()}
               >
                 <ControlLabel>Working example with validation</ControlLabel>
                 <FormControl
                   type="text"
                   //value={this.state.value}
                   placeholder="Enter text"
-                //onChange={this.handleChange}
+                  //onChange={this.handleChange}
                 />
                 <FormControl.Feedback />
                 <HelpBlock>Validation is based on string length.</HelpBlock>
@@ -302,9 +283,9 @@ class SettingsDebug extends ComponentEx<IProps, IComponentState> {
             <h4>Generic</h4>
 
             <p>
-              <code>p</code>The quick <a href="#">brown fox jumps</a> over the
-              lazy dog. Lorem ipsum dolor sit amet, consectetur adipiscing elit,
-              sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+              <code>p</code>The quick <a href="#">brown fox jumps</a> over the lazy dog. Lorem ipsum
+              dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut
+              labore et dolore magna aliqua.
             </p>
             <h1 ref={this.h1Ref}>
               <code>h1</code>Heading 1 {this.h1Styles?.fontSize}
@@ -328,24 +309,14 @@ class SettingsDebug extends ComponentEx<IProps, IComponentState> {
           <Col sm={4} md={4} lg={4} wrap="">
             <h3>Utilities</h3>
             <h4>Notifications</h4>
-            <p>
-              Use these buttons to fire test notifications of different types
-            </p>
-            <Button onClick={() => this.props.onShowError("Test Error", {})}>
-              Test Error
-            </Button>
-            <Button onClick={() => this.props.onShowInfo("Test Info")}>
-              Test Info
-            </Button>
-            <Button onClick={() => this.props.onShowSuccess("Test Success")}>
-              Test Success
-            </Button>
+            <p>Use these buttons to fire test notifications of different types</p>
+            <Button onClick={() => this.props.onShowError("Test Error", {})}>Test Error</Button>
+            <Button onClick={() => this.props.onShowInfo("Test Info")}>Test Info</Button>
+            <Button onClick={() => this.props.onShowSuccess("Test Success")}>Test Success</Button>
             <Button onClick={() => this.props.onShowActivity("Test Activity")}>
               Test Activity (3s)
             </Button>
-            <Button onClick={() => this.props.onShowWarning("Test Warning")}>
-              Test Warning
-            </Button>
+            <Button onClick={() => this.props.onShowWarning("Test Warning")}>Test Warning</Button>
             <h4>Subheading</h4>
             <p>asdasd</p>
           </Col>
@@ -409,17 +380,14 @@ class SettingsDebug extends ComponentEx<IProps, IComponentState> {
     //   meaning that on a case-sensitive file system (linux), we would have allowed two themes to be named
     //   "same" and "SAME".
     //   I don't feel like that's actually desireable - much less worth making the code more complex over
-    const existing = new Set(
-      themes.map((theme) => this.props.locationToName(theme).toUpperCase()),
-    );
+    const existing = new Set(themes.map((theme) => this.props.locationToName(theme).toUpperCase()));
 
     return this.props
       .onShowDialog(
         "question",
         "Enter a name",
         {
-          bbcode:
-            error !== undefined ? `[color=red]${error}[/color]` : undefined,
+          bbcode: error !== undefined ? `[color=red]${error}[/color]` : undefined,
           input: [
             {
               id: "name",
@@ -474,13 +442,11 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, any, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, any, Redux.Action>): IActionProps {
   return {
-    onShowError: (title: string, details: any) =>
-      util.showError(dispatch, title, details),
-    onShowDialog: (type, title, content, dialogActions) => Promise.resolve(dispatch(actions.showDialog(type, title, content, dialogActions))),
+    onShowError: (title: string, details: any) => util.showError(dispatch, title, details),
+    onShowDialog: (type, title, content, dialogActions) =>
+      Promise.resolve(dispatch(actions.showDialog(type, title, content, dialogActions))),
     onShowInfo: (message: string) =>
       dispatch(
         actions.addNotification({

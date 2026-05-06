@@ -15,8 +15,6 @@ export class GamesPage {
   }
 
   manageButton(gameName: string): Locator {
-    return this.gameRow(gameName)
-      .getByRole("button", { name: "Manage", exact: true })
-      .first();
+    return this.gameRow(gameName).getByRole("button", { name: "Manage", exact: true }).first();
   }
 }

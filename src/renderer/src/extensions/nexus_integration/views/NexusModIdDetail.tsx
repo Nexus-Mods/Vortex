@@ -1,24 +1,20 @@
-import FormInput from "../../../controls/FormInput";
-import More from "../../../controls/More";
-import type { ValidationState } from "../../../types/ITableAttribute";
-import { ComponentEx } from "../../../controls/ComponentEx";
-import { truthy } from "../../../util/util";
-
-import { setDownloadModInfo } from "../../download_management/actions/state";
-import { setModAttribute } from "../../mod_management/actions/mods";
-
-import { guessFromFileName } from "../util/guessModID";
-
 import type { TFunction } from "i18next";
 import * as React from "react";
 import { useDispatch } from "react-redux";
 import type * as Redux from "redux";
+
+import { ComponentEx } from "../../../controls/ComponentEx";
+import FormInput from "../../../controls/FormInput";
+import More from "../../../controls/More";
 import { Button, Icon, IconButton } from "../../../controls/TooltipControls";
+import type { ValidationState } from "../../../types/ITableAttribute";
+import { truthy } from "../../../util/util";
+import { setDownloadModInfo } from "../../download_management/actions/state";
+import { setModAttribute } from "../../mod_management/actions/mods";
+import { guessFromFileName } from "../util/guessModID";
 
 function validateNum(value: string): ValidationState {
-  return !truthy(value) || isNaN(Number(value)) || parseInt(value, 10) < 1
-    ? "error"
-    : "success";
+  return !truthy(value) || isNaN(Number(value)) || parseInt(value, 10) < 1 ? "error" : "success";
 }
 
 interface IInputProps {
@@ -140,15 +136,7 @@ function NexusModIdDetail(props: IProps) {
       setFileMD5(fileHash);
       setEdit(doEdit);
     },
-    [
-      setEdit,
-      setModId,
-      setFileId,
-      setFileMD5,
-      nexusModId,
-      nexusFileId,
-      fileHash,
-    ],
+    [setEdit, setModId, setFileId, setFileMD5, nexusModId, nexusFileId, fileHash],
   );
 
   const startEdit = React.useCallback(() => {
@@ -161,23 +149,8 @@ function NexusModIdDetail(props: IProps) {
 
   const save = React.useCallback(() => {
     saveModId(dispatch, isDownload, activeGameId, archiveId, modId, modIdTemp);
-    saveFileId(
-      dispatch,
-      isDownload,
-      activeGameId,
-      archiveId,
-      modId,
-      fileIdTemp,
-    );
-  }, [
-    saveModId,
-    saveFileId,
-    isDownload,
-    activeGameId,
-    modId,
-    modIdTemp,
-    fileIdTemp,
-  ]);
+    saveFileId(dispatch, isDownload, activeGameId, archiveId, modId, fileIdTemp);
+  }, [saveModId, saveFileId, isDownload, activeGameId, modId, modIdTemp, fileIdTemp]);
 
   const guessModId = React.useCallback(() => {
     const guessed = guessFromFileName(fileName);
@@ -205,15 +178,10 @@ function NexusModIdDetail(props: IProps) {
 
   if (edit) {
     const haveHash = !!fileHash;
-    const hashValidation = !!fileMD5Temp
-      ? "success"
-      : !!fileIdTemp
-        ? null
-        : "error";
+    const hashValidation = !!fileMD5Temp ? "success" : !!fileIdTemp ? null : "error";
 
     const changeMade =
-      (nexusModId ?? "") !== (modIdTemp ?? "") ||
-      (nexusFileId ?? "") !== (fileIdTemp ?? "");
+      (nexusModId ?? "") !== (modIdTemp ?? "") || (nexusFileId ?? "") !== (fileIdTemp ?? "");
 
     return (
       <div className="modid-detail">
@@ -275,10 +243,7 @@ function NexusModIdDetail(props: IProps) {
               </td>
               <td className="modid-detail-control">
                 {haveHash ? (
-                  <Button
-                    onClick={onUpdateByMD5}
-                    tooltip={t("Look up by file hash")}
-                  >
+                  <Button onClick={onUpdateByMD5} tooltip={t("Look up by file hash")}>
                     {t("Query Server")}
                   </Button>
                 ) : (
@@ -318,9 +283,7 @@ function NexusModIdDetail(props: IProps) {
                   tooltip={
                     haveHash
                       ? t("Look up")
-                      : t(
-                          "Look up. May fail if the mod has been hidden/archived by the author.",
-                        )
+                      : t("Look up. May fail if the mod has been hidden/archived by the author.")
                   }
                 >
                   {t("Query Server")}
@@ -332,11 +295,7 @@ function NexusModIdDetail(props: IProps) {
         <Button onClick={cancel} tooltip={t("Close")}>
           {t("Close")}
         </Button>{" "}
-        <Button
-          disabled={!changeMade}
-          onClick={save}
-          tooltip={t("Save changes")}
-        >
+        <Button disabled={!changeMade} onClick={save} tooltip={t("Save changes")}>
           {t("Apply")}
         </Button>
       </div>
@@ -359,21 +318,10 @@ function NexusModIdDetail(props: IProps) {
         <Icon
           className={valid === true ? "nexus-id-valid" : "nexus-id-invalid"}
           name={valid === true ? "feedback-success" : "feedback-warning"}
-          tooltip={
-            valid === true
-              ? t("Mod identified")
-              : t("Mod not identified correctly")
-          }
+          tooltip={valid === true ? t("Mod identified") : t("Mod not identified correctly")}
         />
-        <div>
-          {valid === true ? `M: ${nexusModId}, F: ${nexusFileId}` : valid}
-        </div>
-        <IconButton
-          icon="edit"
-          tooltip={t("Edit")}
-          onClick={startEdit}
-          className="btn-embed"
-        />
+        <div>{valid === true ? `M: ${nexusModId}, F: ${nexusFileId}` : valid}</div>
+        <IconButton icon="edit" tooltip={t("Edit")} onClick={startEdit} className="btn-embed" />
         {nexusModId !== undefined ? (
           <IconButton
             icon="open-in-browser"

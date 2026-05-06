@@ -1,13 +1,13 @@
 /* eslint-disable */
-import * as path from 'path';
-import { fs, log, selectors, types, util } from 'vortex-api';
+import * as path from "path";
 
-import { GAME_ID } from './common';
-import { listPackage } from './divineWrapper';
-import { IPakInfo } from './types';
-import { extractPakInfoImpl, logDebug } from './util';
+import { LRUCache } from "lru-cache";
+import { fs, log, selectors, types, util } from "vortex-api";
 
-import { LRUCache } from 'lru-cache';
+import { GAME_ID } from "./common";
+import { listPackage } from "./divineWrapper";
+import { IPakInfo } from "./types";
+import { extractPakInfoImpl, logDebug } from "./util";
 
 export interface ICacheEntry {
   lastModified: number;
@@ -39,9 +39,11 @@ export default class PakInfoCache {
     this.load(api);
   }
 
-  public async getCacheEntry(api: types.IExtensionApi,
-                             filePath: string,
-                             mod?: types.IMod): Promise<ICacheEntry | undefined> {
+  public async getCacheEntry(
+    api: types.IExtensionApi,
+    filePath: string,
+    mod?: types.IMod,
+  ): Promise<ICacheEntry | undefined> {
     const id = this.fileId(filePath);
     // Pak files can vanish between readPAKs listing them and this stat call
     // (mod updates, user deletions, antivirus). Treat that as "no entry"
@@ -50,14 +52,14 @@ export default class PakInfoCache {
     try {
       stat = await fs.statAsync(filePath);
     } catch (err) {
-      if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+      if ((err as NodeJS.ErrnoException).code === "ENOENT") {
         return undefined;
       }
       throw err;
     }
     const ctime = stat.ctimeMs;
     const hasChanged = (entry: ICacheEntry) => {
-      return (!!mod && !!entry.mod)
+      return !!mod && !!entry.mod
         ? mod.attributes?.fileId !== entry.mod.attributes?.fileId
         : ctime !== entry?.lastModified;
     };
@@ -93,14 +95,14 @@ export default class PakInfoCache {
     const state = this.mApi.getState();
     const profileId = selectors.lastActiveProfileForGame(state, GAME_ID);
     const staging = selectors.installPathForGame(state, GAME_ID);
-    const cachePath = path.join(path.dirname(staging), 'cache', profileId + '.json');
+    const cachePath = path.join(path.dirname(staging), "cache", profileId + ".json");
     try {
       await fs.ensureDirWritableAsync(path.dirname(cachePath));
       // Convert cache entries to array for serialization
       const cacheData = Array.from(this.mCache.entries());
       await util.writeFileAtomic(cachePath, JSON.stringify(cacheData));
     } catch (err) {
-      log('error', 'failed to save cache', err);
+      log("error", "failed to save cache", err);
       return;
     }
   }
@@ -109,10 +111,10 @@ export default class PakInfoCache {
     const state = api.getState();
     const profileId = selectors.lastActiveProfileForGame(state, GAME_ID);
     const staging = selectors.installPathForGame(state, GAME_ID);
-    const cachePath = path.join(path.dirname(staging), 'cache', profileId + '.json');
+    const cachePath = path.join(path.dirname(staging), "cache", profileId + ".json");
     try {
       await fs.ensureDirWritableAsync(path.dirname(cachePath));
-      const data = await fs.readFileAsync(cachePath, { encoding: 'utf8' });
+      const data = await fs.readFileAsync(cachePath, { encoding: "utf8" });
       const cacheData = JSON.parse(data);
       // Restore cache entries from array
       if (Array.isArray(cacheData)) {
@@ -121,8 +123,8 @@ export default class PakInfoCache {
         }
       }
     } catch (err) {
-      if (!['ENOENT'].includes(err.code)) {
-        log('error', 'failed to load cache', err);
+      if (!["ENOENT"].includes(err.code)) {
+        log("error", "failed to load cache", err);
       }
     }
   }
@@ -131,16 +133,21 @@ export default class PakInfoCache {
     try {
       // look at the end of the first bit of data to see if it has a meta.lsx file
       // example 'Mods/Safe Edition/meta.lsx\t1759\t0'
-      const containsMetaFile = packageList.find(line => path.basename(line.split('\t')[0]).toLowerCase() === 'meta.lsx') !== undefined ? true : false;
+      const containsMetaFile =
+        packageList.find(
+          (line) => path.basename(line.split("\t")[0]).toLowerCase() === "meta.lsx",
+        ) !== undefined
+          ? true
+          : false;
 
       // invert result as 'listed' means it doesn't contain a meta file.
       return !containsMetaFile;
     } catch (err) {
       api.sendNotification({
-        type: 'error',
+        type: "error",
         message: `${path.basename(pakPath)} couldn't be read correctly. This mod be incorrectly locked/unlocked but will default to unlocked.`,
       });
-      return false;    
+      return false;
     }
   }
 

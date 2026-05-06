@@ -1,14 +1,12 @@
+import { coerce as semverCoerce, gte } from "semver";
 /**
  * Defines Stardew Valley diagnostic tests shown in Vortex health checks.
  */
 import type { types } from "vortex-api";
-
-import { coerce as semverCoerce, gte } from "semver";
 import { selectors } from "vortex-api";
 
-import type ModManifestCache from "./manifests/ModManifestCache";
-
 import { GAME_ID } from "./common";
+import type ModManifestCache from "./manifests/ModManifestCache";
 import { findSMAPIMod } from "./smapi/selectors";
 import { downloadAndInstallSMAPI } from "./smapi/workflow";
 

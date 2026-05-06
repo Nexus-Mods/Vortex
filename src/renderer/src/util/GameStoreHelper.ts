@@ -1,14 +1,14 @@
-import Bluebird from "bluebird";
 import * as path from "path";
-import * as winapi from "winapi-bindings";
 
-import type { IExtensionApi } from "../types/IExtensionContext";
-import type { IGameStore } from "../types/IGameStore";
-import type { IGameStoreEntry } from "../types/IGameStoreEntry";
+import Bluebird from "bluebird";
+import * as winapi from "winapi-bindings";
 
 import { getGameStores } from "../extensions/gamemode_management/util/getGame";
 import { makeExeId } from "../reducers/session";
+import type { IExtensionApi } from "../types/IExtensionContext";
+import type { IGameStore } from "../types/IGameStore";
 import { GameEntryNotFound, GameStoreNotFound } from "../types/IGameStore";
+import type { IGameStoreEntry } from "../types/IGameStoreEntry";
 import { ProcessCanceled, UserCanceled } from "./CustomErrors";
 import * as fs from "./fs";
 import getNormalizeFunc from "./getNormalizeFunc";
@@ -49,14 +49,9 @@ class GameStoreHelper {
   // If a store id is specified, it will return the provided
   //  store id if the game is installed using the specified store id;
   //  otherwise will return undefined.
-  public isGameInstalled(
-    id: string,
-    storeId?: string,
-  ): Bluebird<string | undefined> {
+  public isGameInstalled(id: string, storeId?: string): Bluebird<string | undefined> {
     return (
-      storeId !== undefined
-        ? this.findGameEntry("id", id, storeId)
-        : this.findGameEntry("id", id)
+      storeId !== undefined ? this.findGameEntry("id", id, storeId) : this.findGameEntry("id", id)
     )
       .then((entry) => Bluebird.resolve(entry?.gameStoreId))
       .catch(() => Bluebird.resolve(undefined));
@@ -71,9 +66,7 @@ class GameStoreHelper {
             ?.getGameStorePath()
             .then((execPath) =>
               execPath === undefined
-                ? Bluebird.reject(
-                    new Error(`failed to determine path for ${storeId}`),
-                  )
+                ? Bluebird.reject(new Error(`failed to determine path for ${storeId}`))
                 : fs.statAsync(execPath),
             )
             .then(() => Bluebird.resolve(true))
@@ -94,9 +87,7 @@ class GameStoreHelper {
     const chunked = lookup.split(":", 3);
 
     if (chunked.length !== 3) {
-      return Bluebird.reject(
-        new Error("invalid query, should be hive:path:key"),
-      );
+      return Bluebird.reject(new Error("invalid query, should be hive:path:key"));
     }
 
     if (
@@ -109,18 +100,12 @@ class GameStoreHelper {
       ].includes(chunked[0])
     ) {
       return Bluebird.reject(
-        new Error(
-          "invalid query, hive should be something like HKEY_LOCAL_MACHINE",
-        ),
+        new Error("invalid query, hive should be something like HKEY_LOCAL_MACHINE"),
       );
     }
 
     try {
-      const instPath = winapi.RegGetValue(
-        chunked[0] as any,
-        chunked[1],
-        chunked[2],
-      );
+      const instPath = winapi.RegGetValue(chunked[0] as any, chunked[1], chunked[2]);
       if (!instPath || instPath.type !== "REG_SZ") {
         throw new Error("empty or invalid registry key");
       }
@@ -138,54 +123,43 @@ class GameStoreHelper {
     }
   }
 
-  public find = toBlue(
-    async (query: IStoreQuery): Promise<IGameStoreEntry[]> => {
-      const results: IGameStoreEntry[] = [];
-      for (const storeId of Object.keys(query)) {
-        let prioOffset = 0;
-        for (const storeQuery of query[storeId]) {
-          let result: IGameStoreEntry | undefined = undefined;
-          try {
-            if (storeId === "registry") {
-              result = await this.registryLookup(storeQuery.id);
-            } else if (storeQuery.id !== undefined) {
-              result = await this.findGameEntry("id", storeQuery.id, storeId);
-            } else if (storeQuery.name !== undefined) {
-              result = await this.findGameEntry(
-                "name",
-                storeQuery.name,
-                storeId,
-              );
-            } else {
-              throw new Error("invalid store query, set either id or name");
-            }
-          } catch (err) {
-            if (!(err instanceof GameEntryNotFound)) {
-              log("error", "Failed to look up game", {
-                storeId,
-                appid: storeQuery.id,
-                name: storeQuery.name,
-              });
-            }
+  public find = toBlue(async (query: IStoreQuery): Promise<IGameStoreEntry[]> => {
+    const results: IGameStoreEntry[] = [];
+    for (const storeId of Object.keys(query)) {
+      let prioOffset = 0;
+      for (const storeQuery of query[storeId]) {
+        let result: IGameStoreEntry | undefined = undefined;
+        try {
+          if (storeId === "registry") {
+            result = await this.registryLookup(storeQuery.id);
+          } else if (storeQuery.id !== undefined) {
+            result = await this.findGameEntry("id", storeQuery.id, storeId);
+          } else if (storeQuery.name !== undefined) {
+            result = await this.findGameEntry("name", storeQuery.name, storeId);
+          } else {
+            throw new Error("invalid store query, set either id or name");
           }
-          if (result) {
-            result.priority =
-              storeQuery.prefer ??
-              this.mStoresDict[result.gameStoreId]?.priority ??
-              defaultPriority;
-            result.priority += prioOffset++ / 1000;
-            results.push(result);
+        } catch (err) {
+          if (!(err instanceof GameEntryNotFound)) {
+            log("error", "Failed to look up game", {
+              storeId,
+              appid: storeQuery.id,
+              name: storeQuery.name,
+            });
           }
         }
+        if (result) {
+          result.priority =
+            storeQuery.prefer ?? this.mStoresDict[result.gameStoreId]?.priority ?? defaultPriority;
+          result.priority += prioOffset++ / 1000;
+          results.push(result);
+        }
       }
-      return results;
-    },
-  );
+    }
+    return results;
+  });
 
-  public findByName(
-    name: string | string[],
-    storeId?: string,
-  ): Bluebird<IGameStoreEntry> {
+  public findByName(name: string | string[], storeId?: string): Bluebird<IGameStoreEntry> {
     return this.validInput(name)
       ? this.findGameEntry("name", name, storeId)
       : Bluebird.reject(
@@ -196,10 +170,7 @@ class GameStoreHelper {
         );
   }
 
-  public findByAppId(
-    appId: string | string[],
-    storeId?: string,
-  ): Bluebird<IGameStoreEntry> {
+  public findByAppId(appId: string | string[], storeId?: string): Bluebird<IGameStoreEntry> {
     return this.validInput(appId)
       ? this.findGameEntry("id", appId, storeId)
       : Bluebird.reject(
@@ -220,9 +191,7 @@ class GameStoreHelper {
     try {
       gameStore = this.getGameStore(gameStoreId);
       if (!gameStore?.getGameStorePath) {
-        throw new ProcessCanceled(
-          "gamestore implementation does not define getGameStorePath",
-        );
+        throw new ProcessCanceled("gamestore implementation does not define getGameStorePath");
       }
     } catch (err) {
       api.showErrorNotification?.("Failed to launch game store", err);
@@ -235,10 +204,9 @@ class GameStoreHelper {
         if (!gamestoreInstalled) {
           api.showErrorNotification?.(
             "Game store is not installed",
-            t(
-              "Please install/reinstall {{storeId}} to be able to launch this game store.",
-              { replace: { storeId: gameStoreId } },
-            ),
+            t("Please install/reinstall {{storeId}} to be able to launch this game store.", {
+              replace: { storeId: gameStoreId },
+            }),
             { allowReport: false },
           );
           return Bluebird.resolve();
@@ -267,10 +235,7 @@ class GameStoreHelper {
       gameStore.getGameStorePath
         ? gameStore
             .getGameStorePath()
-            .then(
-              (launcherPath) =>
-                !!launcherPath && this.isStoreRunning(launcherPath),
-            )
+            .then((launcherPath) => !!launcherPath && this.isStoreRunning(launcherPath))
         : Bluebird.resolve(false);
 
     const askConsentDialog = () => {
@@ -312,10 +277,7 @@ class GameStoreHelper {
   public identifyStore = toBlue(async (gamePath: string) => {
     const normalize = await getNormalizeFunc(gamePath);
 
-    const fallback = async (
-      store: IGameStore,
-      gamePath: string,
-    ): Promise<boolean> => {
+    const fallback = async (store: IGameStore, gamePath: string): Promise<boolean> => {
       try {
         const gameInfo = (await store.allGames()).find(
           (game) => normalize(game.gamePath) === normalize(gamePath),
@@ -329,11 +291,7 @@ class GameStoreHelper {
 
     for (const store of this.getStores()) {
       if (store.identifyGame !== undefined) {
-        if (
-          await store.identifyGame?.(gamePath, (gamePath) =>
-            fallback(store, gamePath),
-          )
-        ) {
+        if (await store.identifyGame?.(gamePath, (gamePath) => fallback(store, gamePath))) {
           return store.id;
         }
       } else {
@@ -355,11 +313,7 @@ class GameStoreHelper {
       type: "activity",
       message: "Loading game stores...",
     });
-    log(
-      "info",
-      "reloading game store games",
-      stores.map((store) => store.id).join(", "),
-    );
+    log("info", "reloading game store games", stores.map((store) => store.id).join(", "));
     return Bluebird.each(stores, (store: IGameStore) =>
       store?.reloadGames !== undefined
         ? store.reloadGames().catch((err) => {
@@ -390,16 +344,13 @@ class GameStoreHelper {
     const runningProcesses = winapi.GetProcessList();
     const exeId = makeExeId(storeExecPath);
     return (
-      runningProcesses.find(
-        (runningProc) => exeId === runningProc.exeFile.toLowerCase(),
-      ) !== undefined
+      runningProcesses.find((runningProc) => exeId === runningProc.exeFile.toLowerCase()) !==
+      undefined
     );
   }
 
   private validInput(input: string | string[]): boolean {
-    return !input || (Array.isArray(input) && input.length === 0)
-      ? false
-      : true;
+    return !input || (Array.isArray(input) && input.length === 0) ? false : true;
   }
 
   private getStores(): IGameStore[] {
@@ -486,15 +437,12 @@ class GameStoreHelper {
       }
     }
 
-    const gameStores: IGameStore[] = (
-      queriedStore ? [queriedStore] : this.getStores()
-    ).filter((store) => !!store);
+    const gameStores: IGameStore[] = (queriedStore ? [queriedStore] : this.getStores()).filter(
+      (store) => !!store,
+    );
 
     if (gameStores === undefined || gameStores.length === 0) {
-      const stores =
-        gameStores !== undefined
-          ? gameStores.map((store) => store.id).join(", ")
-          : "";
+      const stores = gameStores !== undefined ? gameStores.map((store) => store.id).join(", ") : "";
       log("debug", "Game entry not found", {
         pattern: name,
         availableStores: stores,

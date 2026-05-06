@@ -298,9 +298,7 @@ describe("startDownload", () => {
   it("sets the download state as started", () => {
     const input = { files: { id: { state: "init" } } };
     const result = stateReducer.reducers.START_DOWNLOAD(input, { id: "id" });
-    expect(
-      (result.files as Record<string, { state: string }>).id.state,
-    ).toEqual("started");
+    expect((result.files as Record<string, { state: string }>).id.state).toEqual("started");
   });
   it("does nothing if the download is already finished", () => {
     const input = { files: { id: { state: "finished" } } };

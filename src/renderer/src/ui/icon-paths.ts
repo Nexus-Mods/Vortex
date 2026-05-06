@@ -27,8 +27,7 @@ export const nxmMod =
   "M11.985 17.8656L17.6972 13.4184L18.97 12.4328L11.985 7L5 12.4328L6.26506 13.4184L11.985 17.8656Z";
 
 /** Single mod icon (outline triangle) */
-export const nxmModOutline =
-  "M2 12L12 5L22 12L12 19L2 12ZM12 7.5L5.5 12L12 16.5L18.5 12L12 7.5Z";
+export const nxmModOutline = "M2 12L12 5L22 12L12 19L2 12ZM12 7.5L5.5 12L12 16.5L18.5 12L12 7.5Z";
 
 /** Collection icon (single) - stacked triangles */
 export const nxmCollection =
@@ -95,8 +94,7 @@ export const nxmTwitch =
   "M11.6401 5.93H13.0701V10.21H11.6401M15.5701 5.93H17.0001V10.21H15.5701M7.00005 2L3.43005 5.57V18.43H7.71005V22L11.2901 18.43H14.1401L20.5701 12V2M19.1401 11.29L16.2901 14.14H13.4301L10.9301 16.64V14.14H7.71005V3.43H19.1401V11.29Z";
 
 /** Unique downloads statistics icon - bar chart */
-export const nxmUniqueDownloads =
-  "M10.6 5H13.4V19H10.6V5ZM5 9.2H8V19H5V9.2ZM19 13H16.2V19H19V13Z";
+export const nxmUniqueDownloads = "M10.6 5H13.4V19H10.6V5ZM5 9.2H8V19H5V9.2ZM19 13H16.2V19H19V13Z";
 
 /** Electronic Arts game publisher icon */
 export const nxmElectronicArts =

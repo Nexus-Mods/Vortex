@@ -1,9 +1,11 @@
+import * as path from "path";
+
 import { ICollection, IDownloadURL, IRevision } from "@nexusmods/nexus-api";
 import Bluebird from "bluebird";
-import * as path from "path";
 import { actions, fs, selectors, types, util } from "vortex-api";
-import InstallDriver from "./util/InstallDriver";
+
 import { readCollection } from "./util/importCollection";
+import InstallDriver from "./util/InstallDriver";
 import { collectionModToRule } from "./util/transformCollection";
 import showChangelog from "./views/InstallDialog/InstallChangelogDialog";
 
@@ -78,20 +80,14 @@ async function collectionUpdate(
     } catch (err) {
       if (err.name === "AlreadyDownloaded") {
         const { files } = api.getState().persistent.downloads;
-        dlId = Object.keys(files).find(
-          (iter) => files[iter].localPath === err.fileName,
-        );
+        dlId = Object.keys(files).find((iter) => files[iter].localPath === err.fileName);
       }
       if (dlId === undefined) {
         throw err;
       }
     }
 
-    api.events.emit(
-      "analytics-track-click-event",
-      "Collections",
-      "Update Collection",
-    );
+    api.events.emit("analytics-track-click-event", "Collections", "Update Collection");
 
     // Determine obsolete mods and clean up BEFORE installing the new revision.
     // This prevents a race condition where did-install-mod starts the InstallDriver
@@ -99,30 +95,18 @@ async function collectionUpdate(
 
     // Extract collection.json from the downloaded archive to get the new revision's
     // full mod list (including tags, external and bundled mods).
-    const dlPath = selectors.downloadPathForGame(
-      api.getState(),
-      downloadGameId,
-    );
-    const localPath =
-      api.getState().persistent.downloads.files[dlId]?.localPath;
+    const dlPath = selectors.downloadPathForGame(api.getState(), downloadGameId);
+    const localPath = api.getState().persistent.downloads.files[dlId]?.localPath;
     const archivePath = path.join(dlPath, localPath);
-    const tempDir = path.join(
-      util.getVortexPath("temp"),
-      "collection-update-" + oldModId,
-    );
+    const tempDir = path.join(util.getVortexPath("temp"), "collection-update-" + oldModId);
 
     let newRules: types.IModRule[];
     const szip = new util.SevenZip();
     await szip.extractFull(archivePath, tempDir);
     try {
-      const newCollectionData = await readCollection(
-        api,
-        path.join(tempDir, "collection.json"),
-      );
+      const newCollectionData = await readCollection(api, path.join(tempDir, "collection.json"));
       const knownGames = selectors.knownGames(api.getState());
-      newRules = newCollectionData.mods.map((mod) =>
-        collectionModToRule(knownGames, mod),
-      );
+      newRules = newCollectionData.mods.map((mod) => collectionModToRule(knownGames, mod));
     } catch (err) {
       await fs.removeAsync(tempDir).catch(() => undefined);
       throw err;
@@ -136,11 +120,7 @@ async function collectionUpdate(
     const candidates = oldRules
       .filter((rule) => ["requires", "recommends"].includes(rule.type))
       .map((rule) => util.findModByRef(rule.reference, mods))
-      .filter(
-        (mod) =>
-          mod !== undefined &&
-          mod.attributes?.["installedAsDependency"] === true,
-      );
+      .filter((mod) => mod !== undefined && mod.attributes?.["installedAsDependency"] === true);
 
     const notCandidates = Object.values(mods).filter(
       (mod) => !candidates.includes(mod) && mod.id !== oldModId,
@@ -187,11 +167,7 @@ async function collectionUpdate(
             collectionName,
           },
         },
-        [
-          { label: "Keep All" },
-          { label: "Review Mods" },
-          { label: "Remove All" },
-        ],
+        [{ label: "Keep All" }, { label: "Review Mods" }, { label: "Remove All" }],
       );
 
       if (result.action === "Keep All") {
@@ -240,12 +216,7 @@ async function collectionUpdate(
     util.batchDispatch(
       api.store,
       ops.keep.map((modId) =>
-        actions.setModAttribute(
-          gameMode,
-          modId,
-          "installedAsDependency",
-          false,
-        ),
+        actions.setModAttribute(gameMode, modId, "installedAsDependency", false),
       ),
     );
 
@@ -254,14 +225,9 @@ async function collectionUpdate(
     const enabledOptionalMods: string[] = candidates
       .filter((mod) => {
         const isOptional = oldRules.some(
-          (r) =>
-            r.type === "recommends" &&
-            util.testModReference(mod, r.reference),
+          (r) => r.type === "recommends" && util.testModReference(mod, r.reference),
         );
-        return (
-          isOptional &&
-          util.getSafe(profile?.modState, [mod.id, "enabled"], false)
-        );
+        return isOptional && util.getSafe(profile?.modState, [mod.id, "enabled"], false);
       })
       .map((mod) => mod.id);
 
@@ -280,9 +246,7 @@ async function collectionUpdate(
     );
 
     if (newModId === undefined) {
-      throw new util.ProcessCanceled(
-        "Download failed, update archive not found",
-      );
+      throw new util.ProcessCanceled("Download failed, update archive not found");
     }
 
     // Restore enabled state for optional mods that survived the update
@@ -317,23 +281,13 @@ export function onCollectionUpdate(
     oldModId: string,
     cb: (err: Error) => void,
   ) => {
-    if (
-      source !== "nexus" ||
-      collectionSlug === undefined ||
-      revisionNumber === undefined
-    ) {
+    if (source !== "nexus" || collectionSlug === undefined || revisionNumber === undefined) {
       return;
     }
 
     driver.prepare(() =>
       Bluebird.resolve(
-        collectionUpdate(
-          api,
-          gameId,
-          collectionSlug,
-          revisionNumber.toString(),
-          oldModId,
-        ),
+        collectionUpdate(api, gameId, collectionSlug, revisionNumber.toString(), oldModId),
       )
         .then(() => {
           cb?.(null);

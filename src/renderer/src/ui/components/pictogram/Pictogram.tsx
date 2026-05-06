@@ -1,5 +1,4 @@
 import type { HTMLAttributes } from "react";
-
 import React from "react";
 
 import { joinClasses } from "../../utils/joinClasses";
@@ -42,12 +41,7 @@ export const Pictogram = ({
 }) => (
   <svg
     {...props}
-    className={joinClasses([
-      "shrink-0",
-      className,
-      sizeMap[size],
-      themeMap[theme],
-    ])}
+    className={joinClasses(["shrink-0", className, sizeMap[size], themeMap[theme]])}
     viewBox="0 0 200 200"
     xmlns="http://www.w3.org/2000/svg"
   >

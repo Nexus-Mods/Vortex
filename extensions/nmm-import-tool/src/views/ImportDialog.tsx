@@ -1,27 +1,4 @@
-import { setImportStep } from "../actions/session";
-
-import { ModsCapacityMap, ICapacityInfo } from "../types/capacityTypes";
-import {
-  IModEntry,
-  ModsMap,
-  ParseError,
-  ProgressCB,
-} from "../types/nmmEntries";
-import { getCategories } from "../util/categories";
-import findInstances from "../util/findInstances";
-import importArchives from "../util/import";
-import parseNMMConfigFile from "../util/nmmVirtualConfigParser";
-
-import TraceImport from "../util/TraceImport";
-
-import {
-  FILENAME,
-  LOCAL,
-  MOD_ID,
-  MOD_NAME,
-  MOD_VERSION,
-} from "../importedModAttributes";
-
+import Promise from "bluebird";
 import * as React from "react";
 import {
   Alert,
@@ -36,7 +13,6 @@ import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import * as Redux from "redux";
 import { ThunkDispatch } from "redux-thunk";
-
 import {
   ComponentEx,
   EmptyPlaceholder,
@@ -54,8 +30,15 @@ import {
   util,
 } from "vortex-api";
 
-import Promise from "bluebird";
-
+import { setImportStep } from "../actions/session";
+import { FILENAME, LOCAL, MOD_ID, MOD_NAME, MOD_VERSION } from "../importedModAttributes";
+import { ModsCapacityMap, ICapacityInfo } from "../types/capacityTypes";
+import { IModEntry, ModsMap, ParseError, ProgressCB } from "../types/nmmEntries";
+import { getCategories } from "../util/categories";
+import findInstances from "../util/findInstances";
+import importArchives from "../util/import";
+import parseNMMConfigFile from "../util/nmmVirtualConfigParser";
+import TraceImport from "../util/TraceImport";
 import {
   calculateModsCapacity,
   generateModEntries,
@@ -171,8 +154,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
       name: "Import",
       description: "The import status of the mod",
       icon: "level-up",
-      calc: (mod: IModEntry) =>
-        this.isModEnabled(mod) ? "Import" : "Don't import",
+      calc: (mod: IModEntry) => (this.isModEnabled(mod) ? "Import" : "Don't import"),
       placement: "both",
       isToggleable: true,
       isSortable: true,
@@ -221,19 +203,12 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
       (importStep === "working" && !this.canImport()) ||
       error !== undefined;
     const nextLabel =
-      sources !== undefined && sources.length > 0
-        ? this.nextLabel(importStep)
-        : undefined;
+      sources !== undefined && sources.length > 0 ? this.nextLabel(importStep) : undefined;
 
-    const onClick = () =>
-      importStep !== "review" ? this.next() : this.finish();
+    const onClick = () => (importStep !== "review" ? this.next() : this.finish());
 
     return (
-      <Modal
-        id="import-dialog"
-        show={importStep !== undefined}
-        onHide={this.nop}
-      >
+      <Modal id="import-dialog" show={importStep !== undefined} onHide={this.nop}>
         <Modal.Header>
           <Modal.Title>{t("Nexus Mod Manager (NMM) Import Tool")}</Modal.Title>
           {this.renderCurrentStep()}
@@ -246,8 +221,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
           )}
         </Modal.Body>
         <Modal.Footer>
-          {importStep === "setup" &&
-          capacityInformation.hasCalculationErrors ? (
+          {importStep === "setup" && capacityInformation.hasCalculationErrors ? (
             <Alert bsStyle="danger">
               {t(
                 "Vortex cannot validate NMM's mod/archive files - this usually occurs when " +
@@ -255,9 +229,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
               )}
             </Alert>
           ) : null}
-          {canCancel ? (
-            <Button onClick={this.cancel}>{t("Cancel")}</Button>
-          ) : null}
+          {canCancel ? <Button onClick={this.cancel}>{t("Cancel")}</Button> : null}
           {nextLabel ? (
             <Button disabled={this.isNextDisabled()} onClick={onClick}>
               {nextLabel}
@@ -325,8 +297,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
 
   private recalculate() {
     const { modsToImport } = this.state;
-    const validCalcState =
-      modsToImport !== undefined && Object.keys(modsToImport).length > 0;
+    const validCalcState = modsToImport !== undefined && Object.keys(modsToImport).length > 0;
     this.nextState.capacityInformation.hasCalculationErrors = false;
     this.nextState.capacityInformation.totalNeededBytes = validCalcState
       ? this.calcArchiveFiles()
@@ -368,12 +339,10 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
   }
 
   private getModsCapacity(modList: IModEntry[], cb: ProgressCB): Promise<void> {
-    return (calculateModsCapacity(modList, cb) as any).then(
-      (modCapacityInfo) => {
-        this.nextState.modsCapacity = modCapacityInfo;
-        this.recalculate();
-      },
-    );
+    return (calculateModsCapacity(modList, cb) as any).then((modCapacityInfo) => {
+      this.nextState.modsCapacity = modCapacityInfo;
+      this.recalculate();
+    });
   }
 
   private calcArchiveFiles(): number {
@@ -432,9 +401,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
 
     const enabled =
       modsToImport !== undefined
-        ? Object.keys(modsToImport).filter((id) =>
-            this.isModEnabled(modsToImport[id]),
-          )
+        ? Object.keys(modsToImport).filter((id) => this.isModEnabled(modsToImport[id]))
         : [];
 
     // We don't want to fill up the user's harddrive.
@@ -453,12 +420,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
 
     return (
       <Steps step={importStep} style={{ marginBottom: 32 }}>
-        <Steps.Step
-          key="start"
-          stepId="start"
-          title={t("Start")}
-          description={t("Introduction")}
-        />
+        <Steps.Step key="start" stepId="start" title={t("Start")} description={t("Introduction")} />
         <Steps.Step
           key="setup"
           stepId="setup"
@@ -503,9 +465,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
       case "setup":
         return this.renderSelectMods();
       case "working":
-        return this.canImport()
-          ? this.renderWorking()
-          : this.renderValidation();
+        return this.canImport() ? this.renderWorking() : this.renderValidation();
       case "review":
         return this.renderReview();
       default:
@@ -520,8 +480,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
     const positives: string[] = [
       "Copy over all archives found inside the selected NMM installation.",
 
-      "Provide the option to install imported archives at the end of the " +
-        "import process.",
+      "Provide the option to install imported archives at the end of the " + "import process.",
 
       "Leave your existing NMM installation disabled, but functionally intact.",
     ];
@@ -535,11 +494,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
         "to LOOT rules once enabled.",
     ];
 
-    const renderItem = (
-      text: string,
-      idx: number,
-      positive: boolean,
-    ): JSX.Element => (
+    const renderItem = (text: string, idx: number, positive: boolean): JSX.Element => (
       <div key={idx} className="import-description-item">
         <Icon name={positive ? "feedback-success" : "feedback-error"} />
         <p>{t(text)}</p>
@@ -549,18 +504,14 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
     const renderPositives = (): JSX.Element => (
       <div className="import-description-column import-description-positive">
         <h4>{t("The import tool will:")}</h4>
-        <span>
-          {positives.map((positive, idx) => renderItem(positive, idx, true))}
-        </span>
+        <span>{positives.map((positive, idx) => renderItem(positive, idx, true))}</span>
       </div>
     );
 
     const renderNegatives = (): JSX.Element => (
       <div className="import-description-column import-description-negative">
         <h4>{t("The import tool won’t:")}</h4>
-        <span>
-          {negatives.map((negative, idx) => renderItem(negative, idx, false))}
-        </span>
+        <span>{negatives.map((negative, idx) => renderItem(negative, idx, false))}</span>
       </div>
     );
 
@@ -602,10 +553,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private renderSources(
-    sources: string[][],
-    selectedSource: string[],
-  ): JSX.Element {
+  private renderSources(sources: string[][], selectedSource: string[]): JSX.Element {
     const { t } = this.props;
 
     return (
@@ -706,16 +654,12 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
 
     const calcProgress = !!progress ? (
       <span>
-        <h3>
-          {t("Calculating required disk space. Thank you for your patience.")}
-        </h3>
+        <h3>{t("Calculating required disk space. Thank you for your patience.")}</h3>
         {t("Scanning: {{mod}}", { replace: { mod: progress.mod } })}
       </span>
     ) : (
       <span>
-        <h3>
-          {t("Processing NMM cache information. Thank you for your patience.")}
-        </h3>
+        <h3>{t("Processing NMM cache information. Thank you for your patience.")}</h3>
         {t("Looking up archives..")}
       </span>
     );
@@ -732,14 +676,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
           data={modsToImport}
           dataId={counter}
           actions={this.actions}
-          staticElements={[
-            this.mStatus,
-            MOD_ID,
-            MOD_NAME,
-            MOD_VERSION,
-            FILENAME,
-            LOCAL,
-          ]}
+          staticElements={[this.mStatus, MOD_ID, MOD_NAME, MOD_VERSION, FILENAME, LOCAL]}
         />
       );
     const modNumberText = this.getModNumber();
@@ -785,10 +722,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
 
     return successfullyImported.length > 0 ? (
       <div>
-        <Toggle
-          checked={installModsOnFinish}
-          onToggle={this.toggleInstallOnFinish}
-        >
+        <Toggle checked={installModsOnFinish} onToggle={this.toggleInstallOnFinish}>
           {t("Install imported mods")}
         </Toggle>
       </div>
@@ -801,13 +735,8 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
 
     return successfullyImported.length > 0 ? (
       <div>
-        {t(
-          "Your selected mod archives have been imported successfully. You can decide now ",
-        )}
-        {t(
-          "whether you would like to start the installation for all imported mods,",
-        )}{" "}
-        <br />
+        {t("Your selected mod archives have been imported successfully. You can decide now ")}
+        {t("whether you would like to start the installation for all imported mods,")} <br />
         {t("or whether you want to install these yourself at a later time.")}
         <br />
         <br />
@@ -906,21 +835,14 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
 
   private installMods(modEntries: IModEntry[]) {
     const state = this.context.api.store.getState();
-    const downloads = util.getSafe(
-      state,
-      ["persistent", "downloads", "files"],
-      undefined,
-    );
+    const downloads = util.getSafe(state, ["persistent", "downloads", "files"], undefined);
     if (downloads === undefined) {
       // We clearly didn't manage to import anything.
       return Promise.reject(new Error("persistent.downloads.files is empty!"));
     }
 
     const archiveIds = Object.keys(downloads).filter(
-      (key) =>
-        modEntries.find(
-          (mod) => mod.modFilename === downloads[key].localPath,
-        ) !== undefined,
+      (key) => modEntries.find((mod) => mod.modFilename === downloads[key].localPath) !== undefined,
     );
     return Promise.each(archiveIds, (archiveId) => {
       this.context.api.events.emit("start-install-download", archiveId, true);
@@ -946,14 +868,10 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
         totalFreeBytes: capInfo.totalFreeBytes,
       };
     } catch (err) {
-      this.context.api.showErrorNotification(
-        "Unable to start import process",
-        err,
-        {
-          // don't allow report on "not found" and permission errors
-          allowReport: [2, 3, 5].indexOf(err.systemCode) === -1,
-        },
-      );
+      this.context.api.showErrorNotification("Unable to start import process", err, {
+        // don't allow report on "not found" and permission errors
+        allowReport: [2, 3, 5].indexOf(err.systemCode) === -1,
+      });
       this.cancel();
     }
 
@@ -974,9 +892,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
     const virtualPath = getVirtualConfigFilePath(this.state.selectedSource[0]);
     return testAccess(this.props.t, this.state.selectedSource[2])
       .then(() => parseNMMConfigFile(virtualPath, mods))
-      .catch((err) =>
-        err instanceof ParseError ? Promise.resolve([]) : Promise.reject(err),
-      )
+      .catch((err) => (err instanceof ParseError ? Promise.resolve([]) : Promise.reject(err)))
       .then((modEntries: IModEntry[]) => {
         this.nextState.parsedMods = modEntries.reduce((prev, value) => {
           // modfilename appears to be the only field that we can rely on being set and it being
@@ -995,9 +911,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
     const { t } = this.props;
     const { selectedSource, parsedMods } = this.state;
     const api = this.context.api;
-    return (
-      generateModEntries(api, selectedSource, parsedMods, cb) as any
-    ).catch((err) => {
+    return (generateModEntries(api, selectedSource, parsedMods, cb) as any).catch((err) => {
       log("error", "Failed to create mod entry", err);
       const errorMessage =
         err.code === "EPERM"
@@ -1015,20 +929,14 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
   private modWillBeEnabled(mod: IModEntry): boolean {
     return (
       this.nextState.importEnabled[mod.modFilename] !== false &&
-      !(
-        this.nextState.importEnabled[mod.modFilename] === undefined &&
-        mod.isAlreadyManaged
-      )
+      !(this.nextState.importEnabled[mod.modFilename] === undefined && mod.isAlreadyManaged)
     );
   }
 
   private isModEnabled(mod: IModEntry): boolean {
     return (
       this.state.importEnabled[mod.modFilename] !== false &&
-      !(
-        this.state.importEnabled[mod.modFilename] === undefined &&
-        mod.isAlreadyManaged
-      )
+      !(this.state.importEnabled[mod.modFilename] === undefined && mod.isAlreadyManaged)
     );
   }
 
@@ -1078,10 +986,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
         .then((categories) => {
           this.mTrace.log(
             "info",
-            "NMM Mods (count): " +
-              modList.length +
-              " - Importing (count):" +
-              enabledMods.length,
+            "NMM Mods (count): " + modList.length + " - Importing (count):" + enabledMods.length,
           );
           this.context.api.events.emit("enable-download-watch", false);
 
@@ -1131,16 +1036,11 @@ function mapStateToProps(state: any): IConnectedProps {
     gameId,
     importStep: state.session.modimport.importStep || undefined,
     downloadPath: selectors.downloadPath(state),
-    installPath:
-      gameId !== undefined
-        ? selectors.installPathForGame(state, gameId)
-        : undefined,
+    installPath: gameId !== undefined ? selectors.installPathForGame(state, gameId) : undefined,
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, null, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetStep: (step?: Step) => dispatch(setImportStep(step)),
   };

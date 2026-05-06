@@ -7,61 +7,40 @@ import {
   mdiThumbDown,
   mdiThumbUp,
 } from "@mdi/js";
+import { unknownToError } from "@vortex/shared";
 import React, { useState, useEffect } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IState } from "../../../types/IState";
-import { shouldShowPremiumAd } from "../../../util/selectors";
-import type { IModRequirementExt, IModFileInfo } from "../types";
-
 import { Button } from "../../../ui/components/button/Button";
 import { Icon } from "../../../ui/components/icon/Icon";
 import { Pictogram } from "../../../ui/components/pictogram/Pictogram";
-import {
-  Typography,
-  TypographyLink,
-} from "../../../ui/components/typography/Typography";
+import { Typography, TypographyLink } from "../../../ui/components/typography/Typography";
 import { opn } from "../../../util/api";
 import { log } from "../../../util/log";
-import {
-  Campaign,
-  Content,
-  Section,
-  nexusModsURL,
-} from "../../../util/util";
+import { shouldShowPremiumAd } from "../../../util/selectors";
+import { Campaign, Content, Section, nexusModsURL } from "../../../util/util";
 import MainPage from "../../../views/MainPage";
-import { unknownToError } from "@vortex/shared";
 import { HealthCheckFeedbackEvent } from "../../analytics/mixpanel/MixpanelEvents";
 import { PREMIUM_PATH } from "../../nexus_integration/constants";
 import { setRequirementHidden, setFeedbackGiven } from "../actions/persistent";
 import { FeedbackModal } from "../components/feedback_modal";
 import { ModRequirement } from "../components/mod_requirement";
 import { PremiumModal } from "../components/premium_modal";
-import {
-  getModFiles,
-  hiddenRequirements,
-  feedbackGivenMap,
-} from "../selectors";
+import { getModFiles, hiddenRequirements, feedbackGivenMap } from "../selectors";
+import type { IModRequirementExt, IModFileInfo } from "../types";
 import { getModFilesWithCache } from "../util";
 
 interface IHealthCheckDetailPageProps {
   mod: IModRequirementExt;
   api: IExtensionApi;
   onBack: () => void;
-  onDownloadMod?: (
-    mod: IModRequirementExt,
-    file?: IModFileInfo,
-  ) => Promise<void>;
+  onDownloadMod?: (mod: IModRequirementExt, file?: IModFileInfo) => Promise<void>;
 }
 
-function HealthCheckDetailPage({
-  mod,
-  api,
-  onBack,
-  onDownloadMod,
-}: IHealthCheckDetailPageProps) {
+function HealthCheckDetailPage({ mod, api, onBack, onDownloadMod }: IHealthCheckDetailPageProps) {
   const { t } = useTranslation(["health_check", "common"]);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
@@ -74,9 +53,7 @@ function HealthCheckDetailPage({
   }, [feedbackMap, mod.requiredBy.modId, mod.id]);
 
   // Get mod files from Redux cache
-  const modFiles = useSelector((state: IState) =>
-    getModFiles(state, mod.modId),
-  );
+  const modFiles = useSelector((state: IState) => getModFiles(state, mod.modId));
 
   const showPremiumAd = useSelector(shouldShowPremiumAd);
 
@@ -126,12 +103,7 @@ function HealthCheckDetailPage({
     api.store?.dispatch(setFeedbackGiven(mod.requiredBy.modId, mod.id));
     api.events.emit(
       "analytics-track-mixpanel-event",
-      new HealthCheckFeedbackEvent(
-        "positive",
-        mod.gameId,
-        mod.modId,
-        mod.requiredBy.modId,
-      ),
+      new HealthCheckFeedbackEvent("positive", mod.gameId, mod.modId, mod.requiredBy.modId),
     );
   }, [api, mod]);
 
@@ -157,9 +129,7 @@ function HealthCheckDetailPage({
   // Memoized callback for toggling hide/unhide state
   const handleToggleHide = React.useCallback(() => {
     // Toggle the hidden state
-    api.store?.dispatch(
-      setRequirementHidden(mod.requiredBy.modId, mod.id, !isHidden),
-    );
+    api.store?.dispatch(setRequirementHidden(mod.requiredBy.modId, mod.id, !isHidden));
     // Navigate back to the main health check page
     onBack();
   }, [api.store, mod.requiredBy.modId, mod.id, isHidden, onBack]);
@@ -167,9 +137,7 @@ function HealthCheckDetailPage({
   // Memoized callback for confirming external requirement installation
   const handleConfirmInstall = React.useCallback(() => {
     // Hide this requirement from future checks
-    api.store?.dispatch(
-      setRequirementHidden(mod.requiredBy.modId, mod.id, true),
-    );
+    api.store?.dispatch(setRequirementHidden(mod.requiredBy.modId, mod.id, true));
     // Navigate back to the main health check page
     onBack();
   }, [api.store, mod.requiredBy.modId, mod.id, onBack]);
@@ -194,11 +162,7 @@ function HealthCheckDetailPage({
 
               <div className="grow">
                 <div className="flex items-center gap-x-1.5">
-                  <Typography
-                    as="h2"
-                    className="m-0"
-                    typographyType="heading-xs"
-                  >
+                  <Typography as="h2" className="m-0" typographyType="heading-xs">
                     {t("detail::title")}
                   </Typography>
 
@@ -211,9 +175,7 @@ function HealthCheckDetailPage({
                   </Typography>
                 </div>
 
-                <Typography appearance="moderate">
-                  {t("detail::subtitle")}
-                </Typography>
+                <Typography appearance="moderate">{t("detail::subtitle")}</Typography>
               </div>
             </div>
 
@@ -233,15 +195,10 @@ function HealthCheckDetailPage({
           {showPremiumAd && (
             <div className="mb-4 flex items-center justify-between gap-x-6 rounded-sm border border-premium-moderate/23 bg-linear-to-r from-premium-moderate/25 via-premium-moderate/10 to-premium-moderate/25 px-4 py-3 shadow-xs">
               <div className="flex items-center gap-x-1.5">
-                <Icon
-                  className="text-netural-strong shrink-0"
-                  path={mdiLightningBolt}
-                />
+                <Icon className="text-netural-strong shrink-0" path={mdiLightningBolt} />
 
                 <div className="flex grow items-center gap-x-2">
-                  <Typography className="font-semibold">
-                    {t("premium::banner::title")}
-                  </Typography>
+                  <Typography className="font-semibold">{t("premium::banner::title")}</Typography>
 
                   <Typography appearance="none" className="text-premium-strong">
                     {t("premium::banner::subtitle")}
@@ -256,10 +213,7 @@ function HealthCheckDetailPage({
           )}
 
           <div className="flex items-start gap-x-3 rounded-lg border border-stroke-weak p-6">
-            <Icon
-              className="mt-0.5 shrink-0 text-info-strong"
-              path={mdiAlertCircle}
-            />
+            <Icon className="mt-0.5 shrink-0 text-info-strong" path={mdiAlertCircle} />
 
             <div className="grow space-y-4">
               <div className="flex gap-x-3">

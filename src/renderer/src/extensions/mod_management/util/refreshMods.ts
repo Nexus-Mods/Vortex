@@ -1,16 +1,16 @@
-import { getErrorCode } from "@vortex/shared";
 import * as path from "path";
 
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import type { IState } from "../../../types/IState";
-import type { IMod } from "../types/IMod";
+import { getErrorCode } from "@vortex/shared";
 
 import { log } from "../../../logging";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IState } from "../../../types/IState";
 import { getApplication } from "../../../util/application";
 import * as fs from "../../../util/fs";
 import { IGNORABLE_PREFIXES } from "../../../util/getFileList";
 import { getSafe } from "../../../util/storeHelper";
 import { setModArchiveId } from "../actions/mods";
+import type { IMod } from "../types/IMod";
 
 /**
  * reads the installation dir and adds mods missing in our database
@@ -27,9 +27,7 @@ function refreshMods(
   onRemoveMods: (names: string[]) => void,
 ) {
   const knownModNames: string[] = Object.keys(knownMods).filter((modId) =>
-    IGNORABLE_PREFIXES.every(
-      (prefix) => !modId.toLowerCase().startsWith(prefix),
-    ),
+    IGNORABLE_PREFIXES.every((prefix) => !modId.toLowerCase().startsWith(prefix)),
   );
   return fs
     .ensureDirAsync(installPath)
@@ -47,18 +45,11 @@ function refreshMods(
     .then((modNames: string[]) => {
       const filtered = modNames
         .filter(
-          (name) =>
-            !IGNORABLE_PREFIXES.some((prefix) =>
-              name.toLowerCase().startsWith(prefix),
-            ),
+          (name) => !IGNORABLE_PREFIXES.some((prefix) => name.toLowerCase().startsWith(prefix)),
         )
         .map((name) => name.replace(/.installing$/, ""));
-      const addedMods = filtered.filter(
-        (name: string) => knownModNames.indexOf(name) === -1,
-      );
-      const removedMods = knownModNames.filter(
-        (name: string) => filtered.indexOf(name) === -1,
-      );
+      const addedMods = filtered.filter((name: string) => knownModNames.indexOf(name) === -1);
+      const removedMods = knownModNames.filter((name: string) => filtered.indexOf(name) === -1);
 
       if (addedMods.length === 0 && removedMods.length === 0) {
         return Promise.resolve();
@@ -112,52 +103,54 @@ function refreshMods(
         )
         .then((res) => {
           if (res.action === "Apply Changes") {
-            return Promise.all(addedMods.map((modName: string) => {
-              const fullPath: string = path.join(installPath, modName);
-              return fs
-                .statAsync(fullPath)
-                .then((stat: fs.Stats) => {
-                  if (stat.isDirectory()) {
-                    onAddMod({
-                      id: modName,
-                      type: "",
-                      installationPath: modName,
-                      state: "installed",
-                      attributes: {
-                        name: modName,
-                        installTime: new Date(stat.ctime).toString(),
-                      },
-                    });
-                  }
-                })
-                .catch((err: unknown) => {
-                  if (getErrorCode(err) !== "ENOENT") {
-                    throw err;
-                  }
-                  return fs.statAsync(fullPath + ".installing").then(() =>
-                    // since we're removing the '.installing' extension above we might be discovering
-                    // a mod here that was not installed successfully but doesn't have an entry in the
-                    // mods database so it wouldn't get cleaned up eiather
-                    api
-                      .showDialog(
-                        "error",
-                        modName,
-                        {
-                          text:
-                            "This mod was not installed completely, most likely the installation " +
-                            "got interrupted before. You should delete it now and then install " +
-                            "it again.",
+            return Promise.all(
+              addedMods.map((modName: string) => {
+                const fullPath: string = path.join(installPath, modName);
+                return fs
+                  .statAsync(fullPath)
+                  .then((stat: fs.Stats) => {
+                    if (stat.isDirectory()) {
+                      onAddMod({
+                        id: modName,
+                        type: "",
+                        installationPath: modName,
+                        state: "installed",
+                        attributes: {
+                          name: modName,
+                          installTime: new Date(stat.ctime).toString(),
                         },
-                        [{ label: "Ignore" }, { label: "Delete" }],
-                      )
-                      .then((deleteRes) => {
-                        if (deleteRes.action === "Delete") {
-                          return fs.removeAsync(fullPath + ".installing");
-                        }
-                      }),
-                  );
-                });
-            })).then(() => onRemoveMods(removedMods));
+                      });
+                    }
+                  })
+                  .catch((err: unknown) => {
+                    if (getErrorCode(err) !== "ENOENT") {
+                      throw err;
+                    }
+                    return fs.statAsync(fullPath + ".installing").then(() =>
+                      // since we're removing the '.installing' extension above we might be discovering
+                      // a mod here that was not installed successfully but doesn't have an entry in the
+                      // mods database so it wouldn't get cleaned up eiather
+                      api
+                        .showDialog(
+                          "error",
+                          modName,
+                          {
+                            text:
+                              "This mod was not installed completely, most likely the installation " +
+                              "got interrupted before. You should delete it now and then install " +
+                              "it again.",
+                          },
+                          [{ label: "Ignore" }, { label: "Delete" }],
+                        )
+                        .then((deleteRes) => {
+                          if (deleteRes.action === "Delete") {
+                            return fs.removeAsync(fullPath + ".installing");
+                          }
+                        }),
+                    );
+                  });
+              }),
+            ).then(() => onRemoveMods(removedMods));
           } else {
             getApplication().quit();
           }
@@ -167,10 +160,7 @@ function refreshMods(
       const state: IState = api.store.getState();
       const downloads = state.persistent.downloads.files;
       knownModNames.forEach((modId) => {
-        if (
-          knownMods[modId]?.archiveId &&
-          downloads[knownMods[modId].archiveId] === undefined
-        ) {
+        if (knownMods[modId]?.archiveId && downloads[knownMods[modId].archiveId] === undefined) {
           const fileName = knownMods[modId]?.attributes?.fileName;
           log("info", "archive referenced in mod doesn't exist", {
             modId,

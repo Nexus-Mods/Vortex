@@ -1,22 +1,22 @@
+import path from "path";
+
 /* eslint-disable */
-import _ from 'lodash';
-import path from 'path';
-import { actions, fs, selectors, types, util } from 'vortex-api';
+import _ from "lodash";
+import { actions, fs, selectors, types, util } from "vortex-api";
 
-import { setSuppressModLimitPatch } from './actions';
-
-import { GAME_ID, I18N_NAMESPACE } from './common';
+import { setSuppressModLimitPatch } from "./actions";
+import { GAME_ID, I18N_NAMESPACE } from "./common";
 
 /**
  * Theoretically the mod limit patcher is no longer needed (CDPR raised the file handle limit)
  *  but we will still keep this functionality in case it is needed in the future.
  */
 
-const RANGE_START = 0xB94000;
-const RANGE_END = 0xB98000;
+const RANGE_START = 0xb94000;
+const RANGE_END = 0xb98000;
 
-const UNPATCHED_SEQ = [0xBA, 0xC0, 0x00, 0x00, 0x00, 0x48, 0x8D, 0x4B];
-const PATCHED_SEQ = [0xBA, 0xF4, 0x01, 0x00, 0x00, 0x48, 0x8D, 0x4B];
+const UNPATCHED_SEQ = [0xba, 0xc0, 0x00, 0x00, 0x00, 0x48, 0x8d, 0x4b];
+const PATCHED_SEQ = [0xba, 0xf4, 0x01, 0x00, 0x00, 0x48, 0x8d, 0x4b];
 
 const OFFSET = 65536;
 
@@ -34,17 +34,20 @@ export class ModLimitPatcher {
     const game: types.IGameStored = selectors.gameById(state, GAME_ID);
     const discovery = state.settings.gameMode.discovered[GAME_ID];
     if (!discovery?.path) {
-      throw new util.ProcessCanceled('Game is not discovered');
+      throw new util.ProcessCanceled("Game is not discovered");
     }
     await this.queryPatch();
     const stagingPath = selectors.installPathForGame(state, GAME_ID);
-    const modName = 'Mod Limit Patcher';
-    let mod: types.IMod = util.getSafe(state, ['persistent', 'mods', GAME_ID, modName], undefined);
+    const modName = "Mod Limit Patcher";
+    let mod: types.IMod = util.getSafe(state, ["persistent", "mods", GAME_ID, modName], undefined);
     if (mod === undefined) {
       try {
         await this.createModLimitPatchMod(modName);
-        mod = util.getSafe(this.mApi.getState(),
-          ['persistent', 'mods', GAME_ID, modName], undefined);
+        mod = util.getSafe(
+          this.mApi.getState(),
+          ["persistent", "mods", GAME_ID, modName],
+          undefined,
+        );
       } catch (err) {
         return Promise.reject(err);
       }
@@ -52,22 +55,23 @@ export class ModLimitPatcher {
     try {
       const src = path.join(discovery.path, game.executable);
       const dest = path.join(stagingPath, mod.installationPath, game.executable);
-      await fs.removeAsync(dest)
-        .catch(err => ['ENOENT'].includes(err.code) ? Promise.resolve() : Promise.reject(err));
+      await fs
+        .removeAsync(dest)
+        .catch((err) => (["ENOENT"].includes(err.code) ? Promise.resolve() : Promise.reject(err)));
       await fs.copyAsync(src, dest);
-      const tempFile = dest + '.tmp';
+      const tempFile = dest + ".tmp";
       await this.streamExecutable(RANGE_START, RANGE_END, dest, tempFile);
       await fs.removeAsync(dest);
       await fs.renameAsync(tempFile, dest);
       this.mApi.sendNotification({
-        message: 'Patch generated successfully',
-        type: 'success',
+        message: "Patch generated successfully",
+        type: "success",
         displayMS: 5000,
       });
     } catch (err) {
-      const allowReport = !(err instanceof util.UserCanceled)
-      this.mApi.showErrorNotification('Failed to generate mod limit patch', err, { allowReport });
-      this.mApi.events.emit('remove-mod', GAME_ID, modName);
+      const allowReport = !(err instanceof util.UserCanceled);
+      this.mApi.showErrorNotification("Failed to generate mod limit patch", err, { allowReport });
+      this.mApi.events.emit("remove-mod", GAME_ID, modName);
       return Promise.resolve(undefined);
     }
 
@@ -75,32 +79,34 @@ export class ModLimitPatcher {
   }
 
   public getLimitText(t: any) {
-    return t('Witcher 3 is restricted to 192 file handles which is quickly reached when '
-      + 'adding mods (about ~25 mods) - Vortex has detected that the current mods environment may be '
-      + 'breaching this limit; this issue will usually exhibit itself by the game failing to start up.{{bl}}'
-      + 'Vortex can attempt to patch your game executable to increase the available file handles to 500 '
-      + 'which should cater for most if not all modding environments.{{bl}}Please note - the patch is applied as '
-      + 'a mod which will be generated and automatically enabled; to disable the patch, simply remove or disable '
-      + 'the "Witcher 3 Mod Limit Patcher" mod and the original game executable will be restored.',
-      { ns: I18N_NAMESPACE, replace: { bl: '[br][/br][br][/br]', br: '[br][/br]' } });
+    return t(
+      "Witcher 3 is restricted to 192 file handles which is quickly reached when " +
+        "adding mods (about ~25 mods) - Vortex has detected that the current mods environment may be " +
+        "breaching this limit; this issue will usually exhibit itself by the game failing to start up.{{bl}}" +
+        "Vortex can attempt to patch your game executable to increase the available file handles to 500 " +
+        "which should cater for most if not all modding environments.{{bl}}Please note - the patch is applied as " +
+        "a mod which will be generated and automatically enabled; to disable the patch, simply remove or disable " +
+        'the "Witcher 3 Mod Limit Patcher" mod and the original game executable will be restored.',
+      { ns: I18N_NAMESPACE, replace: { bl: "[br][/br][br][/br]", br: "[br][/br]" } },
+    );
   }
 
   private async queryPatch(): Promise<void> {
     const t = this.mApi.translate;
     const message = this.getLimitText(t);
-    const res: types.IDialogResult = await (this.mApi.showDialog('question', 'Mod Limit Patch', {
-      bbcode: message,
-      checkboxes: [
-        { id: 'suppress-limit-patcher-test', text: 'Do not ask again', value: false }
-      ],
-    }, [
-      { label: 'Cancel' },
-      { label: 'Generate Patch' },
-    ]) as any);
-    if (res.input['suppress-limit-patcher-test'] === true) {
+    const res: types.IDialogResult = await (this.mApi.showDialog(
+      "question",
+      "Mod Limit Patch",
+      {
+        bbcode: message,
+        checkboxes: [{ id: "suppress-limit-patcher-test", text: "Do not ask again", value: false }],
+      },
+      [{ label: "Cancel" }, { label: "Generate Patch" }],
+    ) as any);
+    if (res.input["suppress-limit-patcher-test"] === true) {
       this.mApi.store.dispatch(setSuppressModLimitPatch(true));
     }
-    if (res.action === 'Cancel') {
+    if (res.action === "Cancel") {
       throw new util.UserCanceled();
     }
 
@@ -110,22 +116,23 @@ export class ModLimitPatcher {
   private createModLimitPatchMod(modName: string): Promise<void> {
     const mod = {
       id: modName,
-      state: 'installed',
+      state: "installed",
       attributes: {
-        name: 'Mod Limit Patcher',
-        description: 'Witcher 3 is restricted to 192 file handles which is quickly reached when '
-                   + 'adding mods (about ~25 mods) - this mod increases the limit to 500',
-        logicalFileName: 'Witcher 3 Mod Limit Patcher',
+        name: "Mod Limit Patcher",
+        description:
+          "Witcher 3 is restricted to 192 file handles which is quickly reached when " +
+          "adding mods (about ~25 mods) - this mod increases the limit to 500",
+        logicalFileName: "Witcher 3 Mod Limit Patcher",
         modId: 42, // Meaning of life
-        version: '1.0.0',
+        version: "1.0.0",
         installTime: new Date(),
       },
       installationPath: modName,
-      type: 'w3modlimitpatcher',
+      type: "w3modlimitpatcher",
     };
 
     return new Promise((resolve, reject) => {
-      this.mApi.events.emit('create-mod', GAME_ID, mod, async (error) => {
+      this.mApi.events.emit("create-mod", GAME_ID, mod, async (error) => {
         if (error !== null) {
           return reject(error);
         }
@@ -161,10 +168,12 @@ export class ModLimitPatcher {
     return data;
   }
 
-  private async streamExecutable(start: number,
-                                 end: number,
-                                 filePath: string,
-                                 tempPath: string): Promise<void> {
+  private async streamExecutable(
+    start: number,
+    end: number,
+    filePath: string,
+    tempPath: string,
+  ): Promise<void> {
     return new Promise((resolve, reject) => {
       const writer = fs.createWriteStream(tempPath);
       const stream = fs.createReadStream(filePath);
@@ -178,14 +187,18 @@ export class ModLimitPatcher {
         }
         return reject(err);
       };
-      stream.on('end', () => {
+      stream.on("end", () => {
         this.mIsPatched = false;
         writer.end();
         return resolve();
       });
-      stream.on('error', onError);
-      stream.on('data', ((chunk: Buffer) => {
-        if (this.mIsPatched || (stream.bytesRead + OFFSET) < start || stream.bytesRead > end + OFFSET) {
+      stream.on("error", onError);
+      stream.on("data", (chunk: Buffer) => {
+        if (
+          this.mIsPatched ||
+          stream.bytesRead + OFFSET < start ||
+          stream.bytesRead > end + OFFSET
+        ) {
           writer.write(chunk);
         } else {
           if (this.hasSequence(unpatched, chunk)) {
@@ -200,7 +213,7 @@ export class ModLimitPatcher {
             writer.write(chunk);
           }
         }
-      }));
+      });
     });
   }
 }

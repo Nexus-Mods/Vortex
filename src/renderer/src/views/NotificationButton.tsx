@@ -8,20 +8,13 @@ import { Badge, Button, Overlay, Popover } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
-import type { IBar } from "../controls/RadialProgress";
-import type {
-  INotification,
-  INotificationAction,
-} from "../types/INotification";
-
-import {
-  dismissNotification,
-  fireNotificationAction,
-} from "../actions/notifications";
+import { dismissNotification, fireNotificationAction } from "../actions/notifications";
 import { suppressNotification } from "../actions/notificationSettings";
 import Icon from "../controls/Icon";
+import type { IBar } from "../controls/RadialProgress";
 import RadialProgress from "../controls/RadialProgress";
 import { useExtensionContext } from "../ExtensionProvider";
+import type { INotification, INotificationAction } from "../types/INotification";
 import Debouncer from "../util/Debouncer";
 import { notifications as notificationsSelector } from "../util/selectors";
 import { Notification } from "./Notification";
@@ -145,9 +138,7 @@ export const NotificationButton: React.FC<IBaseProps> = ({ hide }) => {
           return true;
         }
 
-        const timeout =
-          (item.type === "activity" ? item.createdTime : item.updatedTime) +
-          dispTime;
+        const timeout = (item.type === "activity" ? item.createdTime : item.updatedTime) + dispTime;
         if (timeout > now) {
           if (nextTimeout === null || timeout < nextTimeout) {
             nextTimeout = timeout;
@@ -167,10 +158,7 @@ export const NotificationButton: React.FC<IBaseProps> = ({ hide }) => {
           clearTimeout(updateTimerRef.current);
         }
         if (nextTimeout !== null) {
-          updateTimerRef.current = setTimeout(
-            () => updateFiltered(),
-            nextTimeout - now + 100,
-          );
+          updateTimerRef.current = setTimeout(() => updateFiltered(), nextTimeout - now + 100);
         }
       }
     }
@@ -247,10 +235,7 @@ export const NotificationButton: React.FC<IBaseProps> = ({ hide }) => {
       collapsed: { [groupId: string]: number },
     ) => {
       const { expand: currentExpand } = stateRef.current;
-      if (
-        notification.group !== undefined &&
-        notification.group !== currentExpand
-      ) {
+      if (notification.group !== undefined && notification.group !== currentExpand) {
         if (collapsed[notification.group] === undefined) {
           previous.push(notification);
           collapsed[notification.group] = 0;
@@ -288,11 +273,7 @@ export const NotificationButton: React.FC<IBaseProps> = ({ hide }) => {
         return;
       }
 
-      const callAction = (
-        actionId: string,
-        action: INotificationAction,
-        idx: number,
-      ) => {
+      const callAction = (actionId: string, action: INotificationAction, idx: number) => {
         if (idx === -1) {
           return;
         }
@@ -300,24 +281,18 @@ export const NotificationButton: React.FC<IBaseProps> = ({ hide }) => {
         if (action.action !== undefined) {
           action.action(() => onDismiss(actionId));
         } else {
-          fireNotificationAction(actionId, noti.process, idx, () =>
-            onDismiss(actionId),
-          );
+          fireNotificationAction(actionId, noti.process, idx, () => onDismiss(actionId));
         }
       };
 
       if (noti.group === undefined || noti.group === currentExpand) {
-        const actionIdx = noti.actions.findIndex(
-          (iter) => iter.title === actionTitle,
-        );
+        const actionIdx = noti.actions.findIndex((iter) => iter.title === actionTitle);
         callAction(noti.id, noti.actions[actionIdx], actionIdx);
       } else {
         notis
           .filter((iter) => iter.group === noti.group)
           .forEach((iter) => {
-            const actionIdx = iter.actions.findIndex(
-              (actIter) => actIter.title === actionTitle,
-            );
+            const actionIdx = iter.actions.findIndex((actIter) => actIter.title === actionTitle);
             callAction(iter.id, iter.actions[actionIdx], actionIdx);
           });
       }
@@ -329,11 +304,7 @@ export const NotificationButton: React.FC<IBaseProps> = ({ hide }) => {
     (notificationId: string) => {
       const { notifications: notis, expand: currentExpand } = stateRef.current;
       const noti = notis.find((iter) => iter.id === notificationId);
-      api.events.emit(
-        "analytics-track-click-event",
-        "Notifications",
-        "Dismiss",
-      );
+      api.events.emit("analytics-track-click-event", "Notifications", "Dismiss");
       if (noti === undefined) {
         return;
       }
@@ -355,8 +326,7 @@ export const NotificationButton: React.FC<IBaseProps> = ({ hide }) => {
       const translated: INotification = { ...notification };
       translated.title =
         translated.title !== undefined &&
-        (notification.localize === undefined ||
-          notification.localize.title !== false)
+        (notification.localize === undefined || notification.localize.title !== false)
           ? t(translated.title, { replace: translated.replace })
           : translated.title;
 
@@ -364,8 +334,7 @@ export const NotificationButton: React.FC<IBaseProps> = ({ hide }) => {
         translated.message = t("<Multiple>");
       } else {
         translated.message =
-          notification.localize === undefined ||
-          notification.localize.message !== false
+          notification.localize === undefined || notification.localize.message !== false
             ? t(translated.message, { replace: translated.replace })
             : translated.message;
       }
@@ -466,9 +435,7 @@ export const NotificationButton: React.FC<IBaseProps> = ({ hide }) => {
           totalRadius={8}
         />
 
-        {notifications.length === 0 ? null : (
-          <Badge>{notifications.length}</Badge>
-        )}
+        {notifications.length === 0 ? null : <Badge>{notifications.length}</Badge>}
       </Button>
 
       <Overlay

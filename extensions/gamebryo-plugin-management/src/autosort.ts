@@ -1,25 +1,20 @@
-/* eslint-disable */
-import { updatePluginOrder } from "./actions/loadOrder";
-import { removeGroupRule, removeRule, setGroup } from "./actions/userlist";
-import { IPluginLoot, IPlugins, IPluginsLoot } from "./types/IPlugins";
-import {
-  gameDataPath,
-  gameSupported,
-  nativePlugins,
-  pluginPath,
-} from "./util/gameSupport";
-import { downloadMasterlist, downloadPrelude } from "./util/masterlist";
-
-import { GHOST_EXT, NAMESPACE } from "./statics";
+import * as path from "path";
 
 import Bluebird from "bluebird";
+import { pl } from "date-fns/locale";
 import getVersion from "exe-version";
 import i18next from "i18next";
 import { LootAsync, Message, PluginMetadata } from "loot";
-import * as path from "path";
 import {} from "redux-thunk";
 import { actions, fs, log, selectors, types, util } from "vortex-api";
-import { pl } from "date-fns/locale";
+
+/* eslint-disable */
+import { updatePluginOrder } from "./actions/loadOrder";
+import { removeGroupRule, removeRule, setGroup } from "./actions/userlist";
+import { GHOST_EXT, NAMESPACE } from "./statics";
+import { IPluginLoot, IPlugins, IPluginsLoot } from "./types/IPlugins";
+import { gameDataPath, gameSupported, nativePlugins, pluginPath } from "./util/gameSupport";
+import { downloadMasterlist, downloadPrelude } from "./util/masterlist";
 
 const MAX_RESTARTS = 3;
 
@@ -47,8 +42,10 @@ interface ICycleEdge {
 
 class LootInterface {
   private mExtensionApi: types.IExtensionApi;
-  private mInitPromise: Bluebird<{ game: string; loot: typeof LootProm }> =
-    Bluebird.resolve({ game: undefined, loot: undefined });
+  private mInitPromise: Bluebird<{ game: string; loot: typeof LootProm }> = Bluebird.resolve({
+    game: undefined,
+    loot: undefined,
+  });
   private mSortPromise: Bluebird<string[]> = Bluebird.resolve([]);
 
   private mUserlistTime: Date;
@@ -60,9 +57,7 @@ class LootInterface {
     this.mExtensionApi = api;
 
     // when the game changes, we need to re-initialize loot for that game
-    api.events.on("gamemode-activated", (gameMode) =>
-      this.onGameModeChanged(api, gameMode),
-    );
+    api.events.on("gamemode-activated", (gameMode) => this.onGameModeChanged(api, gameMode));
 
     {
       // in case the initial gamemode-activated event was already sent,
@@ -84,32 +79,18 @@ class LootInterface {
 
     api.events.on(
       "plugin-details",
-      (
-        gameId: string,
-        plugins: string[],
-        callback: (result: IPluginsLoot) => void,
-      ) => this.pluginDetails(api, gameId, plugins, callback),
+      (gameId: string, plugins: string[], callback: (result: IPluginsLoot) => void) =>
+        this.pluginDetails(api, gameId, plugins, callback),
     );
   }
 
   public async downloadMasterlist(gameMode: string): Promise<void> {
-    const masterlistRepoPath = path.join(
-      util.getVortexPath("userData"),
-      gameMode,
-      "masterlist",
-    );
+    const masterlistRepoPath = path.join(util.getVortexPath("userData"), gameMode, "masterlist");
     const masterlistPath = path.join(masterlistRepoPath, "masterlist.yaml");
-    const preludePath = path.join(
-      util.getVortexPath("userData"),
-      "loot_prelude",
-      "prelude.yaml",
-    );
+    const preludePath = path.join(util.getVortexPath("userData"), "loot_prelude", "prelude.yaml");
     try {
       await downloadPrelude(preludePath);
-      await downloadMasterlist(
-        this.convertGameId(gameMode, true),
-        masterlistPath,
-      );
+      await downloadMasterlist(this.convertGameId(gameMode, true), masterlistPath);
       log("info", "updated loot masterlist");
       this.mExtensionApi.events.emit("did-update-masterlist");
     } catch (err) {
@@ -145,11 +126,8 @@ class LootInterface {
     const state = this.mExtensionApi.store.getState();
     const deferOnActivities = ["installing_dependencies"];
     const isActivityRunning = (activity: string) =>
-      util.getSafe(state, ["session", "base", "activity", activity], [])
-        .length > 0;
-    const deferActivities = deferOnActivities.filter((activity) =>
-      isActivityRunning(activity),
-    );
+      util.getSafe(state, ["session", "base", "activity", activity], []).length > 0;
+    const deferActivities = deferOnActivities.filter((activity) => isActivityRunning(activity));
     return deferActivities.length > 0;
   };
 
@@ -265,11 +243,7 @@ class LootInterface {
     return gameDataPath(activeGameId);
   }
 
-  private async doSort(
-    pluginNames: string[],
-    gameMode: string,
-    loot: typeof LootProm,
-  ) {
+  private async doSort(pluginNames: string[], gameMode: string, loot: typeof LootProm) {
     const { store } = this.mExtensionApi;
     try {
       this.mExtensionApi.dismissNotification("loot-cycle-warning");
@@ -286,9 +260,7 @@ class LootInterface {
       this.mRestarts = MAX_RESTARTS;
       const state = store.getState();
       if (sorted !== undefined) {
-        store.dispatch(
-          updatePluginOrder(sorted, false, state.settings.plugins.autoEnable),
-        );
+        store.dispatch(updatePluginOrder(sorted, false, state.settings.plugins.autoEnable));
         log("debug", "sorting plugins finished", {
           elapsedMS: Date.now() - timeBefore,
         });
@@ -303,18 +275,15 @@ class LootInterface {
       if (err.message.startsWith("Cyclic interaction")) {
         this.reportCycle(err, loot);
       } else if (err.message.endsWith("is not a valid plugin")) {
-        const pluginName = err.message.replace(
-          /"([^"]*)" is not a valid plugin/,
-          "$1",
-        );
+        const pluginName = err.message.replace(/"([^"]*)" is not a valid plugin/, "$1");
         const reportErr = () => {
           this.mExtensionApi.sendNotification({
             id: "loot-failed",
             type: "warning",
-            message: this.mExtensionApi.translate(
-              "Plugins not sorted because: {{msg}}",
-              { replace: { msg: err.message }, ns: NAMESPACE },
-            ),
+            message: this.mExtensionApi.translate("Plugins not sorted because: {{msg}}", {
+              replace: { msg: err.message },
+              ns: NAMESPACE,
+            }),
           });
         };
         try {
@@ -334,10 +303,10 @@ class LootInterface {
         this.mExtensionApi.sendNotification({
           id: "loot-failed",
           type: "warning",
-          message: this.mExtensionApi.translate(
-            "Plugins not sorted because: {{msg}}",
-            { replace: { msg: err.message }, ns: NAMESPACE },
-          ),
+          message: this.mExtensionApi.translate("Plugins not sorted because: {{msg}}", {
+            replace: { msg: err.message },
+            ns: NAMESPACE,
+          }),
         });
       } else if (err.message.indexOf("Failed to evaluate condition") !== -1) {
         const match = err.message.match(
@@ -388,14 +357,10 @@ class LootInterface {
             report();
           }
         } else {
-          this.mExtensionApi.showErrorNotification(
-            "LOOT operation failed",
-            err,
-            {
-              id: "loot-failed",
-              allowReport: false,
-            },
-          );
+          this.mExtensionApi.showErrorNotification("LOOT operation failed", err, {
+            id: "loot-failed",
+            allowReport: false,
+          });
         }
       } else if (err.message.toLowerCase() === "already closed") {
         // loot process terminated, don't really care about the result anyway
@@ -414,19 +379,14 @@ class LootInterface {
     }
   }
 
-  private onGameModeChanged = async (
-    api: types.IExtensionApi,
-    gameMode: string,
-  ) => {
+  private onGameModeChanged = async (api: types.IExtensionApi, gameMode: string) => {
     const oldInitProm = this.mInitPromise;
 
     let onRes: (x: { game: string; loot: LootAsync }) => void;
 
-    this.mInitPromise = new Bluebird<{ game: string; loot: LootAsync }>(
-      (resolve) => {
-        onRes = resolve;
-      },
-    );
+    this.mInitPromise = new Bluebird<{ game: string; loot: LootAsync }>((resolve) => {
+      onRes = resolve;
+    });
 
     const { game, loot }: { game: string; loot: LootAsync } = await oldInitProm;
     if (gameMode === game) {
@@ -440,11 +400,7 @@ class LootInterface {
     }
   };
 
-  private startStopLoot(
-    api: types.IExtensionApi,
-    gameMode: string,
-    loot: LootAsync,
-  ) {
+  private startStopLoot(api: types.IExtensionApi, gameMode: string, loot: LootAsync) {
     if (loot !== undefined) {
       // close the loot instance of the old game, but give it a little time, otherwise it may try to
       // to run instructions after being closed.
@@ -534,9 +490,7 @@ class LootInterface {
     try {
       await loot.loadPluginsAsync(
         plugins
-          .filter(
-            (id) => pluginList[id] !== undefined && pluginList[id].deployed,
-          )
+          .filter((id) => pluginList[id] !== undefined && pluginList[id].deployed)
           .map((name) => name.toLowerCase()),
         false,
       );
@@ -575,8 +529,7 @@ class LootInterface {
           return;
         }
         try {
-          const meta: PluginMetadata =
-            await loot.getPluginMetadataAsync(pluginName);
+          const meta: PluginMetadata = await loot.getPluginMetadataAsync(pluginName);
           let info;
           try {
             const id = pluginName.toLowerCase();
@@ -584,9 +537,7 @@ class LootInterface {
               info = await loot.getPluginAsync(pluginName);
             }
           } catch (err) {
-            const gameMode = selectors.activeGameId(
-              this.mExtensionApi.store.getState(),
-            );
+            const gameMode = selectors.activeGameId(this.mExtensionApi.store.getState());
             log("error", "failed to get plugin info", {
               pluginName,
               error: err.message,
@@ -619,10 +570,8 @@ class LootInterface {
             group: meta?.group || "",
             requirements: (meta?.requirements || []).map(toRef),
             incompatibilities: (meta?.incompatibilities || []).map(toRef),
-            isValidAsLightPlugin:
-              pluginsLoaded && info !== undefined && info.isValidAsLightPlugin,
-            loadsArchive:
-              pluginsLoaded && info !== undefined && info.loadsArchive,
+            isValidAsLightPlugin: pluginsLoaded && info !== undefined && info.isValidAsLightPlugin,
+            loadsArchive: pluginsLoaded && info !== undefined && info.loadsArchive,
             isEmpty: pluginsLoaded && info !== undefined && info.isEmpty,
             version: pluginsLoaded && info !== undefined ? info.version : "",
           };
@@ -663,16 +612,8 @@ class LootInterface {
       "masterlist",
       "masterlist.yaml",
     );
-    const userlistPath = path.join(
-      util.getVortexPath("userData"),
-      gameMode,
-      "userlist.yaml",
-    );
-    const preludePath = path.join(
-      util.getVortexPath("userData"),
-      "loot_prelude",
-      "prelude.yaml",
-    );
+    const userlistPath = path.join(util.getVortexPath("userData"), gameMode, "userlist.yaml");
+    const preludePath = path.join(util.getVortexPath("userData"), "loot_prelude", "prelude.yaml");
 
     let mtime: Date;
     try {
@@ -712,88 +653,69 @@ class LootInterface {
         log("info", "loaded loot lists");
         this.mUserlistTime = mtime;
       } catch (err) {
-        this.mExtensionApi.showErrorNotification(
-          "Failed to load master-/userlist",
-          err,
-          {
-            allowReport: false,
-          } as any,
-        );
+        this.mExtensionApi.showErrorNotification("Failed to load master-/userlist", err, {
+          allowReport: false,
+        } as any);
       }
     }
   };
 
   // tslint:disable-next-line:member-ordering
-  private readLists = Bluebird.method(
-    async (gameMode: string, loot: typeof LootProm) => {
-      const t = this.mExtensionApi.translate;
-      const masterlistPath = path.join(
-        util.getVortexPath("userData"),
-        gameMode,
-        "masterlist",
-        "masterlist.yaml",
-      );
-      const userlistPath = path.join(
-        util.getVortexPath("userData"),
-        gameMode,
-        "userlist.yaml",
-      );
-      const preludePath = path.join(
-        util.getVortexPath("userData"),
-        "loot_prelude",
-        "prelude.yaml",
-      );
+  private readLists = Bluebird.method(async (gameMode: string, loot: typeof LootProm) => {
+    const t = this.mExtensionApi.translate;
+    const masterlistPath = path.join(
+      util.getVortexPath("userData"),
+      gameMode,
+      "masterlist",
+      "masterlist.yaml",
+    );
+    const userlistPath = path.join(util.getVortexPath("userData"), gameMode, "userlist.yaml");
+    const preludePath = path.join(util.getVortexPath("userData"), "loot_prelude", "prelude.yaml");
 
-      let mtime: Date;
+    let mtime: Date;
+    try {
+      mtime = (await fs.statAsync(userlistPath)).mtime;
+    } catch (err) {
+      mtime = null;
+    }
+
+    let usePrelude: boolean = false;
+    try {
+      await fs.statAsync(preludePath);
+      usePrelude = true;
+    } catch (err) {
+      // nop
+    }
+
+    // load & evaluate lists first time we need them and whenever
+    // the userlist has changed
+    if (
+      mtime !== null &&
+      // this.mUserlistTime could be undefined or null
+      (!this.mUserlistTime || this.mUserlistTime.getTime() !== mtime.getTime())
+    ) {
+      log("info", "(re-)loading loot lists", {
+        mtime,
+        masterlistPath,
+        userlistPath,
+        last: this.mUserlistTime,
+      });
       try {
-        mtime = (await fs.statAsync(userlistPath)).mtime;
-      } catch (err) {
-        mtime = null;
-      }
-
-      let usePrelude: boolean = false;
-      try {
-        await fs.statAsync(preludePath);
-        usePrelude = true;
-      } catch (err) {
-        // nop
-      }
-
-      // load & evaluate lists first time we need them and whenever
-      // the userlist has changed
-      if (
-        mtime !== null &&
-        // this.mUserlistTime could be undefined or null
-        (!this.mUserlistTime ||
-          this.mUserlistTime.getTime() !== mtime.getTime())
-      ) {
-        log("info", "(re-)loading loot lists", {
-          mtime,
+        await fs.statAsync(masterlistPath);
+        await loot.loadListsAsync(
           masterlistPath,
-          userlistPath,
-          last: this.mUserlistTime,
-        });
-        try {
-          await fs.statAsync(masterlistPath);
-          await loot.loadListsAsync(
-            masterlistPath,
-            mtime !== null ? userlistPath : "",
-            usePrelude ? preludePath : "",
-          );
-          log("info", "loaded loot lists");
-          this.mUserlistTime = mtime;
-        } catch (err) {
-          this.mExtensionApi.showErrorNotification(
-            "Failed to load master-/userlist",
-            err,
-            {
-              allowReport: false,
-            } as any,
-          );
-        }
+          mtime !== null ? userlistPath : "",
+          usePrelude ? preludePath : "",
+        );
+        log("info", "loaded loot lists");
+        this.mUserlistTime = mtime;
+      } catch (err) {
+        this.mExtensionApi.showErrorNotification("Failed to load master-/userlist", err, {
+          allowReport: false,
+        } as any);
       }
-    },
-  );
+    }
+  });
 
   private convertGameId(gameMode: string, masterlist: boolean) {
     // the vr games use the same masterlist as the base game but have their own game id within loot.
@@ -819,13 +741,9 @@ class LootInterface {
     try {
       await fs.ensureDirAsync(localPath);
     } catch (err) {
-      this.mExtensionApi.showErrorNotification(
-        "Failed to create necessary directory",
-        err,
-        {
-          allowReport: false,
-        },
-      );
+      this.mExtensionApi.showErrorNotification("Failed to create necessary directory", err, {
+        allowReport: false,
+      });
     }
 
     let loot: any;
@@ -842,36 +760,20 @@ class LootInterface {
         ),
       );
     } catch (err) {
-      this.mExtensionApi.showErrorNotification(
-        "Failed to initialize LOOT",
-        err,
-        {
-          allowReport: false,
-        } as any,
-      );
+      this.mExtensionApi.showErrorNotification("Failed to initialize LOOT", err, {
+        allowReport: false,
+      } as any);
       return { game: gameMode, loot: undefined };
     }
-    const masterlistRepoPath = path.join(
-      util.getVortexPath("userData"),
-      gameMode,
-      "masterlist",
-    );
+    const masterlistRepoPath = path.join(util.getVortexPath("userData"), gameMode, "masterlist");
     const masterlistPath = path.join(masterlistRepoPath, "masterlist.yaml");
-    const preludePath = path.join(
-      util.getVortexPath("userData"),
-      "loot_prelude",
-      "prelude.yaml",
-    );
+    const preludePath = path.join(util.getVortexPath("userData"), "loot_prelude", "prelude.yaml");
     await this.downloadMasterlist(gameMode);
 
     try {
       // we need to ensure lists get loaded at least once. before sorting there
       // will always be a check if the userlist was changed
-      const userlistPath = path.join(
-        util.getVortexPath("userData"),
-        gameMode,
-        "userlist.yaml",
-      );
+      const userlistPath = path.join(util.getVortexPath("userData"), gameMode, "userlist.yaml");
 
       let mtime: Date;
       try {
@@ -898,13 +800,9 @@ class LootInterface {
       await loot.loadCurrentLoadOrderStateAsync();
       this.mUserlistTime = mtime;
     } catch (err) {
-      this.mExtensionApi.showErrorNotification(
-        "Failed to load master-/userlist",
-        err,
-        {
-          allowReport: false,
-        } as any,
-      );
+      this.mExtensionApi.showErrorNotification("Failed to load master-/userlist", err, {
+        allowReport: false,
+      } as any);
     }
 
     return { game: gameMode, loot };
@@ -938,9 +836,7 @@ class LootInterface {
       .catch((err) => {
         log("warn", "LOOT process died", { error: err.message });
         if (this.mRestarts > 0) {
-          const gameMode = selectors.activeGameId(
-            this.mExtensionApi.store.getState(),
-          );
+          const gameMode = selectors.activeGameId(this.mExtensionApi.store.getState());
           --this.mRestarts;
           if (gameSupported(gameMode, true)) {
             this.mInitPromise = this.init(gameMode);
@@ -1052,10 +948,7 @@ class LootInterface {
     }
   }
 
-  private getGroup(
-    state: any,
-    pluginName: string,
-  ): { group: string; custom: boolean } {
+  private getGroup(state: any, pluginName: string): { group: string; custom: boolean } {
     const ulEdge = (state.userlist.plugins ?? []).find(
       (iter) => iter.name.toLowerCase() === pluginName.toLowerCase(),
     );
@@ -1102,10 +995,7 @@ class LootInterface {
       }),
     );
     const firstGroup = this.getGroup(state, cycle[0].name);
-    return (
-      lines.join(" ") +
-      ` ${cycle[0].name}@[i]${firstGroup.group || "default"}[/i]`
-    );
+    return lines.join(" ") + ` ${cycle[0].name}@[i]${firstGroup.group || "default"}[/i]`;
   }
 
   private async getSolutions(
@@ -1164,11 +1054,7 @@ class LootInterface {
               edgeGroup.group || "default",
               nextGroup.group || "default",
             );
-            if (
-              groupPath.find(
-                (iter) => userTypes.indexOf(iter.typeOfEdgeToNextVertex) !== -1,
-              )
-            ) {
+            if (groupPath.find((iter) => userTypes.indexOf(iter.typeOfEdgeToNextVertex) !== -1)) {
               result.push({
                 // Storing the plugin names here instead of the group directly because the plugin
                 //   names are file names on disk and thus won't contain colons, meaning we can
@@ -1205,11 +1091,7 @@ class LootInterface {
     const args = key.split(":");
     if (args[0] === "removerule") {
       api.store.dispatch(
-        removeRule(
-          args[2],
-          args[1],
-          args[3] === EdgeType.userRequirement ? "requires" : "after",
-        ),
+        removeRule(args[2], args[1], args[3] === EdgeType.userRequirement ? "requires" : "after"),
       );
     } else if (args[0] === "unassign") {
       api.store.dispatch(setGroup(args[1], undefined));
@@ -1231,10 +1113,7 @@ class LootInterface {
           ) {
             const pathNext = cyclePath[(idx + 1) % cyclePath.length];
             api.store.dispatch(
-              removeGroupRule(
-                pathNext.name || "default",
-                pathEdge.name || "default",
-              ),
+              removeGroupRule(pathNext.name || "default", pathEdge.name || "default"),
             );
           }
         });
@@ -1242,10 +1121,7 @@ class LootInterface {
         log("warn", "failed to determine path between groups", err.message);
       }
     } else {
-      api.showErrorNotification(
-        "Invalid fix instruction for cycle, please report this",
-        key,
-      );
+      api.showErrorNotification("Invalid fix instruction for cycle, please report this", key);
     }
   }
 
@@ -1263,10 +1139,7 @@ class LootInterface {
       if (err.message.toLowerCase() === "already closed") {
         return;
       } else {
-        this.mExtensionApi.showErrorNotification(
-          "Failed to report plugin cycle",
-          err,
-        );
+        this.mExtensionApi.showErrorNotification("Failed to report plugin cycle", err);
         return;
       }
     }
@@ -1313,9 +1186,7 @@ class LootInterface {
               )
               .then(async (result) => {
                 if (result.action === "Apply Selected") {
-                  const selected = Object.keys(result.input).filter(
-                    (key) => result.input[key],
-                  );
+                  const selected = Object.keys(result.input).filter((key) => result.input[key]);
 
                   const sorted = selected.sort((lhs, rhs) => {
                     // reset groups first because if one of the other commands changes the

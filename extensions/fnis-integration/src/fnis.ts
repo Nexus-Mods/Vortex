@@ -1,9 +1,10 @@
-import { patchListName } from "./gameSupport";
-import { IDeployment, IFNISPatch } from "./types";
-
 import * as path from "path";
+
 import { actions, fs, log, selectors, types, util } from "vortex-api";
 import { GetProcessWindowList, SetForegroundWindow } from "winapi-bindings";
+
+import { patchListName } from "./gameSupport";
+import { IDeployment, IFNISPatch } from "./types";
 
 // most of these are invalid on windows only but it's not worth the effort allowing them elsewhere
 const INVALID_CHARS = /[:/\\*?"<>|]/g;
@@ -50,26 +51,14 @@ async function createFNISMod(
   });
 
   const state = api.store.getState();
-  const installPath = (selectors as any).installPathForGame(
-    state,
-    profile.gameId,
-  );
+  const installPath = (selectors as any).installPathForGame(state, profile.gameId);
 
   await fs.ensureFileAsync(
-    path.join(
-      installPath,
-      modName,
-      "tools",
-      "GenerateFNIS_for_Users",
-      "MyPatches.txt",
-    ),
+    path.join(installPath, modName, "tools", "GenerateFNIS_for_Users", "MyPatches.txt"),
   );
 }
 
-async function ensureFNISMod(
-  api: types.IExtensionApi,
-  profile: types.IProfile,
-): Promise<string> {
+async function ensureFNISMod(api: types.IExtensionApi, profile: types.IProfile): Promise<string> {
   const state: types.IState = api.store.getState();
   const modName = fnisDataMod(profile.name);
   const mod = state.persistent.mods[profile.gameId]?.[modName];
@@ -77,39 +66,16 @@ async function ensureFNISMod(
     await createFNISMod(api, modName, profile);
   } else {
     // give the user an indication when this was last updated
-    api.store.dispatch(
-      actions.setModAttribute(
-        profile.gameId,
-        modName,
-        "installTime",
-        new Date(),
-      ),
-    );
+    api.store.dispatch(actions.setModAttribute(profile.gameId, modName, "installTime", new Date()));
     // the rest here is only required to update mods from previous vortex versions
+    api.store.dispatch(actions.setModAttribute(profile.gameId, modName, "name", "FNIS Data"));
     api.store.dispatch(
-      actions.setModAttribute(profile.gameId, modName, "name", "FNIS Data"),
+      actions.setModAttribute(profile.gameId, modName, "logicalFileName", "FNIS Data"),
     );
+    api.store.dispatch(actions.setModAttribute(profile.gameId, modName, "modId", 42));
+    api.store.dispatch(actions.setModAttribute(profile.gameId, modName, "version", "1.0.0"));
     api.store.dispatch(
-      actions.setModAttribute(
-        profile.gameId,
-        modName,
-        "logicalFileName",
-        "FNIS Data",
-      ),
-    );
-    api.store.dispatch(
-      actions.setModAttribute(profile.gameId, modName, "modId", 42),
-    );
-    api.store.dispatch(
-      actions.setModAttribute(profile.gameId, modName, "version", "1.0.0"),
-    );
-    api.store.dispatch(
-      actions.setModAttribute(
-        profile.gameId,
-        modName,
-        "source",
-        "user-generated",
-      ),
+      actions.setModAttribute(profile.gameId, modName, "source", "user-generated"),
     );
     api.store.dispatch(
       actions.setModAttribute(
@@ -120,9 +86,7 @@ async function ensureFNISMod(
       ),
     );
     if (mod.installationPath === undefined) {
-      api.store.dispatch(
-        actions.setModInstallationPath(profile.gameId, modName, modName),
-      );
+      api.store.dispatch(actions.setModInstallationPath(profile.gameId, modName, modName));
     }
   }
   return modName;
@@ -132,10 +96,7 @@ export function fileChecksum(filePath: string): Promise<string> {
   const stackErr = new Error();
   const updateErr = (err: Error) => {
     err.stack = []
-      .concat(
-        err.stack.split("\n").slice(0, 1),
-        stackErr.stack.split("\n").slice(1),
-      )
+      .concat(err.stack.split("\n").slice(0, 1), stackErr.stack.split("\n").slice(1))
       .join("\n");
     return err;
   };
@@ -183,8 +144,7 @@ export async function calcChecksum(
 ): Promise<{ checksum: string; mods: string[] }> {
   const mods = new Set<string>();
   const animationFiles = deployment[""].filter((file: types.IDeployedFile) => {
-    const res =
-      expressions.find((expr) => expr.test(file.relPath)) !== undefined;
+    const res = expressions.find((expr) => expr.test(file.relPath)) !== undefined;
     if (res) {
       mods.add(file.source);
     }
@@ -223,10 +183,7 @@ export function fnisTool(state: types.IState, gameId: string) {
   return Object.keys(tools)
     .map((id) => tools[id])
     .filter((iter) => iter !== undefined && iter.path !== undefined)
-    .find(
-      (iter) =>
-        path.basename(iter.path).toLowerCase() === "generatefnisforusers.exe",
-    );
+    .find((iter) => path.basename(iter.path).toLowerCase() === "generatefnisforusers.exe");
 }
 
 const patchTransform = [
@@ -261,8 +218,7 @@ export async function readFNISPatches(
           .split("#")
           .slice(0, 6)
           .reduce((prev: any, value: string, idx: number) => {
-            prev[patchTransform[idx].key] =
-              patchTransform[idx].transform(value);
+            prev[patchTransform[idx].key] = patchTransform[idx].transform(value);
             return prev;
           }, []),
       )
@@ -329,30 +285,19 @@ async function runFNIS(
   const tool = fnisTool(state, profile.gameId);
   if (tool === undefined) {
     log("info", "fnis not configured");
-    return Promise.reject(
-      new util.SetupError("FNIS not installed or not configured correctly"),
-    );
+    return Promise.reject(new util.SetupError("FNIS not installed or not configured correctly"));
   }
   try {
     await fs.statAsync(tool.path);
   } catch (err) {
     log("info", "fnis configured but can't be run", err.message);
-    return Promise.reject(
-      new util.SetupError("FNIS not installed or not configured correctly"),
-    );
+    return Promise.reject(new util.SetupError("FNIS not installed or not configured correctly"));
   }
 
-  const patches = util.getSafe(
-    state,
-    ["settings", "fnis", "patches", profile.id],
-    [],
-  );
+  const patches = util.getSafe(state, ["settings", "fnis", "patches", profile.id], []);
   await writePatches(path.dirname(tool.path), patches);
 
-  const installPath = (selectors as any).installPathForGame(
-    state,
-    profile.gameId,
-  );
+  const installPath = (selectors as any).installPathForGame(state, profile.gameId);
   const modId = await ensureFNISMod(api, profile);
   const modPath = path.join(installPath, modId);
   const args = [`RedirectFiles="${modPath}"`];

@@ -1,31 +1,16 @@
-import { closeDialog, setType } from "../actions";
-import { NAMESPACE } from "../statics";
-
 import minimatch from "minimatch";
 import { IReference, IRule, RuleType } from "modmeta-db";
 import * as React from "react";
-import {
-  Button,
-  Col,
-  ControlLabel,
-  Form,
-  FormControl,
-  FormGroup,
-  Modal,
-} from "react-bootstrap";
+import { Button, Col, ControlLabel, Form, FormControl, FormGroup, Modal } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import * as Redux from "redux";
 import { ThunkDispatch } from "redux-thunk";
 import * as semver from "semver";
-import {
-  actions,
-  ComponentEx,
-  FormFeedback,
-  More,
-  types,
-  util,
-} from "vortex-api";
+import { actions, ComponentEx, FormFeedback, More, types, util } from "vortex-api";
+
+import { closeDialog, setType } from "../actions";
+import { NAMESPACE } from "../statics";
 
 interface IDialog {
   gameId: string;
@@ -70,16 +55,11 @@ class Editor extends ComponentEx<IProps, IComponentState> {
 
   public UNSAFE_componentWillReceiveProps(nextProps: IProps) {
     if (this.props.dialog !== nextProps.dialog) {
-      if (
-        nextProps.dialog !== undefined &&
-        nextProps.dialog.reference !== undefined
-      ) {
+      if (nextProps.dialog !== undefined && nextProps.dialog.reference !== undefined) {
         this.nextState.type = nextProps.dialog.type;
         this.nextState.reference = {
           ...nextProps.dialog.reference,
-          versionMatch: this.genVersionMatch(
-            nextProps.dialog.reference.versionMatch,
-          ),
+          versionMatch: this.genVersionMatch(nextProps.dialog.reference.versionMatch),
         };
       } else {
         this.nextState.type = undefined;
@@ -127,13 +107,9 @@ class Editor extends ComponentEx<IProps, IComponentState> {
 
   private renderReference = (reference: IReference): JSX.Element => {
     const { t, dialog } = this.props;
-    const { logicalFileName, versionMatch, fileExpression, fileMD5 } =
-      reference;
+    const { logicalFileName, versionMatch, fileExpression, fileMD5 } = reference;
 
-    if (
-      (logicalFileName === "" && fileExpression === "") ||
-      versionMatch === undefined
-    ) {
+    if ((logicalFileName === "" && fileExpression === "") || versionMatch === undefined) {
       return (
         <Form horizontal>
           <FormGroup>
@@ -150,10 +126,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
 
     let expressionInvalid = null;
     if (logicalFileName === undefined) {
-      expressionInvalid = minimatch(
-        dialog.reference.fileExpression,
-        fileExpression,
-      )
+      expressionInvalid = minimatch(dialog.reference.fileExpression, fileExpression)
         ? null
         : t("Doesn't match the file name");
     }
@@ -180,10 +153,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
       // treat * as always valid, even if the version is not semver compliant
     } else if (semver.validRange(versionMatch) === null) {
       versionInvalid = t("Range invalid");
-    } else if (
-      semver.valid(refVer) &&
-      !semver.satisfies(refVer, versionMatch)
-    ) {
+    } else if (semver.valid(refVer) && !semver.satisfies(refVer, versionMatch)) {
       versionInvalid = t("Doesn't match the mod");
     } else if (!semver.valid(refVer) && refVer !== versionMatch) {
       versionInvalid = t("Doesn't match the mod");
@@ -221,11 +191,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
               style={{ marginLeft: 0, marginRight: 0 }}
               validationState={versionInvalid !== null ? "error" : "success"}
             >
-              <FormControl
-                type="text"
-                value={versionMatch}
-                onChange={this.changeVersion}
-              />
+              <FormControl type="text" value={versionMatch} onChange={this.changeVersion} />
               <ControlLabel>{versionInvalid}</ControlLabel>
               <FormFeedback />
             </FormGroup>
@@ -297,11 +263,7 @@ function mapStateToProps(state: any): IConnectedProps {
   const dialog: IDialog = state.session.dependencies.dialog || undefined;
   const mod =
     dialog !== undefined
-      ? util.getSafe(
-          state,
-          ["persistent", "mods", dialog.gameId, dialog.modId],
-          undefined,
-        )
+      ? util.getSafe(state, ["persistent", "mods", dialog.gameId, dialog.modId], undefined)
       : undefined;
   return {
     dialog,
@@ -309,14 +271,11 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, null, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onCloseDialog: () => dispatch(closeDialog()),
     onSetType: (type) => dispatch(setType(type)),
-    onAddRule: (gameId, modId, rule) =>
-      dispatch(actions.addModRule(gameId, modId, rule)),
+    onAddRule: (gameId, modId, rule) => dispatch(actions.addModRule(gameId, modId, rule)),
   };
 }
 

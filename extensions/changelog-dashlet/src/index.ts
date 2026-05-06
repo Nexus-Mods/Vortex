@@ -1,13 +1,14 @@
-import { setChangelogs } from "./actions";
-import ChangelogDashlet from "./ChangelogDashlet";
-import sessionReducer from "./reducers";
+import * as path from "path";
 
 import Promise from "bluebird";
 import * as _ from "lodash";
-import * as path from "path";
 import * as Redux from "redux";
 import * as semver from "semver";
 import { log, types, util } from "vortex-api";
+
+import { setChangelogs } from "./actions";
+import ChangelogDashlet from "./ChangelogDashlet";
+import sessionReducer from "./reducers";
 import { Changelog } from "./types";
 
 function updateReleases(store: Redux.Store<types.IState>): Promise<void> {
@@ -23,9 +24,7 @@ function updateReleases(store: Redux.Store<types.IState>): Promise<void> {
     const copiedChangelogs = Array.from(persistentLogs);
 
     // sort
-    const sortedChangelogs = copiedChangelogs.sort((a, b) =>
-      semver.compare(b.version, a.version),
-    );
+    const sortedChangelogs = copiedChangelogs.sort((a, b) => semver.compare(b.version, a.version));
 
     // update state
     store.dispatch(setChangelogs(sortedChangelogs));
@@ -75,10 +74,7 @@ function main(context: types.IExtensionContext) {
   );
 
   context.once(() => {
-    context.api.setStylesheet(
-      "changelog",
-      path.join(__dirname, "changelog.scss"),
-    );
+    context.api.setStylesheet("changelog", path.join(__dirname, "changelog.scss"));
     updateReleases(context.api.store).catch((err) => {
       log("warn", "failed to retrieve list of releases", err.message);
     });

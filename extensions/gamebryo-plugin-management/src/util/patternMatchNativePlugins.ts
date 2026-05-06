@@ -1,7 +1,9 @@
 /* eslint-disable */
 import path from "path";
+
 import memoizeOne from "memoize-one";
 import { fs, types } from "vortex-api";
+
 import { gameDataPath, IGameSupport, pluginExtensions } from "./gameSupport";
 
 export const patternMatchNativePlugins = memoizeOne(

@@ -1,19 +1,14 @@
-import { setAutoRun, setNeedToRun, setPatches } from "./actions";
-import fnis, {
-  calcChecksum,
-  fnisDataMod,
-  fnisTool,
-  readFNISPatches,
-} from "./fnis";
-import { isSupported, nexusPageURL } from "./gameSupport";
-import reducer from "./reducers";
-import Settings from "./Settings";
-import { IDeployment } from "./types";
-
 import Promise from "bluebird";
 import getVersion from "exe-version";
 import I18next from "i18next";
 import { actions, fs, log, selectors, types, util } from "vortex-api";
+
+import { setAutoRun, setNeedToRun, setPatches } from "./actions";
+import fnis, { calcChecksum, fnisDataMod, fnisTool, readFNISPatches } from "./fnis";
+import { isSupported, nexusPageURL } from "./gameSupport";
+import reducer from "./reducers";
+import Settings from "./Settings";
+import { IDeployment } from "./types";
 
 type TranslationFunction = typeof I18next.t;
 
@@ -101,8 +96,7 @@ function init(context: types.IExtensionContext) {
       );
     },
     (props: IFNISProps) => isSupported(props.gameMode),
-    (t: TranslationFunction, props: IFNISProps) =>
-      props.enabled ? t("Yes") : t("No"),
+    (t: TranslationFunction, props: IFNISProps) => (props.enabled ? t("Yes") : t("No")),
     undefined,
   );
 
@@ -143,9 +137,7 @@ function init(context: types.IExtensionContext) {
             context.api.store.dispatch(
               setPatches(
                 profile.id,
-                Object.keys(result.input).filter(
-                  (patch) => result.input[patch],
-                ),
+                Object.keys(result.input).filter((patch) => result.input[patch]),
               ),
             );
             context.api.store.dispatch(setNeedToRun(profile.id, true));
@@ -159,10 +151,7 @@ function init(context: types.IExtensionContext) {
             }
             return;
           }
-          context.api.showErrorNotification(
-            "Failed to read list of available patches",
-            err,
-          );
+          context.api.showErrorNotification("Failed to read list of available patches", err);
         });
     },
     () => {
@@ -173,106 +162,88 @@ function init(context: types.IExtensionContext) {
     },
   );
 
-  context.registerTest(
-    "fnis-integration",
-    "gamemode-activated",
-    (): Promise<types.ITestResult> => {
-      const t = context.api.translate;
-      const state: types.IState = context.api.store.getState();
-      if (!util.getSafe(state, ["settings", "fnis", "autoRun"], false)) {
-        // not enabled
-        return Promise.resolve(undefined);
-      }
-      const gameMode = selectors.activeGameId(state);
-      if (!isSupported(gameMode)) {
-        // game not supported
-        return Promise.resolve(undefined);
-      }
-      const tool = fnisTool(state, gameMode);
+  context.registerTest("fnis-integration", "gamemode-activated", (): Promise<types.ITestResult> => {
+    const t = context.api.translate;
+    const state: types.IState = context.api.store.getState();
+    if (!util.getSafe(state, ["settings", "fnis", "autoRun"], false)) {
+      // not enabled
+      return Promise.resolve(undefined);
+    }
+    const gameMode = selectors.activeGameId(state);
+    if (!isSupported(gameMode)) {
+      // game not supported
+      return Promise.resolve(undefined);
+    }
+    const tool = fnisTool(state, gameMode);
 
-      if (tool !== undefined) {
-        // if the tool is configured, verify it's actually installed at that location
-        return fs
-          .statAsync(tool.path)
-          .then(() => {
-            const versionStr: string = getVersion(tool.path);
-            log("debug", "fnis tool setup", {
-              path: tool.path,
-              version: versionStr || "missing",
-            });
-            if (versionStr === undefined) {
-              return checkFailedResult(t, gameMode, "missing");
-            } else {
-              const version = versionStr
-                .split(".")
-                .map((seg) => parseInt(seg, 10));
-              if (version[0] < 7 || (version[0] === 7 && version[1] < 4)) {
-                return checkFailedResult(t, gameMode, "outdated");
-              }
+    if (tool !== undefined) {
+      // if the tool is configured, verify it's actually installed at that location
+      return fs
+        .statAsync(tool.path)
+        .then(() => {
+          const versionStr: string = getVersion(tool.path);
+          log("debug", "fnis tool setup", {
+            path: tool.path,
+            version: versionStr || "missing",
+          });
+          if (versionStr === undefined) {
+            return checkFailedResult(t, gameMode, "missing");
+          } else {
+            const version = versionStr.split(".").map((seg) => parseInt(seg, 10));
+            if (version[0] < 7 || (version[0] === 7 && version[1] < 4)) {
+              return checkFailedResult(t, gameMode, "outdated");
             }
-            return undefined;
-          })
-          .catch(() => checkFailedResult(t, gameMode, "missing"));
-      } else {
-        return Promise.resolve(checkFailedResult(t, gameMode, "missing"));
-      }
-    },
-  );
+          }
+          return undefined;
+        })
+        .catch(() => checkFailedResult(t, gameMode, "missing"));
+    } else {
+      return Promise.resolve(checkFailedResult(t, gameMode, "missing"));
+    }
+  });
 
   context.once(() => {
     let lastChecksum: string;
-    (context.api as any).onAsync(
-      "will-deploy",
-      (profileId: string, deployment: IDeployment) => {
-        lastChecksum = undefined;
-        const state: types.IState = context.api.store.getState();
+    (context.api as any).onAsync("will-deploy", (profileId: string, deployment: IDeployment) => {
+      lastChecksum = undefined;
+      const state: types.IState = context.api.store.getState();
 
-        if (util.getSafe(state, ["settings", "fnis", "autoRun"], false)) {
-          const profile = state.persistent.profiles[profileId];
-          if (profile === undefined || !isSupported(profile.gameId)) {
-            return;
-          }
-          const modId = fnisDataMod(profile.name);
-          if (
-            util.getSafe(state, ["mods", modId], undefined) !== undefined &&
-            !util.getSafe(profile, ["modState", modId, "enabled"], true)
-          ) {
-            // if the data mod is known but disabled, don't update it and most importantly:
-            //  don't activate it after deployment, that's probably not what the user wants
-            return;
-          }
-          context.api.store.dispatch(
-            actions.setModEnabled(profile.id, modId, false),
-          );
-          const discovery: types.IDiscoveryResult =
-            state.settings.gameMode.discovered[profile.gameId];
-          if (discovery === undefined || discovery.path === undefined) {
-            return Promise.resolve();
-          }
-
-          return calcChecksum(discovery.path, deployment)
-            .then(({ checksum, mods }) => {
-              log("debug", "Animations checksum calculated", checksum);
-              lastChecksum = checksum;
-            })
-            .catch((err) => {
-              context.api.showErrorNotification(
-                "Failed to calculate FNIS checksum",
-                err,
-              );
-            });
-        } else {
+      if (util.getSafe(state, ["settings", "fnis", "autoRun"], false)) {
+        const profile = state.persistent.profiles[profileId];
+        if (profile === undefined || !isSupported(profile.gameId)) {
+          return;
+        }
+        const modId = fnisDataMod(profile.name);
+        if (
+          util.getSafe(state, ["mods", modId], undefined) !== undefined &&
+          !util.getSafe(profile, ["modState", modId, "enabled"], true)
+        ) {
+          // if the data mod is known but disabled, don't update it and most importantly:
+          //  don't activate it after deployment, that's probably not what the user wants
+          return;
+        }
+        context.api.store.dispatch(actions.setModEnabled(profile.id, modId, false));
+        const discovery: types.IDiscoveryResult =
+          state.settings.gameMode.discovered[profile.gameId];
+        if (discovery === undefined || discovery.path === undefined) {
           return Promise.resolve();
         }
-      },
-    );
+
+        return calcChecksum(discovery.path, deployment)
+          .then(({ checksum, mods }) => {
+            log("debug", "Animations checksum calculated", checksum);
+            lastChecksum = checksum;
+          })
+          .catch((err) => {
+            context.api.showErrorNotification("Failed to calculate FNIS checksum", err);
+          });
+      } else {
+        return Promise.resolve();
+      }
+    });
     (context.api as any).onAsync(
       "did-deploy",
-      (
-        profileId: string,
-        deployment: IDeployment,
-        setTitle: (title: string) => void,
-      ) => {
+      (profileId: string, deployment: IDeployment, setTitle: (title: string) => void) => {
         const { store } = context.api;
         const state = context.api.getState();
         if (lastChecksum !== undefined) {
@@ -294,27 +265,20 @@ function init(context: types.IExtensionContext) {
           // TODO: this is a hack. We don't want the FNIS Data mod being enabled to trigger a new
           //   deployment, but this is probably true for everything that runs as a post-deploy
           //   callback but _not_ for everything else that is triggered separately
-          const didNeedDeployment =
-            state.persistent.deployment.needToDeploy[profile.gameId];
+          const didNeedDeployment = state.persistent.deployment.needToDeploy[profile.gameId];
           let dependentMods: string[];
           return calcChecksum(discovery.path, deployment)
             .then(({ checksum, mods }) => {
               dependentMods = mods;
               log("debug", "Animations checksum after deployment", checksum);
               if (!didNeedDeployment) {
-                store.dispatch(
-                  actions.setDeploymentNecessary(profile.gameId, false),
-                );
+                store.dispatch(actions.setDeploymentNecessary(profile.gameId, false));
               }
               if (
                 checksum === lastChecksum &&
                 allMods[modId] !== undefined &&
                 allMods[modId].installationPath !== undefined &&
-                !util.getSafe(
-                  state,
-                  ["settings", "fnis", "needToRun", profile.id],
-                  false,
-                )
+                !util.getSafe(state, ["settings", "fnis", "needToRun", profile.id], false)
               ) {
                 return Promise.resolve();
               }
@@ -339,11 +303,7 @@ function init(context: types.IExtensionContext) {
 
               store.dispatch(actions.setModEnabled(profile.id, modId, true));
               store.dispatch(setNeedToRun(profile.id, false));
-              return context.api.emitAndAwait(
-                "deploy-single-mod",
-                profile.gameId,
-                modId,
-              );
+              return context.api.emitAndAwait("deploy-single-mod", profile.gameId, modId);
             })
             .catch((err) => {
               if (err instanceof util.UserCanceled) {
@@ -360,9 +320,7 @@ function init(context: types.IExtensionContext) {
                 const isMisconfigured = err instanceof util.SetupError;
                 context.api.showErrorNotification(
                   "Failed to run FNIS",
-                  isMisconfigured
-                    ? "Please install FNIS and add it as a tool inside Vortex"
-                    : err,
+                  isMisconfigured ? "Please install FNIS and add it as a tool inside Vortex" : err,
                   { allowReport: !isMisconfigured, id: "fnis-failed-to-run" },
                 );
               }

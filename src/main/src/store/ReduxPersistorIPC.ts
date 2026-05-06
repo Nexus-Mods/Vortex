@@ -11,10 +11,9 @@
  * - Provides hydration data to renderer on startup
  */
 
+import { unknownToError } from "@vortex/shared";
 import type { DiffOperation, Serializable } from "@vortex/shared/ipc";
 import type { IPersistor, PersistorKey } from "@vortex/shared/state";
-
-import { unknownToError } from "@vortex/shared";
 
 import { terminate } from "../errorHandling";
 import { log } from "../logging";
@@ -51,9 +50,7 @@ function insertValueAtLeaf<T extends Record<string, unknown>, V>(
       }
     }, target);
   } catch (err) {
-    const newErr = new Error(
-      `Failed to load application state ${hive}.${key.join(".")}`,
-    );
+    const newErr = new Error(`Failed to load application state ${hive}.${key.join(".")}`);
     if (err instanceof Error) {
       newErr.stack = err.stack;
     }
@@ -85,10 +82,7 @@ class ReduxPersistorIPC {
   /**
    * Set the LevelPersist instance and QueryInvalidator for dirty table tracking.
    */
-  public setQueryInvalidator(
-    levelPersist: LevelPersist,
-    invalidator: QueryInvalidator,
-  ): void {
+  public setQueryInvalidator(levelPersist: LevelPersist, invalidator: QueryInvalidator): void {
     this.#mLevelPersist = levelPersist;
     this.#mInvalidator = invalidator;
   }
@@ -197,8 +191,7 @@ class ReduxPersistorIPC {
   ): Promise<void> {
     const levelPersist = this.#mLevelPersist;
     const invalidator = this.#mInvalidator;
-    const useTransaction =
-      levelPersist !== undefined && invalidator !== undefined;
+    const useTransaction = levelPersist !== undefined && invalidator !== undefined;
 
     try {
       if (useTransaction) {
@@ -250,9 +243,7 @@ class ReduxPersistorIPC {
         // Retry on user ignore
         return this.processOperations(hive, persistor, operations);
       } else {
-        terminate(
-          new Error(`Failed to store application state: ${err.message}`),
-        );
+        terminate(new Error(`Failed to store application state: ${err.message}`));
       }
     }
   }
@@ -260,14 +251,9 @@ class ReduxPersistorIPC {
   /**
    * Apply a single diff operation to the persistor.
    */
-  private applyOperation(
-    persistor: IPersistor,
-    operation: DiffOperation,
-  ): Promise<void> {
+  private applyOperation(persistor: IPersistor, operation: DiffOperation): Promise<void> {
     if (operation.type === "set") {
-      return Promise.resolve(
-        persistor.setItem(operation.path, this.serialize(operation.value)),
-      );
+      return Promise.resolve(persistor.setItem(operation.path, this.serialize(operation.value)));
     } else {
       return Promise.resolve(persistor.removeItem(operation.path));
     }
@@ -310,8 +296,7 @@ class ReduxPersistorIPC {
       );
       // Filter out undefined values (keys that weren't found)
       kvPairs = results.filter(
-        (kvPair): kvPair is { key: PersistorKey; value: Serializable } =>
-          kvPair !== undefined,
+        (kvPair): kvPair is { key: PersistorKey; value: Serializable } => kvPair !== undefined,
       );
     }
 

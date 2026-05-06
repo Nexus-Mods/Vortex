@@ -1,16 +1,12 @@
 import type { IExtensionContext } from "../../types/IExtensionContext";
+import type { IOverlayOptions, IPosition } from "../../types/IState";
 import { dismissOverlay, showOverlay } from "./actions";
 import Container from "./Container";
 import Reducer from "./reducer";
 
-import type { IOverlayOptions, IPosition } from "../../types/IState";
-
 const componentRegistry = new Map<string, React.ComponentType<any>>();
 
-function registerOverlayComponent(
-  id: string,
-  component: React.ComponentType<any>,
-): void {
+function registerOverlayComponent(id: string, component: React.ComponentType<any>): void {
   componentRegistry.set(id, component);
 }
 
@@ -48,13 +44,9 @@ function init(context: IExtensionContext): boolean {
       if (typeof content === "function") {
         const componentId = `component-${id}-${Date.now()}`;
         registerOverlayComponent(componentId, content);
-        context.api.store.dispatch(
-          showOverlay(id, title, undefined, componentId, pos, options),
-        );
+        context.api.store.dispatch(showOverlay(id, title, undefined, componentId, pos, options));
       } else {
-        context.api.store.dispatch(
-          showOverlay(id, title, content, undefined, pos, options),
-        );
+        context.api.store.dispatch(showOverlay(id, title, content, undefined, pos, options));
       }
     },
     { minArguments: 3 },

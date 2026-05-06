@@ -1,22 +1,19 @@
 import path from "path";
+
+import semver from "semver";
+import { util } from "vortex-api";
+
 import {
   IBIXPackageResolver,
   IAvailableDownloads,
   IBepInExGameConfig,
   INexusDownloadInfoExt,
 } from "./types";
-import { util } from "vortex-api";
-
-import semver from "semver";
 export const NEXUS = "www.nexusmods.com";
 export const DOORSTOPPER_HOOK = "winhttp.dll";
 export const DOORSTOPPER_CONFIG = "doorstop_config.ini";
 export const BEPINEX_CONFIG_FILE = "BepInEx.cfg";
-export const BEPINEX_CONFIG_REL_PATH = path.join(
-  "BepInEx",
-  "config",
-  BEPINEX_CONFIG_FILE,
-);
+export const BEPINEX_CONFIG_REL_PATH = path.join("BepInEx", "config", BEPINEX_CONFIG_FILE);
 export const DOORSTOP_FILES: string[] = [DOORSTOPPER_CONFIG, DOORSTOPPER_HOOK];
 export const INJECTOR_FILES: string[] = [
   "0Harmony.dll",
@@ -48,18 +45,12 @@ const DEFAULT_VERSION = "5.4.22";
 const NEW_FILE_FORMAT_VERSION = "6.0.0";
 const GAME_SUPPORT: { [gameId: string]: IBepInExGameConfig } = {};
 export const getSupportMap = () => GAME_SUPPORT;
-export const resolveBixPackage = (
-  gameConf: IBepInExGameConfig,
-): IBIXPackageResolver => {
+export const resolveBixPackage = (gameConf: IBepInExGameConfig): IBIXPackageResolver => {
   // Depending on the game config's github parameters this will generate a regexp
   //  that will match the download link for the BepInEx package.
-  const { architecture, bepinexVersion, bepinexCoercedVersion, unityBuild } =
-    gameConf;
+  const { architecture, bepinexVersion, bepinexCoercedVersion, unityBuild } = gameConf;
   const arch = architecture !== undefined ? architecture : "x64";
-  const version =
-    bepinexCoercedVersion !== undefined
-      ? bepinexCoercedVersion
-      : DEFAULT_VERSION;
+  const version = bepinexCoercedVersion !== undefined ? bepinexCoercedVersion : DEFAULT_VERSION;
   const platform = semver.gte(version.replace(/-.*$/gim, ""), "5.4.23")
     ? process.platform === "win32"
       ? "win_"
@@ -85,9 +76,7 @@ export const resolveBixPackage = (
 export const addGameSupport = (gameConf: IBepInExGameConfig) => {
   const isIL2CPP = gameConf.unityBuild === "unityil2cpp";
 
-  if (isIL2CPP
-      && gameConf.bepinexVersion != null
-      && semver.lt(gameConf.bepinexVersion, "6.0.0")) {
+  if (isIL2CPP && gameConf.bepinexVersion != null && semver.lt(gameConf.bepinexVersion, "6.0.0")) {
     throw new Error("IL2CPP builds require BepInEx 6.0.0 or above");
   }
 
@@ -105,8 +94,7 @@ export const addGameSupport = (gameConf: IBepInExGameConfig) => {
   }
 
   if (gameConf.bepinexVersion != null) {
-    gameConf.bepinexCoercedVersion =
-      util.semverCoerce(gameConf.bepinexVersion).version;
+    gameConf.bepinexCoercedVersion = util.semverCoerce(gameConf.bepinexVersion).version;
   }
 
   GAME_SUPPORT[gameConf.gameId] = gameConf;
@@ -186,14 +174,11 @@ const getLatestVersion = (arch: string): string => {
   return `${latestVersion}${arch}`;
 };
 
-export const getDownload = (
-  gameConf: IBepInExGameConfig,
-): INexusDownloadInfoExt => {
+export const getDownload = (gameConf: IBepInExGameConfig): INexusDownloadInfoExt => {
   const arch = gameConf.architecture ?? "x64";
   const versionKey = `${gameConf.bepinexVersion}${arch}`;
   const download: INexusDownloadInfoExt =
-    gameConf.bepinexVersion != null &&
-      Object.keys(AVAILABLE).includes(versionKey)
+    gameConf.bepinexVersion != null && Object.keys(AVAILABLE).includes(versionKey)
       ? AVAILABLE[versionKey]
       : AVAILABLE[getLatestVersion(arch)];
   return {

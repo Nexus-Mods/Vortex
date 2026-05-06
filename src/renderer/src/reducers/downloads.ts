@@ -1,11 +1,7 @@
 import type { DownloadCheckpoint } from "@vortex/shared/download";
 
+import { clearDownloadCheckpoint, setDownloadCheckpoint } from "../actions/downloads";
 import type { IReducerSpec } from "../types/IExtensionContext";
-
-import {
-  clearDownloadCheckpoint,
-  setDownloadCheckpoint,
-} from "../actions/downloads";
 
 type CheckpointsState = {
   checkpoints: Record<string, DownloadCheckpoint<string>>;

@@ -52,10 +52,7 @@ describe("staticChunker", () => {
     it("accounts for every byte across all chunks", () => {
       const size = 100;
       const chunks = createChunks(size, 4);
-      const total = chunks.reduce(
-        (sum, c) => sum + (c.range.end - c.range.start + 1),
-        0,
-      );
+      const total = chunks.reduce((sum, c) => sum + (c.range.end - c.range.start + 1), 0);
       expect(total).toBe(size);
     });
   });

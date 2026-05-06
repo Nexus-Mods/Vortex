@@ -3,13 +3,12 @@ import { Panel, Tab, Tabs } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
-import type { IBaseProps } from "../extensions/settings_interface/SettingsInterface";
-import type { PropsCallbackTyped } from "../types/IExtensionContext";
-import type { IState } from "../types/IState";
-
 import { setSettingsPage } from "../actions/session";
 import EmptyPlaceholder from "../controls/EmptyPlaceholder";
 import { useExtensionObjects } from "../ExtensionProvider";
+import type { IBaseProps } from "../extensions/settings_interface/SettingsInterface";
+import type { PropsCallbackTyped } from "../types/IExtensionContext";
+import type { IState } from "../types/IState";
 import makeReactive from "../util/makeReactive";
 import startupSettings from "../util/startupSettings";
 import MainPage from "./MainPage";
@@ -48,9 +47,7 @@ export const GameSettings: FC = () => {
   // Get extension objects using the hook instead of HOC
   const settingsPages = useExtensionObjects<ISettingsPage>(registerSettings);
 
-  const settingsPage = useSelector(
-    (state: IState) => state.session.base.settingsPage || undefined,
-  );
+  const settingsPage = useSelector((state: IState) => state.session.base.settingsPage || undefined);
 
   const startupSettingsRef = useRef(makeReactive(startupSettings));
 
@@ -67,10 +64,7 @@ export const GameSettings: FC = () => {
     [dispatch],
   );
 
-  const sortByPriority = (
-    lhs: ICombinedSettingsPage,
-    rhs: ICombinedSettingsPage,
-  ) => {
+  const sortByPriority = (lhs: ICombinedSettingsPage, rhs: ICombinedSettingsPage) => {
     return lhs.priority - rhs.priority;
   };
 
@@ -125,31 +119,23 @@ export const GameSettings: FC = () => {
     tabs.filter((tab) => tab.elements.some(isPerGameSetting));
 
   // Combine all settings by title
-  const combined = settingsPages.reduce(
-    (prev: ICombinedSettingsPage[], current: ISettingsPage) => {
-      const result = prev.slice();
-      const existingPage = prev.find(
-        (ele: ICombinedSettingsPage) => ele.title === current.title,
-      );
-      if (existingPage === undefined) {
-        result.push({
-          title: current.title,
-          elements: [current],
-          priority: current.priority,
-        });
-      } else {
-        existingPage.elements.push(current);
-        if (
-          existingPage.priority === undefined ||
-          current.priority < existingPage.priority
-        ) {
-          existingPage.priority = current.priority;
-        }
+  const combined = settingsPages.reduce((prev: ICombinedSettingsPage[], current: ISettingsPage) => {
+    const result = prev.slice();
+    const existingPage = prev.find((ele: ICombinedSettingsPage) => ele.title === current.title);
+    if (existingPage === undefined) {
+      result.push({
+        title: current.title,
+        elements: [current],
+        priority: current.priority,
+      });
+    } else {
+      existingPage.elements.push(current);
+      if (existingPage.priority === undefined || current.priority < existingPage.priority) {
+        existingPage.priority = current.priority;
       }
-      return result;
-    },
-    [],
-  );
+    }
+    return result;
+  }, []);
 
   // Only show tabs that have at least one per-game setting for the current game
   const visibleTabs = tabsWithPerGameSettings(combined).sort(sortByPriority);

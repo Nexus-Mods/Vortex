@@ -16,9 +16,7 @@ import { useNotificationItems } from "./useNotificationItems";
  * react to it directly. The outer component just manages the Popover state.
  * This allows us to reset expand state and trigger auto-open when new notifications arrive.
  */
-const NotificationsContent: React.FC<{ popoverOpen: boolean }> = ({
-  popoverOpen,
-}) => {
+const NotificationsContent: React.FC<{ popoverOpen: boolean }> = ({ popoverOpen }) => {
   const extensions = useExtensionContext();
   const api = extensions.getApi();
 
@@ -56,9 +54,7 @@ const NotificationsContent: React.FC<{ popoverOpen: boolean }> = ({
   // Silent notifications should never open the tray.
   useEffect(() => {
     const currentIds = new Set(notifications.map((n) => n.id));
-    const hasNew = notifications.some(
-      (n) => !prevIdsRef.current.has(n.id) && n.type !== "silent",
-    );
+    const hasNew = notifications.some((n) => !prevIdsRef.current.has(n.id) && n.type !== "silent");
     prevIdsRef.current = currentIds;
 
     if (hasNew && !popoverOpen && buttonRef.current) {

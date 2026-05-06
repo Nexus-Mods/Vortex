@@ -6,9 +6,13 @@
   "types": "src/index.ts",
   "private": true,
   "type": "commonjs",
+  "scripts": {
+    "build": "pnpm tsdown"
+  },
   "devDependencies": {
     "bluebird": "catalog:",
     "@types/bluebird": "catalog:",
-    "koffi": "^2.9.0"
+    "koffi": "^2.9.0",
+    "tsdown": "catalog:"
   }
 }

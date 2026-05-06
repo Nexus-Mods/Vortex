@@ -1,20 +1,10 @@
-import type { IBiDirRule } from "../types/IBiDirRule";
-import type { IConflict } from "../types/IConflict";
-import type { IModLookupInfo } from "../types/IModLookupInfo";
-
-import { setConflictDialog, setFileOverrideDialog } from "../actions";
-import { NAMESPACE } from "../statics";
-
-import type { ILocalState } from "./DependencyIcon";
-import SearchBox, { ISearchMatch } from "./SearchBox";
-
 import * as React from "react";
 import { Button, Dropdown, MenuItem, Modal } from "react-bootstrap";
 import { Trans, withTranslation, WithTranslation } from "react-i18next";
 import { connect } from "react-redux";
-import { Action } from "redux-act";
 import * as TreeT from "react-sortable-tree";
-import { } from "react-sortable-tree-theme-file-explorer";
+import {} from "react-sortable-tree-theme-file-explorer";
+import { Action } from "redux-act";
 import {
   actions,
   ComponentEx,
@@ -27,6 +17,14 @@ import {
   Usage,
   util,
 } from "vortex-api";
+
+import { setConflictDialog, setFileOverrideDialog } from "../actions";
+import { NAMESPACE } from "../statics";
+import type { IBiDirRule } from "../types/IBiDirRule";
+import type { IConflict } from "../types/IConflict";
+import type { IModLookupInfo } from "../types/IModLookupInfo";
+import type { ILocalState } from "./DependencyIcon";
+import SearchBox, { ISearchMatch } from "./SearchBox";
 
 interface IFileTree {
   title: string;
@@ -66,17 +64,10 @@ interface IConnectedProps {
 
 interface IActionProps {
   onClose: () => void;
-  onConflictDialog: (
-    gameId: string,
-    modIds: string[],
-    modRules: IBiDirRule[],
-  ) => void;
+  onConflictDialog: (gameId: string, modIds: string[], modRules: IBiDirRule[]) => void;
 }
 
-type IProps = IOverrideEditorProps &
-  IConnectedProps &
-  IActionProps &
-  Partial<WithTranslation>;
+type IProps = IOverrideEditorProps & IConnectedProps & IActionProps & Partial<WithTranslation>;
 
 interface IComponentState {
   treeState: IFileTree[];
@@ -156,18 +147,10 @@ class OverrideEditor extends ComponentEx<IProps, IComponentState> {
 
   public render(): JSX.Element {
     const { t, modId, mods } = this.props;
-    const {
-      hasUnsolved,
-      searchString,
-      searchIndex,
-      searchMatches,
-      sorting,
-      sortError,
-      treeState,
-    } = this.state;
+    const { hasUnsolved, searchString, searchIndex, searchMatches, sorting, sortError, treeState } =
+      this.state;
 
-    const modName =
-      mods[modId] !== undefined ? util.renderModName(mods[modId]) : "";
+    const modName = mods[modId] !== undefined ? util.renderModName(mods[modId]) : "";
 
     let content: JSX.Element;
     if (hasUnsolved) {
@@ -176,9 +159,8 @@ class OverrideEditor extends ComponentEx<IProps, IComponentState> {
           <div>
             <Trans i18nKey="unsolved-conflicts-first">
               This mod has unresolved conflicts. Please{" "}
-              <a onClick={this.openConflictEditor}>create mod rules</a> to
-              establish a default load order and only use this screen to make
-              exceptions.
+              <a onClick={this.openConflictEditor}>create mod rules</a> to establish a default load
+              order and only use this screen to make exceptions.
             </Trans>
           </div>
         </div>
@@ -188,9 +170,7 @@ class OverrideEditor extends ComponentEx<IProps, IComponentState> {
         <div className="file-override-sorting">
           <div>
             <Spinner />
-            <div style={{ marginLeft: 8, display: "inline" }}>
-              {t("Sorting mods")}
-            </div>
+            <div style={{ marginLeft: 8, display: "inline" }}>{t("Sorting mods")}</div>
           </div>
         </div>
       );
@@ -200,9 +180,7 @@ class OverrideEditor extends ComponentEx<IProps, IComponentState> {
           <div>
             <Icon name="feedback-error" />
             <div style={{ marginLeft: 8, display: "inline" }}>
-              {t(
-                "Mods were not sorted. You need to fix that before setting file overrides.",
-              )}
+              {t("Mods were not sorted. You need to fix that before setting file overrides.")}
             </div>
           </div>
         </div>
@@ -236,27 +214,22 @@ class OverrideEditor extends ComponentEx<IProps, IComponentState> {
               searchFinishCallback={this.searchFinishCallback}
             />
             <Usage persistent infoId="override-editor">
-              <div>
-                {t(
-                  "Use this dialog to select which mod should provide a file.",
-                )}
-              </div>
+              <div>{t("Use this dialog to select which mod should provide a file.")}</div>
               <div>
                 {t(
                   'The mod marked as "Default" is the one that will provide the ' +
-                  "file based on current mod rules, if you make no change.",
+                    "file based on current mod rules, if you make no change.",
                 )}
               </div>
               <div>
                 {t(
                   "Please try to minimize the number of overrides you set up here. " +
-                  "Use mod rules to order entire mods.",
+                    "Use mod rules to order entire mods.",
                 )}
               </div>
               <div>
                 {t(
-                  "This lists only the files in the selected mod that aren't exclusive " +
-                  "to it.",
+                  "This lists only the files in the selected mod that aren't exclusive " + "to it.",
                 )}
               </div>
             </Usage>
@@ -273,10 +246,7 @@ class OverrideEditor extends ComponentEx<IProps, IComponentState> {
         <Modal.Body>{content}</Modal.Body>
         <Modal.Footer>
           <Button onClick={this.close}>{t("Cancel")}</Button>
-          <Button
-            disabled={hasUnsolved || sorting || sortError}
-            onClick={this.apply}
-          >
+          <Button disabled={hasUnsolved || sorting || sortError} onClick={this.apply}>
             {t("Save")}
           </Button>
         </Modal.Footer>
@@ -297,8 +267,7 @@ class OverrideEditor extends ComponentEx<IProps, IComponentState> {
   };
 
   private apply = () => {
-    const { onClose, onSetFileOverrides, pathTool, gameId, mods, discovery } =
-      this.props;
+    const { onClose, onSetFileOverrides, pathTool, gameId, mods, discovery } = this.props;
     const { treeState } = this.state;
 
     const files: { [provider: string]: string[] } = {};
@@ -350,8 +319,7 @@ class OverrideEditor extends ComponentEx<IProps, IComponentState> {
     searchQuery: any;
   }) => {
     return (
-      searchQuery.length > 0 &&
-      node.title.toLowerCase().indexOf(searchQuery.toLowerCase()) !== -1
+      searchQuery.length > 0 && node.title.toLowerCase().indexOf(searchQuery.toLowerCase()) !== -1
     );
   };
 
@@ -392,9 +360,7 @@ class OverrideEditor extends ComponentEx<IProps, IComponentState> {
 
     const renderName = (id: string, clip?: number) => {
       let name: string =
-        mods[id] !== undefined
-          ? util.renderModName(mods[id], { version: true })
-          : "";
+        mods[id] !== undefined ? util.renderModName(mods[id], { version: true }) : "";
       if (clip && name.length > clip) {
         name = name.substr(0, clip - 3) + "...";
       }
@@ -409,29 +375,29 @@ class OverrideEditor extends ComponentEx<IProps, IComponentState> {
       buttons: node.isDirectory
         ? []
         : [
-          <a key="preview" data-row={rowInfo.path} onClick={this.preview}>
-            {t("Preview")}
-          </a>,
-          <Dropdown
-            id={key}
-            key={key}
-            data-filepath={node.path}
-            onSelect={this.changeProvider as any}
-            title={renderName(node.selected)}
-            pullRight
-          >
-            <Dropdown.Toggle>
-              <span>{renderName(node.selected, 30)}</span>
-            </Dropdown.Toggle>
-            <Dropdown.Menu>
-              {node.providers.map((provider) => (
-                <MenuItem key={provider} eventKey={provider}>
-                  {renderName(provider)}
-                </MenuItem>
-              ))}
-            </Dropdown.Menu>
-          </Dropdown>,
-        ],
+            <a key="preview" data-row={rowInfo.path} onClick={this.preview}>
+              {t("Preview")}
+            </a>,
+            <Dropdown
+              id={key}
+              key={key}
+              data-filepath={node.path}
+              onSelect={this.changeProvider as any}
+              title={renderName(node.selected)}
+              pullRight
+            >
+              <Dropdown.Toggle>
+                <span>{renderName(node.selected, 30)}</span>
+              </Dropdown.Toggle>
+              <Dropdown.Menu>
+                {node.providers.map((provider) => (
+                  <MenuItem key={provider} eventKey={provider}>
+                    {renderName(provider)}
+                  </MenuItem>
+                ))}
+              </Dropdown.Menu>
+            </Dropdown>,
+          ],
     };
   };
 
@@ -477,9 +443,7 @@ class OverrideEditor extends ComponentEx<IProps, IComponentState> {
             });
             return accum;
           }
-          const relPath = pathTool.isAbsolute(filePath)
-            ? toRelPath(mod, filePath)
-            : filePath;
+          const relPath = pathTool.isAbsolute(filePath) ? toRelPath(mod, filePath) : filePath;
           if (!relPath) {
             log("warn", "Failed to resolve relative path for mod", {
               modId,
@@ -507,9 +471,7 @@ class OverrideEditor extends ComponentEx<IProps, IComponentState> {
     // why exactly is the target of the event the <a> of the menu item? This handler
     // was attached to the Dropdown not to the menu item.
     const filePath =
-      evt.currentTarget.parentNode.parentNode.parentNode.getAttribute(
-        "data-filepath",
-      );
+      evt.currentTarget.parentNode.parentNode.parentNode.getAttribute("data-filepath");
     let cur: IFileTree;
 
     // skip the top level "." directory
@@ -563,12 +525,7 @@ class OverrideEditor extends ComponentEx<IProps, IComponentState> {
       isDirectory: prov === undefined,
     });
 
-    const ensure = (
-      ele: IFileTree[],
-      name: string,
-      filePath: string,
-      prov?: string,
-    ) => {
+    const ensure = (ele: IFileTree[], name: string, filePath: string, prov?: string) => {
       let existing = ele.find((iter) => iter.title === name);
       if (existing === undefined) {
         existing = makeEmpty(name, filePath, prov);
@@ -585,11 +542,7 @@ class OverrideEditor extends ComponentEx<IProps, IComponentState> {
           .dirname(pathTool.relative(discovery.path, file))
           .split(pathTool.sep)
           .forEach((comp, idx, segments) => {
-            cur = ensure(
-              cur,
-              comp,
-              segments.slice(0, idx + 1).join(pathTool.sep),
-            ).children;
+            cur = ensure(cur, comp, segments.slice(0, idx + 1).join(pathTool.sep)).children;
           });
         const fileName = pathTool.basename(file);
         ensure(cur, fileName, file, modId).providers.push(input.otherMod.id);
@@ -602,11 +555,7 @@ class OverrideEditor extends ComponentEx<IProps, IComponentState> {
     return result;
   }
 
-  private sortProviders(
-    files: IFileTree[],
-    props: IProps,
-    dirPath: string = "",
-  ): void {
+  private sortProviders(files: IFileTree[], props: IProps, dirPath: string = ""): void {
     const { mods, pathTool } = props;
     const { sortedMods } = this.nextState;
     const sortFunc = (lhs: string, rhs: string) => {
@@ -617,15 +566,11 @@ class OverrideEditor extends ComponentEx<IProps, IComponentState> {
     };
     files.forEach((file) => {
       const filePath = pathTool.join(dirPath, file.title);
-      file.providers = file.providers
-        .filter((modId) => mods[modId] !== undefined)
-        .sort(sortFunc);
+      file.providers = file.providers.filter((modId) => mods[modId] !== undefined).sort(sortFunc);
       file.selected = file.providers[0];
       if (pathTool.isAbsolute(file.path)) {
         const overrider = file.providers.find(
-          (modId) =>
-            ((mods[modId] as any).fileOverrides || []).indexOf(file.path) ===
-            -1,
+          (modId) => ((mods[modId] as any).fileOverrides || []).indexOf(file.path) === -1,
         );
         if (overrider !== undefined) {
           file.selected = overrider;
@@ -639,15 +584,13 @@ class OverrideEditor extends ComponentEx<IProps, IComponentState> {
     const { gameId, mods, profile } = newProps;
     this.nextState.sorting = true;
     const enabled = Object.keys(mods)
-      .filter((key) =>
-        util.getSafe(profile, ["modState", key, "enabled"], false),
-      )
+      .filter((key) => util.getSafe(profile, ["modState", key, "enabled"], false))
       .map((key) => mods[key]);
     return util
       .sortMods(gameId, enabled, this.context.api)
       .then((mods) => {
         this.nextState.sortError = false;
-        return mods.map(x => x.id);
+        return mods.map((x) => x.id);
       })
       .catch(() => {
         this.nextState.sortError = true;
@@ -664,21 +607,14 @@ const emptyObj = {};
 
 function mapStateToProps(state: types.IState): IConnectedProps {
   const dialog = (state.session as any).dependencies.overrideDialog || emptyObj;
-  const discovery = !!dialog?.gameId
-    ? selectors.discoveryByGame(state, dialog.gameId)
-    : emptyObj;
+  const discovery = !!dialog?.gameId ? selectors.discoveryByGame(state, dialog.gameId) : emptyObj;
   return {
     gameId: dialog.gameId,
     modId: dialog.modId,
-    mods:
-      dialog.gameId !== undefined
-        ? state.persistent.mods[dialog.gameId]
-        : emptyObj,
+    mods: dialog.gameId !== undefined ? state.persistent.mods[dialog.gameId] : emptyObj,
     profile: selectors.activeProfile(state),
     installPath:
-      dialog.gameId !== undefined
-        ? selectors.installPathForGame(state, dialog.gameId)
-        : undefined,
+      dialog.gameId !== undefined ? selectors.installPathForGame(state, dialog.gameId) : undefined,
     discovery,
     conflicts: util.getSafe(
       state,

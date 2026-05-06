@@ -1,5 +1,6 @@
-import Bluebird from "bluebird";
 import * as path from "path";
+
+import Bluebird from "bluebird";
 import { log, types, util } from "vortex-api";
 import * as winapi from "winapi-bindings";
 
@@ -8,9 +9,7 @@ import * as winapi from "winapi-bindings";
 // it should never change
 const UUID = "57979c68-f490-55b8-8fed-8b017a5af2fe";
 
-async function verifyUninstallEntry(
-  api: types.IExtensionApi,
-): Promise<types.ITestResult> {
+async function verifyUninstallEntry(api: types.IExtensionApi): Promise<types.ITestResult> {
   const t = api.translate;
 
   if (api.getState().app["installType"] === "managed") {
@@ -26,15 +25,10 @@ async function verifyUninstallEntry(
       `SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\${UUID}`,
       (hkey) => {
         const uninstallString = winapi.RegGetValue(hkey, "", "UninstallString");
-        if (
-          uninstallString === undefined ||
-          uninstallString.type !== "REG_SZ"
-        ) {
+        if (uninstallString === undefined || uninstallString.type !== "REG_SZ") {
           invalid = t("Vortex uninstall key is incomplete");
         } else {
-          const match = (uninstallString.value as string).match(
-            /\w+|"(?:\\"|[^"])+"/g,
-          );
+          const match = (uninstallString.value as string).match(/\w+|"(?:\\"|[^"])+"/g);
           if (match !== null) {
             const value = path.dirname(match[0].replace(/^"|"$/g, ""));
             let expected = util.getVortexPath("application");
@@ -42,9 +36,7 @@ async function verifyUninstallEntry(
               expected = path.dirname(path.dirname(expected));
             }
             if (value.toLowerCase() !== expected.toLowerCase()) {
-              invalid = t(
-                "Vortex uninstall path doesn't match current executable",
-              );
+              invalid = t("Vortex uninstall path doesn't match current executable");
               extra = t('"{{value}}" vs "{{expected}}"', {
                 replace: {
                   value,

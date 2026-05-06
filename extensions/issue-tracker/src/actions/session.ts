@@ -1,4 +1,5 @@
 import { createAction } from "redux-act";
+
 import { IOutstandingIssue } from "../types";
 
 export const openFeedbackResponder = createAction(

@@ -6,7 +6,6 @@
 import { mdiMagnify } from "@mdi/js";
 
 import type { IExtensionContext } from "../../types/IExtensionContext";
-
 import { activeGameId } from "../../util/selectors";
 import BrowseNexusPage from "./views/BrowseNexusPage";
 

@@ -1,7 +1,8 @@
-import { FileSystemError, QualifiedPath } from "@nexusmods/adaptor-api/fs";
 import * as nodeFs from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+
+import { FileSystemError, QualifiedPath } from "@nexusmods/adaptor-api/fs";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { NodeFileSystemBackendImpl } from "./backend";
@@ -46,9 +47,7 @@ describe("NodeFileSystemImpl", () => {
   });
 
   it("throws FileSystemError for missing files via readFile", async () => {
-    await expect(fs.readFile(rootQP.join("nope"))).rejects.toBeInstanceOf(
-      FileSystemError,
-    );
+    await expect(fs.readFile(rootQP.join("nope"))).rejects.toBeInstanceOf(FileSystemError);
   });
 
   it("enumerates a directory yielding QualifiedPath entries", async () => {
@@ -95,9 +94,7 @@ describe("NodeFileSystemImpl", () => {
       if (step.done) break;
       seen.push((step.value as QualifiedPath).path);
     }
-    expect(seen.some((p) => p.endsWith(`${rootQP.path}/sub/nested.txt`))).toBe(
-      true,
-    );
+    expect(seen.some((p) => p.endsWith(`${rootQP.path}/sub/nested.txt`))).toBe(true);
   });
 
   it("closes the backend iterator when return() is called", async () => {
@@ -109,9 +106,7 @@ describe("NodeFileSystemImpl", () => {
     await iter.return?.(undefined);
     // After return, next() must report done without throwing (the underlying
     // Dir handle is closed, but the wrapper swallows that in return()).
-    const tail = await iter
-      .next()
-      .catch(() => ({ done: true, value: undefined }));
+    const tail = await iter.next().catch(() => ({ done: true, value: undefined }));
     expect(tail.done).toBe(true);
   });
 

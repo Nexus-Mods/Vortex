@@ -1,4 +1,4 @@
-import path from 'path';
+import path from "path";
 
 export const DEFAULT_MOD_SETTINGS_V8 = `<?xml version="1.0" encoding="UTF-8"?>
 <save>
@@ -70,45 +70,46 @@ export const DEFAULT_MOD_SETTINGS_V6 = `<?xml version="1.0" encoding="UTF-8" sta
     </node>
   </region>
 </save>`;
-export const GAME_ID = 'baldursgate3';
+export const GAME_ID = "baldursgate3";
 export const DEBUG = false;
-export const LSLIB_URL = 'https://github.com/Norbyte/lslib';
-export const LO_FILE_NAME = 'loadOrder.json';
-export const INVALID_LO_MOD_TYPES = ['bg3-lslib-divine-tool', 'bg3-bg3se', 'bg3-replacer', 'bg3-loose', 'dinput'];
-
-export const IGNORE_PATTERNS = [
-  path.join('**', 'info.json'),
+export const LSLIB_URL = "https://github.com/Norbyte/lslib";
+export const LO_FILE_NAME = "loadOrder.json";
+export const INVALID_LO_MOD_TYPES = [
+  "bg3-lslib-divine-tool",
+  "bg3-bg3se",
+  "bg3-replacer",
+  "bg3-loose",
+  "dinput",
 ];
-export const MOD_TYPE_LSLIB = 'bg3-lslib-divine-tool';
-export const MOD_TYPE_BG3SE = 'bg3-bg3se';
-export const MOD_TYPE_REPLACER = 'bg3-replacer';
-export const MOD_TYPE_LOOSE = 'bg3-loose';
+
+export const IGNORE_PATTERNS = [path.join("**", "info.json")];
+export const MOD_TYPE_LSLIB = "bg3-lslib-divine-tool";
+export const MOD_TYPE_BG3SE = "bg3-bg3se";
+export const MOD_TYPE_REPLACER = "bg3-replacer";
+export const MOD_TYPE_LOOSE = "bg3-loose";
 
 export const ORIGINAL_FILES = new Set([
-  'assets.pak',
-  'assets.pak',
-  'effects.pak',
-  'engine.pak',
-  'engineshaders.pak',
-  'game.pak',
-  'gameplatform.pak',
-  'gustav.pak',
-  'gustav_textures.pak',
-  'icons.pak',
-  'lowtex.pak',
-  'materials.pak',
-  'minimaps.pak',
-  'models.pak',
-  'shared.pak',
-  'sharedsoundbanks.pak',
-  'sharedsounds.pak',
-  'textures.pak',
-  'virtualtextures.pak',
+  "assets.pak",
+  "assets.pak",
+  "effects.pak",
+  "engine.pak",
+  "engineshaders.pak",
+  "game.pak",
+  "gameplatform.pak",
+  "gustav.pak",
+  "gustav_textures.pak",
+  "icons.pak",
+  "lowtex.pak",
+  "materials.pak",
+  "minimaps.pak",
+  "models.pak",
+  "shared.pak",
+  "sharedsoundbanks.pak",
+  "sharedsounds.pak",
+  "textures.pak",
+  "virtualtextures.pak",
 ]);
 
-export const LSLIB_FILES = new Set([
-  'divine.exe',
-  'lslib.dll',
-]);
+export const LSLIB_FILES = new Set(["divine.exe", "lslib.dll"]);
 
-export const NOTIF_IMPORT_ACTIVITY = 'bg3-loadorder-import-activity';
+export const NOTIF_IMPORT_ACTIVITY = "bg3-loadorder-import-activity";

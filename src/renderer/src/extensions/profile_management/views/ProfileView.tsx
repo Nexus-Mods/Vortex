@@ -1,34 +1,29 @@
-import type { WithTranslation } from "react-i18next";
+import * as path from "path";
 
 import { shell } from "electron";
 import update from "immutability-helper";
-import * as path from "path";
 import * as React from "react";
 import { Button, Collapse } from "react-bootstrap";
+import type { WithTranslation } from "react-i18next";
 import { generate as shortid } from "shortid";
 
-import type {
-  DialogActions,
-  DialogType,
-  IDialogContent,
-} from "../../../actions/notifications";
-import type { IMod, IState } from "../../../types/IState";
-import type { IDiscoveryResult } from "../../gamemode_management/types/IDiscoveryResult";
-import type { IGameStored } from "../../gamemode_management/types/IGameStored";
-import type { IProfile } from "../types/IProfile";
-import type { IProfileFeature } from "../types/IProfileFeature";
-
+import type { DialogActions, DialogType, IDialogContent } from "../../../actions/notifications";
 import { showDialog } from "../../../actions/notifications";
 import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
+import type { IMod, IState } from "../../../types/IState";
 import * as fs from "../../../util/fs";
 import getVortexPath from "../../../util/getVortexPath";
 import { log } from "../../../util/log";
 import { activeGameId } from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
 import MainPage from "../../../views/MainPage";
+import type { IDiscoveryResult } from "../../gamemode_management/types/IDiscoveryResult";
+import type { IGameStored } from "../../gamemode_management/types/IGameStored";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { setFeature, setProfile } from "../actions/profiles";
 import { setNextProfile } from "../actions/settings";
+import type { IProfile } from "../types/IProfile";
+import type { IProfileFeature } from "../types/IProfileFeature";
 import { profilePath, removeProfile } from "../util/manage";
 import ProfileEdit from "./ProfileEdit";
 import ProfileItem from "./ProfileItem";
@@ -93,10 +88,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
     const otherProfiles: { [id: string]: IProfile } = {};
 
     Object.keys(profiles).forEach((profileId) => {
-      if (
-        profiles[profileId].gameId === undefined ||
-        profiles[profileId].name === undefined
-      ) {
+      if (profiles[profileId].gameId === undefined || profiles[profileId].name === undefined) {
         return;
       }
 
@@ -107,14 +99,10 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
       }
     });
 
-    const currentGameProfilesSorted = this.sortProfiles(
-      currentGameProfiles,
-      language,
-    );
+    const currentGameProfilesSorted = this.sortProfiles(currentGameProfiles, language);
     const otherProfilesSorted = this.sortProfiles(otherProfiles, language);
 
-    const isDeploying =
-      activity.includes("deployment") || activity.includes("purging");
+    const isDeploying = activity.includes("deployment") || activity.includes("purging");
 
     // const sortedProfiles: string[] = this.sortProfiles(profiles, language);
 
@@ -135,10 +123,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
             <>
               <div>
                 {t("Other Games")}{" "}
-
-                <a onClick={this.toggleOther}>
-                  {showOther ? t("Hide") : t("Show")}
-                </a>
+                <a onClick={this.toggleOther}>{showOther ? t("Hide") : t("Show")}</a>
               </div>
 
               <Collapse in={showOther}>
@@ -174,10 +159,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
     );
   }
 
-  private renderProfile = (
-    profileId: string,
-    features: IProfileFeature[],
-  ): JSX.Element => {
+  private renderProfile = (profileId: string, features: IProfileFeature[]): JSX.Element => {
     const { t, mods } = this.props;
     const { edit } = this.state;
 
@@ -185,8 +167,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
       return this.renderEditProfile();
     }
 
-    const { currentProfile, discoveredGames, onSetNextProfile, profiles } =
-      this.props;
+    const { currentProfile, discoveredGames, onSetNextProfile, profiles } = this.props;
 
     if (profiles[profileId] === undefined) {
       return null;
@@ -194,8 +175,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
 
     const discovered = discoveredGames[profiles[profileId].gameId];
     const available = discovered !== undefined && discovered.path !== undefined;
-    const gameAvailable =
-      getGame(profiles[profileId].gameId)?.name !== undefined;
+    const gameAvailable = getGame(profiles[profileId].gameId)?.name !== undefined;
     if (profileId === this.state.edit) {
       return null;
     }
@@ -244,7 +224,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
 
     const exePath = getVortexPath("exe");
     const isDevelopment = exePath.toLowerCase().endsWith("electron.exe");
-    
+
     const desktopLocation = getVortexPath("desktop");
     const shortcutPath = path.join(
       desktopLocation,
@@ -252,10 +232,8 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
     );
 
     // In development, electron.exe needs the app directory as first argument
-    const target = isDevelopment
-      ? exePath
-      : path.join(path.dirname(exePath), "Vortex.exe");
-    
+    const target = isDevelopment ? exePath : path.join(path.dirname(exePath), "Vortex.exe");
+
     const args = isDevelopment
       ? `"${getVortexPath("package")}" --profile ${profileId}`
       : `--profile ${profileId}`;
@@ -326,11 +304,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
 
     return (
       <div style={{ display: "flex", justifyContent: "center" }}>
-        <Button
-          bsStyle="ghost"
-          className="profile-add"
-          onClick={this.editNewProfile}
-        >
+        <Button bsStyle="ghost" className="profile-add" onClick={this.editNewProfile}>
           {t('Add "{{ name }}" Profile', { replace: { name: gameName } })}
         </Button>
       </div>
@@ -365,11 +339,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
         edit: { $set: "__new" },
       }),
     );
-    this.context.api.events.emit(
-      "analytics-track-click-event",
-      "Profile",
-      `Add new profile`,
-    );
+    this.context.api.events.emit("analytics-track-click-event", "Profile", `Add new profile`);
   };
 
   private onCloneProfile = (profileId: string) => {
@@ -377,9 +347,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
     const newProfile = { ...profiles[profileId] };
     newProfile.id = shortid();
     fs.ensureDirAsync(profilePath(profiles[profileId]))
-      .then(() =>
-        fs.copyAsync(profilePath(profiles[profileId]), profilePath(newProfile)),
-      )
+      .then(() => fs.copyAsync(profilePath(profiles[profileId]), profilePath(newProfile)))
       .then(() => {
         onAddProfile(newProfile);
         this.editExistingProfile(newProfile.id);
@@ -396,8 +364,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
 
     const gameMode = profiles[profileId].gameId;
     const totalProfilesForGame = gameMode
-      ? Object.keys(profiles).filter((id) => profiles[id].gameId === gameMode)
-          .length
+      ? Object.keys(profiles).filter((id) => profiles[id].gameId === gameMode).length
       : 0;
     let confirmText =
       profileId === currentProfile
@@ -453,11 +420,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     mods: state.persistent.mods || emptyObject,
     games: state.session.gameMode.known,
     discoveredGames: state.settings.gameMode.discovered,
-    activity: getSafe(
-      state,
-      ["session", "base", "activity", "mods"],
-      emptyArray,
-    ),
+    activity: getSafe(state, ["session", "base", "activity", "mods"], emptyArray),
     useModernLayout: state.settings.window.useModernLayout,
   };
 }
@@ -465,8 +428,7 @@ function mapStateToProps(state: IState): IConnectedProps {
 function mapDispatchToProps(dispatch): IActionProps {
   return {
     onAddProfile: (profile: IProfile) => dispatch(setProfile(profile)),
-    onSetNextProfile: (profileId: string) =>
-      dispatch(setNextProfile(profileId)),
+    onSetNextProfile: (profileId: string) => dispatch(setNextProfile(profileId)),
     onSetFeature: (profileId: string, featureId: string, value: any) =>
       dispatch(setFeature(profileId, featureId, value)),
     onShowDialog: (type, title, content, actions) =>

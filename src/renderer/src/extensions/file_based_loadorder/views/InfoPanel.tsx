@@ -1,8 +1,9 @@
 import * as React from "react";
 import { withTranslation } from "react-i18next";
-import FlexLayout from "../../../controls/FlexLayout";
+
 import bbcode from "../../../controls/bbcode";
 import { ComponentEx } from "../../../controls/ComponentEx";
+import FlexLayout from "../../../controls/FlexLayout";
 import type { LoadOrderValidationError } from "../types/types";
 
 interface IProps {
@@ -70,9 +71,7 @@ class InfoPanel extends ComponentEx<IProps, {}> {
   }
 }
 
-export default withTranslation(["common"])(
-  InfoPanel as any,
-) as React.ComponentClass<{
+export default withTranslation(["common"])(InfoPanel as any) as React.ComponentClass<{
   validationError: LoadOrderValidationError;
   info: string | React.ComponentType<{}>;
 }>;

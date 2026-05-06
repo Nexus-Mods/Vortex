@@ -39,7 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added error catch for LSLib as it now requires .NET 8
 - Performance improvements when using LSLib
 - Added caching to PAK reading
-- Optimizations when installing collections 
+- Optimizations when installing collections
 - Fixed loose mod installer (Now prioritizing 'Public'/'Generated' folders over 'Data')
 - Added ability to import load order from Baldur's Gate 3 Mod Manager .json files
 - Code cleanup
@@ -54,7 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 1.3.10 - 2023-11-01
 
-- Load Order Export to File now uses System Save Dialog 
+- Load Order Export to File now uses System Save Dialog
 
 ## 1.3.9 - 2023-11-01
 
@@ -68,7 +68,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added activity notification when importing load order
 - Fixed importing missing mods name comparison
-- Removed some spamming console logs   
+- Removed some spamming console logs
 
 ## 1.3.6 - 2023-10-11
 
@@ -88,7 +88,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## 1.3.3 - 2023-10-05
 
 - Backup of `modsettings.lsx` is created on initial managing of BG3
-- Initial import of `modsettings.lsx` happens when a backup isn't found (should solve migration issues) 
+- Initial import of `modsettings.lsx` happens when a backup isn't found (should solve migration issues)
 
 ## 1.3.2 - 2023-10-05
 
@@ -114,4 +114,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 1.2.2 - 2023-08-17
 
-- Support for full release 
+- Support for full release

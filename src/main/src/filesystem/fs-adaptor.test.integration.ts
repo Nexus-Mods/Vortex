@@ -16,12 +16,10 @@
 import * as fs from "node:fs/promises";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
+
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import {
-  createTestHarness,
-  type ITestHarness,
-} from "../node-adaptor-host/testing/harness.js";
+import { createTestHarness, type ITestHarness } from "../node-adaptor-host/testing/harness.js";
 import { NodeFileSystemBackendImpl } from "./backend";
 import { NodeFileSystemImpl } from "./filesystem-impl";
 import { createFileSystemServiceHandler } from "./fs-service.js";
@@ -32,10 +30,7 @@ const BUNDLE_PATH = path.resolve(
   import.meta.dirname,
   "../../../../packages/adaptors/fs-test/dist/index.mjs",
 );
-const BOOTSTRAP_PATH = path.resolve(
-  import.meta.dirname,
-  "../../out/bootstrap.mjs",
-);
+const BOOTSTRAP_PATH = path.resolve(import.meta.dirname, "../../out/bootstrap.mjs");
 
 const PROBE_URI = "vortex:adaptor/fs-test/probe";
 
@@ -80,10 +75,7 @@ describe("fs-test adaptor (Worker end-to-end)", () => {
 
   it("round-trips writeFile + readFile through the Worker via FileSystem", async () => {
     const target = serialize(rootQP.join("hello.txt"));
-    const bytes = (await harness.call(PROBE_URI, "writeRead", [
-      target,
-      [1, 2, 3, 4],
-    ])) as number[];
+    const bytes = (await harness.call(PROBE_URI, "writeRead", [target, [1, 2, 3, 4]])) as number[];
 
     expect(bytes).toEqual([1, 2, 3, 4]);
 
@@ -94,9 +86,11 @@ describe("fs-test adaptor (Worker end-to-end)", () => {
 
   it("surfaces FileSystemError across the Worker boundary with code/isTransient", async () => {
     const missing = serialize(rootQP.join("nope.txt"));
-    const result = (await harness.call(PROBE_URI, "readMissing", [
-      missing,
-    ])) as { name: string; code: string; isTransient: boolean };
+    const result = (await harness.call(PROBE_URI, "readMissing", [missing])) as {
+      name: string;
+      code: string;
+      isTransient: boolean;
+    };
 
     expect(result).toEqual({
       name: "FileSystemError",
@@ -111,9 +105,7 @@ describe("fs-test adaptor (Worker end-to-end)", () => {
       await fs.writeFile(path.join(root, name), name);
     }
 
-    const names = (await harness.call(PROBE_URI, "listFiles", [
-      serialize(rootQP),
-    ])) as string[];
+    const names = (await harness.call(PROBE_URI, "listFiles", [serialize(rootQP)])) as string[];
 
     expect(names).toEqual(["a.txt", "b.txt", "c.txt", "d.txt", "e.txt"]);
   });

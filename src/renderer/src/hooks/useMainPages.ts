@@ -1,10 +1,9 @@
 import { type ComponentType } from "react";
 
+import { useExtensionObjects } from "../ExtensionProvider";
 import type { IRegisteredExtension } from "../types/extensions";
 import type { IMainPageOptions } from "../types/IExtensionContext";
 import type { IMainPage } from "../types/IMainPage";
-
-import { useExtensionObjects } from "../ExtensionProvider";
 
 const trueFunc = () => true;
 
@@ -38,10 +37,5 @@ const registerMainPage = (
 };
 
 export const useMainPages = (): IMainPage[] => {
-  return useExtensionObjects<IMainPage>(
-    registerMainPage,
-    undefined,
-    undefined,
-    true,
-  );
+  return useExtensionObjects<IMainPage>(registerMainPage, undefined, undefined, true);
 };

@@ -1,10 +1,9 @@
 import type * as types from "../../types/api";
 import * as util from "../../util/api";
-import {
-  activeGameId,
-  lastActiveProfileForGame,
-} from "../profile_management/selectors";
+import { activeGameId, lastActiveProfileForGame } from "../profile_management/selectors";
+import { setValidationResult } from "./actions/session";
 import { findGameEntry } from "./gameSupport";
+import { currentGameMods, currentLoadOrderForProfile } from "./selectors";
 import {
   type ILoadOrderGameInfoExt,
   type IValidationResult,
@@ -13,9 +12,6 @@ import {
   LoadOrderValidationError,
   type ILoadOrderEntryExt,
 } from "./types/types";
-
-import { setValidationResult } from "./actions/session";
-import { currentGameMods, currentLoadOrderForProfile } from "./selectors";
 
 export const toExtendedLoadOrderEntry = (api: types.IExtensionApi) => {
   return (entry: types.ILoadOrderEntry, index: number) => {
@@ -31,11 +27,7 @@ export function isModInCollection(collection: types.IMod, mod: types.IMod) {
     return false;
   }
 
-  return (
-    collection.rules.find((rule) =>
-      util.testModReference(mod, rule.reference),
-    ) !== undefined
-  );
+  return collection.rules.find((rule) => util.testModReference(mod, rule.reference)) !== undefined;
 }
 
 export async function genCollectionLoadOrder(
@@ -52,14 +44,10 @@ export async function genCollectionLoadOrder(
     loadOrder = await gameEntry.deserializeLoadOrder();
     loadOrder = loadOrder.filter((entry) =>
       collection !== undefined
-        ? isValidMod(mods[entry.modId]) &&
-          isModInCollection(collection, mods[entry.modId])
+        ? isValidMod(mods[entry.modId]) && isModInCollection(collection, mods[entry.modId])
         : isValidMod(mods[entry.modId]),
     );
-    const validRes: IValidationResult = await gameEntry.validate(
-      prev,
-      loadOrder,
-    );
+    const validRes: IValidationResult = await gameEntry.validate(prev, loadOrder);
     assertValidationResult(validRes);
     if (validRes !== undefined) {
       throw new LoadOrderValidationError(validRes, loadOrder);
@@ -88,11 +76,7 @@ function reportError(
   });
 }
 
-export async function errorHandler(
-  api: types.IExtensionApi,
-  gameId: string,
-  err: Error,
-) {
+export async function errorHandler(api: types.IExtensionApi, gameId: string, err: Error) {
   const gameEntry: ILoadOrderGameInfoExt = findGameEntry(gameId);
   const allowReport =
     !gameEntry.isContributed &&
@@ -102,16 +86,12 @@ export async function errorHandler(
   if (err instanceof LoadOrderValidationError) {
     const invalLOErr = err as LoadOrderValidationError;
     const profileId = lastActiveProfileForGame(api.getState(), gameId);
-    api.store.dispatch(
-      setValidationResult(profileId, invalLOErr.validationResult),
-    );
+    api.store.dispatch(setValidationResult(profileId, invalLOErr.validationResult));
     const errorMessage = "Load order failed validation";
     const details = {
       message: errorMessage,
       loadOrder: invalLOErr.loadOrderEntryNames,
-      reasons: invalLOErr.validationResult.invalid.map(
-        (invl) => `${invl.id} - ${invl.reason}\n`,
-      ),
+      reasons: invalLOErr.validationResult.invalid.map((invl) => `${invl.id} - ${invl.reason}\n`),
     };
     reportError(api, errorMessage, details, allowReport);
   } else if (err instanceof LoadOrderSerializationError) {
@@ -132,10 +112,7 @@ export function assertValidationResult(validRes: any) {
   if (validRes === undefined) {
     return;
   }
-  if (
-    Array.isArray(validRes) ||
-    (validRes as IValidationResult)?.invalid === undefined
-  ) {
+  if (Array.isArray(validRes) || (validRes as IValidationResult)?.invalid === undefined) {
     throw new TypeError(
       "Received incorrect/invalid return type from validation function; " +
         "expected object of type IValidationResult",

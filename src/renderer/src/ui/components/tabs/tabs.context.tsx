@@ -68,9 +68,7 @@ export const TabProvider = ({
   const selectedTab = getTabId(tab);
 
   // Store references to each tab to manage focus. References are keyed by tab name
-  const [tabs, setTabs] = useState<
-    Record<string, Omit<RegisterTabArgs, "name">>
-  >({});
+  const [tabs, setTabs] = useState<Record<string, Omit<RegisterTabArgs, "name">>>({});
 
   // Tracks all tabs in id format
   const tabIds = Object.keys(tabs);
@@ -88,9 +86,7 @@ export const TabProvider = ({
   // Perform keyboard navigation between tabs within the tab list
   const onKeyDown = (event: KeyboardEvent) => {
     // Handle focus and selection separately
-    const focusedIndex = tabIds.findIndex(
-      (t) => tabs[t].ref.current === document.activeElement,
-    );
+    const focusedIndex = tabIds.findIndex((t) => tabs[t].ref.current === document.activeElement);
     const selectedIndex = tabIds.findIndex((t) => t === selectedTab);
 
     // Track focused tab if it exists, else track selected tab

@@ -1,17 +1,8 @@
-import Modal from "../../../controls/Modal";
-import Table from "../../../controls/Table";
-import Toggle from "../../../controls/Toggle";
-import { Button } from "../../../controls/TooltipControls";
-import type { ITableAttribute } from "../../../types/ITableAttribute";
-import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
-import { setdefault } from "../../../util/util";
-
-import {
-  confirmExternalChanges,
-  setExternalChangeAction,
-} from "../actions/session";
-
-import type { FileAction, IFileEntry } from "../types/IFileEntry";
+// Adding these to assist with capturing and debugging
+//  invalid action errors - will remove this once we're able
+//  to deduct what is happening in reports such as:
+//  https://github.com/Nexus-Mods/Vortex/issues/7629
+import path from "path";
 
 import type { TFunction } from "i18next";
 import update from "immutability-helper";
@@ -19,13 +10,17 @@ import * as React from "react";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
 
-// Adding these to assist with capturing and debugging
-//  invalid action errors - will remove this once we're able
-//  to deduct what is happening in reports such as:
-//  https://github.com/Nexus-Mods/Vortex/issues/7629
-import path from "path";
-import getVortexPath from "../../../util/getVortexPath";
+import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
+import Modal from "../../../controls/Modal";
+import Table from "../../../controls/Table";
+import Toggle from "../../../controls/Toggle";
+import { Button } from "../../../controls/TooltipControls";
 import { getReduxLog } from "../../../store/reduxLogger";
+import type { ITableAttribute } from "../../../types/ITableAttribute";
+import getVortexPath from "../../../util/getVortexPath";
+import { setdefault } from "../../../util/util";
+import { confirmExternalChanges, setExternalChangeAction } from "../actions/session";
+import type { FileAction, IFileEntry } from "../types/IFileEntry";
 
 export interface IBaseProps {}
 
@@ -164,9 +159,7 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
           <Modal.Title>{t("External Changes")}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <div
-            style={{ display: "flex", flexDirection: "column", height: "100%" }}
-          >
+          <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
             <div className="padded-text" style={{ flex: 0 }}>
               {t(
                 "Mod files were changed outside Vortex. " +
@@ -180,18 +173,10 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
           </Toggle>
         </Modal.Body>
         <Modal.Footer>
-          <Button
-            id="btn-cancel-activation"
-            tooltip={t("Cancel deployment")}
-            onClick={this.cancel}
-          >
+          <Button id="btn-cancel-activation" tooltip={t("Cancel deployment")} onClick={this.cancel}>
             {t("Cancel")}
           </Button>
-          <Button
-            id="btn-confirm-activation"
-            tooltip={t("Confirm changes")}
-            onClick={this.confirm}
-          >
+          <Button id="btn-confirm-activation" tooltip={t("Confirm changes")} onClick={this.confirm}>
             {t("Confirm")}
           </Button>
         </Modal.Footer>
@@ -212,18 +197,10 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
     const dmap = deleted.reduce(bySource, {});
     const sdmap = srcDeleted.reduce(bySource, {});
 
-    const rc = Object.keys(rcmap).map((source) =>
-      transform(source, rcmap[source]),
-    );
-    const vc = Object.keys(vcmap).map((source) =>
-      transform(source, vcmap[source]),
-    );
-    const d = Object.keys(dmap).map((source) =>
-      transform(source, dmap[source]),
-    );
-    const sd = Object.keys(sdmap).map((source) =>
-      transform(source, sdmap[source]),
-    );
+    const rc = Object.keys(rcmap).map((source) => transform(source, rcmap[source]));
+    const vc = Object.keys(vcmap).map((source) => transform(source, vcmap[source]));
+    const d = Object.keys(dmap).map((source) => transform(source, dmap[source]));
+    const sd = Object.keys(sdmap).map((source) => transform(source, sdmap[source]));
 
     return (
       <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
@@ -299,11 +276,7 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
     );
   };
 
-  private renderChangedSources = (
-    text: string,
-    type: string,
-    entries: ISourceEntry[],
-  ) => {
+  private renderChangedSources = (text: string, type: string, entries: ISourceEntry[]) => {
     const { t } = this.props;
     if (entries.length === 0) {
       return null;
@@ -319,10 +292,7 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
         <p>
           {actions.map((action) => (
             <React.Fragment key={action.key}>
-              <a
-                onClick={this.setAll[type]}
-                href={"#" + action.key}
-              >
+              <a onClick={this.setAll[type]} href={"#" + action.key}>
                 {t(action.allText)}
               </a>
               <span className="link-action-seperator">&nbsp; | &nbsp;</span>
@@ -343,11 +313,7 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
     );
   };
 
-  private renderChangedFile = (
-    text: string,
-    type: string,
-    entries: IFileEntry[],
-  ) => {
+  private renderChangedFile = (text: string, type: string, entries: IFileEntry[]) => {
     const { t } = this.props;
     if (entries.length === 0) {
       return null;
@@ -446,8 +412,7 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
             description: "Number of files in this mod that were changed",
             calc: (source: ISourceEntry, t: TFunction) =>
               t("{{count}} file", {
-                count:
-                  source.filePaths !== undefined ? source.filePaths.length : 0,
+                count: source.filePaths !== undefined ? source.filePaths.length : 0,
               }),
             placement: "table",
             edit: {},
@@ -457,9 +422,7 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
             name: "Action",
             description: "the action to take on files in this mod",
             calc: (source: ISourceEntry) => {
-              const action = possibleActions[type].find(
-                (act) => act.key === source.action,
-              );
+              const action = possibleActions[type].find((act) => act.key === source.action);
               if (action === undefined) {
                 this.reportInvalidAction(type, source.action);
                 return "INVALID!";
@@ -474,12 +437,9 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
                 let newAction = value;
                 if (value === undefined) {
                   const typeActions = possibleActions[type];
-                  const idx = typeActions.findIndex(
-                    (act) => act.key === source.action,
-                  );
+                  const idx = typeActions.findIndex((act) => act.key === source.action);
 
-                  newAction = typeActions[(idx + 1) % typeActions.length]
-                    .key as FileAction;
+                  newAction = typeActions[(idx + 1) % typeActions.length].key as FileAction;
                 }
                 // TODO: the way source is created, filePaths should never be undefined and
                 //   I wasn't able to reproduce a case where it was, but we did get a crash
@@ -519,21 +479,16 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
             description:
               "Last time the stage file (the one in the mod staging folder) was modified",
             calc: (file: IFileEntry, t) =>
-              file.sourceModified !== undefined
-                ? file.sourceModified.toLocaleString()
-                : "",
+              file.sourceModified !== undefined ? file.sourceModified.toLocaleString() : "",
             placement: "table",
             edit: {},
           },
           {
             id: "deployment_changed",
             name: "Deployed file modified",
-            description:
-              "Last time the deployed file (the one in the game folder) was modified",
+            description: "Last time the deployed file (the one in the game folder) was modified",
             calc: (file: IFileEntry) =>
-              file.destModified !== undefined
-                ? file.destModified.toLocaleString()
-                : "",
+              file.destModified !== undefined ? file.destModified.toLocaleString() : "",
             placement: "table",
             edit: {},
           },
@@ -542,9 +497,7 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
             name: "Action",
             description: "the action to take on the file",
             calc: (file: IFileEntry) => {
-              const action = possibleActions[type].find(
-                (act) => act.key === file.action,
-              );
+              const action = possibleActions[type].find((act) => act.key === file.action);
               if (action === undefined) {
                 this.reportInvalidAction(type, file.action);
                 return "INVALID!";
@@ -557,17 +510,14 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
               choices: () => possibleActions[type],
               onChangeValue: (file: IFileEntry, value: any) => {
                 const typeActions = possibleActions[type];
-                const idx = typeActions.findIndex(
-                  (act) => act.key === file.action,
-                );
+                const idx = typeActions.findIndex((act) => act.key === file.action);
                 if (idx < 0) {
                   return;
                 }
                 if (value === undefined) {
                   this.props.onChangeAction(
                     [file.filePath],
-                    typeActions[(idx + 1) % typeActions.length]
-                      .key as FileAction,
+                    typeActions[(idx + 1) % typeActions.length].key as FileAction,
                   );
                 } else {
                   this.props.onChangeAction([file.filePath], value);
@@ -582,9 +532,7 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
   })();
 
   private toggleShowFiles = () => {
-    this.setState(
-      update(this.state, { showFiles: { $set: !this.state.showFiles } }),
-    );
+    this.setState(update(this.state, { showFiles: { $set: !this.state.showFiles } }));
   };
 
   private setAllFunc = (changeType: string, action: FileAction) => {
@@ -602,9 +550,7 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
   };
 
   private confirm = () => {
-    const deletions = this.props.changes.filter(
-      (change) => change.action === "delete",
-    );
+    const deletions = this.props.changes.filter((change) => change.action === "delete");
     if (deletions.length > 1) {
       this.context.api
         .showDialog(
@@ -637,9 +583,7 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, null, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onChangeAction: (fileName: string[], action: FileAction) =>
       dispatch(setExternalChangeAction(fileName, action)),

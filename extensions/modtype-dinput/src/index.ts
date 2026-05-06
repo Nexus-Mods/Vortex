@@ -1,30 +1,22 @@
-import Promise from "bluebird";
 import * as path from "path";
+
+import Promise from "bluebird";
 import { selectors, types, util } from "vortex-api";
 
 function testSupported(files: string[]): Promise<types.ISupportedResult> {
   const supported =
-    files.find(
-      (filePath) => path.basename(filePath).toLowerCase() === "dinput8.dll",
-    ) !== undefined;
+    files.find((filePath) => path.basename(filePath).toLowerCase() === "dinput8.dll") !== undefined;
   return Promise.resolve({
     supported,
     requiredFiles: [],
   });
 }
 
-function makeCopy(
-  basePath: string,
-  filePath: string,
-  executablePath: string,
-): types.IInstruction {
+function makeCopy(basePath: string, filePath: string, executablePath: string): types.IInstruction {
   return {
     type: "copy",
     source: filePath,
-    destination: path.join(
-      path.dirname(executablePath),
-      path.relative(basePath, filePath),
-    ),
+    destination: path.join(path.dirname(executablePath), path.relative(basePath, filePath)),
   };
 }
 
@@ -35,9 +27,7 @@ function install(
   progressDelegate: types.ProgressDelegate,
   api: types.IExtensionApi,
 ): Promise<types.IInstallResult> {
-  const refFile = files.find(
-    (filePath) => path.basename(filePath).toLowerCase() === "dinput8.dll",
-  );
+  const refFile = files.find((filePath) => path.basename(filePath).toLowerCase() === "dinput8.dll");
   const state = api.getState();
   const game: types.IGameStored = selectors.gameById(state, gameId);
   const basePath = path.dirname(refFile);
@@ -55,10 +45,7 @@ function install(
 
 function gameSupported(gameId: string) {
   const game = util.getGame(gameId);
-  if (
-    game?.compatible?.deployToGameDirectory === false ||
-    game?.compatible?.dinput === false
-  ) {
+  if (game?.compatible?.deployToGameDirectory === false || game?.compatible?.dinput === false) {
     return false;
   }
   return !["factorio", "microsoftflightsimulator"].includes(gameId);
@@ -76,10 +63,7 @@ function init(context: types.IExtensionContext) {
   };
 
   const testDinput = (instructions: types.IInstruction[]) => {
-    if (
-      instructions.find((inst) => inst.destination === "dinput8.dll") !==
-      undefined
-    ) {
+    if (instructions.find((inst) => inst.destination === "dinput8.dll") !== undefined) {
       return context.api
         .showDialog(
           "question",

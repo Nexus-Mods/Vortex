@@ -1,6 +1,6 @@
-import { extend } from "../ExtensionProvider";
-
 import * as React from "react";
+
+import { extend } from "../ExtensionProvider";
 
 export interface IExtensibleControlProps {
   wrapperProps?: any;

@@ -1,6 +1,5 @@
 import { setDialogVisible } from "../../actions/session";
 import type { IExtensionContext } from "../../types/IExtensionContext";
-
 import DiagnosticsFilesDialog from "./views/DiagnosticsFilesDialog";
 
 function init(context: IExtensionContext): boolean {

@@ -1,5 +1,6 @@
-import Promise from "bluebird";
 import * as path from "path";
+
+import Promise from "bluebird";
 import * as Redux from "redux";
 import { fs, selectors, types } from "vortex-api";
 import { IniFile } from "vortex-parse-ini";
@@ -21,10 +22,7 @@ function missingOblivionFont(
   iniFile: IniFile<any>,
   gameId: string,
 ): Promise<string[]> {
-  const discovery: types.IDiscoveryResult = selectors.discoveryByGame(
-    store.getState(),
-    gameId,
-  );
+  const discovery: types.IDiscoveryResult = selectors.discoveryByGame(store.getState(), gameId);
   if (discovery === undefined || discovery.path === undefined) {
     // not this extensions job to report game not being discovered
     return Promise.resolve([]);

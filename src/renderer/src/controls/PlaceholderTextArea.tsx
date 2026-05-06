@@ -4,7 +4,6 @@ import { FormControl, FormGroup } from "react-bootstrap";
 import { findDOMNode } from "react-dom";
 
 import type { TFunction } from "../util/i18n";
-
 import { MainContext } from "../views/MainWindow";
 import ContextMenu, { type IContextPosition } from "./ContextMenu";
 
@@ -21,9 +20,7 @@ function PlaceholderTextArea(props: IPlaceholderTextAreaProps) {
   const DEFAULT_PLACEHOLDER = "Paste token here";
 
   const { api } = React.useContext(MainContext);
-  const [placeholder, setPlaceholder] = React.useState(() =>
-    t(DEFAULT_PLACEHOLDER),
-  );
+  const [placeholder, setPlaceholder] = React.useState(() => t(DEFAULT_PLACEHOLDER));
   const [showContextMenu, setShowContextMenu] = React.useState(false);
   const [position, setPosition] = React.useState<IContextPosition>();
   const [value, setValue] = React.useState("");

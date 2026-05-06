@@ -6,11 +6,7 @@ import { connect } from "react-redux";
 import { ThunkDispatch } from "redux-thunk";
 import { actions, selectors, tooltip, types, util } from "vortex-api";
 
-import {
-  HighlightBase,
-  IBaseConnectedProps,
-  IBaseActionProps,
-} from "../types/types";
+import { HighlightBase, IBaseConnectedProps, IBaseActionProps } from "../types/types";
 
 export interface IBaseProps {
   mod: types.IMod;
@@ -67,9 +63,7 @@ class HighlightButton extends HighlightBase<IProps, IComponentState> {
         ) : null}
         <tooltip.IconButton
           ref={this.setRef}
-          className={
-            "highlight-base " + (color !== "" ? color : "highlight-default")
-          }
+          className={"highlight-base " + (color !== "" ? color : "highlight-default")}
           icon={icon !== "" ? icon : "highlight"}
           id={mod.id}
           tooltip={t("Change Icon")}
@@ -94,8 +88,7 @@ class HighlightButton extends HighlightBase<IProps, IComponentState> {
     const node = ReactDOM.findDOMNode(this.mRef) as Element;
     const bounds = this.bounds;
     this.nextState.up =
-      node.getBoundingClientRect().bottom >
-      ((bounds.top + bounds.height) * 2) / 3;
+      node.getBoundingClientRect().bottom > ((bounds.top + bounds.height) * 2) / 3;
   };
 }
 
@@ -105,16 +98,9 @@ function mapStateToProps(state: types.IState): IBaseConnectedProps {
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, any, any>,
-): IBaseActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, any, any>): IBaseActionProps {
   return {
-    onSetModAttribute: (
-      gameMode: string,
-      modId: string,
-      attributeId: string,
-      value: any,
-    ) => {
+    onSetModAttribute: (gameMode: string, modId: string, attributeId: string, value: any) => {
       dispatch(actions.setModAttribute(gameMode, modId, attributeId, value));
     },
   };

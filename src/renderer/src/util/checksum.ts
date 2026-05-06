@@ -1,6 +1,6 @@
-import * as fs from "./fs";
-
 import { createHash } from "crypto";
+
+import * as fs from "./fs";
 
 export function checksum(input: Buffer): string {
   return createHash("md5").update(input).digest("hex");
@@ -19,9 +19,7 @@ export async function fileMD5(
   // Only stat the file when a progress callback is provided. The stat is
   // needed to report (bytesProcessed, totalBytes), but is a wasted syscall
   // when nobody is listening.
-  const totalSize = progress
-    ? await fs.statAsync(input).then((s) => s.size)
-    : 0;
+  const totalSize = progress ? await fs.statAsync(input).then((s) => s.size) : 0;
 
   return new Promise<string>((resolve, reject) => {
     const hash = createHash("md5");

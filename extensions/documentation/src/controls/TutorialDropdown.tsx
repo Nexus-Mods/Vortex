@@ -3,9 +3,9 @@ import { DropdownButton } from "react-bootstrap";
 import * as ReactDOM from "react-dom";
 import { withTranslation } from "react-i18next";
 import { ComponentEx, Icon } from "vortex-api";
-import TutorialButton from "./TutorialButton";
 
 import IYoutubeInfo from "../types/YoutubeInfo";
+import TutorialButton from "./TutorialButton";
 
 interface IComponentState {
   show: boolean;
@@ -74,6 +74,4 @@ class TutorialDropdown extends ComponentEx<IProps, IComponentState> {
   };
 }
 
-export default withTranslation(["common"])(
-  TutorialDropdown as any,
-) as React.ComponentClass<{}>;
+export default withTranslation(["common"])(TutorialDropdown as any) as React.ComponentClass<{}>;

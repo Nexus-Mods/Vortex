@@ -36,9 +36,7 @@ describe("epicCatalogNamespace", () => {
   });
 
   it("rejects empty string", () => {
-    expect(() => epicCatalogNamespace("")).toThrow(
-      "Invalid EpicCatalogNamespace",
-    );
+    expect(() => epicCatalogNamespace("")).toThrow("Invalid EpicCatalogNamespace");
   });
 });
 
@@ -70,23 +68,19 @@ describe("gogGameId", () => {
 
 describe("xboxPackageFamilyName", () => {
   it("accepts a valid package family name", () => {
-    expect(
-      xboxPackageFamilyName("BethesdaSoftworks.SkyrimSE_3275kfvn8vcwc"),
-    ).toBe("BethesdaSoftworks.SkyrimSE_3275kfvn8vcwc");
+    expect(xboxPackageFamilyName("BethesdaSoftworks.SkyrimSE_3275kfvn8vcwc")).toBe(
+      "BethesdaSoftworks.SkyrimSE_3275kfvn8vcwc",
+    );
   });
 
   it("rejects empty string", () => {
-    expect(() => xboxPackageFamilyName("")).toThrow(
-      "Invalid XboxPackageFamilyName",
-    );
+    expect(() => xboxPackageFamilyName("")).toThrow("Invalid XboxPackageFamilyName");
   });
 });
 
 describe("nexusModsDomain", () => {
   it("accepts a valid domain slug", () => {
-    expect(nexusModsDomain("skyrimspecialedition")).toBe(
-      "skyrimspecialedition",
-    );
+    expect(nexusModsDomain("skyrimspecialedition")).toBe("skyrimspecialedition");
   });
 
   it("rejects empty string", () => {
@@ -94,21 +88,15 @@ describe("nexusModsDomain", () => {
   });
 
   it("rejects strings with spaces", () => {
-    expect(() => nexusModsDomain("skyrim special edition")).toThrow(
-      "Invalid NexusModsDomain",
-    );
+    expect(() => nexusModsDomain("skyrim special edition")).toThrow("Invalid NexusModsDomain");
   });
 });
 
 describe("registryKey", () => {
   it("accepts a valid HKEY_LOCAL_MACHINE key", () => {
     expect(
-      registryKey(
-        "HKEY_LOCAL_MACHINE\\SOFTWARE\\Bethesda Softworks\\Skyrim Special Edition",
-      ),
-    ).toBe(
-      "HKEY_LOCAL_MACHINE\\SOFTWARE\\Bethesda Softworks\\Skyrim Special Edition",
-    );
+      registryKey("HKEY_LOCAL_MACHINE\\SOFTWARE\\Bethesda Softworks\\Skyrim Special Edition"),
+    ).toBe("HKEY_LOCAL_MACHINE\\SOFTWARE\\Bethesda Softworks\\Skyrim Special Edition");
   });
 
   it("accepts a valid HKEY_CURRENT_USER key", () => {
@@ -118,14 +106,10 @@ describe("registryKey", () => {
   });
 
   it("rejects key without valid HKEY_ root", () => {
-    expect(() => registryKey("INVALID\\SOFTWARE\\Test")).toThrow(
-      "Invalid RegistryKey",
-    );
+    expect(() => registryKey("INVALID\\SOFTWARE\\Test")).toThrow("Invalid RegistryKey");
   });
 
   it("rejects key without backslash path", () => {
-    expect(() => registryKey("HKEY_LOCAL_MACHINE")).toThrow(
-      "Invalid RegistryKey",
-    );
+    expect(() => registryKey("HKEY_LOCAL_MACHINE")).toThrow("Invalid RegistryKey");
   });
 });

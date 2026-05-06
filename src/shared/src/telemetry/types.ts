@@ -1,7 +1,6 @@
 import type { Attributes } from "@opentelemetry/api";
-import type { ReadableSpan } from "@opentelemetry/sdk-trace-base";
-
 import { Resource } from "@opentelemetry/resources";
+import type { ReadableSpan } from "@opentelemetry/sdk-trace-base";
 
 /** Serializable span representation for IPC transport.
  * ReadableSpan has a spanContext() method which cannot be structured-cloned,

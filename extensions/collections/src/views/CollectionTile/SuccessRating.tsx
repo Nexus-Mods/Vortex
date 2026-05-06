@@ -1,6 +1,7 @@
 import * as React from "react";
 import { TFunction } from "react-i18next";
 import { Icon, log } from "vortex-api";
+
 import InfoCache from "../../util/InfoCache";
 
 export interface ISuccessRatingProps {
@@ -20,11 +21,7 @@ export function SuccessRating(props: ISuccessRatingProps) {
     let mounted = true;
     (async () => {
       try {
-        const rev = await infoCache.getRevisionInfo(
-          revisionId,
-          collectionSlug,
-          revisionNumber,
-        );
+        const rev = await infoCache.getRevisionInfo(revisionId, collectionSlug, revisionNumber);
         if (!mounted) return;
         if ((rev?.rating?.total ?? 0) < 3) {
           setRating(undefined);
@@ -60,9 +57,7 @@ export function SuccessRating(props: ISuccessRatingProps) {
   return (
     <div className={classes.join(" ")}>
       <Icon set="collections" name="health" />
-      {rating === undefined
-        ? t("Awaiting")
-        : t("{{rating}}%", { replace: { rating } })}
+      {rating === undefined ? t("Awaiting") : t("{{rating}}%", { replace: { rating } })}
     </div>
   );
 }

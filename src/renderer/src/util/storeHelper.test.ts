@@ -8,27 +8,15 @@ describe("getSafe", () => {
     expect(res).toBe(42);
   });
   it("returns the default if node missing", () => {
-    const res = helper.getSafe(
-      { this: { is: { no: 13 } } },
-      ["this", "is", "a", "test"],
-      42,
-    );
+    const res = helper.getSafe({ this: { is: { no: 13 } } }, ["this", "is", "a", "test"], 42);
     expect(res).toBe(42);
   });
   it("returns the default if part of path is a value", () => {
-    const res = helper.getSafe(
-      { this: { is: { a: 13 } } },
-      ["this", "is", "a", "test"],
-      42,
-    );
+    const res = helper.getSafe({ this: { is: { a: 13 } } }, ["this", "is", "a", "test"], 42);
     expect(res).toBe(42);
   });
   it("returns the value if path is valid", () => {
-    const res = helper.getSafe(
-      { this: { value: "valid" } },
-      ["this", "value"],
-      42,
-    );
+    const res = helper.getSafe({ this: { value: "valid" } }, ["this", "value"], 42);
     expect(res).toBe("valid");
   });
 });
@@ -39,35 +27,19 @@ describe("getSafeCI", () => {
     expect(res).toBe(42);
   });
   it("returns the default if node missing", () => {
-    const res = helper.getSafeCI(
-      { this: { is: { no: 13 } } },
-      ["this", "is", "a", "test"],
-      42,
-    );
+    const res = helper.getSafeCI({ this: { is: { no: 13 } } }, ["this", "is", "a", "test"], 42);
     expect(res).toBe(42);
   });
   it("returns the default if part of path is a value", () => {
-    const res = helper.getSafeCI(
-      { this: { is: { a: 13 } } },
-      ["this", "is", "a", "test"],
-      42,
-    );
+    const res = helper.getSafeCI({ this: { is: { a: 13 } } }, ["this", "is", "a", "test"], 42);
     expect(res).toBe(42);
   });
   it("returns the value if path is valid", () => {
-    const res = helper.getSafeCI(
-      { this: { value: "valid" } },
-      ["this", "value"],
-      42,
-    );
+    const res = helper.getSafeCI({ this: { value: "valid" } }, ["this", "value"], 42);
     expect(res).toBe("valid");
   });
   it("returns the result if the keys are specified with different case", () => {
-    const res = helper.getSafeCI(
-      { this: { value: "valid" } },
-      ["tHiS", "VaLuE"],
-      42,
-    );
+    const res = helper.getSafeCI({ this: { value: "valid" } }, ["tHiS", "VaLuE"], 42);
     expect(res).toBe("valid");
   });
 });
@@ -197,11 +169,7 @@ describe("pushSafe", () => {
   });
   it("creates base", () => {
     // pushSafe handles undefined state by creating a new object at runtime
-    const result = helper.pushSafe(
-      undefined as unknown as Record<string, unknown>,
-      ["a", "b"],
-      42,
-    );
+    const result = helper.pushSafe(undefined as unknown as Record<string, unknown>, ["a", "b"], 42);
     expect(result).toEqual({ a: { b: [42] } });
   });
   it("turns intermediate non-objects into objects", () => {

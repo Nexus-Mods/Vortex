@@ -2,16 +2,14 @@ import memoizeOne from "memoize-one";
 import * as React from "react";
 import Select from "react-select";
 import { types, util } from "vortex-api";
+
 import { NAMESPACE } from "../statics";
 import { IBiDirRule } from "../types/IBiDirRule";
 import { IConflict } from "../types/IConflict";
 import { IModLookupInfo } from "../types/IModLookupInfo";
 import { ILocalState } from "../views/DependencyIcon";
 
-export class DependenciesFilterComponent extends React.Component<
-  types.IFilterProps,
-  {}
-> {
+export class DependenciesFilterComponent extends React.Component<types.IFilterProps, {}> {
   public render(): JSX.Element {
     const { t } = this.props;
     let { filter } = this.props;
@@ -57,9 +55,7 @@ class DependenciesFilter implements types.ITableFilter {
     this.getDependencyRulesImpl,
   );
 
-  private getLORules: (modId: string) => types.IModRule[] = memoizeOne(
-    this.getLORulesImpl,
-  );
+  private getLORules: (modId: string) => types.IModRule[] = memoizeOne(this.getLORulesImpl);
 
   constructor(
     localState: ILocalState,
@@ -91,11 +87,7 @@ class DependenciesFilter implements types.ITableFilter {
       const conflicts = this.mGetConflicts();
       const mods = this.mGetMods();
 
-      if (
-        mods === undefined ||
-        mods[value] === undefined ||
-        conflicts === undefined
-      ) {
+      if (mods === undefined || mods[value] === undefined || conflicts === undefined) {
         return false;
       }
 
@@ -136,23 +128,18 @@ class DependenciesFilter implements types.ITableFilter {
       (rule) =>
         (util.testModReference(source, rule.source) &&
           util.testModReference(ref, rule.reference)) ||
-        (util.testModReference(ref, rule.source) &&
-          util.testModReference(source, rule.reference)),
+        (util.testModReference(ref, rule.source) && util.testModReference(source, rule.reference)),
     );
   }
 
   private getDependencyRulesImpl(modId: string) {
     const mod = this.mGetMods()[modId];
-    return (mod?.rules ?? []).filter((rule) =>
-      ["requires", "recommends"].includes(rule.type),
-    );
+    return (mod?.rules ?? []).filter((rule) => ["requires", "recommends"].includes(rule.type));
   }
 
   private getLORulesImpl(modId: string) {
     const mod = this.mGetMods()[modId];
-    return (mod?.rules ?? []).filter((rule) =>
-      ["after", "before"].includes(rule.type),
-    );
+    return (mod?.rules ?? []).filter((rule) => ["after", "before"].includes(rule.type));
   }
 }
 

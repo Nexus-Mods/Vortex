@@ -1,7 +1,7 @@
-import * as actions from "../actions/persistent";
-
 import * as _ from "lodash";
 import { types, util } from "vortex-api";
+
+import * as actions from "../actions/persistent";
 
 const persistentReducer: types.IReducerSpec = {
   reducers: {
@@ -34,11 +34,7 @@ const persistentReducer: types.IReducerSpec = {
 
       const revPath = ["revisions", revisionId, "info"];
 
-      state = util.setSafe(
-        state,
-        [...revPath, "metadata", "ratingValue"],
-        vote,
-      );
+      state = util.setSafe(state, [...revPath, "metadata", "ratingValue"], vote);
       return util.setSafe(state, [...revPath, "rating"], {
         average,
         total,

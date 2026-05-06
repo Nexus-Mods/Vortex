@@ -2,7 +2,6 @@
  * Defines Redux reducer state and handlers for Stardew Valley settings.
  */
 import type { types } from "vortex-api";
-
 import { util } from "vortex-api";
 
 import * as actions from "./actions";

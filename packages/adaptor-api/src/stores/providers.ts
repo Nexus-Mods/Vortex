@@ -156,6 +156,4 @@ export interface LinuxStorePathProvider {
  * compile-time safety for OS-specific bases.
  *
  * @public */
-export type StorePathProvider =
-  | WindowsStorePathProvider
-  | LinuxStorePathProvider;
+export type StorePathProvider = WindowsStorePathProvider | LinuxStorePathProvider;

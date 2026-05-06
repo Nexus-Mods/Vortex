@@ -1,23 +1,20 @@
-import type {
-  IExtensionApi,
-  ILookupResult,
-  IModInfo,
-} from "../../../types/IExtensionContext";
+import * as path from "path";
+
+import Bluebird from "bluebird";
+
+import type { IExtensionApi, ILookupResult, IModInfo } from "../../../types/IExtensionContext";
 import { ProcessCanceled } from "../../../util/CustomErrors";
 import { batchDispatch, truthy } from "../../../util/util";
 import { setDownloadModInfo } from "../../download_management/actions/state";
+import { SITE_ID } from "../../gamemode_management/constants";
+import { gameById } from "../../gamemode_management/selectors";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { setModAttribute } from "../../mod_management/actions/mods";
 import type { IMod } from "../../mod_management/types/IMod";
 import modName from "../../mod_management/util/modName";
 import { activeGameId } from "../../profile_management/selectors";
 import NXMUrl from "../NXMUrl";
-
-import Bluebird from "bluebird";
-import * as path from "path";
 import { toNXMId } from "./convertGameId";
-import { gameById } from "../../gamemode_management/selectors";
-import { SITE_ID } from "../../gamemode_management/constants";
 
 export function guessFromFileName(fileName: string): string {
   const match = fileName.match(/-([0-9]+)-/);
@@ -60,21 +57,15 @@ export function queryLookupResult(
         text:
           refs.join(", ") +
           sp +
-          t(
-            "{{fileName}} (Version {{version}}) ({{game}}, Mod {{modId}}, File {{fileId}})",
-            {
-              replace: {
-                fileName: result.fileName,
-                version: result.fileVersion,
-                modId: result.details.modId,
-                fileId: result.details.fileId,
-                game:
-                  game !== undefined
-                    ? game.shortName || game.name
-                    : result.gameId,
-              },
+          t("{{fileName}} (Version {{version}}) ({{game}}, Mod {{modId}}, File {{fileId}})", {
+            replace: {
+              fileName: result.fileName,
+              version: result.fileVersion,
+              modId: result.details.modId,
+              fileId: result.details.fileId,
+              game: game !== undefined ? game.shortName || game.name : result.gameId,
             },
-          ),
+          }),
         value: idx === 0,
       };
     });
@@ -109,11 +100,7 @@ export function queryLookupResult(
     });
 }
 
-export function queryResetSource(
-  api: IExtensionApi,
-  gameId: string,
-  mod: IMod,
-) {
+export function queryResetSource(api: IExtensionApi, gameId: string, mod: IMod) {
   const t = api.translate;
   return api
     .showDialog(
@@ -135,9 +122,7 @@ export function queryResetSource(
     )
     .then((result) => {
       if (result.action !== "Cancel") {
-        api.store.dispatch(
-          setModAttribute(gameId, mod.id, "source", "unsupported"),
-        );
+        api.store.dispatch(setModAttribute(gameId, mod.id, "source", "unsupported"));
       }
     });
 }
@@ -150,10 +135,8 @@ export function fillNexusIdByMD5(
   downloadPath: string,
   hasArchive: boolean,
 ): Bluebird<void> {
-  const hasValidIds =
-    truthy(mod?.attributes?.modId) && truthy(mod?.attributes?.fileId);
-  const isNewestVersion =
-    hasValidIds && mod?.attributes?.newestFileId === mod?.attributes?.fileId;
+  const hasValidIds = truthy(mod?.attributes?.modId) && truthy(mod?.attributes?.fileId);
+  const isNewestVersion = hasValidIds && mod?.attributes?.newestFileId === mod?.attributes?.fileId;
   // We're not using the gameId in the query intentionally as we can't
   //  determine the game based on fileNames of locally imported archives.
   return api
@@ -173,9 +156,7 @@ export function fillNexusIdByMD5(
         if (!hasUri && hasMd5Match && hasValidIds) {
           // We know this is the mod; we just don't have the URI for it.
           const game =
-            iter.value.gameId === SITE_ID
-              ? null
-              : gameById(api.store.getState(), gameId);
+            iter.value.gameId === SITE_ID ? null : gameById(api.store.getState(), gameId);
           if (!game) {
             return acc;
           }
@@ -188,9 +169,7 @@ export function fillNexusIdByMD5(
       }, []);
       if (applicable.length > 0) {
         const idxProm =
-          applicable.length === 1
-            ? Bluebird.resolve(0)
-            : queryLookupResult(api, applicable);
+          applicable.length === 1 ? Bluebird.resolve(0) : queryLookupResult(api, applicable);
 
         return idxProm
           .then(async (idx) => {
@@ -198,8 +177,8 @@ export function fillNexusIdByMD5(
             if (!info.sourceURI) {
               // find the applicable entry and use that one as source uri
               info.sourceURI =
-                applicable.find((iter) => iter.key === lookupResults[idx].key)
-                  ?.value?.sourceURI ?? lookupResults[idx].value.sourceURI;
+                applicable.find((iter) => iter.key === lookupResults[idx].key)?.value?.sourceURI ??
+                lookupResults[idx].value.sourceURI;
             }
             try {
               if (!info.sourceURI) {
@@ -216,12 +195,7 @@ export function fillNexusIdByMD5(
                 //  point, is if we managed to confirm that the installed mod is the latest fileId.
                 if (isNewestVersion) {
                   batched.push(
-                    setModAttribute(
-                      gameId,
-                      mod.id,
-                      "version",
-                      mod.attributes.newestVersion,
-                    ),
+                    setModAttribute(gameId, mod.id, "version", mod.attributes.newestVersion),
                   );
                 } else {
                   // Let's try to guess the version from the filename and ask the user if it's correct.
@@ -245,15 +219,10 @@ export function fillNexusIdByMD5(
                           { replace: { version, modName: modName(mod) } },
                         ),
                       },
-                      [
-                        { label: "Incorrect Version" },
-                        { label: "Correct Version", default: true },
-                      ],
+                      [{ label: "Incorrect Version" }, { label: "Correct Version", default: true }],
                     );
                     if (question.action === "Correct Version") {
-                      batched.push(
-                        setModAttribute(gameId, mod.id, "version", version),
-                      );
+                      batched.push(setModAttribute(gameId, mod.id, "version", version));
                     }
                   }
                 }
@@ -261,16 +230,8 @@ export function fillNexusIdByMD5(
               }
               if (hasArchive) {
                 batchDispatch(api.store, [
-                  setDownloadModInfo(
-                    mod.archiveId,
-                    "nexus.ids.modId",
-                    nxmUrl.modId,
-                  ),
-                  setDownloadModInfo(
-                    mod.archiveId,
-                    "nexus.ids.fileId",
-                    nxmUrl.fileId,
-                  ),
+                  setDownloadModInfo(mod.archiveId, "nexus.ids.modId", nxmUrl.modId),
+                  setDownloadModInfo(mod.archiveId, "nexus.ids.fileId", nxmUrl.fileId),
                 ]);
               }
             } catch (err) {
@@ -289,9 +250,7 @@ export function fillNexusIdByMD5(
             }
             return Promise.resolve();
           })
-          .catch((err) =>
-            api.showErrorNotification("Failed to update mod ids", err),
-          );
+          .catch((err) => api.showErrorNotification("Failed to update mod ids", err));
       } else {
         return queryResetSource(api, gameId, mod);
       }

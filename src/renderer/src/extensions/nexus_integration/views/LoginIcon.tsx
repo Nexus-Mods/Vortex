@@ -1,30 +1,28 @@
-import { setDialogVisible } from "../../../actions/session";
-import Icon from "../../../controls/Icon";
-import Image from "../../../controls/Image";
-import * as tooltip from "../../../controls/TooltipControls";
-import type { IState } from "../../../types/IState";
-import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
-import getVortexPath from "../../../util/getVortexPath";
-import opn from "../../../util/opn";
-import { truthy } from "../../../util/util";
-
-import { clearOAuthCredentials, setUserAPIKey } from "../actions/account";
-import { setUserInfo } from "../actions/persistent";
-import type { IValidateKeyDataV2 } from "../types/IValidateKeyData";
-
-import { FALLBACK_AVATAR, NEXUS_BASE_URL, OAUTH_URL } from "../constants";
+import * as path from "path";
+import { pathToFileURL } from "url";
 
 import type NexusT from "@nexusmods/nexus-api";
-import * as path from "path";
 import * as React from "react";
 import type { WithTranslation } from "react-i18next";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
-import { pathToFileURL } from "url";
-import { isLoggedIn } from "../selectors";
 
-import { setOauthPending } from "../actions/session";
+import { setDialogVisible } from "../../../actions/session";
+import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
+import Icon from "../../../controls/Icon";
+import Image from "../../../controls/Image";
+import * as tooltip from "../../../controls/TooltipControls";
+import type { IState } from "../../../types/IState";
+import getVortexPath from "../../../util/getVortexPath";
 import { showError } from "../../../util/message";
+import opn from "../../../util/opn";
+import { truthy } from "../../../util/util";
+import { clearOAuthCredentials, setUserAPIKey } from "../actions/account";
+import { setUserInfo } from "../actions/persistent";
+import { setOauthPending } from "../actions/session";
+import { FALLBACK_AVATAR, NEXUS_BASE_URL, OAUTH_URL } from "../constants";
+import { isLoggedIn } from "../selectors";
+import type { IValidateKeyDataV2 } from "../types/IValidateKeyData";
 
 export interface IBaseProps extends WithTranslation {
   nexus: NexusT;
@@ -77,10 +75,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
   private getMembershipText(userInfo: IValidateKeyDataV2): string {
     if (userInfo?.isPremium === true) {
       return "★ Premium";
-    } else if (
-      userInfo?.isSupporter === true &&
-      userInfo?.isPremium === false
-    ) {
+    } else if (userInfo?.isSupporter === true && userInfo?.isPremium === false) {
       return "Supporter";
     } else if (userInfo?.isLifetime === true) {
       return "Premium";
@@ -127,9 +122,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
 
     const loggedIn = this.isLoggedIn();
 
-    const fallback = pathToFileURL(
-      path.join(getVortexPath("assets"), "..", FALLBACK_AVATAR),
-    ).href;
+    const fallback = pathToFileURL(path.join(getVortexPath("assets"), "..", FALLBACK_AVATAR)).href;
 
     const profileIcon = truthy(userInfo?.profileUrl)
       ? `${userInfo.profileUrl}?r_${START_TIME}`
@@ -142,11 +135,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
         onClick={this.showLoginLayer}
       >
         {loggedIn ? (
-          <Image
-            srcs={[profileIcon, fallback]}
-            circle
-            style={{ height: 32, width: 32 }}
-          />
+          <Image srcs={[profileIcon, fallback]} circle style={{ height: 32, width: 32 }} />
         ) : (
           <Icon name="user" className="logout-avatar" />
         )}
@@ -158,17 +147,11 @@ class LoginIcon extends ComponentEx<IProps, {}> {
     const { userInfo } = this.props;
 
     if (!this.isLoggedIn()) {
-      this.context.api.events.emit(
-        "analytics-track-click-event",
-        "Profile",
-        "Site profile",
-      );
+      this.context.api.events.emit("analytics-track-click-event", "Profile", "Site profile");
       this.setDialogVisible(true);
       this.launchNexusOauth();
     } else {
-      opn(`${NEXUS_BASE_URL}/users/${userInfo.userId}`).catch(
-        (err) => undefined,
-      );
+      opn(`${NEXUS_BASE_URL}/users/${userInfo.userId}`).catch((err) => undefined);
     }
   };
 
@@ -204,9 +187,7 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, null, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetAPIKey: (APIKey: string) => dispatch(setUserAPIKey(APIKey)),
     onClearOAuthCredentials: () => dispatch(clearOAuthCredentials(null)),

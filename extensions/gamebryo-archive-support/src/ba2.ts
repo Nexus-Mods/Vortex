@@ -129,10 +129,7 @@ export class BA2Archive {
     }
   }
 
-  private async extractAllGeneral(
-    fd: fs.promises.FileHandle,
-    outputPath: string,
-  ): Promise<void> {
+  private async extractAllGeneral(fd: fs.promises.FileHandle, outputPath: string): Promise<void> {
     const entries = this.gnrlEntries!;
 
     for (let i = 0; i < entries.length; i++) {
@@ -142,8 +139,7 @@ export class BA2Archive {
 
       await fs.promises.mkdir(path.dirname(outFile), { recursive: true });
 
-      const isCompressed =
-        entry.packedLen !== 0 && entry.packedLen !== entry.unpackedLen;
+      const isCompressed = entry.packedLen !== 0 && entry.packedLen !== entry.unpackedLen;
       const readLen = isCompressed ? entry.packedLen : entry.unpackedLen;
 
       if (readLen === 0) {
@@ -164,10 +160,7 @@ export class BA2Archive {
     }
   }
 
-  private async extractAllDX10(
-    fd: fs.promises.FileHandle,
-    outputPath: string,
-  ): Promise<void> {
+  private async extractAllDX10(fd: fs.promises.FileHandle, outputPath: string): Promise<void> {
     const entries = this.dx10Entries!;
 
     for (let i = 0; i < entries.length; i++) {
@@ -183,8 +176,7 @@ export class BA2Archive {
 
       // Extract and decompress each chunk
       for (const chunk of tex.chunks) {
-        const isCompressed =
-          chunk.packedLen !== 0 && chunk.packedLen !== chunk.unpackedLen;
+        const isCompressed = chunk.packedLen !== 0 && chunk.packedLen !== chunk.unpackedLen;
         const readLen = isCompressed ? chunk.packedLen : chunk.unpackedLen;
 
         const buf = Buffer.alloc(readLen);
@@ -211,9 +203,7 @@ export async function loadBA2(fileName: string): Promise<BA2Archive> {
 
     const magic = headerBuf.toString("ascii", 0, 4);
     if (magic !== BA2_MAGIC) {
-      throw new Error(
-        `Invalid BA2 file: expected magic "BTDX", got "${magic}"`,
-      );
+      throw new Error(`Invalid BA2 file: expected magic "BTDX", got "${magic}"`);
     }
 
     const version = headerBuf.readUInt32LE(4);

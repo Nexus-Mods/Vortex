@@ -1,9 +1,8 @@
+import { gte } from "semver";
 /**
  * Selectors for discovering and resolving active SMAPI tool/mod entries.
  */
 import type { types } from "vortex-api";
-
-import { gte } from "semver";
 import { selectors, util } from "vortex-api";
 
 import { GAME_ID, MOD_TYPE_SMAPI, SMAPI_MOD_ID } from "../common";
@@ -17,9 +16,7 @@ import { selectSdvMods } from "../state/selectors";
  * @returns Discovered tool (`types.IDiscoveredTool`) when present and has a
  * path; otherwise `undefined`.
  */
-export function findSMAPITool(
-  api: types.IExtensionApi,
-): types.IDiscoveredTool | undefined {
+export function findSMAPITool(api: types.IExtensionApi): types.IDiscoveredTool | undefined {
   const state = api.getState();
   const discovery = selectors.discoveryByGame(state, GAME_ID);
   const tool = discovery?.tools?.["smapi"];
@@ -38,14 +35,11 @@ export function getSMAPIMods(api: types.IExtensionApi): types.IMod[] {
   const state = api.getState();
   const profileId = selectors.lastActiveProfileForGame(state, GAME_ID);
   const profile = selectors.profileById(state, profileId);
-  const isActive = (modId: string) =>
-    util.getSafe(profile, ["modState", modId, "enabled"], false);
+  const isActive = (modId: string) => util.getSafe(profile, ["modState", modId, "enabled"], false);
   const isSMAPI = (mod: types.IMod) =>
     mod.type === MOD_TYPE_SMAPI && mod.attributes?.modId === SMAPI_MOD_ID;
   const mods: { [modId: string]: types.IMod } = selectSdvMods(state);
-  return Object.values(mods).filter(
-    (mod: types.IMod) => isSMAPI(mod) && isActive(mod.id),
-  );
+  return Object.values(mods).filter((mod: types.IMod) => isSMAPI(mod) && isActive(mod.id));
 }
 
 /**
@@ -65,10 +59,7 @@ export function findSMAPIMod(api: types.IExtensionApi): types.IMod | undefined {
           if (prev === undefined) {
             return iter;
           }
-          return gte(
-            iter?.attributes?.version ?? "0.0.0",
-            prev?.attributes?.version ?? "0.0.0",
-          )
+          return gte(iter?.attributes?.version ?? "0.0.0", prev?.attributes?.version ?? "0.0.0")
             ? iter
             : prev;
         }, undefined)

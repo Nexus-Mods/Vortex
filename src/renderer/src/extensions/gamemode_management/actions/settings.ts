@@ -1,4 +1,4 @@
-import { createAction } from 'redux-act';
+import { createAction } from "redux-act";
 
 import type { IDiscoveredTool } from "../../../types/IDiscoveredTool";
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
@@ -12,10 +12,7 @@ export const addDiscoveredGame = createAction(
 );
 
 // undiscover game that's no longer found
-export const clearDiscoveredGame = createAction(
-  "UNDISCOVER_GAME",
-  (id: string) => ({ id }),
-);
+export const clearDiscoveredGame = createAction("UNDISCOVER_GAME", (id: string) => ({ id }));
 
 /**
  * override the path of a game that's already been discovered
@@ -35,12 +32,12 @@ export const setGamePath = createAction(
  */
 export const addDiscoveredTool = createAction(
   "ADD_DISCOVERED_TOOL",
-  (
-    gameId: string,
-    toolId: string,
-    result: IDiscoveredTool,
-    manual: boolean,
-  ) => ({ gameId, toolId, result, manual }),
+  (gameId: string, toolId: string, result: IDiscoveredTool, manual: boolean) => ({
+    gameId,
+    toolId,
+    result,
+    manual,
+  }),
 );
 
 /**
@@ -67,26 +64,17 @@ export const setGameParameters = createAction(
 /**
  * hide or unhide a game
  */
-export const setGameHidden = createAction(
-  "SET_GAME_HIDDEN",
-  (gameId: string, hidden: boolean) => ({ gameId, hidden }),
-);
+export const setGameHidden = createAction("SET_GAME_HIDDEN", (gameId: string, hidden: boolean) => ({
+  gameId,
+  hidden,
+}));
 
-export const setGameSearchPaths = createAction(
-  "SET_GAME_SEARCH_PATHS",
-  (paths: string[]) => paths,
-);
+export const setGameSearchPaths = createAction("SET_GAME_SEARCH_PATHS", (paths: string[]) => paths);
 
 export const setPickerLayout = createAction(
   "SET_GAMEPICKER_LAYOUT",
   (layout: "list" | "small" | "large") => ({ layout }),
 );
 
-export const setSortManaged = createAction(
-  "SET_SORT_MANAGED",
-  (order: string) => order,
-);
-export const setSortUnmanaged = createAction(
-  "SET_SORT_UNMANAGED",
-  (order: string) => order,
-);
+export const setSortManaged = createAction("SET_SORT_MANAGED", (order: string) => order);
+export const setSortUnmanaged = createAction("SET_SORT_UNMANAGED", (order: string) => order);

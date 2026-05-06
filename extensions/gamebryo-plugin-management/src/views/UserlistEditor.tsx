@@ -1,23 +1,17 @@
-import { addRule, removeRule } from "../actions/userlist";
-import { closeDialog } from "../actions/userlistEdit";
-import { ILOOTPlugin } from "../types/ILOOTList";
-import { IPlugins } from "../types/IPlugins";
-
 import I18next from "i18next";
 import * as React from "react";
-import {
-  Button,
-  ListGroup,
-  ListGroupItem,
-  Modal,
-  ModalHeader,
-} from "react-bootstrap";
+import { Button, ListGroup, ListGroupItem, Modal, ModalHeader } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import Select from "react-select";
 import * as Redux from "redux";
 import { ThunkDispatch } from "redux-thunk";
 import { ComponentEx, Icon, tooltip, types } from "vortex-api";
+
+import { addRule, removeRule } from "../actions/userlist";
+import { closeDialog } from "../actions/userlistEdit";
+import { ILOOTPlugin } from "../types/ILOOTList";
+import { IPlugins } from "../types/IPlugins";
 import { IStateWithGamebryo } from "../types/IStateWithGamebryo";
 
 type RuleType = "after" | "requires" | "incompatible";
@@ -45,12 +39,7 @@ class RuleEntry extends React.Component<IRuleEntryProps, {}> {
     const { pluginId, reference, type } = this.props;
     return (
       <ListGroupItem key={`${pluginId}-${type}-${reference}`}>
-        <tooltip.IconButton
-          className="btn-embed"
-          icon="remove"
-          tooltip=""
-          onClick={this.click}
-        />
+        <tooltip.IconButton className="btn-embed" icon="remove" tooltip="" onClick={this.click} />
         <div className="rule-name">{pluginId}</div>
         <div className="rule-type">{this.renderType(type)}</div>
         <div className="rule-name">{reference}</div>
@@ -116,8 +105,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
 
   public UNSAFE_componentWillReceiveProps(nextProps: IProps) {
     if (nextProps.dialog !== this.props.dialog) {
-      this.nextState.dialog =
-        nextProps.dialog !== undefined ? { ...nextProps.dialog } : undefined;
+      this.nextState.dialog = nextProps.dialog !== undefined ? { ...nextProps.dialog } : undefined;
     }
   }
 
@@ -132,11 +120,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
     }));
 
     return (
-      <Modal
-        id="manage-plugin-rules-dialog"
-        show={dialog !== undefined}
-        onHide={this.close}
-      >
+      <Modal id="manage-plugin-rules-dialog" show={dialog !== undefined} onHide={this.close}>
         <ModalHeader>
           <h3>{t("Set Rules")}</h3>
         </ModalHeader>
@@ -163,11 +147,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
                 options={pluginOptions}
                 clearable={false}
                 placeholder={t("Select Plugin...")}
-                value={
-                  pluginOptions.find(
-                    (option) => option.value === dialog.pluginId,
-                  ) || null
-                }
+                value={pluginOptions.find((option) => option.value === dialog.pluginId) || null}
                 onChange={this.selectPlugin}
               />
               <Select
@@ -179,16 +159,16 @@ class Editor extends ComponentEx<IProps, IComponentState> {
                 value={
                   dialog.type
                     ? (() => {
-                      const typeLabels = {
-                        after: t("Must Load After"),
-                        requires: t("Requires"),
-                        incompatible: t("Is Incompatible With"),
-                      };
-                      return {
-                        value: dialog.type,
-                        label: typeLabels[dialog.type],
-                      };
-                    })()
+                        const typeLabels = {
+                          after: t("Must Load After"),
+                          requires: t("Requires"),
+                          incompatible: t("Is Incompatible With"),
+                        };
+                        return {
+                          value: dialog.type,
+                          label: typeLabels[dialog.type],
+                        };
+                      })()
                     : null
                 }
                 clearable={false}
@@ -200,13 +180,9 @@ class Editor extends ComponentEx<IProps, IComponentState> {
                 clearable={false}
                 placeholder={t("Select Plugin...")}
                 value={
-                  dialog.reference
-                    ? { value: dialog.reference, label: dialog.reference }
-                    : null
+                  dialog.reference ? { value: dialog.reference, label: dialog.reference } : null
                 }
-                onChange={(newValue: ISelectOption | null) =>
-                  this.selectReference(newValue)
-                }
+                onChange={(newValue: ISelectOption | null) => this.selectReference(newValue)}
               />
               <tooltip.IconButton
                 icon="swap"
@@ -217,10 +193,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
               <tooltip.Button
                 tooltip=""
                 onClick={this.add}
-                disabled={
-                  dialog.pluginId === undefined ||
-                  dialog.reference === undefined
-                }
+                disabled={dialog.pluginId === undefined || dialog.reference === undefined}
               >
                 {t("Add")}
               </tooltip.Button>
@@ -271,11 +244,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
     );
   };
 
-  private deleteRule = (
-    pluginId: string,
-    reference: string,
-    type: RuleType,
-  ) => {
+  private deleteRule = (pluginId: string, reference: string, type: RuleType) => {
     const { onRemoveRule } = this.props;
     onRemoveRule(pluginId, reference, type);
   };
@@ -323,8 +292,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
     const { onAddRule, userlist } = this.props;
     const { dialog } = this.state;
 
-    const pluginRules =
-      userlist.find((iter) => iter.name === dialog.pluginId) || {};
+    const pluginRules = userlist.find((iter) => iter.name === dialog.pluginId) || {};
 
     if ((pluginRules[dialog.type] || []).indexOf(dialog.reference) === -1) {
       // don't set a duplicate of the rule
@@ -354,8 +322,7 @@ type Dispatch = ThunkDispatch<types.IState, null, Redux.Action>;
 function mapDispatchToProps(dispatch: Dispatch): IActionProps {
   return {
     onCloseDialog: () => dispatch(closeDialog()),
-    onAddRule: (pluginId, referenceId, type) =>
-      dispatch(addRule(pluginId, referenceId, type)),
+    onAddRule: (pluginId, referenceId, type) => dispatch(addRule(pluginId, referenceId, type)),
     onRemoveRule: (pluginId, referenceId, type) =>
       dispatch(removeRule(pluginId, referenceId, type)),
   };

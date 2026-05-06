@@ -5,7 +5,6 @@ import type {
   Status,
 } from "@nexusmods/adaptor-api/fs";
 import type { Pattern } from "@nexusmods/adaptor-api/fs";
-
 import { FileSystemError, QualifiedPath } from "@nexusmods/adaptor-api/fs";
 
 /**
@@ -18,10 +17,7 @@ import { FileSystemError, QualifiedPath } from "@nexusmods/adaptor-api/fs";
  *
  * @public
  */
-export type FileSystemSendFn = (
-  method: string,
-  args: readonly unknown[],
-) => Promise<unknown>;
+export type FileSystemSendFn = (method: string, args: readonly unknown[]) => Promise<unknown>;
 
 /**
  * Wire-level enumeration options. This is an implementation detail of
@@ -57,10 +53,7 @@ interface EnumerateNextResult {
  * @public
  */
 export function createFileSystemClient(send: FileSystemSendFn): FileSystem {
-  const call = async <T>(
-    method: string,
-    args: readonly unknown[],
-  ): Promise<T> => {
+  const call = async <T>(method: string, args: readonly unknown[]): Promise<T> => {
     try {
       return (await send(method, args)) as T;
     } catch (err) {
@@ -75,10 +68,8 @@ export function createFileSystemClient(send: FileSystemSendFn): FileSystem {
     Promise.resolve(createEnumerationIterator(call, path, options));
 
   return {
-    copy: (source, target, options) =>
-      call<void>("copy", [source, target, options]),
-    move: (source, target, options) =>
-      call<void>("move", [source, target, options]),
+    copy: (source, target, options) => call<void>("copy", [source, target, options]),
+    move: (source, target, options) => call<void>("move", [source, target, options]),
     readFile: (path) => call<Uint8Array>("readFile", [path]),
     writeFile: (path, contents) => call<void>("writeFile", [path, contents]),
     createDirectory: (path) => call<void>("createDirectory", [path]),
@@ -91,12 +82,9 @@ export function createFileSystemClient(send: FileSystemSendFn): FileSystem {
     // unchanged to the host.
     enumerateDirectory: enumerateDirectory as FileSystem["enumerateDirectory"],
     createStream: ((..._args: unknown[]) => {
-      throw new Error(
-        "createStream is not yet supported over the RPC client polyfill",
-      );
+      throw new Error("createStream is not yet supported over the RPC client polyfill");
     }) as FileSystem["createStream"],
-    createLink: (from, to, type) =>
-      call<void>("createLink", [from, to, type]),
+    createLink: (from, to, type) => call<void>("createLink", [from, to, type]),
   };
 }
 
@@ -118,10 +106,7 @@ function createEnumerationIterator(
     if (done || queue.length > 0) return;
 
     if (!opened) {
-      const res = await call<EnumerateOpenResult>("enumerateOpen", [
-        path,
-        options,
-      ]);
+      const res = await call<EnumerateOpenResult>("enumerateOpen", [path, options]);
       cursorId = res.cursorId;
       queue = res.batch.map(rehydrateEntry);
       done = res.done;

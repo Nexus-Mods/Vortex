@@ -52,9 +52,7 @@ export function computeStateDiff<T>(
         operations.push(...collectRemoveOperations(currentPath, oldState[key]));
       } else if (oldState[key] !== newState[key]) {
         // Key exists in both but value changed - recurse
-        operations.push(
-          ...computeStateDiff(oldState[key], newState[key], currentPath),
-        );
+        operations.push(...computeStateDiff(oldState[key], newState[key], currentPath));
       }
       // If oldState[key] === newState[key], no operation needed
     }
@@ -118,10 +116,7 @@ function collectSetOperations(path: string[], state: unknown): DiffOperation[] {
  * Collect all remove operations needed to clear an entire state subtree.
  * Recursively traverses objects to find all leaf values.
  */
-function collectRemoveOperations(
-  path: string[],
-  state: unknown,
-): DiffOperation[] {
+function collectRemoveOperations(path: string[], state: unknown): DiffOperation[] {
   if (isObject(state)) {
     const operations: DiffOperation[] = [];
     for (const key of Object.keys(state)) {

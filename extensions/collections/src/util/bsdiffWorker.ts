@@ -4,8 +4,8 @@
  * the main thread.
  */
 
-import { parentPort, workerData } from "worker_threads";
 import * as fs from "fs";
+import { parentPort, workerData } from "worker_threads";
 
 // --- WASM interface ---
 
@@ -13,18 +13,8 @@ interface BsdiffWasmExports {
   memory: WebAssembly.Memory;
   alloc(size: number): number;
   dealloc(ptr: number, size: number): void;
-  create_patch(
-    basePtr: number,
-    baseLen: number,
-    nextPtr: number,
-    nextLen: number,
-  ): number;
-  apply_patch(
-    basePtr: number,
-    baseLen: number,
-    patchPtr: number,
-    patchLen: number,
-  ): number;
+  create_patch(basePtr: number, baseLen: number, nextPtr: number, nextLen: number): number;
+  apply_patch(basePtr: number, baseLen: number, patchPtr: number, patchLen: number): number;
   output_ptr(): number;
   output_len(): number;
   free_output(): void;
@@ -114,10 +104,9 @@ parentPort!.on("message", (msg: BsdiffRequest) => {
       return;
     }
     const output = readOutput(wasm);
-    parentPort!.postMessage(
-      { id: msg.id, result: output } as BsdiffResponse,
-      [output.buffer as ArrayBuffer],
-    );
+    parentPort!.postMessage({ id: msg.id, result: output } as BsdiffResponse, [
+      output.buffer as ArrayBuffer,
+    ]);
   } catch (err: any) {
     parentPort!.postMessage({
       id: msg.id,

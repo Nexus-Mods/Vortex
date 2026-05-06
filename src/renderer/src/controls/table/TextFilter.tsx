@@ -1,7 +1,7 @@
-import type { IFilterProps, ITableFilter } from "../../types/ITableAttribute";
-
 import * as React from "react";
 import { FormControl } from "react-bootstrap";
+
+import type { IFilterProps, ITableFilter } from "../../types/ITableAttribute";
 
 export class TextFilterComponent extends React.Component<IFilterProps, {}> {
   public render(): JSX.Element {

@@ -1,9 +1,5 @@
 import { mdiMagnifyRemoveOutline } from "@mdi/js";
-import React, {
-  type ComponentType,
-  type PropsWithChildren,
-  type ReactNode,
-} from "react";
+import React, { type ComponentType, type PropsWithChildren, type ReactNode } from "react";
 
 import { ListingLoader } from "../listing_loader/ListingLoader";
 import { NoResults } from "../no_results/NoResults";

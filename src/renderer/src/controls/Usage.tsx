@@ -66,10 +66,7 @@ class Usage extends PureComponentEx<IProps, {}> {
   }
 }
 
-function mapStateToProps(
-  state: IState,
-  ownProps: IUsageProps,
-): IConnectedProps {
+function mapStateToProps(state: IState, ownProps: IUsageProps): IConnectedProps {
   return {
     // Defensive check: interface.usage might not be initialized during hydration
     show: state.settings?.interface?.usage?.[ownProps.infoId] !== false,

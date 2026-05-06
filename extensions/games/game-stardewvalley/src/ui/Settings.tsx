@@ -1,16 +1,15 @@
-/**
- * Renders Stardew Valley extension settings controls in the Vortex UI.
- */
-import type { types } from "vortex-api";
-
 import React from "react";
 import { ControlLabel, FormGroup, HelpBlock, Panel } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useSelector, useStore } from "react-redux";
+/**
+ * Renders Stardew Valley extension settings controls in the Vortex UI.
+ */
+import type { types } from "vortex-api";
 import { Toggle, More, selectors } from "vortex-api";
 
-import { setRecommendations } from "../state/actions";
 import { GAME_ID } from "../common";
+import { setRecommendations } from "../state/actions";
 
 /**
  * Displays SDV-specific settings toggles and forwards updates to extension callbacks.
@@ -42,11 +41,7 @@ export default function Settings(props: IBaseProps) {
           <Panel.Body>
             <ControlLabel>{t("Stardew Valley")}</ControlLabel>
 
-            <Toggle
-              checked={useRecommendations}
-              disabled={true}
-              onToggle={setUseRecommendations}
-            >
+            <Toggle checked={useRecommendations} disabled={true} onToggle={setUseRecommendations}>
               {t("Use recommendations from the mod manifests")}
 
               <More id="sdv_use_recommendations" name="SDV Use Recommendations">

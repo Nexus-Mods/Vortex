@@ -81,10 +81,7 @@ export interface FileSystem {
    *
    * @throws {@link FileSystemError}
    * */
-  stat(
-    path: QualifiedPath,
-    options?: { parseSymLink: boolean },
-  ): Promise<StatResult>;
+  stat(path: QualifiedPath, options?: { parseSymLink: boolean }): Promise<StatResult>;
 
   /**
    * Returns an async iterator to enumerate the directory.
@@ -181,26 +178,14 @@ export interface FileSystem {
    *
    * @throws {@link FileSystemError}
    * */
-  createLink(
-    from: QualifiedPath,
-    to: QualifiedPath,
-    type: "hardlink" | "symlink",
-  ): Promise<void>;
+  createLink(from: QualifiedPath, to: QualifiedPath, type: "hardlink" | "symlink"): Promise<void>;
 }
 
 /** @public */
 export interface FileSystemBackend {
-  copy(
-    source: ResolvedPath,
-    target: ResolvedPath,
-    options?: { overwrite: boolean },
-  ): Promise<void>;
+  copy(source: ResolvedPath, target: ResolvedPath, options?: { overwrite: boolean }): Promise<void>;
 
-  move(
-    source: ResolvedPath,
-    target: ResolvedPath,
-    options?: { overwrite: boolean },
-  ): Promise<void>;
+  move(source: ResolvedPath, target: ResolvedPath, options?: { overwrite: boolean }): Promise<void>;
 
   readFile(path: ResolvedPath): Promise<Uint8Array>;
   writeFile(path: ResolvedPath, contents: Uint8Array): Promise<void>;
@@ -210,10 +195,7 @@ export interface FileSystemBackend {
   delete(path: ResolvedPath): Promise<void>;
   deleteRecursive(path: ResolvedPath): Promise<void>;
 
-  stat(
-    path: ResolvedPath,
-    options?: { parseSymLink: boolean },
-  ): Promise<StatResult>;
+  stat(path: ResolvedPath, options?: { parseSymLink: boolean }): Promise<StatResult>;
 
   enumerateDirectory(
     path: ResolvedPath,
@@ -265,17 +247,11 @@ export interface FileSystemBackend {
     options?: { start?: number; end?: number },
   ): Promise<ReadableStream | WritableStream>;
 
-  createLink(
-    from: ResolvedPath,
-    to: ResolvedPath,
-    type: "hardlink" | "symlink",
-  ): Promise<void>;
+  createLink(from: ResolvedPath, to: ResolvedPath, type: "hardlink" | "symlink"): Promise<void>;
 }
 
 /** @public */
-export type StatResult =
-  | { readonly exists: false }
-  | ({ readonly exists: true } & Status);
+export type StatResult = { readonly exists: false } | ({ readonly exists: true } & Status);
 
 /** @public */
 export type Status = (FileStatus | DirectoryStatus) & SymLinkStatus;

@@ -1,8 +1,9 @@
-import { saveFiles } from "./gameSupport";
+import * as path from "path";
 
 import Promise from "bluebird";
-import * as path from "path";
 import { fs } from "vortex-api";
+
+import { saveFiles } from "./gameSupport";
 
 /**
  * copy or move a list of savegame files
@@ -27,10 +28,7 @@ function transferSavegames(
   }, []);
 
   return Promise.map(savegames, (save) =>
-    operation(
-      path.join(sourceSavePath, save),
-      path.join(destSavePath, save),
-    ).catch((err) => {
+    operation(path.join(sourceSavePath, save), path.join(destSavePath, save)).catch((err) => {
       if (err.code === "ENOENT") {
         // if the file doesn't exist the user has just deleted it in which case: screw it or,
         // much more likely, this was the copy op for the .*se file and the user didn't use

@@ -13,10 +13,7 @@
     },
     {
       "name": "Debug Electron (System Electron)",
-      "configurations": [
-        "Debug Main Process (System Electron)",
-        "Debug Renderer Process"
-      ],
+      "configurations": ["Debug Main Process (System Electron)", "Debug Renderer Process"],
       "presentation": {
         "hidden": false,
         "group": "",
@@ -26,17 +23,14 @@
     },
     {
       "name": "Debug Electron (Staging)",
-      "configurations": [
-        "Debug Main Process (Staging)",
-        "Debug Renderer Process"
-      ],
+      "configurations": ["Debug Main Process (Staging)", "Debug Renderer Process"],
       "presentation": {
         "hidden": false,
         "group": "",
         "order": 1
       },
       "stopAll": true
-    },
+    }
   ],
   "configurations": [
     {
@@ -57,10 +51,7 @@
       "console": "integratedTerminal",
       "sourceMaps": true,
       "outFiles": ["${workspaceFolder}/src/main/out/**/*.{js,cjs}"],
-      "resolveSourceMapLocations": [
-        "${workspaceFolder}/**",
-        "!**/node_modules/**"
-      ],
+      "resolveSourceMapLocations": ["${workspaceFolder}/**", "!**/node_modules/**"],
       "autoAttachChildProcesses": false,
       "timeout": 60000,
       "skipFiles": ["<node_internals>/**", "${workspaceFolder}/node_modules/**"]
@@ -86,10 +77,7 @@
       "console": "integratedTerminal",
       "sourceMaps": true,
       "outFiles": ["${workspaceFolder}/src/main/out/**/*.{js,cjs}"],
-      "resolveSourceMapLocations": [
-        "${workspaceFolder}/**",
-        "!**/node_modules/**"
-      ],
+      "resolveSourceMapLocations": ["${workspaceFolder}/**", "!**/node_modules/**"],
       "timeout": 60000,
       "skipFiles": ["<node_internals>/**", "${workspaceFolder}/node_modules/**"]
     },
@@ -112,10 +100,7 @@
       "console": "internalConsole",
       "sourceMaps": true,
       "outFiles": ["${workspaceFolder}/src/main/out/**/*.{js,cjs}"],
-      "skipFiles": [
-        "<node_internals>/**",
-        "${workspaceFolder}/node_modules/**"
-      ],
+      "skipFiles": ["<node_internals>/**", "${workspaceFolder}/node_modules/**"],
       "autoAttachChildProcesses": false,
       "timeout": 60000
     },

@@ -1,6 +1,7 @@
 import type { FC } from "react";
 import React, { useRef } from "react";
 import { useDrag, useDrop } from "react-dnd";
+
 import Icon from "../../controls/Icon";
 import type { IStarterInfo } from "../../util/StarterInfo";
 
@@ -33,8 +34,7 @@ export const BoxWithHandle: FC<IProps> = (props: IProps) => {
         return;
       }
       const hoverBoundingRect = ref.current?.getBoundingClientRect();
-      const hoverMiddleY =
-        (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
+      const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
       const hoverActualY = monitor.getClientOffset().y - hoverBoundingRect.top;
       // if dragging down, continue only when hover is smaller than middle Y
       if (dragIdx < hoverIdx && hoverActualY < hoverMiddleY) return;
@@ -45,15 +45,9 @@ export const BoxWithHandle: FC<IProps> = (props: IProps) => {
   });
 
   const dragDropRef = drag(dropRef(ref));
-  const children = Array.isArray(props.children)
-    ? props.children
-    : [props.children];
+  const children = Array.isArray(props.children) ? props.children : [props.children];
   return (
-    <div
-      className="box-drag-handle-container"
-      ref={dragPreview}
-      style={{ opacity }}
-    >
+    <div className="box-drag-handle-container" ref={dragPreview} style={{ opacity }}>
       <div className="box-drag-handle" ref={dragDropRef as any}>
         <Icon className="box-drag-handle-icon" name="drag-handle" />
       </div>

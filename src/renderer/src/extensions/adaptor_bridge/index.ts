@@ -33,12 +33,12 @@
  * - Tools → supportedTools array on the IGame object
  */
 
-import Bluebird from "bluebird"; // Used for setup callback return type
 import * as path from "path";
 
-import type { IExtensionContext } from "../../types/IExtensionContext";
-import type { IInstruction } from "../../extensions/mod_management/types/IInstallResult";
+import Bluebird from "bluebird"; // Used for setup callback return type
 
+import type { IInstruction } from "../../extensions/mod_management/types/IInstallResult";
+import type { IExtensionContext } from "../../types/IExtensionContext";
 import { log } from "../../util/log";
 
 // ---------------------------------------------------------------------------
@@ -122,9 +122,7 @@ export interface InstallMapping {
   destination: string;
 }
 
-type InstallerDispatch = (
-  files: readonly string[],
-) => Promise<readonly InstallMapping[]>;
+type InstallerDispatch = (files: readonly string[]) => Promise<readonly InstallMapping[]>;
 
 /**
  * Registry of per-game mod-installer dispatch functions, populated as
@@ -144,9 +142,7 @@ const installerRegistry = new Map<string, InstallerDispatch>();
 const detectedVersions = new Map<string, string>();
 
 /** Returns the installer dispatch for a game, or `undefined`. */
-export function getAdaptorInstaller(
-  gameId: string,
-): InstallerDispatch | undefined {
+export function getAdaptorInstaller(gameId: string): InstallerDispatch | undefined {
   return installerRegistry.get(gameId);
 }
 
@@ -161,14 +157,9 @@ export function adaptorInstallerGameIds(): readonly string[] {
  * A misbehaving adaptor shouldn't be able to surface as a crash in
  * downstream code that trusted the cast.
  */
-function assertInstallMappings(
-  value: unknown,
-  adaptorName: string,
-): readonly InstallMapping[] {
+function assertInstallMappings(value: unknown, adaptorName: string): readonly InstallMapping[] {
   if (!Array.isArray(value)) {
-    throw new Error(
-      `[adaptor-bridge] ${adaptorName}: installer returned non-array`,
-    );
+    throw new Error(`[adaptor-bridge] ${adaptorName}: installer returned non-array`);
   }
   for (const entry of value) {
     if (
@@ -178,9 +169,7 @@ function assertInstallMappings(
       typeof (entry as { anchor?: unknown }).anchor !== "string" ||
       typeof (entry as { destination?: unknown }).destination !== "string"
     ) {
-      throw new Error(
-        `[adaptor-bridge] ${adaptorName}: installer returned malformed mapping`,
-      );
+      throw new Error(`[adaptor-bridge] ${adaptorName}: installer returned malformed mapping`);
     }
   }
   return value as readonly InstallMapping[];
@@ -258,10 +247,7 @@ function gameIdFromUri(gameUri: string): string {
 function buildQueryArgs(
   info: GameInfo,
 ): Record<string, Array<{ id?: string; name?: string; prefer?: number }>> {
-  const args: Record<
-    string,
-    Array<{ id?: string; name?: string; prefer?: number }>
-  > = {};
+  const args: Record<string, Array<{ id?: string; name?: string; prefer?: number }>> = {};
 
   // prefer values enforce ordering: Steam > GOG > Epic > Xbox
   if (info.steam?.length) {
@@ -303,19 +289,14 @@ function buildQueryArgs(
  *    b. Tools and executable info (IGameToolsService)
  *    c. Populate supported tools from the resolved data
  */
-function registerAdaptor(
-  context: IExtensionContext,
-  adaptor: AdaptorEntry,
-): void {
+function registerAdaptor(context: IExtensionContext, adaptor: AdaptorEntry): void {
   const { name, provides } = adaptor;
 
   // Match adaptor service URIs by the exact "vortex:adaptor/{id}/{service}"
   // convention.  A full regex avoids false positives from URIs that merely
   // happen to end with the service name.
   const findService = (service: string): string | undefined =>
-    provides.find((u) =>
-      new RegExp(`^vortex:adaptor/[^/]+/${service}$`).test(u),
-    );
+    provides.find((u) => new RegExp(`^vortex:adaptor/[^/]+/${service}$`).test(u));
 
   const infoUri = findService("info");
   const pathsUri = findService("paths");
@@ -370,15 +351,10 @@ function registerAdaptor(
   }
 
   /** Resolves game paths. Called once after discovery. */
-  async function getPaths(
-    store: string,
-    gamePath: string,
-  ): Promise<OpaqueGamePaths | null> {
+  async function getPaths(store: string, gamePath: string): Promise<OpaqueGamePaths | null> {
     if (!pathsResolved && pathsUri) {
       cachedSnapshot = await window.api.adaptors.buildSnapshot(store, gamePath);
-      cachedPaths = await callAdaptor(name, pathsUri, "paths", [
-        cachedSnapshot,
-      ]);
+      cachedPaths = await callAdaptor(name, pathsUri, "paths", [cachedSnapshot]);
       pathsResolved = true;
     }
     return cachedPaths;
@@ -389,14 +365,10 @@ function registerAdaptor(
    * `null` if the adaptor provides no tools service or if paths were
    * unavailable (we never call `getGameTools` with a `null` paths arg).
    */
-  async function getTools(
-    paths: OpaqueGamePaths | null,
-  ): Promise<GameToolsInfo | null> {
+  async function getTools(paths: OpaqueGamePaths | null): Promise<GameToolsInfo | null> {
     if (!toolsUri || paths === null) return null;
     if (!cachedTools) {
-      cachedTools = (await callAdaptor(name, toolsUri, "getGameTools", [
-        paths,
-      ])) as GameToolsInfo;
+      cachedTools = (await callAdaptor(name, toolsUri, "getGameTools", [paths])) as GameToolsInfo;
     }
     return cachedTools;
   }
@@ -407,14 +379,10 @@ function registerAdaptor(
    * resulting descriptor to the main process for execution.
    * Returns null if the adaptor doesn't declare version detection.
    */
-  async function getVersion(
-    paths: OpaqueGamePaths | null,
-  ): Promise<string | null> {
+  async function getVersion(paths: OpaqueGamePaths | null): Promise<string | null> {
     if (!pathsUri || paths === null) return null;
     try {
-      const source = await callAdaptor(name, pathsUri, "getVersionSource", [
-        paths,
-      ]);
+      const source = await callAdaptor(name, pathsUri, "getVersionSource", [paths]);
       if (!source || typeof source !== "object") return null;
       return await window.api.adaptors.detectVersion(
         source as { type: string; path: { value: string }; regex?: string },
@@ -432,14 +400,10 @@ function registerAdaptor(
    * both forwarded opaquely. Returns an empty array when the adaptor
    * does not declare an installer service.
    */
-  async function invokeInstaller(
-    files: readonly string[],
-  ): Promise<readonly InstallMapping[]> {
+  async function invokeInstaller(files: readonly string[]): Promise<readonly InstallMapping[]> {
     if (!installerUri || !pathsUri) return [];
     if (!cachedSnapshot || !cachedPaths) {
-      throw new Error(
-        `[adaptor-bridge] ${name}: installer called before paths resolved`,
-      );
+      throw new Error(`[adaptor-bridge] ${name}: installer called before paths resolved`);
     }
     const raw = await callAdaptor(name, installerUri, "install", [
       cachedSnapshot,
@@ -511,10 +475,7 @@ function registerAdaptor(
           const store = discovery.store ?? "unknown";
           const gamePath = discovery.path;
           if (!gamePath) {
-            log(
-              "warn",
-              `[adaptor-bridge] No discovery path for ${name}, skipping setup`,
-            );
+            log("warn", `[adaptor-bridge] No discovery path for ${name}, skipping setup`);
             return;
           }
 
@@ -525,11 +486,7 @@ function registerAdaptor(
           const version = await getVersion(paths);
           if (version && version !== "0.0.0") {
             detectedVersions.set(gameId, version);
-            log(
-              "info",
-              "[adaptor-bridge] {{gameId}} version: {{version}}",
-              { gameId, version },
-            );
+            log("info", "[adaptor-bridge] {{gameId}} version: {{version}}", { gameId, version });
           }
 
           // Step 3: Resolve tools (depends on paths)
@@ -568,9 +525,7 @@ function registerAdaptor(
           // deployment system knows where to route files that target
           // saves, preferences, or other adaptor-declared directories.
           if (paths !== null) {
-            for (const [anchor, qp] of Object.entries(
-              paths as Record<string, unknown>,
-            )) {
+            for (const [anchor, qp] of Object.entries(paths as Record<string, unknown>)) {
               if (anchor === "game") continue;
               if (
                 typeof qp !== "object" ||
@@ -578,11 +533,10 @@ function registerAdaptor(
                 typeof (qp as SerializedQP).scheme !== "string" ||
                 typeof (qp as SerializedQP).path !== "string"
               ) {
-                log(
-                  "warn",
-                  "[adaptor-bridge] {{name}}: skipping non-QP paths entry {{anchor}}",
-                  { name, anchor },
-                );
+                log("warn", "[adaptor-bridge] {{name}}: skipping non-QP paths entry {{anchor}}", {
+                  name,
+                  anchor,
+                });
                 continue;
               }
               const modTypeId = `${gameId}-${anchor}`;
@@ -637,9 +591,7 @@ function init(context: IExtensionContext): boolean {
     async (files, _destinationPath, gameId) => {
       const dispatch = getAdaptorInstaller(gameId);
       if (dispatch === undefined) {
-        throw new Error(
-          `[adaptor-bridge] No adaptor installer registered for game "${gameId}"`,
-        );
+        throw new Error(`[adaptor-bridge] No adaptor installer registered for game "${gameId}"`);
       }
       // InstallManager's buildFileList produces backslash-separated paths
       // on Windows and appends path.sep to directory entries. Adaptors
@@ -698,14 +650,10 @@ function init(context: IExtensionContext): boolean {
         try {
           registerAdaptor(context, adaptor);
         } catch (err) {
-          log(
-            "warn",
-            "[adaptor-bridge] Failed to register adaptor {{name}}: {{error}}",
-            {
-              name: adaptor.name,
-              error: err instanceof Error ? err.message : "Unknown error",
-            },
-          );
+          log("warn", "[adaptor-bridge] Failed to register adaptor {{name}}: {{error}}", {
+            name: adaptor.name,
+            error: err instanceof Error ? err.message : "Unknown error",
+          });
         }
       }
     }

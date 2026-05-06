@@ -1,18 +1,18 @@
+import { pathToFileURL } from "url";
+
+import { unknownToError } from "@vortex/shared";
 import React from "react";
 import { DropdownButton, MenuItem } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { shallowEqual, useDispatch, useSelector } from "react-redux";
-import { pathToFileURL } from "url";
 
-import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
-import type { IState } from "../types/IState";
-
-import { unknownToError } from "@vortex/shared";
 import EmptyPlaceholder from "../controls/EmptyPlaceholder";
 import Spinner from "../controls/Spinner";
 import { IconButton } from "../controls/TooltipControls";
 import { useExtensionContext } from "../ExtensionProvider";
+import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 import { makeExeId } from "../reducers/session";
+import type { IState } from "../types/IState";
 import Debouncer from "../util/Debouncer";
 import { log } from "../util/log";
 import { showError } from "../util/message";
@@ -41,18 +41,14 @@ export const QuickLauncher: React.FC = () => {
   const game = useSelector(currentGame);
   const gameDiscovery = useSelector(currentGameDiscovery);
   const discoveredTools = useSelector(
-    (state: IState) =>
-      state.settings?.gameMode?.discovered?.[gameMode ?? ""]?.tools ?? {},
+    (state: IState) => state.settings?.gameMode?.discovered?.[gameMode ?? ""]?.tools ?? {},
     shallowEqual,
   );
   const primaryToolId = useSelector(
     (state: IState) => state.settings?.interface?.primaryTool?.[gameMode ?? ""],
   );
   const knownGames = useSelector(knownGamesSelector);
-  const profiles = useSelector(
-    (state: IState) => state.persistent?.profiles ?? {},
-    shallowEqual,
-  );
+  const profiles = useSelector((state: IState) => state.persistent?.profiles ?? {}, shallowEqual);
   const discoveredGames = useSelector(
     (state: IState) => state.settings?.gameMode?.discovered ?? {},
     shallowEqual,
@@ -67,29 +63,27 @@ export const QuickLauncher: React.FC = () => {
   );
 
   // Derived state - gameIconCache with debouncing
-  const [gameIconCache, setGameIconCache] = React.useState<IGameIconCache>(
-    () => {
-      const managedGamesIds = Array.from(
-        new Set<string>(
-          Object.keys(profiles)
-            .map((profileId) => profiles[profileId].gameId)
-            .filter((gameId) => truthy(discoveredGames[gameId]?.path)),
-        ),
-      );
+  const [gameIconCache, setGameIconCache] = React.useState<IGameIconCache>(() => {
+    const managedGamesIds = Array.from(
+      new Set<string>(
+        Object.keys(profiles)
+          .map((profileId) => profiles[profileId].gameId)
+          .filter((gameId) => truthy(discoveredGames[gameId]?.path)),
+      ),
+    );
 
-      return managedGamesIds.reduce((prev, gameId) => {
-        const knownGame = knownGames.find((iter) => iter.id === gameId);
-        if (knownGame === undefined || discoveredGames[gameId] === undefined) {
-          return prev;
-        }
-        prev[gameId] = {
-          icon: StarterInfo.getGameIcon(knownGame, discoveredGames[gameId]),
-          game: knownGame,
-        };
+    return managedGamesIds.reduce((prev, gameId) => {
+      const knownGame = knownGames.find((iter) => iter.id === gameId);
+      if (knownGame === undefined || discoveredGames[gameId] === undefined) {
         return prev;
-      }, {} satisfies IGameIconCache);
-    },
-  );
+      }
+      prev[gameId] = {
+        icon: StarterInfo.getGameIcon(knownGame, discoveredGames[gameId]),
+        game: knownGame,
+      };
+      return prev;
+    }, {} satisfies IGameIconCache);
+  });
 
   // Refs for debouncer - store latest dependencies
   const depsRef = React.useRef({ profiles, discoveredGames, knownGames });
@@ -97,11 +91,7 @@ export const QuickLauncher: React.FC = () => {
 
   const cacheDebouncer = React.useRef<Debouncer>(
     new Debouncer(() => {
-      const {
-        profiles: p,
-        discoveredGames: dg,
-        knownGames: kg,
-      } = depsRef.current;
+      const { profiles: p, discoveredGames: dg, knownGames: kg } = depsRef.current;
       const managedGamesIds = Array.from(
         new Set<string>(
           Object.keys(p)
@@ -142,14 +132,9 @@ export const QuickLauncher: React.FC = () => {
         ? game.supportedTools?.find((tool) => tool.id === primaryToolId)
         : undefined;
       const foundDiscoveredTool = primaryToolId
-        ? Object.values(discoveredTools).find(
-            (tool) => tool.id === primaryToolId,
-          )
+        ? Object.values(discoveredTools).find((tool) => tool.id === primaryToolId)
         : undefined;
-      if (
-        primaryToolId == undefined ||
-        (!foundGameSupportedTools && !foundDiscoveredTool)
-      ) {
+      if (primaryToolId == undefined || (!foundGameSupportedTools && !foundDiscoveredTool)) {
         return new StarterInfo(game, gameDiscovery);
       } else {
         try {
@@ -211,16 +196,9 @@ export const QuickLauncher: React.FC = () => {
     );
 
     const numberOfEnabledCollections = enabledCollections.length;
-    const numberOfEnabledModsExcludingCollections =
-      enabledMods.length - numberOfEnabledCollections;
-    log(
-      "info",
-      `Enabled mods at game launch: ${numberOfEnabledModsExcludingCollections}`,
-    );
-    log(
-      "info",
-      `Enabled collections at game launch: ${numberOfEnabledCollections}`,
-    );
+    const numberOfEnabledModsExcludingCollections = enabledMods.length - numberOfEnabledCollections;
+    log("info", `Enabled mods at game launch: ${numberOfEnabledModsExcludingCollections}`);
+    log("info", `Enabled collections at game launch: ${numberOfEnabledCollections}`);
 
     StarterInfo.run(starter, api, onShowError);
   }, [starter, api, onShowError]);
@@ -254,20 +232,14 @@ export const QuickLauncher: React.FC = () => {
       const profile = profiles[lastActiveProfile[gameId]];
 
       let displayName =
-        discovered?.shortName ??
-        cachedGame?.shortName ??
-        discovered?.name ??
-        cachedGame?.name;
+        discovered?.shortName ?? cachedGame?.shortName ?? discovered?.name ?? cachedGame?.name;
 
       if (displayName !== undefined) {
         displayName = displayName.replace(/\t/g, " ");
       }
 
       return (
-        <div
-          className="tool-icon-container"
-          style={{ background: `url('${iconPath}')` }}
-        >
+        <div className="tool-icon-container" style={{ background: `url('${iconPath}')` }}>
           <div className="quicklaunch-item">
             <div className="quicklaunch-name">{t(displayName)}</div>
 
@@ -280,24 +252,14 @@ export const QuickLauncher: React.FC = () => {
         </div>
       );
     },
-    [
-      gameIconCache,
-      discoveredGames,
-      profiles,
-      lastActiveProfile,
-      profilesVisible,
-      t,
-    ],
+    [gameIconCache, discoveredGames, profiles, lastActiveProfile, profilesVisible, t],
   );
 
   const renderGameOptions = React.useCallback(() => {
     if (Object.keys(gameIconCache).length === 1) {
       return (
         <MenuItem disabled={true} key="no-other-games">
-          <EmptyPlaceholder
-            icon="layout-list"
-            text={t("No other games managed")}
-          />
+          <EmptyPlaceholder icon="layout-list" text={t("No other games managed")} />
         </MenuItem>
       );
     }
@@ -330,13 +292,10 @@ export const QuickLauncher: React.FC = () => {
   }
 
   const exclusiveRunning =
-    Object.keys(toolsRunning).find((exeId) => toolsRunning[exeId].exclusive) !==
-    undefined;
+    Object.keys(toolsRunning).find((exeId) => toolsRunning[exeId].exclusive) !== undefined;
   const primaryRunning =
     truthy(starter.exePath) &&
-    Object.keys(toolsRunning).find(
-      (exeId) => exeId === makeExeId(starter.exePath),
-    ) !== undefined;
+    Object.keys(toolsRunning).find((exeId) => exeId === makeExeId(starter.exePath)) !== undefined;
 
   return (
     <div className="container-quicklaunch">

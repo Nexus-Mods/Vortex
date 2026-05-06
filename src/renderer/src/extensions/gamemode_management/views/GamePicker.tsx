@@ -1,38 +1,3 @@
-import EmptyPlaceholder from "../../../controls/EmptyPlaceholder";
-import FlexLayout from "../../../controls/FlexLayout";
-import FormInput from "../../../controls/FormInput";
-import Icon from "../../../controls/Icon";
-import IconBar from "../../../controls/IconBar";
-import { ToggleButton } from "../../../controls/TooltipControls";
-import type { IActionDefinition } from "../../../types/IActionDefinition";
-import type { IComponentContext } from "../../../types/IComponentContext";
-import type { IState } from "../../../types/IState";
-import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
-import opn from "../../../util/opn";
-import { activeGameId } from "../../../util/selectors";
-import { getSafe } from "../../../util/storeHelper";
-import { truthy } from "../../../util/util";
-import MainPage from "../../../views/MainPage";
-
-import type {
-  IAvailableExtension,
-  IExtension,
-} from "../../../types/extensions";
-import { nexusGameId } from "../../nexus_integration/util/convertGameId";
-import type { IProfile } from "../../profile_management/types/IProfile";
-
-import {
-  setPickerLayout,
-  setSortManaged,
-  setSortUnmanaged,
-} from "../actions/settings";
-import type { IDiscoveryResult } from "../types/IDiscoveryResult";
-import type { IGameStored } from "../types/IGameStored";
-
-import GameRow from "./GameRow";
-import GameThumbnail from "./GameThumbnail";
-import ShowHiddenButton from "./ShowHiddenButton";
-
 import type { IGameListEntry } from "@nexusmods/nexus-api";
 import type PromiseBB from "bluebird";
 import { ratio } from "fuzzball";
@@ -42,10 +7,32 @@ import * as React from "react";
 import { InputGroup, ListGroup, Panel, PanelGroup } from "react-bootstrap";
 import Select from "react-select";
 
-function gameFromDiscovery(
-  id: string,
-  discovered: IDiscoveryResult,
-): IGameStored {
+import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
+import EmptyPlaceholder from "../../../controls/EmptyPlaceholder";
+import FlexLayout from "../../../controls/FlexLayout";
+import FormInput from "../../../controls/FormInput";
+import Icon from "../../../controls/Icon";
+import IconBar from "../../../controls/IconBar";
+import { ToggleButton } from "../../../controls/TooltipControls";
+import type { IAvailableExtension, IExtension } from "../../../types/extensions";
+import type { IActionDefinition } from "../../../types/IActionDefinition";
+import type { IComponentContext } from "../../../types/IComponentContext";
+import type { IState } from "../../../types/IState";
+import opn from "../../../util/opn";
+import { activeGameId } from "../../../util/selectors";
+import { getSafe } from "../../../util/storeHelper";
+import { truthy } from "../../../util/util";
+import MainPage from "../../../views/MainPage";
+import { nexusGameId } from "../../nexus_integration/util/convertGameId";
+import type { IProfile } from "../../profile_management/types/IProfile";
+import { setPickerLayout, setSortManaged, setSortUnmanaged } from "../actions/settings";
+import type { IDiscoveryResult } from "../types/IDiscoveryResult";
+import type { IGameStored } from "../types/IGameStored";
+import GameRow from "./GameRow";
+import GameThumbnail from "./GameThumbnail";
+import ShowHiddenButton from "./ShowHiddenButton";
+
+function gameFromDiscovery(id: string, discovered: IDiscoveryResult): IGameStored {
   return {
     id,
     name: discovered.name ?? id,
@@ -168,15 +155,10 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
       sortManaged,
       sortUnmanaged,
     } = this.props;
-    const { showHidden, currentFilterValue, expandManaged, expandUnmanaged } =
-      this.state;
+    const { showHidden, currentFilterValue, expandManaged, expandUnmanaged } = this.state;
 
-    const installedExtIds = new Set(
-      Object.values(extensionsInstalled).map((ext) => ext.modId),
-    );
-    const installedNames = new Set(
-      Object.values(extensionsInstalled).map((ext) => ext.name),
-    );
+    const installedExtIds = new Set(Object.values(extensionsInstalled).map((ext) => ext.modId));
+    const installedNames = new Set(Object.values(extensionsInstalled).map((ext) => ext.name));
 
     // figuring out if a manually installed extension corresponds to a remotely available extension
     // isn't trivial, because the unique id and the game name stored in the extension list are both
@@ -184,9 +166,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     // because we can't rely on authors to be consistent here.
     // Therefore we will also filter out based on game name, meaning there can only be one entry
     // for each game name, the one installed locally taking precedence.
-    const installedGameNames = new Set(
-      knownGames.map((game) => game.name.replace(/\t/g, " ")),
-    );
+    const installedGameNames = new Set(knownGames.map((game) => game.name.replace(/\t/g, " ")));
 
     // contains the extensions we don't have installed locally
     const extensionsUninstalled = extensions
@@ -203,14 +183,10 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     const displayedGames: IGameStored[] =
       showHidden || !!currentFilterValue
         ? knownGames
-        : knownGames.filter(
-            (game: IGameStored) => !(discoveredGames[game.id]?.hidden ?? false),
-          );
+        : knownGames.filter((game: IGameStored) => !(discoveredGames[game.id]?.hidden ?? false));
 
     const profileGames = new Set<string>(
-      Object.keys(profiles).map(
-        (profileId: string) => profiles[profileId].gameId,
-      ),
+      Object.keys(profiles).map((profileId: string) => profiles[profileId].gameId),
     );
 
     const managedGameList: IGameStored[] = [];
@@ -218,9 +194,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     const supportedGameList: IGameStored[] = [];
 
     displayedGames.forEach((game: IGameStored) => {
-      if (
-        getSafe(discoveredGames, [game.id, "path"], undefined) !== undefined
-      ) {
+      if (getSafe(discoveredGames, [game.id, "path"], undefined) !== undefined) {
         if (profileGames.has(game.id)) {
           managedGameList.push(game);
         } else {
@@ -242,9 +216,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
           executable: undefined,
           contributed: ext.author,
         }))
-        .filter(
-          (ext) => showHidden || !(discoveredGames[ext.id]?.hidden ?? false),
-        ),
+        .filter((ext) => showHidden || !(discoveredGames[ext.id]?.hidden ?? false)),
     );
 
     Object.keys(discoveredGames).forEach((gameId) => {
@@ -253,13 +225,9 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
           return;
         }
         if (profileGames.has(gameId)) {
-          managedGameList.push(
-            gameFromDiscovery(gameId, discoveredGames[gameId]),
-          );
+          managedGameList.push(gameFromDiscovery(gameId, discoveredGames[gameId]));
         } else {
-          discoveredGameList.push(
-            gameFromDiscovery(gameId, discoveredGames[gameId]),
-          );
+          discoveredGameList.push(gameFromDiscovery(gameId, discoveredGames[gameId]));
         }
       }
     });
@@ -280,22 +248,14 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     });
     const titleUnmanaged = t("Unmanaged ({{filterCount}})", {
       replace: {
-        filterCount: this.getTabGameNumber(
-          unmanagedGameList,
-          filteredUnmanaged,
-        ),
+        filterCount: this.getTabGameNumber(unmanagedGameList, filteredUnmanaged),
       },
     });
 
     return (
       <MainPage domRef={this.setRef}>
         <MainPage.Header>
-          <IconBar
-            group="game-icons"
-            staticElements={[]}
-            className="menubar"
-            t={t}
-          />
+          <IconBar group="game-icons" staticElements={[]} className="menubar" t={t} />
           <div className="flex-fill" />
           <IconBar
             id="gamepicker-layout-list"
@@ -355,24 +315,13 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
             <FlexLayout.Flex>
               <div ref={this.setScrollRef} className="gamepicker-body">
                 <PanelGroup id="game-panel-group">
-                  <Panel
-                    expanded={expandManaged}
-                    eventKey="managed"
-                    onToggle={nop}
-                  >
+                  <Panel expanded={expandManaged} eventKey="managed" onToggle={nop}>
                     <Panel.Heading onClick={this.toggleManaged}>
-                      <Icon
-                        name={
-                          expandManaged ? "showhide-down" : "showhide-right"
-                        }
-                      />
+                      <Icon name={expandManaged ? "showhide-down" : "showhide-right"} />
                       <Panel.Title>{titleManaged}</Panel.Title>
                       <div className="flex-fill" />
                       {expandManaged ? (
-                        <div
-                          className="game-sort-container"
-                          onClick={captureClick}
-                        >
+                        <div className="game-sort-container" onClick={captureClick}>
                           {t("Sort by:")}
                           <Select
                             className="select-compact"
@@ -396,24 +345,13 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
                       {this.renderGames(filteredManaged, "managed")}
                     </Panel.Body>
                   </Panel>
-                  <Panel
-                    expanded={expandUnmanaged}
-                    eventKey="unmanaged"
-                    onToggle={nop}
-                  >
+                  <Panel expanded={expandUnmanaged} eventKey="unmanaged" onToggle={nop}>
                     <Panel.Heading onClick={this.toggleUnmanaged}>
-                      <Icon
-                        name={
-                          expandUnmanaged ? "showhide-down" : "showhide-right"
-                        }
-                      />
+                      <Icon name={expandUnmanaged ? "showhide-down" : "showhide-right"} />
                       <Panel.Title>{titleUnmanaged}</Panel.Title>
                       <div className="flex-fill" />
                       {expandUnmanaged ? (
-                        <div
-                          className="game-sort-container"
-                          onClick={captureClick}
-                        >
+                        <div className="game-sort-container" onClick={captureClick}>
                           {t("Sort by:")}
                           <Select
                             className="select-compact"
@@ -490,21 +428,15 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     this.nextState.currentFilterValue = input;
   };
 
-  private getTabGameNumber(
-    unfiltered: IGameStored[],
-    filtered: IGameStored[],
-  ): string {
+  private getTabGameNumber(unfiltered: IGameStored[], filtered: IGameStored[]): string {
     const { currentFilterValue } = this.state;
-    return currentFilterValue
-      ? `${filtered.length}/${unfiltered.length}`
-      : `${unfiltered.length}`;
+    return currentFilterValue ? `${filtered.length}/${unfiltered.length}` : `${unfiltered.length}`;
   }
 
   private applyGameFilter = (game: IGameStored): boolean => {
     const { currentFilterValue } = this.state;
     return (
-      !currentFilterValue ||
-      game.name?.toLowerCase().includes(currentFilterValue.toLowerCase())
+      !currentFilterValue || game.name?.toLowerCase().includes(currentFilterValue.toLowerCase())
     );
   };
 
@@ -520,9 +452,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
   private getBounds = () => this.mRef.getBoundingClientRect();
 
   private toggleHidden = () => {
-    this.setState(
-      update(this.state, { showHidden: { $set: !this.state.showHidden } }),
-    );
+    this.setState(update(this.state, { showHidden: { $set: !this.state.showHidden } }));
   };
 
   private setLayoutList = () => {
@@ -558,8 +488,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
           .filter((iter) => iter.ratio > GamePicker.SIMILARITY_RATIO)
           .sort((lhs, rhs) => rhs.ratio - lhs.ratio);
 
-        this.mNameLookup[input] =
-          sorted.length > 0 ? sorted[0].item.name : input;
+        this.mNameLookup[input] = sorted.length > 0 ? sorted[0].item.name : input;
       }
     }
 
@@ -614,9 +543,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
           <EmptyPlaceholder
             icon="game"
             text={t("You haven't managed any games yet")}
-            subtext={t(
-              'To start managing a game, go to "Unmanaged" and activate a game there.',
-            )}
+            subtext={t('To start managing a game, go to "Unmanaged" and activate a game there.')}
           />
         );
       }
@@ -632,11 +559,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     }
   };
 
-  private renderGamesList(
-    games: IGameStored[],
-    type: string,
-    gameMode: string,
-  ): JSX.Element {
+  private renderGamesList(games: IGameStored[], type: string, gameMode: string): JSX.Element {
     const { t, discoveredGames, onRefreshGameInfo } = this.props;
 
     return (
@@ -659,11 +582,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private renderGamesSmall(
-    games: IGameStored[],
-    type: string,
-    gameMode: string,
-  ) {
+  private renderGamesSmall(games: IGameStored[], type: string, gameMode: string) {
     const { t, discoveredGames, onRefreshGameInfo } = this.props;
 
     const isDiscovered = (gameId: string) =>
@@ -709,8 +628,7 @@ function mapDispatchToProps(dispatch): IActionProps {
   return {
     onSetPickerLayout: (layout) => dispatch(setPickerLayout(layout)),
     onSetSortManaged: (sorting: string) => dispatch(setSortManaged(sorting)),
-    onSetSortUnmanaged: (sorting: string) =>
-      dispatch(setSortUnmanaged(sorting)),
+    onSetSortUnmanaged: (sorting: string) => dispatch(setSortUnmanaged(sorting)),
   };
 }
 

@@ -66,8 +66,7 @@ export default class StardewValleyGame implements types.IGame {
    */
   constructor(context: types.IExtensionContext) {
     this.context = context;
-    this.requiredFiles =
-      process.platform == "win32" ? ["Stardew Valley.exe"] : ["StardewValley"];
+    this.requiredFiles = process.platform == "win32" ? ["Stardew Valley.exe"] : ["StardewValley"];
 
     this.defaultPaths = [
       // Linux
@@ -148,10 +147,9 @@ export default class StardewValleyGame implements types.IGame {
     const title = smapiMod ? "SMAPI is not deployed" : "SMAPI is not installed";
     const actionTitle = smapiMod ? "Deploy" : "Get SMAPI";
     const action = () =>
-      (smapiMod
-        ? deploySMAPI(this.context.api)
-        : downloadAndInstallSMAPI(this.context.api)
-      ).then(() => this.context.api.dismissNotification?.("smapi-missing"));
+      (smapiMod ? deploySMAPI(this.context.api) : downloadAndInstallSMAPI(this.context.api)).then(
+        () => this.context.api.dismissNotification?.("smapi-missing"),
+      );
 
     this.context.api.sendNotification?.({
       id: "smapi-missing",

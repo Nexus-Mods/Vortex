@@ -1,23 +1,21 @@
 import type { IModFile, IModFileQuery } from "@nexusmods/nexus-api";
 import type Nexus from "@nexusmods/nexus-api";
-import type { TFunction } from "i18next";
-
 import { getErrorMessageOrDefault } from "@vortex/shared";
+import type { TFunction } from "i18next";
 import * as React from "react";
 import { Button } from "react-bootstrap";
 import { useSelector } from "react-redux";
 
+import Modal from "../../../controls/Modal";
 import type { IComponentContext } from "../../../types/IComponentContext";
 import type { IState } from "../../../types/IState";
-import type { IValidateKeyDataV2 } from "../types/IValidateKeyData";
-
-import Modal from "../../../controls/Modal";
 import { log } from "../../../util/log";
 import opn from "../../../util/opn";
 import { Campaign, Content, nexusModsURL, Section } from "../../../util/util";
 import { MainContext } from "../../../views/MainWindow";
 import { NEXUS_BASE_URL, PREMIUM_PATH } from "../constants";
 import NXMUrl from "../NXMUrl";
+import type { IValidateKeyDataV2 } from "../types/IValidateKeyData";
 import { nexusGamesProm } from "../util";
 import { makeFileUID } from "../util/UIDs";
 import NewFreeDownloadModal from "./NewFreeDownloadModal";
@@ -91,16 +89,7 @@ function nop() {
 }
 
 function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
-  const {
-    t,
-    nexus,
-    onCancel,
-    onDownload,
-    onSkip,
-    onUpdated,
-    onRetry,
-    onCheckStatus,
-  } = props;
+  const { t, nexus, onCancel, onDownload, onSkip, onUpdated, onRetry, onCheckStatus } = props;
 
   const urls: string[] = useSelector<IState, string[]>(
     (state) => state.session["nexus"].freeUserDLQueue,
@@ -141,8 +130,7 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
     if (collectionInstallSession?.downloadedCount != null) {
       const position = collectionInstallSession.downloadedCount + 1;
       const total = Math.max(
-        collectionInstallSession.totalRequired +
-          collectionInstallSession.totalOptional,
+        collectionInstallSession.totalRequired + collectionInstallSession.totalOptional,
         1,
       );
       setPositionText(`${position}/${total}`);
@@ -151,8 +139,7 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
 
   React.useEffect(() => {
     // if userInfo is updated, and isPremium is true, then retry
-    if (userInfo !== undefined)
-      if (userInfo?.isPremium && urls.length > 0) retry();
+    if (userInfo !== undefined) if (userInfo?.isPremium && urls.length > 0) retry();
   }, [userInfo]);
 
   React.useEffect(() => {
@@ -216,17 +203,11 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
   }, [fileInfo]);
 
   const openAuthorPage = React.useCallback(() => {
-    opn(
-      `${NEXUS_BASE_URL}/${fileInfo.game.domainName}/users/${fileInfo.owner.memberId}`,
-    );
+    opn(`${NEXUS_BASE_URL}/${fileInfo.game.domainName}/users/${fileInfo.owner.memberId}`);
   }, [fileInfo]);
 
   const goPremium = React.useCallback(() => {
-    context.api.events.emit(
-      "analytics-track-click-event",
-      "Go Premium",
-      "Download Mod",
-    );
+    context.api.events.emit("analytics-track-click-event", "Go Premium", "Download Mod");
 
     opn(
       nexusModsURL(PREMIUM_PATH, {

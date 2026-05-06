@@ -1,7 +1,7 @@
-import { discoveryByGame } from "../../gamemode_management/selectors";
-import type { IState } from "../../../types/IState";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IState } from "../../../types/IState";
 import { getApplication } from "../../../util/application";
+import { discoveryByGame } from "../../gamemode_management/selectors";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { hasLoadOrder, hasSessionPlugins } from "../utils/guards";
 
@@ -10,10 +10,7 @@ import { hasLoadOrder, hasSessionPlugins } from "../utils/guards";
  * These are called by the C# installer process to query game/mod state
  */
 export class SharedDelegates {
-  public static async create(
-    api: IExtensionApi,
-    gameId: string,
-  ): Promise<SharedDelegates> {
+  public static async create(api: IExtensionApi, gameId: string): Promise<SharedDelegates> {
     const delegates = new SharedDelegates(api);
     await delegates.initialize(gameId);
     return delegates;
@@ -30,8 +27,7 @@ export class SharedDelegates {
     const state = this.mApi.getState();
     const discovery = discoveryByGame(state, gameId);
     const gameInfo = getGame(gameId);
-    this.mGameVersion =
-      (await gameInfo?.getInstalledVersion?.(discovery)) ?? null;
+    this.mGameVersion = (await gameInfo?.getInstalledVersion?.(discovery)) ?? null;
   };
 
   /**
@@ -80,9 +76,7 @@ export class SharedDelegates {
       const pluginList = state.session.plugins?.pluginList ?? {};
       let plugins = Object.keys(pluginList);
       if (activeOnly === true) {
-        plugins = plugins.filter((name) =>
-          this.isPluginEnabled(state, pluginList, plugins, name),
-        );
+        plugins = plugins.filter((name) => this.isPluginEnabled(state, pluginList, plugins, name));
       }
       return plugins;
     } catch (error) {

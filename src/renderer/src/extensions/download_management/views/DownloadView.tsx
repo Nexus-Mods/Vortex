@@ -1,6 +1,19 @@
+import * as path from "path";
+
+import { DownloadIsHTML } from "@vortex/shared/errors";
+import type PromiseBB from "bluebird";
+import type { TFunction } from "i18next";
+import _ from "lodash";
+import * as React from "react";
+import { Button, Panel } from "react-bootstrap";
+import type { WithTranslation } from "react-i18next";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
+
 import { showDialog } from "../../../actions/notifications";
 import Banner from "../../../controls/Banner";
 import CollapseIcon from "../../../controls/CollapseIcon";
+import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
 import type { DropType } from "../../../controls/Dropzone";
 import Dropzone from "../../../controls/Dropzone";
 import FlexLayout from "../../../controls/FlexLayout";
@@ -16,10 +29,8 @@ import type {
   IDialogResult,
 } from "../../../types/IDialog";
 import type { IAttachment } from "../../../types/IExtensionContext";
-import { convertGameIdReverse } from "../../nexus_integration/util/convertGameId";
 import type { IState } from "../../../types/IState";
 import type { ITableAttribute } from "../../../types/ITableAttribute";
-import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
 import {
   DataInvalid,
   ProcessCanceled,
@@ -31,39 +42,23 @@ import { log } from "../../../util/log";
 import { showError } from "../../../util/message";
 import opn from "../../../util/opn";
 import * as selectors from "../../../util/selectors";
+import { getCollectionModByReference } from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
 import { truthy } from "../../../util/util";
 import MainPage from "../../../views/MainPage";
-
 import type { IGameStored } from "../../gamemode_management/types/IGameStored";
 import type { IInstallOptions } from "../../mod_management/types/IInstallOptions";
-
+import { convertGameIdReverse } from "../../nexus_integration/util/convertGameId";
 import { setShowDLDropzone, setShowDLGraph } from "../actions/settings";
 import { finishDownload, setDownloadTime } from "../actions/state";
 import type { IDownload } from "../types/IDownload";
 import getDownloadGames from "../util/getDownloadGames";
-
-import { DownloadIsHTML } from "@vortex/shared/errors";
-
 import DownloadGraph from "./DownloadGraph";
-
-import type PromiseBB from "bluebird";
-import type { TFunction } from "i18next";
-import _ from "lodash";
-import * as path from "path";
-import * as React from "react";
-import { Button, Panel } from "react-bootstrap";
-import type { WithTranslation } from "react-i18next";
-import type * as Redux from "redux";
-import type { ThunkDispatch } from "redux-thunk";
-import { getCollectionModByReference } from "../../../util/selectors";
 
 export interface IDownloadViewBaseProps extends WithTranslation {
   active: boolean;
   secondary: boolean;
-  columns: (
-    props: () => IDownloadViewProps,
-  ) => Array<ITableAttribute<IDownload>>;
+  columns: (props: () => IDownloadViewProps) => Array<ITableAttribute<IDownload>>;
   downloadPathForGame: (game: string) => string;
 }
 
@@ -98,11 +93,7 @@ interface IActionProps {
   ) => void;
   onShowDropzone: (show: boolean) => void;
   onShowGraph: (show: boolean) => void;
-  onFinishDownload: (
-    dlId: string,
-    dlState: DownloadFinishState,
-    failReason: string,
-  ) => void;
+  onFinishDownload: (dlId: string, dlState: DownloadFinishState, failReason: string) => void;
 }
 
 export type IDownloadViewProps = IDownloadViewBaseProps &
@@ -144,8 +135,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         title: "Inspect",
         action: this.inspect,
         condition: (instanceIds: string[]) =>
-          this.allowActionsDuringCollectionSession(instanceIds) &&
-          this.inspectable(instanceIds[0]),
+          this.allowActionsDuringCollectionSession(instanceIds) && this.inspectable(instanceIds[0]),
         multiRowAction: false,
         options: {
           noCollapse: true,
@@ -156,8 +146,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         title: "Install",
         action: this.install,
         condition: (instanceIds: string[]) =>
-          this.allowActionsDuringCollectionSession(instanceIds) &&
-          this.installable(instanceIds),
+          this.allowActionsDuringCollectionSession(instanceIds) && this.installable(instanceIds),
         hotKey: { code: 13 },
         options: {
           noCollapse: true,
@@ -168,40 +157,35 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         title: "Unpack (as-is)",
         action: this.installAsIs,
         condition: (instanceIds: string[]) =>
-          this.allowActionsDuringCollectionSession(instanceIds) &&
-          this.installable(instanceIds),
+          this.allowActionsDuringCollectionSession(instanceIds) && this.installable(instanceIds),
       },
       {
         icon: "pause",
         title: "Pause",
         action: this.pause,
         condition: (instanceIds: string[]) =>
-          this.allowActionsDuringCollectionSession(instanceIds) &&
-          this.pausable(instanceIds),
+          this.allowActionsDuringCollectionSession(instanceIds) && this.pausable(instanceIds),
       },
       {
         icon: "resume",
         title: "Resume",
         action: this.resume,
         condition: (instanceIds: string[]) =>
-          this.allowActionsDuringCollectionSession(instanceIds) &&
-          this.resumable(instanceIds),
+          this.allowActionsDuringCollectionSession(instanceIds) && this.resumable(instanceIds),
       },
       {
         icon: "resume",
         title: "Retry",
         action: this.resume,
         condition: (instanceIds: string[]) =>
-          this.allowActionsDuringCollectionSession(instanceIds) &&
-          this.retryable(instanceIds),
+          this.allowActionsDuringCollectionSession(instanceIds) && this.retryable(instanceIds),
       },
       {
         icon: "delete",
         title: "Delete",
         action: this.remove,
         condition: (instanceIds: string[]) =>
-          this.allowActionsDuringCollectionSession(instanceIds) &&
-          this.removable(instanceIds),
+          this.allowActionsDuringCollectionSession(instanceIds) && this.removable(instanceIds),
         hotKey: { code: 46 },
       },
       {
@@ -209,16 +193,14 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         title: "Cancel",
         action: this.cancel,
         condition: (instanceIds: string[]) =>
-          this.allowActionsDuringCollectionSession(instanceIds) &&
-          this.cancelable(instanceIds),
+          this.allowActionsDuringCollectionSession(instanceIds) && this.cancelable(instanceIds),
       },
       {
         icon: "open-ext",
         title: "Open",
         action: this.open,
         condition: (instanceIds: string[]) =>
-          this.allowActionsDuringCollectionSession(instanceIds) &&
-          this.installable(instanceIds),
+          this.allowActionsDuringCollectionSession(instanceIds) && this.installable(instanceIds),
         singleRowAction: true,
       },
     ];
@@ -226,10 +208,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
     this.mTableActions = [];
   }
 
-  public shouldComponentUpdate(
-    nextProps: IDownloadViewProps,
-    nextState: IComponentState,
-  ) {
+  public shouldComponentUpdate(nextProps: IDownloadViewProps, nextState: IComponentState) {
     if (!this.mHeaderRendered) {
       // bit of a hack. The toolbar doesn't get rendered until the reference for the
       // portal target is initialized, until then we can't make the update dependent on just
@@ -250,8 +229,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, downloads, gameMode, maxBandwidth, secondary, showGraph } =
-      this.props;
+    const { t, downloads, gameMode, maxBandwidth, secondary, showGraph } = this.props;
     const { viewAll } = this.state;
 
     if (this.mColumns === undefined) {
@@ -273,9 +251,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
       content = this.renderDropzone();
     } else {
       if (!viewAll) {
-        filteredIds = filteredIds.filter(
-          (dlId) => downloads[dlId].installed === undefined,
-        );
+        filteredIds = filteredIds.filter((dlId) => downloads[dlId].installed === undefined);
       }
       const filtered = filteredIds.reduce((prev, dlId) => {
         prev[dlId] = downloads[dlId];
@@ -292,11 +268,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
           <FlexLayout.Flex className="download-list-container">
             <Panel className="download-panel">
               {secondary ? null : (
-                <Panel
-                  className="download-graph-panel"
-                  expanded={showGraph}
-                  onToggle={nop}
-                >
+                <Panel className="download-graph-panel" expanded={showGraph} onToggle={nop}>
                   <Panel.Body collapsible={true}>
                     <DownloadGraph t={t} maxBandwidth={maxBandwidth} />
                   </Panel.Body>
@@ -319,9 +291,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
                   </FlexLayout.Flex>
                   <FlexLayout.Fixed style={{ textAlign: "center" }}>
                     <Button bsStyle="ghost" onClick={this.toggleViewAll}>
-                      {viewAll
-                        ? t("View not-yet-installed Downloads")
-                        : t("View All Downloads")}
+                      {viewAll ? t("View not-yet-installed Downloads") : t("View All Downloads")}
                     </Button>
                   </FlexLayout.Fixed>
                 </FlexLayout>
@@ -358,11 +328,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
   private renderDropzone(): JSX.Element {
     const { t, showDropzone } = this.props;
     return (
-      <Panel
-        className="download-drop-panel"
-        expanded={showDropzone}
-        onToggle={nop}
-      >
+      <Panel className="download-drop-panel" expanded={showDropzone} onToggle={nop}>
         <Panel.Collapse>
           <Panel.Body>
             <Dropzone
@@ -373,11 +339,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
             />
           </Panel.Body>
         </Panel.Collapse>
-        <CollapseIcon
-          position="topright"
-          onClick={this.toggleDropzone}
-          visible={showDropzone}
-        />
+        <CollapseIcon position="topright" onClick={this.toggleDropzone} visible={showDropzone} />
       </Panel>
     );
   }
@@ -415,9 +377,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
    * @param downloadIds the IDs of the downloads for which to check if actions are allowed
    * @returns true if actions are allowed, false otherwise
    */
-  private allowActionsDuringCollectionSession = (
-    downloadIds: string | string[],
-  ) => {
+  private allowActionsDuringCollectionSession = (downloadIds: string | string[]) => {
     if (typeof downloadIds === "string") {
       downloadIds = [downloadIds];
     }
@@ -462,9 +422,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
       return;
     }
     const urlInvalid = ["moved permanently", "forbidden", "gone"];
-    const title = resume
-      ? "Failed to resume download"
-      : "Failed to start download";
+    const title = resume ? "Failed to resume download" : "Failed to start download";
     if (err instanceof ProcessCanceled) {
       this.props.onShowError(title, err, undefined, false);
     } else if (err instanceof UserCanceled) {
@@ -475,21 +433,18 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
       if (resume) {
         this.props.onShowError(
           title,
-          "Sorry, the download link is no longer valid. " +
-            "Please restart the download.",
+          "Sorry, the download link is no longer valid. " + "Please restart the download.",
           undefined,
           false,
         );
       } // else nop
     } else if (
-      (err.HTTPStatus !== undefined &&
-        urlInvalid.indexOf(err.HTTPStatus.toLowerCase()) !== -1) ||
+      (err.HTTPStatus !== undefined && urlInvalid.indexOf(err.HTTPStatus.toLowerCase()) !== -1) ||
       err.message === "No download urls"
     ) {
       this.props.onShowError(
         title,
-        "Sorry, the download link is no longer valid. " +
-          "Please restart the download.",
+        "Sorry, the download link is no longer valid. " + "Please restart the download.",
         undefined,
         false,
       );
@@ -561,8 +516,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
     } else if (err.code === "ECONNRESET") {
       this.props.onShowError(
         title,
-        "Server closed the connection, please " +
-          "check your internet connection",
+        "Server closed the connection, please " + "check your internet connection",
         undefined,
         false,
       );
@@ -597,9 +551,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         undefined,
         false,
       );
-    } else if (
-      err.message.indexOf("DECRYPTION_FAILED_OR_BAD_RECORD_MAC") !== -1
-    ) {
+    } else if (err.message.indexOf("DECRYPTION_FAILED_OR_BAD_RECORD_MAC") !== -1) {
       this.props.onShowError(
         title,
         "Network communication error (SSL payload corrupted). " +
@@ -626,17 +578,15 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
 
   private resumable = (downloadIds: string[]) => {
     return (
-      downloadIds.find(
-        (downloadId: string) => this.getDownload(downloadId).state === "paused",
-      ) !== undefined
+      downloadIds.find((downloadId: string) => this.getDownload(downloadId).state === "paused") !==
+      undefined
     );
   };
 
   private retryable = (downloadIds: string[]) => {
     return (
-      downloadIds.find(
-        (downloadId: string) => this.getDownload(downloadId).state === "failed",
-      ) !== undefined
+      downloadIds.find((downloadId: string) => this.getDownload(downloadId).state === "failed") !==
+      undefined
     );
   };
 
@@ -666,10 +616,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
           translated: true,
         },
       },
-      [
-        { label: "Cancel" },
-        { label: "Delete", action: () => downloadIds.forEach(removeId) },
-      ],
+      [{ label: "Cancel" }, { label: "Delete", action: () => downloadIds.forEach(removeId) }],
     );
   };
 
@@ -684,12 +631,8 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
 
   private cancel = (downloadIds: string[]) => {
     const { t, onFinishDownload } = this.props;
-    const paused = downloadIds.filter(
-      (dlId) => this.getDownload(dlId)?.state === "paused",
-    );
-    const nonPaused = downloadIds.filter(
-      (dlId) => this.getDownload(dlId)?.state !== "paused",
-    );
+    const paused = downloadIds.filter((dlId) => this.getDownload(dlId)?.state === "paused");
+    const nonPaused = downloadIds.filter((dlId) => this.getDownload(dlId)?.state !== "paused");
     paused.forEach((dlId) =>
       onFinishDownload(dlId, "failed", t("Download was canceled by the user")),
     );
@@ -720,20 +663,13 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
       const options: IInstallOptions = {
         forceInstaller: "fallback",
       };
-      this.context.api.events.emit(
-        "start-install-download",
-        downloadId,
-        options,
-        undefined,
-      );
+      this.context.api.events.emit("start-install-download", downloadId, options, undefined);
     });
   };
 
   private installable = (downloadIds: string[]) => {
     return (
-      downloadIds.find(
-        (id: string) => this.getDownload(id).state === "finished",
-      ) !== undefined
+      downloadIds.find((id: string) => this.getDownload(id).state === "finished") !== undefined
     );
   };
 
@@ -762,23 +698,13 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
             description: "Vortex Log",
           },
         ];
-        const err = new Error(
-          `Cannot find download path for ${internalGameId}`,
-        );
+        const err = new Error(`Cannot find download path for ${internalGameId}`);
         err["download"] = download;
-        this.props.onShowError(
-          "Failed to open archive",
-          err,
-          undefined,
-          true,
-          attachments,
-        );
+        this.props.onShowError("Failed to open archive", err, undefined, true, attachments);
         return;
       }
 
-      opn(
-        path.join(downloadPathForGame(internalGameId), download.localPath),
-      ).catch((err) => {
+      opn(path.join(downloadPathForGame(internalGameId), download.localPath)).catch((err) => {
         this.props.onShowError("Failed to open archive", err, undefined, false);
       });
     }
@@ -797,19 +723,13 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         {
           label: "Delete",
           action: () =>
-            this.context.api.events.emit(
-              "remove-download",
-              downloadId,
-              undefined,
-              { confirmed: true },
-            ),
+            this.context.api.events.emit("remove-download", downloadId, undefined, {
+              confirmed: true,
+            }),
         },
         { label: "Close" },
       ];
-      if (
-        download.failCause !== undefined &&
-        download.failCause.htmlFile !== undefined
-      ) {
+      if (download.failCause !== undefined && download.failCause.htmlFile !== undefined) {
         onShowDialog(
           "error",
           "Download failed",
@@ -818,10 +738,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
           },
           actions,
         );
-      } else if (
-        download.failCause !== undefined &&
-        truthy(download.failCause.message)
-      ) {
+      } else if (download.failCause !== undefined && truthy(download.failCause.message)) {
         onShowDialog(
           "error",
           "Download failed",
@@ -845,20 +762,15 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         "error",
         "Received website",
         {
-          message: t(
-            "The url lead to this website, maybe it contains a redirection?",
-          ),
+          message: t("The url lead to this website, maybe it contains a redirection?"),
         },
         [
           {
             label: "Delete",
             action: () =>
-              this.context.api.events.emit(
-                "remove-download",
-                downloadId,
-                undefined,
-                { confirmed: true },
-              ),
+              this.context.api.events.emit("remove-download", downloadId, undefined, {
+                confirmed: true,
+              }),
           },
           { label: "Close" },
         ],
@@ -876,9 +788,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
       return undefined;
     }
     const isValid = (ids) =>
-      ids?.fileId !== undefined &&
-      ids?.gameId !== undefined &&
-      ids?.modId !== undefined;
+      ids?.fileId !== undefined && ids?.gameId !== undefined && ids?.modId !== undefined;
     let ids = getSafe(download.modInfo, ["nexus", "ids"], undefined);
     if (isValid(ids)) {
       return ids;
@@ -913,15 +823,9 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
   private dropDownload = (type: DropType, dlPaths: string[]) => {
     if (type === "urls") {
       dlPaths.forEach((url) =>
-        this.context.api.events.emit(
-          "start-download",
-          [url],
-          {},
-          undefined,
-          (err: Error) => {
-            this.reportDownloadError(err, false);
-          },
-        ),
+        this.context.api.events.emit("start-download", [url], {}, undefined, (err: Error) => {
+          this.reportDownloadError(err, false);
+        }),
       );
     } else {
       this.context.api.events.emit("import-downloads", dlPaths);
@@ -943,9 +847,7 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, null, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetAttribute: (id, time) => dispatch(setDownloadTime(id, time)),
     onShowDialog: (type, title, content, actions) =>
@@ -962,15 +864,9 @@ function mapDispatchToProps(
       }),
     onShowDropzone: (show: boolean) => dispatch(setShowDLDropzone(show)),
     onShowGraph: (show: boolean) => dispatch(setShowDLGraph(show)),
-    onFinishDownload: (
-      dlId: string,
-      dlState: DownloadFinishState,
-      failReason: string,
-    ) => dispatch(finishDownload(dlId, dlState, { message: failReason })),
+    onFinishDownload: (dlId: string, dlState: DownloadFinishState, failReason: string) =>
+      dispatch(finishDownload(dlId, dlState, { message: failReason })),
   };
 }
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(translate(["common"])(DownloadView));
+export default connect(mapStateToProps, mapDispatchToProps)(translate(["common"])(DownloadView));

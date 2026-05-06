@@ -1,10 +1,6 @@
 function transformRules(rules: CSSStyleRule[]): { [id: string]: any } {
   return rules
-    .filter(
-      (rule) =>
-        rule.selectorText !== undefined &&
-        rule.selectorText.startsWith("#variable"),
-    )
+    .filter((rule) => rule.selectorText !== undefined && rule.selectorText.startsWith("#variable"))
     .reduce((prev, rule) => {
       const [id, type, key] = rule.selectorText.split(" ");
       prev[key.slice(1)] = rule.style[type.slice(1)];

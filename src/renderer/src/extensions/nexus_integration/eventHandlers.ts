@@ -1,3 +1,5 @@
+import * as path from "path";
+
 import type {
   EndorsedStatus,
   ICollection,
@@ -20,34 +22,17 @@ import type {
   IPreference,
 } from "@nexusmods/nexus-api";
 import type Nexus from "@nexusmods/nexus-api";
-
 import { NexusError, RateLimitError, TimeoutError } from "@nexusmods/nexus-api";
-import {
-  getErrorCode,
-  getErrorMessageOrDefault,
-  unknownToError,
-} from "@vortex/shared";
+import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import { AlreadyDownloaded, DownloadIsHTML } from "@vortex/shared/errors";
 import Bluebird from "bluebird";
-import * as path from "path";
 import * as semver from "semver";
-
-import type {
-  IExtensionApi,
-  StateChangeCallback,
-} from "../../types/IExtensionContext";
-import type { IDownload, IMod, IModTable, IState } from "../../types/IState";
-import type { IGameStoredExt } from "../gamemode_management/types/IGameStored";
-import type { IModListItem } from "../news_dashlet/types";
-import type { IValidateKeyDataV2 } from "./types/IValidateKeyData";
-import type { ITokenReply } from "./util/oauth";
 
 import { setDownloadModInfo } from "../../actions";
 import { log } from "../../logging";
-import {
-  DataInvalid,
-  ProcessCanceled,
-  UserCanceled,
-} from "../../util/CustomErrors";
+import type { IExtensionApi, StateChangeCallback } from "../../types/IExtensionContext";
+import type { IDownload, IMod, IModTable, IState } from "../../types/IState";
+import { DataInvalid, ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
 import Debouncer from "../../util/Debouncer";
 import * as fs from "../../util/fs";
 import { calcDuration, showError } from "../../util/message";
@@ -63,12 +48,14 @@ import {
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, truthy } from "../../util/util";
 import { resolveCategoryName } from "../category_management";
-import { AlreadyDownloaded, DownloadIsHTML } from "@vortex/shared/errors";
 import { SITE_ID } from "../gamemode_management/constants";
+import type { IGameStoredExt } from "../gamemode_management/types/IGameStored";
 import { setUpdatingMods } from "../mod_management/actions/session";
+import type { IModListItem } from "../news_dashlet/types";
 import { setUserInfo } from "./actions/persistent";
 import { NEXUS_BASE_URL, NEXUS_GAMES_URL } from "./constants";
 import { isLoggedIn } from "./selectors";
+import type { IValidateKeyDataV2 } from "./types/IValidateKeyData";
 import {
   checkModVersionsImpl,
   endorseDirectImpl,
@@ -84,11 +71,7 @@ import {
   updateToken,
 } from "./util";
 import { findLatestUpdate, retrieveModInfo } from "./util/checkModsVersion";
-import {
-  nexusGameId,
-  toNXMId,
-  convertGameIdReverse,
-} from "./util/convertGameId";
+import { nexusGameId, toNXMId, convertGameIdReverse } from "./util/convertGameId";
 import {
   FULL_COLLECTION_INFO,
   FULL_REVISION_INFO,
@@ -96,6 +79,7 @@ import {
   MOD_REQUIREMENTS_INFO,
   MY_COLLECTIONS_SEARCH_QUERY,
 } from "./util/graphQueries";
+import type { ITokenReply } from "./util/oauth";
 import submitFeedback from "./util/submitFeedback";
 import { makeModUID } from "./util/UIDs";
 
@@ -114,37 +98,19 @@ export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
       }
 
       // Only process downloads that have actually changed
-      const changedDownloadIds = Object.keys(newDownloadTable).filter(
-        (dlId) => {
-          const newDownload = newDownloadTable[dlId];
-          const oldDownload = oldDownloadTable?.[dlId];
+      const changedDownloadIds = Object.keys(newDownloadTable).filter((dlId) => {
+        const newDownload = newDownloadTable[dlId];
+        const oldDownload = oldDownloadTable?.[dlId];
 
-          if (!oldDownload || !newDownload) return true;
+        if (!oldDownload || !newDownload) return true;
 
-          const newModId = getSafe(
-            newDownload,
-            [...IDS_PATH, "modId"],
-            undefined,
-          );
-          const newFileId = getSafe(
-            newDownload,
-            [...IDS_PATH, "fileId"],
-            undefined,
-          );
-          const oldModId = getSafe(
-            oldDownload,
-            [...IDS_PATH, "modId"],
-            undefined,
-          );
-          const oldFileId = getSafe(
-            oldDownload,
-            [...IDS_PATH, "fileId"],
-            undefined,
-          );
+        const newModId = getSafe(newDownload, [...IDS_PATH, "modId"], undefined);
+        const newFileId = getSafe(newDownload, [...IDS_PATH, "fileId"], undefined);
+        const oldModId = getSafe(oldDownload, [...IDS_PATH, "modId"], undefined);
+        const oldFileId = getSafe(oldDownload, [...IDS_PATH, "fileId"], undefined);
 
-          return newModId !== oldModId || newFileId !== oldFileId;
-        },
-      );
+        return newModId !== oldModId || newFileId !== oldFileId;
+      });
 
       if (changedDownloadIds.length === 0) {
         return Bluebird.resolve();
@@ -167,36 +133,27 @@ export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
               : activeGameId(api.store.getState());
           // Ensure we use the internal game id for lookups and domain conversion
           const metaGameId = rawGame
-            ? convertGameIdReverse(knownGames(api.store.getState()), rawGame) ||
-              rawGame
+            ? convertGameIdReverse(knownGames(api.store.getState()), rawGame) || rawGame
             : rawGame;
 
-          const gameDomain = nexusGameId(
-            gameById(state, metaGameId),
-            metaGameId,
-          );
+          const gameDomain = nexusGameId(gameById(state, metaGameId), metaGameId);
 
           // Create cache keys for deduplication
           const modInfoKey = `mod_${modId}_${gameDomain}`;
-          const fileInfoKey =
-            fileId !== undefined
-              ? `file_${modId}_${fileId}_${gameDomain}`
-              : null;
+          const fileInfoKey = fileId !== undefined ? `file_${modId}_${fileId}_${gameDomain}` : null;
 
           // Fetch mod info with caching
           let modInfoBluebird = infoCache.get(modInfoKey);
           if (!modInfoBluebird) {
-            modInfoBluebird = nexus
-              .getModInfo(modId, gameDomain)
-              .catch((err) => {
-                log("warn", "failed to query mod info", {
-                  modId,
-                  gameDomain,
-                  downloadId: dlId,
-                  message: getErrorMessageOrDefault(err),
-                });
-                return null;
+            modInfoBluebird = nexus.getModInfo(modId, gameDomain).catch((err) => {
+              log("warn", "failed to query mod info", {
+                modId,
+                gameDomain,
+                downloadId: dlId,
+                message: getErrorMessageOrDefault(err),
               });
+              return null;
+            });
             infoCache.set(modInfoKey, modInfoBluebird);
           }
 
@@ -205,18 +162,16 @@ export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
           if (fileId !== undefined && fileInfoKey) {
             let cachedFileInfo = infoCache.get(fileInfoKey);
             if (!cachedFileInfo) {
-              cachedFileInfo = nexus
-                .getFileInfo(modId, fileId, gameDomain)
-                .catch((err) => {
-                  log("warn", "failed to query file info", {
-                    modId,
-                    fileId,
-                    gameDomain,
-                    downloadId: dlId,
-                    message: getErrorMessageOrDefault(err),
-                  });
-                  return null;
+              cachedFileInfo = nexus.getFileInfo(modId, fileId, gameDomain).catch((err) => {
+                log("warn", "failed to query file info", {
+                  modId,
+                  fileId,
+                  gameDomain,
+                  downloadId: dlId,
+                  message: getErrorMessageOrDefault(err),
                 });
+                return null;
+              });
               infoCache.set(fileInfoKey, cachedFileInfo);
             }
             fileInfoBluebird = cachedFileInfo;
@@ -226,14 +181,10 @@ export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
             .then(([modInfo, fileInfo]) => {
               const batched = [];
               if (modInfo !== null) {
-                batched.push(
-                  setDownloadModInfo(dlId, "nexus.modInfo", modInfo),
-                );
+                batched.push(setDownloadModInfo(dlId, "nexus.modInfo", modInfo));
               }
               if (fileInfo !== null) {
-                batched.push(
-                  setDownloadModInfo(dlId, "nexus.fileInfo", fileInfo),
-                );
+                batched.push(setDownloadModInfo(dlId, "nexus.fileInfo", fileInfo));
               }
 
               batchDispatch(api.store, batched);
@@ -253,9 +204,7 @@ export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
           if (infoCache.size > 100) {
             const entries = Array.from(infoCache.entries());
             infoCache.clear();
-            entries
-              .slice(-50)
-              .forEach(([key, value]) => infoCache.set(key, value));
+            entries.slice(-50).forEach(([key, value]) => infoCache.set(key, value));
           }
         })
         .catch((err) => {
@@ -313,8 +262,7 @@ export function onChangeMods(api: IExtensionApi, nexus: Nexus) {
         const idPath = [gameMode, modId, "attributes", "modId"];
         const dlGamePath = [gameMode, modId, "attributes", "downloadGame"];
         if (
-          getSafe(lastModTable, idPath, undefined) !==
-            getSafe(newModTable, idPath, undefined) ||
+          getSafe(lastModTable, idPath, undefined) !== getSafe(newModTable, idPath, undefined) ||
           getSafe(lastModTable, dlGamePath, undefined) !==
             getSafe(newModTable, dlGamePath, undefined)
         ) {
@@ -344,22 +292,12 @@ export function onChangeMods(api: IExtensionApi, nexus: Nexus) {
 }
 
 export function onOpenCollectionPage(api: IExtensionApi) {
-  return (
-    gameId: string,
-    collectionSlug: string,
-    revisionNumber: number,
-    source: string,
-  ) => {
+  return (gameId: string, collectionSlug: string, revisionNumber: number, source: string) => {
     if (source !== "nexus") {
       return;
     }
     const game = gameById(api.store.getState(), gameId);
-    const segments = [
-      NEXUS_GAMES_URL,
-      nexusGameId(game) || gameId,
-      "collections",
-      collectionSlug,
-    ];
+    const segments = [NEXUS_GAMES_URL, nexusGameId(game) || gameId, "collections", collectionSlug];
     if (revisionNumber !== undefined) {
       segments.push("revisions", revisionNumber.toString());
     }
@@ -373,9 +311,9 @@ export function onOpenModPage(api: IExtensionApi) {
       return;
     }
     const game = gameById(api.store.getState(), gameId);
-    opn(
-      [NEXUS_BASE_URL, nexusGameId(game) || gameId, "mods", modId].join("/"),
-    ).catch((err) => undefined);
+    opn([NEXUS_BASE_URL, nexusGameId(game) || gameId, "mods", modId].join("/")).catch(
+      (err) => undefined,
+    );
   };
 }
 
@@ -405,16 +343,9 @@ export function onRequestOwnIssues(nexus: Nexus) {
 }
 
 function getFileId(download: IDownload): number {
-  const res = getSafe(
-    download,
-    ["modInfo", "nexus", "ids", "fileId"],
-    undefined,
-  );
+  const res = getSafe(download, ["modInfo", "nexus", "ids", "fileId"], undefined);
 
-  if (
-    res === undefined &&
-    getSafe(download, ["modInfo", "source"], undefined) === "nexus"
-  ) {
+  if (res === undefined && getSafe(download, ["modInfo", "source"], undefined) === "nexus") {
     return getSafe(download, ["modInfo", "ids", "fileId"], undefined);
   } else {
     return res;
@@ -439,9 +370,7 @@ function downloadFile(
   ) {
     // nexusmods can't let users download files directly from client, without
     // showing ads
-    return Bluebird.reject(
-      new ProcessCanceled("Only available to premium users"),
-    );
+    return Bluebird.reject(new ProcessCanceled("Only available to premium users"));
   }
   // TODO: Need some way to identify if this request is actually for a nexus mod
   const url = `nxm://${toNXMId(game, gameId)}/mods/${modId}/files/${fileId}`;
@@ -517,11 +446,7 @@ export function onModsUpdate(api: IExtensionApi, nexus: Nexus) {
     );
     for (const modId of modIds) {
       const mod = mods[modId];
-      if (
-        !mod ||
-        mod.attributes?.source !== "nexus" ||
-        !mod.attributes?.newestFileId
-      ) {
+      if (!mod || mod.attributes?.source !== "nexus" || !mod.attributes?.newestFileId) {
         log("warn", "unable to automatically update mod", modId);
         continue;
       }
@@ -534,12 +459,7 @@ export function onModsUpdate(api: IExtensionApi, nexus: Nexus) {
       }
       const numericModId = mod.attributes?.modId;
       const downloadGame = mod.attributes?.downloadGame ?? gameId;
-      onModUpdate(api, nexus)(
-        downloadGame,
-        numericModId,
-        newestFileId,
-        "nexus",
-      );
+      onModUpdate(api, nexus)(downloadGame, numericModId, newestFileId, "nexus");
     }
 
     api.dismissNotification("mods-update-multi");
@@ -549,8 +469,7 @@ export function onModsUpdate(api: IExtensionApi, nexus: Nexus) {
 
 export function onModUpdate(api: IExtensionApi, nexus: Nexus) {
   return (gameId: string, modId: number, fileId: number, source: string) => {
-    let game =
-      gameId === SITE_ID ? null : gameById(api.store.getState(), gameId);
+    let game = gameId === SITE_ID ? null : gameById(api.store.getState(), gameId);
 
     if (!game) {
       log("warn", "mod update requested for unknown game id", gameId);
@@ -572,15 +491,7 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus) {
       : gameId; // Game is not present in the state. Concurrency issue? lets just assign it to gameId.
     const downloadFunc = () =>
       truthy(game)
-        ? downloadFile(
-            api,
-            nexus,
-            { ...game, downloadGameId },
-            modId,
-            fileId,
-            undefined,
-            false,
-          )
+        ? downloadFile(api, nexus, { ...game, downloadGameId }, modId, fileId, undefined, false)
         : Bluebird.reject(new ProcessCanceled("Game not found")); // Can't download an update for a game extension that doesn't exist
 
     downloadFunc()
@@ -599,9 +510,7 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus) {
         if (!truthy(downloadId)) {
           // nop
         } else if (downloads[downloadId]?.state !== "finished") {
-          api.store.dispatch(
-            setDownloadModInfo(downloadId, "startedAsUpdate", true),
-          );
+          api.store.dispatch(setDownloadModInfo(downloadId, "startedAsUpdate", true));
         } else {
           api.events.emit("start-install-download", downloadId);
         }
@@ -612,12 +521,7 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus) {
         api.showErrorNotification("Invalid URL", url, { allowReport: false });
       })
       .catch(ProcessCanceled, () => {
-        const url = [
-          NEXUS_BASE_URL,
-          nexusGameId(game, gameId),
-          "mods",
-          modId,
-        ].join("/");
+        const url = [NEXUS_BASE_URL, nexusGameId(game, gameId), "mods", modId].join("/");
         const params = `?tab=files&file_id=${fileId}&nmm=1`;
         return opn(url + params).catch(() => undefined);
       })
@@ -638,8 +542,7 @@ export function onNexusDownload(
     fileName?: string,
     allowInstall?: boolean,
   ): Bluebird<string> => {
-    const game =
-      gameId === SITE_ID ? null : gameById(api.store.getState(), gameId);
+    const game = gameId === SITE_ID ? null : gameById(api.store.getState(), gameId);
     log("debug", "on nexus download", fileName);
     return ensureLoggedIn(api)
       .then(() => {
@@ -669,9 +572,7 @@ export function onNexusDownload(
       })
       .catch(AlreadyDownloaded, (err) => {
         const { files } = api.getState().persistent.downloads;
-        const dlId = Object.keys(files).find(
-          (iter) => files[iter].localPath === err.fileName,
-        );
+        const dlId = Object.keys(files).find((iter) => files[iter].localPath === err.fileName);
         return Bluebird.resolve(dlId);
       })
       .catch((err) => {
@@ -684,16 +585,8 @@ export function onNexusDownload(
 export function onGetMyCollections(
   api: IExtensionApi,
   nexus: Nexus,
-): (
-  gameId: string,
-  count?: number,
-  offset?: number,
-) => Promise<Partial<IRevision[]>> {
-  return async (
-    gameId: string,
-    count?: number,
-    offset?: number,
-  ): Promise<Partial<IRevision[]>> => {
+): (gameId: string, count?: number, offset?: number) => Promise<Partial<IRevision[]>> {
+  return async (gameId: string, count?: number, offset?: number): Promise<Partial<IRevision[]>> => {
     const game = gameById(api.getState(), gameId);
     const nexusDomainId = nexusGameId(game);
     if (!nexusDomainId) {
@@ -711,12 +604,7 @@ export function onGetMyCollections(
         query,
       )({
         gameId: nexusDomainId,
-        collectionStatuses: [
-          "listed",
-          "published",
-          "under_moderation",
-          "unlisted",
-        ],
+        collectionStatuses: ["listed", "published", "under_moderation", "unlisted"],
         count,
         offset,
         userId: userId.toString(),
@@ -726,9 +614,7 @@ export function onGetMyCollections(
       const revisions: Partial<IRevision[]> = searchResult.nodes
         .map(
           (collection: ICollection) =>
-            (collection.revisions ?? []).sort(
-              (a, b) => b.revisionNumber - a.revisionNumber,
-            )[0],
+            (collection.revisions ?? []).sort((a, b) => b.revisionNumber - a.revisionNumber)[0],
         )
         .filter((rev): rev is IRevision => rev != null);
 
@@ -751,14 +637,10 @@ export function onGetNexusCollection(
 ): (slug: string) => Bluebird<ICollection> {
   return (slug: string): Bluebird<ICollection> => {
     if (slug === undefined) {
-      return Bluebird.reject(
-        new Error("invalid parameter, collectionId has to be a number"),
-      );
+      return Bluebird.reject(new Error("invalid parameter, collectionId has to be a number"));
     }
 
-    return Bluebird.resolve(
-      nexus.getCollectionGraph(FULL_COLLECTION_INFO, slug),
-    ).catch((err) => {
+    return Bluebird.resolve(nexus.getCollectionGraph(FULL_COLLECTION_INFO, slug)).catch((err) => {
       if (!["COLLECTION_DISCARDED", "NOT_FOUND"].includes(err.code)) {
         if (err.code === "COLLECTION_UNDER_MODERATION") {
           api.showErrorNotification(
@@ -786,9 +668,7 @@ export function onGetNexusCollections(
   nexus: Nexus,
 ): (gameId: string) => Bluebird<ICollection[]> {
   return (gameId: string): Bluebird<ICollection[]> =>
-    Bluebird.resolve(
-      nexus.getCollectionListGraph(FULL_COLLECTION_INFO, gameId),
-    ).catch((err) => {
+    Bluebird.resolve(nexus.getCollectionListGraph(FULL_COLLECTION_INFO, gameId)).catch((err) => {
       api.showErrorNotification("Failed to get list of collections", err);
       return Bluebird.resolve(undefined);
     });
@@ -827,10 +707,7 @@ export function onGetNexusCollectionRevision(
   api: IExtensionApi,
   nexus: Nexus,
 ): (collectionSlug: string, revisionNumber: number) => Bluebird<IRevision> {
-  return (
-    collectionSlug: string,
-    revisionNumber: number,
-  ): Bluebird<IRevision> => {
+  return (collectionSlug: string, revisionNumber: number): Bluebird<IRevision> => {
     if (collectionSlug === undefined) {
       const err = new Error("invalid parameter, collectionSlug undefined");
       err["attachLogOnReport"] = true;
@@ -839,8 +716,7 @@ export function onGetNexusCollectionRevision(
     } else if (!Number.isFinite(revisionNumber)) {
       return Bluebird.reject(
         new Error(
-          "invalid parameter, revisionNumber has to be a number, " +
-            `got: ${revisionNumber}`,
+          "invalid parameter, revisionNumber has to be a number, " + `got: ${revisionNumber}`,
         ),
       );
     }
@@ -850,33 +726,29 @@ export function onGetNexusCollectionRevision(
         collectionSlug,
         revisionNumber > 0 ? revisionNumber : undefined,
       ),
-    ).catch(
-      (
-        err: NexusError & { collectionSlug?: string; revisionNumber?: number },
-      ) => {
-        const message = getErrorMessageOrDefault(err);
-        const isRevisionUnavailable = [
-          "NOT_FOUND",
-          "COLLECTION_REVISION_DISCARDED",
-          "COLLECTION_UNDER_MODERATION",
-        ].includes(err.code);
-        const allowReport =
-          !isRevisionUnavailable &&
-          !message.includes("network disconnected") &&
-          !message.includes(
-            "Cannot return null for non-nullable field CollectionRevision.collection",
-          );
-        err.collectionSlug = collectionSlug;
-        err.revisionNumber = revisionNumber;
-        if (!isRevisionUnavailable) {
-          api.showErrorNotification("Failed to get nexus revision info", err, {
-            id: "failed-get-revision-info",
-            allowReport,
-          });
-        }
-        return Bluebird.resolve(undefined);
-      },
-    );
+    ).catch((err: NexusError & { collectionSlug?: string; revisionNumber?: number }) => {
+      const message = getErrorMessageOrDefault(err);
+      const isRevisionUnavailable = [
+        "NOT_FOUND",
+        "COLLECTION_REVISION_DISCARDED",
+        "COLLECTION_UNDER_MODERATION",
+      ].includes(err.code);
+      const allowReport =
+        !isRevisionUnavailable &&
+        !message.includes("network disconnected") &&
+        !message.includes(
+          "Cannot return null for non-nullable field CollectionRevision.collection",
+        );
+      err.collectionSlug = collectionSlug;
+      err.revisionNumber = revisionNumber;
+      if (!isRevisionUnavailable) {
+        api.showErrorNotification("Failed to get nexus revision info", err, {
+          id: "failed-get-revision-info",
+          allowReport,
+        });
+      }
+      return Bluebird.resolve(undefined);
+    });
   };
 }
 
@@ -892,8 +764,7 @@ function reportRateError(api: IExtensionApi, err: Error, revisionId: number) {
       },
     });
   } else if (err instanceof TimeoutError || err.message.includes("ETIMEDOUT")) {
-    const message =
-      "A timeout occurred trying to rate a collection, please try again later.";
+    const message = "A timeout occurred trying to rate a collection, please try again later.";
     api.sendNotification({
       type: "error",
       title: "Timeout",
@@ -901,34 +772,20 @@ function reportRateError(api: IExtensionApi, err: Error, revisionId: number) {
       displayMS: calcDuration(message.length),
     });
   } else if (err["code"] === "NOT_FOUND") {
-    api.showErrorNotification(
-      "Collection not found, it might have been removed.",
-      err,
-      {
-        allowReport: false,
-      },
-    );
+    api.showErrorNotification("Collection not found, it might have been removed.", err, {
+      allowReport: false,
+    });
   } else if (
-    ["ENOENT", "ECONNRESET", "ECONNABORTED", "ESOCKETTIMEDOUT"].includes(
-      err["code"],
-    ) ||
+    ["ENOENT", "ECONNRESET", "ECONNABORTED", "ESOCKETTIMEDOUT"].includes(err["code"]) ||
     err instanceof ProcessCanceled
   ) {
-    api.showErrorNotification(
-      "Rating collection failed, please try again later",
-      err,
-      {
-        allowReport: false,
-      },
-    );
+    api.showErrorNotification("Rating collection failed, please try again later", err, {
+      allowReport: false,
+    });
   } else if (err.message.startsWith("getaddrinfo ENOTFOUND")) {
-    api.showErrorNotification(
-      "Rating collection failed, please try again later",
-      err,
-      {
-        allowReport: false,
-      },
-    );
+    api.showErrorNotification("Rating collection failed, please try again later", err, {
+      allowReport: false,
+    });
   } else {
     const detail = processErrorMessage(err as NexusError);
     detail.Revision = revisionId;
@@ -937,12 +794,7 @@ function reportRateError(api: IExtensionApi, err: Error, revisionId: number) {
       allowReport = false;
       delete detail.noReport;
     }
-    showError(
-      api.store.dispatch,
-      "An error occurred rating a collection",
-      detail,
-      { allowReport },
-    );
+    showError(api.store.dispatch, "An error occurred rating a collection", detail, { allowReport });
   }
 }
 
@@ -956,12 +808,10 @@ export function onRateRevision(
   nexus: Nexus,
 ): (revisionId: number, rating: number) => Bluebird<IRateRevisionResult> {
   return (revisionId: number, rating: any): Bluebird<IRateRevisionResult> => {
-    return Bluebird.resolve(nexus.rateRevision(revisionId, rating)).catch(
-      (err) => {
-        reportRateError(api, err, revisionId);
-        return Bluebird.resolve({ success: false });
-      },
-    );
+    return Bluebird.resolve(nexus.rateRevision(revisionId, rating)).catch((err) => {
+      reportRateError(api, err, revisionId);
+      return Bluebird.resolve({ success: false });
+    });
   };
 }
 
@@ -977,9 +827,7 @@ export function onGetModFiles(
   return (gameId: string, modId: number): Bluebird<IFileInfo[]> => {
     const state = api.getState();
     const game = gameById(state, gameId);
-    return Bluebird.resolve(
-      nexus.getModFiles(modId, nexusGameId(game, gameId) || gameId),
-    )
+    return Bluebird.resolve(nexus.getModFiles(modId, nexusGameId(game, gameId) || gameId))
       .then((result) => result.files)
       .catch((err) => {
         api.showErrorNotification("Failed to get list of mod files", err, {
@@ -1000,9 +848,7 @@ export function onModFileContents(
     offset?: number,
     count?: number,
   ) => {
-    return Bluebird.resolve(
-      nexus.modFileContents(query, filter, offset, count),
-    ).catch((err) => {
+    return Bluebird.resolve(nexus.modFileContents(query, filter, offset, count)).catch((err) => {
       api.showErrorNotification("Failed to get mod file contents", err, {
         allowReport: false,
       });
@@ -1021,14 +867,14 @@ export function onGetModInfo(
   return (gameId: string, modId: number) => {
     const state = api.getState();
     const game = gameById(state, gameId);
-    return Bluebird.resolve(
-      nexus.getModInfo(modId, nexusGameId(game, gameId) || gameId),
-    ).catch((err) => {
-      api.showErrorNotification("Failed to get mod info", err, {
-        allowReport: false,
-      });
-      return Bluebird.resolve({});
-    });
+    return Bluebird.resolve(nexus.getModInfo(modId, nexusGameId(game, gameId) || gameId)).catch(
+      (err) => {
+        api.showErrorNotification("Failed to get mod info", err, {
+          allowReport: false,
+        });
+        return Bluebird.resolve({});
+      },
+    );
   };
 }
 
@@ -1045,10 +891,7 @@ export function onGetModInfo(
 export function onGetModRequirements(
   api: IExtensionApi,
   nexus: Nexus,
-): (
-  gameId: string,
-  modIds: number[],
-) => Bluebird<{ [modId: number]: Partial<IModRequirements> }> {
+): (gameId: string, modIds: number[]) => Bluebird<{ [modId: number]: Partial<IModRequirements> }> {
   return (gameId: string, modIds: number[]) => {
     const state = api.getState();
     const game = gameById(state, gameId);
@@ -1118,9 +961,7 @@ export function onGetModRequirements(
         log("debug", "onGetModRequirements result", {
           resultKeys,
           firstResultValue:
-            resultKeys.length > 0
-              ? JSON.stringify(result[parseInt(resultKeys[0], 10)])
-              : null,
+            resultKeys.length > 0 ? JSON.stringify(result[parseInt(resultKeys[0], 10)]) : null,
         });
 
         return result;
@@ -1129,14 +970,14 @@ export function onGetModRequirements(
         const defaultDetails = {
           gameId: nexusGameDomain,
           modIds,
-        }
+        };
         if (err instanceof RateLimitError) {
           log("warn", "Rate limited when fetching mod requirements", {
-            ...defaultDetails
+            ...defaultDetails,
           });
         } else if (err instanceof TimeoutError) {
           log("warn", "Timeout when fetching mod requirements", {
-            ...defaultDetails
+            ...defaultDetails,
           });
         } else {
           const detail = processErrorMessage(err as NexusError);
@@ -1159,11 +1000,7 @@ export function onGetUserKeyData(
     //  but we keep the Promise interface for consistency + in case we want to
     //  make an async call in the future
     const state: IState = api.getState();
-    const userKey = getSafe(
-      state,
-      ["persistent", "nexus", "userInfo"],
-      undefined,
-    );
+    const userKey = getSafe(state, ["persistent", "nexus", "userInfo"], undefined);
     return Promise.resolve(userKey);
   };
 }
@@ -1216,10 +1053,7 @@ export function onDownloadUpdate(
     const fileIdNum = parseInt(fileId, 10);
 
     return Bluebird.resolve(
-      nexus.getModFiles(
-        parseInt(modId, 10),
-        nexusGameId(game, gameId) || gameId,
-      ),
+      nexus.getModFiles(parseInt(modId, 10), nexusGameId(game, gameId) || gameId),
     )
       .then((files) => {
         let updateFileId: number;
@@ -1230,9 +1064,7 @@ export function onDownloadUpdate(
           .sort((lhs, rhs) => rhs.uploaded_timestamp - lhs.uploaded_timestamp)
           // find the first update entry that has a version matching the pattern
           .find((update) => {
-            const file = files.files.find(
-              (iter) => iter.file_id === update.new_file_id,
-            );
+            const file = files.files.find((iter) => iter.file_id === update.new_file_id);
             if (file === undefined) {
               return false;
             }
@@ -1305,9 +1137,7 @@ export function onDownloadUpdate(
         if (err instanceof UserCanceled) {
           // there is a really good chance that the download will fail
           log("warn", "failed to fetch mod file list", err.message);
-          const urlParsed = new URL(
-            `nxm://${toNXMId(game, gameId)}/mods/${modId}/files/${fileId}`,
-          );
+          const urlParsed = new URL(`nxm://${toNXMId(game, gameId)}/mods/${modId}/files/${fileId}`);
           if (campaign !== undefined) {
             urlParsed.searchParams.set("campaign", campaign);
           }
@@ -1362,19 +1192,17 @@ function sendCollection(
       uuid,
     );
   } else {
-    return nexus
-      .editCollection(collectionId as any, collectionInfo.info.name)
-      .then(() =>
-        nexus.createOrUpdateRevision(
-          {
-            adultContent: false,
-            collectionManifest: collectionInfo,
-            collectionSchemaId: 1,
-          },
-          uuid,
-          collectionId,
-        ),
-      );
+    return nexus.editCollection(collectionId as any, collectionInfo.info.name).then(() =>
+      nexus.createOrUpdateRevision(
+        {
+          adultContent: false,
+          collectionManifest: collectionInfo,
+          collectionSchemaId: 1,
+        },
+        uuid,
+        collectionId,
+      ),
+    );
   }
 }
 
@@ -1390,14 +1218,10 @@ export function onSubmitCollection(nexus: Nexus) {
       .then(({ url, uuid }) => {
         return fs
           .statAsync(assetFilePath)
-          .then((stat) =>
-            upload(url, fs.createReadStream(assetFilePath), stat.size),
-          )
+          .then((stat) => upload(url, fs.createReadStream(assetFilePath), stat.size))
           .then(() => uuid);
       })
-      .then((uuid: string) =>
-        sendCollection(nexus, collectionInfo, collectionId, uuid),
-      )
+      .then((uuid: string) => sendCollection(nexus, collectionInfo, collectionId, uuid))
       .then((response) => callback(null, response))
       .catch((err) => callback(unknownToError(err)));
   };
@@ -1424,22 +1248,13 @@ export function onEndorseDirect(api: IExtensionApi, nexus: Nexus) {
     version: string,
     endorsedStatus: EndorsedStatus,
   ): Bluebird<EndorsedStatus> => {
-    return endorseDirectImpl(
-      api,
-      nexus,
-      gameId,
-      nexusId,
-      version,
-      endorsedStatus,
-    ).then((res) => res as EndorsedStatus);
+    return endorseDirectImpl(api, nexus, gameId, nexusId, version, endorsedStatus).then(
+      (res) => res as EndorsedStatus,
+    );
   };
 }
 
-function extractLatestModInfo(
-  state: IState,
-  gameId: string,
-  input: IModInfo,
-): IModListItem {
+function extractLatestModInfo(state: IState, gameId: string, input: IModInfo): IModListItem {
   return {
     name: input.name,
     author: input.uploaded_by,
@@ -1455,9 +1270,7 @@ function extractLatestModInfo(
 }
 
 export function onGetLatestMods(api: IExtensionApi, nexus: Nexus) {
-  return (
-    gameId: string,
-  ): Bluebird<{ id: string; encoding: string; mods: IModListItem[] }> => {
+  return (gameId: string): Bluebird<{ id: string; encoding: string; mods: IModListItem[] }> => {
     const state = api.getState();
     const gameDomain = nexusGameId(gameById(state, gameId), gameId);
     return Bluebird.resolve(nexus.getLatestAdded(gameDomain)).then((mods) => ({
@@ -1484,26 +1297,13 @@ export function onRefreshUserInfo(nexus: Nexus, api: IExtensionApi) {
     return Bluebird.resolve(nexus.getUserInfo())
       .then((apiUserInfo) => {
         api.store.dispatch(setUserInfo(transformUserInfoFromApi(apiUserInfo)));
-        log(
-          "info",
-          "onRefreshUserInfo() nexus.getUserInfo response",
-          apiUserInfo,
-        );
+        log("info", "onRefreshUserInfo() nexus.getUserInfo response", apiUserInfo);
       })
       .catch((err) => {
-        log(
-          "error",
-          `onRefreshUserInfo() nexus.getUserInfo response ${err.message}`,
-          err,
-        );
-        showError(
-          api.store.dispatch,
-          "An error occurred refreshing user info",
-          err,
-          {
-            allowReport: false,
-          },
-        );
+        log("error", `onRefreshUserInfo() nexus.getUserInfo response ${err.message}`, err);
+        showError(api.store.dispatch, "An error occurred refreshing user info", err, {
+          allowReport: false,
+        });
       });
     //} else {
     //  log('warn', 'onRefreshUserInfo() no oauth token');
@@ -1512,9 +1312,7 @@ export function onRefreshUserInfo(nexus: Nexus, api: IExtensionApi) {
 }
 
 export function onGetTrendingMods(api: IExtensionApi, nexus: Nexus) {
-  return (
-    gameId: string,
-  ): Bluebird<{ id: string; encoding: string; mods: IModListItem[] }> => {
+  return (gameId: string): Bluebird<{ id: string; encoding: string; mods: IModListItem[] }> => {
     const state = api.getState();
     const gameDomain = nexusGameId(gameById(state, gameId), gameId);
     return Bluebird.resolve(nexus.getTrending(gameDomain)).then((mods) => ({
@@ -1527,10 +1325,7 @@ export function onGetTrendingMods(api: IExtensionApi, nexus: Nexus) {
   };
 }
 
-export function onAPIKeyChanged(
-  api: IExtensionApi,
-  nexus: Nexus,
-): StateChangeCallback {
+export function onAPIKeyChanged(api: IExtensionApi, nexus: Nexus): StateChangeCallback {
   return (oldValue: string, newValue: string) => {
     api.store.dispatch(setUserInfo(undefined));
     if (newValue !== undefined) {
@@ -1540,10 +1335,7 @@ export function onAPIKeyChanged(
 }
 
 // fired when state variable changes 'confidential.account.nexus.OAuthCredentials'
-export function onOAuthTokenChanged(
-  api: IExtensionApi,
-  nexus: Nexus,
-): StateChangeCallback {
+export function onOAuthTokenChanged(api: IExtensionApi, nexus: Nexus): StateChangeCallback {
   return (oldValue: ITokenReply, newValue: ITokenReply) => {
     log("info", "onOAuthTokenChanged event handler.");
 
@@ -1584,60 +1376,34 @@ export function onCheckModsVersion(
           return Bluebird.resolve(modIds);
         })
         .catch(NexusError, (err) => {
-          showError(
-            api.store.dispatch,
-            "An error occurred checking for mod updates",
-            err,
-            {
-              allowReport: false,
-            },
-          );
+          showError(api.store.dispatch, "An error occurred checking for mod updates", err, {
+            allowReport: false,
+          });
           return Bluebird.resolve([]);
         })
         .catch(TimeoutError, (err) => {
-          showError(
-            api.store.dispatch,
-            "An error occurred checking for mod updates",
-            err,
-            {
-              allowReport: false,
-            },
-          );
+          showError(api.store.dispatch, "An error occurred checking for mod updates", err, {
+            allowReport: false,
+          });
           return Bluebird.resolve([]);
         })
         .catch(RateLimitError, (err) => {
-          showError(
-            api.store.dispatch,
-            "Rate limit exceeded, please try again later",
-            err,
-            {
-              allowReport: false,
-            },
-          );
+          showError(api.store.dispatch, "Rate limit exceeded, please try again later", err, {
+            allowReport: false,
+          });
           return Bluebird.resolve([]);
         })
         .catch(ProcessCanceled, (err) => {
-          showError(
-            api.store.dispatch,
-            "An error occurred checking for mod updates",
-            err,
-            {
-              allowReport: false,
-            },
-          );
+          showError(api.store.dispatch, "An error occurred checking for mod updates", err, {
+            allowReport: false,
+          });
           return Bluebird.resolve([]);
         })
         .catch((err) => {
-          showError(
-            api.store.dispatch,
-            "An error occurred checking for mod updates",
-            err,
-          );
+          showError(api.store.dispatch, "An error occurred checking for mod updates", err);
           return Bluebird.resolve([]);
         })
-        .then((modIds: string[]) =>
-          Bluebird.delay(2000 - (Date.now() - start)).then(() => modIds),
-        )
+        .then((modIds: string[]) => Bluebird.delay(2000 - (Date.now() - start)).then(() => modIds))
         .finally(() => {
           api.store.dispatch(setUpdatingMods(gameId, false));
         });
@@ -1654,13 +1420,7 @@ export function sendMetric(api: IExtensionApi, nexus: Nexus) {
     clientString?: string,
   ) => {
     try {
-      await nexus.sendMetric(
-        eventType,
-        entityType,
-        entityId,
-        metadata,
-        clientString,
-      );
+      await nexus.sendMetric(eventType, entityType, entityId, metadata, clientString);
     } catch {
       // do nothing
     }

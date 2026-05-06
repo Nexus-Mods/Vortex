@@ -1,7 +1,6 @@
+import safeCreateAction from "../../../actions/safeCreateAction";
 import type { IHealthCheckResult } from "../../../types/IHealthCheck";
 import type { IModFileInfo } from "../types";
-
-import safeCreateAction from "../../../actions/safeCreateAction";
 
 /**
  * Set the result of a health check

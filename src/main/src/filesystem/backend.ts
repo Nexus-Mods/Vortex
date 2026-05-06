@@ -1,5 +1,4 @@
 import type { BigIntStats } from "node:fs";
-
 import {
   cp,
   link,
@@ -27,7 +26,6 @@ import type {
 } from "@nexusmods/adaptor-api/fs";
 import type { Pattern, ResolvedPath } from "@nexusmods/adaptor-api/fs";
 import type { FileSystemBackend as NodeFileSystemBackend } from "@nexusmods/adaptor-api/fs";
-
 import { FileSystemError, matches } from "@nexusmods/adaptor-api/fs";
 
 interface ParsedNodeError {
@@ -340,15 +338,10 @@ export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
       throw new FileSystemError(code, message, err, isTransient);
     }
 
-    throw new Error(
-      `Cannot create stream for '${path}': unknown mode'${mode}'`,
-    );
+    throw new Error(`Cannot create stream for '${path}': unknown mode'${mode}'`);
   }
 
-  async stat(
-    path: ResolvedPath,
-    options?: { parseSymLink: boolean },
-  ): Promise<StatResult> {
+  async stat(path: ResolvedPath, options?: { parseSymLink: boolean }): Promise<StatResult> {
     const parseSymLink = options?.parseSymLink ?? false;
 
     try {
@@ -384,12 +377,7 @@ export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
         return { exists: false };
       }
 
-      throw new FileSystemError(
-        code,
-        `Failed to stat ${path}`,
-        err,
-        isTransient,
-      );
+      throw new FileSystemError(code, `Failed to stat ${path}`, err, isTransient);
     }
   }
 
@@ -503,10 +491,7 @@ function parseTime(stats: BigIntStats): StatusTime {
   return times;
 }
 
-function parseNodeStats(
-  path: ResolvedPath,
-  stats: BigIntStats,
-): FileStatus | DirectoryStatus {
+function parseNodeStats(path: ResolvedPath, stats: BigIntStats): FileStatus | DirectoryStatus {
   const times = parseTime(stats);
 
   if (stats.isFile()) {

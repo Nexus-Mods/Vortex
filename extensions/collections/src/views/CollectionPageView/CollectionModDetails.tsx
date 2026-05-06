@@ -1,14 +1,8 @@
 import { ICollectionRevisionMod } from "@nexusmods/nexus-api";
 import * as React from "react";
 import { Panel } from "react-bootstrap";
-import {
-  FlexLayout,
-  Image,
-  tooltip,
-  types,
-  util,
-  ZoomableImage,
-} from "vortex-api";
+import { FlexLayout, Image, tooltip, types, util, ZoomableImage } from "vortex-api";
+
 import { AUTHOR_UNKNOWN, NEXUS_BASE_URL } from "../../constants";
 import { IModEx } from "../../types/IModEx";
 
@@ -22,18 +16,13 @@ export interface ICollectionModDetails {
 function CollectionModDetails(props: ICollectionModDetails) {
   const { t, gameId, local, remote } = props;
 
-  const uploaderName =
-    local?.attributes?.uploader ?? remote?.file?.owner?.name ?? AUTHOR_UNKNOWN;
-  const uploaderId =
-    local?.attributes?.uploaderId ?? remote?.file?.owner?.memberId;
-  const uploaderAvatar =
-    remote?.file?.owner?.avatar ?? "assets/images/noavatar.png";
-  const authorName =
-    local?.attributes?.author ?? remote?.file?.mod?.author ?? AUTHOR_UNKNOWN;
+  const uploaderName = local?.attributes?.uploader ?? remote?.file?.owner?.name ?? AUTHOR_UNKNOWN;
+  const uploaderId = local?.attributes?.uploaderId ?? remote?.file?.owner?.memberId;
+  const uploaderAvatar = remote?.file?.owner?.avatar ?? "assets/images/noavatar.png";
+  const authorName = local?.attributes?.author ?? remote?.file?.mod?.author ?? AUTHOR_UNKNOWN;
   const modTitle = util.renderModName(local) ?? remote?.file?.mod?.name ?? "";
   const version = local?.attributes?.version ?? remote?.file?.version ?? "???";
-  const description =
-    local?.attributes?.shortDescription ?? remote?.file?.mod?.summary ?? "";
+  const description = local?.attributes?.shortDescription ?? remote?.file?.mod?.summary ?? "";
   const image = local?.attributes?.pictureUrl ?? remote?.file?.mod?.pictureUrl;
 
   const domainName =
@@ -53,9 +42,7 @@ function CollectionModDetails(props: ICollectionModDetails) {
     <div className="installing-mod-overview">
       <FlexLayout type="row">
         <FlexLayout.Fixed className="collection-mod-detail-imagecontainer">
-          {image ? (
-            <ZoomableImage className="installing-mod-image" url={image} />
-          ) : null}
+          {image ? <ZoomableImage className="installing-mod-image" url={image} /> : null}
         </FlexLayout.Fixed>
         <FlexLayout.Flex fill>
           <FlexLayout type="column">
@@ -73,9 +60,7 @@ function CollectionModDetails(props: ICollectionModDetails) {
               </FlexLayout>
             </FlexLayout.Fixed>
             <FlexLayout.Flex>
-              <div className="collection-description">
-                {util.bbcodeToReact(description)}
-              </div>
+              <div className="collection-description">{util.bbcodeToReact(description)}</div>
             </FlexLayout.Flex>
             <FlexLayout.Fixed>
               <FlexLayout type="row">

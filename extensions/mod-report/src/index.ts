@@ -1,7 +1,9 @@
-import { clipboard } from "electron";
 import * as path from "path";
+
+import { clipboard } from "electron";
 import turbowalk, { IEntry } from "turbowalk";
 import { fs, log, selectors, types, util } from "vortex-api";
+
 import binUpload from "./binupload";
 import format, { FormatterBBCode, FormatterReadable } from "./format";
 import { IFileEntry, IPluginEntry, IReport } from "./IReport";
@@ -21,10 +23,7 @@ async function fileMD5(filePath: string): Promise<string> {
   const stackErr = new Error();
   const updateErr = (err: Error) => {
     err.stack = []
-      .concat(
-        err.stack.split("\n").slice(0, 1),
-        stackErr.stack.split("\n").slice(1),
-      )
+      .concat(err.stack.split("\n").slice(0, 1), stackErr.stack.split("\n").slice(1))
       .join("\n");
     return err;
   };
@@ -90,11 +89,13 @@ async function fileReport(
     return Promise.resolve([]);
   }
 
-  const manifestLookup: { [relPath: string]: types.IDeployedFile } =
-    manifest.files.reduce((prev, iter) => {
+  const manifestLookup: { [relPath: string]: types.IDeployedFile } = manifest.files.reduce(
+    (prev, iter) => {
       prev[iter.relPath.toUpperCase()] = iter;
       return prev;
-    }, {});
+    },
+    {},
+  );
 
   const fileListFiles = fileList.filter((entry) => !entry.isDirectory);
 
@@ -144,8 +145,7 @@ async function fileReport(
       const res: IFileEntry = {
         path: path.relative(modPath, entry.filePath),
         deployed: manifestEntry !== undefined,
-        overwrittenBy:
-          manifestEntry?.source === mod.id ? null : manifestEntry?.source,
+        overwrittenBy: manifestEntry?.source === mod.id ? null : manifestEntry?.source,
         md5sum,
       };
       if (errCode !== undefined) {
@@ -170,9 +170,8 @@ async function pluginReport(
 
   const plugins = fileList.filter(
     (entry) =>
-      [".esp", ".esm", ".esl"].includes(
-        path.extname(entry.filePath).toLowerCase(),
-      ) && path.dirname(entry.filePath) === modPath,
+      [".esp", ".esm", ".esl"].includes(path.extname(entry.filePath).toLowerCase()) &&
+      path.dirname(entry.filePath) === modPath,
   );
 
   return Promise.all(
@@ -217,11 +216,7 @@ async function createReportImpl(
 
   const download = state.persistent.downloads.files[mod.archiveId];
 
-  const manifest: types.IDeploymentManifest = await util.getManifest(
-    api,
-    mod.type,
-    gameId,
-  );
+  const manifest: types.IDeploymentManifest = await util.getManifest(api, mod.type, gameId);
 
   const result: Partial<IReport> = {
     info: {
@@ -249,9 +244,7 @@ async function createReportImpl(
   }
 
   const stagingPath = selectors.installPathForGame(state, gameId);
-  const fileList = await listFiles(
-    path.join(stagingPath, mod.installationPath),
-  );
+  const fileList = await listFiles(path.join(stagingPath, mod.installationPath));
 
   let generateMD5: boolean = options?.hashes !== false;
   if (generateMD5 && fileList.length > WARN_CHECKSUM_FILES) {
@@ -262,9 +255,7 @@ async function createReportImpl(
         text:
           "This mod contains a large number of files, calculating checksums for each " +
           "may take a while, but without them the report is slightly less useful.",
-        checkboxes: [
-          { id: "checksums", value: true, text: "Generate checksums" },
-        ],
+        checkboxes: [{ id: "checksums", value: true, text: "Generate checksums" }],
       },
       [{ label: "Continue" }],
     );
@@ -274,14 +265,7 @@ async function createReportImpl(
     }
   }
 
-  result.files = await fileReport(
-    api,
-    gameId,
-    mod,
-    fileList,
-    manifest,
-    generateMD5,
-  );
+  result.files = await fileReport(api, gameId, mod, fileList, manifest, generateMD5);
 
   if (options?.loadOrder !== false) {
     if (isBethesdaGame(gameId)) {
@@ -293,15 +277,9 @@ async function createReportImpl(
         .map((entry) => ({ name: entry, enabled: true }));
     } else {
       const profile: types.IProfile = selectors.activeProfile(state);
-      const loadOrder = util.getSafe(
-        state,
-        ["persistent", "loadOrder", profile.id],
-        undefined,
-      );
+      const loadOrder = util.getSafe(state, ["persistent", "loadOrder", profile.id], undefined);
       if (!!loadOrder) {
-        result.loadOrder = (
-          (Array.isArray(loadOrder) ? loadOrder : Object.keys(loadOrder)) || []
-        )
+        result.loadOrder = ((Array.isArray(loadOrder) ? loadOrder : Object.keys(loadOrder)) || [])
           .map((entry, idx) => ({
             name: typeof entry === "string" ? entry : entry.name,
             pos: typeof entry === "string" ? idx : (entry as any)?.pos || idx,
@@ -372,11 +350,7 @@ async function displayReport(
   }
 }
 
-async function createReport(
-  api: types.IExtensionApi,
-  modId: string,
-  gameId?: string,
-) {
+async function createReport(api: types.IExtensionApi, modId: string, gameId?: string) {
   const notiId = makeNotificationId(modId);
   try {
     const state = api.getState();
@@ -405,13 +379,8 @@ async function createReport(
         {
           title: "Save to file",
           action: async () => {
-            const modReportsPath = path.join(
-              util.getVortexPath("temp"),
-              "mod reports",
-            );
-            await fs.ensureDirWritableAsync(modReportsPath, () =>
-              Promise.resolve(),
-            );
+            const modReportsPath = path.join(util.getVortexPath("temp"), "mod reports");
+            await fs.ensureDirWritableAsync(modReportsPath, () => Promise.resolve());
             const sanitizedModName = util.sanitizeFilename(modName);
             const tmpPath = path.join(
               modReportsPath,
