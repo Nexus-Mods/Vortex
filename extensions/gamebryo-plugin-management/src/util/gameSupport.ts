@@ -377,6 +377,14 @@ export function gameDataPath(gameMode: string): string {
     return customDataPath;
   }
   const discovery = discoveryForGame(gameMode);
+  if (discovery?.path === undefined) {
+    // Discovery isn't ready (profile switch can fire before the new game's
+    // discovery state is populated). Surfacing a TypeError from path.join
+    // produces a reportable crash, which we don't want
+    throw new util.ProcessCanceled(
+      `gameDataPath: no discovery for "${gameMode}"`,
+    );
+  }
   return path.join(discovery.path, "Data");
 }
 
