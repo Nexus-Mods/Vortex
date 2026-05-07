@@ -1,6 +1,6 @@
-'use strict';
+"use strict";
 
-var util = require('util');
+var util = require("util");
 
 let error = undefined;
 
@@ -16,11 +16,12 @@ module.exports = {
             return callback(new Error(error));
           }
           return callback(null, 42);
-        }
+        },
       };
     }
     return result;
   },
-  __setError: (err) => { error = err; },
+  __setError: (err) => {
+    error = err;
+  },
 };
-

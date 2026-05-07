@@ -138,7 +138,6 @@ export const ModRequirement = ({
             </Button>
           </div>
         )}
-
       </div>
     </div>
   );

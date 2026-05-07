@@ -1,44 +1,34 @@
 {
-    "version": "2.0.0",
-    "command": "npm",
-    "tasks": [
-        {
-            "label": "install",
-            "type": "shell",
-            "args": [
-                "install"
-            ],
-            "problemMatcher": []
-        },
-        {
-            "label": "update",
-            "type": "shell",
-            "args": [
-                "update"
-            ],
-            "problemMatcher": []
-        },
-        {
-            "label": "test",
-            "type": "shell",
-            "args": [
-                "run",
-                "test"
-            ],
-            "problemMatcher": []
-        },
-        {
-            "label": "build",
-            "type": "shell",
-            "args": [
-                "run",
-                "buildDev"
-            ],
-            "problemMatcher": [],
-            "group": {
-                "_id": "build",
-                "isDefault": false
-            }
-        }
-    ]
+  "version": "2.0.0",
+  "command": "npm",
+  "tasks": [
+    {
+      "label": "install",
+      "type": "shell",
+      "args": ["install"],
+      "problemMatcher": []
+    },
+    {
+      "label": "update",
+      "type": "shell",
+      "args": ["update"],
+      "problemMatcher": []
+    },
+    {
+      "label": "test",
+      "type": "shell",
+      "args": ["run", "test"],
+      "problemMatcher": []
+    },
+    {
+      "label": "build",
+      "type": "shell",
+      "args": ["run", "buildDev"],
+      "problemMatcher": [],
+      "group": {
+        "_id": "build",
+        "isDefault": false
+      }
+    }
+  ]
 }

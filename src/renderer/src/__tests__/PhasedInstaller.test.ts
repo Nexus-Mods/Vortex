@@ -1,15 +1,22 @@
-import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
-import InstallManager from '../extensions/mod_management/InstallManager';
-import { IExtensionApi, IState } from '../types/api';
-import { IDependency } from '../extensions/mod_management/types/IDependency';
-import { IModRule } from '../extensions/mod_management/types/IMod';
+import {
+  describe,
+  it,
+  expect,
+  jest,
+  beforeEach,
+  afterEach,
+} from "@jest/globals";
+import InstallManager from "../extensions/mod_management/InstallManager";
+import { IExtensionApi, IState } from "../types/api";
+import { IDependency } from "../extensions/mod_management/types/IDependency";
+import { IModRule } from "../extensions/mod_management/types/IMod";
 
 // Mock dependencies
-jest.mock('../extensions/mod_management/util/dependencies');
-jest.mock('../util/api');
-jest.mock('../util/log');
+jest.mock("../extensions/mod_management/util/dependencies");
+jest.mock("../util/api");
+jest.mock("../util/log");
 
-describe('Phased Installer', () => {
+describe("Phased Installer", () => {
   let installManager: any;
   let mockApi: jest.Mocked<IExtensionApi>;
   let mockState: Partial<IState>;
@@ -20,38 +27,38 @@ describe('Phased Installer', () => {
       persistent: {
         mods: {},
         downloads: {
-          files: {}
+          files: {},
         },
-        profiles: {}
+        profiles: {},
       } as any,
       session: {
         collections: {
-          activeSession: null
-        }
+          activeSession: null,
+        },
       } as any,
       settings: {
         downloads: {
-          collectionsInstallWhileDownloading: false
+          collectionsInstallWhileDownloading: false,
         },
         profiles: {
-          activeProfileId: 'test-profile-1',
+          activeProfileId: "test-profile-1",
           nextProfileId: undefined,
-          lastActiveProfile: {}
-        }
-      } as any
+          lastActiveProfile: {},
+        },
+      } as any,
     };
 
     mockApi = {
       getState: jest.fn(() => mockState as IState),
       store: {
         dispatch: jest.fn(),
-        getState: jest.fn(() => mockState as IState)
+        getState: jest.fn(() => mockState as IState),
       },
       events: {
         emit: jest.fn(),
         on: jest.fn(),
         once: jest.fn(),
-        removeListener: jest.fn()
+        removeListener: jest.fn(),
       },
       onAsync: jest.fn(),
       onStateChange: jest.fn(),
@@ -59,18 +66,18 @@ describe('Phased Installer', () => {
       dismissNotification: jest.fn(),
       showErrorNotification: jest.fn(),
       translate: jest.fn((key) => key),
-      registerInstaller: jest.fn()
+      registerInstaller: jest.fn(),
     } as any;
 
     // Create InstallManager instance with private access
     const InstallManagerClass: any = InstallManager;
     installManager = new InstallManagerClass(
       mockApi,
-      'testGameId',
+      "testGameId",
       jest.fn(), // getStagingPath
       jest.fn(), // getInstallPath
       jest.fn(), // getGameVersion
-      jest.fn()  // getDownloadPath
+      jest.fn(), // getDownloadPath
     );
   });
 
@@ -78,9 +85,9 @@ describe('Phased Installer', () => {
     jest.clearAllMocks();
   });
 
-  describe('Phase State Management', () => {
-    it('should initialize phase state correctly', () => {
-      const sourceModId = 'test-collection-1';
+  describe("Phase State Management", () => {
+    it("should initialize phase state correctly", () => {
+      const sourceModId = "test-collection-1";
 
       installManager.ensurePhaseState(sourceModId);
       const state = installManager.mInstallPhaseState.get(sourceModId);
@@ -94,8 +101,8 @@ describe('Phased Installer', () => {
       expect(state.deployedPhases).toBeInstanceOf(Set);
     });
 
-    it('should not reinitialize existing phase state', () => {
-      const sourceModId = 'test-collection-1';
+    it("should not reinitialize existing phase state", () => {
+      const sourceModId = "test-collection-1";
 
       installManager.ensurePhaseState(sourceModId);
       const state1 = installManager.mInstallPhaseState.get(sourceModId);
@@ -109,9 +116,9 @@ describe('Phased Installer', () => {
     });
   });
 
-  describe('Phase Advancement', () => {
-    it('should advance phase when current phase is complete', () => {
-      const sourceModId = 'test-collection-1';
+  describe("Phase Advancement", () => {
+    it("should advance phase when current phase is complete", () => {
+      const sourceModId = "test-collection-1";
 
       installManager.ensurePhaseState(sourceModId);
       const state = installManager.mInstallPhaseState.get(sourceModId);
@@ -129,8 +136,8 @@ describe('Phased Installer', () => {
       expect(state.allowedPhase).toBe(1);
     });
 
-    it('should not advance phase if previous phase not deployed', () => {
-      const sourceModId = 'test-collection-1';
+    it("should not advance phase if previous phase not deployed", () => {
+      const sourceModId = "test-collection-1";
 
       installManager.ensurePhaseState(sourceModId);
       const state = installManager.mInstallPhaseState.get(sourceModId);
@@ -148,8 +155,8 @@ describe('Phased Installer', () => {
       expect(state.allowedPhase).toBe(0); // Should not advance
     });
 
-    it('should not advance if active installations in current phase', () => {
-      const sourceModId = 'test-collection-1';
+    it("should not advance if active installations in current phase", () => {
+      const sourceModId = "test-collection-1";
 
       installManager.ensurePhaseState(sourceModId);
       const state = installManager.mInstallPhaseState.get(sourceModId);
@@ -166,22 +173,22 @@ describe('Phased Installer', () => {
     });
   });
 
-  describe('Collection Phase Detection', () => {
-    it('should detect completed phases from collection session', () => {
-      const sourceModId = 'test-collection-1';
+  describe("Collection Phase Detection", () => {
+    it("should detect completed phases from collection session", () => {
+      const sourceModId = "test-collection-1";
       const dependencies: IDependency[] = [
         {
-          download: 'dl1',
-          reference: { logicalFileName: 'mod1' } as any,
+          download: "dl1",
+          reference: { logicalFileName: "mod1" } as any,
           lookupResults: [],
-          phase: 2
+          phase: 2,
         },
         {
-          download: 'dl2',
-          reference: { logicalFileName: 'mod2' } as any,
+          download: "dl2",
+          reference: { logicalFileName: "mod2" } as any,
           lookupResults: [],
-          phase: 2
-        }
+          phase: 2,
+        },
       ];
 
       // Setup collection session with phases 0 and 1 complete
@@ -189,14 +196,14 @@ describe('Phased Installer', () => {
         activeSession: {
           collectionId: sourceModId,
           mods: {
-            'mod-0-1': { phase: 0, type: 'requires', status: 'installed' },
-            'mod-1-1': { phase: 1, type: 'requires', status: 'installed' },
-            'mod-1-2': { phase: 1, type: 'requires', status: 'installed' },
-            'mod-1-3': { phase: 1, type: 'recommends', status: 'installed' },
-            'mod-2-1': { phase: 2, type: 'requires', status: 'pending' },
-            'mod-2-2': { phase: 2, type: 'requires', status: 'pending' }
-          }
-        }
+            "mod-0-1": { phase: 0, type: "requires", status: "installed" },
+            "mod-1-1": { phase: 1, type: "requires", status: "installed" },
+            "mod-1-2": { phase: 1, type: "requires", status: "installed" },
+            "mod-1-3": { phase: 1, type: "recommends", status: "installed" },
+            "mod-2-1": { phase: 2, type: "requires", status: "pending" },
+            "mod-2-2": { phase: 2, type: "requires", status: "pending" },
+          },
+        },
       } as any;
 
       // This would be called during doInstallDependencyList
@@ -205,24 +212,33 @@ describe('Phased Installer', () => {
       const state = installManager.mInstallPhaseState.get(sourceModId);
 
       // Simulate what would happen in the actual code
-      const allMods = Object.values((mockState.session as any).collections.activeSession.mods);
+      const allMods = Object.values(
+        (mockState.session as any).collections.activeSession.mods,
+      );
       const allPhases = new Set<number>();
       allMods.forEach((mod: any) => {
         allPhases.add(mod.phase ?? 0);
       });
 
       let highestCompletedPhase = -1;
-      Array.from(allPhases).sort((a, b) => a - b).forEach(phase => {
-        const phaseMods = allMods.filter((mod: any) => (mod.phase ?? 0) === phase);
-        const requiredPhaseMods = phaseMods.filter((mod: any) => mod.type === 'requires');
-        const completedRequired = requiredPhaseMods.filter((mod: any) =>
-          ['installed', 'failed', 'skipped'].includes(mod.status)).length;
-        const totalRequired = requiredPhaseMods.length;
+      Array.from(allPhases)
+        .sort((a, b) => a - b)
+        .forEach((phase) => {
+          const phaseMods = allMods.filter(
+            (mod: any) => (mod.phase ?? 0) === phase,
+          );
+          const requiredPhaseMods = phaseMods.filter(
+            (mod: any) => mod.type === "requires",
+          );
+          const completedRequired = requiredPhaseMods.filter((mod: any) =>
+            ["installed", "failed", "skipped"].includes(mod.status),
+          ).length;
+          const totalRequired = requiredPhaseMods.length;
 
-        if (completedRequired >= totalRequired && totalRequired > 0) {
-          highestCompletedPhase = phase;
-        }
-      });
+          if (completedRequired >= totalRequired && totalRequired > 0) {
+            highestCompletedPhase = phase;
+          }
+        });
 
       expect(highestCompletedPhase).toBe(1);
 
@@ -231,20 +247,22 @@ describe('Phased Installer', () => {
       expect(nextPhase).toBe(2);
     });
 
-    it('should handle collection with no completed phases', () => {
-      const sourceModId = 'test-collection-1';
+    it("should handle collection with no completed phases", () => {
+      const sourceModId = "test-collection-1";
 
       (mockState.session as any).collections = {
         activeSession: {
           collectionId: sourceModId,
           mods: {
-            'mod-0-1': { phase: 0, type: 'requires', status: 'pending' },
-            'mod-1-1': { phase: 1, type: 'requires', status: 'pending' }
-          }
-        }
+            "mod-0-1": { phase: 0, type: "requires", status: "pending" },
+            "mod-1-1": { phase: 1, type: "requires", status: "pending" },
+          },
+        },
       } as any;
 
-      const allMods = Object.values((mockState.session as any).collections.activeSession.mods);
+      const allMods = Object.values(
+        (mockState.session as any).collections.activeSession.mods,
+      );
       let highestCompletedPhase = -1;
 
       const allPhases = new Set<number>();
@@ -252,25 +270,32 @@ describe('Phased Installer', () => {
         allPhases.add(mod.phase ?? 0);
       });
 
-      Array.from(allPhases).sort((a, b) => a - b).forEach(phase => {
-        const phaseMods = allMods.filter((mod: any) => (mod.phase ?? 0) === phase);
-        const requiredPhaseMods = phaseMods.filter((mod: any) => mod.type === 'requires');
-        const completedRequired = requiredPhaseMods.filter((mod: any) =>
-          ['installed', 'failed', 'skipped'].includes(mod.status)).length;
-        const totalRequired = requiredPhaseMods.length;
+      Array.from(allPhases)
+        .sort((a, b) => a - b)
+        .forEach((phase) => {
+          const phaseMods = allMods.filter(
+            (mod: any) => (mod.phase ?? 0) === phase,
+          );
+          const requiredPhaseMods = phaseMods.filter(
+            (mod: any) => mod.type === "requires",
+          );
+          const completedRequired = requiredPhaseMods.filter((mod: any) =>
+            ["installed", "failed", "skipped"].includes(mod.status),
+          ).length;
+          const totalRequired = requiredPhaseMods.length;
 
-        if (completedRequired >= totalRequired && totalRequired > 0) {
-          highestCompletedPhase = phase;
-        }
-      });
+          if (completedRequired >= totalRequired && totalRequired > 0) {
+            highestCompletedPhase = phase;
+          }
+        });
 
       expect(highestCompletedPhase).toBe(-1);
     });
   });
 
-  describe('Re-queue Prevention', () => {
-    it('should track re-queue attempts per phase', () => {
-      const sourceModId = 'test-collection-1';
+  describe("Re-queue Prevention", () => {
+    it("should track re-queue attempts per phase", () => {
+      const sourceModId = "test-collection-1";
 
       installManager.ensurePhaseState(sourceModId);
       const state = installManager.mInstallPhaseState.get(sourceModId);
@@ -287,8 +312,8 @@ describe('Phased Installer', () => {
       expect(state.reQueueAttempted.has(1)).toBe(true);
     });
 
-    it('should not re-queue same phase twice', () => {
-      const sourceModId = 'test-collection-1';
+    it("should not re-queue same phase twice", () => {
+      const sourceModId = "test-collection-1";
 
       installManager.ensurePhaseState(sourceModId);
       const state = installManager.mInstallPhaseState.get(sourceModId);
@@ -309,9 +334,9 @@ describe('Phased Installer', () => {
     });
   });
 
-  describe('Phase Downloads Tracking', () => {
-    it('should mark phase downloads as finished', () => {
-      const sourceModId = 'test-collection-1';
+  describe("Phase Downloads Tracking", () => {
+    it("should mark phase downloads as finished", () => {
+      const sourceModId = "test-collection-1";
 
       installManager.ensurePhaseState(sourceModId);
       installManager.markPhaseDownloadsFinished(sourceModId, 1, mockApi);
@@ -320,8 +345,8 @@ describe('Phased Installer', () => {
       expect(state.downloadsFinished.has(1)).toBe(true);
     });
 
-    it('should initialize allowed phase on first download finish', () => {
-      const sourceModId = 'test-collection-1';
+    it("should initialize allowed phase on first download finish", () => {
+      const sourceModId = "test-collection-1";
 
       installManager.ensurePhaseState(sourceModId);
       const state = installManager.mInstallPhaseState.get(sourceModId);
@@ -333,8 +358,8 @@ describe('Phased Installer', () => {
       expect(state.allowedPhase).toBe(2);
     });
 
-    it('should not change allowed phase if already set', () => {
-      const sourceModId = 'test-collection-1';
+    it("should not change allowed phase if already set", () => {
+      const sourceModId = "test-collection-1";
 
       installManager.ensurePhaseState(sourceModId);
       const state = installManager.mInstallPhaseState.get(sourceModId);
@@ -347,11 +372,11 @@ describe('Phased Installer', () => {
     });
   });
 
-  describe('Collection Session Phase Assignment', () => {
-    it('should assign phase 0 when rule.extra.phase is undefined', () => {
+  describe("Collection Session Phase Assignment", () => {
+    it("should assign phase 0 when rule.extra.phase is undefined", () => {
       const rule: Partial<IModRule> = {
-        reference: { logicalFileName: 'test-mod' } as any,
-        type: 'requires'
+        reference: { logicalFileName: "test-mod" } as any,
+        type: "requires",
         // Note: no extra field
       };
 
@@ -360,22 +385,22 @@ describe('Phased Installer', () => {
       expect(phase).toBe(0);
     });
 
-    it('should use phase from rule.extra.phase when present', () => {
+    it("should use phase from rule.extra.phase when present", () => {
       const rule: Partial<IModRule> = {
-        reference: { logicalFileName: 'test-mod' } as any,
-        type: 'requires',
-        extra: { phase: 3 }
+        reference: { logicalFileName: "test-mod" } as any,
+        type: "requires",
+        extra: { phase: 3 },
       };
 
       const phase = rule.extra?.phase ?? 0;
       expect(phase).toBe(3);
     });
 
-    it('should handle null extra field', () => {
+    it("should handle null extra field", () => {
       const rule: Partial<IModRule> = {
-        reference: { logicalFileName: 'test-mod' } as any,
-        type: 'requires',
-        extra: null
+        reference: { logicalFileName: "test-mod" } as any,
+        type: "requires",
+        extra: null,
       };
 
       const phase = rule.extra?.phase ?? 0;
@@ -383,9 +408,9 @@ describe('Phased Installer', () => {
     });
   });
 
-  describe('Phase Gating', () => {
-    it('should allow installation in current phase', () => {
-      const sourceModId = 'test-collection-1';
+  describe("Phase Gating", () => {
+    it("should allow installation in current phase", () => {
+      const sourceModId = "test-collection-1";
 
       installManager.ensurePhaseState(sourceModId);
       // Use the proper method to mark phase 2's downloads as finished
@@ -395,9 +420,11 @@ describe('Phased Installer', () => {
       const state = installManager.mInstallPhaseState.get(sourceModId);
 
       const canStart = (phase: number) => {
-        return (state.allowedPhase !== undefined) &&
-               (phase <= state.allowedPhase) &&
-               state.downloadsFinished.has(phase);
+        return (
+          state.allowedPhase !== undefined &&
+          phase <= state.allowedPhase &&
+          state.downloadsFinished.has(phase)
+        );
       };
 
       expect(canStart(2)).toBe(true);
@@ -406,8 +433,8 @@ describe('Phased Installer', () => {
       expect(canStart(3)).toBe(false);
     });
 
-    it('should block installation in future phases', () => {
-      const sourceModId = 'test-collection-1';
+    it("should block installation in future phases", () => {
+      const sourceModId = "test-collection-1";
 
       installManager.ensurePhaseState(sourceModId);
       const state = installManager.mInstallPhaseState.get(sourceModId);
@@ -415,9 +442,11 @@ describe('Phased Installer', () => {
       state.downloadsFinished.add(1);
 
       const canStart = (phase: number) => {
-        return (state.allowedPhase !== undefined) &&
-               (phase <= state.allowedPhase) &&
-               state.downloadsFinished.has(phase);
+        return (
+          state.allowedPhase !== undefined &&
+          phase <= state.allowedPhase &&
+          state.downloadsFinished.has(phase)
+        );
       };
 
       expect(canStart(2)).toBe(false);
@@ -425,9 +454,9 @@ describe('Phased Installer', () => {
     });
   });
 
-  describe('Concurrent Phase Processing', () => {
-    it('should track active installations per phase', () => {
-      const sourceModId = 'test-collection-1';
+  describe("Concurrent Phase Processing", () => {
+    it("should track active installations per phase", () => {
+      const sourceModId = "test-collection-1";
 
       installManager.ensurePhaseState(sourceModId);
       const state = installManager.mInstallPhaseState.get(sourceModId);
@@ -441,8 +470,8 @@ describe('Phased Installer', () => {
       expect(state.activeByPhase.get(3) ?? 0).toBe(0);
     });
 
-    it('should track pending installations per phase', () => {
-      const sourceModId = 'test-collection-1';
+    it("should track pending installations per phase", () => {
+      const sourceModId = "test-collection-1";
 
       installManager.ensurePhaseState(sourceModId);
       const state = installManager.mInstallPhaseState.get(sourceModId);

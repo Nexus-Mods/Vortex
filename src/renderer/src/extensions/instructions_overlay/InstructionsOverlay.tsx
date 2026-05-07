@@ -165,7 +165,11 @@ function InstructionsOverlay(props: IInstructionsOverlayProps) {
   };
 
   return ReactDOM.createPortal(
-    <div className={className} ref={ref} style={{ left: pos.x, top: pos.y, height: open ? undefined : "auto" }}>
+    <div
+      className={className}
+      ref={ref}
+      style={{ left: pos.x, top: pos.y, height: open ? undefined : "auto" }}
+    >
       <FlexLayout type="column">
         <FlexLayout.Fixed>
           <FlexLayout className="instructions-overlay-header" type="row">

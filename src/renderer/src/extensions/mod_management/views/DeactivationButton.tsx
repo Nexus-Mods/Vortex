@@ -120,13 +120,16 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
         }
 
         const errCode = getErrorCode(err);
-        if (errCode == null && (err as {errno?: number}).errno !== undefined) {
+        if (
+          errCode == null &&
+          (err as { errno?: number }).errno !== undefined
+        ) {
           // unresolved windows error code
           onShowError(
             "Failed to purge mods",
             {
               error: err,
-              ErrorCode: (err as {errno?: number}).errno,
+              ErrorCode: (err as { errno?: number }).errno,
             },
             true,
           );
@@ -222,7 +225,9 @@ function mapDispatchToProps(
       showError(dispatch, message, details, { allowReport }),
     onShowDialog: (type, title, content, dialogActions) =>
       // showDialog thunk returns Bluebird — see comment in notifications.ts
-      Promise.resolve(dispatch(showDialog(type, title, content, dialogActions))),
+      Promise.resolve(
+        dispatch(showDialog(type, title, content, dialogActions)),
+      ),
     onSetConfirmPurge: (enabled: boolean) => dispatch(setConfirmPurge(enabled)),
     onShowWarning: (
       message: string,

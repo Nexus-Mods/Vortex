@@ -21,11 +21,13 @@ import type Nexus from "@nexusmods/nexus-api";
 import type { TFunction } from "i18next";
 import type * as Redux from "redux";
 
-import { GraphError, NexusError, RateLimitError, TimeoutError } from "@nexusmods/nexus-api";
 import {
-  getErrorMessageOrDefault,
-  unknownToError,
-} from "@vortex/shared";
+  GraphError,
+  NexusError,
+  RateLimitError,
+  TimeoutError,
+} from "@nexusmods/nexus-api";
+import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import BluebirdPromise from "bluebird";
 import jwt from "jsonwebtoken";
 import * as _ from "lodash";
@@ -2050,7 +2052,6 @@ export function updateToken(
   nexus: Nexus,
   credentials: any,
 ): BluebirdPromise<boolean> {
-
   log("info", "updateToken()");
 
   // update the nexus-node object with our credentials.
@@ -2243,5 +2244,5 @@ export function nexusGamesProm(): BluebirdPromise<IGameListEntry[]> {
 }
 
 export function numericGameIdToDomainName(gameId: number): string | undefined {
-  return nexusGamesCache.find(g => g.id === gameId)?.domain_name;
+  return nexusGamesCache.find((g) => g.id === gameId)?.domain_name;
 }

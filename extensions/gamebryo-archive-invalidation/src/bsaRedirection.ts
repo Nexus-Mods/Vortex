@@ -168,7 +168,7 @@ export function toggleInvalidation(
         api.showErrorNotification(
           "Failed to add invalidation mod",
           "The extension providing BSA support has been disabled or removed. " +
-          "Without it, Vortex can't provide BSA redirection.",
+            "Without it, Vortex can't provide BSA redirection.",
           {
             allowReport: false,
           },

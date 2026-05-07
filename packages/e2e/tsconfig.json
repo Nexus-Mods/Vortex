@@ -1,7 +1,13 @@
 {
   "$schema": "https://www.schemastore.org/tsconfig.json",
   "extends": "../../tsconfig.strict.json",
-  "include": ["tests", "fixtures", "selectors", "helpers", "playwright.config.ts"],
+  "include": [
+    "tests",
+    "fixtures",
+    "selectors",
+    "helpers",
+    "playwright.config.ts"
+  ],
   "compilerOptions": {
     "composite": true,
     "noEmit": true,

@@ -25,12 +25,7 @@ import {
 } from "../../../ui/components/typography/Typography";
 import { opn } from "../../../util/api";
 import { log } from "../../../util/log";
-import {
-  Campaign,
-  Content,
-  Section,
-  nexusModsURL,
-} from "../../../util/util";
+import { Campaign, Content, Section, nexusModsURL } from "../../../util/util";
 import MainPage from "../../../views/MainPage";
 import { unknownToError } from "@vortex/shared";
 import { HealthCheckFeedbackEvent } from "../../analytics/mixpanel/MixpanelEvents";
@@ -309,7 +304,9 @@ function HealthCheckDetailPage({
                 showPremiumBadge={showPremiumAd}
                 onConfirmInstall={handleConfirmInstall}
                 onShowVortexModal={
-                  !showPremiumAd ? handleDownload : () => setShowPremiumModal(true)
+                  !showPremiumAd
+                    ? handleDownload
+                    : () => setShowPremiumModal(true)
                 }
               />
             </div>

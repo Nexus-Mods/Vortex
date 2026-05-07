@@ -1,37 +1,38 @@
-const path = require('path');
-const crypto = require('crypto');
-const os = require('os');
-const fs = require('fs');
-const Bluebird = require('bluebird');
+const path = require("path");
+const crypto = require("crypto");
+const os = require("os");
+const fs = require("fs");
+const Bluebird = require("bluebird");
 
 // We need to mock the util object with storeHelper functions
-const storeHelper = require('../util/storeHelper');
+const storeHelper = require("../util/storeHelper");
 
 global.modsInstalled = 0;
 global.suppressLogging = false;
 
 // Polyfill for Node.js functions not available in jsdom
-if (typeof global.setImmediate === 'undefined') {
+if (typeof global.setImmediate === "undefined") {
   global.setImmediate = (callback, ...args) => {
     return setTimeout(() => callback(...args), 0);
   };
 }
 
-if (typeof global.clearImmediate === 'undefined') {
+if (typeof global.clearImmediate === "undefined") {
   global.clearImmediate = (id) => {
     return clearTimeout(id);
   };
 }
 
 function getVortexPath(key) {
-  const testBasePath = global.testBasePath || path.join(os.tmpdir(), 'vortex-test-default');
+  const testBasePath =
+    global.testBasePath || path.join(os.tmpdir(), "vortex-test-default");
   switch (key) {
-    case 'userData':
+    case "userData":
       return testBasePath;
-    case 'temp':
-      return path.join(testBasePath, 'temp');
-    case 'downloads':
-      return global.testDownloadPath || path.join(testBasePath, 'downloads');
+    case "temp":
+      return path.join(testBasePath, "temp");
+    case "downloads":
+      return global.testDownloadPath || path.join(testBasePath, "downloads");
     default:
       return testBasePath;
   }
@@ -39,17 +40,17 @@ function getVortexPath(key) {
 
 function genMd5Hash(filePath, progressFunc) {
   return new Promise((resolve, reject) => {
-    const fs = require('fs');
+    const fs = require("fs");
     if (!fs.existsSync(filePath)) {
       return reject(new Error(`File not found: ${filePath}`));
     }
 
-    const hash = crypto.createHash('md5');
+    const hash = crypto.createHash("md5");
     const stats = fs.statSync(filePath);
     const stream = fs.createReadStream(filePath);
     let totalBytes = 0;
 
-    stream.on('data', (chunk) => {
+    stream.on("data", (chunk) => {
       hash.update(chunk);
       totalBytes += chunk.length;
       if (progressFunc) {
@@ -57,14 +58,14 @@ function genMd5Hash(filePath, progressFunc) {
       }
     });
 
-    stream.on('end', () => {
+    stream.on("end", () => {
       resolve({
-        md5sum: hash.digest('hex'),
-        numBytes: stats.size
+        md5sum: hash.digest("hex"),
+        numBytes: stats.size,
       });
     });
 
-    stream.on('error', reject);
+    stream.on("error", reject);
   });
 }
 
@@ -82,7 +83,7 @@ const createMockApiMethods = () => ({
   // UI methods (no-op in tests)
   highlightControl: () => {},
   selectGame: () => Promise.resolve(),
-  selectDir: () => Promise.resolve('/mock/path'),
+  selectDir: () => Promise.resolve("/mock/path"),
 
   withPrePost: (eventName, func) => {
     return (...args) => {
@@ -91,33 +92,31 @@ const createMockApiMethods = () => ({
     };
   },
 
-  getGames: () => [
-    { id: 'stardewvalley', name: 'Stardew Valley' }
-  ],
+  getGames: () => [{ id: "stardewvalley", name: "Stardew Valley" }],
 
   getGame: (gameId) => {
     return {
-      id: gameId || 'stardewvalley',
-      name: 'Stardew Valley',
+      id: gameId || "stardewvalley",
+      name: "Stardew Valley",
       mergeMods: false,
       modTypes: [],
       supportedTools: [],
-      queryModPath: () => '.',
+      queryModPath: () => ".",
       queryPath: () => undefined,
-      executable: () => 'StardewValley.exe',
+      executable: () => "StardewValley.exe",
       setup: () => Promise.resolve(),
       requiredFiles: [],
       environment: {},
       details: {},
-      logo: 'gameart.jpg',
-      extensionPath: '',
+      logo: "gameart.jpg",
+      extensionPath: "",
       compatible: {},
       final: true,
       contributed: undefined,
       shell: false,
       parameters: [],
       requiresCleanup: false,
-      requiresLauncher: undefined
+      requiresLauncher: undefined,
     };
   },
 });
@@ -125,9 +124,9 @@ const createMockApiMethods = () => ({
 class MockTestAPI {
   constructor(initialState = {}, collectionData = null) {
     // Create a single temporary base directory (platform agnostic)
-    this.tempBasePath = path.join(os.tmpdir(), 'vortex-test-' + Date.now());
-    this.tempDownloadPath = path.join(this.tempBasePath, 'downloads');
-    this.tempInstallPath = path.join(this.tempBasePath, 'installs');
+    this.tempBasePath = path.join(os.tmpdir(), "vortex-test-" + Date.now());
+    this.tempDownloadPath = path.join(this.tempBasePath, "downloads");
+    this.tempInstallPath = path.join(this.tempBasePath, "installs");
 
     // Ensure temp directories exist
     if (!fs.existsSync(this.tempBasePath)) {
@@ -148,14 +147,15 @@ class MockTestAPI {
     // Initialize state with defaults or provided state
     this.state = {
       app: {
-        instanceId: initialState.app?.instanceId || 'test-instance-' + Date.now()
+        instanceId:
+          initialState.app?.instanceId || "test-instance-" + Date.now(),
       },
       persistent: {
         profiles: initialState.persistent?.profiles || {},
         mods: initialState.persistent?.mods || {},
         downloads: {
           files: initialState.persistent?.downloads?.files || {},
-          ...initialState.persistent?.downloads
+          ...initialState.persistent?.downloads,
         },
         nexus: initialState.persistent?.nexus || {},
         collections: initialState.persistent?.collections || {},
@@ -163,56 +163,59 @@ class MockTestAPI {
           downloads: {
             path: this.tempDownloadPath,
             collectionsInstallWhileDownloading: true,
-            ...initialState.persistent?.settings?.downloads
+            ...initialState.persistent?.settings?.downloads,
           },
           mods: {
             installPath: this.tempInstallPath,
-            ...initialState.persistent?.settings?.mods
+            ...initialState.persistent?.settings?.mods,
           },
           automation: {
             install: true,
-            ...initialState.persistent?.settings?.automation
-          }
-        }
+            ...initialState.persistent?.settings?.automation,
+          },
+        },
       },
       confidential: {
         account: {
           nexus: {
             APIKey: process.env.NEXUS_API_KEY,
-            ...initialState.confidential?.account?.nexus
-          }
+            ...initialState.confidential?.account?.nexus,
+          },
         },
-        ...initialState.confidential
+        ...initialState.confidential,
       },
       session: {
         base: {
-          gameMode: collectionData?.info?.domainName || 'stardewvalley',
+          gameMode: collectionData?.info?.domainName || "stardewvalley",
           activity: {},
-          ...initialState.session?.base
+          ...initialState.session?.base,
         },
         gameMode: {
           known: [],
-          ...initialState.session?.gameMode
+          ...initialState.session?.gameMode,
         },
         collections: {
           installSession: {},
-          ...initialState.session?.collections
-        }
+          ...initialState.session?.collections,
+        },
       },
-      settings: initialState.settings || {}
+      settings: initialState.settings || {},
     };
 
     this.collectionData = collectionData;
     this.eventListeners = new Map();
     this.events = {
       emit: (event, ...args) => {
-        if (event === 'get-download-free-slots' && typeof args[0] === 'function') {
+        if (
+          event === "get-download-free-slots" &&
+          typeof args[0] === "function"
+        ) {
           args[0](5); // Mock 5 free download slots
           return;
         }
 
         // Handle deploy-mods event with callback
-        if (event === 'deploy-mods' && typeof args[0] === 'function') {
+        if (event === "deploy-mods" && typeof args[0] === "function") {
           // Call the callback immediately to simulate instant deployment
           setImmediate(() => args[0](null)); // Call with no error
           return;
@@ -220,11 +223,14 @@ class MockTestAPI {
 
         // Call any registered listeners for this event
         const listeners = this.eventListeners.get(event) || [];
-        listeners.forEach(listener => {
+        listeners.forEach((listener) => {
           try {
             listener(...args);
           } catch (error) {
-            console.error(`❌ Error in event listener for ${event}:`, error.message);
+            console.error(
+              `❌ Error in event listener for ${event}:`,
+              error.message,
+            );
           }
         });
 
@@ -235,7 +241,7 @@ class MockTestAPI {
           this.eventListeners.set(event, []);
         }
         this.eventListeners.get(event).push(listener);
-      }
+      },
     };
 
     // Create store with dispatch
@@ -244,22 +250,22 @@ class MockTestAPI {
     this.store = {
       getState: () => this.state,
       dispatch: (action) => {
-        if (typeof action === 'function') {
+        if (typeof action === "function") {
           try {
             const result = action(this.store.dispatch);
-            if (result && typeof result.then === 'function') {
+            if (result && typeof result.then === "function") {
               setTimeout(() => {
                 // Auto-resolve dialog after a tiny delay to simulate user interaction
               }, 1);
 
               return Promise.resolve({
-                action: 'Install',
+                action: "Install",
                 input: {
                   remember: false,
-                  variant: '',
+                  variant: "",
                   replace: false,
-                  password: ''
-                }
+                  password: "",
+                },
               });
             }
 
@@ -267,47 +273,55 @@ class MockTestAPI {
           } catch (error) {
             console.error(`❌ Error executing thunk:`, error.message);
             return Promise.resolve({
-              action: 'Install',
+              action: "Install",
               input: {
                 remember: false,
-                variant: '',
+                variant: "",
                 replace: false,
-                password: ''
-              }
+                password: "",
+              },
             });
           }
         }
 
-        if (action.type === 'BATCHED_ACTIONS' || (Array.isArray(action.payload) && action.payload.length > 0 && action.payload[0].type)) {
+        if (
+          action.type === "BATCHED_ACTIONS" ||
+          (Array.isArray(action.payload) &&
+            action.payload.length > 0 &&
+            action.payload[0].type)
+        ) {
           const actions = action.payload || [];
-          actions.forEach(batchedAction => {
+          actions.forEach((batchedAction) => {
             this.store.dispatch(batchedAction);
           });
           return;
         }
 
-        if (action.type === 'INIT_DOWNLOAD') {
+        if (action.type === "INIT_DOWNLOAD") {
           const { id, urls, modInfo, games } = action.payload;
           if (!this.state.persistent.downloads.files[id]) {
             this.state.persistent.downloads.files[id] = {
               id,
-              state: 'init',
+              state: "init",
               game: games,
               urls: urls || [],
               modInfo: modInfo || {},
               fileTime: Date.now(),
               size: 0,
               received: 0,
-              localPath: '',
-              chunks: []
+              localPath: "",
+              chunks: [],
             };
           }
         }
 
-        if (action.type === 'SET_DOWNLOAD_HASH_BY_FILE') {
+        if (action.type === "SET_DOWNLOAD_HASH_BY_FILE") {
           const { fileName, fileMD5, fileSize } = action.payload;
-          const downloadId = Object.keys(this.state.persistent.downloads.files).find(
-            id => this.state.persistent.downloads.files[id].localPath === fileName
+          const downloadId = Object.keys(
+            this.state.persistent.downloads.files,
+          ).find(
+            (id) =>
+              this.state.persistent.downloads.files[id].localPath === fileName,
           );
           if (downloadId) {
             this.state.persistent.downloads.files[downloadId].fileMD5 = fileMD5;
@@ -315,86 +329,94 @@ class MockTestAPI {
           }
         }
 
-        if (action.type === 'SET_DOWNLOAD_FILEPATH') {
+        if (action.type === "SET_DOWNLOAD_FILEPATH") {
           const { id, filePath } = action.payload;
           if (this.state.persistent.downloads.files[id]) {
             this.state.persistent.downloads.files[id].localPath = filePath;
           }
         }
 
-        if (action.type === 'FINISH_DOWNLOAD') {
+        if (action.type === "FINISH_DOWNLOAD") {
           const { id, state: downloadState } = action.payload;
           if (this.state.persistent.downloads.files[id]) {
             this.state.persistent.downloads.files[id].state = downloadState;
           }
         }
 
-        if (action.type === 'SHOW_MODAL_DIALOG') {
+        if (action.type === "SHOW_MODAL_DIALOG") {
           return Promise.resolve();
         }
 
-        if (action.type && action.type.includes('DIALOG') ||
-            action.type && action.type.includes('SHOW') ||
-            (action.payload && typeof action.payload === 'object' &&
-             (action.payload.title === 'Install Dependencies' || action.payload.type === 'question'))) {
+        if (
+          (action.type && action.type.includes("DIALOG")) ||
+          (action.type && action.type.includes("SHOW")) ||
+          (action.payload &&
+            typeof action.payload === "object" &&
+            (action.payload.title === "Install Dependencies" ||
+              action.payload.type === "question"))
+        ) {
           return Promise.resolve({
-            action: 'Install',
+            action: "Install",
             input: {
               remember: false,
-              variant: '',
+              variant: "",
               replace: false,
-              password: ''
-            }
+              password: "",
+            },
           });
         }
 
-        Object.entries(this.registeredReducers).forEach(([statePath, reducerSpec]) => {
-          try {
-            const pathParts = statePath.split('.');
-            let current = this.state;
-            for (const part of pathParts.slice(0, -1)) {
-              current = current[part];
-            }
-            const lastPart = pathParts[pathParts.length - 1];
-            const oldState = current[lastPart];
-            let newState = oldState;
-            if (reducerSpec.reducers) {
-              Object.entries(reducerSpec.reducers).forEach(([key, reducerFn]) => {
-                try {
-                  let matches = false;
-                  if (typeof key === 'function' && key.getType) {
-                    matches = key.getType() === action.type;
-                  } else if (typeof key === 'string') {
-                    matches = key === action.type;
-                  } else if (key.toString) {
-                    matches = key.toString() === action.type;
-                  }
+        Object.entries(this.registeredReducers).forEach(
+          ([statePath, reducerSpec]) => {
+            try {
+              const pathParts = statePath.split(".");
+              let current = this.state;
+              for (const part of pathParts.slice(0, -1)) {
+                current = current[part];
+              }
+              const lastPart = pathParts[pathParts.length - 1];
+              const oldState = current[lastPart];
+              let newState = oldState;
+              if (reducerSpec.reducers) {
+                Object.entries(reducerSpec.reducers).forEach(
+                  ([key, reducerFn]) => {
+                    try {
+                      let matches = false;
+                      if (typeof key === "function" && key.getType) {
+                        matches = key.getType() === action.type;
+                      } else if (typeof key === "string") {
+                        matches = key === action.type;
+                      } else if (key.toString) {
+                        matches = key.toString() === action.type;
+                      }
 
-                  if (matches) {
-                    newState = reducerFn(newState, action.payload);
-                  }
-                } catch (err) {
-                  // noop
-                }
-              });
-            }
+                      if (matches) {
+                        newState = reducerFn(newState, action.payload);
+                      }
+                    } catch (err) {
+                      // noop
+                    }
+                  },
+                );
+              }
 
-            // Update state if changed
-            if (newState !== oldState) {
-              current[lastPart] = newState;
+              // Update state if changed
+              if (newState !== oldState) {
+                current[lastPart] = newState;
+              }
+            } catch (err) {
+              // Ignore reducer errors
             }
-          } catch (err) {
-            // Ignore reducer errors
-          }
-        });
+          },
+        );
 
         return Promise.resolve();
-      }
+      },
     };
 
     // Extension API
     this.ext = {
-      ensureLoggedIn: () => Promise.resolve(true)
+      ensureLoggedIn: () => Promise.resolve(true),
     };
 
     // Create storage for async event handlers
@@ -429,7 +451,7 @@ class MockTestAPI {
     this.translate = (text, options) => {
       if (options && options.replace) {
         let result = text;
-        Object.keys(options.replace).forEach(key => {
+        Object.keys(options.replace).forEach((key) => {
           result = result.replace(`{{${key}}}`, options.replace[key]);
         });
         return result;
@@ -439,10 +461,12 @@ class MockTestAPI {
 
     // Game methods
     this.getGames = () => {
-      return Object.keys(this.state.session.gameMode.known || {}).map(gameId => ({
-        id: gameId,
-        name: this.state.session.gameMode.known[gameId].name || gameId
-      }));
+      return Object.keys(this.state.session.gameMode.known || {}).map(
+        (gameId) => ({
+          id: gameId,
+          name: this.state.session.gameMode.known[gameId].name || gameId,
+        }),
+      );
     };
 
     this.getGame = (gameId) => {
@@ -452,15 +476,15 @@ class MockTestAPI {
           id: gameId,
           name: games[gameId].name || gameId,
           mergeMods: false,
-          supportedTools: []
+          supportedTools: [],
         };
       }
       // Default to first game or Stardew Valley
       return {
-        id: this.collectionData?.info?.domainName || 'stardewvalley',
-        name: 'Stardew Valley',
+        id: this.collectionData?.info?.domainName || "stardewvalley",
+        name: "Stardew Valley",
         mergeMods: false,
-        supportedTools: []
+        supportedTools: [],
       };
     };
 
@@ -480,14 +504,14 @@ class MockTestAPI {
       getSafe: (obj, path, defaultValue) => {
         let current = obj;
         for (const key of path) {
-          if (current && typeof current === 'object' && key in current) {
+          if (current && typeof current === "object" && key in current) {
             current = current[key];
           } else {
             return defaultValue;
           }
         }
         return current !== undefined ? current : defaultValue;
-      }
+      },
     };
 
     // Extension registration
@@ -520,10 +544,12 @@ class MockTestAPI {
         queryPath: game.queryPath,
         details: game.details || {},
         contributed: game.contributed,
-        final: !!game.final
+        final: !!game.final,
       };
 
-      const existingIndex = this.state.session.gameMode.known.findIndex(g => g.id === game.id);
+      const existingIndex = this.state.session.gameMode.known.findIndex(
+        (g) => g.id === game.id,
+      );
       if (existingIndex >= 0) {
         this.state.session.gameMode.known[existingIndex] = gameStored;
       } else {
@@ -549,7 +575,13 @@ class MockTestAPI {
       // Silent registration
     };
 
-    this.registerAction = (group, position, iconOrComponent, options, titleOrAction) => {
+    this.registerAction = (
+      group,
+      position,
+      iconOrComponent,
+      options,
+      titleOrAction,
+    ) => {
       // Silent registration
     };
 
@@ -557,7 +589,14 @@ class MockTestAPI {
       // Silent registration
     };
 
-    this.registerModType = (typeId, priority, isSupported, getPath, test, options) => {
+    this.registerModType = (
+      typeId,
+      priority,
+      isSupported,
+      getPath,
+      test,
+      options,
+    ) => {
       // Silent registration
     };
 
@@ -587,9 +626,9 @@ class MockTestAPI {
 
     // MD5 hash generation
     this.genMd5Hash = (filePath, progressCB) => {
-      const hash = crypto.createHash('md5');
+      const hash = crypto.createHash("md5");
       hash.update(filePath + Date.now());
-      const md5sum = hash.digest('hex');
+      const md5sum = hash.digest("hex");
 
       let numBytes = 0;
       try {
@@ -611,14 +650,16 @@ class MockTestAPI {
     this.emitAndAwait = async (event, ...args) => {
       const handlers = this.asyncEventHandlers.get(event) || [];
       if (handlers.length > 0) {
-        const results = await Promise.all(handlers.map(handler => {
-          try {
-            return handler(...args);
-          } catch (error) {
-            console.error(`  ❌ Handler error for ${event}:`, error.message);
-            return { error };
-          }
-        }));
+        const results = await Promise.all(
+          handlers.map((handler) => {
+            try {
+              return handler(...args);
+            } catch (error) {
+              console.error(`  ❌ Handler error for ${event}:`, error.message);
+              return { error };
+            }
+          }),
+        );
         return results;
       }
       return [];
@@ -626,7 +667,7 @@ class MockTestAPI {
 
     // Once callback
     this.once = (callbackOrEvent, handler) => {
-      if (typeof callbackOrEvent === 'function') {
+      if (typeof callbackOrEvent === "function") {
         try {
           callbackOrEvent();
         } catch (err) {
@@ -650,8 +691,8 @@ class MockTestAPI {
         return Bluebird.resolve([]);
       }
 
-      const matchingMod = this.collectionData.mods.find(mod =>
-        mod.source && mod.source.md5 === targetMD5
+      const matchingMod = this.collectionData.mods.find(
+        (mod) => mod.source && mod.source.md5 === targetMD5,
       );
 
       if (matchingMod) {
@@ -659,30 +700,32 @@ class MockTestAPI {
           key: {
             fileMD5: targetMD5,
             fileSize: details.fileSize,
-            gameId: details.gameId || 'stardewvalley'
+            gameId: details.gameId || "stardewvalley",
           },
           value: {
             details: {
               name: matchingMod.name,
-              version: matchingMod.source?.version || '1.0.0',
+              version: matchingMod.source?.version || "1.0.0",
               nexus: {
                 modId: matchingMod.source?.modId?.toString(),
-                fileId: matchingMod.source?.fileId?.toString()
-              }
+                fileId: matchingMod.source?.fileId?.toString(),
+              },
             },
-            gameId: details.gameId || 'stardewvalley',
-            source: 'nexus',
-            logicalFileName: matchingMod.source?.logicalFilename || `${matchingMod.name}.zip`,
-            fileName: matchingMod.source?.logicalFilename || `${matchingMod.name}.zip`,
+            gameId: details.gameId || "stardewvalley",
+            source: "nexus",
+            logicalFileName:
+              matchingMod.source?.logicalFilename || `${matchingMod.name}.zip`,
+            fileName:
+              matchingMod.source?.logicalFilename || `${matchingMod.name}.zip`,
             fileMD5: targetMD5,
             fileSize: details.fileSize,
             nexus: {
               modId: matchingMod.source?.modId,
-              fileId: matchingMod.source?.fileId
+              fileId: matchingMod.source?.fileId,
             },
             name: matchingMod.name,
-            version: matchingMod.source?.version || '1.0.0'
-          }
+            version: matchingMod.source?.version || "1.0.0",
+          },
         };
 
         return Bluebird.resolve([lookupResult]);
@@ -702,16 +745,17 @@ class MockTestAPI {
       }
 
       try {
-        const matchingMod = this.collectionData.mods.find(mod =>
-          mod.source && (
-            mod.source.md5 === reference.archiveId ||
-            (mod.source.modId?.toString() === reference.id?.toString() &&
-             mod.source.fileId?.toString() === reference.fileId?.toString())
-          )
+        const matchingMod = this.collectionData.mods.find(
+          (mod) =>
+            mod.source &&
+            (mod.source.md5 === reference.archiveId ||
+              (mod.source.modId?.toString() === reference.id?.toString() &&
+                mod.source.fileId?.toString() ===
+                  reference.fileId?.toString())),
         );
 
         if (matchingMod && matchingMod.source) {
-          const gameId = reference.gameId || 'stardewvalley';
+          const gameId = reference.gameId || "stardewvalley";
           const modId = matchingMod.source?.modId;
           const fileId = matchingMod.source?.fileId;
 
@@ -720,48 +764,56 @@ class MockTestAPI {
           const lookupResult = {
             key: {
               fileMD5: matchingMod.source.md5,
-              fileSize: reference.fileSizeBytes || matchingMod.source.fileSize || 0,
-              gameId: gameId
+              fileSize:
+                reference.fileSizeBytes || matchingMod.source.fileSize || 0,
+              gameId: gameId,
             },
             value: {
               details: {
                 name: matchingMod.name,
-                version: matchingMod.source?.version || '1.0.0',
+                version: matchingMod.source?.version || "1.0.0",
                 modId: modId?.toString(),
                 fileId: fileId?.toString(),
                 nexus: {
                   modId: modId?.toString(),
-                  fileId: fileId?.toString()
-                }
+                  fileId: fileId?.toString(),
+                },
               },
               gameId: gameId,
               domainName: gameId,
-              source: 'nexus',
+              source: "nexus",
               sourceURI: nxmUrl,
-              logicalFileName: reference.logicalFileName || matchingMod.source?.logicalFilename || `${matchingMod.name}.zip`,
-              fileName: reference.logicalFileName || matchingMod.source?.logicalFilename || `${matchingMod.name}.zip`,
+              logicalFileName:
+                reference.logicalFileName ||
+                matchingMod.source?.logicalFilename ||
+                `${matchingMod.name}.zip`,
+              fileName:
+                reference.logicalFileName ||
+                matchingMod.source?.logicalFilename ||
+                `${matchingMod.name}.zip`,
               fileMD5: matchingMod.source.md5,
-              fileSize: reference.fileSizeBytes || matchingMod.source.fileSize || 0,
-              fileSizeBytes: reference.fileSizeBytes || matchingMod.source.fileSize || 0,
+              fileSize:
+                reference.fileSizeBytes || matchingMod.source.fileSize || 0,
+              fileSizeBytes:
+                reference.fileSizeBytes || matchingMod.source.fileSize || 0,
               nexus: {
                 modId: modId,
                 fileId: fileId,
                 ids: {
                   modId: modId,
                   fileId: fileId,
-                  gameId: gameId
-                }
+                  gameId: gameId,
+                },
               },
               name: matchingMod.name,
-              version: matchingMod.source?.version || '1.0.0'
-            }
+              version: matchingMod.source?.version || "1.0.0",
+            },
           };
 
           return [lookupResult];
         }
 
         return [];
-
       } catch (error) {
         console.warn(`  ⚠️ Mod reference lookup failed: ${error.message}`);
         return [];
@@ -794,8 +846,8 @@ class MockTestAPI {
         registerModType: this.registerModType,
         registerAPI: this.registerAPI,
         registerTableAttribute: this.registerTableAttribute,
-        registerTest: this.registerTest
-      }
+        registerTest: this.registerTest,
+      },
     };
 
     // Selectors
@@ -804,7 +856,11 @@ class MockTestAPI {
         return this.tempDownloadPath;
       },
       activeGameId: (state) => {
-        return this.state.settings.gameMode?.current || this.collectionData?.info?.domainName || 'stardewvalley';
+        return (
+          this.state.settings.gameMode?.current ||
+          this.collectionData?.info?.domainName ||
+          "stardewvalley"
+        );
       },
     };
 
@@ -834,25 +890,28 @@ class MockTestAPI {
 
     this.showDialog = (type, title, content, actions) => {
       let result;
-      if (title === 'Downloads Folder invalid') {
+      if (title === "Downloads Folder invalid") {
         result = {
-          action: 'Reinit',
-          input: {}
+          action: "Reinit",
+          input: {},
         };
-      } else if (title === 'Confirm' && content?.text?.includes('not marked as a downloads folder')) {
+      } else if (
+        title === "Confirm" &&
+        content?.text?.includes("not marked as a downloads folder")
+      ) {
         result = {
-          action: 'Continue',
-          input: {}
+          action: "Continue",
+          input: {},
         };
       } else {
         result = {
-          action: 'Install',
+          action: "Install",
           input: {
             remember: false,
-            variant: '',
+            variant: "",
             replace: false,
-            password: ''
-          }
+            password: "",
+          },
         };
       }
 
@@ -867,7 +926,7 @@ class MockTestAPI {
         fs.rmSync(this.tempBasePath, { recursive: true, force: true });
       }
     } catch (error) {
-      console.warn('⚠️ Failed to clean up temp directory:', error.message);
+      console.warn("⚠️ Failed to clean up temp directory:", error.message);
     }
   }
 }
@@ -885,16 +944,16 @@ const vortexApi = {
     updateOrNop: storeHelper.updateOrNop,
     batchDispatch: () => {},
     bytesToString: (bytes) => `${bytes} bytes`,
-    delay: (ms) => new Promise(resolve => setTimeout(resolve, ms)),
+    delay: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
     makeQueue: () => ({ push: () => {}, length: 0 }),
     toPromise: (value) => Promise.resolve(value),
     unique: (arr) => [...new Set(arr)],
-    sanitizeFilename: (name) => name.replace(/[<>:"/\\|?*]/g, '_'),
+    sanitizeFilename: (name) => name.replace(/[<>:"/\\|?*]/g, "_"),
     isChildPath: () => false,
     isFilenameValid: () => true,
     isPathValid: () => true,
     deBOM: (input) => {
-      if (typeof input === 'string' && input.charCodeAt(0) === 0xFEFF) {
+      if (typeof input === "string" && input.charCodeAt(0) === 0xfeff) {
         return input.slice(1);
       }
       return input;
@@ -902,14 +961,17 @@ const vortexApi = {
     lazyRequire: (getModule) => {
       // Lazy require - delays loading until first access
       let cached = null;
-      return new Proxy({}, {
-        get: (target, prop) => {
-          if (cached === null) {
-            cached = getModule();
-          }
-          return cached[prop];
-        }
-      });
+      return new Proxy(
+        {},
+        {
+          get: (target, prop) => {
+            if (cached === null) {
+              cached = getModule();
+            }
+            return cached[prop];
+          },
+        },
+      );
     },
   },
   actions: {},
@@ -918,23 +980,23 @@ const vortexApi = {
     writeFileAtomic: async () => {},
     copyFileAtomic: async () => {},
     readFileAsync: async (filePath, options) => {
-      const fs = require('fs').promises;
+      const fs = require("fs").promises;
       return fs.readFile(filePath, options);
     },
     statAsync: async (filePath) => {
-      const fs = require('fs').promises;
+      const fs = require("fs").promises;
       return fs.stat(filePath);
     },
     readFileSync: (filePath, options) => {
-      const fs = require('fs');
+      const fs = require("fs");
       try {
         return fs.readFileSync(filePath, options);
       } catch (err) {
-        return options?.encoding ? '' : Buffer.alloc(0);
+        return options?.encoding ? "" : Buffer.alloc(0);
       }
     },
     readdirSync: (dirPath) => {
-      const fs = require('fs');
+      const fs = require("fs");
       try {
         return fs.readdirSync(dirPath);
       } catch (err) {
@@ -942,7 +1004,7 @@ const vortexApi = {
       }
     },
     existsSync: (filePath) => {
-      const fs = require('fs');
+      const fs = require("fs");
       return fs.existsSync(filePath);
     },
   },
@@ -950,70 +1012,84 @@ const vortexApi = {
     // Suppress logging after tests complete to avoid Jest warnings
     if (!global.suppressLogging) {
       // Use console.error for error level logs, console.log for others
-      const logFn = level === 'error' ? console.error : console.log;
-      logFn(`[${level}] ${message}`, meta || '');
+      const logFn = level === "error" ? console.error : console.log;
+      logFn(`[${level}] ${message}`, meta || "");
 
       // Debug: Show what we're checking for installation messages
-      if (message.includes('Installation') || message.includes('install')) {
-        console.log(`🔍 Message check: "${message}", exact match: ${message === 'Installation completed successfully'}, has meta: ${!!meta}, has modId: ${!!(meta && meta.modId)}, current count: ${global.modsInstalled || 0}`);
+      if (message.includes("Installation") || message.includes("install")) {
+        console.log(
+          `🔍 Message check: "${message}", exact match: ${message === "Installation completed successfully"}, has meta: ${!!meta}, has modId: ${!!(meta && meta.modId)}, current count: ${global.modsInstalled || 0}`,
+        );
       }
     }
 
     // Increment counter when installation completes successfully
-    if (message === 'Installation completed successfully' && meta && meta.modId) {
+    if (
+      message === "Installation completed successfully" &&
+      meta &&
+      meta.modId
+    ) {
       global.modsInstalled = (global.modsInstalled || 0) + 1;
       if (!global.suppressLogging) {
-        console.log(`✅ Incremented modsInstalled to ${global.modsInstalled} for mod ${meta.modId}`);
+        console.log(
+          `✅ Incremented modsInstalled to ${global.modsInstalled} for mod ${meta.modId}`,
+        );
       }
     }
   },
   selectors: {
     installPathForGame: (state, gameId) => {
-      return global.testInstallPath || '/tmp/vortex-test/installs';
+      return global.testInstallPath || "/tmp/vortex-test/installs";
     },
     downloadPathForGame: (state, gameId) => {
-      return global.testDownloadPath || '/tmp/vortex-test/downloads';
+      return global.testDownloadPath || "/tmp/vortex-test/downloads";
     },
-    activeGameId: (state) => 'stardewvalley',
+    activeGameId: (state) => "stardewvalley",
     activeProfile: (state) => ({
-      gameId: 'stardewvalley',
-      id: 'default',
+      gameId: "stardewvalley",
+      id: "default",
       modState: {},
-      name: 'Default'
+      name: "Default",
     }),
     currentProfile: (state) => {
       const profiles = state?.persistent?.profiles || {};
-      return Object.values(profiles)[0] || { id: 'default', gameId: 'stardewvalley' };
+      return (
+        Object.values(profiles)[0] || { id: "default", gameId: "stardewvalley" }
+      );
     },
     profileById: (state, profileId) => {
-      return state?.persistent?.profiles?.[profileId] || {
-        gameId: 'stardewvalley',
-        id: profileId,
-        modState: {},
-        name: 'Default'
-      };
+      return (
+        state?.persistent?.profiles?.[profileId] || {
+          gameId: "stardewvalley",
+          id: profileId,
+          modState: {},
+          name: "Default",
+        }
+      );
     },
     gameProfiles: (state) => ({}),
     discoveryByGame: (state, gameId) => ({
-      path: 'C:/Program Files/Stardew Valley',
+      path: "C:/Program Files/Stardew Valley",
       tools: {},
-      store: 'steam'
+      store: "steam",
     }),
-    gameName: (state, gameId) => 'Stardew Valley',
+    gameName: (state, gameId) => "Stardew Valley",
     knownGames: (state) => {
       if (state?.session?.gameMode?.known) {
         return state.session.gameMode.known;
       }
-      return [{
-        id: 'stardewvalley',
-        name: 'Stardew Valley',
-        executable: () => 'StardewValley.exe',
-        queryPath: () => 'StardewValley',
-        queryModPath: () => 'Mods',
-        logo: 'gameart.jpg'
-      }];
+      return [
+        {
+          id: "stardewvalley",
+          name: "Stardew Valley",
+          executable: () => "StardewValley.exe",
+          queryPath: () => "StardewValley",
+          queryModPath: () => "Mods",
+          logo: "gameart.jpg",
+        },
+      ];
     },
-    lastActiveProfileForGame: (state, gameId) => 'default',
+    lastActiveProfileForGame: (state, gameId) => "default",
     // Collection selectors
     getCollectionInstallProgress: (state) => {
       const session = state?.session?.collections?.activeSession;
@@ -1024,17 +1100,20 @@ const vortexApi = {
       const totalRequired = session.totalRequired || 25;
       const totalOptional = session.totalOptional || 0;
       const downloadedCount = session.downloadedCount || 0;
-      const installedCount = session.installedCount || global.modsInstalled || 0;
+      const installedCount =
+        session.installedCount || global.modsInstalled || 0;
       const failedCount = session.failedCount || 0;
       const skippedCount = session.skippedCount || 0;
 
-      const downloadProgress = totalRequired > 0
-        ? Math.round((downloadedCount / totalRequired) * 100)
-        : 0;
+      const downloadProgress =
+        totalRequired > 0
+          ? Math.round((downloadedCount / totalRequired) * 100)
+          : 0;
 
-      const installProgress = totalRequired > 0
-        ? Math.round((installedCount / totalRequired) * 100)
-        : 0;
+      const installProgress =
+        totalRequired > 0
+          ? Math.round((installedCount / totalRequired) * 100)
+          : 0;
 
       // isComplete is true ONLY when compatibility info has been added (debug log emitted)
       const isComplete = global.modsInstalled >= totalRequired;
@@ -1066,20 +1145,28 @@ const vortexApi = {
 
       // First try to find by modId if provided (most direct match)
       if (searchParams.modId) {
-        const byModId = Object.values(mods).find(mod => mod.modId === searchParams.modId);
+        const byModId = Object.values(mods).find(
+          (mod) => mod.modId === searchParams.modId,
+        );
         if (byModId) return byModId;
       }
 
       // Fall back to searching by rule reference fields
-      return Object.values(mods).find(mod => {
+      return Object.values(mods).find((mod) => {
         const ref = mod.rule?.reference;
         if (!ref) return false;
 
         // Check each available identifier
         if (searchParams.tag && ref.tag === searchParams.tag) return true;
-        if (searchParams.fileMD5 && ref.fileMD5 === searchParams.fileMD5) return true;
-        if (searchParams.fileId && ref.fileId === searchParams.fileId) return true;
-        if (searchParams.logicalFileName && ref.logicalFileName === searchParams.logicalFileName) return true;
+        if (searchParams.fileMD5 && ref.fileMD5 === searchParams.fileMD5)
+          return true;
+        if (searchParams.fileId && ref.fileId === searchParams.fileId)
+          return true;
+        if (
+          searchParams.logicalFileName &&
+          ref.logicalFileName === searchParams.logicalFileName
+        )
+          return true;
 
         return false;
       });

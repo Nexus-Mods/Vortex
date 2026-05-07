@@ -1,7 +1,6 @@
-'use strict';
+"use strict";
 
-let handlers = {
-};
+let handlers = {};
 
 module.exports = {
   __esModule: true,
@@ -15,7 +14,7 @@ module.exports = {
             cb(files);
             resolve();
           }
-        })
+        });
       } else {
         cb([]);
         resolve();

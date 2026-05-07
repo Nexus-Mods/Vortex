@@ -1,6 +1,10 @@
 import type { TFunction } from "i18next";
 
-import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import {
+  getErrorCode,
+  getErrorMessageOrDefault,
+  unknownToError,
+} from "@vortex/shared";
 import PromiseBB from "bluebird";
 import * as path from "path";
 import turbowalk from "turbowalk";
@@ -12,7 +16,7 @@ import type {
   IExtensionContext,
 } from "../../types/IExtensionContext";
 import type { IGame } from "../../types/IGame";
-import type { IState } from '../../types/IState';
+import type { IState } from "../../types/IState";
 import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
 import type {
   IDeployedFile,

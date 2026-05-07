@@ -705,13 +705,16 @@ export class DownloadObserver {
           try {
             callback?.(null, id);
           } finally {
-            this.mApi.events.removeListener("start-install-download", onInstallFromCallback);
+            this.mApi.events.removeListener(
+              "start-install-download",
+              onInstallFromCallback,
+            );
           }
           if (
             !installTriggeredByCallback &&
             ((state.settings.automation?.install && allowInstall === true) ||
-            allowInstall === "force" ||
-            download.modInfo?.["startedAsUpdate"] === true)
+              allowInstall === "force" ||
+              download.modInfo?.["startedAsUpdate"] === true)
           ) {
             this.mApi.events.emit("start-install-download", id);
           }

@@ -19,8 +19,18 @@ describe("pathUtils root handling", () => {
 
   describe("parse", () => {
     test.each([
-      ["posix /", posix, "/", { root: "/", dir: "/", base: "", ext: "", name: "" }],
-      ["win32 drive", win32, "C:\\", { root: "C:\\", dir: "C:\\", base: "", ext: "", name: "" }],
+      [
+        "posix /",
+        posix,
+        "/",
+        { root: "/", dir: "/", base: "", ext: "", name: "" },
+      ],
+      [
+        "win32 drive",
+        win32,
+        "C:\\",
+        { root: "C:\\", dir: "C:\\", base: "", ext: "", name: "" },
+      ],
       [
         "win32 UNC",
         win32,

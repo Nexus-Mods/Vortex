@@ -81,24 +81,26 @@ class GoGLauncher implements types.IGameStore {
       return gameEntry === undefined
         ? Bluebird.reject(new types.GameEntryNotFound(appId, STORE_ID))
         : this.mClientPath.then((basePath) => {
-          const gogClientExec = {
-            execPath: path.join(basePath, GOG_EXEC),
-            arguments: [
-              "/command=runGame",
-              `/gameId=${gameEntry.appid}`,
-              `path="${gameEntry.gamePath}"`,
-            ],
-          };
+            const gogClientExec = {
+              execPath: path.join(basePath, GOG_EXEC),
+              arguments: [
+                "/command=runGame",
+                `/gameId=${gameEntry.appid}`,
+                `path="${gameEntry.gamePath}"`,
+              ],
+            };
 
-          return Bluebird.resolve(gogClientExec);
-        });
+            return Bluebird.resolve(gogClientExec);
+          });
     });
   }
 
   /**
    * find the first game with the specified appid or one of the specified appids
    */
-  public findByAppId(appId: string | string[]): Bluebird<types.IGameStoreEntry> {
+  public findByAppId(
+    appId: string | string[],
+  ): Bluebird<types.IGameStoreEntry> {
     const matcher = Array.isArray(appId)
       ? (entry: types.IGameStoreEntry) => appId.includes(entry.appid)
       : (entry: types.IGameStoreEntry) => appId === entry.appid;
@@ -135,8 +137,8 @@ class GoGLauncher implements types.IGameStore {
   public getGameStorePath(): Bluebird<string> {
     return !!this.mClientPath
       ? this.mClientPath.then((basePath) =>
-        Bluebird.resolve(path.join(basePath, "GalaxyClient.exe")),
-      )
+          Bluebird.resolve(path.join(basePath, "GalaxyClient.exe")),
+        )
       : Bluebird.resolve(undefined);
   }
 
@@ -169,39 +171,39 @@ class GoGLauncher implements types.IGameStore {
   private getGameEntries(): Bluebird<types.IGameStoreEntry[]> {
     return !!this.mClientPath
       ? new Bluebird<types.IGameStoreEntry[]>((resolve, reject) => {
-        try {
-          winapi.WithRegOpen("HKEY_LOCAL_MACHINE", REG_GOG_GAMES, (hkey) => {
-            const keys = winapi.RegEnumKeys(hkey);
-            const gameEntries: types.IGameStoreEntry[] = keys
-              .map((key) => {
-                try {
-                  const gameEntry: types.IGameStoreEntry = {
-                    appid: winapi.RegGetValue(hkey, key.key, "gameID")
-                      .value as string,
-                    gamePath: winapi.RegGetValue(hkey, key.key, "path")
-                      .value as string,
-                    name: winapi.RegGetValue(hkey, key.key, "startMenu")
-                      .value as string,
-                    gameStoreId: STORE_ID,
-                  };
-                  return gameEntry;
-                } catch (err) {
-                  log(
-                    "error",
-                    "gamestore-gog: failed to create game entry",
-                    err,
-                  );
-                  // Don't stop, keep going.
-                  return undefined;
-                }
-              })
-              .filter((entry) => !!entry);
-            return resolve(gameEntries);
-          });
-        } catch (err) {
-          return err.code === "ENOENT" ? resolve([]) : reject(err);
-        }
-      })
+          try {
+            winapi.WithRegOpen("HKEY_LOCAL_MACHINE", REG_GOG_GAMES, (hkey) => {
+              const keys = winapi.RegEnumKeys(hkey);
+              const gameEntries: types.IGameStoreEntry[] = keys
+                .map((key) => {
+                  try {
+                    const gameEntry: types.IGameStoreEntry = {
+                      appid: winapi.RegGetValue(hkey, key.key, "gameID")
+                        .value as string,
+                      gamePath: winapi.RegGetValue(hkey, key.key, "path")
+                        .value as string,
+                      name: winapi.RegGetValue(hkey, key.key, "startMenu")
+                        .value as string,
+                      gameStoreId: STORE_ID,
+                    };
+                    return gameEntry;
+                  } catch (err) {
+                    log(
+                      "error",
+                      "gamestore-gog: failed to create game entry",
+                      err,
+                    );
+                    // Don't stop, keep going.
+                    return undefined;
+                  }
+                })
+                .filter((entry) => !!entry);
+              return resolve(gameEntries);
+            });
+          } catch (err) {
+            return err.code === "ENOENT" ? resolve([]) : reject(err);
+          }
+        })
       : Bluebird.resolve([]);
   }
 }

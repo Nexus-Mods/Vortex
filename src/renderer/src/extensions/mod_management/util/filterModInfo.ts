@@ -1,7 +1,4 @@
-import {
-  getErrorMessageOrDefault,
-  unknownToError,
-} from "@vortex/shared";
+import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 
 import type { AttributeExtractor } from "../../../types/IExtensionContext";
 

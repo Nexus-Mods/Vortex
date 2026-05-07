@@ -58,8 +58,7 @@ export interface BaseFormFieldProps {
 }
 
 export interface FormFieldProps
-  extends BaseFormFieldProps,
-    HTMLAttributes<HTMLElement> {
+  extends BaseFormFieldProps, HTMLAttributes<HTMLElement> {
   /**
    * Form element to be rendered
    */

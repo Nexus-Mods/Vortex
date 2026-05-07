@@ -59,8 +59,8 @@ function importMods(
             mod.archiveName === undefined || mod.archiveName === ""
               ? Promise.resolve("")
               : genHash(archivePath)
-                .then((hash) => hash.md5sum)
-                .catch((err) => ""),
+                  .then((hash) => hash.md5sum)
+                  .catch((err) => ""),
           )
           .then((md5Hash) => {
             const archiveId = shortid();
