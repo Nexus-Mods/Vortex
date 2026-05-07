@@ -80,7 +80,11 @@ export function cloneTheme(
     const targetPath = path.join(themesPath(), newName);
     const sourcePath = themePath(themeName);
     if (sourcePath === undefined) {
-      return Bluebird.reject(new Error("no path for current theme"));
+      // Defense-in-depth — the Clone button is disabled in this state, so
+      // this should be unreachable from the UI.
+      const err = new Error("no path for current theme");
+      (err as { allowReport?: boolean }).allowReport = false;
+      return Bluebird.reject(err);
     }
     api.events.emit("analytics-track-click-event", "Themes", "Clone theme");
 

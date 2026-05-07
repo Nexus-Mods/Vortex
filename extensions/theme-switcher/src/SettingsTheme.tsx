@@ -101,6 +101,12 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
     const { t, currentTheme, themes, useModernLayout } = this.props;
     const { editable, variables } = this.state;
     const isLegacy = !useModernLayout;
+    // Clone needs a resolvable source path; if the current theme has no entry
+    // in `themes` (e.g. state references a theme that no longer exists on
+    // disk) the operation can't proceed.
+    const canClone = themes.some(
+      (iter) => this.props.locationToName(iter) === currentTheme,
+    );
     return (
       <div style={{ position: "relative" }}>
         <form>
@@ -124,7 +130,11 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
                 })}
               </FormControl>
               <InputGroup.Button>
-                <Button bsStyle="primary" onClick={this.onClone}>
+                <Button
+                  bsStyle="primary"
+                  onClick={this.onClone}
+                  disabled={!canClone}
+                >
                   {t("Clone")}
                 </Button>
                 {editable ? (
