@@ -1,6 +1,10 @@
 import { describe, it, expect } from "vitest";
 
-import { computeErrorFingerprint, sanitizeFramePath } from "./errors";
+import {
+  computeErrorFingerprint,
+  isEnvironmentalError,
+  sanitizeFramePath,
+} from "./errors";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -396,5 +400,48 @@ describe("computeErrorFingerprint", () => {
         computeErrorFingerprint(b, VERSION),
       );
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// isEnvironmentalError
+// ---------------------------------------------------------------------------
+
+describe("isEnvironmentalError", () => {
+  const withCode = (code: string): Error =>
+    Object.assign(new Error(code), { code });
+
+  it.each(["EPERM", "EACCES", "ENOSPC", "EROFS"])(
+    "returns true for %s",
+    (code) => {
+      expect(isEnvironmentalError(withCode(code))).toBe(true);
+    },
+  );
+
+  it("returns false for unrelated error codes", () => {
+    expect(isEnvironmentalError(withCode("ENOENT"))).toBe(false);
+    expect(isEnvironmentalError(withCode("ETIMEDOUT"))).toBe(false);
+    expect(isEnvironmentalError(withCode("EBUSY"))).toBe(false);
+  });
+
+  it("returns false for plain Error without code", () => {
+    expect(isEnvironmentalError(new Error("boom"))).toBe(false);
+  });
+
+  it("returns true when allowReport is explicitly false", () => {
+    const err = Object.assign(new Error("boom"), { allowReport: false });
+    expect(isEnvironmentalError(err)).toBe(true);
+  });
+
+  it("ignores allowReport when not strictly false", () => {
+    const err = Object.assign(new Error("boom"), { allowReport: true });
+    expect(isEnvironmentalError(err)).toBe(false);
+  });
+
+  it("returns false for non-Error values", () => {
+    expect(isEnvironmentalError("EPERM")).toBe(false);
+    expect(isEnvironmentalError(undefined)).toBe(false);
+    expect(isEnvironmentalError(null)).toBe(false);
+    expect(isEnvironmentalError({ code: "EPERM" })).toBe(false);
   });
 });

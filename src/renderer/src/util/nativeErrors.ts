@@ -38,7 +38,7 @@ export function decodeSystemError(
     return {
       title: `I/O Error (${code})`,
       message:
-        'Accessing "{{filePath}} failed with an error that indicates ' +
+        'Accessing "{{filePath}}" failed with an error that indicates ' +
         "file system corruption. If this isn't a temporary problem " +
         "you may want to run chkdsk or similar software to check for problems. " +
         "It may also help to reinstall the software that this file belongs to.",
