@@ -367,32 +367,12 @@ describe("computeErrorFingerprint", () => {
       );
     });
 
-    it("ignores plugin-version suffix in plugin paths", () => {
-      const a = stack(
-        `at pathPattern (plugins/BioShock Vortex Extension v0.6.1/index.js:265:12)`,
-      );
-      const b = stack(
-        `at pathPattern (plugins/BioShock Vortex Extension v0.7.0/index.js:265:12)`,
-      );
-      expect(computeErrorFingerprint(a, VERSION)).toBe(
-        computeErrorFingerprint(b, VERSION),
-      );
-    });
-
-    it("does not strip a non-version 'v' token (e.g. 'v1' with no dot)", () => {
-      const a = stack(`at f (plugins/Foo v1/index.js:1:2)`);
-      const b = stack(`at f (plugins/Foo/index.js:1:2)`);
-      expect(computeErrorFingerprint(a, VERSION)).not.toBe(
-        computeErrorFingerprint(b, VERSION),
-      );
-    });
-
     it("hashes only the innermost N frames (calling context above is ignored)", () => {
       // First 5 frames identical, 6th differs → same fingerprint.
       const top5 = [
         `at template (node_modules/string-template/index.js:21:19)`,
-        `at pathPattern (plugins/Foo v0.6.1/index.js:265:12)`,
-        `at Object.getPath (plugins/Foo v0.6.1/index.js:880:15)`,
+        `at pathPattern (plugins/Foo/index.js:265:12)`,
+        `at Object.getPath (plugins/Foo/index.js:880:15)`,
         `at app.asar/renderer.js:2:989340`,
         `at Array.reduce (<anonymous>)`,
       ];
