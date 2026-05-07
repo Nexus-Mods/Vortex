@@ -804,8 +804,9 @@ class Application {
       );
     }
 
-    // Wrap all operations in a single transaction to avoid concurrent
-    // BEGIN TRANSACTION calls from individual setItem/removeItem calls.
+    // Wrap all operations in a single transaction so the import is atomic;
+    // a partial backup restore on failure would leave state in a confusing
+    // mixed-version condition.
     await persistor.beginTransaction();
     try {
       for (const [hive, hiveData] of Object.entries(backupData)) {
