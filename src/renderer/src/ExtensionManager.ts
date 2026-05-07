@@ -960,13 +960,51 @@ class ExtensionManager {
 
     log("info", "outdated extensions", { numOutdated: this.mOutdated.length });
     if (this.mOutdated.length > 0) {
+      const removeOps: Array<{
+        type: "set";
+        path: string[];
+        value: unknown;
+      }> = [];
       this.mOutdated.forEach((ext) => {
         log("info", "extension older than bundled version, will be removed", {
           name: ext,
         });
-        // Store pending removal - will be dispatched when setStore() is called
-        this.mPendingRemoves.push(ext);
+        // Delete the folder synchronously: the caller relaunches the renderer
+        // immediately after, before setStore() runs, so a deferred dispatch
+        // would never fire and the folder would re-trigger this branch on the
+        // next boot — a bootloop.
+        const extPath = path.join(extensionsPath, ext);
+        try {
+          fs.removeSync(extPath);
+        } catch (err) {
+          // On Windows the previous renderer's file handles may not be
+          // released yet. Subsequent relaunches will retry; a few failed
+          // removes converging is preferable to silently looping forever.
+          log(
+            "warn",
+            "failed to remove outdated extension, will retry on next startup",
+            { name: ext, error: getErrorMessageOrDefault(err) },
+          );
+        }
+        // Mark the extension state for removal so the next boot's
+        // state-flagged-remove path (above) dispatches forgetExtension via
+        // setStore(). We can't dispatch directly here — the store doesn't
+        // exist yet and the renderer is about to relaunch. Main drains its
+        // persist queue during shutdown, so this diff is on disk before the
+        // process restarts.
+        removeOps.push({
+          type: "set",
+          path: ["extensions", ext, "remove"],
+          value: true,
+        });
       });
+      try {
+        window.api?.persist?.sendDiff?.("app", removeOps);
+      } catch (err) {
+        log("warn", "failed to persist outdated-extension remove flags", {
+          error: getErrorMessageOrDefault(err),
+        });
+      }
       return;
     }
 
