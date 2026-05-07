@@ -286,9 +286,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
             typeof instanceId === "string"
               ? cond(instanceId)
               : instanceId.find(cond) !== undefined;
-          return res
-            ? true
-            : (this.props.t("No associated archive."));
+          return res ? true : this.props.t("No associated archive.");
         },
         position: 60,
       },
@@ -907,8 +905,8 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       isToggleable: false,
       edit: {
         readOnly: (mod: IModWithState) => mod.state === "downloaded",
-        validate: (input: string) => input.length === 0 ||
-          isFilenameValid(input) ? "success" : "error",
+        validate: (input: string) =>
+          input.length === 0 || isFilenameValid(input) ? "success" : "error",
         onChangeValue: (mod: IModWithState, value: any) =>
           this.props.onSetModAttribute(
             this.props.gameMode,
@@ -980,11 +978,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         }
         return Array.from(authors).join(" & ");
       },
-      customRenderer: (
-        mod: IModWithState,
-        detailCell: boolean,
-        t: TFunction,
-      ) =>
+      customRenderer: (mod: IModWithState, detailCell: boolean, t: TFunction) =>
         detailCell ? (
           <Author gameId={this.props.gameMode} mod={mod} t={t} />
         ) : (
@@ -1053,31 +1047,33 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     // insert downloads. Since this requires deriving mod attributes from
     // the source-specific data we need to do this asynchronously although
     // we expect all attributes to be available instantaneous.
-    return Promise.all(Object.keys(newProps.downloads).map((archiveId) => {
-      if (
-        getDownloadGames(newProps.downloads[archiveId]).indexOf(gameMode) !==
-          -1 &&
-        newProps.downloads[archiveId].state === "finished" &&
-        !installedIds.has(archiveId)
-      ) {
+    return Promise.all(
+      Object.keys(newProps.downloads).map((archiveId) => {
         if (
-          oldProps.downloads[archiveId] === newProps.downloads[archiveId] &&
-          this.state.modsWithState[archiveId] !== undefined
+          getDownloadGames(newProps.downloads[archiveId]).indexOf(gameMode) !==
+            -1 &&
+          newProps.downloads[archiveId].state === "finished" &&
+          !installedIds.has(archiveId)
         ) {
-          newModsWithState[archiveId] = this.state.modsWithState[archiveId];
-          return;
+          if (
+            oldProps.downloads[archiveId] === newProps.downloads[archiveId] &&
+            this.state.modsWithState[archiveId] !== undefined
+          ) {
+            newModsWithState[archiveId] = this.state.modsWithState[archiveId];
+            return;
+          }
+          return filterModInfo(
+            {
+              download: newProps.downloads[archiveId],
+              meta: newProps.downloads[archiveId]?.modInfo?.meta,
+            },
+            undefined,
+          ).then((info) => ({ archiveId, info }));
+        } else {
+          return Promise.resolve(undefined);
         }
-        return filterModInfo(
-          {
-            download: newProps.downloads[archiveId],
-            meta: newProps.downloads[archiveId]?.modInfo?.meta,
-          },
-          undefined,
-        ).then((info) => ({ archiveId, info }));
-      } else {
-        return Promise.resolve(undefined);
-      }
-    })).then((modAttributes: Array<{ archiveId: string; info: any }>) => {
+      }),
+    ).then((modAttributes: Array<{ archiveId: string; info: any }>) => {
       modAttributes
         .filter((attribute) => attribute !== undefined)
         .forEach((mod) => {
@@ -1175,7 +1171,10 @@ class ModList extends ComponentEx<IProps, IComponentState> {
             this.context.api.showErrorNotification(
               "Failed to set mod to uninstalled",
               err,
-              { allowReport: (err as {allowReport?: boolean})?.allowReport !== false },
+              {
+                allowReport:
+                  (err as { allowReport?: boolean })?.allowReport !== false,
+              },
             );
           });
       }
@@ -1360,14 +1359,16 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     const { modsWithState } = this.state;
 
     if (modsWithState[modId]?.state === "downloaded") {
-      return Promise.resolve(toPromise<string>((cb) =>
-        this.context.api.events.emit(
-          "start-install-download",
-          modId,
-          false,
-          cb,
+      return Promise.resolve(
+        toPromise<string>((cb) =>
+          this.context.api.events.emit(
+            "start-install-download",
+            modId,
+            false,
+            cb,
+          ),
         ),
-      ));
+      );
     } else {
       return Promise.resolve(modId);
     }

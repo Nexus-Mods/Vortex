@@ -183,9 +183,7 @@ function lookupDownloadHint(
     return browseForDownload(api, urlNorm, input.instructions)
       .then((result) => {
         if (result === undefined) {
-          return Promise.reject(
-            new NotFound("No download found browsing url"),
-          );
+          return Promise.reject(new NotFound("No download found browsing url"));
         } else {
           return Promise.resolve(result);
         }

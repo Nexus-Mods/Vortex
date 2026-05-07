@@ -45,12 +45,12 @@ export function createModels(db: Database): Models {
 
 /** Maps query names to their parameter types */
 export interface QueryParamsMap {
-  "recently_managed_games": RecentlyManagedGamesParams;
+  recently_managed_games: RecentlyManagedGamesParams;
 }
 
 /** Maps query names to their result row types */
 export interface QueryResultMap {
-  "recently_managed_games": RecentlyManagedGamesRow;
+  recently_managed_games: RecentlyManagedGamesRow;
 }
 
 /** All valid query names */

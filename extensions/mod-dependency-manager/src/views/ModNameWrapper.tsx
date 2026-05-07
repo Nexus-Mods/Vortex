@@ -84,12 +84,8 @@ function ModNameWrapper(props: React.PropsWithChildren<IModNameWrapper>) {
     );
   }
 
-  return (
-    <div className={classes.join(" ")}>
-      {...icons}
-      {props.children}
-    </div>
-  );
+  return <div className={classes.join(" ")}>{...icons}
+    {props.children}</div>;
 }
 
 export default ModNameWrapper;

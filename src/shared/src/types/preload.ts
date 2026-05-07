@@ -357,7 +357,9 @@ export interface PersistApi {
    * The renderer applies these via __persist_push, which is excluded from
    * persistDiffMiddleware to prevent feedback loops.
    */
-  onPush(callback: (hive: PersistedHive, operations: DiffOperation[]) => void): void;
+  onPush(
+    callback: (hive: PersistedHive, operations: DiffOperation[]) => void,
+  ): void;
 }
 
 /** API for requesting extension main process initialization */

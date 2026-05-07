@@ -85,7 +85,7 @@ import { applyMiddleware, compose, createStore } from "redux";
 import thunkMiddleware from "redux-thunk";
 import { generate as shortid } from "shortid";
 
-import type { IExtensionReducer } from './types/extensions';
+import type { IExtensionReducer } from "./types/extensions";
 import type { ThunkStore } from "./types/IExtensionContext";
 import type { IState } from "./types/IState";
 
@@ -577,10 +577,7 @@ async function init(): Promise<ExtensionManager | null> {
 
   // Create store WITHOUT preloaded state - reducers will initialize with defaults
   // Then we dispatch __hydrate to merge persisted data with defaults
-  store = createStore(
-    reducer(extReducers, reportReducerError),
-    enhancer,
-  );
+  store = createStore(reducer(extReducers, reportReducerError), enhancer);
 
   // Hydrate each hive by dispatching __hydrate action
   // This merges persisted data with reducer defaults (like the old architecture)

@@ -43,4 +43,3 @@ Starting with Python 3.12 you also need to install the `setuptools` packages. Ve
 - [Flatpak](./docs/flatpak-maintenance.md)
 - [Docker Dev Containers](./docker)
 - [Nix](./flake.nix)
-

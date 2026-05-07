@@ -319,10 +319,7 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
         <p>
           {actions.map((action) => (
             <React.Fragment key={action.key}>
-              <a
-                onClick={this.setAll[type]}
-                href={"#" + action.key}
-              >
+              <a onClick={this.setAll[type]} href={"#" + action.key}>
                 {t(action.allText)}
               </a>
               <span className="link-action-seperator">&nbsp; | &nbsp;</span>

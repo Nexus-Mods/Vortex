@@ -56,15 +56,17 @@ function copyGameSettings(
       .then(() =>
         copyType.endsWith("Glo")
           ? fs
-            .copyAsync(source, destinationOrig, { noSelfCopy: true })
-            .then(() =>
-              fs.copyAsync(source, destinationOrig + ".baked", {
-                noSelfCopy: true,
-              }),
-            )
-            .catch({ code: "ENOENT" }, (err) =>
-              gameSetting.optional ? PromiseBB.resolve() : PromiseBB.reject(err),
-            )
+              .copyAsync(source, destinationOrig, { noSelfCopy: true })
+              .then(() =>
+                fs.copyAsync(source, destinationOrig + ".baked", {
+                  noSelfCopy: true,
+                }),
+              )
+              .catch({ code: "ENOENT" }, (err) =>
+                gameSetting.optional
+                  ? PromiseBB.resolve()
+                  : PromiseBB.reject(err),
+              )
           : PromiseBB.resolve(),
       );
   }).then(() => undefined);
@@ -94,9 +96,9 @@ function checkGlobalFiles(
     file.optional
       ? PromiseBB.resolve(false)
       : fs
-        .statAsync(file.name)
-        .then(() => false)
-        .catch(() => true),
+          .statAsync(file.name)
+          .then(() => false)
+          .catch(() => true),
   ).then((missingFiles: ISettingsFile[]) => {
     if (missingFiles.length > 0) {
       return PromiseBB.resolve(missingFiles);
@@ -128,11 +130,11 @@ function updateLocalGameSettings(
         (oldProfile as any).pendingRemove === true
           ? PromiseBB.resolve()
           : copyGameSettings(
-            myGames,
-            profilePath(oldProfile),
-            gameSettings,
-            "GloPro",
-          ),
+              myGames,
+              profilePath(oldProfile),
+              gameSettings,
+              "GloPro",
+            ),
       )
       // restore backup
       .then(() =>
@@ -193,9 +195,9 @@ function onSwitchGameProfile(
         store.dispatch,
         "An error occurred activating profile",
         "Files are missing or not writeable:\n" +
-        fileList +
-        "\n\n" +
-        "Some games need to be run at least once before they can be modded.",
+          fileList +
+          "\n\n" +
+          "Some games need to be run at least once before they can be modded.",
         { allowReport: false },
       );
       return false;
@@ -245,9 +247,9 @@ function onDeselectGameProfile(
           store.dispatch,
           "An error occurred activating profile",
           "Files are missing or not writeable:\n" +
-          fileList +
-          "\n\n" +
-          "Some games need to be run at least once before they can be modded.",
+            fileList +
+            "\n\n" +
+            "Some games need to be run at least once before they can be modded.",
           { allowReport: false },
         );
         return false;
@@ -279,14 +281,18 @@ function bakeSettings(
     .filter((key) => util.getSafe(profile, ["modState", key, "enabled"], false))
     .map((key) => gameMods[key]);
 
-  return PromiseBB.resolve(util
-    .sortMods(profile.gameId, mods, api)
-    .then((sortedMods) =>
-      api.emitAndAwait("bake-settings", profile.gameId, sortedMods, profile),
-    ));
+  return PromiseBB.resolve(
+    util
+      .sortMods(profile.gameId, mods, api)
+      .then((sortedMods) =>
+        api.emitAndAwait("bake-settings", profile.gameId, sortedMods, profile),
+      ),
+  );
 }
 
-function testGlobalFiles(api: types.IExtensionApi): PromiseBB<types.ITestResult> {
+function testGlobalFiles(
+  api: types.IExtensionApi,
+): PromiseBB<types.ITestResult> {
   const gameMode = selectors.activeGameId(api.getState());
   if (!gameSupported(gameMode)) {
     return PromiseBB.resolve(undefined);

@@ -13,7 +13,8 @@ import { joinClasses } from "../../../utils/joinClasses";
 import { FormField } from "../formfield/FormField";
 
 export interface InputProps
-  extends BaseFormFieldProps,
+  extends
+    BaseFormFieldProps,
     Omit<InputHTMLAttributes<HTMLInputElement>, "size"> {
   /**
    * Restrict default value to string | number as we don't use this component for checkbox

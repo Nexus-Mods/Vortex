@@ -2,10 +2,7 @@ import type PromiseBB from "bluebird";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
 
-import {
-  getErrorMessageOrDefault,
-  unknownToError,
-} from "@vortex/shared";
+import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import * as React from "react";
 import { Media } from "react-bootstrap";
 import { useTranslation } from "react-i18next";

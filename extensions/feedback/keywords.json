@@ -1,7 +1,17 @@
 {
   "About Load Orders": ["plugin", "loot"],
   "Adding a new game to Vortex": ["discover"],
-  "Controlled Folder Access": ["enoent", "permission", "skyrim.ini", "fallout4.ini"],
+  "Controlled Folder Access": [
+    "enoent",
+    "permission",
+    "skyrim.ini",
+    "fallout4.ini"
+  ],
   "Creating themes for Vortex": ["look", "font", "style", "readable"],
-  "Download speed Never comes close to 1MB/s": ["speed", "slow", "cap", "download"]
+  "Download speed Never comes close to 1MB/s": [
+    "speed",
+    "slow",
+    "cap",
+    "download"
+  ]
 }

@@ -82,7 +82,11 @@ let backupTime: number;
  *      and apply it to the local state using setSafe / deleteOrNop.
  */
 function pushRed(state: any, payload: any, statePath: string): any {
-  if (!payload || typeof payload.hive !== "string" || !Array.isArray(payload.operations)) {
+  if (
+    !payload ||
+    typeof payload.hive !== "string" ||
+    !Array.isArray(payload.operations)
+  ) {
     return state;
   }
 
@@ -105,7 +109,9 @@ function pushRed(state: any, payload: any, statePath: string): any {
       if (op.path.length < subPath.length) {
         continue;
       }
-      const matches = subPath.every((seg: string, i: number) => op.path[i] === seg);
+      const matches = subPath.every(
+        (seg: string, i: number) => op.path[i] === seg,
+      );
       if (!matches) {
         continue;
       }

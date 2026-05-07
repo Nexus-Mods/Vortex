@@ -215,8 +215,8 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
           }
           return typeof instanceId === "string"
             ? ["downloaded", "installed"].includes(
-              this.state.modsEx[instanceId].state,
-            )
+                this.state.modsEx[instanceId].state,
+              )
             : true;
         },
         hotKey: { code: 46 },
@@ -337,11 +337,11 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
         calc: (mod) =>
           mod.state !== null
             ? util.renderModReference(mod.collectionRule.reference, mod, {
-              version: false,
-            })
+                version: false,
+              })
             : util.renderModReference(mod.collectionRule.reference, undefined, {
-              version: false,
-            }),
+                version: false,
+              }),
         placement: "table",
         edit: {},
         isToggleable: false,
@@ -490,8 +490,10 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
       }
       const currentMods = state.persistent.mods[gameId] ?? {};
       const currentDownloads = state.persistent.downloads.files;
-      if ((currentMods !== this.props.mods)
-        || (currentDownloads !== this.props.downloads)) {
+      if (
+        currentMods !== this.props.mods ||
+        currentDownloads !== this.props.downloads
+      ) {
         this.nextState.modsEx = this.updateModsEx(this.props, {
           ...this.props,
           mods: currentMods,
@@ -617,9 +619,9 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
     const selection =
       (this.mInstalling && driver.collectionInfo !== undefined
         ? revisionInfo?.modFiles?.map?.((file) => ({
-          local: undefined,
-          remote: file,
-        }))
+            local: undefined,
+            remote: file,
+          }))
         : modSelection) ?? [];
 
     return (
@@ -696,7 +698,8 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
             </Tab>
           </Tabs>
         </FlexLayout.Flex>
-        {(driver.step !== "review" || driver.collection?.id !== collection?.id) && (
+        {(driver.step !== "review" ||
+          driver.collection?.id !== collection?.id) && (
           <FlexLayout.Fixed>
             <CollectionProgress
               t={t}
@@ -876,7 +879,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
       // The button is only rendered when instructions exist (customRenderer guards this).
       // If reached anyway (race condition/state desync), log for debugging but don't
       // surface a confusing error dialog to the user or auto-report via VortexFeedback.
-      log('warn', 'toggleInstructions called but no instructions found', {
+      log("warn", "toggleInstructions called but no instructions found", {
         modId,
         collectionSlug: this.props.collection?.attributes?.collectionSlug,
         revisionNumber: this.props.collection?.attributes?.revisionNumber,
@@ -1007,9 +1010,9 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
       modsEx[modId].state !== null
         ? util.renderModName(modsEx[modId], { version: true })
         : util.renderModReference(
-          modsEx[modId].collectionRule.reference,
-          undefined,
-        ),
+            modsEx[modId].collectionRule.reference,
+            undefined,
+          ),
     );
 
     const checkboxes = [

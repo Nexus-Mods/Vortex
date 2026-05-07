@@ -152,27 +152,30 @@ export function purgeMods(
       "deployment.gameId": effectiveGameId,
       "deployment.isUnmanaging": isUnmanaging ?? false,
     },
-    () => getManifest(api, "", gameId).then((manifest) => {
-      if (manifest?.deploymentMethod !== undefined) {
-        log("info", "using deployment method from manifest", {
-          method: manifest?.deploymentMethod,
-        });
-        const deployedActivator = getActivator(manifest?.deploymentMethod);
-        return purgeModsImpl(api, deployedActivator, profile);
-      } else {
-        return purgeModsImpl(api, undefined, profile).catch((err: unknown) => {
-          // If the user is unmanaging the game and the purge was unable to find any
-          //  of the game's mods path during the purge, that suggests that the user
-          //  has uninstalled the game and is trying to "unmanage" the game.
-          //  In this case, there's nothing left to purge so we can safely resolve.
-          if (["ENOENT"].includes(getErrorCode(err)) && isUnmanaging) {
-            return Promise.resolve();
-          } else {
-            return Promise.reject(err);
-          }
-        });
-      }
-    }),
+    () =>
+      getManifest(api, "", gameId).then((manifest) => {
+        if (manifest?.deploymentMethod !== undefined) {
+          log("info", "using deployment method from manifest", {
+            method: manifest?.deploymentMethod,
+          });
+          const deployedActivator = getActivator(manifest?.deploymentMethod);
+          return purgeModsImpl(api, deployedActivator, profile);
+        } else {
+          return purgeModsImpl(api, undefined, profile).catch(
+            (err: unknown) => {
+              // If the user is unmanaging the game and the purge was unable to find any
+              //  of the game's mods path during the purge, that suggests that the user
+              //  has uninstalled the game and is trying to "unmanage" the game.
+              //  In this case, there's nothing left to purge so we can safely resolve.
+              if (["ENOENT"].includes(getErrorCode(err)) && isUnmanaging) {
+                return Promise.resolve();
+              } else {
+                return Promise.reject(err);
+              }
+            },
+          );
+        }
+      }),
   );
 }
 
@@ -413,59 +416,63 @@ export function purgeModsInPath(
       "deployment.modPath": modPath,
       "deployment.method": activator.name,
     },
-    () => withActivationLock(async () => {
-      log("debug", "purging mods", { activatorId: activator.id, stagingPath });
-      onProgress(0, "Preparing purge");
-
-      if (gameId !== undefined && profile === undefined) {
-        // gameId was set but we have no last active profile for that game.
-        // In this case there is probably nothing to purge but if that's true
-        // there will also be no manifest so we can just as easily try a fallback
-        // purge just to be safe.
-        return fallbackPurgeType(
-          api,
-          activator,
-          gameId,
-          typeId,
-          modPath,
+    () =>
+      withActivationLock(async () => {
+        log("debug", "purging mods", {
+          activatorId: activator.id,
           stagingPath,
-        );
-      }
+        });
+        onProgress(0, "Preparing purge");
 
-      // TODO: we really should be using the deployment specified in the manifest,
-      //   not the current one! This only works because we force a purge when switching
-      //   deployment method.
-      let purgeSucceeded = true;
-      try {
-        await activator.prePurge(stagingPath);
-        onProgress(25, "Removing links");
-        await activator.purge(stagingPath, modPath, gameId);
-        onProgress(50, "Saving updated manifest");
-        await saveActivation(
-          gameId,
-          typeId,
-          state.app.instanceId,
-          modPath,
-          stagingPath,
-          [],
-          activator.id,
-        );
-      } catch (err: unknown) {
-        if (!(err instanceof ProcessCanceled)) {
-          purgeSucceeded = false;
-          throw err;
+        if (gameId !== undefined && profile === undefined) {
+          // gameId was set but we have no last active profile for that game.
+          // In this case there is probably nothing to purge but if that's true
+          // there will also be no manifest so we can just as easily try a fallback
+          // purge just to be safe.
+          return fallbackPurgeType(
+            api,
+            activator,
+            gameId,
+            typeId,
+            modPath,
+            stagingPath,
+          );
         }
-      } finally {
-        onProgress(75, "Post purge events");
-        await activator.postPurge();
-        if (purgeSucceeded) {
-          await api.emitAndAwait("did-purge", profile.id);
+
+        // TODO: we really should be using the deployment specified in the manifest,
+        //   not the current one! This only works because we force a purge when switching
+        //   deployment method.
+        let purgeSucceeded = true;
+        try {
+          await activator.prePurge(stagingPath);
+          onProgress(25, "Removing links");
+          await activator.purge(stagingPath, modPath, gameId);
+          onProgress(50, "Saving updated manifest");
+          await saveActivation(
+            gameId,
+            typeId,
+            state.app.instanceId,
+            modPath,
+            stagingPath,
+            [],
+            activator.id,
+          );
+        } catch (err: unknown) {
+          if (!(err instanceof ProcessCanceled)) {
+            purgeSucceeded = false;
+            throw err;
+          }
+        } finally {
+          onProgress(75, "Post purge events");
+          await activator.postPurge();
+          if (purgeSucceeded) {
+            await api.emitAndAwait("did-purge", profile.id);
+          }
         }
-      }
-    }, true)
-      .then(() => null)
-      .finally(() => {
-        api.dismissNotification(notificationId);
-      }),
+      }, true)
+        .then(() => null)
+        .finally(() => {
+          api.dismissNotification(notificationId);
+        }),
   );
 }

@@ -21,7 +21,6 @@ Same button set. **"Report and Quit"** calls `reportCrash("Crash", errorToReport
 
 When `error.extension` is set, after the main dialog the user is asked whether to disable the extension. Confirmed → writes `<temp>/__disable_<extension>` marker file; Vortex skips the extension on next startup.
 
-
 ## Renderer-Process Crash
 
 **Entry**: `terminate(error, state, allowReport?)` in `src/renderer/util/errorHandling.ts`
@@ -62,50 +61,50 @@ Separate from the renderer-side `errorIgnored` flag in `src/renderer/util/errorH
 
 ### Main Process — `terminate()`
 
-| File | Trigger |
-|------|---------|
-| `src/main/main.ts` | `uncaughtException` / `unhandledRejection` during startup (after app ready); filtered through `Application.shouldIgnoreError()` |
-| `src/main/Application.ts` | `uncaughtException` / `unhandledRejection` during normal operation (replaces the startup handler once persistence is set up) |
-| `src/main/Application.ts` | Startup failure that is not `UserCanceled`, `ProcessCanceled`, `DocumentsPathMissing`, `DatabaseLocked`, or `DatabaseOpenError` |
+| File                                  | Trigger                                                                                                                               |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/main/main.ts`                    | `uncaughtException` / `unhandledRejection` during startup (after app ready); filtered through `Application.shouldIgnoreError()`       |
+| `src/main/Application.ts`             | `uncaughtException` / `unhandledRejection` during normal operation (replaces the startup handler once persistence is set up)          |
+| `src/main/Application.ts`             | Startup failure that is not `UserCanceled`, `ProcessCanceled`, `DocumentsPathMissing`, `DatabaseLocked`, or `DatabaseOpenError`       |
 | `src/main/store/ReduxPersistorIPC.ts` | Disk-full error during state write (`IO error: ...Append: cannot write`) — user-friendly message; `allowReport = undefined` (default) |
-| `src/main/store/ReduxPersistorIPC.ts` | Any other persistence write failure — `allowReport = true` |
-| `src/main/MainWindow.ts` | Renderer emits a console error but the window has not shown within 15 seconds — `allowReport = true` |
+| `src/main/store/ReduxPersistorIPC.ts` | Any other persistence write failure — `allowReport = true`                                                                            |
+| `src/main/MainWindow.ts`              | Renderer emits a console error but the window has not shown within 15 seconds — `allowReport = true`                                  |
 
 ### Main Process — `app.exit()` (no dialog)
 
-| File | Trigger |
-|------|---------|
-| `src/main/main.ts` | `uncaughtException` / `unhandledRejection` during pre-app-ready startup; shows a native error box then exits immediately |
-| `src/main/Application.ts` | `UserCanceled` thrown during startup |
-| `src/main/Application.ts` | Renderer signals it finished loading but the main window was never created |
-| `src/main/Application.ts` | Exception thrown while attempting to show the main window and the window reference is null |
-| `src/main/ipcHandlers.ts` | Renderer requests exit via `app:exit` IPC — used for normal controlled shutdown |
+| File                      | Trigger                                                                                                                  |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `src/main/main.ts`        | `uncaughtException` / `unhandledRejection` during pre-app-ready startup; shows a native error box then exits immediately |
+| `src/main/Application.ts` | `UserCanceled` thrown during startup                                                                                     |
+| `src/main/Application.ts` | Renderer signals it finished loading but the main window was never created                                               |
+| `src/main/Application.ts` | Exception thrown while attempting to show the main window and the window reference is null                               |
+| `src/main/ipcHandlers.ts` | Renderer requests exit via `app:exit` IPC — used for normal controlled shutdown                                          |
 
 ### Main Process — `process.exit()` (no dialog)
 
-| File | Trigger |
-|------|---------|
+| File                     | Trigger                                                                                                                        |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
 | `src/main/MainWindow.ts` | Renderer process crashes (`render-process-gone`) with a reason other than `"killed"`, and the window reference is already null |
 
 ### Renderer Process — `terminate()`
 
-| File | Trigger |
-|------|---------|
-| `src/renderer/renderer.tsx` | `uncaughtException` / `unhandledRejection` global handler |
-| `src/renderer/extensions/mod_management/InstallManager.ts` | Attempt to change download state with a duplicate or invalid ID — `allowReport = false` (programming error, not user data) |
-| `extensions/gamebryo-plugin-management/src/util/UserlistPersistor.ts` | Cannot read the userlist file even though it exists — `allowReport = false`; user directed to repair or delete the file |
+| File                                                                  | Trigger                                                                                                                    |
+| --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `src/renderer/renderer.tsx`                                           | `uncaughtException` / `unhandledRejection` global handler                                                                  |
+| `src/renderer/extensions/mod_management/InstallManager.ts`            | Attempt to change download state with a duplicate or invalid ID — `allowReport = false` (programming error, not user data) |
+| `extensions/gamebryo-plugin-management/src/util/UserlistPersistor.ts` | Cannot read the userlist file even though it exists — `allowReport = false`; user directed to repair or delete the file    |
 
 ### Renderer Process — direct exit (no dialog)
 
-| File | Trigger |
-|------|---------|
-| `src/renderer/renderer.tsx` | Very early unhandled error before the full error handler is set up; shows a native error box via preload, then calls `window.api.app.exit(1)` |
-| `src/renderer/reducers/index.ts` | Redux state sanity check fails and decision is `QUIT`; calls `window.api.app.exit()` |
+| File                             | Trigger                                                                                                                                       |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/renderer/renderer.tsx`      | Very early unhandled error before the full error handler is set up; shows a native error box via preload, then calls `window.api.app.exit(1)` |
+| `src/renderer/reducers/index.ts` | Redux state sanity check fails and decision is `QUIT`; calls `window.api.app.exit()`                                                          |
 
 ### `createErrorReport()` call sites (spawns crash reporter subprocess)
 
-| File | Trigger |
-|------|---------|
-| `src/renderer/util/errorHandling.ts` | User clicks "Report and Quit" in the renderer terminal error dialog |
-| `src/renderer/util/fs.ts` | Native filesystem error where user clicks "Cancel and Report" — collects Windows API error codes |
-| `src/renderer/extensions/mod_management/InstallManager.ts` | FOMOD installer calls an unimplemented function during installation |
+| File                                                       | Trigger                                                                                          |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `src/renderer/util/errorHandling.ts`                       | User clicks "Report and Quit" in the renderer terminal error dialog                              |
+| `src/renderer/util/fs.ts`                                  | Native filesystem error where user clicks "Cancel and Report" — collects Windows API error codes |
+| `src/renderer/extensions/mod_management/InstallManager.ts` | FOMOD installer calls an unimplemented function during installation                              |

@@ -135,7 +135,6 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
             <>
               <div>
                 {t("Other Games")}{" "}
-
                 <a onClick={this.toggleOther}>
                   {showOther ? t("Hide") : t("Show")}
                 </a>
@@ -244,7 +243,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
 
     const exePath = getVortexPath("exe");
     const isDevelopment = exePath.toLowerCase().endsWith("electron.exe");
-    
+
     const desktopLocation = getVortexPath("desktop");
     const shortcutPath = path.join(
       desktopLocation,
@@ -255,7 +254,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
     const target = isDevelopment
       ? exePath
       : path.join(path.dirname(exePath), "Vortex.exe");
-    
+
     const args = isDevelopment
       ? `"${getVortexPath("package")}" --profile ${profileId}`
       : `--profile ${profileId}`;

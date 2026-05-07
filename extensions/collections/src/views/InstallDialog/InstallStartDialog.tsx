@@ -322,9 +322,9 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
                 name={t("Skip plugin rules")}
               >
                 {t(
-                  "If enabled, custom LOOT plugin rules and groups included in this collection "
-                  + "will not be applied. This can help prevent inherited plugin rules from "
-                  + "causing conflicts.",
+                  "If enabled, custom LOOT plugin rules and groups included in this collection " +
+                    "will not be applied. This can help prevent inherited plugin rules from " +
+                    "causing conflicts.",
                 )}
               </More>
             </Toggle>

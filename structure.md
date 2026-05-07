@@ -7,8 +7,8 @@
     - **src/shared/**: code shared across processes
     - **src/extensions/**: embedded extensions (statically loaded)
     - **extensions/**: bundled extensions (built separately, shipped with app)
-    - **__mocks__/**: mocks for unit tests
-    - **__tests__/**: root integration/cross-cutting tests
+    - ****mocks**/**: mocks for unit tests
+    - ****tests**/**: root integration/cross-cutting tests
     - **.vscode/**: VS Code launch/tasks/settings config
     - **dist/**: packaged installer/output artifacts
     - **src/main/out/**: development runtime output (`pnpm run build`)

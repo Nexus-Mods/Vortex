@@ -319,114 +319,119 @@ function installExtension(
   let type: ExtensionType;
 
   let extName: string;
-  return PromiseBB.resolve(withTrackedActivity(
-    "vortex.extension-manager",
-    "extension.install",
-    {
-      "extension.archive": path.basename(archivePath),
-      "extension.name": info?.name,
-      "extension.type": info?.type,
-    },
-    () =>
-    extractor
-      .extractFull(
-        archivePath,
-        tempPath,
-        { ssc: false },
-        () => undefined,
-        () => undefined,
-      )
-      .then(() =>
-        validateInstall(tempPath, info).then(
-          (guessedType) => (type = guessedType),
-        ),
-      )
-      .then(() => readExtensionInfo(tempPath, false, info))
-      // merge the caller-provided info with the stuff parsed from the info.json file because there
-      // is data we may only know at runtime (e.g. the modId)
-      .then((manifestInfo) => {
-        fullInfo = { ...(manifestInfo.info || {}), ...fullInfo };
-        const res: { id: string; info: Partial<IExtension> } = {
-          id: manifestInfo.id,
-          info: fullInfo,
-        };
-
-        if (res.info.type === undefined) {
-          res.info.type = type;
-        }
-
-        return res;
-      })
-      .catch({ code: "ENOENT" }, () =>
-        info !== undefined
-          ? PromiseBB.resolve({
-              id: path.basename(archivePath, path.extname(archivePath)),
-              info,
-            })
-          : PromiseBB.reject(new Error("not an extension, info.json missing")),
-      )
-      .then((manifestInfo) =>
-        // update the manifest on disc, in case we had new info from the caller
-        fs
-          .writeFileAsync(
-            path.join(tempPath, "info.json"),
-            JSON.stringify(manifestInfo.info, undefined, 2),
+  return PromiseBB.resolve(
+    withTrackedActivity(
+      "vortex.extension-manager",
+      "extension.install",
+      {
+        "extension.archive": path.basename(archivePath),
+        "extension.name": info?.name,
+        "extension.type": info?.type,
+      },
+      () =>
+        extractor
+          .extractFull(
+            archivePath,
+            tempPath,
+            { ssc: false },
+            () => undefined,
+            () => undefined,
           )
-          .then(() => manifestInfo),
-      )
-      .then((manifestInfo: { id: string; info: IExtension }) => {
-        extName = manifestInfo.id;
+          .then(() =>
+            validateInstall(tempPath, info).then(
+              (guessedType) => (type = guessedType),
+            ),
+          )
+          .then(() => readExtensionInfo(tempPath, false, info))
+          // merge the caller-provided info with the stuff parsed from the info.json file because there
+          // is data we may only know at runtime (e.g. the modId)
+          .then((manifestInfo) => {
+            fullInfo = { ...(manifestInfo.info || {}), ...fullInfo };
+            const res: { id: string; info: Partial<IExtension> } = {
+              id: manifestInfo.id,
+              info: fullInfo,
+            };
 
-        const dirName = sanitize(manifestInfo.id);
-        destPath = path.join(extensionsPath, dirName);
-        if (manifestInfo.info.type !== undefined) {
-          type = manifestInfo.info.type;
-        }
-        return removeOldVersion(api, manifestInfo.info);
-      })
-      // we don't actually expect the output directory to exist
-      .then(() => fs.removeAsync(destPath))
-      .then(() => fs.renameAsync(tempPath, destPath))
-      .then(() => {
-        if (type === "translation") {
-          return fs
-            .readdirAsync(destPath)
-            .map((entry: string) =>
-              fs
-                .statAsync(path.join(destPath, entry))
-                .then((stat) => ({ name: entry, stat })),
-            )
-            .then(() => null);
-        } else if (type === "theme") {
-          return PromiseBB.resolve();
-        } else {
-          // don't install dependencies for extensions that are already loaded because
-          // doing so could cause an exception
-          if (
-            api.getLoadedExtensions().find((ext) => ext.name === extName) ===
-            undefined
-          ) {
-            return installExtensionDependencies(api, destPath);
-          } else {
-            return PromiseBB.resolve();
-          }
-        }
-      })
-      .catch(DataInvalid, (err) =>
-        rimrafAsync(tempPath, { glob: false }).then(() => {
-          api.showErrorNotification("Invalid Extension", err, {
-            allowReport: false,
-            message: archivePath,
-          });
-          return Promise.reject(err);
-        }),
-      )
-      .catch((err) =>
-        rimrafAsync(tempPath, { glob: false }).then(() =>
-          PromiseBB.reject(err),
-        ),
-      ),
-  ));
+            if (res.info.type === undefined) {
+              res.info.type = type;
+            }
+
+            return res;
+          })
+          .catch({ code: "ENOENT" }, () =>
+            info !== undefined
+              ? PromiseBB.resolve({
+                  id: path.basename(archivePath, path.extname(archivePath)),
+                  info,
+                })
+              : PromiseBB.reject(
+                  new Error("not an extension, info.json missing"),
+                ),
+          )
+          .then((manifestInfo) =>
+            // update the manifest on disc, in case we had new info from the caller
+            fs
+              .writeFileAsync(
+                path.join(tempPath, "info.json"),
+                JSON.stringify(manifestInfo.info, undefined, 2),
+              )
+              .then(() => manifestInfo),
+          )
+          .then((manifestInfo: { id: string; info: IExtension }) => {
+            extName = manifestInfo.id;
+
+            const dirName = sanitize(manifestInfo.id);
+            destPath = path.join(extensionsPath, dirName);
+            if (manifestInfo.info.type !== undefined) {
+              type = manifestInfo.info.type;
+            }
+            return removeOldVersion(api, manifestInfo.info);
+          })
+          // we don't actually expect the output directory to exist
+          .then(() => fs.removeAsync(destPath))
+          .then(() => fs.renameAsync(tempPath, destPath))
+          .then(() => {
+            if (type === "translation") {
+              return fs
+                .readdirAsync(destPath)
+                .map((entry: string) =>
+                  fs
+                    .statAsync(path.join(destPath, entry))
+                    .then((stat) => ({ name: entry, stat })),
+                )
+                .then(() => null);
+            } else if (type === "theme") {
+              return PromiseBB.resolve();
+            } else {
+              // don't install dependencies for extensions that are already loaded because
+              // doing so could cause an exception
+              if (
+                api
+                  .getLoadedExtensions()
+                  .find((ext) => ext.name === extName) === undefined
+              ) {
+                return installExtensionDependencies(api, destPath);
+              } else {
+                return PromiseBB.resolve();
+              }
+            }
+          })
+          .catch(DataInvalid, (err) =>
+            rimrafAsync(tempPath, { glob: false }).then(() => {
+              api.showErrorNotification("Invalid Extension", err, {
+                allowReport: false,
+                message: archivePath,
+              });
+              return Promise.reject(err);
+            }),
+          )
+          .catch((err) =>
+            rimrafAsync(tempPath, { glob: false }).then(() =>
+              PromiseBB.reject(err),
+            ),
+          ),
+    ),
+  );
 }
 
 export default installExtension;

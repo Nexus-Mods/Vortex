@@ -15,7 +15,11 @@ import type { IResolverBase } from "./IResolver";
 import type { Anchor, RelativePath, ResolvedPath } from "./types";
 
 import { forPlatform, trimTrailingSeparator } from "./pathUtils";
-import { fnv1a, RelativePath as RelativePathNS, Anchor as AnchorNS } from "./types";
+import {
+  fnv1a,
+  RelativePath as RelativePathNS,
+  Anchor as AnchorNS,
+} from "./types";
 
 /**
  * FilePath combines a RelativePath, an Anchor, and a IResolver
@@ -306,11 +310,18 @@ export class FilePath {
     const resolvedChild = pathMod.normalize(childPath as string);
 
     // Check if child is under base (case-insensitive on Windows)
-    const baseNorm = trimTrailingSeparator(fs.normalizePath(resolvedBase), sepCode);
-    const childNorm = trimTrailingSeparator(fs.normalizePath(resolvedChild), sepCode);
-    const baseWithSep = baseNorm.charCodeAt(baseNorm.length - 1) === sepCode
-      ? baseNorm
-      : baseNorm + fs.sep;
+    const baseNorm = trimTrailingSeparator(
+      fs.normalizePath(resolvedBase),
+      sepCode,
+    );
+    const childNorm = trimTrailingSeparator(
+      fs.normalizePath(resolvedChild),
+      sepCode,
+    );
+    const baseWithSep =
+      baseNorm.charCodeAt(baseNorm.length - 1) === sepCode
+        ? baseNorm
+        : baseNorm + fs.sep;
 
     if (!childNorm.startsWith(baseWithSep) && childNorm !== baseNorm) {
       return null; // This path is not under basePath
@@ -377,9 +388,10 @@ export class FilePath {
       fs.normalizePath(resolvedChild),
       sepCode,
     );
-    const parentWithSep = parentNorm.charCodeAt(parentNorm.length - 1) === sepCode
-      ? parentNorm
-      : parentNorm + fs.sep;
+    const parentWithSep =
+      parentNorm.charCodeAt(parentNorm.length - 1) === sepCode
+        ? parentNorm
+        : parentNorm + fs.sep;
     return childNorm.startsWith(parentWithSep) || childNorm === parentNorm;
   }
 }

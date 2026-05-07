@@ -16,7 +16,7 @@ import { Image } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { pathToFileURL } from "url";
 
-import { Button } from '@/ui/components/button/Button';
+import { Button } from "@/ui/components/button/Button";
 import { Dropdown } from "@/ui/components/dropdown/Dropdown";
 import { DropdownItem } from "@/ui/components/dropdown/DropdownItem";
 import { DropdownItems } from "@/ui/components/dropdown/DropdownItems";
@@ -85,16 +85,18 @@ export const ToolRow: FC<ToolRowProps> = ({
         {iconSrc ? (
           <Image src={iconSrc} />
         ) : (
-          <Typography appearance="moderate" className="uppercase" typographyType="body-lg">
-            {starterInfo.name?.charAt(0) || 'T'}
+          <Typography
+            appearance="moderate"
+            className="uppercase"
+            typographyType="body-lg"
+          >
+            {starterInfo.name?.charAt(0) || "T"}
           </Typography>
         )}
       </div>
 
       <Typography as="div" className="flex min-w-0 grow items-center gap-x-2">
-        <span className="truncate">
-          {starterInfo.name}
-        </span>
+        <span className="truncate">{starterInfo.name}</span>
 
         {isRunning && (
           <span className="shrink-0 text-neutral-subdued">

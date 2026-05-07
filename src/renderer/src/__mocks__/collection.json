@@ -6,9 +6,7 @@
     "description": "Stardew Valley Expanded with dependencies + Grandpa's Farm",
     "installInstructions": "",
     "domainName": "stardewvalley",
-    "gameVersions": [
-      "1.6.8.24119"
-    ]
+    "gameVersions": ["1.6.8.24119"]
   },
   "mods": [
     {
