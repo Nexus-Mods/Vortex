@@ -8,7 +8,7 @@ import {
   SpanStatusCode,
   trace,
 } from "@opentelemetry/api";
-import { unknownToError } from "@vortex/shared";
+import { isEnvironmentalError, unknownToError } from "@vortex/shared";
 import { recordErrorOnSpan } from "@vortex/shared/telemetry";
 import { ipcRenderer } from "electron";
 import * as fs from "fs-extra";
@@ -516,6 +516,9 @@ export function withTrackedActivity<T>(
       const result = await fun(
         (key, value) => span.setAttribute(key, value),
         (error) => {
+          if (isEnvironmentalError(error)) {
+            return;
+          }
           hasError = true;
           recordError(error);
         },
@@ -526,11 +529,15 @@ export function withTrackedActivity<T>(
       return result;
     } catch (unknownErr) {
       const err = unknownToError(unknownErr);
-      span.setStatus({
-        code: SpanStatusCode.ERROR,
-        message: err?.message,
-      });
-      recordError(err);
+      // Environmental errors (write-protected folders, disk full, etc.) leave
+      // the span status UNSET so RingBufferSpanProcessor doesn't flush the trace.
+      if (!isEnvironmentalError(err)) {
+        span.setStatus({
+          code: SpanStatusCode.ERROR,
+          message: err?.message,
+        });
+        recordError(err);
+      }
       throw err;
     } finally {
       span.end();
@@ -567,6 +574,9 @@ export function recordErrorSpan(
   error: Error,
   attributes?: Record<string, string | number | boolean>,
 ): void {
+  if (isEnvironmentalError(error)) {
+    return;
+  }
   const activeSpan = trace.getSpan(context.active());
 
   if (activeSpan !== undefined) {

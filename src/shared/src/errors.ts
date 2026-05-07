@@ -80,6 +80,35 @@ export function getErrorNativeCode(err: unknown): number | bigint | null {
   return null;
 }
 
+/**
+ * Error codes that indicate a user-environment problem (write-protected
+ * folder, disk full, file locked by another process) rather than a Vortex
+ * bug. Telemetry export filters these out — exporting them spams our error
+ * tracking with issues we cannot fix in code.
+ */
+const ENVIRONMENTAL_ERROR_CODES = new Set([
+  "EPERM", // Operation not permitted (e.g. write-protected Program Files folder)
+  "EACCES", // Permission denied (filesystem ACL or process lacks rights)
+  "ENOSPC", // No space left on the device (disk full)
+  "EROFS", // Read-only filesystem (mount option or hardware switch)
+]);
+
+/**
+ * Returns true if the error represents a user-environment problem rather
+ * than a Vortex bug. Honors an explicit `allowReport === false` flag set
+ * by `prettifyNodeErrorMessage`, falling back to a code-based check.
+ */
+export function isEnvironmentalError(err: unknown): boolean {
+  if (!(err instanceof Error)) {
+    return false;
+  }
+  if ((err as { allowReport?: boolean }).allowReport === false) {
+    return true;
+  }
+  const code = getErrorCode(err);
+  return code !== null && ENVIRONMENTAL_ERROR_CODES.has(code);
+}
+
 type ErrorWithSystemCode = Error & { systemCode: number | bigint };
 
 /** Extracts the system code property from a potential error object */
