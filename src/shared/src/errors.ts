@@ -147,10 +147,27 @@ const INSTALL_PATH_RE = new RegExp(
  * already-redacted `<USER>` is not matched again (idempotence). */
 const USER_HOME_RE = /(\/(?:Users|home)\/)([^/\s'"<>:|?*]+)/gi;
 
+/** Strips the trailing `:column` from a `:line:col` position, keeping `:line`.
+ *  V8 reports the call-site column for each frame, which differs per invocation
+ *  even for the same minified line — same function calling out at multiple
+ *  sites produces multiple columns. Dropping it groups those together. */
+const STRIP_COLUMN_RE = /(:\d+):\d+(?=\)|$)/g;
+
+/** Number of innermost frames hashed for the fingerprint. The deepest frames
+ *  carry the throw site and immediate caller; frames further up are calling
+ *  context that varies per invocation and prevents grouping. */
+const FINGERPRINT_FRAME_LIMIT = 5;
+
 /**
  * Compute a fingerprint from the stack trace call frames and app version.
  * Same error from the same code path in the same version produces the same hash,
  * which can be used for deduplication on the backend.
+ *
+ * Beyond `sanitizeFramePath`'s install-prefix strip and user-home redact, the
+ * fingerprint additionally:
+ *   - drops the `:column` from each frame (unstable across builds and call sites),
+ *   - keeps only the innermost {@link FINGERPRINT_FRAME_LIMIT} frames (calling
+ *     context above the throw site varies per invocation).
  */
 export const computeErrorFingerprint = (
   stack: string | undefined,
@@ -161,7 +178,9 @@ export const computeErrorFingerprint = (
     .split("\n")
     .map((line) => line.trim())
     .filter((line) => line.startsWith("at "))
-    .map(sanitizeFramePath);
+    .map(sanitizeFramePath)
+    .map((f) => f.replace(STRIP_COLUMN_RE, "$1"))
+    .slice(0, FINGERPRINT_FRAME_LIMIT);
   if (frames.length === 0) return undefined;
   const input = frames.join("\n") + "\n" + appVersion;
   return fnv1aHash(input);

@@ -349,4 +349,52 @@ describe("computeErrorFingerprint", () => {
       );
     });
   });
+
+  describe("grouping normalizations", () => {
+    it("ignores column differences within the same line", () => {
+      const a = stack(`at f (src/foo.ts:42:10)`);
+      const b = stack(`at f (src/foo.ts:42:99)`);
+      expect(computeErrorFingerprint(a, VERSION)).toBe(
+        computeErrorFingerprint(b, VERSION),
+      );
+    });
+
+    it("strips column from frames without parentheses (`at path:line:col`)", () => {
+      const a = stack(`at app.asar/renderer.js:2:989340`);
+      const b = stack(`at app.asar/renderer.js:2:1054550`);
+      expect(computeErrorFingerprint(a, VERSION)).toBe(
+        computeErrorFingerprint(b, VERSION),
+      );
+    });
+
+    it("hashes only the innermost N frames (calling context above is ignored)", () => {
+      // First 5 frames identical, 6th differs → same fingerprint.
+      const top5 = [
+        `at template (node_modules/string-template/index.js:21:19)`,
+        `at pathPattern (plugins/Foo/index.js:265:12)`,
+        `at Object.getPath (plugins/Foo/index.js:880:15)`,
+        `at app.asar/renderer.js:2:989340`,
+        `at Array.reduce (<anonymous>)`,
+      ];
+      const a = stack(
+        ...top5,
+        `at getCurrentActivator (app.asar/renderer.js:2:1661103)`,
+      );
+      const b = stack(
+        ...top5,
+        `at getSupportedActivators (app.asar/renderer.js:2:1660629)`,
+      );
+      expect(computeErrorFingerprint(a, VERSION)).toBe(
+        computeErrorFingerprint(b, VERSION),
+      );
+    });
+
+    it("still differentiates when innermost frames differ", () => {
+      const a = stack(`at f (src/foo.ts:1:2)`, `at g (src/bar.ts:3:4)`);
+      const b = stack(`at h (src/baz.ts:1:2)`, `at g (src/bar.ts:3:4)`);
+      expect(computeErrorFingerprint(a, VERSION)).not.toBe(
+        computeErrorFingerprint(b, VERSION),
+      );
+    });
+  });
 });
