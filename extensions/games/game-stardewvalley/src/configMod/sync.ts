@@ -209,6 +209,13 @@ export async function addModConfig(
       await fs.copyAsync(file.filePath, targetPath, { overwrite: true });
       await fs.removeAsync(file.filePath);
     } catch (err) {
+      // When a mod has been deployed via hardlink, the source and target
+      // share an inode and copyAsync rejects with SelfCopyCheckError. The
+      // file is already in the config mod, so there is nothing to do.
+      const message = err instanceof Error ? err.message : String(err);
+      if (message.includes("are the same file")) {
+        continue;
+      }
       api.showErrorNotification?.("Failed to write mod config", err);
     }
   }
