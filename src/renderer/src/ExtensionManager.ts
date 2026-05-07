@@ -3078,6 +3078,17 @@ class ExtensionManager {
       .filter((name) =>
         fs.statSync(path.join(extension.path, name)).isDirectory(),
       )
+      .filter((name) => {
+        // Skip transient directories left behind by the extension installer/updater:
+        // `*.installing` / `*.7z.installing` are in-progress installs, `*.bak-*` are
+        // pre-update backups. Loading them causes spurious "Cannot find module" /
+        // native-addon errors.
+        if (/\.installing$/i.test(name) || /\.bak-/i.test(name)) {
+          log("debug", "skipping transient extension directory", { name });
+          return false;
+        }
+        return true;
+      })
       .reduce((prev: { [id: string]: IRegisteredExtension }, name: string) => {
         if (!getSafe(this.mExtensionState, [name, "enabled"], true)) {
           log("debug", "extension disabled", { name });
