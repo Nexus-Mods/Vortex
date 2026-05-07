@@ -376,8 +376,14 @@ describe("computeErrorFingerprint", () => {
         `at app.asar/renderer.js:2:989340`,
         `at Array.reduce (<anonymous>)`,
       ];
-      const a = stack(...top5, `at getCurrentActivator (app.asar/renderer.js:2:1661103)`);
-      const b = stack(...top5, `at getSupportedActivators (app.asar/renderer.js:2:1660629)`);
+      const a = stack(
+        ...top5,
+        `at getCurrentActivator (app.asar/renderer.js:2:1661103)`,
+      );
+      const b = stack(
+        ...top5,
+        `at getSupportedActivators (app.asar/renderer.js:2:1660629)`,
+      );
       expect(computeErrorFingerprint(a, VERSION)).toBe(
         computeErrorFingerprint(b, VERSION),
       );
