@@ -17,6 +17,8 @@ vi.mock("../logging", () => ({
   log: vi.fn(),
 }));
 
+import type LevelPersist from "./LevelPersist";
+import type QueryInvalidator from "./QueryInvalidator";
 import ReduxPersistorIPC from "./ReduxPersistorIPC";
 
 type MockPersistor = IPersistor & {
@@ -79,10 +81,8 @@ async function setupIPC(persistor: IPersistor) {
   const levelPersist = createMockLevelPersist();
   const invalidator = createMockInvalidator();
   ipc.setQueryInvalidator(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    levelPersist as any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    invalidator as any,
+    levelPersist as unknown as LevelPersist,
+    invalidator as unknown as QueryInvalidator,
   );
   await ipc.insertPersistor("test", persistor);
   return { ipc, levelPersist, invalidator };
@@ -132,10 +132,12 @@ describe("ReduxPersistorIPC: run grouping", () => {
     // Record the dispatch order via a shared call log rather than reading
     // it back out of two separate mock-call lists.
     const callLog: Array<"set" | "remove"> = [];
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
     persistor.bulkSetItem.mockImplementation((): Promise<void> => {
       callLog.push("set");
       return Promise.resolve();
     });
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
     persistor.bulkRemoveItem.mockImplementation((): Promise<void> => {
       callLog.push("remove");
       return Promise.resolve();
@@ -400,6 +402,7 @@ describe(
       const blocker = new Promise<void>((resolve) => {
         release = resolve;
       });
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises
       persistor.bulkSetItem.mockImplementationOnce(() => blocker);
 
       const { ipc } = await setupIPC(persistor);

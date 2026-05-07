@@ -376,7 +376,7 @@ describe("LevelPersist write timing breadcrumbs", () => {
       await persist.setItem(["a"], "v");
 
       expect(logMock).toHaveBeenCalledTimes(2);
-      const levels = logMock.mock.calls.map((c) => c[0]);
+      const levels = logMock.mock.calls.map((c): unknown => c[0]);
       expect(levels).toEqual(["debug", "debug"]);
       expect(levels).not.toContain("warn");
     });
