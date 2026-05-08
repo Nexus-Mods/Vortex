@@ -4,7 +4,8 @@
   "description": "Support for XCOM 2 and XCOM 2: War of the Chosen",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",
-    "build": "copyfiles -u 1 -f ./src/index.js dist && pnpm run _assets && pnpm extractInfo"
+    "_build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
+    "build": "pnpm run _build && node ../../copy-extension.mjs"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
