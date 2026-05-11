@@ -261,11 +261,22 @@ class LevelPersist implements IPersistor {
     );
   }
 
+  // Removes the exact key and any descendants (keys whose stored form is
+  // `<key>###...`). Subtree removal is needed because some persistence paths
+  // store an object as a single JSON blob at an intermediate path, while
+  // others decompose it into one row per leaf - a parent-only delete would
+  // leave the blob row orphaned (the "infinite repair loop" failure mode).
+  // starts_with is a literal prefix match, so segments containing LIKE
+  // metacharacters (`_`, `%`) - common in keys like `skyrim_se` - cannot
+  // over-match. SEPARATOR collisions are structurally impossible: keys
+  // cannot contain `###` except as a separator.
   public async removeItem(statePath: string[]): Promise<void> {
+    const key = statePath.join(SEPARATOR);
     await this.timedWrite("removeItem", 1, () =>
-      this.#mConnection.run(`DELETE FROM ${this.#mAlias}.kv WHERE key = $1`, [
-        statePath.join(SEPARATOR),
-      ]),
+      this.#mConnection.run(
+        `DELETE FROM ${this.#mAlias}.kv WHERE key = $1 OR starts_with(key, $2)`,
+        [key, `${key}${SEPARATOR}`],
+      ),
     );
   }
 
@@ -297,22 +308,28 @@ class LevelPersist implements IPersistor {
   }
 
   /**
-   * Bulk variant of removeItem: a single DELETE … WHERE key IN (…) statement
-   * covering every key. The caller is expected to chunk large lists.
+   * Bulk variant of removeItem: a single DELETE statement covering every
+   * key. Each input key removes the exact match and any descendants - same
+   * subtree semantics as removeItem (see comment there). The caller is
+   * expected to chunk large lists; with BULK_CHUNK_SIZE=256 the parameter
+   * count stays at 2*256=512.
    */
   public async bulkRemoveItem(keys: ReadonlyArray<string[]>): Promise<void> {
     if (keys.length === 0) {
       return;
     }
-    const placeholders: string[] = [];
+    const clauses: string[] = [];
     const params: string[] = [];
     for (let i = 0; i < keys.length; i++) {
-      placeholders.push(`$${i + 1}`);
-      params.push(keys[i].join(SEPARATOR));
+      const exact = 2 * i + 1;
+      const prefix = 2 * i + 2;
+      clauses.push(`key = $${exact} OR starts_with(key, $${prefix})`);
+      const key = keys[i].join(SEPARATOR);
+      params.push(key, `${key}${SEPARATOR}`);
     }
     await this.timedWrite("bulkRemoveItem", keys.length, () =>
       this.#mConnection.run(
-        `DELETE FROM ${this.#mAlias}.kv WHERE key IN (${placeholders.join(", ")})`,
+        `DELETE FROM ${this.#mAlias}.kv WHERE ${clauses.join(" OR ")}`,
         params,
       ),
     );
