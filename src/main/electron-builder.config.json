@@ -60,6 +60,7 @@
     "bundledPlugins",
     "node_modules/7z-bin",
     "node_modules/bootstrap-sass/assets/stylesheets",
+    "node_modules/json-socket",
     "node_modules/react-select/scss",
     "node_modules/@nexusmods/fomod-installer-native/dist/*.dll",
     "node_modules/@nexusmods/fomod-installer-ipc/dist/*.exe",

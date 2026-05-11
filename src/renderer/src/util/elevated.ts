@@ -8,6 +8,7 @@ import * as path from "path";
 import * as tmp from "tmp";
 import * as winapi from "winapi-bindings";
 
+import { log } from "../logging";
 import { getRealNodeModulePaths } from "./webpack-hacks";
 
 declare const __non_webpack_require__: NodeJS.Require;
@@ -31,6 +32,39 @@ function elevatedMain(
   main: (ipc: IElevatedIpc, req: NodeJS.Require) => void | PromiseLike<void>,
 ) {
   let client;
+
+  // stderr from the elevated child goes nowhere visible (issue #23043), so
+  // failures need to land in vortex.log to be diagnosable. userData comes
+  // from ELECTRON_USERDATA, set by the outer elevated Vortex.exe when
+  // spawning this inner Node child.
+  const logError = (message: string, error: unknown) => {
+    try {
+      const fs = __non_webpack_require__("fs");
+      const path = __non_webpack_require__("path");
+      const userData = process.env.ELECTRON_USERDATA;
+      if (!userData) return;
+      const detail =
+        error instanceof Error
+          ? {
+              name: error.name,
+              message: error.message,
+              stack: error.stack,
+              code: (error as { code?: unknown }).code,
+            }
+          : { value: String(error) };
+      const line =
+        new Date().toISOString() +
+        " [ERROR] [ELEVATED] " +
+        message +
+        " " +
+        JSON.stringify({ pid: process.pid, ipcPath, ...detail }) +
+        "\n";
+      fs.appendFileSync(path.join(userData, "vortex.log"), line);
+    } catch {
+      // diagnostics must never throw
+    }
+  };
+
   const syntaxErrors = ["ReferenceError"];
   const handleError = (error: any) => {
     const testIfScriptInvalid = () => {
@@ -41,7 +75,7 @@ function elevatedMain(
         }
       });
     };
-    console.error("Elevated code failed", error.stack);
+    logError("Elevated code failed", error);
     if (client !== undefined) {
       testIfScriptInvalid();
     }
@@ -73,7 +107,7 @@ function elevatedMain(
     })
     .on("error", (err) => {
       if (err.code !== "EPIPE") {
-        console.error("Connection failed", err.message);
+        logError("Connection failed", err);
       }
     });
 }
@@ -119,6 +153,21 @@ export function runElevated(
           p.split("\\").join("/"),
         );
 
+        // In production builds the elevated Node child runs with
+        // ELECTRON_RUN_AS_NODE, which disables Electron's asar resolution.
+        // Asar-unpacked deps (e.g. json-socket) live under
+        // resources/app.asar.unpacked/node_modules and must be on the
+        // require search path explicitly. In dev the path doesn't exist
+        // and is harmless. See issue #23043.
+        if (process.resourcesPath) {
+          modulePaths.unshift(
+            path
+              .join(process.resourcesPath, "app.asar.unpacked", "node_modules")
+              .split("\\")
+              .join("/"),
+          );
+        }
+
         let mainBody = elevatedMain.toString();
         mainBody = mainBody.slice(
           mainBody.indexOf("{") + 1,
@@ -158,11 +207,9 @@ export function runElevated(
               try {
                 cleanup();
               } catch (cleanupErr) {
-                const errorMessage = getErrorMessageOrDefault(cleanupErr);
-                console.error(
-                  "failed to clean up temporary script",
-                  errorMessage,
-                );
+                log("warn", "failed to clean up temporary script", {
+                  error: getErrorMessageOrDefault(cleanupErr),
+                });
               }
               return reject(writeErr);
             }
