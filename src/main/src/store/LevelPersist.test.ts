@@ -92,9 +92,7 @@ describe("LevelPersist.bulkSetItem", () => {
 
     expect(connection.run).toHaveBeenCalledTimes(1);
     const [sql, params] = connection.run.mock.calls[0];
-    expect(sql).toBe(
-      "INSERT INTO db.kv VALUES ($1, $2), ($3, $4), ($5, $6)",
-    );
+    expect(sql).toBe("INSERT INTO db.kv VALUES ($1, $2), ($3, $4), ($5, $6)");
     expect(params).toEqual(["a", "1", "b", "2", "c", "3"]);
   });
 
