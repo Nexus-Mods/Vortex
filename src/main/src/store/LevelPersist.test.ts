@@ -59,15 +59,16 @@ describe("LevelPersist.setItem", () => {
 });
 
 describe("LevelPersist.removeItem", () => {
-  it("issues a single DELETE", async () => {
+  it("issues a single DELETE that matches the exact key and any descendants", async () => {
     const { persist, connection } = createPersist();
 
     await persist.removeItem(["settings", "window", "x"]);
 
     expect(connection.run).toHaveBeenCalledTimes(1);
+    const exact = `settings${SEPARATOR}window${SEPARATOR}x`;
     expect(connection.run).toHaveBeenCalledWith(
-      "DELETE FROM db.kv WHERE key = $1",
-      [`settings${SEPARATOR}window${SEPARATOR}x`],
+      "DELETE FROM db.kv WHERE key = $1 OR starts_with(key, $2)",
+      [exact, `${exact}${SEPARATOR}`],
     );
   });
 });
@@ -138,15 +139,26 @@ describe("LevelPersist.bulkRemoveItem", () => {
     expect(connection.run).not.toHaveBeenCalled();
   });
 
-  it("emits a single DELETE … WHERE key IN (…)", async () => {
+  it("emits a single DELETE with a subtree clause per input key", async () => {
     const { persist, connection } = createPersist();
 
     await persist.bulkRemoveItem([["a"], ["b"], ["c"]]);
 
     expect(connection.run).toHaveBeenCalledTimes(1);
     const [sql, params] = connection.run.mock.calls[0];
-    expect(sql).toBe("DELETE FROM db.kv WHERE key IN ($1, $2, $3)");
-    expect(params).toEqual(["a", "b", "c"]);
+    expect(sql).toBe(
+      "DELETE FROM db.kv WHERE key = $1 OR starts_with(key, $2) " +
+        "OR key = $3 OR starts_with(key, $4) " +
+        "OR key = $5 OR starts_with(key, $6)",
+    );
+    expect(params).toEqual([
+      "a",
+      `a${SEPARATOR}`,
+      "b",
+      `b${SEPARATOR}`,
+      "c",
+      `c${SEPARATOR}`,
+    ]);
   });
 
   it("joins compound key paths with the separator", async () => {
@@ -155,7 +167,10 @@ describe("LevelPersist.bulkRemoveItem", () => {
     await persist.bulkRemoveItem([["settings", "window"]]);
 
     const params = connection.run.mock.calls[0][1] as string[];
-    expect(params).toEqual([`settings${SEPARATOR}window`]);
+    expect(params).toEqual([
+      `settings${SEPARATOR}window`,
+      `settings${SEPARATOR}window${SEPARATOR}`,
+    ]);
   });
 });
 
