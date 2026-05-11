@@ -22,11 +22,7 @@ import type {
 import type Nexus from "@nexusmods/nexus-api";
 
 import { NexusError, RateLimitError, TimeoutError } from "@nexusmods/nexus-api";
-import {
-  getErrorCode,
-  getErrorMessageOrDefault,
-  unknownToError,
-} from "@vortex/shared";
+import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import Bluebird from "bluebird";
 import * as path from "path";
 import * as semver from "semver";
@@ -78,6 +74,7 @@ import {
   endorseThing,
   ensureLoggedIn,
   graphErrorContext,
+  handleGraphError,
   nexusGamesProm,
   processErrorMessage,
   resolveGraphError,
@@ -737,13 +734,12 @@ export function onGetMyCollections(
 
       return revisions;
     } catch (err) {
-      const code = getErrorCode(err);
-      if (!["NOT_FOUND", "UNAUTHORIZED"].includes(code)) {
-        api.showErrorNotification("Failed to get list of collections", err, {
-          allowReport: !["MODEL_NOT_FOUND"].includes(code),
-        });
-      }
-      return [];
+      return handleGraphError<IRevision[]>(api, err, {
+        title: "Failed to get list of collections",
+        fallback: [],
+        skipCodes: ["NOT_FOUND", "UNAUTHORIZED"],
+        noReportCodes: ["MODEL_NOT_FOUND"],
+      });
     }
   };
 }
@@ -787,14 +783,16 @@ export function onGetNexusCollection(
 export function onGetNexusCollections(
   api: IExtensionApi,
   nexus: Nexus,
-): (gameId: string) => Bluebird<ICollection[]> {
-  return (gameId: string): Bluebird<ICollection[]> =>
+): (gameId: string) => Bluebird<Partial<ICollection>[] | undefined> {
+  return (gameId: string) =>
     Bluebird.resolve(
       nexus.getCollectionListGraph(FULL_COLLECTION_INFO, gameId),
-    ).catch((err) => {
-      api.showErrorNotification("Failed to get list of collections", err);
-      return Bluebird.resolve(undefined);
-    });
+    ).catch((err) =>
+      handleGraphError<Partial<ICollection>[] | undefined>(api, err, {
+        title: "Failed to get list of collections",
+        fallback: undefined,
+      }),
+    );
 }
 
 /**
@@ -820,10 +818,12 @@ export function onResolveCollectionUrl(
   nexus: Nexus,
 ): (apiLink: string) => Bluebird<IDownloadURL[]> {
   return (apiLink: string): Bluebird<IDownloadURL[]> =>
-    Bluebird.resolve(nexus.getCollectionDownloadLink(apiLink)).catch((err) => {
-      api.showErrorNotification("Failed to get list of collections", err);
-      return Bluebird.resolve([]);
-    });
+    Bluebird.resolve(nexus.getCollectionDownloadLink(apiLink)).catch((err) =>
+      handleGraphError<IDownloadURL[]>(api, err, {
+        title: "Failed to get list of collections",
+        fallback: [],
+      }),
+    );
 }
 
 export function onGetNexusCollectionRevision(
@@ -984,12 +984,13 @@ export function onGetModFiles(
       nexus.getModFiles(modId, nexusGameId(game, gameId) || gameId),
     )
       .then((result) => result.files)
-      .catch((err) => {
-        api.showErrorNotification("Failed to get list of mod files", err, {
-          allowReport: false,
-        });
-        return Bluebird.resolve([]);
-      });
+      .catch((err) =>
+        handleGraphError<IFileInfo[]>(api, err, {
+          title: "Failed to get list of mod files",
+          fallback: [],
+          doNotReport: true,
+        }),
+      );
   };
 }
 
@@ -1005,12 +1006,13 @@ export function onModFileContents(
   ) => {
     return Bluebird.resolve(
       nexus.modFileContents(query, filter, offset, count),
-    ).catch((err) => {
-      api.showErrorNotification("Failed to get mod file contents", err, {
-        allowReport: false,
-      });
-      return Bluebird.resolve({});
-    });
+    ).catch((err) =>
+      handleGraphError(api, err, {
+        title: "Failed to get mod file contents",
+        fallback: {},
+        doNotReport: true,
+      }),
+    );
   };
 }
 
@@ -1026,12 +1028,13 @@ export function onGetModInfo(
     const game = gameById(state, gameId);
     return Bluebird.resolve(
       nexus.getModInfo(modId, nexusGameId(game, gameId) || gameId),
-    ).catch((err) => {
-      api.showErrorNotification("Failed to get mod info", err, {
-        allowReport: false,
-      });
-      return Bluebird.resolve({});
-    });
+    ).catch((err) =>
+      handleGraphError(api, err, {
+        title: "Failed to get mod info",
+        fallback: {},
+        doNotReport: true,
+      }),
+    );
   };
 }
 
@@ -1176,12 +1179,13 @@ export function onGetPreferences(
   nexus: Nexus,
 ): (...args: any[]) => Promise<Partial<IPreference>> {
   return (query: IPreferenceQuery) => {
-    return Promise.resolve(nexus.getPreferences(query)).catch((err) => {
-      api.showErrorNotification("Failed to get preferences", err, {
-        allowReport: false,
-      });
-      return Promise.resolve({});
-    });
+    return Promise.resolve(nexus.getPreferences(query)).catch((err) =>
+      handleGraphError(api, err, {
+        title: "Failed to get preferences",
+        fallback: {},
+        doNotReport: true,
+      }),
+    );
   };
 }
 
