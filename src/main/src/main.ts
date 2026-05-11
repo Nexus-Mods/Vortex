@@ -30,6 +30,7 @@ import {
 import { app, dialog } from "electron";
 import i18next from "i18next";
 import child_process from "node:child_process";
+import { appendFileSync } from "node:fs";
 import { stat } from "node:fs/promises";
 import path from "node:path";
 import os from "os";
@@ -174,6 +175,32 @@ const handleError = (error: Error) => {
 async function main(): Promise<void> {
   // important: The following has to be synchronous!
   const mainArgs = parseCommandline(process.argv, false);
+
+  // Elevation diagnostics (issue #23043). Uses synchronous fs.appendFileSync
+  // (not winston) because the elevated Vortex.exe app.quit()s immediately
+  // after the --run handler spawns the inner Node child; winston's buffered
+  // writes can be lost in that window, and winston itself isn't initialised
+  // until later in Application's constructor.
+  const traceElevation = (
+    stage: string,
+    data?: Record<string, unknown>,
+  ): void => {
+    try {
+      const line =
+        new Date().toISOString() +
+        " [DEBG] [MAIN] [elevation-trace] " +
+        stage +
+        " " +
+        JSON.stringify({ pid: process.pid, ...(data || {}) }) +
+        "\n";
+      appendFileSync(path.join(app.getPath("userData"), "vortex.log"), line);
+    } catch {
+      // diagnostics must never throw
+    }
+  };
+
+  traceElevation("main entry", { argv: process.argv });
+
   if (mainArgs.report) {
     return sendReportFile(mainArgs.report)
       .catch((err: unknown) => {
@@ -184,39 +211,15 @@ async function main(): Promise<void> {
       .then(() => app.quit());
   }
 
-  const NODE_OPTIONS = process.env.NODE_OPTIONS || "";
-  process.env.NODE_OPTIONS =
-    NODE_OPTIONS +
-    ` --max-http-header-size=${HTTP_HEADER_SIZE}` +
-    " --no-force-async-hooks-checks";
-
-  if (mainArgs.disableGPU) {
-    app.disableHardwareAcceleration();
-    app.commandLine.appendSwitch("--disable-software-rasterizer");
-    app.commandLine.appendSwitch("--disable-gpu");
-  }
-
-  app.commandLine.appendSwitch("disable-features", "WidgetLayering");
-  app.commandLine.appendSwitch(
-    "disable-features",
-    "UseEcoQoSForBackgroundProcess",
-  );
-
-  createMainTelemetryProvider();
-
-  // Now that telemetry is available, swap in the proper error handler
-  // that supports crash reporting
-  process.removeListener("uncaughtException", earlyErrHandler);
-  process.removeListener("unhandledRejection", earlyErrHandler);
-  process.on("uncaughtException", handleError);
-  process.on("unhandledRejection", handleError);
-
-  initIpcHandlers();
-  initTelemetryIpcHandler();
-  StylesheetCompiler.init();
-
-  // --run has to be evaluated *before* we request the single instance lock!
+  // --run is the entry point for the elevated helper chain (see
+  // src/renderer/src/util/elevated.ts). The renderer-side monitorConsent
+  // watchdog is tight, so this must run before the telemetry / IPC /
+  // stylesheet init below; in v2.0 those steps burned the budget and broke
+  // deployment elevation (issue #23043).
   if (mainArgs.run !== undefined) {
+    traceElevation("--run detected, spawning inner Node child", {
+      tmpScript: mainArgs.run,
+    });
     const appAsar = `${path.sep}app.asar${path.sep}`;
     const execPath = process.execPath.replace(
       appAsar,
@@ -264,14 +267,47 @@ async function main(): Promise<void> {
         detached: true,
       })
       .on("error", (err) => {
+        traceElevation("inner child spawn error", { error: err.message });
         // TODO: In practice we have practically no information about what we're running
         //       at this point
         dialog.showErrorBox("Failed to run script", err.message);
       });
+    traceElevation("inner child spawn issued, quitting");
     // quit this process, the new one is detached
     app.quit();
     return;
   }
+
+  const NODE_OPTIONS = process.env.NODE_OPTIONS || "";
+  process.env.NODE_OPTIONS =
+    NODE_OPTIONS +
+    ` --max-http-header-size=${HTTP_HEADER_SIZE}` +
+    " --no-force-async-hooks-checks";
+
+  if (mainArgs.disableGPU) {
+    app.disableHardwareAcceleration();
+    app.commandLine.appendSwitch("--disable-software-rasterizer");
+    app.commandLine.appendSwitch("--disable-gpu");
+  }
+
+  app.commandLine.appendSwitch("disable-features", "WidgetLayering");
+  app.commandLine.appendSwitch(
+    "disable-features",
+    "UseEcoQoSForBackgroundProcess",
+  );
+
+  createMainTelemetryProvider();
+
+  // Now that telemetry is available, swap in the proper error handler
+  // that supports crash reporting
+  process.removeListener("uncaughtException", earlyErrHandler);
+  process.removeListener("unhandledRejection", earlyErrHandler);
+  process.on("uncaughtException", handleError);
+  process.on("unhandledRejection", handleError);
+
+  initIpcHandlers();
+  initTelemetryIpcHandler();
+  StylesheetCompiler.init();
 
   if (process.env.VORTEX_E2E === "1") {
     // Skip single-instance lock in e2e tests — each test worker runs its
