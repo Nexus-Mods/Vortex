@@ -48,8 +48,13 @@ export function computeStateDiff<T>(
       const currentPath = [...path, key];
 
       if (newState[key] === undefined) {
-        // Key was removed - collect all remove operations for this subtree
-        operations.push(...collectRemoveOperations(currentPath, oldState[key]));
+        // Key was removed — emit a remove at this path (prefix-delete handles
+        // any children stored separately) plus leaf removes for keys that may
+        // be stored deeper than this level.
+        operations.push({ type: "remove", path: currentPath });
+        if (isObject(oldState[key])) {
+          operations.push(...collectRemoveOperations(currentPath, oldState[key]));
+        }
       } else if (oldState[key] !== newState[key]) {
         // Key exists in both but value changed - recurse
         operations.push(...computeStateDiff(oldState[key], newState[key], currentPath));
@@ -77,13 +82,11 @@ export function computeStateDiff<T>(
         operations.push({ type: "set", path, value: newState });
       }
     } else {
-      // Value was removed
+      // Value was removed — always emit remove at this path
+      operations.push({ type: "remove", path });
       if (isObject(oldState)) {
-        // Old value was an object - remove all its leaf values
+        // Old value was an object - also remove leaf keys stored separately
         operations.push(...collectRemoveOperations(path, oldState));
-      } else {
-        // Old value was a primitive
-        operations.push({ type: "remove", path });
       }
     }
   }

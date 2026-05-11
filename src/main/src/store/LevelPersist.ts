@@ -213,8 +213,10 @@ class LevelPersist implements IPersistor {
   }
 
   public async removeItem(statePath: string[]): Promise<void> {
-    await this.#mConnection.run(`DELETE FROM ${this.#mAlias}.kv WHERE key = $1`, [
-      statePath.join(SEPARATOR),
+    const key = statePath.join(SEPARATOR);
+    await this.#mConnection.run(`DELETE FROM ${this.#mAlias}.kv WHERE key = $1 OR key LIKE $2`, [
+      key,
+      key + SEPARATOR + "%",
     ]);
   }
 
