@@ -186,9 +186,22 @@ class ReduxPersistorIPC {
       });
   }
 
+  // Maximum operations bundled into a single bulk INSERT or DELETE.
+  // Bounds failure granularity (a Write failure loses at most this many
+  // operations of progress) while still collapsing typical Redux diffs
+  // into a small number of LevelDB writes. Each set chunk uses 2*N
+  // positional parameters; each remove chunk uses N. 256 keeps both
+  // comfortably below any reasonable parameter limit.
+  private static readonly BULK_CHUNK_SIZE = 256;
+
   /**
    * Process a batch of diff operations for a hive.
-   * Operations are processed sequentially to maintain order.
+   *
+   * Consecutive operations of the same type are coalesced into multi-row
+   * INSERT or DELETE statements (chunked at BULK_CHUNK_SIZE) when the
+   * persistor supports the optional bulk methods. Order is preserved across
+   * type boundaries - a set->remove->set sequence on the same key still
+   * resolves last-write-wins.
    */
   private async processOperations(
     hive: string,
@@ -205,10 +218,7 @@ class ReduxPersistorIPC {
         await levelPersist.beginTransaction();
       }
 
-      // Process operations sequentially to maintain order
-      for (const op of operations) {
-        await this.applyOperation(persistor, op);
-      }
+      await this.applyOperationsInRuns(persistor, operations);
 
       if (useTransaction) {
         // Check dirty tables BEFORE commit (while transaction is active)
@@ -258,18 +268,77 @@ class ReduxPersistorIPC {
   }
 
   /**
-   * Apply a single diff operation to the persistor.
+   * Walk the operation list, grouping consecutive same-type ops into runs
+   * and dispatching each run to the bulk path when available.
    */
-  private applyOperation(
+  private async applyOperationsInRuns(
     persistor: IPersistor,
-    operation: DiffOperation,
+    operations: DiffOperation[],
   ): Promise<void> {
-    if (operation.type === "set") {
-      return Promise.resolve(
-        persistor.setItem(operation.path, this.serialize(operation.value)),
-      );
+    let i = 0;
+    while (i < operations.length) {
+      const opType = operations[i].type;
+      let runEnd = i + 1;
+      while (
+        runEnd < operations.length &&
+        operations[runEnd].type === opType
+      ) {
+        runEnd++;
+      }
+      const run = operations.slice(i, runEnd);
+      if (opType === "set") {
+        await this.applySetRun(persistor, run);
+      } else {
+        await this.applyRemoveRun(persistor, run);
+      }
+      i = runEnd;
+    }
+  }
+
+  private async applySetRun(
+    persistor: IPersistor,
+    run: DiffOperation[],
+  ): Promise<void> {
+    if (persistor.bulkSetItem !== undefined) {
+      const bulk = persistor.bulkSetItem.bind(persistor);
+      for (
+        let start = 0;
+        start < run.length;
+        start += ReduxPersistorIPC.BULK_CHUNK_SIZE
+      ) {
+        const chunk = run.slice(start, start + ReduxPersistorIPC.BULK_CHUNK_SIZE);
+        await bulk(
+          chunk.map((op) => ({
+            key: op.path,
+            value: this.serialize(op.value),
+          })),
+        );
+      }
     } else {
-      return Promise.resolve(persistor.removeItem(operation.path));
+      for (const op of run) {
+        await persistor.setItem(op.path, this.serialize(op.value));
+      }
+    }
+  }
+
+  private async applyRemoveRun(
+    persistor: IPersistor,
+    run: DiffOperation[],
+  ): Promise<void> {
+    if (persistor.bulkRemoveItem !== undefined) {
+      const bulk = persistor.bulkRemoveItem.bind(persistor);
+      for (
+        let start = 0;
+        start < run.length;
+        start += ReduxPersistorIPC.BULK_CHUNK_SIZE
+      ) {
+        const chunk = run.slice(start, start + ReduxPersistorIPC.BULK_CHUNK_SIZE);
+        await bulk(chunk.map((op) => op.path));
+      }
+    } else {
+      for (const op of run) {
+        await persistor.removeItem(op.path);
+      }
     }
   }
 

@@ -1,17 +1,28 @@
-import type { IPersistor } from "@vortex/shared/state";
-
 import type { DuckDBConnection } from "@duckdb/node-api";
+import type { IPersistor } from "@vortex/shared/state";
 
 import { unknownToError } from "@vortex/shared";
 import { DataInvalid } from "@vortex/shared/errors";
-
 import * as path from "node:path";
 
-import { log } from "../logging";
 import { getVortexPath } from "../getVortexPath";
+import { log } from "../logging";
 import DuckDBSingleton from "./DuckDBSingleton";
 
 const SEPARATOR: string = "###";
+
+// Threshold (in milliseconds) above which a successful write is logged as
+// a warning. Picked to be silent under healthy operation while still
+// surfacing meaningful stalls in field log captures.
+const SLOW_WRITE_THRESHOLD_MS = 250;
+
+// When VORTEX_TRACE_DB_WRITES=1 is set in the environment, every persistence
+// write logs an enter/exit pair at debug level so the "last enter without an
+// exit" marks the wedged call. Read per-call so tests (and live operators)
+// can flip it via vi.stubEnv / a relaunch without rebuilding.
+function traceWritesEnabled(): boolean {
+  return process.env.VORTEX_TRACE_DB_WRITES === "1";
+}
 
 export class DatabaseLocked extends Error {
   constructor() {
@@ -115,6 +126,52 @@ class LevelPersist implements IPersistor {
     return this.#mConnection;
   }
 
+  public get inTransaction(): boolean {
+    return this.#mInTransaction;
+  }
+
+  // Times a write through the connection. Default behaviour: silent on
+  // success, warns when the call exceeded SLOW_WRITE_THRESHOLD_MS. With
+  // VORTEX_TRACE_DB_WRITES=1 set in the environment, also emits an enter
+  // line before the await and an exit line after - so an indefinite hang
+  // (where the exit line never appears in vortex.log) pinpoints the
+  // wedged call.
+  private async timedWrite<T>(
+    method: string,
+    count: number,
+    op: () => Promise<T>,
+  ): Promise<T> {
+    const trace = traceWritesEnabled();
+    const start = Date.now();
+    if (trace) {
+      log("debug", "level_pivot Write enter", {
+        method,
+        alias: this.#mAlias,
+        count,
+      });
+    }
+    try {
+      return await op();
+    } finally {
+      const elapsedMs = Date.now() - start;
+      if (trace) {
+        log("debug", "level_pivot Write exit", {
+          method,
+          alias: this.#mAlias,
+          count,
+          elapsedMs,
+        });
+      } else if (elapsedMs > SLOW_WRITE_THRESHOLD_MS) {
+        log("warn", "level_pivot slow Write", {
+          method,
+          alias: this.#mAlias,
+          count,
+          elapsedMs,
+        });
+      }
+    }
+  }
+
   public async close(): Promise<void> {
     await DuckDBSingleton.getInstance().detachDatabase(this.#mAlias);
   }
@@ -184,54 +241,87 @@ class LevelPersist implements IPersistor {
   }
 
   public async setItem(statePath: string[], newState: string): Promise<void> {
-    const key = statePath.join(SEPARATOR);
-    // level_pivot tables don't support UNIQUE indexes, so ON CONFLICT
-    // upserts aren't possible.  UPDATE … RETURNING is also unreliable:
-    // level_pivot's EmitRowCount unconditionally emits a single-row chunk
-    // (the "rows affected" count), which DuckDB's RETURNING pipeline
-    // surfaces as the query result — so RETURNING always reports 1 row
-    // regardless of whether any row was matched.  Use SELECT to check
-    // existence, then UPDATE or INSERT accordingly.
-    const ownTransaction = !this.#mInTransaction;
-    if (ownTransaction) {
-      await this.beginTransaction();
-    }
-    try {
-      const exists = await this.#mConnection.runAndReadAll(
-        `SELECT 1 FROM ${this.#mAlias}.kv WHERE key = $1`,
-        [key],
-      );
-      if (exists.getRows().length > 0) {
-        await this.#mConnection.run(
-          `UPDATE ${this.#mAlias}.kv SET value = $2 WHERE key = $1`,
-          [key, newState],
-        );
-      } else {
-        await this.#mConnection.run(
-          `INSERT INTO ${this.#mAlias}.kv VALUES ($1, $2)`,
-          [key, newState],
-        );
-      }
-      if (ownTransaction) {
-        await this.commitTransaction();
-      }
-    } catch (err) {
-      if (ownTransaction) {
-        await this.rollbackTransaction();
-      }
-      throw err;
-    }
+    // No internal BEGIN/COMMIT here. The previous implementation issued
+    // three statements (SELECT-then-UPDATE-or-INSERT) and self-wrapped in a
+    // transaction to keep them atomic against concurrent writers to the
+    // same key. The new shape is a single statement - raw-mode level_pivot
+    // tables have no UNIQUE constraint and the Sink unconditionally calls
+    // batch.put, so plain INSERT already overwrites an existing row, and
+    // DuckDB's auto-commit makes a one-statement INSERT atomic on its own.
+    // Pinned by the upsert tests in the level_pivot extension's
+    // level_pivot.test. Callers that need to batch multiple setItem /
+    // removeItem calls atomically wrap them in beginTransaction /
+    // commitTransaction explicitly (see ReduxPersistorIPC.processOperations
+    // and Application.importBackup).
+    await this.timedWrite("setItem", 1, () =>
+      this.#mConnection.run(`INSERT INTO ${this.#mAlias}.kv VALUES ($1, $2)`, [
+        statePath.join(SEPARATOR),
+        newState,
+      ]),
+    );
   }
 
   public async removeItem(statePath: string[]): Promise<void> {
-    await this.#mConnection.run(
-      `DELETE FROM ${this.#mAlias}.kv WHERE key = $1`,
-      [statePath.join(SEPARATOR)],
+    await this.timedWrite("removeItem", 1, () =>
+      this.#mConnection.run(
+        `DELETE FROM ${this.#mAlias}.kv WHERE key = $1`,
+        [statePath.join(SEPARATOR)],
+      ),
     );
   }
 
   /**
-   * Begin a transaction on this connection.
+   * Bulk variant of setItem: a single multi-row INSERT covering every item.
+   * Relies on the same upsert behaviour as setItem. The caller is expected
+   * to chunk large diffs to bound failure granularity (see
+   * ReduxPersistorIPC.processOperations).
+   */
+  public async bulkSetItem(
+    items: ReadonlyArray<{ key: string[]; value: string }>,
+  ): Promise<void> {
+    if (items.length === 0) {
+      return;
+    }
+    // Build "VALUES ($1, $2), ($3, $4), ..." with positional params.
+    const placeholders: string[] = [];
+    const params: string[] = [];
+    for (let i = 0; i < items.length; i++) {
+      placeholders.push(`($${2 * i + 1}, $${2 * i + 2})`);
+      params.push(items[i].key.join(SEPARATOR), items[i].value);
+    }
+    await this.timedWrite("bulkSetItem", items.length, () =>
+      this.#mConnection.run(
+        `INSERT INTO ${this.#mAlias}.kv VALUES ${placeholders.join(", ")}`,
+        params,
+      ),
+    );
+  }
+
+  /**
+   * Bulk variant of removeItem: a single DELETE … WHERE key IN (…) statement
+   * covering every key. The caller is expected to chunk large lists.
+   */
+  public async bulkRemoveItem(keys: ReadonlyArray<string[]>): Promise<void> {
+    if (keys.length === 0) {
+      return;
+    }
+    const placeholders: string[] = [];
+    const params: string[] = [];
+    for (let i = 0; i < keys.length; i++) {
+      placeholders.push(`$${i + 1}`);
+      params.push(keys[i].join(SEPARATOR));
+    }
+    await this.timedWrite("bulkRemoveItem", keys.length, () =>
+      this.#mConnection.run(
+        `DELETE FROM ${this.#mAlias}.kv WHERE key IN (${placeholders.join(", ")})`,
+        params,
+      ),
+    );
+  }
+
+  /**
+   * Begin a transaction on this connection. The in-transaction flag is only
+   * set if BEGIN succeeds.
    */
   public async beginTransaction(): Promise<void> {
     await this.#mConnection.run("BEGIN TRANSACTION");
@@ -242,16 +332,22 @@ class LevelPersist implements IPersistor {
    * Commit the current transaction.
    */
   public async commitTransaction(): Promise<void> {
-    await this.#mConnection.run("COMMIT");
-    this.#mInTransaction = false;
+    try {
+      await this.#mConnection.run("COMMIT");
+    } finally {
+      this.#mInTransaction = false;
+    }
   }
 
   /**
    * Rollback the current transaction.
    */
   public async rollbackTransaction(): Promise<void> {
-    await this.#mConnection.run("ROLLBACK");
-    this.#mInTransaction = false;
+    try {
+      await this.#mConnection.run("ROLLBACK");
+    } finally {
+      this.#mInTransaction = false;
+    }
   }
 
   /**
