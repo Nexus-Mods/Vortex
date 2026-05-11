@@ -49,9 +49,7 @@ class SubPersistor implements IPersistor {
     if (this.mWrapped.bulkRemoveItem) {
       const wrappedBulkRemove: (
         keys: ReadonlyArray<PersistorKey>,
-      ) => PromiseLike<void> = this.mWrapped.bulkRemoveItem.bind(
-        this.mWrapped,
-      );
+      ) => PromiseLike<void> = this.mWrapped.bulkRemoveItem.bind(this.mWrapped);
       this.bulkRemoveItem = (keys) =>
         wrappedBulkRemove(keys.map((k) => [hive, ...k]));
     }

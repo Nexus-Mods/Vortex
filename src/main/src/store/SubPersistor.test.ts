@@ -20,7 +20,14 @@ function createWrappedWithBulk() {
     bulkSetItem,
     bulkRemoveItem,
   };
-  return { wrapped, setItem, removeItem, getAllKVs, bulkSetItem, bulkRemoveItem };
+  return {
+    wrapped,
+    setItem,
+    removeItem,
+    getAllKVs,
+    bulkSetItem,
+    bulkRemoveItem,
+  };
 }
 
 function createWrappedWithoutBulk(): IPersistor {
@@ -109,7 +116,10 @@ describe("SubPersistor.bulkRemoveItem", () => {
     const { wrapped, bulkRemoveItem } = createWrappedWithBulk();
     const sub = new SubPersistor(wrapped, "app");
 
-    await sub.bulkRemoveItem([["extensions", "a"], ["extensions", "b"]]);
+    await sub.bulkRemoveItem([
+      ["extensions", "a"],
+      ["extensions", "b"],
+    ]);
 
     expect(bulkRemoveItem).toHaveBeenCalledTimes(1);
     expect(bulkRemoveItem).toHaveBeenCalledWith([

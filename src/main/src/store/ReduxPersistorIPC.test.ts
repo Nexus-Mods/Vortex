@@ -295,141 +295,138 @@ describe("ReduxPersistorIPC: transaction wrapping and dirty-table notify", () =>
   });
 });
 
-describe(
-  "ReduxPersistorIPC: atomicity under partial failure (force-close simulation)",
-  () => {
-    beforeEach(() => vi.clearAllMocks());
+describe("ReduxPersistorIPC: atomicity under partial failure (force-close simulation)", () => {
+  beforeEach(() => vi.clearAllMocks());
 
-    // What this test models:
-    //
-    // The renderer pushes a multi-chunk diff while the user force-closes the
-    // app (or the OS / disk introduces a write error). We can't actually
-    // SIGKILL inside the test, so we simulate the failure point by making
-    // one of the bulk writes throw - the same shape the queue would
-    // observe if a LevelDB Write reported an error mid-transaction.
-    //
-    // We assert two recovery properties:
-    //   1. ROLLBACK is issued for the in-flight DuckDB transaction so a
-    //      stale BEGIN can't block a future caller.
-    //   2. Bulk calls *after* the failure point do not run, bounding
-    //      worst-case data loss to one chunk's worth of writes (256 ops
-    //      with the current BULK_CHUNK_SIZE).
-    //
-    // Note: at the LevelDB layer, each chunk's batch.commit is its own
-    // atomic Write - so chunks the persistor *did* successfully apply
-    // before the failure are durable independently of the DuckDB
-    // ROLLBACK. This test verifies that the queue stops dispatching
-    // additional chunks rather than charging on through the rest.
+  // What this test models:
+  //
+  // The renderer pushes a multi-chunk diff while the user force-closes the
+  // app (or the OS / disk introduces a write error). We can't actually
+  // SIGKILL inside the test, so we simulate the failure point by making
+  // one of the bulk writes throw - the same shape the queue would
+  // observe if a LevelDB Write reported an error mid-transaction.
+  //
+  // We assert two recovery properties:
+  //   1. ROLLBACK is issued for the in-flight DuckDB transaction so a
+  //      stale BEGIN can't block a future caller.
+  //   2. Bulk calls *after* the failure point do not run, bounding
+  //      worst-case data loss to one chunk's worth of writes (256 ops
+  //      with the current BULK_CHUNK_SIZE).
+  //
+  // Note: at the LevelDB layer, each chunk's batch.commit is its own
+  // atomic Write - so chunks the persistor *did* successfully apply
+  // before the failure are durable independently of the DuckDB
+  // ROLLBACK. This test verifies that the queue stops dispatching
+  // additional chunks rather than charging on through the rest.
 
-    it("rolls back and stops dispatch when a bulk chunk fails mid-transaction", async () => {
-      const persistor = createBulkPersistor();
+  it("rolls back and stops dispatch when a bulk chunk fails mid-transaction", async () => {
+    const persistor = createBulkPersistor();
 
-      // Succeed on the first chunk, fail on the second, never reach the third.
-      persistor.bulkSetItem
-        .mockResolvedValueOnce(undefined)
-        .mockRejectedValueOnce(new Error("simulated mid-transaction failure"))
-        .mockResolvedValueOnce(undefined);
+    // Succeed on the first chunk, fail on the second, never reach the third.
+    persistor.bulkSetItem
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error("simulated mid-transaction failure"))
+      .mockResolvedValueOnce(undefined);
 
-      const { ipc, levelPersist, invalidator } = await setupIPC(persistor);
+    const { ipc, levelPersist, invalidator } = await setupIPC(persistor);
 
-      // 700 ops -> 256 + 256 + 188 chunks
-      const ops = Array.from({ length: 700 }, (_, i) =>
-        set([`k${i}`], `v${i}`),
-      );
-      ipc.applyDiffOperations("test", ops);
-      await ipc.finalizeWrite();
+    // 700 ops -> 256 + 256 + 188 chunks
+    const ops = Array.from({ length: 700 }, (_, i) => set([`k${i}`], `v${i}`));
+    ipc.applyDiffOperations("test", ops);
+    await ipc.finalizeWrite();
 
-      // Exactly two chunks attempted: chunk #1 succeeded, chunk #2 threw,
-      // chunk #3 never ran.
-      expect(persistor.bulkSetItem).toHaveBeenCalledTimes(2);
+    // Exactly two chunks attempted: chunk #1 succeeded, chunk #2 threw,
+    // chunk #3 never ran.
+    expect(persistor.bulkSetItem).toHaveBeenCalledTimes(2);
 
-      // The transaction was rolled back rather than committed.
-      expect(levelPersist.beginTransaction).toHaveBeenCalledTimes(1);
-      expect(levelPersist.rollbackTransaction).toHaveBeenCalledTimes(1);
-      expect(levelPersist.commitTransaction).not.toHaveBeenCalled();
+    // The transaction was rolled back rather than committed.
+    expect(levelPersist.beginTransaction).toHaveBeenCalledTimes(1);
+    expect(levelPersist.rollbackTransaction).toHaveBeenCalledTimes(1);
+    expect(levelPersist.commitTransaction).not.toHaveBeenCalled();
 
-      // Dirty-table notifications must not fire on a failed transaction -
-      // consumers would otherwise observe phantom invalidations for state
-      // that didn't actually commit.
-      expect(invalidator.notifyDirtyTables).not.toHaveBeenCalled();
+    // Dirty-table notifications must not fire on a failed transaction -
+    // consumers would otherwise observe phantom invalidations for state
+    // that didn't actually commit.
+    expect(invalidator.notifyDirtyTables).not.toHaveBeenCalled();
+  });
+
+  it("survives a rollback that itself fails - queue continues", async () => {
+    const persistor = createBulkPersistor();
+    persistor.bulkSetItem.mockRejectedValueOnce(new Error("write failed"));
+
+    const { ipc, levelPersist } = await setupIPC(persistor);
+    levelPersist.rollbackTransaction.mockRejectedValueOnce(
+      new Error("rollback failed"),
+    );
+
+    // First diff fails.
+    ipc.applyDiffOperations("test", [set(["a"], "1")]);
+
+    // Subsequent diff must still drain - the queue's catch handler must
+    // not let the rejection propagate and block the chain.
+    ipc.applyDiffOperations("test", [set(["b"], "2")]);
+
+    await expect(ipc.finalizeWrite()).resolves.toBeUndefined();
+
+    // Both diffs were attempted (the second one's bulkSetItem ran fine).
+    expect(persistor.bulkSetItem).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not partially apply ops after the failure point within the same diff", async () => {
+    const persistor = createBulkPersistor();
+    // Fail on the very first chunk.
+    persistor.bulkSetItem.mockRejectedValueOnce(new Error("disk error"));
+
+    const { ipc } = await setupIPC(persistor);
+
+    const ops = Array.from({ length: 600 }, (_, i) => set([`k${i}`], `v${i}`));
+    ipc.applyDiffOperations("test", ops);
+    await ipc.finalizeWrite();
+
+    // 600 ops would be 3 chunks (256+256+88) on success. After the first
+    // chunk throws, no further chunks may run.
+    expect(persistor.bulkSetItem).toHaveBeenCalledTimes(1);
+  });
+
+  it("queue stays in order: a later diff is not processed before an earlier one finishes", async () => {
+    const persistor = createBulkPersistor();
+    // Hold the first bulk call in flight via a deferred promise so we can
+    // observe ordering.
+    let release: () => void = () => undefined;
+    const blocker = new Promise<void>((resolve) => {
+      release = resolve;
     });
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+    persistor.bulkSetItem.mockImplementationOnce(() => blocker);
 
-    it("survives a rollback that itself fails - queue continues", async () => {
-      const persistor = createBulkPersistor();
-      persistor.bulkSetItem.mockRejectedValueOnce(new Error("write failed"));
+    const { ipc } = await setupIPC(persistor);
 
-      const { ipc, levelPersist } = await setupIPC(persistor);
-      levelPersist.rollbackTransaction.mockRejectedValueOnce(
-        new Error("rollback failed"),
-      );
+    ipc.applyDiffOperations("test", [set(["first"], "1")]);
+    ipc.applyDiffOperations("test", [set(["second"], "2")]);
 
-      // First diff fails.
-      ipc.applyDiffOperations("test", [set(["a"], "1")]);
-
-      // Subsequent diff must still drain - the queue's catch handler must
-      // not let the rejection propagate and block the chain.
-      ipc.applyDiffOperations("test", [set(["b"], "2")]);
-
-      await expect(ipc.finalizeWrite()).resolves.toBeUndefined();
-
-      // Both diffs were attempted (the second one's bulkSetItem ran fine).
-      expect(persistor.bulkSetItem).toHaveBeenCalledTimes(2);
-    });
-
-    it("does not partially apply ops after the failure point within the same diff", async () => {
-      const persistor = createBulkPersistor();
-      // Fail on the very first chunk.
-      persistor.bulkSetItem.mockRejectedValueOnce(new Error("disk error"));
-
-      const { ipc } = await setupIPC(persistor);
-
-      const ops = Array.from({ length: 600 }, (_, i) =>
-        set([`k${i}`], `v${i}`),
-      );
-      ipc.applyDiffOperations("test", ops);
-      await ipc.finalizeWrite();
-
-      // 600 ops would be 3 chunks (256+256+88) on success. After the first
-      // chunk throws, no further chunks may run.
-      expect(persistor.bulkSetItem).toHaveBeenCalledTimes(1);
-    });
-
-    it("queue stays in order: a later diff is not processed before an earlier one finishes", async () => {
-      const persistor = createBulkPersistor();
-      // Hold the first bulk call in flight via a deferred promise so we can
-      // observe ordering.
-      let release: () => void = () => undefined;
-      const blocker = new Promise<void>((resolve) => {
-        release = resolve;
-      });
-      // eslint-disable-next-line @typescript-eslint/no-misused-promises
-      persistor.bulkSetItem.mockImplementationOnce(() => blocker);
-
-      const { ipc } = await setupIPC(persistor);
-
-      ipc.applyDiffOperations("test", [set(["first"], "1")]);
-      ipc.applyDiffOperations("test", [set(["second"], "2")]);
-
-      // Give microtasks a chance to drain. Only the first diff's bulk call
-      // should have been issued so far - the second is queued behind it.
-      await Promise.resolve();
-      await Promise.resolve();
-      expect(persistor.bulkSetItem).toHaveBeenCalledTimes(1);
-      expect(
-        (persistor.bulkSetItem.mock.calls[0][0] as Array<{
+    // Give microtasks a chance to drain. Only the first diff's bulk call
+    // should have been issued so far - the second is queued behind it.
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(persistor.bulkSetItem).toHaveBeenCalledTimes(1);
+    expect(
+      (
+        persistor.bulkSetItem.mock.calls[0][0] as Array<{
           key: PersistorKey;
-        }>)[0].key[0],
-      ).toBe("first");
+        }>
+      )[0].key[0],
+    ).toBe("first");
 
-      release();
-      await ipc.finalizeWrite();
+    release();
+    await ipc.finalizeWrite();
 
-      expect(persistor.bulkSetItem).toHaveBeenCalledTimes(2);
-      expect(
-        (persistor.bulkSetItem.mock.calls[1][0] as Array<{
+    expect(persistor.bulkSetItem).toHaveBeenCalledTimes(2);
+    expect(
+      (
+        persistor.bulkSetItem.mock.calls[1][0] as Array<{
           key: PersistorKey;
-        }>)[0].key[0],
-      ).toBe("second");
-    });
-  },
-);
+        }>
+      )[0].key[0],
+    ).toBe("second");
+  });
+});

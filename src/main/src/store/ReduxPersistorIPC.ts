@@ -279,10 +279,7 @@ class ReduxPersistorIPC {
     while (i < operations.length) {
       const opType = operations[i].type;
       let runEnd = i + 1;
-      while (
-        runEnd < operations.length &&
-        operations[runEnd].type === opType
-      ) {
+      while (runEnd < operations.length && operations[runEnd].type === opType) {
         runEnd++;
       }
       const run = operations.slice(i, runEnd);
@@ -306,7 +303,10 @@ class ReduxPersistorIPC {
         start < run.length;
         start += ReduxPersistorIPC.BULK_CHUNK_SIZE
       ) {
-        const chunk = run.slice(start, start + ReduxPersistorIPC.BULK_CHUNK_SIZE);
+        const chunk = run.slice(
+          start,
+          start + ReduxPersistorIPC.BULK_CHUNK_SIZE,
+        );
         await bulk(
           chunk.map((op) => ({
             key: op.path,
@@ -332,7 +332,10 @@ class ReduxPersistorIPC {
         start < run.length;
         start += ReduxPersistorIPC.BULK_CHUNK_SIZE
       ) {
-        const chunk = run.slice(start, start + ReduxPersistorIPC.BULK_CHUNK_SIZE);
+        const chunk = run.slice(
+          start,
+          start + ReduxPersistorIPC.BULK_CHUNK_SIZE,
+        );
         await bulk(chunk.map((op) => op.path));
       }
     } else {
