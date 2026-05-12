@@ -1,10 +1,7 @@
 const Promise = require("bluebird");
 const path = require("path");
 const winapi = require("winapi-bindings");
-const { app, remote } = require("electron");
 const { actions, fs, util } = require("vortex-api");
-
-const uniApp = app || remote.app;
 
 let _API;
 const GAME_ID = "dawnofman";
@@ -15,7 +12,7 @@ const SCENE_FILE_EXT = ".scn.xml";
 const UMM_MOD_INFO = "Info.json";
 
 function getSceneFolder() {
-  return path.join(uniApp.getPath("documents"), "DawnOfMan", "Scenarios");
+  return path.join(util.getVortexPath("documents"), "DawnOfMan", "Scenarios");
 }
 
 function readRegistryKey(hive, key, name) {
@@ -31,11 +28,9 @@ function readRegistryKey(hive, key, name) {
 }
 
 function findUnityModManager() {
-  return readRegistryKey(
-    "HKEY_CURRENT_USER",
-    "Software\\UnityModManager",
-    "Path",
-  ).then((value) => fs.statAsync(path.join(value, UMM_DLL)));
+  return readRegistryKey("HKEY_CURRENT_USER", "Software\\UnityModManager", "Path").then((value) =>
+    fs.statAsync(path.join(value, UMM_DLL)),
+  );
 }
 
 function findGame() {
@@ -50,11 +45,7 @@ function findGame() {
       ),
     )
     .catch(() =>
-      readRegistryKey(
-        "HKEY_LOCAL_MACHINE",
-        `SOFTWARE\\GOG.com\\Games\\${GOG_ID}`,
-        "PATH",
-      ),
+      readRegistryKey("HKEY_LOCAL_MACHINE", `SOFTWARE\\GOG.com\\Games\\${GOG_ID}`, "PATH"),
     );
 }
 
@@ -80,9 +71,7 @@ function prepareForModding(discovery) {
               label: "More on Vortex Tools",
               action: () => {
                 util
-                  .opn(
-                    "https://wiki.nexusmods.com/index.php/Category:Tool_Setup",
-                  )
+                  .opn("https://wiki.nexusmods.com/index.php/Category:Tool_Setup")
                   .then(() => showUMMDialog())
                   .catch((err) => undefined);
                 resolve();
@@ -91,9 +80,7 @@ function prepareForModding(discovery) {
             {
               label: "Go to UMM page",
               action: () => {
-                util
-                  .opn("https://www.nexusmods.com/site/mods/21/")
-                  .catch((err) => undefined);
+                util.opn("https://www.nexusmods.com/site/mods/21/").catch((err) => undefined);
                 // We want to go forward even if UMM is not installed as the scenario modType
                 //  can be installed without UMM.
                 resolve();
@@ -107,27 +94,22 @@ function prepareForModding(discovery) {
   return fs
     .ensureDirWritableAsync(getSceneFolder(), () => Promise.resolve())
     .then(() =>
-      fs.ensureDirWritableAsync(path.join(discovery.path, "Mods"), () =>
-        Promise.resolve(),
-      ),
+      fs.ensureDirWritableAsync(path.join(discovery.path, "Mods"), () => Promise.resolve()),
     )
     .then(() => findUnityModManager().catch((err) => showUMMDialog()));
 }
 
 function endsWithPattern(instructions, pattern) {
   return Promise.resolve(
-    instructions.find(
-      (inst) => !!inst?.destination && inst.destination.endsWith(pattern),
-    ) !== undefined,
+    instructions.find((inst) => !!inst?.destination && inst.destination.endsWith(pattern)) !==
+      undefined,
   );
 }
 
 function installSceneMod(files, destinationPath) {
   const sceneFile = files.find((file) => file.endsWith(SCENE_FILE_EXT));
   const idx = sceneFile.indexOf(path.basename(sceneFile));
-  const modName = path
-    .basename(destinationPath, ".installing")
-    .replace(/[^A-Za-z]/g, "");
+  const modName = path.basename(destinationPath, ".installing").replace(/[^A-Za-z]/g, "");
 
   const filtered = files.filter((file) => !file.endsWith(path.sep));
   const instructions = filtered.map((file) => {
@@ -146,9 +128,7 @@ function installMod(files, destinationPath) {
   const infoFile = files.find((file) => file.endsWith(UMM_MOD_INFO));
   const idx = infoFile.indexOf(UMM_MOD_INFO);
   const rootPath = path.dirname(infoFile);
-  const modName = path
-    .basename(destinationPath, ".installing")
-    .replace(/[^A-Za-z]/g, "");
+  const modName = path.basename(destinationPath, ".installing").replace(/[^A-Za-z]/g, "");
 
   const filtered = files.filter(
     (file) => !file.endsWith(path.sep) && file.indexOf(rootPath) !== -1,
@@ -217,12 +197,7 @@ function main(context) {
     (instructions) => endsWithPattern(instructions, SCENE_FILE_EXT),
   );
 
-  context.registerInstaller(
-    "dom-scene-installer",
-    25,
-    testSceneMod,
-    installSceneMod,
-  );
+  context.registerInstaller("dom-scene-installer", 25, testSceneMod, installSceneMod);
   context.registerInstaller("dom-mod", 25, testMod, installMod);
 }
 

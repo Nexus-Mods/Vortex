@@ -1,10 +1,8 @@
-const { app, remote } = require("electron");
 const path = require("path");
 const { fs, util } = require("vortex-api");
 
-const appUni = app || remote.app;
 const LOCAL_LOW = path.resolve(
-  appUni.getPath("appData"),
+  util.getVortexPath("appData"),
   "..",
   "LocalLow",
   "Daggerfall Workshop",
@@ -28,10 +26,7 @@ function resolveGameVersion() {
 
 function findGame() {
   const getTrimmedPath = (gamePath) => {
-    const trimmed = gamePath
-      .substr(CMD_PATTERN.length)
-      .trim()
-      .replace(/\"/g, "");
+    const trimmed = gamePath.substr(CMD_PATTERN.length).trim().replace(/\"/g, "");
     return path.dirname(trimmed);
   };
 
@@ -44,16 +39,11 @@ function findGame() {
         ? Promise.resolve(getTrimmedPath(gamePathLine))
         : Promise.resolve(undefined);
     })
-    .catch((err) =>
-      err["code"] === "ENOENT"
-        ? Promise.resolve(undefined)
-        : Promise.reject(err),
-    );
+    .catch((err) => (err["code"] === "ENOENT" ? Promise.resolve(undefined) : Promise.reject(err)));
 }
 
 function testSupported(files, gameId) {
-  const notSupported = () =>
-    Promise.resolve({ supported: false, requiredFiles: [] });
+  const notSupported = () => Promise.resolve({ supported: false, requiredFiles: [] });
   const dfmods = files.filter((file) => path.extname(file) === DFMOD_EXT);
 
   // No point proceeding if we find 0 dfmods.

@@ -1,11 +1,8 @@
 const Promise = require("bluebird");
-const { app, remote } = require("electron");
 const _ = require("lodash");
 const path = require("path");
 const { fs, log, selectors, util } = require("vortex-api");
 const { Builder, parseStringPromise } = require("xml2js");
-
-const appUni = remote !== undefined ? remote.app : app;
 
 const GAME_ID = "wolcenlordsofmayhem";
 const APPID = 424370;
@@ -24,9 +21,7 @@ function findGame() {
 }
 
 function prepareForModding(discovery) {
-  return fs.ensureDirWritableAsync(path.join(discovery.path, "Mods"), () =>
-    Promise.resolve(),
-  );
+  return fs.ensureDirWritableAsync(path.join(discovery.path, "Mods"), () => Promise.resolve());
 }
 
 function gameExecutable() {
@@ -43,10 +38,7 @@ function makeTestMerge(api) {
       return undefined;
     }
 
-    const installPath = selectors.installPathForGame(
-      api.store.getState(),
-      game.id,
-    );
+    const installPath = selectors.installPathForGame(api.store.getState(), game.id);
 
     return {
       baseFiles: (deployedFiles) =>
@@ -100,16 +92,9 @@ async function getTargetData(targetPath) {
  */
 function makeMergeXML(api) {
   return async (filePath, mergePath) => {
-    const installPath = selectors.installPathForGame(
-      api.store.getState(),
-      GAME_ID,
-    );
+    const installPath = selectors.installPathForGame(api.store.getState(), GAME_ID);
 
-    const relPath = path
-      .relative(installPath, filePath)
-      .split(path.sep)
-      .slice(1)
-      .join(path.sep);
+    const relPath = path.relative(installPath, filePath).split(path.sep).slice(1).join(path.sep);
 
     const targetPath = path.join(mergePath, relPath);
 
@@ -173,11 +158,7 @@ function main(context) {
     },
   });
 
-  context.registerMerge(
-    makeTestMerge(context.api),
-    makeMergeXML(context.api),
-    "",
-  );
+  context.registerMerge(makeTestMerge(context.api), makeMergeXML(context.api), "");
 
   return true;
 }

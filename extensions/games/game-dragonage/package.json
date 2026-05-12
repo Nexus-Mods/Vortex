@@ -1,6 +1,6 @@
 {
   "name": "game-dragonage",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Support for Dragon Age: Origins",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",

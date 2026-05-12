@@ -2,15 +2,11 @@ const Promise = require("bluebird");
 const path = require("path");
 const winapi = require("winapi-bindings");
 const { fs, util } = require("vortex-api");
-const { app, remote } = require("electron");
 
-const executable =
-  process.platform == "linux" ? "PrisonArchitect" : "Prison Architect64.exe";
-
-const appUni = remote !== undefined ? remote.app : app;
+const executable = process.platform == "linux" ? "PrisonArchitect" : "Prison Architect64.exe";
 
 const MODS_LOCAL = path.resolve(
-  appUni.getPath("appData"),
+  util.getVortexPath("appData"),
   "..",
   "Local",
   "Introversion",
@@ -45,9 +41,7 @@ function findGame() {
     }
     return Promise.resolve(instPath.value);
   } catch (err) {
-    return util.steam
-      .findByAppId(STEAM_ID.toString())
-      .then((game) => game.gamePath);
+    return util.steam.findByAppId(STEAM_ID.toString()).then((game) => game.gamePath);
   }
 }
 

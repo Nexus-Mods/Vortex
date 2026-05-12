@@ -1,6 +1,6 @@
 {
   "name": "game-sims4",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Support for The Sims 4",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",

@@ -1,13 +1,10 @@
 const Promise = require("bluebird");
 const winapi = require("winapi-bindings");
 
-const { remote, app } = require("electron");
 const path = require("path");
 const semver = require("semver");
 const { actions, fs, log, util } = require("vortex-api");
 const IniParser = require("vortex-parse-ini");
-
-const appUni = app || remote.app;
 
 // The Sims 4 mods folder may be affected by localization.
 const LOCALE_MODS_FOLDER = {
@@ -81,10 +78,7 @@ function getLocale(eaPath) {
   if (locale === undefined) {
     // fall back to english directory name ("The Sims 4") because that's what
     // practically all variants use.
-    log(
-      "warn",
-      "[The Sims 4] Falling back to default mod directory because locale is unknown",
-    );
+    log("warn", "[The Sims 4] Falling back to default mod directory because locale is unknown");
     locale = "en_US";
   }
 
@@ -92,7 +86,7 @@ function getLocale(eaPath) {
 }
 
 function findModPath() {
-  const eaPath = path.join(appUni.getPath("documents"), "Electronic Arts");
+  const eaPath = path.join(util.getVortexPath("documents"), "Electronic Arts");
 
   const locale = getLocale(eaPath);
   return path.join(eaPath, LOCALE_MODS_FOLDER[locale], "Mods");
@@ -222,13 +216,7 @@ const TRAY_EXTENSIONS = new Set([
   ".rmi",
 ]);
 
-const MODS_EXTENSIONS = new Set([
-  ".package",
-  ".ts4script",
-  ".py",
-  ".pyc",
-  ".pyo",
-]);
+const MODS_EXTENSIONS = new Set([".package", ".ts4script", ".py", ".pyc", ".pyo"]);
 
 function testMixed(files, gameId) {
   if (gameId !== "thesims4") {
@@ -268,20 +256,12 @@ function installMixed(files, destinationPath) {
   const ext = (input) => path.extname(input).toLowerCase();
 
   // find out which path(s) contain files for tray
-  const traySamples = files.filter((filePath) =>
-    TRAY_EXTENSIONS.has(ext(filePath)),
-  );
-  let trayBases = new Set(
-    traySamples.map((filePath) => path.dirname(filePath).toLowerCase()),
-  );
+  const traySamples = files.filter((filePath) => TRAY_EXTENSIONS.has(ext(filePath)));
+  let trayBases = new Set(traySamples.map((filePath) => path.dirname(filePath).toLowerCase()));
 
   // find out which path(s) contain files for mods
-  const modsSamples = files.filter((filePath) =>
-    MODS_EXTENSIONS.has(ext(filePath)),
-  );
-  let modsBases = new Set(
-    modsSamples.map((filePath) => path.dirname(filePath).toLowerCase()),
-  );
+  const modsSamples = files.filter((filePath) => MODS_EXTENSIONS.has(ext(filePath)));
+  let modsBases = new Set(modsSamples.map((filePath) => path.dirname(filePath).toLowerCase()));
 
   // the following tries to account for overlap where the same directory contains files
   // for tray and mods:
@@ -305,19 +285,11 @@ function installMixed(files, destinationPath) {
       source: filePath,
     };
     if (hasParent(filePath, modsBases) && !TRAY_EXTENSIONS.has(ext(filePath))) {
-      instruction.destination = path.join(
-        "Mods",
-        MODS_SUB_PATH,
-        path.basename(filePath),
-      );
+      instruction.destination = path.join("Mods", MODS_SUB_PATH, path.basename(filePath));
     } else if (hasParent(filePath, trayBases)) {
       instruction.destination = path.join("Tray", path.basename(filePath));
     } else {
-      instruction.destination = path.join(
-        "Mods",
-        MODS_SUB_PATH,
-        path.basename(filePath),
-      );
+      instruction.destination = path.join("Mods", MODS_SUB_PATH, path.basename(filePath));
     }
     instructions.push(instruction);
   });
@@ -335,11 +307,7 @@ function migrate200(api, oldVersion) {
   }
 
   const state = api.store.getState();
-  const activatorId = util.getSafe(
-    state,
-    ["settings", "mods", "activator", "thesims4"],
-    undefined,
-  );
+  const activatorId = util.getSafe(state, ["settings", "mods", "activator", "thesims4"], undefined);
   const gameDiscovery = util.getSafe(
     state,
     ["settings", "gameMode", "discovered", "thesims4"],
@@ -352,10 +320,7 @@ function migrate200(api, oldVersion) {
     activatorId === undefined
   ) {
     // if this game is not discovered or deployed there is no need to migrate
-    log(
-      "debug",
-      "skipping sims 4 migration because no deployment set up for it",
-    );
+    log("debug", "skipping sims 4 migration because no deployment set up for it");
     return Promise.resolve();
   }
 
@@ -374,12 +339,7 @@ function migrate200(api, oldVersion) {
     .awaitUI()
     .then(() => fs.ensureDirWritableAsync(path.join(bmp, MODS_SUB_PATH)))
     .then(() =>
-      api.emitAndAwait(
-        "purge-mods-in-path",
-        "thesims4",
-        "",
-        path.join(bmp, MODS_SUB_PATH),
-      ),
+      api.emitAndAwait("purge-mods-in-path", "thesims4", "", path.join(bmp, MODS_SUB_PATH)),
     )
     .then(() => api.emitAndAwait("purge-mods-in-path", "thesims4", "", bmp))
     .then(() => {

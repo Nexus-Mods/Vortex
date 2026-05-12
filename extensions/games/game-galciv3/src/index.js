@@ -1,10 +1,8 @@
 const Promise = require("bluebird");
-const { app, remote } = require("electron");
 const path = require("path");
 const { fs, selectors, util } = require("vortex-api");
 const winapi = require("winapi-bindings");
 
-const appUni = app || remote.app;
 const GAME_ID = "galacticcivilizations3";
 
 const STEAM_ID = 976210;
@@ -24,18 +22,16 @@ function findGame() {
     }
     return Promise.resolve(instPath.value);
   } catch (err) {
-    return util.steam
-      .findByAppId(STEAM_ID.toString())
-      .then((game) => game.gamePath);
+    return util.steam.findByAppId(STEAM_ID.toString()).then((game) => game.gamePath);
   }
 }
 
 function modPath() {
-  return path.join(appUni.getPath("documents"), "My Games", "GalCiv3");
+  return path.join(util.getVortexPath("documents"), "My Games", "GalCiv3");
 }
 
 function crusadeModPath() {
-  return path.join(appUni.getPath("documents"), "My Games", "GC3Crusade");
+  return path.join(util.getVortexPath("documents"), "My Games", "GC3Crusade");
 }
 
 function dirExists(dirPath) {
@@ -52,9 +48,7 @@ function installContent(files) {
   //       ../someMod/Game/something.xml
   const filtered = files.filter((file) => !file.endsWith(path.sep));
   const factionFiles = filtered.filter((file) => file.endsWith(FACTION_EXT));
-  const nonFactionFiles = filtered.filter(
-    (file) => !file.endsWith(FACTION_EXT),
-  );
+  const nonFactionFiles = filtered.filter((file) => !file.endsWith(FACTION_EXT));
   const instructions = nonFactionFiles
     .map((file) => {
       return {
@@ -111,12 +105,7 @@ function main(context) {
     },
   });
 
-  context.registerInstaller(
-    "galciv3installer",
-    25,
-    testSupportedContent,
-    installContent,
-  );
+  context.registerInstaller("galciv3installer", 25, testSupportedContent, installContent);
   context.registerModType(
     "galciv3crusade",
     25,
@@ -134,8 +123,7 @@ function main(context) {
         return Promise.resolve();
       }
 
-      displayNotification =
-        deployment[""].concat(deployment["galciv3crusade"]).length === 0;
+      displayNotification = deployment[""].concat(deployment["galciv3crusade"]).length === 0;
       return Promise.resolve();
     });
     context.api.onAsync("did-deploy", (profileId, deployment) => {

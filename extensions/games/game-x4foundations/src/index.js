@@ -1,5 +1,4 @@
 /* eslint-disable */
-const { app, remote } = require("electron");
 const Big = require("big.js");
 const Promise = require("bluebird");
 const { parseStringPromise } = require("xml2js");
@@ -9,7 +8,6 @@ const winapi = require("winapi-bindings");
 
 const semver = require("semver");
 
-const APPUNI = app || remote.app;
 const GAME_ID = "x4foundations";
 const I18N_NAMESPACE = `game-${GAME_ID}`;
 const STEAM_ID = 392160;
@@ -33,11 +31,7 @@ function findGame() {
       ),
     )
     .catch(() =>
-      readRegistryKey(
-        "HKEY_LOCAL_MACHINE",
-        `SOFTWARE\\GOG.com\\Games\\${GOG_ID}`,
-        "PATH",
-      ),
+      readRegistryKey("HKEY_LOCAL_MACHINE", `SOFTWARE\\GOG.com\\Games\\${GOG_ID}`, "PATH"),
     );
 }
 
@@ -58,9 +52,7 @@ function testSupportedContent(files, gameId) {
     return Promise.resolve({ supported: false });
   }
 
-  const contentPath = files.find(
-    (file) => path.basename(file) === "content.xml",
-  );
+  const contentPath = files.find((file) => path.basename(file) === "content.xml");
   return Promise.resolve({
     supported: contentPath !== undefined,
     requiredFiles: [contentPath],
@@ -87,10 +79,7 @@ async function parseIndexFiles(indexPath) {
                 parsed = await parseStringPromise(data);
                 const entries = parsed?.diff?.add?.[0]?.entry;
                 const entryValue = entries[0]?.$?.value;
-                if (
-                  entryValue !== undefined &&
-                  entryValue.startsWith("extensions")
-                ) {
+                if (entryValue !== undefined && entryValue.startsWith("extensions")) {
                   const segments = entryValue.split(path.sep);
                   return Promise.resolve(segments[1]);
                 }
@@ -118,15 +107,8 @@ async function parseIndexFiles(indexPath) {
     });
 }
 
-async function installContent(
-  files,
-  destinationPath,
-  gameId,
-  progressDelegate,
-) {
-  const contentPath = files.find(
-    (file) => path.basename(file) === "content.xml",
-  );
+async function installContent(files, destinationPath, gameId, progressDelegate) {
+  const contentPath = files.find((file) => path.basename(file) === "content.xml");
   const basePath = path.dirname(contentPath);
 
   const hasIndexFolder = await fs
@@ -144,9 +126,7 @@ async function installContent(
       try {
         parsed = await parseStringPromise(data);
       } catch (err) {
-        return Promise.reject(
-          new util.DataInvalid("content.xml invalid: " + err.message),
-        );
+        return Promise.reject(new util.DataInvalid("content.xml invalid: " + err.message));
       }
       const attrInstructions = [];
 
@@ -161,9 +141,7 @@ async function installContent(
 
       const contentModId = getAttr("id");
       if (contentModId === undefined) {
-        return Promise.reject(
-          new util.DataInvalid("invalid or unsupported content.xml"),
-        );
+        return Promise.reject(new util.DataInvalid("invalid or unsupported content.xml"));
       }
 
       // We prefer using the mod folder name included in the archive structure.
@@ -176,9 +154,9 @@ async function installContent(
         contentPath.indexOf("content.xml") > 0
           ? path.basename(path.dirname(contentPath))
           : hasIndexFolder
-            ? parseIndexFiles(
-                path.join(destinationPath, basePath, "index"),
-              ).then((res) => (!!res ? res : contentModId))
+            ? parseIndexFiles(path.join(destinationPath, basePath, "index")).then((res) =>
+                !!res ? res : contentModId,
+              )
             : contentModId; // Last resort.
 
       const name = getAttr("name") || contentModId;
@@ -220,17 +198,11 @@ async function installContent(
     .then((attrInstructions) => {
       let instructions = attrInstructions.concat(
         files
-          .filter(
-            (file) =>
-              file.startsWith(basePath + path.sep) && !file.endsWith(path.sep),
-          )
+          .filter((file) => file.startsWith(basePath + path.sep) && !file.endsWith(path.sep))
           .map((file) => ({
             type: "copy",
             source: file,
-            destination: path.join(
-              outputPath,
-              file.substring(basePath.length + 1),
-            ),
+            destination: path.join(outputPath, file.substring(basePath.length + 1)),
           })),
       );
       return { instructions };
@@ -253,14 +225,8 @@ function steamUserId32Bit() {
 
 function getDocumentsModPath() {
   return _STEAM_ENTRY !== undefined
-    ? path.join(
-        APPUNI.getPath("documents"),
-        "Egosoft",
-        "X4",
-        steamUserId32Bit(),
-        "extensions",
-      )
-    : path.join(APPUNI.getPath("documents"), "Egosoft", "X4", "extensions");
+    ? path.join(util.getVortexPath("documents"), "Egosoft", "X4", steamUserId32Bit(), "extensions")
+    : path.join(util.getVortexPath("documents"), "Egosoft", "X4", "extensions");
 }
 
 function migrate101(api, oldVersion) {
@@ -321,15 +287,11 @@ function migrate101(api, oldVersion) {
     modIds,
     (accum, modId) => {
       const mod = mods[modId];
-      const modStagingPath = path.join(
-        gameInstallationPath,
-        mod.installationPath,
-      );
+      const modStagingPath = path.join(gameInstallationPath, mod.installationPath);
       return fs
         .readdirAsync(modStagingPath)
         .then((entries) => {
-          const hasInvalidModName =
-            entries.find((entry) => entry.startsWith("ws_")) !== undefined;
+          const hasInvalidModName = entries.find((entry) => entry.startsWith("ws_")) !== undefined;
           if (hasInvalidModName) {
             accum.push(modId);
           }
@@ -349,9 +311,7 @@ async function prepareForModding(discovery) {
     const extensionsPath = path.join(discovery.path, "extensions");
     return fs
       .ensureDirWritableAsync(documentsPath, () => Promise.resolve())
-      .then(() =>
-        fs.ensureDirWritableAsync(extensionsPath, () => Promise.resolve()),
-      );
+      .then(() => fs.ensureDirWritableAsync(extensionsPath, () => Promise.resolve()));
   } catch (err) {
     Promise.reject(err);
   }
@@ -376,12 +336,7 @@ function main(context) {
     },
   });
 
-  context.registerInstaller(
-    "x4foundations",
-    50,
-    testSupportedContent,
-    installContent,
-  );
+  context.registerInstaller("x4foundations", 50, testSupportedContent, installContent);
   context.registerModType(
     "x4-documents-modtype",
     15,

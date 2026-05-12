@@ -1,7 +1,6 @@
 const Promise = require("bluebird");
-const { remote } = require("electron");
 const path = require("path");
-const { fs } = require("vortex-api");
+const { fs, util } = require("vortex-api");
 const winapi = require("winapi-bindings");
 
 function findGame() {
@@ -43,7 +42,7 @@ function prepareForModding() {
 
 function modPath() {
   return path.join(
-    remote.app.getPath("documents"),
+    util.getVortexPath("documents"),
     "Electronic Arts",
     "The Sims 3",
     "Mods",
@@ -54,13 +53,10 @@ function modPath() {
 let tools = [];
 
 async function getGameVersion(gamePath) {
-  const skuInfo = await fs.readFileAsync(
-    path.join(gamePath, "game", "bin", "skuversion.txt"),
-    { encoding: "utf8" },
-  );
-  const gvLine = skuInfo
-    .split("\n")
-    .find((line) => line.startsWith("GameVersion"));
+  const skuInfo = await fs.readFileAsync(path.join(gamePath, "game", "bin", "skuversion.txt"), {
+    encoding: "utf8",
+  });
+  const gvLine = skuInfo.split("\n").find((line) => line.startsWith("GameVersion"));
   if (gvLine !== undefined) {
     return gvLine.split("=")[1].trim();
   } else {

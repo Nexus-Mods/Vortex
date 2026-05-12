@@ -1,9 +1,6 @@
-const { app, remote } = require("electron");
 const path = require("path");
 const { fs, util } = require("vortex-api");
 const winapi = require("winapi-bindings");
-
-const appUni = app || remote.app;
 
 const STEAM_IDS = ["15543", "1238040"];
 function regget(key, val) {
@@ -28,17 +25,13 @@ function findGame() {
   //  we're going to test both.
   return util.GameStoreHelper.findByAppId(STEAM_IDS)
     .then((game) => game.gamePath)
-    .catch(() =>
-      regget("Software\\Wow6432Node\\BioWare\\Dragon Age 2", "Install Dir"),
-    )
-    .catch(() =>
-      regget("Software\\Wow6432Node\\BioWare\\Dragon Age II", "Install Dir"),
-    );
+    .catch(() => regget("Software\\Wow6432Node\\BioWare\\Dragon Age 2", "Install Dir"))
+    .catch(() => regget("Software\\Wow6432Node\\BioWare\\Dragon Age II", "Install Dir"));
 }
 
 function queryModPath() {
   return path.join(
-    appUni.getPath("documents"),
+    util.getVortexPath("documents"),
     "BioWare",
     "Dragon Age 2",
     "packages",

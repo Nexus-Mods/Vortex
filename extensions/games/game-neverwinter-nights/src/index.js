@@ -1,5 +1,4 @@
 const Promise = require("bluebird");
-const { remote } = require("electron");
 const path = require("path");
 const winapi = require("winapi-bindings");
 const { fs, util } = require("vortex-api");
@@ -106,10 +105,7 @@ function modPath(context) {
 let _modsFolder;
 function modPathEE() {
   if (_modsFolder === undefined) {
-    _modsFolder = path.join(
-      remote.app.getPath("documents"),
-      "Neverwinter Nights",
-    );
+    _modsFolder = path.join(util.getVortexPath("documents"), "Neverwinter Nights");
   }
 
   return _modsFolder;
@@ -139,18 +135,14 @@ function prepareForModding(discovery, context) {
                 parameters: {
                   modsPath: modPathEE(),
                   modPaths: candidates
-                    .map(
-                      (cand) =>
-                        `"${path.join(path.dirname(modPathEE()), cand)}"`,
-                    )
+                    .map((cand) => `"${path.join(path.dirname(modPathEE()), cand)}"`)
                     .join("\n"),
                 },
               },
               [
                 {
                   label: "Go to Documents Folder",
-                  action: () =>
-                    util.opn(path.dirname(modPathEE())).catch(() => null),
+                  action: () => util.opn(path.dirname(modPathEE())).catch(() => null),
                 },
                 { label: "Close" },
               ],
@@ -168,17 +160,12 @@ function prepareForModding(discovery, context) {
       ? Promise.resolve()
       : fs.readdirAsync(path.dirname(modPathEE())).then((entries) => {
           const candidates = entries.filter((entry) => rgx.test(entry));
-          return candidates.length > 1
-            ? raiseNotif(candidates)
-            : Promise.resolve();
+          return candidates.length > 1 ? raiseNotif(candidates) : Promise.resolve();
         });
 
   return Promise.map(Object.keys(MOD_EXT_DESTINATION), (ext) =>
     fs.ensureDirAsync(
-      path.join(
-        context === undefined ? discovery.path : modPathEE(),
-        MOD_EXT_DESTINATION[ext],
-      ),
+      path.join(context === undefined ? discovery.path : modPathEE(), MOD_EXT_DESTINATION[ext]),
     ),
   ).then(() => testModsPath());
 }
@@ -218,12 +205,7 @@ function main(context) {
     setup: (discovery) => prepareForModding(discovery, context),
   });
 
-  context.registerInstaller(
-    "nwn-mod",
-    25,
-    testSupportedContent,
-    installContent,
-  );
+  context.registerInstaller("nwn-mod", 25, testSupportedContent, installContent);
 
   return true;
 }
@@ -236,20 +218,14 @@ function main(context) {
  */
 function installContent(files) {
   const instructions = files
-    .filter(
-      (file) =>
-        MOD_EXT_DESTINATION[path.extname(file).toLowerCase()] !== undefined,
-    )
+    .filter((file) => MOD_EXT_DESTINATION[path.extname(file).toLowerCase()] !== undefined)
     .map((file) => {
       let finalDestination;
       if (file.indexOf(MOD_OVERRIDE) !== -1) {
         finalDestination = path.join(file);
       } else {
         const fileType = path.extname(file).toLowerCase();
-        finalDestination = path.join(
-          MOD_EXT_DESTINATION[fileType],
-          path.basename(file),
-        );
+        finalDestination = path.join(MOD_EXT_DESTINATION[fileType], path.basename(file));
       }
 
       return {
@@ -266,9 +242,7 @@ function testSupportedContent(files, gameId) {
   // Make sure we're able to support this mod.
   const supported =
     [NWN_GAME_ID, NWNEE_GAME_ID].indexOf(gameId) !== -1 &&
-    files.find(
-      (file) => path.extname(file).toLowerCase() in MOD_EXT_DESTINATION,
-    ) !== undefined &&
+    files.find((file) => path.extname(file).toLowerCase() in MOD_EXT_DESTINATION) !== undefined &&
     !hasCorrectFolderStructure(files);
   return Promise.resolve({
     supported,
@@ -284,8 +258,7 @@ function hasCorrectFolderStructure(files) {
       .split(path.sep)
       .filter((seg) => !!seg);
     return (
-      path.extname(segments[segments.length - 1]) === "" &&
-      segments.find(matcher) !== undefined
+      path.extname(segments[segments.length - 1]) === "" && segments.find(matcher) !== undefined
     );
   });
 

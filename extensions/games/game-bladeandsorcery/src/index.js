@@ -3,9 +3,6 @@ const path = require("path");
 const { actions, fs, FlexLayout, log, selectors, util } = require("vortex-api");
 const semver = require("semver");
 
-const { app, remote } = require("electron");
-const uniApp = app || remote.app;
-
 const {
   BAS_EXEC,
   GAME_ID,
@@ -13,11 +10,7 @@ const {
   MOD_MANIFEST,
   GameNotDiscoveredException,
 } = require("./common");
-const {
-  testModInstaller,
-  installMulleMod,
-  installOfficialMod,
-} = require("./installers");
+const { testModInstaller, installMulleMod, installOfficialMod } = require("./installers");
 
 const { migrate010, migrate020, migrate0212 } = require("./migrations");
 
@@ -65,9 +58,7 @@ const supportedTools = [
 
 // TODO: Add Oculus detection once/if we add the Oculus game store.
 function findGame() {
-  return util.GameStoreHelper.findByAppId("629730", "steam").then(
-    (game) => game.gamePath,
-  );
+  return util.GameStoreHelper.findByAppId("629730", "steam").then((game) => game.gamePath);
 }
 
 function createModDirectories(discovery) {
@@ -87,12 +78,7 @@ async function purgeMods(discovery, api) {
     path.join(baseModsPath, "Mods"),
   );
 
-  return await api.emitAndAwait(
-    "purge-mods-in-path",
-    GAME_ID,
-    "bas-legacy-modtype",
-    baseModsPath,
-  );
+  return await api.emitAndAwait("purge-mods-in-path", GAME_ID, "bas-legacy-modtype", baseModsPath);
 }
 
 async function ensureModType(discovery, api) {
@@ -105,8 +91,7 @@ async function ensureModType(discovery, api) {
 
   // Not really invalid - just wrong modType for the currently installed game version.
   const invalidMods = Object.keys(mods).filter(
-    (key) =>
-      isOfficialModType(mods[key]?.type) && mods[key].type !== targetModType,
+    (key) => isOfficialModType(mods[key]?.type) && mods[key].type !== targetModType,
   );
   return invalidMods.length > 0
     ? purgeMods(discovery, api).then(() => {
@@ -134,11 +119,7 @@ async function getDeployedManaged(context, modType) {
   //  manifest (this is obviously only deployed mods)
   const state = context.api.getState();
   const deployPath = selectors.modPathsForGame(state, GAME_ID)[modType];
-  const deploymentManifest = await util.getManifest(
-    context.api,
-    modType,
-    GAME_ID,
-  );
+  const deploymentManifest = await util.getManifest(context.api, modType, GAME_ID);
   const gameManifestFiles = deploymentManifest.files.filter(
     (entry) => path.basename(entry.relPath).toLowerCase() === MOD_MANIFEST,
   );
@@ -146,10 +127,7 @@ async function getDeployedManaged(context, modType) {
     gameManifestFiles,
     async (accum, manifest) => {
       try {
-        const modName = await getModName(
-          path.join(deployPath, manifest.relPath),
-          "Name",
-        );
+        const modName = await getModName(path.join(deployPath, manifest.relPath), "Name");
         accum.push({ modName, modId: manifest.source });
       } catch (err) {
         // The can occur if the user had manipulated the file
@@ -157,15 +135,11 @@ async function getDeployedManaged(context, modType) {
         //  the mod's folder completely.
         // Since game version 8.4 this can also happen if the name in the manifest is
         // no longer valid.
-        context.api.showErrorNotification(
-          "Manifest is missing or invalid",
-          err,
-          {
-            id: `bas-invalid-manifest-${manifest.relPath}`,
-            allowReport: false,
-            message: manifest.relPath,
-          },
-        );
+        context.api.showErrorNotification("Manifest is missing or invalid", err, {
+          id: `bas-invalid-manifest-${manifest.relPath}`,
+          allowReport: false,
+          message: manifest.relPath,
+        });
       }
       return accum;
     },
@@ -210,12 +184,7 @@ async function ensureLOFile(discoveryPath) {
   // It really doesn't matter what modType we're using, the loadorder
   //  file can only be loaded by 8.4 and above which will always expect it to
   //  be located inside the "new" Mods folder.
-  const loFilePath = path.join(
-    discoveryPath,
-    streamingAssetsPath(),
-    "Mods",
-    LOAD_ORDER_FILENAME,
-  );
+  const loFilePath = path.join(discoveryPath, streamingAssetsPath(), "Mods", LOAD_ORDER_FILENAME);
   return (
     fs
       .statAsync(loFilePath)
@@ -232,11 +201,9 @@ async function ensureLOFile(discoveryPath) {
           .catch((err2) => null)
           .then(() => fs.ensureDirWritableAsync(path.dirname(loFilePath)))
           .then(() =>
-            fs.writeFileAsync(
-              loFilePath,
-              JSON.stringify(emptyLO, undefined, 2),
-              { encoding: "utf8" },
-            ),
+            fs.writeFileAsync(loFilePath, JSON.stringify(emptyLO, undefined, 2), {
+              encoding: "utf8",
+            }),
           )
           .then(() => Promise.resolve(loFilePath)),
       )
@@ -278,9 +245,7 @@ async function writeLOToFile(api, loadOrder) {
   } catch (err) {
     return Promise.reject(err);
   }
-  const loKeys = Object.keys(loadOrder).sort(
-    (a, b) => loadOrder[a].pos - loadOrder[b].pos,
-  );
+  const loKeys = Object.keys(loadOrder).sort((a, b) => loadOrder[a].pos - loadOrder[b].pos);
   const modNames = loKeys.reduce((accum, iter) => {
     const loName = loadOrder[iter].data?.name;
     if (loName !== undefined) {
@@ -333,25 +298,15 @@ async function preSort(context, items, direction, refreshType) {
   } catch (err) {
     // The game.json file must be missing...
     log("error", "failed to ascertain current official modType", err);
-    return Promise.resolve(
-      items.map((item) => toDisplayItem(item.name, item.id)),
-    );
+    return Promise.resolve(items.map((item) => toDisplayItem(item.name, item.id)));
   }
 
   const managedModsTarget = await getDeployedManaged(context, targetModType);
   const managedModsDinput = await getDeployedManaged(context, "dinput");
   const managedMods = [].concat(managedModsTarget, managedModsDinput);
-  const managedItems = managedMods.map((item) =>
-    toDisplayItem(item.modName, item.modId),
-  );
-  const loadOrder = util.getSafe(
-    state,
-    ["persistent", "loadOrder", activeProfile.id],
-    {},
-  );
-  const loKeys = Object.keys(loadOrder).sort(
-    (a, b) => loadOrder[a].pos - loadOrder[b].pos,
-  );
+  const managedItems = managedMods.map((item) => toDisplayItem(item.modName, item.modId));
+  const loadOrder = util.getSafe(state, ["persistent", "loadOrder", activeProfile.id], {});
+  const loKeys = Object.keys(loadOrder).sort((a, b) => loadOrder[a].pos - loadOrder[b].pos);
   const external = await getDeployedExternal(
     context,
     managedMods.map((mod) => mod.modName),
@@ -375,8 +330,7 @@ async function preSort(context, items, direction, refreshType) {
     } catch (err) {
       context.api.showErrorNotification("Failed to read load order", err, {
         allowReport: false,
-        message:
-          "Please make sure that your load order file exists and is valid",
+        message: "Please make sure that your load order file exists and is valid",
       });
       return toLOPage(items);
     }
@@ -386,9 +340,7 @@ async function preSort(context, items, direction, refreshType) {
       return idx !== undefined ? idx : loKeys.indexOf(id);
     };
 
-    items = []
-      .concat(items, externalItems)
-      .sort((a, b) => getIdx(a.id) - getIdx(b.id));
+    items = [].concat(items, externalItems).sort((a, b) => getIdx(a.id) - getIdx(b.id));
     return toLOPage(items);
   } else {
     const preSorted = []
@@ -403,11 +355,7 @@ function infoComponent(context, props) {
   return React.createElement(
     BS.Panel,
     { id: "loadorderinfo" },
-    React.createElement(
-      "h2",
-      {},
-      t("Managing your load order", { ns: I18N_NAMESPACE }),
-    ),
+    React.createElement("h2", {}, t("Managing your load order", { ns: I18N_NAMESPACE })),
     React.createElement(
       FlexLayout.Fixed,
       { style: { height: "30%" } },
@@ -466,11 +414,9 @@ function infoComponent(context, props) {
 function resolveGameVersion(api, discoveryPath) {
   if (
     process.env.NODE_ENV !== "development" &&
-    semver.satisfies(uniApp.getVersion(), "<1.4.0")
+    semver.satisfies(util.getApplication().version, "<1.4.0")
   ) {
-    return Promise.reject(
-      new util.ProcessCanceled("not supported in older Vortex versions"),
-    );
+    return Promise.reject(new util.ProcessCanceled("not supported in older Vortex versions"));
   }
   return getMinModVersion(discoveryPath, BAS_EXEC, true)
     .then((minVer) => {
@@ -499,11 +445,7 @@ function main(context) {
   };
 
   const getOfficialDestination = () => {
-    return path.join(
-      getDiscoveryPath(context.api),
-      streamingAssetsPath(),
-      "Mods",
-    );
+    return path.join(getDiscoveryPath(context.api), streamingAssetsPath(), "Mods");
   };
 
   context.registerGame({
@@ -512,8 +454,7 @@ function main(context) {
     mergeMods: true,
     queryPath: findGame,
     queryModPath: () => path.join(streamingAssetsPath(), "Mods"),
-    getGameVersion: (discoveryPath) =>
-      resolveGameVersion(context.api, discoveryPath),
+    getGameVersion: (discoveryPath) => resolveGameVersion(context.api, discoveryPath),
     logo: "gameart.jpg",
     executable: () => BAS_EXEC,
     requiredFiles: [BAS_EXEC],
@@ -540,13 +481,7 @@ function main(context) {
     25,
     (files, gameId) => testModInstaller(files, gameId, MULLE_MOD_INFO),
     (files, destinationPath, gameId, progressDelegate) =>
-      installMulleMod(
-        files,
-        destinationPath,
-        gameId,
-        progressDelegate,
-        context.api,
-      ),
+      installMulleMod(files, destinationPath, gameId, progressDelegate, context.api),
   );
 
   context.registerInstaller(
@@ -554,13 +489,7 @@ function main(context) {
     25,
     (files, gameId) => testModInstaller(files, gameId, MOD_MANIFEST),
     (files, destinationPath, gameId, progressDelegate) =>
-      installOfficialMod(
-        files,
-        destinationPath,
-        gameId,
-        progressDelegate,
-        context.api,
-      ),
+      installOfficialMod(files, destinationPath, gameId, progressDelegate, context.api),
   );
 
   context.registerModType(
@@ -590,13 +519,10 @@ function main(context) {
     },
     filter: (mods) =>
       mods.filter(
-        (mod) =>
-          isOfficialModType(mod.type) &&
-          mod?.attributes?.hasMultipleMods === false,
+        (mod) => isOfficialModType(mod.type) && mod?.attributes?.hasMultipleMods === false,
       ),
     gameArtURL: `${__dirname}/gameart.jpg`,
-    preSort: (items, direction, refreshType) =>
-      preSort(context, items, direction, refreshType),
+    preSort: (items, direction, refreshType) => preSort(context, items, direction, refreshType),
     displayCheckboxes: false,
     callback: (loadOrder) => {
       writeLOToFile(context.api, loadOrder).catch((err) => {
@@ -604,13 +530,10 @@ function main(context) {
           return;
         }
         const allowReport =
-          !["EPERM", "EISDIR"].includes(err.code) &&
-          !(err instanceof GameNotDiscoveredException);
-        context.api.showErrorNotification(
-          "failed to write to load order file",
-          err,
-          { allowReport },
-        );
+          !["EPERM", "EISDIR"].includes(err.code) && !(err instanceof GameNotDiscoveredException);
+        context.api.showErrorNotification("failed to write to load order file", err, {
+          allowReport,
+        });
       });
     },
   });
@@ -627,9 +550,7 @@ function main(context) {
         log("debug", "Game is not discovered");
         return;
       }
-      util
-        .opn(path.join(discoveryPath, streamingAssetsPath(), "Mods"))
-        .catch((err) => null);
+      util.opn(path.join(discoveryPath, streamingAssetsPath(), "Mods")).catch((err) => null);
     },
     () => {
       const state = context.api.getState();
@@ -676,9 +597,7 @@ function main(context) {
 
       // Not really invalid - just wrong modType for the currently installed game version.
       const invalidMods = Object.keys(mods).filter(
-        (key) =>
-          isOfficialModType(mods[key]?.type) &&
-          mods[key].type !== targetModType,
+        (key) => isOfficialModType(mods[key]?.type) && mods[key].type !== targetModType,
       );
       return invalidMods.length > 0
         ? new Promise((resolve) => {
