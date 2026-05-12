@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { util } from "vortex-api";
 
-import { XCOM2_GAME_IDS, XCOM2_INSTALLER_SPECS, XCOM2_MOD_TYPES } from "./installers";
+import {
+  XCOM2_GAME_IDS,
+  XCOM2_INSTALLER_SPECS,
+  XCOM2_MOD_TYPES,
+  installConfigDropIn,
+  pickConfigDestination,
+  testConfigDropIn,
+} from "./installers";
 
 function specById(id: string) {
   const spec = XCOM2_INSTALLER_SPECS.find((s) => s.id === id);
@@ -165,3 +172,157 @@ describe("character-pool install (filter + flatten)", () => {
     expect(baseReject.supported).toBe(false);
   });
 });
+
+describe("testConfigDropIn", () => {
+  it("accepts archives with .ini and no .XComMod", async () => {
+    const r = await testConfigDropIn(["mod/Config/X.ini", "mod/readme.txt"], XCOM2_GAME_IDS.base);
+    expect(r.supported).toBe(true);
+  });
+
+  it("accepts archives with .int loc files", async () => {
+    const r = await testConfigDropIn(
+      ["XCom2-WarOfTheChosen/XComGame/Localization/X.int"],
+      XCOM2_GAME_IDS.wotc,
+    );
+    expect(r.supported).toBe(true);
+  });
+
+  it("accepts language-tagged loc extensions (.rus, .deu, etc.)", async () => {
+    const r = await testConfigDropIn(["XComGame/Localization/X.rus"], XCOM2_GAME_IDS.base);
+    expect(r.supported).toBe(true);
+  });
+
+  it("rejects when a .XComMod descriptor is present (canonical installer claims it)", async () => {
+    const r = await testConfigDropIn(["mod/mod.XComMod", "mod/Config/X.ini"], XCOM2_GAME_IDS.base);
+    expect(r.supported).toBe(false);
+  });
+
+  it("rejects archives with no .ini or .int", async () => {
+    const r = await testConfigDropIn(["Pool/X.bin"], XCOM2_GAME_IDS.base);
+    expect(r.supported).toBe(false);
+  });
+
+  it("rejects when gameId is not an XCOM 2 id", async () => {
+    const r = await testConfigDropIn(["XComGame/Config/X.ini"], "xrebirth");
+    expect(r.supported).toBe(false);
+  });
+});
+
+describe("pickConfigDestination", () => {
+  it("preserves WOTC tree suffix when archive has explicit WOTC prefix", () => {
+    expect(
+      pickConfigDestination(
+        "Wrapper/XCom2-WarOfTheChosen/XComGame/Localization/X.int",
+        XCOM2_GAME_IDS.wotc,
+      ),
+    ).toBe("XCom2-WarOfTheChosen/XComGame/Localization/X.int".replace(/\//g, requireSep()));
+  });
+
+  it("WOTC-prefixed path deploys to WOTC tree even when installing for base game", () => {
+    // The author tagged the file as WOTC content. The base-game install
+    // still deploys to <gamePath>/XCom2-WarOfTheChosen/...; if WOTC isn't
+    // present the file is harmless dead weight.
+    expect(
+      pickConfigDestination(
+        "Wrapper/XCom2-WarOfTheChosen/XComGame/Localization/X.int",
+        XCOM2_GAME_IDS.base,
+      ),
+    ).toBe("XCom2-WarOfTheChosen/XComGame/Localization/X.int".replace(/\//g, requireSep()));
+  });
+
+  it("vanilla-tree path preserves XComGame/ prefix for base game install", () => {
+    expect(pickConfigDestination("Mod/XComGame/Config/X.ini", XCOM2_GAME_IDS.base)).toBe(
+      "XComGame/Config/X.ini".replace(/\//g, requireSep()),
+    );
+  });
+
+  it("vanilla-tree path gets WOTC prefix when installing for WOTC", () => {
+    expect(pickConfigDestination("Mod/XComGame/Config/X.ini", XCOM2_GAME_IDS.wotc)).toBe(
+      "XCom2-WarOfTheChosen/XComGame/Config/X.ini".replace(/\//g, requireSep()),
+    );
+  });
+
+  it("bare .ini at root routes to XComGame/Config (base game)", () => {
+    expect(pickConfigDestination("DefaultGameCore.ini", XCOM2_GAME_IDS.base)).toBe(
+      "XComGame/Config/DefaultGameCore.ini".replace(/\//g, requireSep()),
+    );
+  });
+
+  it("bare .int at root routes to XComGame/Localization (WOTC, prefixed)", () => {
+    expect(pickConfigDestination("XComGame.int", XCOM2_GAME_IDS.wotc)).toBe(
+      "XCom2-WarOfTheChosen/XComGame/Localization/XComGame.int".replace(/\//g, requireSep()),
+    );
+  });
+
+  it("handles backslash-separated source paths", () => {
+    expect(pickConfigDestination("Wrap\\XComGame\\Config\\X.ini", XCOM2_GAME_IDS.base)).toBe(
+      "XComGame/Config/X.ini".replace(/\//g, requireSep()),
+    );
+  });
+});
+
+describe("installConfigDropIn", () => {
+  it("emits one copy per .ini/.int and drops readmes/screenshots", async () => {
+    const result = await installConfigDropIn(
+      [
+        "wrap/Config/MyConfig.ini",
+        "wrap/Localization/MyLoc.int",
+        "wrap/Readme.txt",
+        "wrap/preview.jpg",
+      ],
+      "",
+      XCOM2_GAME_IDS.base,
+    );
+    expect(result.instructions).toHaveLength(3); // 2 copy + 1 setmodtype
+    const copies = result.instructions.filter((i) => i.type === "copy");
+    expect(copies).toHaveLength(2);
+    expect(result.instructions.at(-1)).toEqual({
+      type: "setmodtype",
+      value: XCOM2_MOD_TYPES.configDropIn,
+    });
+  });
+
+  it("routes a Traducao-style WOTC archive into XCom2-WarOfTheChosen tree", async () => {
+    const result = await installConfigDropIn(
+      [
+        "Traducao XCOM2/XCOM 2/XCom2-WarOfTheChosen/XComGame/DLC/DLC_1/Localization/DLC_1.int",
+        "Traducao XCOM2/Creditos.txt",
+      ],
+      "",
+      XCOM2_GAME_IDS.wotc,
+    );
+    const copy = result.instructions.find((i) => i.type === "copy")!;
+    expect(copy).toEqual({
+      type: "copy",
+      source:
+        "Traducao XCOM2/XCOM 2/XCom2-WarOfTheChosen/XComGame/DLC/DLC_1/Localization/DLC_1.int",
+      destination: "XCom2-WarOfTheChosen/XComGame/DLC/DLC_1/Localization/DLC_1.int".replace(
+        /\//g,
+        requireSep(),
+      ),
+    });
+  });
+
+  it("vanilla install of a bare .ini routes to XComGame/Config/", async () => {
+    const result = await installConfigDropIn(["DefaultGameCore.ini"], "", XCOM2_GAME_IDS.base);
+    const copy = result.instructions.find((i) => i.type === "copy")!;
+    expect(copy).toEqual({
+      type: "copy",
+      source: "DefaultGameCore.ini",
+      destination: "XComGame/Config/DefaultGameCore.ini".replace(/\//g, requireSep()),
+    });
+  });
+
+  it("WOTC install of a bare .int routes to XCom2-WarOfTheChosen/XComGame/Localization/", async () => {
+    const result = await installConfigDropIn(["XComGame.int"], "", XCOM2_GAME_IDS.wotc);
+    const copy = result.instructions.find((i) => i.type === "copy")!;
+    expect((copy as { destination: string }).destination).toBe(
+      "XCom2-WarOfTheChosen/XComGame/Localization/XComGame.int".replace(/\//g, requireSep()),
+    );
+  });
+});
+
+function requireSep(): string {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  return (require("node:path") as typeof import("node:path")).sep;
+}

@@ -4,7 +4,14 @@ import { fs, log, util } from "vortex-api";
 import type { types } from "vortex-api";
 
 import { healthChecks } from "./diagnostic";
-import { XCOM2_GAME_IDS, XCOM2_INSTALLER_SPECS, XCOM2_MOD_TYPES } from "./installers";
+import {
+  XCOM2_CONFIG_DROP_IN_PRIORITY,
+  XCOM2_GAME_IDS,
+  XCOM2_INSTALLER_SPECS,
+  XCOM2_MOD_TYPES,
+  installConfigDropIn,
+  testConfigDropIn,
+} from "./installers";
 
 let cachedVersion: string | undefined;
 function getAppVersion(): string {
@@ -317,6 +324,34 @@ function main(context: types.IExtensionContext): boolean {
 
   util.declareInstallers(context, XCOM2_GAME_IDS.base, XCOM2_INSTALLER_SPECS);
   util.declareInstallers(context, XCOM2_GAME_IDS.wotc, XCOM2_INSTALLER_SPECS);
+
+  // Config / localisation drop-in installer + its modType. Install path is
+  // the game's discovered root (no baseDir); the install function emits
+  // `XCom2-WarOfTheChosen/...` destinations when the file belongs in the WOTC
+  // subtree, so a single modType covers both game ids.
+  context.registerModType(
+    XCOM2_MOD_TYPES.configDropIn,
+    25,
+    (gameId) => gameId === XCOM2_GAME_IDS.base || gameId === XCOM2_GAME_IDS.wotc,
+    (game) => {
+      const state = context.api.store!.getState();
+      const discovery = util.getSafe(
+        state,
+        ["settings", "gameMode", "discovered", game.id],
+        undefined,
+      ) as types.IDiscoveryResult | undefined;
+      return discovery?.path;
+    },
+    () => Promise.resolve(false),
+    { name: "Config / Localisation Drop-in", mergeMods: true },
+  );
+
+  context.registerInstaller(
+    XCOM2_MOD_TYPES.configDropIn,
+    XCOM2_CONFIG_DROP_IN_PRIORITY,
+    testConfigDropIn,
+    installConfigDropIn,
+  );
 
   for (const check of healthChecks) {
     context.registerHealthCheck(check);
