@@ -15,8 +15,12 @@
   "config": {
     "game": "XCOM 2"
   },
+  "vortex": {
+    "gameExtensionTest": true
+  },
   "devDependencies": {
     "@nexusmods/vortex-api": "workspace:*",
+    "@vortex/game-extension-test": "workspace:*",
     "vitest": "catalog:"
   },
   "nx": {
@@ -30,6 +34,23 @@
           "typescript",
           "vortex-api"
         ]
+      },
+      "typecheck": {
+        "inputs": [
+          "default",
+          "typescript",
+          "vortex-api"
+        ]
+      },
+      "test:game-extensions": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "pnpm --filter @vortex/game-extension-test run start -- --game game-xcom2"
+        },
+        "inputs": [
+          "{projectRoot}/src/**/*.ts"
+        ],
+        "cache": false
       }
     }
   }
