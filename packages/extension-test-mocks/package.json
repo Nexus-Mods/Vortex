@@ -1,0 +1,27 @@
+{
+  "$schema": "https://www.schemastore.org/package.json",
+  "name": "@vortex/extension-test-mocks",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "nx": {
+    "tags": [
+      "vortex:tooling"
+    ]
+  }
+}
