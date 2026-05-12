@@ -2,7 +2,7 @@ import * as path from "path";
 
 import type { IExtensionContext } from "../../../types/IExtensionContext";
 import { getGame } from "../../gamemode_management/util/getGame";
-import type { IInstallerMatch, IInstallerSpec } from "../types/IInstallerSpec";
+import type { IInstallerFilter, IInstallerMatch, IInstallerSpec } from "../types/IInstallerSpec";
 import type { IInstallResult, IInstruction } from "../types/IInstallResult";
 import type { TestSupported } from "../types/TestSupported";
 
@@ -24,24 +24,70 @@ export function findCommonRootDir(files: readonly string[]): string | undefined 
 }
 
 /**
- * Build a `copy` instruction for every non-directory entry. When
- * `stripCommonRoot` is true and the archive wraps everything in a single
- * top-level dir, that dir is stripped from destination paths so the mod stages
- * at game root rather than inside the wrapper. Appends a `setmodtype`
- * instruction when `modType` is provided.
+ * True if `file` matches the per-file `filter`. Each kind uses the same
+ * comparison as the matching `IInstallerMatch` kind but operates on a single
+ * file (no `any`/`all` mode), since filtering selects files, not archives.
+ */
+function matchesFilter(file: string, filter: IInstallerFilter): boolean {
+  switch (filter.kind) {
+    case "extensions": {
+      const lower = file.toLowerCase();
+      return filter.list.some((ext) => lower.endsWith(ext.toLowerCase()));
+    }
+    case "regex":
+      return filter.patterns.some((re) => re.test(file));
+    case "filename": {
+      const names = new Set(filter.names.map((n) => n.toLowerCase()));
+      return names.has(path.basename(file).toLowerCase());
+    }
+    case "custom":
+      return filter.predicate(file);
+  }
+}
+
+/**
+ * Build a `copy` instruction for every non-directory entry that survives the
+ * optional `filter`. Destination paths are chosen in this order of precedence:
+ *
+ *   1. `flatten: true` → `destination = basename(source)`. Targets that read
+ *      a directory non-recursively (importable folders) want flat output.
+ *   2. `stripCommonRoot: true` → if every (post-filter) file shares a single
+ *      top-level dir, that wrapper is stripped from destinations so the mod
+ *      stages at game root.
+ *   3. Otherwise → `destination = source`.
+ *
+ * `setmodtype` is appended when `modType` is provided, even if the filter
+ * removed every file (consumers detect the empty-files case via health
+ * checks).
  */
 export function buildCopyInstructions(
   files: readonly string[],
-  opts: { stripCommonRoot: boolean; modType?: string },
+  opts: {
+    stripCommonRoot: boolean;
+    modType?: string;
+    filter?: IInstallerFilter;
+    flatten?: boolean;
+  },
 ): IInstallResult {
-  const dataFiles = files.filter((f) => !f.endsWith(path.sep));
-  const commonPrefix = opts.stripCommonRoot ? findCommonRootDir(dataFiles) : undefined;
+  let dataFiles = files.filter((f) => !f.endsWith(path.sep));
+  if (opts.filter !== undefined) {
+    const filter = opts.filter;
+    dataFiles = dataFiles.filter((f) => matchesFilter(f, filter));
+  }
+  const commonPrefix =
+    !opts.flatten && opts.stripCommonRoot ? findCommonRootDir(dataFiles) : undefined;
 
-  const instructions: IInstruction[] = dataFiles.map((file) => ({
-    type: "copy" as const,
-    source: file,
-    destination: commonPrefix ? file.substring(commonPrefix.length + 1) : file,
-  }));
+  const instructions: IInstruction[] = dataFiles.map((file) => {
+    let destination: string;
+    if (opts.flatten) {
+      destination = path.basename(file);
+    } else if (commonPrefix) {
+      destination = file.substring(commonPrefix.length + 1);
+    } else {
+      destination = file;
+    }
+    return { type: "copy" as const, source: file, destination };
+  });
   if (opts.modType !== undefined) {
     instructions.push({ type: "setmodtype" as const, value: opts.modType });
   }
@@ -153,6 +199,8 @@ export function makeInstallerFromSpec(
       buildCopyInstructions(files, {
         stripCommonRoot: spec.install.stripCommonRoot,
         modType: spec.modType,
+        filter: spec.install.filter,
+        flatten: spec.install.flatten,
       }),
     );
 

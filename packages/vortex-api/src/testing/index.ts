@@ -82,8 +82,9 @@ export const fs = {
   readFileAsync: vi.fn(async (absPath: string, _opts?: unknown) => readFileResolver(absPath)),
 };
 
-// Minimal mirror of src/renderer/src/util/installerHelpers.ts. See the
-// drift-note in the header.
+// Minimal mirror of
+// src/renderer/src/extensions/mod_management/util/installerHelpers.ts. See
+// the drift-note in the header.
 type InstallerMatchMode = "any" | "all";
 type InstallerMatch =
   | { kind: "extensions"; list: readonly string[]; mode: InstallerMatchMode }
@@ -91,12 +92,23 @@ type InstallerMatch =
   | { kind: "filename"; names: readonly string[]; mode: InstallerMatchMode }
   | { kind: "stopPatterns" }
   | { kind: "custom"; predicate: (files: string[]) => boolean };
+type InstallerFilter =
+  | { kind: "extensions"; list: readonly string[] }
+  | { kind: "regex"; patterns: readonly RegExp[] }
+  | { kind: "filename"; names: readonly string[] }
+  | { kind: "custom"; predicate: (file: string) => boolean };
 interface InstallerSpec {
   id: string;
   priority: number;
   modType?: string;
   match: InstallerMatch;
-  install: { stripCommonRoot: boolean };
+  install: {
+    stripCommonRoot: boolean;
+    /** Per-file selector; non-matching files dropped from output. */
+    filter?: InstallerFilter;
+    /** When true, destinations are reduced to basename. Overrides stripCommonRoot. */
+    flatten?: boolean;
+  };
 }
 
 function compileStopPatterns(patterns: readonly string[]): RegExp[] {
@@ -114,17 +126,50 @@ function findCommonRootDir(files: readonly string[]): string | undefined {
   return root;
 }
 
+function matchesFilter(file: string, filter: InstallerFilter): boolean {
+  switch (filter.kind) {
+    case "extensions": {
+      const lower = file.toLowerCase();
+      return filter.list.some((ext) => lower.endsWith(ext.toLowerCase()));
+    }
+    case "regex":
+      return filter.patterns.some((re) => re.test(file));
+    case "filename": {
+      const names = new Set(filter.names.map((n) => n.toLowerCase()));
+      return names.has(path.basename(file).toLowerCase());
+    }
+    case "custom":
+      return filter.predicate(file);
+  }
+}
+
 function buildCopyInstructions(
   files: readonly string[],
-  opts: { stripCommonRoot: boolean; modType?: string },
+  opts: {
+    stripCommonRoot: boolean;
+    modType?: string;
+    filter?: InstallerFilter;
+    flatten?: boolean;
+  },
 ): { instructions: Array<{ type: string; [key: string]: unknown }> } {
-  const dataFiles = files.filter((f) => !f.endsWith(path.sep));
-  const commonPrefix = opts.stripCommonRoot ? findCommonRootDir(dataFiles) : undefined;
-  const instructions: Array<{ type: string; [key: string]: unknown }> = dataFiles.map((file) => ({
-    type: "copy",
-    source: file,
-    destination: commonPrefix ? file.substring(commonPrefix.length + 1) : file,
-  }));
+  let dataFiles = files.filter((f) => !f.endsWith(path.sep));
+  if (opts.filter !== undefined) {
+    const filter = opts.filter;
+    dataFiles = dataFiles.filter((f) => matchesFilter(f, filter));
+  }
+  const commonPrefix =
+    !opts.flatten && opts.stripCommonRoot ? findCommonRootDir(dataFiles) : undefined;
+  const instructions: Array<{ type: string; [key: string]: unknown }> = dataFiles.map((file) => {
+    let destination: string;
+    if (opts.flatten) {
+      destination = path.basename(file);
+    } else if (commonPrefix) {
+      destination = file.substring(commonPrefix.length + 1);
+    } else {
+      destination = file;
+    }
+    return { type: "copy", source: file, destination };
+  });
   if (opts.modType !== undefined) {
     instructions.push({ type: "setmodtype", value: opts.modType });
   }
@@ -228,6 +273,8 @@ function declareInstallers(
         buildCopyInstructions(files, {
           stripCommonRoot: spec.install.stripCommonRoot,
           modType: spec.modType,
+          filter: spec.install.filter,
+          flatten: spec.install.flatten,
         }),
       );
     const registrationId = spec.modType ?? `${gameId}-${spec.id}`;

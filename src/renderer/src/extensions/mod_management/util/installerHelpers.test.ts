@@ -72,6 +72,105 @@ describe("buildCopyInstructions", () => {
     const r = buildCopyInstructions(["a.xml"], { stripCommonRoot: false });
     expect(r.instructions).toHaveLength(1);
   });
+
+  test("filter (extensions) drops non-matching files", () => {
+    const r = buildCopyInstructions(["pool/a.bin", "pool/readme.txt", "pool/pic.jpg"], {
+      stripCommonRoot: false,
+      filter: { kind: "extensions", list: [".bin"] },
+    });
+    expect(r.instructions).toEqual([
+      { type: "copy", source: "pool/a.bin", destination: "pool/a.bin" },
+    ]);
+  });
+
+  test("filter (regex) drops non-matching files", () => {
+    const r = buildCopyInstructions(["a.bin", "b.BIN", "c.txt"], {
+      stripCommonRoot: false,
+      filter: { kind: "regex", patterns: [/\.bin$/i] },
+    });
+    expect(r.instructions.map((i) => (i as any).destination)).toEqual(["a.bin", "b.BIN"]);
+  });
+
+  test("filter (filename) matches on basename", () => {
+    const r = buildCopyInstructions(["mod/content.xml", "mod/extra/notes.txt"], {
+      stripCommonRoot: false,
+      filter: { kind: "filename", names: ["content.xml"] },
+    });
+    expect(r.instructions).toHaveLength(1);
+    expect((r.instructions[0] as any).source).toBe("mod/content.xml");
+  });
+
+  test("filter (custom) gets per-file evaluation", () => {
+    const seen: string[] = [];
+    const r = buildCopyInstructions(["a.bin", "b.txt"], {
+      stripCommonRoot: false,
+      filter: {
+        kind: "custom",
+        predicate: (f) => {
+          seen.push(f);
+          return f.endsWith(".bin");
+        },
+      },
+    });
+    expect(seen).toEqual(["a.bin", "b.txt"]);
+    expect(r.instructions).toHaveLength(1);
+  });
+
+  test("flatten reduces destinations to basenames", () => {
+    const r = buildCopyInstructions(["mod/a/b/c.bin", "mod/d.bin"], {
+      stripCommonRoot: false,
+      flatten: true,
+    });
+    expect(r.instructions).toEqual([
+      { type: "copy", source: "mod/a/b/c.bin", destination: "c.bin" },
+      { type: "copy", source: "mod/d.bin", destination: "d.bin" },
+    ]);
+  });
+
+  test("flatten overrides stripCommonRoot", () => {
+    // stripCommonRoot would yield destination 'a/b/c.bin'; flatten wins.
+    const r = buildCopyInstructions(["mod/a/b/c.bin"], { stripCommonRoot: true, flatten: true });
+    expect((r.instructions[0] as any).destination).toBe("c.bin");
+  });
+
+  test("filter + flatten + modType compose", () => {
+    const r = buildCopyInstructions(
+      ["mod/CharacterPool/X.bin", "mod/CharacterPool/Y.bin", "mod/screenshots/preview.jpg"],
+      {
+        stripCommonRoot: false,
+        filter: { kind: "extensions", list: [".bin"] },
+        flatten: true,
+        modType: "xcom2-character-pool",
+      },
+    );
+    expect(r.instructions).toEqual([
+      { type: "copy", source: "mod/CharacterPool/X.bin", destination: "X.bin" },
+      { type: "copy", source: "mod/CharacterPool/Y.bin", destination: "Y.bin" },
+      { type: "setmodtype", value: "xcom2-character-pool" },
+    ]);
+  });
+
+  test("filter that excludes every file leaves only setmodtype", () => {
+    const r = buildCopyInstructions(["readme.txt", "preview.jpg"], {
+      stripCommonRoot: false,
+      filter: { kind: "extensions", list: [".bin"] },
+      modType: "xcom2-character-pool",
+    });
+    expect(r.instructions).toEqual([{ type: "setmodtype", value: "xcom2-character-pool" }]);
+  });
+
+  test("filter applied before computing common root", () => {
+    // Once readme.txt is filtered out the survivors share `mod/` as the
+    // common root and stripCommonRoot should remove it.
+    const r = buildCopyInstructions(["mod/a.bin", "mod/b.bin", "readme.txt"], {
+      stripCommonRoot: true,
+      filter: { kind: "extensions", list: [".bin"] },
+    });
+    expect(r.instructions).toEqual([
+      { type: "copy", source: "mod/a.bin", destination: "a.bin" },
+      { type: "copy", source: "mod/b.bin", destination: "b.bin" },
+    ]);
+  });
 });
 
 describe("compileStopPatterns", () => {
