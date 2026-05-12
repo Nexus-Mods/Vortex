@@ -78,5 +78,26 @@ export const testDescriptor = {
       reason: "cheat-engine table (.ct, not an XCOM 2 mod)",
       matches: (files: string[]): boolean => files.length === 1 && /\.ct$/i.test(files[0]!),
     },
+    {
+      reason:
+        "raw cooked content (.upk / .u with no .XComMod) — replaces stock packages, " +
+        "not safe to auto-install",
+      matches: (files: string[]): boolean => {
+        const data = files.filter((f) => !f.endsWith("/") && !f.endsWith("\\"));
+        const hasCooked = data.some((f) => /\.(upk|u)$/i.test(f));
+        const hasXComMod = data.some((f) => /\.XComMod$/i.test(f));
+        return hasCooked && !hasXComMod;
+      },
+    },
+    {
+      reason:
+        "voice pack (raw .wav/.ogg samples) — needs the Voice Pack Toolkit mod to load " +
+        "them at runtime, not installable standalone",
+      matches: (files: string[]): boolean => {
+        const data = files.filter((f) => !f.endsWith("/") && !f.endsWith("\\"));
+        if (data.length === 0) return false;
+        return data.every((f) => /\.(wav|ogg|mp3|wem)$/i.test(f) || DOC_EXT_RE.test(f));
+      },
+    },
   ],
 };
