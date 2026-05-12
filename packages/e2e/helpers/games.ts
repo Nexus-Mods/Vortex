@@ -24,6 +24,9 @@ export async function manageGame(vortexWindow: Page, gameId: ManagedGameId): Pro
     const navbar = new NavBar(vortexWindow);
     const gamesPage = new GamesPage(vortexWindow);
 
+    // Without window focus the Manage button can render off-viewport.
+    await vortexWindow.bringToFront();
+
     await expect(navbar.gamesLink).toBeVisible({ timeout: 10_000 });
     await navbar.gamesLink.click();
 
@@ -41,8 +44,10 @@ export async function manageGame(vortexWindow: Page, gameId: ManagedGameId): Pro
     const row = gamesPage.gameRow(gameName);
     await expect(row).toBeVisible({ timeout: 30_000 });
     await row.scrollIntoViewIfNeeded();
-    await row.hover();
-    await gamesPage.manageButton(gameName).click({ timeout: 15_000, force: true });
+    // dispatchEvent skips Playwright's viewport actionability — needed when
+    // running unauthenticated (the Manage button can land off-screen).
+    await row.dispatchEvent("mouseenter");
+    await gamesPage.manageButton(gameName).dispatchEvent("click");
 
     await expect(navbar.modsLink).toBeVisible({ timeout: 60_000 });
   });
