@@ -1,6 +1,6 @@
 {
   "name": "game-neverwinter-nights",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Support for Neverwinter Nights",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",

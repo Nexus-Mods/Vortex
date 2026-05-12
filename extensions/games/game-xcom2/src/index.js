@@ -1,6 +1,5 @@
 const path = require("path");
 const { fs, util, log } = require("vortex-api");
-const { remote } = require("electron");
 
 const XCOM2_ID = "xcom2";
 const WOTC_ID = "xcom2-wotc";
@@ -55,19 +54,14 @@ https://www.gog.com/forum/xcom_2/actually_where_do_mods_go_in_this_version/page1
 */
 
 function findGame() {
-  return util.GameStoreHelper.findByAppId([
-    STEAMAPP_ID,
-    GOGAPP_ID,
-    EPICAPP_ID,
-  ]).then((game) => game.gamePath);
+  return util.GameStoreHelper.findByAppId([STEAMAPP_ID, GOGAPP_ID, EPICAPP_ID]).then(
+    (game) => game.gamePath,
+  );
 }
 
 function findDevTools(game) {
-  const steamId =
-    game === XCOM2_ID ? X2DEVTOOLSSTEAMAPP_ID : WOTCDEVTOOLSSTEAMAPP_ID;
-  return util.GameStoreHelper.findByAppId([steamId]).then(
-    (game) => game.gamePath,
-  );
+  const steamId = game === XCOM2_ID ? X2DEVTOOLSSTEAMAPP_ID : WOTCDEVTOOLSSTEAMAPP_ID;
+  return util.GameStoreHelper.findByAppId([steamId]).then((game) => game.gamePath);
 }
 
 function prepareForModding(discovery, modPath) {
@@ -80,10 +74,7 @@ function supportedTools(game) {
     {
       id: `${game}-launcher`,
       name: "Launcher",
-      logo: path.join(
-        "icons",
-        game === XCOM2_ID ? "xcom-icon.png" : "wotc-icon.png",
-      ),
+      logo: path.join("icons", game === XCOM2_ID ? "xcom-icon.png" : "wotc-icon.png"),
       executable: () => path.join("Launcher", "launcher.exe"),
       requiredFiles: [path.join("Launcher", "launcher.exe")],
       relative: true,
@@ -93,11 +84,8 @@ function supportedTools(game) {
       name: "ModBuddy",
       logo: path.join("icons", "modbuddy.png"),
       queryPath: () => findDevTools(game),
-      executable: () =>
-        path.join("Binaries", "Win32", "ModBuddy", "XCOM ModBuddy.exe"),
-      requiredFiles: [
-        path.join("Binaries", "Win32", "ModBuddy", "XCOM ModBuddy.exe"),
-      ],
+      executable: () => path.join("Binaries", "Win32", "ModBuddy", "XCOM ModBuddy.exe"),
+      requiredFiles: [path.join("Binaries", "Win32", "ModBuddy", "XCOM ModBuddy.exe")],
     },
   ];
 }
@@ -141,17 +129,11 @@ function main(context) {
     mergeMods: true,
     queryPath: findGame,
     queryModPath: () => WOTC_MODS,
-    executable: () =>
-      path.join("XCom2-WarOfTheChosen", "Binaries", "Win64", "XCom2.exe"),
+    executable: () => path.join("XCom2-WarOfTheChosen", "Binaries", "Win64", "XCom2.exe"),
     setup: (discovery) => prepareForModding(discovery, WOTC_MODS),
     requiredFiles: [
       "XCom2-WarOfTheChosen",
-      path.join(
-        "XCom2-WarOfTheChosen",
-        "XComGame",
-        "CookedPCConsole",
-        "3DUIBP.upk",
-      ),
+      path.join("XCom2-WarOfTheChosen", "XComGame", "CookedPCConsole", "3DUIBP.upk"),
     ],
     parameters: [
       "-fromLauncher",
@@ -180,8 +162,7 @@ function main(context) {
     gameId: XCOM2_ID,
     validate,
     deserializeLoadOrder: () => deserializeLoadOrder(context.api, XCOM2_ID),
-    serializeLoadOrder: (loadOrder) =>
-      serializeLoadOrder(context.api, loadOrder, XCOM2_ID),
+    serializeLoadOrder: (loadOrder) => serializeLoadOrder(context.api, loadOrder, XCOM2_ID),
     toggleableEntries: true,
     usageInstructions: instructions(XCOM2_ID),
   });
@@ -190,8 +171,7 @@ function main(context) {
     gameId: WOTC_ID,
     validate,
     deserializeLoadOrder: () => deserializeLoadOrder(context.api, WOTC_ID),
-    serializeLoadOrder: (loadOrder) =>
-      serializeLoadOrder(context.api, loadOrder, WOTC_ID),
+    serializeLoadOrder: (loadOrder) => serializeLoadOrder(context.api, loadOrder, WOTC_ID),
     toggleableEntries: true,
     usageInstructions: instructions(WOTC_ID),
   });
@@ -204,9 +184,7 @@ function main(context) {
 function testMod(files, gameId) {
   const supported =
     (gameId === XCOM2_ID || gameId === WOTC_ID) &&
-    !!files.find(
-      (file) => path.extname(file).toLowerCase() === MOD_EXT.toLowerCase(),
-    );
+    !!files.find((file) => path.extname(file).toLowerCase() === MOD_EXT.toLowerCase());
 
   return Promise.resolve({ supported, requiredFiles: [] });
 }
@@ -241,9 +219,7 @@ async function installMod(files) {
     const modInstructions = modFiles.map((file) => {
       // Trim off the folder name, in case it doesn't match the modName.
       const shortPath =
-        modFolder != "."
-          ? file.substr(file.indexOf(modFolder) + modFolder.length)
-          : file;
+        modFolder != "." ? file.substr(file.indexOf(modFolder) + modFolder.length) : file;
       return {
         type: "copy",
         source: file,
@@ -272,15 +248,9 @@ function validate(prev, cur) {
 async function deserializeLoadOrder(api, gameId) {
   // Get the path to the game.
   const state = api.store.getState();
-  const discovery = util.getSafe(
-    state,
-    ["settings", "gameMode", "discovered", gameId],
-    undefined,
-  );
+  const discovery = util.getSafe(state, ["settings", "gameMode", "discovered", gameId], undefined);
   if (!discovery?.path)
-    return Promise.reject(
-      new util.ProcessCanceled("The game could not be discovered."),
-    );
+    return Promise.reject(new util.ProcessCanceled("The game could not be discovered."));
 
   // Scan the mods folder for directories
   let folders = [];
@@ -315,24 +285,15 @@ async function deserializeLoadOrder(api, gameId) {
     const manifest = await util.getManifest(api, "", gameId);
     deployedFiles = manifest.files;
   } catch (err) {
-    if (err.code !== "ENOENT")
-      log("error", `Error reading manifest for ${gameId}`, err);
+    if (err.code !== "ENOENT") log("error", `Error reading manifest for ${gameId}`, err);
   }
 
   // If we have the game on Steam, also get the Steam Workshop mods.
   let workshopMods = [];
   if (discovery.path.toLowerCase().includes("steamapps")) {
     // Find the workshop content path
-    const steamApps = discovery.path.substr(
-      0,
-      discovery.path.indexOf("common"),
-    );
-    const workshopDir = path.join(
-      steamApps,
-      "workshop",
-      "content",
-      STEAMAPP_ID,
-    );
+    const steamApps = discovery.path.substr(0, discovery.path.indexOf("common"));
+    const workshopDir = path.join(steamApps, "workshop", "content", STEAMAPP_ID);
     try {
       const entries = await fs.readdirAsync(workshopDir);
       const folders = entries.filter((f) => !path.extname(f));
@@ -348,17 +309,12 @@ async function deserializeLoadOrder(api, gameId) {
         return prev;
       }, Promise.resolve([]));
     } catch (err) {
-      if (err.code !== "ENOENT")
-        log("warn", `Error reading workshop mods for ${gameId}`, err);
+      if (err.code !== "ENOENT") log("warn", `Error reading workshop mods for ${gameId}`, err);
     }
   }
 
   // Now we need the INI which holds the enabled mods.
-  const optionsIni = path.join(
-    discovery.path,
-    optionsPath(gameId),
-    MOD_OPTIONS,
-  );
+  const optionsIni = path.join(discovery.path, optionsPath(gameId), MOD_OPTIONS);
   let enabledMods = [];
   try {
     const file = await fs.readFileAsync(optionsIni, "utf8");
@@ -368,12 +324,9 @@ async function deserializeLoadOrder(api, gameId) {
       .map((m) => m.replace("ActiveMods=", ""));
     const names = active.map((mod) => mod.replace(/"/g, ""));
     // Only shown enabled mods that actually have a folder.
-    enabledMods = names.filter(
-      (name) => folders.includes(name) || workshopMods.includes(name),
-    );
+    enabledMods = names.filter((name) => folders.includes(name) || workshopMods.includes(name));
   } catch (err) {
-    if (err.code === "ENOENT")
-      log("info", `${MOD_OPTIONS} does not exist for ${gameId}`);
+    if (err.code === "ENOENT") log("info", `${MOD_OPTIONS} does not exist for ${gameId}`);
     else log("error", `Error reading ${MOD_OPTIONS} for ${gameId}`, err);
   }
 
@@ -389,8 +342,7 @@ async function deserializeLoadOrder(api, gameId) {
       (file) => file.relPath.toLowerCase() === xmodPath.toLowerCase(),
     );
     return {
-      id:
-        steamMod === true ? `steam-${xmod}.toLowerCase()` : xmod.toLowerCase(),
+      id: steamMod === true ? `steam-${xmod}.toLowerCase()` : xmod.toLowerCase(),
       name: xmod,
       enabled,
       modId: deployed ? deployed.source : undefined,
@@ -403,25 +355,13 @@ async function deserializeLoadOrder(api, gameId) {
 async function serializeLoadOrder(api, loadOrder, gameId) {
   // Get the game install folder.
   const state = api.store.getState();
-  const discovery = util.getSafe(
-    state,
-    ["settings", "gameMode", "discovered", gameId],
-    undefined,
-  );
+  const discovery = util.getSafe(state, ["settings", "gameMode", "discovered", gameId], undefined);
   if (!discovery?.path)
-    return Promise.reject(
-      new util.ProcessCanceled("The game could not be discovered."),
-    );
-  const optionsIni = path.join(
-    discovery.path,
-    optionsPath(gameId),
-    MOD_OPTIONS,
-  );
+    return Promise.reject(new util.ProcessCanceled("The game could not be discovered."));
+  const optionsIni = path.join(discovery.path, optionsPath(gameId), MOD_OPTIONS);
 
   try {
-    const mods = loadOrder
-      .filter((entry) => entry.enabled)
-      .map((entry) => entry.name);
+    const mods = loadOrder.filter((entry) => entry.enabled).map((entry) => entry.name);
     return fs.writeFileAsync(optionsIni, xComModOptionsIni(mods), {
       encoding: "utf-8",
     });
@@ -433,7 +373,7 @@ async function serializeLoadOrder(api, loadOrder, gameId) {
 
 const xComModOptionsIni = (mods) => {
   return (
-    `;Generated by Vortex ${remote.app.getVersion()} (https://www.nexusmods.com/about/vortex/)\n` +
+    `;Generated by Vortex ${util.getApplication().version} (https://www.nexusmods.com/about/vortex/)\n` +
     "[Engine.XComModOptions]\n" +
     mods.map((mod) => `ActiveMods="${mod}"`).join("\n") +
     '\n\n;Use the below pattern to activate mods (no "+"/"-" etc. operators as this is the base INI file)\n' +

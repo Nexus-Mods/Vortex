@@ -1,4 +1,3 @@
-const { app, remote } = require("electron");
 const path = require("path");
 const { fs, selectors, util } = require("vortex-api");
 const winapi = require("winapi-bindings");
@@ -6,11 +5,9 @@ const winapi = require("winapi-bindings");
 const GAME_ID = "divinityoriginalsin2";
 const GAME_ID_DE = "divinityoriginalsin2definitiveedition";
 
-const appUni = app || remote.app;
-
 function modPath() {
   return path.join(
-    appUni.getPath("documents"),
+    util.getVortexPath("documents"),
     "Larian Studios",
     "Divinity Original Sin 2",
     "Mods",
@@ -19,7 +16,7 @@ function modPath() {
 
 function modPathDE() {
   return path.join(
-    appUni.getPath("documents"),
+    util.getVortexPath("documents"),
     "Larian Studios",
     "Divinity Original Sin 2 Definitive Edition",
     "Mods",
@@ -38,9 +35,7 @@ function findGame() {
     }
     return Promise.resolve(instPath.value);
   } catch (err) {
-    return util.steam
-      .findByName("Divinity: Original Sin 2")
-      .then((game) => game.gamePath);
+    return util.steam.findByName("Divinity: Original Sin 2").then((game) => game.gamePath);
   }
 }
 
@@ -117,9 +112,7 @@ function main(context) {
       if ([GAME_ID, GAME_ID_DE].indexOf(profile?.gameId) === -1) {
         return Promise.resolve();
       }
-      previouslyDeployed = new Set(
-        deployment[""].filter(isPak).map((iter) => iter.relPath),
-      );
+      previouslyDeployed = new Set(deployment[""].filter(isPak).map((iter) => iter.relPath));
       return Promise.resolve();
     });
     context.api.onAsync("did-deploy", (profileId, deployment) => {

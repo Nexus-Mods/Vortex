@@ -1,6 +1,6 @@
 {
   "name": "game-dawnofman",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Support for Dawn of Man",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",

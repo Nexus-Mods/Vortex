@@ -1,9 +1,6 @@
 const Promise = require("bluebird");
-const { app, remote } = require("electron");
 const path = require("path");
 const { fs, selectors, util } = require("vortex-api");
-
-const appUni = remote !== undefined ? remote.app : app;
 
 const GAME_ID = "battletech";
 const APPID = 637090;
@@ -13,9 +10,7 @@ function findGame() {
 }
 
 function prepareForModding(discovery) {
-  return fs.ensureDirWritableAsync(path.join(discovery.path, "Mods"), () =>
-    Promise.resolve(),
-  );
+  return fs.ensureDirWritableAsync(path.join(discovery.path, "Mods"), () => Promise.resolve());
 }
 
 function gameExecutable() {
@@ -23,12 +18,7 @@ function gameExecutable() {
 }
 
 function modPath() {
-  return path.join(
-    appUni.getPath("documents"),
-    "My Games",
-    "BattleTech",
-    "mods",
-  );
+  return path.join(util.getVortexPath("documents"), "My Games", "BattleTech", "mods");
 }
 
 function resolveGameVersion(discoveryPath) {
@@ -96,10 +86,7 @@ function main(context) {
             // Mod no longer installed ?
             return Promise.resolve();
           }
-          const relPath = path.relative(
-            modPaths[mod.type ?? ""],
-            entry.filePath,
-          );
+          const relPath = path.relative(modPaths[mod.type ?? ""], entry.filePath);
           const targetPath = path.join(installPath, mod.id, relPath);
           // copy the new file back into the corresponding mod, then delete it. That way, vortex will
           // create a link to it with the correct deployment method and not ask the user any questions
@@ -108,17 +95,11 @@ function main(context) {
             await fs.copyAsync(entry.filePath, targetPath);
             await fs.removeAsync(entry.filePath);
           } catch (err) {
-            if (
-              err instanceof util.UserCanceled ||
-              err.message.includes("are the same file")
-            ) {
+            if (err instanceof util.UserCanceled || err.message.includes("are the same file")) {
               // Identical file already there? smells like user tampering to me!
               //  Either way, if the file is already there then we have no problems.
             } else {
-              context.api.showErrorNotification(
-                "Failed to re-import mod file",
-                err,
-              );
+              context.api.showErrorNotification("Failed to re-import mod file", err);
             }
           }
         }

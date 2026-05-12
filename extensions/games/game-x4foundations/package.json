@@ -1,6 +1,6 @@
 {
   "name": "game-x4foundations",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Support for X4: Foundations",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",

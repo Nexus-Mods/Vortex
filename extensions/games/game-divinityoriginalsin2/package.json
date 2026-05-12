@@ -1,6 +1,6 @@
 {
   "name": "game-divinityoriginalsin2",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Support for Divinity: Original Sin 2",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",

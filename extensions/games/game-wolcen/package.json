@@ -1,6 +1,6 @@
 {
   "name": "game-wolcen",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Support for Wolcen: Lords of Mayhem",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",

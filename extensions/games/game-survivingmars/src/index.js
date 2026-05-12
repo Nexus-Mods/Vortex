@@ -1,5 +1,4 @@
 const Promise = require("bluebird");
-const { remote } = require("electron");
 const path = require("path");
 const winapi = require("winapi-bindings");
 const { log, fs, util } = require("vortex-api");
@@ -36,7 +35,7 @@ function findGame() {
 }
 
 function modPath() {
-  return path.join(remote.app.getPath("appData"), "Surviving Mars", "mods");
+  return path.join(util.getVortexPath("appData"), "Surviving Mars", "mods");
 }
 
 function prepareForModding() {
@@ -46,13 +45,10 @@ function prepareForModding() {
 function installContent(files, destinationPath, gameId, progressDelegate) {
   // The modinfo.ini file is expected to always be positioned in the root directory
   //  of the mod itself; we're going to disregard anything placed outside the root.
-  const modFile = files.find(
-    (file) => path.basename(file).toLowerCase() === MOD_FILE,
-  );
+  const modFile = files.find((file) => path.basename(file).toLowerCase() === MOD_FILE);
   const idx = modFile.indexOf(path.basename(modFile));
   const rootPath = path.dirname(modFile);
-  const modName =
-    rootPath !== "" ? rootPath : path.basename(destinationPath, ".installing");
+  const modName = rootPath !== "" ? rootPath : path.basename(destinationPath, ".installing");
 
   // Remove directories and anything that isn't in the rootPath.
   const filtered = files.filter(
@@ -74,8 +70,7 @@ function testSupportedContent(files, gameId) {
   // Make sure we're able to support this mod.
   const supported =
     gameId === SURVIVINGMARS_ID &&
-    files.find((file) => path.basename(file).toLowerCase() === MOD_FILE) !==
-      undefined;
+    files.find((file) => path.basename(file).toLowerCase() === MOD_FILE) !== undefined;
   return Promise.resolve({
     supported,
     requiredFiles: [],
@@ -135,12 +130,7 @@ function main(context) {
     },
   });
 
-  context.registerInstaller(
-    "survivingmars-mod",
-    25,
-    testSupportedContent,
-    installContent,
-  );
+  context.registerInstaller("survivingmars-mod", 25, testSupportedContent, installContent);
 
   return true;
 }
