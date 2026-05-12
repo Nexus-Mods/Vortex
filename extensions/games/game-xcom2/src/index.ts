@@ -353,6 +353,23 @@ function main(context: types.IExtensionContext): boolean {
     installConfigDropIn,
   );
 
+  // Save-game modType. Saves don't live in the game install — they live in
+  // the user's documents directory under "My Games/<gameDocsDir>/XComGame/
+  // SaveData/". The docs-dir name differs from the game's baseDir: XCOM 2
+  // vanilla uses "XCOM2" while WOTC uses "XCOM2 War of the Chosen".
+  context.registerModType(
+    XCOM2_MOD_TYPES.save,
+    25,
+    (gameId) => gameId === XCOM2_GAME_IDS.base || gameId === XCOM2_GAME_IDS.wotc,
+    (game) => {
+      const docsRoot = util.getVortexPath("documents");
+      const gameDocsDir = game.id === XCOM2_GAME_IDS.wotc ? "XCOM2 War of the Chosen" : "XCOM2";
+      return path.join(docsRoot, "My Games", gameDocsDir, "XComGame", "SaveData");
+    },
+    () => Promise.resolve(false),
+    { name: "Save Game", mergeMods: true },
+  );
+
   for (const check of healthChecks) {
     context.registerHealthCheck(check);
   }

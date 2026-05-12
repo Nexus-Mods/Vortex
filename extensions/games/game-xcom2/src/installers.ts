@@ -15,6 +15,7 @@ export const XCOM2_GAME_IDS = {
 export const XCOM2_MOD_TYPES = {
   characterPool: "xcom2-character-pool",
   configDropIn: "xcom2-config-drop-in",
+  save: "xcom2-save",
 } as const;
 
 /** Baseline mod-descriptor extension used by the canonical XCOM 2 installer. */
@@ -43,13 +44,32 @@ const CONFIG_DROP_IN_RE = /\.(ini|int|rus|deu|esn|fra|ita|kor|pol|chn|cht|jpn)$/
  *                         character pools because a translation pack happens
  *                         to also have a `.bin` is vanishingly rare and
  *                         character-pool routing is the better default.
+ *   save (50)           — archives whose data is files named
+ *                         `save_<name>` / `save<digits>` (no extension);
+ *                         deployed flat into the game's user-docs SaveData
+ *                         directory via the `xcom2-save` modType. Runs last
+ *                         because save filenames have no extension and could
+ *                         in principle false-match other heuristics; an
+ *                         archive that's also a recognised XCOM 2 mod shape
+ *                         (e.g. `.XComMod` present) should reach this slot
+ *                         only after the canonical installer has had its
+ *                         turn.
  */
 const PRIORITIES = {
   characterPool: 30,
   configDropIn: 40,
+  save: 50,
 } as const;
 
 export const XCOM2_CONFIG_DROP_IN_PRIORITY = PRIORITIES.configDropIn;
+
+/**
+ * XCOM 2 save-file naming convention: `save_<name>` (named save) or
+ * `save<digits>` (auto/quick save). Match the basename — i.e. start at `^`
+ * or path-separator — and require no extension (no `.` allowed in the
+ * suffix) so `save_archive.zip` / `savefile.txt` don't false-match.
+ */
+const SAVE_NAME_RE = /(?:^|[\\/])save(_[^.\\/]+|\d+)$/i;
 
 /**
  * Per-file regex for the XCOM 2 character-pool descriptor. Used by `match`
@@ -89,6 +109,33 @@ export const XCOM2_INSTALLER_SPECS: types.IInstallerSpec[] = [
     install: {
       stripCommonRoot: false,
       filter: { kind: "extensions", list: [BIN_EXTENSION] },
+      flatten: true,
+    },
+  },
+  {
+    id: "save",
+    priority: PRIORITIES.save,
+    modType: XCOM2_MOD_TYPES.save,
+    // Accept the archive when it contains at least one save-named file and
+    // no `.XComMod` descriptor. Custom predicate because save filenames have
+    // no extension — none of the simpler match kinds capture this shape.
+    match: {
+      kind: "custom",
+      predicate: (files: string[]): boolean => {
+        const hasSave = files.some((f) => SAVE_NAME_RE.test(f));
+        const hasXComMod = files.some((f) =>
+          f.toLowerCase().endsWith(XCOM_MOD_DESCRIPTOR.toLowerCase()),
+        );
+        return hasSave && !hasXComMod;
+      },
+    },
+    // Save archives commonly bundle screenshots and instructions. SaveData/
+    // is a flat directory so we drop everything but the save-named files
+    // and flatten to basename. The modType's install path resolves to the
+    // active game's user-docs SaveData folder (see `index.ts`).
+    install: {
+      stripCommonRoot: false,
+      filter: { kind: "regex", patterns: [SAVE_NAME_RE] },
       flatten: true,
     },
   },

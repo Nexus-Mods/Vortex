@@ -58,8 +58,10 @@ function findInstaller(installers: RegisteredInstaller[], modType: string): Regi
 }
 
 describe("XCOM2_INSTALLER_SPECS — shape", () => {
-  it("declares the character-pool spec", () => {
-    expect(XCOM2_INSTALLER_SPECS.map((s) => s.id)).toEqual(["character-pool"]);
+  it("declares character-pool and save specs in ascending priority order", () => {
+    const specs = XCOM2_INSTALLER_SPECS;
+    expect(specs.map((s) => s.id)).toEqual(["character-pool", "save"]);
+    expect(specs[0]!.priority).toBeLessThan(specs[1]!.priority);
   });
 
   it("character-pool spec targets the character-pool modType", () => {
@@ -70,6 +72,16 @@ describe("XCOM2_INSTALLER_SPECS — shape", () => {
     const inst = specById("character-pool").install;
     expect(inst.flatten).toBe(true);
     expect(inst.filter).toEqual({ kind: "extensions", list: [".bin"] });
+  });
+
+  it("save spec targets the save modType", () => {
+    expect(specById("save").modType).toBe(XCOM2_MOD_TYPES.save);
+  });
+
+  it("save spec uses regex filter + flatten install", () => {
+    const inst = specById("save").install;
+    expect(inst.flatten).toBe(true);
+    expect(inst.filter?.kind).toBe("regex");
   });
 });
 
@@ -326,3 +338,74 @@ function requireSep(): string {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   return (require("node:path") as typeof import("node:path")).sep;
 }
+
+describe("save match predicate (via custom match)", () => {
+  const match = specById("save").match;
+  if (match.kind !== "custom") throw new Error("expected custom match");
+  const accepts = match.predicate;
+
+  it("accepts a named save (save_<name>) at root", () => {
+    expect(accepts(["save_LOST"])).toBe(true);
+  });
+
+  it("accepts a numbered save (save<digits>) at root", () => {
+    expect(accepts(["save14"])).toBe(true);
+  });
+
+  it("accepts a save inside a wrapper directory", () => {
+    expect(accepts(["Some Save Pack/save_MyName", "Some Save Pack/Readme.txt"])).toBe(true);
+  });
+
+  it("rejects archives with a .XComMod (canonical installer claims those)", () => {
+    expect(accepts(["mod/save_X", "mod/mod.XComMod"])).toBe(false);
+  });
+
+  it("rejects savefile.txt (extension present)", () => {
+    expect(accepts(["savefile.txt"])).toBe(false);
+  });
+
+  it("rejects 'save_archive.zip' (the underscore is followed by an extension)", () => {
+    expect(accepts(["save_archive.zip"])).toBe(false);
+  });
+
+  it("rejects a name that just starts with 'save' (e.g. savescum.bin)", () => {
+    expect(accepts(["savescum.bin"])).toBe(false);
+  });
+});
+
+describe("save install (filter + flatten via declareInstallers)", () => {
+  it("filters to save-named files and flattens to basenames", async () => {
+    const ctx = makeContext();
+    util.declareInstallers(ctx as never, XCOM2_GAME_IDS.base, XCOM2_INSTALLER_SPECS);
+    const inst = findInstaller(ctx.installers, XCOM2_MOD_TYPES.save);
+
+    const result = await inst.install([
+      "MySaveCollection/save_LOST",
+      "MySaveCollection/save14",
+      "MySaveCollection/screenshot.jpg",
+      "MySaveCollection/Readme.txt",
+    ]);
+
+    expect(result.instructions).toEqual([
+      { type: "copy", source: "MySaveCollection/save_LOST", destination: "save_LOST" },
+      { type: "copy", source: "MySaveCollection/save14", destination: "save14" },
+      { type: "setmodtype", value: XCOM2_MOD_TYPES.save },
+    ]);
+  });
+
+  it("accepts both xcom2 and xcom2-wotc when declared per game", async () => {
+    const baseCtx = makeContext();
+    const wotcCtx = makeContext();
+    util.declareInstallers(baseCtx as never, XCOM2_GAME_IDS.base, XCOM2_INSTALLER_SPECS);
+    util.declareInstallers(wotcCtx as never, XCOM2_GAME_IDS.wotc, XCOM2_INSTALLER_SPECS);
+
+    const baseInst = findInstaller(baseCtx.installers, XCOM2_MOD_TYPES.save);
+    const wotcInst = findInstaller(wotcCtx.installers, XCOM2_MOD_TYPES.save);
+
+    const baseOk = await baseInst.testSupported(["save_X"], XCOM2_GAME_IDS.base);
+    const wotcOk = await wotcInst.testSupported(["save14"], XCOM2_GAME_IDS.wotc);
+
+    expect(baseOk.supported).toBe(true);
+    expect(wotcOk.supported).toBe(true);
+  });
+});

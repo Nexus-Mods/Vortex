@@ -7,6 +7,14 @@ import { XCOM2_MOD_TYPES } from "./installers";
 const MOD_EXT = ".XComMod";
 const CHARACTER_POOL_EXT = ".bin";
 
+/**
+ * Save-file name shape — matches the installer's SAVE_NAME_RE.
+ * `save_<name>` or `save<digits>`, no extension. Anchored to basename via
+ * `^` because health checks see flattened deploy paths (just the basename
+ * after the installer's `flatten: true`).
+ */
+const SAVE_NAME_RE = /^save(_[^.\\/]+|\d+)$/i;
+
 const CATEGORY = types.HealthCheckCategory.Mods;
 const TRIGGERS: types.HealthCheckTrigger[] = [
   types.HealthCheckTrigger.ModsChanged,
@@ -46,6 +54,7 @@ function warning(
 const isXComMod = (f: string) => path.extname(f).toLowerCase() === MOD_EXT.toLowerCase();
 const isCharacterPoolBin = (f: string) =>
   path.extname(f).toLowerCase() === CHARACTER_POOL_EXT.toLowerCase();
+const isSaveFile = (f: string) => SAVE_NAME_RE.test(path.basename(f));
 
 /**
  * True for mods deployed via the character-pool installer. `.XComMod`-shape
@@ -53,6 +62,13 @@ const isCharacterPoolBin = (f: string) =>
  */
 const isCharacterPoolMod = (mod: types.IMod): boolean =>
   (mod.attributes.modType as string | undefined) === XCOM2_MOD_TYPES.characterPool;
+
+/**
+ * True for mods deployed via the save installer. Same rationale —
+ * `.XComMod`-shape health checks skip save mods.
+ */
+const isSaveMod = (mod: types.IMod): boolean =>
+  (mod.attributes.modType as string | undefined) === XCOM2_MOD_TYPES.save;
 
 /**
  * Fails when an install produced zero files — typically means the installer's
@@ -95,10 +111,10 @@ const hasXComModFileCheck: types.IModHealthCheck = {
   triggers: TRIGGERS,
   checkMod: async (_api, mod) => {
     const startedAt = Date.now();
-    if (isCharacterPoolMod(mod)) {
+    if (isCharacterPoolMod(mod) || isSaveMod(mod)) {
       return passed(
         "xcom2-has-xcommod-file",
-        "Character pool mod; .XComMod check not applicable",
+        "Non-.XComMod mod type; check not applicable",
         startedAt,
       );
     }
@@ -132,10 +148,10 @@ const xComModsAttributeCheck: types.IModHealthCheck = {
   triggers: TRIGGERS,
   checkMod: async (_api, mod) => {
     const startedAt = Date.now();
-    if (isCharacterPoolMod(mod)) {
+    if (isCharacterPoolMod(mod) || isSaveMod(mod)) {
       return passed(
         "xcom2-xCommods-attribute-set",
-        "Character pool mod; xComMods attribute check not applicable",
+        "Non-.XComMod mod type; xComMods attribute check not applicable",
         startedAt,
       );
     }
@@ -194,9 +210,46 @@ const characterPoolHasBinCheck: types.IModHealthCheck = {
   },
 };
 
+/**
+ * The save installer filters archives to save-named files and flattens them
+ * to basenames. The install output for a save mod must contain at least one
+ * file matching the save-name shape; absence means the filter dropped
+ * everything (the archive contained no recognisable save files) or the
+ * install path didn't complete.
+ */
+const saveDeployedCheck: types.IModHealthCheck = {
+  id: "xcom2-save-deployed",
+  name: "XCOM 2 — save mod output contains a save file",
+  description:
+    "Verifies that a save mod's install output contains at least one file " +
+    "with the XCOM 2 save-name shape (save_<name> or save<digits>).",
+  category: CATEGORY,
+  severity: SEVERITY_WARNING,
+  triggers: TRIGGERS,
+  checkMod: async (_api, mod) => {
+    const startedAt = Date.now();
+    if (!isSaveMod(mod)) {
+      return passed("xcom2-save-deployed", "Not a save mod; check not applicable", startedAt);
+    }
+    if (!mod.files.some(isSaveFile)) {
+      return warning(
+        "xcom2-save-deployed",
+        "Save mod has no save-named file",
+        "The save installer filters archives to files matching the XCOM 2 save-name " +
+          "shape (save_<name>, save<digits>). Empty output after install means the " +
+          "archive contained no recognisable save files, or the install path didn't " +
+          "complete.",
+        startedAt,
+      );
+    }
+    return passed("xcom2-save-deployed", "Save mod has at least one save-named file", startedAt);
+  },
+};
+
 export const healthChecks: types.IModHealthCheck[] = [
   modHasFilesCheck,
   hasXComModFileCheck,
   xComModsAttributeCheck,
   characterPoolHasBinCheck,
+  saveDeployedCheck,
 ];
