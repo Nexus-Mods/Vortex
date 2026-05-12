@@ -43,7 +43,15 @@ export const testDescriptor = {
   skipHeuristics: [
     {
       reason: "ModBuddy source project — needs compilation into a .XComMod first",
-      matches: (files: string[]): boolean => files.some((f) => /\.(uc|x2proj)$/i.test(f)),
+      // .uc source is commonly bundled alongside the compiled output in
+      // legitimate mod archives (the canonical installer picks them up via
+      // .XComMod). Only skip when there's no .XComMod present, i.e. the
+      // upload is genuinely a source-only project.
+      matches: (files: string[]): boolean => {
+        const hasSource = files.some((f) => /\.(uc|x2proj)$/i.test(f));
+        const hasXComMod = files.some((f) => /\.XComMod$/i.test(f));
+        return hasSource && !hasXComMod;
+      },
     },
     {
       reason: "nested archive — user must extract before installing",
