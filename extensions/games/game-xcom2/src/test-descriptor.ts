@@ -62,7 +62,21 @@ export const testDescriptor = {
     },
     {
       reason: "ReShade / shader injector (graphics overlay, not an XCOM 2 mod)",
-      matches: (files: string[]): boolean => files.some((f) => /\.(fx|fxh|hlsl)$/i.test(f)),
+      // Three ways to recognise the family:
+      //  - any shader source file (.fx / .fxh / .hlsl) → ReShade preset
+      //  - any .cfg or .undef file. XCOM 2 itself uses .ini for config and
+      //    has no native .undef, so these extensions in this game's fixture
+      //    set are exclusively ReShade/SweetFX preset files (Real Vision
+      //    SSAO Boost ships SSAO.h + McFX.cfg with no ReShade/ wrapper;
+      //    X-Com2.cfg is a bare SweetFX drop).
+      //  - any path component named ReShade/ or SweetFX/, catching
+      //    wrapper-folder uploads like Real Vision ReShade No Blur's
+      //    ReShade/Common.cfg layout.
+      matches: (files: string[]): boolean =>
+        files.some(
+          (f) =>
+            /\.(fx|fxh|hlsl|cfg|undef)$/i.test(f) || /(^|[\\/])(ReShade|SweetFX)([\\/.])/i.test(f),
+        ),
     },
     {
       reason: "standalone Windows tool (external utility, not an XCOM 2 mod)",
