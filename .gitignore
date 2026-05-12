@@ -65,8 +65,7 @@ log.txt
 nul
 
 # Claude Code directory
-.claude
-!.claude/skills/changelog/skill.md
+.claude/settings.local.json
 
 # direnv
 .direnv/
