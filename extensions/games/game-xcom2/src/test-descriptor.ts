@@ -16,7 +16,18 @@
  * manifest before the installer chain runs; a match reports the fixture as
  * skipped instead of letting it surface as an installer rejection.
  */
-const DOC_EXT_RE = /\.(txt|pdf|md|docx|rtf|html|htm)$/i;
+/**
+ * "Documentation" extensions — text instructions plus image/screenshot
+ * formats. An archive whose data is *entirely* these is an upload of human-
+ * readable material (readmes, wallpapers, modding guides, screenshot packs)
+ * with no installable game content. Vortex has nothing to do with it.
+ *
+ * Image extensions are included here, not in their own heuristic, because
+ * image-only archives (wallpapers) and mixed doc+image archives (modding
+ * guides bundling PDFs with screenshots) collapse to the same conclusion:
+ * skip.
+ */
+const DOC_EXT_RE = /\.(txt|pdf|md|docx|rtf|html|htm|jpe?g|png|gif|bmp|webp|svg|tiff?)$/i;
 
 export const testDescriptor = {
   gameId: "xcom2",
@@ -39,10 +50,14 @@ export const testDescriptor = {
       matches: (files: string[]): boolean => files.some((f) => /\.(7z|rar|zip)$/i.test(f)),
     },
     {
-      reason: "instructions-only upload (readme/PDF, no installable content)",
+      reason:
+        "documentation-only upload (readmes/PDFs/screenshots/wallpapers, no installable content)",
+      // Also covers empty manifests — a CDN content-preview that lists no
+      // files means the harness can't see installable content even if the
+      // archive bytes contain some. Skip rather than fail.
       matches: (files: string[]): boolean => {
         const data = files.filter((f) => !f.endsWith("/") && !f.endsWith("\\"));
-        return data.length > 0 && data.every((f) => DOC_EXT_RE.test(f));
+        return data.length === 0 || data.every((f) => DOC_EXT_RE.test(f));
       },
     },
     {
