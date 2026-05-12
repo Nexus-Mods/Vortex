@@ -3,6 +3,9 @@ import path from "path";
 import { fs, log, util } from "vortex-api";
 import type { types } from "vortex-api";
 
+import { healthChecks } from "./diagnostic";
+import { XCOM2_GAME_IDS, XCOM2_INSTALLER_SPECS, XCOM2_MOD_TYPES } from "./installers";
+
 let cachedVersion: string | undefined;
 function getAppVersion(): string {
   if (cachedVersion === undefined) {
@@ -287,6 +290,37 @@ function main(context: types.IExtensionContext): boolean {
   }
 
   context.registerInstaller("xcom2-installer", 25, testMod, installMod);
+
+  // Character-pool installer (`.bin` archives) + the mod-type it routes to.
+  // The mod-type's install path is `XComGame/CharacterPool/Importable/`
+  // under the active game's discovered path; WOTC nests one folder deeper
+  // because its `baseDir` is `XCom2-WarOfTheChosen`.
+  context.registerModType(
+    XCOM2_MOD_TYPES.characterPool,
+    25,
+    (gameId) => gameId === XCOM2_GAME_IDS.base || gameId === XCOM2_GAME_IDS.wotc,
+    (game) => {
+      const def = GAMES.find((g) => g.id === game.id);
+      if (!def) return undefined;
+      const state = context.api.store!.getState();
+      const discovery = util.getSafe(
+        state,
+        ["settings", "gameMode", "discovered", game.id],
+        undefined,
+      ) as types.IDiscoveryResult | undefined;
+      if (!discovery?.path) return undefined;
+      return path.join(discovery.path, def.baseDir, "XComGame", "CharacterPool", "Importable");
+    },
+    () => Promise.resolve(false),
+    { name: "Character Pool", mergeMods: true },
+  );
+
+  util.declareInstallers(context, XCOM2_GAME_IDS.base, XCOM2_INSTALLER_SPECS);
+  util.declareInstallers(context, XCOM2_GAME_IDS.wotc, XCOM2_INSTALLER_SPECS);
+
+  for (const check of healthChecks) {
+    context.registerHealthCheck(check);
+  }
 
   return true;
 }

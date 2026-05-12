@@ -2,7 +2,10 @@ import * as path from "node:path";
 
 import { types } from "vortex-api";
 
+import { XCOM2_MOD_TYPES } from "./installers";
+
 const MOD_EXT = ".XComMod";
+const CHARACTER_POOL_EXT = ".bin";
 
 const CATEGORY = types.HealthCheckCategory.Mods;
 const TRIGGERS: types.HealthCheckTrigger[] = [
@@ -41,6 +44,15 @@ function warning(
 }
 
 const isXComMod = (f: string) => path.extname(f).toLowerCase() === MOD_EXT.toLowerCase();
+const isCharacterPoolBin = (f: string) =>
+  path.extname(f).toLowerCase() === CHARACTER_POOL_EXT.toLowerCase();
+
+/**
+ * True for mods deployed via the character-pool installer. `.XComMod`-shape
+ * health checks below skip these since character pools have no descriptor.
+ */
+const isCharacterPoolMod = (mod: types.IMod): boolean =>
+  (mod.attributes.modType as string | undefined) === XCOM2_MOD_TYPES.characterPool;
 
 /**
  * Fails when an install produced zero files — typically means the installer's
@@ -71,7 +83,8 @@ const modHasFilesCheck: types.IModHealthCheck = {
  * The XCOM 2 installer's testSupported requires at least one `.XComMod` file
  * and the install function copies the folder around that file. Absence in the
  * install output means the installer matched something it shouldn't have, or
- * the copy loop dropped the canonical mod descriptor.
+ * the copy loop dropped the canonical mod descriptor. Skipped for character
+ * pool mods — those have no `.XComMod`.
  */
 const hasXComModFileCheck: types.IModHealthCheck = {
   id: "xcom2-has-xcommod-file",
@@ -82,6 +95,13 @@ const hasXComModFileCheck: types.IModHealthCheck = {
   triggers: TRIGGERS,
   checkMod: async (_api, mod) => {
     const startedAt = Date.now();
+    if (isCharacterPoolMod(mod)) {
+      return passed(
+        "xcom2-has-xcommod-file",
+        "Character pool mod; .XComMod check not applicable",
+        startedAt,
+      );
+    }
     if (!mod.files.some(isXComMod)) {
       return warning(
         "xcom2-has-xcommod-file",
@@ -97,9 +117,11 @@ const hasXComModFileCheck: types.IModHealthCheck = {
 };
 
 /**
- * The install function always emits an `xComMods` attribute listing the mod
- * descriptor basenames. An empty or missing value means the install path
- * didn't complete end-to-end (e.g. silent throw before the attribute push).
+ * The .XComMod install function always emits an `xComMods` attribute listing
+ * the mod descriptor basenames. An empty or missing value means the install
+ * path didn't complete end-to-end (e.g. silent throw before the attribute
+ * push). Skipped for character pool mods — that installer doesn't set this
+ * attribute.
  */
 const xComModsAttributeCheck: types.IModHealthCheck = {
   id: "xcom2-xCommods-attribute-set",
@@ -110,6 +132,13 @@ const xComModsAttributeCheck: types.IModHealthCheck = {
   triggers: TRIGGERS,
   checkMod: async (_api, mod) => {
     const startedAt = Date.now();
+    if (isCharacterPoolMod(mod)) {
+      return passed(
+        "xcom2-xCommods-attribute-set",
+        "Character pool mod; xComMods attribute check not applicable",
+        startedAt,
+      );
+    }
     const value = mod.attributes.xComMods;
     if (!Array.isArray(value) || value.length === 0) {
       return warning(
@@ -124,8 +153,50 @@ const xComModsAttributeCheck: types.IModHealthCheck = {
   },
 };
 
+/**
+ * The character-pool installer filters the archive to `.bin` only and flattens
+ * to `Importable/`. The install output for a character-pool mod must contain
+ * at least one `.bin` file; absence means the filter dropped everything (the
+ * archive had no `.bin`) or the install path didn't complete.
+ */
+const characterPoolHasBinCheck: types.IModHealthCheck = {
+  id: "xcom2-character-pool-has-bin",
+  name: "XCOM 2 — character pool output contains a .bin file",
+  description:
+    "Verifies that a character pool mod's install output contains at least one .bin file.",
+  category: CATEGORY,
+  severity: SEVERITY_WARNING,
+  triggers: TRIGGERS,
+  checkMod: async (_api, mod) => {
+    const startedAt = Date.now();
+    if (!isCharacterPoolMod(mod)) {
+      return passed(
+        "xcom2-character-pool-has-bin",
+        "Not a character pool mod; check not applicable",
+        startedAt,
+      );
+    }
+    if (!mod.files.some(isCharacterPoolBin)) {
+      return warning(
+        "xcom2-character-pool-has-bin",
+        "Character pool mod has no .bin file",
+        "The character-pool installer filters archives to .bin only. Empty output " +
+          "after install means the archive contained no recognisable character pool " +
+          "files, or the install path didn't complete.",
+        startedAt,
+      );
+    }
+    return passed(
+      "xcom2-character-pool-has-bin",
+      "Character pool mod has at least one .bin file",
+      startedAt,
+    );
+  },
+};
+
 export const healthChecks: types.IModHealthCheck[] = [
   modHasFilesCheck,
   hasXComModFileCheck,
   xComModsAttributeCheck,
+  characterPoolHasBinCheck,
 ];

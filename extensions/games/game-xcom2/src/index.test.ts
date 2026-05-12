@@ -10,6 +10,15 @@ function createMockContext() {
   const games: Record<string, unknown>[] = [];
   const installers: { id: string; priority: number; test: Function; install: Function }[] = [];
   const loadOrders: Record<string, unknown>[] = [];
+  const modTypes: {
+    id: string;
+    priority: number;
+    isGameSupported: (gameId: string) => boolean;
+    getInstallPath: (game: { id: string }) => string | undefined;
+    test: Function;
+    options?: Record<string, unknown>;
+  }[] = [];
+  const healthChecks: Record<string, unknown>[] = [];
 
   const context = {
     registerGame: vi.fn((game: Record<string, unknown>) => games.push(game)),
@@ -18,6 +27,17 @@ function createMockContext() {
         installers.push({ id, priority, test: testFn, install: installFn }),
     ),
     registerLoadOrder: vi.fn((info: Record<string, unknown>) => loadOrders.push(info)),
+    registerModType: vi.fn(
+      (
+        id: string,
+        priority: number,
+        isGameSupported: (gameId: string) => boolean,
+        getInstallPath: (game: { id: string }) => string | undefined,
+        test: Function,
+        options?: Record<string, unknown>,
+      ) => modTypes.push({ id, priority, isGameSupported, getInstallPath, test, options }),
+    ),
+    registerHealthCheck: vi.fn((check: Record<string, unknown>) => healthChecks.push(check)),
     api: {
       store: {
         getState: vi.fn(() => ({})),
@@ -25,7 +45,7 @@ function createMockContext() {
     },
   };
 
-  return { context, games, installers, loadOrders };
+  return { context, games, installers, loadOrders, modTypes, healthChecks };
 }
 
 afterEach(() => vi.clearAllMocks());
@@ -149,12 +169,22 @@ describe("installer", () => {
     return installers[0]!;
   }
 
-  test("registers one installer with id xcom2-installer", () => {
+  test("registers the canonical .XComMod installer at priority 25", () => {
     const { context, installers } = createMockContext();
     init(context as never);
-    expect(installers).toHaveLength(1);
-    expect(installers[0]!.id).toBe("xcom2-installer");
-    expect(installers[0]!.priority).toBe(25);
+    const xcomInst = installers.find((i) => i.id === "xcom2-installer");
+    expect(xcomInst).toBeDefined();
+    expect(xcomInst!.priority).toBe(25);
+  });
+
+  test("registers a character-pool installer per game id", () => {
+    const { context, installers } = createMockContext();
+    init(context as never);
+    // declareInstallers is called once per game id, both reusing the same
+    // modType-keyed registration id (xcom2-character-pool).
+    const poolInstallers = installers.filter((i) => i.id === "xcom2-character-pool");
+    expect(poolInstallers).toHaveLength(2);
+    expect(poolInstallers.every((i) => i.priority === 30)).toBe(true);
   });
 
   test("testMod supports xcom2 game ID with XComMod file", async () => {
