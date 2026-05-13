@@ -12,6 +12,9 @@
 
 @import "tailwindcss";
 
+/* Explicit source paths so detection doesn't depend on the CLI's cwd. */
+@source "../renderer/src/**/*.{ts,tsx,html}";
+
 /* Import design system */
 @import "./ui/theme";
 @import "./ui/elements";
