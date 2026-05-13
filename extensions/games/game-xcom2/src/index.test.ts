@@ -505,3 +505,122 @@ describe("load order", () => {
     });
   });
 });
+
+// ── ModType callbacks ──────────────────────────────────────────────
+//
+// Exercises every Vortex call point on each registerModType() entry:
+//
+//   isGameSupported(gameId) — gates whether this modType applies
+//   getInstallPath(game)    — absolute deploy target
+//
+// The `test` callback (auto-classification of an existing mod into this
+// modType) is left at `() => Promise.resolve(false)` in production — covered
+// by a single "never auto-classifies" assertion rather than per-modType.
+
+describe("mod types", () => {
+  function getModTypes() {
+    const { context, modTypes } = createMockContext();
+    init(context as never);
+    return modTypes;
+  }
+
+  function findModType(modTypes: ReturnType<typeof getModTypes>, id: string) {
+    const mt = modTypes.find((m) => m.id === id);
+    if (!mt) throw new Error(`no modType with id=${id}`);
+    return mt;
+  }
+
+  test("registers three mod types: character pool, config drop-in, save", () => {
+    const modTypes = getModTypes();
+    expect(modTypes.map((m) => m.id).sort()).toEqual([
+      "xcom2-character-pool",
+      "xcom2-config-drop-in",
+      "xcom2-save",
+    ]);
+  });
+
+  for (const id of ["xcom2-character-pool", "xcom2-config-drop-in", "xcom2-save"]) {
+    test(`${id}: isGameSupported accepts xcom2 + xcom2-wotc, rejects others`, () => {
+      const mt = findModType(getModTypes(), id);
+      expect(mt.isGameSupported("xcom2")).toBe(true);
+      expect(mt.isGameSupported("xcom2-wotc")).toBe(true);
+      expect(mt.isGameSupported("xrebirth")).toBe(false);
+      expect(mt.isGameSupported("")).toBe(false);
+    });
+
+    test(`${id}: never auto-classifies existing mods`, async () => {
+      const mt = findModType(getModTypes(), id);
+      const verdict = await (mt.test as Function)([
+        { type: "copy", source: "x", destination: "y" },
+      ]);
+      expect(verdict).toBe(false);
+    });
+  }
+
+  describe("getInstallPath", () => {
+    test("character-pool: xcom2 deploys to XComGame/CharacterPool/Importable", () => {
+      const mt = findModType(getModTypes(), "xcom2-character-pool");
+      vi.mocked(util.getSafe).mockReturnValue({ path: "/games/xcom2" });
+      expect(mt.getInstallPath({ id: "xcom2" })).toBe(
+        path.join("/games/xcom2", "XComGame", "CharacterPool", "Importable"),
+      );
+    });
+
+    test("character-pool: WOTC nests under XCom2-WarOfTheChosen", () => {
+      const mt = findModType(getModTypes(), "xcom2-character-pool");
+      vi.mocked(util.getSafe).mockReturnValue({ path: "/games/xcom2" });
+      expect(mt.getInstallPath({ id: "xcom2-wotc" })).toBe(
+        path.join(
+          "/games/xcom2",
+          "XCom2-WarOfTheChosen",
+          "XComGame",
+          "CharacterPool",
+          "Importable",
+        ),
+      );
+    });
+
+    test("character-pool: returns undefined when discovery is missing", () => {
+      const mt = findModType(getModTypes(), "xcom2-character-pool");
+      // util.getSafe's mock-default returns the fallback (undefined) when the
+      // state path isn't overridden.
+      vi.mocked(util.getSafe).mockReturnValueOnce(undefined);
+      expect(mt.getInstallPath({ id: "xcom2" })).toBeUndefined();
+    });
+
+    test("config-drop-in: install path is the game's discovered root", () => {
+      const mt = findModType(getModTypes(), "xcom2-config-drop-in");
+      vi.mocked(util.getSafe).mockReturnValue({ path: "/games/xcom2" });
+      expect(mt.getInstallPath({ id: "xcom2" })).toBe("/games/xcom2");
+      expect(mt.getInstallPath({ id: "xcom2-wotc" })).toBe("/games/xcom2");
+    });
+
+    test("config-drop-in: undefined when discovery is missing", () => {
+      const mt = findModType(getModTypes(), "xcom2-config-drop-in");
+      vi.mocked(util.getSafe).mockReturnValueOnce(undefined);
+      expect(mt.getInstallPath({ id: "xcom2" })).toBeUndefined();
+    });
+
+    test("save: xcom2 deploys to <documents>/My Games/XCOM2/XComGame/SaveData", () => {
+      const mt = findModType(getModTypes(), "xcom2-save");
+      vi.mocked(util.getVortexPath).mockReturnValue("/home/test/Documents");
+      expect(mt.getInstallPath({ id: "xcom2" })).toBe(
+        path.join("/home/test/Documents", "My Games", "XCOM2", "XComGame", "SaveData"),
+      );
+    });
+
+    test("save: WOTC uses 'XCOM2 War of the Chosen' docs subdir", () => {
+      const mt = findModType(getModTypes(), "xcom2-save");
+      vi.mocked(util.getVortexPath).mockReturnValue("/home/test/Documents");
+      expect(mt.getInstallPath({ id: "xcom2-wotc" })).toBe(
+        path.join(
+          "/home/test/Documents",
+          "My Games",
+          "XCOM2 War of the Chosen",
+          "XComGame",
+          "SaveData",
+        ),
+      );
+    });
+  });
+});

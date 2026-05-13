@@ -210,6 +210,11 @@ export const util = {
   ProcessCanceled,
   DataInvalid,
   getManifest: vi.fn(() => Promise.resolve({ files: [] })),
+  // Mirrors util.getVortexPath in vortex-api. Tests override via
+  // vi.mocked(util.getVortexPath).mockReturnValueOnce(...) when they need a
+  // specific path; the default is a stable Linux-friendly placeholder so
+  // happy-path tests don't need to know about it.
+  getVortexPath: vi.fn((_key: string) => "/home/test"),
   declareInstallers,
   buildCopyInstructions,
 };
