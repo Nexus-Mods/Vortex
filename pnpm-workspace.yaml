@@ -288,7 +288,6 @@ dedupePeers: true
 
 engineStrict: true
 failIfNoMatch: true
-forceLegacyDeploy: true
 
 overrides:
   "@types/react": "16"

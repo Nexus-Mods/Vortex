@@ -16,7 +16,7 @@
     "test": "pnpm vitest run --config ./vitest.config.ts",
     "test:downloader": "pnpm vitest run --config ./vitest.downloader.config.ts",
     "test:adaptor": "pnpm vitest run --config ./vitest.integration.config.ts",
-    "publish": "pnpm exec rimraf ./dist && pnpm -F @vortex/main deploy ./dist && node ./dist/prepare-dist-package.mjs",
+    "publish": "pnpm exec rimraf ./dist && pnpm -F @vortex/main deploy --config.inject-workspace-packages=true --config.node-linker=hoisted ./dist && node ./dist/prepare-dist-package.mjs",
     "package": "cd ./dist && pnpm electron-builder --config ./electron-builder.config.json --config.win.forceCodeSigning=true --config.win.sign=./sign.cjs --publish never",
     "package:nosign": "cd ./dist && pnpm electron-builder --config ./electron-builder.config.json --publish never"
   },
@@ -38,6 +38,7 @@
         "cache": false
       },
       "publish": {
+        "cache": false,
         "dependsOn": [
           "build"
         ]
@@ -46,13 +47,21 @@
         "cache": false,
         "dependsOn": [
           "publish"
-        ]
+        ],
+        "executor": "nx:run-script",
+        "options": {
+          "script": "package"
+        }
       },
       "package:nosign": {
         "cache": false,
         "dependsOn": [
           "publish"
-        ]
+        ],
+        "executor": "nx:run-script",
+        "options": {
+          "script": "package:nosign"
+        }
       },
       "copy-assets": {
         "executor": "nx:run-commands",
