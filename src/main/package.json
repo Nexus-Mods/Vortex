@@ -9,6 +9,7 @@
   "main": "build/main.cjs",
   "scripts": {
     "start": "pnpm electron .",
+    "postinstall": "pnpm exec electron-rebuild",
     "build": "node ./build.mjs",
     "typecheck": "pnpm tsc",
     "lint": "pnpm eslint --quiet --concurrency auto .",
@@ -16,7 +17,7 @@
     "test": "pnpm vitest run --config ./vitest.config.ts",
     "test:downloader": "pnpm vitest run --config ./vitest.downloader.config.ts",
     "test:adaptor": "pnpm vitest run --config ./vitest.integration.config.ts",
-    "publish": "pnpm exec rimraf ./dist && pnpm -F @vortex/main deploy ./dist && node ./dist/prepare-dist-package.mjs",
+    "publish": "pnpm exec rimraf ./dist && pnpm cross-env pnpm_config_inject_workspace_packages=true pnpm_config_node_linker=hoisted pnpm -F @vortex/main deploy ./dist && node ./dist/prepare-dist-package.mjs",
     "package": "cd ./dist && pnpm electron-builder --config ./electron-builder.config.json --config.win.forceCodeSigning=true --config.win.sign=./sign.cjs --publish never",
     "package:nosign": "cd ./dist && pnpm electron-builder --config ./electron-builder.config.json --publish never"
   },
@@ -38,6 +39,7 @@
         "cache": false
       },
       "publish": {
+        "cache": false,
         "dependsOn": [
           "build"
         ]
@@ -46,13 +48,21 @@
         "cache": false,
         "dependsOn": [
           "publish"
-        ]
+        ],
+        "executor": "nx:run-script",
+        "options": {
+          "script": "package"
+        }
       },
       "package:nosign": {
         "cache": false,
         "dependsOn": [
           "publish"
-        ]
+        ],
+        "executor": "nx:run-script",
+        "options": {
+          "script": "package:nosign"
+        }
       },
       "copy-assets": {
         "executor": "nx:run-commands",
@@ -128,6 +138,7 @@
     "@headlessui/react": "catalog:",
     "@mdi/js": "catalog:",
     "@msgpack/msgpack": "catalog:",
+    "@nexusmods/adaptor-api": "workspace:*",
     "@nexusmods/fomod-installer-ipc": "catalog:",
     "@nexusmods/fomod-installer-native": "catalog:",
     "@nexusmods/nexus-api": "catalog:",
@@ -141,7 +152,6 @@
     "@tailwindcss/cli": "catalog:",
     "@types/bluebird": "catalog:",
     "@types/uuid": "catalog:",
-    "@nexusmods/adaptor-api": "workspace:*",
     "bbcode-to-react": "catalog:",
     "big.js": "catalog:",
     "bluebird": "catalog:",
@@ -241,7 +251,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@vortex/adaptor-cyberpunk2077": "workspace:*",
+    "@electron/rebuild": "catalog:",
     "@types/bbcode-to-react": "catalog:",
     "@types/big.js": "catalog:",
     "@types/content-disposition": "catalog:",
@@ -274,6 +284,7 @@
     "@types/write-file-atomic": "catalog:",
     "@types/ws": "catalog:",
     "@types/xml2js": "catalog:",
+    "@vortex/adaptor-cyberpunk2077": "workspace:*",
     "@vortex/shared": "workspace:*",
     "@welldone-software/why-did-you-render": "catalog:",
     "cross-env": "catalog:",

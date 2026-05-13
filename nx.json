@@ -33,13 +33,17 @@
       ],
       "outputs": ["{projectRoot}/dist/"]
     },
+    "test*": {
+      "dependsOn": ["^build"],
+      "cache": false
+    },
     "typecheck": {
       "dependsOn": ["^build"],
       "cache": true,
       "inputs": ["default", "typescript"],
       "outputs": ["{projectRoot}/tsconfig*.tsbuildinfo"]
     },
-    "lint": {
+    "lint*": {
       "dependsOn": ["^build"],
       "cache": true,
       "inputs": [
@@ -47,17 +51,6 @@
         "typescript",
         "{projectRoot}/*.mjs",
 
-        "{workspaceRoot}/eslint.config.base.mjs"
-      ],
-      "outputs": []
-    },
-    "lint:verbose": {
-      "dependsOn": ["^build"],
-      "cache": true,
-      "inputs": [
-        "default",
-        "typescript",
-        "{projectRoot}/*.mjs",
         "{workspaceRoot}/eslint.config.base.mjs"
       ],
       "outputs": []
