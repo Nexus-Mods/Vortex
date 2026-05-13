@@ -2,7 +2,7 @@ name: Cherry Pick
 
 on:
   pull_request_target:
-    branches: [v2*]
+    branches: [v2*, release/*]
     types: [closed]
 
 permissions:
