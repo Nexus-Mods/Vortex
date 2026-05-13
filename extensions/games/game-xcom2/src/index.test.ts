@@ -624,3 +624,190 @@ describe("mod types", () => {
     });
   });
 });
+
+// ── Health checks ──────────────────────────────────────────────────
+//
+// Each registered IModHealthCheck.checkMod is invoked at runtime by Vortex's
+// health-check service per registered mod. Below: build a minimal IMod
+// fixture per scenario and assert the check returns the expected status.
+
+interface ModFixture {
+  files: string[];
+  attributes: Record<string, unknown>;
+}
+
+function makeMod(opts: Partial<ModFixture> = {}): ModFixture {
+  return { files: [], attributes: {}, ...opts };
+}
+
+describe("health checks", () => {
+  function getCheck(id: string) {
+    const { context, healthChecks } = createMockContext();
+    init(context as never);
+    const check = healthChecks.find((c) => c.id === id);
+    if (!check) throw new Error(`no health check with id=${id}`);
+    return check as { checkMod: (api: unknown, mod: ModFixture) => Promise<{ status: string }> };
+  }
+
+  test("registers all five health checks", () => {
+    const { context, healthChecks } = createMockContext();
+    init(context as never);
+    expect(healthChecks.map((c) => c.id).sort()).toEqual([
+      "xcom2-character-pool-has-bin",
+      "xcom2-has-xcommod-file",
+      "xcom2-mod-has-files",
+      "xcom2-save-deployed",
+      "xcom2-xCommods-attribute-set",
+    ]);
+  });
+
+  describe("xcom2-mod-has-files", () => {
+    test("warns when install output is empty", async () => {
+      const r = await getCheck("xcom2-mod-has-files").checkMod(undefined, makeMod());
+      expect(r.status).toBe("warning");
+    });
+
+    test("passes when mod has at least one file", async () => {
+      const r = await getCheck("xcom2-mod-has-files").checkMod(
+        undefined,
+        makeMod({ files: ["MyMod/MyMod.XComMod"] }),
+      );
+      expect(r.status).toBe("passed");
+    });
+  });
+
+  describe("xcom2-has-xcommod-file", () => {
+    test("warns when no .XComMod file is present", async () => {
+      const r = await getCheck("xcom2-has-xcommod-file").checkMod(
+        undefined,
+        makeMod({ files: ["MyMod/Content.upk"] }),
+      );
+      expect(r.status).toBe("warning");
+    });
+
+    test("passes when a .XComMod file is present", async () => {
+      const r = await getCheck("xcom2-has-xcommod-file").checkMod(
+        undefined,
+        makeMod({ files: ["MyMod/MyMod.XComMod"] }),
+      );
+      expect(r.status).toBe("passed");
+    });
+
+    test("skipped (passes) for character pool mods", async () => {
+      const r = await getCheck("xcom2-has-xcommod-file").checkMod(
+        undefined,
+        makeMod({ files: ["Annette.bin"], attributes: { modType: "xcom2-character-pool" } }),
+      );
+      expect(r.status).toBe("passed");
+      expect(r.message).toContain("not applicable");
+    });
+
+    test("skipped (passes) for save mods", async () => {
+      const r = await getCheck("xcom2-has-xcommod-file").checkMod(
+        undefined,
+        makeMod({ files: ["save_LOST"], attributes: { modType: "xcom2-save" } }),
+      );
+      expect(r.status).toBe("passed");
+      expect(r.message).toContain("not applicable");
+    });
+  });
+
+  describe("xcom2-xCommods-attribute-set", () => {
+    test("warns when attribute is missing", async () => {
+      const r = await getCheck("xcom2-xCommods-attribute-set").checkMod(
+        undefined,
+        makeMod({ files: ["MyMod/MyMod.XComMod"] }),
+      );
+      expect(r.status).toBe("warning");
+    });
+
+    test("warns when attribute is an empty array", async () => {
+      const r = await getCheck("xcom2-xCommods-attribute-set").checkMod(
+        undefined,
+        makeMod({ files: ["MyMod/MyMod.XComMod"], attributes: { xComMods: [] } }),
+      );
+      expect(r.status).toBe("warning");
+    });
+
+    test("passes when attribute is a non-empty array", async () => {
+      const r = await getCheck("xcom2-xCommods-attribute-set").checkMod(
+        undefined,
+        makeMod({
+          files: ["MyMod/MyMod.XComMod"],
+          attributes: { xComMods: ["MyMod"] },
+        }),
+      );
+      expect(r.status).toBe("passed");
+    });
+
+    test("skipped (passes) for character pool mods", async () => {
+      const r = await getCheck("xcom2-xCommods-attribute-set").checkMod(
+        undefined,
+        makeMod({ files: ["Annette.bin"], attributes: { modType: "xcom2-character-pool" } }),
+      );
+      expect(r.status).toBe("passed");
+    });
+  });
+
+  describe("xcom2-character-pool-has-bin", () => {
+    test("not applicable (passes) for non-character-pool mods", async () => {
+      const r = await getCheck("xcom2-character-pool-has-bin").checkMod(
+        undefined,
+        makeMod({ files: ["MyMod/MyMod.XComMod"] }),
+      );
+      expect(r.status).toBe("passed");
+      expect(r.message).toContain("Not a character pool mod");
+    });
+
+    test("warns when a character-pool mod has no .bin file", async () => {
+      const r = await getCheck("xcom2-character-pool-has-bin").checkMod(
+        undefined,
+        makeMod({ files: ["Readme.txt"], attributes: { modType: "xcom2-character-pool" } }),
+      );
+      expect(r.status).toBe("warning");
+    });
+
+    test("passes when a character-pool mod has at least one .bin file", async () => {
+      const r = await getCheck("xcom2-character-pool-has-bin").checkMod(
+        undefined,
+        makeMod({ files: ["Annette.bin"], attributes: { modType: "xcom2-character-pool" } }),
+      );
+      expect(r.status).toBe("passed");
+    });
+  });
+
+  describe("xcom2-save-deployed", () => {
+    test("not applicable (passes) for non-save mods", async () => {
+      const r = await getCheck("xcom2-save-deployed").checkMod(
+        undefined,
+        makeMod({ files: ["MyMod/MyMod.XComMod"] }),
+      );
+      expect(r.status).toBe("passed");
+      expect(r.message).toContain("Not a save mod");
+    });
+
+    test("warns when a save mod has no save-named file", async () => {
+      const r = await getCheck("xcom2-save-deployed").checkMod(
+        undefined,
+        makeMod({ files: ["screenshot.jpg"], attributes: { modType: "xcom2-save" } }),
+      );
+      expect(r.status).toBe("warning");
+    });
+
+    test("passes for a save_<name> file", async () => {
+      const r = await getCheck("xcom2-save-deployed").checkMod(
+        undefined,
+        makeMod({ files: ["save_LOST"], attributes: { modType: "xcom2-save" } }),
+      );
+      expect(r.status).toBe("passed");
+    });
+
+    test("passes for save<digits>", async () => {
+      const r = await getCheck("xcom2-save-deployed").checkMod(
+        undefined,
+        makeMod({ files: ["save14"], attributes: { modType: "xcom2-save" } }),
+      );
+      expect(r.status).toBe("passed");
+    });
+  });
+});
