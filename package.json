@@ -4,9 +4,16 @@
   "version": "1.0.0",
   "private": true,
   "type": "commonjs",
-  "packageManager": "pnpm@10.33.0+sha512.10568bb4a6afb58c9eb3630da90cc9516417abebd3fabbe6739f0ae795728da1491e9db5a544c76ad8eb7570f5c4bb3d6c637b2cb41bfdcdb47fa823c8649319",
+  "packageManager": "pnpm@11.1.1+sha512.d1fdf5f73c617b64fa1a56a81c3c8dfe0e966e33a6010aa256b517ae77be21d93e05affc0de1a83b0e4f29d569f68b446ae8f068cd7247c0bb3df0fb4d7bdf9a",
   "engines": {
-    "node": "24"
+    "node": "24.15.0"
+  },
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "24.15.0",
+      "onFail": "download"
+    }
   },
   "volta": {
     "node": "24.15.0",
@@ -14,7 +21,7 @@
   },
   "scripts": {
     "prepare": "husky",
-    "preinstall": "npx only-allow pnpm && node ./scripts/create-env-file.mjs",
+    "preinstall": "node ./scripts/create-env-file.mjs",
     "start": "pnpm nx run @vortex/main:start",
     "build": "pnpm nx run-many -t build lint typecheck && pnpm run assets",
     "assets": "npx tsx scripts/download-duckdb-extensions.ts && node ./scripts/dependency-report.mjs",
@@ -29,13 +36,16 @@
     "format": "pnpm oxfmt",
     "format:check": "pnpm oxfmt --check",
     "format:staged": "git diff --name-only --cached | xargs --no-run-if-empty pnpm oxfmt",
-    "e2e": "pnpm -F @vortex/e2e run test",
-    "e2e:headed": "pnpm -F @vortex/e2e run test:headed",
-    "e2e:debug": "pnpm -F @vortex/e2e run test:debug",
+    "e2e": "pnpm nx run @vortex/e2e:test",
+    "e2e:headed": "pnpm nx run @vortex/e2e:test:headed",
+    "e2e:debug": "pnpm nx run @vortex/e2e:test:debug",
     "generate:query-types": "npx tsx scripts/generate-query-types.ts"
   },
   "lint-staged": {
     "*": "pnpm oxfmt --no-error-on-unmatched-pattern"
+  },
+  "dependencies": {
+    "node": "catalog:"
   },
   "devDependencies": {
     "@eslint-react/eslint-plugin": "catalog:",

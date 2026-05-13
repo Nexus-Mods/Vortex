@@ -36,13 +36,6 @@ jobs:
         with:
           cache: true
 
-      - name: Configure node-gyp for VS 2022
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          echo "npm_config_msvs_version=2022" >> $env:GITHUB_ENV
-          echo "GYP_MSVS_VERSION=2022" >> $env:GITHUB_ENV
-
       # NOTE(erri120): fontconfig required by font-scanner required by theme-switcher
       - name: Install fontconfig
         if: runner.os == 'Linux'
