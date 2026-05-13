@@ -3,9 +3,6 @@
  * Both main and renderer spread this into their Resource at startup.
  * Add cross-process attributes here as needed.
  */
-export const SHARED_TELEMETRY_ATTRIBUTES: Record<
-  string,
-  string | number | boolean
-> = {
+export const SHARED_TELEMETRY_ATTRIBUTES: Record<string, string | number | boolean> = {
   "deployment.environment": "test",
 };

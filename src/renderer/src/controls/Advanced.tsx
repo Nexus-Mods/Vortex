@@ -1,7 +1,7 @@
+import * as React from "react";
+
 import type { IState } from "../types/IState";
 import { ComponentEx, connect } from "./ComponentEx";
-
-import * as React from "react";
 
 interface IConnectedProps {
   advancedMode: boolean;
@@ -32,9 +32,7 @@ class Advanced extends ComponentEx<IProps, {}> {
         ? React.Children.toArray(this.props.children)[0]
         : React.Children.toArray(this.props.children)[1];
     } else {
-      throw new Error(
-        "Advanced component should always have exactly 2 children",
-      );
+      throw new Error("Advanced component should always have exactly 2 children");
     }
 
     if (typeof control === "string") {

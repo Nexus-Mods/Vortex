@@ -1,16 +1,11 @@
-import { IPluginCombined, IPlugins } from "../types/IPlugins";
-
 import { createAction } from "redux-act";
 
-const uiOnlyMeta =
-  process.type === "renderer"
-    ? () => ({ forward: false, scope: "local" })
-    : undefined;
+import { IPluginCombined, IPlugins } from "../types/IPlugins";
 
-export const setPluginList = createAction(
-  "SET_PLUGIN_LIST",
-  (plugins: IPlugins) => ({ plugins }),
-);
+const uiOnlyMeta =
+  process.type === "renderer" ? () => ({ forward: false, scope: "local" }) : undefined;
+
+export const setPluginList = createAction("SET_PLUGIN_LIST", (plugins: IPlugins) => ({ plugins }));
 
 /*
 sets the plugins with all the info we gather about them

@@ -1,8 +1,7 @@
 import { createAction } from "redux-act";
 
-import type { IChunk } from "../types/IChunk";
-
 import { log } from "../../../logging";
+import type { IChunk } from "../types/IChunk";
 
 export interface IDictionary {
   [key: string]: any;
@@ -26,13 +25,13 @@ export const initDownload = createAction(
  */
 export const downloadProgress = createAction(
   "DOWNLOAD_PROGRESS",
-  (
-    id: string,
-    received: number,
-    total: number,
-    chunks: IChunk[],
-    urls: string[],
-  ) => ({ id, received, total, chunks, urls }),
+  (id: string, received: number, total: number, chunks: IChunk[], urls: string[]) => ({
+    id,
+    received,
+    total,
+    chunks,
+    urls,
+  }),
 );
 
 export const finalizingProgress = createAction(
@@ -67,10 +66,7 @@ export const startDownload = createAction("START_DOWNLOAD", (id: string) => ({
  * mark download as finalizing, meaning the file has been downloaded fully,
  * during this phase checksums are calculated for example
  */
-export const finalizingDownload = createAction(
-  "FINALIZING_DOWNLOAD",
-  (id: string) => ({ id }),
-);
+export const finalizingDownload = createAction("FINALIZING_DOWNLOAD", (id: string) => ({ id }));
 
 /**
  * mark download as finished
@@ -84,10 +80,10 @@ export const finishDownload = createAction(
   }),
 );
 
-export const setDownloadHash = createAction(
-  "SET_DOWNLOAD_HASH",
-  (id: string, fileMD5: string) => ({ id, fileMD5 }),
-);
+export const setDownloadHash = createAction("SET_DOWNLOAD_HASH", (id: string, fileMD5: string) => ({
+  id,
+  fileMD5,
+}));
 
 export const setDownloadHashByFile = createAction(
   "SET_DOWNLOAD_HASH_BY_FILE",
@@ -118,10 +114,9 @@ export const removeDownload = createAction("REMOVE_DOWNLOAD", (id: string) => ({
   id,
 }));
 
-export const removeDownloadSilent = createAction(
-  "REMOVE_DOWNLOAD_SILENT",
-  (id: string) => ({ id }),
-);
+export const removeDownloadSilent = createAction("REMOVE_DOWNLOAD_SILENT", (id: string) => ({
+  id,
+}));
 
 /**
  * sets the current download speed in bytes/second
@@ -132,10 +127,7 @@ export const setDownloadSpeed = createAction(
   () => ({ forward: false, scope: "local" }),
 );
 
-export const setDownloadSpeeds = createAction(
-  "SET_DOWNLOAD_SPEEDS",
-  (speeds) => speeds,
-);
+export const setDownloadSpeeds = createAction("SET_DOWNLOAD_SPEEDS", (speeds) => speeds);
 
 /**
  * add a file that has been found on disk but where we weren't involved
@@ -173,10 +165,10 @@ export const setDownloadInstalled = createAction(
   (id: string, gameId: string, modId: string) => ({ id, gameId, modId }),
 );
 
-export const setDownloadTime = createAction(
-  "SET_DOWNLOAD_TIME",
-  (id: string, time: number) => ({ id, time }),
-);
+export const setDownloadTime = createAction("SET_DOWNLOAD_TIME", (id: string, time: number) => ({
+  id,
+  time,
+}));
 
 export const setCompatibleGames = createAction(
   "SET_COMPATIBLE_GAMES",

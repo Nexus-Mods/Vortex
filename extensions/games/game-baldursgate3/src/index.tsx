@@ -1,3 +1,5 @@
+import * as path from "path";
+
 /* eslint-disable */
 /**
  * Important - although we no longer define the info panel here,
@@ -10,10 +12,10 @@
  */
 import Bluebird from "bluebird";
 import * as _ from "lodash";
-import * as path from "path";
 import * as React from "react";
 import { fs, selectors, types, util } from "vortex-api";
 
+import PakInfoCache from "./cache";
 import {
   GAME_ID,
   IGNORE_PATTERNS,
@@ -22,11 +24,36 @@ import {
   MOD_TYPE_LSLIB,
   MOD_TYPE_REPLACER,
 } from "./common";
+import { abortDivineOperations } from "./divineWrapper";
 import * as gitHubDownloader from "./githubDownloader";
-import Settings from "./Settings";
-import reducer from "./reducers";
+import { InfoPanelWrap } from "./InfoPanel";
+import {
+  testLSLib,
+  testBG3SE,
+  testEngineInjector,
+  testModFixer,
+  testReplacer,
+  installLSLib,
+  installBG3SE,
+  installEngineInjector,
+  installModFixer,
+  installReplacer,
+} from "./installers";
+import {
+  deserialize,
+  importModSettingsFile,
+  importModSettingsGame,
+  importFromBG3MM,
+  serialize,
+  exportToGame,
+  exportToFile,
+  validate,
+  getNodes,
+} from "./loadOrder";
 import { migrate } from "./migrations";
-
+import { isBG3SE, isLSLib, isLoose, isReplacer } from "./modTypes";
+import reducer from "./reducers";
+import Settings from "./Settings";
 import {
   logDebug,
   forceRefresh,
@@ -46,38 +73,6 @@ import {
   convertToV8,
 } from "./util";
 
-import {
-  testLSLib,
-  testBG3SE,
-  testEngineInjector,
-  testModFixer,
-  testReplacer,
-  installLSLib,
-  installBG3SE,
-  installEngineInjector,
-  installModFixer,
-  installReplacer,
-} from "./installers";
-
-import { abortDivineOperations } from "./divineWrapper";
-
-import { isBG3SE, isLSLib, isLoose, isReplacer } from "./modTypes";
-
-import {
-  deserialize,
-  importModSettingsFile,
-  importModSettingsGame,
-  importFromBG3MM,
-  serialize,
-  exportToGame,
-  exportToFile,
-  validate,
-  getNodes,
-} from "./loadOrder";
-
-import { InfoPanelWrap } from "./InfoPanel";
-import PakInfoCache from "./cache";
-
 const STOP_PATTERNS = ["[^/]*\\.pak$"];
 
 const GOG_ID = "1456460669";
@@ -88,15 +83,10 @@ function toWordExp(input) {
 }
 
 function findGame(): any {
-  return util.GameStoreHelper.findByAppId([GOG_ID, STEAM_ID]).then(
-    (game) => game.gamePath,
-  );
+  return util.GameStoreHelper.findByAppId([GOG_ID, STEAM_ID]).then((game) => game.gamePath);
 }
 
-async function ensureGlobalProfile(
-  api: types.IExtensionApi,
-  discovery: types.IDiscoveryResult,
-) {
+async function ensureGlobalProfile(api: types.IExtensionApi, discovery: types.IDiscoveryResult) {
   if (discovery?.path) {
     const profilePath = await globalProfilePath(api);
     try {
@@ -167,18 +157,13 @@ function showFullReleaseModFixerRecommendation(api: types.IExtensionApi) {
                   "We recommend installing \"Baldur's Gate 3 Mod Fixer\" to be able to mod Baldur's Gate 3.\n\n" +
                   'This can be downloaded from Nexus Mods and installed using Vortex by pressing "Open Nexus Mods',
               },
-              [
-                { label: "Dismiss" },
-                { label: "Open Nexus Mods", default: true },
-              ],
+              [{ label: "Dismiss" }, { label: "Open Nexus Mods", default: true }],
             )
             .then((result) => {
               dismiss();
               if (result.action === "Open Nexus Mods") {
                 util
-                  .opn(
-                    "https://www.nexusmods.com/baldursgate3/mods/141?tab=description",
-                  )
+                  .opn("https://www.nexusmods.com/baldursgate3/mods/141?tab=description")
                   .catch(() => null);
               } else if (result.action === "Cancel") {
                 // dismiss anyway
@@ -191,11 +176,7 @@ function showFullReleaseModFixerRecommendation(api: types.IExtensionApi) {
   });
 }
 
-async function onCheckModVersion(
-  api: types.IExtensionApi,
-  gameId: string,
-  mods: types.IMod[],
-) {
+async function onCheckModVersion(api: types.IExtensionApi, gameId: string, mods: types.IMod[]) {
   const profile = selectors.activeProfile(api.getState());
   if (profile.gameId !== GAME_ID || gameId !== GAME_ID) {
     return;
@@ -208,10 +189,7 @@ async function onCheckModVersion(
     return;
   }
 
-  const newestVer: string = await gitHubDownloader.checkForUpdates(
-    api,
-    latestVer,
-  );
+  const newestVer: string = await gitHubDownloader.checkForUpdates(api, latestVer);
   if (!newestVer || newestVer === latestVer) {
     return;
   }
@@ -229,17 +207,10 @@ async function onGameModeActivated(api: types.IExtensionApi, gameId: string) {
   try {
     await migrate(api);
     const bg3ProfileId = await getActivePlayerProfile(api);
-    const gameSettingsPath: string = path.join(
-      profilesPath(),
-      bg3ProfileId,
-      "modsettings.lsx",
-    );
+    const gameSettingsPath: string = path.join(profilesPath(), bg3ProfileId, "modsettings.lsx");
     let nodes = await getNodes(gameSettingsPath);
     const { modsNode, modsOrderNode } = nodes;
-    if (
-      modsNode.children === undefined ||
-      (modsNode.children[0] as any) === ""
-    ) {
+    if (modsNode.children === undefined || (modsNode.children[0] as any) === "") {
       modsNode.children = [{ node: [] }];
     }
 
@@ -322,9 +293,7 @@ function main(context: types.IExtensionContext) {
         ["persistent", "mods", GAME_ID],
         {},
       );
-      const lslibs = Object.keys(mods).filter(
-        (mod) => mods[mod].type === "bg3-lslib-divine-tool",
-      );
+      const lslibs = Object.keys(mods).filter((mod) => mods[mod].type === "bg3-lslib-divine-tool");
       context.api.events.emit("remove-mods", GAME_ID, lslibs, (err) => {
         if (err !== null) {
           context.api.showErrorNotification(
@@ -344,36 +313,16 @@ function main(context: types.IExtensionContext) {
     },
   );
 
-  context.registerInstaller(
-    "bg3-lslib-divine-tool",
-    15,
-    testLSLib as any,
-    installLSLib as any,
-  );
-  context.registerInstaller(
-    "bg3-bg3se",
-    15,
-    testBG3SE as any,
-    installBG3SE as any,
-  );
+  context.registerInstaller("bg3-lslib-divine-tool", 15, testLSLib as any, installLSLib as any);
+  context.registerInstaller("bg3-bg3se", 15, testBG3SE as any, installBG3SE as any);
   context.registerInstaller(
     "bg3-engine-injector",
     20,
     testEngineInjector as any,
     installEngineInjector as any,
   );
-  context.registerInstaller(
-    "bg3-replacer",
-    25,
-    testReplacer as any,
-    installReplacer as any,
-  );
-  context.registerInstaller(
-    "bg3-modfixer",
-    25,
-    testModFixer as any,
-    installModFixer as any,
-  );
+  context.registerInstaller("bg3-replacer", 25, testReplacer as any, installReplacer as any);
+  context.registerInstaller("bg3-modfixer", 25, testModFixer as any, installModFixer as any);
 
   context.registerModType(
     MOD_TYPE_LSLIB,
@@ -498,11 +447,7 @@ function main(context: types.IExtensionContext) {
     "Open Load Order File",
     () => {
       getActivePlayerProfile(context.api).then((bg3ProfileId) => {
-        const gameSettingsPath: string = path.join(
-          profilesPath(),
-          bg3ProfileId,
-          "modsettings.lsx",
-        );
+        const gameSettingsPath: string = path.join(profilesPath(), bg3ProfileId, "modsettings.lsx");
         util.opn(gameSettingsPath).catch(() => null);
       });
     },
@@ -512,26 +457,19 @@ function main(context: types.IExtensionContext) {
   context.registerSettings("Mods", Settings, undefined, isBG3, 150);
 
   context.once(() => {
-    context.api.onStateChange(
-      ["session", "base", "toolsRunning"],
-      (prev: any, current: any) => {
-        // when a tool exits, re-read the load order from disk as it may have been
-        // changed
-        const gameMode = selectors.activeGameId(context.api.getState());
-        if (gameMode === GAME_ID && Object.keys(current).length === 0) {
-          readStoredLO(context.api).catch((err) => {
-            context.api.showErrorNotification(
-              "Failed to read load order",
-              err,
-              {
-                message: "Please run the game before you start modding",
-                allowReport: false,
-              },
-            );
+    context.api.onStateChange(["session", "base", "toolsRunning"], (prev: any, current: any) => {
+      // when a tool exits, re-read the load order from disk as it may have been
+      // changed
+      const gameMode = selectors.activeGameId(context.api.getState());
+      if (gameMode === GAME_ID && Object.keys(current).length === 0) {
+        readStoredLO(context.api).catch((err) => {
+          context.api.showErrorNotification("Failed to read load order", err, {
+            message: "Please run the game before you start modding",
+            allowReport: false,
           });
-        }
-      },
-    );
+        });
+      }
+    });
 
     context.api.onAsync("did-deploy", async (profileId: string, deployment) => {
       const profile = selectors.profileById(context.api.getState(), profileId);
@@ -542,10 +480,8 @@ function main(context: types.IExtensionContext) {
       return Promise.resolve();
     });
 
-    context.api.events.on(
-      "check-mods-version",
-      (gameId: string, mods: types.IMod[]) =>
-        onCheckModVersion(context.api, gameId, mods),
+    context.api.events.on("check-mods-version", (gameId: string, mods: types.IMod[]) =>
+      onCheckModVersion(context.api, gameId, mods),
     );
 
     context.api.events.on("gamemode-activated", async (gameMode: string) =>

@@ -1,3 +1,11 @@
+import * as React from "react";
+import { Button } from "react-bootstrap";
+import { withTranslation } from "react-i18next";
+import { connect } from "react-redux";
+import * as Redux from "redux";
+import { ThunkDispatch } from "redux-thunk";
+import { actions, ComponentEx, ContextMenu, log, Modal, types, Usage } from "vortex-api";
+
 import {
   addGroup,
   addGroupRule,
@@ -6,29 +14,10 @@ import {
   setGroup,
 } from "../actions/userlist";
 import { openGroupEditor } from "../actions/userlistEdit";
-import { ILOOTList } from "../types/ILOOTList";
-
-import genGraphStyle from "../util/genGraphStyle";
-
 import { NAMESPACE } from "../statics";
-
+import { ILOOTList } from "../types/ILOOTList";
+import genGraphStyle from "../util/genGraphStyle";
 import GraphView, { IGraphElement, IGraphSelection } from "./GraphView";
-
-import * as React from "react";
-import { Button } from "react-bootstrap";
-import { withTranslation } from "react-i18next";
-import { connect } from "react-redux";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
-import {
-  actions,
-  ComponentEx,
-  ContextMenu,
-  log,
-  Modal,
-  types,
-  Usage,
-} from "vortex-api";
 
 interface IConnectedProps {
   open: boolean;
@@ -127,28 +116,12 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
           <Modal.Title>{t("Groups")}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Usage
-            persistent
-            infoId="plugins-group-editor"
-            className="group-editor-usage"
-          >
-            <div>
-              {t(
-                "Hold ctrl and drag a line from one group to another to define a rule.",
-              )}
-            </div>
-            <div>
-              {t(
-                "Right click a line/node to remove the corresponding rule/group.",
-              )}
-            </div>
+          <Usage persistent infoId="plugins-group-editor" className="group-editor-usage">
+            <div>{t("Hold ctrl and drag a line from one group to another to define a rule.")}</div>
+            <div>{t("Right click a line/node to remove the corresponding rule/group.")}</div>
             <div>{t("Right click empty area to create new Group.")}</div>
             <div>{t("Masterlist groups and rules can't be removed.")}</div>
-            <div>
-              {t(
-                "Use the mouse wheel to zoom, drag on an empty area to pan the view",
-              )}
-            </div>
+            <div>{t("Use the mouse wheel to zoom, drag on an empty area to pan the view")}</div>
           </Usage>
           <GraphView
             className="group-graph"
@@ -189,10 +162,7 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
       onAddGroup(target);
     }
     if (masterExisting && (masterExisting.after ?? []).includes(source)) {
-      log(
-        "info",
-        "not adding userlist rule since it's already a masterlist rule",
-      );
+      log("info", "not adding userlist rule since it's already a masterlist rule");
       return;
     }
     onAddGroupRule(target, source);
@@ -222,9 +192,7 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
       "question",
       "Add Group",
       {
-        input: [
-          { id: "newGroup", value: "New group name", label: "Group Name" },
-        ],
+        input: [{ id: "newGroup", value: "New group name", label: "Group Name" }],
       },
       [{ label: "Cancel" }, { label: "Add", default: true }],
     ).then((result: types.IDialogResult) => {
@@ -240,14 +208,8 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
   };
 
   private reset = () => {
-    const {
-      onRemoveGroup,
-      onRemoveGroupRule,
-      onSetGroup,
-      onShowDialog,
-      masterlist,
-      userlist,
-    } = this.props;
+    const { onRemoveGroup, onRemoveGroupRule, onSetGroup, onShowDialog, masterlist, userlist } =
+      this.props;
     onShowDialog(
       "question",
       "Reset Customisations",
@@ -267,16 +229,11 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
       if (result.action === "Cancel") {
         return;
       }
-      const masterlistGroups = new Set<string>(
-        masterlist.groups.map((group) => group.name),
-      );
+      const masterlistGroups = new Set<string>(masterlist.groups.map((group) => group.name));
       if (result.input.custom_groups) {
         // unassign all plugins from custom groups
         userlist.plugins.forEach((plugin) => {
-          if (
-            plugin.group !== undefined &&
-            !masterlistGroups.has(plugin.group)
-          ) {
+          if (plugin.group !== undefined && !masterlistGroups.has(plugin.group)) {
             onSetGroup(plugin.name, undefined);
           }
         });
@@ -350,9 +307,7 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
       .concat(
         (masterlist.groups || []).map((group) => ({
           title: group.name,
-          connections: [
-            { class: "masterlist", connections: group.after || [] },
-          ],
+          connections: [{ class: "masterlist", connections: group.after || [] }],
           class: `masterlist group-${group.name.replace(/[^A-Za-z0-9]/g, "_")}`,
           readonly: true,
         })),
@@ -366,10 +321,7 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
         if (prev[ele.title] !== undefined) {
           // masterlist entries are listed first, don't overwrite the class
           // or readonly flag
-          prev[ele.title].connections = [].concat(
-            prev[ele.title].connections,
-            ele.connections,
-          );
+          prev[ele.title].connections = [].concat(prev[ele.title].connections, ele.connections);
           prev[ele.title].readonly = false;
         } else {
           prev[ele.title] = ele;
@@ -400,16 +352,13 @@ function mapDispatchToProps(dispatch: DispatchFunc): IActionProps {
     onOpen: (open: boolean) => dispatch(openGroupEditor(open)),
     onAddGroup: (groupId: string) => dispatch(addGroup(groupId)),
     onRemoveGroup: (groupId: string) => dispatch(removeGroup(groupId)),
-    onSetGroup: (pluginId: string, groupId: string) =>
-      dispatch(setGroup(pluginId, groupId)),
+    onSetGroup: (pluginId: string, groupId: string) => dispatch(setGroup(pluginId, groupId)),
     onAddGroupRule: (groupId: string, reference: string) =>
       dispatch(addGroupRule(groupId, reference)),
     onRemoveGroupRule: (groupId: string, reference: string) =>
       dispatch(removeGroupRule(groupId, reference)),
     onShowDialog: (type, title, content, dialogActions) =>
-      dispatch(
-        (actions.showDialog as any)(type, title, content, dialogActions),
-      ),
+      dispatch((actions.showDialog as any)(type, title, content, dialogActions)),
   };
 }
 

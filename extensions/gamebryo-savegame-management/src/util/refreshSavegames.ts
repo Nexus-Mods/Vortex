@@ -1,12 +1,12 @@
-import { ISavegame } from "../types/ISavegame";
-
-import { CORRUPTED_NAME, MAX_SAVEGAMES } from "../constants";
+import * as path from "path";
 
 import Promise from "bluebird";
 import * as savegameLib from "gamebryo-savegame";
-import * as path from "path";
 import turbowalk, { IEntry } from "turbowalk";
 import { fs } from "vortex-api";
+
+import { CORRUPTED_NAME, MAX_SAVEGAMES } from "../constants";
+import { ISavegame } from "../types/ISavegame";
 
 // TODO essentially disables cache clearing since we can as many screenshots as the max of
 // savegames we will display.
@@ -26,10 +26,7 @@ function maintainCache() {
   const ids = Object.keys(screenshotCache);
   if (ids.length > MAX_CACHE_SIZE) {
     ids
-      .sort(
-        (lhs, rhs) =>
-          screenshotCache[lhs].lastAccess - screenshotCache[rhs].lastAccess,
-      )
+      .sort((lhs, rhs) => screenshotCache[lhs].lastAccess - screenshotCache[rhs].lastAccess)
       .slice(0, ids.length - MIN_CACHE_SIZE)
       .forEach((id) => delete screenshotCache[id]);
   }
@@ -70,9 +67,7 @@ export function refreshSavegames(
     { recurse: false },
   )
     .catch((err) =>
-      ["ENOENT", "ENOTFOUND"].indexOf(err.code) !== -1
-        ? Promise.resolve()
-        : Promise.reject(err),
+      ["ENOENT", "ENOTFOUND"].indexOf(err.code) !== -1 ? Promise.resolve() : Promise.reject(err),
     )
     .then(() => {
       saves = saves.sort((lhs, rhs) => rhs.mtime - lhs.mtime);
@@ -81,13 +76,9 @@ export function refreshSavegames(
         saves = saves.slice(0, MAX_SAVEGAMES);
       }
       return Promise.map(saves, (save) =>
-        loadSaveGame(save.filePath, save.size, onAddSavegame, false).catch(
-          (err) => {
-            failedReads.push(
-              `[b]${path.basename(save.filePath)}[/b] - ${err.message}`,
-            );
-          },
-        ),
+        loadSaveGame(save.filePath, save.size, onAddSavegame, false).catch((err) => {
+          failedReads.push(`[b]${path.basename(save.filePath)}[/b] - ${err.message}`);
+        }),
       );
     })
     .then(() => ({ failedReads, truncated }));

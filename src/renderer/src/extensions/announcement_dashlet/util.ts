@@ -1,5 +1,6 @@
 import minimatch from "minimatch";
 import * as semver from "semver";
+
 import { getSafe } from "../../util/storeHelper";
 
 export function matchesGameMode<T>(
@@ -10,9 +11,7 @@ export function matchesGameMode<T>(
   const entryGameMode = getSafe(entry, ["gamemode"], undefined);
   if (
     gameMode === undefined &&
-    (entryGameMode === undefined ||
-      entryGameMode === "*" ||
-      entryGameMode === "")
+    (entryGameMode === undefined || entryGameMode === "*" || entryGameMode === "")
   ) {
     return true;
   }
@@ -29,7 +28,5 @@ export function matchesGameMode<T>(
 
 export function matchesVersion<T>(entry: T, appVersion: string): boolean {
   const entryVersion = getSafe(entry, ["version"], undefined);
-  return entryVersion !== undefined
-    ? semver.satisfies(appVersion, entryVersion)
-    : true;
+  return entryVersion !== undefined ? semver.satisfies(appVersion, entryVersion) : true;
 }

@@ -1,5 +1,5 @@
-import settingsReducer from "../extensions/settings_interface/reducers/interface";
 import automationReducer from "../extensions/settings_interface/reducers/automation";
+import settingsReducer from "../extensions/settings_interface/reducers/interface";
 
 describe("setLanguage", () => {
   it("sets the Language", () => {

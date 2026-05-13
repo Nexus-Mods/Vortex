@@ -1,20 +1,19 @@
-import { getErrorCode, unknownToError } from "@vortex/shared";
-import PromiseBB from "bluebird";
 import * as fs from "fs";
 import * as path from "path";
 
-import type { IDiscoveryResult } from "../extensions/gamemode_management/types/IDiscoveryResult";
-import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
-import type { IToolStored } from "../extensions/gamemode_management/types/IToolStored";
-import type { IDiscoveredTool } from "../types/IDiscoveredTool";
-import type { IExtensionApi } from "../types/IExtensionContext";
-import type { IGame } from "../types/IGame";
-import type { Steam, ISteamEntry } from "./Steam";
+import { getErrorCode, unknownToError } from "@vortex/shared";
+import PromiseBB from "bluebird";
 
 import { setToolRunning, setToolStopped } from "../actions";
 import { ApplicationData } from "../applicationData";
+import type { IDiscoveryResult } from "../extensions/gamemode_management/types/IDiscoveryResult";
+import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
+import type { IToolStored } from "../extensions/gamemode_management/types/IToolStored";
 import { getGame } from "../extensions/gamemode_management/util/getGame";
 import { log } from "../logging";
+import type { IDiscoveredTool } from "../types/IDiscoveredTool";
+import type { IExtensionApi } from "../types/IExtensionContext";
+import type { IGame } from "../types/IGame";
 import { GameEntryNotFound, GameStoreNotFound } from "../types/IGameStore";
 import { getApplication } from "./application";
 import {
@@ -26,6 +25,7 @@ import {
 import GameStoreHelper from "./GameStoreHelper";
 import getVortexPath from "./getVortexPath";
 import { isWindowsExecutable } from "./linux/proton";
+import type { Steam, ISteamEntry } from "./Steam";
 import { getSafe } from "./storeHelper";
 
 async function hideWindow(): Promise<void> {
@@ -96,9 +96,7 @@ async function shouldRunWithProton(
     // Find the game entry that matches this executable's location
     return games.find(
       (g) =>
-        info.workingDirectory
-          ?.toLowerCase()
-          .startsWith(g.gamePath.toLowerCase()) ||
+        info.workingDirectory?.toLowerCase().startsWith(g.gamePath.toLowerCase()) ||
         info.exePath.toLowerCase().startsWith(g.gamePath.toLowerCase()),
     );
   } catch (err: any) {
@@ -117,73 +115,50 @@ async function shouldRunWithProton(
  * @class StarterInfo
  */
 class StarterInfo implements IStarterInfo {
-  public static getGameIcon(
-    game: IGameStored,
-    gameDiscovery: IDiscoveryResult,
-  ): string {
+  public static getGameIcon(game: IGameStored, gameDiscovery: IDiscoveryResult): string {
     const extensionPath = gameDiscovery.extensionPath || game.extensionPath;
     const logoName = gameDiscovery.logo || game.logo;
     return StarterInfo.gameIcon(game.id, extensionPath, logoName);
   }
 
   public static toolIconRW(gameId: string, toolId: string) {
-    return path.join(
-      getVortexPath("userData"),
-      gameId,
-      "icons",
-      toolId + ".png",
-    );
+    return path.join(getVortexPath("userData"), gameId, "icons", toolId + ".png");
   }
 
-  public static run(
-    info: IStarterInfo,
-    api: IExtensionApi,
-    onShowError: OnShowErrorFunc,
-  ) {
+  public static run(info: IStarterInfo, api: IExtensionApi, onShowError: OnShowErrorFunc) {
     const game: IGame = getGame(info.gameId);
     // Determine if game requires a specific launcher (Steam, Epic, etc.)
     // On Linux, Steam games run through Proton directly rather than via steam -applaunch
     const launcherPromise: PromiseBB<{ launcher: string; addInfo?: any }> =
       game.requiresLauncher !== undefined && info.isGame
-        ? PromiseBB.resolve(
-            game.requiresLauncher(path.dirname(info.exePath), info.store),
-          ).catch((err) => {
-            if (err instanceof UserCanceled) {
-              // warning because it'd be kind of unusual for the user to have to confirm anything
-              // in requiresLauncher
-              log(
-                "warn",
-                "failed to determine if launcher is required because user canceled something",
-              );
-            } else {
-              const allowReport = !game.contributed;
-              const errorObj = allowReport
-                ? err
-                : {
-                    message:
-                      "Report this to the community extension author, not Vortex support!",
-                  };
-              onShowError(
-                "Failed to determine if launcher is required",
-                errorObj,
-                allowReport,
-              );
-              if (!allowReport) {
+        ? PromiseBB.resolve(game.requiresLauncher(path.dirname(info.exePath), info.store)).catch(
+            (err) => {
+              if (err instanceof UserCanceled) {
+                // warning because it'd be kind of unusual for the user to have to confirm anything
+                // in requiresLauncher
                 log(
-                  "error",
-                  "failed to determine if launcher is required",
-                  errorObj.message,
+                  "warn",
+                  "failed to determine if launcher is required because user canceled something",
                 );
+              } else {
+                const allowReport = !game.contributed;
+                const errorObj = allowReport
+                  ? err
+                  : {
+                      message: "Report this to the community extension author, not Vortex support!",
+                    };
+                onShowError("Failed to determine if launcher is required", errorObj, allowReport);
+                if (!allowReport) {
+                  log("error", "failed to determine if launcher is required", errorObj.message);
+                }
               }
-            }
-            return PromiseBB.resolve(undefined);
-          })
+              return PromiseBB.resolve(undefined);
+            },
+          )
         : PromiseBB.resolve(undefined);
 
     const onSpawned = () => {
-      api.store.dispatch(
-        setToolRunning(info.exePath, Date.now(), info.exclusive),
-      );
+      api.store.dispatch(setToolRunning(info.exePath, Date.now(), info.exclusive));
 
       // Flatpak can't reliably observe host game exit for now, so emulate stop after a short delay
       // for now. We'll come up with a better solution/design in the future.
@@ -206,8 +181,7 @@ class StarterInfo implements IStarterInfo {
           .then(() => {
             // assuming that runThroughLauncher returns immediately on handing things off
             // to the launcher
-            const isLinuxSteamLauncher =
-              process.platform !== "win32" && res.launcher === "steam";
+            const isLinuxSteamLauncher = process.platform !== "win32" && res.launcher === "steam";
             // Keep existing Linux Steam behavior unless running under Flatpak, where we now
             // emulate stop events to avoid stale running state.
             if (!isLinuxSteamLauncher || process.env.IS_FLATPAK === "true") {
@@ -221,17 +195,9 @@ class StarterInfo implements IStarterInfo {
           })
           .catch(UserCanceled, () => null)
           .catch(GameEntryNotFound, (err) => {
-            const errorMsg = [
-              err.message,
-              err.storeName,
-              err.existingGames,
-            ].join(" - ");
+            const errorMsg = [err.message, err.storeName, err.existingGames].join(" - ");
             log("error", errorMsg);
-            onShowError(
-              "Failed to start game through launcher",
-              err,
-              !game.contributed,
-            );
+            onShowError("Failed to start game through launcher", err, !game.contributed);
             return StarterInfo.runDirectly(info, api, onShowError, onSpawned);
           })
           .catch(GameStoreNotFound, (err) => {
@@ -255,11 +221,7 @@ class StarterInfo implements IStarterInfo {
   public static getIconPath(info: IStarterInfo): string {
     if (info["__iconCache"] === undefined) {
       if (info.isGame) {
-        info["__iconCache"] = StarterInfo.gameIcon(
-          info.gameId,
-          info.extensionPath,
-          info.logoName,
-        );
+        info["__iconCache"] = StarterInfo.gameIcon(info.gameId, info.extensionPath, info.logoName);
       } else {
         info["__iconCache"] = StarterInfo.toolIcon(
           info.gameId,
@@ -420,8 +382,7 @@ class StarterInfo implements IStarterInfo {
     } catch (err) {
       return PromiseBB.reject(err);
     }
-    const infoObj =
-      addInfo !== undefined ? addInfo : path.dirname(info.exePath);
+    const infoObj = addInfo !== undefined ? addInfo : path.dirname(info.exePath);
     return gameLauncher !== undefined
       ? gameLauncher.launchGame(infoObj, api)
       : PromiseBB.reject(new Error(`unsupported launcher ${launcher}`));
@@ -500,27 +461,15 @@ class StarterInfo implements IStarterInfo {
     // Store is set from game discovery for both games and tools
     // Tools need this to enable Proton execution on Linux
     this.store = gameDiscovery.store;
-    this.detach = getSafe(
-      toolDiscovery,
-      ["detach"],
-      getSafe(tool, ["detach"], true),
-    );
-    this.onStart = getSafe(
-      toolDiscovery,
-      ["onStart"],
-      getSafe(tool, ["onStart"], undefined),
-    );
+    this.detach = getSafe(toolDiscovery, ["detach"], getSafe(tool, ["detach"], true));
+    this.onStart = getSafe(toolDiscovery, ["onStart"], getSafe(tool, ["onStart"], undefined));
 
     if (tool === undefined && toolDiscovery === undefined) {
       this.id = this.gameId;
       this.isGame = true;
       this.initFromGame(game, gameDiscovery);
     } else {
-      this.id = getSafe(
-        toolDiscovery,
-        ["id"],
-        getSafe(tool, ["id"], undefined),
-      );
+      this.id = getSafe(toolDiscovery, ["id"], getSafe(tool, ["id"], undefined));
       this.isGame = false;
       this.initFromTool(this.gameId, tool, toolDiscovery);
     }
@@ -531,15 +480,8 @@ class StarterInfo implements IStarterInfo {
 
   private initFromGame(game: IGameStored, gameDiscovery: IDiscoveryResult) {
     this.name = gameDiscovery.name || game.name;
-    this.exePath = path.join(
-      gameDiscovery.path,
-      gameDiscovery.executable || game.executable,
-    );
-    this.commandLine = getSafe(
-      gameDiscovery,
-      ["parameters"],
-      getSafe(game, ["parameters"], []),
-    );
+    this.exePath = path.join(gameDiscovery.path, gameDiscovery.executable || game.executable);
+    this.commandLine = getSafe(gameDiscovery, ["parameters"], getSafe(game, ["parameters"], []));
     this.workingDirectory = path.dirname(this.exePath);
     this.originalEnvironment = getSafe(game, ["environment"], {});
     this.environment = getSafe(gameDiscovery, ["envCustomized"], false)
@@ -552,46 +494,22 @@ class StarterInfo implements IStarterInfo {
     this.exclusive = true;
   }
 
-  private initFromTool(
-    gameId: string,
-    tool: IToolStored,
-    toolDiscovery: IDiscoveredTool,
-  ) {
+  private initFromTool(gameId: string, tool: IToolStored, toolDiscovery: IDiscoveredTool) {
     if (toolDiscovery !== undefined) {
-      this.name = getSafe(
-        toolDiscovery,
-        ["name"],
-        getSafe(tool, ["name"], undefined),
-      );
+      this.name = getSafe(toolDiscovery, ["name"], getSafe(tool, ["name"], undefined));
       // TODO: umm, the discovery path here stores the path to the exe, whereas for a game it
       //   stores the base path of the game? That's not confusing at all...
       this.exePath = toolDiscovery.path;
-      this.commandLine = getSafe(
-        toolDiscovery,
-        ["parameters"],
-        getSafe(tool, ["parameters"], []),
-      );
+      this.commandLine = getSafe(toolDiscovery, ["parameters"], getSafe(tool, ["parameters"], []));
       this.environment =
-        getSafe(
-          toolDiscovery,
-          ["environment"],
-          getSafe(tool, ["environment"], {}),
-        ) || {};
-      this.logoName = getSafe(
-        toolDiscovery,
-        ["logo"],
-        getSafe(tool, ["logo"], undefined),
-      );
+        getSafe(toolDiscovery, ["environment"], getSafe(tool, ["environment"], {})) || {};
+      this.logoName = getSafe(toolDiscovery, ["logo"], getSafe(tool, ["logo"], undefined));
       this.workingDirectory = getSafe(
         toolDiscovery,
         ["workingDirectory"],
         getSafe(tool, ["workingDirectory"], ""),
       );
-      this.shell = getSafe(
-        toolDiscovery,
-        ["shell"],
-        getSafe(tool, ["shell"], undefined),
-      );
+      this.shell = getSafe(toolDiscovery, ["shell"], getSafe(tool, ["shell"], undefined));
       this.exclusive = getSafe(tool, ["exclusive"], false) || false;
       this.defaultPrimary = getSafe(tool, ["defaultPrimary"], false);
       this.timestamp = toolDiscovery.timestamp;

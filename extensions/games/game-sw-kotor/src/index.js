@@ -90,11 +90,7 @@ function findGame(kotorGame) {
       ),
     )
     .catch(() =>
-      readRegistryKey(
-        "HKEY_LOCAL_MACHINE",
-        `SOFTWARE\\GOG.com\\Games\\${gogId}`,
-        "PATH",
-      ),
+      readRegistryKey("HKEY_LOCAL_MACHINE", `SOFTWARE\\GOG.com\\Games\\${gogId}`, "PATH"),
     );
 }
 
@@ -146,24 +142,11 @@ function main(context) {
   context.registerInstaller("kotor-tslpatcher", 10, testTSLSupported, () =>
     installTSLContent(context.api),
   );
-  context.registerInstaller(
-    "kotor-tslpatcher-mod",
-    10,
-    testTSLModSupported,
-    () => installTSLModContent(context.api),
+  context.registerInstaller("kotor-tslpatcher-mod", 10, testTSLModSupported, () =>
+    installTSLModContent(context.api),
   );
-  context.registerInstaller(
-    "kotor-root-mod",
-    15,
-    testRootSupported,
-    installRootContent,
-  );
-  context.registerInstaller(
-    "kotor-override-mod",
-    25,
-    testSupported,
-    installContent,
-  );
+  context.registerInstaller("kotor-root-mod", 15, testRootSupported, installRootContent);
+  context.registerInstaller("kotor-override-mod", 25, testSupported, installContent);
 
   return true;
 }
@@ -196,9 +179,7 @@ function installRootContent(files, destinationPath, gameId, progressDelegate) {
         return accum;
       }
       const segments = file.split(path.sep);
-      const rootIdx = segments.findIndex((seg) =>
-        GAME_FOLDERS.includes(seg.toLowerCase()),
-      );
+      const rootIdx = segments.findIndex((seg) => GAME_FOLDERS.includes(seg.toLowerCase()));
       if (rootIdx === -1) {
         return accum;
       }
@@ -239,9 +220,7 @@ function installTSLModContent(api) {
 
 function testTSLSupported(files, gameId) {
   const isTslPatcher =
-    files.find(
-      (file) => path.basename(file.toLowerCase()) === "tslpatcher.exe",
-    ) !== undefined;
+    files.find((file) => path.basename(file.toLowerCase()) === "tslpatcher.exe") !== undefined;
   return Promise.resolve({
     supported: isTslPatcher && isKotorGame(gameId),
     requiredFiles: [],

@@ -138,9 +138,7 @@ export interface IResolverBase {
  * }
  * ```
  */
-export interface IResolver<
-  ValidAnchors extends string = string,
-> extends IResolverBase {
+export interface IResolver<ValidAnchors extends string = string> extends IResolverBase {
   /**
    * Type-safe convenience method for creating FilePath objects
    *

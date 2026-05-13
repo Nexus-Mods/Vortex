@@ -14,12 +14,7 @@ export type { PathModule } from "./pathUtils";
 // Resolver implementations
 export { BaseResolver } from "./resolvers/BaseResolver";
 
-export {
-  MappingResolver,
-  fromRecord,
-  fromMap,
-  fromFunction,
-} from "./resolvers/MappingResolver";
+export { MappingResolver, fromRecord, fromMap, fromFunction } from "./resolvers/MappingResolver";
 
 export type { MappingStrategy } from "./resolvers/MappingResolver";
 export { UnixResolver } from "./resolvers/UnixResolver";

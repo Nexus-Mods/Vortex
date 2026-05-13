@@ -53,10 +53,7 @@ export const Header: FC = () => {
       className="flex h-11 items-center justify-between pl-4.5"
       style={{ WebkitAppRegion: "drag" }}
     >
-      <div
-        className="flex items-center gap-x-1"
-        style={{ WebkitAppRegion: "no-drag" }}
-      >
+      <div className="flex items-center gap-x-1" style={{ WebkitAppRegion: "no-drag" }}>
         <IconButton
           appearance="secondary"
           iconPath={menuIsCollapsed ? nxmPanelOpen : nxmPanelClose}
@@ -64,22 +61,14 @@ export const Header: FC = () => {
           onClick={handleToggleMenu}
         />
 
-        <Typography
-          appearance="none"
-          className="flex items-center gap-x-2 truncate font-semibold"
-        >
+        <Typography appearance="none" className="flex items-center gap-x-2 truncate font-semibold">
           <span className="text-neutral-strong">{title}</span>
 
-          {profileName && (
-            <span className="text-neutral-subdued">{profileName}</span>
-          )}
+          {profileName && <span className="text-neutral-subdued">{profileName}</span>}
         </Typography>
       </div>
 
-      <div
-        className="flex items-center gap-x-4"
-        style={{ WebkitAppRegion: "no-drag" }}
-      >
+      <div className="flex items-center gap-x-4" style={{ WebkitAppRegion: "no-drag" }}>
         <PremiumIndicator />
 
         <div className="flex gap-x-2">

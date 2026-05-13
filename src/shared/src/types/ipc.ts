@@ -189,27 +189,15 @@ export interface InvokeChannels {
   // Updater: Query current update status from main process
   "updater:get-status": () => Promise<UpdateStatus>;
   // Dialog channels
-  "dialog:showOpen": (
-    options: OpenDialogOptions,
-  ) => Promise<OpenDialogReturnValue>;
-  "dialog:showSave": (
-    options: SaveDialogOptions,
-  ) => Promise<SaveDialogReturnValue>;
-  "dialog:showMessageBox": (
-    options: MessageBoxOptions,
-  ) => Promise<MessageBoxReturnValue>;
+  "dialog:showOpen": (options: OpenDialogOptions) => Promise<OpenDialogReturnValue>;
+  "dialog:showSave": (options: SaveDialogOptions) => Promise<SaveDialogReturnValue>;
+  "dialog:showMessageBox": (options: MessageBoxOptions) => Promise<MessageBoxReturnValue>;
   "dialog:showErrorBox": (title: string, content: string) => Promise<void>;
 
   // App protocol client channels
   "app:setProtocolClient": (protocol: string, udPath: string) => Promise<void>;
-  "app:isProtocolClient": (
-    protocol: string,
-    udPath: string,
-  ) => Promise<boolean>;
-  "app:removeProtocolClient": (
-    protocol: string,
-    udPath: string,
-  ) => Promise<void>;
+  "app:isProtocolClient": (protocol: string, udPath: string) => Promise<boolean>;
+  "app:removeProtocolClient": (protocol: string, udPath: string) => Promise<void>;
   "app:exit": (exitCode?: number) => Promise<void>;
   "app:getName": () => Promise<string>;
   "app:getInitMetadata": () => Promise<AppInitMetadata>;
@@ -222,11 +210,7 @@ export interface InvokeChannels {
   "app:extractFileIcon": (exePath: string, iconPath: string) => Promise<void>;
 
   // BrowserView channels
-  "browserView:create": (
-    src: string,
-    partition: string,
-    isNexus: boolean,
-  ) => Promise<string>;
+  "browserView:create": (src: string, partition: string, isNexus: boolean) => Promise<string>;
   "browserView:createWithEvents": (
     src: string,
     forwardEvents: string[],
@@ -301,17 +285,9 @@ export interface InvokeChannels {
 
   // Additional window operations
   "window:getPosition": (windowId: number) => Promise<[number, number]>;
-  "window:setPosition": (
-    windowId: number,
-    x: number,
-    y: number,
-  ) => Promise<void>;
+  "window:setPosition": (windowId: number, x: number, y: number) => Promise<void>;
   "window:getSize": (windowId: number) => Promise<[number, number]>;
-  "window:setSize": (
-    windowId: number,
-    width: number,
-    height: number,
-  ) => Promise<void>;
+  "window:setSize": (windowId: number, width: number, height: number) => Promise<void>;
   "window:isVisible": (windowId: number) => Promise<boolean>;
   "window:toggleDevTools": (windowId: number) => Promise<void>;
 
@@ -354,10 +330,7 @@ type SerializablePrimitive =
   | TypedArray;
 
 /** Represents all IPC-safe types */
-export type Serializable =
-  | SerializablePrimitive
-  | Serializable[]
-  | { [key: string]: Serializable };
+export type Serializable = SerializablePrimitive | Serializable[] | { [key: string]: Serializable };
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
 

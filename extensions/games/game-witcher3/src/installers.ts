@@ -1,12 +1,9 @@
 /* eslint-disable */
 import path from "path";
+
 import { types, util } from "vortex-api";
-import {
-  CONFIG_MATRIX_REL_PATH,
-  GAME_ID,
-  SCRIPT_MERGER_FILES,
-  PART_SUFFIX,
-} from "./common";
+
+import { CONFIG_MATRIX_REL_PATH, GAME_ID, SCRIPT_MERGER_FILES, PART_SUFFIX } from "./common";
 import { PrefixType } from "./types";
 
 export function scriptMergerTest(files, gameId) {
@@ -55,28 +52,20 @@ export function testMenuModRoot(
 export function installMenuMod(files: string[], destinationPath: string) {
   // Input specific files need to be installed outside the mods folder while
   //  all other mod files are to be installed as usual.
-  const filtered = files.filter(
-    (file) => path.extname(path.basename(file)) !== "",
-  );
-  const inputFiles = filtered.filter(
-    (file) => file.indexOf(CONFIG_MATRIX_REL_PATH) !== -1,
-  );
+  const filtered = files.filter((file) => path.extname(path.basename(file)) !== "");
+  const inputFiles = filtered.filter((file) => file.indexOf(CONFIG_MATRIX_REL_PATH) !== -1);
   const uniqueInput = inputFiles.reduce((accum, iter) => {
     // Some mods tend to include a backup file meant for the user to restore
     //  his game to vanilla (obvs we only want to apply the non-backup).
     const fileName = path.basename(iter);
 
-    if (
-      accum.find((entry) => path.basename(entry) === fileName) !== undefined
-    ) {
+    if (accum.find((entry) => path.basename(entry) === fileName) !== undefined) {
       // This config file has already been added to the accumulator.
       //  Ignore this instance.
       return accum;
     }
 
-    const instances = inputFiles.filter(
-      (file) => path.basename(file) === fileName,
-    );
+    const instances = inputFiles.filter((file) => path.basename(file) === fileName);
     if (instances.length > 1) {
       // We have multiple instances of the same menu config file - mod author probably included
       //  a backup file to restore vanilla state, or perhaps this is a variant mod which we
@@ -99,21 +88,14 @@ export function installMenuMod(files: string[], destinationPath: string) {
   const inputFileDestination = CONFIG_MATRIX_REL_PATH;
 
   // Get the mod's root folder.
-  const binIdx = uniqueInput?.[0]
-    ?.toLowerCase()
-    ?.split(path.sep)
-    ?.indexOf?.("bin");
+  const binIdx = uniqueInput?.[0]?.toLowerCase()?.split(path.sep)?.indexOf?.("bin");
 
   // Refers to files located inside the archive's 'Mods' directory.
   //  This array can very well be empty if a mods folder doesn't exist
-  const modFiles = otherFiles.filter((file) =>
-    file.toLowerCase().split(path.sep).includes("mods"),
-  );
+  const modFiles = otherFiles.filter((file) => file.toLowerCase().split(path.sep).includes("mods"));
 
   const modsIdx =
-    modFiles.length > 0
-      ? modFiles[0].toLowerCase().split(path.sep).indexOf("mods")
-      : -1;
+    modFiles.length > 0 ? modFiles[0].toLowerCase().split(path.sep).indexOf("mods") : -1;
   const modNames =
     modsIdx !== -1
       ? modFiles.reduce((accum, iter) => {
@@ -138,10 +120,7 @@ export function installMenuMod(files: string[], destinationPath: string) {
   const modName =
     binIdx > 0
       ? inputFiles[0].split(path.sep)[binIdx - 1]
-      : ("mod" + path.basename(destinationPath, ".installing")).replace(
-          /\s/g,
-          "",
-        );
+      : ("mod" + path.basename(destinationPath, ".installing")).replace(/\s/g, "");
 
   const trimmedFiles = otherFiles.map((file) => {
     const source = file;
@@ -170,25 +149,16 @@ export function installMenuMod(files: string[], destinationPath: string) {
   });
 
   const inputInstructions = uniqueInput.map((file) =>
-    toCopyInstruction(
-      file,
-      path.join(inputFileDestination, path.basename(file)),
-    ),
+    toCopyInstruction(file, path.join(inputFileDestination, path.basename(file))),
   );
 
   const otherInstructions = trimmedFiles.map((file) =>
     toCopyInstruction(file.source, file.relPath),
   );
 
-  const modFileInstructions = modFiles.map((file) =>
-    toCopyInstruction(file, file),
-  );
+  const modFileInstructions = modFiles.map((file) => toCopyInstruction(file, file));
 
-  const instructions = [].concat(
-    inputInstructions,
-    otherInstructions,
-    modFileInstructions,
-  );
+  const instructions = [].concat(inputInstructions, otherInstructions, modFileInstructions);
   if (modNames.length > 0) {
     instructions.push({
       type: "attribute",
@@ -202,10 +172,7 @@ export function installMenuMod(files: string[], destinationPath: string) {
 export function testSupportedContent(files: string[], gameId: string) {
   const supported =
     gameId === GAME_ID &&
-    files.find(
-      (file) =>
-        file.toLowerCase().startsWith("content" + path.sep) !== undefined,
-    );
+    files.find((file) => file.toLowerCase().startsWith("content" + path.sep) !== undefined);
   return Promise.resolve({
     supported,
     requiredFiles: [],
@@ -230,9 +197,7 @@ export function installContent(files: string[], destinationPath: string) {
 export function testSupportedTL(files: string[], gameId: string) {
   const supported =
     gameId === GAME_ID &&
-    files.find(
-      (file) => file.toLowerCase().split(path.sep).indexOf("mods") !== -1,
-    ) !== undefined;
+    files.find((file) => file.toLowerCase().split(path.sep).indexOf("mods") !== -1) !== undefined;
   return Promise.resolve({
     supported,
     requiredFiles: [],
@@ -251,10 +216,7 @@ export function installTL(files: string[]) {
   }, "");
 
   const instructions = files
-    .filter(
-      (file) =>
-        !file.endsWith(path.sep) && file.toLowerCase().startsWith(prefix),
-    )
+    .filter((file) => !file.endsWith(path.sep) && file.toLowerCase().startsWith(prefix))
     .map((file) => ({
       type: "copy",
       source: file,
@@ -264,17 +226,12 @@ export function installTL(files: string[]) {
   return Promise.resolve({ instructions });
 }
 
-export function testDLCMod(
-  files: string[],
-  gameId: string,
-): Promise<types.ISupportedResult> {
+export function testDLCMod(files: string[], gameId: string): Promise<types.ISupportedResult> {
   if (gameId !== GAME_ID) {
     return Promise.resolve({ supported: false, requiredFiles: [] });
   }
 
-  const nonDlcFile = files.find(
-    (file) => !file.toLowerCase().startsWith("dlc"),
-  );
+  const nonDlcFile = files.find((file) => !file.toLowerCase().startsWith("dlc"));
   return nonDlcFile !== undefined
     ? Promise.resolve({ supported: false, requiredFiles: [] })
     : Promise.resolve({ supported: true, requiredFiles: [] });
@@ -294,8 +251,7 @@ export function installDLCMod(files: string[]) {
       const segments = iter.split(path.sep);
       const properlyFormatted =
         segments.length > 2
-          ? segments[0].toLowerCase() === "dlc" &&
-            (segments[2] || "").toLowerCase() === "content"
+          ? segments[0].toLowerCase() === "dlc" && (segments[2] || "").toLowerCase() === "content"
           : false;
       const modName = properlyFormatted ? segments[1] : segments[0];
       modNames.push(modName);
@@ -346,16 +302,14 @@ export function testSupportedMixed(
   }
 
   const hasConfigMatrixFile =
-    files.find(
-      (file) => path.basename(file).toLowerCase() === CONFIG_MATRIX_REL_PATH,
-    ) !== undefined;
+    files.find((file) => path.basename(file).toLowerCase() === CONFIG_MATRIX_REL_PATH) !==
+    undefined;
   if (hasConfigMatrixFile) {
     return Promise.resolve({ supported: false, requiredFiles: [] });
   }
 
   const supported =
-    files.some((file) => hasPrefix("dlc", file)) &&
-    files.some((file) => hasPrefix("mod", file));
+    files.some((file) => hasPrefix("dlc", file)) && files.some((file) => hasPrefix("mod", file));
   return Promise.resolve({
     supported,
     requiredFiles: [],
@@ -375,9 +329,7 @@ export function installMixed(files: string[]) {
       }
 
       let destinationSegments = [];
-      const contentIdx = segments
-        .map((seg) => seg.toLowerCase())
-        .indexOf("content");
+      const contentIdx = segments.map((seg) => seg.toLowerCase()).indexOf("content");
 
       if (isRootDir) {
         // Take out the root folder.

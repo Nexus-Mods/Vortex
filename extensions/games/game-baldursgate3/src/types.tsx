@@ -110,15 +110,7 @@ export interface IDivineOptions {
   source: string;
   destination?: string;
   expression?: string;
-  loglevel?:
-    | "off"
-    | "fatal"
-    | "error"
-    | "warn"
-    | "info"
-    | "debug"
-    | "trace"
-    | "all";
+  loglevel?: "off" | "fatal" | "error" | "warn" | "info" | "debug" | "trace" | "all";
 }
 
 export interface IDivineOutput {

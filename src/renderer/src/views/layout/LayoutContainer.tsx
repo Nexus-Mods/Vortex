@@ -1,9 +1,8 @@
 import React, { type ReactNode, type FC, useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 
-import type { IState } from "../../types/IState";
-
 import { useMenuLayerContext, useWindowContext } from "../../contexts";
+import type { IState } from "../../types/IState";
 import { joinClasses } from "../../ui/utils/joinClasses";
 import startupSettings from "../../util/startupSettings";
 
@@ -16,16 +15,11 @@ export interface ILayoutContainerProps {
  * Provides the main container for the layout, applying necessary classes and refs.
  * For both layouts.
  */
-export const LayoutContainer: FC<ILayoutContainerProps> = ({
-  children,
-  className,
-}) => {
+export const LayoutContainer: FC<ILayoutContainerProps> = ({ children, className }) => {
   const { isFocused, isHidpi } = useWindowContext();
   const { menuLayerOpen, setMenuLayerRef } = useMenuLayerContext();
 
-  const { customTitlebar, useModernLayout } = useSelector(
-    (state: IState) => state.settings.window,
-  );
+  const { customTitlebar, useModernLayout } = useSelector((state: IState) => state.settings.window);
 
   // Add custom titlebar class on mount
   const initializedRef = useRef(false);
@@ -43,9 +37,7 @@ export const LayoutContainer: FC<ILayoutContainerProps> = ({
   }, [customTitlebar]);
 
   useEffect(() => {
-    document.body.classList.add(
-      `${useModernLayout ? "modern" : "legacy"}-layout`,
-    );
+    document.body.classList.add(`${useModernLayout ? "modern" : "legacy"}-layout`);
   }, []);
 
   return (

@@ -1,10 +1,9 @@
 import { useCallback, useMemo } from "react";
 
 import type { IExtensionApi } from "../../../types/api";
-import type { IStarterInfo } from "../../../util/StarterInfo";
-
 import { log } from "../../../util/log";
 import { activeProfile } from "../../../util/selectors";
+import type { IStarterInfo } from "../../../util/StarterInfo";
 import StarterInfo from "../../../util/StarterInfo";
 import { useToolsData } from "./useToolsData";
 import { useToolsRunning } from "./useToolsRunning";
@@ -35,10 +34,7 @@ export interface UseToolsResult {
  * Composes useToolsData, useToolsValidation, and useToolsRunning.
  * Provides visible tools, primary starter, running state, and actions.
  */
-export const useTools = (
-  onShowError: ShowErrorCallback,
-  api: IExtensionApi,
-): UseToolsResult => {
+export const useTools = (onShowError: ShowErrorCallback, api: IExtensionApi): UseToolsResult => {
   const {
     gameId,
     gameStarter,
@@ -56,11 +52,7 @@ export const useTools = (
     [gameStarter, tools],
   );
 
-  const { isToolValid } = useToolsValidation(
-    allStarters,
-    discoveryPath,
-    deploymentCounter,
-  );
+  const { isToolValid } = useToolsValidation(allStarters, discoveryPath, deploymentCounter);
 
   const { exclusiveRunning, isToolRunning } = useToolsRunning();
 
@@ -108,11 +100,7 @@ export const useTools = (
         );
         return;
       }
-      api.events.emit(
-        "analytics-track-click-event",
-        "Tools",
-        "Manually ran tool",
-      );
+      api.events.emit("analytics-track-click-event", "Tools", "Manually ran tool");
       StarterInfo.run(info, api, onShowError);
     },
     [api, onShowError],

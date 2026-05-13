@@ -33,9 +33,7 @@ function main(context) {
   });
 
   function findGame() {
-    return util.steam
-      .findByAppId(SteamId.toString())
-      .then((game) => game.gamePath);
+    return util.steam.findByAppId(SteamId.toString()).then((game) => game.gamePath);
   }
 
   function readRegistryKey(hive, key, name) {
@@ -55,18 +53,14 @@ function main(context) {
   }
 
   function findUnityModManager() {
-    return readRegistryKey(
-      "HKEY_CURRENT_USER",
-      "Software\\UnityModManager",
-      "Path",
-    ).then((value) => fs.statAsync(path.join(value, UMM_DLL)));
+    return readRegistryKey("HKEY_CURRENT_USER", "Software\\UnityModManager", "Path").then((value) =>
+      fs.statAsync(path.join(value, UMM_DLL)),
+    );
   }
 
   function setup(discovery) {
     return fs
-      .ensureDirWritableAsync(path.join(discovery.path, "Mods"), () =>
-        Promise.resolve(),
-      )
+      .ensureDirWritableAsync(path.join(discovery.path, "Mods"), () => Promise.resolve())
       .then(() =>
         findUnityModManager().catch((err) => {
           return new Promise((resolve, reject) => {
@@ -75,10 +69,7 @@ function main(context) {
                 "question",
                 "Action required",
                 {
-                  message:
-                    "You must install Unity Mod Manager to use mods with " +
-                    Name +
-                    ".",
+                  message: "You must install Unity Mod Manager to use mods with " + Name + ".",
                 },
                 [
                   {
@@ -88,9 +79,7 @@ function main(context) {
                   {
                     label: "Go to the Unity Mod Manager page",
                     action: () => {
-                      util
-                        .opn("https://www.nexusmods.com/site/mods/21/")
-                        .catch((err) => undefined);
+                      util.opn("https://www.nexusmods.com/site/mods/21/").catch((err) => undefined);
                       reject(new util.UserCanceled());
                     },
                   },

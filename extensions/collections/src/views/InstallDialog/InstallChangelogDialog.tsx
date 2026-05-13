@@ -1,13 +1,13 @@
-import CollectionThumbnail from "../CollectionTile";
+import { IRevision } from "@nexusmods/nexus-api";
 import React from "react";
 import { useContext, useCallback, Component } from "react";
 import { Button, Media, Modal } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
+import { useSelector } from "react-redux";
 import { FlexLayout, MainContext, tooltip, types, util } from "vortex-api";
 
-import { IRevision } from "@nexusmods/nexus-api";
-import { useSelector } from "react-redux";
+import CollectionThumbnail from "../CollectionTile";
 
 export interface IInstallChangelogDialogProps {
   gameId: string;
@@ -39,11 +39,7 @@ function InstallChangelogDialogImpl(props: IInstallChangelogDialogProps) {
     );
     util.opn(
       util.nexusModsURL(
-        [
-          revisionInfo.collection.game.domainName,
-          "collections",
-          revisionInfo.collection.slug,
-        ],
+        [revisionInfo.collection.game.domainName, "collections", revisionInfo.collection.slug],
         {
           campaign: util.Campaign.GeneralNavigation,
           section: util.Section.Collections,
@@ -60,11 +56,7 @@ function InstallChangelogDialogImpl(props: IInstallChangelogDialogProps) {
   const changelogDate = new Date(changelog.createdAt);
 
   return (
-    <Modal
-      id="install-changelog-dialog"
-      show={collection !== undefined}
-      onHide={nop}
-    >
+    <Modal id="install-changelog-dialog" show={collection !== undefined} onHide={nop}>
       <Modal.Header>
         <Modal.Title>
           {t("{{collectionName}} update", {
@@ -90,9 +82,7 @@ function InstallChangelogDialogImpl(props: IInstallChangelogDialogProps) {
                 replace: { revNum: revisionInfo.revisionNumber },
               })}
             </h4>
-            <div className="changelog-time">
-              {changelogDate.toLocaleDateString(lang)}
-            </div>
+            <div className="changelog-time">{changelogDate.toLocaleDateString(lang)}</div>
           </FlexLayout>
           <div className="changelog-scroll">
             <ReactMarkdown>{changelog.description}</ReactMarkdown>

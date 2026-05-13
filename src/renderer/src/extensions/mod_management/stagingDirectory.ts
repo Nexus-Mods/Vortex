@@ -1,5 +1,10 @@
 import * as path from "path";
+
+import { isErrorWithSystemCode, unknownToError } from "@vortex/shared";
 import { generate as shortid } from "shortid";
+import type * as winapiT from "winapi-bindings";
+
+import { log } from "../../logging";
 import type { IDialogResult } from "../../types/IDialog";
 import type { IExtensionApi } from "../../types/IExtensionContext";
 import type { IState } from "../../types/IState";
@@ -7,19 +12,13 @@ import { getApplication } from "../../util/application";
 import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
 import lazyRequire from "../../util/lazyRequire";
-import { log } from "../../logging";
 import { activeGameId, installPathForGame } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { truthy } from "../../util/util";
-
 import { suggestStagingPath } from "../gamemode_management/util/discovery";
-
 import { setInstallPath } from "./actions/settings";
 import { fallbackPurge } from "./util/activationStore";
 import { resolveInstallPath } from "./util/getInstallPath";
-
-import type * as winapiT from "winapi-bindings";
-import { isErrorWithSystemCode, unknownToError } from "@vortex/shared";
 
 const winapi: typeof winapiT = lazyRequire(() => require("winapi-bindings"));
 
@@ -34,10 +33,7 @@ function writeStagingTag(api: IExtensionApi, tagPath: string, gameId: string) {
   return fs.writeFileAsync(tagPath, JSON.stringify(data), { encoding: "utf8" });
 }
 
-async function validateStagingTag(
-  api: IExtensionApi,
-  tagPath: string,
-): Promise<void> {
+async function validateStagingTag(api: IExtensionApi, tagPath: string): Promise<void> {
   try {
     const data = await fs.readFileAsync(tagPath, { encoding: "utf8" });
     const state: IState = api.store.getState();
@@ -121,11 +117,7 @@ async function queryStagingFolderInvalid(
         path: instPath,
       },
     },
-    [
-      { label: "Quit Vortex" },
-      { label: "Reinitialize" },
-      { label: "Browse..." },
-    ],
+    [{ label: "Quit Vortex" }, { label: "Reinitialize" }, { label: "Browse..." }],
   );
 }
 
@@ -142,10 +134,7 @@ async function ensureStagingDirectoryImpl(
   if (instPath === undefined) {
     // no staging folder set yet
     if (state.settings.mods.installPathMode === "suggested") {
-      instPath = resolveInstallPath(
-        await suggestStagingPath(api, gameId),
-        gameId,
-      );
+      instPath = resolveInstallPath(await suggestStagingPath(api, gameId), gameId);
       api.store.dispatch(setInstallPath(gameId, instPath));
     } else {
       instPath = installPathForGame(state, gameId);
@@ -185,12 +174,7 @@ async function ensureStagingDirectoryImpl(
       await fs.ensureDirWritableAsync(instPath, () => Promise.resolve());
     } else {
       const err = unknownToError(unknownError);
-      const dialogResult = await queryStagingFolderInvalid(
-        api,
-        err,
-        dirExists,
-        instPath,
-      );
+      const dialogResult = await queryStagingFolderInvalid(api, err, dirExists, instPath);
       if (dialogResult.action === "Quit Vortex") {
         getApplication().quit(0);
         throw new UserCanceled();
@@ -250,10 +234,7 @@ async function ensureStagingDirectoryImpl(
         }
 
         try {
-          await validateStagingTag(
-            api,
-            path.join(selectedPath, STAGING_DIR_TAG),
-          );
+          await validateStagingTag(api, path.join(selectedPath, STAGING_DIR_TAG));
           instPath = selectedPath;
           api.store.dispatch(setInstallPath(gameId, instPath));
         } catch (validateErr) {

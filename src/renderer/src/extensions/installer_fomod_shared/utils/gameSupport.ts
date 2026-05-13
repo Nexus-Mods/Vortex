@@ -1,18 +1,13 @@
-import type { IGame } from "../../../types/IGame";
-
 import * as path from "path";
+
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IGame } from "../../../types/IGame";
 import type { IDiscoveryResult, IState } from "../../../types/IState";
 import getVortexPath from "../../../util/getVortexPath";
 import { makeOverlayableDictionary } from "../../../util/util";
-import type { IExtensionApi } from "../../../types/IExtensionContext";
 
 function bethIni(gamePath: string, iniName: string) {
-  return path.join(
-    getVortexPath("documents"),
-    "My Games",
-    gamePath,
-    iniName + ".ini",
-  );
+  return path.join(getVortexPath("documents"), "My Games", gamePath, iniName + ".ini");
 }
 
 function toWordExp(input: string): string {
@@ -55,41 +50,17 @@ export const uniPatterns: string[] = ["fomod"].map(toWordExp);
 function stopPatterns(gameMode: string) {
   switch (gameMode) {
     case "fallout3":
-      return Array<string>().concat(
-        uniPatterns,
-        gamebryoPatterns,
-        ["fose"].map(toWordExp),
-      );
+      return Array<string>().concat(uniPatterns, gamebryoPatterns, ["fose"].map(toWordExp));
     case "falloutnv":
-      return Array<string>().concat(
-        uniPatterns,
-        gamebryoPatterns,
-        ["nvse"].map(toWordExp),
-      );
+      return Array<string>().concat(uniPatterns, gamebryoPatterns, ["nvse"].map(toWordExp));
     case "fallout4":
-      return Array<string>().concat(
-        uniPatterns,
-        gamebryoPatterns,
-        ["f4se"].map(toWordExp),
-      );
+      return Array<string>().concat(uniPatterns, gamebryoPatterns, ["f4se"].map(toWordExp));
     case "fallout4vr":
-      return Array<string>().concat(
-        uniPatterns,
-        gamebryoPatterns,
-        ["f4se"].map(toWordExp),
-      );
+      return Array<string>().concat(uniPatterns, gamebryoPatterns, ["f4se"].map(toWordExp));
     case "oblivion":
-      return Array<string>().concat(
-        uniPatterns,
-        gamebryoPatterns,
-        ["obse"].map(toWordExp),
-      );
+      return Array<string>().concat(uniPatterns, gamebryoPatterns, ["obse"].map(toWordExp));
     case "morrowind":
-      return Array<string>().concat(
-        uniPatterns,
-        gamebryoPatterns,
-        ["mwse"].map(toWordExp),
-      );
+      return Array<string>().concat(uniPatterns, gamebryoPatterns, ["mwse"].map(toWordExp));
     case "skyrim":
       return Array<string>().concat(
         uniPatterns,
@@ -97,22 +68,9 @@ function stopPatterns(gameMode: string) {
         ["skse", "SkyProc Patchers"].map(toWordExp),
       );
     case "skyrimse":
-      return Array<string>().concat(
-        uniPatterns,
-        gamebryoPatterns,
-        ["skse"].map(toWordExp),
-      );
+      return Array<string>().concat(uniPatterns, gamebryoPatterns, ["skse"].map(toWordExp));
     case "dragonsdogma":
-      return [
-        "movie",
-        "rom",
-        "sa",
-        "sound",
-        "system",
-        "tgs",
-        "usershader",
-        "usertexture",
-      ]
+      return ["movie", "rom", "sa", "sound", "system", "tgs", "usershader", "usertexture"]
         .map(toWordExp)
         .concat(uniPatterns);
     case "stateofdecay":
@@ -152,18 +110,9 @@ function stopPatterns(gameMode: string) {
         .map(toWordExp)
         .concat(uniPatterns);
     case "kingdomcomedeliverance":
-      return ["[^/]*\\.pak$"].concat(
-        ["mod.manifest"].map(toWordExp),
-        uniPatterns,
-      );
+      return ["[^/]*\\.pak$"].concat(["mod.manifest"].map(toWordExp), uniPatterns);
     case "pillarsofeternity2":
-      return [
-        "manifest.json",
-        "thumb.png",
-        "localized",
-        "conversations",
-        "atlases",
-      ].map(toWordExp);
+      return ["manifest.json", "thumb.png", "localized", "conversations", "atlases"].map(toWordExp);
     case "vampirebloodlines":
       return ["[^/]*\\.vpk$"].concat(
         [
@@ -263,9 +212,7 @@ function stopPatterns(gameMode: string) {
         "Waves",
       ].map(toWordExp);
     case "shadowrunreturns":
-      return ["data", "project.cpack.txt", "project.cpack.bytes"].map(
-        toWordExp,
-      );
+      return ["data", "project.cpack.txt", "project.cpack.bytes"].map(toWordExp);
     case "neverwinter":
       return [
         "ambient",
@@ -561,22 +508,15 @@ const gameSupport = makeOverlayableDictionary<string, IGameSupport>(
   },
 );
 
-let discoveryForGame: (gameId: string) => IDiscoveryResult | undefined = () =>
-  undefined;
+let discoveryForGame: (gameId: string) => IDiscoveryResult | undefined = () => undefined;
 
 type selectors = {
-  discoveryByGame: (
-    state: IState,
-    gameId: string,
-  ) => IDiscoveryResult | undefined;
+  discoveryByGame: (state: IState, gameId: string) => IDiscoveryResult | undefined;
 };
 export function initGameSupport(api: IExtensionApi) {
   // Lazy import to avoid circular dependency during module loading
-  const {
-    discoveryByGame,
-  }: selectors = require("../../gamemode_management/selectors");
-  discoveryForGame = (gameId: string) =>
-    discoveryByGame(api.getState(), gameId);
+  const { discoveryByGame }: selectors = require("../../gamemode_management/selectors");
+  discoveryForGame = (gameId: string) => discoveryByGame(api.getState(), gameId);
 }
 
 export function getIniFilePath(gameMode: string): string {

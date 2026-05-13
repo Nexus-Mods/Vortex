@@ -1,10 +1,3 @@
-import { setDisplayBatchHighlight } from "../actions/session";
-import {
-  HighlightBase,
-  IBaseActionProps,
-  IBaseConnectedProps,
-} from "../types/types";
-
 import * as React from "react";
 import { Overlay } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
@@ -12,13 +5,11 @@ import { connect } from "react-redux";
 import { ThunkDispatch } from "redux-thunk";
 import { actions, selectors, ToolbarIcon, types, util } from "vortex-api";
 
+import { setDisplayBatchHighlight } from "../actions/session";
+import { HighlightBase, IBaseActionProps, IBaseConnectedProps } from "../types/types";
+
 interface IActionProps extends IBaseActionProps {
-  onSetModAttributes: (
-    gameMode: string,
-    modIds: string[],
-    attributeId: string,
-    value: any,
-  ) => void;
+  onSetModAttributes: (gameMode: string, modIds: string[], attributeId: string, value: any) => void;
   onToggleBatchHiglighter: (enabled: boolean) => void;
 }
 
@@ -77,12 +68,7 @@ class HighlightIconBar extends HighlightBase<IProps, {}> {
 
   private toggleColors = (color) => {
     const { gameMode, selectedMods, onSetModAttributes } = this.props;
-    onSetModAttributes(
-      gameMode,
-      selectedMods,
-      "color",
-      color.currentTarget.value,
-    );
+    onSetModAttributes(gameMode, selectedMods, "color", color.currentTarget.value);
   };
 
   private toggleOverlay = () => {
@@ -93,47 +79,24 @@ class HighlightIconBar extends HighlightBase<IProps, {}> {
 
 function mapStateToProps(state: types.IState): IConnectedProps {
   return {
-    selectedMods: util.getSafe(
-      state,
-      ["session", "modhighlight", "selectedMods"],
-      [],
-    ),
-    showOverlay: util.getSafe(
-      state,
-      ["session", "modhighlight", "displayBatchHighlighter"],
-      false,
-    ),
+    selectedMods: util.getSafe(state, ["session", "modhighlight", "selectedMods"], []),
+    showOverlay: util.getSafe(state, ["session", "modhighlight", "displayBatchHighlighter"], false),
     gameMode: selectors.activeGameId(state),
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, any, any>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, any, any>): IActionProps {
   return {
-    onSetModAttribute: (
-      gameMode: string,
-      modId: string,
-      attributeId: string,
-      value: any,
-    ) => {
+    onSetModAttribute: (gameMode: string, modId: string, attributeId: string, value: any) => {
       dispatch(actions.setModAttribute(gameMode, modId, attributeId, value));
     },
-    onSetModAttributes: (
-      gameMode: string,
-      modIds: string[],
-      attributeId: string,
-      value: any,
-    ) => {
+    onSetModAttributes: (gameMode: string, modIds: string[], attributeId: string, value: any) => {
       util.batchDispatch(
         dispatch,
-        modIds.map((modId) =>
-          actions.setModAttribute(gameMode, modId, attributeId, value),
-        ),
+        modIds.map((modId) => actions.setModAttribute(gameMode, modId, attributeId, value)),
       );
     },
-    onToggleBatchHiglighter: (enabled: boolean) =>
-      dispatch(setDisplayBatchHighlight(enabled)),
+    onToggleBatchHiglighter: (enabled: boolean) => dispatch(setDisplayBatchHighlight(enabled)),
   };
 }
 

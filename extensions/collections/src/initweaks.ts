@@ -1,13 +1,14 @@
 /* eslint-disable */
 import * as path from "node:path";
+
 import * as React from "react";
 import { actions, fs, log, selectors, types, util } from "vortex-api";
+
+import { INI_TWEAKS_PATH, OPTIONAL_TWEAK_PREFIX } from "./constants";
 import { ICollection } from "./types/ICollection";
 import { IExtendedInterfaceProps } from "./types/IExtendedInterfaceProps";
 import { IINITweak, TweakArray } from "./types/IINITweak";
 import TweakList from "./views/IniTweaks";
-
-import { INI_TWEAKS_PATH, OPTIONAL_TWEAK_PREFIX } from "./constants";
 
 const gameSupport = {
   skyrim: {
@@ -23,11 +24,7 @@ const gameSupport = {
     gameSettingsFiles: ["Fallout.ini", "FalloutPrefs.ini", "FalloutCustom.ini"],
   },
   fallout4: {
-    gameSettingsFiles: [
-      "Fallout4.ini",
-      "Fallout4Prefs.ini",
-      "Fallout4Custom.ini",
-    ],
+    gameSettingsFiles: ["Fallout4.ini", "Fallout4Prefs.ini", "Fallout4Custom.ini"],
   },
   fallout4vr: {
     gameSettingsFiles: ["Fallout4Custom.ini", "Fallout4Prefs.ini"],
@@ -53,9 +50,7 @@ function isSupported(gameId: string) {
   return gameSupport[gameId] !== undefined;
 }
 
-function validateFilenameInput(
-  content: types.IDialogContent,
-): types.IConditionResult[] {
+function validateFilenameInput(content: types.IDialogContent): types.IConditionResult[] {
   const input = content.input[0].value || "";
   if (input.length < 2 || !(util as any).isFilenameValid(input)) {
     return [
@@ -70,10 +65,7 @@ function validateFilenameInput(
   }
 }
 
-function TweakListWrap(
-  api: types.IExtensionApi,
-  prop: IExtendedInterfaceProps,
-): JSX.Element {
+function TweakListWrap(api: types.IExtensionApi, prop: IExtendedInterfaceProps): JSX.Element {
   return React.createElement(TweakList, {
     ...prop,
     settingsFiles: gameSupport[prop.gameId].gameSettingsFiles,
@@ -95,11 +87,7 @@ async function getTweaks(dirPath: string): Promise<string[]> {
   }
 }
 
-export function getEnabledTweaks(
-  api: types.IExtensionApi,
-  gameId: string,
-  modId: string,
-) {
+export function getEnabledTweaks(api: types.IExtensionApi, gameId: string, modId: string) {
   const state = api.getState();
   const mods: { [modId: string]: types.IMod } = util.getSafe(
     state,
@@ -120,11 +108,7 @@ export async function importTweaks(
   const tweaks = await getAllTweaks(api, profile, mods);
   const state = api.getState();
   const stagingFolder = selectors.installPathForGame(state, profile.gameId);
-  const destTweakDirPath = path.join(
-    stagingFolder,
-    destCollection.id,
-    INI_TWEAKS_PATH,
-  );
+  const destTweakDirPath = path.join(stagingFolder, destCollection.id, INI_TWEAKS_PATH);
   const batchedActions = [];
   const existingTweaks = destCollection.enabledINITweaks ?? [];
   await fs.ensureDirWritableAsync(destTweakDirPath);
@@ -137,12 +121,7 @@ export async function importTweaks(
       const dest = path.join(destTweakDirPath, path.basename(tweak.sourcePath));
       await fs.copyAsync(tweak.sourcePath, dest, { overwrite: true });
       batchedActions.push(
-        actions.setINITweakEnabled(
-          profile.gameId,
-          destCollection.id,
-          tweak.fileName,
-          true,
-        ),
+        actions.setINITweakEnabled(profile.gameId, destCollection.id, tweak.fileName, true),
       );
     } catch (err) {
       log("error", "Unable to import tweak", err);
@@ -250,35 +229,19 @@ async function genRemoveIniTweak(
       if (res.action === "Remove") {
         try {
           const tweaks = await genRefreshTweaks(modPath);
-          const targetTweak = tweaks.find(
-            (twk) => twk.fileName === tweak.fileName,
-          );
-          const tweakPath = path.join(
-            modPath,
-            INI_TWEAKS_PATH,
-            targetTweak.fileName,
-          );
+          const targetTweak = tweaks.find((twk) => twk.fileName === tweak.fileName);
+          const tweakPath = path.join(modPath, INI_TWEAKS_PATH, targetTweak.fileName);
           await fs.removeAsync(tweakPath);
           const { gameId, collection } = props;
           api.store.dispatch(
-            actions.setINITweakEnabled(
-              gameId,
-              collection.id,
-              targetTweak.fileName,
-              false,
-            ),
+            actions.setINITweakEnabled(gameId, collection.id, targetTweak.fileName, false),
           );
         } catch (err) {
           if (err.code === "ENOENT") {
             // No file, no problem.
             const { gameId, collection } = props;
             api.store.dispatch(
-              actions.setINITweakEnabled(
-                gameId,
-                collection.id,
-                tweak.fileName,
-                false,
-              ),
+              actions.setINITweakEnabled(gameId, collection.id, tweak.fileName, false),
             );
             return;
           }
@@ -333,11 +296,7 @@ async function genAddIniTweak(
     });
 }
 
-async function genEnableIniTweaks(
-  api: types.IExtensionApi,
-  gameId: string,
-  mod: types.IMod,
-) {
+async function genEnableIniTweaks(api: types.IExtensionApi, gameId: string, mod: types.IMod) {
   const stagingPath = selectors.installPathForGame(api.getState(), gameId);
   const modPath = path.join(stagingPath, mod.installationPath);
   try {

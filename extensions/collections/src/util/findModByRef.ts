@@ -9,8 +9,5 @@ export function testDownloadReference(
     return false;
   }
 
-  return util.testModReference(
-    (util as any).lookupFromDownload(download),
-    reference,
-  );
+  return util.testModReference((util as any).lookupFromDownload(download), reference);
 }

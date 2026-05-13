@@ -1,15 +1,14 @@
-import Bluebird from "bluebird";
 import * as https from "https";
-import * as _ from "lodash";
 import * as path from "path";
-import type * as Redux from "redux";
 import * as url from "url";
 
+import { getErrorMessageOrDefault } from "@vortex/shared";
+import Bluebird from "bluebird";
+import * as _ from "lodash";
+import type * as Redux from "redux";
+
 import { addNotification } from "../../actions/notifications";
-import type {
-  IExtensionContext,
-  ThunkStore,
-} from "../../types/IExtensionContext";
+import type { IExtensionContext, ThunkStore } from "../../types/IExtensionContext";
 import type { IState } from "../../types/IState";
 import { getApplication } from "../../util/application";
 import { DataInvalid } from "../../util/CustomErrors";
@@ -19,22 +18,14 @@ import { log } from "../../util/log";
 import opn from "../../util/opn";
 import { activeGameId } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
-
+import { setAnnouncements, setAvailableSurveys, setSuppressSurvey } from "./actions";
+import AnnouncementDashlet from "./AnnouncementDashlet";
 import sessionReducer from "./reducers/announcements";
 import persistentReducer from "./reducers/persistent";
 import surveySessionReducer from "./reducers/surveys";
-
-import {
-  setAnnouncements,
-  setAvailableSurveys,
-  setSuppressSurvey,
-} from "./actions";
-import AnnouncementDashlet from "./AnnouncementDashlet";
 import type { IAnnouncement, ISurveyInstance } from "./types";
 import { ParserError } from "./types";
-
 import { matchesGameMode, matchesVersion } from "./util";
-import { getErrorMessageOrDefault } from "@vortex/shared";
 
 const ANNOUNCEMENT_LINK =
   "https://raw.githubusercontent.com/Nexus-Mods/Vortex-Backend/main/out/announcements.json";
@@ -77,14 +68,7 @@ function getHTTPData<T>(link: string): Bluebird<T[]> {
               const parsed: T[] = JSON.parse(output);
               resolve(parsed);
             } catch (err) {
-              reject(
-                new ParserError(
-                  res.statusCode,
-                  getErrorMessageOrDefault(err),
-                  link,
-                  output,
-                ),
-              );
+              reject(new ParserError(res.statusCode, getErrorMessageOrDefault(err), link, output));
             }
           });
       })
@@ -101,10 +85,9 @@ async function updateAnnouncements(store: ThunkStore<IState>) {
     if (process.env.NODE_ENV === "development") {
       try {
         res = JSON.parse(
-          await fs.readFileAsync(
-            path.join(getVortexPath("temp"), "announcements.json"),
-            { encoding: "utf8" },
-          ),
+          await fs.readFileAsync(path.join(getVortexPath("temp"), "announcements.json"), {
+            encoding: "utf8",
+          }),
         );
         store.dispatch(
           addNotification({
@@ -128,22 +111,14 @@ async function updateAnnouncements(store: ThunkStore<IState>) {
 }
 
 function updateSurveys(store: Redux.Store<IState>) {
-  return (
-    DEBUG_MODE
-      ? readLocalSurveysFile()
-      : getHTTPData<ISurveyInstance>(SURVEYS_LINK)
-  )
+  return (DEBUG_MODE ? readLocalSurveysFile() : getHTTPData<ISurveyInstance>(SURVEYS_LINK))
     .then((res) => {
       if (!Array.isArray(res)) {
-        return Bluebird.reject(
-          new DataInvalid(`expected array but got ${typeof res} instead`),
-        );
+        return Bluebird.reject(new DataInvalid(`expected array but got ${typeof res} instead`));
       }
 
       // Ugly but needed.
-      const validSurveys = res.filter(
-        (iter) => !!iter.endDate && !!iter.id && !!iter.link,
-      );
+      const validSurveys = res.filter((iter) => !!iter.endDate && !!iter.id && !!iter.link);
 
       if (validSurveys.length !== res.length) {
         log("debug", "survey array contains invalid survey instances");
@@ -187,11 +162,7 @@ function showSurveyNotification(context) {
   const state = context.api.store.getState();
   const now = new Date().getTime();
   const surveys = getSafe(state, ["session", "surveys", "available"], []);
-  const suppressed = getSafe(
-    state,
-    ["persistent", "surveys", "suppressed"],
-    {},
-  );
+  const suppressed = getSafe(state, ["persistent", "surveys", "suppressed"], {});
   const gameMode = activeGameId(state);
   const suppressedIds = Object.keys(suppressed);
   const isOutdated = (survey: ISurveyInstance) => {
@@ -202,8 +173,7 @@ function showSurveyNotification(context) {
   const appVersion = getApplication().version;
 
   const filtered = surveys.filter((survey) => {
-    const isSuppressed =
-      suppressedIds.includes(survey.id) && suppressed[survey.id] === true;
+    const isSuppressed = suppressedIds.includes(survey.id) && suppressed[survey.id] === true;
     return (
       !isSuppressed &&
       !isOutdated(survey) &&
@@ -224,9 +194,7 @@ function showSurveyNotification(context) {
           action: (dismiss) => {
             const survey = filtered[0];
             opn(survey.link)
-              .then(() =>
-                context.api.store.dispatch(setSuppressSurvey(survey.id, true)),
-              )
+              .then(() => context.api.store.dispatch(setSuppressSurvey(survey.id, true)))
               .catch(() => null);
             dismiss();
           },

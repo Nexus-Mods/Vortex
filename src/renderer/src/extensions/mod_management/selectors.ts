@@ -1,22 +1,19 @@
-import type { IDiscoveryResult, IMod, IState } from "../../types/IState";
-import { activeGameId } from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
-
 import * as path from "path";
-
-import { getGame } from "../gamemode_management/util/getGame";
-
-import getInstallPath from "./util/getInstallPath";
 
 import { createCachedSelector } from "re-reselect";
 import { createSelector } from "reselect";
+
+import type { IDiscoveryResult, IMod, IState } from "../../types/IState";
+import { activeGameId } from "../../util/selectors";
+import { getSafe } from "../../util/storeHelper";
+import { getGame } from "../gamemode_management/util/getGame";
+import getInstallPath from "./util/getInstallPath";
 
 const installPathPattern = (state: IState) => state.settings.mods.installPath;
 const gameInstallPathPattern = (state: IState, gameId: string) =>
   state.settings.mods.installPath[gameId];
 const activators = (state: IState) => state.settings.mods.activator;
-const allNeedToDeploy = (state: IState) =>
-  state.persistent.deployment.needToDeploy;
+const allNeedToDeploy = (state: IState) => state.persistent.deployment.needToDeploy;
 
 export const installPath = createSelector(
   installPathPattern,
@@ -52,8 +49,7 @@ export const currentActivator = createSelector(
 export const activatorForGame = createCachedSelector(
   activators,
   (state: IState, gameId: string) => gameId,
-  (inActivators: { [gameId: string]: string }, gameId: string) =>
-    inActivators[gameId],
+  (inActivators: { [gameId: string]: string }, gameId: string) => inActivators[gameId],
 )((state, gameId) => {
   if (gameId === undefined) {
     throw new Error("gameId can't be undefined");
@@ -68,15 +64,13 @@ interface INeedToDeployMap {
 export const needToDeploy = createSelector(
   allNeedToDeploy,
   activeGameId,
-  (inNeedToDeploy: INeedToDeployMap, inGameMode: string) =>
-    inNeedToDeploy[inGameMode],
+  (inNeedToDeploy: INeedToDeployMap, inGameMode: string) => inNeedToDeploy[inGameMode],
 );
 
 export const needToDeployForGame = createCachedSelector(
   allNeedToDeploy,
   (state: IState, gameId: string) => gameId,
-  (inNeedToDeploy: INeedToDeployMap, inGameId: string) =>
-    inNeedToDeploy[inGameId],
+  (inNeedToDeploy: INeedToDeployMap, inGameId: string) => inNeedToDeploy[inGameId],
 )((state, gameId) => gameId);
 
 const emptyObj = {};
@@ -101,10 +95,7 @@ export const modPathsForGame = createSelector(
   },
 );
 
-export const modsForGame = (
-  state: IState,
-  gameId: string,
-): { [modId: string]: IMod } => {
+export const modsForGame = (state: IState, gameId: string): { [modId: string]: IMod } => {
   if (gameId === undefined) {
     return {};
   }

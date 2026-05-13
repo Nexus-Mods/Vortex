@@ -8,9 +8,7 @@ Ignore the Meshes\AnimTextData\AnimationOffsets\PersistantSubgraphInfoAndOffsetD
 It's present in a lot of weapon mods but doesn't matter if it's overwritten. 
 This issue is compounded by users extracting all their BA2s. 
 */
-const IGNORED_FILES = [
-  path.join("**", "PersistantSubgraphInfoAndOffsetData.txt"),
-];
+const IGNORED_FILES = [path.join("**", "PersistantSubgraphInfoAndOffsetData.txt")];
 
 const MS_ID = "BethesdaSoftworks.Fallout4-PC";
 const GOG_ID = "1998527297";
@@ -45,11 +43,8 @@ let tools = [
   {
     id: "bodyslide",
     name: "BodySlide",
-    executable: () =>
-      path.join("Data", "Tools", "BodySlide", "BodySlide x64.exe"),
-    requiredFiles: [
-      path.join("Data", "Tools", "BodySlide", "BodySlide x64.exe"),
-    ],
+    executable: () => path.join("Data", "Tools", "BodySlide", "BodySlide x64.exe"),
+    requiredFiles: [path.join("Data", "Tools", "BodySlide", "BodySlide x64.exe")],
     relative: true,
     logo: "auto",
   },

@@ -18,18 +18,10 @@
 
 import type { IFilesystem } from "../IFilesystem";
 import type { IResolverBase } from "../IResolver";
-import type { RelativePath, ResolvedPath } from "../types";
-
 import { win32 } from "../pathUtils";
-import {
-  RelativePath as RelativePathNS,
-  ResolvedPath as ResolvedPathNS,
-} from "../types";
-import {
-  MappingResolver,
-  fromFunction,
-  type MappingStrategy,
-} from "./MappingResolver";
+import type { RelativePath, ResolvedPath } from "../types";
+import { RelativePath as RelativePathNS, ResolvedPath as ResolvedPathNS } from "../types";
+import { MappingResolver, fromFunction, type MappingStrategy } from "./MappingResolver";
 
 /**
  * All valid Windows drive letters (lowercase)
@@ -127,10 +119,7 @@ export class WindowsResolver extends MappingResolver<WindowsDrive> {
    * Override to use Windows path joining semantics
    * This ensures correct path joining even on non-Windows platforms
    */
-  protected joinPaths(
-    base: ResolvedPath,
-    relative: RelativePath,
-  ): ResolvedPath {
+  protected joinPaths(base: ResolvedPath, relative: RelativePath): ResolvedPath {
     if (relative === RelativePathNS.EMPTY) {
       return base;
     }

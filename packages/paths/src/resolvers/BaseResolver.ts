@@ -7,16 +7,11 @@
  * - Common resolution logic
  */
 
+import { FilePath } from "../FilePath";
 import type { IFilesystem } from "../IFilesystem";
 import type { IResolver, IResolverBase } from "../IResolver";
+import { forPlatform, trimTrailingSeparator, type PathModule } from "../pathUtils";
 import type { Anchor, RelativePath, ResolvedPath } from "../types";
-
-import { FilePath } from "../FilePath";
-import {
-  forPlatform,
-  trimTrailingSeparator,
-  type PathModule,
-} from "../pathUtils";
 import {
   RelativePath as RelativePathNS,
   Anchor as AnchorNS,
@@ -150,10 +145,7 @@ export abstract class BaseResolver<
   /**
    * Join base path with relative path (OS-specific)
    */
-  protected joinPaths(
-    base: ResolvedPath,
-    relative: RelativePath,
-  ): ResolvedPath {
+  protected joinPaths(base: ResolvedPath, relative: RelativePath): ResolvedPath {
     if (relative === RelativePathNS.EMPTY) {
       return base;
     }
@@ -196,13 +188,9 @@ export abstract class BaseResolver<
    * resolver.PathFor('drive_c');   // ✗ TypeScript error!
    * ```
    */
-  PathFor<A extends ValidAnchors>(
-    anchorName: A,
-    relative: string = "",
-  ): FilePath {
+  PathFor<A extends ValidAnchors>(anchorName: A, relative: string = ""): FilePath {
     const anchor = AnchorNS.make(anchorName);
-    const relativePath =
-      relative === "" ? RelativePathNS.EMPTY : RelativePathNS.make(relative);
+    const relativePath = relative === "" ? RelativePathNS.EMPTY : RelativePathNS.make(relative);
 
     // FilePath constructor will validate that this resolver can handle the anchor
     return new FilePath(relativePath, anchor, this);
@@ -301,24 +289,16 @@ export abstract class BaseResolver<
 
       if (isUnder) {
         // Pass original (non-case-folded) paths to preserve case in the relative portion
-        const relative = this.#extractRelative(
-          resolvedPath as string,
-          basePath as string,
-        );
+        const relative = this.#extractRelative(resolvedPath as string, basePath as string);
 
         // Keep the longest matching base (most specific)
-        if (
-          !bestMatch ||
-          normalizedBase.length > this.#normalizePath(bestMatch.basePath).length
-        ) {
+        if (!bestMatch || normalizedBase.length > this.#normalizePath(bestMatch.basePath).length) {
           bestMatch = { anchor, basePath, relative };
         }
       }
     }
 
-    return bestMatch
-      ? { anchor: bestMatch.anchor, relative: bestMatch.relative }
-      : null;
+    return bestMatch ? { anchor: bestMatch.anchor, relative: bestMatch.relative } : null;
   }
 
   /**
@@ -343,19 +323,11 @@ export abstract class BaseResolver<
   /**
    * Check if path is under base path
    */
-  #isUnder(
-    childPath: string,
-    basePath: string,
-    preNormalized = false,
-  ): boolean {
+  #isUnder(childPath: string, basePath: string, preNormalized = false): boolean {
     const fs = this.getFilesystem();
     const sepCode = fs.sep.charCodeAt(0);
-    const normalizedChild = preNormalized
-      ? childPath
-      : fs.normalizePath(childPath);
-    const normalizedBase = preNormalized
-      ? basePath
-      : fs.normalizePath(basePath);
+    const normalizedChild = preNormalized ? childPath : fs.normalizePath(childPath);
+    const normalizedBase = preNormalized ? basePath : fs.normalizePath(basePath);
 
     const comparableChild = trimTrailingSeparator(normalizedChild, sepCode);
     const comparableBase = trimTrailingSeparator(normalizedBase, sepCode);
@@ -365,10 +337,7 @@ export abstract class BaseResolver<
       comparableBase.charCodeAt(comparableBase.length - 1) === sepCode
         ? comparableBase
         : comparableBase + fs.sep;
-    return (
-      comparableChild.startsWith(baseWithSep) ||
-      comparableChild === comparableBase
-    );
+    return comparableChild.startsWith(baseWithSep) || comparableChild === comparableBase;
   }
 
   /**
@@ -389,16 +358,12 @@ export abstract class BaseResolver<
     }
 
     // Strip base prefix (plus separator) from full path
-    const prefixLen = normBase.endsWith(sep)
-      ? normBase.length
-      : normBase.length + 1;
+    const prefixLen = normBase.endsWith(sep) ? normBase.length : normBase.length + 1;
     const relative = normFull.substring(prefixLen);
 
     // Convert to forward slashes (RelativePath convention)
     const normalized = relative.replace(/\\/g, "/");
 
-    return normalized === ""
-      ? RelativePathNS.EMPTY
-      : RelativePathNS.make(normalized);
+    return normalized === "" ? RelativePathNS.EMPTY : RelativePathNS.make(normalized);
   }
 }

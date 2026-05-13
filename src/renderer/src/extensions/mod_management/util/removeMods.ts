@@ -2,14 +2,9 @@ import { unknownToError } from "@vortex/shared";
 
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { INotification } from "../../../types/INotification";
-
 import { toPromise } from "../../../util/util";
 
-export function removeMod(
-  api: IExtensionApi,
-  gameId: string,
-  modId: string,
-): Promise<void> {
+export function removeMod(api: IExtensionApi, gameId: string, modId: string): Promise<void> {
   return new Promise((resolve, reject) => {
     api.events.emit("remove-mod", gameId, modId, (err) => {
       if (err) {
@@ -21,11 +16,7 @@ export function removeMod(
   });
 }
 
-export function removeMods(
-  api: IExtensionApi,
-  gameId: string,
-  modIds: string[],
-): Promise<void> {
+export function removeMods(api: IExtensionApi, gameId: string, modIds: string[]): Promise<void> {
   if (modIds.length === 0) {
     return Promise.resolve();
   }
@@ -50,9 +41,7 @@ export function removeMods(
   };
 
   return Promise.resolve(
-    toPromise((cb) =>
-      api.events.emit("remove-mods", gameId, modIds, cb, { progressCB }),
-    ),
+    toPromise((cb) => api.events.emit("remove-mods", gameId, modIds, cb, { progressCB })),
   )
     .then(() => {
       api.events.emit("mods-enabled", modIds, false, gameId);

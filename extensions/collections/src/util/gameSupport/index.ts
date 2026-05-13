@@ -1,9 +1,9 @@
-import * as gamebryo from "./gamebryo";
-
 import { types } from "vortex-api";
+
 import { ICollection } from "../../types/ICollection";
 import { IExtendedInterfaceProps } from "../../types/IExtendedInterfaceProps";
 import { IGameSupportEntry } from "../../types/IGameSupportEntry";
+import * as gamebryo from "./gamebryo";
 
 const gameSupport: { [gameId: string]: IGameSupportEntry } = {
   skyrim: {
@@ -70,17 +70,8 @@ export function generateGameSpecifics(
   modIds: string[],
   mods: { [modId: string]: types.IMod },
 ): Promise<any> {
-  if (
-    gameSupport[gameId] !== undefined &&
-    gameSupport[gameId].generator !== undefined
-  ) {
-    return gameSupport[gameId].generator(
-      state,
-      gameId,
-      stagingPath,
-      modIds,
-      mods,
-    );
+  if (gameSupport[gameId] !== undefined && gameSupport[gameId].generator !== undefined) {
+    return gameSupport[gameId].generator(state, gameId, stagingPath, modIds, mods);
   } else {
     return Promise.resolve({});
   }
@@ -92,19 +83,14 @@ export function parseGameSpecifics(
   collection: ICollection,
   collectionMod: types.IMod,
 ): Promise<void> {
-  if (
-    gameSupport[gameId] !== undefined &&
-    gameSupport[gameId].parser !== undefined
-  ) {
+  if (gameSupport[gameId] !== undefined && gameSupport[gameId].parser !== undefined) {
     return gameSupport[gameId].parser(api, gameId, collection, collectionMod);
   } else {
     return Promise.resolve();
   }
 }
 
-export function getInterface(
-  gameId: string,
-): React.ComponentType<IExtendedInterfaceProps> {
+export function getInterface(gameId: string): React.ComponentType<IExtendedInterfaceProps> {
   if (gameSupport[gameId] === undefined) {
     return null;
   } else {

@@ -5,8 +5,7 @@ const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
 const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
 const path = require("node:path");
 
-const mode =
-    process.env.NODE_ENV === "production" ? "production" : "development";
+const mode = process.env.NODE_ENV === "production" ? "production" : "development";
 
 const plugins = [
     new webpack.DefinePlugin({
@@ -36,12 +35,7 @@ const config = {
     output: {
         libraryTarget: "commonjs2",
         filename: "[name].js",
-        path: path.resolve(
-            __dirname,
-            "..",
-            "main",
-            mode === "production" ? "dist" : "out",
-        ),
+        path: path.resolve(__dirname, "..", "main", mode === "production" ? "dist" : "out"),
     },
     plugins: plugins,
     resolve: {

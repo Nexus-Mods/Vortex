@@ -1,14 +1,14 @@
-import Toggle from "../../../controls/Toggle";
-import type { IState } from "../../../types/IState";
-import { ComponentEx } from "../../../controls/ComponentEx";
-import { setCleanupOnDeploy } from "../actions/settings";
-
 import * as React from "react";
 import { ControlLabel, FormGroup, HelpBlock } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
+
+import { ComponentEx } from "../../../controls/ComponentEx";
+import Toggle from "../../../controls/Toggle";
+import type { IState } from "../../../types/IState";
+import { setCleanupOnDeploy } from "../actions/settings";
 
 export interface IBaseProps {}
 
@@ -60,12 +60,9 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, null, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
-    onSetCleanupOnDeploy: (enable: boolean) =>
-      dispatch(setCleanupOnDeploy(enable)),
+    onSetCleanupOnDeploy: (enable: boolean) => dispatch(setCleanupOnDeploy(enable)),
   };
 }
 

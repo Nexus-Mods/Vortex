@@ -1,5 +1,5 @@
-import * as settingsActions from "../extensions/mod_management/actions/settings";
 import * as modsActions from "../extensions/mod_management/actions/mods";
+import * as settingsActions from "../extensions/mod_management/actions/settings";
 
 describe("setPath", () => {
   it("creates the correct action", () => {
@@ -53,9 +53,7 @@ describe("setModState", () => {
 
 describe("setModInstallationPath", () => {
   it("creates the correct action", () => {
-    expect(
-      modsActions.setModInstallationPath("gameId1", "modId1", "installPath1"),
-    ).toEqual({
+    expect(modsActions.setModInstallationPath("gameId1", "modId1", "installPath1")).toEqual({
       error: false,
       type: "SET_MOD_INSTALLATION_PATH",
       payload: {
@@ -69,9 +67,7 @@ describe("setModInstallationPath", () => {
 
 describe("setModAttribute", () => {
   it("creates the correct action", () => {
-    expect(
-      modsActions.setModAttribute("gameId1", "modId1", "attribute1", "value1"),
-    ).toEqual({
+    expect(modsActions.setModAttribute("gameId1", "modId1", "attribute1", "value1")).toEqual({
       error: false,
       type: "SET_MOD_ATTRIBUTE",
       payload: {

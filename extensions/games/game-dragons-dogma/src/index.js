@@ -39,9 +39,7 @@ const ROM_CONTENTS = [
 ];
 
 function findGame() {
-  return util.steam
-    .findByName("Dragon's Dogma: Dark Arisen")
-    .then((game) => game.gamePath);
+  return util.steam.findByName("Dragon's Dogma: Dark Arisen").then((game) => game.gamePath);
 }
 
 function modPath() {
@@ -209,9 +207,7 @@ function migrate101(api, oldVersion) {
                 return fs.moveAsync(file, newFilePath);
               }).then(() => {
                 if (filtered.dirs !== undefined) {
-                  const sorted = filtered.dirs.sort(
-                    (a, b) => b.length - a.length,
-                  );
+                  const sorted = filtered.dirs.sort((a, b) => b.length - a.length);
                   return Promise.each(sorted, (dir) => fs.removeAsync(dir));
                 }
               }),
@@ -236,10 +232,7 @@ function migrate101(api, oldVersion) {
 // if merged. E.g. texture/mesh replacers affecting the same armor wouldn't.
 // I further found that merging bbsrpg_core.arc somehow breaks the number one mod on the site,
 // haven't figured out why yet.
-const mergeNames = [
-  "game_main.arc",
-  "title.arc" /*, 'bbsrpg_core.arc', 'bbs_rpg.arc'*/,
-];
+const mergeNames = ["game_main.arc", "title.arc" /*, 'bbsrpg_core.arc', 'bbs_rpg.arc'*/];
 
 function main(context) {
   context.requireExtension("mtframework-arc-support");
@@ -248,8 +241,7 @@ function main(context) {
     id: GAME_ID,
     name: "Dragon's Dogma",
     mergeMods: true,
-    mergeArchive: (filePath) =>
-      mergeNames.includes(path.basename(filePath.toLowerCase())),
+    mergeArchive: (filePath) => mergeNames.includes(path.basename(filePath.toLowerCase())),
     queryPath: findGame,
     queryModPath: modPath,
     logo: "gameart.jpg",
@@ -300,8 +292,7 @@ function reportInvalidMod(
             "for this game, and probably will not install correctly. Are you sure you want " +
             "to proceed?",
           parameters: {
-            archiveName:
-              archivePath !== undefined ? path.basename(archivePath) : "",
+            archiveName: archivePath !== undefined ? path.basename(archivePath) : "",
           },
         },
         [

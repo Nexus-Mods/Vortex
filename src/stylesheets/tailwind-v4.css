@@ -22,8 +22,8 @@
  * - container: Tailwind's responsive container conflicts with Bootstrap's grid container
  * - collapse: Tailwind's `visibility: collapse` overrides Bootstrap's collapse component
  */
-@source not inline('container');
-@source not inline('collapse');
+@source not inline("container");
+@source not inline("collapse");
 
 /* Make `dark:` respond to a `.dark` class on <html> or parent element */
 @variant dark (.dark &);

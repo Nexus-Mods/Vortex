@@ -1,13 +1,12 @@
-import type { TOptions, i18n } from "i18next";
+import * as path from "path";
 
 import Bluebird from "bluebird";
+import type { TOptions, i18n } from "i18next";
 import I18next from "i18next";
 import FSBackend from "i18next-fs-backend";
-import * as path from "path";
 import { initReactI18next } from "react-i18next";
 
 import type { IExtension } from "../types/extensions";
-
 import * as fs from "./fs";
 import getVortexPath from "./getVortexPath";
 import { log } from "./log";
@@ -16,8 +15,7 @@ type TFunction = typeof I18next.t;
 
 let debugging = false;
 let currentLanguage = "en";
-const fallbackTFunc: TFunction = (str) =>
-  Array.isArray(str) ? str[0].toString() : str.toString();
+const fallbackTFunc: TFunction = (str) => (Array.isArray(str) ? str[0].toString() : str.toString());
 
 let actualT: TFunction = fallbackTFunc;
 
@@ -142,10 +140,7 @@ class HighlightPP {
  * @param {string} language
  * @returns {I18next.I18n}
  */
-function init(
-  language: string,
-  translationExts: () => IExtension[],
-): Bluebird<IInitResult> {
+function init(language: string, translationExts: () => IExtension[]): Bluebird<IInitResult> {
   // reset to english if the language isn't valid
   try {
     new Date().toLocaleString(language);
@@ -184,8 +179,7 @@ function init(
       keySeparator: "::",
 
       debug: false,
-      postProcess:
-        process.env.HIGHLIGHT_I18N === "true" ? "HighlightPP" : false,
+      postProcess: process.env.HIGHLIGHT_I18N === "true" ? "HighlightPP" : false,
 
       react: {
         // afaict this is simply broken at this time. With this enabled the React.Suspense will
@@ -237,10 +231,7 @@ export function getCurrentLanguage() {
   return currentLanguage;
 }
 
-export function changeLanguage(
-  lng: string,
-  cb?: (err: Error) => void,
-): Promise<TFunction> {
+export function changeLanguage(lng: string, cb?: (err: Error) => void): Promise<TFunction> {
   currentLanguage = lng;
   return I18next.changeLanguage(lng, cb);
 }

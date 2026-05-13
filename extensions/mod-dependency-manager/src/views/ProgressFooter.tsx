@@ -3,6 +3,7 @@ import { TFunction } from "react-i18next";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import { Spinner, tooltip, util } from "vortex-api";
+
 import { NAMESPACE } from "../statics";
 
 interface IBaseProps {
@@ -32,9 +33,7 @@ const ProgressFooter = (props: IProps) => {
 
 function mapStateToProps(state: any): IConnectedProps {
   return {
-    working:
-      util.getSafe(state, ["session", "base", "activity", "mods"], []).length >
-      0,
+    working: util.getSafe(state, ["session", "base", "activity", "mods"], []).length > 0,
   };
 }
 

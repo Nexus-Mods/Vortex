@@ -1,26 +1,19 @@
+import * as Redux from "redux";
+import { actions, selectors, types, util } from "vortex-api";
+
 /* eslint-disable */
 import { MOD_TYPE } from "./constants";
 import {
   createCollectionFromProfile,
   showQuickCollectionRestrictionsDialog,
 } from "./util/transformCollection";
-
-import * as Redux from "redux";
-import { actions, selectors, types, util } from "vortex-api";
-
 import { uploadCollection } from "./util/util";
 
-export async function initFromProfile(
-  api: types.IExtensionApi,
-  profileId?: string,
-) {
+export async function initFromProfile(api: types.IExtensionApi, profileId?: string) {
   try {
     let forcedName: string;
     const isQuickCollection = profileId === undefined;
-    if (
-      isQuickCollection &&
-      selectors.activeProfile(api.getState()) === undefined
-    ) {
+    if (isQuickCollection && selectors.activeProfile(api.getState()) === undefined) {
       // Should never happen - quick collection button shouldn't even appear if there's no active profile
       //  but lets just put this here.
       throw new util.ProcessCanceled("No active profile");
@@ -37,8 +30,11 @@ export async function initFromProfile(
       })}`;
     }
 
-    const { id, name, updated, wantsToUpload } =
-      await createCollectionFromProfile(api, profileId, forcedName);
+    const { id, name, updated, wantsToUpload } = await createCollectionFromProfile(
+      api,
+      profileId,
+      forcedName,
+    );
     if (isQuickCollection) {
       const state = api.getState();
       const activeGameId = selectors.activeGameId(state);
@@ -91,19 +87,13 @@ export async function initFromProfile(
 }
 
 const collections = (mods: { [modId: string]: types.IMod }) => {
-  const isWorkshopCollection = (mod) =>
-    mod.type === MOD_TYPE && mod.attributes?.editable === true;
+  const isWorkshopCollection = (mod) => mod.type === MOD_TYPE && mod.attributes?.editable === true;
   return Object.values(mods)
     .filter(isWorkshopCollection)
-    .map(
-      (coll) => new Set((coll.rules ?? []).map((rule) => rule.reference.id)),
-    );
+    .map((coll) => new Set((coll.rules ?? []).map((rule) => rule.reference.id)));
 };
 
-export function addCollectionCondition(
-  api: types.IExtensionApi,
-  instanceIds: string[],
-) {
+export function addCollectionCondition(api: types.IExtensionApi, instanceIds: string[]) {
   const state = api.getState();
   const gameId = selectors.activeGameId(state);
   const mods = state.persistent.mods[gameId];
@@ -112,18 +102,14 @@ export function addCollectionCondition(
     collections(mods).find((ruleSet) => {
       // only offer the option if there is at least one mod not assigned to a collection
       return (
-        instanceIds.find(
-          (modId) => mods[modId].type !== MOD_TYPE && !ruleSet.has(modId),
-        ) !== undefined
+        instanceIds.find((modId) => mods[modId].type !== MOD_TYPE && !ruleSet.has(modId)) !==
+        undefined
       );
     }) !== undefined
   );
 }
 
-export function removeCollectionCondition(
-  api: types.IExtensionApi,
-  instanceIds: string[],
-) {
+export function removeCollectionCondition(api: types.IExtensionApi, instanceIds: string[]) {
   const state = api.getState();
   const gameId = selectors.activeGameId(state);
   const mods = state.persistent.mods[gameId];
@@ -139,27 +125,19 @@ export function alreadyIncluded(rules, modId): boolean {
   return rules?.find?.((rule) => rule.reference.id === modId) !== undefined;
 }
 
-export function addCollectionAction(
-  api: types.IExtensionApi,
-  instanceIdsIn: string[],
-) {
+export function addCollectionAction(api: types.IExtensionApi, instanceIdsIn: string[]) {
   const state = api.getState();
   const gameId = selectors.activeGameId(state);
 
   const mods = state.persistent.mods[gameId];
 
   // Not sure why this would happen but maybe if the table uses a cache
-  const instanceIds = instanceIdsIn.filter(
-    (modId) => mods[modId] !== undefined,
-  );
+  const instanceIds = instanceIdsIn.filter((modId) => mods[modId] !== undefined);
 
   const filtered = instanceIds.filter((modId) => mods[modId].type !== MOD_TYPE);
 
   const collections = Object.keys(mods).filter((collectionId) => {
-    if (
-      mods[collectionId].type !== MOD_TYPE ||
-      mods[collectionId].attributes?.editable !== true
-    ) {
+    if (mods[collectionId].type !== MOD_TYPE || mods[collectionId].attributes?.editable !== true) {
       return false;
     }
 
@@ -167,9 +145,7 @@ export function addCollectionAction(
 
     // only offer the option if there is at least one mod selected that is not
     // already in that collection
-    return (
-      filtered.find((modId) => !alreadyIncluded(rules, modId)) !== undefined
-    );
+    return filtered.find((modId) => !alreadyIncluded(rules, modId)) !== undefined;
   });
 
   const sortAlphabetically = (modIds: string[]) => {
@@ -188,9 +164,7 @@ export function addCollectionAction(
       {
         text: "Choose which collection you want the selected mods to be added",
         message: sortAlphabetically(filtered)
-          .map((modId) =>
-            util.renderModName(mods[modId], { version: true, variant: true }),
-          )
+          .map((modId) => util.renderModName(mods[modId], { version: true, variant: true }))
           .join("\n"),
         choices: sortAlphabetically(collections).map((modId, idx) => ({
           id: modId,
@@ -202,9 +176,7 @@ export function addCollectionAction(
     )
     .then((result: types.IDialogResult) => {
       if (result.action === "Add") {
-        const collectionId = Object.keys(result.input).find(
-          (target) => result.input[target],
-        );
+        const collectionId = Object.keys(result.input).find((target) => result.input[target]);
         if (mods[collectionId] === undefined) {
           // not entirely sure how this could happen
           return;
@@ -213,10 +185,7 @@ export function addCollectionAction(
         util.batchDispatch(
           api.store,
           filtered.reduce((prev: Redux.Action[], modId: string) => {
-            if (
-              !alreadyIncluded(rules, modId) &&
-              mods[modId].type !== MOD_TYPE
-            ) {
+            if (!alreadyIncluded(rules, modId) && mods[modId].type !== MOD_TYPE) {
               prev.push(
                 actions.addModRule(gameId, collectionId, {
                   type: "requires",
@@ -233,27 +202,19 @@ export function addCollectionAction(
     });
 }
 
-export function removeCollectionAction(
-  api: types.IExtensionApi,
-  instanceIds: string[],
-) {
+export function removeCollectionAction(api: types.IExtensionApi, instanceIds: string[]) {
   const state = api.getState();
   const gameId = selectors.activeGameId(state);
   const mods = state.persistent.mods[gameId];
   const collections = Object.keys(mods).filter((collectionId) => {
-    if (
-      mods[collectionId].type !== MOD_TYPE ||
-      mods[collectionId].attributes?.editable !== true
-    ) {
+    if (mods[collectionId].type !== MOD_TYPE || mods[collectionId].attributes?.editable !== true) {
       return false;
     }
 
     const rules = mods[collectionId].rules ?? [];
 
     // only offer the option if there is at least one mod assigned to a collection
-    return (
-      instanceIds.find((modId) => alreadyIncluded(rules, modId)) !== undefined
-    );
+    return instanceIds.find((modId) => alreadyIncluded(rules, modId)) !== undefined;
   });
 
   return api
@@ -262,9 +223,7 @@ export function removeCollectionAction(
       "Remove Mods from Collection",
       {
         text: "Please select the (modifiable) collection to remove the mods from",
-        message: instanceIds
-          .map((modId) => util.renderModName(mods[modId]))
-          .join("\n"),
+        message: instanceIds.map((modId) => util.renderModName(mods[modId])).join("\n"),
         choices: collections.map((modId, idx) => ({
           id: modId,
           text: util.renderModName(mods[modId]),
@@ -275,21 +234,15 @@ export function removeCollectionAction(
     )
     .then((result: types.IDialogResult) => {
       if (result.action === "Remove") {
-        const collectionId = Object.keys(result.input).find(
-          (target) => result.input[target],
-        );
+        const collectionId = Object.keys(result.input).find((target) => result.input[target]);
         const rules = mods[collectionId].rules ?? [];
 
         util.batchDispatch(
           api.store,
           instanceIds.reduce((prev: Redux.Action[], modId: string) => {
-            const ruleToRemove = rules.find(
-              (rule) => rule.reference.id === modId,
-            );
+            const ruleToRemove = rules.find((rule) => rule.reference.id === modId);
             if (ruleToRemove !== undefined) {
-              prev.push(
-                actions.removeModRule(gameId, collectionId, ruleToRemove),
-              );
+              prev.push(actions.removeModRule(gameId, collectionId, ruleToRemove));
             }
             return prev;
           }, []),

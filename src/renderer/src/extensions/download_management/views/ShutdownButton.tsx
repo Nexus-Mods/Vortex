@@ -1,4 +1,5 @@
 import * as React from "react";
+
 import ToolbarIcon from "../../../controls/ToolbarIcon";
 import type { TFunction } from "../../../util/i18n";
 import type { IDownload } from "../types/IDownload";
@@ -17,9 +18,7 @@ function ShutdownButton(props: IShutdownButtonProps) {
       icon="onoff"
       text={t("Power off when done")}
       className={shutdownPending ? "toolbar-flash-button" : undefined}
-      disabled={
-        !shutdownPending && Object.keys(activeDownloads ?? {}).length === 0
-      }
+      disabled={!shutdownPending && Object.keys(activeDownloads ?? {}).length === 0}
       onClick={toggleShutdown}
     />
   );

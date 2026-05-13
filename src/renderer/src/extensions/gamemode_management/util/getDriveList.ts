@@ -1,4 +1,5 @@
 import type { list as listT } from "drivelist";
+
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 
 function getDriveList(api: IExtensionApi): Promise<string[]> {

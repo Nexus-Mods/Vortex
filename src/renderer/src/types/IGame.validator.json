@@ -231,13 +231,6 @@
       "type": "string"
     }
   },
-  "required": [
-    "executable",
-    "id",
-    "mergeMods",
-    "name",
-    "queryModPath",
-    "requiredFiles"
-  ],
+  "required": ["executable", "id", "mergeMods", "name", "queryModPath", "requiredFiles"],
   "type": "object"
 }

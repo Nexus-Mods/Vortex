@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import fs from "node:fs";
 import { execSync } from "node:child_process";
+import fs from "node:fs";
 
 const args = process.argv.slice(2);
 
@@ -12,8 +12,7 @@ if (args.length === 0) {
 
 const files = args.filter((arg) => !arg.startsWith("-") && !/^\d+$/.test(arg));
 const copyFlags =
-  args.filter((arg) => arg.startsWith("-") || /^\d+$/.test(arg)).join(" ") ||
-  "-u 1 -f";
+  args.filter((arg) => arg.startsWith("-") || /^\d+$/.test(arg)).join(" ") || "-u 1 -f";
 
 const missingFiles = [];
 

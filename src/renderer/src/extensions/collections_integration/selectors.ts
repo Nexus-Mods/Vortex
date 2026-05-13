@@ -1,17 +1,16 @@
+import * as path from "path";
+
 import { createSelector } from "reselect";
+
+import type { IDownload, IMod, IState } from "../../types/IState";
+import { activeDownloads } from "../download_management/selectors";
+import { modsForActiveGame } from "../mod_management/selectors";
 import type {
   ICollectionInstallState,
   ICollectionInstallSession,
   ICollectionModInstallInfo,
   CollectionModStatus,
 } from "./types";
-
-import * as path from "path";
-
-import { modsForActiveGame } from "../mod_management/selectors";
-
-import type { IDownload, IMod, IState } from "../../types/IState";
-import { activeDownloads } from "../download_management/selectors";
 
 /**
  * Selectors for the installTracking reducer
@@ -41,9 +40,7 @@ export const getCollectionActiveSession = (
  * Get the session ID of the last completed installation
  * @returns The last active session ID or undefined
  */
-export const getCollectionLastActiveSessionId = (
-  state: IState,
-): string | undefined => {
+export const getCollectionLastActiveSessionId = (state: IState): string | undefined => {
   const collectionsState = getCollectionsState(state);
   return collectionsState?.lastActiveSessionId;
 };
@@ -100,10 +97,7 @@ export const hasCollectionActiveSession = (state: IState): boolean => {
  * @param collectionId The collection ID to check
  * @returns True if the collection is being installed
  */
-export const isCollectionInstalling = (
-  state: IState,
-  collectionId: string,
-): boolean => {
+export const isCollectionInstalling = (state: IState, collectionId: string): boolean => {
   const session = getCollectionActiveSession(state);
   return session?.collectionId === collectionId;
 };
@@ -160,9 +154,7 @@ export const getCollectionModByReference = (
 
   // First try to find by modId if provided (most direct match)
   if (searchParams.modId) {
-    const byModId = Object.values(mods).find(
-      (mod) => mod.modId === searchParams.modId,
-    );
+    const byModId = Object.values(mods).find((mod) => mod.modId === searchParams.modId);
     if (byModId) return byModId;
   }
 
@@ -184,14 +176,9 @@ export const getCollectionModByReference = (
 
     // Check each available identifier
     if (searchParams.tag && ref.tag === searchParams.tag) return true;
-    if (searchParams.fileMD5 && ref.fileMD5 === searchParams.fileMD5)
-      return true;
-    if (searchParams.fileId && ref.repo?.fileId === searchParams.fileId)
-      return true;
-    if (
-      searchParams.logicalFileName &&
-      ref.logicalFileName === searchParams.logicalFileName
-    )
+    if (searchParams.fileMD5 && ref.fileMD5 === searchParams.fileMD5) return true;
+    if (searchParams.fileId && ref.repo?.fileId === searchParams.fileId) return true;
+    if (searchParams.logicalFileName && ref.logicalFileName === searchParams.logicalFileName)
       return true;
 
     return false;
@@ -215,9 +202,7 @@ export const getCollectionModsByStatus = (
  * Get all required mods from the active session
  * @returns Array of required mods
  */
-export const getCollectionRequiredMods = (
-  state: IState,
-): ICollectionModInstallInfo[] => {
+export const getCollectionRequiredMods = (state: IState): ICollectionModInstallInfo[] => {
   const mods = getCollectionActiveSessionMods(state);
   return Object.values(mods).filter((mod) => mod.type === "requires");
 };
@@ -226,9 +211,7 @@ export const getCollectionRequiredMods = (
  * Get all optional/recommended mods from the active session
  * @returns Array of optional mods
  */
-export const getCollectionOptionalMods = (
-  state: IState,
-): ICollectionModInstallInfo[] => {
+export const getCollectionOptionalMods = (state: IState): ICollectionModInstallInfo[] => {
   const mods = getCollectionActiveSessionMods(state);
   return Object.values(mods).filter((mod) => mod.type === "recommends");
 };
@@ -264,9 +247,7 @@ export const getCollectionModsForPhase = (
   phase: number,
 ): ICollectionModInstallInfo[] => {
   const mods = getCollectionActiveSessionMods(state);
-  return Object.values(mods).filter(
-    (mod) => (mod.rule?.extra?.phase ?? 0) === phase,
-  );
+  return Object.values(mods).filter((mod) => (mod.rule?.extra?.phase ?? 0) === phase);
 };
 
 /**
@@ -318,20 +299,13 @@ export const getCollectionInstallProgress = createSelector(
           (mod: ICollectionModInstallInfo) => mod.type === "requires",
         )
       : [];
-    const installedRequired = requiredMods.filter(
-      (mod) => mod.status === "installed",
-    ).length;
+    const installedRequired = requiredMods.filter((mod) => mod.status === "installed").length;
     const completedRequired = requiredMods.filter(
-      (mod) =>
-        mod.status === "installed" ||
-        mod.status === "failed" ||
-        mod.status === "skipped",
+      (mod) => mod.status === "installed" || mod.status === "failed" || mod.status === "skipped",
     ).length;
 
     const installProgress =
-      session.totalRequired > 0
-        ? Math.round((installedRequired / session.totalRequired) * 100)
-        : 0;
+      session.totalRequired > 0 ? Math.round((installedRequired / session.totalRequired) * 100) : 0;
 
     const isComplete = completedRequired >= session.totalRequired;
 
@@ -361,11 +335,7 @@ export const isCollectionModPresent = createSelector(
     collectionSlug: string,
   ): boolean => {
     const hasDownload = Object.values(downloads).some((dl) => {
-      return (
-        dl &&
-        dl.modInfo &&
-        dl.modInfo.attributes?.collectionSlug === collectionSlug
-      );
+      return dl && dl.modInfo && dl.modInfo.attributes?.collectionSlug === collectionSlug;
     });
     const hasMod = Object.values(mods).some(
       (mod) =>
@@ -442,9 +412,7 @@ export const getCollectionStatusBreakdown = createSelector(
  * Get mods that are currently in progress (downloading or installing)
  * @returns Array of mods that are actively being processed
  */
-export const getCollectionModsInProgress = (
-  state: IState,
-): ICollectionModInstallInfo[] => {
+export const getCollectionModsInProgress = (state: IState): ICollectionModInstallInfo[] => {
   const mods = getCollectionActiveSessionMods(state);
   return Object.values(mods).filter(
     (mod) => mod.status === "downloading" || mod.status === "installing",
@@ -455,9 +423,7 @@ export const getCollectionModsInProgress = (
  * Get mods that are waiting to be processed
  * @returns Array of mods with 'pending' or 'downloaded' status
  */
-export const getCollectionPendingMods = (
-  state: IState,
-): ICollectionModInstallInfo[] => {
+export const getCollectionPendingMods = (state: IState): ICollectionModInstallInfo[] => {
   const mods = getCollectionActiveSessionMods(state);
   return Object.values(mods).filter(
     (mod) => mod.status === "pending" || mod.status === "downloaded",
@@ -468,15 +434,10 @@ export const getCollectionPendingMods = (
  * Get mods that have completed (successfully or not)
  * @returns Array of mods with 'installed', 'failed', or 'skipped' status
  */
-export const getCollectionCompletedMods = (
-  state: IState,
-): ICollectionModInstallInfo[] => {
+export const getCollectionCompletedMods = (state: IState): ICollectionModInstallInfo[] => {
   const mods = getCollectionActiveSessionMods(state);
   return Object.values(mods).filter(
-    (mod) =>
-      mod.status === "installed" ||
-      mod.status === "failed" ||
-      mod.status === "skipped",
+    (mod) => mod.status === "installed" || mod.status === "failed" || mod.status === "skipped",
   );
 };
 
@@ -485,10 +446,7 @@ export const getCollectionCompletedMods = (
  * @param phase The phase number to check
  * @returns True if all required mods in the phase are completed
  */
-export const isCollectionPhaseComplete = (
-  state: IState,
-  phase: number,
-): boolean => {
+export const isCollectionPhaseComplete = (state: IState, phase: number): boolean => {
   const phaseMods = getCollectionModsForPhase(state, phase);
   const requiredPhaseMods = phaseMods.filter((mod) => mod.type === "requires");
 
@@ -497,10 +455,7 @@ export const isCollectionPhaseComplete = (
   }
 
   return requiredPhaseMods.every(
-    (mod) =>
-      mod.status === "installed" ||
-      mod.status === "failed" ||
-      mod.status === "skipped",
+    (mod) => mod.status === "installed" || mod.status === "failed" || mod.status === "skipped",
   );
 };
 
@@ -558,9 +513,7 @@ export const getCollectionPhaseProgress = createSelector(
       const optional = phaseMods.filter((m) => m.type === "recommends");
       const installed = required.filter((m) => m.status === "installed").length;
       const failed = required.filter((m) => m.status === "failed").length;
-      const skipped = required.filter(
-        (m) => m.status === "skipped" || m.rule.ignored,
-      ).length;
+      const skipped = required.filter((m) => m.status === "skipped" || m.rule.ignored).length;
       const pending = required.filter(
         (m) =>
           m.status === "pending" ||
@@ -569,10 +522,7 @@ export const getCollectionPhaseProgress = createSelector(
           m.status === "installing",
       ).length;
       const completed = installed + failed + skipped;
-      const progress =
-        required.length > 0
-          ? Math.round((completed / required.length) * 100)
-          : 100;
+      const progress = required.length > 0 ? Math.round((completed / required.length) * 100) : 100;
       const isComplete = completed >= required.length;
 
       return {

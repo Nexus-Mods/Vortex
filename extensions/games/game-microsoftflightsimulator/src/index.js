@@ -20,9 +20,7 @@ function toWordExp(input) {
 
 function findGame() {
   // game is currently available on Steam and the Microsoft store
-  return util.GameStoreHelper.findByAppId([MS_APPID, STEAM_APPID]).then(
-    (disco) => disco.gamePath,
-  );
+  return util.GameStoreHelper.findByAppId([MS_APPID, STEAM_APPID]).then((disco) => disco.gamePath);
 }
 
 function localCacheMissingTest(...candidates) {
@@ -48,12 +46,7 @@ function officialDataMissingTest(...candidates) {
 
 function findLocalCache() {
   const makeCachePath = (appName) =>
-    path.join(
-      process.env.LOCALAPPDATA,
-      "packages",
-      `${appName}_${PACKAGE_ID}`,
-      "LocalCache",
-    );
+    path.join(process.env.LOCALAPPDATA, "packages", `${appName}_${PACKAGE_ID}`, "LocalCache");
 
   const opt1 = makeCachePath(MS_APPID);
   // according to various pages this should exist when installed through Steam
@@ -62,10 +55,7 @@ function findLocalCache() {
   //  FlightSimulator.CFG and UserCfg.opt files are both inside
   //  his roaming folder. Going to keep opt2 just in case that
   //  option is valid for other users.
-  const opt3 = path.join(
-    util.getVortexPath("appData"),
-    "Microsoft Flight Simulator",
-  );
+  const opt3 = path.join(util.getVortexPath("appData"), "Microsoft Flight Simulator");
 
   try {
     fs.statSync(opt1);
@@ -148,19 +138,14 @@ const getPackagesPath = (() => {
         usercfg = parseOPT(path.join(basePath, "UserCfg.opt"));
       } catch (err) {
         if (err.code === "ENOENT") {
-          const roamPath = path.join(
-            util.getVortexPath("appData"),
-            "Microsoft Flight Simulator",
-          );
+          const roamPath = path.join(util.getVortexPath("appData"), "Microsoft Flight Simulator");
           // if the .opt file doesn't exist in that location, this may be steam
           // and it may be in a separate location from the LocalCache dir
           try {
             usercfg = parseOPT(path.join(roamPath, "UserCfg.opt"));
           } catch (innerErr) {
             if (innerErr.code === "ENOENT") {
-              throw new util.SetupError(
-                localCacheMissingTest(basePath, roamPath),
-              );
+              throw new util.SetupError(localCacheMissingTest(basePath, roamPath));
             } else {
               throw err;
             }
@@ -225,9 +210,7 @@ function makeInstallReplacer(api) {
     let possibleTypes = new Set();
     let possibleTargets;
 
-    const filesFiltered = files.filter(
-      (filePath) => !filePath.endsWith(path.sep),
-    );
+    const filesFiltered = files.filter((filePath) => !filePath.endsWith(path.sep));
 
     // first things first, we have to figure out which object (e.g. which aircraft) is being
     // replaced/modified here. For that we go through the list of official files cached earlier
@@ -239,17 +222,13 @@ function makeInstallReplacer(api) {
         const targets = sOfficialFileList[type][fileId];
         if (targets !== undefined) {
           possibleTypes.add(type);
-          const targetIds = targets.map(
-            (iter) => `${iter.type}:${iter.itemId}`,
-          );
+          const targetIds = targets.map((iter) => `${iter.type}:${iter.itemId}`);
           // possible targets are only items that contain _all_ the files in the mod, so
           // what we're interested in is the intersection of targets of each of the files
           if (possibleTargets === undefined) {
             possibleTargets = new Set(targetIds);
           } else {
-            possibleTargets = new Set(
-              [...targetIds].filter((x) => possibleTargets.has(x)),
-            );
+            possibleTargets = new Set([...targetIds].filter((x) => possibleTargets.has(x)));
           }
         }
       });
@@ -261,10 +240,7 @@ function makeInstallReplacer(api) {
     if (possibleTargets === undefined || possibleTargets.size === 0) {
       // not a single file matched anything in the file list? huh, this is probably not a replacer
       // after all, is it?
-      log(
-        "warn",
-        "mod was expected to be a replacer but didn't match any official content",
-      );
+      log("warn", "mod was expected to be a replacer but didn't match any official content");
       return {
         instructions: [
           {
@@ -305,9 +281,7 @@ function makeInstallReplacer(api) {
         },
         [{ label: "Continue" }],
       );
-      possibleTargets = [
-        Object.keys(result.input).find((target) => result.input[target]),
-      ];
+      possibleTargets = [Object.keys(result.input).find((target) => result.input[target])];
     }
 
     // ok, at this point we know which target to install into, either it was clear from the included
@@ -319,9 +293,7 @@ function makeInstallReplacer(api) {
     const mapPathToTarget = (sourcePath, targetId) => {
       const fileId = toFileId(sourcePath);
       if (sOfficialFileList[type][fileId] !== undefined) {
-        const target = sOfficialFileList[type][fileId].find(
-          (iter) => iter.itemId === targetId,
-        );
+        const target = sOfficialFileList[type][fileId].find((iter) => iter.itemId === targetId);
         if (target !== undefined) {
           return target.relPath;
         }
@@ -365,9 +337,7 @@ async function testSupportedReplacer(files, gameId) {
   const supported =
     gameId === GAME_ID &&
     files.find((file) =>
-      ["manifest.json", "layout.json"].includes(
-        path.basename(file).toLowerCase(),
-      ),
+      ["manifest.json", "layout.json"].includes(path.basename(file).toLowerCase()),
     ) === undefined;
   return Promise.resolve({
     supported,
@@ -461,9 +431,7 @@ async function setup() {
   }
 
   if (officialItems === undefined) {
-    return Promise.reject(
-      new util.SetupError(officialDataMissingTest(...candidates)),
-    );
+    return Promise.reject(new util.SetupError(officialDataMissingTest(...candidates)));
   }
 
   for (let item of officialItems) {
@@ -477,11 +445,7 @@ async function setup() {
       await walk(itemPath, (entries) => {
         for (let entry of entries) {
           util
-            .setdefault(
-              sOfficialFileList[type],
-              path.basename(entry.filePath).toUpperCase(),
-              [],
-            )
+            .setdefault(sOfficialFileList[type], path.basename(entry.filePath).toUpperCase(), [])
             .push({
               type,
               itemId: name,
@@ -503,10 +467,7 @@ function makeTestMerge(api) {
       return undefined;
     }
 
-    const installPath = selectors.installPathForGame(
-      api.store.getState(),
-      game.id,
-    );
+    const installPath = selectors.installPathForGame(api.store.getState(), game.id);
     return {
       baseFiles: () => [],
       filter: (filePath) => isConfig(filePath),
@@ -517,12 +478,7 @@ function makeTestMerge(api) {
 // as far as I can tell, the game doesn't seem to _use_ ui_manufacturer from liveries,
 // always seems to use the one from FLTSIM.0. Not sure if this is a bug and gets fixed
 // at some point, but it kind of makes sense
-const LOCALIZATION_KEYS = [
-  "description",
-  "ui_manufacturer",
-  "ui_type",
-  "ui_variation",
-];
+const LOCALIZATION_KEYS = ["description", "ui_manufacturer", "ui_type", "ui_variation"];
 
 function renameLocKeys(obj, locId) {
   obj["vortex_merged"] = locId;
@@ -573,10 +529,7 @@ async function mergeAircraft(mergePath, incomingPath, locId, firstMerge) {
       if (oldId !== "0" && existingSection === undefined) {
         locTexts.push(...renameLocKeys(incomingData.data[section], locId));
         fltsims[`FLTSIM.${offset++}`] = incomingData.data[section];
-      } else if (
-        existingSection !== undefined &&
-        existingSection["vortex_merged"] == undefined
-      ) {
+      } else if (existingSection !== undefined && existingSection["vortex_merged"] == undefined) {
         locTexts.push(...renameLocKeys(incomingData.data[section], locId));
         fltsims[`FLTSIM.${oldId}`] = incomingData.data[section];
       }
@@ -610,9 +563,7 @@ async function mergeLocalizations(modPath, mergePath, texts, locId) {
   await Promise.all(
     locPakNames.map(async (locPakName) => {
       try {
-        let locPakIn = JSON.parse(
-          await fs.readFileAsync(path.join(modPath, locPakName)),
-        );
+        let locPakIn = JSON.parse(await fs.readFileAsync(path.join(modPath, locPakName)));
         let locPakOut = {
           LocalisationPackage: {
             Language: locPakIn.LocalisationPackage.Language,
@@ -622,9 +573,7 @@ async function mergeLocalizations(modPath, mergePath, texts, locId) {
 
         try {
           // try reading existing locpak, doesn't matter if it's missing
-          locPakOut = JSON.parse(
-            await fs.readFileAsync(path.join(mergePath, locPakName)),
-          );
+          locPakOut = JSON.parse(await fs.readFileAsync(path.join(mergePath, locPakName)));
         } catch (err) {}
 
         texts.forEach((textId) => {
@@ -647,33 +596,22 @@ async function mergeLocalizations(modPath, mergePath, texts, locId) {
 
 function makeMerge(api) {
   return async (filePath, mergePath) => {
-    const installPath = selectors.installPathForGame(
-      api.store.getState(),
-      GAME_ID,
-    );
+    const installPath = selectors.installPathForGame(api.store.getState(), GAME_ID);
 
-    const relPath = path
-      .relative(installPath, filePath)
-      .split(path.sep)
-      .slice(1)
-      .join(path.sep);
+    const relPath = path.relative(installPath, filePath).split(path.sep).slice(1).join(path.sep);
     const targetPath = path.join(mergePath, relPath);
     const layoutPath = path.join(mergePath, "layout.json");
 
     let layout = { content: [] };
 
     try {
-      layout = JSON.parse(
-        await fs.readFileAsync(layoutPath, { encoding: "utf-8" }),
-      );
+      layout = JSON.parse(await fs.readFileAsync(layoutPath, { encoding: "utf-8" }));
       firstMerge = false;
     } catch (err) {
       // ignore
     }
 
-    await fs.ensureDirWritableAsync(path.dirname(targetPath), () =>
-      Promise.resolve(),
-    );
+    await fs.ensureDirWritableAsync(path.dirname(targetPath), () => Promise.resolve());
 
     let locTexts = [];
     const locId = shortid.generate();
@@ -711,9 +649,7 @@ function makeMerge(api) {
         locTexts,
         locId,
       );
-      layout.content = layout.content.filter(
-        (iter) => !locFiles.includes(iter.path),
-      );
+      layout.content = layout.content.filter((iter) => !locFiles.includes(iter.path));
       layout.content.push(
         ...(await Promise.all(
           locFiles.map(async (locFileName) => {
@@ -738,10 +674,7 @@ function makeMerge(api) {
       });
       await fs.writeFileAsync(layoutPath, JSON.stringify(layout, undefined, 2));
     } catch (err) {
-      api.showErrorNotification(
-        "failed to update layout.json of merge mod",
-        err,
-      );
+      api.showErrorNotification("failed to update layout.json of merge mod", err);
     }
   };
 }
@@ -763,11 +696,7 @@ function loadOrderPrefix(api, mod) {
     return "ZZZ-";
   }
   const profile = selectors.profileById(state, gameProfile);
-  const loadOrder = util.getSafe(
-    state,
-    ["persistent", "loadOrder", profile?.id],
-    {},
-  );
+  const loadOrder = util.getSafe(state, ["persistent", "loadOrder", profile?.id], {});
   const pos = loadOrder[mod.id]?.pos ?? -1;
   if (pos === -1) {
     return "ZZZ-";
@@ -824,12 +753,7 @@ function main(context) {
     makeInstallReplacer(context.api),
   );
 
-  context.registerInstaller(
-    "msfs-pack",
-    20,
-    testSupportedPack,
-    makeInstallerPack(context.api),
-  );
+  context.registerInstaller("msfs-pack", 20, testSupportedPack, makeInstallerPack(context.api));
 
   context.registerMerge(makeTestMerge(context.api), makeMerge(context.api), "");
 
@@ -848,9 +772,7 @@ function main(context) {
     displayCheckboxes: false,
     callback: (loadOrder) => {
       if (!_.isEqual(prevLoadOrder, loadOrder)) {
-        context.api.store.dispatch(
-          actions.setDeploymentNecessary(GAME_ID, true),
-        );
+        context.api.store.dispatch(actions.setDeploymentNecessary(GAME_ID, true));
         prevLoadOrder = loadOrder;
       }
     },

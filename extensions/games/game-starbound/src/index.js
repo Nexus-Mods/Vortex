@@ -55,10 +55,7 @@ function main(context) {
     queryModPath: () => "mods",
     logo: "gameart.jpg",
     executable: gameExecutable,
-    requiredFiles: [
-      "assets/packed.pak",
-      "assets/user/songs/12 Days Of Christmas.abc",
-    ],
+    requiredFiles: ["assets/packed.pak", "assets/user/songs/12 Days Of Christmas.abc"],
     setup: prepareForModding,
     requiresLauncher,
     environment: {

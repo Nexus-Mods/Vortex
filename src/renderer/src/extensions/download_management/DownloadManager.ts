@@ -1,46 +1,33 @@
-import {
-  HTTPError,
-  ProcessCanceled,
-  StalledError,
-  UserCanceled,
-} from "../../util/CustomErrors";
+import * as http from "http";
+import * as https from "https";
+import * as path from "path";
+import type * as stream from "stream";
+import * as zlib from "zlib";
+
+import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import Bluebird from "bluebird";
+import * as contentDisposition from "content-disposition";
+import * as contentType from "content-type";
+import * as _ from "lodash";
+
+import type { IExtensionApi } from "../../types/api";
+import { HTTPError, ProcessCanceled, StalledError, UserCanceled } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
 import { log } from "../../util/log";
+import { getPreloadApi } from "../../util/preloadAccess";
 import { delayed, INVALID_FILENAME_RE, truthy } from "../../util/util";
+import { setDownloadFilePath } from "./actions/state";
+import FileAssembler from "./FileAssembler";
+import SpeedCalculator from "./SpeedCalculator";
 import type { IChunk } from "./types/IChunk";
 import type { IDownloadOptions } from "./types/IDownload";
 import type { IDownloadJob } from "./types/IDownloadJob";
 import type { IDownloadResult } from "./types/IDownloadResult";
 import type { ProgressCallback } from "./types/ProgressCallback";
-import type {
-  IProtocolHandlers,
-  IResolvedURL,
-  IResolvedURLs,
-} from "./types/ProtocolHandlers";
-
+import type { IProtocolHandlers, IResolvedURL, IResolvedURLs } from "./types/ProtocolHandlers";
 import makeThrottle from "./util/throttle";
 
-import FileAssembler from "./FileAssembler";
-import SpeedCalculator from "./SpeedCalculator";
-import { setDownloadFilePath } from "./actions/state";
-
-import Bluebird from "bluebird";
-import * as contentDisposition from "content-disposition";
-import * as contentType from "content-type";
-import * as http from "http";
-import * as https from "https";
-import * as _ from "lodash";
-import * as path from "path";
-import type * as stream from "stream";
-import * as zlib from "zlib";
-import type { IExtensionApi } from "../../types/api";
-
-import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
-import { getPreloadApi } from "../../util/preloadAccess";
-
-function getCookies(
-  filter: Electron.CookiesGetFilter,
-): Promise<Electron.Cookie[]> {
+function getCookies(filter: Electron.CookiesGetFilter): Promise<Electron.Cookie[]> {
   return getPreloadApi().session.getCookies(filter);
 }
 
@@ -99,9 +86,7 @@ function isHTMLHeader(headers: http.IncomingHttpHeaders) {
   );
 }
 
-function contentTypeStr(
-  input: string | contentType.RequestLike | contentType.ResponseLike,
-) {
+function contentTypeStr(input: string | contentType.RequestLike | contentType.ResponseLike) {
   try {
     return contentType.parse(input).type;
   } catch (err) {
@@ -223,14 +208,11 @@ class DownloadWorker {
         } else if (jobUrl) {
           this.assignJob(job, jobUrl);
         } else {
-          this.handleError(
-            new ProcessCanceled("No URL found for this download"),
-          );
+          this.handleError(new ProcessCanceled("No URL found for this download"));
         }
       })
       .catch((err) => {
-        const isCanceled =
-          err instanceof ProcessCanceled || err instanceof UserCanceled;
+        const isCanceled = err instanceof ProcessCanceled || err instanceof UserCanceled;
         if (!isCanceled) {
           log("error", "DownloadWorker URL resolution failed", {
             workerId: job.workerId || "unknown",
@@ -293,11 +275,7 @@ class DownloadWorker {
   };
 
   public isPending = () => {
-    return (
-      this.mEnded === false &&
-      this.mWriting === false &&
-      this.mJob.received === 0
-    );
+    return this.mEnded === false && this.mWriting === false && this.mJob.received === 0;
   };
 
   public ended = () => {
@@ -427,10 +405,7 @@ class DownloadWorker {
 
     const lib: IHTTP = parsed.protocol === "https:" ? https : http;
 
-    const allCookies = this.formatCookies(
-      electronCookies,
-      this.mJob.extraCookies,
-    );
+    const allCookies = this.formatCookies(electronCookies, this.mJob.extraCookies);
 
     try {
       const headers = {
@@ -511,11 +486,7 @@ class DownloadWorker {
             str = str.pipe(inflate);
           }
         } catch (err) {
-          log(
-            "error",
-            "stream pipeline setup failed",
-            getErrorMessageOrDefault(err),
-          );
+          log("error", "stream pipeline setup failed", getErrorMessageOrDefault(err));
           this.handleError(err);
           return;
         }
@@ -571,10 +542,7 @@ class DownloadWorker {
     }
   };
 
-  private formatCookies(
-    electronCookies: Electron.Cookie[],
-    extraCookies: string[],
-  ): string {
+  private formatCookies(electronCookies: Electron.Cookie[], extraCookies: string[]): string {
     const cookies: string[] = [];
 
     if (electronCookies && electronCookies.length > 0) {
@@ -595,11 +563,7 @@ class DownloadWorker {
   public stalled = () => {
     if (this.mRequest !== undefined) {
       if (this.mStallResets <= 0) {
-        log(
-          "warn",
-          "giving up on download after repeated stalling with no progress",
-          this.mUrl,
-        );
+        log("warn", "giving up on download after repeated stalling with no progress", this.mUrl);
         const stalled = new StalledError(
           `Download stalled for ${STALL_TIMEOUT}ms with no progress (url: ${this.mUrl})`,
         );
@@ -640,10 +604,7 @@ class DownloadWorker {
       is416Error;
 
     // If we've already hit max retries, abort immediately
-    if (
-      isNetworkError &&
-      this.mNetworkRetries >= DownloadWorker.MAX_NETWORK_RETRIES
-    ) {
+    if (isNetworkError && this.mNetworkRetries >= DownloadWorker.MAX_NETWORK_RETRIES) {
       log("warn", "maximum network retries exceeded for chunk", {
         id: this.mJob.workerId,
         retries: this.mNetworkRetries,
@@ -672,9 +633,7 @@ class DownloadWorker {
 
     // For timeout errors, be more permissive - retry even without progress for initial connection issues
     const isTimeoutError =
-      ["ETIMEDOUT", "ESOCKETTIMEDOUT", "ECONNRESET", "ENOTFOUND"].includes(
-        err.code,
-      ) ||
+      ["ETIMEDOUT", "ESOCKETTIMEDOUT", "ECONNRESET", "ENOTFOUND"].includes(err.code) ||
       err.message?.includes("Request timeout") ||
       err.message?.includes("ETIMEDOUT");
 
@@ -792,11 +751,7 @@ class DownloadWorker {
 
   private handleComplete = (str?: stream.Readable) => {
     if (this.mEnded) {
-      log(
-        "debug",
-        "chunk completed but can't write it anymore",
-        JSON.stringify(this.mJob),
-      );
+      log("debug", "chunk completed but can't write it anymore", JSON.stringify(this.mJob));
       return;
     }
     clearTimeout(this.mStallTimer);
@@ -867,9 +822,7 @@ class DownloadWorker {
           // domain-appropriate cookies for the new URL.
           this.mJob.extraCookies = [];
         } else if (response.headers["set-cookie"] !== undefined) {
-          this.mJob.extraCookies = this.mJob.extraCookies.concat(
-            response.headers["set-cookie"],
-          );
+          this.mJob.extraCookies = this.mJob.extraCookies.concat(response.headers["set-cookie"]);
         }
 
         // delay the new request a bit to ensure the old request is completely settled
@@ -888,11 +841,7 @@ class DownloadWorker {
           }, 100);
         });
       } else {
-        const err = new HTTPError(
-          response.statusCode,
-          response.statusMessage,
-          jobUrl,
-        );
+        const err = new HTTPError(response.statusCode, response.statusMessage, jobUrl);
         err["attachLogOnReport"] = true;
         if (response.statusCode === 429) {
           err["allowReport"] = false;
@@ -924,9 +873,7 @@ class DownloadWorker {
       let fileSize = chunkSize;
       if (chunkable) {
         const rangeExp: RegExp = /bytes (\d)*-(\d*)\/(\d*)/i;
-        const sizeMatch: string[] = (
-          response.headers["content-range"] as string
-        ).match(rangeExp);
+        const sizeMatch: string[] = (response.headers["content-range"] as string).match(rangeExp);
         if ((sizeMatch?.length ?? 0) > 1) {
           fileSize = parseInt(sizeMatch[3], 10);
         }
@@ -980,9 +927,7 @@ class DownloadWorker {
   };
 
   private mergeBuffers = (): Buffer => {
-    const res = Buffer.concat(
-      this.mBuffers.map((buffer) => new Uint8Array(buffer)),
-    );
+    const res = Buffer.concat(this.mBuffers.map((buffer) => new Uint8Array(buffer)));
     this.mBuffers = [];
     return res;
   };
@@ -1008,8 +953,7 @@ class DownloadWorker {
         this.mJob.confirmedReceived += len;
 
         // Recalculate confirmed-based fields
-        this.mJob.offset =
-          this.mJob.confirmedOffset + this.mJob.confirmedReceived;
+        this.mJob.offset = this.mJob.confirmedOffset + this.mJob.confirmedReceived;
         this.mJob.size = this.mJob.confirmedSize - this.mJob.confirmedReceived;
       })
       .catch((err) => {
@@ -1234,9 +1178,7 @@ class DownloadManager {
     const busyWorkerIds = Object.keys(this.mBusyWorkers);
     const busyCount = busyWorkerIds.reduce((count, key) => {
       const worker = this.mBusyWorkers[key];
-      return (
-        count + (this.mSlowWorkers[key] == null && !worker.isPending() ? 1 : 0)
-      );
+      return count + (this.mSlowWorkers[key] == null && !worker.isPending() ? 1 : 0);
     }, 0);
     return Math.max(this.mMaxWorkers - busyCount, 0);
   };
@@ -1267,12 +1209,9 @@ class DownloadManager {
     let baseUrl: string;
     try {
       baseUrl = urls[0].toString().split("<")[0];
-      nameTemplate =
-        fileName || decodeURI(path.basename(new URL(baseUrl).pathname));
+      nameTemplate = fileName || decodeURI(path.basename(new URL(baseUrl).pathname));
     } catch (err) {
-      return Bluebird.reject(
-        new ProcessCanceled(`failed to parse url "${baseUrl}"`),
-      );
+      return Bluebird.reject(new ProcessCanceled(`failed to parse url "${baseUrl}"`));
     }
     const destPath = destinationPath || this.mDownloadPath;
     let download: IRunningDownload;
@@ -1281,23 +1220,12 @@ class DownloadManager {
       .then(() =>
         options.redownload === "replace"
           ? fs.removeAsync(path.join(destPath, nameTemplate)).catch((err) => {
-              log(
-                "debug",
-                "failed to remove archive expected to be replaced",
-                err,
-              );
+              log("debug", "failed to remove archive expected to be replaced", err);
               return Bluebird.resolve();
             })
           : Bluebird.resolve(),
       )
-      .then(() =>
-        this.unusedName(
-          destPath,
-          nameTemplate || "deferred",
-          options.redownload,
-          id,
-        ),
-      )
+      .then(() => this.unusedName(destPath, nameTemplate || "deferred", options.redownload, id))
       .then(
         (filePath: string) =>
           new Bluebird<IDownloadResult>((resolve, reject) => {
@@ -1307,17 +1235,11 @@ class DownloadManager {
               tempName: filePath,
               finalName:
                 fileName !== undefined
-                  ? Bluebird.resolve(
-                      path.join(destPath, path.basename(filePath)),
-                    )
+                  ? Bluebird.resolve(path.join(destPath, path.basename(filePath)))
                   : undefined,
               error: false,
               urls,
-              resolvedUrls: this.resolveUrls(
-                urls,
-                nameTemplate,
-                options?.nameHint,
-              ),
+              resolvedUrls: this.resolveUrls(urls, nameTemplate, options?.nameHint),
               options,
               started: new Date(),
               lastProgressSent: 0,
@@ -1376,11 +1298,7 @@ class DownloadManager {
         tempName: filePath,
         error: false,
         urls,
-        resolvedUrls: this.resolveUrls(
-          urls,
-          path.basename(filePath),
-          options?.nameHint,
-        ),
+        resolvedUrls: this.resolveUrls(urls, path.basename(filePath), options?.nameHint),
         options,
         lastProgressSent: 0,
         received,
@@ -1442,10 +1360,7 @@ class DownloadManager {
 
     // stop running workers
     download.chunks.forEach((chunk: IDownloadJob) => {
-      if (
-        chunk.state === "running" &&
-        this.mBusyWorkers[chunk.workerId] !== undefined
-      ) {
+      if (chunk.state === "running" && this.mBusyWorkers[chunk.workerId] !== undefined) {
         this.mBusyWorkers[chunk.workerId].cancel();
       }
     });
@@ -1453,9 +1368,7 @@ class DownloadManager {
     this.cleanupOrphanedPlaceholder(download);
 
     // remove from queue
-    this.mQueue = this.mQueue.filter(
-      (value: IRunningDownload) => value.id !== id,
-    );
+    this.mQueue = this.mQueue.filter((value: IRunningDownload) => value.id !== id);
 
     return true;
   };
@@ -1511,9 +1424,7 @@ class DownloadManager {
     }
 
     // remove from queue
-    this.mQueue = this.mQueue.filter(
-      (value: IRunningDownload) => value.id !== id,
-    );
+    this.mQueue = this.mQueue.filter((value: IRunningDownload) => value.id !== id);
 
     return unfinishedChunks;
   };
@@ -1540,8 +1451,7 @@ class DownloadManager {
     if (!truthy(protocol)) {
       return Bluebird.resolve({ urls: [], meta: {} });
     }
-    const handler =
-      this.mProtocolHandlers[protocol.slice(0, protocol.length - 1)];
+    const handler = this.mProtocolHandlers[protocol.slice(0, protocol.length - 1)];
 
     return handler !== undefined
       ? handler(input, name, friendlyName).then((res) => {
@@ -1576,10 +1486,7 @@ class DownloadManager {
                 return Bluebird.resolve({
                   urls: [...prev.urls, ...resolved.urls],
                   meta: _.merge(prev.meta, resolved.meta),
-                  updatedUrls: [
-                    ...prev.updatedUrls,
-                    resolved.updatedUrl || iter,
-                  ],
+                  updatedUrls: [...prev.updatedUrls, resolved.updatedUrl || iter],
                 });
               })
               .catch(Error, (err) => {
@@ -1611,28 +1518,17 @@ class DownloadManager {
             download.urls = resolved.updatedUrls;
           }
           if (fileNameFromURL === undefined && resolved.urls.length > 0) {
-            const [urlIn, fileName] = resolved.urls[0]
-              .toString()
-              .split("<")[0]
-              .split("|");
+            const [urlIn, fileName] = resolved.urls[0].toString().split("<")[0].split("|");
             fileNameFromURL =
-              fileName !== undefined
-                ? fileName
-                : decodeURI(path.basename(new URL(urlIn).pathname));
+              fileName !== undefined ? fileName : decodeURI(path.basename(new URL(urlIn).pathname));
           }
-          if (
-            !resolved.urls ||
-            resolved.urls.length === 0 ||
-            !resolved.urls[0]
-          ) {
+          if (!resolved.urls || resolved.urls.length === 0 || !resolved.urls[0]) {
             log("error", "URL resolution returned empty or invalid URL list", {
               downloadId: download.id,
               originalUrls: download.urls,
               resolvedUrlCount: resolved.urls?.length || 0,
             });
-            return Bluebird.reject(
-              new ProcessCanceled("Failed to resolve download URL"),
-            );
+            return Bluebird.reject(new ProcessCanceled("Failed to resolve download URL"));
           }
           // Ensure URL is a string, not a URL object (URL objects don't serialize properly through IPC)
           const url = resolved.urls[0];
@@ -1651,12 +1547,7 @@ class DownloadManager {
         this.cancelDownload(download, err);
       },
       responseCB: (size: number, fileName: string, chunkable: boolean) =>
-        this.updateDownload(
-          download,
-          size,
-          fileName || fileNameFromURL,
-          chunkable,
-        ),
+        this.updateDownload(download, size, fileName || fileNameFromURL, chunkable),
     };
   };
 
@@ -1718,9 +1609,7 @@ class DownloadManager {
     const busyWorkerIds = Object.keys(this.mBusyWorkers);
     const busyCount = busyWorkerIds.reduce((count, key) => {
       const worker = this.mBusyWorkers[key];
-      return (
-        count + (this.mSlowWorkers[key] == null && !worker.isPending() ? 1 : 0)
-      );
+      return count + (this.mSlowWorkers[key] == null && !worker.isPending() ? 1 : 0);
     }, 0);
     let freeSpots = Math.max(this.mMaxWorkers - busyCount, 0);
 
@@ -1769,12 +1658,8 @@ class DownloadManager {
         continue;
       }
 
-      const unstartedChunks = queueItem.chunks.filter(
-        (chunk) => chunk.state === "init",
-      );
-      const pausedChunks = queueItem.chunks.filter(
-        (chunk) => chunk.state === "paused",
-      );
+      const unstartedChunks = queueItem.chunks.filter((chunk) => chunk.state === "init");
+      const pausedChunks = queueItem.chunks.filter((chunk) => chunk.state === "paused");
       pausedChunks.forEach((chunk) => (chunk.state = "init"));
       const totalUnstarted = unstartedChunks.concat(pausedChunks);
 
@@ -1798,25 +1683,19 @@ class DownloadManager {
     const multiChunkPromises: Bluebird<void>[] = [];
     for (const queueItem of multiChunkDownloads) {
       if (freeSpots <= 0) break;
-      const finishedChunks = queueItem.chunks.filter(
-        (chunk) => chunk.state === "finished",
-      );
+      const finishedChunks = queueItem.chunks.filter((chunk) => chunk.state === "finished");
 
       // Skip downloads that are already finished (they'll be cleaned up later)
       if (finishedChunks.length === queueItem.chunks.length) {
         continue;
       }
 
-      const pausedChunks = queueItem.chunks.filter(
-        (chunk) => chunk.state === "paused",
-      );
+      const pausedChunks = queueItem.chunks.filter((chunk) => chunk.state === "paused");
       pausedChunks.forEach((chunk) => {
         chunk.state = "init";
       });
 
-      const unstartedChunks = queueItem.chunks.filter(
-        (chunk) => chunk.state === "init",
-      );
+      const unstartedChunks = queueItem.chunks.filter((chunk) => chunk.state === "init");
 
       // Start as many chunks as we have free spots for this download
       const chunksToStart = Math.min(unstartedChunks.length, freeSpots);
@@ -1825,15 +1704,11 @@ class DownloadManager {
           // For multi-chunk downloads, be more resilient - don't fail the entire download
           // if one chunk fails to start, unless it's the first/only chunk
           if (queueItem.chunks.length === 1 || chunkIdx === 0) {
-            log(
-              "error",
-              "failed to start critical chunk for multi-chunk download",
-              {
-                downloadId: queueItem.id,
-                chunkIndex: chunkIdx,
-                error: err.message,
-              },
-            );
+            log("error", "failed to start critical chunk for multi-chunk download", {
+              downloadId: queueItem.id,
+              chunkIndex: chunkIdx,
+              error: err.message,
+            });
             // Don't modify the queue here, let cleanup handle it
             queueItem.failedCB(err);
           } else {
@@ -1863,9 +1738,7 @@ class DownloadManager {
       // Remove downloads that are fully completed or failed from the queue
       this.mQueue = this.mQueue.filter((download) => {
         // Check if all chunks are finished
-        const allChunksFinished = download.chunks.every(
-          (chunk) => chunk.state === "finished",
-        );
+        const allChunksFinished = download.chunks.every((chunk) => chunk.state === "finished");
         // Check if download has any active or pending chunks
         const hasActiveChunks = download.chunks.some(
           (chunk) => chunk.state === "running" || chunk.state === "init",
@@ -1880,8 +1753,7 @@ class DownloadManager {
         // Only remove if:
         // 1. All chunks are finished, OR
         // 2. No active chunks AND no paused chunks with remaining data
-        const shouldRemove =
-          allChunksFinished || (!hasActiveChunks && !hasPausedChunksWithData);
+        const shouldRemove = allChunksFinished || (!hasActiveChunks && !hasPausedChunksWithData);
         return !shouldRemove;
       });
     });
@@ -1891,9 +1763,7 @@ class DownloadManager {
     const workerId: number = this.mNextId++;
     this.mSpeedCalculator.initCounter(workerId);
 
-    const job: IDownloadJob = download.chunks.find(
-      (ele) => ele.state === "init",
-    );
+    const job: IDownloadJob = download.chunks.find((ele) => ele.state === "init");
     if (!job) {
       // No init chunks? no problem.
       return Bluebird.resolve();
@@ -1924,8 +1794,7 @@ class DownloadManager {
     return (bytes) => {
       const starving = this.mSpeedCalculator.addMeasure(job.workerId, bytes);
       if (starving) {
-        this.mSlowWorkers[job.workerId] =
-          (this.mSlowWorkers[job.workerId] || 0) + 1;
+        this.mSlowWorkers[job.workerId] = (this.mSlowWorkers[job.workerId] || 0) + 1;
         if (this.shouldRestartSlowWorker(job.workerId, download)) {
           log("debug", "restarting slow worker", {
             workerId: job.workerId,
@@ -1955,10 +1824,7 @@ class DownloadManager {
     };
   };
 
-  private shouldRestartSlowWorker(
-    workerId: number,
-    download: IRunningDownload,
-  ): boolean {
+  private shouldRestartSlowWorker(workerId: number, download: IRunningDownload): boolean {
     const slowCount = this.mSlowWorkers[workerId] || 0;
     const restartCount = this.mWorkerRestartCounts[workerId] || 0;
     const lastRestart = this.mWorkerLastRestart[workerId] || 0;
@@ -1987,10 +1853,7 @@ class DownloadManager {
       return false;
     }
 
-    if (
-      lastRestart > 0 &&
-      timeSinceLastRestart < SLOW_WORKER_RESTART_COOLDOWN_MS
-    ) {
+    if (lastRestart > 0 && timeSinceLastRestart < SLOW_WORKER_RESTART_COOLDOWN_MS) {
       return false;
     }
 
@@ -1999,8 +1862,8 @@ class DownloadManager {
 
   private startJob = (download: IRunningDownload, job: IDownloadJob) => {
     if (download.assemblerProm === undefined) {
-      download.assemblerProm = FileAssembler.create(download.tempName).tap(
-        (assembler) => assembler.setTotalSize(download.size),
+      download.assemblerProm = FileAssembler.create(download.tempName).tap((assembler) =>
+        assembler.setTotalSize(download.size),
       );
     }
 
@@ -2077,9 +1940,7 @@ class DownloadManager {
       return download.assembler
         .addChunk(offset, data)
         .then((synced: boolean) => {
-          const urls: string[] = Array.isArray(download.urls)
-            ? download.urls
-            : undefined;
+          const urls: string[] = Array.isArray(download.urls) ? download.urls : undefined;
           download.received += data.byteLength;
           if (download.received > download.size) {
             download.size = download.received;
@@ -2122,11 +1983,7 @@ class DownloadManager {
     };
   };
 
-  private updateDownloadSize = (
-    download: IRunningDownload,
-    size: number,
-    chunkable: boolean,
-  ) => {
+  private updateDownloadSize = (download: IRunningDownload, size: number, chunkable: boolean) => {
     if (download.size !== size) {
       download.size = size;
       download.assembler.setTotalSize(size);
@@ -2148,11 +2005,7 @@ class DownloadManager {
         download.chunks[0].confirmedSize - download.chunks[0].confirmedReceived;
     }
 
-    if (
-      chunkable ||
-      download.chunkable === null ||
-      download.chunkable === undefined
-    ) {
+    if (chunkable || download.chunkable === null || download.chunkable === undefined) {
       download.chunkable = chunkable;
     }
   };
@@ -2190,19 +2043,14 @@ class DownloadManager {
               })
               .catch((err) => {
                 // If file is closed, fall back to fs.renameAsync
-                if (
-                  err instanceof ProcessCanceled &&
-                  err.message === "File is closed"
-                ) {
+                if (err instanceof ProcessCanceled && err.message === "File is closed") {
                   return fs
                     .renameAsync(oldTempName, resolvedName)
                     .then(() => {
                       download.finalName = newName;
                       // Update Redux state with the new file path
                       const newFileName = path.basename(resolvedName);
-                      this.mApi.store.dispatch(
-                        setDownloadFilePath(download.id, newFileName),
-                      );
+                      this.mApi.store.dispatch(setDownloadFilePath(download.id, newFileName));
                     })
                     .catch((fsErr) => {
                       // Reset to original name
@@ -2228,9 +2076,7 @@ class DownloadManager {
                 download.finalName = newName;
                 // Update Redux state with the new file path
                 const newFileName = path.basename(resolvedName);
-                this.mApi.store.dispatch(
-                  setDownloadFilePath(download.id, newFileName),
-                );
+                this.mApi.store.dispatch(setDownloadFilePath(download.id, newFileName));
               })
               .catch((err) => {
                 // Don't reject - just log the error
@@ -2253,11 +2099,7 @@ class DownloadManager {
         });
     }
 
-    if (
-      chunkable ||
-      download.chunkable === null ||
-      download.chunkable === undefined
-    ) {
+    if (chunkable || download.chunkable === null || download.chunkable === undefined) {
       download.chunkable = chunkable;
     }
 
@@ -2285,11 +2127,8 @@ class DownloadManager {
 
       let offset = this.mMinChunkSize;
       while (offset < fileSize) {
-        const previousChunk = download.chunks.find(
-          (chunk) => chunk.extraCookies.length > 0,
-        );
-        const extraCookies =
-          previousChunk !== undefined ? previousChunk.extraCookies : [];
+        const previousChunk = download.chunks.find((chunk) => chunk.extraCookies.length > 0);
+        const extraCookies = previousChunk !== undefined ? previousChunk.extraCookies : [];
 
         const minSize = Math.min(chunkSize, fileSize - offset);
         download.chunks.push({
@@ -2304,23 +2143,13 @@ class DownloadManager {
           extraCookies,
           url: () =>
             download.resolvedUrls().then((resolved) => {
-              if (
-                !resolved.urls ||
-                resolved.urls.length === 0 ||
-                !resolved.urls[0]
-              ) {
-                log(
-                  "error",
-                  "URL resolution returned empty or invalid URL list for chunk",
-                  {
-                    downloadId: download.id,
-                    originalUrls: download.urls,
-                    resolvedUrlCount: resolved.urls?.length || 0,
-                  },
-                );
-                return Bluebird.reject(
-                  new ProcessCanceled("Failed to resolve download URL"),
-                );
+              if (!resolved.urls || resolved.urls.length === 0 || !resolved.urls[0]) {
+                log("error", "URL resolution returned empty or invalid URL list for chunk", {
+                  downloadId: download.id,
+                  originalUrls: download.urls,
+                  resolvedUrlCount: resolved.urls?.length || 0,
+                });
+                return Bluebird.reject(new ProcessCanceled("Failed to resolve download URL"));
               }
               // Ensure URL is a string, not a URL object
               const url = resolved.urls[0];
@@ -2349,14 +2178,12 @@ class DownloadManager {
         download.chunks[0].confirmedSize = fileSize;
         // Recalculate derived size field
         download.chunks[0].size =
-          download.chunks[0].confirmedSize -
-          download.chunks[0].confirmedReceived;
+          download.chunks[0].confirmedSize - download.chunks[0].confirmedReceived;
       }
-      log(
-        "debug",
-        "download not chunked (no server support or it's too small)",
-        { name: download.finalName, size: fileSize },
-      );
+      log("debug", "download not chunked (no server support or it's too small)", {
+        name: download.finalName,
+        size: fileSize,
+      });
     }
   };
 
@@ -2369,11 +2196,7 @@ class DownloadManager {
     };
   };
 
-  private toJob = (
-    download: IRunningDownload,
-    chunk: IChunk,
-    first: boolean,
-  ): IDownloadJob => {
+  private toJob = (download: IRunningDownload, chunk: IChunk, first: boolean): IDownloadJob => {
     let fileNameFromURL: string;
     // Initialize confirmed immutable fields from stored chunk
     const confirmedOffset = chunk.offset;
@@ -2384,28 +2207,16 @@ class DownloadManager {
       url: () =>
         download.resolvedUrls().then((resolved) => {
           if (fileNameFromURL === undefined && resolved.urls.length > 0) {
-            fileNameFromURL = decodeURI(
-              path.basename(new URL(resolved.urls[0]).pathname),
-            );
+            fileNameFromURL = decodeURI(path.basename(new URL(resolved.urls[0]).pathname));
           }
 
-          if (
-            !resolved.urls ||
-            resolved.urls.length === 0 ||
-            !resolved.urls[0]
-          ) {
-            log(
-              "error",
-              "URL resolution returned empty or invalid URL list in toJob",
-              {
-                downloadId: download.id,
-                originalUrls: download.urls,
-                resolvedUrlCount: resolved.urls?.length || 0,
-              },
-            );
-            return Bluebird.reject(
-              new ProcessCanceled("Failed to resolve download URL"),
-            );
+          if (!resolved.urls || resolved.urls.length === 0 || !resolved.urls[0]) {
+            log("error", "URL resolution returned empty or invalid URL list in toJob", {
+              downloadId: download.id,
+              originalUrls: download.urls,
+              resolvedUrlCount: resolved.urls?.length || 0,
+            });
+            return Bluebird.reject(new ProcessCanceled("Failed to resolve download URL"));
           }
           // Ensure URL is a string, not a URL object
           const url = resolved.urls[0];
@@ -2424,12 +2235,7 @@ class DownloadManager {
       extraCookies: [],
       responseCB: first
         ? (size: number, fileName: string, chunkable: boolean) =>
-            this.updateDownload(
-              download,
-              size,
-              fileName || fileNameFromURL,
-              chunkable,
-            )
+            this.updateDownload(download, size, fileName || fileNameFromURL, chunkable)
         : (size: number, fileName: string, chunkable: boolean) =>
             this.updateDownloadSize(download, size, chunkable),
     };
@@ -2441,11 +2247,7 @@ class DownloadManager {
     return job;
   };
 
-  private useExistingFile = (
-    download: IRunningDownload,
-    job: IDownloadJob,
-    fileName: string,
-  ) => {
+  private useExistingFile = (download: IRunningDownload, job: IDownloadJob, fileName: string) => {
     this.stopWorker(job.workerId);
     log("debug", "using existing file for download", {
       download: download.id,
@@ -2460,23 +2262,12 @@ class DownloadManager {
       .then(() =>
         fs
           .removeAsync(download.tempName)
-          .catch((err) =>
-            err.code !== "ENOENT" ? Bluebird.reject(err) : Bluebird.resolve(),
-          ),
+          .catch((err) => (err.code !== "ENOENT" ? Bluebird.reject(err) : Bluebird.resolve())),
       )
       .then(() => fs.statAsync(filePath + ".tmp"))
       .then((stat) => {
-        download.progressCB(
-          stat.size,
-          stat.size,
-          undefined,
-          false,
-          undefined,
-          filePath,
-        );
-        return fs
-          .renameAsync(filePath + ".tmp", filePath)
-          .then(() => stat.size);
+        download.progressCB(stat.size, stat.size, undefined, false, undefined, filePath);
+        return fs.renameAsync(filePath + ".tmp", filePath).then(() => stat.size);
       })
       .then((size: number) => {
         download.finishCB({
@@ -2496,11 +2287,7 @@ class DownloadManager {
   /**
    * gets called whenever a chunk runs to the end or is interrupted
    */
-  private finishChunk = (
-    download: IRunningDownload,
-    job: IDownloadJob,
-    paused: boolean,
-  ) => {
+  private finishChunk = (download: IRunningDownload, job: IDownloadJob, paused: boolean) => {
     this.stopWorker(job.workerId);
 
     log("debug", "stopping chunk worker", {
@@ -2519,16 +2306,12 @@ class DownloadManager {
     if (!paused && hasRemainingData) {
       job.requeues = (job.requeues || 0) + 1;
       if (job.requeues >= MAX_CHUNK_REQUEUES) {
-        log(
-          "warn",
-          "chunk exceeded max requeues, marking download as errored",
-          {
-            id: download.id,
-            workerId: job.workerId,
-            remaining: job.size,
-            requeues: job.requeues,
-          },
-        );
+        log("warn", "chunk exceeded max requeues, marking download as errored", {
+          id: download.id,
+          workerId: job.workerId,
+          remaining: job.size,
+          requeues: job.requeues,
+        });
         download.error = true;
         job.state = "finished";
       } else {
@@ -2563,63 +2346,49 @@ class DownloadManager {
           // If file has no extension, detect it from magic header and rename
           const currentExt = path.extname(download.tempName);
           if (currentExt === "" && !download.error) {
-            log(
-              "info",
-              "download has no extension, detecting from magic header",
-              {
-                id: download.id,
-                tempName: download.tempName,
-              },
-            );
+            log("info", "download has no extension, detecting from magic header", {
+              id: download.id,
+              tempName: download.tempName,
+            });
 
-            return Bluebird.resolve(
-              this.detectFileExtensionFromMagic(download.tempName),
-            ).then((detectedExt: string | null) => {
-              if (detectedExt) {
-                const newPath = download.tempName + detectedExt;
-                log("info", "renaming file with detected extension", {
-                  from: download.tempName,
-                  to: newPath,
-                  extension: detectedExt,
-                });
+            return Bluebird.resolve(this.detectFileExtensionFromMagic(download.tempName)).then(
+              (detectedExt: string | null) => {
+                if (detectedExt) {
+                  const newPath = download.tempName + detectedExt;
+                  log("info", "renaming file with detected extension", {
+                    from: download.tempName,
+                    to: newPath,
+                    extension: detectedExt,
+                  });
 
-                return fs
-                  .renameAsync(download.tempName, newPath)
-                  .then(() => {
-                    download.tempName = newPath;
-                    finalPath = newPath;
-                  })
-                  .catch((err) => {
-                    log(
-                      "error",
-                      "failed to rename file with detected extension",
-                      {
+                  return fs
+                    .renameAsync(download.tempName, newPath)
+                    .then(() => {
+                      download.tempName = newPath;
+                      finalPath = newPath;
+                    })
+                    .catch((err) => {
+                      log("error", "failed to rename file with detected extension", {
                         error: err.message,
                         from: download.tempName,
                         to: newPath,
-                      },
-                    );
-                    // Continue without renaming
-                  });
-              } else {
-                log(
-                  "warn",
-                  "could not detect file type for extensionless file",
-                  {
+                      });
+                      // Continue without renaming
+                    });
+                } else {
+                  log("warn", "could not detect file type for extensionless file", {
                     file: download.tempName,
-                  },
-                );
-              }
-            });
+                  });
+                }
+              },
+            );
           }
         })
         .then(() => {
           if (download.finalName !== undefined) {
             return download.finalName.then((resolvedPath: string) => {
               finalPath = resolvedPath;
-              const received = download.chunks.filter(
-                (chunk) => chunk.state === "paused",
-              )
+              const received = download.chunks.filter((chunk) => chunk.state === "paused")
                 ? download.received
                 : download.size;
               download.progressCB(
@@ -2649,19 +2418,13 @@ class DownloadManager {
             // don't keep html files. It's possible handleHTML already deleted it though
             return fs
               .removeAsync(download.tempName)
-              .catch((err) =>
-                err.code !== "ENOENT"
-                  ? Bluebird.reject(err)
-                  : Bluebird.resolve(),
-              );
+              .catch((err) => (err.code !== "ENOENT" ? Bluebird.reject(err) : Bluebird.resolve()));
           }
         })
         .catch((err) => {
           download.failedCB(err);
         })
-        .then(() =>
-          download.resolvedUrls().catch(() => ({ urls: [], meta: {} })),
-        )
+        .then(() => download.resolvedUrls().catch(() => ({ urls: [], meta: {} })))
         .then((resolved: IResolvedURLs) => {
           const unfinishedChunks = download.chunks
             .filter((chunk) => chunk.state === "paused")
@@ -2690,9 +2453,7 @@ class DownloadManager {
     return input.replace(INVALID_FILENAME_RE, "_");
   }
 
-  private async detectFileExtensionFromMagic(
-    filePath: string,
-  ): Promise<string | null> {
+  private async detectFileExtensionFromMagic(filePath: string): Promise<string | null> {
     try {
       const fd = await fs.openAsync(filePath, "r");
       const buffer = Buffer.alloc(16); // Read first 16 bytes for magic detection

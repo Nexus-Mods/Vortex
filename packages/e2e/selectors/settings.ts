@@ -26,9 +26,7 @@ export class SettingsPage {
     this.vortexTab = page.getByText("Vortex", { exact: true }).first();
     this.modsTab = page.getByText("Mods", { exact: true }).first();
     this.downloadTab = page.getByText("Download", { exact: true }).first();
-    this.workaroundsTab = page
-      .getByText("Workarounds", { exact: true })
-      .first();
+    this.workaroundsTab = page.getByText("Workarounds", { exact: true }).first();
     this.themeTab = page.getByText("Theme", { exact: true }).first();
   }
 

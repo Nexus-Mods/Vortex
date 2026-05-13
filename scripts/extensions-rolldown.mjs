@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { builtinModules } from "node:module";
 import * as path from "node:path";
+
 import { rolldown } from "rolldown";
 
 import { createConfig as createCoreConfig } from "../rolldown.base.mjs";
@@ -22,13 +23,7 @@ import { createConfig as createCoreConfig } from "../rolldown.base.mjs";
  * - `bundle(config)` runs Rolldown and writes the output bundle.
  */
 
-const packageJsonPath = path.resolve(
-  import.meta.dirname,
-  "..",
-  "src",
-  "main",
-  "package.json",
-);
+const packageJsonPath = path.resolve(import.meta.dirname, "..", "src", "main", "package.json");
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");

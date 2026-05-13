@@ -6,22 +6,17 @@
 export * from "./message";
 export * from "./storeHelper";
 
+import bbcodeToReact, { bbcodeToHTML, preProcess as bbcodePreProcess } from "../controls/bbcode";
 import { installIconSet } from "../controls/Icon";
 import {
   resolveCategoryName,
   resolveCategoryPath,
 } from "../extensions/category_management/util/retrieveCategoryPath";
-import {
-  generateCollectionSessionId,
-  modRuleId,
-} from "../extensions/collections_integration/util";
+import { generateCollectionSessionId, modRuleId } from "../extensions/collections_integration/util";
 import { readExtensibleDir } from "../extensions/extension_manager/util";
-import {
-  getGame,
-  getGames,
-} from "../extensions/gamemode_management/util/getGame";
-import { getModType } from "../extensions/gamemode_management/util/modTypeExtensions";
 import getDriveList from "../extensions/gamemode_management/util/getDriveList";
+import { getGame, getGames } from "../extensions/gamemode_management/util/getGame";
+import { getModType } from "../extensions/gamemode_management/util/modTypeExtensions";
 import deriveModInstallName from "../extensions/mod_management/modIdManager";
 import { getManifest } from "../extensions/mod_management/util/activationStore";
 import {
@@ -33,14 +28,9 @@ import {
   getActivator,
   getCurrentActivator,
 } from "../extensions/mod_management/util/deploymentMethods";
-import renderModName, {
-  renderModReference,
-} from "../extensions/mod_management/util/modName";
+import renderModName, { renderModReference } from "../extensions/mod_management/util/modName";
 import { makeModReference } from "../extensions/mod_management/util/modReference";
-import {
-  getModSource,
-  getModSources,
-} from "../extensions/mod_management/util/modSource";
+import { getModSource, getModSources } from "../extensions/mod_management/util/modSource";
 import { removeMods } from "../extensions/mod_management/util/removeMods";
 import sortMods, { CycleError } from "../extensions/mod_management/util/sort";
 import testModReference, {
@@ -52,13 +42,8 @@ import {
   convertGameIdReverse,
   nexusGameId,
 } from "../extensions/nexus_integration/util/convertGameId";
-import GameStoreHelper from "./GameStoreHelper";
 import { getApplication } from "./application";
 import { Archive } from "./archives";
-import bbcodeToReact, {
-  bbcodeToHTML,
-  preProcess as bbcodePreProcess,
-} from "../controls/bbcode";
 import calculateFolderSize from "./calculateFolderSize";
 import { checksum, fileMD5 } from "./checksum";
 import ConcurrencyLimiter from "./ConcurrencyLimiter";
@@ -82,6 +67,7 @@ import {
   withTrackedActivity,
 } from "./errorHandling";
 import extractExeIcon from "./exeIcon";
+import GameStoreHelper from "./GameStoreHelper";
 
 /**
  * @deprecated Use window.api for IPC communication from renderer to main process.
@@ -97,22 +83,42 @@ function makeRemoteCall(): never {
 import { copyFileAtomic, writeFileAtomic } from "./fsAtomic";
 import getNormalizeFunc, { makeNormalizingDict } from "./getNormalizeFunc";
 export type { Normalize } from "./getNormalizeFunc.ts";
+import LazyComponent from "../controls/LazyComponent";
+import ReduxProp from "../ReduxProp";
+import { getReduxLog } from "../store/reduxLogger";
 import getVortexPath from "./getVortexPath";
 import github from "./github";
 import type { TFunction } from "./i18n";
 import { getCurrentLanguage } from "./i18n";
-import LazyComponent from "../controls/LazyComponent";
 import lazyRequire from "./lazyRequire";
 import local from "./local";
 import makeReactive from "./makeReactive";
 import onceCB from "./onceCB";
 import opn from "./opn";
-import { getReduxLog } from "../store/reduxLogger";
-import ReduxProp from "../ReduxProp";
 import relativeTime, { userFriendlyTime } from "./relativeTime";
 import StarterInfo from "./StarterInfo";
 import steam, { GameNotFound } from "./Steam";
 export type { ISteamEntry } from "./Steam.ts";
+import SevenZip from "node-7z";
+
+import {
+  CollectionsDownloadCompletedEvent,
+  CollectionsDownloadClickedEvent,
+  CollectionsDownloadFailedEvent,
+  CollectionsDownloadCancelledEvent,
+  CollectionsInstallationStartedEvent,
+  CollectionsInstallationCompletedEvent,
+  CollectionsInstallationFailedEvent,
+  CollectionsInstallationCancelledEvent,
+  CollectionsDraftedEvent,
+  CollectionsDraftUploadedEvent,
+  CollectionsDraftUpdateUploadedEvent,
+} from "../extensions/analytics/mixpanel/MixpanelEvents";
+import getTextModManagement from "../extensions/mod_management/texts";
+import getTextProfileManagement from "../extensions/profile_management/texts";
+import deepMerge from "./deepMerge";
+import { runElevated } from "./elevated";
+import { runThreaded } from "./thread";
 import {
   batchDispatch,
   bytesToString,
@@ -137,28 +143,7 @@ import {
   makeOverlayableDictionary,
 } from "./util";
 import { Campaign, Section, Content, Overlayable } from "./util";
-import deepMerge from "./deepMerge";
 import walk from "./walk";
-
-import SevenZip from "node-7z";
-import { runElevated } from "./elevated";
-import { runThreaded } from "./thread";
-
-import getTextModManagement from "../extensions/mod_management/texts";
-import getTextProfileManagement from "../extensions/profile_management/texts";
-import {
-  CollectionsDownloadCompletedEvent,
-  CollectionsDownloadClickedEvent,
-  CollectionsDownloadFailedEvent,
-  CollectionsDownloadCancelledEvent,
-  CollectionsInstallationStartedEvent,
-  CollectionsInstallationCompletedEvent,
-  CollectionsInstallationFailedEvent,
-  CollectionsInstallationCancelledEvent,
-  CollectionsDraftedEvent,
-  CollectionsDraftUploadedEvent,
-  CollectionsDraftUpdateUploadedEvent,
-} from "../extensions/analytics/mixpanel/MixpanelEvents";
 
 export * from "./network";
 export {

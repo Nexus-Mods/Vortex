@@ -44,11 +44,7 @@ function getModsFolder() {
     return _GAME_MODS_FOLDER;
   }
   const state = _API.store.getState();
-  const discovery = util.getSafe(
-    state,
-    ["settings", "gameMode", "discovered", GAME_ID],
-    undefined,
-  );
+  const discovery = util.getSafe(state, ["settings", "gameMode", "discovered", GAME_ID], undefined);
   if (discovery?.path === undefined) {
     throw new util.ProcessCanceled("Game is not discovered!");
   }
@@ -117,11 +113,7 @@ function findGame() {
       ),
     )
     .catch(() =>
-      readRegistryKey(
-        "HKEY_LOCAL_MACHINE",
-        `SOFTWARE\\GOG.com\\Games\\${GOG_ID}`,
-        "PATH",
-      ),
+      readRegistryKey("HKEY_LOCAL_MACHINE", `SOFTWARE\\GOG.com\\Games\\${GOG_ID}`, "PATH"),
     );
 }
 
@@ -156,10 +148,7 @@ async function requiresLauncher(gamePath, store) {
 function prepareForModding(discovery) {
   return walkAsync(discovery.path, 0).then(() => {
     // Add the dlc folder if it's missing.
-    if (
-      _DIRECTORY_STRUCT.find((entry) => entry.toLowerCase() === "dlc") ===
-      undefined
-    ) {
+    if (_DIRECTORY_STRUCT.find((entry) => entry.toLowerCase() === "dlc") === undefined) {
       _DIRECTORY_STRUCT.push("dlc");
     }
 
@@ -172,15 +161,9 @@ async function setModDataPath(projectFilePath, modPath) {
   return fs.readFileAsync(projectFilePath).then(async (xmlData) => {
     try {
       projectData = await parseStringPromise(xmlData);
-      return writeProjectFile(
-        projectFilePath,
-        projectData?.project?.Title,
-        modPath,
-      );
+      return writeProjectFile(projectFilePath, projectData?.project?.Title, modPath);
     } catch (err) {
-      return Promise.reject(
-        new util.DataInvalid("Failed to parse project file."),
-      );
+      return Promise.reject(new util.DataInvalid("Failed to parse project file."));
     }
   });
 }
@@ -192,24 +175,17 @@ function writeProjectFile(projectFilePath, title, modPath) {
 }
 
 function installProject(files, destinationPath) {
-  const projectFile = files.find(
-    (file) => path.basename(file).toLowerCase() === PROJECT_FILE,
-  );
+  const projectFile = files.find((file) => path.basename(file).toLowerCase() === PROJECT_FILE);
   const idx = projectFile.indexOf(path.basename(projectFile));
   const rootPath = path.dirname(projectFile);
-  const modName = path
-    .basename(destinationPath, ".installing")
-    .replace(/[^A-Za-z]/g, "");
+  const modName = path.basename(destinationPath, ".installing").replace(/[^A-Za-z]/g, "");
   let expectedModPath;
   try {
     expectedModPath = path.join(getModsFolder(), modName);
   } catch (err) {
     return Promise.reject(err);
   }
-  return setModDataPath(
-    path.join(destinationPath, projectFile),
-    expectedModPath,
-  ).then(() => {
+  return setModDataPath(path.join(destinationPath, projectFile), expectedModPath).then(() => {
     // Remove directories and anything that isn't in the rootPath.
     const filtered = files.filter(
       (file) => file.indexOf(rootPath) !== -1 && !file.endsWith(path.sep),
@@ -230,8 +206,7 @@ function installProject(files, destinationPath) {
 function testSupportedProject(files, gameId) {
   const supported =
     gameId === GAME_ID &&
-    files.find((file) => path.basename(file).toLowerCase() === PROJECT_FILE) !==
-      undefined;
+    files.find((file) => path.basename(file).toLowerCase() === PROJECT_FILE) !== undefined;
   return Promise.resolve({
     supported,
     requiredFiles: [],
@@ -249,16 +224,13 @@ function testSupportedNoProject(files, gameId) {
 
   const filtered = files.filter((file) => file.endsWith(path.sep));
   // Filter files with the _portrait_roster.png suffix - safe to assume those are hero mods.
-  const portraits = files.filter(
-    (file) => file.indexOf(HERO_PORTRAIT_SUFFIX) !== -1,
-  );
+  const portraits = files.filter((file) => file.indexOf(HERO_PORTRAIT_SUFFIX) !== -1);
 
   // Mod is supported if the file structure matches the game's dir structure OR
   //  if we are able to find portraits within the mod's archive.
   const supported =
     filtered.find(
-      (file) =>
-        _DIRECTORY_STRUCT.find((dir) => file.indexOf(dir) !== -1) !== undefined,
+      (file) => _DIRECTORY_STRUCT.find((dir) => file.indexOf(dir) !== -1) !== undefined,
     ) !== undefined || portraits.length > 0;
 
   return Promise.resolve({
@@ -269,8 +241,7 @@ function testSupportedNoProject(files, gameId) {
 
 function installNoProject(files, destinationPath) {
   const matchDirStructure = (file) =>
-    _DIRECTORY_STRUCT.find((dir) => path.dirname(file).indexOf(dir) !== -1) !==
-    undefined;
+    _DIRECTORY_STRUCT.find((dir) => path.dirname(file).indexOf(dir) !== -1) !== undefined;
 
   const matchParentDirs = (lhs, rhs) => {
     // Checks whether both lhs and rhs have the same parent directory.
@@ -287,12 +258,8 @@ function installNoProject(files, destinationPath) {
     return lhsParent.join(path.sep) === rhsParent.join(path.sep);
   };
 
-  const onlyFiles = files.filter(
-    (file) => path.extname(path.basename(file)) !== "",
-  );
-  const portraits = onlyFiles.filter(
-    (file) => file.indexOf(HERO_PORTRAIT_SUFFIX) !== -1,
-  );
+  const onlyFiles = files.filter((file) => path.extname(path.basename(file)) !== "");
+  const portraits = onlyFiles.filter((file) => file.indexOf(HERO_PORTRAIT_SUFFIX) !== -1);
 
   const findExternalHeroFiles = (dirStruct, portraitPath, destPath) => {
     // Hero mods may include additional files located inside the Hero's root path.
@@ -334,9 +301,7 @@ function installNoProject(files, destinationPath) {
       const portraitDir = path.dirname(portrait);
       const idx = portrait.indexOf(path.basename(portrait));
       const heroSuffix = portraitDir.substr(portraitDir.length - 2);
-      const heroFiles = onlyFiles.filter(
-        (file) => file.indexOf(portraitDir) !== -1,
-      );
+      const heroFiles = onlyFiles.filter((file) => file.indexOf(portraitDir) !== -1);
       let heroName = portraitDir.replace(/_[A-Z]/g, "").split(path.sep);
       heroName = heroName[heroName.length - 1];
       const heroPath = path.join(heroesRoot, heroName);
@@ -347,12 +312,7 @@ function installNoProject(files, destinationPath) {
         heroFiles.map((file) => {
           return {
             source: file,
-            destination: path.join(
-              heroesRoot,
-              heroName,
-              heroName + heroSuffix,
-              file.substr(idx),
-            ),
+            destination: path.join(heroesRoot, heroName, heroName + heroSuffix, file.substr(idx)),
           };
         }),
       );
@@ -385,34 +345,30 @@ function installNoProject(files, destinationPath) {
     );
   }
 
-  const modName = path
-    .basename(destinationPath, ".installing")
-    .replace(/[^A-Za-z]/g, "");
+  const modName = path.basename(destinationPath, ".installing").replace(/[^A-Za-z]/g, "");
   let expectedModPath;
   try {
     expectedModPath = path.join(getModsFolder(), modName);
   } catch (err) {
     return Promise.reject(err);
   }
-  return writeProjectFile(
-    path.join(destinationPath, PROJECT_FILE),
-    modName,
-    expectedModPath,
-  ).then(() => {
-    dirStructure.push({
-      source: PROJECT_FILE,
-      destination: PROJECT_FILE,
-    });
-    const instructions = dirStructure.map((file) => {
-      return {
-        type: "copy",
-        source: file.source,
-        destination: path.join(modName, file.destination),
-      };
-    });
+  return writeProjectFile(path.join(destinationPath, PROJECT_FILE), modName, expectedModPath).then(
+    () => {
+      dirStructure.push({
+        source: PROJECT_FILE,
+        destination: PROJECT_FILE,
+      });
+      const instructions = dirStructure.map((file) => {
+        return {
+          type: "copy",
+          source: file.source,
+          destination: path.join(modName, file.destination),
+        };
+      });
 
-    return Promise.resolve({ instructions });
-  });
+      return Promise.resolve({ instructions });
+    },
+  );
 }
 
 function getExecutable(discoveryPath) {
@@ -430,8 +386,7 @@ function getExecutable(discoveryPath) {
     return GOG_EXE; //use GOG on early return since it is present in all versions
   }
 
-  const discPath =
-    discoveryPath !== undefined ? discoveryPath : getDiscoveryPath();
+  const discPath = discoveryPath !== undefined ? discoveryPath : getDiscoveryPath();
 
   let execFile = GOG_EXE;
   try {
@@ -466,18 +421,8 @@ function main(context) {
     },
   });
 
-  context.registerInstaller(
-    "dd-project-mod",
-    25,
-    testSupportedProject,
-    installProject,
-  );
-  context.registerInstaller(
-    "dd-noproject-mod",
-    25,
-    testSupportedNoProject,
-    installNoProject,
-  );
+  context.registerInstaller("dd-project-mod", 25, testSupportedProject, installProject);
+  context.registerInstaller("dd-noproject-mod", 25, testSupportedNoProject, installNoProject);
 
   return true;
 }

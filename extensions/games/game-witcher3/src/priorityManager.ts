@@ -45,16 +45,12 @@ export class PriorityManager {
     this.mMaxPriority = this.getMaxPriority(props);
   };
 
-  public getPriority = (
-    loadOrder: types.LoadOrder,
-    item: types.ILoadOrderEntry,
-  ) => {
+  public getPriority = (loadOrder: types.LoadOrder, item: types.ILoadOrderEntry) => {
     if (item === undefined) {
       // Send it off to the end.
       return ++this.mMaxPriority;
     }
-    const minPriority =
-      Object.keys(loadOrder).filter((key) => loadOrder[key]?.locked).length + 1;
+    const minPriority = Object.keys(loadOrder).filter((key) => loadOrder[key]?.locked).length + 1;
 
     const itemIdx = loadOrder.findIndex((x) => x?.id === item.id);
     if (itemIdx !== -1) {
@@ -62,10 +58,8 @@ export class PriorityManager {
         const position = itemIdx + 1;
         return position > minPriority ? position : ++this.mMaxPriority;
       } else {
-        const prefixVal =
-          loadOrder[itemIdx]?.data?.prefix ?? loadOrder[itemIdx]?.["prefix"];
-        const intVal =
-          prefixVal !== undefined ? parseInt(prefixVal, 10) : itemIdx;
+        const prefixVal = loadOrder[itemIdx]?.data?.prefix ?? loadOrder[itemIdx]?.["prefix"];
+        const intVal = prefixVal !== undefined ? parseInt(prefixVal, 10) : itemIdx;
         const posVal = itemIdx;
         if (posVal !== intVal && intVal > minPriority) {
           return intVal;
@@ -91,9 +85,7 @@ export class PriorityManager {
 
     const loadOrder: types.LoadOrder = getPersistentLoadOrder(this.mApi);
 
-    const lockedEntries = Object.keys(loadOrder).filter(
-      (key) => loadOrder[key]?.locked,
-    );
+    const lockedEntries = Object.keys(loadOrder).filter((key) => loadOrder[key]?.locked);
     const minPriority = min ? min : lockedEntries.length;
     return { state, profile, loadOrder, minPriority };
   };
@@ -103,9 +95,7 @@ export class PriorityManager {
     return Object.keys(loadOrder).reduce((prev, key) => {
       const prefixVal = loadOrder[key]?.data?.prefix ?? loadOrder[key]?.prefix;
       const intVal =
-        prefixVal !== undefined
-          ? parseInt(loadOrder[key].prefix, 10)
-          : loadOrder[key].pos;
+        prefixVal !== undefined ? parseInt(loadOrder[key].prefix, 10) : loadOrder[key].pos;
       const posVal = loadOrder[key].pos;
       if (posVal !== intVal) {
         prev = intVal > prev ? intVal : prev;

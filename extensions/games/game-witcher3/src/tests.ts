@@ -17,11 +17,8 @@ export async function testModLimitBreach(
     return Promise.resolve(undefined);
   }
 
-  const mods: { [modId: string]: types.IMod } =
-    state.persistent.mods[GAME_ID] ?? {};
-  const limitPatch = Object.values(mods).find(
-    (mod) => mod.type === "w3modlimitpatcher",
-  );
+  const mods: { [modId: string]: types.IMod } = state.persistent.mods[GAME_ID] ?? {};
+  const limitPatch = Object.values(mods).find((mod) => mod.type === "w3modlimitpatcher");
   if (limitPatch) {
     // A limit patch already exists.
     return Promise.resolve(undefined);

@@ -8,9 +8,7 @@ const DINPUT = "dinput8.dll";
 const PARTS_DCX_EXT = ".partsbnd.dcx";
 
 function findGame() {
-  return util.steam
-    .findByAppId(STEAM_ID.toString())
-    .then((game) => game.gamePath);
+  return util.steam.findByAppId(STEAM_ID.toString()).then((game) => game.gamePath);
 }
 
 function prepareForModding(api, discovery) {
@@ -32,9 +30,7 @@ function prepareForModding(api, discovery) {
             {
               label: "Go to Mod Engine Page",
               action: () => {
-                util
-                  .opn("https://www.nexusmods.com/sekiro/mods/6")
-                  .catch((err) => undefined);
+                util.opn("https://www.nexusmods.com/sekiro/mods/6").catch((err) => undefined);
                 resolve();
               },
             },
@@ -45,23 +41,17 @@ function prepareForModding(api, discovery) {
 
   // Check whether mod engine is installed.
   return fs
-    .ensureDirWritableAsync(path.join(discovery.path, "mods", "parts"), () =>
-      Promise.resolve(),
-    )
+    .ensureDirWritableAsync(path.join(discovery.path, "mods", "parts"), () => Promise.resolve())
     .then(() =>
       fs
         .statAsync(modEngineDInput)
-        .catch((err) =>
-          err.code === "ENOENT" ? showModEngineDialog() : Promise.reject(err),
-        ),
+        .catch((err) => (err.code === "ENOENT" ? showModEngineDialog() : Promise.reject(err))),
     );
 }
 
 function hasLooseParts(files) {
   const dcxFiles = files.filter((file) => file.endsWith(PARTS_DCX_EXT));
-  return dcxFiles.length > 0
-    ? dcxFiles[0].indexOf(path.sep + "parts" + path.sep) === -1
-    : false;
+  return dcxFiles.length > 0 ? dcxFiles[0].indexOf(path.sep + "parts" + path.sep) === -1 : false;
 }
 
 function installLooseMod(files, destinationPath) {
@@ -145,12 +135,7 @@ function main(context) {
     setup: (discovery) => prepareForModding(context.api, discovery),
   });
 
-  context.registerInstaller(
-    "sek-loose-files",
-    25,
-    testLooseMod,
-    installLooseMod,
-  );
+  context.registerInstaller("sek-loose-files", 25, testLooseMod, installLooseMod);
   context.registerInstaller("sek-root-mod", 20, testRootMod, installRootMod);
 }
 

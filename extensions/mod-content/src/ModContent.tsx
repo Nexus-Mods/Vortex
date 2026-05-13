@@ -1,7 +1,7 @@
-import { byTypeIndex, typeDescription } from "./filetypes";
-
 import * as React from "react";
 import { ComponentEx, tooltip, types, util } from "vortex-api";
+
+import { byTypeIndex, typeDescription } from "./filetypes";
 
 interface IModContentProps {
   mod: types.IMod;

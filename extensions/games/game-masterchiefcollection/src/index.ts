@@ -1,25 +1,10 @@
 /* eslint-disable */
 import path from "path";
-import {
-  fs,
-  types,
-  FlexLayout,
-  OptionsFilter,
-  selectors,
-  util,
-} from "vortex-api";
 
 import * as React from "react";
+import { fs, types, FlexLayout, OptionsFilter, selectors, util } from "vortex-api";
 
-import {
-  GAME_ID,
-  HALO_GAMES,
-  MS_APPID,
-  STEAM_ID,
-  MODTYPE_PLUG_AND_PLAY,
-} from "./common";
-import { LauncherConfig } from "./types";
-import { testPlugAndPlayModType } from "./modTypes";
+import { GAME_ID, HALO_GAMES, MS_APPID, STEAM_ID, MODTYPE_PLUG_AND_PLAY } from "./common";
 import {
   installPlugAndPlay,
   testModConfigInstaller,
@@ -28,7 +13,9 @@ import {
   install,
   testInstaller,
 } from "./installers";
+import { testPlugAndPlayModType } from "./modTypes";
 import { testCEMP } from "./tests";
+import { LauncherConfig } from "./types";
 import { applyToManifest } from "./util";
 
 // Master chef collection
@@ -53,8 +40,7 @@ class MasterChiefCollectionGame implements types.IGame {
     this.shortName = "Halo: MCC";
     this.logo = "gameart.jpg";
     this.api = context.api;
-    ((this.getGameVersion = resolveGameVersion),
-      (this.requiredFiles = [this.executable()]));
+    ((this.getGameVersion = resolveGameVersion), (this.requiredFiles = [this.executable()]));
     this.supportedTools = [
       {
         id: "haloassemblytool",
@@ -87,18 +73,13 @@ class MasterChiefCollectionGame implements types.IGame {
   }
 
   public queryPath() {
-    return util.GameStoreHelper.findByAppId([STEAM_ID, MS_APPID]).then(
-      (game) => game.gamePath,
-    );
+    return util.GameStoreHelper.findByAppId([STEAM_ID, MS_APPID]).then((game) => game.gamePath);
   }
 
   public requiresLauncher = util.toBlue((gamePath: string, store: string) =>
     this.checkLauncher(gamePath, store),
   );
-  public async checkLauncher(
-    gamePath: string,
-    store: string,
-  ): LauncherConfig | undefined {
+  public async checkLauncher(gamePath: string, store: string): LauncherConfig | undefined {
     if (store === "xbox") {
       return Promise.resolve({
         launcher: "xbox",
@@ -196,12 +177,7 @@ module.exports = {
       installModConfig as any,
     );
 
-    context.registerInstaller(
-      "masterchiefinstaller",
-      25,
-      testInstaller as any,
-      install as any,
-    );
+    context.registerInstaller("masterchiefinstaller", 25, testInstaller as any, install as any);
 
     context.registerTest(
       "mcc-ce-mp-test",
@@ -269,26 +245,19 @@ module.exports = {
         if (haloEntries.length > 1) {
           return "Multiple";
         } else {
-          return !!haloEntries && haloEntries.length > 0
-            ? haloEntries[0].name
-            : "None";
+          return !!haloEntries && haloEntries.length > 0 ? haloEntries[0].name : "None";
         }
       },
       isDefaultVisible: true,
       //sortFunc: (lhs, rhs) => getCollator(locale).compare(lhs, rhs),
       condition: () => {
-        const activeGameId = selectors.activeGameId(
-          context.api.store.getState(),
-        );
+        const activeGameId = selectors.activeGameId(context.api.store.getState());
         return activeGameId === GAME_ID;
       },
     });
 
     context.once(() => {
-      context.api.setStylesheet(
-        "masterchiefstyle",
-        path.join(__dirname, "masterchief.scss"),
-      );
+      context.api.setStylesheet("masterchiefstyle", path.join(__dirname, "masterchief.scss"));
       context.api.onAsync("did-deploy", async (profileId: string) =>
         applyToManifest(context.api, true),
       );

@@ -5,22 +5,18 @@
  * Used in production code for actual filesystem access.
  */
 
+import * as path from "path";
+
 import type { IFilesystem, FileEntry } from "@vortex/paths";
 import type { ResolvedPath } from "@vortex/paths";
-
-import {
-  FileType as FileTypeEnum,
-  RelativePath as RelativePathNS,
-} from "@vortex/paths";
+import { FileType as FileTypeEnum, RelativePath as RelativePathNS } from "@vortex/paths";
 import * as fs from "fs-extra";
-import * as path from "path";
 
 /**
  * Real filesystem implementation using Node.js fs
  */
 export class NodeFilesystem implements IFilesystem {
-  readonly platform =
-    process.platform === "win32" ? ("windows" as const) : ("unix" as const);
+  readonly platform = process.platform === "win32" ? ("windows" as const) : ("unix" as const);
   readonly caseSensitive = process.platform !== "win32";
   readonly sep = path.sep;
 
@@ -33,10 +29,7 @@ export class NodeFilesystem implements IFilesystem {
   // Read Operations
   // ========================================================================
 
-  async readFile(
-    filePath: ResolvedPath,
-    encoding?: string | null,
-  ): Promise<string | Uint8Array> {
+  async readFile(filePath: ResolvedPath, encoding?: string | null): Promise<string | Uint8Array> {
     return encoding === null
       ? fs.readFile(filePath as string)
       : fs.readFile(filePath as string, {
@@ -117,10 +110,7 @@ export class NodeFilesystem implements IFilesystem {
     await fs.mkdir(dirPath as string, options);
   }
 
-  async rmdir(
-    dirPath: ResolvedPath,
-    options?: { recursive?: boolean },
-  ): Promise<void> {
+  async rmdir(dirPath: ResolvedPath, options?: { recursive?: boolean }): Promise<void> {
     if (options?.recursive) {
       await fs.remove(dirPath as string);
     } else {

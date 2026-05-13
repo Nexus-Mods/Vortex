@@ -2,14 +2,13 @@
  * Registers Stardew-specific settings, actions, and table renderers in the UI.
  */
 import React from "react";
-
 import { selectors } from "vortex-api";
 import type { types } from "vortex-api";
 
-import { setMergeConfigs } from "../state/actions";
-import CompatibilityIcon from "../ui/CompatibilityIcon";
 import { GAME_ID } from "../common";
 import { onRevertFiles } from "../configMod";
+import { setMergeConfigs } from "../state/actions";
+import CompatibilityIcon from "../ui/CompatibilityIcon";
 import Settings from "../ui/Settings";
 import { onShowSMAPILog } from "../ui/smapiLog";
 
@@ -64,11 +63,7 @@ export function registerUi(context: types.IExtensionContext) {
     condition: () => selectors.activeGameId(context.api.getState()) === GAME_ID,
     placement: "table",
     calc: (mod: types.IMod) => mod.attributes?.compatibilityStatus,
-    customRenderer: (
-      mod: types.IMod,
-      detailCell: boolean,
-      t: types.TFunction,
-    ) => {
+    customRenderer: (mod: types.IMod, detailCell: boolean, t: types.TFunction) => {
       return React.createElement(CompatibilityIcon, { t, mod, detailCell }, []);
     },
     name: "Compatibility",

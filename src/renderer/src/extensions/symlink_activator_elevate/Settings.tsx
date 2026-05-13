@@ -1,16 +1,3 @@
-import { showDialog } from "../../actions/notifications";
-import Toggle from "../../controls/Toggle";
-import type {
-  DialogActions,
-  DialogType,
-  IDialogContent,
-  IDialogResult,
-} from "../../types/IDialog";
-import type { IState } from "../../types/IState";
-import { ComponentEx } from "../../controls/ComponentEx";
-
-import { enableUserSymlinks } from "./actions";
-
 import type PromiseBB from "bluebird";
 import * as React from "react";
 import { Alert, ControlLabel, FormGroup, HelpBlock } from "react-bootstrap";
@@ -18,6 +5,13 @@ import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
+
+import { showDialog } from "../../actions/notifications";
+import { ComponentEx } from "../../controls/ComponentEx";
+import Toggle from "../../controls/Toggle";
+import type { DialogActions, DialogType, IDialogContent, IDialogResult } from "../../types/IDialog";
+import type { IState } from "../../types/IState";
+import { enableUserSymlinks } from "./actions";
 
 export interface IBaseProps {
   supported: string;
@@ -74,23 +68,14 @@ class Settings extends ComponentEx<IProps, {}> {
               )}
             </Alert>
           ) : null}
-          <Toggle
-            checked={userSymlinks}
-            onToggle={this.toggle}
-            disabled={supported !== null}
-          >
-            {t(
-              "Allow Symlinks without elevation (old mechanism, pre Vortex v1.4.3)",
-            )}
+          <Toggle checked={userSymlinks} onToggle={this.toggle} disabled={supported !== null}>
+            {t("Allow Symlinks without elevation (old mechanism, pre Vortex v1.4.3)")}
           </Toggle>
           {supported !== null ? (
             <Alert>
-              {t(
-                "This feature doesn't seem to be supported on your system: {{reason}}",
-                {
-                  replace: { reason: supported },
-                },
-              )}
+              {t("This feature doesn't seem to be supported on your system: {{reason}}", {
+                replace: { reason: supported },
+              })}
             </Alert>
           ) : null}
         </FormGroup>
@@ -116,10 +101,7 @@ class Settings extends ComponentEx<IProps, {}> {
       {
         text,
       },
-      [
-        { label: "Cancel" },
-        { label: enabled ? "Give Privilege" : "Remove Privilege" },
-      ],
+      [{ label: "Cancel" }, { label: enabled ? "Give Privilege" : "Remove Privilege" }],
     ).then((result) => {
       if (result.action !== "Cancel") {
         onSymlinksPrivilege(enabled);
@@ -166,12 +148,9 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, null, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
-    onEnableUserSymlinks: (enable: boolean) =>
-      dispatch(enableUserSymlinks(enable)),
+    onEnableUserSymlinks: (enable: boolean) => dispatch(enableUserSymlinks(enable)),
     onShowDialog: (
       type: DialogType,
       title: string,

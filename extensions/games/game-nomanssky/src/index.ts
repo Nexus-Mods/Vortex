@@ -1,5 +1,6 @@
 /* eslint-disable */
 import path from "path";
+
 import semver from "semver";
 import { actions, fs, log, types, util } from "vortex-api";
 
@@ -12,9 +13,7 @@ const EXEC = path.join(BIN_PATH, "NMS.exe");
 
 async function purge(api: types.IExtensionApi): Promise<void> {
   return new Promise<void>((resolve, reject) =>
-    api.events.emit("purge-mods", true, (err) =>
-      err ? reject(err) : resolve(),
-    ),
+    api.events.emit("purge-mods", true, (err) => (err ? reject(err) : resolve())),
   );
 }
 
@@ -25,9 +24,7 @@ async function deploy(api: types.IExtensionApi): Promise<void> {
 }
 
 function findGame() {
-  return util.GameStoreHelper.findByAppId([STEAMAPP_ID, XBOX_ID]).then(
-    (game) => game.gamePath,
-  );
+  return util.GameStoreHelper.findByAppId([STEAMAPP_ID, XBOX_ID]).then((game) => game.gamePath);
 }
 
 function deprecatedModPath() {
@@ -38,10 +35,7 @@ function modPath() {
   return path.join("GAMEDATA", "MODS");
 }
 
-async function migrate101(
-  api: types.IExtensionApi,
-  oldVersion: string,
-): Promise<void> {
+async function migrate101(api: types.IExtensionApi, oldVersion: string): Promise<void> {
   if (semver.gte(oldVersion, "1.0.1")) {
     return Promise.resolve();
   }
@@ -55,9 +49,7 @@ async function migrate101(
   const modIds = Object.keys(mods).filter(
     (modId) => mods[modId].type !== "nomanssky-deprecated-pak",
   );
-  const batched = modIds.map((modId) =>
-    actions.setModType(GAME_ID, modId, MODTYPE_DEPRECATED_PAK),
-  );
+  const batched = modIds.map((modId) => actions.setModType(GAME_ID, modId, MODTYPE_DEPRECATED_PAK));
   if (batched.length > 0) {
     try {
       log("info", "Migrating mods to deprecated PAK type.", {
@@ -76,25 +68,13 @@ async function migrate101(
   return Promise.resolve();
 }
 
-async function prepareForModding(
-  api: types.IExtensionApi,
-  discovery: types.IDiscoveryResult,
-) {
+async function prepareForModding(api: types.IExtensionApi, discovery: types.IDiscoveryResult) {
   const pcbanks = path.join(discovery.path, "GAMEDATA", "PCBANKS");
-  const ensureDir = (dir: string) =>
-    fs.ensureDirWritableAsync(path.join(discovery.path, dir));
-  return Promise.all([
-    ensureDir(modPath()),
-    ensureDir(deprecatedModPath()),
-  ]).then(() =>
+  const ensureDir = (dir: string) => fs.ensureDirWritableAsync(path.join(discovery.path, dir));
+  return Promise.all([ensureDir(modPath()), ensureDir(deprecatedModPath())]).then(() =>
     fs
-      .renameAsync(
-        path.join(pcbanks, "DISABLEMODS.TXT"),
-        path.join(pcbanks, "ENABLEMODS.TXT"),
-      )
-      .catch((err) =>
-        err.code === "ENOENT" ? Promise.resolve() : Promise.reject(err),
-      ),
+      .renameAsync(path.join(pcbanks, "DISABLEMODS.TXT"), path.join(pcbanks, "ENABLEMODS.TXT"))
+      .catch((err) => (err.code === "ENOENT" ? Promise.resolve() : Promise.reject(err))),
   );
 }
 
@@ -130,29 +110,19 @@ function getBinariesPath(api: types.IExtensionApi, game: types.IGame) {
   return dataPath;
 }
 
-async function testDeprecatedPakMod(
-  instructions: types.IInstruction[],
-): Promise<boolean> {
-  const hasPak = instructions.some(
-    (inst) => inst.source && inst.source.match(/\.pak$/i),
-  );
+async function testDeprecatedPakMod(instructions: types.IInstruction[]): Promise<boolean> {
+  const hasPak = instructions.some((inst) => inst.source && inst.source.match(/\.pak$/i));
   return Promise.resolve(hasPak);
 }
 
-async function testBinariesMod(
-  instructions: types.IInstruction[],
-): Promise<boolean> {
-  const hasDll = instructions.some(
-    (inst) => inst.source && inst.source.match(/\.dll$/i),
-  );
+async function testBinariesMod(instructions: types.IInstruction[]): Promise<boolean> {
+  const hasDll = instructions.some((inst) => inst.source && inst.source.match(/\.dll$/i));
   return Promise.resolve(hasDll);
 }
 
 async function getGameVersion(gamePath: string) {
   const exeVersion = require("exe-version");
-  return Promise.resolve(
-    exeVersion.getProductVersionLocalized(path.join(gamePath, EXEC)),
-  );
+  return Promise.resolve(exeVersion.getProductVersionLocalized(path.join(gamePath, EXEC)));
 }
 
 function main(context: types.IExtensionContext) {
@@ -167,8 +137,7 @@ function main(context: types.IExtensionContext) {
     executable: () => EXEC,
     requiredFiles: [EXEC],
     requiresLauncher: requiresLauncher as any,
-    setup: (discovery: types.IDiscoveryResult) =>
-      prepareForModding(context.api, discovery) as any,
+    setup: (discovery: types.IDiscoveryResult) => prepareForModding(context.api, discovery) as any,
     environment: {
       SteamAPPId: STEAMAPP_ID,
     },

@@ -35,12 +35,12 @@ jest.mock("react-redux", () => ({
   },
 }));
 
-import { AppLayout } from "../views/AppLayout";
-import React from "react";
 import { shallow } from "enzyme";
+import React from "react";
+import { Modal } from "react-bootstrap";
 import { findAll } from "react-shallow-testutils";
 
-import { Modal } from "react-bootstrap";
+import { AppLayout } from "../views/AppLayout";
 
 function renderMainWindow() {
   return shallow(<AppLayout objects={[]} />);

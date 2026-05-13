@@ -1,28 +1,19 @@
+import { getErrorMessageOrDefault } from "@vortex/shared";
 import Bluebird from "bluebird";
-import type {
-  IExtensionApi,
-  IExtensionContext,
-  IPreviewFile,
-} from "../../types/IExtensionContext";
+
+import type { IExtensionApi, IExtensionContext, IPreviewFile } from "../../types/IExtensionContext";
 import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
 import { log } from "../../util/log";
 import opn from "../../util/opn";
-import { getErrorMessageOrDefault } from "@vortex/shared";
 
 interface IPreviewHandler {
   priority: number;
-  handler: (
-    files: IPreviewFile[],
-    allowPick: boolean,
-  ) => Bluebird<IPreviewFile>;
+  handler: (files: IPreviewFile[], allowPick: boolean) => Bluebird<IPreviewFile>;
 }
 
 let previewHandlers: IPreviewHandler[] = [];
 
-async function fallbackHandler(
-  api: IExtensionApi,
-  files: IPreviewFile[],
-): Promise<IPreviewFile> {
+async function fallbackHandler(api: IExtensionApi, files: IPreviewFile[]): Promise<IPreviewFile> {
   const result = await api.showDialog(
     "info",
     "Select files to open",
@@ -55,15 +46,10 @@ async function fallbackHandler(
 function init(context: IExtensionContext) {
   context.registerPreview = (
     priority: number,
-    handler: (
-      files: IPreviewFile[],
-      allowPick: boolean,
-    ) => Bluebird<IPreviewFile>,
+    handler: (files: IPreviewFile[], allowPick: boolean) => Bluebird<IPreviewFile>,
   ) => {
     previewHandlers.push({ priority, handler });
-    previewHandlers = previewHandlers.sort(
-      (lhs, rhs) => lhs.priority - rhs.priority,
-    );
+    previewHandlers = previewHandlers.sort((lhs, rhs) => lhs.priority - rhs.priority);
   };
 
   context.registerPreview(300, (files: IPreviewFile[], allowPick: boolean) =>
@@ -94,11 +80,7 @@ function init(context: IExtensionContext) {
               }
               return;
             } else {
-              log(
-                "error",
-                "file preview handler failed",
-                getErrorMessageOrDefault(err),
-              );
+              log("error", "file preview handler failed", getErrorMessageOrDefault(err));
             }
           }
         }

@@ -1,5 +1,6 @@
-import { setPrefixOffset, setPreviousLO, setUDF } from "./actions";
 import { types, util } from "vortex-api";
+
+import { setPrefixOffset, setPreviousLO, setUDF } from "./actions";
 export const reducer: types.IReducerSpec = {
   reducers: {
     [setPrefixOffset as any]: (state, payload) => {

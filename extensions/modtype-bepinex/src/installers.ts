@@ -1,6 +1,9 @@
 /* eslint-disable */
 import path from "path";
+
+import { types } from "vortex-api";
 import Parser, { IniFile, WinapiFormat } from "vortex-parse-ini";
+
 import {
   BEPINEX_CONFIG_REL_PATH,
   DOORSTOPPER_CONFIG,
@@ -9,14 +12,8 @@ import {
   INJECTOR_FILES,
   MODTYPE_BIX_INJECTOR,
 } from "./common";
-import {
-  IBepInExGameConfig,
-  IDoorstopConfig,
-  UnityDoorstopType,
-} from "./types";
+import { IBepInExGameConfig, IDoorstopConfig, UnityDoorstopType } from "./types";
 import { resolveBepInExConfiguration } from "./util";
-
-import { types } from "vortex-api";
 
 function makeCopy(
   source: string,
@@ -59,9 +56,7 @@ async function applyDoorStopConfig(config: IDoorstopConfig, filePath: string) {
   iniData.data["UnityDoorstop"]["redirectOutputLog"] =
     config.redirectOutputLog !== undefined ? config.redirectOutputLog : false;
   iniData.data["UnityDoorstop"]["ignoreDisableSwitch"] =
-    config.ignoreDisableSwitch !== undefined
-      ? config.ignoreDisableSwitch
-      : true;
+    config.ignoreDisableSwitch !== undefined ? config.ignoreDisableSwitch : true;
   iniData.data["UnityDoorstop"]["dllSearchPathOverride"] =
     config.dllOverrideRelPath !== undefined ? config.dllOverrideRelPath : "";
   return parser.write(filePath, iniData);
@@ -77,9 +72,7 @@ export async function testSupportedBepInExInjector(
   }
 
   const filesMatched = files.filter((file) =>
-    INJECTOR_FILES.map((f) => f.toLowerCase()).includes(
-      path.basename(file).toLowerCase(),
-    ),
+    INJECTOR_FILES.map((f) => f.toLowerCase()).includes(path.basename(file).toLowerCase()),
   );
   return Promise.resolve({
     supported: filesMatched.length > MINIMUM_INJECTOR_MATCHES,
@@ -105,9 +98,7 @@ export async function installInjector(
   })();
   const doorStopConfig = gameConfig.doorstopConfig;
   const doorstopType: UnityDoorstopType =
-    doorStopConfig?.doorstopType !== undefined
-      ? doorStopConfig.doorstopType
-      : "default";
+    doorStopConfig?.doorstopType !== undefined ? doorStopConfig.doorstopType : "default";
   const modTypeInstruction: types.IInstruction = {
     type: "setmodtype",
     value: MODTYPE_BIX_INJECTOR,
@@ -146,10 +137,7 @@ export async function installInjector(
       if (!path.extname(file) || file.endsWith(path.sep)) {
         return accum;
       }
-      if (
-        doorstopType !== "default" &&
-        path.basename(file).toLowerCase() === DOORSTOPPER_HOOK
-      ) {
+      if (doorstopType !== "default" && path.basename(file).toLowerCase() === DOORSTOPPER_HOOK) {
         switch (doorstopType) {
           case "unity3": {
             accum.push(makeCopy(file, gameConfig, "version.dll", idx));

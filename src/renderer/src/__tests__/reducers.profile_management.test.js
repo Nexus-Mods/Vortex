@@ -1,6 +1,6 @@
-import { profilesReducer } from "../extensions/profile_management/reducers/profiles";
-
 import * as _ from "lodash";
+
+import { profilesReducer } from "../extensions/profile_management/reducers/profiles";
 
 describe("setModEnabled", () => {
   it("sets the mod enabled", () => {

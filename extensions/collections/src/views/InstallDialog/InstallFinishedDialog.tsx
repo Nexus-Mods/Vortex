@@ -3,12 +3,11 @@ import { Button, Media, Panel } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { actions, log, Modal, Spinner, tooltip, types, util } from "vortex-api";
+
 import { NAMESPACE } from "../../constants";
-
-import YouCuratedTag from "./YouCuratedThisTag";
-
 import InstallDriver from "../../util/InstallDriver";
 import CollectionThumbnail from "../CollectionTile";
+import YouCuratedTag from "./YouCuratedThisTag";
 
 export interface IInstallFinishedDialogProps {
   api: types.IExtensionApi;
@@ -51,12 +50,8 @@ function InstallFinishedDialog(props: IInstallFinishedDialogProps) {
   const showOptionals = React.useCallback(async () => {
     if (driver.collection !== undefined) {
       api.events.emit("view-collection", driver.collection.id, "mods");
-      api.store.dispatch(
-        actions.setAttributeFilter("collection-mods", undefined, undefined),
-      );
-      api.store.dispatch(
-        actions.setAttributeFilter("collection-mods", "required", false),
-      );
+      api.store.dispatch(actions.setAttributeFilter("collection-mods", undefined, undefined));
+      api.store.dispatch(actions.setAttributeFilter("collection-mods", "required", false));
       await driver.continue();
     }
     forceUpdate((i) => i + 1);
@@ -83,28 +78,19 @@ function InstallFinishedDialog(props: IInstallFinishedDialogProps) {
 
   const collection = driver.collection;
 
-  const mods = useSelector<types.IState, { [modId: string]: types.IMod }>(
-    (state) =>
-      driver.profile !== undefined
-        ? state.persistent.mods[driver.profile?.gameId]
-        : emptyObject,
+  const mods = useSelector<types.IState, { [modId: string]: types.IMod }>((state) =>
+    driver.profile !== undefined ? state.persistent.mods[driver.profile?.gameId] : emptyObject,
   );
 
   const optionals = React.useMemo(() => {
     return (collection?.rules ?? []).filter(
-      (rule) =>
-        rule.type === "recommends" &&
-        util.findModByRef(rule.reference, mods) === undefined,
+      (rule) => rule.type === "recommends" && util.findModByRef(rule.reference, mods) === undefined,
     );
   }, [collection?.rules, mods]);
 
-  const game =
-    driver.profile !== undefined
-      ? util.getGame(driver.profile.gameId)
-      : undefined;
+  const game = driver.profile !== undefined ? util.getGame(driver.profile.gameId) : undefined;
 
-  const ownCollection: boolean =
-    driver.collectionInfo?.user?.memberId === userInfo?.userId;
+  const ownCollection: boolean = driver.collectionInfo?.user?.memberId === userInfo?.userId;
 
   const finalizing = driver.postprocessing;
 
@@ -120,9 +106,7 @@ function InstallFinishedDialog(props: IInstallFinishedDialogProps) {
       <Modal.Body>
         <div
           className="collection-finished-body"
-          style={
-            finalizing ? { opacity: 0.5, pointerEvents: "none" } : undefined
-          }
+          style={finalizing ? { opacity: 0.5, pointerEvents: "none" } : undefined}
         >
           <Media.Left>
             <CollectionThumbnail
@@ -136,14 +120,11 @@ function InstallFinishedDialog(props: IInstallFinishedDialogProps) {
           <Media.Right>
             <h5>{game?.name}</h5>
             <h3>{util.renderModName(driver.collection)}</h3>
-            {driver.collection?.attributes?.shortDescription ??
-              t("No description")}
+            {driver.collection?.attributes?.shortDescription ?? t("No description")}
             {ownCollection && optionals.length > 0 ? (
               <div>
                 <YouCuratedTag t={t} />
-                {t(
-                  "To edit this collection you must install all of the optional mods",
-                )}
+                {t("To edit this collection you must install all of the optional mods")}
               </div>
             ) : null}
           </Media.Right>
@@ -196,11 +177,7 @@ function InstallFinishedDialog(props: IInstallFinishedDialogProps) {
             }}
           >
             <Spinner />
-            <p>
-              {t(
-                "Finalizing installation - deploying mods and applying collection rules...",
-              )}
-            </p>
+            <p>{t("Finalizing installation - deploying mods and applying collection rules...")}</p>
           </div>
         ) : null}
       </Modal.Body>

@@ -1,4 +1,5 @@
 import { createAction } from "redux-act";
+
 import { ISavegame } from "../types/ISavegame";
 
 export const setSavegames = createAction(
@@ -21,17 +22,8 @@ export const updateSavegame = createAction(
 
 export const clearSavegames = createAction("CLEAR_SAVEGAMES");
 
-export const removeSavegame = createAction(
-  "REMOVE_SAVEGAME",
-  (id: string) => id,
-);
+export const removeSavegame = createAction("REMOVE_SAVEGAME", (id: string) => id);
 
-export const setSavegamePath = createAction(
-  "SET_SAVEGAME_PATH",
-  (path: string) => path,
-);
+export const setSavegamePath = createAction("SET_SAVEGAME_PATH", (path: string) => path);
 
-export const showTransferDialog = createAction(
-  "SHOW_TRANSFER_DIALOG",
-  (b: boolean) => b,
-);
+export const showTransferDialog = createAction("SHOW_TRANSFER_DIALOG", (b: boolean) => b);

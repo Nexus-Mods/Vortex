@@ -37,9 +37,7 @@ const gameStoreIds = {
 };
 
 async function findGame() {
-  const storeGames = await util.GameStoreHelper.find(gameStoreIds).catch(
-    () => [],
-  );
+  const storeGames = await util.GameStoreHelper.find(gameStoreIds).catch(() => []);
 
   if (!storeGames.length) return;
 
@@ -58,10 +56,7 @@ async function findGame() {
       store: selectedGame.gameStoreId,
       folder: localeFoldersXbox["en"],
     });
-    selectedGame.gamePath = path.join(
-      selectedGame.gamePath,
-      localeFoldersXbox["en"],
-    );
+    selectedGame.gamePath = path.join(selectedGame.gamePath, localeFoldersXbox["en"]);
   }
 
   return selectedGame;
@@ -130,8 +125,7 @@ function prepareForModding(api, discovery) {
   const gameName = util.getGame(GAME_ID)?.name || "This game";
 
   if (discovery.store && ["epic", "xbox"].includes(discovery.store)) {
-    const storeName =
-      discovery.store === "epic" ? "Epic Games" : "Xbox Game Pass";
+    const storeName = discovery.store === "epic" ? "Epic Games" : "Xbox Game Pass";
     // If this is an Epic or Xbox game we've defaulted to English, so we should let the user know.
     api.sendNotification({
       id: `${GAME_ID}-locale-message`,
@@ -157,8 +151,7 @@ function prepareForModding(api, discovery) {
               [
                 {
                   label: "Close",
-                  action: () =>
-                    api.suppressNotification(`${GAME_ID}-locale-message`),
+                  action: () => api.suppressNotification(`${GAME_ID}-locale-message`),
                 },
               ],
             );

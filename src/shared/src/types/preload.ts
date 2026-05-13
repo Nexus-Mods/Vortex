@@ -288,9 +288,7 @@ export interface Menu {
 
 export interface ContentTracing {
   /** Start recording performance trace */
-  startRecording(
-    options: TraceCategoriesAndOptions | TraceConfig,
-  ): Promise<void>;
+  startRecording(options: TraceCategoriesAndOptions | TraceConfig): Promise<void>;
 
   /** Stop recording and save to file, returns the path to the trace file */
   stopRecording(resultPath: string): Promise<string>;
@@ -314,9 +312,7 @@ export interface Clipboard {
 
 export interface PowerSaveBlocker {
   /** Start blocking power save mode */
-  start(
-    type: "prevent-app-suspension" | "prevent-display-sleep",
-  ): Promise<number>;
+  start(type: "prevent-app-suspension" | "prevent-display-sleep"): Promise<number>;
 
   /** Stop blocking power save mode */
   stop(id: number): Promise<void>;
@@ -357,9 +353,7 @@ export interface PersistApi {
    * The renderer applies these via __persist_push, which is excluded from
    * persistDiffMiddleware to prevent feedback loops.
    */
-  onPush(
-    callback: (hive: PersistedHive, operations: DiffOperation[]) => void,
-  ): void;
+  onPush(callback: (hive: PersistedHive, operations: DiffOperation[]) => void): void;
 }
 
 /** API for requesting extension main process initialization */

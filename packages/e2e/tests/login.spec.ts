@@ -5,9 +5,7 @@
 import { test, expect } from "../fixtures/vortex-app";
 
 test.describe("Login UI", () => {
-  test("login button is visible when not logged in", async ({
-    vortexWindow,
-  }) => {
+  test("login button is visible when not logged in", async ({ vortexWindow }) => {
     await test.step("Verify login UI is present", async () => {
       // With a fresh user data dir, the user should not be logged in.
       const loginBtn = vortexWindow.getByText(/log in/i).first();

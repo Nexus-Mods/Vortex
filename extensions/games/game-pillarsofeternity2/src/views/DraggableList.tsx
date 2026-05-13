@@ -1,5 +1,3 @@
-import { ILoadOrderDisplayItem } from "../types";
-
 import * as React from "react";
 import { ListGroup } from "react-bootstrap";
 import {
@@ -17,6 +15,8 @@ import {
 } from "react-dnd";
 import * as ReactDOM from "react-dom";
 import { ComponentEx, util } from "vortex-api";
+
+import { ILoadOrderDisplayItem } from "../types";
 
 interface IItemBaseProps {
   index: number;
@@ -105,9 +105,7 @@ const entryTarget: DropTargetSpec<IItemProps> = {
       return;
     }
 
-    const hoverBoundingRect = (
-      ReactDOM.findDOMNode(component) as Element
-    ).getBoundingClientRect();
+    const hoverBoundingRect = (ReactDOM.findDOMNode(component) as Element).getBoundingClientRect();
     const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
     const clientOffset = monitor.getClientOffset();
     const hoverClientY = clientOffset.y - hoverBoundingRect.top;
@@ -119,12 +117,7 @@ const entryTarget: DropTargetSpec<IItemProps> = {
       return;
     }
 
-    props.onChangeIndex(
-      index,
-      hoverIndex,
-      containerId !== props.containerId,
-      take,
-    );
+    props.onChangeIndex(index, hoverIndex, containerId !== props.containerId, take);
 
     (monitor.getItem() as any).index = hoverIndex;
     if (containerId !== props.containerId) {
@@ -249,16 +242,12 @@ const containerTarget: DropTargetSpec<IProps> = {
 
       (monitor.getItem() as any).index = 0;
       (monitor.getItem() as any).containerId = props.id;
-      (monitor.getItem() as any).take = (list) =>
-        (component as any).take(item, list);
+      (monitor.getItem() as any).take = (list) => (component as any).take(item, list);
     }
   },
 };
 
-function containerCollect(
-  connect: DropTargetConnector,
-  monitor: DropTargetMonitor,
-) {
+function containerCollect(connect: DropTargetConnector, monitor: DropTargetMonitor) {
   return {
     connectDropTarget: connect.dropTarget(),
   };

@@ -1,18 +1,13 @@
-import {
-  gameSupportXboxPass,
-  iniPath,
-  initGameSupport,
-} from "./util/gameSupport";
-import missingOblivionFont, {
-  oblivionDefaultFonts,
-} from "./util/missingOblivionFonts";
-import missingSkyrimFonts from "./util/missingSkyrimFonts";
+import * as path from "path";
 
 import Promise from "bluebird";
-import * as path from "path";
 import * as Redux from "redux";
 import { actions, fs, log, selectors, types, util } from "vortex-api";
 import IniParser, { IniFile, WinapiFormat } from "vortex-parse-ini";
+
+import { gameSupportXboxPass, iniPath, initGameSupport } from "./util/gameSupport";
+import missingOblivionFont, { oblivionDefaultFonts } from "./util/missingOblivionFonts";
+import missingSkyrimFonts from "./util/missingSkyrimFonts";
 
 const parser = new IniParser(new WinapiFormat());
 
@@ -74,9 +69,7 @@ function testOblivionFontsImpl(api: types.IExtensionApi) {
       return Promise.resolve({
         description: {
           short: "Fonts missing.",
-          long:
-            "Fonts referenced in oblivion.ini don't seem to be installed:\n" +
-            fontList,
+          long: "Fonts referenced in oblivion.ini don't seem to be installed:\n" + fontList,
         },
         severity: "error" as types.ProblemSeverity,
         automaticFix: () => fixOblivionFonts(iniFile, missingFonts, gameId),
@@ -146,26 +139,17 @@ function testSkyrimFontsImpl(context: types.IExtensionContext) {
           })
           .catch((err: Error) => {
             if (err instanceof util.NotSupportedError) {
-              log(
-                "info",
-                "Not checking font list because bsa archive support not available",
-              );
+              log("info", "Not checking font list because bsa archive support not available");
               return Promise.reject(err);
             }
             return fs
               .statAsync(interfacePath)
               .then(() => {
-                context.api.showErrorNotification(
-                  "Failed to read default fonts",
-                  err,
-                  {
-                    message: interfacePath,
-                    allowReport: false,
-                  },
-                );
-                return Promise.reject(
-                  new util.ProcessCanceled("default fonts unknown"),
-                );
+                context.api.showErrorNotification("Failed to read default fonts", err, {
+                  message: interfacePath,
+                  allowReport: false,
+                });
+                return Promise.reject(new util.ProcessCanceled("default fonts unknown"));
               })
               .catch(() => {
                 context.api.showErrorNotification(
@@ -176,16 +160,12 @@ function testSkyrimFontsImpl(context: types.IExtensionContext) {
                     allowReport: false,
                   },
                 );
-                return Promise.reject(
-                  new util.ProcessCanceled("default fonts unknown"),
-                );
+                return Promise.reject(new util.ProcessCanceled("default fonts unknown"));
               });
           });
 
   return prom
-    .then(() =>
-      missingSkyrimFonts(store.getState(), defaultFonts[gameId], gameId),
-    )
+    .then(() => missingSkyrimFonts(store.getState(), defaultFonts[gameId], gameId))
     .then((missingFonts: string[]) => {
       if (missingFonts.length === 0) {
         return Promise.resolve(undefined);
@@ -196,9 +176,7 @@ function testSkyrimFontsImpl(context: types.IExtensionContext) {
       return Promise.resolve({
         description: {
           short: "Fonts missing.",
-          long:
-            "Fonts referenced in fontconfig.txt don't seem to be installed:\n" +
-            fontList,
+          long: "Fonts referenced in fontconfig.txt don't seem to be installed:\n" + fontList,
         },
         severity: "error" as types.ProblemSeverity,
       });
@@ -218,22 +196,12 @@ function testSkyrimFontsImpl(context: types.IExtensionContext) {
 
 function init(context: types.IExtensionContext): boolean {
   initGameSupport(context.api);
-  const testOblivionFonts = (): Promise<types.ITestResult> =>
-    testOblivionFontsImpl(context.api);
+  const testOblivionFonts = (): Promise<types.ITestResult> => testOblivionFontsImpl(context.api);
 
-  const testSkyrimFonts = (): Promise<types.ITestResult> =>
-    testSkyrimFontsImpl(context);
+  const testSkyrimFonts = (): Promise<types.ITestResult> => testSkyrimFontsImpl(context);
 
-  context.registerTest(
-    "oblivion-fonts",
-    "gamemode-activated",
-    testOblivionFonts as any,
-  );
-  context.registerTest(
-    "skyrim-fonts",
-    "gamemode-activated",
-    testSkyrimFonts as any,
-  );
+  context.registerTest("oblivion-fonts", "gamemode-activated", testOblivionFonts as any);
+  context.registerTest("skyrim-fonts", "gamemode-activated", testSkyrimFonts as any);
 
   return true;
 }

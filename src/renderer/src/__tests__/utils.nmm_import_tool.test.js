@@ -1,7 +1,7 @@
-import { parseModEntries } from "../../../../extensions/nmm-import-tool/src/util/nmmVirtualConfigParser";
-import { ParseError } from "../../../../extensions/nmm-import-tool/src/types/nmmEntries";
-
 import { Readable } from "stream";
+
+import { ParseError } from "../../../../extensions/nmm-import-tool/src/types/nmmEntries";
+import { parseModEntries } from "../../../../extensions/nmm-import-tool/src/util/nmmVirtualConfigParser";
 
 jest.mock("vortex-api", () => ({
   fs: {

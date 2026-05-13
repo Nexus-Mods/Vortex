@@ -1,5 +1,6 @@
-import { LoadOrder } from "./types";
 import { createAction } from "redux-act";
+
+import { LoadOrder } from "./types";
 
 export const setPrefixOffset = createAction(
   "7DTD_SET_PREFIX_OFFSET",

@@ -1,5 +1,4 @@
 import type { IInstallResult } from "./IInstallResult";
-
 import type { IModReference } from "./IMod";
 
 export type ProgressDelegate = (perc: number) => void;

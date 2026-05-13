@@ -1,5 +1,4 @@
 import * as actions from "../actions";
-
 import safeCreateAction from "../actions/safeCreateAction";
 
 describe("safeCreateAction", () => {

@@ -1,15 +1,13 @@
-import { IconButton } from "../../../controls/TooltipControls";
+import type { TFunction } from "i18next";
+import * as React from "react";
+
 import { ComponentEx } from "../../../controls/ComponentEx";
+import { IconButton } from "../../../controls/TooltipControls";
 import { getSafe } from "../../../util/storeHelper";
-
 import type { IDownload } from "../../download_management/types/IDownload";
-
 import type { IModWithState } from "../types/IModProps";
 import type { UpdateState } from "../util/modUpdateState";
 import { isIdValid } from "../util/modUpdateState";
-
-import type { TFunction } from "i18next";
-import * as React from "react";
 
 export interface IBaseProps {
   t: TFunction;
@@ -74,9 +72,7 @@ class VersionIconButton extends ComponentEx<IProps, {}> {
 
     switch (state) {
       case "bug-update":
-        return t(
-          "Mod should be updated because the installed version is bugged",
-        );
+        return t("Mod should be updated because the installed version is bugged");
       case "bug-disable":
         return t(
           "Mod should be disabled or downgraded because this version has been " +
@@ -87,9 +83,7 @@ class VersionIconButton extends ComponentEx<IProps, {}> {
           replace: { newVersion },
         });
       case "update-site":
-        return t(
-          "Mod can be updated (but you will have to pick the file yourself)",
-        );
+        return t("Mod can be updated (but you will have to pick the file yourself)");
       case "install":
         return t("The newest file is already downloaded.");
       default:

@@ -1,11 +1,9 @@
 import type { DuckDBConnection } from "@duckdb/node-api";
-
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 vi.mock("../logging", () => ({ log: vi.fn() }));
 
 import { log } from "../logging";
-
 import LevelPersist from "./LevelPersist";
 
 const SEPARATOR = "###";
@@ -19,10 +17,7 @@ function createMockConnection() {
 
 function createPersist() {
   const connection = createMockConnection();
-  const persist = new LevelPersist(
-    connection as unknown as DuckDBConnection,
-    "db",
-  );
+  const persist = new LevelPersist(connection as unknown as DuckDBConnection, "db");
   return { persist, connection };
 }
 
@@ -34,10 +29,10 @@ describe("LevelPersist.setItem", () => {
 
     expect(connection.runAndReadAll).not.toHaveBeenCalled();
     expect(connection.run).toHaveBeenCalledTimes(1);
-    expect(connection.run).toHaveBeenCalledWith(
-      "INSERT INTO db.kv VALUES ($1, $2)",
-      [`settings${SEPARATOR}window${SEPARATOR}x`, "42"],
-    );
+    expect(connection.run).toHaveBeenCalledWith("INSERT INTO db.kv VALUES ($1, $2)", [
+      `settings${SEPARATOR}window${SEPARATOR}x`,
+      "42",
+    ]);
   });
 
   it("does not begin or commit a transaction internally", async () => {
@@ -100,9 +95,7 @@ describe("LevelPersist.bulkSetItem", () => {
   it("joins compound key paths with the separator", async () => {
     const { persist, connection } = createPersist();
 
-    await persist.bulkSetItem([
-      { key: ["settings", "window", "x"], value: "42" },
-    ]);
+    await persist.bulkSetItem([{ key: ["settings", "window", "x"], value: "42" }]);
 
     const params = connection.run.mock.calls[0][1] as string[];
     expect(params[0]).toBe(`settings${SEPARATOR}window${SEPARATOR}x`);
@@ -151,14 +144,7 @@ describe("LevelPersist.bulkRemoveItem", () => {
         "OR key = $3 OR starts_with(key, $4) " +
         "OR key = $5 OR starts_with(key, $6)",
     );
-    expect(params).toEqual([
-      "a",
-      `a${SEPARATOR}`,
-      "b",
-      `b${SEPARATOR}`,
-      "c",
-      `c${SEPARATOR}`,
-    ]);
+    expect(params).toEqual(["a", `a${SEPARATOR}`, "b", `b${SEPARATOR}`, "c", `c${SEPARATOR}`]);
   });
 
   it("joins compound key paths with the separator", async () => {

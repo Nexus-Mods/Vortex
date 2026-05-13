@@ -13,18 +13,11 @@ export const ListboxButton = ({
 }: ComponentProps<typeof HeadlessListbox.Button> & {
   showChevron?: boolean;
 }) => (
-  <HeadlessListbox.Button
-    className={joinClasses(["nxm-dropdown-button", className])}
-    {...props}
-  >
+  <HeadlessListbox.Button className={joinClasses(["nxm-dropdown-button", className])} {...props}>
     {!!children && <span>{children}</span>}
 
     {showChevron && (
-      <Icon
-        className="nxm-dropdown-button-icon"
-        path={mdiUnfoldMoreHorizontal}
-        size="none"
-      />
+      <Icon className="nxm-dropdown-button-icon" path={mdiUnfoldMoreHorizontal} size="none" />
     )}
   </HeadlessListbox.Button>
 );

@@ -1,4 +1,5 @@
 import * as path from "path";
+
 import { types } from "vortex-api";
 
 import { LSLIB_FILES, ORIGINAL_FILES } from "./common";
@@ -7,38 +8,26 @@ import { logDebug } from "./util";
 export async function isLSLib(files: types.IInstruction[]) {
   const origFile = files.find(
     (iter) =>
-      iter.type === "copy" &&
-      LSLIB_FILES.has(path.basename(iter.destination).toLowerCase()),
+      iter.type === "copy" && LSLIB_FILES.has(path.basename(iter.destination).toLowerCase()),
   );
-  return origFile !== undefined
-    ? Promise.resolve(true)
-    : Promise.resolve(false);
+  return origFile !== undefined ? Promise.resolve(true) : Promise.resolve(false);
 }
 
 export async function isBG3SE(files: types.IInstruction[]) {
   const origFile = files.find(
     (iter) =>
-      iter.type === "copy" &&
-      path.basename(iter.destination).toLowerCase() === "dwrite.dll",
+      iter.type === "copy" && path.basename(iter.destination).toLowerCase() === "dwrite.dll",
   );
-  return origFile !== undefined
-    ? Promise.resolve(true)
-    : Promise.resolve(false);
+  return origFile !== undefined ? Promise.resolve(true) : Promise.resolve(false);
 }
 
-export async function isLoose(
-  instructions: types.IInstruction[],
-): Promise<boolean> {
+export async function isLoose(instructions: types.IInstruction[]): Promise<boolean> {
   // only interested in copy instructions
-  const copyInstructions = instructions.filter(
-    (instr) => instr.type === "copy",
-  );
+  const copyInstructions = instructions.filter((instr) => instr.type === "copy");
 
   // do we have a data folder?
   const hasDataFolder: boolean =
-    copyInstructions.find(
-      (instr) => instr.source.indexOf("Data" + path.sep) !== -1,
-    ) !== undefined;
+    copyInstructions.find((instr) => instr.source.indexOf("Data" + path.sep) !== -1) !== undefined;
 
   // do we have a public or generated folder?
   const hasGenOrPublicFolder: boolean =
@@ -61,15 +50,11 @@ export async function isReplacer(
   files: types.IInstruction[],
 ): Promise<boolean> {
   const origFile = files.find(
-    (iter) =>
-      iter.type === "copy" &&
-      ORIGINAL_FILES.has(iter.destination.toLowerCase()),
+    (iter) => iter.type === "copy" && ORIGINAL_FILES.has(iter.destination.toLowerCase()),
   );
 
   const paks = files.filter(
-    (iter) =>
-      iter.type === "copy" &&
-      path.extname(iter.destination).toLowerCase() === ".pak",
+    (iter) => iter.type === "copy" && path.extname(iter.destination).toLowerCase() === ".pak",
   );
 
   logDebug("isReplacer", { origFile: origFile, paks: paks });

@@ -14,11 +14,7 @@ const config = {
   },
   testRegex: "(/__tests__/.*\\.(test|spec))\\.(js|jsx|ts|tsx)$",
   testPathIgnorePatterns: ["/node_modules/", "/dist/", "/out/"],
-  modulePathIgnorePatterns: [
-    "<rootDir>/out/",
-    "<rootDir>/dist/",
-    "<rootDir>/temp/",
-  ],
+  modulePathIgnorePatterns: ["<rootDir>/out/", "<rootDir>/dist/", "<rootDir>/temp/"],
   moduleFileExtensions: ["js", "json", "jsx", "ts", "tsx", "node"],
   setupFilesAfterEnv: ["<rootDir>/src/setupTests.js"],
 };

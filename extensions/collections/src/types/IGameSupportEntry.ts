@@ -1,7 +1,7 @@
-import { IExtendedInterfaceProps } from "./IExtendedInterfaceProps";
-
 import { types } from "vortex-api";
+
 import { ICollection } from "./ICollection";
+import { IExtendedInterfaceProps } from "./IExtendedInterfaceProps";
 
 export interface IGameSupportEntry {
   generator: (

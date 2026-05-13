@@ -13,6 +13,7 @@ import {
   Usage,
   util,
 } from "vortex-api";
+
 import { startAddModsToCollection } from "../actions/session";
 import { alreadyIncluded } from "../collectionCreate";
 import { MOD_TYPE, NAMESPACE } from "../constants";
@@ -100,18 +101,13 @@ function AddModsDialog(props: IAddModsDialogProps) {
   );
 
   const collection =
-    collectionId !== undefined
-      ? state.persistent.mods[gameId]?.[collectionId]
-      : undefined;
+    collectionId !== undefined ? state.persistent.mods[gameId]?.[collectionId] : undefined;
 
   const mods = state.persistent.mods[gameId];
   const modsWithState = React.useMemo(
     () =>
       Object.keys(mods ?? {}).reduce((prev, modId) => {
-        if (
-          !alreadyIncluded(collection?.rules, modId) &&
-          mods[modId].type !== MOD_TYPE
-        ) {
+        if (!alreadyIncluded(collection?.rules, modId) && mods[modId].type !== MOD_TYPE) {
           prev[modId] = {
             selected: selection.has(modId),
             mod: mods[modId],
@@ -127,9 +123,7 @@ function AddModsDialog(props: IAddModsDialogProps) {
         setSelection(new Set<string>([].concat(Array.from(selection), modIds)));
       } else {
         setSelection(
-          new Set<string>(
-            Array.from(selection).filter((modId) => !modIds.includes(modId)),
-          ),
+          new Set<string>(Array.from(selection).filter((modId) => !modIds.includes(modId))),
         );
       }
     },

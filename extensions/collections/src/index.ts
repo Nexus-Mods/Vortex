@@ -1,35 +1,18 @@
+import * as path from "path";
+import { pathToFileURL } from "url";
+
+import * as nexusApi from "@nexusmods/nexus-api";
+import { IRevision } from "@nexusmods/nexus-api";
+import Bluebird from "bluebird";
+import * as _ from "lodash";
+import memoize from "memoize-one";
+import * as React from "react";
+import * as Redux from "redux";
+import { generate as shortid } from "shortid";
+import { actions, log, OptionsFilter, selectors, types, util } from "vortex-api";
+
 /* eslint-disable */
 import { clearPendingVote, updateSuccessRate } from "./actions/persistent";
-import persistentReducer from "./reducers/persistent";
-import sessionReducer from "./reducers/session";
-import settingsReducer from "./reducers/settings";
-import trackingReducer from "./reducers/installTracking";
-import { ICollection } from "./types/ICollection";
-import { IExtendedInterfaceProps } from "./types/IExtendedInterfaceProps";
-import { genDefaultsAction } from "./util/defaults";
-import { addExtension } from "./util/extension";
-import InstallDriver from "./util/InstallDriver";
-import {
-  cloneCollection,
-  createCollection,
-  makeCollectionId,
-} from "./util/transformCollection";
-import { bbProm, getUnfulfilledNotificationId } from "./util/util";
-import AddModsDialog from "./views/AddModsDialog";
-import HealthDownvoteDialog from "./views/CollectionPageView/HealthDownvoteDialog";
-import CollectionsMainPage from "./views/CollectionList";
-import {
-  InstallChangelogDialog,
-  InstallFinishDialog,
-  InstallStartDialog,
-} from "./views/InstallDialog";
-
-import { getActiveInstallSession } from "./util/selectors";
-
-import { IPathTools } from "./views/CollectionPageEdit/FileOverrides";
-
-import CollectionAttributeRenderer from "./views/CollectionModsPageAttributeRenderer";
-
 import {
   addCollectionAction,
   addCollectionCondition,
@@ -38,11 +21,7 @@ import {
   removeCollectionAction,
   removeCollectionCondition,
 } from "./collectionCreate";
-import {
-  makeInstall,
-  postprocessCollection,
-  testSupported,
-} from "./collectionInstall";
+import { makeInstall, postprocessCollection, testSupported } from "./collectionInstall";
 import {
   DELAY_FIRST_VOTE_REQUEST,
   INSTALLING_NOTIFICATION_ID,
@@ -51,27 +30,30 @@ import {
 } from "./constants";
 import { onCollectionUpdate } from "./eventHandlers";
 import initIniTweaks from "./initweaks";
+import trackingReducer from "./reducers/installTracking";
+import persistentReducer from "./reducers/persistent";
+import sessionReducer from "./reducers/session";
+import settingsReducer from "./reducers/settings";
 import initTools from "./tools";
-
-import * as nexusApi from "@nexusmods/nexus-api";
-import Bluebird from "bluebird";
-import * as _ from "lodash";
-import memoize from "memoize-one";
-import * as path from "path";
-import * as React from "react";
-import * as Redux from "redux";
-import { generate as shortid } from "shortid";
-import { pathToFileURL } from "url";
-import {
-  actions,
-  log,
-  OptionsFilter,
-  selectors,
-  types,
-  util,
-} from "vortex-api";
-import { IRevision } from "@nexusmods/nexus-api";
+import { ICollection } from "./types/ICollection";
+import { IExtendedInterfaceProps } from "./types/IExtendedInterfaceProps";
+import { genDefaultsAction } from "./util/defaults";
+import { addExtension } from "./util/extension";
 import { readCollection } from "./util/importCollection";
+import InstallDriver from "./util/InstallDriver";
+import { getActiveInstallSession } from "./util/selectors";
+import { cloneCollection, createCollection, makeCollectionId } from "./util/transformCollection";
+import { bbProm, getUnfulfilledNotificationId } from "./util/util";
+import AddModsDialog from "./views/AddModsDialog";
+import CollectionsMainPage from "./views/CollectionList";
+import CollectionAttributeRenderer from "./views/CollectionModsPageAttributeRenderer";
+import { IPathTools } from "./views/CollectionPageEdit/FileOverrides";
+import HealthDownvoteDialog from "./views/CollectionPageView/HealthDownvoteDialog";
+import {
+  InstallChangelogDialog,
+  InstallFinishDialog,
+  InstallStartDialog,
+} from "./views/InstallDialog";
 
 // TODO: Import from vortex-api once the dependency is updated
 /** Collection icon (single) - stacked triangles */
@@ -114,12 +96,8 @@ function makeWillRemoveMods(api: types.IExtensionApi) {
   return (gameId: string, modIds: string[]) => {
     const state = api.getState();
     const mods = state.persistent.mods[gameId];
-    const collections = Object.values(mods).filter(
-      (mod) => mod.type === MOD_TYPE,
-    );
-    collections.forEach((coll) =>
-      api.dismissNotification(getUnfulfilledNotificationId(coll.id)),
-    );
+    const collections = Object.values(mods).filter((mod) => mod.type === MOD_TYPE);
+    collections.forEach((coll) => api.dismissNotification(getUnfulfilledNotificationId(coll.id)));
     modIds.forEach((modId) => modsBeingRemoved.add(makeModKey(gameId, modId)));
     return Promise.resolve();
   };
@@ -127,9 +105,7 @@ function makeWillRemoveMods(api: types.IExtensionApi) {
 
 function makeDidRemoveMods() {
   return (gameId: string, modIds: string[]) => {
-    modIds.forEach((modId) =>
-      modsBeingRemoved.delete(makeModKey(gameId, modId)),
-    );
+    modIds.forEach((modId) => modsBeingRemoved.delete(makeModKey(gameId, modId)));
     return Promise.resolve();
   };
 }
@@ -137,11 +113,7 @@ function makeDidRemoveMods() {
 function makeOnUnfulfilledRules(api: types.IExtensionApi) {
   const reported = new Set<string>();
 
-  return (
-    profileId: string,
-    modId: string,
-    rules: types.IModRule[],
-  ): Bluebird<boolean> => {
+  return (profileId: string, modId: string, rules: types.IModRule[]): Bluebird<boolean> => {
     const state: types.IState = api.store.getState();
 
     const profile = selectors.profileById(state, profileId);
@@ -154,11 +126,7 @@ function makeOnUnfulfilledRules(api: types.IExtensionApi) {
       return Bluebird.resolve(false);
     }
 
-    const collection: types.IMod = util.getSafe(
-      state.persistent.mods,
-      [gameId, modId],
-      undefined,
-    );
+    const collection: types.IMod = util.getSafe(state.persistent.mods, [gameId, modId], undefined);
 
     if (
       collection !== undefined &&
@@ -176,9 +144,7 @@ function makeOnUnfulfilledRules(api: types.IExtensionApi) {
           action: (dismiss) => {
             dismiss();
             if (profile !== undefined) {
-              api.store.dispatch(
-                actions.setModEnabled(profile.id, modId, false),
-              );
+              api.store.dispatch(actions.setModEnabled(profile.id, modId, false));
             }
           },
         },
@@ -193,9 +159,7 @@ function makeOnUnfulfilledRules(api: types.IExtensionApi) {
           action: (dismiss) => {
             initFromProfile(api, collectionProfile)
               .then(dismiss)
-              .catch((err) =>
-                api.showErrorNotification("Failed to update collection", err),
-              );
+              .catch((err) => api.showErrorNotification("Failed to update collection", err));
           },
         });
       } else if (profile !== undefined) {
@@ -299,10 +263,7 @@ async function createNewCollection(
   });
 }
 
-async function installCollection(
-  api: types.IExtensionApi,
-  revision: IRevision,
-) {
+async function installCollection(api: types.IExtensionApi, revision: IRevision) {
   return api
     .showDialog(
       "question",
@@ -376,11 +337,7 @@ async function pauseCollection(
     //  to the codebase recently + the imminent 1.16 stable release - updating the API submodule
     //  is not worth the risk at this moment, so will just omit the fields here as well.
     // TODO: update the vortex-api types and remove the omit when we update the dependency.
-    const cleanReference = _.omit(rule.reference, [
-      "installerChoices",
-      "fileList",
-      "patches",
-    ]);
+    const cleanReference = _.omit(rule.reference, ["installerChoices", "fileList", "patches"]);
     const dlId = util.findDownloadByRef(cleanReference, downloads);
     if (dlId !== undefined) {
       api.events.emit("pause-download", dlId);
@@ -498,10 +455,7 @@ async function removeCollection(
 
         if (dlId !== undefined) {
           const download = state.persistent.downloads.files[dlId];
-          if (
-            download !== undefined &&
-            (deleteArchives || download.state !== "finished")
-          ) {
+          if (download !== undefined && (deleteArchives || download.state !== "finished")) {
             await util.toPromise((cb) =>
               api.events.emit("remove-download", dlId, cb, {
                 silent: true,
@@ -510,10 +464,7 @@ async function removeCollection(
             );
           }
         }
-        doProgress(
-          "Removing downloads",
-          50 * (completed++ / collection.rules.length),
-        );
+        doProgress("Removing downloads", 50 * (completed++ / collection.rules.length));
       }),
     );
 
@@ -577,10 +528,8 @@ function genAttributeExtractor(api: types.IExtensionApi) {
   return (modInfo: any, modPath: string): Bluebird<{ [key: string]: any }> => {
     const collectionId = modInfo.download?.modInfo?.nexus?.ids?.collectionId;
     const revisionId = modInfo.download?.modInfo?.nexus?.ids?.revisionId;
-    const collectionSlug =
-      modInfo.download?.modInfo?.nexus?.ids?.collectionSlug;
-    const revisionNumber =
-      modInfo.download?.modInfo?.nexus?.ids?.revisionNumber;
+    const collectionSlug = modInfo.download?.modInfo?.nexus?.ids?.collectionSlug;
+    const revisionNumber = modInfo.download?.modInfo?.nexus?.ids?.revisionNumber;
     const referenceTag = modInfo.download?.modInfo?.referenceTag;
 
     const result: { [key: string]: any } = {
@@ -598,9 +547,7 @@ function genAttributeExtractor(api: types.IExtensionApi) {
 function generateCollectionMap(mods: { [modId: string]: types.IMod }): {
   [modId: string]: types.IMod[];
 } {
-  const collections = Object.values(mods).filter(
-    (mod) => mod.type === MOD_TYPE,
-  );
+  const collections = Object.values(mods).filter((mod) => mod.type === MOD_TYPE);
 
   const result: { [modId: string]: types.IMod[] } = {};
 
@@ -639,9 +586,7 @@ function collectionListEqual(lArgs: IModTable[], rArgs: IModTable[]): boolean {
   }
 
   const ruleDiff = keys.find(
-    (modId) =>
-      lhs[modId].state !== rhs[modId].state ||
-      lhs[modId].rules !== rhs[modId].rules,
+    (modId) => lhs[modId].state !== rhs[modId].state || lhs[modId].rules !== rhs[modId].rules,
   );
 
   return ruleDiff === undefined;
@@ -680,8 +625,7 @@ async function updateMeta(api: types.IExtensionApi, collectionId?: string) {
   // tslint:disable-next-line:prefer-for-of
   for (let i = 0; i < collections.length; ++i) {
     const modId = collections[i];
-    const { revisionId, collectionSlug, revisionNumber } =
-      mods[modId].attributes ?? {};
+    const { revisionId, collectionSlug, revisionNumber } = mods[modId].attributes ?? {};
     try {
       if (revisionId !== undefined || collectionSlug !== undefined) {
         progress(util.renderModName(mods[modId]), i);
@@ -721,8 +665,7 @@ async function updateMeta(api: types.IExtensionApi, collectionId?: string) {
     }
   }
 
-  localState.ownCollections =
-    (await api.emitAndAwait("get-my-collections", gameMode))[0] || [];
+  localState.ownCollections = (await api.emitAndAwait("get-my-collections", gameMode))[0] || [];
 
   api.dismissNotification(notiId);
 }
@@ -733,11 +676,7 @@ interface ICallbackMap {
 
 let collectionChangedCB: () => void;
 
-function onAddSelectionImpl(
-  api: types.IExtensionApi,
-  collectionId: string,
-  modIds: string[],
-) {
+function onAddSelectionImpl(api: types.IExtensionApi, collectionId: string, modIds: string[]) {
   const state = api.getState();
   const gameId = selectors.activeGameId(state);
   const collection = state.persistent.mods[gameId][collectionId];
@@ -756,11 +695,11 @@ function onAddSelectionImpl(
       }
     });
   } else {
-    log(
-      "warn",
-      "failed to add mods to collection, collection no longer found",
-      { gameId, collectionId, modIds },
-    );
+    log("warn", "failed to add mods to collection, collection no longer found", {
+      gameId,
+      collectionId,
+      modIds,
+    });
   }
 }
 
@@ -770,10 +709,7 @@ const localState = util.makeReactive<{
   ownCollections: [],
 });
 
-function register(
-  context: types.IExtensionContext,
-  collectionsCB: ICallbackMap,
-) {
+function register(context: types.IExtensionContext, collectionsCB: ICallbackMap) {
   context.registerReducer(["session", "collections"], sessionReducer);
   context.registerReducer(["session", "collections"], trackingReducer);
   context.registerReducer(["settings", "collections"], settingsReducer);
@@ -785,20 +721,10 @@ function register(
         if (newProfileId === profileId) {
           resolve();
         } else {
-          log(
-            "warn",
-            `Failed to switch to profile ${profileId}; got ${newProfileId}`,
-          );
-          const profile = selectors.profileById(
-            context.api.getState(),
-            profileId,
-          );
+          log("warn", `Failed to switch to profile ${profileId}; got ${newProfileId}`);
+          const profile = selectors.profileById(context.api.getState(), profileId);
           if (profile === undefined) {
-            reject(
-              new Error(
-                `Failed to switch to profile ${profileId}; got ${newProfileId}`,
-              ),
-            );
+            reject(new Error(`Failed to switch to profile ${profileId}; got ${newProfileId}`));
           }
 
           // The profile exists - this is a memoization issue, lets just switch to
@@ -821,16 +747,14 @@ function register(
     onSwitchProfile,
   }));
 
-  const onClone = (collectionId: string) =>
-    cloneInstalledCollection(context.api, collectionId);
+  const onClone = (collectionId: string) => cloneInstalledCollection(context.api, collectionId);
   const onCreateCollection = (profile: types.IProfile, name: string) =>
     createNewCollection(context.api, profile, name);
   const onRemoveCollection = (gameId: string, modId: string, cancel: boolean) =>
     removeCollection(context.api, gameId, modId, cancel);
   const onUpdateMeta = () => updateMeta(context.api);
   const editCollection = (id: string) => collectionsCB.editCollection?.(id);
-  const onInstallCollection = (revision: IRevision) =>
-    installCollection(context.api, revision);
+  const onInstallCollection = (revision: IRevision) => installCollection(context.api, revision);
 
   context.registerDialog("collection-finish", InstallFinishDialog, () => ({
     api: context.api,
@@ -839,11 +763,7 @@ function register(
     editCollection,
   }));
 
-  context.registerDialog(
-    "collection-changelog",
-    InstallChangelogDialog,
-    () => ({}),
-  );
+  context.registerDialog("collection-changelog", InstallChangelogDialog, () => ({}));
 
   const onAddSelection = (collectionId: string, modIds: string[]) =>
     onAddSelectionImpl(context.api, collectionId, modIds);
@@ -852,11 +772,7 @@ function register(
     onAddSelection,
   }));
 
-  context.registerDialog(
-    "collection-health-downvote",
-    HealthDownvoteDialog,
-    () => ({}),
-  );
+  context.registerDialog("collection-health-downvote", HealthDownvoteDialog, () => ({}));
 
   let resetPageCB: () => void;
   const resetCB = (cb) => (resetPageCB = cb);
@@ -903,15 +819,11 @@ function register(
   const emptyArray = [];
   const emptyObj = {};
 
-  const collectionsMapFunc = memoize(
-    generateCollectionMap,
-    collectionListEqual,
-  );
+  const collectionsMapFunc = memoize(generateCollectionMap, collectionListEqual);
 
   const collectionsMap = () =>
     collectionsMapFunc(
-      stateFunc().persistent.mods[selectors.activeGameId(stateFunc())] ??
-        emptyObj,
+      stateFunc().persistent.mods[selectors.activeGameId(stateFunc())] ?? emptyObj,
     );
   const collectionOptions = memoize(generateCollectionOptions);
 
@@ -936,9 +848,7 @@ function register(
     },
     calc: (mod: types.IMod) => {
       const collections = collectionsMap()[mod.id];
-      return collections === undefined
-        ? ""
-        : collections.map((iter) => iter.id);
+      return collections === undefined ? "" : collections.map((iter) => iter.id);
     },
     externalData: (onChanged: () => void) => {
       collectionChangedCB = onChanged;
@@ -947,9 +857,7 @@ function register(
     edit: {},
     filter: new OptionsFilter(
       () => {
-        const mods =
-          stateFunc().persistent.mods[selectors.activeGameId(stateFunc())] ??
-          {};
+        const mods = stateFunc().persistent.mods[selectors.activeGameId(stateFunc())] ?? {};
         return [
           {
             label: `<${context.api.translate("None")}>`,
@@ -963,11 +871,7 @@ function register(
     ),
     isGroupable: true,
     groupName: (modId: string) =>
-      util.renderModName(
-        stateFunc().persistent.mods[selectors.activeGameId(stateFunc())]?.[
-          modId
-        ],
-      ),
+      util.renderModName(stateFunc().persistent.mods[selectors.activeGameId(stateFunc())]?.[modId]),
     isDefaultVisible: false,
   };
   context.registerTableAttribute("mods", collectionAttribute);
@@ -983,10 +887,7 @@ function register(
       // have to delay this a bit because the callbacks are only set up once the page
       // is first opened
       setTimeout(() => {
-        if (
-          collectionsCB !== undefined &&
-          collectionsCB.editCollection !== undefined
-        ) {
+        if (collectionsCB !== undefined && collectionsCB.editCollection !== undefined) {
           collectionsCB.editCollection(modIds[0]);
         }
       }, 100);
@@ -1004,39 +905,23 @@ function register(
       const state = context.api.getState();
       const gameId = selectors.activeGameId(state);
       const mods = state.persistent.mods[gameId];
-      const stagingPath = selectors.installPathForGame(
-        context.api.getState(),
-        gameId,
-      );
+      const stagingPath = selectors.installPathForGame(context.api.getState(), gameId);
       const mod = mods[modIds[0]];
       if (mod !== undefined && mod.type === MOD_TYPE) {
-        readCollection(
-          context.api,
-          path.join(stagingPath, mod.installationPath, "collection.json"),
-        )
+        readCollection(context.api, path.join(stagingPath, mod.installationPath, "collection.json"))
           .then(async (collectionInfo: ICollection) => {
             try {
-              await postprocessCollection(
-                context.api,
-                gameId,
-                mod,
-                collectionInfo,
-                mods,
-              );
+              await postprocessCollection(context.api, gameId, mod, collectionInfo, mods);
             } catch (err) {
-              context.api.showErrorNotification(
-                "Failed to apply collection rules",
-                err,
-                { message: util.renderModName(mod) },
-              );
+              context.api.showErrorNotification("Failed to apply collection rules", err, {
+                message: util.renderModName(mod),
+              });
             }
           })
           .catch((err) => {
-            context.api.showErrorNotification(
-              "Failed to read collection info",
-              err,
-              { message: util.renderModName(mod) },
-            );
+            context.api.showErrorNotification("Failed to read collection info", err, {
+              message: util.renderModName(mod),
+            });
           });
       }
     },
@@ -1085,8 +970,7 @@ function register(
         context.api.showErrorNotification("Failed to init collection", err),
       );
     },
-    (profileIds: string[]) =>
-      !profileCollectionExists(context.api, profileIds[0]),
+    (profileIds: string[]) => !profileCollectionExists(context.api, profileIds[0]),
   );
 
   context.registerAction(
@@ -1100,8 +984,7 @@ function register(
         context.api.showErrorNotification("Failed to update collection", err),
       );
     },
-    (profileIds: string[]) =>
-      profileCollectionExists(context.api, profileIds[0]),
+    (profileIds: string[]) => profileCollectionExists(context.api, profileIds[0]),
   );
 
   context.registerAction(
@@ -1113,12 +996,7 @@ function register(
     (instanceIds: string[]) => {
       addCollectionAction(context.api, instanceIds)
         .then(() => collectionChanged.schedule())
-        .catch((err) =>
-          context.api.showErrorNotification(
-            "failed to add mod to collection",
-            err,
-          ),
-        );
+        .catch((err) => context.api.showErrorNotification("failed to add mod to collection", err));
     },
     (instanceIds: string[]) => addCollectionCondition(context.api, instanceIds),
   );
@@ -1132,12 +1010,7 @@ function register(
     (instanceIds: string[]) => {
       addCollectionAction(context.api, instanceIds)
         .then(() => collectionChanged.schedule())
-        .catch((err) =>
-          context.api.showErrorNotification(
-            "failed to add mod to collection",
-            err,
-          ),
-        );
+        .catch((err) => context.api.showErrorNotification("failed to add mod to collection", err));
     },
     (instanceIds: string[]) => addCollectionCondition(context.api, instanceIds),
   );
@@ -1152,14 +1025,10 @@ function register(
       removeCollectionAction(context.api, instanceIds)
         .then(() => collectionChanged.schedule())
         .catch((err) =>
-          context.api.showErrorNotification(
-            "failed to remove mod from collection",
-            err,
-          ),
+          context.api.showErrorNotification("failed to remove mod from collection", err),
         );
     },
-    (instanceIds: string[]) =>
-      removeCollectionCondition(context.api, instanceIds),
+    (instanceIds: string[]) => removeCollectionCondition(context.api, instanceIds),
   );
 
   context.registerAction(
@@ -1172,14 +1041,10 @@ function register(
       removeCollectionAction(context.api, instanceIds)
         .then(() => collectionChanged.schedule())
         .catch((err) =>
-          context.api.showErrorNotification(
-            "failed to remove mod from collection",
-            err,
-          ),
+          context.api.showErrorNotification("failed to remove mod from collection", err),
         );
     },
-    (instanceIds: string[]) =>
-      removeCollectionCondition(context.api, instanceIds),
+    (instanceIds: string[]) => removeCollectionCondition(context.api, instanceIds),
   );
 
   context.registerAttributeExtractor(100, genAttributeExtractor(context.api));
@@ -1222,36 +1087,27 @@ function register(
     });
   };
 
-  context.registerActionCheck(
-    "ADD_NOTIFICATION",
-    (state: types.IState, action: Redux.Action) => {
-      const notification: types.INotification = action["payload"];
-      const ruleMatches = (rule) =>
-        rule.reference.tag === notification.replace?.tag;
+  context.registerActionCheck("ADD_NOTIFICATION", (state: types.IState, action: Redux.Action) => {
+    const notification: types.INotification = action["payload"];
+    const ruleMatches = (rule) => rule.reference.tag === notification.replace?.tag;
 
-      let collection: types.IMod;
-      if (
-        driver?.collection !== undefined &&
-        notification.id.startsWith("multiple-plugins-")
-      ) {
-        // reference tags may be updated during installation, so we need to get the
-        // updated collection if necessary
-        if (driver.profile !== undefined) {
-          collection =
-            state.persistent.mods[driver.profile.gameId]?.[
-              driver.collection.id
-            ] ?? driver.collection;
-        } else {
-          collection = driver.collection;
-        }
+    let collection: types.IMod;
+    if (driver?.collection !== undefined && notification.id.startsWith("multiple-plugins-")) {
+      // reference tags may be updated during installation, so we need to get the
+      // updated collection if necessary
+      if (driver.profile !== undefined) {
+        collection =
+          state.persistent.mods[driver.profile.gameId]?.[driver.collection.id] ?? driver.collection;
+      } else {
+        collection = driver.collection;
       }
+    }
 
-      if ((collection?.rules ?? []).find(ruleMatches) !== undefined) {
-        return false as any;
-      }
-      return undefined;
-    },
-  );
+    if ((collection?.rules ?? []).find(ruleMatches) !== undefined) {
+      return false as any;
+    }
+    return undefined;
+  });
 }
 
 async function triggerVoteNotification(
@@ -1285,12 +1141,7 @@ async function triggerVoteNotification(
     )[0];
     if (voted.success) {
       api.store.dispatch(
-        updateSuccessRate(
-          revisionId,
-          vote,
-          voted.averageRating.average,
-          voted.averageRating.total,
-        ),
+        updateSuccessRate(revisionId, vote, voted.averageRating.average, voted.averageRating.total),
       );
     }
   };
@@ -1301,22 +1152,14 @@ async function triggerVoteNotification(
       message: revInfo.collection.name,
       title: "Did the Collection work for you?",
       onDismiss: () => {
-        api.events.emit(
-          "analytics-track-click-event",
-          "Notifications",
-          "Success rating - Dismiss",
-        );
+        api.events.emit("analytics-track-click-event", "Notifications", "Success rating - Dismiss");
         resolve();
       },
       actions: [
         {
           title: "Yes",
           action: (dismiss) => {
-            api.events.emit(
-              "analytics-track-click-event",
-              "Notifications",
-              "Success rating - Yes",
-            );
+            api.events.emit("analytics-track-click-event", "Notifications", "Success rating - Yes");
             sendRating(true);
             resolve();
             dismiss();
@@ -1325,11 +1168,7 @@ async function triggerVoteNotification(
         {
           title: "No",
           action: (dismiss) => {
-            api.events.emit(
-              "analytics-track-click-event",
-              "Notifications",
-              "Success rating - No",
-            );
+            api.events.emit("analytics-track-click-event", "Notifications", "Success rating - No");
             sendRating(false);
             resolve();
             dismiss();
@@ -1374,15 +1213,10 @@ function once(api: types.IExtensionApi, collectionsCB: () => ICallbackMap) {
   const applyCollectionModDefaults = new util.Debouncer(() => {
     const gameMode = selectors.activeGameId(state());
     const mods = util.getSafe(state(), ["persistent", "mods", gameMode], {});
-    const collectionIds = Object.keys(mods).filter(
-      (id) => mods[id]?.type === MOD_TYPE,
-    );
+    const collectionIds = Object.keys(mods).filter((id) => mods[id]?.type === MOD_TYPE);
     const redActions: Redux.Action[] = collectionIds.reduce((accum, id) => {
       const collection: types.IMod = mods[id];
-      if (
-        collection === undefined ||
-        collection.attributes["editable"] !== true
-      ) {
+      if (collection === undefined || collection.attributes["editable"] !== true) {
         return accum;
       }
       const collMods = (collection.rules ?? [])
@@ -1416,44 +1250,38 @@ function once(api: types.IExtensionApi, collectionsCB: () => ICallbackMap) {
       const gameId = driver.profile.gameId;
       const modId = driver.collection.id;
 
-      api.store.dispatch(
-        actions.setModAttribute(gameId, modId, "installCompleted", Date.now()),
-      );
+      api.store.dispatch(actions.setModAttribute(gameId, modId, "installCompleted", Date.now()));
     }
   });
 
   // Pause collection installation if user becomes unauthenticated
-  api.onStateChange(
-    ["persistent", "nexus", "userInfo"],
-    (oldValue, newValue) => {
-      // Only pause if user logged out (userInfo became undefined), not during re-login
-      if (oldValue !== undefined && newValue === undefined) {
-        if (!driver.installDone && driver.collection !== undefined) {
-          const gameId =
-            driver.profile?.gameId ?? selectors.activeGameId(api.getState());
-          const modId = driver.collection.id;
-          log("info", "User logged out during collection install, pausing", {
-            modId,
-          });
-          pauseCollection(api, gameId, modId, true)
-            .then(() => {
-              api.sendNotification({
-                type: "warning",
-                title: "Collection paused",
-                message: "You have been logged out. Please log in and resume.",
-                displayMS: 5000,
-              });
-            })
-            .catch((err) => {
-              log("error", "Failed to pause collection after logout", {
-                modId,
-                error: err.message,
-              });
+  api.onStateChange(["persistent", "nexus", "userInfo"], (oldValue, newValue) => {
+    // Only pause if user logged out (userInfo became undefined), not during re-login
+    if (oldValue !== undefined && newValue === undefined) {
+      if (!driver.installDone && driver.collection !== undefined) {
+        const gameId = driver.profile?.gameId ?? selectors.activeGameId(api.getState());
+        const modId = driver.collection.id;
+        log("info", "User logged out during collection install, pausing", {
+          modId,
+        });
+        pauseCollection(api, gameId, modId, true)
+          .then(() => {
+            api.sendNotification({
+              type: "warning",
+              title: "Collection paused",
+              message: "You have been logged out. Please log in and resume.",
+              displayMS: 5000,
             });
-        }
+          })
+          .catch((err) => {
+            log("error", "Failed to pause collection after logout", {
+              modId,
+              error: err.message,
+            });
+          });
       }
-    },
-  );
+    }
+  });
 
   const doCheckVoteRequest = () => {
     checkVoteRequest(api).then((nextCheck: number) => {
@@ -1471,53 +1299,45 @@ function once(api: types.IExtensionApi, collectionsCB: () => ICallbackMap) {
     [gameId: string]: { [modId: string]: types.IMod };
   }
 
-  api.onStateChange(
-    ["persistent", "mods"],
-    (prev: IModsDict, cur: IModsDict) => {
-      const gameMode = selectors.activeGameId(api.getState());
-      const prevG = prev[gameMode] ?? {};
-      const curG = cur[gameMode] ?? {};
-      const allIds = Array.from(
-        new Set([].concat(Object.keys(prevG), Object.keys(curG))),
-      );
-      const collections = allIds.filter(
-        (id) => prevG[id]?.type === MOD_TYPE || curG[id]?.type === MOD_TYPE,
-      );
-      const changed = collections.find(
-        (modId) =>
-          prevG[modId]?.attributes?.customFileName !==
-          curG[modId]?.attributes?.customFileName,
-      );
-      if (changed !== undefined) {
+  api.onStateChange(["persistent", "mods"], (prev: IModsDict, cur: IModsDict) => {
+    const gameMode = selectors.activeGameId(api.getState());
+    const prevG = prev[gameMode] ?? {};
+    const curG = cur[gameMode] ?? {};
+    const allIds = Array.from(new Set([].concat(Object.keys(prevG), Object.keys(curG))));
+    const collections = allIds.filter(
+      (id) => prevG[id]?.type === MOD_TYPE || curG[id]?.type === MOD_TYPE,
+    );
+    const changed = collections.find(
+      (modId) =>
+        prevG[modId]?.attributes?.customFileName !== curG[modId]?.attributes?.customFileName,
+    );
+    if (changed !== undefined) {
+      collectionChangedCB?.();
+    }
+
+    const foundRuleChanges: boolean =
+      collections.find((id) => {
+        if (prevG[id]?.rules === curG[id]?.rules) {
+          return false;
+        }
+        const added = _.difference(curG[id]?.rules, prevG[id]?.rules);
+        const removed = _.difference(prevG[id]?.rules, curG[id]?.rules);
+        return (
+          removed.length > 0 ||
+          added.find((rule) => ["requires", "recommends"].includes(rule.type)) !== undefined
+        );
+      }) !== undefined;
+
+    if (foundRuleChanges) {
+      applyCollectionModDefaults.schedule();
+      if (changed === undefined) {
+        // The collectionChanged callback hasn't been called; yet
+        //  the mod entries had been changed - we need to call the CB
+        //  in order for the collection column on the mods page to rerender
         collectionChangedCB?.();
       }
-
-      const foundRuleChanges: boolean =
-        collections.find((id) => {
-          if (prevG[id]?.rules === curG[id]?.rules) {
-            return false;
-          }
-          const added = _.difference(curG[id]?.rules, prevG[id]?.rules);
-          const removed = _.difference(prevG[id]?.rules, curG[id]?.rules);
-          return (
-            removed.length > 0 ||
-            added.find((rule) =>
-              ["requires", "recommends"].includes(rule.type),
-            ) !== undefined
-          );
-        }) !== undefined;
-
-      if (foundRuleChanges) {
-        applyCollectionModDefaults.schedule();
-        if (changed === undefined) {
-          // The collectionChanged callback hasn't been called; yet
-          //  the mod entries had been changed - we need to call the CB
-          //  in order for the collection column on the mods page to rerender
-          collectionChangedCB?.();
-        }
-      }
-    },
-  );
+    }
+  });
 
   api.events.on("did-dismiss-overlay", (overlayId: string, itemId: string) => {
     const OVERLAY_ID = "collection-instructions-overlay";
@@ -1559,9 +1379,7 @@ function once(api: types.IExtensionApi, collectionsCB: () => ICallbackMap) {
           )
           .then((result: types.IDialogResult) => {
             if (result.input["dont_show_again"]) {
-              api.store.dispatch(
-                actions.suppressNotification(OVERLAY_ID, true),
-              );
+              api.store.dispatch(actions.suppressNotification(OVERLAY_ID, true));
             }
 
             if (result.action === "Take me to instructions") {
@@ -1582,82 +1400,70 @@ function once(api: types.IExtensionApi, collectionsCB: () => ICallbackMap) {
     }
   });
 
-  api.events.on(
-    "did-install-mod",
-    async (gameId: string, archiveId: string, modId: string) => {
-      // automatically enable collections once they're installed
-      // Use the driver's target profile if available, otherwise fall back to last active profile
-      const targetProfile = driver.profile;
-      const profileId =
-        targetProfile?.id ??
-        selectors.lastActiveProfileForGame(state(), gameId);
-      const profile =
-        targetProfile ?? selectors.profileById(state(), profileId);
-      if (profile === undefined) {
-        return;
-      }
-      const mod = util.getSafe(
-        state().persistent.mods,
-        [gameId, modId],
-        undefined,
-      );
-      if (mod === undefined) {
-        // how ?
-        return;
-      }
-      if (mod.type === MOD_TYPE) {
-        if (driver.collection === undefined) {
-          const awaitProfileSwitch =
-            api.ext?.awaitProfileSwitch ?? (() => Promise.resolve());
-          await awaitProfileSwitch();
-          driver.query(profile, mod);
-        } else {
-          api.sendNotification({
-            type: "info",
-            message:
-              "Collection can't be installed as another one is being installed already",
-          });
-        }
-      } else if (driver.collection !== undefined) {
-        const { collection, revisionId } = driver;
-
-        const dependency = (collection?.rules ?? []).find((rule) => {
-          const validType = ["requires", "recommends"].includes(rule.type);
-          if (!validType) {
-            return false;
-          }
-          const matchedRule = util.testModReference(mod, rule.reference);
-          return matchedRule;
+  api.events.on("did-install-mod", async (gameId: string, archiveId: string, modId: string) => {
+    // automatically enable collections once they're installed
+    // Use the driver's target profile if available, otherwise fall back to last active profile
+    const targetProfile = driver.profile;
+    const profileId = targetProfile?.id ?? selectors.lastActiveProfileForGame(state(), gameId);
+    const profile = targetProfile ?? selectors.profileById(state(), profileId);
+    if (profile === undefined) {
+      return;
+    }
+    const mod = util.getSafe(state().persistent.mods, [gameId, modId], undefined);
+    if (mod === undefined) {
+      // how ?
+      return;
+    }
+    if (mod.type === MOD_TYPE) {
+      if (driver.collection === undefined) {
+        const awaitProfileSwitch = api.ext?.awaitProfileSwitch ?? (() => Promise.resolve());
+        await awaitProfileSwitch();
+        driver.query(profile, mod);
+      } else {
+        api.sendNotification({
+          type: "info",
+          message: "Collection can't be installed as another one is being installed already",
         });
-        const isDependency = dependency !== undefined;
-        if (isDependency) {
-          driver.markModInstalledInTracking(dependency, modId);
-          const modRules = await driver.infoCache.getCollectionModRules(
-            revisionId,
-            collection,
-            gameId,
-          );
-          util.batchDispatch(
-            api.store,
-            (modRules ?? []).reduce((prev, rule) => {
-              if (util.testModReference(mod, rule.source)) {
-                prev.push(
-                  actions.addModRule(gameId, modId, {
-                    type: rule.type,
-                    reference: rule.reference,
-                    extra: {
-                      fromCollection: collection.id,
-                    },
-                  }),
-                );
-              }
-              return prev;
-            }, []),
-          );
-        }
       }
-    },
-  );
+    } else if (driver.collection !== undefined) {
+      const { collection, revisionId } = driver;
+
+      const dependency = (collection?.rules ?? []).find((rule) => {
+        const validType = ["requires", "recommends"].includes(rule.type);
+        if (!validType) {
+          return false;
+        }
+        const matchedRule = util.testModReference(mod, rule.reference);
+        return matchedRule;
+      });
+      const isDependency = dependency !== undefined;
+      if (isDependency) {
+        driver.markModInstalledInTracking(dependency, modId);
+        const modRules = await driver.infoCache.getCollectionModRules(
+          revisionId,
+          collection,
+          gameId,
+        );
+        util.batchDispatch(
+          api.store,
+          (modRules ?? []).reduce((prev, rule) => {
+            if (util.testModReference(mod, rule.source)) {
+              prev.push(
+                actions.addModRule(gameId, modId, {
+                  type: rule.type,
+                  reference: rule.reference,
+                  extra: {
+                    fromCollection: collection.id,
+                  },
+                }),
+              );
+            }
+            return prev;
+          }, []),
+        );
+      }
+    }
+  });
 
   api.onAsync("will-remove-mods", makeWillRemoveMods(api));
   api.onAsync("did-remove-mods", makeDidRemoveMods());
@@ -1667,8 +1473,7 @@ function once(api: types.IExtensionApi, collectionsCB: () => ICallbackMap) {
 
   api.events.on("did-finish-download", (dlId: string, outcome: string) => {
     if (outcome === "finished") {
-      const download: types.IDownload =
-        state().persistent.downloads.files[dlId];
+      const download: types.IDownload = state().persistent.downloads.files[dlId];
       if (download === undefined) {
         return;
       }
@@ -1687,11 +1492,10 @@ function once(api: types.IExtensionApi, collectionsCB: () => ICallbackMap) {
         return;
       }
       if (!dlInfo.game.includes(profile.gameId)) {
-        log(
-          "info",
-          "Collection downloaded for a different game than is being managed",
-          { gameMode: profile.gameId, game: dlInfo.game },
-        );
+        log("info", "Collection downloaded for a different game than is being managed", {
+          gameMode: profile.gameId,
+          game: dlInfo.game,
+        });
         const expectedGame = util.getGame(dlInfo.game[0]);
         const actualGame = util.getGame(profile.gameId);
         api.sendNotification({
@@ -1701,8 +1505,7 @@ function once(api: types.IExtensionApi, collectionsCB: () => ICallbackMap) {
           type: "info",
           replace: {
             collectionName: dlInfo.modInfo?.name ?? dlInfo.localPath,
-            expectedGame:
-              expectedGame?.name ?? api.translate("an unsupported game"),
+            expectedGame: expectedGame?.name ?? api.translate("an unsupported game"),
             actualGame: actualGame.name,
           },
         });
@@ -1764,64 +1567,43 @@ function once(api: types.IExtensionApi, collectionsCB: () => ICallbackMap) {
     driver.start(profile, mod);
   });
 
-  api.onStateChange(
-    ["persistent", "collections", "collections"],
-    (prev, cur) => {
-      // tslint:disable-next-line:no-shadowed-variable
-      const state = api.getState();
-      const changedIds = Object.keys(cur).filter(
-        (id) => cur[id].info !== prev[id]?.info,
+  api.onStateChange(["persistent", "collections", "collections"], (prev, cur) => {
+    // tslint:disable-next-line:no-shadowed-variable
+    const state = api.getState();
+    const changedIds = Object.keys(cur).filter((id) => cur[id].info !== prev[id]?.info);
+
+    const knownGames = selectors.knownGames(state);
+
+    const { mods } = state.persistent;
+
+    changedIds.forEach((collId) => {
+      const coll: nexusApi.ICollection = cur[collId].info;
+      const gameId = util.convertGameIdReverse(knownGames, coll.game.domainName);
+      const collModId = Object.keys(mods[gameId] ?? {}).find(
+        (modId) => mods[gameId][modId].attributes["collectionId"] === coll.id,
       );
+      // don't set a "newestVersion" on own collections because we don't allow an update on those
+      // anyway
+      if (collModId !== undefined && !mods[gameId][collModId].attributes.editable) {
+        const latestRevNumber = coll.latestPublishedRevision?.revisionNumber;
 
-      const knownGames = selectors.knownGames(state);
-
-      const { mods } = state.persistent;
-
-      changedIds.forEach((collId) => {
-        const coll: nexusApi.ICollection = cur[collId].info;
-        const gameId = util.convertGameIdReverse(
-          knownGames,
-          coll.game.domainName,
-        );
-        const collModId = Object.keys(mods[gameId] ?? {}).find(
-          (modId) => mods[gameId][modId].attributes["collectionId"] === coll.id,
-        );
-        // don't set a "newestVersion" on own collections because we don't allow an update on those
-        // anyway
-        if (
-          collModId !== undefined &&
-          !mods[gameId][collModId].attributes.editable
-        ) {
-          const latestRevNumber = coll.latestPublishedRevision?.revisionNumber;
-
-          if (latestRevNumber !== undefined) {
-            api.store.dispatch(
-              actions.setModAttribute(
-                gameId,
-                collModId,
-                "newestVersion",
-                latestRevNumber.toString(),
-              ),
-            );
-          }
+        if (latestRevNumber !== undefined) {
+          api.store.dispatch(
+            actions.setModAttribute(gameId, collModId, "newestVersion", latestRevNumber.toString()),
+          );
         }
-      });
-    },
-  );
+      }
+    });
+  });
 
   util
     .installIconSet("collections", path.join(__dirname, "icons.svg"))
-    .catch((err) =>
-      api.showErrorNotification("failed to install icon set", err),
-    );
+    .catch((err) => api.showErrorNotification("failed to install icon set", err));
 
   const iconPath = path.join(__dirname, "collectionicon.svg");
   document
     .getElementById("content")
-    .style.setProperty(
-      "--collection-icon",
-      `url(${pathToFileURL(iconPath).href})`,
-    );
+    .style.setProperty("--collection-icon", `url(${pathToFileURL(iconPath).href})`);
 
   const updateOwnCollectionsCB = (gameId: string) =>
     api.emitAndAwait("get-my-collections", gameId).then((result) => {
@@ -1830,12 +1612,7 @@ function once(api: types.IExtensionApi, collectionsCB: () => ICallbackMap) {
 
   const onGameModeChange = (gameMode: string) => {
     if (driver.profile?.gameId && driver.profile.gameId !== gameMode) {
-      pauseCollection(
-        api,
-        driver.profile?.gameId,
-        driver.collection?.id,
-        false,
-      );
+      pauseCollection(api, driver.profile?.gameId, driver.collection?.id, false);
     }
 
     updateOwnCollectionsCB(gameMode);

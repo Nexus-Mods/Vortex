@@ -195,10 +195,7 @@ export interface IFilesystem {
    * @returns File contents as string or Uint8Array (if encoding is null)
    * @throws Error if file doesn't exist or can't be read
    */
-  readFile(
-    path: ResolvedPath,
-    encoding?: string | null,
-  ): Promise<string | Uint8Array>;
+  readFile(path: ResolvedPath, encoding?: string | null): Promise<string | Uint8Array>;
 
   // ========================================================================
   // Write Operations
@@ -213,11 +210,7 @@ export interface IFilesystem {
    * @param encoding - Encoding (default: utf8)
    * @throws Error if write fails
    */
-  writeFile(
-    path: ResolvedPath,
-    data: string | Uint8Array,
-    encoding?: string,
-  ): Promise<void>;
+  writeFile(path: ResolvedPath, data: string | Uint8Array, encoding?: string): Promise<void>;
 
   /**
    * Append data to file
@@ -226,11 +219,7 @@ export interface IFilesystem {
    * @param data - Data to append
    * @param encoding - Encoding (default: utf8)
    */
-  appendFile(
-    path: ResolvedPath,
-    data: string | Uint8Array,
-    encoding?: string,
-  ): Promise<void>;
+  appendFile(path: ResolvedPath, data: string | Uint8Array, encoding?: string): Promise<void>;
 
   /**
    * Delete file
@@ -260,10 +249,7 @@ export interface IFilesystem {
    * @param options - Options (recursive: true to create parent directories)
    * @throws Error if directory already exists or can't be created
    */
-  mkdir(
-    path: ResolvedPath,
-    options?: { recursive?: boolean; mode?: number },
-  ): Promise<void>;
+  mkdir(path: ResolvedPath, options?: { recursive?: boolean; mode?: number }): Promise<void>;
 
   /**
    * Remove directory

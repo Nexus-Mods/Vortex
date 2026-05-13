@@ -1,14 +1,15 @@
 /* eslint-disable */
 import path from "path";
+
 import Bluebird from "bluebird";
 import { actions, fs, log, selectors, types, util } from "vortex-api";
 const IniParser = require("vortex-parse-ini");
 import { generate } from "shortid";
 
-import { getPersistentLoadOrder } from "./migrations";
 import { prepareFileData, restoreFileData } from "./collections/util";
-import { getDeployment } from "./util";
 import { GAME_ID, INPUT_XML_FILENAME, PART_SUFFIX } from "./common";
+import { getPersistentLoadOrder } from "./migrations";
+import { getDeployment } from "./util";
 
 // most of these are invalid on windows only but it's not worth the effort allowing them elsewhere
 const INVALID_CHARS = /[:/\\*?"<>|]/g;
@@ -47,11 +48,7 @@ const CACHE_FILENAME = "vortex_menumod.cache";
 async function getExistingCache(state, activeProfile) {
   const stagingFolder = selectors.installPathForGame(state, GAME_ID);
   const modName = menuMod(activeProfile.name);
-  const mod = util.getSafe(
-    state,
-    ["persistent", "mods", GAME_ID, modName],
-    undefined,
-  );
+  const mod = util.getSafe(state, ["persistent", "mods", GAME_ID, modName], undefined);
   if (mod === undefined) {
     return [];
   }
@@ -143,26 +140,22 @@ function populateCache(
       if (mod.installationPath === undefined) {
         return accum;
       }
-      return getRelevantModEntries(
-        path.join(stagingFolder, mod.installationPath),
-      ).then((entries) => {
-        return Bluebird.each(entries, (filepath) => {
-          return readModData(filepath).then((data) => {
-            if (data !== undefined) {
-              accum.push({ id: mod.id, filepath, data });
-            }
-          });
-        }).then(() => Promise.resolve(accum));
-      });
+      return getRelevantModEntries(path.join(stagingFolder, mod.installationPath)).then(
+        (entries) => {
+          return Bluebird.each(entries, (filepath) => {
+            return readModData(filepath).then((data) => {
+              if (data !== undefined) {
+                accum.push({ id: mod.id, filepath, data });
+              }
+            });
+          }).then(() => Promise.resolve(accum));
+        },
+      );
     },
     initialCacheValue !== undefined ? initialCacheValue : [],
   ).then((newCache) => {
     const modName = menuMod(activeProfile.name);
-    let mod = util.getSafe(
-      state,
-      ["persistent", "mods", GAME_ID, modName],
-      undefined,
-    );
+    let mod = util.getSafe(state, ["persistent", "mods", GAME_ID, modName], undefined);
     if (mod?.installationPath === undefined) {
       log("warn", "failed to ascertain installation path", modName);
       // We will create it on the next run.
@@ -221,9 +214,7 @@ export async function onWillDeploy(api, deployment, activeProfile) {
   }
 
   const docFiles = (deployment["witcher3menumodroot"] ?? []).filter(
-    (file) =>
-      file.relPath.endsWith(PART_SUFFIX) &&
-      file.relPath.indexOf(INPUT_XML_FILENAME) === -1,
+    (file) => file.relPath.endsWith(PART_SUFFIX) && file.relPath.indexOf(INPUT_XML_FILENAME) === -1,
   );
 
   if (docFiles.length <= 0) {
@@ -235,8 +226,7 @@ export async function onWillDeploy(api, deployment, activeProfile) {
   const modState = util.getSafe(activeProfile, ["modState"], {});
   const invalidModTypes = ["witcher3menumoddocuments"];
   const enabledMods = Object.keys(mods).filter(
-    (key) =>
-      !!modState[key]?.enabled && !invalidModTypes.includes(mods[key].type),
+    (key) => !!modState[key]?.enabled && !invalidModTypes.includes(mods[key].type),
   );
 
   const parser = new IniParser.default(new IniParser.WinapiFormat());
@@ -293,10 +283,7 @@ export async function onWillDeploy(api, deployment, activeProfile) {
     [],
   );
 
-  return fs.writeFileAsync(
-    path.join(destinationFolder, CACHE_FILENAME),
-    JSON.stringify(newCache),
-  );
+  return fs.writeFileAsync(path.join(destinationFolder, CACHE_FILENAME), JSON.stringify(newCache));
 }
 
 async function toIniFileObject(data, tempDest) {
@@ -322,9 +309,7 @@ export async function onDidDeploy(api, deployment, activeProfile) {
   const state = api.store.getState();
   const loadOrder = getPersistentLoadOrder(api);
   const docFiles = deployment["witcher3menumodroot"].filter(
-    (file) =>
-      file.relPath.endsWith(PART_SUFFIX) &&
-      file.relPath.indexOf(INPUT_XML_FILENAME) === -1,
+    (file) => file.relPath.endsWith(PART_SUFFIX) && file.relPath.indexOf(INPUT_XML_FILENAME) === -1,
   );
 
   if (docFiles.length <= 0) {
@@ -339,14 +324,9 @@ export async function onDidDeploy(api, deployment, activeProfile) {
   };
   const invalidModTypes = ["witcher3menumoddocuments"];
   const enabledMods = Object.keys(mods)
-    .filter(
-      (key) =>
-        !!modState[key]?.enabled && !invalidModTypes.includes(mods[key].type),
-    )
+    .filter((key) => !!modState[key]?.enabled && !invalidModTypes.includes(mods[key].type))
     .sort(
-      (lhs, rhs) =>
-        (loadOrder[rhs]?.pos || getNextId()) -
-        (loadOrder[lhs]?.pos || getNextId()),
+      (lhs, rhs) => (loadOrder[rhs]?.pos || getNextId()) - (loadOrder[lhs]?.pos || getNextId()),
     );
 
   const currentCache = await getExistingCache(state, activeProfile);
@@ -359,21 +339,12 @@ export async function onDidDeploy(api, deployment, activeProfile) {
       currentCache.length === 0 && enabledMods.length > 0
         ? populateCache(api, activeProfile)
         : notInCache.size !== 0
-          ? populateCache(
-              api,
-              activeProfile,
-              Array.from(notInCache),
-              currentCache,
-            )
+          ? populateCache(api, activeProfile, Array.from(notInCache), currentCache)
           : Promise.resolve(),
     )
     .then(() => writeCacheToFiles(api, activeProfile))
     .then(() => menuMod(activeProfile.name))
-    .catch((err) =>
-      err instanceof util.UserCanceled
-        ? Promise.resolve()
-        : Promise.reject(err),
-    );
+    .catch((err) => (err instanceof util.UserCanceled ? Promise.resolve() : Promise.reject(err)));
 }
 
 function sanitizeProfileName(input) {
@@ -420,11 +391,7 @@ export async function removeMenuMod(api, profile) {
   // }
   const state = api.store.getState();
   const modName = menuMod(profile.name);
-  const mod = util.getSafe(
-    state,
-    ["persistent", "mods", profile.gameId, modName],
-    undefined,
-  );
+  const mod = util.getSafe(state, ["persistent", "mods", profile.gameId, modName], undefined);
   if (mod === undefined) {
     return Promise.resolve();
   }
@@ -456,16 +423,13 @@ async function cacheToFileMap(state, profile) {
 
   const stagingFolder = selectors.installPathForGame(state, GAME_ID);
   const fileMap = currentCache.reduce((accum, entry) => {
-    accum[toFileMapKey(entry.filepath)] = [].concat(
-      accum[toFileMapKey(entry.filepath)] || [],
-      [
-        {
-          id: entry.id,
-          data: entry.data,
-          filepath: convertFilePath(entry.filepath, stagingFolder),
-        },
-      ],
-    );
+    accum[toFileMapKey(entry.filepath)] = [].concat(accum[toFileMapKey(entry.filepath)] || [], [
+      {
+        id: entry.id,
+        data: entry.data,
+        filepath: convertFilePath(entry.filepath, stagingFolder),
+      },
+    ]);
 
     return accum;
   }, {});
@@ -483,9 +447,7 @@ const getInitialDoc = (filePath: string) => {
   return fs
     .statAsync(filePath + BACKUP_TAG)
     .then(() => Promise.resolve(filePath + BACKUP_TAG))
-    .catch((err) =>
-      fs.statAsync(filePath).then(() => Promise.resolve(filePath)),
-    )
+    .catch((err) => fs.statAsync(filePath).then(() => Promise.resolve(filePath)))
     .catch((err) => {
       // We couldn't find the original document. This
       //  can potentially happen when the .part.txt suffix
@@ -563,11 +525,7 @@ export async function ensureMenuMod(api, profile) {
   // }
   const state = api.store.getState();
   const modName = menuMod(profile.name);
-  const mod = util.getSafe(
-    state,
-    ["persistent", "mods", profile.gameId, modName],
-    undefined,
-  );
+  const mod = util.getSafe(state, ["persistent", "mods", profile.gameId, modName], undefined);
   if (mod === undefined) {
     try {
       await createMenuMod(api, modName, profile);
@@ -576,47 +534,21 @@ export async function ensureMenuMod(api, profile) {
     }
   } else {
     // give the user an indication when this was last updated
-    api.store.dispatch(
-      actions.setModAttribute(
-        profile.gameId,
-        modName,
-        "installTime",
-        new Date(),
-      ),
-    );
+    api.store.dispatch(actions.setModAttribute(profile.gameId, modName, "installTime", new Date()));
     // the rest here is only required to update mods from previous vortex versions
     api.store.dispatch(
-      actions.setModAttribute(
-        profile.gameId,
-        modName,
-        "name",
-        "Witcher 3 Menu Mod",
-      ),
+      actions.setModAttribute(profile.gameId, modName, "name", "Witcher 3 Menu Mod"),
     );
 
     api.store.dispatch(
-      actions.setModAttribute(
-        profile.gameId,
-        modName,
-        "type",
-        "witcher3menumoddocuments",
-      ),
+      actions.setModAttribute(profile.gameId, modName, "type", "witcher3menumoddocuments"),
     );
 
     api.store.dispatch(
-      actions.setModAttribute(
-        profile.gameId,
-        modName,
-        "logicalFileName",
-        "Witcher 3 Menu Mod",
-      ),
+      actions.setModAttribute(profile.gameId, modName, "logicalFileName", "Witcher 3 Menu Mod"),
     );
-    api.store.dispatch(
-      actions.setModAttribute(profile.gameId, modName, "modId", 42),
-    );
-    api.store.dispatch(
-      actions.setModAttribute(profile.gameId, modName, "version", "1.0.0"),
-    );
+    api.store.dispatch(actions.setModAttribute(profile.gameId, modName, "modId", 42));
+    api.store.dispatch(actions.setModAttribute(profile.gameId, modName, "version", "1.0.0"));
     api.store.dispatch(
       actions.setModAttribute(
         profile.gameId,
@@ -643,11 +575,7 @@ export async function exportMenuMod(api, profile, includedMods) {
       // The installed mods do not require a menu mod.
       return undefined;
     }
-    const mods = util.getSafe(
-      api.getState(),
-      ["persistent", "mods", GAME_ID],
-      {},
-    );
+    const mods = util.getSafe(api.getState(), ["persistent", "mods", GAME_ID], {});
     const modId = Object.keys(mods).find((id) => id === modName);
     if (modId === undefined) {
       throw new Error("Menu mod is missing");

@@ -1,24 +1,12 @@
+import path from "path";
+
 /* eslint-disable */
 import Bluebird from "bluebird";
-import path from "path";
 import { actions, fs, log, selectors, types, util } from "vortex-api";
 import winapi from "winapi-bindings";
 
-import { getPersistentLoadOrder, migrate148 } from "./migrations";
-
-import {
-  genCollectionsData,
-  parseCollectionsData,
-} from "./collections/collections";
+import { genCollectionsData, parseCollectionsData } from "./collections/collections";
 import { IW3CollectionsData } from "./collections/types";
-import CollectionsDataView from "./views/CollectionsDataView";
-
-import {
-  downloadScriptMerger,
-  getScriptMergerDir,
-  setMergerConfig,
-} from "./scriptmerger";
-
 import {
   DO_NOT_DEPLOY,
   GAME_ID,
@@ -26,13 +14,18 @@ import {
   LOCKED_PREFIX,
   SCRIPT_MERGER_ID,
 } from "./common";
-
-import { testDLC, testTL } from "./modTypes";
-import { canMergeXML, doMergeXML } from "./mergers";
-
+import {
+  onDidDeploy,
+  onDidPurge,
+  onDidRemoveMod,
+  onGameModeActivation,
+  onModsDisabled,
+  onProfileWillChange,
+  onSettingsChange,
+  onWillDeploy,
+} from "./eventHandlers";
 import { registerActions } from "./iconbarActions";
-import { PriorityManager } from "./priorityManager";
-
+import IniStructure from "./iniParser";
 import {
   installContent,
   installMenuMod,
@@ -47,9 +40,13 @@ import {
   testSupportedMixed,
   testDLCMod,
 } from "./installers";
-
+import TW3LoadOrder from "./loadOrder";
+import { canMergeXML, doMergeXML } from "./mergers";
+import { getPersistentLoadOrder, migrate148 } from "./migrations";
+import { testDLC, testTL } from "./modTypes";
+import { PriorityManager } from "./priorityManager";
 import { W3Reducer } from "./reducers";
-
+import { downloadScriptMerger, getScriptMergerDir, setMergerConfig } from "./scriptmerger";
 import {
   getDLCPath,
   getAllMods,
@@ -59,19 +56,7 @@ import {
   isTW3,
   notifyMissingScriptMerger,
 } from "./util";
-import TW3LoadOrder from "./loadOrder";
-
-import {
-  onDidDeploy,
-  onDidPurge,
-  onDidRemoveMod,
-  onGameModeActivation,
-  onModsDisabled,
-  onProfileWillChange,
-  onSettingsChange,
-  onWillDeploy,
-} from "./eventHandlers";
-import IniStructure from "./iniParser";
+import CollectionsDataView from "./views/CollectionsDataView";
 
 const GOG_ID = "1207664663";
 const GOG_ID_GOTY = "1495134320";
@@ -148,9 +133,7 @@ function prepareForModding(api: types.IExtensionApi) {
     const ensurePath = (dirpath) =>
       fs
         .ensureDirWritableAsync(dirpath)
-        .catch((err) =>
-          err.code === "EEXIST" ? Promise.resolve() : Promise.reject(err),
-        );
+        .catch((err) => (err.code === "EEXIST" ? Promise.resolve() : Promise.reject(err)));
 
     return Promise.all([
       ensurePath(path.join(discovery.path, "Mods")),
@@ -158,9 +141,7 @@ function prepareForModding(api: types.IExtensionApi) {
       ensurePath(path.dirname(getLoadOrderFilePath())),
     ]).then(() =>
       downloadScriptMerger(api).catch((err) =>
-        err instanceof util.UserCanceled
-          ? Promise.resolve()
-          : findScriptMerger(err),
+        err instanceof util.UserCanceled ? Promise.resolve() : findScriptMerger(err),
       ),
     );
   };
@@ -206,30 +187,15 @@ function main(context: types.IExtensionContext) {
     testMenuModRoot as any,
     installMenuMod as any,
   );
-  context.registerInstaller(
-    "witcher3mixed",
-    25,
-    testSupportedMixed as any,
-    installMixed as any,
-  );
-  context.registerInstaller(
-    "witcher3tl",
-    30,
-    testSupportedTL as any,
-    installTL as any,
-  );
+  context.registerInstaller("witcher3mixed", 25, testSupportedMixed as any, installMixed as any);
+  context.registerInstaller("witcher3tl", 30, testSupportedTL as any, installTL as any);
   context.registerInstaller(
     "witcher3content",
     50,
     testSupportedContent as any,
     installContent as any,
   );
-  context.registerInstaller(
-    "witcher3dlcmod",
-    60,
-    testDLCMod as any,
-    installDLCMod as any,
-  );
+  context.registerInstaller("witcher3dlcmod", 60, testDLCMod as any, installDLCMod as any);
 
   context.registerModType(
     "witcher3menumodroot",
@@ -275,9 +241,7 @@ function main(context: types.IExtensionContext) {
   );
   // context.registerMerge(canMergeSettings(context.api), doMergeSettings(context.api) as any, 'witcher3menumoddocuments');
 
-  context.registerMigration(
-    (oldVersion) => migrate148(context, oldVersion) as any,
-  );
+  context.registerMigration((oldVersion) => migrate148(context, oldVersion) as any);
 
   registerActions({ context, getPriorityManager });
 
@@ -310,9 +274,7 @@ function main(context: types.IExtensionContext) {
     const profile = selectors.activeProfile(state);
     const loadOrder = getPersistentLoadOrder(context.api);
     const modMap = await getAllMods(context.api);
-    const manualLocked = modMap.manual.filter((modName) =>
-      modName.startsWith(LOCKED_PREFIX),
-    );
+    const manualLocked = modMap.manual.filter((modName) => modName.startsWith(LOCKED_PREFIX));
     const totalLocked = [].concat(modMap.merged, manualLocked);
     const newLO = loadOrder.reduce((accum, key, idx) => {
       if (totalLocked.includes(key)) {
@@ -343,29 +305,14 @@ function main(context: types.IExtensionContext) {
     IniStructure.getInstance(context.api, getPriorityManager);
     // modLimitPatcher = new ModLimitPatcher(context.api);
 
-    context.api.events.on(
-      "gamemode-activated",
-      onGameModeActivation(context.api),
-    );
-    context.api.events.on(
-      "profile-will-change",
-      onProfileWillChange(context.api),
-    );
-    context.api.events.on(
-      "mods-enabled",
-      onModsDisabled(context.api, getPriorityManager),
-    );
+    context.api.events.on("gamemode-activated", onGameModeActivation(context.api));
+    context.api.events.on("profile-will-change", onProfileWillChange(context.api));
+    context.api.events.on("mods-enabled", onModsDisabled(context.api, getPriorityManager));
 
     context.api.onAsync("will-deploy", onWillDeploy(context.api) as any);
     context.api.onAsync("did-deploy", onDidDeploy(context.api) as any);
-    context.api.onAsync(
-      "did-purge",
-      onDidPurge(context.api, getPriorityManager) as any,
-    );
-    context.api.onAsync(
-      "did-remove-mod",
-      onDidRemoveMod(context.api, getPriorityManager) as any,
-    );
+    context.api.onAsync("did-purge", onDidPurge(context.api, getPriorityManager) as any);
+    context.api.onAsync("did-remove-mod", onDidRemoveMod(context.api, getPriorityManager) as any);
 
     context.api.onStateChange(
       ["settings", "witcher3"],

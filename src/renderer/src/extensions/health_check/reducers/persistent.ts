@@ -1,5 +1,4 @@
 import type { IReducerSpec } from "../../../types/IExtensionContext";
-
 import { setSafe, deleteOrNop } from "../../../util/storeHelper";
 import * as actions from "../actions/persistent";
 
@@ -30,11 +29,7 @@ export const persistentReducer: IReducerSpec<IHealthCheckPersistentState> = {
       const currentHidden = state.hiddenRequirements?.[modId] || [];
 
       if (hidden && !currentHidden.includes(requirementId)) {
-        return setSafe(
-          state,
-          ["hiddenRequirements", modId],
-          [...currentHidden, requirementId],
-        );
+        return setSafe(state, ["hiddenRequirements", modId], [...currentHidden, requirementId]);
       } else if (!hidden && currentHidden.includes(requirementId)) {
         const filtered = currentHidden.filter((id) => id !== requirementId);
         if (filtered.length === 0) {
@@ -64,11 +59,7 @@ export const persistentReducer: IReducerSpec<IHealthCheckPersistentState> = {
       if (current.includes(requirementId)) {
         return state;
       }
-      return setSafe(
-        state,
-        ["feedbackGiven", modId],
-        [...current, requirementId],
-      );
+      return setSafe(state, ["feedbackGiven", modId], [...current, requirementId]);
     },
   },
   defaults: {

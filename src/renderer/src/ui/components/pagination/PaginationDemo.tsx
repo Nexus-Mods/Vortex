@@ -21,10 +21,9 @@ export const PaginationDemo = () => {
         </Typography>
 
         <Typography appearance="subdued">
-          Page navigation for paginated lists. Automatically adapts its layout
-          based on total page count — showing all pages when few, collapsing
-          with ellipsis when many, and adding a "Jump to Page" input for large
-          sets.
+          Page navigation for paginated lists. Automatically adapts its layout based on total page
+          count — showing all pages when few, collapsing with ellipsis when many, and adding a "Jump
+          to Page" input for large sets.
         </Typography>
       </div>
 
@@ -34,8 +33,7 @@ export const PaginationDemo = () => {
         </Typography>
 
         <Typography appearance="subdued" typographyType="body-sm">
-          When there are 5 or fewer pages, all page numbers are shown without
-          ellipsis.
+          When there are 5 or fewer pages, all page numbers are shown without ellipsis.
         </Typography>
 
         <Pagination
@@ -52,8 +50,8 @@ export const PaginationDemo = () => {
         </Typography>
 
         <Typography appearance="subdued" typographyType="body-sm">
-          When there are more than 5 pages, the component collapses middle pages
-          into ellipsis and always shows the first and last page.
+          When there are more than 5 pages, the component collapses middle pages into ellipsis and
+          always shows the first and last page.
         </Typography>
 
         <Pagination
@@ -70,8 +68,8 @@ export const PaginationDemo = () => {
         </Typography>
 
         <Typography appearance="subdued" typographyType="body-sm">
-          When there are 7 or more pages, a "Jump to Page" input appears
-          allowing direct navigation to any page.
+          When there are 7 or more pages, a "Jump to Page" input appears allowing direct navigation
+          to any page.
         </Typography>
 
         <Pagination
@@ -87,29 +85,14 @@ export const PaginationDemo = () => {
           Design Notes
         </Typography>
 
-        <Typography
-          appearance="subdued"
-          as="ul"
-          className="list-inside list-disc space-y-2"
-        >
-          <li>
-            Returns null when there are fewer than 2 pages — no need to
-            conditionally render
-          </li>
+        <Typography appearance="subdued" as="ul" className="list-inside list-disc space-y-2">
+          <li>Returns null when there are fewer than 2 pages — no need to conditionally render</li>
 
-          <li>
-            Previous and next arrows are disabled at the first and last pages
-          </li>
+          <li>Previous and next arrows are disabled at the first and last pages</li>
 
-          <li>
-            The onPaginationUpdate callback receives both the page number and
-            recordsPerPage
-          </li>
+          <li>The onPaginationUpdate callback receives both the page number and recordsPerPage</li>
 
-          <li>
-            An optional scrollRef prop scrolls a container to the top on page
-            change
-          </li>
+          <li>An optional scrollRef prop scrolls a container to the top on page change</li>
         </Typography>
       </div>
     </div>

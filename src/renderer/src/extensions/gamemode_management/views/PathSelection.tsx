@@ -1,15 +1,10 @@
 import * as React from "react";
-import {
-  Button,
-  FormControl,
-  InputGroup,
-  ListGroup,
-  ListGroupItem,
-} from "react-bootstrap";
+import { Button, FormControl, InputGroup, ListGroup, ListGroupItem } from "react-bootstrap";
 import type { WithTranslation } from "react-i18next";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import type * as Redux from "redux";
+
 import { setGameSearchPaths } from "../../../actions";
 import Icon from "../../../controls/Icon";
 import Modal from "../../../controls/Modal";
@@ -24,21 +19,10 @@ export interface IGameSelectionDialogProps {
   onSelectPath: (basePath: string) => Promise<string>;
 }
 
-type IProps = IGameSelectionDialogProps &
-  IConnectedProps &
-  IActionProps &
-  WithTranslation;
+type IProps = IGameSelectionDialogProps & IConnectedProps & IActionProps & WithTranslation;
 
 function GameSelectionDialog(props: IProps): JSX.Element {
-  const {
-    t,
-    onHide,
-    onScan,
-    onSelectPath,
-    onSetSearchPaths,
-    searchPaths,
-    visible,
-  } = props;
+  const { t, onHide, onScan, onSelectPath, onSetSearchPaths, searchPaths, visible } = props;
 
   const [paths, setPaths] = React.useState(searchPaths);
 

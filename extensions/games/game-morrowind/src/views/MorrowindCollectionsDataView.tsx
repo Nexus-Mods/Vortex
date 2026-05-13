@@ -2,7 +2,6 @@ import * as React from "react";
 import { Button, ListGroup, ListGroupItem } from "react-bootstrap";
 import { WithTranslation, withTranslation } from "react-i18next";
 import { connect } from "react-redux";
-
 import {
   ComponentEx,
   EmptyPlaceholder,
@@ -13,11 +12,9 @@ import {
   util,
 } from "vortex-api";
 
-import { IExtendedInterfaceProps, ILoadOrderEntry } from "../types/types";
-
 import { NATIVE_PLUGINS } from "../constants";
-
 import { deserializeLoadOrder } from "../loadorder";
+import { IExtendedInterfaceProps, ILoadOrderEntry } from "../types/types";
 
 const NAMESPACE: string = "game-morrowind";
 
@@ -38,16 +35,10 @@ interface IConnectedProps {
 
 interface IActionProps {}
 
-type IProps = IBaseProps &
-  IActionProps &
-  IExtendedInterfaceProps &
-  IConnectedProps;
+type IProps = IBaseProps & IActionProps & IExtendedInterfaceProps & IConnectedProps;
 type IComponentState = IBaseState;
 
-class MorrowindCollectionsDataView extends ComponentEx<
-  IProps,
-  IComponentState
-> {
+class MorrowindCollectionsDataView extends ComponentEx<IProps, IComponentState> {
   constructor(props: IProps) {
     super(props);
     this.initState({
@@ -60,10 +51,7 @@ class MorrowindCollectionsDataView extends ComponentEx<
   }
 
   public componentDidUpdate(prevProps: IProps, prevState: IBaseState): void {
-    if (
-      JSON.stringify(this.state.sortedMods) !==
-      JSON.stringify(this.props.loadOrder)
-    ) {
+    if (JSON.stringify(this.state.sortedMods) !== JSON.stringify(this.props.loadOrder)) {
       this.updateSortedMods();
     }
   }
@@ -91,9 +79,7 @@ class MorrowindCollectionsDataView extends ComponentEx<
   }
 
   private updateSortedMods() {
-    const includedModIds = (this.props.collection?.rules || []).map(
-      (rule) => rule.reference.id,
-    );
+    const includedModIds = (this.props.collection?.rules || []).map((rule) => rule.reference.id);
     const mods = Object.keys(this.props.mods).reduce((accum, iter) => {
       if (includedModIds.includes(iter)) {
         accum[iter] = this.props.mods[iter];
@@ -102,8 +88,7 @@ class MorrowindCollectionsDataView extends ComponentEx<
     }, {});
     deserializeLoadOrder(this.props.api, mods).then((lo) => {
       const filtered = lo.filter(
-        (entry) =>
-          NATIVE_PLUGINS.includes(entry.id) || entry.modId !== undefined,
+        (entry) => NATIVE_PLUGINS.includes(entry.id) || entry.modId !== undefined,
       );
       this.nextState.sortedMods = filtered;
     });
@@ -156,9 +141,7 @@ class MorrowindCollectionsDataView extends ComponentEx<
     return (
       <EmptyPlaceholder
         icon="sort-none"
-        text={t(
-          "You have no load order entries (for the current mods in the collection)",
-        )}
+        text={t("You have no load order entries (for the current mods in the collection)")}
         subtext={this.renderOpenLOButton()}
       />
     );
@@ -179,18 +162,11 @@ class MorrowindCollectionsDataView extends ComponentEx<
 }
 
 const empty = [];
-function mapStateToProps(
-  state: types.IState,
-  ownProps: IProps,
-): IConnectedProps {
+function mapStateToProps(state: types.IState, ownProps: IProps): IConnectedProps {
   const profile = selectors.activeProfile(state) || undefined;
   let loadOrder: ILoadOrderEntry[] = [];
   if (!!profile?.gameId) {
-    loadOrder = util.getSafe(
-      state,
-      ["persistent", "loadOrder", profile.id],
-      empty,
-    );
+    loadOrder = util.getSafe(state, ["persistent", "loadOrder", profile.id], empty);
   }
 
   return {
@@ -206,8 +182,5 @@ function mapDispatchToProps(dispatch: any): IActionProps {
 }
 
 export default withTranslation(["common", NAMESPACE])(
-  connect(
-    mapStateToProps,
-    mapDispatchToProps,
-  )(MorrowindCollectionsDataView) as any,
+  connect(mapStateToProps, mapDispatchToProps)(MorrowindCollectionsDataView) as any,
 ) as React.ComponentClass<IBaseProps & IExtendedInterfaceProps>;

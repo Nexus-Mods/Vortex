@@ -3,11 +3,10 @@ import { Button as ReactButton } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
-import type { IState } from "../../types/IState";
-
 import { clearUIBlocker } from "../../actions/session";
 import { useMainContext } from "../../contexts";
 import Icon from "../../controls/Icon";
+import type { IState } from "../../types/IState";
 
 /**
  * Modal overlay that blocks user interaction during certain operations.
@@ -20,16 +19,13 @@ export const UIBlocker: FC = () => {
   const dispatch = useDispatch();
   const { api } = useMainContext();
 
-  const uiBlockers = useSelector(
-    (state: IState) => state.session.base.uiBlockers,
-  );
+  const uiBlockers = useSelector((state: IState) => state.session.base.uiBlockers);
 
   const uiBlockerId = useMemo(() => {
     return uiBlockers ? Object.keys(uiBlockers)[0] : undefined;
   }, [uiBlockers]);
 
-  const blocker =
-    uiBlockerId !== undefined ? uiBlockers[uiBlockerId] : undefined;
+  const blocker = uiBlockerId !== undefined ? uiBlockers[uiBlockerId] : undefined;
 
   const onUnblock = useCallback(
     (id: string) => {
@@ -50,9 +46,7 @@ export const UIBlocker: FC = () => {
       <div className="blocker-text">{blocker.description}</div>
 
       {blocker.mayCancel ? (
-        <ReactButton onClick={() => onUnblock(uiBlockerId)}>
-          {t("Cancel")}
-        </ReactButton>
+        <ReactButton onClick={() => onUnblock(uiBlockerId)}>{t("Cancel")}</ReactButton>
       ) : null}
     </div>
   );

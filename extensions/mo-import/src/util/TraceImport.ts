@@ -1,7 +1,8 @@
-import Promise from "bluebird";
 import * as os from "os";
 import * as path from "path";
 import { inspect } from "util";
+
+import Promise from "bluebird";
 import { fs, util } from "vortex-api";
 
 class TraceImport {
@@ -44,11 +45,7 @@ class TraceImport {
     this.mLogFile = undefined;
   }
 
-  public log(
-    level: "info" | "warn" | "error",
-    message: string,
-    extra?: any,
-  ): void {
+  public log(level: "info" | "warn" | "error", message: string, extra?: any): void {
     let fullMessage = message;
     if (extra !== undefined) {
       fullMessage += " (" + inspect(extra, { depth: null }) + ")";

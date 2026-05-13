@@ -1,10 +1,10 @@
-import Promise from "bluebird";
 import * as path from "path";
+
+import Promise from "bluebird";
 import { log, types, selectors, util } from "vortex-api";
 
-import { migrate100 } from "./migrations";
-
 import { DA_GAMES } from "./constants";
+import { migrate100 } from "./migrations";
 
 const DA_MODULE_ERF_SUFFIX = "_module.erf";
 
@@ -29,24 +29,17 @@ function shortestPath(lhs: string, rhs: string) {
 }
 
 function testSupportedInner(files: string[], gameId: string) {
-  const unsupported = () =>
-    Promise.resolve({ supported: false, requiredFiles: [] });
+  const unsupported = () => Promise.resolve({ supported: false, requiredFiles: [] });
 
   if (!isDragonAge(gameId)) {
     return unsupported();
   }
 
-  if (
-    files.find((file) =>
-      file.toLowerCase().split(path.sep).includes("contents"),
-    ) === undefined
-  ) {
+  if (files.find((file) => file.toLowerCase().split(path.sep).includes("contents")) === undefined) {
     return unsupported();
   }
 
-  const manifests = files.filter(
-    (iter) => path.basename(iter.toLowerCase()) === "manifest.xml",
-  );
+  const manifests = files.filter((iter) => path.basename(iter.toLowerCase()) === "manifest.xml");
   if (manifests.length === 0) {
     return unsupported();
   }
@@ -108,29 +101,20 @@ function installInner(
     ],
   };
 
-  const manifests = files.filter(
-    (iter) => path.basename(iter.toLowerCase()) === "manifest.xml",
-  );
+  const manifests = files.filter((iter) => path.basename(iter.toLowerCase()) === "manifest.xml");
   const shortest = manifests.sort(shortestPath)[0];
   const basePath = path.dirname(shortest);
 
   let modName: string;
   const sep = `${path.sep}${path.sep}`;
-  const addinsPathRE = new RegExp(
-    ["contents", "addins", `[^${sep}]+`].join(sep) + sep,
-    "i",
-  );
+  const addinsPathRE = new RegExp(["contents", "addins", `[^${sep}]+`].join(sep) + sep, "i");
   const addinsPath = files.find((filePath) => addinsPathRE.test(filePath));
   if (addinsPath !== undefined) {
     const segments = addinsPath.split(path.sep);
-    const addinsIdx = segments.findIndex(
-      (seg) => seg.toLowerCase() === "addins",
-    );
+    const addinsIdx = segments.findIndex((seg) => seg.toLowerCase() === "addins");
     modName = segments[addinsIdx + 1];
   } else {
-    const moduleERF = files.find((file) =>
-      path.basename(file).includes(DA_MODULE_ERF_SUFFIX),
-    );
+    const moduleERF = files.find((file) => path.basename(file).includes(DA_MODULE_ERF_SUFFIX));
     if (moduleERF !== undefined) {
       modName = path.basename(moduleERF).replace(DA_MODULE_ERF_SUFFIX, "");
     }
@@ -147,20 +131,14 @@ function installInner(
       result.instructions.push({
         type: "copy",
         source: filePath,
-        destination:
-          modName !== undefined
-            ? path.join("addins", modName, shortest)
-            : filePath,
+        destination: modName !== undefined ? path.join("addins", modName, shortest) : filePath,
       });
       return;
     }
 
     // we already checked that all files are inside basePath in the test function so this
     // second check should be unnecessary
-    if (
-      basePath !== "." &&
-      filePath.toLowerCase().startsWith(basePath.toLowerCase())
-    ) {
+    if (basePath !== "." && filePath.toLowerCase().startsWith(basePath.toLowerCase())) {
       filePath = filePath.slice(basePath.length + 1);
     }
     let filePathSplit = filePath.split(path.sep);
@@ -179,9 +157,7 @@ function installInner(
 }
 
 function isDragonAge(gameId: string): boolean {
-  return (
-    [DA_GAMES.DragonAge1.id, DA_GAMES.DragonAge2.id].indexOf(gameId) !== -1
-  );
+  return [DA_GAMES.DragonAge1.id, DA_GAMES.DragonAge2.id].indexOf(gameId) !== -1;
 }
 
 function init(context: types.IExtensionContext) {

@@ -1,17 +1,16 @@
-import { ComponentEx, translate } from "./ComponentEx";
-import { didIgnoreError, isOutdated } from "../util/errorHandling";
-import { genHash } from "../util/genHash";
-import { renderError } from "../util/message";
-
-import Icon from "./Icon";
-import { IconButton } from "./TooltipControls";
-
+import { unknownToError } from "@vortex/shared";
 import * as _ from "lodash";
 import * as React from "react";
 import { Alert, Button } from "react-bootstrap";
 import type { WithTranslation } from "react-i18next";
+
 import { getApplication } from "../util/application";
-import { unknownToError } from "@vortex/shared";
+import { didIgnoreError, isOutdated } from "../util/errorHandling";
+import { genHash } from "../util/genHash";
+import { renderError } from "../util/message";
+import { ComponentEx, translate } from "./ComponentEx";
+import Icon from "./Icon";
+import { IconButton } from "./TooltipControls";
 
 export type CBFunction = (...args: any[]) => void;
 
@@ -37,10 +36,7 @@ interface IErrorBoundaryState {
   errorInfo?: React.ErrorInfo;
 }
 
-class ErrorBoundary extends ComponentEx<
-  IErrorBoundaryProps,
-  IErrorBoundaryState
-> {
+class ErrorBoundary extends ComponentEx<IErrorBoundaryProps, IErrorBoundaryState> {
   private mErrContext: IErrorContext;
   constructor(props: IErrorBoundaryProps) {
     super(props);
@@ -169,13 +165,7 @@ class ErrorBoundary extends ComponentEx<
       errMessage += "\n\nComponentStack:" + errorInfo.componentStack + "\n";
     }
 
-    events.emit(
-      "report-feedback",
-      error.stack.split("\n")[0],
-      errMessage,
-      [],
-      genHash(error),
-    );
+    events.emit("report-feedback", error.stack.split("\n")[0], errMessage, [], genHash(error));
   };
 
   private retryRender = () => {

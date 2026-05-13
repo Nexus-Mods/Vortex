@@ -1,12 +1,10 @@
 import path from "path";
+
+import * as React from "react";
 import { useSelector } from "react-redux";
 import { actions, fs, selectors, types, util } from "vortex-api";
 
-import * as React from "react";
-
 import { setPrefixOffset } from "./actions";
-import { reducer } from "./reducers";
-
 import {
   GAME_ID,
   gameExecutable,
@@ -16,6 +14,8 @@ import {
 } from "./common";
 import { deserialize, serialize, validate } from "./loadOrder";
 import { migrate020, migrate100, migrate1011 } from "./migrations";
+import { reducer } from "./reducers";
+import Settings from "./Settings";
 import { ILoadOrderEntry, IProps } from "./types";
 import {
   genProps,
@@ -26,7 +26,6 @@ import {
   selectUDF,
   toBlue,
 } from "./util";
-import Settings from "./Settings";
 
 const STEAM_ID = "251570";
 const STEAM_DLL = "steamclient64.dll";
@@ -45,11 +44,7 @@ function resetPrefixOffset(api: types.IExtensionApi) {
   }
 
   api.store.dispatch(setPrefixOffset(profileId, 0));
-  const loadOrder = util.getSafe(
-    api.getState(),
-    ["persistent", "loadOrder", profileId],
-    [],
-  );
+  const loadOrder = util.getSafe(api.getState(), ["persistent", "loadOrder", profileId], []);
   const newLO = loadOrder.map((entry, idx) => ({
     ...entry,
     data: {
@@ -97,11 +92,7 @@ function setPrefixOffsetDialog(api: types.IExtensionApi) {
         }
 
         api.store.dispatch(setPrefixOffset(profileId, offset));
-        const loadOrder = util.getSafe(
-          api.getState(),
-          ["persistent", "loadOrder", profileId],
-          [],
-        );
+        const loadOrder = util.getSafe(api.getState(), ["persistent", "loadOrder", profileId], []);
         const newLO = loadOrder.map((entry) => ({
           ...entry,
           data: {
@@ -121,9 +112,7 @@ function setPrefixOffsetDialog(api: types.IExtensionApi) {
 }
 
 async function findGame() {
-  return util.GameStoreHelper.findByAppId([STEAM_ID]).then(
-    (game) => game.gamePath,
-  );
+  return util.GameStoreHelper.findByAppId([STEAM_ID]).then((game) => game.gamePath);
 }
 
 async function prepareForModding(
@@ -131,11 +120,7 @@ async function prepareForModding(
   discovery: types.IDiscoveryResult,
 ) {
   const isUDFSet =
-    util.getSafe(
-      context.api.getState(),
-      ["settings", "7daystodie", "udf"],
-      undefined,
-    ) != null;
+    util.getSafe(context.api.getState(), ["settings", "7daystodie", "udf"], undefined) != null;
   return !isUDFSet ? selectUDF(context) : Promise.resolve();
 }
 
@@ -146,17 +131,14 @@ async function installContent(
 ): Promise<types.IInstallResult> {
   // The modinfo.xml file is expected to always be positioned in the root directory
   //  of the mod itself; we're going to disregard anything placed outside the root.
-  const modFile = files.find(
-    (file) => path.basename(file).toLowerCase() === MOD_INFO,
-  );
+  const modFile = files.find((file) => path.basename(file).toLowerCase() === MOD_INFO);
   const rootPath = path.dirname(modFile);
   return getModName(path.join(destinationPath, modFile)).then((modName) => {
     modName = modName.replace(/[^a-zA-Z0-9]/g, "");
 
     // Remove directories and anything that isn't in the rootPath (also directories).
     const filtered = files.filter(
-      (filePath) =>
-        filePath.startsWith(rootPath) && !filePath.endsWith(path.sep),
+      (filePath) => filePath.startsWith(rootPath) && !filePath.endsWith(path.sep),
     );
 
     const instructions: types.IInstruction[] = filtered.map((filePath) => {
@@ -175,8 +157,7 @@ function testSupportedContent(files, gameId) {
   // Make sure we're able to support this mod.
   const supported =
     gameId === GAME_ID &&
-    files.find((file) => path.basename(file).toLowerCase() === MOD_INFO) !==
-      undefined;
+    files.find((file) => path.basename(file).toLowerCase() === MOD_INFO) !== undefined;
   return Promise.resolve({
     supported,
     requiredFiles: [],
@@ -198,10 +179,7 @@ function hasCandidate(files: string[]): boolean {
   return candidate !== undefined;
 }
 
-async function installRootMod(
-  files: string[],
-  gameId: string,
-): Promise<types.IInstallResult> {
+async function installRootMod(files: string[], gameId: string): Promise<types.IInstallResult> {
   const filtered = files.filter((file) => !file.endsWith(path.sep));
   const candidate = findCandFile(files);
   const candIdx = candidate
@@ -219,10 +197,7 @@ async function installRootMod(
   return Promise.resolve({ instructions });
 }
 
-async function testRootMod(
-  files: string[],
-  gameId: string,
-): Promise<types.ISupportedResult> {
+async function testRootMod(files: string[], gameId: string): Promise<types.ISupportedResult> {
   return Promise.resolve({
     requiredFiles: [],
     supported: hasCandidate(files) && gameId === GAME_ID,
@@ -236,17 +211,11 @@ function toLOPrefix(context: types.IExtensionContext, mod: types.IMod): string {
   }
 
   // Retrieve the load order as stored in Vortex's application state.
-  const loadOrder = util.getSafe(
-    props.state,
-    ["persistent", "loadOrder", props.profile.id],
-    [],
-  );
+  const loadOrder = util.getSafe(props.state, ["persistent", "loadOrder", props.profile.id], []);
 
   // Find the mod entry in the load order state and insert the prefix in front
   //  of the mod's name/id/whatever
-  let loEntry: ILoadOrderEntry = loadOrder.find(
-    (loEntry) => loEntry.id === mod.id,
-  );
+  let loEntry: ILoadOrderEntry = loadOrder.find((loEntry) => loEntry.id === mod.id);
   if (loEntry === undefined) {
     // The mod entry wasn't found in the load order state - this is potentially
     //  due to the mod being removed as part of an update or uninstallation.
@@ -282,9 +251,7 @@ function InfoPanel(props) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", padding: "16px" }}>
-      <div
-        style={{ display: "flex", whiteSpace: "nowrap", alignItems: "center" }}
-      >
+      <div style={{ display: "flex", whiteSpace: "nowrap", alignItems: "center" }}>
         {t("Current Prefix Offset: ")}
         <hr />
         <label style={{ color: "red" }}>{currentOffset}</label>
@@ -303,13 +270,7 @@ function InfoPanel(props) {
 function InfoPanelWrap(props: { api: types.IExtensionApi; profileId: string }) {
   const { api, profileId } = props;
   const currentOffset = useSelector((state: types.IState) =>
-    makePrefix(
-      util.getSafe(
-        state,
-        ["settings", "7daystodie", "prefixOffset", profileId],
-        0,
-      ),
-    ),
+    makePrefix(util.getSafe(state, ["settings", "7daystodie", "prefixOffset", profileId], 0)),
   );
 
   return <InfoPanel t={api.translate} currentOffset={currentOffset} />;
@@ -341,8 +302,7 @@ function main(context: types.IExtensionContext) {
 
   context.registerLoadOrder({
     deserializeLoadOrder: () => deserialize(context),
-    serializeLoadOrder: ((loadOrder, prev) =>
-      serialize(context, loadOrder, prev)) as any,
+    serializeLoadOrder: ((loadOrder, prev) => serialize(context, loadOrder, prev)) as any,
     validate,
     gameId: GAME_ID,
     toggleableEntries: false,
@@ -407,19 +367,9 @@ function main(context: types.IExtensionContext) {
     return discovery?.path;
   };
 
-  context.registerInstaller(
-    "7dtd-mod",
-    25,
-    toBlue(testSupportedContent),
-    toBlue(installContent),
-  );
+  context.registerInstaller("7dtd-mod", 25, toBlue(testSupportedContent), toBlue(installContent));
 
-  context.registerInstaller(
-    "7dtd-root-mod",
-    20,
-    toBlue(testRootMod),
-    toBlue(installRootMod),
-  );
+  context.registerInstaller("7dtd-root-mod", 20, toBlue(testRootMod), toBlue(installRootMod));
   context.registerModType(
     "7dtd-root-mod",
     20,
@@ -427,9 +377,7 @@ function main(context: types.IExtensionContext) {
     getOverhaulPath,
     (instructions) => {
       const candidateFound = hasCandidate(
-        instructions
-          .filter((instr) => !!instr.destination)
-          .map((instr) => instr.destination),
+        instructions.filter((instr) => !!instr.destination).map((instr) => instr.destination),
       );
       return Promise.resolve(candidateFound) as any;
     },

@@ -16,12 +16,8 @@ export class DashboardPage {
     this.latestNews = page.getByText("Latest News").first();
     this.customiseButton = page.getByText(/customi[sz]e/i).first();
     this.doneButton = page.getByText(/done/i).first();
-    this.getStartedSection = page
-      .getByText(/get.*started|introduction/i)
-      .first();
-    this.introductionVideo = page
-      .getByText(/getting started|introduction video/i)
-      .first();
+    this.getStartedSection = page.getByText(/get.*started|introduction/i).first();
+    this.introductionVideo = page.getByText(/getting started|introduction video/i).first();
     // The close button in the video modal/overlay
     this.videoCloseButton = page
       .locator('.modal .close, [class*="video"] [class*="close"]')

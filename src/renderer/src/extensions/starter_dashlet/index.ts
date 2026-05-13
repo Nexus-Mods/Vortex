@@ -1,19 +1,16 @@
-import PromiseBB from "bluebird";
-import memoize from "memoize-one";
 import path from "path";
 
-import type {
-  IExtensionApi,
-  IExtensionContext,
-} from "../../types/IExtensionContext";
-import type { ITestResult } from "../../types/ITestResult";
-import type { IStarterInfo } from "../../util/StarterInfo";
-import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
+import PromiseBB from "bluebird";
+import memoize from "memoize-one";
 
+import type { IExtensionApi, IExtensionContext } from "../../types/IExtensionContext";
+import type { ITestResult } from "../../types/ITestResult";
 import * as fs from "../../util/fs";
 import { activeGameId } from "../../util/selectors";
+import type { IStarterInfo } from "../../util/StarterInfo";
 import { getSafe } from "../../util/storeHelper";
 import { truthy } from "../../util/util";
+import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
 import { incrementDeploymentCounter } from "../mod_management/reducers/deployment";
 import { setPrimaryTool } from "./actions";
 import settingsReducer from "./reducers";
@@ -74,9 +71,7 @@ function testPrimaryTool(api: IExtensionApi): PromiseBB<ITestResult> {
           : path.dirname(primaryTool.path);
 
       // Make sure all the required files are still present.
-      const requiredFiles = primaryTool.requiredFiles.map((file) =>
-        path.join(workingDir, file),
-      );
+      const requiredFiles = primaryTool.requiredFiles.map((file) => path.join(workingDir, file));
       return PromiseBB.each(requiredFiles, (file: string) => fs.statAsync(file))
         .then(() => PromiseBB.resolve(undefined))
         .catch((err) => {
@@ -123,9 +118,7 @@ function init(context: IExtensionContext): boolean {
     },
   );
 
-  context.registerTest("primary-tool", "gamemode-activated", () =>
-    testPrimaryTool(context.api),
-  );
+  context.registerTest("primary-tool", "gamemode-activated", () => testPrimaryTool(context.api));
 
   context.once(() => {
     // Purging and deploying may change the tool state. We need to kick off
@@ -136,11 +129,7 @@ function init(context: IExtensionContext): boolean {
   return true;
 }
 
-function validateTools(
-  api: IExtensionApi,
-  starters: IStarterInfo[],
-  gameMode: string,
-) {
+function validateTools(api: IExtensionApi, starters: IStarterInfo[], gameMode: string) {
   const state = api.getState();
   const discovery: IDiscoveryResult = getSafe(
     state,

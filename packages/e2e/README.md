@@ -132,10 +132,7 @@ pnpm -F @vortex/e2e run test:report
 For tests that need a managed game without installing real games:
 
 ```ts
-import {
-    setupFakeGame,
-    cleanupFakeGame,
-} from "../fixtures/game-setup/fake-game";
+import { setupFakeGame, cleanupFakeGame } from "../fixtures/game-setup/fake-game";
 
 const { basePath, gamePath } = setupFakeGame("stardewvalley");
 // ... run tests ...

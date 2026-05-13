@@ -1,14 +1,9 @@
-/* eslint-disable */
-import Bluebird from "bluebird";
-import { fs, log, types, selectors, util } from "vortex-api";
-
-import IniStructure from "./iniParser";
-
 import path from "path";
 
-import { getMergedModNames } from "./mergeInventoryParsing";
-
+/* eslint-disable */
+import Bluebird from "bluebird";
 import turbowalk, { IEntry, IWalkOptions } from "turbowalk";
+import { fs, log, types, selectors, util } from "vortex-api";
 
 import {
   GAME_ID,
@@ -17,6 +12,8 @@ import {
   ACTIVITY_ID_IMPORTING_LOADORDER,
   PART_SUFFIX,
 } from "./common";
+import IniStructure from "./iniParser";
+import { getMergedModNames } from "./mergeInventoryParsing";
 import { IDeployedFile, IDeployment, PrefixType } from "./types";
 
 export async function getDeployment(
@@ -24,11 +21,7 @@ export async function getDeployment(
   includedMods?: string[],
 ): Promise<IDeployment> {
   const state = api.getState();
-  const discovery = util.getSafe(
-    state,
-    ["settings", "gameMode", "discovered", GAME_ID],
-    undefined,
-  );
+  const discovery = util.getSafe(state, ["settings", "gameMode", "discovered", GAME_ID], undefined);
   const game = util.getGame(GAME_ID);
   if (game === undefined || discovery?.path === undefined) {
     log("error", "game is not discovered", GAME_ID);
@@ -42,35 +35,23 @@ export async function getDeployment(
   );
 
   const installationDirectories = Object.values(mods)
-    .filter((mod) =>
-      includedMods !== undefined ? includedMods.includes(mod.id) : true,
-    )
+    .filter((mod) => (includedMods !== undefined ? includedMods.includes(mod.id) : true))
     .map((mod) => mod.installationPath);
 
-  const filterFunc = (file: IDeployedFile) =>
-    installationDirectories.includes(file.source);
+  const filterFunc = (file: IDeployedFile) => installationDirectories.includes(file.source);
 
-  const modPaths: { [typeId: string]: string } = game.getModPaths(
-    discovery.path,
-  );
+  const modPaths: { [typeId: string]: string } = game.getModPaths(discovery.path);
   const modTypes = Object.keys(modPaths).filter((key) => !!modPaths[key]);
-  const deployment: IDeployment = await modTypes.reduce(
-    async (accumP, modType) => {
-      const accum = await accumP;
-      try {
-        const manifest: types.IDeploymentManifest = await util.getManifest(
-          api,
-          modType,
-          GAME_ID,
-        );
-        accum[modType] = manifest.files.filter(filterFunc);
-      } catch (err) {
-        log("error", "failed to get manifest", err);
-      }
-      return accum;
-    },
-    {},
-  );
+  const deployment: IDeployment = await modTypes.reduce(async (accumP, modType) => {
+    const accum = await accumP;
+    try {
+      const manifest: types.IDeploymentManifest = await util.getManifest(api, modType, GAME_ID);
+      accum[modType] = manifest.files.filter(filterFunc);
+    } catch (err) {
+      log("error", "failed to get manifest", err);
+    }
+    return accum;
+  }, {});
 
   return deployment;
 }
@@ -143,9 +124,7 @@ export function notifyMissingScriptMerger(api) {
                   util
                     .opn("https://www.nexusmods.com/witcher3/mods/484")
                     .catch((err) => null)
-                    .then(() =>
-                      api.dismissNotification("missing-script-merger"),
-                    ),
+                    .then(() => api.dismissNotification("missing-script-merger")),
               },
             ],
           );
@@ -166,10 +145,7 @@ export const hasPrefix = (prefix: PrefixType, fileEntry: string) => {
   return segments[contentIdx - 1].indexOf(prefix) !== -1;
 };
 
-export async function findModFolders(
-  installationPath: string,
-  mod: types.IMod,
-): Promise<string[]> {
+export async function findModFolders(installationPath: string, mod: types.IMod): Promise<string[]> {
   if (!installationPath || !mod?.installationPath) {
     const errMessage = !installationPath
       ? "Game is not discovered"
@@ -183,9 +159,7 @@ export async function findModFolders(
     (entries: IEntry[]) => {
       entries.forEach((entry) => {
         const segments = entry.filePath.split(path.sep);
-        const contentIdx = segments.findIndex(
-          (seg) => seg.toLowerCase() === "content",
-        );
+        const contentIdx = segments.findIndex((seg) => seg.toLowerCase() === "content");
         if (![-1, 0].includes(contentIdx)) {
           validNames.add(segments[contentIdx - 1]);
         }
@@ -203,18 +177,12 @@ export async function getManagedModNames(
   api: types.IExtensionApi,
   mods: types.IMod[],
 ): Promise<{ name: string; id: string }[]> {
-  const installationPath = selectors.installPathForGame(
-    api.getState(),
-    GAME_ID,
-  );
+  const installationPath = selectors.installPathForGame(api.getState(), GAME_ID);
   return mods.reduce(async (accumP, mod) => {
     const accum = await accumP;
     let folderNames = [];
     try {
-      if (
-        !folderNames ||
-        ["collection", "w3modlimitpatcher"].includes(mod.type)
-      ) {
+      if (!folderNames || ["collection", "w3modlimitpatcher"].includes(mod.type)) {
         return Promise.resolve(accum);
       }
       folderNames = await findModFolders(installationPath, mod);
@@ -240,19 +208,12 @@ export async function getAllMods(api: types.IExtensionApi) {
       managed: [],
     });
   }
-  const modState = util.getSafe(
-    state,
-    ["persistent", "profiles", profile.id, "modState"],
-    {},
-  );
+  const modState = util.getSafe(state, ["persistent", "profiles", profile.id, "modState"], {});
   const mods = util.getSafe(state, ["persistent", "mods", GAME_ID], {});
 
   // Only select mods which are enabled, and are not a menu mod.
   const enabledMods = Object.keys(modState).filter(
-    (key) =>
-      !!mods[key] &&
-      modState[key].enabled &&
-      !invalidModTypes.includes(mods[key].type),
+    (key) => !!mods[key] && modState[key].enabled && !invalidModTypes.includes(mods[key].type),
   );
 
   const mergedModNames = await getMergedModNames(api);
@@ -270,11 +231,7 @@ export async function getAllMods(api: types.IExtensionApi) {
 
 export async function getManuallyAddedMods(api: types.IExtensionApi) {
   const state = api.getState();
-  const discovery = util.getSafe(
-    state,
-    ["settings", "gameMode", "discovered", GAME_ID],
-    undefined,
-  );
+  const discovery = util.getSafe(state, ["settings", "gameMode", "discovered", GAME_ID], undefined);
   if (discovery?.path === undefined) {
     // How/why are we even here ?
     return Promise.reject(new util.ProcessCanceled("Game is not discovered!"));
@@ -293,12 +250,8 @@ export async function getManuallyAddedMods(api: types.IExtensionApi) {
   const modKeys = Object.keys(mods);
   const iniEntries = Object.keys(ini.data);
   const manualCandidates = [].concat(iniEntries).filter((entry) => {
-    const hasVortexKey =
-      util.getSafe(ini.data[entry], ["VK"], undefined) !== undefined;
-    return (
-      !hasVortexKey ||
-      (ini.data[entry].VK === entry && !modKeys.includes(entry))
-    );
+    const hasVortexKey = util.getSafe(ini.data[entry], ["VK"], undefined) !== undefined;
+    return !hasVortexKey || (ini.data[entry].VK === entry && !modKeys.includes(entry));
   });
   const uniqueCandidates = new Set(new Set(manualCandidates));
   const modsPath = path.join(discovery.path, "Mods");
@@ -377,10 +330,7 @@ export function forceRefresh(api: types.IExtensionApi) {
   api.store.dispatch(action);
 }
 
-export async function walkPath(
-  dirPath: string,
-  walkOptions?: IWalkOptions,
-): Promise<IEntry[]> {
+export async function walkPath(dirPath: string, walkOptions?: IWalkOptions): Promise<IEntry[]> {
   walkOptions = walkOptions || {
     skipLinks: true,
     skipHidden: true,
@@ -404,9 +354,7 @@ export async function walkPath(
         //  in the process of being installed/removed. We can safely ignore this.
       },
       walkOptions,
-    ).catch((err) =>
-      err.code === "ENOENT" ? Promise.resolve() : Promise.reject(err),
-    );
+    ).catch((err) => (err.code === "ENOENT" ? Promise.resolve() : Promise.reject(err)));
     return resolve(walkResults);
   });
 }
@@ -414,11 +362,7 @@ export async function walkPath(
 export function validateProfile(profileId: string, state: types.IState) {
   const activeProfile = selectors.activeProfile(state);
   const deployProfile = selectors.profileById(state, profileId);
-  if (
-    !!activeProfile &&
-    !!deployProfile &&
-    deployProfile.id !== activeProfile.id
-  ) {
+  if (!!activeProfile && !!deployProfile && deployProfile.id !== activeProfile.id) {
     return undefined;
   }
 
@@ -454,9 +398,7 @@ export function suppressEventHandlers(api: types.IExtensionApi) {
   );
 }
 
-export function toBlue<T>(
-  func: (...args: any[]) => Promise<T>,
-): (...args: any[]) => Bluebird<T> {
+export function toBlue<T>(func: (...args: any[]) => Promise<T>): (...args: any[]) => Bluebird<T> {
   return (...args: any[]) => Bluebird.resolve(func(...args));
 }
 

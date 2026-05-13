@@ -1,9 +1,10 @@
 import Promise from "bluebird";
 import * as _ from "lodash";
 import * as React from "react";
-import Select from "react-select";
 import { connect } from "react-redux";
+import Select from "react-select";
 import { types, selectors } from "vortex-api";
+
 import { ILOOTList } from "../types/ILOOTList";
 
 interface IConnectedProps {
@@ -19,11 +20,7 @@ class GroupFilterComponent extends React.Component<IProps, {}> {
     const { filter, masterlist, userlist } = this.props;
 
     const options = Array.from(
-      new Set(
-        []
-          .concat(masterlist.groups ?? [], userlist.groups ?? [])
-          .map((iter) => iter.name),
-      ),
+      new Set([].concat(masterlist.groups ?? [], userlist.groups ?? []).map((iter) => iter.name)),
     ).map((iter) => ({ label: iter, value: iter }));
 
     return (
@@ -61,9 +58,7 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-const GroupFilterComponentConn = connect(mapStateToProps)(
-  GroupFilterComponent,
-) as any;
+const GroupFilterComponentConn = connect(mapStateToProps)(GroupFilterComponent) as any;
 
 class GroupFilter implements types.ITableFilter {
   public component = GroupFilterComponentConn;

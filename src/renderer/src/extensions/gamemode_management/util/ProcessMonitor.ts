@@ -1,3 +1,7 @@
+import * as path from "path";
+
+import type * as Redux from "redux";
+
 import { setToolPid, setToolStopped } from "../../../actions";
 import { makeExeId } from "../../../reducers/session";
 import type { IDiscoveredTool } from "../../../types/IDiscoveredTool";
@@ -7,9 +11,6 @@ import { log } from "../../../util/log";
 import { currentGame, currentGameDiscovery } from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
 import { setdefault } from "../../../util/util";
-
-import * as path from "path";
-import type * as Redux from "redux";
 import type { IProcessInfo, IProcessProvider } from "./processProvider";
 import { defaultProcessProvider } from "./processProvider";
 
@@ -101,10 +102,7 @@ class ProcessMonitor {
    *                          Defaults to ps-list based implementation. Useful for
    *                          testing with mock process data.
    */
-  constructor(
-    api: IExtensionApi,
-    processProvider: IProcessProvider = defaultProcessProvider,
-  ) {
+  constructor(api: IExtensionApi, processProvider: IProcessProvider = defaultProcessProvider) {
     this.mStore = api.store;
     this.mProcessProvider = processProvider;
   }
@@ -248,9 +246,7 @@ class ProcessMonitor {
       if (trimmed.startsWith('"')) {
         const end = trimmed.indexOf('"', 1);
         const quoted = end > 1 ? trimmed.slice(1, end) : undefined;
-        return quoted !== undefined && hasPathSeparator(quoted)
-          ? quoted
-          : undefined;
+        return quoted !== undefined && hasPathSeparator(quoted) ? quoted : undefined;
       }
 
       // Step 2c: Split into whitespace-delimited tokens
@@ -281,13 +277,10 @@ class ProcessMonitor {
     // ─── Step 3: Build lookup maps ────────────────────────────────────────────
 
     // Step 3a: Map by PID for quick validation of cached tool PIDs (avoid stale PID reuse)
-    const byPid: { [pid: number]: IProcessInfo } = processes.reduce(
-      (prev, proc) => {
-        prev[proc.pid] = proc;
-        return prev;
-      },
-      {},
-    );
+    const byPid: { [pid: number]: IProcessInfo } = processes.reduce((prev, proc) => {
+      prev[proc.pid] = proc;
+      return prev;
+    }, {});
 
     // Step 3b: Map by exeId (normalized lowercase basename) for name-based candidate lookup
     const byName: { [exeId: string]: IProcessInfo[] } = processes.reduce(
@@ -305,10 +298,7 @@ class ProcessMonitor {
     // ─── Step 5: Define child-process ancestry check ──────────────────────────
     // Recursively walks the parent chain to determine if a process descends from Vortex.
     // Used to distinguish tools we launched vs. unrelated processes with the same name.
-    const isChildProcessOfVortex = (
-      proc: IProcessInfo,
-      visited: Set<number>,
-    ): boolean => {
+    const isChildProcessOfVortex = (proc: IProcessInfo, visited: Set<number>): boolean => {
       // Base case: no process or reached init (PID 0)
       if (proc === undefined || proc.ppid === 0) {
         return false;
@@ -319,10 +309,7 @@ class ProcessMonitor {
       }
       visited.add(proc.ppid);
       // Success if direct child of Vortex, otherwise recurse up the tree
-      return (
-        proc.ppid === vortexPid ||
-        isChildProcessOfVortex(byPid[proc.ppid], visited)
-      );
+      return proc.ppid === vortexPid || isChildProcessOfVortex(byPid[proc.ppid], visited);
     };
 
     // ─── Step 6: Define the update() matching closure ─────────────────────────
@@ -334,11 +321,7 @@ class ProcessMonitor {
     // - exePath: full path to the executable we're looking for
     // - exclusive: whether this tool should block other tools from running
     // - considerDetached: if true, match any process; if false, only match Vortex children
-    const update = (
-      exePath: string,
-      exclusive: boolean,
-      considerDetached: boolean,
-    ) => {
+    const update = (exePath: string, exclusive: boolean, considerDetached: boolean) => {
       // Step 6a: Lookup current state
       // - knownRunning: what we previously recorded as running (may be stale)
       // - exeRunning: all processes with matching basename currently in the process list
@@ -361,10 +344,7 @@ class ProcessMonitor {
           // Step 6c-i: Process with cached PID still exists - but is it still "ours"?
           // For games (considerDetached=true): any process is valid, we're done
           // For tools (considerDetached=false): must still be a Vortex child process
-          if (
-            considerDetached ||
-            isChildProcessOfVortex(knownProc, new Set())
-          ) {
+          if (considerDetached || isChildProcessOfVortex(knownProc, new Set())) {
             return; // Still valid, no state change needed
           }
           // Step 6c-ii: Process exists but is no longer a child - fall through to re-match
@@ -387,14 +367,11 @@ class ProcessMonitor {
 
       // Step 6f: Attempt exact path match (preferred - most reliable)
       const pathMatch = candidatesWithPath.find(
-        (entry) =>
-          entry.path !== undefined && entry.path.toLowerCase() === exePathLower,
+        (entry) => entry.path !== undefined && entry.path.toLowerCase() === exePathLower,
       );
 
       if (pathMatch !== undefined) {
-        this.mStore.dispatch(
-          setToolPid(exePath, pathMatch.proc.pid, exclusive),
-        );
+        this.mStore.dispatch(setToolPid(exePath, pathMatch.proc.pid, exclusive));
         return;
       }
 
@@ -405,9 +382,7 @@ class ProcessMonitor {
         candidatesWithPath.length > 0 &&
         candidatesWithPath.every((entry) => entry.path === undefined)
       ) {
-        this.mStore.dispatch(
-          setToolPid(exePath, candidatesWithPath[0].proc.pid, exclusive),
-        );
+        this.mStore.dispatch(setToolPid(exePath, candidatesWithPath[0].proc.pid, exclusive));
         return;
       }
 
@@ -427,8 +402,7 @@ class ProcessMonitor {
     const game = currentGame(state);
     const gameDiscovery = currentGameDiscovery(state);
     const gameExe =
-      getSafe(gameDiscovery, ["executable"], undefined) ||
-      getSafe(game, ["executable"], undefined);
+      getSafe(gameDiscovery, ["executable"], undefined) || getSafe(game, ["executable"], undefined);
     const gamePath = getSafe(gameDiscovery, ["path"], undefined);
     if (gameExe === undefined || gamePath === undefined) {
       return;
@@ -450,11 +424,7 @@ class ProcessMonitor {
       if (discoveredTools[toolId].path === undefined) {
         return;
       }
-      update(
-        discoveredTools[toolId].path,
-        discoveredTools[toolId].exclusive || false,
-        false,
-      );
+      update(discoveredTools[toolId].path, discoveredTools[toolId].exclusive || false, false);
     });
   }
 

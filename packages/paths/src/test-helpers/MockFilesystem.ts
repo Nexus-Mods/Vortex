@@ -11,11 +11,10 @@
 
 import { Buffer } from "node:buffer";
 
-import { forPlatform, type PathModule } from "../pathUtils";
 import type { IFilesystem, FileEntry } from "../IFilesystem";
-import type { ResolvedPath } from "../types";
-
 import { FileType as FileTypeEnum } from "../IFilesystem";
+import { forPlatform, type PathModule } from "../pathUtils";
+import type { ResolvedPath } from "../types";
 import { RelativePath as RelativePathNS } from "../types";
 
 /**
@@ -162,10 +161,7 @@ export class MockFilesystem implements IFilesystem {
   ): Promise<void> {
     // Ensure parent directory exists (create if needed)
     const parent = this.#getParentPath(path as string);
-    if (
-      parent !== (path as string) &&
-      !this.#entries.has(this.normalizePath(parent))
-    ) {
+    if (parent !== (path as string) && !this.#entries.has(this.normalizePath(parent))) {
       await this.mkdir(parent as ResolvedPath, { recursive: true });
     }
 
@@ -232,9 +228,7 @@ export class MockFilesystem implements IFilesystem {
     dirEntry.atime = new Date();
 
     const normalizedPath = this.normalizePath(path as string);
-    const prefix = normalizedPath.endsWith(this.sep)
-      ? normalizedPath
-      : normalizedPath + this.sep;
+    const prefix = normalizedPath.endsWith(this.sep) ? normalizedPath : normalizedPath + this.sep;
 
     const children: Array<{ name: string; entry: Entry }> = [];
 
@@ -261,10 +255,7 @@ export class MockFilesystem implements IFilesystem {
     }));
   }
 
-  async mkdir(
-    path: ResolvedPath,
-    options?: { recursive?: boolean; mode?: number },
-  ): Promise<void> {
+  async mkdir(path: ResolvedPath, options?: { recursive?: boolean; mode?: number }): Promise<void> {
     if (this.#entries.has(this.normalizePath(path as string))) {
       const entry = this.#getEntry(path);
       if (entry?.type === "directory") {
@@ -279,10 +270,7 @@ export class MockFilesystem implements IFilesystem {
 
     if (options?.recursive) {
       const parent = this.#getParentPath(path as string);
-      if (
-        parent !== (path as string) &&
-        !this.#entries.has(this.normalizePath(parent))
-      ) {
+      if (parent !== (path as string) && !this.#entries.has(this.normalizePath(parent))) {
         await this.mkdir(parent as ResolvedPath, options);
       }
     } else {
@@ -299,10 +287,7 @@ export class MockFilesystem implements IFilesystem {
     });
   }
 
-  async rmdir(
-    path: ResolvedPath,
-    options?: { recursive?: boolean },
-  ): Promise<void> {
+  async rmdir(path: ResolvedPath, options?: { recursive?: boolean }): Promise<void> {
     const _entry = this.#getDirectoryEntry(path);
 
     // Check if directory is empty (unless recursive)
@@ -316,9 +301,7 @@ export class MockFilesystem implements IFilesystem {
     // Delete recursively if needed
     if (options?.recursive) {
       const normalizedPath = this.normalizePath(path as string);
-      const prefix = normalizedPath.endsWith(this.sep)
-        ? normalizedPath
-        : normalizedPath + this.sep;
+      const prefix = normalizedPath.endsWith(this.sep) ? normalizedPath : normalizedPath + this.sep;
 
       const toDelete: string[] = [];
       for (const entryPath of this.#entries.keys()) {
@@ -389,10 +372,7 @@ export class MockFilesystem implements IFilesystem {
       throw new Error(`ENOENT: no such file or directory: ${src}`);
     }
 
-    if (
-      !options?.overwrite &&
-      this.#entries.has(this.normalizePath(dest as string))
-    ) {
+    if (!options?.overwrite && this.#entries.has(this.normalizePath(dest as string))) {
       throw new Error(`EEXIST: file already exists: ${dest}`);
     }
 

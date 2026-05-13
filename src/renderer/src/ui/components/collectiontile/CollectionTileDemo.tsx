@@ -4,20 +4,16 @@
  */
 
 import type { ICollection } from "@nexusmods/nexus-api";
-
 import React, { type ComponentType } from "react";
 
 import type { IExtensionApi } from "../../../types/IExtensionContext";
-
 import { Typography } from "../typography/Typography";
 import { CollectionTile } from "./CollectionTile";
 
 export interface ICollectionTileDemoProps {
   api: IExtensionApi;
 }
-export const CollectionTileDemo: ComponentType<ICollectionTileDemoProps> = ({
-  api,
-}) => {
+export const CollectionTileDemo: ComponentType<ICollectionTileDemoProps> = ({ api }) => {
   const handleAddCollection = (title: string) => {
     console.log("Add collection:", title);
   };
@@ -117,8 +113,8 @@ export const CollectionTileDemo: ComponentType<ICollectionTileDemoProps> = ({
         </Typography>
 
         <Typography appearance="subdued">
-          Collection tiles for browsing and managing mod collections. Maximum 2
-          tags shown, with primary and tertiary action buttons.
+          Collection tiles for browsing and managing mod collections. Maximum 2 tags shown, with
+          primary and tertiary action buttons.
         </Typography>
       </div>
 
@@ -145,11 +141,7 @@ export const CollectionTileDemo: ComponentType<ICollectionTileDemoProps> = ({
           Design Notes
         </Typography>
 
-        <Typography
-          appearance="subdued"
-          as="ul"
-          className="list-inside list-disc space-y-2"
-        >
+        <Typography appearance="subdued" as="ul" className="list-inside list-disc space-y-2">
           <li>Maximum 2 tags displayed per tile</li>
 
           <li>"Adult" tag uses danger-400 color (#F87171)</li>

@@ -1,9 +1,10 @@
 import React from "react";
 import { Button } from "react-bootstrap";
+import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
+
 import Icon from "../../../controls/Icon";
 import { completeStep } from "../actions";
-import { useTranslation } from "react-i18next";
 
 export function Overlay(props: {
   url: string;

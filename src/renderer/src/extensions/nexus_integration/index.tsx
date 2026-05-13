@@ -1,3 +1,5 @@
+import * as path from "path";
+
 import type {
   IDownloadURL,
   IFileInfo,
@@ -10,47 +12,29 @@ import type {
   IValidateKeyResponse,
 } from "@nexusmods/nexus-api";
 import type NexusT from "@nexusmods/nexus-api";
-import type { TFunction } from "i18next";
-import type { Action } from "redux";
-
 import { NexusError, RateLimitError, TimeoutError } from "@nexusmods/nexus-api";
 import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import PromiseBB from "bluebird";
 import { app } from "electron";
 import * as fuzz from "fuzzball";
-import * as path from "path";
+import type { TFunction } from "i18next";
 import * as React from "react";
 import { Button } from "react-bootstrap";
 import { toast } from "react-hot-toast";
+import type { Action } from "redux";
 import {} from "uuid";
 
+import { setDownloadModInfo, setForcedLogout, setModAttribute } from "../../actions";
 import type { IDialogResult } from "../../actions/notifications";
-import type { IComponentContext } from "../../types/IComponentContext";
-import type {
-  IExtensionApi,
-  IExtensionContext,
-} from "../../types/IExtensionContext";
-import type { IModLookupResult } from "../../types/IModLookupResult";
-import type { IState } from "../../types/IState";
-import type { LogLevel } from "../../util/log";
-import type { ICategoryDictionary } from "../category_management/types/ICategoryDictionary";
-import type { IDownload } from "../download_management/types/IDownload";
-import type { IResolvedURL } from "../download_management/types/ProtocolHandlers";
-import type { IGameStored } from "../gamemode_management/types/IGameStored";
-import type { IMod, IModRepoId } from "../mod_management/types/IMod";
-import type { INexusAPIExtension } from "./types/INexusAPIExtension";
-import type { IRemoteInfo } from "./util";
-
-import {
-  setDownloadModInfo,
-  setForcedLogout,
-  setModAttribute,
-} from "../../actions";
 import { showDialog } from "../../actions/notifications";
 import FlexLayout from "../../controls/FlexLayout";
 import Icon from "../../controls/Icon";
 import Image from "../../controls/Image";
 import LazyComponent from "../../controls/LazyComponent";
+import type { IComponentContext } from "../../types/IComponentContext";
+import type { IExtensionApi, IExtensionContext } from "../../types/IExtensionContext";
+import type { IModLookupResult } from "../../types/IModLookupResult";
+import type { IState } from "../../types/IState";
 import { getApplication } from "../../util/application";
 import {
   DataInvalid,
@@ -62,15 +46,11 @@ import {
 import Debouncer from "../../util/Debouncer";
 import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
+import type { LogLevel } from "../../util/log";
 import { log } from "../../util/log";
 import { showError } from "../../util/message";
 import opn from "../../util/opn";
-import {
-  activeGameId,
-  downloadPathForGame,
-  gameById,
-  knownGames,
-} from "../../util/selectors";
+import { activeGameId, downloadPathForGame, gameById, knownGames } from "../../util/selectors";
 import { currentGame, getSafe } from "../../util/storeHelper";
 import {
   batchDispatch,
@@ -82,19 +62,17 @@ import {
   Campaign,
 } from "../../util/util";
 import { MainContext } from "../../views/MainWindow";
+import type { ICategoryDictionary } from "../category_management/types/ICategoryDictionary";
 import { DownloadIsHTML } from "../download_management/DownloadManager";
+import type { IDownload } from "../download_management/types/IDownload";
+import type { IResolvedURL } from "../download_management/types/ProtocolHandlers";
 import { SITE_ID } from "../gamemode_management/constants";
+import type { IGameStored } from "../gamemode_management/types/IGameStored";
 import { getGame } from "../gamemode_management/util/getGame";
-import {
-  isDownloadIdValid,
-  isIdValid,
-} from "../mod_management/util/modUpdateState";
+import type { IMod, IModRepoId } from "../mod_management/types/IMod";
+import { isDownloadIdValid, isIdValid } from "../mod_management/util/modUpdateState";
 import { setNewestVersion, setUserInfo } from "./actions/persistent";
-import {
-  addFreeUserDLItem,
-  removeFreeUserDLItem,
-  setOauthPending,
-} from "./actions/session";
+import { addFreeUserDLItem, removeFreeUserDLItem, setOauthPending } from "./actions/session";
 import { setAssociatedWithNXMURLs } from "./actions/settings";
 import {
   genCollectionIdAttribute,
@@ -116,6 +94,8 @@ import { persistentReducer } from "./reducers/persistent";
 import { sessionReducer } from "./reducers/session";
 import { settingsReducer } from "./reducers/settings";
 import * as sel from "./selectors";
+import type { INexusAPIExtension } from "./types/INexusAPIExtension";
+import type { IRemoteInfo } from "./util";
 import {
   bringToFront,
   endorseThing,
@@ -136,11 +116,7 @@ import {
 } from "./util";
 import { checkModVersion } from "./util/checkModsVersion";
 import { convertNXMIdReverse, nexusGameId } from "./util/convertGameId";
-import {
-  fillNexusIdByMD5,
-  guessFromFileName,
-  queryResetSource,
-} from "./util/guessModID";
+import { fillNexusIdByMD5, guessFromFileName, queryResetSource } from "./util/guessModID";
 import retrieveCategoryList from "./util/retrieveCategories";
 import Tracking from "./util/tracking";
 import { makeFileUID } from "./util/UIDs";
@@ -162,12 +138,7 @@ export class APIDisabled extends Error {
 
 // functions in the nexus api that don't trigger requests but instead are
 // management functions to control the our api connection
-const mgmtFuncs = new Set([
-  "setGame",
-  "getValidationResult",
-  "getRateLimits",
-  "setLogger",
-]);
+const mgmtFuncs = new Set(["setGame", "getValidationResult", "getRateLimits", "setLogger"]);
 const revalidateFuncs = new Set([
   "getCollectionGraph",
   "getCollectionDownloadLink",
@@ -267,10 +238,7 @@ class Disableable {
         // premium status and that is also included in the JWT token which gets refreshed
         // automatically
         const key = state.confidential.account?.["nexus"]?.["APIKey"];
-        if (
-          key !== undefined &&
-          now > that.mLastValidation + REVALIDATION_FREQUENCY
-        ) {
+        if (key !== undefined && now > that.mLastValidation + REVALIDATION_FREQUENCY) {
           that.mLastValidation = now;
           // the purpose of this is to renew our user info, in case the user
           // has bought premium since the last validation but technically
@@ -281,9 +249,7 @@ class Disableable {
             key === undefined
               ? PromiseBB.resolve(undefined as IValidateKeyResponse)
               : PromiseBB.resolve(
-                  truthy(obj.getValidationResult())
-                    ? obj.revalidate()
-                    : obj.setKey(key),
+                  truthy(obj.getValidationResult()) ? obj.revalidate() : obj.setKey(key),
                 );
 
           return prom.then((userInfo) => {
@@ -337,9 +303,7 @@ const requestLog = {
       .then(() => null);
   }, 500),
   log(prop: string, args: any[], caller: string) {
-    this.requests.push(
-      `success - (${Date.now()}) ${prop} (${args.join(", ")}) from ${caller}`,
-    );
+    this.requests.push(`success - (${Date.now()}) ${prop} (${args.join(", ")}) from ${caller}`);
     this.debouncer.schedule();
   },
   logErr(prop: string, args: any[], caller: string, err: Error) {
@@ -383,10 +347,7 @@ const requestLog = {
               err.stack +=
                 "\n\nCalled from:\n\n" +
                 stack
-                  .map(
-                    (frame) =>
-                      `  at ${frame.getFunctionName()} (${framePos(frame)})`,
-                  )
+                  .map((frame) => `  at ${frame.getFunctionName()} (${framePos(frame)})`)
                   .join("\n");
               return PromiseBB.reject(err);
             });
@@ -401,10 +362,7 @@ const requestLog = {
 export interface IExtensionContextExt extends IExtensionContext {
   registerDownloadProtocol: (
     schema: string,
-    handler: (
-      inputUrl: string,
-      name: string,
-    ) => PromiseBB<{ urls: string[]; meta: any }>,
+    handler: (inputUrl: string, name: string) => PromiseBB<{ urls: string[]; meta: any }>,
   ) => void;
 }
 
@@ -449,10 +407,7 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
         .then((game: IGameStored) => {
           gameId = game.id;
           const nexusId = nexusGameId(game);
-          if (
-            nexusGames().find((ngame) => ngame.domain_name === nexusId) ===
-            undefined
-          ) {
+          if (nexusGames().find((ngame) => ngame.domain_name === nexusId) === undefined) {
             // for all we know there could be another extension providing categories for this game
             // so we can't really display an error message or anything
             log("debug", "game unknown on nexus", { gameId: nexusId });
@@ -468,16 +423,14 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
         .catch(TimeoutError, () => {
           api.sendNotification({
             type: "warning",
-            message:
-              "Timeout retrieving categories from server, please try again later.",
+            message: "Timeout retrieving categories from server, please try again later.",
           });
         })
         .catch((err) => {
           if (["ESOCKETTIMEDOUT", "ETIMEDOUT"].includes(err.code)) {
             api.sendNotification({
               type: "warning",
-              message:
-                "Timeout retrieving categories from server, please try again later.",
+              message: "Timeout retrieving categories from server, please try again later.",
             });
           } else if (err.syscall === "getaddrinfo") {
             api.sendNotification({
@@ -498,21 +451,17 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
           } else if (["ENETUNREACH"].includes(err.code)) {
             api.sendNotification({
               type: "warning",
-              message:
-                "Server can't be reached, please check your internet connection.",
+              message: "Server can't be reached, please check your internet connection.",
             });
           } else if (err.message.includes("OPENSSL_internal")) {
             api.sendNotification({
               type: "warning",
               message: "Network connection failed, please try again later.",
             });
-          } else if (
-            ["ECONNRESET", "ECONNREFUSED", "ECONNABORTED"].includes(err.code)
-          ) {
+          } else if (["ECONNRESET", "ECONNREFUSED", "ECONNABORTED"].includes(err.code)) {
             api.sendNotification({
               type: "warning",
-              message:
-                "The server refused the connection, please try again later.",
+              message: "The server refused the connection, please try again later.",
             });
           } else {
             const detail = processErrorMessage(err);
@@ -521,12 +470,7 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
               allowReport = false;
               delete detail.noReport;
             }
-            showError(
-              api.store.dispatch,
-              "Failed to retrieve categories",
-              detail,
-              { allowReport },
-            );
+            showError(api.store.dispatch, "Failed to retrieve categories", detail, { allowReport });
           }
         });
     }
@@ -538,12 +482,7 @@ function openNexusPage(state: IState, gameIds: string[]) {
   opn(`${NEXUS_BASE_URL}/${nexusGameId(game)}`).catch((err) => undefined);
 }
 
-function remapCategory(
-  state: IState,
-  category: number,
-  fromGame: string,
-  toGame: string,
-) {
+function remapCategory(state: IState, category: number, fromGame: string, toGame: string) {
   if (fromGame === toGame || fromGame === undefined) {
     // should be the default case: we're installing the mod for the game it's intended for
     return category;
@@ -592,16 +531,11 @@ function safeParseInt(input: any, radix: number = 10): number {
 const attributesCache: { [key: string]: { data: any; expires: number } } = {};
 const ATTRIBUTES_CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
 
-function processAttributes(
-  state: IState,
-  input: any,
-  quick: boolean,
-): PromiseBB<any> {
+function processAttributes(state: IState, input: any, quick: boolean): PromiseBB<any> {
   const nexusChangelog = input.nexus?.fileInfo?.changelog_html;
 
   const modName = decodeHTML(
-    input.download?.modInfo?.nexus?.modInfo?.name ??
-      input.download?.modInfo?.name,
+    input.download?.modInfo?.nexus?.modInfo?.name ?? input.download?.modInfo?.name,
   );
   const fileName = decodeHTML(
     input.download?.modInfo?.nexus?.fileInfo?.name ??
@@ -609,32 +543,24 @@ function processAttributes(
       input.meta?.fileName,
   );
   const fuzzRatio =
-    modName !== undefined && fileName !== undefined
-      ? fuzz.ratio(modName, fileName)
-      : 100;
+    modName !== undefined && fileName !== undefined ? fuzz.ratio(modName, fileName) : 100;
 
   let fetchPromise: PromiseBB<IRemoteInfo> = PromiseBB.resolve(undefined);
 
-  let gameId =
-    input.download?.modInfo?.game ||
-    input.download?.modInfo?.nexus?.ids?.gameId;
+  let gameId = input.download?.modInfo?.game || input.download?.modInfo?.nexus?.ids?.gameId;
 
   if (
     input.download?.modInfo?.nexus?.modInfo == null &&
     input.download?.modInfo?.source === "nexus"
   ) {
-    const modId =
-      input.download?.modInfo?.ids?.modId ??
-      input.download?.modInfo?.nexus?.ids?.modId;
+    const modId = input.download?.modInfo?.ids?.modId ?? input.download?.modInfo?.nexus?.ids?.modId;
     const fileId =
-      input.download?.modInfo?.ids?.fileId ??
-      input.download?.modInfo?.nexus?.ids?.fileId;
+      input.download?.modInfo?.ids?.fileId ?? input.download?.modInfo?.nexus?.ids?.fileId;
     const collectionSlug =
       input.download?.modInfo?.ids?.collectionSlug ??
       input.download?.modInfo?.nexus?.ids?.collectionSlug;
     const revisionId =
-      input.download?.modInfo?.ids?.revisionId ??
-      input.download?.modInfo?.nexus?.ids?.revisionId;
+      input.download?.modInfo?.ids?.revisionId ?? input.download?.modInfo?.nexus?.ids?.revisionId;
     const revisionNumber =
       input.download?.modInfo?.ids?.revisionNumber ??
       input.download?.modInfo?.nexus?.ids?.revisionNumber;
@@ -655,12 +581,7 @@ function processAttributes(
           const domain = nexusGameId(gameById(state, gameId), gameId);
 
           // Make API call non-blocking by not awaiting it immediately
-          fetchPromise = getInfo(
-            nexus,
-            domain,
-            parseInt(modId, 10),
-            parseInt(fileId, 10),
-          )
+          fetchPromise = getInfo(nexus, domain, parseInt(modId, 10), parseInt(fileId, 10))
             .then((result) => {
               // Cache the successful result
               if (result) {
@@ -689,12 +610,7 @@ function processAttributes(
         if (cached && Date.now() < cached.expires) {
           fetchPromise = PromiseBB.resolve(cached.data);
         } else {
-          fetchPromise = getCollectionInfo(
-            nexus,
-            collectionSlug,
-            revisionNumber,
-            revisionId,
-          )
+          fetchPromise = getCollectionInfo(nexus, collectionSlug, revisionNumber, revisionId)
             .then((result) => {
               // Cache the successful result
               if (result) {
@@ -706,10 +622,7 @@ function processAttributes(
               return result;
             })
             .catch((err) => {
-              const errorLevel = [
-                "COLLECTION_UNDER_MODERATION",
-                "NOT_FOUND",
-              ].includes(err.code)
+              const errorLevel = ["COLLECTION_UNDER_MODERATION", "NOT_FOUND"].includes(err.code)
                 ? "warn"
                 : "error";
               log(errorLevel, "failed to fetch nexus info about collection", {
@@ -726,81 +639,46 @@ function processAttributes(
   }
 
   return fetchPromise.then((info: IRemoteInfo) => {
-    const nexusModInfo: IModInfo =
-      info?.modInfo ?? input.download?.modInfo?.nexus?.modInfo;
-    const nexusFileInfo: IFileInfo =
-      info?.fileInfo ?? input.download?.modInfo?.nexus?.fileInfo;
+    const nexusModInfo: IModInfo = info?.modInfo ?? input.download?.modInfo?.nexus?.modInfo;
+    const nexusFileInfo: IFileInfo = info?.fileInfo ?? input.download?.modInfo?.nexus?.fileInfo;
     const nexusIds = input.download?.modInfo?.nexus?.ids;
     const nexusCollectionInfo: IRevision =
       info?.revisionInfo ?? input.download?.modInfo?.nexus?.revisionInfo;
 
     const gameMode = activeGameId(state);
-    const category = remapCategory(
-      state,
-      nexusModInfo?.category_id,
-      gameId,
-      gameMode,
-    );
+    const category = remapCategory(state, nexusModInfo?.category_id, gameId, gameMode);
 
     return {
-      modId:
-        input.download?.modInfo?.nexus?.ids?.modId ??
-        safeParseInt(input.meta?.details?.modId),
+      modId: input.download?.modInfo?.nexus?.ids?.modId ?? safeParseInt(input.meta?.details?.modId),
       fileId:
-        input.download?.modInfo?.nexus?.ids?.fileId ??
-        safeParseInt(input.meta?.details?.fileId),
+        input.download?.modInfo?.nexus?.ids?.fileId ?? safeParseInt(input.meta?.details?.fileId),
       collectionId:
-        input.download?.modInfo?.nexus?.ids?.collectionId ??
-        nexusCollectionInfo?.collection?.id,
-      revisionId:
-        input.download?.modInfo?.nexus?.ids?.revisionId ??
-        nexusCollectionInfo?.id,
-      collectionSlug:
-        nexusIds?.collectionSlug ?? nexusCollectionInfo?.collection["slug"],
-      revisionNumber:
-        nexusIds?.revisionNumber ?? nexusCollectionInfo?.revisionNumber,
-      author:
-        nexusModInfo?.author ?? nexusCollectionInfo?.collection?.user?.name,
-      uploader:
-        nexusModInfo?.uploaded_by ??
-        nexusCollectionInfo?.collection?.user?.name,
+        input.download?.modInfo?.nexus?.ids?.collectionId ?? nexusCollectionInfo?.collection?.id,
+      revisionId: input.download?.modInfo?.nexus?.ids?.revisionId ?? nexusCollectionInfo?.id,
+      collectionSlug: nexusIds?.collectionSlug ?? nexusCollectionInfo?.collection["slug"],
+      revisionNumber: nexusIds?.revisionNumber ?? nexusCollectionInfo?.revisionNumber,
+      author: nexusModInfo?.author ?? nexusCollectionInfo?.collection?.user?.name,
+      uploader: nexusModInfo?.uploaded_by ?? nexusCollectionInfo?.collection?.user?.name,
       uploaderUrl: nexusModInfo?.uploaded_users_profile_url,
-      uploaderAvatar:
-        nexusModInfo?.user?.avatar ??
-        nexusCollectionInfo?.collection?.user?.avatar,
-      uploaderId:
-        nexusModInfo?.user?.member_id ??
-        nexusCollectionInfo?.collection?.user?.memberId,
+      uploaderAvatar: nexusModInfo?.user?.avatar ?? nexusCollectionInfo?.collection?.user?.avatar,
+      uploaderId: nexusModInfo?.user?.member_id ?? nexusCollectionInfo?.collection?.user?.memberId,
       category,
-      pictureUrl:
-        nexusModInfo?.picture_url ??
-        nexusCollectionInfo?.collection?.tileImage?.url,
-      description:
-        nexusModInfo?.description ??
-        nexusCollectionInfo?.collection?.description,
-      shortDescription:
-        nexusModInfo?.summary ?? nexusCollectionInfo?.collection?.summary,
+      pictureUrl: nexusModInfo?.picture_url ?? nexusCollectionInfo?.collection?.tileImage?.url,
+      description: nexusModInfo?.description ?? nexusCollectionInfo?.collection?.description,
+      shortDescription: nexusModInfo?.summary ?? nexusCollectionInfo?.collection?.summary,
       fileType: nexusFileInfo?.category_name,
       isPrimary: nexusFileInfo?.is_primary,
       modName,
       logicalFileName: input.meta?.logicalFileName ?? fileName,
-      changelog: truthy(nexusChangelog)
-        ? { format: "html", content: nexusChangelog }
-        : undefined,
+      changelog: truthy(nexusChangelog) ? { format: "html", content: nexusChangelog } : undefined,
       uploadedTimestamp:
-        nexusFileInfo?.uploaded_timestamp ??
-        toTimestamp(nexusCollectionInfo?.createdAt),
+        nexusFileInfo?.uploaded_timestamp ?? toTimestamp(nexusCollectionInfo?.createdAt),
       updatedTimestamp: toTimestamp(nexusCollectionInfo?.updatedAt),
-      version:
-        nexusFileInfo?.version ??
-        nexusCollectionInfo?.revisionNumber?.toString?.(),
-      modVersion:
-        nexusModInfo?.version ??
-        nexusCollectionInfo?.revisionNumber?.toString?.(),
+      version: nexusFileInfo?.version ?? nexusCollectionInfo?.revisionNumber?.toString?.(),
+      modVersion: nexusModInfo?.version ?? nexusCollectionInfo?.revisionNumber?.toString?.(),
       allowRating: input?.download?.modInfo?.nexus?.modInfo?.allow_rating,
       customFileName: fuzzRatio < 50 ? `${modName} - ${fileName}` : undefined,
-      newestFileId:
-        nexusCollectionInfo?.collection?.latestPublishedRevision?.id,
+      newestFileId: nexusCollectionInfo?.collection?.latestPublishedRevision?.id,
       newestVersion:
         nexusCollectionInfo?.collection?.latestPublishedRevision?.revisionNumber?.toString?.(),
       rating: nexusCollectionInfo?.rating,
@@ -848,9 +726,8 @@ function makeNXMLinkCallback(api: IExtensionApi) {
 
       const state = api.getState();
       const isExtAvailable =
-        state.session.extensions.available.find(
-          (iter) => iter.modId === nxmUrl.modId,
-        ) !== undefined;
+        state.session.extensions.available.find((iter) => iter.modId === nxmUrl.modId) !==
+        undefined;
 
       if (nxmUrl.type === "oauth") {
         try {
@@ -910,24 +787,16 @@ function makeNXMLinkCallback(api: IExtensionApi) {
 
         const actions: Action[] = [setDownloadModInfo(dlId, "source", "nexus")];
         if (nxmUrl.collectionId !== undefined) {
-          actions.push(
-            setDownloadModInfo(dlId, "collectionId", nxmUrl.collectionId),
-          );
+          actions.push(setDownloadModInfo(dlId, "collectionId", nxmUrl.collectionId));
         }
         if (nxmUrl.revisionId !== undefined) {
-          actions.push(
-            setDownloadModInfo(dlId, "revisionId", nxmUrl.revisionId),
-          );
+          actions.push(setDownloadModInfo(dlId, "revisionId", nxmUrl.revisionId));
         }
         if (nxmUrl.collectionSlug !== undefined) {
-          actions.push(
-            setDownloadModInfo(dlId, "collectionSlug", nxmUrl.collectionSlug),
-          );
+          actions.push(setDownloadModInfo(dlId, "collectionSlug", nxmUrl.collectionSlug));
         }
         if (nxmUrl.revisionNumber !== undefined && nxmUrl.revisionNumber > 0) {
-          actions.push(
-            setDownloadModInfo(dlId, "revisionNumber", nxmUrl.revisionNumber),
-          );
+          actions.push(setDownloadModInfo(dlId, "revisionNumber", nxmUrl.revisionNumber));
         }
         batchDispatch(api.store, actions);
 
@@ -939,17 +808,13 @@ function makeNXMLinkCallback(api: IExtensionApi) {
           }
           // collections always get installed automatically.
           if (install && nxmUrl.type !== "collection") {
-            api.events.emit(
-              "start-install-download",
-              dlId,
-              (err: Error, id: string) => {
-                if (err !== null) {
-                  reject(err);
-                } else {
-                  resolve();
-                }
-              },
-            );
+            api.events.emit("start-install-download", dlId, (err: Error, id: string) => {
+              if (err !== null) {
+                reject(err);
+              } else {
+                resolve();
+              }
+            });
           } else {
             resolve();
           }
@@ -1014,9 +879,7 @@ function makeRepositoryLookup(api: IExtensionApi, nexusConn: NexusT) {
         return nexusConn
           .modFilesByUid(
             query,
-            processingQueries.map((iter) =>
-              makeFileUID(iter.repoInfo),
-            ) as any[],
+            processingQueries.map((iter) => makeFileUID(iter.repoInfo)) as any[],
           )
           .then((files: IModFile[]) => {
             processingQueries.forEach((item) => {
@@ -1159,9 +1022,7 @@ function checkModsWithMissingMeta(api: IExtensionApi) {
         actions.push(setModAttribute(gameId, modId, "fileId", ids.fileId));
       }
       if (!truthy(attributes.downloadGame) && truthy(ids?.gameId)) {
-        actions.push(
-          setModAttribute(gameId, modId, "downloadGame", ids.gameId),
-        );
+        actions.push(setModAttribute(gameId, modId, "downloadGame", ids.gameId));
       }
     }
 
@@ -1201,8 +1062,7 @@ function extendAPI(api: IExtensionApi, nexus: NexusT): INexusAPIExtension {
     nexusOpenModPage: eh.onOpenModPage(api),
     nexusRequestNexusLogin: (callback) => requestLogin(nexus, api, callback),
     nexusRequestOwnIssues: eh.onRequestOwnIssues(nexus),
-    nexusRetrieveCategoryList: (isUpdate: boolean) =>
-      retrieveCategories(api, isUpdate),
+    nexusRetrieveCategoryList: (isUpdate: boolean) => retrieveCategories(api, isUpdate),
     nexusGetModFiles: eh.onGetModFiles(api, nexus),
     nexusDownloadUpdate: eh.onDownloadUpdate(api, nexus),
     nexusModFileContents: eh.onModFileContents(api, nexus),
@@ -1263,8 +1123,7 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
 
     const Nexus: typeof NexusT = require("@nexusmods/nexus-api").default;
     const apiKey = state.confidential.account?.["nexus"]?.["APIKey"];
-    const oauthCred =
-      state.confidential.account?.["nexus"]?.["OAuthCredentials"]; // get credentials from state - this only happens once when extension is loading
+    const oauthCred = state.confidential.account?.["nexus"]?.["OAuthCredentials"]; // get credentials from state - this only happens once when extension is loading
     const loggedIn = apiKey !== undefined || oauthCred !== undefined;
 
     log("info", "nexus_integration auth state status", {
@@ -1277,28 +1136,20 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
 
     nexus = new Proxy(
       new Proxy(
-        new Nexus(
-          "Vortex",
-          getApplication().version,
-          nexusGameId(getGame(gameMode)),
-          30000,
-        ),
+        new Nexus("Vortex", getApplication().version, nexusGameId(getGame(gameMode)), 30000),
         new Disableable(api),
       ),
       requestLog,
     );
 
-    nexus.setLogger((level: LogLevel, message: string, meta: any) =>
-      log(level, message, meta),
-    );
+    nexus.setLogger((level: LogLevel, message: string, meta: any) => log(level, message, meta));
 
     /**
      * this has probably been set from an application level migration, and so we should show the dialog
      * about what happened and why
      */
 
-    const forcedLogout =
-      state.confidential.account?.["nexus"]?.["ForcedLogout"] ?? false;
+    const forcedLogout = state.confidential.account?.["nexus"]?.["ForcedLogout"] ?? false;
 
     log("info", "nexus_integration forcedLogout", {
       forcedLogout: forcedLogout,
@@ -1337,25 +1188,16 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
     } else {
       // check to see if we have oauth credentials in state, if so, then we need to update nexus-node
       if (oauthCred !== undefined) {
-        log(
-          "info",
-          "OAuth credentials found in state. updating nexus-node credentials",
-        );
+        log("info", "OAuth credentials found in state. updating nexus-node credentials");
         updateToken(api, nexus, oauthCred);
       } else {
         //updateKey(api, nexus, apiKey);
       }
     }
 
-    registerFunc(
-      getSafe(state, ["settings", "nexus", "associateNXM"], undefined),
-    );
+    registerFunc(getSafe(state, ["settings", "nexus", "associateNXM"], undefined));
 
-    api.registerRepositoryLookup(
-      "nexus",
-      true,
-      makeRepositoryLookup(api, nexus),
-    );
+    api.registerRepositoryLookup("nexus", true, makeRepositoryLookup(api, nexus));
 
     retrieveNexusGames(nexus).catch((err) => {
       api.showErrorNotification("Failed to fetch list of games", err, {
@@ -1370,10 +1212,7 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
   api.onAsync("get-nexus-collections", eh.onGetNexusCollections(api, nexus));
   api.onAsync("get-my-collections", eh.onGetMyCollections(api, nexus));
   api.onAsync("resolve-collection-url", eh.onResolveCollectionUrl(api, nexus));
-  api.onAsync(
-    "get-nexus-collection-revision",
-    eh.onGetNexusCollectionRevision(api, nexus),
-  );
+  api.onAsync("get-nexus-collection-revision", eh.onGetNexusCollectionRevision(api, nexus));
   api.onAsync("rate-nexus-collection-revision", eh.onRateRevision(api, nexus));
   api.onAsync("endorse-nexus-mod", eh.onEndorseDirect(api, nexus));
   api.onAsync("get-latest-mods", eh.onGetLatestMods(api, nexus));
@@ -1387,9 +1226,7 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
   api.events.on("mod-update", eh.onModUpdate(api, nexus));
   api.events.on("open-collection-page", eh.onOpenCollectionPage(api));
   api.events.on("open-mod-page", eh.onOpenModPage(api));
-  api.events.on("request-nexus-login", (callback) =>
-    requestLogin(nexus, api, callback),
-  );
+  api.events.on("request-nexus-login", (callback) => requestLogin(nexus, api, callback));
   api.events.on("request-own-issues", eh.onRequestOwnIssues(nexus));
   api.events.on("retrieve-category-list", (isUpdate: boolean) => {
     retrieveCategories(api, isUpdate);
@@ -1405,20 +1242,14 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
     ["settings", "nexus", "associateNXM"],
     eh.onChangeNXMAssociation(registerFunc, api),
   );
-  api.onStateChange(
-    ["confidential", "account", "nexus", "APIKey"],
-    eh.onAPIKeyChanged(api, nexus),
-  );
+  api.onStateChange(["confidential", "account", "nexus", "APIKey"], eh.onAPIKeyChanged(api, nexus));
   api.onStateChange(
     ["confidential", "account", "nexus", "OAuthCredentials"],
     eh.onOAuthTokenChanged(api, nexus),
   );
 
   api.onStateChange(["persistent", "mods"], eh.onChangeMods(api, nexus));
-  api.onStateChange(
-    ["persistent", "downloads", "files"],
-    eh.onChangeDownloads(api, nexus),
-  );
+  api.onStateChange(["persistent", "downloads", "files"], eh.onChangeDownloads(api, nexus));
 
   api.addMetaServer("nexus_api", {
     nexus,
@@ -1451,11 +1282,7 @@ function toolbarBanner(t: TFunction): React.FunctionComponent<any> {
     const premiumPictogramPath = "assets/pictograms/premium-pictogram.svg";
 
     const trackAndGoToPremium = (e) => {
-      context.api.events.emit(
-        "analytics-track-click-event",
-        "Go Premium",
-        "Header",
-      );
+      context.api.events.emit("analytics-track-click-event", "Go Premium", "Header");
       goBuyPremium(e);
     };
 
@@ -1466,27 +1293,19 @@ function toolbarBanner(t: TFunction): React.FunctionComponent<any> {
             <FlexLayout.Flex>
               <FlexLayout className="text-flex-container" type="column">
                 <div className="nexus-header-ad-title">
-                  Want <span className="ad-title-highlight">more time</span>{" "}
-                  playing?
+                  Want <span className="ad-title-highlight">more time</span> playing?
                 </div>
 
                 <div className="nexus-header-ad-body">
-                  Save time with{" "}
-                  <span className="ad-body-highlight">max download speeds</span>
-                  ,{" "}
-                  <span className="ad-body-highlight">
-                    auto-install collections
-                  </span>
-                  , and <span className="ad-body-highlight">no ads</span>.
+                  Save time with <span className="ad-body-highlight">max download speeds</span>,{" "}
+                  <span className="ad-body-highlight">auto-install collections</span>, and{" "}
+                  <span className="ad-body-highlight">no ads</span>.
                 </div>
               </FlexLayout>
             </FlexLayout.Flex>
 
             <FlexLayout.Fixed>
-              <Image
-                className="premium-pictogram"
-                srcs={[premiumPictogramPath]}
-              />
+              <Image className="premium-pictogram" srcs={[premiumPictogramPath]} />
             </FlexLayout.Fixed>
           </FlexLayout>
 
@@ -1526,19 +1345,13 @@ function idValid(
     : isDownloadIdValid(downloads[thingId]);
 }
 
-function includesMissingMetaId(
-  api: IExtensionApi,
-  instanceIds: string[],
-): boolean {
+function includesMissingMetaId(api: IExtensionApi, instanceIds: string[]): boolean {
   const state: IState = api.getState();
   const gameMode = activeGameId(state);
   const mods = state.persistent.mods[gameMode];
   const downloads = state.persistent.downloads.files;
 
-  return (
-    instanceIds.find((instanceId) => !idValid(instanceId, mods, downloads)) !==
-    undefined
-  );
+  return instanceIds.find((instanceId) => !idValid(instanceId, mods, downloads)) !== undefined;
 }
 
 function fixIds(api: IExtensionApi, instanceIds: string[]) {
@@ -1583,34 +1396,26 @@ function fixIds(api: IExtensionApi, instanceIds: string[]) {
 
       if (mod !== undefined) {
         const downloadPath = downloadPathForGame(state, gameMode);
-        const hasArchive =
-          mod.archiveId !== undefined && downloads[mod.archiveId] !== undefined;
+        const hasArchive = mod.archiveId !== undefined && downloads[mod.archiveId] !== undefined;
 
         if (mod.attributes?.fileMD5 !== undefined) {
-          return fillNexusIdByMD5(
-            api,
-            gameMode,
-            mod,
-            fileName,
-            downloadPath,
-            hasArchive,
-          ).catch((err) => {
-            api.showErrorNotification("Query failed", err, {
-              allowReport: false,
-            });
-          });
-        } else {
-          return checkModVersion(api.store, nexus, gameMode, mod).catch(
+          return fillNexusIdByMD5(api, gameMode, mod, fileName, downloadPath, hasArchive).catch(
             (err) => {
-              if (err.statusCode === 403) {
-                return queryResetSource(api, gameMode, mod);
-              } else {
-                api.showErrorNotification("Query failed", err, {
-                  allowReport: false,
-                });
-              }
+              api.showErrorNotification("Query failed", err, {
+                allowReport: false,
+              });
             },
           );
+        } else {
+          return checkModVersion(api.store, nexus, gameMode, mod).catch((err) => {
+            if (err.statusCode === 403) {
+              return queryResetSource(api, gameMode, mod);
+            } else {
+              api.showErrorNotification("Query failed", err, {
+                allowReport: false,
+              });
+            }
+          });
         }
       }
       return PromiseBB.resolve();
@@ -1618,11 +1423,7 @@ function fixIds(api: IExtensionApi, instanceIds: string[]) {
   ).then(() => null);
 }
 
-type AwaitLinkCB = (
-  gameId: string,
-  modId: number,
-  fileId: number,
-) => PromiseBB<string>;
+type AwaitLinkCB = (gameId: string, modId: number, fileId: number) => PromiseBB<string>;
 
 interface IDLQueueItem {
   input: string;
@@ -1652,12 +1453,7 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
   // out of the larger process without the user having to click cancel multiple times.
   // Thus we have to keep track of all queued downloads.
 
-  function freeUserDownload(
-    input: string,
-    url: NXMUrl,
-    name: string,
-    friendlyName: string,
-  ) {
+  function freeUserDownload(input: string, url: NXMUrl, name: string, friendlyName: string) {
     // non-premium user trying to download a file with no id, have to send the user to the
     // corresponding site to generate a proper link
     return new PromiseBB<IResolvedURL>((resolve, reject, onCancel) => {
@@ -1709,10 +1505,7 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
           }
 
           // Now traverse forwards from the oldest file to build complete chain
-          const oldestId =
-            backwardChain.length > 0
-              ? backwardChain[0].old_file_id
-              : url.fileId;
+          const oldestId = backwardChain.length > 0 ? backwardChain[0].old_file_id : url.fileId;
           currentId = oldestId;
           const completeChain: IFileUpdate[] = [];
 
@@ -1791,13 +1584,7 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
       .then(() =>
         url.type === "mod"
           ? nexus
-              .getDownloadURLs(
-                url.modId,
-                url.fileId,
-                downloadKey,
-                downloadExpires,
-                pageId,
-              )
+              .getDownloadURLs(url.modId, url.fileId, downloadKey, downloadExpires, pageId)
               .then((res: IDownloadURL[]) => {
                 const result = {
                   urls: res.map((u) => u.URI),
@@ -1823,11 +1610,7 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
                 return result;
               })
           : nexus
-              .getCollectionRevisionGraph(
-                DL_QUERY,
-                url.collectionSlug,
-                revNumber,
-              )
+              .getCollectionRevisionGraph(DL_QUERY, url.collectionSlug, revNumber)
               .catch((err) => {
                 err["collectionSlug"] = url.collectionSlug;
                 err["revisionNumber"] = url.revisionNumber;
@@ -1865,11 +1648,7 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
               }),
       )
       .catch(NexusError, (err) => {
-        const newError = new HTTPError(
-          err.statusCode,
-          err.message,
-          err.request,
-        );
+        const newError = new HTTPError(err.statusCode, err.message, err.request);
         newError.stack = err.stack;
         return PromiseBB.reject(newError);
       })
@@ -1895,11 +1674,7 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
       return PromiseBB.reject(err);
     }
 
-    const userInfo: any = getSafe(
-      state,
-      ["persistent", "nexus", "userInfo"],
-      undefined,
-    );
+    const userInfo: any = getSafe(state, ["persistent", "nexus", "userInfo"], undefined);
     if (url.userId !== undefined && url.userId !== userInfo?.userId) {
       const userName: string = getSafe(
         state,
@@ -1952,11 +1727,7 @@ function onUpdated() {
   bringToFront();
 }
 
-type ResolveFunc = (
-  input: string,
-  name?: string,
-  friendlyName?: string,
-) => PromiseBB<IResolvedURL>;
+type ResolveFunc = (input: string, name?: string, friendlyName?: string) => PromiseBB<IResolvedURL>;
 
 function onDownloadImpl(resolveFunc: ResolveFunc, inputUrl: string) {
   const queueItem = freeDLQueue.find((iter) => iter.input === inputUrl);
@@ -2023,11 +1794,7 @@ function onSkip(api: IExtensionApi, inputUrl: string) {
   }
 }
 
-function onRetryImpl(
-  resolveFunc: ResolveFunc,
-  api: IExtensionApi,
-  inputUrl: string,
-) {
+function onRetryImpl(resolveFunc: ResolveFunc, api: IExtensionApi, inputUrl: string) {
   const queueItem = freeDLQueue.find((iter) => iter.input === inputUrl);
   if (queueItem === undefined) {
     log("error", "failed to find queue item", {
@@ -2076,15 +1843,9 @@ function init(context: IExtensionContextExt): boolean {
   context.registerReducer(["settings", "nexus"], settingsReducer);
   context.registerReducer(["persistent", "nexus"], persistentReducer);
   context.registerReducer(["session", "nexus"], sessionReducer);
-  context.registerAction(
-    "application-icons",
-    200,
-    LoginIcon,
-    { isClassicOnly: true },
-    () => ({
-      nexus,
-    }),
-  );
+  context.registerAction("application-icons", 200, LoginIcon, { isClassicOnly: true }, () => ({
+    nexus,
+  }));
   context.registerAction(
     "mods-action-icons",
     800,
@@ -2135,16 +1896,10 @@ function init(context: IExtensionContextExt): boolean {
     (instanceIds) => {
       const state: IState = context.api.store.getState();
       const gameMode = activeGameId(state);
-      const mod: IMod = getSafe(
-        state.persistent.mods,
-        [gameMode, instanceIds[0]],
-        undefined,
-      );
+      const mod: IMod = getSafe(state.persistent.mods, [gameMode, instanceIds[0]], undefined);
       if (mod !== undefined) {
         const gameId =
-          mod.attributes?.downloadGame !== undefined
-            ? mod.attributes?.downloadGame
-            : gameMode;
+          mod.attributes?.downloadGame !== undefined ? mod.attributes?.downloadGame : gameMode;
         if (mod.type === "collection") {
           context.api.events.emit(
             "open-collection-page",
@@ -2177,12 +1932,7 @@ function init(context: IExtensionContextExt): boolean {
               "nexus",
             );
           } else {
-            context.api.events.emit(
-              "open-mod-page",
-              ids.gameId || gameMode,
-              ids.modId,
-              "nexus",
-            );
+            context.api.events.emit("open-mod-page", ids.gameId || gameMode, ids.modId, "nexus");
           }
         }
       }
@@ -2273,16 +2023,9 @@ function init(context: IExtensionContextExt): boolean {
     },
     (instanceIds) => includesMissingMetaId(context.api, instanceIds),
   );
-  context.registerAction(
-    "mods-multirow-actions",
-    250,
-    "track",
-    {},
-    "Track",
-    (instanceIds) => {
-      tracking.trackMods(instanceIds);
-    },
-  );
+  context.registerAction("mods-multirow-actions", 250, "track", {}, "Track", (instanceIds) => {
+    tracking.trackMods(instanceIds);
+  });
   context.registerAction(
     "mods-multirow-actions",
     250,
@@ -2319,19 +2062,16 @@ function init(context: IExtensionContextExt): boolean {
 
   context.registerDialog("login-dialog", LoginDialog, () => ({
     onCancelLogin,
-    onReceiveCode: (code: string, state: string) =>
-      oauthCallback(context.api, code, state),
+    onReceiveCode: (code: string, state: string) => oauthCallback(context.api, code, state),
   }));
 
-  const onDownload = (inputUrl: string) =>
-    onDownloadImpl(resolveFunc, inputUrl);
+  const onDownload = (inputUrl: string) => onDownloadImpl(resolveFunc, inputUrl);
 
   const onCancel = (inputUrl: string) => onCancelImpl(context.api, inputUrl);
 
   const onCheckStatus = () => onCheckStatusImpl();
 
-  const onRetry = (inputUrl: string) =>
-    onRetryImpl(resolveFunc, context.api, inputUrl);
+  const onRetry = (inputUrl: string) => onRetryImpl(resolveFunc, context.api, inputUrl);
 
   context.registerDialog("free-user-download", FreeUserDLDialog, () => ({
     t: context.api.translate,
@@ -2350,19 +2090,14 @@ function init(context: IExtensionContextExt): boolean {
       const t = context.api.translate;
       const electricBoltIconPath = "assets/icons/electric-bolt.svg";
       const trackAndGoToPremium = (e) => {
-        context.api.events.emit(
-          "analytics-track-click-event",
-          "Go Premium",
-          "Downloads",
-        );
+        context.api.events.emit("analytics-track-click-event", "Go Premium", "Downloads");
         goBuyPremium(e);
       };
       return (
         <div id="nexus-download-banner">
           <div className="banner-text">
-            Free users are{" "}
-            <span className="text-highlight">capped at 3MB/s</span> (1.5 MB/s
-            with AdBlock). Play your modded games{" "}
+            Free users are <span className="text-highlight">capped at 3MB/s</span> (1.5 MB/s with
+            AdBlock). Play your modded games{" "}
             <span className="text-highlight">faster with premium</span>.
           </div>
 
@@ -2407,21 +2142,14 @@ function init(context: IExtensionContextExt): boolean {
     },
   );
 
-  context.registerAction(
-    "categories-icons",
-    100,
-    "download",
-    {},
-    "Retrieve categories",
-    () => retrieveCategories(context.api, true),
+  context.registerAction("categories-icons", 100, "download", {}, "Retrieve categories", () =>
+    retrieveCategories(context.api, true),
   );
 
   context.registerTableAttribute(
     "mods",
-    genEndorsedAttribute(
-      context.api,
-      (gameId: string, modId: string, endorseStatus: string) =>
-        endorseThing(context.api, nexus, gameId, modId, endorseStatus),
+    genEndorsedAttribute(context.api, (gameId: string, modId: string, endorseStatus: string) =>
+      endorseThing(context.api, nexus, gameId, modId, endorseStatus),
     ),
   );
 
@@ -2459,11 +2187,7 @@ function init(context: IExtensionContextExt): boolean {
   );
 
   context.registerAttributeExtractor(50, (input: any, modPath: string) => {
-    return processAttributes(
-      context.api.store.getState(),
-      input,
-      modPath === undefined,
-    );
+    return processAttributes(context.api.store.getState(), input, modPath === undefined);
   });
 
   context.registerAction(
@@ -2491,16 +2215,13 @@ function init(context: IExtensionContextExt): boolean {
     {},
     context.api.translate("Open Nexus Page"),
     (games: string[]) => openNexusPage(context.api.store.getState(), games),
-    (games: string[]) =>
-      gameById(context.api.getState(), games[0]) !== undefined,
+    (games: string[]) => gameById(context.api.getState(), games[0]) !== undefined,
   );
 
   context.registerAPI("getNexusGames", () => nexusGamesProm(), {});
   context.registerAPI("ensureLoggedIn", () => ensureLoggedIn(context.api), {});
 
-  const extIntegrations: Array<(nex: NexusT) => void> = [
-    (nex: NexusT) => tracking.once(nex),
-  ];
+  const extIntegrations: Array<(nex: NexusT) => void> = [(nex: NexusT) => tracking.once(nex)];
   context["registerNexusIntegration"] = (cb: (nex: NexusT) => void) => {
     extIntegrations.push(cb);
   };

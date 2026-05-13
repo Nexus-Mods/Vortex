@@ -1,17 +1,13 @@
 /* eslint-disable */
 import path from "path";
+
+import ini from "ini";
 import { fs, types, selectors, util } from "vortex-api";
 import { Builder, parseStringPromise } from "xml2js";
 
-import {
-  GAME_ID,
-  CONFIG_MATRIX_REL_PATH,
-  CONFIG_MATRIX_FILES,
-  VORTEX_BACKUP_TAG,
-} from "./common";
+import { GAME_ID, CONFIG_MATRIX_REL_PATH, CONFIG_MATRIX_FILES, VORTEX_BACKUP_TAG } from "./common";
 import { getPersistentLoadOrder } from "./migrations";
 import { fileExists, getDocumentsPath, isSettingsFile, isXML } from "./util";
-import ini from "ini";
 
 class ModXMLDataInvalid extends util.DataInvalid {
   constructor(message: string, modFilePath: string) {
@@ -32,27 +28,19 @@ class ModXMLDataInvalid extends util.DataInvalid {
 // Adding a group with a different id will create a new group in the game's input.xml
 //  file, if the group already exists it will merge the vars into the existing group.
 export const doMergeXML =
-  (api: types.IExtensionApi) =>
-  async (modFilePath: string, targetMergeDir: string) => {
+  (api: types.IExtensionApi) => async (modFilePath: string, targetMergeDir: string) => {
     try {
       const modData = await fs.readFileAsync(modFilePath);
       const modXml = await parseStringPromise(modData);
       const modGroups = modXml?.UserConfig?.Group;
       if (!modGroups) {
-        const err = new ModXMLDataInvalid(
-          "Invalid XML data - inform mod author",
-          modFilePath,
-        );
+        const err = new ModXMLDataInvalid("Invalid XML data - inform mod author", modFilePath);
         api.showErrorNotification("Failed to merge XML data", err, {
           allowReport: false,
         });
         return Promise.resolve();
       }
-      const currentInputFile = await readXMLInputFile(
-        api,
-        modFilePath,
-        targetMergeDir,
-      );
+      const currentInputFile = await readXMLInputFile(api, modFilePath, targetMergeDir);
       if (!currentInputFile) {
         // If the current input file is not found, we cannot merge, so we just return.
         return Promise.resolve();
@@ -61,9 +49,7 @@ export const doMergeXML =
       modGroups.forEach((modGroup) => {
         const gameGroups = mergedXmlData?.UserConfig?.Group;
         const modVars = modGroup?.VisibleVars?.[0]?.Var;
-        const gameGroup = gameGroups.find(
-          (group) => group?.$?.id === modGroup?.$?.id,
-        );
+        const gameGroup = gameGroups.find((group) => group?.$?.id === modGroup?.$?.id);
         if (gameGroup) {
           const gameVars = gameGroup?.VisibleVars?.[0]?.Var;
           modVars.forEach((modVar) => {
@@ -80,25 +66,17 @@ export const doMergeXML =
       });
       const builder = new Builder({ doctype: { dtd: "UTF-16" } });
       const xml = builder.buildObject(mergedXmlData);
-      await fs.ensureDirWritableAsync(
-        path.join(targetMergeDir, CONFIG_MATRIX_REL_PATH),
-      );
+      await fs.ensureDirWritableAsync(path.join(targetMergeDir, CONFIG_MATRIX_REL_PATH));
       return fs.writeFileAsync(
-        path.join(
-          targetMergeDir,
-          CONFIG_MATRIX_REL_PATH,
-          path.basename(modFilePath),
-        ),
+        path.join(targetMergeDir, CONFIG_MATRIX_REL_PATH, path.basename(modFilePath)),
         xml,
       );
     } catch (err) {
       const activeProfile = selectors.activeProfile(api.store.getState());
       if (!activeProfile?.id) {
-        api.showErrorNotification(
-          "Failed to merge XML data",
-          "No active profile found",
-          { allowReport: false },
-        );
+        api.showErrorNotification("Failed to merge XML data", "No active profile found", {
+          allowReport: false,
+        });
         return Promise.resolve();
       }
       const loadOrder = getPersistentLoadOrder(api);
@@ -132,18 +110,12 @@ export const canMergeXML = (api: types.IExtensionApi) => {
         deployedFiles
           .filter((file) => isXML(file.relPath))
           .map((file) => ({
-            in: path.join(
-              gameDiscovery.path,
-              CONFIG_MATRIX_REL_PATH,
-              file.relPath,
-            ),
+            in: path.join(gameDiscovery.path, CONFIG_MATRIX_REL_PATH, file.relPath),
             out: path.join(CONFIG_MATRIX_REL_PATH, file.relPath),
           })),
       filter: (filePath) =>
         isXML(filePath) &&
-        CONFIG_MATRIX_FILES.includes(
-          path.basename(filePath, path.extname(filePath)),
-        ),
+        CONFIG_MATRIX_FILES.includes(path.basename(filePath, path.extname(filePath))),
     };
   };
 };
@@ -154,11 +126,7 @@ async function readXMLInputFile(
   mergeDirPath: string,
 ) {
   const state = api.store.getState();
-  const discovery = util.getSafe(
-    state,
-    ["settings", "gameMode", "discovered", GAME_ID],
-    undefined,
-  );
+  const discovery = util.getSafe(state, ["settings", "gameMode", "discovered", GAME_ID], undefined);
   if (!discovery?.path) {
     return Promise.reject({
       code: "ENOENT",
@@ -226,8 +194,7 @@ export const canMergeSettings = (api: types.IExtensionApi) => {
 };
 
 export const doMergeSettings =
-  (api: types.IExtensionApi) =>
-  async (modFilePath: string, targetMergeDir: string) => {
+  (api: types.IExtensionApi) => async (modFilePath: string, targetMergeDir: string) => {
     // if (isSettingsMergeSuppressed(api)) {
     //   return Promise.resolve();
     // }
@@ -235,11 +202,7 @@ export const doMergeSettings =
     try {
       const modData = await fs.readFileAsync(modFilePath, { encoding: "utf8" });
       const modIniData = ini.parse(modData);
-      const currentSettingsFile = await readSettingsFile(
-        api,
-        modFilePath,
-        targetMergeDir,
-      );
+      const currentSettingsFile = await readSettingsFile(api, modFilePath, targetMergeDir);
       const mergedIniData = ini.parse(currentSettingsFile);
       Object.keys(modIniData).forEach((section) => {
         if (!mergedIniData[section]) {
@@ -265,11 +228,7 @@ export const doMergeSettings =
         { modFilePath, targetMergeDir, message: err.message, stack: err.stack },
         err,
       );
-      const mergedData = await readSettingsFile(
-        api,
-        modFilePath,
-        targetMergeDir,
-      );
+      const mergedData = await readSettingsFile(api, modFilePath, targetMergeDir);
       const modData = await fs.readFileAsync(modFilePath, { encoding: "utf8" });
       api.showErrorNotification("Failed to merge settings data", extendedErr, {
         allowReport: true,
@@ -304,21 +263,14 @@ async function readSettingsFile(
   mergeDirPath: string,
 ) {
   const state = api.store.getState();
-  const discovery = util.getSafe(
-    state,
-    ["settings", "gameMode", "discovered", GAME_ID],
-    undefined,
-  );
+  const discovery = util.getSafe(state, ["settings", "gameMode", "discovered", GAME_ID], undefined);
   if (!discovery?.path) {
     return Promise.reject({
       code: "ENOENT",
       message: "Game is not discovered",
     });
   }
-  const gameSettingsFilepath = path.join(
-    getDocumentsPath(discovery),
-    path.basename(modFilePath),
-  );
+  const gameSettingsFilepath = path.join(getDocumentsPath(discovery), path.basename(modFilePath));
   const mergedFilePath = path.join(mergeDirPath, path.basename(modFilePath));
   const backupFilePath = gameSettingsFilepath + VORTEX_BACKUP_TAG;
   try {

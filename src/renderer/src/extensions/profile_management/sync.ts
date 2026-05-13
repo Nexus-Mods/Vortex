@@ -1,19 +1,16 @@
+import * as path from "path";
+
+import PromiseBB from "bluebird";
+
 import { UserCanceled } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
 import { copyFileAtomic } from "../../util/fsAtomic";
 import { log } from "../../util/log";
 
-import PromiseBB from "bluebird";
-import * as path from "path";
-
 export function syncToProfile(
   profilePath: string,
   sourceFiles: string[],
-  onError: (
-    error: string,
-    details: string | Error,
-    allowReport?: boolean,
-  ) => void,
+  onError: (error: string, details: string | Error, allowReport?: boolean) => void,
 ): PromiseBB<void> {
   log("debug", "sync to profile", { profilePath, sourceFiles });
   return fs
@@ -38,19 +35,13 @@ export function syncToProfile(
     .then(() => {
       log("debug", "sync to profile complete");
     })
-    .catch((err) =>
-      PromiseBB.reject(new Error("failed to sync to profile: " + err.message)),
-    );
+    .catch((err) => PromiseBB.reject(new Error("failed to sync to profile: " + err.message)));
 }
 
 export function syncFromProfile(
   profilePath: string,
   sourceFiles: string[],
-  onError: (
-    error: string,
-    details: string | Error,
-    allowReport?: boolean,
-  ) => void,
+  onError: (error: string, details: string | Error, allowReport?: boolean) => void,
 ): PromiseBB<void> {
   log("debug", "sync from profile", { profilePath, sourceFiles });
   return PromiseBB.map(sourceFiles, (filePath: string) => {
@@ -61,11 +52,7 @@ export function syncFromProfile(
       })
       .catch((err) => {
         if (err.code === "EPERM") {
-          onError(
-            "failed to sync from profile",
-            `${filePath} is write protected`,
-            false,
-          );
+          onError("failed to sync from profile", `${filePath} is write protected`, false);
         } else if (err.code !== "ENOENT") {
           onError("failed to sync from profile", err);
         }
@@ -74,9 +61,5 @@ export function syncFromProfile(
     .then(() => {
       log("debug", "sync from profile complete");
     })
-    .catch((err) =>
-      PromiseBB.reject(
-        new Error("failed from sync to profile: " + err.message),
-      ),
-    );
+    .catch((err) => PromiseBB.reject(new Error("failed from sync to profile: " + err.message)));
 }

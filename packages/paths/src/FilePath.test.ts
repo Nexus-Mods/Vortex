@@ -1,11 +1,10 @@
 import { describe, test, expect, beforeEach, vi } from "vitest";
 
+import { FilePath } from "./FilePath";
 import type { IFilesystem } from "./IFilesystem";
 import type { IResolverBase } from "./IResolver";
-
-import { FilePath } from "./FilePath";
-import { RelativePath, Anchor, ResolvedPath } from "./types";
 import { MockFilesystem } from "./test-helpers/MockFilesystem";
+import { RelativePath, Anchor, ResolvedPath } from "./types";
 
 // Mock resolver for testing
 class MockResolver implements IResolverBase {
@@ -93,11 +92,7 @@ describe("FilePath", () => {
 
   describe("resolve", () => {
     test("async resolution", async () => {
-      const filePath = new FilePath(
-        RelativePath.make("mods/skyrim"),
-        anchor,
-        resolver,
-      );
+      const filePath = new FilePath(RelativePath.make("mods/skyrim"), anchor, resolver);
 
       const resolved = await filePath.resolve();
       expect(resolved).toBe("/mock/test/mods/skyrim");
@@ -135,11 +130,7 @@ describe("FilePath", () => {
 
     test("withResolver creates new FilePath", () => {
       const newResolver = new MockResolver("new-resolver");
-      const original = new FilePath(
-        RelativePath.make("mods"),
-        anchor,
-        resolver,
-      );
+      const original = new FilePath(RelativePath.make("mods"), anchor, resolver);
       const updated = original.withResolver(newResolver);
 
       expect(updated).not.toBe(original);
@@ -150,11 +141,7 @@ describe("FilePath", () => {
 
     test("withAnchor creates new FilePath", () => {
       const newAnchor = Anchor.make("newAnchor");
-      const original = new FilePath(
-        RelativePath.make("mods"),
-        anchor,
-        resolver,
-      );
+      const original = new FilePath(RelativePath.make("mods"), anchor, resolver);
       const updated = original.withAnchor(newAnchor);
 
       expect(updated).not.toBe(original);
@@ -165,11 +152,7 @@ describe("FilePath", () => {
 
     test("withRelative creates new FilePath", () => {
       const newRelative = RelativePath.make("downloads");
-      const original = new FilePath(
-        RelativePath.make("mods"),
-        anchor,
-        resolver,
-      );
+      const original = new FilePath(RelativePath.make("mods"), anchor, resolver);
       const updated = original.withRelative(newRelative);
 
       expect(updated).not.toBe(original);
@@ -179,11 +162,7 @@ describe("FilePath", () => {
     });
 
     test("parent returns parent directory", () => {
-      const filePath = new FilePath(
-        RelativePath.make("mods/skyrim/data.esp"),
-        anchor,
-        resolver,
-      );
+      const filePath = new FilePath(RelativePath.make("mods/skyrim/data.esp"), anchor, resolver);
       const parent = filePath.parent();
 
       expect(parent.relative).toBe("mods/skyrim");
@@ -192,11 +171,7 @@ describe("FilePath", () => {
     });
 
     test("basename returns filename", () => {
-      const filePath = new FilePath(
-        RelativePath.make("mods/skyrim/data.esp"),
-        anchor,
-        resolver,
-      );
+      const filePath = new FilePath(RelativePath.make("mods/skyrim/data.esp"), anchor, resolver);
 
       expect(filePath.basename()).toBe("data.esp");
       expect(filePath.basename(".esp")).toBe("data");
@@ -205,11 +180,7 @@ describe("FilePath", () => {
 
   describe("debugging", () => {
     test("toString formats FilePath", () => {
-      const filePath = new FilePath(
-        RelativePath.make("mods/skyrim"),
-        anchor,
-        resolver,
-      );
+      const filePath = new FilePath(RelativePath.make("mods/skyrim"), anchor, resolver);
 
       const str = filePath.toString();
       expect(str).toContain("FilePath");
@@ -229,11 +200,7 @@ describe("FilePath", () => {
     test("equals compares FilePath instances", () => {
       const path1 = new FilePath(RelativePath.make("mods"), anchor, resolver);
       const path2 = new FilePath(RelativePath.make("mods"), anchor, resolver);
-      const path3 = new FilePath(
-        RelativePath.make("downloads"),
-        anchor,
-        resolver,
-      );
+      const path3 = new FilePath(RelativePath.make("downloads"), anchor, resolver);
 
       expect(path1.equals(path2)).toBe(true);
       expect(path1.equals(path3)).toBe(false);
@@ -259,11 +226,7 @@ describe("FilePath", () => {
 
     test("hashCode differs for different paths", () => {
       const path1 = new FilePath(RelativePath.make("mods"), anchor, resolver);
-      const path2 = new FilePath(
-        RelativePath.make("downloads"),
-        anchor,
-        resolver,
-      );
+      const path2 = new FilePath(RelativePath.make("downloads"), anchor, resolver);
 
       expect(path1.hashCode()).not.toBe(path2.hashCode());
     });
@@ -271,11 +234,7 @@ describe("FilePath", () => {
 
   describe("depth", () => {
     test("returns segment count", () => {
-      const filePath = new FilePath(
-        RelativePath.make("mods/skyrim/data"),
-        anchor,
-        resolver,
-      );
+      const filePath = new FilePath(RelativePath.make("mods/skyrim/data"), anchor, resolver);
       expect(filePath.depth()).toBe(3);
     });
 
@@ -285,11 +244,7 @@ describe("FilePath", () => {
     });
 
     test("single segment has depth 1", () => {
-      const filePath = new FilePath(
-        RelativePath.make("mods"),
-        anchor,
-        resolver,
-      );
+      const filePath = new FilePath(RelativePath.make("mods"), anchor, resolver);
       expect(filePath.depth()).toBe(1);
     });
   });
@@ -297,11 +252,7 @@ describe("FilePath", () => {
   describe("isIn", () => {
     test("child is in parent", () => {
       const parent = new FilePath(RelativePath.make("mods"), anchor, resolver);
-      const child = new FilePath(
-        RelativePath.make("mods/skyrim"),
-        anchor,
-        resolver,
-      );
+      const child = new FilePath(RelativePath.make("mods/skyrim"), anchor, resolver);
 
       expect(child.isIn(parent)).toBe(true);
     });
@@ -318,11 +269,7 @@ describe("FilePath", () => {
       const otherResolver = new MockResolver("mock-other");
 
       const parent = new FilePath(RelativePath.make("mods"), anchor, resolver);
-      const child = new FilePath(
-        RelativePath.make("mods/skyrim"),
-        otherAnchor,
-        otherResolver,
-      );
+      const child = new FilePath(RelativePath.make("mods/skyrim"), otherAnchor, otherResolver);
 
       expect(child.isIn(parent)).toBe(false);
     });
@@ -331,11 +278,7 @@ describe("FilePath", () => {
       const otherResolver = new MockResolver("different");
 
       const parent = new FilePath(RelativePath.make("mods"), anchor, resolver);
-      const child = new FilePath(
-        RelativePath.make("mods/skyrim"),
-        anchor,
-        otherResolver,
-      );
+      const child = new FilePath(RelativePath.make("mods/skyrim"), anchor, otherResolver);
 
       expect(child.isIn(parent)).toBe(false);
     });

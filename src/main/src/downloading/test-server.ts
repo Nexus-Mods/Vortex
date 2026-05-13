@@ -29,9 +29,7 @@ export type TestServer = {
   close: () => Promise<void>;
 };
 
-export async function createTestServer(
-  initialHandler: RequestHandler,
-): Promise<TestServer> {
+export async function createTestServer(initialHandler: RequestHandler): Promise<TestServer> {
   let handler = initialHandler;
   const requests: RecordedRequest[] = [];
 
@@ -121,9 +119,7 @@ export function serveFile(opts: ServeFileOptions): RequestHandler {
  * Routes requests to different handlers based on URL path. Useful for testing
  * resolvers that return different URLs for probe vs chunk requests.
  */
-export function serveRoutes(
-  routes: Record<string, RequestHandler>,
-): RequestHandler {
+export function serveRoutes(routes: Record<string, RequestHandler>): RequestHandler {
   return (ctx) => {
     const pathname = ctx.req.url ?? "/";
     const handler = routes[pathname];
@@ -149,10 +145,7 @@ export function serveStatus(statusCode: number): RequestHandler {
  * Writes part of the response body then abruptly destroys the socket,
  * simulating a dropped connection mid-transfer.
  */
-export function serveTruncated(
-  body: Buffer,
-  bytesBeforeDrop: number,
-): RequestHandler {
+export function serveTruncated(body: Buffer, bytesBeforeDrop: number): RequestHandler {
   return ({ res }) => {
     res.writeHead(200, { "content-length": body.length });
     res.write(body.subarray(0, bytesBeforeDrop));
@@ -218,9 +211,7 @@ function listen(server: http.Server): Promise<URL> {
   });
 }
 
-function parseRange(
-  header: string | undefined,
-): { start: number; end: number } | null {
+function parseRange(header: string | undefined): { start: number; end: number } | null {
   if (!header) return null;
   const match = header.match(/^bytes=(\d+)-(\d+)$/);
   if (!match) return null;

@@ -49,11 +49,7 @@ export const MutexProvider: React.FC<IMutexProviderProps> = ({ children }) => {
     queueRef.current = new MutexContextValue();
   }
 
-  return React.createElement(
-    MutexContext.Provider,
-    { value: queueRef.current },
-    children,
-  );
+  return React.createElement(MutexContext.Provider, { value: queueRef.current }, children);
 };
 
 export const MutexConsumer = MutexContext.Consumer;
@@ -92,10 +88,7 @@ export function useRandomId() {
   return ref.current;
 }
 
-export function MutexWrapper(props: {
-  show: boolean;
-  children: React.ReactNode;
-}) {
+export function MutexWrapper(props: { show: boolean; children: React.ReactNode }) {
   // const primary = useMutex(props.show);
 
   // return primary ? React.createElement('div', undefined, props.children) : null;

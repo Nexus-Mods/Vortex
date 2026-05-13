@@ -1,23 +1,19 @@
-import type { IDownload, IState } from "../../../types/IState";
-import type {
-  IFilterProps,
-  ITableFilter,
-} from "../../../types/ITableAttribute";
-import { connect } from "../../../controls/ComponentEx";
-import { getSafe } from "../../../util/storeHelper";
-import { truthy } from "../../../util/util";
-
-import type { ICategoryDictionary } from "../types/ICategoryDictionary";
-import getDownloadGames from "../../download_management/util/getDownloadGames";
-import type { IMod } from "../../mod_management/types/IMod";
-import filterModInfo from "../../mod_management/util/filterModInfo";
-import { activeGameId } from "../../profile_management/selectors";
-
 import PromiseBB from "bluebird";
 import update from "immutability-helper";
 import * as _ from "lodash";
 import * as React from "react";
 import { Creatable } from "react-select";
+
+import { connect } from "../../../controls/ComponentEx";
+import type { IDownload, IState } from "../../../types/IState";
+import type { IFilterProps, ITableFilter } from "../../../types/ITableAttribute";
+import { getSafe } from "../../../util/storeHelper";
+import { truthy } from "../../../util/util";
+import getDownloadGames from "../../download_management/util/getDownloadGames";
+import type { IMod } from "../../mod_management/types/IMod";
+import filterModInfo from "../../mod_management/util/filterModInfo";
+import { activeGameId } from "../../profile_management/selectors";
+import type { ICategoryDictionary } from "../types/ICategoryDictionary";
 
 interface IConnectedProps {
   gameId: string;
@@ -57,10 +53,7 @@ class CategoryFilterComponent extends React.Component<IProps, IComponentState> {
   public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     if (this.props.downloads !== newProps.downloads) {
       const before = Object.keys(this.props.downloads).filter(
-        (dlId) =>
-          getDownloadGames(this.props.downloads[dlId]).indexOf(
-            this.props.gameId,
-          ) !== -1,
+        (dlId) => getDownloadGames(this.props.downloads[dlId]).indexOf(this.props.gameId) !== -1,
       );
 
       this.updateState(before, newProps, false);
@@ -147,9 +140,7 @@ class CategoryFilterComponent extends React.Component<IProps, IComponentState> {
   private shouldCreate = ({ keyCode }) => {
     const should = [9, 13].includes(keyCode);
     if (should) {
-      this.setState(
-        update(this.state, { customOption: { $set: this.mCustomOptionTemp } }),
-      );
+      this.setState(update(this.state, { customOption: { $set: this.mCustomOptionTemp } }));
     }
     return should;
   };
@@ -170,8 +161,7 @@ class CategoryFilterComponent extends React.Component<IProps, IComponentState> {
   private updateState(before: string[], props: IProps, force: boolean) {
     const archiveCategories = { ...this.state.archiveCategories };
     const after = Object.keys(props.downloads).filter(
-      (dlId) =>
-        getDownloadGames(props.downloads[dlId]).indexOf(props.gameId) !== -1,
+      (dlId) => getDownloadGames(props.downloads[dlId]).indexOf(props.gameId) !== -1,
     );
     const removed: string[] = _.difference(before, after);
     // remove disappeared downloads
@@ -181,27 +171,20 @@ class CategoryFilterComponent extends React.Component<IProps, IComponentState> {
     // update added or changed downloads
     const filtered = force
       ? after
-      : after.filter(
-          (archiveId) =>
-            this.props.downloads[archiveId] !== props.downloads[archiveId],
-        );
+      : after.filter((archiveId) => this.props.downloads[archiveId] !== props.downloads[archiveId]);
 
     let customOption;
-    const customFilter = (props.filter ?? []).find((filt) =>
-      filt.startsWith("*"),
-    );
+    const customFilter = (props.filter ?? []).find((filt) => filt.startsWith("*"));
     if (customFilter !== undefined) {
       customOption = { label: customFilter.slice(1), value: customFilter };
     }
 
     PromiseBB.map(filtered, (archiveId) =>
-      filterModInfo({ download: props.downloads[archiveId] }, undefined).then(
-        (info) => {
-          if (info.category !== undefined) {
-            archiveCategories[archiveId] = info.category;
-          }
-        },
-      ),
+      filterModInfo({ download: props.downloads[archiveId] }, undefined).then((info) => {
+        if (info.category !== undefined) {
+          archiveCategories[archiveId] = info.category;
+        }
+      }),
     ).then(() => {
       this.setState({ archiveCategories, customOption });
     });
@@ -252,17 +235,14 @@ class CategoryFilter implements ITableFilter {
     }
 
     // this supports multiple patterns but the UI does not
-    const patterns = filter
-      .filter((f) => f.startsWith("*"))
-      .map((f) => f.slice(1).toLowerCase());
+    const patterns = filter.filter((f) => f.startsWith("*")).map((f) => f.slice(1).toLowerCase());
     if (patterns.length > 0 && value !== undefined) {
       const gameId = activeGameId(state);
       const primaryValue = value.toString().split(",")[0];
       const catName = state.persistent.categories[gameId]?.[primaryValue];
       if (
         catName?.name != null &&
-        patterns.find((pat) => catName.name.toLowerCase().includes(pat)) !==
-          undefined
+        patterns.find((pat) => catName.name.toLowerCase().includes(pat)) !== undefined
       ) {
         return true;
       }
@@ -280,11 +260,7 @@ class CategoryFilter implements ITableFilter {
     const categories = state.persistent.categories[gameId] || {};
     const result: string[] = [];
     let iter = category;
-    while (
-      truthy(iter) &&
-      categories[iter] !== undefined &&
-      !result.includes(iter)
-    ) {
+    while (truthy(iter) && categories[iter] !== undefined && !result.includes(iter)) {
       result.push(iter);
       iter = categories[iter].parentCategory;
     }

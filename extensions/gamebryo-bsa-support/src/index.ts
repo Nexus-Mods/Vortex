@@ -1,7 +1,8 @@
-import PromiseBB from "bluebird";
-import { BSAFile, BSAFolder, BSArchive, createBSA, loadBSA } from "bsatk";
 import * as path from "path";
 import { PassThrough } from "stream";
+
+import PromiseBB from "bluebird";
+import { BSAFile, BSAFolder, BSArchive, createBSA, loadBSA } from "bsatk";
 import { dir as tmpDir } from "tmp";
 import { fs, types, util } from "vortex-api";
 
@@ -12,17 +13,11 @@ class BSAHandler implements types.IArchiveHandler {
   }
 
   public readDir(archPath: string): PromiseBB<string[]> {
-    return PromiseBB.resolve(
-      this.readDirImpl(this.mBSA.root, archPath.split(path.sep), 0),
-    );
+    return PromiseBB.resolve(this.readDirImpl(this.mBSA.root, archPath.split(path.sep), 0));
   }
 
   public extractFile(filePath: string, outputPath: string): PromiseBB<void> {
-    const file: BSAFile = this.getFileImpl(
-      this.mBSA.root,
-      filePath.split(path.sep),
-      0,
-    );
+    const file: BSAFile = this.getFileImpl(this.mBSA.root, filePath.split(path.sep), 0);
     if (file === undefined) {
       return PromiseBB.reject(new Error("file not found " + filePath));
     }
@@ -55,11 +50,7 @@ class BSAHandler implements types.IArchiveHandler {
     // this way felt like overkill.
     const pass = new PassThrough();
 
-    const file: BSAFile = this.getFileImpl(
-      this.mBSA.root,
-      filePath.split(path.sep),
-      0,
-    );
+    const file: BSAFile = this.getFileImpl(this.mBSA.root, filePath.split(path.sep), 0);
     if (file === undefined) {
       pass.emit("error", new Error("file not found " + filePath));
       return pass;
@@ -74,9 +65,7 @@ class BSAHandler implements types.IArchiveHandler {
           return pass.emit("error", readErr);
         }
 
-        const fileStream = fs.createReadStream(
-          path.join(tmpPath, path.basename(filePath)),
-        );
+        const fileStream = fs.createReadStream(path.join(tmpPath, path.basename(filePath)));
         fileStream.on("data", (data) => pass.write(data));
         fileStream.on("end", () => {
           pass.end();
@@ -122,36 +111,24 @@ class BSAHandler implements types.IArchiveHandler {
     return base.addFolder(name);
   }
 
-  private getFileImpl(
-    folder: BSAFolder,
-    filePath: string[],
-    offset: number,
-  ): BSAFile {
+  private getFileImpl(folder: BSAFolder, filePath: string[], offset: number): BSAFile {
     if (offset === filePath.length - 1) {
-      return this.getFiles(folder).find(
-        (file) => file.name === filePath[offset],
-      );
+      return this.getFiles(folder).find((file) => file.name === filePath[offset]);
     }
 
-    const res = this.findSubFolders(folder, filePath[offset]).map(
-      (subFolder: BSAFolder) =>
-        this.getFileImpl(subFolder, filePath, offset + 1),
+    const res = this.findSubFolders(folder, filePath[offset]).map((subFolder: BSAFolder) =>
+      this.getFileImpl(subFolder, filePath, offset + 1),
     );
     return res.find((item) => item !== undefined);
   }
 
-  private readDirImpl(
-    folder: BSAFolder,
-    archPath: string[],
-    offset: number,
-  ): string[] {
+  private readDirImpl(folder: BSAFolder, archPath: string[], offset: number): string[] {
     if (offset === archPath.length) {
       return this.getFileAndFolderNames(folder);
     }
 
-    const res = this.findSubFolders(folder, archPath[offset]).map(
-      (subFolder: BSAFolder) =>
-        this.readDirImpl(subFolder, archPath, offset + 1),
+    const res = this.findSubFolders(folder, archPath[offset]).map((subFolder: BSAFolder) =>
+      this.readDirImpl(subFolder, archPath, offset + 1),
     );
     return [].concat.apply([], res);
   }
@@ -201,9 +178,7 @@ function createBSAHandler(
     (async () =>
       options.create
         ? util.toPromise((cb) => createBSA(fileName, cb))
-        : util.toPromise((cb) =>
-            loadBSA(fileName, options.verify === true, cb),
-          ))(),
+        : util.toPromise((cb) => loadBSA(fileName, options.verify === true, cb)))(),
   ).then((arc: BSArchive) => Promise.resolve(new BSAHandler(arc)));
 }
 

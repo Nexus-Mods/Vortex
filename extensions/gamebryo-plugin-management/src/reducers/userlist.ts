@@ -65,9 +65,8 @@ const userlistReducer: types.IReducerSpec = {
       }
     },
     [actions.addGroup as any]: (state, payload) =>
-      state.groups.find(
-        (group) => group.name.toUpperCase() === payload.group.toUpperCase(),
-      ) === undefined
+      state.groups.find((group) => group.name.toUpperCase() === payload.group.toUpperCase()) ===
+      undefined
         ? util.pushSafe(state, ["groups"], {
             name: payload.group,
             after: [],
@@ -76,11 +75,7 @@ const userlistReducer: types.IReducerSpec = {
     [actions.removeGroup as any]: (state, payload) => {
       // need to remove the group from all rules
       state.groups.forEach((group, idx) => {
-        state = util.removeValue(
-          state,
-          ["groups", idx, "after"],
-          payload.group,
-        );
+        state = util.removeValue(state, ["groups", idx, "after"], payload.group);
       });
 
       state.plugins.forEach((plugin, idx) => {
@@ -108,9 +103,7 @@ const userlistReducer: types.IReducerSpec = {
       }
 
       if (payload.group === undefined) {
-        return existing !== -1
-          ? util.deleteOrNop(state, ["plugins", existing, "group"])
-          : state;
+        return existing !== -1 ? util.deleteOrNop(state, ["plugins", existing, "group"]) : state;
       }
 
       return existing !== -1
@@ -130,11 +123,7 @@ const userlistReducer: types.IReducerSpec = {
           after: [payload.reference],
         });
       } else {
-        return util.addUniqueSafe(
-          state,
-          ["groups", idx, "after"],
-          payload.reference,
-        );
+        return util.addUniqueSafe(state, ["groups", idx, "after"], payload.reference);
       }
     },
     [actions.clearUserlist as any]: () => ({ plugins: [], groups: [] }),
@@ -145,11 +134,7 @@ const userlistReducer: types.IReducerSpec = {
       if (idx === -1) {
         return state;
       }
-      return util.removeValue(
-        state,
-        ["groups", idx, "after"],
-        payload.reference,
-      );
+      return util.removeValue(state, ["groups", idx, "after"], payload.reference);
     },
   },
   defaults: { plugins: [], groups: [] },

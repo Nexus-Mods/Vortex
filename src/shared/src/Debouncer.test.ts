@@ -23,11 +23,14 @@ function makeDebouncer(
   triggerImmediately = false,
 ) {
   const { setFn, clearFn, advance, runAll } = makeTimers();
-  const d = new GenericDebouncer<
-    Timeout,
-    typeof setTimeout,
-    typeof clearTimeout
-  >(setFn, clearFn, func, debounceMS, reset, triggerImmediately);
+  const d = new GenericDebouncer<Timeout, typeof setTimeout, typeof clearTimeout>(
+    setFn,
+    clearFn,
+    func,
+    debounceMS,
+    reset,
+    triggerImmediately,
+  );
   return { d, advance, runAll };
 }
 

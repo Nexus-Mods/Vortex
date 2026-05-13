@@ -2,14 +2,7 @@ import * as React from "react";
 import { FormControl, FormGroup, InputGroup } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
-import {
-  ComponentEx,
-  FlexLayout,
-  selectors,
-  tooltip,
-  types,
-  util,
-} from "vortex-api";
+import { ComponentEx, FlexLayout, selectors, tooltip, types, util } from "vortex-api";
 
 import { NAMESPACE } from "../../constants";
 
@@ -50,10 +43,7 @@ class InstallModeRenderer extends ComponentEx<IProps, {}> {
     const { t, hasInstallerOptions } = this.props;
     return hasInstallerOptions ? (
       <FlexLayout.Fixed style={{ marginLeft: "5px", marginTop: "3px" }}>
-        <tooltip.Icon
-          name="options"
-          tooltip={t("This mod has installer options")}
-        />
+        <tooltip.Icon name="options" tooltip={t("This mod has installer options")} />
       </FlexLayout.Fixed>
     ) : null;
   };
@@ -70,8 +60,7 @@ class InstallModeRenderer extends ComponentEx<IProps, {}> {
 
   private selectInstallMode = (evt) => {
     const { onSetInstallMode } = this.props;
-    const modId: string =
-      evt.target.selectedOptions[0]?.getAttribute("data-id");
+    const modId: string = evt.target.selectedOptions[0]?.getAttribute("data-id");
     const newVal: string = evt.target.value;
     onSetInstallMode(modId, newVal);
   };

@@ -9,9 +9,7 @@ class UMMAttribDashlet extends PureComponentEx<{}, {}> {
     const { t } = this.props;
     return (
       <Dashlet
-        title={t(
-          "Support for this game is made possible using the Unity Mod Manager tool (UMM)",
-        )}
+        title={t("Support for this game is made possible using the Unity Mod Manager tool (UMM)")}
         className="dashlet-umm"
       >
         <div>

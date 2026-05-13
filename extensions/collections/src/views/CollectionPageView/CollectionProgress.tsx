@@ -1,20 +1,11 @@
-import { IModEx } from "../../types/IModEx";
-
-import CollectionBanner from "./CollectionBanner";
-
 import type { TFunction } from "i18next";
 import * as React from "react";
 import { Panel } from "react-bootstrap";
-import {
-  ComponentEx,
-  FlexLayout,
-  ProgressBar,
-  Spinner,
-  tooltip,
-  types,
-  util,
-} from "vortex-api";
+import { ComponentEx, FlexLayout, ProgressBar, Spinner, tooltip, types, util } from "vortex-api";
+
+import { IModEx } from "../../types/IModEx";
 import { calculateCollectionSize, isRelevant } from "../../util/util";
+import CollectionBanner from "./CollectionBanner";
 
 export interface ICollectionProgressProps {
   t: TFunction;
@@ -33,10 +24,7 @@ interface ICompState {
   totalSize: number;
 }
 
-class CollectionProgress extends ComponentEx<
-  ICollectionProgressProps,
-  ICompState
-> {
+class CollectionProgress extends ComponentEx<ICollectionProgressProps, ICompState> {
   public static getDerivedStateFromProps(props, state) {
     return {
       totalSize: calculateCollectionSize(props.mods),
@@ -97,10 +85,7 @@ class CollectionProgress extends ComponentEx<
       mods,
     ).reduce<IModGroups>(
       (prev, mod) => {
-        if (
-          mod.collectionRule.type === "requires" &&
-          !mod.collectionRule["ignored"]
-        ) {
+        if (mod.collectionRule.type === "requires" && !mod.collectionRule["ignored"]) {
           prev[group(mod, downloads[mod.archiveId])].push(mod);
         }
         return prev;
@@ -179,9 +164,7 @@ class CollectionProgress extends ComponentEx<
     const { totalSize } = this.state;
 
     const curInstall =
-      installing.length > 0
-        ? installing.find((iter) => iter.state === "installing")
-        : undefined;
+      installing.length > 0 ? installing.find((iter) => iter.state === "installing") : undefined;
 
     const downloadProgress = Object.values(mods).reduce((prev, mod) => {
       let size = 0;
@@ -209,14 +192,8 @@ class CollectionProgress extends ComponentEx<
           now={done.length}
           max={relevant.length}
           showPercentage
-          labelLeft={
-            installing.length > 0 ? t("Installing") : t("Waiting to install")
-          }
-          labelRight={
-            curInstall !== undefined
-              ? util.renderModName(curInstall)
-              : undefined
-          }
+          labelLeft={installing.length > 0 ? t("Installing") : t("Waiting to install")}
+          labelRight={curInstall !== undefined ? util.renderModName(curInstall) : undefined}
         />
       </>
     );

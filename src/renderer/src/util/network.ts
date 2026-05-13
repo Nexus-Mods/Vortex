@@ -3,6 +3,7 @@ import { get as getHTTP, request as requestHTTP } from "http";
 import { get as getHTTPS, request as requestHTTPS } from "https";
 import type { Readable } from "stream";
 import * as url from "url";
+
 import { DataInvalid, TemporaryError } from "./CustomErrors";
 import { log } from "./log";
 
@@ -11,10 +12,7 @@ export interface IRequestOptions {
   encoding?: BufferEncoding;
 }
 
-export function rawRequest(
-  apiURL: string,
-  options?: IRequestOptions,
-): Promise<string | Buffer> {
+export function rawRequest(apiURL: string, options?: IRequestOptions): Promise<string | Buffer> {
   if (options === undefined) {
     options = {};
   }
@@ -48,8 +46,7 @@ export function rawRequest(
         if (options.encoding !== undefined) {
           res.setEncoding(options.encoding);
         }
-        let rawData: string | Buffer =
-          options.encoding !== undefined ? "" : Buffer.alloc(0);
+        let rawData: string | Buffer = options.encoding !== undefined ? "" : Buffer.alloc(0);
         res.on("data", (chunk) => {
           if (options.encoding !== undefined) {
             rawData += chunk;
@@ -84,9 +81,7 @@ export function jsonRequest<T>(apiURL: string): Promise<T> {
     try {
       return JSON.parse(rawData as string);
     } catch (err) {
-      return Promise.reject(
-        new DataInvalid("Invalid json response: " + rawData),
-      );
+      return Promise.reject(new DataInvalid("Invalid json response: " + rawData));
     }
   });
 }
@@ -115,11 +110,7 @@ export function request(
   return result;
 }
 
-export function upload(
-  targetUrl: string,
-  dataStream: Readable,
-  dataSize: number,
-): Promise<Buffer> {
+export function upload(targetUrl: string, dataStream: Readable, dataSize: number): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     log("debug", "uploading file", { targetUrl, dataSize });
     const started = Date.now();

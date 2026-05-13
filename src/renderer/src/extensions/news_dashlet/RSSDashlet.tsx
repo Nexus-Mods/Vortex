@@ -1,17 +1,16 @@
+import * as React from "react";
+import { connect as redConnect } from "react-redux";
+
 import bbcode, { stripBBCode } from "../../controls/bbcode";
 import { ComponentEx, translate } from "../../controls/ComponentEx";
 import { getSafe } from "../../util/storeHelper";
 import { truthy } from "../../util/util";
 import { currentGame } from "../gamemode_management/selectors";
 import { nexusGameId } from "../nexus_integration/util/convertGameId";
-
 import BaseDashlet from "./BaseDashlet";
 import { GAMEID_PLACEHOLDER, MAX_SUMMARY_LENGTH } from "./constants";
 import type { IFeedMessage } from "./rss";
 import rss from "./rss";
-
-import * as React from "react";
-import { connect as redConnect } from "react-redux";
 import type { IListItem } from "./types";
 
 export interface IConnectedProps {
@@ -82,8 +81,7 @@ class RSSDashlet extends ComponentEx<IProps, IComponentState> {
   private refresh = () => {
     const { url } = this.props;
     const rssUrl =
-      this.props.nexusGameId !== undefined &&
-      url.indexOf(GAMEID_PLACEHOLDER) !== -1
+      this.props.nexusGameId !== undefined && url.indexOf(GAMEID_PLACEHOLDER) !== -1
         ? url.replace(GAMEID_PLACEHOLDER, this.props.nexusGameId)
         : url;
 
@@ -111,19 +109,14 @@ class RSSDashlet extends ComponentEx<IProps, IComponentState> {
     const { extras } = this.props;
 
     const image = input.enclosures.find(
-      (enc) =>
-        (!truthy(enc.type) || enc.type.startsWith("image/")) && truthy(enc.url),
+      (enc) => (!truthy(enc.type) || enc.type.startsWith("image/")) && truthy(enc.url),
     );
 
     if (!image) {
       return undefined;
     }
 
-    const messageInput = getSafe(
-      input,
-      ["nexusmods:summary", "#"],
-      input.description,
-    );
+    const messageInput = getSafe(input, ["nexusmods:summary", "#"], input.description);
 
     let summary = stripBBCode(messageInput);
     if (summary.length > MAX_SUMMARY_LENGTH) {

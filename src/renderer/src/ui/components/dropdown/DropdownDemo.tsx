@@ -4,13 +4,7 @@
  */
 
 import { Menu } from "@headlessui/react";
-import {
-  mdiContentCopy,
-  mdiDelete,
-  mdiDotsVertical,
-  mdiDownload,
-  mdiPencil,
-} from "@mdi/js";
+import { mdiContentCopy, mdiDelete, mdiDotsVertical, mdiDownload, mdiPencil } from "@mdi/js";
 import React, { useCallback } from "react";
 
 import { Button } from "../button/Button";
@@ -33,9 +27,9 @@ export const DropdownDemo = () => {
         </Typography>
 
         <Typography appearance="subdued">
-          Action menu built on Headless UI. Use Dropdown when items trigger
-          actions (e.g. edit, delete, sign out) rather than selecting a value.
-          Supports icons, dividers, disabled items, and custom trigger elements.
+          Action menu built on Headless UI. Use Dropdown when items trigger actions (e.g. edit,
+          delete, sign out) rather than selecting a value. Supports icons, dividers, disabled items,
+          and custom trigger elements.
         </Typography>
       </div>
 
@@ -51,17 +45,11 @@ export const DropdownDemo = () => {
             </Menu.Button>
 
             <DropdownItems className="right-auto left-0">
-              <DropdownItem onClick={() => handleClick("Option 1")}>
-                Option 1
-              </DropdownItem>
+              <DropdownItem onClick={() => handleClick("Option 1")}>Option 1</DropdownItem>
 
-              <DropdownItem onClick={() => handleClick("Option 2")}>
-                Option 2
-              </DropdownItem>
+              <DropdownItem onClick={() => handleClick("Option 2")}>Option 2</DropdownItem>
 
-              <DropdownItem onClick={() => handleClick("Option 3")}>
-                Option 3
-              </DropdownItem>
+              <DropdownItem onClick={() => handleClick("Option 3")}>Option 3</DropdownItem>
             </DropdownItems>
           </Dropdown>
         </div>
@@ -79,33 +67,21 @@ export const DropdownDemo = () => {
             </Menu.Button>
 
             <DropdownItems className="right-auto left-0">
-              <DropdownItem
-                leftIconPath={mdiPencil}
-                onClick={() => handleClick("Edit")}
-              >
+              <DropdownItem leftIconPath={mdiPencil} onClick={() => handleClick("Edit")}>
                 Edit
               </DropdownItem>
 
-              <DropdownItem
-                leftIconPath={mdiContentCopy}
-                onClick={() => handleClick("Duplicate")}
-              >
+              <DropdownItem leftIconPath={mdiContentCopy} onClick={() => handleClick("Duplicate")}>
                 Duplicate
               </DropdownItem>
 
-              <DropdownItem
-                leftIconPath={mdiDownload}
-                onClick={() => handleClick("Download")}
-              >
+              <DropdownItem leftIconPath={mdiDownload} onClick={() => handleClick("Download")}>
                 Download
               </DropdownItem>
 
               <DropdownDivider />
 
-              <DropdownItem
-                leftIconPath={mdiDelete}
-                onClick={() => handleClick("Delete")}
-              >
+              <DropdownItem leftIconPath={mdiDelete} onClick={() => handleClick("Delete")}>
                 Delete
               </DropdownItem>
             </DropdownItems>
@@ -132,24 +108,15 @@ export const DropdownDemo = () => {
             />
 
             <DropdownItems className="right-auto left-0">
-              <DropdownItem
-                leftIconPath={mdiPencil}
-                onClick={() => handleClick("Edit")}
-              >
+              <DropdownItem leftIconPath={mdiPencil} onClick={() => handleClick("Edit")}>
                 Edit
               </DropdownItem>
 
-              <DropdownItem
-                leftIconPath={mdiContentCopy}
-                onClick={() => handleClick("Duplicate")}
-              >
+              <DropdownItem leftIconPath={mdiContentCopy} onClick={() => handleClick("Duplicate")}>
                 Duplicate
               </DropdownItem>
 
-              <DropdownItem
-                leftIconPath={mdiDelete}
-                onClick={() => handleClick("Delete")}
-              >
+              <DropdownItem leftIconPath={mdiDelete} onClick={() => handleClick("Delete")}>
                 Delete
               </DropdownItem>
             </DropdownItems>
@@ -169,15 +136,11 @@ export const DropdownDemo = () => {
             </Menu.Button>
 
             <DropdownItems className="right-auto left-0">
-              <DropdownItem onClick={() => handleClick("Available")}>
-                Available action
-              </DropdownItem>
+              <DropdownItem onClick={() => handleClick("Available")}>Available action</DropdownItem>
 
               <DropdownItem disabled={true}>Disabled action</DropdownItem>
 
-              <DropdownItem onClick={() => handleClick("Another")}>
-                Another action
-              </DropdownItem>
+              <DropdownItem onClick={() => handleClick("Another")}>Another action</DropdownItem>
             </DropdownItems>
           </Dropdown>
         </div>

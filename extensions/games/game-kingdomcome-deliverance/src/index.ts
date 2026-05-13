@@ -1,8 +1,9 @@
+import path from "path";
+
 import Bluebird from "bluebird";
 import * as React from "react";
 import * as BS from "react-bootstrap";
 import { connect } from "react-redux";
-import path from "path";
 import {
   actions,
   fs,
@@ -15,12 +16,9 @@ import {
   util,
 } from "vortex-api";
 
-import { IKCDCollectionsData } from "./collections/types";
-import {
-  genCollectionsData,
-  parseCollectionsData,
-} from "./collections/collections";
+import { genCollectionsData, parseCollectionsData } from "./collections/collections";
 import CollectionsDataView from "./collections/CollectionsDataView";
+import { IKCDCollectionsData } from "./collections/types";
 import { GAME_ID, MODS_ORDER_FILENAME } from "./statics";
 import { transformId } from "./util";
 
@@ -38,11 +36,9 @@ const _MODS_STATE = {
 };
 
 function findGame() {
-  return util.GameStoreHelper.findByAppId([
-    STEAM_APPID,
-    XBOX_APPID,
-    EPIC_APPID,
-  ]).then((game) => game.gamePath);
+  return util.GameStoreHelper.findByAppId([STEAM_APPID, XBOX_APPID, EPIC_APPID]).then(
+    (game) => game.gamePath,
+  );
 }
 
 async function requiresLauncher(gamePath, store) {
@@ -68,11 +64,7 @@ async function requiresLauncher(gamePath, store) {
 
 function getExecutable(discoveredPath) {
   const steamPath = path.join("Bin", "Win64", "KingdomCome.exe");
-  const epicPath = path.join(
-    "Bin",
-    "Win64MasterMasterEpicPGO",
-    "KingdomCome.exe",
-  );
+  const epicPath = path.join("Bin", "Win64MasterMasterEpicPGO", "KingdomCome.exe");
   const xboxPath = path.join("gamelaunchhelper.exe");
   const isCorrectExec = (exec) => {
     try {
@@ -98,22 +90,11 @@ function prepareForModding(context, discovery) {
   const state = context.api.store.getState();
   const profile = selectors.activeProfile(state);
   return fs
-    .ensureDirWritableAsync(path.join(discovery.path, "Mods"), () =>
-      Bluebird.resolve(),
-    )
-    .then(() =>
-      getCurrentOrder(
-        path.join(discovery.path, modsPath(), MODS_ORDER_FILENAME),
-      ),
-    )
-    .catch((err) =>
-      err.code === "ENOENT" ? Promise.resolve([]) : Promise.reject(err),
-    )
+    .ensureDirWritableAsync(path.join(discovery.path, "Mods"), () => Bluebird.resolve())
+    .then(() => getCurrentOrder(path.join(discovery.path, modsPath(), MODS_ORDER_FILENAME)))
+    .catch((err) => (err.code === "ENOENT" ? Promise.resolve([]) : Promise.reject(err)))
     .then((data) =>
-      setNewOrder(
-        { context, profile },
-        Array.isArray(data) ? data : data.split("\n"),
-      ),
+      setNewOrder({ context, profile }, Array.isArray(data) ? data : data.split("\n")),
     );
 }
 
@@ -150,8 +131,7 @@ function walkAsync(dir) {
 
 function readModsFolder(modsFolder, api) {
   const extL = (input) => path.extname(input).toLowerCase();
-  const isValidMod = (modFile) =>
-    [".pak", ".cfg", ".manifest"].indexOf(extL(modFile)) !== -1;
+  const isValidMod = (modFile) => [".pak", ".cfg", ".manifest"].indexOf(extL(modFile)) !== -1;
 
   // Reads the provided folderPath and attempts to identify all
   //  currently deployed mods.
@@ -176,38 +156,26 @@ function readModsFolder(modsFolder, api) {
       ),
     )
     .catch((err) => {
-      const allowReport =
-        ["ENOENT", "EPERM", "EACCESS"].indexOf(err.code) === -1;
-      api.showErrorNotification(
-        "failed to read kingdom come mods directory",
-        err.message,
-        { allowReport },
-      );
+      const allowReport = ["ENOENT", "EPERM", "EACCESS"].indexOf(err.code) === -1;
+      api.showErrorNotification("failed to read kingdom come mods directory", err.message, {
+        allowReport,
+      });
       return Promise.resolve([]);
     });
 }
 
 function listHasMod(modId, list) {
   return !!list
-    ? list
-        .map((mod) => transformId(mod).toLowerCase())
-        .includes(modId.toLowerCase())
+    ? list.map((mod) => transformId(mod).toLowerCase()).includes(modId.toLowerCase())
     : false;
 }
 
-function getManuallyAddedMods(
-  disabledMods,
-  enabledMods,
-  modOrderFilepath,
-  api,
-) {
+function getManuallyAddedMods(disabledMods, enabledMods, modOrderFilepath, api) {
   const modsPath = path.dirname(modOrderFilepath);
 
   return readModsFolder(modsPath, api).then((deployedMods) =>
     getCurrentOrder(modOrderFilepath)
-      .catch((err) =>
-        err.code === "ENOENT" ? Promise.resolve("") : Promise.reject(err),
-      )
+      .catch((err) => (err.code === "ENOENT" ? Promise.resolve("") : Promise.reject(err)))
       .then((data) => {
         // 1. Confirmed to exist (deployed) inside the mods directory.
         // 2. Is not part of any of the mod lists which Vortex manages.
@@ -232,9 +200,7 @@ function refreshModList(context, discoveryPath) {
   const mods = util.getSafe(state, ["persistent", "mods", GAME_ID], []);
   const modKeys = Object.keys(mods);
   const modState = util.getSafe(profile, ["modState"], {});
-  const enabled = modKeys.filter(
-    (mod) => !!modState[mod] && modState[mod].enabled,
-  );
+  const enabled = modKeys.filter((mod) => !!modState[mod] && modState[mod].enabled);
   const disabled = modKeys.filter((dis) => !enabled.includes(dis));
 
   const extL = (input) => path.extname(input).toLowerCase();
@@ -246,9 +212,8 @@ function refreshModList(context, discoveryPath) {
       }
       const modPath = path.join(installationPath, mods[mod].installationPath);
       return walkAsync(modPath).then((entries) =>
-        entries.find((fileName) =>
-          [".pak", ".cfg", ".manifest"].includes(extL(fileName)),
-        ) !== undefined
+        entries.find((fileName) => [".pak", ".cfg", ".manifest"].includes(extL(fileName))) !==
+        undefined
           ? accum.concat(mod)
           : accum,
       );
@@ -276,9 +241,7 @@ function LoadOrderBase(props) {
   const getMod = (item) => {
     const keys = Object.keys(props.mods);
     const found = keys.find((key) => transformId(key) === item);
-    return found !== undefined
-      ? props.mods[found]
-      : { attributes: { name: item } };
+    return found !== undefined ? props.mods[found] : { attributes: { name: item } };
   };
 
   class ItemRenderer extends React.Component {
@@ -435,13 +398,9 @@ function setNewOrder(props, ordered) {
 function writeOrderFile(filePath, modList) {
   return fs
     .removeAsync(filePath)
-    .catch((err) =>
-      err.code === "ENOENT" ? Promise.resolve() : Promise.reject(err),
-    )
+    .catch((err) => (err.code === "ENOENT" ? Promise.resolve() : Promise.reject(err)))
     .then(() => fs.ensureFileAsync(filePath))
-    .then(() =>
-      fs.writeFileAsync(filePath, modList.join("\n"), { encoding: "utf8" }),
-    );
+    .then(() => fs.writeFileAsync(filePath, modList.join("\n"), { encoding: "utf8" }));
 }
 
 function main(context: types.IExtensionContext) {
@@ -475,8 +434,7 @@ function main(context: types.IExtensionContext) {
     priority: 30,
     hotkey: "E",
     group: "per-game",
-    visible: () =>
-      selectors.activeGameId(context.api.store.getState()) === GAME_ID,
+    visible: () => selectors.activeGameId(context.api.store.getState()) === GAME_ID,
     props: () => ({
       t: context.api.translate,
     }),
@@ -484,8 +442,7 @@ function main(context: types.IExtensionContext) {
 
   context.optional.registerCollectionFeature(
     "kcd_collection_data",
-    (gameId: string, includedMods: string[]) =>
-      genCollectionsData(context, gameId, includedMods),
+    (gameId: string, includedMods: string[]) => genCollectionsData(context, gameId, includedMods),
     (gameId: string, collection: IKCDCollectionsData) =>
       parseCollectionsData(context, gameId, collection),
     () => Promise.resolve(),
@@ -506,16 +463,8 @@ function main(context: types.IExtensionContext) {
         return;
       }
 
-      const profile = util.getSafe(
-        state,
-        ["persistent", "profiles", profileId],
-        undefined,
-      );
-      if (
-        !!profile &&
-        profile.gameId === GAME_ID &&
-        _MODS_STATE.display.indexOf(modId) === -1
-      ) {
+      const profile = util.getSafe(state, ["persistent", "profiles", profileId], undefined);
+      if (!!profile && profile.gameId === GAME_ID && _MODS_STATE.display.indexOf(modId) === -1) {
         refreshModList(context, discovery.path);
       }
     });
@@ -539,43 +488,28 @@ function main(context: types.IExtensionContext) {
         return;
       }
 
-      const modsOrderFilePath = path.join(
-        discovery.path,
-        modsPath(),
-        MODS_ORDER_FILENAME,
-      );
-      const managedMods = util.getSafe(
-        state,
-        ["persistent", "mods", GAME_ID],
-        {},
-      );
+      const modsOrderFilePath = path.join(discovery.path, modsPath(), MODS_ORDER_FILENAME);
+      const managedMods = util.getSafe(state, ["persistent", "mods", GAME_ID], {});
       const modKeys = Object.keys(managedMods);
       const modState = util.getSafe(profile, ["modState"], {});
-      const enabled = modKeys.filter(
-        (mod) => !!modState[mod] && modState[mod].enabled,
-      );
+      const enabled = modKeys.filter((mod) => !!modState[mod] && modState[mod].enabled);
       const disabled = modKeys.filter((dis) => !enabled.includes(dis));
       getManuallyAddedMods(disabled, enabled, modsOrderFilePath, context.api)
         .then((manuallyAdded) => {
           writeOrderFile(modsOrderFilePath, manuallyAdded)
             .then(() => setNewOrder({ context, profile }, manuallyAdded))
             .catch((err) => {
-              const allowReport =
-                !(err instanceof util.UserCanceled) && err["code"] !== "EPERM";
-              context.api.showErrorNotification(
-                "Failed to write to load order file",
-                err,
-                { allowReport },
-              );
+              const allowReport = !(err instanceof util.UserCanceled) && err["code"] !== "EPERM";
+              context.api.showErrorNotification("Failed to write to load order file", err, {
+                allowReport,
+              });
             });
         })
         .catch((err) => {
           const userCanceled = err instanceof util.UserCanceled;
-          context.api.showErrorNotification(
-            "Failed to re-instate manually added mods",
-            err,
-            { allowReport: !userCanceled },
-          );
+          context.api.showErrorNotification("Failed to re-instate manually added mods", err, {
+            allowReport: !userCanceled,
+          });
         });
     });
 
@@ -635,11 +569,9 @@ function main(context: types.IExtensionContext) {
         setNewOrder({ context, profile }, sorted);
         return writeOrderFile(modOrderFile, transformed).catch((err) => {
           const userCanceled = err instanceof util.UserCanceled;
-          context.api.showErrorNotification(
-            "Failed to write to load order file",
-            err,
-            { allowReport: !userCanceled },
-          );
+          context.api.showErrorNotification("Failed to write to load order file", err, {
+            allowReport: !userCanceled,
+          });
         });
       });
     });
@@ -664,8 +596,7 @@ function mapDispatchToProps(dispatch) {
   return {
     onSetDeploymentNecessary: (gameId, necessary) =>
       dispatch(actions.setDeploymentNecessary(gameId, necessary)),
-    onSetOrder: (profileId, ordered) =>
-      dispatch(actions.setLoadOrder(profileId, ordered)),
+    onSetOrder: (profileId, ordered) => dispatch(actions.setLoadOrder(profileId, ordered)),
   };
 }
 

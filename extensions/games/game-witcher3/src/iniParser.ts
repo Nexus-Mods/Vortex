@@ -1,21 +1,12 @@
 /* eslint-disable */
 import path from "path";
-import IniParser, { IniFile, WinapiFormat } from "vortex-parse-ini";
+
 import { fs, selectors, types, util } from "vortex-api";
+import IniParser, { IniFile, WinapiFormat } from "vortex-parse-ini";
 
-import {
-  forceRefresh,
-  isLockedEntry,
-  getAllMods,
-  getManuallyAddedMods,
-} from "./util";
+import { GAME_ID, ResourceInaccessibleError, getLoadOrderFilePath } from "./common";
 import { PriorityManager } from "./priorityManager";
-
-import {
-  GAME_ID,
-  ResourceInaccessibleError,
-  getLoadOrderFilePath,
-} from "./common";
+import { forceRefresh, isLockedEntry, getAllMods, getManuallyAddedMods } from "./util";
 
 export default class IniStructure {
   private static instance: IniStructure = null;
@@ -35,10 +26,7 @@ export default class IniStructure {
   private mIniStruct = {};
   private mApi: types.IExtensionApi;
   private mPriorityManager: PriorityManager;
-  constructor(
-    api: types.IExtensionApi,
-    priorityManager: () => PriorityManager,
-  ) {
+  constructor(api: types.IExtensionApi, priorityManager: () => PriorityManager) {
     this.mIniStruct = {};
     this.mApi = api;
     this.mPriorityManager = priorityManager();
@@ -72,9 +60,7 @@ export default class IniStructure {
         return accum;
       }
 
-      const idxOfEntry = (loadOrder || []).findIndex(
-        (iter) => iter.id === name,
-      );
+      const idxOfEntry = (loadOrder || []).findIndex((iter) => iter.id === name);
       const LOEntry = loadOrder.at(idxOfEntry);
       if (idx === 0) {
         this.mPriorityManager?.resetMaxPriority(totalLocked.length);
@@ -114,22 +100,14 @@ export default class IniStructure {
             forceRefresh(this.mApi);
             return Promise.resolve();
           })
-          .catch((err) =>
-            this.modSettingsErrorHandler(
-              err,
-              "Failed to cleanup load order file",
-            ),
-          );
+          .catch((err) => this.modSettingsErrorHandler(err, "Failed to cleanup load order file"));
       } else {
         const filePath = getLoadOrderFilePath();
         await fs
           .removeAsync(filePath)
           .catch((err) =>
             err.code !== "ENOENT"
-              ? this.mApi.showErrorNotification(
-                  "Failed to cleanup load order file",
-                  err,
-                )
+              ? this.mApi.showErrorNotification("Failed to cleanup load order file", err)
               : null,
           );
         forceRefresh(this.mApi);

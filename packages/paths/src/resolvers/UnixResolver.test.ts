@@ -1,8 +1,8 @@
 import { describe, test, expect, beforeEach } from "vitest";
 
-import { UnixResolver } from "./UnixResolver";
-import { Anchor } from "../types";
 import { MockUnixFilesystem } from "../test-helpers/MockUnixFilesystem";
+import { Anchor } from "../types";
+import { UnixResolver } from "./UnixResolver";
 
 describe("UnixResolver", () => {
   let resolver: UnixResolver;
@@ -65,10 +65,7 @@ describe("UnixResolver", () => {
     });
 
     test("resolves deeply nested paths", async () => {
-      const deepPath = resolver.PathFor(
-        "root",
-        "home/user/.local/share/vortex",
-      );
+      const deepPath = resolver.PathFor("root", "home/user/.local/share/vortex");
       const resolved = await deepPath.resolve();
       expect(resolved).toBe("/home/user/.local/share/vortex");
     });

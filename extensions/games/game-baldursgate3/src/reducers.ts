@@ -1,11 +1,11 @@
-import * as actions from "./actions";
 import { types, util } from "vortex-api";
+
+import * as actions from "./actions";
 
 // reducer
 const reducer: types.IReducerSpec = {
   reducers: {
-    [actions.setMigration as any]: (state, payload) =>
-      util.setSafe(state, ["migration"], payload),
+    [actions.setMigration as any]: (state, payload) => util.setSafe(state, ["migration"], payload),
     [actions.setAutoExportLoadOrder as any]: (state, payload) =>
       util.setSafe(state, ["autoExportLoadOrder"], payload),
     [actions.setPlayerProfile as any]: (state, payload) =>

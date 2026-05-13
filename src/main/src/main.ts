@@ -1,11 +1,7 @@
 // IPC handler for forked child processes requesting Electron app info
 if (process.send) {
   process.on("message", (msg: unknown) => {
-    if (
-      typeof msg === "object" &&
-      "type" in msg &&
-      msg.type === "get-app-info"
-    ) {
+    if (typeof msg === "object" && "type" in msg && msg.type === "get-app-info") {
       // You can expand this object with more info as needed
       process.send({
         type: "app-info",
@@ -22,18 +18,15 @@ if (process.send) {
   });
 }
 
-import {
-  DEBUG_PORT,
-  getErrorMessageOrDefault,
-  HTTP_HEADER_SIZE,
-} from "@vortex/shared";
-import { app, dialog } from "electron";
-import i18next from "i18next";
 import child_process from "node:child_process";
 import { appendFileSync } from "node:fs";
 import { stat } from "node:fs/promises";
 import path from "node:path";
 import os from "os";
+
+import { DEBUG_PORT, getErrorMessageOrDefault, HTTP_HEADER_SIZE } from "@vortex/shared";
+import { app, dialog } from "electron";
+import i18next from "i18next";
 import * as sourceMapSupport from "source-map-support";
 import winapi from "winapi-bindings";
 
@@ -51,11 +44,7 @@ if (process.env.VORTEX_E2E === "1") {
 import Application from "./Application";
 import { parseCommandline } from "./cli";
 import { terminateAsync } from "./errorHandling";
-import {
-  reportCrash,
-  errorToReportableError,
-  sendReportFile,
-} from "./errorReporting";
+import { reportCrash, errorToReportableError, sendReportFile } from "./errorReporting";
 import { getVortexPath } from "./getVortexPath";
 import { init as initIpcHandlers } from "./ipcHandlers";
 import { log } from "./logging";
@@ -129,11 +118,9 @@ if (process.platform === "win32" && process.env.NODE_ENV !== "development") {
   // The most common problem this should prevent is the edge dll being loaded from
   // "Browser Assistant" instead of our own.
 
-  const userPath =
-    (process.env.HOMEDRIVE || "c:") + (process.env.HOMEPATH || "\\Users");
+  const userPath = (process.env.HOMEDRIVE || "c:") + (process.env.HOMEPATH || "\\Users");
   const programFiles = process.env.ProgramFiles || "C:\\Program Files";
-  const programFilesX86 =
-    process.env["ProgramFiles(x86)"] || "C:\\Program Files (x86)";
+  const programFilesX86 = process.env["ProgramFiles(x86)"] || "C:\\Program Files (x86)";
   const programData = process.env.ProgramData || "C:\\ProgramData";
 
   const pathFilter = (envPath: string): boolean => {
@@ -146,10 +133,7 @@ if (process.platform === "win32" && process.env.NODE_ENV !== "development") {
   };
 
   process.env["PATH_ORIG"] = process.env["PATH"].slice(0);
-  process.env["PATH"] = process.env["PATH"]
-    .split(";")
-    .filter(pathFilter)
-    .join(";");
+  process.env["PATH"] = process.env["PATH"].split(";").filter(pathFilter).join(";");
 }
 
 try {
@@ -181,10 +165,7 @@ async function main(): Promise<void> {
   // after the --run handler spawns the inner Node child; winston's buffered
   // writes can be lost in that window, and winston itself isn't initialised
   // until later in Application's constructor.
-  const traceElevation = (
-    stage: string,
-    data?: Record<string, unknown>,
-  ): void => {
+  const traceElevation = (stage: string, data?: Record<string, unknown>): void => {
     try {
       const line =
         new Date().toISOString() +
@@ -221,10 +202,7 @@ async function main(): Promise<void> {
       tmpScript: mainArgs.run,
     });
     const appAsar = `${path.sep}app.asar${path.sep}`;
-    const execPath = process.execPath.replace(
-      appAsar,
-      `${path.sep}app.asar.unpacked${path.sep}`,
-    );
+    const execPath = process.execPath.replace(appAsar, `${path.sep}app.asar.unpacked${path.sep}`);
 
     child_process
       .spawn(execPath, [mainArgs.run], {
@@ -240,28 +218,16 @@ async function main(): Promise<void> {
           ELECTRON_DESKTOP: app.getPath("desktop"),
           ELECTRON_APP_PATH: app.getAppPath(),
           ELECTRON_ASSETS: path.join(app.getAppPath(), "assets"),
-          ELECTRON_ASSETS_UNPACKED: path.join(
-            app.getAppPath() + ".unpacked",
-            "assets",
-          ),
+          ELECTRON_ASSETS_UNPACKED: path.join(app.getAppPath() + ".unpacked", "assets"),
           ELECTRON_MODULES: path.join(app.getAppPath(), "node_modules"),
-          ELECTRON_MODULES_UNPACKED: path.join(
-            app.getAppPath() + ".unpacked",
-            "node_modules",
-          ),
-          ELECTRON_BUNDLEDPLUGINS: path.join(
-            app.getAppPath() + ".unpacked",
-            "bundledPlugins",
-          ),
+          ELECTRON_MODULES_UNPACKED: path.join(app.getAppPath() + ".unpacked", "node_modules"),
+          ELECTRON_BUNDLEDPLUGINS: path.join(app.getAppPath() + ".unpacked", "bundledPlugins"),
           ELECTRON_LOCALES: path.resolve(app.getAppPath(), "..", "locales"),
           ELECTRON_BASE: app.getAppPath(),
           ELECTRON_BASE_UNPACKED: app.getAppPath() + ".unpacked",
           ELECTRON_APPLICATION: path.resolve(app.getAppPath(), ".."),
           ELECTRON_PACKAGE: app.getAppPath(),
-          ELECTRON_PACKAGE_UNPACKED: path.join(
-            path.dirname(app.getAppPath()),
-            "app.asar.unpacked",
-          ),
+          ELECTRON_PACKAGE_UNPACKED: path.join(path.dirname(app.getAppPath()), "app.asar.unpacked"),
         },
         stdio: "inherit",
         detached: true,
@@ -280,9 +246,7 @@ async function main(): Promise<void> {
 
   const NODE_OPTIONS = process.env.NODE_OPTIONS || "";
   process.env.NODE_OPTIONS =
-    NODE_OPTIONS +
-    ` --max-http-header-size=${HTTP_HEADER_SIZE}` +
-    " --no-force-async-hooks-checks";
+    NODE_OPTIONS + ` --max-http-header-size=${HTTP_HEADER_SIZE}` + " --no-force-async-hooks-checks";
 
   if (mainArgs.disableGPU) {
     app.disableHardwareAcceleration();
@@ -291,10 +255,7 @@ async function main(): Promise<void> {
   }
 
   app.commandLine.appendSwitch("disable-features", "WidgetLayering");
-  app.commandLine.appendSwitch(
-    "disable-features",
-    "UseEcoQoSForBackgroundProcess",
-  );
+  app.commandLine.appendSwitch("disable-features", "UseEcoQoSForBackgroundProcess");
 
   createMainTelemetryProvider();
 

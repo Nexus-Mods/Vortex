@@ -1,8 +1,6 @@
 import PromiseBB from "bluebird";
-import type {
-  IDeploymentMethod,
-  IExtensionContext,
-} from "../../types/IExtensionContext";
+
+import type { IDeploymentMethod, IExtensionContext } from "../../types/IExtensionContext";
 import type { IGame } from "../../types/IGame";
 import { getGame } from "../gamemode_management/util/getGame";
 
@@ -32,9 +30,7 @@ class DeploymentMethod implements IDeploymentMethod {
       ? undefined
       : {
           description: (t) =>
-            t(
-              "Only supported for games that can use mods directly from the staging folder",
-            ),
+            t("Only supported for games that can use mods directly from the staging folder"),
           order: 1000,
         };
   }

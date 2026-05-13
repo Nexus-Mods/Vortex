@@ -1,4 +1,5 @@
 import path from "path";
+
 import { fs, log, selectors, types, util } from "vortex-api";
 
 import { GAME_ID, MOD_FILE_EXT, modsRelPath } from "./common";
@@ -10,15 +11,10 @@ import { genProps, getPakFiles, toBlue } from "./util";
 const STEAM_ID = "996580";
 
 async function findGame() {
-  return util.GameStoreHelper.findByAppId([STEAM_ID]).then(
-    (game) => game.gamePath,
-  );
+  return util.GameStoreHelper.findByAppId([STEAM_ID]).then((game) => game.gamePath);
 }
 
-async function externalFilesWarning(
-  api: types.IExtensionApi,
-  externalMods: string[],
-) {
+async function externalFilesWarning(api: types.IExtensionApi, externalMods: string[]) {
   const t = api.translate;
   if (externalMods.length === 0) {
     return Promise.resolve(undefined);
@@ -52,18 +48,12 @@ async function externalFilesWarning(
   });
 }
 
-async function ImportExternalMods(
-  api: types.IExtensionApi,
-  external: string[],
-) {
+async function ImportExternalMods(api: types.IExtensionApi, external: string[]) {
   const state = api.getState();
   const downloadsPath = selectors.downloadPathForGame(state, GAME_ID);
   const szip = new util.SevenZip();
   for (const modFile of external) {
-    const archivePath = path.join(
-      downloadsPath,
-      path.basename(modFile, MOD_FILE_EXT) + ".zip",
-    );
+    const archivePath = path.join(downloadsPath, path.basename(modFile, MOD_FILE_EXT) + ".zip");
     try {
       await szip.add(archivePath, [modFile], { raw: ["-r"] });
       await fs.removeAsync(modFile);
@@ -86,9 +76,7 @@ async function prepareForModding(
     const deployedFiles = await getPakFiles(modsPath);
     const modifier = (filePath) => path.basename(filePath).toLowerCase();
     const unManagedPredicate = (filePath: string) =>
-      managedFiles.find(
-        (managed) => modifier(managed) === modifier(filePath),
-      ) === undefined;
+      managedFiles.find((managed) => modifier(managed) === modifier(filePath)) === undefined;
     const externalMods = deployedFiles.filter(unManagedPredicate);
     try {
       await externalFilesWarning(context.api, externalMods);
@@ -106,9 +94,7 @@ async function prepareForModding(
 }
 
 function installContent(files) {
-  const modFile = files.find(
-    (file) => path.extname(file).toLowerCase() === MOD_FILE_EXT,
-  );
+  const modFile = files.find((file) => path.extname(file).toLowerCase() === MOD_FILE_EXT);
   const idx = modFile.indexOf(path.basename(modFile));
   const rootPath = path.dirname(modFile);
 
@@ -132,8 +118,7 @@ function testSupportedContent(files, gameId) {
   // Make sure we're able to support this mod.
   let supported =
     gameId === GAME_ID &&
-    files.find((file) => path.extname(file).toLowerCase() === MOD_FILE_EXT) !==
-      undefined;
+    files.find((file) => path.extname(file).toLowerCase() === MOD_FILE_EXT) !== undefined;
 
   if (
     supported &&
@@ -159,17 +144,11 @@ function toLOPrefix(context: types.IExtensionContext, mod: types.IMod): string {
   }
 
   // Retrieve the load order as stored in Vortex's application state.
-  const loadOrder = util.getSafe(
-    props.state,
-    ["persistent", "loadOrder", props.profile.id],
-    [],
-  );
+  const loadOrder = util.getSafe(props.state, ["persistent", "loadOrder", props.profile.id], []);
 
   // Find the mod entry in the load order state and insert the prefix in front
   //  of the mod's name/id/whatever
-  const loEntry: ILoadOrderEntry = loadOrder.find(
-    (loEntry) => loEntry.id === mod.id,
-  );
+  const loEntry: ILoadOrderEntry = loadOrder.find((loEntry) => loEntry.id === mod.id);
   return loEntry?.data?.prefix !== undefined
     ? loEntry.data.prefix + "-" + mod.id
     : "ZZZZ-" + mod.id;

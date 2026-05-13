@@ -1,22 +1,18 @@
-import type {
-  IExtensionApi,
-  IExtensionContext,
-} from "../../types/IExtensionContext";
-import { UserCanceled } from "../../util/CustomErrors";
-import { getSafe } from "../../util/storeHelper";
-import { makeQueue, setdefault } from "../../util/util";
-
-import type { SubscriptionResult } from "./views/BrowserView";
-import BrowserView from "./views/BrowserView";
-
-import { closeBrowser, showURL } from "./actions";
-import { sessionReducer } from "./reducers";
+import * as url from "url";
 
 import PromiseBB from "bluebird";
 import { ipcRenderer } from "electron";
 import { generate as shortid } from "shortid";
-import * as url from "url";
+
+import type { IExtensionApi, IExtensionContext } from "../../types/IExtensionContext";
 import type { IState } from "../../types/IState";
+import { UserCanceled } from "../../util/CustomErrors";
+import { getSafe } from "../../util/storeHelper";
+import { makeQueue, setdefault } from "../../util/util";
+import { closeBrowser, showURL } from "./actions";
+import { sessionReducer } from "./reducers";
+import type { SubscriptionResult } from "./views/BrowserView";
+import BrowserView from "./views/BrowserView";
 
 type SubscriptionFunction = (eventId: string, value: any) => SubscriptionResult;
 
@@ -31,20 +27,14 @@ function subscribe(
   eventId: string,
   callback: (...args: any[]) => SubscriptionResult,
 ) {
-  setdefault(setdefault(subscriptions, subscriber, {}), eventId, []).push(
-    callback,
-  );
+  setdefault(setdefault(subscriptions, subscriber, {}), eventId, []).push(callback);
 }
 
 function unsubscribeAll(subscriber: string) {
   delete subscriptions[subscriber];
 }
 
-function triggerEvent(
-  subscriber: string,
-  eventId: string,
-  ...args: any
-): SubscriptionResult {
+function triggerEvent(subscriber: string, eventId: string, ...args: any): SubscriptionResult {
   let res: SubscriptionResult = "continue";
 
   getSafe(subscriptions, [subscriber, eventId], []).forEach((sub) => {
@@ -88,12 +78,8 @@ function doBrowse(
       instructions += "\n\n";
     }
     const t = api.translate;
-    instructions += t(
-      "This window will close as soon as you click a valid download link",
-    );
-    api.store.dispatch(
-      showURL(navUrl, instructions, subscriptionId, skippable),
-    );
+    instructions += t("This window will close as soon as you click a valid download link");
+    api.store.dispatch(showURL(navUrl, instructions, subscriptionId, skippable));
   })
     .catch((err) => {
       if (err instanceof UserCanceled) {
@@ -132,14 +118,7 @@ function init(context: IExtensionContext): boolean {
       "browse-for-download",
       (navUrl: string, instructions: string, skippable?: boolean) => {
         return enqueue(
-          () =>
-            doBrowse(
-              context.api,
-              navUrl,
-              instructions,
-              shortid(),
-              skippable ?? false,
-            ),
+          () => doBrowse(context.api, navUrl, instructions, shortid(), skippable ?? false),
           false,
         );
       },

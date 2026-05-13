@@ -1,17 +1,13 @@
-import {
-  byTypeIndex,
-  fileTypes,
-  typeDescription,
-  typeIndices,
-} from "./filetypes";
-import ModContent from "./ModContent";
+import * as path from "path";
 
 import Bluebird from "bluebird";
-import * as path from "path";
 import * as React from "react";
 import * as Redux from "redux";
 import turbowalk from "turbowalk";
 import { actions, OptionsFilter, selectors, types, util } from "vortex-api";
+
+import { byTypeIndex, fileTypes, typeDescription, typeIndices } from "./filetypes";
+import ModContent from "./ModContent";
 
 const readQueue = (util as any).makeQueue();
 
@@ -45,8 +41,7 @@ function readModContent(
           const ext = path.extname(entry.filePath).toLowerCase();
           const possibleTypes = fileTypes[ext] || [];
           const ft = possibleTypes.find(
-            (iter) =>
-              iter.condition === undefined || iter.condition(gameId, entry),
+            (iter) => iter.condition === undefined || iter.condition(gameId, entry),
           );
           if (ft !== undefined) {
             typesFound.add(ft.type);
@@ -75,26 +70,13 @@ function main(context: types.IExtensionContext) {
     true,
   );
 
-  const onUpdateContent = (
-    gameId: string,
-    modId: string,
-    typesFound: string[],
-    empty: boolean,
-  ) => {
-    contentUpdates.push(
-      actions.setModAttribute(gameId, modId, "content", typesFound),
-    );
-    contentUpdates.push(
-      actions.setModAttribute(gameId, modId, "noContent", empty),
-    );
+  const onUpdateContent = (gameId: string, modId: string, typesFound: string[], empty: boolean) => {
+    contentUpdates.push(actions.setModAttribute(gameId, modId, "content", typesFound));
+    contentUpdates.push(actions.setModAttribute(gameId, modId, "noContent", empty));
     updateDebouncer.schedule();
   };
 
-  const updateContent = (
-    state: types.IState,
-    mod: types.IMod,
-    reset: boolean,
-  ) => {
+  const updateContent = (state: types.IState, mod: types.IMod, reset: boolean) => {
     const gameId = selectors.activeGameId(state);
     const stagingPath = selectors.installPath(state);
     if (stagingPath === undefined || mod.installationPath === undefined) {
@@ -119,10 +101,7 @@ function main(context: types.IExtensionContext) {
       .catch((err) => {
         // this may happen while installing a mod
         if (!["ENOENT", "ENOTFOUND"].includes(err.code)) {
-          context.api.showErrorNotification(
-            "Failed to determine mod content",
-            err,
-          );
+          context.api.showErrorNotification("Failed to determine mod content", err);
         }
       });
   };
@@ -144,8 +123,7 @@ function main(context: types.IExtensionContext) {
       }
       return <ModContent t={context.api.translate} mod={mod} />;
     },
-    calc: (mod: types.IMod) =>
-      util.getSafe(mod, ["attributes", "content"], []).map(capitalize),
+    calc: (mod: types.IMod) => util.getSafe(mod, ["attributes", "content"], []).map(capitalize),
     filter: new OptionsFilter(
       () =>
         [].concat(
@@ -177,11 +155,7 @@ function main(context: types.IExtensionContext) {
     const state = context.api.store.getState();
     const gameId = selectors.activeGameId(state);
     instanceIds.forEach((instanceId) => {
-      const mod = util.getSafe(
-        state.persistent.mods,
-        [gameId, instanceId],
-        undefined,
-      );
+      const mod = util.getSafe(state.persistent.mods, [gameId, instanceId], undefined);
       if (mod !== undefined) {
         updateContent(state, mod, true);
       }
@@ -207,30 +181,17 @@ function main(context: types.IExtensionContext) {
   );
 
   context.once(() => {
-    context.api.setStylesheet(
-      "mod-content",
-      path.join(__dirname, "mod-content.scss"),
-    );
+    context.api.setStylesheet("mod-content", path.join(__dirname, "mod-content.scss"));
 
-    context.api.events.on(
-      "mod-content-changed",
-      (gameId: string, modId: string) => {
-        const state = context.api.store.getState();
-        const mod = util.getSafe(
-          state.persistent.mods,
-          [gameId, modId],
-          undefined,
-        );
-        if (mod !== undefined) {
-          updateContent(state, mod, true);
-        }
-      },
-    );
+    context.api.events.on("mod-content-changed", (gameId: string, modId: string) => {
+      const state = context.api.store.getState();
+      const mod = util.getSafe(state.persistent.mods, [gameId, modId], undefined);
+      if (mod !== undefined) {
+        updateContent(state, mod, true);
+      }
+    });
 
-    return (util as any).installIconSet(
-      "mod-content",
-      path.join(__dirname, "icons.svg"),
-    );
+    return (util as any).installIconSet("mod-content", path.join(__dirname, "icons.svg"));
   });
 
   return true;

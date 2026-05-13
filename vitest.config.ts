@@ -1,4 +1,5 @@
 import * as path from "node:path";
+
 import { defineConfig } from "vitest/config";
 
 const RESULTS_DIR = path.join(import.meta.dirname, "test-results");
@@ -16,11 +17,7 @@ export default defineConfig({
       "./packages/paths-node",
       "./extensions/games/game-stardewvalley",
     ],
-    reporters: [
-      "default",
-      "junit",
-      isGitHubCI ? "github-actions" : undefined,
-    ].filter(Boolean),
+    reporters: ["default", "junit", isGitHubCI ? "github-actions" : undefined].filter(Boolean),
     outputFile: {
       junit: path.join(RESULTS_DIR, "junit.xml"),
     },

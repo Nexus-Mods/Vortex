@@ -1,16 +1,14 @@
 /* eslint-disable */
 import * as React from "react";
-import { types, tooltip } from "vortex-api";
-
 import { Alert } from "react-bootstrap";
 import { useSelector } from "react-redux";
 import * as Redux from "redux";
-
-import { forceRefresh } from "./util";
 import { ThunkDispatch } from "redux-thunk";
+import { types, tooltip } from "vortex-api";
 
 import { setPlayerProfile } from "./actions";
 import { GAME_ID } from "./common";
+import { forceRefresh } from "./util";
 
 interface IBaseProps {
   api: types.IExtensionApi;
@@ -25,13 +23,7 @@ interface IActionProps {
 }
 
 export function InfoPanelWrap(props: IBaseProps) {
-  const {
-    api,
-    getOwnGameVersion,
-    readStoredLO,
-    installLSLib,
-    getLatestLSLibMod,
-  } = props;
+  const { api, getOwnGameVersion, readStoredLO, installLSLib, getLatestLSLibMod } = props;
 
   const currentProfile = useSelector(
     (state: types.IState) => state.settings["baldursgate3"]?.playerProfile,
@@ -102,10 +94,7 @@ function InfoPanel(props: any) {
         marginRight: "16px",
       }}
     >
-      <Alert
-        bsStyle="warning"
-        style={{ display: "flex", flexDirection: "column", gap: "8px" }}
-      >
+      <Alert bsStyle="warning" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         <div>
           {t(
             "To successfully switch between different game versions/patches please follow these steps:",
@@ -113,15 +102,11 @@ function InfoPanel(props: any) {
           <ul>
             <li>{t("Purge your mods")}</li>
             <li>
-              {t(
-                "Run the game so that the modsettings.lsx file gets reset to the default values",
-              )}
+              {t("Run the game so that the modsettings.lsx file gets reset to the default values")}
             </li>
             <li>{t("Close the game")}</li>
             <li>{t("Deploy your mods")}</li>
-            <li>
-              {t("Run the game again - your load order will be maintained")}
-            </li>
+            <li>{t("Run the game again - your load order will be maintained")}</li>
           </ul>
         </div>
       </Alert>
@@ -135,9 +120,7 @@ function InfoPanel(props: any) {
         )}
       </div>
       <div>
-        {t(
-          `Mod descriptions from mod authors may have information to determine the best order.`,
-        )}
+        {t(`Mod descriptions from mod authors may have information to determine the best order.`)}
       </div>
       <div>
         {t(`Some mods may be locked in this list because they are loaded differently by the game and can therefore not be load-ordered by mod managers. 
@@ -152,9 +135,7 @@ function InfoPanel(props: any) {
         {t(`Export can be used to manually update the game's modsettings.lsx file if 'Settings > Mods > Auto export load order' isn't set to do this automatically. 
         It can also be used to export to a different file as a backup.`)}
       </div>
-      <h4 style={{ margin: 0 }}>
-        {t("Import from Baldur's Gate 3 Mod Manager")}
-      </h4>
+      <h4 style={{ margin: 0 }}>{t("Import from Baldur's Gate 3 Mod Manager")}</h4>
       <div>
         {t(
           "Vortex can sort your load order based on a BG3MM .json load order file. Any mods that are not installed through Vortex will be ignored.",
@@ -176,9 +157,7 @@ function InfoPanel(props: any) {
         )}
       </div>
       <div>
-        {t(
-          "Please install the library using the buttons below to manage your load order.",
-        )}
+        {t("Please install the library using the buttons below to manage your load order.")}
       </div>
       <tooltip.Button tooltip={"Install LSLib"} onClick={onInstallLSLib}>
         {t("Install LSLib")}
@@ -193,9 +172,7 @@ function InfoPanel(props: any) {
 //   };
 // }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, any, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, any, Redux.Action>): IActionProps {
   return {
     onSetProfile: (profile: string) => dispatch(setPlayerProfile(profile)),
   };

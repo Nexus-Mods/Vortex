@@ -1,9 +1,10 @@
+import * as fs from "fs";
 /* eslint-disable */
 /*
   Special thanks to the LOOT team for the original C++ implementation used to decipher the .gamingroot file.
 */
 import * as path from "path";
-import * as fs from "fs";
+
 import walk from "turbowalk";
 import { log, types, util } from "vortex-api";
 import { parseStringPromise } from "xml2js";
@@ -11,9 +12,7 @@ import { parseStringPromise } from "xml2js";
 import { APP_MANIFEST } from "./common";
 import { GamePathMap } from "./types";
 
-export async function findInstalledGames(
-  api: types.IExtensionApi,
-): Promise<GamePathMap> {
+export async function findInstalledGames(api: types.IExtensionApi): Promise<GamePathMap> {
   const gamingRootPaths = await findXboxGamingRootPaths(api);
   const gamePathMap: GamePathMap = {};
 
@@ -31,9 +30,7 @@ export async function findInstalledGames(
   return gamePathMap;
 }
 
-export async function findXboxGamingRootPaths(
-  api: types.IExtensionApi,
-): Promise<string[]> {
+export async function findXboxGamingRootPaths(api: types.IExtensionApi): Promise<string[]> {
   let drives = api.store.getState().settings.gameMode.searchPaths;
   if (drives.length === 0) {
     drives = await util.getDriveList(api);
@@ -49,9 +46,7 @@ export async function findXboxGamingRootPaths(
   return gamingRootPaths;
 }
 
-export async function findXboxGamingRootPath(
-  driveRootPath: string,
-): Promise<string> {
+export async function findXboxGamingRootPath(driveRootPath: string): Promise<string> {
   const gamingRootFilePath = `${driveRootPath}.GamingRoot`;
 
   try {
@@ -64,14 +59,8 @@ export async function findXboxGamingRootPath(
     const fileContent: Buffer = await fs.promises.readFile(gamingRootFilePath);
 
     // Log the content in hexadecimal format for debugging
-    const hexBytes = Array.from(
-      fileContent,
-      (byte) => `0x${byte.toString(16)}`,
-    );
-    log(
-      "debug",
-      `Read the following bytes from ${gamingRootFilePath}: ${hexBytes.join(" ")}`,
-    );
+    const hexBytes = Array.from(fileContent, (byte) => `0x${byte.toString(16)}`);
+    log("debug", `Read the following bytes from ${gamingRootFilePath}: ${hexBytes.join(" ")}`);
 
     // The content of .GamingRoot is the byte sequence 52 47 42 58 01 00 00 00
     // followed by the null-terminated UTF-16LE location of the Xbox games folder
@@ -82,9 +71,7 @@ export async function findXboxGamingRootPath(
         "error",
         `Found a non-even number of bytes in the file at ${gamingRootFilePath}, cannot interpret it as UTF-16LE`,
       );
-      throw new Error(
-        `Found a non-even number of bytes in the file at "${gamingRootFilePath}"`,
-      );
+      throw new Error(`Found a non-even number of bytes in the file at "${gamingRootFilePath}"`);
     }
 
     const content = [];
@@ -97,25 +84,14 @@ export async function findXboxGamingRootPath(
 
     const CHAR16_PATH_OFFSET = 4;
     if (content.length < CHAR16_PATH_OFFSET + 1) {
-      log(
-        "error",
-        `.GamingRoot content was unexpectedly short at ${content.length} char16_t long`,
-      );
-      throw new Error(
-        `The file at "${gamingRootFilePath}" is shorter than expected.`,
-      );
+      log("error", `.GamingRoot content was unexpectedly short at ${content.length} char16_t long`);
+      throw new Error(`The file at "${gamingRootFilePath}" is shorter than expected.`);
     }
 
     // Cut off the null char16_t at the end.
-    const relativePath = String.fromCharCode.apply(
-      null,
-      content.slice(CHAR16_PATH_OFFSET, -1),
-    );
+    const relativePath = String.fromCharCode.apply(null, content.slice(CHAR16_PATH_OFFSET, -1));
 
-    log(
-      "debug",
-      `Read the following relative path from .GamingRoot: ${relativePath}`,
-    );
+    log("debug", `Read the following relative path from .GamingRoot: ${relativePath}`);
 
     const resultPath = `${driveRootPath}${relativePath}`;
     if (!isPathValid(resultPath)) {
@@ -136,10 +112,7 @@ export async function findXboxGamingRootPath(
   }
 }
 
-export async function findManifests(
-  rootPath: string,
-  recurse: boolean,
-): Promise<string[]> {
+export async function findManifests(rootPath: string, recurse: boolean): Promise<string[]> {
   let fileList: string[] = [];
   return walk(
     rootPath,

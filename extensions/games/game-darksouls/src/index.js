@@ -30,9 +30,7 @@ class DarkSouls {
   }
 
   requiresLauncher(gamePath, store) {
-    return store === "steam"
-      ? Promise.resolve({ launcher: "steam" })
-      : Promise.resolve(undefined);
+    return store === "steam" ? Promise.resolve({ launcher: "steam" }) : Promise.resolve(undefined);
   }
 
   executable() {

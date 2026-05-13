@@ -1,6 +1,7 @@
+import * as path from "path";
+
 import type { TFunction } from "i18next";
 import memoizeOne from "memoize-one";
-import * as path from "path";
 import * as React from "react";
 import { FormControl, FormGroup, Panel } from "react-bootstrap";
 import { connect } from "react-redux";
@@ -16,6 +17,7 @@ import {
   types,
   util,
 } from "vortex-api";
+
 import {
   AUTHOR_UNKNOWN,
   MAX_COLLECTION_NAME_LENGTH,
@@ -52,12 +54,7 @@ interface IConnectedProps {
 }
 
 interface IActionProps {
-  onSetModAttribute: (
-    gameId: string,
-    modId: string,
-    key: string,
-    value: any,
-  ) => void;
+  onSetModAttribute: (gameId: string, modId: string, key: string, value: any) => void;
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
@@ -116,10 +113,7 @@ function ModNameField(props: IModNameFieldProps) {
     <div className={`collection-name ${editing ? "editing" : "displaying"}`}>
       {editing ? (
         <>
-          <FormGroup
-            controlId="formBasicText"
-            validationState={validationState()}
-          >
+          <FormGroup controlId="formBasicText" validationState={validationState()}>
             <FormControl
               type="text"
               value={tempName}
@@ -129,20 +123,12 @@ function ModNameField(props: IModNameFieldProps) {
               onKeyPress={keyPress}
             />
           </FormGroup>
-          <tooltip.IconButton
-            icon="input-confirm"
-            tooltip={t("Save name")}
-            onClick={apply}
-          />
+          <tooltip.IconButton icon="input-confirm" tooltip={t("Save name")} onClick={apply} />
         </>
       ) : (
         <>
           <div className="name">{tempName}</div>
-          <tooltip.IconButton
-            icon="edit"
-            tooltip={t("Change name")}
-            onClick={startEdit}
-          />
+          <tooltip.IconButton icon="edit" tooltip={t("Change name")} onClick={startEdit} />
         </>
       )}
     </div>
@@ -151,10 +137,9 @@ function ModNameField(props: IModNameFieldProps) {
 
 class CollectionThumbnail extends ComponentEx<IProps, { updating: boolean }> {
   private imageURLs = memoizeOne((collection: types.IMod) =>
-    [
-      collection.attributes?.pictureUrl,
-      path.join(__dirname, "fallback_tile.png"),
-    ].filter((iter) => iter !== undefined),
+    [collection.attributes?.pictureUrl, path.join(__dirname, "fallback_tile.png")].filter(
+      (iter) => iter !== undefined,
+    ),
   );
 
   public constructor(props: IProps) {
@@ -182,28 +167,21 @@ class CollectionThumbnail extends ComponentEx<IProps, { updating: boolean }> {
       return null;
     }
 
-    const active = util.getSafe(
-      profile,
-      ["modState", collection.id, "enabled"],
-      false,
-    );
+    const active = util.getSafe(profile, ["modState", collection.id, "enabled"], false);
 
     const refMods: types.IModRule[] = (collection.rules ?? []).filter((rule) =>
       ["requires", "recommends"].includes(rule.type),
     );
 
-    const totalSize: number = Object.values(collection.rules ?? []).reduce(
-      (prev, rule) => {
-        if (rule.reference.fileSize !== undefined) {
-          return prev + rule.reference.fileSize;
-        } else if (rule.reference.id !== undefined && mods !== undefined) {
-          return prev + (mods[rule.reference.id]?.attributes?.fileSize ?? 0);
-        } else {
-          return prev;
-        }
-      },
-      0,
-    );
+    const totalSize: number = Object.values(collection.rules ?? []).reduce((prev, rule) => {
+      if (rule.reference.fileSize !== undefined) {
+        return prev + rule.reference.fileSize;
+      } else if (rule.reference.id !== undefined && mods !== undefined) {
+        return prev + (mods[rule.reference.id]?.attributes?.fileSize ?? 0);
+      } else {
+        return prev;
+      }
+    }, 0);
 
     const classes = ["collection-thumbnail"];
 
@@ -217,32 +195,18 @@ class CollectionThumbnail extends ComponentEx<IProps, { updating: boolean }> {
       classes.push("has-menu");
     }
 
-    const { revisionId, collectionSlug, revisionNumber } =
-      collection.attributes ?? {};
+    const { revisionId, collectionSlug, revisionNumber } = collection.attributes ?? {};
 
     const validRemote =
-      revisionId !== undefined &&
-      collectionSlug !== undefined &&
-      revisionNumber !== undefined;
+      revisionId !== undefined && collectionSlug !== undefined && revisionNumber !== undefined;
 
     return (
-      <Panel
-        className={classes.join(" ")}
-        bsStyle={active ? "primary" : "default"}
-      >
+      <Panel className={classes.join(" ")} bsStyle={active ? "primary" : "default"}>
         <Panel.Body className="collection-thumbnail-body">
           {details === true ? (
-            <NewRevisionMarker
-              t={t}
-              collection={collection}
-              updating={this.state.updating}
-            />
+            <NewRevisionMarker t={t} collection={collection} updating={this.state.updating} />
           ) : null}
-          <Image
-            className="thumbnail-img"
-            srcs={this.imageURLs(collection)}
-            circle={false}
-          />
+          <Image className="thumbnail-img" srcs={this.imageURLs(collection)} circle={false} />
           {details !== false ? <div className="gradient" /> : null}
 
           {details !== false ? (
@@ -260,9 +224,7 @@ class CollectionThumbnail extends ComponentEx<IProps, { updating: boolean }> {
                     replace: {
                       number: collection.attributes?.version ?? "0",
                       forceRevision:
-                        forceRevisionDisplay === undefined
-                          ? ""
-                          : " ➔ " + forceRevisionDisplay,
+                        forceRevisionDisplay === undefined ? "" : " ➔ " + forceRevisionDisplay,
                     },
                   })}
                 </div>
@@ -298,8 +260,7 @@ class CollectionThumbnail extends ComponentEx<IProps, { updating: boolean }> {
                   */}
                   {t("By {{uploader}}", {
                     replace: {
-                      uploader:
-                        collection.attributes?.uploader ?? t(AUTHOR_UNKNOWN),
+                      uploader: collection.attributes?.uploader ?? t(AUTHOR_UNKNOWN),
                     },
                   })}
                 </div>
@@ -312,9 +273,7 @@ class CollectionThumbnail extends ComponentEx<IProps, { updating: boolean }> {
             </div>
           ) : null}
           {hasMenu ? (
-            <div className="thumbnail-hover-menu">
-              {this.renderMenu(refMods, totalSize)}
-            </div>
+            <div className="thumbnail-hover-menu">{this.renderMenu(refMods, totalSize)}</div>
           ) : null}
         </Panel.Body>
       </Panel>
@@ -356,8 +315,7 @@ class CollectionThumbnail extends ComponentEx<IProps, { updating: boolean }> {
           }
           return (
             attributes?.newestVersion !== undefined &&
-            parseInt(attributes.newestVersion, 10) >
-              parseInt(attributes.version, 10)
+            parseInt(attributes.newestVersion, 10) > parseInt(attributes.version, 10)
           );
         },
         action: (instanceIds: string[]) => {
@@ -367,10 +325,7 @@ class CollectionThumbnail extends ComponentEx<IProps, { updating: boolean }> {
             prom
               .catch((err) => {
                 if (!(err instanceof util.UserCanceled)) {
-                  this.context.api.showErrorNotification(
-                    "Failed to update collection",
-                    err,
-                  );
+                  this.context.api.showErrorNotification("Failed to update collection", err);
                 }
               })
               .finally(() => {
@@ -443,8 +398,8 @@ class CollectionThumbnail extends ComponentEx<IProps, { updating: boolean }> {
         icon: "upload",
         action: (instanceIds: string[]) => this.invoke(onUpload, instanceIds),
         condition: () => {
-          const refMods: types.IModRule[] = (collection.rules ?? []).filter(
-            (rule) => ["requires", "recommends"].includes(rule.type),
+          const refMods: types.IModRule[] = (collection.rules ?? []).filter((rule) =>
+            ["requires", "recommends"].includes(rule.type),
           );
           if (refMods.length === 0) {
             return this.props.t("Can't upload an empty collection") as string;
@@ -458,10 +413,7 @@ class CollectionThumbnail extends ComponentEx<IProps, { updating: boolean }> {
     return result;
   }
 
-  private renderMenu(
-    refMods: types.IModRule[],
-    totalSize: number,
-  ): JSX.Element[] {
+  private renderMenu(refMods: types.IModRule[], totalSize: number): JSX.Element[] {
     const { t, collection } = this.props;
 
     return [
@@ -491,10 +443,7 @@ class CollectionThumbnail extends ComponentEx<IProps, { updating: boolean }> {
 
 const emptyObj = {};
 
-function mapStateToProps(
-  state: types.IState,
-  ownProps: IBaseProps,
-): IConnectedProps {
+function mapStateToProps(state: types.IState, ownProps: IBaseProps): IConnectedProps {
   return {
     profile: selectors.activeProfile(state),
   };
@@ -502,12 +451,8 @@ function mapStateToProps(
 
 function mapDispatchToProps(dispatch: Redux.Dispatch): IActionProps {
   return {
-    onSetModAttribute: (
-      gameId: string,
-      modId: string,
-      key: string,
-      value: any,
-    ) => dispatch(actions.setModAttribute(gameId, modId, key, value)),
+    onSetModAttribute: (gameId: string, modId: string, key: string, value: any) =>
+      dispatch(actions.setModAttribute(gameId, modId, key, value)),
   };
 }
 

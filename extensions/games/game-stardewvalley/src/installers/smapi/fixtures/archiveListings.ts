@@ -205,10 +205,7 @@ export function archiveFileEntries(entries: string[]): string[] {
   return entries.filter((entry) => !entry.endsWith("/"));
 }
 
-type IWalkCallback = (
-  iter: string,
-  stats: { isFile: () => boolean },
-) => Promise<void>;
+type IWalkCallback = (iter: string, stats: { isFile: () => boolean }) => Promise<void>;
 
 /**
  * Calls a `util.walk`-style callback for each archive entry.

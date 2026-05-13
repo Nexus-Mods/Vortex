@@ -1,8 +1,9 @@
-import { ISavegame } from "../types/ISavegame";
+import * as path from "path";
 
 import Promise from "bluebird";
-import * as path from "path";
 import { fs, types } from "vortex-api";
+
+import { ISavegame } from "../types/ISavegame";
 
 export class MissingPluginsError extends Error {
   private mFiles: string[];
@@ -43,9 +44,7 @@ function restoreSavegamePlugins(
         }),
     );
 
-    const missing = save.attributes.plugins.filter(
-      (plugin) => !plugins.has(plugin.toLowerCase()),
-    );
+    const missing = save.attributes.plugins.filter((plugin) => !plugins.has(plugin.toLowerCase()));
 
     if (missing.length > 0) {
       return Promise.reject(new MissingPluginsError(missing));

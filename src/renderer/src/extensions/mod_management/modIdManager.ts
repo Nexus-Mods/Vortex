@@ -1,14 +1,4 @@
-const invalidWindowsChars: string[] = [
-  "<",
-  ">",
-  ":",
-  '"',
-  "/",
-  "\\",
-  "|",
-  "?",
-  "*",
-];
+const invalidWindowsChars: string[] = ["<", ">", ":", '"', "/", "\\", "|", "?", "*"];
 const invalidOSXChars: string[] = ["/"];
 const invalidLinuxChars: string[] = ["/"];
 

@@ -10,8 +10,6 @@ import React, {
 import { Alert, Button, Jumbotron } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 
-import type { IMainPage } from "../types/IMainPage";
-
 import { useMainContext } from "../contexts";
 import {
   PageHeaderProvider,
@@ -20,6 +18,7 @@ import {
 } from "../contexts/MainPageHeaderContext";
 import ExtensionGate from "../controls/ExtensionGate";
 import Icon from "../controls/Icon";
+import type { IMainPage } from "../types/IMainPage";
 import { getApplication } from "../util/application";
 import { didIgnoreError, isOutdated } from "../util/errorHandling";
 import { genHash } from "../util/genHash";
@@ -50,10 +49,7 @@ interface IErrorBoundaryState {
 }
 
 // Error boundaries must be class components - no hook equivalent exists
-class PageErrorBoundary extends Component<
-  IErrorBoundaryProps,
-  IErrorBoundaryState
-> {
+class PageErrorBoundary extends Component<IErrorBoundaryProps, IErrorBoundaryState> {
   constructor(props: IErrorBoundaryProps) {
     super(props);
     this.state = { error: undefined, errorInfo: undefined };
@@ -74,9 +70,7 @@ class PageErrorBoundary extends Component<
           error={error}
           errorInfo={errorInfo}
           pageId={pageId}
-          onRetry={() =>
-            this.setState({ error: undefined, errorInfo: undefined })
-          }
+          onRetry={() => this.setState({ error: undefined, errorInfo: undefined })}
         />
       );
     }
@@ -93,13 +87,7 @@ interface IErrorFallbackProps {
   onRetry: () => void;
 }
 
-const ErrorFallback: FC<IErrorFallbackProps> = ({
-  pageId,
-  classes,
-  error,
-  errorInfo,
-  onRetry,
-}) => {
+const ErrorFallback: FC<IErrorFallbackProps> = ({ pageId, classes, error, errorInfo, onRetry }) => {
   const { t } = useTranslation(["common"]);
   const context = useMainContext();
 
@@ -140,11 +128,7 @@ ComponentStack:
   );
 };
 
-export const MainPageContainer: React.FC<IBaseProps> = ({
-  page,
-  active,
-  secondary,
-}) => {
+export const MainPageContainer: React.FC<IBaseProps> = ({ page, active, secondary }) => {
   const { t } = useTranslation(["common"]);
   const [headerRef, setHeaderRef] = useState<HTMLElement | null>(null);
 
@@ -180,11 +164,7 @@ export const MainPageContainer: React.FC<IBaseProps> = ({
 
           <div className="mainpage-body-container">
             <ExtensionGate id={page.id}>
-              <page.component
-                active={active}
-                secondary={secondary}
-                {...props}
-              />
+              <page.component active={active} secondary={secondary} {...props} />
             </ExtensionGate>
           </div>
         </div>

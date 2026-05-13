@@ -1,18 +1,12 @@
+import * as React from "react";
+import { TableDateTimeFilter, TableNumericFilter, TableTextFilter, types, util } from "vortex-api";
+
 import { updateSavegame } from "./actions/session";
 import { ISavegame } from "./types/ISavegame";
 import CharacterFilter from "./util/CharacterFilter";
 import { getScreenshot, loadSaveGame } from "./util/refreshSavegames";
 import PluginList from "./views/PluginList";
 import ScreenshotCanvas from "./views/ScreenshotCanvas";
-
-import * as React from "react";
-import {
-  TableDateTimeFilter,
-  TableNumericFilter,
-  TableTextFilter,
-  types,
-  util,
-} from "vortex-api";
 
 let language: string;
 let collator: Intl.Collator;
@@ -62,10 +56,7 @@ function getSavegameAttributes(
         savegame.attributes.screenshot === undefined ||
         getScreenshot(savegame.id) === undefined
       ) {
-        if (
-          !loading.has(savegame.id) &&
-          savegame.attributes["corrupted"] !== true
-        ) {
+        if (!loading.has(savegame.id) && savegame.attributes["corrupted"] !== true) {
           loading.add(savegame.id);
           loadSaveGame(
             savegame.filePath,
@@ -194,9 +185,7 @@ function getSavegameAttributes(
       description: "Size of the file",
       icon: "file-picture-o",
       calc: (savegame: ISavegame) => savegame.fileSize,
-      customRenderer: (savegame: ISavegame) => (
-        <>{util.bytesToString(savegame.fileSize)}</>
-      ),
+      customRenderer: (savegame: ISavegame) => <>{util.bytesToString(savegame.fileSize)}</>,
       placement: "both",
       isToggleable: true,
       isSortable: true,
@@ -212,13 +201,7 @@ function getSavegameAttributes(
       customRenderer: (savegame: ISavegame, detail: boolean, t) => {
         if (detail) {
           const lang = util.getCurrentLanguage();
-          return (
-            <p>
-              {new Date(savegame.attributes["creationtime"]).toLocaleString(
-                lang,
-              )}
-            </p>
-          );
+          return <p>{new Date(savegame.attributes["creationtime"]).toLocaleString(lang)}</p>;
         } else {
           const creationTime = new Date(savegame.attributes["creationtime"]);
           const prettyTime =
@@ -228,8 +211,7 @@ function getSavegameAttributes(
           return <p>{prettyTime}</p>;
         }
       },
-      calc: (savegame: ISavegame) =>
-        new Date(savegame.attributes["creationtime"]),
+      calc: (savegame: ISavegame) => new Date(savegame.attributes["creationtime"]),
       placement: "both",
       isToggleable: true,
       isSortable: true,
@@ -240,8 +222,7 @@ function getSavegameAttributes(
       id: "savetype",
       name: "Savegame Type",
       description: "Whether this save is a autosave/quicksave or manual one",
-      calc: (savegame: ISavegame, t: types.TFunction) =>
-        typeToString(t, saveType(savegame)),
+      calc: (savegame: ISavegame, t: types.TFunction) => typeToString(t, saveType(savegame)),
       placement: "both",
       isToggleable: true,
       isSortable: true,

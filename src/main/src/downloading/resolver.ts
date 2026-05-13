@@ -2,9 +2,7 @@ import type { Chunk } from "./chunking";
 
 export type Resolver<T> = (resource: T) => Promise<ResolvedResource>;
 
-export type ResolvedResource =
-  | URL
-  | { probeUrl: URL; chunkUrl?: (chunk: Chunk) => Promise<URL> };
+export type ResolvedResource = URL | { probeUrl: URL; chunkUrl?: (chunk: Chunk) => Promise<URL> };
 
 export const urlResolver: Resolver<URL> = (url) => Promise.resolve(url);
 

@@ -2,7 +2,6 @@ import type {
   ISupportedResult,
   ITestSupportedDetails,
 } from "../mod_management/types/TestSupported";
-
 import { VortexModTester } from "./utils/VortexModTester";
 
 let testerInstance: VortexModTester | null = null;
@@ -26,9 +25,6 @@ export const testSupported = async (
     testerInstance = new VortexModTester();
   }
 
-  const result = testerInstance.testSupport(
-    files,
-    isBasic ? ["Basic"] : ["XmlScript"],
-  );
+  const result = testerInstance.testSupport(files, isBasic ? ["Basic"] : ["XmlScript"]);
   return Promise.resolve(result);
 };

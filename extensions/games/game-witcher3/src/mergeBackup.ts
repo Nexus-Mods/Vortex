@@ -1,9 +1,12 @@
+import path from "path";
+
 /* eslint-disable */
 import _ from "lodash";
-import path from "path";
+import { generate } from "shortid";
 import turbowalk from "turbowalk";
 import { fs, log, selectors, types, util } from "vortex-api";
 
+import { hex2Buffer, prepareFileData, restoreFileData } from "./collections/util";
 import {
   GAME_ID,
   getLoadOrderFilePath,
@@ -12,22 +15,10 @@ import {
   W3_TEMP_DATA_DIR,
   MergeDataViolationError,
 } from "./common";
-
-import { generate } from "shortid";
-
-import {
-  hex2Buffer,
-  prepareFileData,
-  restoreFileData,
-} from "./collections/util";
-
 import { getNamesOfMergedMods } from "./mergeInventoryParsing";
-
 import { getMergedModName, downloadScriptMerger } from "./scriptmerger";
-
-import { getDeployment } from "./util";
-
 import { IDeployedFile, IDeployment } from "./types";
+import { getDeployment } from "./util";
 
 type OpType = "import" | "export";
 interface IBaseProps {
@@ -41,11 +32,7 @@ interface IBaseProps {
 const sortInc = (lhs: string, rhs: string) => lhs.length - rhs.length;
 const sortDec = (lhs: string, rhs: string) => rhs.length - lhs.length;
 
-function genBaseProps(
-  api: types.IExtensionApi,
-  profileId: string,
-  force?: boolean,
-): IBaseProps {
+function genBaseProps(api: types.IExtensionApi, profileId: string, force?: boolean): IBaseProps {
   if (!profileId) {
     return undefined;
   }
@@ -57,11 +44,7 @@ function genBaseProps(
 
   const localMergedScripts: boolean = force
     ? true
-    : util.getSafe(
-        state,
-        ["persistent", "profiles", profileId, "features", "local_merges"],
-        false,
-      );
+    : util.getSafe(state, ["persistent", "profiles", profileId, "features", "local_merges"], false);
   if (!localMergedScripts) {
     return undefined;
   }
@@ -71,8 +54,7 @@ function genBaseProps(
     ["settings", "gameMode", "discovered", GAME_ID],
     undefined,
   );
-  const scriptMergerTool: types.IDiscoveredTool =
-    discovery?.tools?.[SCRIPT_MERGER_ID];
+  const scriptMergerTool: types.IDiscoveredTool = discovery?.tools?.[SCRIPT_MERGER_ID];
   if (!scriptMergerTool?.path) {
     // Regardless of the user's profile settings - there's no point in backing up
     //  the merges if we don't know where the script merger is!
@@ -95,9 +77,7 @@ function getFileEntries(filePath: string): Promise<string[]> {
     { recurse: true },
   )
     .catch((err) =>
-      ["ENOENT", "ENOTFOUND"].includes(err.code)
-        ? Promise.resolve()
-        : Promise.reject(err),
+      ["ENOENT", "ENOTFOUND"].includes(err.code) ? Promise.resolve() : Promise.reject(err),
     )
     .then(() => Promise.resolve(files));
 }
@@ -225,11 +205,7 @@ function backupPath(profile: types.IProfile): string {
   );
 }
 
-async function handleMergedScripts(
-  props: IBaseProps,
-  opType: OpType,
-  dest?: string,
-) {
+async function handleMergedScripts(props: IBaseProps, opType: OpType, dest?: string) {
   const { scriptMergerTool, profile, gamePath } = props;
   if (!scriptMergerTool?.path) {
     return Promise.reject(new util.NotFound("Script merging tool path"));
@@ -240,8 +216,7 @@ async function handleMergedScripts(
 
   try {
     const mergerToolDir = path.dirname(scriptMergerTool.path);
-    const profilePath: string =
-      dest === undefined ? path.join(mergerToolDir, profile.id) : dest;
+    const profilePath: string = dest === undefined ? path.join(mergerToolDir, profile.id) : dest;
     const loarOrderFilepath: string = getLoadOrderFilePath();
     const mergedModName = await getMergedModName(mergerToolDir);
     const mergedScriptsPath = path.join(gamePath, "Mods", mergedModName);
@@ -256,11 +231,7 @@ async function handleMergedScripts(
         profilePath,
         path.basename(loarOrderFilepath),
       );
-      await moveFiles(
-        mergedScriptsPath,
-        path.join(profilePath, mergedModName),
-        props,
-      );
+      await moveFiles(mergedScriptsPath, path.join(profilePath, mergedModName), props);
     } else if (opType === "import") {
       await moveFile(profilePath, mergerToolDir, MERGE_INV_MANIFEST);
       await moveFile(
@@ -268,11 +239,7 @@ async function handleMergedScripts(
         path.dirname(loarOrderFilepath),
         path.basename(loarOrderFilepath),
       );
-      await moveFiles(
-        path.join(profilePath, mergedModName),
-        mergedScriptsPath,
-        props,
-      );
+      await moveFiles(path.join(profilePath, mergedModName), mergedScriptsPath, props);
     }
     return Promise.resolve();
   } catch (err) {
@@ -281,10 +248,7 @@ async function handleMergedScripts(
   }
 }
 
-export async function storeToProfile(
-  api: types.IExtensionApi,
-  profileId: string,
-) {
+export async function storeToProfile(api: types.IExtensionApi, profileId: string) {
   const props: IBaseProps = genBaseProps(api, profileId);
   if (props === undefined) {
     return;
@@ -299,10 +263,7 @@ export async function storeToProfile(
   return handleMergedScripts(props, "export");
 }
 
-export async function restoreFromProfile(
-  api: types.IExtensionApi,
-  profileId: string,
-) {
+export async function restoreFromProfile(api: types.IExtensionApi, profileId: string) {
   const props: IBaseProps = genBaseProps(api, profileId);
   if (props === undefined) {
     return;
@@ -328,32 +289,24 @@ export async function queryScriptMerges(
     ["persistent", "mods", GAME_ID],
     {},
   );
-  const modTypes: { [typeId: string]: string } = selectors.modPathsForGame(
-    state,
-    GAME_ID,
-  );
+  const modTypes: { [typeId: string]: string } = selectors.modPathsForGame(state, GAME_ID);
   const deployment: IDeployment = await getDeployment(api, includedModIds);
-  const deployedNames: string[] = Object.keys(modTypes).reduce(
-    (accum, typeId) => {
-      const modPath = modTypes[typeId];
-      const files: IDeployedFile[] = deployment[typeId];
-      const isRootMod =
-        modPath.toLowerCase().split(path.sep).indexOf("mods") === -1;
-      const names = files.map((file) => {
-        const nameSegments = file.relPath.split(path.sep);
-        if (isRootMod) {
-          const nameIdx =
-            nameSegments.map((seg) => seg.toLowerCase()).indexOf("mods") + 1;
-          return nameIdx > 0 ? nameSegments[nameIdx] : undefined;
-        } else {
-          return nameSegments[0];
-        }
-      });
-      accum = accum.concat(names.filter((name) => !!name));
-      return accum;
-    },
-    [],
-  );
+  const deployedNames: string[] = Object.keys(modTypes).reduce((accum, typeId) => {
+    const modPath = modTypes[typeId];
+    const files: IDeployedFile[] = deployment[typeId];
+    const isRootMod = modPath.toLowerCase().split(path.sep).indexOf("mods") === -1;
+    const names = files.map((file) => {
+      const nameSegments = file.relPath.split(path.sep);
+      if (isRootMod) {
+        const nameIdx = nameSegments.map((seg) => seg.toLowerCase()).indexOf("mods") + 1;
+        return nameIdx > 0 ? nameSegments[nameIdx] : undefined;
+      } else {
+        return nameSegments[0];
+      }
+    });
+    accum = accum.concat(names.filter((name) => !!name));
+    return accum;
+  }, []);
   const uniqueDeployed = Array.from(new Set(deployedNames));
   const merged = await getNamesOfMergedMods(api);
   const diff = _.difference(merged, uniqueDeployed);
@@ -441,9 +394,7 @@ export async function exportScriptMerges(
           [{ label: "Cancel" }, { label: "Upload Collection" }],
         )
         .then((res) =>
-          res.action === "Cancel"
-            ? Promise.reject(new util.UserCanceled())
-            : exportMergedData(),
+          res.action === "Cancel" ? Promise.reject(new util.UserCanceled()) : exportMergedData(),
         );
     }
     return Promise.reject(err);
@@ -493,10 +444,7 @@ export async function importScriptMerges(
   }
 }
 
-export async function makeOnContextImport(
-  api: types.IExtensionApi,
-  collectionId: string,
-) {
+export async function makeOnContextImport(api: types.IExtensionApi, collectionId: string) {
   const state = api.getState();
   const mods: { [modId: string]: types.IMod } = util.getSafe(
     state,
@@ -512,11 +460,7 @@ export async function makeOnContextImport(
   const stagingFolder = selectors.installPathForGame(state, GAME_ID);
   try {
     const fileData = await fs.readFileAsync(
-      path.join(
-        stagingFolder,
-        collectionMod.installationPath,
-        "collection.json",
-      ),
+      path.join(stagingFolder, collectionMod.installationPath, "collection.json"),
       { encoding: "utf8" },
     );
     const collection = JSON.parse(fileData);
@@ -525,14 +469,7 @@ export async function makeOnContextImport(
       // Make sure we have the script merger installed straight away!
       const scriptMergerTool = util.getSafe(
         state,
-        [
-          "settings",
-          "gameMode",
-          "discovered",
-          GAME_ID,
-          "tools",
-          SCRIPT_MERGER_ID,
-        ],
+        ["settings", "gameMode", "discovered", GAME_ID, "tools", SCRIPT_MERGER_ID],
         undefined,
       );
       if (scriptMergerTool === undefined) {

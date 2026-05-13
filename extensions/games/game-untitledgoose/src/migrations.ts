@@ -1,5 +1,6 @@
 // import { runPatcher } from 'harmony-patcher';
 import path from "path";
+
 import semver from "semver";
 import { fs } from "vortex-api";
 
@@ -46,7 +47,5 @@ export function migrate020(context, oldVersion) {
   return context.api
     .awaitUI()
     .then(() => fs.ensureDirWritableAsync(modsPath))
-    .then(() =>
-      context.api.emitAndAwait("purge-mods-in-path", GAME_ID, "", modsPath),
-    );
+    .then(() => context.api.emitAndAwait("purge-mods-in-path", GAME_ID, "", modsPath));
 }

@@ -1,13 +1,13 @@
-import { transferArchive } from "./modFileImport";
-
-import { IModEntry } from "../types/nmmEntries";
-import TraceImport from "./TraceImport";
-import { addMetaData } from "./vortexImports";
+import * as path from "path";
 
 import Promise from "bluebird";
-import * as path from "path";
 import { generate as shortid } from "shortid";
 import { actions, fs, selectors, types, util } from "vortex-api";
+
+import { IModEntry } from "../types/nmmEntries";
+import { transferArchive } from "./modFileImport";
+import TraceImport from "./TraceImport";
+import { addMetaData } from "./vortexImports";
 
 function getInner(ele: Element): string {
   if (ele !== undefined && ele !== null) {
@@ -34,12 +34,7 @@ function enhance(
     .then((data) => {
       const fields = data.toString().split("@@");
       return fs.readFileAsync(
-        path.join(
-          cacheBasePath,
-          fields[1] === "-" ? "" : fields[1],
-          "fomod",
-          "info.xml",
-        ),
+        path.join(cacheBasePath, fields[1] === "-" ? "" : fields[1], "fomod", "info.xml"),
       );
     })
     .then((infoXmlData) => {
@@ -51,11 +46,9 @@ function enhance(
       let categoryId =
         getInner(xmlDoc.querySelector("fomod CustomCategoryId")) ||
         getInner(xmlDoc.querySelector("fomod CategoryId"));
-      const category =
-        categoryId !== undefined ? nmmCategories[categoryId] : undefined;
+      const category = categoryId !== undefined ? nmmCategories[categoryId] : undefined;
 
-      categoryId =
-        category !== undefined ? vortexCategory(category) : undefined;
+      categoryId = category !== undefined ? vortexCategory(category) : undefined;
 
       return {
         ...input,
@@ -128,11 +121,7 @@ function importArchives(
   ): Promise<void> => {
     return transferArchive(source, dest)
       .then(() => {
-        const downloads = util.getSafe(
-          state,
-          ["persistent", "downloads", "files"],
-          undefined,
-        );
+        const downloads = util.getSafe(state, ["persistent", "downloads", "files"], undefined);
         if (downloads === undefined) {
           // The user hasn't downloaded anything yet.
           return Promise.resolve();
@@ -141,9 +130,7 @@ function importArchives(
         // Ensure we don't have any duplicate archive ids pointing
         //  to the same localPath - if we do, remove them.
         const archiveIds = Object.keys(downloads);
-        const filtered = archiveIds.filter(
-          (id) => downloads[id].localPath === mod.modFilename,
-        );
+        const filtered = archiveIds.filter((id) => downloads[id].localPath === mod.modFilename);
         filtered.forEach((id) => {
           mod.archiveId = id;
           store.dispatch(actions.removeDownload(id));
@@ -151,14 +138,7 @@ function importArchives(
         return Promise.resolve();
       })
       .then(() => {
-        store.dispatch(
-          actions.addLocalDownload(
-            mod.archiveId,
-            gameId,
-            mod.modFilename,
-            size,
-          ),
-        );
+        store.dispatch(actions.addLocalDownload(mod.archiveId, gameId, mod.modFilename, size));
         return Promise.resolve();
       });
   };
@@ -173,25 +153,15 @@ function importArchives(
         enhance(modsPath, mod, categories, makeVortexCategory),
       ).then((modsEx) =>
         Promise.mapSeries(modsEx, (mod, idx) => {
-          trace.log(
-            "info",
-            "transferring",
-            JSON.stringify(mod.modFilename, undefined, 2),
-          );
+          trace.log("info", "transferring", JSON.stringify(mod.modFilename, undefined, 2));
           progress(mod.modName, idx);
           const archivePath = path.join(mod.archivePath, mod.modFilename);
           return fs
             .statAsync(archivePath)
-            .then((stats) =>
-              transferArchiveFile(archivePath, downloadPath, mod, stats.size),
-            )
+            .then((stats) => transferArchiveFile(archivePath, downloadPath, mod, stats.size))
             .tap(() => importedArchives.push(mod))
             .catch((err) => {
-              trace.log(
-                "error",
-                "Failed to import mod archive",
-                archivePath + " - " + err.message,
-              );
+              trace.log("error", "Failed to import mod archive", archivePath + " - " + err.message);
               errors.push(mod.modFilename);
             });
         }).then(() => {

@@ -40,10 +40,7 @@ export interface IGraphViewProps {
 }
 
 function san(input: string): string {
-  let res = input.replace(
-    /[^a-zA-Z0-9_-]/g,
-    (invalid) => `_${invalid.charCodeAt(0)}_`,
-  );
+  let res = input.replace(/[^a-zA-Z0-9_-]/g, (invalid) => `_${invalid.charCodeAt(0)}_`);
   if (!res) {
     // workaround so we can open the dialog even with an empty node name
     res = "__empty";
@@ -255,11 +252,7 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
       }
     }
     this.mMousePos = evt.position;
-    this.props.onContext(
-      evt.renderedPosition.x,
-      evt.renderedPosition.y,
-      selection,
-    );
+    this.props.onContext(evt.renderedPosition.x, evt.renderedPosition.y, selection);
   };
 
   private handleEHComplete = (evt, source, target, added) => {
@@ -304,9 +297,7 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
     // Clear the flag after a short delay to allow edge creation to complete
     setTimeout(() => {
       this.mIsHandlingEdgeCreation = false;
-      this.mRecentlyCreatedEdges.delete(
-        `${san(dataSourceTitle)}-to-${san(dataTargetTitle)}`,
-      );
+      this.mRecentlyCreatedEdges.delete(`${san(dataSourceTitle)}-to-${san(dataTargetTitle)}`);
     }, 100);
 
     // Notify parent component with inverted direction

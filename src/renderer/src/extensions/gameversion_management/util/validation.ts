@@ -344,17 +344,14 @@ function validate11(
           if (typeof data5 !== "boolean") {
             const err10 = {
               instancePath: instancePath + "/getGameVersion/isFunction",
-              schemaPath:
-                "#/properties/getGameVersion/properties/isFunction/type",
+              schemaPath: "#/properties/getGameVersion/properties/isFunction/type",
               keyword: "type",
               params: {
                 type: "boolean",
               },
               message: "must be boolean",
-              schema:
-                schema12.properties.getGameVersion.properties.isFunction.type,
-              parentSchema:
-                schema12.properties.getGameVersion.properties.isFunction,
+              schema: schema12.properties.getGameVersion.properties.isFunction.type,
+              parentSchema: schema12.properties.getGameVersion.properties.isFunction,
               data: data5,
             };
             if (vErrors === null) {
@@ -367,16 +364,14 @@ function validate11(
           if (true !== data5) {
             const err11 = {
               instancePath: instancePath + "/getGameVersion/isFunction",
-              schemaPath:
-                "#/properties/getGameVersion/properties/isFunction/const",
+              schemaPath: "#/properties/getGameVersion/properties/isFunction/const",
               keyword: "const",
               params: {
                 allowedValue: true,
               },
               message: "must be equal to constant",
               schema: true,
-              parentSchema:
-                schema12.properties.getGameVersion.properties.isFunction,
+              parentSchema: schema12.properties.getGameVersion.properties.isFunction,
               data: data5,
             };
             if (vErrors === null) {
@@ -416,8 +411,7 @@ function validate11(
         for (const key1 in data6) {
           const err13 = {
             instancePath: instancePath + "/options",
-            schemaPath:
-              "#/definitions/IGameVersionProviderOptions/additionalProperties",
+            schemaPath: "#/definitions/IGameVersionProviderOptions/additionalProperties",
             keyword: "additionalProperties",
             params: {
               additionalProperty: key1,
@@ -496,8 +490,7 @@ function validate10(
       rootData,
     })
   ) {
-    vErrors =
-      vErrors === null ? validate11.errors : vErrors.concat(validate11.errors);
+    vErrors = vErrors === null ? validate11.errors : vErrors.concat(validate11.errors);
     errors = vErrors.length;
   }
   var _valid0 = _errs1 === errors;

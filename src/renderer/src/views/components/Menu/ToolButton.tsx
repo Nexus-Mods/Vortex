@@ -1,12 +1,12 @@
-import { mdiCircleOutline, mdiLoading, mdiPlay } from "@mdi/js";
-import React, { type ButtonHTMLAttributes, type FC, useMemo } from "react";
 import { pathToFileURL } from "url";
 
-import type { IStarterInfo } from "../../../util/StarterInfo";
+import { mdiCircleOutline, mdiLoading, mdiPlay } from "@mdi/js";
+import React, { type ButtonHTMLAttributes, type FC, useMemo } from "react";
 
 import { Icon } from "../../../ui/components/icon/Icon";
 import { Typography } from "../../../ui/components/typography/Typography";
 import { joinClasses } from "../../../ui/utils/joinClasses";
+import type { IStarterInfo } from "../../../util/StarterInfo";
 import StarterInfo from "../../../util/StarterInfo";
 
 interface ToolButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -37,20 +37,18 @@ export const ToolButton: FC<ToolButtonProps> = ({
 
   return (
     <button
-      className={joinClasses(
-        "group/tool-button relative size-8 shrink-0 rounded-sm",
-        { "pointer-events-none cursor-not-allowed": isRunning },
-      )}
+      className={joinClasses("group/tool-button relative size-8 shrink-0 rounded-sm", {
+        "pointer-events-none cursor-not-allowed": isRunning,
+      })}
       title={isValid ? starter.name : `${starter.name} (Not configured)`}
       {...props}
     >
       {imageSrc ? (
         <img
           alt={starter.name}
-          className={joinClasses(
-            "absolute inset-0 size-full rounded-sm object-cover",
-            { "opacity-40 grayscale": !isValid },
-          )}
+          className={joinClasses("absolute inset-0 size-full rounded-sm object-cover", {
+            "opacity-40 grayscale": !isValid,
+          })}
           src={imageSrc}
         />
       ) : (

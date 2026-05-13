@@ -7,20 +7,13 @@ import {
 } from "@mdi/js";
 import React, { type FC, useCallback } from "react";
 
-import type {
-  INotification,
-  NotificationType,
-} from "../../../../types/INotification";
-
+import type { INotification, NotificationType } from "../../../../types/INotification";
 import { Icon } from "../../../../ui/components/icon/Icon";
 import { joinClasses } from "../../../../ui/utils/joinClasses";
 import { NotificationActions } from "./NotificationActions";
 import { NotificationContent } from "./NotificationContent";
 import { NotificationControls } from "./NotificationControls";
-import {
-  addWordBreakOpportunities,
-  createNotificationHandler,
-} from "./notificationUtils";
+import { addWordBreakOpportunities, createNotificationHandler } from "./notificationUtils";
 import { useNotificationTranslation } from "./useNotificationTranslation";
 
 const STATUS_MAP = {
@@ -33,9 +26,7 @@ const STATUS_MAP = {
   silent: { className: "text-info-strong", icon: mdiInformationOutline },
 } satisfies Record<NotificationType, { className: string; icon: string }>;
 
-const getNotificationStatus = (
-  type: NotificationType,
-): { className: string; icon: string } => {
+const getNotificationStatus = (type: NotificationType): { className: string; icon: string } => {
   return STATUS_MAP[type];
 };
 
@@ -67,15 +58,9 @@ export const NotificationItem: FC<INotificationItemProps> = ({
   const status = getNotificationStatus(type);
 
   // Event handlers
-  const handleDismiss = useCallback(createNotificationHandler(id, onDismiss), [
-    id,
-    onDismiss,
-  ]);
+  const handleDismiss = useCallback(createNotificationHandler(id, onDismiss), [id, onDismiss]);
 
-  const handleSuppress = useCallback(
-    createNotificationHandler(id, onSuppress),
-    [id, onSuppress],
-  );
+  const handleSuppress = useCallback(createNotificationHandler(id, onSuppress), [id, onSuppress]);
 
   const handleExpand = useCallback(() => {
     if (notification.group && onExpand) {
@@ -85,9 +70,7 @@ export const NotificationItem: FC<INotificationItemProps> = ({
 
   const handleActionClick = useCallback(
     (actionTitle: string) =>
-      createNotificationHandler(id, (notifId) =>
-        onTriggerAction(notifId, actionTitle),
-      ),
+      createNotificationHandler(id, (notifId) => onTriggerAction(notifId, actionTitle)),
     [id, onTriggerAction],
   );
 

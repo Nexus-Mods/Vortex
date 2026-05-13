@@ -1,7 +1,15 @@
 /* eslint-disable */
 import * as path from "path";
+
 import { fs, actions, log, selectors, types, util } from "vortex-api";
+
 import { storeName } from "./common";
+import supportData from "./gameSupport";
+import * as gitHubDownloader from "./githubDownloader";
+import { testSupported, installScriptExtender } from "./installer";
+import * as nexusModsDownloader from "./nexusModsDownloader";
+import * as silverlockDownloader from "./silverlockDownloader";
+import { IGameSupport } from "./types";
 import {
   getGameStore,
   getScriptExtenderVersion,
@@ -10,13 +18,6 @@ import {
   clearNotifications,
   ignoreNotifications,
 } from "./util";
-import * as gitHubDownloader from "./githubDownloader";
-import * as silverlockDownloader from "./silverlockDownloader";
-import supportData from "./gameSupport";
-import { testSupported, installScriptExtender } from "./installer";
-import { IGameSupport } from "./types";
-
-import * as nexusModsDownloader from "./nexusModsDownloader";
 
 async function onCheckModVersion(
   api: types.IExtensionApi,
@@ -61,32 +62,16 @@ async function onCheckModVersion(
   const profile = selectors.activeProfile(api.store.getState());
   // Filter out any non-script extender mods or those which are disabled (old versions).
   const scriptExtenders = modArray.filter((mod: types.IMod) => {
-    const isScriptExtender = util.getSafe(
-      mod,
-      ["attributes", "scriptExtender"],
-      false,
-    );
-    const isEnabled = util.getSafe(
-      profile,
-      ["modState", mod.id, "enabled"],
-      false,
-    );
+    const isScriptExtender = util.getSafe(mod, ["attributes", "scriptExtender"], false);
+    const isEnabled = util.getSafe(profile, ["modState", mod.id, "enabled"], false);
     const isNotFromNexusMods = mod.attributes?.source !== "nexus";
     return isScriptExtender && isEnabled && isNotFromNexusMods;
   });
 
   // Check for update.
   const latestVersion: string = !!gameSupport?.gitHubAPIUrl
-    ? await gitHubDownloader.checkForUpdates(
-        api,
-        gameSupport,
-        scriptExtenderVersion,
-      )
-    : await silverlockDownloader.checkForUpdate(
-        api,
-        gameSupport,
-        scriptExtenderVersion,
-      );
+    ? await gitHubDownloader.checkForUpdates(api, gameSupport, scriptExtenderVersion)
+    : await silverlockDownloader.checkForUpdate(api, gameSupport, scriptExtenderVersion);
 
   // If we fail to get the latest version or it's an exact match for our
   // installed script extender, return.
@@ -107,10 +92,7 @@ async function onCheckModVersion(
   });
 }
 
-async function isMissingScriptExtender(
-  api: types.IExtensionApi,
-  gameId: string,
-) {
+async function isMissingScriptExtender(api: types.IExtensionApi, gameId: string) {
   // If the game is unsupported, exit here.
   if (!supportData[gameId]) {
     return false;
@@ -140,11 +122,7 @@ async function isMissingScriptExtender(
   if (["xbox", "epic"].includes(gameStore)) return false;
 
   // Check for disabled (but installed) script extenders.
-  const mods = util.getSafe(
-    api.store.getState(),
-    ["persistent", "mods", gameId],
-    undefined,
-  );
+  const mods = util.getSafe(api.store.getState(), ["persistent", "mods", gameId], undefined);
   const modArray: types.IMod[] = mods ? Object.values(mods) : [];
   const isManuallyInstalled = await fs
     .statAsync(path.join(gamePath, gameSupport.scriptExtExe))
@@ -179,16 +157,13 @@ async function downloadScriptExtender(
   gameSupport: IGameSupport,
   gameId: string,
 ): Promise<void> {
-  if (!!gameSupport?.nexusMods)
-    return nexusModsDownloader.downloadScriptExtender(api, gameSupport);
+  if (!!gameSupport?.nexusMods) return nexusModsDownloader.downloadScriptExtender(api, gameSupport);
   else if (!!gameSupport?.gitHubAPIUrl)
     return gitHubDownloader.downloadScriptExtender(api, gameSupport);
   else return silverlockDownloader.notifyNotInstalled(gameSupport, api);
 }
 
-async function testMissingScriptExtender(
-  api: types.IExtensionApi,
-): Promise<types.ITestResult> {
+async function testMissingScriptExtender(api: types.IExtensionApi): Promise<types.ITestResult> {
   const state = api.store.getState();
   const gameMode = selectors.activeGameId(state);
   const gameSupport = supportData[gameMode];
@@ -208,9 +183,7 @@ async function testMissingScriptExtender(
     const discovery = selectors.discoveryByGame(state, gameMode);
     const game = util.getGame(gameMode);
     gameVersion = await game?.getInstalledVersion?.(discovery);
-    const versionBasic = gameVersion
-      ? gameVersion.split(".").slice(0, 3).join(".")
-      : undefined;
+    const versionBasic = gameVersion ? gameVersion.split(".").slice(0, 3).join(".") : undefined;
     gameStore = getGameStore(gameMode, api);
 
     return Promise.resolve({
@@ -249,9 +222,7 @@ async function testMissingScriptExtender(
   }
 }
 
-async function testMisconfiguredPrimaryTool(
-  api: types.IExtensionApi,
-): Promise<types.ITestResult> {
+async function testMisconfiguredPrimaryTool(api: types.IExtensionApi): Promise<types.ITestResult> {
   const state = api.store.getState();
   const gameMode = selectors.activeGameId(state);
   const primaryToolId = util.getSafe(
@@ -280,10 +251,7 @@ async function testMisconfiguredPrimaryTool(
     return Promise.resolve(undefined);
   }
 
-  const expectedPath = path.join(
-    discovery.path,
-    supportData[gameMode].scriptExtExe,
-  );
+  const expectedPath = path.join(discovery.path, supportData[gameMode].scriptExtExe);
 
   const installedSEVersion = await getScriptExtenderVersion(expectedPath);
 
@@ -294,10 +262,8 @@ async function testMisconfiguredPrimaryTool(
       : path.normalize(input.toLowerCase());
   if (
     installedSEVersion !== undefined &&
-    normalize(primaryTool.path, path.basename) ===
-      normalize(supportData[gameMode].scriptExtExe) &&
-    normalize(primaryTool.path, path.dirname) !==
-      normalize(discovery.path).replace(/\/$|\\$/, "")
+    normalize(primaryTool.path, path.basename) === normalize(supportData[gameMode].scriptExtExe) &&
+    normalize(primaryTool.path, path.dirname) !== normalize(discovery.path).replace(/\/$|\\$/, "")
   ) {
     log(
       "info",
@@ -361,10 +327,8 @@ function main(context: types.IExtensionContext) {
   context.registerTest("script-extender-missing", "gamemode-activated", () =>
     testMissingScriptExtender(context.api),
   );
-  context.registerTest(
-    "misconfigured-script-extender",
-    "gamemode-activated",
-    () => testMisconfiguredPrimaryTool(context.api),
+  context.registerTest("misconfigured-script-extender", "gamemode-activated", () =>
+    testMisconfiguredPrimaryTool(context.api),
   );
 
   context.once(() => {
