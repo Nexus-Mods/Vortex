@@ -290,6 +290,30 @@ describe("load order", () => {
     expect(result).toBeUndefined();
   });
 
+  test("validate accepts an empty load order", async () => {
+    const loadOrders = getLoadOrders();
+    const validate = loadOrders[0]!.validate as Function;
+    const result = await validate([], []);
+    expect(result).toBeUndefined();
+  });
+
+  test("validate flags only the bad entries in a mixed list", async () => {
+    const loadOrders = getLoadOrders();
+    const validate = loadOrders[0]!.validate as Function;
+    const result = await validate(
+      [],
+      [
+        { id: "ok1", name: "GoodMod", enabled: true },
+        { id: "bad1", name: 'Bad "One"', enabled: true },
+        { id: "ok2", name: "AnotherGood", enabled: false },
+        { id: "bad2", name: '"Quoted', enabled: true },
+      ],
+    );
+    expect(result.invalid).toHaveLength(2);
+    expect(result.invalid.map((e: { id: string }) => e.id).sort()).toEqual(["bad1", "bad2"]);
+    expect(result.invalid[0].reason).toBe("contains invalid characters.");
+  });
+
   describe("deserializeLoadOrder", () => {
     test("returns mods found in the mods folder", async () => {
       const { context, loadOrders } = createMockContext();
@@ -347,6 +371,82 @@ describe("load order", () => {
       expect(modA.enabled).toBe(true);
       expect(modB.enabled).toBe(false);
     });
+
+    test("returns an empty load order when no mods are installed", async () => {
+      const { context, loadOrders } = createMockContext();
+      init(context as never);
+
+      vi.mocked(util.getSafe).mockReturnValue({ path: "C:\\Games\\XCOM2" });
+      vi.mocked(fs.readdirAsync).mockResolvedValue([] as never);
+      vi.mocked(fs.readFileAsync).mockRejectedValue(
+        Object.assign(new Error("ENOENT"), { code: "ENOENT" }),
+      );
+
+      const deserialize = loadOrders[0]!.deserializeLoadOrder as Function;
+      const result = await deserialize();
+      expect(result).toEqual([]);
+    });
+
+    test("populates modId from deployed manifest when paths match", async () => {
+      const { context, loadOrders } = createMockContext();
+      init(context as never);
+
+      vi.mocked(util.getSafe).mockReturnValue({ path: "C:\\Games\\XCOM2" });
+      vi.mocked(fs.readdirAsync)
+        .mockResolvedValueOnce(["ModA"] as never)
+        .mockResolvedValue([] as never);
+      vi.mocked(fs.statAsync).mockImplementation((filePath: string) => {
+        if (filePath.endsWith(".XComMod")) return Promise.resolve({} as never);
+        return Promise.resolve({ isDirectory: () => true } as never);
+      });
+      vi.mocked(fs.readFileAsync).mockRejectedValue(
+        Object.assign(new Error("ENOENT"), { code: "ENOENT" }),
+      );
+      vi.mocked(util.getManifest).mockResolvedValue({
+        files: [{ relPath: path.join("ModA", "ModA.XComMod"), source: "vortex-mod-42" }],
+      } as never);
+
+      const deserialize = loadOrders[0]!.deserializeLoadOrder as Function;
+      const [entry] = await deserialize();
+      expect(entry.modId).toBe("vortex-mod-42");
+    });
+
+    test("picks up steam workshop mods and lowercases the steam-prefixed id", async () => {
+      const { context, loadOrders } = createMockContext();
+      init(context as never);
+
+      // Steam install layout: ...\steamapps\common\XCOM 2 → workshop dir at
+      // ...\steamapps\workshop\content\268500\<workshopId>\<ModName>.XComMod
+      const gamePath = "C:\\Steam\\steamapps\\common\\XCOM 2";
+      vi.mocked(util.getSafe).mockReturnValue({ path: gamePath });
+
+      vi.mocked(fs.readdirAsync).mockImplementation((p: string) => {
+        const s = String(p);
+        // Mods folder — no local mods, only workshop.
+        if (s.endsWith(path.join("XComGame", "Mods"))) return Promise.resolve([] as never);
+        // Workshop content/268500 — one workshop entry directory.
+        if (s.endsWith(path.join("workshop", "content", "268500"))) {
+          return Promise.resolve(["1234567890"] as never);
+        }
+        // Inside the workshop entry — the .XComMod descriptor.
+        if (s.endsWith("1234567890")) {
+          return Promise.resolve(["WorkshopMod.XComMod"] as never);
+        }
+        return Promise.resolve([] as never);
+      });
+      vi.mocked(fs.statAsync).mockResolvedValue({ isDirectory: () => true } as never);
+      vi.mocked(fs.readFileAsync).mockRejectedValue(
+        Object.assign(new Error("ENOENT"), { code: "ENOENT" }),
+      );
+
+      const deserialize = loadOrders[0]!.deserializeLoadOrder as Function;
+      const result = await deserialize();
+      expect(result).toHaveLength(1);
+      expect(result[0].name).toBe("WorkshopMod");
+      // Regression guard: the id must be a lowercased "steam-<name>", not
+      // "steam-WorkshopMod.toLowerCase()" (the literal-template-string typo).
+      expect(result[0].id).toBe("steam-workshopmod");
+    });
   });
 
   describe("serializeLoadOrder", () => {
@@ -370,6 +470,38 @@ describe("load order", () => {
       expect(content).not.toContain("ModB");
       expect(content).toContain('ActiveMods="ModC"');
       expect(content).toContain("[Engine.XComModOptions]");
+    });
+
+    test("WOTC serializes under XCom2-WarOfTheChosen/XComGame/Config", async () => {
+      const { context, loadOrders } = createMockContext();
+      init(context as never);
+
+      vi.mocked(util.getSafe).mockReturnValue({ path: "C:\\Games\\XCOM2" });
+
+      const serialize = loadOrders[1]!.serializeLoadOrder as Function;
+      await serialize([{ id: "moda", name: "ModA", enabled: true }]);
+
+      const [filePath] = vi.mocked(fs.writeFileAsync).mock.calls[0]!;
+      expect(filePath).toContain(path.join("XCom2-WarOfTheChosen", "XComGame", "Config"));
+      expect(filePath).toContain("DefaultModOptions.ini");
+    });
+
+    test("empty enabled list still writes the INI header", async () => {
+      const { context, loadOrders } = createMockContext();
+      init(context as never);
+
+      vi.mocked(util.getSafe).mockReturnValue({ path: "C:\\Games\\XCOM2" });
+
+      const serialize = loadOrders[0]!.serializeLoadOrder as Function;
+      await serialize([
+        { id: "a", name: "Disabled1", enabled: false },
+        { id: "b", name: "Disabled2", enabled: false },
+      ]);
+
+      const [, content] = vi.mocked(fs.writeFileAsync).mock.calls[0]!;
+      expect(content).toContain("[Engine.XComModOptions]");
+      expect(content).not.toContain('ActiveMods="Disabled1"');
+      expect(content).not.toContain('ActiveMods="Disabled2"');
     });
   });
 });

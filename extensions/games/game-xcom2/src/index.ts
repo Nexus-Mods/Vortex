@@ -239,7 +239,7 @@ async function deserializeLoadOrder(
     const xmodPath = path.join(xmod, `${xmod}${MOD_EXT}`);
     const deployed = deployedFiles.find((f) => f.relPath.toLowerCase() === xmodPath.toLowerCase());
     return {
-      id: workshopMods.includes(xmod) ? `steam-${xmod}.toLowerCase()` : xmod.toLowerCase(),
+      id: workshopMods.includes(xmod) ? `steam-${xmod.toLowerCase()}` : xmod.toLowerCase(),
       name: xmod,
       enabled: enabledMods.includes(xmod),
       modId: deployed?.source,
