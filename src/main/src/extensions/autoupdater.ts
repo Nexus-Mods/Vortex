@@ -5,11 +5,10 @@
  * UI/notifications are handled by the renderer - this just manages the update mechanics.
  */
 
-import type { UpdateStatus } from "@vortex/shared/ipc";
-import type { CancellationToken, UpdateInfo } from "electron-updater";
-
 import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import type { UpdateStatus } from "@vortex/shared/ipc";
 import { app, dialog } from "electron";
+import type { CancellationToken, UpdateInfo } from "electron-updater";
 import { autoUpdater } from "electron-updater";
 import * as semver from "semver";
 
@@ -166,11 +165,16 @@ export function setupAutoUpdater(installType: string): void {
         const updateVersion = check?.updateInfo?.version;
 
         // Auto-download patch updates for regular installs;
-        // minor/major updates require user-initiated download via renderer
+        // minor/major updates require user-initiated download via renderer.
+        // Require strict-newer: with allowDowngrade = true the feed may
+        // report the current version as "latest", which would otherwise
+        // satisfy the `~current` range and trigger a bogus downloadUpdate
+        // that electron-updater rejects with "Please check update first".
         if (
           installType === "regular" &&
           currentVersion != null &&
           updateVersion != null &&
+          semver.gt(updateVersion, currentVersion.version) &&
           semver.satisfies(updateVersion, `~${currentVersion.version}`, {
             includePrerelease: true,
           })
@@ -210,34 +214,31 @@ export function setupAutoUpdater(installType: string): void {
     checkForUpdates(channel, manual);
   });
 
-  betterIpcMain.on(
-    "updater:download",
-    (_event, channel: string, installAfterDownload: boolean) => {
-      log("info", "Download update requested", {
-        channel,
-        installAfterDownload,
-      });
+  betterIpcMain.on("updater:download", (_event, channel: string, installAfterDownload: boolean) => {
+    log("info", "Download update requested", {
+      channel,
+      installAfterDownload,
+    });
 
-      installAfterDownloadFlag = installAfterDownload;
+    installAfterDownloadFlag = installAfterDownload;
 
-      const isPreviewBuild = process.env.IS_PREVIEW_BUILD === "true";
-      autoUpdater.allowPrerelease = channel !== "stable";
-      autoUpdater.setFeedURL({
-        provider: "github",
-        owner: "Nexus-Mods",
-        repo: isPreviewBuild ? "Vortex-Staging" : "Vortex",
-        private: false,
-        publisherName: ["Black Tree Gaming Ltd", "Black Tree Gaming Limited"],
-      });
+    const isPreviewBuild = process.env.IS_PREVIEW_BUILD === "true";
+    autoUpdater.allowPrerelease = channel !== "stable";
+    autoUpdater.setFeedURL({
+      provider: "github",
+      owner: "Nexus-Mods",
+      repo: isPreviewBuild ? "Vortex-Staging" : "Vortex",
+      private: false,
+      publisherName: ["Black Tree Gaming Ltd", "Black Tree Gaming Limited"],
+    });
 
-      autoUpdater.downloadUpdate().catch((unknownErr) => {
-        const err = unknownToError(unknownErr);
-        log("error", "Download failed", { error: err.message });
-        updateStatus.error = err.message;
-        installAfterDownloadFlag = false;
-      });
-    },
-  );
+    autoUpdater.downloadUpdate().catch((unknownErr) => {
+      const err = unknownToError(unknownErr);
+      log("error", "Download failed", { error: err.message });
+      updateStatus.error = err.message;
+      installAfterDownloadFlag = false;
+    });
+  });
 
   betterIpcMain.on("updater:restart-and-install", () => {
     if (process.env.NODE_ENV !== "development") {
