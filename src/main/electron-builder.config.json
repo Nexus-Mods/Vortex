@@ -1,7 +1,7 @@
 {
   "$schema": "https://github.com/electron-userland/electron-builder/raw/refs/tags/v24.13.3/packages/app-builder-lib/scheme.json",
   "appId": "com.nexusmods.vortex",
-  "includeSubNodeModules": false,
+  "includeSubNodeModules": true,
   "directories": {
     "buildResources": "./nsis",
     "app": "./build",

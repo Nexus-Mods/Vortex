@@ -67,6 +67,35 @@ Some native build pieces need CMake during local builds.
 winget install --id Microsoft.DotNet.SDK.9 -e
 ```
 
+## Enable Windows Settings
+
+The following Windows settings must be enabled. Both require an
+**Administrator** PowerShell session and a sign-out (or reboot) to take effect.
+
+### Enable Long Paths
+
+Vortex and its native modules produce paths longer than the legacy 260-character
+`MAX_PATH` limit. Enable long path support in Windows and Git:
+
+```powershell
+New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" `
+    -Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force
+git config --system core.longpaths true
+```
+
+### Enable Windows Developer Mode
+
+Developer Mode allows symlink creation without elevation, which `pnpm` and some
+native build steps rely on.
+
+```powershell
+New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" `
+    -Name "AllowDevelopmentWithoutDevLicense" -Value 1 -PropertyType DWORD -Force
+```
+
+Alternatively, enable it via **Settings → System → For developers → Developer
+Mode**.
+
 ## Verify Install
 
 ```powershell

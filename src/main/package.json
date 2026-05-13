@@ -16,7 +16,7 @@
     "test": "pnpm vitest run --config ./vitest.config.ts",
     "test:downloader": "pnpm vitest run --config ./vitest.downloader.config.ts",
     "test:adaptor": "pnpm vitest run --config ./vitest.integration.config.ts",
-    "publish": "pnpm exec rimraf ./dist && pnpm -F @vortex/main deploy ./dist && node ./dist/prepare-dist-package.mjs",
+    "publish": "pnpm exec rimraf ./dist && pnpm -F @vortex/main deploy ./dist && node ./dist/prepare-dist-package.mjs && pnpm install --dir=./dist --prod --node-linker=hoisted",
     "package": "cd ./dist && pnpm electron-builder --config ./electron-builder.config.json --config.win.forceCodeSigning=true --config.win.sign=./sign.cjs --publish never",
     "package:nosign": "cd ./dist && pnpm electron-builder --config ./electron-builder.config.json --publish never"
   },
@@ -141,6 +141,7 @@
     "@tailwindcss/cli": "catalog:",
     "@types/bluebird": "catalog:",
     "@types/uuid": "catalog:",
+    "@welldone-software/why-did-you-render": "catalog:",
     "@nexusmods/adaptor-api": "workspace:*",
     "bbcode-to-react": "catalog:",
     "big.js": "catalog:",
@@ -150,6 +151,7 @@
     "commander": "catalog:",
     "content-disposition": "catalog:",
     "content-type": "catalog:",
+    "csstype": "catalog:",
     "d3": "catalog:",
     "date-fns": "catalog:",
     "dayjs": "catalog:",
@@ -213,6 +215,7 @@
     "redux": "catalog:",
     "redux-act": "catalog:",
     "redux-batched-actions": "catalog:",
+    "redux-freeze": "catalog:",
     "redux-thunk": "catalog:",
     "relaxed-json": "catalog:",
     "reselect": "catalog:",
@@ -275,11 +278,9 @@
     "@types/ws": "catalog:",
     "@types/xml2js": "catalog:",
     "@vortex/shared": "workspace:*",
-    "@welldone-software/why-did-you-render": "catalog:",
     "cross-env": "catalog:",
     "electron": "catalog:",
     "electron-builder": "catalog:",
-    "electron-devtools-installer": "catalog:",
-    "redux-freeze": "catalog:"
+    "electron-devtools-installer": "catalog:"
   }
 }

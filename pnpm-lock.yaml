@@ -3981,6 +3981,9 @@ importers:
       '@types/uuid':
         specifier: 'catalog:'
         version: 3.4.13
+      '@welldone-software/why-did-you-render':
+        specifier: 'catalog:'
+        version: 10.0.1(react@16.14.0)
       bbcode-to-react:
         specifier: 'catalog:'
         version: https://codeload.github.com/TanninOne/bbcode-to-react/tar.gz/c67356006470e5066ea447e04a3968dca367339d(react@16.14.0)
@@ -4005,6 +4008,9 @@ importers:
       content-type:
         specifier: 'catalog:'
         version: 1.0.5
+      csstype:
+        specifier: 'catalog:'
+        version: 3.2.3
       d3:
         specifier: 'catalog:'
         version: 5.16.0
@@ -4194,6 +4200,9 @@ importers:
       redux-batched-actions:
         specifier: 'catalog:'
         version: 0.5.0(redux@4.2.1)
+      redux-freeze:
+        specifier: 'catalog:'
+        version: 0.1.7
       redux-thunk:
         specifier: 'catalog:'
         version: 2.4.2(redux@4.2.1)
@@ -4375,9 +4384,6 @@ importers:
       '@vortex/shared':
         specifier: workspace:*
         version: link:../shared
-      '@welldone-software/why-did-you-render':
-        specifier: 'catalog:'
-        version: 10.0.1(react@16.14.0)
       cross-env:
         specifier: 'catalog:'
         version: 10.1.0
@@ -4390,9 +4396,6 @@ importers:
       electron-devtools-installer:
         specifier: 'catalog:'
         version: 3.2.1
-      redux-freeze:
-        specifier: 'catalog:'
-        version: 0.1.7
 
   src/preload:
     dependencies:
