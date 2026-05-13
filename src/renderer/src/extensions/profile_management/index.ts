@@ -1163,6 +1163,30 @@ function init(context: IExtensionContext): boolean {
             commandLine?.profile === undefined &&
             commandLine?.game === undefined
           ) {
+            // Re-read state: gamemode_management's startup discovery pass
+            // (startQuickDiscovery → removeDisappearedGames) runs in parallel
+            // and may have just cleared the active game's discovery if its
+            // folder is no longer on disk. Emitting profile-did-change for a
+            // game with no discovery causes downstream handlers to call into
+            // path.join(undefined, ...). The manual-switch path already
+            // refuses this state in genOnProfileChange; do the same here.
+            const currentState: IState = store.getState();
+            const discovery = currentState.settings.gameMode.discovered[initProfile.gameId];
+            if (discovery?.path === undefined) {
+              showError(
+                store.dispatch,
+                "Game is no longer discoverable, please go to the games page and scan for, or " +
+                  "manually select the game folder.",
+                initProfile.gameId,
+                { allowReport: false },
+              );
+              store.dispatch(setCurrentProfile(undefined, undefined));
+              store.dispatch(setNextProfile(undefined));
+              if (finishProfileSwitch !== undefined) {
+                finishProfileSwitch();
+              }
+              return null;
+            }
             context.api.events.emit("profile-did-change", initProfile.id);
           }
           return null;
