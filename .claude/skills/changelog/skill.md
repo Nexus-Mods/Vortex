@@ -5,7 +5,7 @@ description: Generate a new Vortex `CHANGELOG.md` entry from merged PRs since a 
 
 # Vortex `/changelog`
 
-A skill that drafts the next entry of `C:\src\Vortex\CHANGELOG.md` from merge commits on the current release branch and presents the result for review before editing the file.
+A skill that drafts the next entry of `./CHANGELOG.md` from merge commits on the current release branch and presents the result for review before editing the file.
 
 ## When to use
 
@@ -16,6 +16,22 @@ Use this skill when the user:
 - Is preparing a Vortex pre-release (alpha/beta) or patch release and needs the entry written
 
 Do **not** use this skill to _promote_ an existing pre-release entry to stable (e.g. renaming `2.0.0-beta.3` → `2.0.0`). That workflow stays manual.
+
+## Prerequisites
+
+This skill requires:
+
+1. **GitHub CLI (`gh`)** — must be installed and authenticated with read access to the Nexus-Mods/Vortex repository
+    - Test with: `gh auth status`
+    - If not authenticated, run: `gh auth login`
+
+2. **Git remote named `origin`** — the skill assumes the primary remote is called `origin`
+    - Check with: `git remote -v`
+    - If your remote has a different name, either rename it (`git remote rename <old> origin`) or the skill will fail when fetching
+
+3. **Git Bash or WSL (Windows users)** — the git commands use Unix-style syntax
+
+If any of these are missing, surface a clear error to the user before attempting to fetch PRs.
 
 ## Inputs
 
@@ -34,7 +50,7 @@ If the user invoked `/changelog 2.0.0-beta.4 2026-05-20`, treat the first arg as
 
 ### 1. Read style exemplars
 
-Read the topmost three entries of `C:\src\Vortex\CHANGELOG.md` (e.g. `2.0.0`, `2.0.0-beta.2`, `2.0.0-beta.1`) to internalise:
+Read the topmost three entries of `./CHANGELOG.md` (e.g. `2.0.0`, `2.0.0-beta.2`, `2.0.0-beta.1`) to internalise:
 
 - The heading format: `## [VERSION] - YYYY-MM-DD`
 - Section order: `### Added` → `### Changed` → `### Fixed`
@@ -157,7 +173,7 @@ Then ask the user to confirm in plain chat: "Ready to write to CHANGELOG.md, or 
 
 After the user confirms:
 
-1. Insert the new entry **directly above** the topmost existing version heading in `C:\src\Vortex\CHANGELOG.md`. Preserve the blank lines around the headings as seen in existing entries.
+1. Insert the new entry **directly above** the topmost existing version heading in `./CHANGELOG.md`. Preserve the blank lines around the headings as seen in existing entries.
 2. Add a matching reference-style link to the bottom-of-file link list:
 
     ```
