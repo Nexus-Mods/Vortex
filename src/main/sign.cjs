@@ -4,7 +4,7 @@ const childProcess = require("child_process");
 require("dotenv").config();
 
 const TEMP_DIR = path.join(__dirname, "temp");
-const PROJECT_ROOT = path.resolve(__dirname, "..", "..");
+const PROJECT_ROOT = path.resolve(__dirname, "..", "..", "..");
 const CODE_SIGN_TOOL_DIR = path.join(PROJECT_ROOT, "CodeSignTool");
 
 // These were being incorrectly flagged by esigner as malware
