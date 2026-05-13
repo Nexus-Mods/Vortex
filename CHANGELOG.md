@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.1] - 2026-05-12
+
+### Changed
+
+- Large state changes (mass plugin sort, collection install, bulk rule edits) no longer stall Vortex ([#23049](https://github.com/Nexus-Mods/Vortex/pull/23049))
+- Theme cloning is blocked while the source theme has validation issues ([#23068](https://github.com/Nexus-Mods/Vortex/pull/23068))
+- Reduced crash-report noise: better grouping, and user-environment errors (permission denied, disk full, read-only drive) and user-cancelled actions are no longer reported as crashes ([#23050](https://github.com/Nexus-Mods/Vortex/pull/23050), [#23059](https://github.com/Nexus-Mods/Vortex/pull/23059), [#23066](https://github.com/Nexus-Mods/Vortex/pull/23066))
+- More detail captured when a Nexus API request fails ([#23101](https://github.com/Nexus-Mods/Vortex/pull/23101))
+
+### Fixed
+
+- "Deployment interrupted" failure when symlink deployment required elevation ([#23107](https://github.com/Nexus-Mods/Vortex/pull/23107))
+- nxm:// links not being captured by Vortex after 2.0.0 ([#23107](https://github.com/Nexus-Mods/Vortex/pull/23107))
+- State verifier looping on the same entries, so repair warnings reappeared on every launch ([#23112](https://github.com/Nexus-Mods/Vortex/pull/23112))
+- "NXM handler registered" notification appearing on every startup ([#23026](https://github.com/Nexus-Mods/Vortex/pull/23026))
+- Baldur's Gate 3 "pak read failed" error spam on load-order changes ([#23022](https://github.com/Nexus-Mods/Vortex/pull/23022))
+- Renderer bootloop after an outdated extension was queued for removal ([#23048](https://github.com/Nexus-Mods/Vortex/pull/23048))
+- Stardew Valley hardlink deployment failing with a self-copy error ([#23055](https://github.com/Nexus-Mods/Vortex/pull/23055))
+- Crash while loading extensions when a stale install or backup folder was present ([#23063](https://github.com/Nexus-Mods/Vortex/pull/23063))
+- Collection plugin-rules toggles shown for games without plugins ([#23018](https://github.com/Nexus-Mods/Vortex/pull/23018))
+- Awkward line breaks in game-name tooltips in the new UI ([#23019](https://github.com/Nexus-Mods/Vortex/pull/23019))
+
 ## [2.0.0] - 2026-05-06
 
 _Stable 2.0 release. See the alpha and beta entries below for the full list of changes since 1.16._
@@ -1749,6 +1771,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[2.0.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.0.1
 [2.0.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.0.0
 [2.0.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.0.0-beta.2
 [2.0.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/v2.0.0-beta.1

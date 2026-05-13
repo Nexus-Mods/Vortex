@@ -1,9 +1,6 @@
 const Promise = require("bluebird");
-const { app, remote } = require("electron");
 const path = require("path");
 const { fs, selectors, util } = require("vortex-api");
-
-const appUni = remote !== undefined ? remote.app : app;
 
 const GAME_ID = "battletech";
 const APPID = 637090;
@@ -21,7 +18,7 @@ function gameExecutable() {
 }
 
 function modPath() {
-  return path.join(appUni.getPath("documents"), "My Games", "BattleTech", "mods");
+  return path.join(util.getVortexPath("documents"), "My Games", "BattleTech", "mods");
 }
 
 function resolveGameVersion(discoveryPath) {

@@ -1,10 +1,7 @@
-const { app, remote } = require("electron");
 const path = require("path");
 const { fs, util } = require("vortex-api");
 const { Builder, parseStringPromise } = require("xml2js");
 const winapi = require("winapi-bindings");
-
-const appUni = app || remote.app;
 
 const ADDINS_FILE = "AddIns.xml";
 const STEAM_ID = 17450;
@@ -12,7 +9,7 @@ const STEAM_ID_ULTIMATE_EDITION = 47810;
 
 const VDF_EXT = ".vdf";
 
-// Static variables to store paths we resolve using appUni.
+// Static variables to store paths we resolve using util.getVortexPath.
 let _ADDINS_PATH = undefined;
 let _MODS_PATH = undefined;
 
@@ -46,7 +43,7 @@ function findGame() {
 function queryModPath() {
   if (_MODS_PATH === undefined) {
     _MODS_PATH = path.join(
-      appUni.getPath("documents"),
+      util.getVortexPath("documents"),
       "BioWare",
       "Dragon Age",
       "packages",
@@ -61,7 +58,7 @@ function queryModPath() {
 function addinsPath() {
   if (_ADDINS_PATH === undefined) {
     _ADDINS_PATH = path.join(
-      appUni.getPath("documents"),
+      util.getVortexPath("documents"),
       "Bioware",
       "Dragon Age",
       "Settings",
@@ -76,7 +73,9 @@ function prepareForModding() {
   return fs
     .ensureDirWritableAsync(queryModPath())
     .then(() =>
-      fs.ensureDirAsync(path.join(appUni.getPath("documents"), "BioWare", "Dragon Age", "AddIns")),
+      fs.ensureDirAsync(
+        path.join(util.getVortexPath("documents"), "BioWare", "Dragon Age", "AddIns"),
+      ),
     )
     .then(() => fs.ensureDirAsync(path.dirname(addinsPath())));
 }

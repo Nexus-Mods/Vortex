@@ -4,8 +4,7 @@
   "description": "Adds several BepInEx-specific modTypes and the ability to automatically download and install the library.",
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/assets/* dist",
-    "_build": "node build.mjs && pnpm extractInfo && pnpm run _assets",
-    "build": "pnpm run _build && node ../copy-extension.mjs",
+    "build": "node build.mjs && pnpm extractInfo && pnpm run _assets",
     "typecheck": "pnpm tsc"
   },
   "author": "Black Tree Gaming Ltd.",

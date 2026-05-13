@@ -4902,6 +4902,18 @@ importers:
         specifier: ^1.30.0
         version: 1.30.1(@opentelemetry/api@1.9.1)
 
+  src/stylesheets:
+    devDependencies:
+      '@tailwindcss/cli':
+        specifier: 'catalog:'
+        version: 4.2.2
+      sass:
+        specifier: 'catalog:'
+        version: 1.97.3
+      tailwindcss:
+        specifier: 'catalog:'
+        version: 4.2.2
+
 packages:
 
   7z-bin@https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/025786f01319526b56400b0410af6268adc1125c:

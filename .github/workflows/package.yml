@@ -131,10 +131,7 @@ jobs:
           echo "GYP_MSVS_VERSION=2022" >> $env:GITHUB_ENV
 
       - name: Install dependencies
-        run: pnpm install
-
-      - name: Download Runtime Dependencies
-        run: pnpm -F @vortex/main run prepare:win
+        run: pnpm install --frozen-lockfile
 
       - name: Create Signed Installer
         if: ${{ inputs.use-codesigning == true }}

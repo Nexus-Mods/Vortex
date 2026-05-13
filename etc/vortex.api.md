@@ -3083,6 +3083,13 @@ interface IOverlaysState {
 // @public
 interface IPersistor {
     // (undocumented)
+    bulkRemoveItem?(keys: ReadonlyArray<PersistorKey>): PromiseLike<void>;
+    // (undocumented)
+    bulkSetItem?(items: ReadonlyArray<{
+        key: PersistorKey;
+        value: string;
+    }>): PromiseLike<void>;
+    // (undocumented)
     getAllKeys(): PromiseLike<PersistorKey[]>;
     // (undocumented)
     getAllKVs?(prefix?: string): PromiseLike<Array<{

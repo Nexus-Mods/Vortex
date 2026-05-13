@@ -4,8 +4,7 @@
   "description": "Feedback page",
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/stylesheets/feedback.scss issues.json dist",
-    "_build": "node build.mjs && pnpm extractInfo && pnpm run _assets",
-    "build": "pnpm run _build && node ../copy-extension.mjs",
+    "build": "node build.mjs && pnpm extractInfo && pnpm run _assets",
     "typecheck": "pnpm tsc"
   },
   "author": "Black Tree Gaming Ltd.",

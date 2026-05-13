@@ -1,10 +1,7 @@
 const Promise = require("bluebird");
 const path = require("path");
 const winapi = require("winapi-bindings");
-const { app, remote } = require("electron");
 const { actions, fs, util } = require("vortex-api");
-
-const uniApp = app || remote.app;
 
 let _API;
 const GAME_ID = "dawnofman";
@@ -15,7 +12,7 @@ const SCENE_FILE_EXT = ".scn.xml";
 const UMM_MOD_INFO = "Info.json";
 
 function getSceneFolder() {
-  return path.join(uniApp.getPath("documents"), "DawnOfMan", "Scenarios");
+  return path.join(util.getVortexPath("documents"), "DawnOfMan", "Scenarios");
 }
 
 function readRegistryKey(hive, key, name) {

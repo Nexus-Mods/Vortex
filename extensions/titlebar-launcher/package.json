@@ -7,8 +7,7 @@
   },
   "scripts": {
     "_assets": "copyfiles -u 1 -f titlebar-launcher.scss src/images/* dist",
-    "_build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
-    "build": "pnpm run _build && node ../copy-extension.mjs",
+    "build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
     "typecheck": "pnpm tsc"
   },
   "author": "Black Tree Gaming Ltd.",

@@ -4,8 +4,7 @@
   "description": "This is a stub of the Palworld extension. It will be downloaded the first time it's managed.",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",
-    "_build": "copyfiles -u 1 -f ./src/index.js dist && pnpm run _assets && pnpm extractInfo",
-    "build": "pnpm run _build && node ../../copy-extension.mjs"
+    "build": "copyfiles -u 1 -f ./src/index.js dist && pnpm run _assets && pnpm extractInfo"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

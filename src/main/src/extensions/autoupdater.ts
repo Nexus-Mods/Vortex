@@ -165,11 +165,16 @@ export function setupAutoUpdater(installType: string): void {
         const updateVersion = check?.updateInfo?.version;
 
         // Auto-download patch updates for regular installs;
-        // minor/major updates require user-initiated download via renderer
+        // minor/major updates require user-initiated download via renderer.
+        // Require strict-newer: with allowDowngrade = true the feed may
+        // report the current version as "latest", which would otherwise
+        // satisfy the `~current` range and trigger a bogus downloadUpdate
+        // that electron-updater rejects with "Please check update first".
         if (
           installType === "regular" &&
           currentVersion != null &&
           updateVersion != null &&
+          semver.gt(updateVersion, currentVersion.version) &&
           semver.satisfies(updateVersion, `~${currentVersion.version}`, {
             includePrerelease: true,
           })

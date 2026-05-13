@@ -5,7 +5,7 @@
   "directories": {
     "buildResources": "./nsis",
     "app": "./build",
-    "output": "../../dist"
+    "output": "../../../dist"
   },
   "win": {
     "target": "nsis",
@@ -37,7 +37,7 @@
   },
   "linux": {
     "target": ["zip"],
-    "icon": "../../assets/images/vortex.png",
+    "icon": "../../../assets/images/vortex.png",
     "category": "Network;Development;Game;",
     "synopsis": "Mod Manager",
     "description": "The elegant, powerful, and open-source mod manager from Nexus Mods.",
@@ -49,7 +49,7 @@
     "./temp/windowsdesktop-runtime-win-x64.exe",
     "./nsis/**/*",
     {
-      "from": "../../locales",
+      "from": "../../../locales",
       "to": "locales"
     }
   ],

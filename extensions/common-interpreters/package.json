@@ -5,8 +5,7 @@
   "description": "Adds support for running java, python, ... executables",
   "license": "GPL-3.0",
   "scripts": {
-    "_build": "node build.mjs && pnpm extractInfo",
-    "build": "pnpm run _build && node ../copy-extension.mjs",
+    "build": "node build.mjs && pnpm extractInfo",
     "typecheck": "pnpm tsc"
   },
   "devDependencies": {

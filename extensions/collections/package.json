@@ -7,8 +7,7 @@
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/language.json src/icons.svg src/collectionicon.svg style.scss src/assets/fallback_tile.png dist",
     "_wasm": "node -e \"require('fs').copyFileSync(require('path').resolve(process.cwd(),'node_modules/@hot-updater/bsdiff/assets/hdiff.wasm'), require('path').resolve(process.cwd(),'dist/hdiff.wasm'))\"",
-    "_build": "node build.mjs && pnpm run _assets && pnpm run _wasm && pnpm extractInfo",
-    "build": "pnpm run _build && node ../copy-extension.mjs",
+    "build": "node build.mjs && pnpm run _assets && pnpm run _wasm && pnpm extractInfo",
     "typecheck": "pnpm tsc"
   },
   "devDependencies": {

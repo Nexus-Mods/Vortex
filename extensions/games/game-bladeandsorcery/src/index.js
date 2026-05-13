@@ -3,9 +3,6 @@ const path = require("path");
 const { actions, fs, FlexLayout, log, selectors, util } = require("vortex-api");
 const semver = require("semver");
 
-const { app, remote } = require("electron");
-const uniApp = app || remote.app;
-
 const {
   BAS_EXEC,
   GAME_ID,
@@ -413,7 +410,10 @@ function infoComponent(context, props) {
 }
 
 function resolveGameVersion(api, discoveryPath) {
-  if (process.env.NODE_ENV !== "development" && semver.satisfies(uniApp.getVersion(), "<1.4.0")) {
+  if (
+    process.env.NODE_ENV !== "development" &&
+    semver.satisfies(util.getApplication().version, "<1.4.0")
+  ) {
     return Promise.reject(new util.ProcessCanceled("not supported in older Vortex versions"));
   }
   return getMinModVersion(discoveryPath, BAS_EXEC, true)

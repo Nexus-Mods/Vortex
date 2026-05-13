@@ -1,0 +1,48 @@
+{
+  "$schema": "https://www.schemastore.org/package.json",
+  "name": "@vortex/stylesheets",
+  "private": true,
+  "scripts": {
+    "sass": "pnpm exec sass --style compressed --silence-deprecation=import ./loadingScreen.scss ./dist/loadingScreen.css",
+    "tailwind": "pnpm exec tailwindcss -i ./tailwind-v4.css -o ./dist/tailwind-v4.css -m"
+  },
+  "nx": {
+    "targets": {
+      "build": {
+        "executor": "nx:noop",
+        "dependsOn": [
+          "sass",
+          "tailwind"
+        ],
+        "cache": false,
+        "inputs": [],
+        "outputs": []
+      },
+      "sass": {
+        "cache": true,
+        "inputs": [
+          "default",
+          "{projectRoot}/**/*.scss"
+        ],
+        "outputs": [
+          "{projectRoot}/dist/loadingScreen.css"
+        ]
+      },
+      "tailwind": {
+        "cache": true,
+        "inputs": [
+          "default",
+          "{projectRoot}/**/*.css"
+        ],
+        "outputs": [
+          "{projectRoot}/dist/tailwind-v4.css"
+        ]
+      }
+    }
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "catalog:",
+    "sass": "catalog:",
+    "tailwindcss": "catalog:"
+  }
+}

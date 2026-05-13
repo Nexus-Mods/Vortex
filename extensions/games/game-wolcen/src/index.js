@@ -1,11 +1,8 @@
 const Promise = require("bluebird");
-const { app, remote } = require("electron");
 const _ = require("lodash");
 const path = require("path");
 const { fs, log, selectors, util } = require("vortex-api");
 const { Builder, parseStringPromise } = require("xml2js");
-
-const appUni = remote !== undefined ? remote.app : app;
 
 const GAME_ID = "wolcenlordsofmayhem";
 const APPID = 424370;

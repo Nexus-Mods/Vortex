@@ -3,8 +3,7 @@
   "version": "0.2.5",
   "description": "QuickBMS extractor support",
   "scripts": {
-    "_build": "node build.mjs && node download_dependencies.js && pnpm extractInfo",
-    "build": "pnpm run _build && node ../copy-extension.mjs",
+    "build": "node build.mjs && node download_dependencies.js && pnpm extractInfo",
     "typecheck": "pnpm tsc"
   },
   "author": "Black Tree Gaming Ltd.",

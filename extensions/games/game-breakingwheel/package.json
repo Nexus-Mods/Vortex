@@ -11,8 +11,7 @@
   },
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",
-    "_build": "copyfiles -u 1 -f ./src/*.js dist && pnpm run _assets && pnpm extractInfo",
-    "build": "pnpm run _build && node ../../copy-extension.mjs"
+    "build": "copyfiles -u 1 -f ./src/*.js dist && pnpm run _assets && pnpm extractInfo"
   },
   "devDependencies": {
     "vortex-api": "workspace:*"

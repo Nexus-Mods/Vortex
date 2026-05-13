@@ -3,8 +3,7 @@
   "version": "0.1.0",
   "description": "Allows Gamebryo plugins to be locked to a specific index",
   "scripts": {
-    "_build": "node build.mjs && pnpm extractInfo",
-    "build": "pnpm run _build && node ../copy-extension.mjs",
+    "build": "node build.mjs && pnpm extractInfo",
     "typecheck": "pnpm tsc"
   },
   "author": "Black Tree Gaming Ltd.",

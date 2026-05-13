@@ -1,34 +1,127 @@
 {
   "$schema": "https://www.schemastore.org/package.json",
   "name": "@vortex/main",
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0-only",
   "version": "1.0.0",
   "private": true,
   "type": "commonjs",
   "main": "build/main.cjs",
   "scripts": {
-    "start": "pnpm cross-env NODE_ENV=development pnpm electron .",
-    "build": "pnpm cross-env NODE_ENV=development node ./build.mjs",
-    "dist": "pnpm cross-env NODE_ENV=production node ./build.mjs",
+    "start": "pnpm electron .",
+    "build": "node ./build.mjs",
     "typecheck": "pnpm tsc",
     "lint": "pnpm eslint --quiet --concurrency auto .",
     "lint:verbose": "pnpm eslint --concurrency auto .",
     "test": "pnpm vitest run --config ./vitest.config.ts",
     "test:downloader": "pnpm vitest run --config ./vitest.downloader.config.ts",
     "test:adaptor": "pnpm vitest run --config ./vitest.integration.config.ts",
-    "package": "node ./prepare-dist-package.mjs && pnpm install --dir=./build && pnpm electron-builder --config ./electron-builder.config.json --config.win.forceCodeSigning=true --config.win.sign=./sign.cjs --publish never",
-    "package:nosign": "node ./prepare-dist-package.mjs && pnpm install --dir=./build && pnpm electron-builder --config ./electron-builder.config.json --publish never",
-    "prepare:win": "curl -L \"https://aka.ms/vs/17/release/vc_redist.x64.exe\" -o \"./temp/VC_redist.x64.exe\" --create-dirs && curl -L \"https://aka.ms/dotnet/9.0/windowsdesktop-runtime-win-x64.exe\" -o \"./temp/windowsdesktop-runtime-win-x64.exe\" --create-dirs"
+    "publish": "pnpm exec rimraf ./dist && pnpm -F @vortex/main deploy ./dist && node ./dist/prepare-dist-package.mjs",
+    "package": "cd ./dist && pnpm electron-builder --config ./electron-builder.config.json --config.win.forceCodeSigning=true --config.win.sign=./sign.cjs --publish never",
+    "package:nosign": "cd ./dist && pnpm electron-builder --config ./electron-builder.config.json --publish never"
   },
   "nx": {
     "targets": {
       "start": {
         "continuous": true,
+        "cache": false,
         "dependsOn": [
           "build"
+        ]
+      },
+      "build": {
+        "dependsOn": [
+          "copy-assets",
+          "copy-extensions",
+          "^build"
+        ],
+        "cache": false
+      },
+      "publish": {
+        "dependsOn": [
+          "build"
+        ]
+      },
+      "package": {
+        "cache": false,
+        "dependsOn": [
+          "publish"
+        ]
+      },
+      "package:nosign": {
+        "cache": false,
+        "dependsOn": [
+          "publish"
+        ]
+      },
+      "copy-assets": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "node ./copy-assets.mjs",
+          "cwd": "{projectRoot}"
+        },
+        "dependsOn": [
+          {
+            "target": "build",
+            "projects": "@vortex/stylesheets"
+          }
+        ],
+        "cache": true,
+        "inputs": [
+          "default",
+          {
+            "dependentTasksOutputFiles": "**/dist/**"
+          },
+          "{projectRoot}/copy-assets.mjs",
+          "{workspaceRoot}/src/stylesheets/**/*.scss",
+          "{workspaceRoot}/src/renderer/src/index.html",
+          "{workspaceRoot}/src/renderer/src/splash.html",
+          "{workspaceRoot}/src/queries/**/*",
+          "{workspaceRoot}/assets/**/*",
+          "{workspaceRoot}/LICENSE.md"
+        ],
+        "outputs": [
+          "{projectRoot}/build/assets/",
+          "{projectRoot}/build/queries/",
+          "{projectRoot}/build/index.html",
+          "{projectRoot}/build/splash.html",
+          "{projectRoot}/build/LICENSE.md",
+          "{projectRoot}/build/modules.json"
+        ]
+      },
+      "copy-extensions": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "node ./copy-extensions.mjs",
+          "cwd": "{projectRoot}"
+        },
+        "dependsOn": [
+          {
+            "target": "build",
+            "projects": "tag:vortex:extension"
+          }
+        ],
+        "cache": true,
+        "inputs": [
+          "default",
+          {
+            "dependentTasksOutputFiles": "**/dist/**"
+          },
+          "{projectRoot}/copy-extensions.mjs"
+        ],
+        "outputs": [
+          "{projectRoot}/build/bundledPlugins/"
         ]
       }
     }
   },
+  "files": [
+    "./build",
+    "./nsis/",
+    "./electron-builder.config.json",
+    "./prepare-dist-package.mjs",
+    "./sign.cjs"
+  ],
   "dependencies": {
     "@duckdb/node-api": "catalog:",
     "@electron/remote": "catalog:",

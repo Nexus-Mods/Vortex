@@ -1,4 +1,3 @@
-const { remote } = require("electron");
 const { fs, log, util } = require("vortex-api");
 const path = require("path");
 
@@ -10,7 +9,7 @@ function findGame() {
 
 function modPath() {
   return path.join(
-    remote.app.getPath("documents"),
+    util.getVortexPath("documents"),
     "Almost Human",
     "Legend of Grimrock",
     "Dungeons",

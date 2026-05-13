@@ -1,5 +1,4 @@
 const Promise = require("bluebird");
-const { remote } = require("electron");
 const path = require("path");
 const winapi = require("winapi-bindings");
 const { log, fs, util } = require("vortex-api");
@@ -36,7 +35,7 @@ function findGame() {
 }
 
 function modPath() {
-  return path.join(remote.app.getPath("appData"), "Surviving Mars", "mods");
+  return path.join(util.getVortexPath("appData"), "Surviving Mars", "mods");
 }
 
 function prepareForModding() {

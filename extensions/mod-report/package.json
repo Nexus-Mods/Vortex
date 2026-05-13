@@ -5,8 +5,7 @@
   "license": "GPL-3.0",
   "author": "Black Tree Gaming Ltd.",
   "scripts": {
-    "_build": "node build.mjs && pnpm extractInfo",
-    "build": "pnpm run _build && node ../copy-extension.mjs",
+    "build": "node build.mjs && pnpm extractInfo",
     "typecheck": "pnpm tsc"
   },
   "devDependencies": {

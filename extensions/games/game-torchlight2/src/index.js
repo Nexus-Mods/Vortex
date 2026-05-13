@@ -1,9 +1,6 @@
 const path = require("path");
-const { app, remote } = require("electron");
 const winapi = require("winapi-bindings");
 const { fs, util } = require("vortex-api");
-
-const appUni = app || remote.app;
 
 // Nexus Mods id for the game.
 const GAME_ID = "torchlight2";
@@ -16,7 +13,13 @@ const MOD_EXT = ".mod";
 const extension = process.platform == "linux" ? ".bin.x86" : ".exe";
 
 function modPath() {
-  return path.join(appUni.getPath("documents"), "My Games", "runic games", "torchlight 2", "mods");
+  return path.join(
+    util.getVortexPath("documents"),
+    "My Games",
+    "runic games",
+    "torchlight 2",
+    "mods",
+  );
 }
 
 function findGame() {

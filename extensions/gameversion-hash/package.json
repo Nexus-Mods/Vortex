@@ -3,8 +3,7 @@
   "version": "1.0.2",
   "description": "An alternative to conventional game version resolution aiming to identify game version based on file hashes. This is useful when the game is in Early Access or the user facing version is not easily resolved.",
   "scripts": {
-    "_build": "node build.mjs && pnpm extractInfo",
-    "build": "pnpm run _build && node ../copy-extension.mjs",
+    "build": "node build.mjs && pnpm extractInfo",
     "typecheck": "pnpm tsc"
   },
   "author": "Black Tree Gaming Ltd.",

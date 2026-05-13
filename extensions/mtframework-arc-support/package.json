@@ -3,8 +3,7 @@
   "version": "0.1.1",
   "description": "Support for arc archives used in MT Framework (Capcom) games",
   "scripts": {
-    "_build": "node build.mjs && node download_arctool.js && pnpm extractInfo",
-    "build": "pnpm run _build && node ../copy-extension.mjs",
+    "build": "node build.mjs && node download_arctool.js && pnpm extractInfo",
     "typecheck": "pnpm tsc"
   },
   "author": "Black Tree Gaming Ltd.",

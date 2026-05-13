@@ -6,7 +6,7 @@
     "_assets": "copyfiles -u 1 -f ./src/stylesheets/plugin_management.scss ./src/language.json ./src/loot_icon.png dist",
     "_native": "node ../copy-native.mjs ./node_modules/loot/build/Release/node-loot.node ./node_modules/loot/loot_api/libloot.dll ./node_modules/loot/async.js && node -e \"const fs=require('fs');const f='dist/async.js';let c=fs.readFileSync(f,'utf8');c=c.replace('./build/Release/node-loot','./node-loot');fs.writeFileSync(f,c);\"",
     "_build": "node build.mjs && pnpm run _assets && pnpm run _native && pnpm extractInfo",
-    "build": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build && node ../copy-extension.mjs)",
+    "build": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build)",
     "typecheck": "pnpm tsc"
   },
   "author": "Black Tree Gaming Ltd.",

@@ -1,5 +1,4 @@
 /* eslint-disable */
-const { app, remote } = require("electron");
 const Big = require("big.js");
 const Promise = require("bluebird");
 const { parseStringPromise } = require("xml2js");
@@ -9,7 +8,6 @@ const winapi = require("winapi-bindings");
 
 const semver = require("semver");
 
-const APPUNI = app || remote.app;
 const GAME_ID = "x4foundations";
 const I18N_NAMESPACE = `game-${GAME_ID}`;
 const STEAM_ID = 392160;
@@ -227,8 +225,8 @@ function steamUserId32Bit() {
 
 function getDocumentsModPath() {
   return _STEAM_ENTRY !== undefined
-    ? path.join(APPUNI.getPath("documents"), "Egosoft", "X4", steamUserId32Bit(), "extensions")
-    : path.join(APPUNI.getPath("documents"), "Egosoft", "X4", "extensions");
+    ? path.join(util.getVortexPath("documents"), "Egosoft", "X4", steamUserId32Bit(), "extensions")
+    : path.join(util.getVortexPath("documents"), "Egosoft", "X4", "extensions");
 }
 
 function migrate101(api, oldVersion) {

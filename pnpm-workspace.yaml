@@ -7,6 +7,7 @@ packages:
   - ./src/preload
   - ./src/main
   - ./src/renderer
+  - ./src/stylesheets
   - ./extensions/*
   - ./extensions/games/*
 
@@ -287,6 +288,7 @@ dedupePeers: true
 
 engineStrict: true
 failIfNoMatch: true
+forceLegacyDeploy: true
 
 overrides:
   "@types/react": "16"
