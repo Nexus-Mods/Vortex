@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - "v*"
+      - "release/*"
 
 permissions:
   contents: read
