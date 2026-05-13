@@ -3,6 +3,8 @@ import path from "path";
 import PromiseBB from "bluebird";
 import memoize from "memoize-one";
 
+import type { IState } from "@/types/api";
+
 import type { IExtensionApi, IExtensionContext } from "../../types/IExtensionContext";
 import type { ITestResult } from "../../types/ITestResult";
 import * as fs from "../../util/fs";
@@ -109,7 +111,7 @@ function init(context: IExtensionContext): boolean {
     2,
     100,
     Tools,
-    undefined,
+    (state: IState) => !state.settings.window.useModernLayout,
     () => ({
       onGetValidTools,
     }),
