@@ -18,16 +18,8 @@
 import type { IFilesystem } from "../IFilesystem";
 import type { IResolverBase } from "../IResolver";
 import type { RelativePath, ResolvedPath } from "../types";
-
-import {
-  RelativePath as RelativePathNS,
-  ResolvedPath as ResolvedPathNS,
-} from "../types";
-import {
-  MappingResolver,
-  fromFunction,
-  type MappingStrategy,
-} from "./MappingResolver";
+import { RelativePath as RelativePathNS, ResolvedPath as ResolvedPathNS } from "../types";
+import { MappingResolver, fromFunction, type MappingStrategy } from "./MappingResolver";
 
 /**
  * Valid Unix anchor (single 'root' anchor)
@@ -63,10 +55,7 @@ export class UnixResolver extends MappingResolver<UnixAnchor> {
    * Override to use POSIX path joining semantics
    * This ensures correct path joining even on non-Unix platforms (e.g., Windows)
    */
-  protected joinPaths(
-    base: ResolvedPath,
-    relative: RelativePath,
-  ): ResolvedPath {
+  protected joinPaths(base: ResolvedPath, relative: RelativePath): ResolvedPath {
     if (relative === RelativePathNS.EMPTY) {
       return base;
     }

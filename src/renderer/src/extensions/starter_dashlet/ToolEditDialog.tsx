@@ -1,21 +1,3 @@
-import { displayGroup } from "../../actions/session";
-import { FormPathItem, FormTextItem } from "../../controls/FormFields";
-import More from "../../controls/More";
-import Toggle from "../../controls/Toggle";
-import { Button } from "../../controls/TooltipControls";
-import type { ThunkDispatch } from "redux-thunk";
-import type { IDiscoveredTool } from "../../types/IDiscoveredTool";
-import type StarterInfo from "../../util/StarterInfo";
-
-import {
-  addDiscoveredTool,
-  setGameParameters,
-} from "../gamemode_management/actions/settings";
-
-import * as selectors from "../../util/selectors";
-
-import ToolIcon from "../../controls/ToolIcon";
-
 import * as React from "react";
 import {
   Col,
@@ -27,11 +9,26 @@ import {
   ToggleButton,
   ToggleButtonGroup,
 } from "react-bootstrap";
+import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
+
+import { displayGroup } from "../../actions/session";
+import { FormPathItem, FormTextItem } from "../../controls/FormFields";
+import More from "../../controls/More";
+import Toggle from "../../controls/Toggle";
+import ToolIcon from "../../controls/ToolIcon";
+import { Button } from "../../controls/TooltipControls";
+import type { IDiscoveredTool } from "../../types/IDiscoveredTool";
+import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
+import * as selectors from "../../util/selectors";
+import type StarterInfo from "../../util/StarterInfo";
+import { MainContext } from "../../views/MainWindow";
+import { addDiscoveredTool, setGameParameters } from "../gamemode_management/actions/settings";
 import type { IGameStored } from "../gamemode_management/types/IGameStored";
 import type { IToolStored } from "../gamemode_management/types/IToolStored";
-import { useTranslation } from "react-i18next";
-
+import Environment from "./Environment";
 import {
   toDirname,
   isEqual,
@@ -41,11 +38,6 @@ import {
   splitCommandLine,
   resolveToolName,
 } from "./util";
-import { MainContext } from "../../views/MainWindow";
-import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
-import { useSelector } from "react-redux";
-
-import Environment from "./Environment";
 
 export interface IBaseProps {
   tool: StarterInfo;
@@ -86,9 +78,7 @@ export default function ToolEditDialog(props: IProps) {
 
   let exePathPlaceholder = t("Target");
   const predefinedToolPath = (
-    (game?.supportedTools ?? []).find(
-      (st) => st.id === editTool.id,
-    ) as IToolStored
+    (game?.supportedTools ?? []).find((st) => st.id === editTool.id) as IToolStored
   )?.executable;
   if (predefinedToolPath !== undefined) {
     exePathPlaceholder = `../${predefinedToolPath}`;
@@ -147,9 +137,7 @@ export default function ToolEditDialog(props: IProps) {
     (filePath: string) => {
       updateImage(tool, filePath, (err) => {
         if (err !== null) {
-          const reportable = !(
-            err instanceof ProcessCanceled || err instanceof UserCanceled
-          );
+          const reportable = !(err instanceof ProcessCanceled || err instanceof UserCanceled);
           if (reportable) {
             onShowError("Failed to change tool icon", err, false);
           }
@@ -212,10 +200,7 @@ export default function ToolEditDialog(props: IProps) {
 
   const saveAndClose = React.useCallback(() => {
     if (editTool.isGame) {
-      const envCustomized = !isEqual(
-        editTool.environment,
-        tool.originalEnvironment,
-      );
+      const envCustomized = !isEqual(editTool.environment, tool.originalEnvironment);
       onSetGameParameters(editTool.gameId, {
         workingDirectory: editTool.workingDirectory,
         iconPath: editTool.iconPath,
@@ -230,11 +215,7 @@ export default function ToolEditDialog(props: IProps) {
       onAddTool(editTool.gameId, editTool.id, toToolDiscovery(editTool));
     }
     onClose();
-    context.api.events.emit(
-      "analytics-track-click-event",
-      "Tools",
-      "Edited tool",
-    );
+    context.api.events.emit("analytics-track-click-event", "Tools", "Edited tool");
   }, [editTool, onAddTool, onClose]);
 
   return (
@@ -316,9 +297,7 @@ export default function ToolEditDialog(props: IProps) {
               />
               {haveEnvironment ? (
                 <ControlLabel style={{ paddingTop: 0 }}>
-                  {t(
-                    'Tools with environments can\'t be started from the "Tasks" list',
-                  )}
+                  {t('Tools with environments can\'t be started from the "Tasks" list')}
                 </ControlLabel>
               ) : null}
             </Col>
@@ -329,11 +308,7 @@ export default function ToolEditDialog(props: IProps) {
             </Col>
             <Col sm={9}>
               <FormControl.Static>
-                <Button
-                  id="change-tool-icon"
-                  tooltip={t("Change")}
-                  onClick={onHandleChangeIcon}
-                >
+                <Button id="change-tool-icon" tooltip={t("Change")} onClick={onHandleChangeIcon}>
                   <ToolIcon
                     item={editTool}
                     imageUrl={editTool.iconPath}
@@ -440,14 +415,11 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, null, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onAddTool: (gameId, toolId, result) =>
       dispatch(addDiscoveredTool(gameId, toolId, result, true)),
     onEditEnv: (itemId: string) => dispatch(displayGroup("envEdit", itemId)),
-    onSetGameParameters: (gameId, parameters) =>
-      dispatch(setGameParameters(gameId, parameters)),
+    onSetGameParameters: (gameId, parameters) => dispatch(setGameParameters(gameId, parameters)),
   };
 }

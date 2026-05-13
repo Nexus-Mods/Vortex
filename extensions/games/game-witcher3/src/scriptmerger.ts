@@ -1,12 +1,13 @@
 /* eslint-disable */
 import https from "https";
 import path from "path";
-import _ from "lodash";
 import url from "url";
-import { Builder, parseStringPromise } from "xml2js";
-import semver from "semver";
+
 import getVersion from "exe-version";
+import _ from "lodash";
+import semver from "semver";
 import { actions, fs, types, log, util } from "vortex-api";
+import { Builder, parseStringPromise } from "xml2js";
 
 import { IIncomingGithubHttpHeaders } from "./types";
 
@@ -121,12 +122,7 @@ async function getMergerVersion(api: types.IExtensionApi) {
           const trimmedVersion = execVersion.split(".").slice(0, 3).join(".");
           const newToolDetails = { ...merger, mergerVersion: trimmedVersion };
           api.store.dispatch(
-            actions.addDiscoveredTool(
-              "witcher3",
-              SCRIPT_MERGER_ID,
-              newToolDetails,
-              true,
-            ),
+            actions.addDiscoveredTool("witcher3", SCRIPT_MERGER_ID, newToolDetails, true),
           );
           return Promise.resolve(trimmedVersion);
         }
@@ -141,10 +137,9 @@ let _HASH_CACHE;
 async function getCache(api: types.IExtensionApi) {
   if (_HASH_CACHE === undefined) {
     try {
-      const data = await fs.readFileAsync(
-        path.join(__dirname, "MD5Cache.json"),
-        { encoding: "utf8" },
-      );
+      const data = await fs.readFileAsync(path.join(__dirname, "MD5Cache.json"), {
+        encoding: "utf8",
+      });
       _HASH_CACHE = JSON.parse(data);
     } catch (err) {
       // If this ever happens - the user's machine must be screwed.
@@ -164,9 +159,7 @@ async function onDownloadComplete(api, archivePath, mostRecentVersion) {
     try {
       archiveHash = await getHash(archivePath);
     } catch (err) {
-      return Promise.reject(
-        new MD5ComparisonError("Failed to calculate hash", archivePath),
-      );
+      return Promise.reject(new MD5ComparisonError("Failed to calculate hash", archivePath));
     }
     const hashCache = await getCache(api);
     if (
@@ -177,9 +170,7 @@ async function onDownloadComplete(api, archivePath, mostRecentVersion) {
       ) === undefined
     ) {
       // Not a valid hash - something may have happened during the download ?
-      return reject(
-        new MD5ComparisonError("Corrupted archive download", archivePath),
-      );
+      return reject(new MD5ComparisonError("Corrupted archive download", archivePath));
     }
 
     return resolve(archivePath);
@@ -191,22 +182,17 @@ async function onDownloadComplete(api, archivePath, mostRecentVersion) {
       try {
         execHash = await getHash(mergerExec);
       } catch (err) {
-        return Promise.reject(
-          new MD5ComparisonError("Failed to calculate hash", mergerExec),
-        );
+        return Promise.reject(new MD5ComparisonError("Failed to calculate hash", mergerExec));
       }
       const hashCache = await getCache(api);
       if (
         hashCache.find(
           (entry) =>
-            entry.execChecksum.toLowerCase() === execHash &&
-            entry.version === mostRecentVersion,
+            entry.execChecksum.toLowerCase() === execHash && entry.version === mostRecentVersion,
         ) === undefined
       ) {
         // Not a valid hash - something may have happened during extraction ?
-        return Promise.reject(
-          new MD5ComparisonError("Corrupted executable", mergerExec),
-        );
+        return Promise.reject(new MD5ComparisonError("Corrupted executable", mergerExec));
       }
 
       return Promise.resolve(mergerPath);
@@ -256,15 +242,10 @@ export async function downloadScriptMerger(api: types.IExtensionApi) {
   return query(GITHUB_URL, "releases")
     .then((releases) => {
       if (!Array.isArray(releases)) {
-        return Promise.reject(
-          new util.DataInvalid("expected array of github releases"),
-        );
+        return Promise.reject(new util.DataInvalid("expected array of github releases"));
       }
       const current = releases
-        .filter(
-          (rel) =>
-            semver.valid(rel.name) && semver.gte(rel.name, RELEASE_CUTOFF),
-        )
+        .filter((rel) => semver.valid(rel.name) && semver.gte(rel.name, RELEASE_CUTOFF))
         .sort((lhs, rhs) => semver.compare(rhs.name, lhs.name));
 
       return Promise.resolve(current);
@@ -298,11 +279,7 @@ export async function downloadScriptMerger(api: types.IExtensionApi) {
             .request(options, (res) => {
               return res.headers["location"] !== undefined
                 ? resolve(res.headers["location"])
-                : reject(
-                    new util.ProcessCanceled(
-                      "Failed to resolve download location",
-                    ),
-                  );
+                : reject(new util.ProcessCanceled("Failed to resolve download location"));
             })
             .on("error", (err) => reject(err))
             .end();
@@ -314,19 +291,13 @@ export async function downloadScriptMerger(api: types.IExtensionApi) {
               res.setEncoding("binary");
               const headers = res.headers as IIncomingGithubHttpHeaders;
               const contentLength = parseInt(headers?.["content-length"], 10);
-              const callsRemaining = parseInt(
-                headers?.["x-ratelimit-remaining"],
-                10,
-              );
+              const callsRemaining = parseInt(headers?.["x-ratelimit-remaining"], 10);
               if (res.statusCode === 403 && callsRemaining === 0) {
-                const resetDate =
-                  parseInt(headers?.["x-ratelimit-reset"], 10) * 1000;
+                const resetDate = parseInt(headers?.["x-ratelimit-reset"], 10) * 1000;
                 log("info", "GitHub rate limit exceeded", {
                   reset_at: new Date(resetDate).toString(),
                 });
-                return reject(
-                  new util.ProcessCanceled("GitHub rate limit exceeded"),
-                );
+                return reject(new util.ProcessCanceled("GitHub rate limit exceeded"));
               }
 
               let output = "";
@@ -350,11 +321,9 @@ export async function downloadScriptMerger(api: types.IExtensionApi) {
                   });
                   api.dismissNotification(downloadNotifId);
                   return fs
-                    .writeFileAsync(
-                      path.join(discovery.path, fileName),
-                      output,
-                      { encoding: "binary" },
-                    )
+                    .writeFileAsync(path.join(discovery.path, fileName), output, {
+                      encoding: "binary",
+                    })
                     .then(() => resolve(path.join(discovery.path, fileName)))
                     .catch((err) => reject(err));
                 });
@@ -366,8 +335,7 @@ export async function downloadScriptMerger(api: types.IExtensionApi) {
 
       if (
         !!currentlyInstalledVersion ||
-        (currentlyInstalledVersion === undefined &&
-          !!discovery?.tools?.W3ScriptMerger)
+        (currentlyInstalledVersion === undefined && !!discovery?.tools?.W3ScriptMerger)
       ) {
         api.sendNotification({
           id: "merger-update",
@@ -382,16 +350,11 @@ export async function downloadScriptMerger(api: types.IExtensionApi) {
               action: (dismiss) => {
                 dismiss();
                 return download()
-                  .then((archivePath) =>
-                    onDownloadComplete(api, archivePath, mostRecentVersion),
-                  )
+                  .then((archivePath) => onDownloadComplete(api, archivePath, mostRecentVersion))
                   .catch((err) => {
                     api.dismissNotification(extractNotifId);
                     api.dismissNotification(downloadNotifId);
-                    if (
-                      err instanceof MD5ComparisonError ||
-                      err instanceof util.ProcessCanceled
-                    ) {
+                    if (err instanceof MD5ComparisonError || err instanceof util.ProcessCanceled) {
                       log(
                         "error",
                         "Failed to automatically install Script Merger",
@@ -399,18 +362,15 @@ export async function downloadScriptMerger(api: types.IExtensionApi) {
                       );
                       api.sendNotification({
                         type: "error",
-                        message: api.translate(
-                          "Please install Script Merger manually",
-                          { ns: "game-witcher3" },
-                        ),
+                        message: api.translate("Please install Script Merger manually", {
+                          ns: "game-witcher3",
+                        }),
                         actions: [
                           {
                             title: "Install Manually",
                             action: () =>
                               util
-                                .opn(
-                                  "https://www.nexusmods.com/witcher3/mods/484",
-                                )
+                                .opn("https://www.nexusmods.com/witcher3/mods/484")
                                 .catch((err) => null),
                           },
                         ],
@@ -440,16 +400,10 @@ export async function downloadScriptMerger(api: types.IExtensionApi) {
 
       return downloadConsent(api).then(() => download());
     })
-    .then((archivePath) =>
-      onDownloadComplete(api, archivePath, mostRecentVersion),
-    )
+    .then((archivePath) => onDownloadComplete(api, archivePath, mostRecentVersion))
     .catch(async (err) => {
       const raiseManualInstallNotif = () => {
-        log(
-          "error",
-          "Failed to automatically install Script Merger",
-          err.errorMessage,
-        );
+        log("error", "Failed to automatically install Script Merger", err.errorMessage);
         api.sendNotification({
           type: "error",
           message: api.translate("Please install Script Merger manually", {
@@ -459,9 +413,7 @@ export async function downloadScriptMerger(api: types.IExtensionApi) {
             {
               title: "Install Manually",
               action: () =>
-                util
-                  .opn("https://www.nexusmods.com/witcher3/mods/484")
-                  .catch((err) => null),
+                util.opn("https://www.nexusmods.com/witcher3/mods/484").catch((err) => null),
             },
           ],
         });
@@ -475,22 +427,13 @@ export async function downloadScriptMerger(api: types.IExtensionApi) {
       if (err instanceof util.UserCanceled) {
         return Promise.resolve();
       } else if (err instanceof util.ProcessCanceled) {
-        if (
-          err.message.startsWith("Already") ||
-          err.message.startsWith("Update")
-        ) {
+        if (err.message.startsWith("Already") || err.message.startsWith("Update")) {
           return Promise.resolve();
-        } else if (
-          err.message.startsWith("Failed to resolve download location")
-        ) {
+        } else if (err.message.startsWith("Failed to resolve download location")) {
           // Currently AFAIK this would only occur if github is down for any reason
           //  and we were unable to resolve the re-direction link. Given that this
           //  will most certainly resolve itself eventually - we log this and keep going.
-          log(
-            "info",
-            "failed to resolve W3 script merger re-direction link",
-            err,
-          );
+          log("info", "failed to resolve W3 script merger re-direction link", err);
           return Promise.resolve();
         } else if (err.message.startsWith("Game is not discovered")) {
           raiseManualInstallNotif();
@@ -549,14 +492,7 @@ async function setUpMerger(api, mergerVersion, newPath) {
   newToolDetails.path = path.join(newPath, "WitcherScriptMerger.exe");
   newToolDetails.workingDirectory = newPath;
   await setMergerConfig(discovery.path, newPath);
-  api.store.dispatch(
-    actions.addDiscoveredTool(
-      "witcher3",
-      SCRIPT_MERGER_ID,
-      newToolDetails,
-      true,
-    ),
-  );
+  api.store.dispatch(actions.addDiscoveredTool("witcher3", SCRIPT_MERGER_ID, newToolDetails, true));
   return Promise.resolve();
 }
 
@@ -566,18 +502,13 @@ export async function getMergedModName(scriptMergerPath) {
     const data = await fs.readFileAsync(configFilePath, { encoding: "utf8" });
     const config = await parseStringPromise(data);
     const configItems = config?.configuration?.appSettings?.[0]?.add;
-    const MergedModName =
-      configItems?.find((item) => item.$?.key === "MergedModName") ?? undefined;
+    const MergedModName = configItems?.find((item) => item.$?.key === "MergedModName") ?? undefined;
     if (!!MergedModName?.$?.value) {
       return MergedModName.$.value;
     }
   } catch (err) {
     // This is probably a sign of a corrupt script merger installation....
-    log(
-      "error",
-      'failed to ascertain merged mod name - using "mod0000_MergedFiles"',
-      err,
-    );
+    log("error", 'failed to ascertain merged mod name - using "mod0000_MergedFiles"', err);
     return "mod0000_MergedFiles";
   }
 }

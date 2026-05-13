@@ -1,5 +1,6 @@
-import { IRevision } from "@nexusmods/nexus-api";
 import * as path from "path";
+
+import { IRevision } from "@nexusmods/nexus-api";
 import * as React from "react";
 import { Panel } from "react-bootstrap";
 import { Icon, IconBar, Image, types } from "vortex-api";
@@ -56,9 +57,7 @@ function HoverMenu(props: IRemoteTileProps) {
         title: "Edit",
         icon: "edit",
         condition: (instanceId: string | string[], data?: any) =>
-          t(
-            "Your collection must be installed first and then cloned to make edits.",
-          ),
+          t("Your collection must be installed first and then cloned to make edits."),
         action: () => {
           // nop
         },
@@ -89,13 +88,7 @@ function HoverMenu(props: IRemoteTileProps) {
 }
 
 function RemoteTile(props: IRemoteTileProps) {
-  const {
-    t,
-    revision,
-    onCloneCollection,
-    onInstallCollection,
-    onResumeCollection,
-  } = props;
+  const { t, revision, onCloneCollection, onInstallCollection, onResumeCollection } = props;
 
   const classes = ["collection-thumbnail", "collection-remote"];
   const images: string[] = [];

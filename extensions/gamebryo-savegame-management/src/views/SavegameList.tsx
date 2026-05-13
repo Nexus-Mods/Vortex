@@ -1,9 +1,3 @@
-import { showTransferDialog } from "../actions/session";
-import type { ISavegame } from "../types/ISavegame";
-
-import { MAX_SAVEGAMES } from "../constants";
-import getSavegameAttributes from "../savegameAttributes";
-
 import Bluebird from "bluebird";
 import * as React from "react";
 import { Alert, FormControl, Panel } from "react-bootstrap";
@@ -26,16 +20,18 @@ import {
   util,
 } from "vortex-api";
 
+import { showTransferDialog } from "../actions/session";
+import { MAX_SAVEGAMES } from "../constants";
+import getSavegameAttributes from "../savegameAttributes";
+import type { ISavegame } from "../types/ISavegame";
+
 const placeholder: string = "------";
 
 interface IBaseProps {
   onRefresh: () => void;
   onLoadSaves: (profileId: string) => Promise<ISavegame[]>;
   onRestorePlugins: (savegame: ISavegame) => Promise<void>;
-  onRemoveSavegames: (
-    profileId: string,
-    savegameIds: string[],
-  ) => Promise<void>;
+  onRemoveSavegames: (profileId: string, savegameIds: string[]) => Promise<void>;
   onTransferSavegames: (
     profileId: string,
     fileNames: string[],
@@ -61,12 +57,7 @@ interface IActionProps {
     content: types.IDialogContent,
     actions: types.DialogActions,
   ) => Bluebird<types.IDialogResult>;
-  onShowError: (
-    message: string,
-    details: any,
-    id?: string,
-    allowReport?: boolean,
-  ) => void;
+  onShowError: (message: string, details: any, id?: string, allowReport?: boolean) => void;
 }
 
 interface IComponentState {
@@ -111,15 +102,13 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
     this.mTransferAttributes = getSavegameAttributes(
       this.context.api,
       false,
-      () =>
-        this.props.showTransfer ? this.state.importSaves : this.props.saves,
+      () => (this.props.showTransfer ? this.state.importSaves : this.props.saves),
       this.props.getInstalledPlugins,
     );
     this.mCurrentProfileAttributes = getSavegameAttributes(
       this.context.api,
       true,
-      () =>
-        this.props.showTransfer ? this.state.importSaves : this.props.saves,
+      () => (this.props.showTransfer ? this.state.importSaves : this.props.saves),
       this.props.getInstalledPlugins,
     );
   }
@@ -159,14 +148,7 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
         this.savegameActions,
       );
     } else {
-      header = (
-        <IconBar
-          group="savegames-icons"
-          orientation="vertical"
-          className="menubar"
-          t={t}
-        />
-      );
+      header = <IconBar group="savegames-icons" orientation="vertical" className="menubar" t={t} />;
     }
 
     return (
@@ -208,9 +190,7 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
                   data={showTransfer ? importSaves : saves}
                   actions={saveActions}
                   staticElements={
-                    showTransfer
-                      ? this.mTransferAttributes
-                      : this.mCurrentProfileAttributes
+                    showTransfer ? this.mTransferAttributes : this.mCurrentProfileAttributes
                   }
                 />
               </FlexLayout.Flex>
@@ -251,11 +231,7 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
       return null;
     }
 
-    const activeHasLocalSaves = util.getSafe(
-      currentProfile,
-      ["features", "local_saves"],
-      false,
-    );
+    const activeHasLocalSaves = util.getSafe(currentProfile, ["features", "local_saves"], false);
 
     const profileOptions = Object.keys(profiles).filter(
       (profileId) =>
@@ -283,9 +259,7 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
               {t("Global")}
             </option>
           ) : null}
-          {profileOptions.map((profileId) =>
-            this.renderProfilesOption(profileId),
-          )}
+          {profileOptions.map((profileId) => this.renderProfilesOption(profileId))}
         </FormControl>
         <tooltip.IconButton
           id="btn-transfer-save-cancel"
@@ -412,14 +386,9 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
     const { t, currentProfile, onShowDialog, onTransferSavegames } = this.props;
     const { importSaves, importProfileId } = this.state;
 
-    const fileNames = instanceIds.map(
-      (id) => importSaves[id].attributes["filename"],
-    );
+    const fileNames = instanceIds.map((id) => importSaves[id].attributes["filename"]);
 
-    if (
-      importProfileId === currentProfile.id ||
-      importProfileId === undefined
-    ) {
+    if (importProfileId === currentProfile.id || importProfileId === undefined) {
       return;
     }
 
@@ -442,11 +411,7 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
           return;
         }
 
-        return onTransferSavegames(
-          importProfileId,
-          fileNames,
-          result.action === "Copy",
-        );
+        return onTransferSavegames(importProfileId, fileNames, result.action === "Copy");
       })
       .then((result: { errors: string[]; allowReport: boolean }) => {
         if (result === undefined) {
@@ -479,10 +444,7 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
       })
       .catch((err) => {
         if (!(err instanceof util.ProcessCanceled)) {
-          this.context.api.showErrorNotification(
-            "Failed to import savegames",
-            err,
-          );
+          this.context.api.showErrorNotification("Failed to import savegames", err);
         }
       });
   };
@@ -502,19 +464,13 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, null, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onShowDialog: (type, title, content, dialogActions) =>
       dispatch(actions.showDialog(type, title, content, dialogActions)),
     onHideTransfer: () => dispatch(showTransferDialog(false)),
-    onShowError: (
-      message: string,
-      details: any,
-      id?: string,
-      allowReport?: boolean,
-    ) => util.showError(dispatch, message, details, { id, allowReport }),
+    onShowError: (message: string, details: any, id?: string, allowReport?: boolean) =>
+      util.showError(dispatch, message, details, { id, allowReport }),
   };
 }
 

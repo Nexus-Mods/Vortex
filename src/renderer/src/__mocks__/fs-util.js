@@ -65,9 +65,7 @@ const readFileBOM = (filePath, fallbackEncoding = "utf8") => {
       ];
 
       const detectedBom = KNOWN_BOMS.find(
-        (b) =>
-          b.bom.length <= buffer.length &&
-          b.bom.compare(buffer, 0, b.bom.length) === 0,
+        (b) => b.bom.length <= buffer.length && b.bom.compare(buffer, 0, b.bom.length) === 0,
       );
 
       if (detectedBom) {

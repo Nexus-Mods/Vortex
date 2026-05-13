@@ -4,10 +4,10 @@ import eslintReact from "@eslint-react/eslint-plugin";
 import eslint from "@eslint/js";
 import stylistic from "@stylistic/eslint-plugin";
 import prettierConfig from "eslint-config-prettier";
-import betterTailwindcss from "eslint-plugin-better-tailwindcss";
-import perfectionist from "eslint-plugin-perfectionist";
-import importPlugin from "eslint-plugin-import";
 import { createTypeScriptImportResolver } from "eslint-import-resolver-typescript";
+import betterTailwindcss from "eslint-plugin-better-tailwindcss";
+import importPlugin from "eslint-plugin-import";
+import perfectionist from "eslint-plugin-perfectionist";
 import { defineConfig } from "eslint/config";
 import globals from "globals";
 import tseslint from "typescript-eslint";
@@ -83,9 +83,7 @@ export default defineConfig([
         {
           type: "alphabetical",
           groups: ["shorthand-prop", "unknown", "callback"],
-          customGroups: [
-            { groupName: "callback", elementNamePattern: "^on.+" },
-          ],
+          customGroups: [{ groupName: "callback", elementNamePattern: "^on.+" }],
         },
       ],
 
@@ -156,11 +154,7 @@ export default defineConfig([
 
   {
     files: ["*.mjs"],
-    extends: [
-      eslint.configs.recommended,
-      tseslint.configs.recommended,
-      prettierConfig,
-    ],
+    extends: [eslint.configs.recommended, tseslint.configs.recommended, prettierConfig],
     languageOptions: {
       globals: { ...globals.node },
     },

@@ -3,8 +3,8 @@
  * Ported from the root playwright/src/game-setup-helpers.ts.
  */
 import fs from "node:fs";
-import path from "node:path";
 import os from "node:os";
+import path from "node:path";
 
 export interface GameConfig {
   gameId: string;
@@ -20,8 +20,7 @@ export const GAME_CONFIGS: Record<string, GameConfig> = {
   stardewvalley: {
     gameId: "stardewvalley",
     gameName: "Stardew Valley",
-    executable:
-      process.platform === "win32" ? "Stardew Valley.exe" : "StardewValley",
+    executable: process.platform === "win32" ? "Stardew Valley.exe" : "StardewValley",
     requiredFiles: [
       process.platform === "win32" ? "Stardew Valley.exe" : "StardewValley",
       "Stardew Valley.deps.json",
@@ -29,13 +28,7 @@ export const GAME_CONFIGS: Record<string, GameConfig> = {
       "Stardew Valley.pdb",
       "Stardew Valley.runtimeconfig.json",
     ],
-    directories: [
-      "Content",
-      "Content/Characters",
-      "Content/Data",
-      "Content/Maps",
-      "Mods",
-    ],
+    directories: ["Content", "Content/Characters", "Content/Data", "Content/Maps", "Mods"],
     optionalFiles: [
       { path: "steam_appid.txt", content: "413150" },
       { path: "Content/XACT/FarmerSounds.xwb", content: "FAKE_AUDIO_FILE" },
@@ -46,12 +39,7 @@ export const GAME_CONFIGS: Record<string, GameConfig> = {
     gameId: "skyrimse",
     gameName: "Skyrim Special Edition",
     executable: "SkyrimSE.exe",
-    requiredFiles: [
-      "SkyrimSE.exe",
-      "SkyrimSELauncher.exe",
-      "binkw64.dll",
-      "steam_api64.dll",
-    ],
+    requiredFiles: ["SkyrimSE.exe", "SkyrimSELauncher.exe", "binkw64.dll", "steam_api64.dll"],
     directories: ["Data", "Data/Scripts", "Data/Meshes", "Data/Textures"],
     optionalFiles: [
       { path: "steam_appid.txt", content: "489830" },
@@ -72,10 +60,7 @@ function createFakeExecutable(): Buffer {
 }
 
 /** Creates a fake game installation directory with all required files. */
-export function createFakeGameInstallation(
-  gameConfig: GameConfig,
-  basePath: string,
-): string {
+export function createFakeGameInstallation(gameConfig: GameConfig, basePath: string): string {
   const gamePath = path.join(basePath, gameConfig.gameName);
   fs.mkdirSync(gamePath, { recursive: true });
 

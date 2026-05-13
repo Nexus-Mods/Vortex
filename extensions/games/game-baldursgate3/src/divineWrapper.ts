@@ -1,11 +1,9 @@
 /* eslint-disable */
 import * as path from "path";
+
 import { log, selectors, types, util } from "vortex-api";
 
 import { GAME_ID } from "./common";
-import { DivineAction, IDivineOptions, IDivineOutput } from "./types";
-import { getLatestLSLibMod, logError } from "./util";
-
 import {
   DEFAULT_TIMEOUT_MS,
   DivineAborted,
@@ -16,6 +14,8 @@ import {
   parsePackageListOutput,
   runDivineCore,
 } from "./divineCore";
+import { DivineAction, IDivineOptions, IDivineOutput } from "./types";
+import { getLatestLSLibMod, logError } from "./util";
 
 // Run 5 concurrent Divine processes. Retry on transient failures, but fail
 // fast for deterministic ones — retrying a missing exe, a missing .NET
@@ -48,12 +48,7 @@ function resolveExePath(api: types.IExtensionApi): string {
   if (lsLib === undefined) {
     throw new Error("LSLib/Divine tool is missing");
   }
-  return path.join(
-    stagingFolder,
-    lsLib.installationPath,
-    "tools",
-    "divine.exe",
-  );
+  return path.join(stagingFolder, lsLib.installationPath, "tools", "divine.exe");
 }
 
 async function runDivine(
@@ -70,12 +65,7 @@ async function runDivine(
     concurrencyLimiter.do(async () => {
       try {
         const exePath = resolveExePath(api);
-        const result = await runDivineCore(
-          exePath,
-          action,
-          divineOpts,
-          runOpts,
-        );
+        const result = await runDivineCore(exePath, action, divineOpts, runOpts);
         return resolve(result);
       } catch (err) {
         return reject(err);
@@ -97,10 +87,7 @@ export async function extractPak(
   });
 }
 
-export async function listPackage(
-  api: types.IExtensionApi,
-  pakPath: string,
-): Promise<string[]> {
+export async function listPackage(api: types.IExtensionApi, pakPath: string): Promise<string[]> {
   let res: IDivineOutput | undefined;
   try {
     res = await runDivine(api, "list-package", {

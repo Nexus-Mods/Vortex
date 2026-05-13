@@ -1,9 +1,9 @@
-import { Button } from "../TooltipControls";
-import type { IFilterProps, ITableFilter } from "../../types/ITableAttribute";
-import { truthy } from "../../util/util";
-
 import * as React from "react";
 import { FormControl, InputGroup } from "react-bootstrap";
+
+import type { IFilterProps, ITableFilter } from "../../types/ITableAttribute";
+import { truthy } from "../../util/util";
+import { Button } from "../TooltipControls";
 
 export class NumericFilterComponent extends React.Component<IFilterProps, {}> {
   private currentComparison: "eq" | "ge" | "le";
@@ -38,8 +38,7 @@ export class NumericFilterComponent extends React.Component<IFilterProps, {}> {
 
     const filt = filter || { comparison: "eq", value: "" };
 
-    const currentComparison =
-      this.comparisons[filt.comparison] ?? this.comparisons.eq;
+    const currentComparison = this.comparisons[filt.comparison] ?? this.comparisons.eq;
 
     return (
       <InputGroup style={{ width: "100%" }}>

@@ -1,4 +1,5 @@
 import path from "path";
+
 import semver from "semver";
 import { actions, fs, log, selectors, types, util } from "vortex-api";
 
@@ -15,22 +16,11 @@ export async function migrate100(api: types.IExtensionApi, oldVersion: string) {
   const activatorId = selectors.activatorForGame(state, GAME_ID);
   const activator = util.getActivator(activatorId);
 
-  const discovery = util.getSafe(
-    state,
-    ["settings", "gameMode", "discovered", GAME_ID],
-    undefined,
-  );
+  const discovery = util.getSafe(state, ["settings", "gameMode", "discovered", GAME_ID], undefined);
 
-  if (
-    discovery === undefined ||
-    discovery.path === undefined ||
-    activator === undefined
-  ) {
+  if (discovery === undefined || discovery.path === undefined || activator === undefined) {
     // if this game is not discovered or deployed there is no need to migrate
-    log(
-      "debug",
-      "skipping bloodstained migration because no deployment set up for it",
-    );
+    log("debug", "skipping bloodstained migration because no deployment set up for it");
     return Promise.resolve();
   }
 
@@ -39,16 +29,9 @@ export async function migrate100(api: types.IExtensionApi, oldVersion: string) {
   // this way.
   return api
     .awaitUI()
+    .then(() => fs.ensureDirWritableAsync(path.join(discovery.path, modsRelPath())))
     .then(() =>
-      fs.ensureDirWritableAsync(path.join(discovery.path, modsRelPath())),
-    )
-    .then(() =>
-      api.emitAndAwait(
-        "purge-mods-in-path",
-        GAME_ID,
-        "",
-        path.join(discovery.path, oldModRelPath),
-      ),
+      api.emitAndAwait("purge-mods-in-path", GAME_ID, "", path.join(discovery.path, oldModRelPath)),
     )
     .then(() => {
       api.store.dispatch(actions.setDeploymentNecessary(GAME_ID, true));

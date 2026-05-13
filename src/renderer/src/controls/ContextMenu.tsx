@@ -1,16 +1,16 @@
-import { ComponentEx } from "./ComponentEx";
-import type { TFunction } from "../util/i18n";
-
-import type { IActionDefinitionEx } from "./ActionControl";
-import { HOVER_DELAY } from "./constants";
-import Dropdown from "./Dropdown";
-import Icon from "./Icon";
+import { clearTimeout } from "timers";
 
 import * as React from "react";
 import { MenuItem } from "react-bootstrap";
 import ReactDOM from "react-dom";
 import { Portal } from "react-overlays";
-import { clearTimeout } from "timers";
+
+import type { TFunction } from "../util/i18n";
+import type { IActionDefinitionEx } from "./ActionControl";
+import { ComponentEx } from "./ComponentEx";
+import { HOVER_DELAY } from "./constants";
+import Dropdown from "./Dropdown";
+import Icon from "./Icon";
 
 export interface IMenuActionProps {
   t: TFunction;
@@ -33,19 +33,16 @@ function MenuAction(props: IMenuActionProps) {
       "objects",
       "children",
     ];
-    const unknownProps = Object.keys(props).reduce(
-      (prev: any, current: string) => {
-        if (knownProps.indexOf(current) === -1) {
-          return {
-            ...prev,
-            [current]: props[current],
-          };
-        } else {
-          return prev;
-        }
-      },
-      {},
-    );
+    const unknownProps = Object.keys(props).reduce((prev: any, current: string) => {
+      if (knownProps.indexOf(current) === -1) {
+        return {
+          ...prev,
+          [current]: props[current],
+        };
+      } else {
+        return prev;
+      }
+    }, {});
 
     const staticProps = {
       ...unknownProps,
@@ -53,9 +50,7 @@ function MenuAction(props: IMenuActionProps) {
     };
     if (action.props !== undefined) {
       const addProps = action.props();
-      return (
-        <action.component {...staticProps} {...addProps} parentType="context" />
-      );
+      return <action.component {...staticProps} {...addProps} parentType="context" />;
     } else {
       return <action.component {...staticProps} parentType="context" />;
     }
@@ -90,8 +85,7 @@ function MenuAction(props: IMenuActionProps) {
       clearTimeout(hideTimer.current);
     }
 
-    const instanceIds =
-      typeof instanceId === "string" ? [instanceId] : instanceId;
+    const instanceIds = typeof instanceId === "string" ? [instanceId] : instanceId;
 
     action.action?.(instanceIds, action.data);
     if (action.subMenus !== undefined) {
@@ -229,8 +223,7 @@ class ContextMenu extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { actions, children, className, onHide, position, visible } =
-      this.props;
+    const { actions, children, className, onHide, position, visible } = this.props;
     const { right, bottom } = this.state;
     if (!visible || (actions || []).length === 0) {
       return null;
@@ -275,11 +268,7 @@ class ContextMenu extends ComponentEx<IProps, IComponentState> {
 
     const tf = t ?? ((input) => input);
 
-    if (
-      action.icon === null &&
-      action.component === undefined &&
-      action.action === undefined
-    ) {
+    if (action.icon === null && action.component === undefined && action.action === undefined) {
       return (
         <MenuItem className="menu-separator-line" key={id} disabled={true}>
           {action.title !== undefined ? tf(action.title) : <hr />}
@@ -322,20 +311,13 @@ class ContextMenu extends ComponentEx<IProps, IComponentState> {
 
     if (position !== undefined) {
       this.nextState.bottom =
-        position.y + rect.height > outer.bottom
-          ? outer.bottom - position.y
-          : undefined;
+        position.y + rect.height > outer.bottom ? outer.bottom - position.y : undefined;
 
       this.nextState.right =
-        position.x + rect.width > outer.right
-          ? outer.right - position.x
-          : undefined;
+        position.x + rect.width > outer.right ? outer.right - position.x : undefined;
     } else if (!!this.props.anchor) {
       const bbrect = this.props.anchor.getBoundingClientRect();
-      this.nextState.bottom = Math.max(
-        0,
-        outer.bottom - bbrect.y - rect.height,
-      );
+      this.nextState.bottom = Math.max(0, outer.bottom - bbrect.y - rect.height);
       let right = outer.right - bbrect.right - rect.width;
       if (right < 0) {
         right = outer.right - bbrect.left;

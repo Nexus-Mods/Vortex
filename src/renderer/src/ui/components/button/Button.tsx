@@ -7,23 +7,13 @@
  */
 
 import { mdiCircleOutline, mdiLoading } from "@mdi/js";
-import React, {
-  type ButtonHTMLAttributes,
-  forwardRef,
-  type ReactNode,
-} from "react";
-
-import type { XOr } from "@/ui/utils/types";
+import React, { type ButtonHTMLAttributes, forwardRef, type ReactNode } from "react";
 
 import { Icon } from "@/ui/components/icon/Icon";
 import { joinClasses } from "@/ui/utils/joinClasses";
+import type { XOr } from "@/ui/utils/types";
 
-export type ButtonType =
-  | "primary"
-  | "secondary"
-  | "tertiary"
-  | "success"
-  | "premium";
+export type ButtonType = "primary" | "secondary" | "tertiary" | "success" | "premium";
 
 type BaseButtonProps = {
   buttonType?: ButtonType;
@@ -121,11 +111,7 @@ const ButtonIcon = ({
   }
 
   if (icon) {
-    return (
-      <span className="nxm-button-icon flex items-center justify-center">
-        {icon}
-      </span>
-    );
+    return <span className="nxm-button-icon flex items-center justify-center">{icon}</span>;
   }
 
   if (path) {
@@ -175,11 +161,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     >
       {customContent ?? (
         <>
-          <ButtonIcon
-            icon={leftIcon}
-            isLoading={isLoading}
-            path={leftIconPath}
-          />
+          <ButtonIcon icon={leftIcon} isLoading={isLoading} path={leftIconPath} />
 
           {!!children && <span>{children}</span>}
 

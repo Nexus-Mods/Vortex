@@ -1,5 +1,6 @@
 /* eslint-disable */
 import path from "path";
+
 import * as rjson from "relaxed-json";
 import { fs, types, log, util } from "vortex-api";
 
@@ -15,10 +16,7 @@ import {
 import { IModConfig } from "./types";
 import { identifyHaloGames } from "./util";
 
-export async function testPlugAndPlayInstaller(
-  files: string[],
-  gameId: string,
-) {
+export async function testPlugAndPlayInstaller(files: string[], gameId: string) {
   const hasModInfoFile = files.some(
     (file) => path.basename(file).toLowerCase() === MOD_INFO_JSON_FILE,
   );
@@ -28,17 +26,11 @@ export async function testPlugAndPlayInstaller(
   });
 }
 
-export async function installPlugAndPlay(
-  files: string[],
-  destinationPath: string,
-) {
-  const modInfo = files.find(
-    (file) => path.basename(file).toLowerCase() === MOD_INFO_JSON_FILE,
-  );
-  const modInfoData = await fs.readFileAsync(
-    path.join(destinationPath, modInfo),
-    { encoding: "utf8" },
-  );
+export async function installPlugAndPlay(files: string[], destinationPath: string) {
+  const modInfo = files.find((file) => path.basename(file).toLowerCase() === MOD_INFO_JSON_FILE);
+  const modInfoData = await fs.readFileAsync(path.join(destinationPath, modInfo), {
+    encoding: "utf8",
+  });
   const parsed: IModConfig = rjson.parse(modInfoData) as IModConfig;
   let modConfigAttributes: types.IInstruction[] = [];
   modConfigAttributes.push({
@@ -65,9 +57,7 @@ export async function installPlugAndPlay(
 
   const infoSegments = modInfo.split(path.sep);
   const modFolderIndex = infoSegments.length >= 1 ? infoSegments.length - 1 : 0;
-  const filtered = files.filter(
-    (file) => path.extname(path.basename(file)) !== "",
-  );
+  const filtered = files.filter((file) => path.extname(path.basename(file)) !== "");
   const instructions: types.IInstruction[] = filtered.map((file) => {
     const segments = file.split(path.sep);
     const destination = segments.slice(modFolderIndex);
@@ -96,58 +86,42 @@ export function testModConfigInstaller(files, gameId) {
     ? Promise.resolve({ supported: false, requiredFiles: [] })
     : Promise.resolve({
         supported:
-          files.find((file) => path.basename(file) === MOD_CONFIG_FILE) !==
-            undefined && !isAssemblyOnlyMod(),
+          files.find((file) => path.basename(file) === MOD_CONFIG_FILE) !== undefined &&
+          !isAssemblyOnlyMod(),
         requiredFiles: [],
       });
 }
 
-export async function installModConfig(
-  files: string[],
-  destinationPath: string,
-) {
+export async function installModConfig(files: string[], destinationPath: string) {
   // Find the mod config file and use it to build the instructions.
-  const modConfigFile = files.find(
-    (file) => path.basename(file) === MOD_CONFIG_FILE,
-  );
+  const modConfigFile = files.find((file) => path.basename(file) === MOD_CONFIG_FILE);
   const filtered = files.filter((file) => {
     // No directories, assembly tool files, readmes or mod config files.
     const segments = file.split(path.sep);
     const lastElementExt = path.extname(segments[segments.length - 1]);
-    return (
-      modConfigFile !== file &&
-      ["", ".txt", ASSEMBLY_EXT].indexOf(lastElementExt) === -1
-    );
+    return modConfigFile !== file && ["", ".txt", ASSEMBLY_EXT].indexOf(lastElementExt) === -1;
   });
-  const configData = await fs.readFileAsync(
-    path.join(destinationPath, modConfigFile),
-    { encoding: "utf8" },
-  );
+  const configData = await fs.readFileAsync(path.join(destinationPath, modConfigFile), {
+    encoding: "utf8",
+  });
   let data;
   try {
     data = rjson.parse(util.deBOM(configData));
   } catch (err) {
     log("error", "Unable to parse modpack_config.cfg", err);
-    return Promise.reject(
-      new util.DataInvalid("Invalid modpack_config.cfg file"),
-    );
+    return Promise.reject(new util.DataInvalid("Invalid modpack_config.cfg file"));
   }
 
   if (!data.entries) {
-    return Promise.reject(
-      new util.DataInvalid("modpack_config.cfg file contains no entries"),
-    );
+    return Promise.reject(new util.DataInvalid("modpack_config.cfg file contains no entries"));
   }
 
   const instructions = filtered.reduce((accum, file) => {
     const matchingEntry = data.entries.find(
-      (entry) =>
-        "src" in entry && entry.src.toLowerCase() === file.toLowerCase(),
+      (entry) => "src" in entry && entry.src.toLowerCase() === file.toLowerCase(),
     );
     if (!!matchingEntry) {
-      const destination = matchingEntry.dest.substring(
-        MOD_CONFIG_DEST_ELEMENT.length,
-      );
+      const destination = matchingEntry.dest.substring(MOD_CONFIG_DEST_ELEMENT.length);
       accum.push({
         type: "copy",
         source: file,
@@ -156,11 +130,7 @@ export async function installModConfig(
     } else {
       // This may just be a pointless addition by the mod author - we're going to log
       //  this and continue.
-      log(
-        "warn",
-        "Failed to find matching manifest entry for file in archive",
-        file,
-      );
+      log("warn", "Failed to find matching manifest entry for file in archive", file);
     }
 
     return accum;

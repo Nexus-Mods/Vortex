@@ -34,9 +34,7 @@ export interface PathModule {
  * Keeps bare roots like `/` intact.
  */
 export function trimTrailingSeparator(path: string, sepCode: number): string {
-  return path.length > 1 && path.charCodeAt(path.length - 1) === sepCode
-    ? path.slice(0, -1)
-    : path;
+  return path.length > 1 && path.charCodeAt(path.length - 1) === sepCode ? path.slice(0, -1) : path;
 }
 
 // ============================================================================
@@ -285,11 +283,7 @@ function win32Root(p: string): string {
   if (p.length === 0) return "";
 
   // UNC path: \\server\share
-  if (
-    p.length >= 2 &&
-    isWin32Sep(p.charCodeAt(0)) &&
-    isWin32Sep(p.charCodeAt(1))
-  ) {
+  if (p.length >= 2 && isWin32Sep(p.charCodeAt(0)) && isWin32Sep(p.charCodeAt(1))) {
     let j = 2;
     while (j < p.length && !isWin32Sep(p.charCodeAt(j))) j++; // skip server
     if (j === p.length) return "\\\\";
@@ -309,11 +303,7 @@ function win32Root(p: string): string {
   }
 
   // Drive root: C:\ or C:/, or drive-relative root: C:
-  if (
-    p.length >= 2 &&
-    isDriveLetter(p.charCodeAt(0)) &&
-    p.charCodeAt(1) === 0x3a
-  ) {
+  if (p.length >= 2 && isDriveLetter(p.charCodeAt(0)) && p.charCodeAt(1) === 0x3a) {
     if (p.length >= 3 && isWin32Sep(p.charCodeAt(2))) {
       return p.charCodeAt(2) === 0x2f ? p.slice(0, 2) + "\\" : p.slice(0, 3);
     }
@@ -424,11 +414,7 @@ function win32Basename(p: string, ext?: string): string {
 
   // Find last separator
   let start = end;
-  while (
-    start > 0 &&
-    !isWin32Sep(p.charCodeAt(start - 1)) &&
-    p.charCodeAt(start - 1) !== 0x3a
-  )
+  while (start > 0 && !isWin32Sep(p.charCodeAt(start - 1)) && p.charCodeAt(start - 1) !== 0x3a)
     start--;
 
   let base = p.slice(start, end + 1);
@@ -541,12 +527,7 @@ export function detectPathModule(p: string): PathModule {
     if (isWin32Sep(first) && isWin32Sep(second)) return win32;
 
     // Standard Windows drive-rooted path.
-    if (
-      p.length >= 3 &&
-      isDriveLetter(first) &&
-      second === 0x3a &&
-      isWin32Sep(p.charCodeAt(2))
-    ) {
+    if (p.length >= 3 && isDriveLetter(first) && second === 0x3a && isWin32Sep(p.charCodeAt(2))) {
       return win32;
     }
   }

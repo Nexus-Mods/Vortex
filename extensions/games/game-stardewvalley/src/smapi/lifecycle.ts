@@ -2,7 +2,6 @@
  * Lifecycle helpers for deploying SMAPI and activating it as primary tool.
  */
 import type { types } from "vortex-api";
-
 import { actions, selectors, util } from "vortex-api";
 
 import { GAME_ID } from "../common";
@@ -18,9 +17,7 @@ import { GAME_ID } from "../common";
  */
 export async function deploySMAPI(api: types.IExtensionApi): Promise<void> {
   await util.toPromise((cb) => api.events.emit("deploy-mods", cb));
-  await util.toPromise((cb) =>
-    api.events.emit("start-quick-discovery", () => cb(null)),
-  );
+  await util.toPromise((cb) => api.events.emit("start-quick-discovery", () => cb(null)));
 
   const discovery = selectors.discoveryByGame(api.getState(), GAME_ID);
   const tool = discovery?.tools?.["smapi"];

@@ -1,3 +1,12 @@
+import * as path from "path";
+
+import I18next from "i18next";
+import {} from "redux-thunk";
+import { actions, fs, log, selectors, types, util } from "vortex-api";
+import { IniFile } from "vortex-parse-ini";
+
+import { toggleInvalidation } from "./bsaRedirection";
+import { REDIRECTION_MOD } from "./constants";
 import filesNewer from "./util/filesNewer";
 import {
   bsaVersion,
@@ -8,15 +17,6 @@ import {
   targetAge,
 } from "./util/gameSupport";
 import Settings from "./views/Settings";
-
-import { toggleInvalidation } from "./bsaRedirection";
-import { REDIRECTION_MOD } from "./constants";
-
-import I18next from "i18next";
-import * as path from "path";
-import {} from "redux-thunk";
-import { actions, fs, log, selectors, types, util } from "vortex-api";
-import { IniFile } from "vortex-parse-ini";
 
 function testArchivesAge(api: types.IExtensionApi) {
   const state: types.IState = api.store.getState();
@@ -53,26 +53,17 @@ function testArchivesAge(api: types.IExtensionApi) {
       }
       return Promise.all(
         files.map((file) =>
-          fs.utimesAsync(
-            path.join(dataPath, file),
-            age.getTime() / 1000,
-            age.getTime() / 1000,
-          ),
+          fs.utimesAsync(path.join(dataPath, file), age.getTime() / 1000, age.getTime() / 1000),
         ),
       ).then(() => {
-        log(
-          "info",
-          `Updated timestamps on ${files.length} archive files for game ${gameId}`,
-        );
+        log("info", `Updated timestamps on ${files.length} archive files for game ${gameId}`);
         return Promise.resolve(undefined);
       });
     })
     .catch((err: Error) => {
-      const canceled =
-        err instanceof util.ProcessCanceled || err instanceof util.UserCanceled;
+      const canceled = err instanceof util.ProcessCanceled || err instanceof util.UserCanceled;
       api.showErrorNotification("Failed to read bsa/ba2 files.", err, {
-        allowReport:
-          !canceled && !["ENOENT", "EPERM"].includes((err as any).code),
+        allowReport: !canceled && !["ENOENT", "EPERM"].includes((err as any).code),
       });
       return Promise.resolve(undefined);
     });

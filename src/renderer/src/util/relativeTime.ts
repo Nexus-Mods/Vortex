@@ -18,11 +18,7 @@ export function setTimeMode(mode: TimeMode) {
 /**
  * format the specified date in a user-friendly way, depending on the globally set time mode
  */
-export function userFriendlyTime(
-  date: Date,
-  t: TFunction,
-  locale: string,
-): string {
+export function userFriendlyTime(date: Date, t: TFunction, locale: string): string {
   if (timeMode === "relative") {
     return relativeTime(date, t);
   } else {

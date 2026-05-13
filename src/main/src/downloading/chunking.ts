@@ -11,10 +11,7 @@ export type Chunk = {
 export type Chunker<T> = (size: number, resource: T) => Chunk[];
 
 /** Creates a chunker that splits into n same-sized chunks */
-export function staticChunker(
-  numChunks: number = 4,
-  minFileSize: number = 10 * 1024 * 1024,
-) {
+export function staticChunker(numChunks: number = 4, minFileSize: number = 10 * 1024 * 1024) {
   const f = (size: number): Chunk[] => {
     if (size < minFileSize) return [];
     if (numChunks > size) {

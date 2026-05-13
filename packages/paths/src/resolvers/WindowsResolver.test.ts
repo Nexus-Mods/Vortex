@@ -1,8 +1,8 @@
 import { describe, test, expect, beforeEach } from "vitest";
 
-import { WindowsResolver } from "./WindowsResolver";
-import { Anchor } from "../types";
 import { MockWindowsFilesystem } from "../test-helpers/MockWindowsFilesystem";
+import { Anchor } from "../types";
+import { WindowsResolver } from "./WindowsResolver";
 
 describe("WindowsResolver", () => {
   let resolver: WindowsResolver;
@@ -134,17 +134,13 @@ describe("WindowsResolver", () => {
     test("relativeTo accepts C:\\ as basePath", async () => {
       const file = resolver.PathFor("c", "Games/Skyrim/skyrim.exe");
 
-      await expect(file.relativeTo("C:\\")).resolves.toBe(
-        "Games/Skyrim/skyrim.exe",
-      );
+      await expect(file.relativeTo("C:\\")).resolves.toBe("Games/Skyrim/skyrim.exe");
     });
 
     test("relativeTo with trailing \\ on a non-root base path", async () => {
       const file = resolver.PathFor("c", "Games/Skyrim/skyrim.exe");
 
-      await expect(file.relativeTo("C:\\Games\\")).resolves.toBe(
-        "Skyrim/skyrim.exe",
-      );
+      await expect(file.relativeTo("C:\\Games\\")).resolves.toBe("Skyrim/skyrim.exe");
     });
   });
 

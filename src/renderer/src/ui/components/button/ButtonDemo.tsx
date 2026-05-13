@@ -10,16 +10,11 @@ import { Typography } from "../typography/Typography";
 import { Button } from "./Button";
 
 export const ButtonDemo = () => {
-  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>(
-    {},
-  );
+  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
 
   const handleLoadingClick = (key: string) => {
     setLoadingStates({ ...loadingStates, [key]: true });
-    setTimeout(
-      () => setLoadingStates({ ...loadingStates, [key]: false }),
-      2000,
-    );
+    setTimeout(() => setLoadingStates({ ...loadingStates, [key]: false }), 2000);
   };
 
   return (
@@ -30,8 +25,7 @@ export const ButtonDemo = () => {
         </Typography>
 
         <Typography appearance="subdued">
-          A consistent button system with multiple types, sizes, and states
-          including icon support.
+          A consistent button system with multiple types, sizes, and states including icon support.
         </Typography>
       </div>
 
@@ -47,10 +41,7 @@ export const ButtonDemo = () => {
 
           <Button disabled={true}>Disabled</Button>
 
-          <Button
-            isLoading={loadingStates.primary}
-            onClick={() => handleLoadingClick("primary")}
-          >
+          <Button isLoading={loadingStates.primary} onClick={() => handleLoadingClick("primary")}>
             Click for Loading
           </Button>
         </div>
@@ -162,8 +153,7 @@ export const ButtonDemo = () => {
         </Typography>
 
         <Typography appearance="subdued" typographyType="body-sm">
-          These buttons change size based on screen width. Try resizing the
-          window!
+          These buttons change size based on screen width. Try resizing the window!
         </Typography>
 
         <div className="flex flex-wrap items-center gap-4">

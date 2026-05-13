@@ -14,9 +14,7 @@ import { MOD_MANIFEST, MODS_REL_PATH } from "../common";
  * still handling mixed archives that also include regular SMAPI content.
  */
 export function isSdvRootFolderModType(instructions: types.IInstruction[]) {
-  const copyInstructions = instructions.filter(
-    (instr) => instr.type === "copy",
-  );
+  const copyInstructions = instructions.filter((instr) => instr.type === "copy");
 
   const hasManifest = copyInstructions.some(
     (instr) => instr.destination?.endsWith(MOD_MANIFEST) === true,

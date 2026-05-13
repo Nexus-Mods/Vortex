@@ -1,15 +1,7 @@
 import update from "immutability-helper";
 import { IHashResult, ILookupResult, IReference, RuleType } from "modmeta-db";
 import * as React from "react";
-import {
-  Button,
-  ControlLabel,
-  FormControl,
-  FormGroup,
-  Modal,
-  Nav,
-  NavItem,
-} from "react-bootstrap";
+import { Button, ControlLabel, FormControl, FormGroup, Modal, Nav, NavItem } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { ComponentEx, FormFeedback } from "vortex-api";
 
@@ -65,11 +57,7 @@ class RuleEditor extends ComponentEx<IRule, IComponentState> {
           <form>
             <FormGroup>
               <ControlLabel>{t("Rule Type")}</ControlLabel>
-              <FormControl
-                componentClass="select"
-                value={ruleType}
-                onChange={this.setRuleType}
-              >
+              <FormControl componentClass="select" value={ruleType} onChange={this.setRuleType}>
                 <option value="before">{t("Always load before")}</option>
                 <option value="after">{t("Always load after")}</option>
                 <option value="requires">{t("Requires")}</option>
@@ -106,19 +94,11 @@ class RuleEditor extends ComponentEx<IRule, IComponentState> {
         </FormGroup>
         <FormGroup>
           <ControlLabel>{t("Logical File Name")}</ControlLabel>
-          <FormControl
-            type="text"
-            value={logicalFileName}
-            onChange={this.setFileName}
-          />
+          <FormControl type="text" value={logicalFileName} onChange={this.setFileName} />
         </FormGroup>
         <FormGroup>
           <ControlLabel>{t("Version Match")}</ControlLabel>
-          <FormControl
-            type="text"
-            value={versionMatch}
-            onChange={this.setVersionMatch}
-          />
+          <FormControl type="text" value={versionMatch} onChange={this.setVersionMatch} />
         </FormGroup>
       </form>
     );

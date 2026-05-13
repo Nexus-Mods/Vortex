@@ -1,16 +1,15 @@
+import { IncomingHttpHeaders, IncomingMessage } from "http";
 /* eslint-disable */
 import * as https from "https";
-import * as _ from "lodash";
-import * as semver from "semver";
 import * as url from "url";
 
-import { IBepInExGameConfig, IGithubRelease } from "./types";
+import * as _ from "lodash";
+import * as semver from "semver";
+import { log, types, util } from "vortex-api";
 
 import { raiseConsentDialog } from "./bepInExDownloader";
-
-import { IncomingHttpHeaders, IncomingMessage } from "http";
-import { log, types, util } from "vortex-api";
 import { resolveBixPackage } from "./common";
+import { IBepInExGameConfig, IGithubRelease } from "./types";
 
 const GITHUB_URL = "https://api.github.com/repos/BepInEx/BepInEx";
 const BIX_LANDING = "https://github.com/BepInEx/BepInEx";
@@ -28,10 +27,7 @@ function query(baseUrl: string, request: string): Promise<IGithubRelease[]> {
           10,
         );
         if (res.statusCode === 403 && callsRemaining === 0) {
-          const resetDate = parseInt(
-            util.getSafe(msgHeaders, ["x-ratelimit-reset"], "0"),
-            10,
-          );
+          const resetDate = parseInt(util.getSafe(msgHeaders, ["x-ratelimit-reset"], "0"), 10);
           log("info", "GitHub rate limit exceeded", {
             reset_at: new Date(resetDate).toString(),
           });
@@ -78,9 +74,7 @@ async function downloadConsent(
   gameConf: IBepInExGameConfig,
 ): Promise<void> {
   return raiseConsentDialog(api, gameConf).then((result) =>
-    result.action === "Close"
-      ? Promise.reject(new util.UserCanceled())
-      : Promise.resolve(),
+    result.action === "Close" ? Promise.reject(new util.UserCanceled()) : Promise.resolve(),
   );
 }
 
@@ -151,9 +145,7 @@ export async function getLatestReleases(
   if (GITHUB_URL) {
     return query(GITHUB_URL, "releases").then((releases) => {
       if (!Array.isArray(releases)) {
-        return Promise.reject(
-          new util.DataInvalid("expected array of github releases"),
-        );
+        return Promise.reject(new util.DataInvalid("expected array of github releases"));
       }
       const current = releases
         .filter((rel) => {
@@ -165,9 +157,7 @@ export async function getLatestReleases(
             return false;
           }
           return (
-            !currentVersion ||
-            (version !== currentVersion &&
-              semver.satisfies(version, constraint))
+            !currentVersion || (version !== currentVersion && semver.satisfies(version, constraint))
           );
         })
         .sort((lhs, rhs) =>
@@ -208,10 +198,7 @@ async function startDownload(
     undefined,
     (error, id) => {
       if (error !== null) {
-        if (
-          error.name === "AlreadyDownloaded" &&
-          error.downloadId !== undefined
-        ) {
+        if (error.name === "AlreadyDownloaded" && error.downloadId !== undefined) {
           id = error.downloadId;
         } else {
           api.showErrorNotification("Download failed", error, {
@@ -236,17 +223,12 @@ async function startDownload(
   );
 }
 
-async function resolveDownloadLink(
-  gameConf: IBepInExGameConfig,
-  currentReleases: any[],
-) {
+async function resolveDownloadLink(gameConf: IBepInExGameConfig, currentReleases: any[]) {
   const { rgx, version } = resolveBixPackage(gameConf);
   let assetLink: string | undefined;
   const matchingRelease = currentReleases.find((release) => {
     // The slice removes the 'v' prefix
-    const tagVer = util
-      .semverCoerce(release.tag_name.slice(1))
-      .raw.replace(/-.*/gim, "");
+    const tagVer = util.semverCoerce(release.tag_name.slice(1)).raw.replace(/-.*/gim, "");
     // Take out the pre-release stuff - while resolving the download link, it's safe
     //  to assume that the releases are checked from newest to oldest, thus the constraint
     //  will be satisfied at the first match of major.minor.patch - which is the latest version
@@ -266,16 +248,11 @@ async function resolveDownloadLink(
     }
   });
   if (matchingRelease === undefined) {
-    return Promise.reject(
-      new util.DataInvalid("Failed to find matching BepInEx archive"),
-    );
+    return Promise.reject(new util.DataInvalid("Failed to find matching BepInEx archive"));
   }
-  const downloadLink =
-    assetLink || matchingRelease.assets[0].browser_download_url;
+  const downloadLink = assetLink || matchingRelease.assets[0].browser_download_url;
   return downloadLink === undefined
-    ? Promise.reject(
-        new util.DataInvalid("Failed to resolve browser download url"),
-      )
+    ? Promise.reject(new util.DataInvalid("Failed to resolve browser download url"))
     : Promise.resolve({
         version: matchingRelease.tag_name.slice(1),
         downloadLink,
@@ -295,10 +272,7 @@ export async function checkForUpdates(
         log("error", "Unable to update BepInEx", "Failed to find any releases");
         return Promise.resolve(currentVersion);
       }
-      const { version, downloadLink } = await resolveDownloadLink(
-        gameConf,
-        currentReleases,
-      );
+      const { version, downloadLink } = await resolveDownloadLink(gameConf, currentReleases);
       if (semver.valid(version) === null) {
         return Promise.resolve(currentVersion);
       } else {
@@ -312,11 +286,10 @@ export async function checkForUpdates(
       }
     })
     .catch((err) => {
-      const suppressibleError = [
-        util.DataInvalid,
-        util.UserCanceled,
-        util.ProcessCanceled,
-      ].reduce((a, c) => a || err instanceof c, false);
+      const suppressibleError = [util.DataInvalid, util.UserCanceled, util.ProcessCanceled].reduce(
+        (a, c) => a || err instanceof c,
+        false,
+      );
       if (suppressibleError) {
         log("debug", "Unable to update BepInEx", err.message);
         return Promise.resolve(currentVersion);
@@ -336,25 +309,18 @@ export async function downloadFromGithub(
 ): Promise<void> {
   return getLatestReleases(undefined, `^${gameConf.bepinexVersion}`)
     .then(async (currentReleases) => {
-      const { version, downloadLink } = await resolveDownloadLink(
-        gameConf,
-        currentReleases,
-      );
-      return downloadConsent(api, gameConf).then(() =>
-        startDownload(api, gameConf, downloadLink),
-      );
+      const { version, downloadLink } = await resolveDownloadLink(gameConf, currentReleases);
+      return downloadConsent(api, gameConf).then(() => startDownload(api, gameConf, downloadLink));
     })
     .catch((err) => {
-      const suppressibleError = [
-        util.UserCanceled,
-        util.ProcessCanceled,
-      ].reduce((a, c) => a || err instanceof c, false);
+      const suppressibleError = [util.UserCanceled, util.ProcessCanceled].reduce(
+        (a, c) => a || err instanceof c,
+        false,
+      );
       if (!suppressibleError) {
-        api.showErrorNotification(
-          "Unable to download/install BepInEx - do it manually",
-          err,
-          { allowReport: false },
-        );
+        api.showErrorNotification("Unable to download/install BepInEx - do it manually", err, {
+          allowReport: false,
+        });
         util.opn(BIX_RELEASES).catch(() => null);
       }
       return Promise.resolve();

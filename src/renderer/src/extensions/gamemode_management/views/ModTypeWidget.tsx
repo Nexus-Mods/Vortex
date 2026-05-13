@@ -1,18 +1,16 @@
-import type { Option } from "react-select";
-
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
+import type { Option } from "react-select";
 import Select from "react-select";
 
-import type { IDiscoveryResult, IState } from "../../../types/IState";
-import type { IModWithState } from "../../mod_management/types/IModProps";
-import type { IModType } from "../types/IModType";
-
 import { IconButton } from "../../../controls/TooltipControls";
+import type { IDiscoveryResult, IState } from "../../../types/IState";
 import { midClip, truthy } from "../../../util/util";
 import { setModType } from "../../mod_management/actions/mods";
+import type { IModWithState } from "../../mod_management/types/IModProps";
 import { activeGameId } from "../../profile_management/selectors";
+import type { IModType } from "../types/IModType";
 import { getGame } from "../util/getGame";
 import { getModType, getModTypeExtensions } from "../util/modTypeExtensions";
 

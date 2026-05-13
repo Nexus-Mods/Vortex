@@ -30,9 +30,7 @@ class BA2Handler implements types.IArchiveHandler {
         if (nextBS === -1) {
           files.push(fileName.substr(query.length));
         } else {
-          subDirs.add(
-            fileName.substr(query.length, nextBS - query.length).toLowerCase(),
-          );
+          subDirs.add(fileName.substr(query.length, nextBS - query.length).toLowerCase());
         }
       });
       resolve([].concat(Array.from(subDirs), files));
@@ -63,9 +61,7 @@ function createBA2Handler(
   fileName: string,
   options: types.IArchiveOptions,
 ): Promise<types.IArchiveHandler> {
-  return loadBA2async(fileName).then(
-    (archive: BA2Archive) => new BA2Handler(archive),
-  );
+  return loadBA2async(fileName).then((archive: BA2Archive) => new BA2Handler(archive));
 }
 
 function init(context: types.IExtensionContext) {

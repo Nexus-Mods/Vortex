@@ -1,5 +1,6 @@
-import Promise from "bluebird";
 import * as path from "path";
+
+import Promise from "bluebird";
 import { fs, util } from "vortex-api";
 
 /**
@@ -7,14 +8,8 @@ import { fs, util } from "vortex-api";
  * @param {string} modArchive
  * @param {string} destSavePath
  */
-export function transferArchive(
-  modArchivePath: string,
-  destSavePath: string,
-): Promise<void> {
-  return fs.copyAsync(
-    modArchivePath,
-    path.join(destSavePath, path.basename(modArchivePath)),
-  );
+export function transferArchive(modArchivePath: string, destSavePath: string): Promise<void> {
+  return fs.copyAsync(modArchivePath, path.join(destSavePath, path.basename(modArchivePath)));
 }
 
 function byLength(lhs: string, rhs: string): number {

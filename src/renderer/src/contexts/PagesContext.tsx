@@ -8,11 +8,10 @@ import React, {
 } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import type { IMainPage } from "../types/IMainPage";
-import type { IState } from "../types/IState";
-
 import { setOpenMainPage } from "../actions/session";
 import { useMainPages } from "../hooks/useMainPages";
+import type { IMainPage } from "../types/IMainPage";
+import type { IState } from "../types/IState";
 import {
   activeGameId as activeGameIdSelector,
   activeProfileId as activeProfileIdSelector,
@@ -50,12 +49,8 @@ export const PagesProvider: FC<IPagesProviderProps> = ({ children }) => {
   const mainPage = useSelector(mainPageSelector);
   const activeProfileId = useSelector(activeProfileIdSelector);
   const activeGameId = useSelector(activeGameIdSelector);
-  const useModernLayout = useSelector(
-    (state: IState) => state.settings.window.useModernLayout,
-  );
-  const profilesVisible = useSelector(
-    (state: IState) => state.settings.interface.profilesVisible,
-  );
+  const useModernLayout = useSelector((state: IState) => state.settings.window.useModernLayout);
+  const profilesVisible = useSelector((state: IState) => state.settings.interface.profilesVisible);
 
   const sortedPages = useMemo(
     () =>
@@ -95,14 +90,7 @@ export const PagesProvider: FC<IPagesProviderProps> = ({ children }) => {
         dispatch(setOpenMainPage(firstVisible.id, false));
       }
     }
-  }, [
-    mainPage,
-    sortedPages,
-    activeProfileId,
-    activeGameId,
-    profilesVisible,
-    dispatch,
-  ]);
+  }, [mainPage, sortedPages, activeProfileId, activeGameId, profilesVisible, dispatch]);
 
   const contextValue = useMemo(
     () => ({
@@ -112,11 +100,7 @@ export const PagesProvider: FC<IPagesProviderProps> = ({ children }) => {
     [sortedPages, mainPage],
   );
 
-  return (
-    <PagesContext.Provider value={contextValue}>
-      {children}
-    </PagesContext.Provider>
-  );
+  return <PagesContext.Provider value={contextValue}>{children}</PagesContext.Provider>;
 };
 
 export const PagesConsumer = PagesContext.Consumer;

@@ -1,22 +1,21 @@
+import * as path from "path";
+import { pathToFileURL } from "url";
+
 import type PromiseBB from "bluebird";
 import type { TFunction } from "i18next";
-
-import * as path from "path";
 import * as React from "react";
 import { ListGroupItem, Media, Popover } from "react-bootstrap";
 import { Provider } from "react-redux";
-import { pathToFileURL } from "url";
-
-import type { IActionDefinition } from "../../../types/IActionDefinition";
-import type { IMod } from "../../mod_management/types/IMod";
-import type { IDiscoveryResult } from "../types/IDiscoveryResult";
-import type { IGameStored } from "../types/IGameStored";
 
 import { ComponentEx } from "../../../controls/ComponentEx";
 import IconBar from "../../../controls/IconBar";
 import OverlayTrigger from "../../../controls/OverlayTrigger";
 import { IconButton } from "../../../controls/TooltipControls";
+import type { IActionDefinition } from "../../../types/IActionDefinition";
 import opn from "../../../util/opn";
+import type { IMod } from "../../mod_management/types/IMod";
+import type { IDiscoveryResult } from "../types/IDiscoveryResult";
+import type { IGameStored } from "../types/IGameStored";
 import GameInfoPopover from "./GameInfoPopover";
 
 export interface IProps {
@@ -41,25 +40,15 @@ class GameRow extends ComponentEx<IProps, {}> {
   private mRef = null;
 
   public render(): JSX.Element {
-    const {
-      t,
-      active,
-      container,
-      discovery,
-      game,
-      getBounds,
-      onRefreshGameInfo,
-      type,
-    } = this.props;
+    const { t, active, container, discovery, game, getBounds, onRefreshGameInfo, type } =
+      this.props;
 
     if (game === undefined) {
       return null;
     }
 
     const logoPath: string =
-      game.extensionPath !== undefined
-        ? path.join(game.extensionPath, game.logo)
-        : game.imageURL;
+      game.extensionPath !== undefined ? path.join(game.extensionPath, game.logo) : game.imageURL;
 
     const location =
       discovery !== undefined && discovery.path !== undefined ? (
@@ -102,9 +91,7 @@ class GameRow extends ComponentEx<IProps, {}> {
 
     const protocol = new URL(logoPath)?.protocol;
     const imgurl =
-      protocol != null && protocol.startsWith("http")
-        ? logoPath
-        : pathToFileURL(logoPath).href;
+      protocol != null && protocol.startsWith("http") ? logoPath : pathToFileURL(logoPath).href;
 
     return (
       <ListGroupItem className={classes.join(" ")}>
@@ -186,11 +173,9 @@ class GameRow extends ComponentEx<IProps, {}> {
     this.props.onBrowseGameLocation(this.props.game.id);
   };
 
-  private priorityButtons = (action: IActionDefinition) =>
-    action.position < 100;
+  private priorityButtons = (action: IActionDefinition) => action.position < 100;
 
-  private lowPriorityButtons = (action: IActionDefinition) =>
-    action.position >= 100;
+  private lowPriorityButtons = (action: IActionDefinition) => action.position >= 100;
 }
 
 export default GameRow as React.ComponentClass<IProps>;

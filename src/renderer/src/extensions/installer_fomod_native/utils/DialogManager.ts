@@ -1,10 +1,9 @@
+import type * as fomodT from "@nexusmods/fomod-installer-native";
+import { getErrorMessageOrDefault } from "@vortex/shared";
+
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import { log } from "../../../util/log";
 import { showError } from "../../../util/message";
-
-import type { IDialogManager } from "../../installer_fomod_shared/utils/DialogQueue";
-import { DialogQueue } from "../../installer_fomod_shared/utils/DialogQueue";
-
 import {
   clearDialog,
   endDialog,
@@ -16,9 +15,8 @@ import type {
   IInstallerState,
   IInstallStep,
 } from "../../installer_fomod_shared/types/interface";
-
-import type * as fomodT from "@nexusmods/fomod-installer-native";
-import { getErrorMessageOrDefault } from "@vortex/shared";
+import type { IDialogManager } from "../../installer_fomod_shared/utils/DialogQueue";
+import { DialogQueue } from "../../installer_fomod_shared/utils/DialogQueue";
 
 /**
  * UI Delegate for native FOMOD installer
@@ -48,11 +46,7 @@ export class DialogManager implements IDialogManager {
     return this.mApi;
   }
 
-  public constructor(
-    api: IExtensionApi,
-    instanceId: string,
-    scriptPath: string,
-  ) {
+  public constructor(api: IExtensionApi, instanceId: string, scriptPath: string) {
     this.mApi = api;
     this.mInstanceId = instanceId;
     this.mScriptPath = scriptPath;
@@ -135,11 +129,7 @@ export class DialogManager implements IDialogManager {
         installSteps,
         error: getErrorMessageOrDefault(err),
       });
-      showError(
-        this.mApi.store.dispatch,
-        "update installer dialog failed",
-        err,
-      );
+      showError(this.mApi.store.dispatch, "update installer dialog failed", err);
       throw err;
     }
   };
@@ -155,18 +145,9 @@ export class DialogManager implements IDialogManager {
       this.mApi.store.dispatch(endDialog(this.mInstanceId));
 
       this.mApi.events
-        .removeListener(
-          `fomod-installer-select-${this.mInstanceId}`,
-          this.onDialogSelect,
-        )
-        .removeListener(
-          `fomod-installer-continue-${this.mInstanceId}`,
-          this.onDialogContinue,
-        )
-        .removeListener(
-          `fomod-installer-cancel-${this.mInstanceId}`,
-          this.onDialogEnd,
-        );
+        .removeListener(`fomod-installer-select-${this.mInstanceId}`, this.onDialogSelect)
+        .removeListener(`fomod-installer-continue-${this.mInstanceId}`, this.onDialogContinue)
+        .removeListener(`fomod-installer-cancel-${this.mInstanceId}`, this.onDialogEnd);
 
       this.mContinueCB = this.mSelectCB = this.mCancelCB = undefined;
 
@@ -194,10 +175,7 @@ export class DialogManager implements IDialogManager {
     try {
       this.mApi.events
         .on(`fomod-installer-select-${this.mInstanceId}`, this.onDialogSelect)
-        .on(
-          `fomod-installer-continue-${this.mInstanceId}`,
-          this.onDialogContinue,
-        )
+        .on(`fomod-installer-continue-${this.mInstanceId}`, this.onDialogContinue)
         .on(`fomod-installer-cancel-${this.mInstanceId}`, this.onDialogEnd);
 
       this.mApi.store.dispatch(
@@ -230,11 +208,7 @@ export class DialogManager implements IDialogManager {
   /**
    * Event handler: User selected options in the dialog
    */
-  private onDialogSelect = (
-    stepId: string,
-    groupId: string,
-    pluginIds: string[],
-  ) => {
+  private onDialogSelect = (stepId: string, groupId: string, pluginIds: string[]) => {
     log("debug", "User selected options in FOMOD dialog", {
       instanceId: this.mInstanceId,
       stepId,
@@ -255,11 +229,7 @@ export class DialogManager implements IDialogManager {
         pluginIds,
         error: getErrorMessageOrDefault(err),
       });
-      showError(
-        this.mApi.store.dispatch,
-        "select installer dialog failed",
-        err,
-      );
+      showError(this.mApi.store.dispatch, "select installer dialog failed", err);
       throw err;
     }
   };
@@ -285,11 +255,7 @@ export class DialogManager implements IDialogManager {
         currentStepId,
         error: getErrorMessageOrDefault(err),
       });
-      showError(
-        this.mApi.store.dispatch,
-        "continue installer dialog failed",
-        err,
-      );
+      showError(this.mApi.store.dispatch, "continue installer dialog failed", err);
       throw err;
     }
   };
@@ -314,11 +280,7 @@ export class DialogManager implements IDialogManager {
         instanceId: this.mInstanceId,
         error: getErrorMessageOrDefault(err),
       });
-      showError(
-        this.mApi.store.dispatch,
-        "cancel installer dialog failed",
-        err,
-      );
+      showError(this.mApi.store.dispatch, "cancel installer dialog failed", err);
       throw err;
     }
   };
@@ -327,9 +289,7 @@ export class DialogManager implements IDialogManager {
 /**
  * Convert native IInstallStep to shared IInstallStep format
  */
-const convertInstallStep = (
-  nativeStep: fomodT.types.IInstallStep,
-): IInstallStep => {
+const convertInstallStep = (nativeStep: fomodT.types.IInstallStep): IInstallStep => {
   return {
     id: nativeStep.id,
     name: nativeStep.name,

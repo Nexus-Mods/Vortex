@@ -1,8 +1,9 @@
-import parseMOIni from "./parseMOIni";
+import * as path from "path";
 
 import Promise from "bluebird";
-import * as path from "path";
 import { fs, types } from "vortex-api";
+
+import parseMOIni from "./parseMOIni";
 
 export function instancesPath(): string {
   return path.resolve(process.env["LOCALAPPDATA"], "ModOrganizer");

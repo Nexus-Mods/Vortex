@@ -1,15 +1,9 @@
-import {
-  describe,
-  it,
-  expect,
-  jest,
-  beforeEach,
-  afterEach,
-} from "@jest/globals";
+import { describe, it, expect, jest, beforeEach, afterEach } from "@jest/globals";
+
 import InstallManager from "../extensions/mod_management/InstallManager";
-import { IExtensionApi, IState } from "../types/api";
 import { IDependency } from "../extensions/mod_management/types/IDependency";
 import { IModRule } from "../extensions/mod_management/types/IMod";
+import { IExtensionApi, IState } from "../types/api";
 
 // Mock dependencies
 jest.mock("../extensions/mod_management/util/dependencies");
@@ -212,9 +206,7 @@ describe("Phased Installer", () => {
       const state = installManager.mInstallPhaseState.get(sourceModId);
 
       // Simulate what would happen in the actual code
-      const allMods = Object.values(
-        (mockState.session as any).collections.activeSession.mods,
-      );
+      const allMods = Object.values((mockState.session as any).collections.activeSession.mods);
       const allPhases = new Set<number>();
       allMods.forEach((mod: any) => {
         allPhases.add(mod.phase ?? 0);
@@ -224,12 +216,8 @@ describe("Phased Installer", () => {
       Array.from(allPhases)
         .sort((a, b) => a - b)
         .forEach((phase) => {
-          const phaseMods = allMods.filter(
-            (mod: any) => (mod.phase ?? 0) === phase,
-          );
-          const requiredPhaseMods = phaseMods.filter(
-            (mod: any) => mod.type === "requires",
-          );
+          const phaseMods = allMods.filter((mod: any) => (mod.phase ?? 0) === phase);
+          const requiredPhaseMods = phaseMods.filter((mod: any) => mod.type === "requires");
           const completedRequired = requiredPhaseMods.filter((mod: any) =>
             ["installed", "failed", "skipped"].includes(mod.status),
           ).length;
@@ -260,9 +248,7 @@ describe("Phased Installer", () => {
         },
       } as any;
 
-      const allMods = Object.values(
-        (mockState.session as any).collections.activeSession.mods,
-      );
+      const allMods = Object.values((mockState.session as any).collections.activeSession.mods);
       let highestCompletedPhase = -1;
 
       const allPhases = new Set<number>();
@@ -273,12 +259,8 @@ describe("Phased Installer", () => {
       Array.from(allPhases)
         .sort((a, b) => a - b)
         .forEach((phase) => {
-          const phaseMods = allMods.filter(
-            (mod: any) => (mod.phase ?? 0) === phase,
-          );
-          const requiredPhaseMods = phaseMods.filter(
-            (mod: any) => mod.type === "requires",
-          );
+          const phaseMods = allMods.filter((mod: any) => (mod.phase ?? 0) === phase);
+          const requiredPhaseMods = phaseMods.filter((mod: any) => mod.type === "requires");
           const completedRequired = requiredPhaseMods.filter((mod: any) =>
             ["installed", "failed", "skipped"].includes(mod.status),
           ).length;

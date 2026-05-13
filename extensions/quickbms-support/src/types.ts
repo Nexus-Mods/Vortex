@@ -13,9 +13,7 @@ export class QuickBMSError extends Error {
     //  can cause the array to get truncated "<long array cut>"
     const filtered = this.trimContact(stdErrLines);
     this.mErrorLines =
-      filtered.length > 40
-        ? filtered.slice(filtered.length - 40).join("\n")
-        : filtered.join("\n");
+      filtered.length > 40 ? filtered.slice(filtered.length - 40).join("\n") : filtered.join("\n");
   }
 
   public get errorLines(): string {

@@ -3,15 +3,9 @@ import * as _ from "lodash";
 import type { IDiscoveredTool } from "../../../types/IDiscoveredTool";
 import type { IReducerSpec } from "../../../types/IExtensionContext";
 import type { ISettingsGameMode } from "../../../types/IState";
-import type { IDiscoveryResult } from "../types/IDiscoveryResult";
-
-import {
-  deleteOrNop,
-  getSafe,
-  merge,
-  setSafe,
-} from "../../../util/storeHelper";
+import { deleteOrNop, getSafe, merge, setSafe } from "../../../util/storeHelper";
 import * as actions from "../actions/settings";
+import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 
 /**
  * reducer for changes to the window state
@@ -24,10 +18,7 @@ export const settingsReducer: IReducerSpec<ISettingsGameMode> = {
       const gamePath = ["discovered", payload.id];
       let result = payload.result;
       // If the path was manually set by the user, don't let auto-discovery overwrite it
-      if (
-        getSafe(state, [...gamePath, "pathSetManually"], false) &&
-        !result.pathSetManually
-      ) {
+      if (getSafe(state, [...gamePath, "pathSetManually"], false) && !result.pathSetManually) {
         const { path: _path, ...rest } = result;
         result = rest;
       }
@@ -45,12 +36,7 @@ export const settingsReducer: IReducerSpec<ISettingsGameMode> = {
       }
 
       // avoid triggering unnecessary events
-      if (
-        _.isEqual(
-          getSafe(res, gamePath, undefined),
-          getSafe(state, gamePath, undefined),
-        )
-      ) {
+      if (_.isEqual(getSafe(res, gamePath, undefined), getSafe(state, gamePath, undefined))) {
         return state;
       } else {
         return res;
@@ -90,9 +76,7 @@ export const settingsReducer: IReducerSpec<ISettingsGameMode> = {
       // easier to fix here
       // delete payload.result.executable;
 
-      const old: IDiscoveredTool = _.omit(getSafe(state, toolPath, {}), [
-        "timestamp",
-      ]) as any;
+      const old: IDiscoveredTool = _.omit(getSafe(state, toolPath, {}), ["timestamp"]) as any;
       if (!payload.manual) {
         if (_.isEqual(old, payload.result)) {
           return state;
@@ -108,17 +92,8 @@ export const settingsReducer: IReducerSpec<ISettingsGameMode> = {
     [actions.setToolVisible as any]: (state, payload) =>
       // custom added tools can be deleted so we do that instead of hiding them
       !payload.visible &&
-      getSafe(
-        state,
-        ["discovered", payload.gameId, "tools", payload.toolId, "custom"],
-        false,
-      )
-        ? deleteOrNop(state, [
-            "discovered",
-            payload.gameId,
-            "tools",
-            payload.toolId,
-          ])
+      getSafe(state, ["discovered", payload.gameId, "tools", payload.toolId, "custom"], false)
+        ? deleteOrNop(state, ["discovered", payload.gameId, "tools", payload.toolId])
         : setSafe(
             state,
             ["discovered", payload.gameId, "tools", payload.toolId, "hidden"],
@@ -134,8 +109,7 @@ export const settingsReducer: IReducerSpec<ISettingsGameMode> = {
       setSafe(state, ["searchPaths"], payload),
     [actions.setPickerLayout as any]: (state, payload) =>
       setSafe(state, ["pickerLayout"], payload.layout),
-    [actions.setSortManaged as any]: (state, payload) =>
-      setSafe(state, ["sortManaged"], payload),
+    [actions.setSortManaged as any]: (state, payload) => setSafe(state, ["sortManaged"], payload),
     [actions.setSortUnmanaged as any]: (state, payload) =>
       setSafe(state, ["sortUnmanaged"], payload),
   },

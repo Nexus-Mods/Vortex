@@ -1,4 +1,5 @@
 import path from "path";
+
 import { fs, types, selectors } from "vortex-api";
 
 import { GAME_ID, HALO_GAMES, MOD_MANIFEST_FILE_PATH } from "./common";
@@ -22,10 +23,7 @@ export function identifyHaloGames(files: string[]): IHaloGame[] {
   }, []);
 }
 
-export async function applyToManifest(
-  api: types.IExtensionApi,
-  apply: boolean,
-) {
+export async function applyToManifest(api: types.IExtensionApi, apply: boolean) {
   const state = api.getState();
   const activeGame = selectors.activeGameId(state);
   if (activeGame !== GAME_ID) {
@@ -46,9 +44,7 @@ export async function applyToManifest(
   }
   const stagingPath = selectors.installPathForGame(state, GAME_ID);
   const lines = manifestData.split("\r\n");
-  const hasStagingFolderEntry = lines.some((line) =>
-    line.includes(stagingPath),
-  );
+  const hasStagingFolderEntry = lines.some((line) => line.includes(stagingPath));
   if (apply && !hasStagingFolderEntry) {
     lines.push(stagingPath);
   } else if (!apply && hasStagingFolderEntry) {
@@ -56,10 +52,7 @@ export async function applyToManifest(
   }
   try {
     await fs.ensureDirWritableAsync(path.dirname(MOD_MANIFEST_FILE_PATH));
-    await fs.writeFileAsync(
-      MOD_MANIFEST_FILE_PATH,
-      lines.filter((line) => !!line).join("\r\n"),
-    );
+    await fs.writeFileAsync(MOD_MANIFEST_FILE_PATH, lines.filter((line) => !!line).join("\r\n"));
   } catch (err) {
     api.showErrorNotification("Failed to write mod manifest file", err, {
       allowReport: err.code !== "EPERM",

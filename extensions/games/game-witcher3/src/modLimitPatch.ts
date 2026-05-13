@@ -1,10 +1,10 @@
+import path from "path";
+
 /* eslint-disable */
 import _ from "lodash";
-import path from "path";
 import { actions, fs, selectors, types, util } from "vortex-api";
 
 import { setSuppressModLimitPatch } from "./actions";
-
 import { GAME_ID, I18N_NAMESPACE } from "./common";
 
 /**
@@ -39,11 +39,7 @@ export class ModLimitPatcher {
     await this.queryPatch();
     const stagingPath = selectors.installPathForGame(state, GAME_ID);
     const modName = "Mod Limit Patcher";
-    let mod: types.IMod = util.getSafe(
-      state,
-      ["persistent", "mods", GAME_ID, modName],
-      undefined,
-    );
+    let mod: types.IMod = util.getSafe(state, ["persistent", "mods", GAME_ID, modName], undefined);
     if (mod === undefined) {
       try {
         await this.createModLimitPatchMod(modName);
@@ -58,18 +54,10 @@ export class ModLimitPatcher {
     }
     try {
       const src = path.join(discovery.path, game.executable);
-      const dest = path.join(
-        stagingPath,
-        mod.installationPath,
-        game.executable,
-      );
+      const dest = path.join(stagingPath, mod.installationPath, game.executable);
       await fs
         .removeAsync(dest)
-        .catch((err) =>
-          ["ENOENT"].includes(err.code)
-            ? Promise.resolve()
-            : Promise.reject(err),
-        );
+        .catch((err) => (["ENOENT"].includes(err.code) ? Promise.resolve() : Promise.reject(err)));
       await fs.copyAsync(src, dest);
       const tempFile = dest + ".tmp";
       await this.streamExecutable(RANGE_START, RANGE_END, dest, tempFile);
@@ -82,11 +70,7 @@ export class ModLimitPatcher {
       });
     } catch (err) {
       const allowReport = !(err instanceof util.UserCanceled);
-      this.mApi.showErrorNotification(
-        "Failed to generate mod limit patch",
-        err,
-        { allowReport },
-      );
+      this.mApi.showErrorNotification("Failed to generate mod limit patch", err, { allowReport });
       this.mApi.events.emit("remove-mod", GAME_ID, modName);
       return Promise.resolve(undefined);
     }
@@ -161,13 +145,8 @@ export class ModLimitPatcher {
         if (error !== null) {
           return reject(error);
         }
-        const profileId = selectors.lastActiveProfileForGame(
-          this.mApi.getState(),
-          GAME_ID,
-        );
-        this.mApi.store.dispatch(
-          actions.setModEnabled(profileId, modName, true),
-        );
+        const profileId = selectors.lastActiveProfileForGame(this.mApi.getState(), GAME_ID);
+        this.mApi.store.dispatch(actions.setModEnabled(profileId, modName, true));
         return resolve();
       });
     });
@@ -179,9 +158,7 @@ export class ModLimitPatcher {
     let iter = 0;
     while (iter < chunk.length) {
       if (!foundSeq && chunk[iter] === firstSeqByte) {
-        const subArray = _.cloneDeep(
-          Array.from(chunk.slice(iter, iter + sequence.length)),
-        );
+        const subArray = _.cloneDeep(Array.from(chunk.slice(iter, iter + sequence.length)));
         foundSeq = _.isEqual(sequence, Buffer.from(subArray));
       }
       iter++;
@@ -196,10 +173,7 @@ export class ModLimitPatcher {
     const data = Buffer.alloc(chunk.length);
     data.fill(chunk.slice(0, idx), 0, idx);
     data.fill(patchedBuffer, idx, idx + patchedBuffer.length);
-    data.fill(
-      chunk.slice(idx + patchedBuffer.length),
-      idx + patchedBuffer.length,
-    );
+    data.fill(chunk.slice(idx + patchedBuffer.length), idx + patchedBuffer.length);
     return data;
   }
 

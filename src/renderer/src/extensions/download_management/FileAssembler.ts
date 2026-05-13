@@ -1,7 +1,8 @@
+import * as path from "path";
+
 import PromiseBB from "bluebird";
 import { dialog as dialogIn } from "electron";
 import * as fsFast from "fs-extra";
-import * as path from "path";
 
 import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
 import { getVisibleWindow } from "../../util/errorHandling";
@@ -49,10 +50,7 @@ class FileAssembler {
   private mFD: number;
   private mFileName: string;
   private mTotalSize: number;
-  private mQueue: (
-    cb: () => PromiseBB<any>,
-    tryOnly: boolean,
-  ) => PromiseBB<any>;
+  private mQueue: (cb: () => PromiseBB<any>, tryOnly: boolean) => PromiseBB<any>;
   private mWritten: number = 0;
   private mLastFlushedTime: number = 0;
   private mLastFlushedSize: number = 0;
@@ -88,11 +86,7 @@ class FileAssembler {
       () =>
         closeFD()
           .catch({ code: "EBADF" }, () => null)
-          .then(() =>
-            PromiseBB.resolve(newName).then(
-              (nameResolved) => (resolved = nameResolved),
-            ),
-          )
+          .then(() => PromiseBB.resolve(newName).then((nameResolved) => (resolved = nameResolved)))
           .then(() => fs.renameAsync(this.mFileName, resolved))
           .then(() => fs.openAsync(resolved, "r+"))
           .then((fd) => {
@@ -133,8 +127,7 @@ class FileAssembler {
             this.mWritten += bytesWritten;
             const now = Date.now();
             if (
-              this.mWritten - this.mLastFlushedSize >
-                FileAssembler.MIN_FLUSH_SIZE ||
+              this.mWritten - this.mLastFlushedSize > FileAssembler.MIN_FLUSH_SIZE ||
               now - this.mLastFlushedTime > FileAssembler.MIN_FLUSH_TIME
             ) {
               this.mLastFlushedSize = this.mWritten;
@@ -152,9 +145,7 @@ class FileAssembler {
           })
           .then((bytesWritten: number) =>
             bytesWritten !== data.length
-              ? PromiseBB.reject(
-                  new Error(`incomplete write ${bytesWritten}/${data.length}`),
-                )
+              ? PromiseBB.reject(new Error(`incomplete write ${bytesWritten}/${data.length}`))
               : PromiseBB.resolve(synced),
           )
           .catch({ code: "ENOSPC" }, () => {
@@ -197,14 +188,12 @@ class FileAssembler {
   }
 
   private writeAsync(data: Buffer, offset: number) {
-    return fs
-      .writeAsync(this.mFD, data, 0, data.length, offset)
-      .catch((err) => {
-        if (err.code === "EBADF") {
-          err.message += ` (fd: ${this.mFD ?? "closed"})`;
-        }
-        return PromiseBB.reject(err);
-      });
+    return fs.writeAsync(this.mFD, data, 0, data.length, offset).catch((err) => {
+      if (err.code === "EBADF") {
+        err.message += ` (fd: ${this.mFD ?? "closed"})`;
+      }
+      return PromiseBB.reject(err);
+    });
   }
 }
 

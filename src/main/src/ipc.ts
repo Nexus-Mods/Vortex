@@ -6,7 +6,6 @@ import type {
   SerializableArgs,
   AssertSerializable,
 } from "@vortex/shared/ipc";
-
 import { ipcMain, type WebContents } from "electron";
 
 import { log } from "./logging";
@@ -51,14 +50,11 @@ function mainOn<C extends keyof RendererChannels>(
   ) => void,
   logOptions: LogOptions = false,
 ): void {
-  ipcMain.on(
-    channel,
-    (event, ...args: SerializableArgs<Parameters<RendererChannels[C]>>) => {
-      ipcLogger(logOptions, channel, event, args);
-      assertTrustedSender(event);
-      listener(event, ...args);
-    },
-  );
+  ipcMain.on(channel, (event, ...args: SerializableArgs<Parameters<RendererChannels[C]>>) => {
+    ipcLogger(logOptions, channel, event, args);
+    assertTrustedSender(event);
+    listener(event, ...args);
+  });
 }
 
 function mainHandle<C extends keyof InvokeChannels>(
@@ -71,14 +67,11 @@ function mainHandle<C extends keyof InvokeChannels>(
     | AssertSerializable<Awaited<ReturnType<InvokeChannels[C]>>>,
   logOptions: LogOptions = false,
 ): void {
-  ipcMain.handle(
-    channel,
-    (event, ...args: SerializableArgs<Parameters<InvokeChannels[C]>>) => {
-      ipcLogger(logOptions, channel, event, args);
-      assertTrustedSender(event);
-      return listener(event, ...args);
-    },
-  );
+  ipcMain.handle(channel, (event, ...args: SerializableArgs<Parameters<InvokeChannels[C]>>) => {
+    ipcLogger(logOptions, channel, event, args);
+    assertTrustedSender(event);
+    return listener(event, ...args);
+  });
 }
 
 function mainHandleSync<C extends keyof SyncChannels>(
@@ -88,13 +81,10 @@ function mainHandleSync<C extends keyof SyncChannels>(
     ...args: SerializableArgs<Parameters<SyncChannels[C]>>
   ) => AssertSerializable<ReturnType<SyncChannels[C]>>,
 ): void {
-  ipcMain.on(
-    channel,
-    (event, ...args: SerializableArgs<Parameters<SyncChannels[C]>>) => {
-      assertTrustedSender(event);
-      event.returnValue = listener(event, ...args);
-    },
-  );
+  ipcMain.on(channel, (event, ...args: SerializableArgs<Parameters<SyncChannels[C]>>) => {
+    assertTrustedSender(event);
+    event.returnValue = listener(event, ...args);
+  });
 }
 
 function mainSend<C extends keyof MainChannels>(
@@ -105,9 +95,7 @@ function mainSend<C extends keyof MainChannels>(
   webContents.send(channel, ...args);
 }
 
-function assertTrustedSender(
-  event: Electron.IpcMainEvent | Electron.IpcMainInvokeEvent,
-) {
+function assertTrustedSender(event: Electron.IpcMainEvent | Electron.IpcMainInvokeEvent) {
   // NOTE(erri120): https://www.electronjs.org/docs/latest/tutorial/security#17-validate-the-sender-of-all-ipc-messages
 
   const { senderFrame } = event;
@@ -117,8 +105,7 @@ function assertTrustedSender(
   const url = parseURL(rawUrl);
   if (!url) throw new Error(`Invalid url: ${rawUrl}`);
 
-  if (!isTrustedProtocol(url))
-    throw new Error(`URL is not a trusted protocol: ${rawUrl}`);
+  if (!isTrustedProtocol(url)) throw new Error(`URL is not a trusted protocol: ${rawUrl}`);
 }
 
 function isTrustedProtocol(url: URL): boolean {

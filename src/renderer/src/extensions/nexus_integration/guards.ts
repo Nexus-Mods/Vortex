@@ -1,5 +1,5 @@
-import type { IValidateKeyDataV2 } from "./types/IValidateKeyData";
 import type { IState } from "../../types/IState";
+import type { IValidateKeyDataV2 } from "./types/IValidateKeyData";
 
 type IStatePersistent = IState["persistent"];
 type IStateConfidential = IState["confidential"];

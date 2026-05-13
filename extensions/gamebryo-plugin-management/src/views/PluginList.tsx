@@ -1,45 +1,12 @@
-/* eslint-disable */
-import { setPluginEnabled } from "../actions/loadOrder";
-import {
-  clearNewPluginCounter,
-  setPluginInfo,
-  updatePluginWarnings,
-} from "../actions/plugins";
-import { setAutoSortEnabled } from "../actions/settings";
-import { addGroup, addGroupRule, setGroup } from "../actions/userlist";
-import { IESPFile } from "../types/IESPFile";
-import { ILoadOrder } from "../types/ILoadOrder";
-import { ILOOTList, ILOOTPlugin } from "../types/ILOOTList";
-import {
-  IPluginCombined,
-  IPluginLoot,
-  IPluginParsed,
-  IPlugins,
-} from "../types/IPlugins";
-import GroupFilter from "../util/GroupFilter";
-
-import { GHOST_EXT, NAMESPACE } from "../statics";
-
-import DependencyIcon from "./DependencyIcon";
-import MasterList from "./MasterList";
-import PluginFlags from "./PluginFlags";
-import PluginFlagsFilter from "./PluginFlagsFilter";
-import PluginStatusFilter from "./PluginStatusFilter";
+import * as path from "path";
 
 import Promise from "bluebird";
 import I18next, { TFunction } from "i18next";
 import update from "immutability-helper";
 import * as _ from "lodash";
 import { Message, PluginCleaningData } from "loot";
-import * as path from "path";
 import * as React from "react";
-import {
-  Alert,
-  Button,
-  ListGroup,
-  ListGroupItem,
-  Panel,
-} from "react-bootstrap";
+import { Alert, Button, ListGroup, ListGroupItem, Panel } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
 import { connect } from "react-redux";
@@ -68,6 +35,23 @@ import {
   util,
 } from "vortex-api";
 
+/* eslint-disable */
+import { setPluginEnabled } from "../actions/loadOrder";
+import { clearNewPluginCounter, setPluginInfo, updatePluginWarnings } from "../actions/plugins";
+import { setAutoSortEnabled } from "../actions/settings";
+import { addGroup, addGroupRule, setGroup } from "../actions/userlist";
+import { GHOST_EXT, NAMESPACE } from "../statics";
+import { IESPFile } from "../types/IESPFile";
+import { ILoadOrder } from "../types/ILoadOrder";
+import { ILOOTList, ILOOTPlugin } from "../types/ILOOTList";
+import { IPluginCombined, IPluginLoot, IPluginParsed, IPlugins } from "../types/IPlugins";
+import GroupFilter from "../util/GroupFilter";
+import DependencyIcon from "./DependencyIcon";
+import MasterList from "./MasterList";
+import PluginFlags from "./PluginFlags";
+import PluginFlagsFilter from "./PluginFlagsFilter";
+import PluginStatusFilter from "./PluginStatusFilter";
+
 type TranslationFunction = typeof I18next.t;
 
 const CLEANING_GUIDE_LINK =
@@ -77,12 +61,7 @@ interface IBaseProps {
   forceListUpdate: any;
   nativePlugins: string[];
   onRefreshPlugins: () => void;
-  onSetPluginGhost: (
-    pluginId: string,
-    gameId: string,
-    ghosted: boolean,
-    enabled: boolean,
-  ) => void;
+  onSetPluginGhost: (pluginId: string, gameId: string, ghosted: boolean, enabled: boolean) => void;
   onSetPluginLight: (pluginId: string, enable: boolean) => void;
   gameSupported: (gameMode: string) => boolean;
   minRevision: (gameMode: string) => number;
@@ -98,11 +77,7 @@ interface IBaseProps {
   ): string[];
   isMaster: (filePath: string, flag: boolean, gameMode: string) => boolean;
   isLight: (filePath: string, flag: boolean, gameMode: string) => boolean;
-  isMediumMaster: (
-    filePath: string,
-    flag: boolean,
-    gameMode: string,
-  ) => boolean;
+  isMediumMaster: (filePath: string, flag: boolean, gameMode: string) => boolean;
   openLOOTSite: () => Promise<any>;
   parseESPFile: (filePath: string, gameMode: string) => IESPFile;
   safeBasename: (filePath: string) => string;
@@ -167,10 +142,7 @@ interface IGroupSelectState {
   inputValue: string;
 }
 
-class GroupSelect extends React.PureComponent<
-  IGroupSelectProps,
-  IGroupSelectState
-> {
+class GroupSelect extends React.PureComponent<IGroupSelectProps, IGroupSelectState> {
   constructor(props: IGroupSelectProps) {
     super(props);
     this.state = { inputValue: "" };
@@ -198,9 +170,7 @@ class GroupSelect extends React.PureComponent<
     const options = [...existingOptions];
     if (
       inputValue &&
-      !existingOptions.some(
-        (opt) => opt.value.toLowerCase() === inputValue.toLowerCase(),
-      )
+      !existingOptions.some((opt) => opt.value.toLowerCase() === inputValue.toLowerCase())
     ) {
       options.unshift({
         label: t("Create Group: {{group}}", { replace: { group: inputValue } }),
@@ -210,9 +180,7 @@ class GroupSelect extends React.PureComponent<
 
     const isCustom: boolean =
       (userlist.plugins || []).find((plugin) => {
-        const refPlugin = plugins.find(
-          (iter) => iter.id === plugin.name.toLowerCase(),
-        );
+        const refPlugin = plugins.find((iter) => iter.id === plugin.name.toLowerCase());
         return refPlugin !== undefined && plugin.group !== undefined;
       }) !== undefined;
 
@@ -232,14 +200,10 @@ class GroupSelect extends React.PureComponent<
     return newValue;
   };
 
-  private changeGroup = (
-    selection: { label: string; value: string } | null,
-  ) => {
+  private changeGroup = (selection: { label: string; value: string } | null) => {
     const { plugins, onSetGroup } = this.props;
     this.setState({ inputValue: "" });
-    plugins.forEach((plugin) =>
-      onSetGroup(plugin.name, selection ? selection.value : undefined),
-    );
+    plugins.forEach((plugin) => onSetGroup(plugin.name, selection ? selection.value : undefined));
   };
 }
 
@@ -253,14 +217,7 @@ interface IPluginCountProps {
 }
 
 function PluginCount(props: IPluginCountProps) {
-  const {
-    t,
-    gameId,
-    plugins,
-    gameSupported,
-    supportsESL,
-    supportsMediumMasters,
-  } = props;
+  const { t, gameId, plugins, gameSupported, supportsESL, supportsMediumMasters } = props;
 
   if (!gameSupported(gameId)) {
     return null;
@@ -275,9 +232,7 @@ function PluginCount(props: IPluginCountProps) {
   const mediumGame = supportsMediumMasters(gameId);
 
   const active = Object.keys(plugins).filter(isValid);
-  const regular = active.filter(
-    (id) => !plugins[id].isLight && !plugins[id].isMedium,
-  );
+  const regular = active.filter((id) => !plugins[id].isLight && !plugins[id].isMedium);
   const light = eslGame ? active.filter((id) => plugins[id].isLight) : [];
   const medium = mediumGame ? active.filter((id) => plugins[id].isMedium) : [];
 
@@ -300,10 +255,7 @@ function PluginCount(props: IPluginCountProps) {
   );
 
   tooltipText += mediumGame
-    ? "\n" +
-      t(
-        "In addition you can have up to 256 medium plugins, and 4096 light plugins.",
-      )
+    ? "\n" + t("In addition you can have up to 256 medium plugins, and 4096 light plugins.")
     : "\n" + t("In addition you can have up to 4096 light plugins.");
 
   return (
@@ -420,11 +372,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           this.props.supportsESL(this.props.gameMode) &&
           instanceIds.find((pluginId) => {
             const plugin = this.state.pluginsCombined[pluginId];
-            return (
-              plugin.isLight &&
-              plugin.deployed &&
-              pluginId.toLowerCase().endsWith(".esp")
-            );
+            return plugin.isLight && plugin.deployed && pluginId.toLowerCase().endsWith(".esp");
           }) !== undefined,
         singleRowAction: true,
         multiRowAction: true,
@@ -468,23 +416,13 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           if (value === undefined) {
             // toggle
             if (plugin.filePath.toLowerCase().endsWith(GHOST_EXT)) {
-              this.props.onSetPluginGhost(
-                plugin.id,
-                this.props.gameMode,
-                false,
-                true,
-              );
+              this.props.onSetPluginGhost(plugin.id, this.props.gameMode, false, true);
             } else {
               this.props.onSetPluginEnabled(plugin.id, !plugin.enabled);
             }
           } else {
             if (value === "ghost") {
-              this.props.onSetPluginGhost(
-                plugin.id,
-                this.props.gameMode,
-                true,
-                false,
-              );
+              this.props.onSetPluginGhost(plugin.id, this.props.gameMode, true, false);
             } else {
               if (plugin.filePath.toLowerCase().endsWith(GHOST_EXT)) {
                 this.props.onSetPluginGhost(
@@ -567,24 +505,18 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       },
     ];
 
-    this.updateDetailsDebouncer = new util.Debouncer(
-      (pluginList: IPlugins, gameId: string) => {
-        if (
-          this.props.modActivity !== undefined &&
-          this.props.modActivity.length > 0
-        ) {
-          log("debug", "deferring update plugin details because mod activity");
-          this.updateDetailsDebouncer.schedule(undefined, pluginList, gameId);
-          return Promise.resolve();
-        }
-        return this.updatePlugins(pluginList, gameId)
-          .catch(util.ProcessCanceled, () => null)
-          .catch((err) => {
-            log("warn", "failed to update plugins", { error: err.message });
-          });
-      },
-      2000,
-    );
+    this.updateDetailsDebouncer = new util.Debouncer((pluginList: IPlugins, gameId: string) => {
+      if (this.props.modActivity !== undefined && this.props.modActivity.length > 0) {
+        log("debug", "deferring update plugin details because mod activity");
+        this.updateDetailsDebouncer.schedule(undefined, pluginList, gameId);
+        return Promise.resolve();
+      }
+      return this.updatePlugins(pluginList, gameId)
+        .catch(util.ProcessCanceled, () => null)
+        .catch((err) => {
+          log("warn", "failed to update plugins", { error: err.message });
+        });
+    }, 2000);
   }
 
   public emptyPluginParsed(): { [plugin: string]: IPluginParsed } {
@@ -640,10 +572,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     //  and notify the user if any are found.
     this.updatePlugins(this.props.plugins, this.props.gameMode)
       .then(() =>
-        this.applyUserlist(
-          this.props.userlist.plugins || [],
-          this.props.masterlist.plugins || [],
-        ),
+        this.applyUserlist(this.props.userlist.plugins || [], this.props.masterlist.plugins || []),
       )
       .catch(util.ProcessCanceled, () => null)
       .catch((err) => {
@@ -668,30 +597,17 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           .sort();
       if (
         this.props.plugins === undefined ||
-        !_.isEqual(
-          Object.keys(this.props.plugins ?? {}),
-          Object.keys(nextProps.plugins ?? {}),
-        ) ||
-        !_.isEqual(
-          pluginPaths(this.props.plugins),
-          pluginPaths(nextProps.plugins),
-        ) ||
+        !_.isEqual(Object.keys(this.props.plugins ?? {}), Object.keys(nextProps.plugins ?? {})) ||
+        !_.isEqual(pluginPaths(this.props.plugins), pluginPaths(nextProps.plugins)) ||
         hasUserlistChange
       ) {
         if (hasUserlistChange) {
           // There's a chance that the userlist has changed (user applied a new
           // group to a plugin, etc)
           // we need to apply the userlist change before scheduling the update.
-          this.applyUserlist(
-            nextProps.userlist.plugins || [],
-            nextProps.masterlist.plugins || [],
-          );
+          this.applyUserlist(nextProps.userlist.plugins || [], nextProps.masterlist.plugins || []);
         }
-        this.updateDetailsDebouncer.schedule(
-          undefined,
-          nextProps.plugins,
-          nextProps.gameMode,
-        );
+        this.updateDetailsDebouncer.schedule(undefined, nextProps.plugins, nextProps.gameMode);
       }
     }
 
@@ -700,17 +616,12 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     }
 
     if (this.props.forceListUpdate !== nextProps.forceListUpdate) {
-      this.updateDetailsDebouncer.schedule(
-        undefined,
-        nextProps.plugins,
-        nextProps.gameMode,
-      );
+      this.updateDetailsDebouncer.schedule(undefined, nextProps.plugins, nextProps.gameMode);
     }
   }
 
   public render(): JSX.Element {
-    const { t, deployProgress, gameMode, needToDeploy, onRefreshPlugins } =
-      this.props;
+    const { t, deployProgress, gameMode, needToDeploy, onRefreshPlugins } = this.props;
     const { pluginsCombined } = this.state;
 
     if (!this.props.gameSupported(gameMode)) {
@@ -740,10 +651,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           <Table
             tableId="gamebryo-plugins"
             actions={this.actions}
-            staticElements={[
-              this.pluginEnabledAttribute,
-              ...this.pluginAttributes,
-            ]}
+            staticElements={[this.pluginEnabledAttribute, ...this.pluginAttributes]}
             data={pluginsCombined}
           />
         );
@@ -781,9 +689,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
                 </More>
               </UsageX>
             </FlexLayout.Fixed>
-            <FlexLayout.Fixed>
-              {needToDeploy ? this.renderOutdated() : null}
-            </FlexLayout.Fixed>
+            <FlexLayout.Fixed>{needToDeploy ? this.renderOutdated() : null}</FlexLayout.Fixed>
             <FlexLayout.Flex>
               <Panel>
                 <Panel.Body>
@@ -802,9 +708,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     const { t } = this.props;
     return (
       <Alert bsStyle="warning">
-        {t(
-          "This list may be outdated, you should deploy mods before modifying it.",
-        )}{" "}
+        {t("This list may be outdated, you should deploy mods before modifying it.")}{" "}
         <Button onClick={this.deploy}>{t("Deploy now")}</Button>
       </Alert>
     );
@@ -814,9 +718,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     const { t } = this.props;
     const things = [];
     if (dat["itmCount"] > 0) {
-      things.push(
-        t("{{count}} ITM record", { ns: NAMESPACE, count: dat["itmCount"] }),
-      );
+      things.push(t("{{count}} ITM record", { ns: NAMESPACE, count: dat["itmCount"] }));
     }
     if (dat.deletedNavmeshCount > 0) {
       things.push(
@@ -884,10 +786,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       }
       return new Promise((resolve, reject) => {
         try {
-          const esp = this.props.parseESPFile(
-            pluginsIn[pluginName].filePath,
-            this.props.gameMode,
-          );
+          const esp = this.props.parseESPFile(pluginsIn[pluginName].filePath, this.props.gameMode);
           pluginsParsed[pluginName] = {
             isMaster: this.props.isMaster(
               pluginsIn[pluginName].filePath,
@@ -962,11 +861,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           return Promise.reject(new util.ProcessCanceled("new update started"));
         }
 
-        const pluginsCombined = this.detailedPlugins(
-          pluginsIn,
-          pluginsLoot,
-          pluginsParsed,
-        );
+        const pluginsCombined = this.detailedPlugins(pluginsIn, pluginsLoot, pluginsParsed);
 
         if (this.mMounted) {
           this.mCachedGameMode = this.props.gameMode;
@@ -983,9 +878,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         this.installedNative = nativePlugins
           .filter(
             (name) =>
-              pluginsFlat.find(
-                (plugin: IPluginCombined) => name === plugin.id,
-              ) !== undefined,
+              pluginsFlat.find((plugin: IPluginCombined) => name === plugin.id) !== undefined,
           )
           .reduce((prev, name, idx) => {
             prev[name.toLowerCase()] = idx;
@@ -1062,16 +955,11 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     // native plugins at the top in their hard-coded order. Then it assigns
     // the ascending mod index to all enabled plugins.
 
-    const np = nativePlugins.reduce(
-      (prev: { [id: string]: number }, id: string, idx: number) => {
-        prev[id] = idx;
-        return prev;
-      },
-      {},
-    );
-    const byLO = pluginObjects
-      .slice()
-      .sort((lhs, rhs) => this.sortByLoadOrder(np, lhs, rhs));
+    const np = nativePlugins.reduce((prev: { [id: string]: number }, id: string, idx: number) => {
+      prev[id] = idx;
+      return prev;
+    }, {});
+    const byLO = pluginObjects.slice().sort((lhs, rhs) => this.sortByLoadOrder(np, lhs, rhs));
 
     let modIndex = 0;
     let eslIndex = 0;
@@ -1108,31 +996,29 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
     const pluginIds = Object.keys(plugins ?? {});
 
-    const pluginObjects: IPluginCombined[] = pluginIds.map(
-      (pluginId: string) => {
-        const userlistEntry = (userlist.plugins || []).find(
-          (entry) => entry.name.toLowerCase() === pluginId,
-        );
-        const res = {
-          id: pluginId,
-          modIndex: -1,
-          enabled: plugins[pluginId].isNative ? undefined : false,
-          cleanliness: [],
-          dirtyness: [],
-          ...plugins[pluginId],
-          ...loadOrder[pluginId],
-          ...pluginsLoot[pluginId],
-          ...pluginsParsed[pluginId],
-          name: this.props.safeBasename(plugins[pluginId].filePath),
-        };
+    const pluginObjects: IPluginCombined[] = pluginIds.map((pluginId: string) => {
+      const userlistEntry = (userlist.plugins || []).find(
+        (entry) => entry.name.toLowerCase() === pluginId,
+      );
+      const res = {
+        id: pluginId,
+        modIndex: -1,
+        enabled: plugins[pluginId].isNative ? undefined : false,
+        cleanliness: [],
+        dirtyness: [],
+        ...plugins[pluginId],
+        ...loadOrder[pluginId],
+        ...pluginsLoot[pluginId],
+        ...pluginsParsed[pluginId],
+        name: this.props.safeBasename(plugins[pluginId].filePath),
+      };
 
-        if (userlistEntry !== undefined && userlistEntry.group !== undefined) {
-          res.group = userlistEntry.group;
-        }
+      if (userlistEntry !== undefined && userlistEntry.group !== undefined) {
+        res.group = userlistEntry.group;
+      }
 
-        return res;
-      },
-    );
+      return res;
+    });
 
     const modIndices = this.modIndices(pluginObjects);
     const result: { [id: string]: IPluginCombined } = {};
@@ -1150,9 +1036,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     const { pluginsCombined } = this.state;
 
     const updateSet = {};
-    const pluginsFlat = Object.keys(pluginsCombined).map(
-      (pluginId) => pluginsCombined[pluginId],
-    );
+    const pluginsFlat = Object.keys(pluginsCombined).map((pluginId) => pluginsCombined[pluginId]);
     pluginsFlat.forEach((plugin, idx) => {
       const lo = loadOrder[plugin.id] || {
         enabled: false,
@@ -1174,10 +1058,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     });
 
     if (this.mMounted) {
-      this.nextState.pluginsCombined = update(
-        this.state.pluginsCombined,
-        updateSet,
-      );
+      this.nextState.pluginsCombined = update(this.state.pluginsCombined, updateSet);
     }
   }
 
@@ -1216,11 +1097,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           //   actually want to filter by, rather than rename:
           // || err.message.includes('Access is denied');
           err.message.includes("rename:");
-        this.context.api.showErrorNotification(
-          "Failed to convert plugin",
-          err,
-          { allowReport: !isUserError },
-        );
+        this.context.api.showErrorNotification("Failed to convert plugin", err, {
+          allowReport: !isUserError,
+        });
       });
   };
 
@@ -1248,11 +1127,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           //   actually want to filter by, rather than rename:
           // || err.message.includes('Access is denied');
           err.message.includes("rename:");
-        this.context.api.showErrorNotification(
-          "Failed to convert plugin",
-          err,
-          { allowReport: !isUserError },
-        );
+        this.context.api.showErrorNotification("Failed to convert plugin", err, {
+          allowReport: !isUserError,
+        });
       });
   };
 
@@ -1266,15 +1143,11 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         return;
       }
 
-      const pluginML: any =
-        masterlist.find((iter) => iter.name.toLowerCase() === pluginId) || {};
+      const pluginML: any = masterlist.find((iter) => iter.name.toLowerCase() === pluginId) || {};
 
       updateSet[pluginId] = {};
 
-      if (
-        (plugin.group || pluginML.group || "") !==
-        (pluginsCombined[pluginId].group || "")
-      ) {
+      if ((plugin.group || pluginML.group || "") !== (pluginsCombined[pluginId].group || "")) {
         updateSet[pluginId]["group"] = { $set: plugin.group || pluginML.group };
       } else {
         const loot = pluginsLoot[plugin.name];
@@ -1285,10 +1158,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     });
 
     if (this.mMounted) {
-      this.nextState.pluginsCombined = update(
-        this.state.pluginsCombined,
-        updateSet,
-      );
+      this.nextState.pluginsCombined = update(this.state.pluginsCombined, updateSet);
     }
   }
 
@@ -1358,10 +1228,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       return null;
     }
 
-    const filtered =
-      relevantOnly === true
-        ? messages.filter((msg) => msg.type !== -1)
-        : messages;
+    const filtered = relevantOnly === true ? messages.filter((msg) => msg.type !== -1) : messages;
     return (
       <ListGroup className="loot-message-list">
         {filtered.map((msg: Message, idx: number) => (
@@ -1392,12 +1259,10 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   };
 
   private setGroup = (plugin: string, group: string) => {
-    const { onAddGroup, onAddGroupRule, onSetGroup, masterlist, userlist } =
-      this.props;
+    const { onAddGroup, onAddGroupRule, onSetGroup, masterlist, userlist } = this.props;
     if (
       group !== undefined &&
-      (masterlist.groups || []).find((iter) => iter.name === group) ===
-        undefined &&
+      (masterlist.groups || []).find((iter) => iter.name === group) === undefined &&
       (userlist.groups || []).find((iter) => iter.name === group) === undefined
     ) {
       onAddGroup(group);
@@ -1453,11 +1318,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         edit: {},
         calc: (plugin) =>
           util.resolveCategoryName(
-            util.getSafe(
-              this.props.mods,
-              [plugin.modId, "attributes", "category"],
-              undefined,
-            ),
+            util.getSafe(this.props.mods, [plugin.modId, "attributes", "category"], undefined),
             this.context.api.store.getState(),
           ),
         placement: "both",
@@ -1480,11 +1341,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         description: "Revision of the plugin",
         placement: "detail",
         calc: (plugin: IPluginCombined) => plugin.revision,
-        customRenderer: (
-          plugin: IPluginCombined,
-          detail: boolean,
-          t: TranslationFunction,
-        ) =>
+        customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) =>
           plugin.revision < this.props.minRevision(this.props.gameMode) ? (
             <Alert bsStyle="warning">
               {t(this.props.revisionText(this.props.gameMode), {
@@ -1509,11 +1366,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         isToggleable: true,
         edit: {},
         isSortable: true,
-        customRenderer: (
-          plugin: IPluginCombined,
-          detail: boolean,
-          t: TranslationFunction,
-        ) => (
+        customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) => (
           <PluginFlags
             gameSupported={this.props.gameSupported}
             supportsESL={this.props.supportsESL}
@@ -1540,11 +1393,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         id: "tags",
         name: "Tags",
         icon: "flag",
-        customRenderer: (
-          plugin: IPluginCombined,
-          detail: boolean,
-          t: TranslationFunction,
-        ) => (
+        customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) => (
           <div className="plugin-tags">
             {t("Current")}
             <div>
@@ -1576,11 +1425,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         id: "flagsDetail",
         name: "Flags",
         edit: {},
-        customRenderer: (
-          plugin: IPluginCombined,
-          detail: boolean,
-          t: TranslationFunction,
-        ) => {
+        customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) => {
           const flags = this.props.getPluginFlags(
             plugin,
             this.props.gameSupported(this.props.gameMode),
@@ -1622,8 +1467,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           plugin.loadOrder !== -1
             ? plugin.loadOrder
             : (this.props.loadOrder[plugin.id]?.loadOrder ?? "?"),
-        sortFuncRaw: (lhs, rhs) =>
-          this.sortByLoadOrder(this.installedNative, lhs, rhs),
+        sortFuncRaw: (lhs, rhs) => this.sortByLoadOrder(this.installedNative, lhs, rhs),
         placement: "table",
       },
       {
@@ -1640,10 +1484,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           if (!plugin.enabled && !plugin.isNative) {
             return undefined;
           }
-          if (
-            plugin.eslIndex === undefined &&
-            plugin.mediumIndex === undefined
-          ) {
+          if (plugin.eslIndex === undefined && plugin.mediumIndex === undefined) {
             return toHex(plugin.modIndex, 2);
           } else if (plugin.isLight) {
             return `${toHex(plugin.modIndex, 2)} (${toHex(plugin.eslIndex, 3)})`;
@@ -1668,13 +1509,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           const isCustom = ulEntry !== undefined && ulEntry.group !== undefined;
 
           return (
-            <div
-              className={
-                isCustom ? "plugin-group-custom" : "plugin-group-default"
-              }
-            >
-              {grp}
-            </div>
+            <div className={isCustom ? "plugin-group-custom" : "plugin-group-default"}>{grp}</div>
           );
         },
         edit: {},
@@ -1721,14 +1556,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         edit: {},
         condition: () => this.props.supportsESL(this.props.gameMode),
         calc: (plugin: IPluginCombined) => plugin.isValidAsLightPlugin,
-        customRenderer: (
-          plugin: IPluginCombined,
-          detail: boolean,
-          t: TranslationFunction,
-        ) => {
+        customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) => {
           const isEsp = plugin.name.toLowerCase().endsWith(".esp");
-          const canBeConverted =
-            (plugin.isValidAsLightPlugin || plugin.isLight) && isEsp;
+          const canBeConverted = (plugin.isValidAsLightPlugin || plugin.isLight) && isEsp;
           return (
             <Button
               disabled={!canBeConverted}
@@ -1741,9 +1571,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
                   : !isEsp
                     ? t("Only plugins with .esp extension can be converted")
                     : plugin.isLight
-                      ? t(
-                          "This plugin already has the light flag set, you can unset it.",
-                        )
+                      ? t("This plugin already has the light flag set, you can unset it.")
                       : t(
                           "This is a regular plugin that could be turned into a light one " +
                             "(also known as an ESPfe). " +
@@ -1760,27 +1588,18 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
                           // TODO: this was previously treated as a manual sort which caused the
                           // autosort setting to be ignored. Was there a reason for that?
-                          this.context.api.events.emit(
-                            "autosort-plugins",
-                            false,
-                          );
+                          this.context.api.events.emit("autosort-plugins", false);
                         })
                         .catch((err) => {
-                          const hasSubstring = (subString) =>
-                            err.message.indexOf(subString) !== -1;
+                          const hasSubstring = (subString) => err.message.indexOf(subString) !== -1;
                           // still haven't figured out why these error messages are localized
                           // but what we actually want to "suppress" reporting on is "Access denied"
                           // and "file not found" given that we can't stop the user or 3rd party
                           // applications from removing the file for whatever reason.
-                          this.context.api.showErrorNotification(
-                            "Failed to convert plugin",
-                            err,
-                            {
-                              allowReport:
-                                !hasSubstring("rename:") &&
-                                !hasSubstring("file not found"),
-                            },
-                          );
+                          this.context.api.showErrorNotification("Failed to convert plugin", err, {
+                            allowReport:
+                              !hasSubstring("rename:") && !hasSubstring("file not found"),
+                          });
                         });
                     }
                   : nop
@@ -1802,13 +1621,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           detail: boolean,
           t: TFunction,
           props: types.ICustomProps,
-        ) => (
-          <DependencyIcon
-            plugin={plugin}
-            t={t}
-            onHighlight={props.onHighlight}
-          />
-        ),
+        ) => <DependencyIcon plugin={plugin} t={t} onHighlight={props.onHighlight} />,
         calc: () => null,
         isToggleable: true,
         edit: {},
@@ -1818,11 +1631,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         id: "masters",
         name: "Masters",
         edit: {},
-        customRenderer: (
-          plugin: IPluginCombined,
-          detail: boolean,
-          t: TranslationFunction,
-        ) => (
+        customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) => (
           <MasterList
             masters={plugin.masterList}
             installedPlugins={this.props.installedPlugins()}
@@ -1835,21 +1644,13 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         id: "cleaning_info",
         name: "LOOT cleaning info",
         edit: {},
-        customRenderer: (
-          plugin: IPluginCombined,
-          detail: boolean,
-          t: TranslationFunction,
-        ) => (
+        customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) => (
           <ListGroup className="loot-message-list">
             {(plugin.cleanliness ?? []).map((dat, idx) => (
-              <ListGroupItem key={idx}>
-                {this.renderCleaningData(dat)}
-              </ListGroupItem>
+              <ListGroupItem key={idx}>{this.renderCleaningData(dat)}</ListGroupItem>
             ))}
             {(plugin.dirtyness ?? []).map((dat, idx) => (
-              <ListGroupItem key={idx}>
-                {this.renderCleaningData(dat)}
-              </ListGroupItem>
+              <ListGroupItem key={idx}>{this.renderCleaningData(dat)}</ListGroupItem>
             ))}
           </ListGroup>
         ),
@@ -1861,8 +1662,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         id: "loot_messages",
         name: "LOOT Messages (only updates on sort)",
         edit: {},
-        customRenderer: (plugin: IPluginCombined) =>
-          this.renderLootMessages(plugin),
+        customRenderer: (plugin: IPluginCombined) => this.renderLootMessages(plugin),
         calc: (plugin: IPluginCombined) => plugin.messages,
         placement: "detail",
       },
@@ -1870,8 +1670,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         id: "loot_messages_extra",
         name: "LOOT Messages (inlined)",
         edit: {},
-        customRenderer: (plugin: IPluginCombined) =>
-          this.renderLootMessages(plugin, true),
+        customRenderer: (plugin: IPluginCombined) => this.renderLootMessages(plugin, true),
         calc: (plugin: IPluginCombined) => plugin.messages,
         placement: "inline" as any,
         isToggleable: true,
@@ -1915,26 +1714,17 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, null, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetPluginEnabled: (pluginName: string, enabled: boolean) =>
       dispatch(setPluginEnabled(pluginName, enabled)),
-    onSetAutoSortEnabled: (enabled: boolean) =>
-      dispatch(setAutoSortEnabled(enabled)),
+    onSetAutoSortEnabled: (enabled: boolean) => dispatch(setAutoSortEnabled(enabled)),
     onAddGroup: (group: string) => dispatch(addGroup(group)),
-    onAddGroupRule: (group: string, reference: string) =>
-      dispatch(addGroupRule(group, reference)),
-    onSetGroup: (pluginName: string, group: string) =>
-      dispatch(setGroup(pluginName, group)),
-    onUpdateWarnings: (
-      pluginName: string,
-      notificationId: string,
-      value: boolean,
-    ) => dispatch(updatePluginWarnings(pluginName, notificationId, value)),
-    onUpdatePluginInfo: (info: { [id: string]: IPluginCombined }) =>
-      dispatch(setPluginInfo(info)),
+    onAddGroupRule: (group: string, reference: string) => dispatch(addGroupRule(group, reference)),
+    onSetGroup: (pluginName: string, group: string) => dispatch(setGroup(pluginName, group)),
+    onUpdateWarnings: (pluginName: string, notificationId: string, value: boolean) =>
+      dispatch(updatePluginWarnings(pluginName, notificationId, value)),
+    onUpdatePluginInfo: (info: { [id: string]: IPluginCombined }) => dispatch(setPluginInfo(info)),
     onClearNewPluginCounter: () => dispatch(clearNewPluginCounter()),
   };
 }

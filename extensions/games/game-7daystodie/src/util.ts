@@ -1,11 +1,11 @@
-import Bluebird from "bluebird";
 import path from "path";
+
+import Bluebird from "bluebird";
 import turbowalk from "turbowalk";
 import { actions, fs, selectors, types, util } from "vortex-api";
 import { Parser } from "xml2js";
 
 import { setUDF } from "./actions";
-
 import {
   DEFAULT_LAUNCHER_SETTINGS,
   GAME_ID,
@@ -19,9 +19,7 @@ const PARSER = new Parser({ explicitRoot: false });
 
 export async function purge(api: types.IExtensionApi): Promise<void> {
   return new Promise<void>((resolve, reject) =>
-    api.events.emit("purge-mods", false, (err) =>
-      err ? reject(err) : resolve(),
-    ),
+    api.events.emit("purge-mods", false, (err) => (err ? reject(err) : resolve())),
   );
 }
 
@@ -73,9 +71,7 @@ export const selectUDF = async (context: types.IExtensionContext) => {
     [{ label: "Cancel" }, { label: "Select UDF" }],
   );
   if (res.action !== "Select UDF") {
-    return Promise.reject(
-      new util.ProcessCanceled("Cannot proceed without UDF"),
-    );
+    return Promise.reject(new util.ProcessCanceled("Cannot proceed without UDF"));
   }
   await fs.ensureDirWritableAsync(path.dirname(launcherSettings));
   await ensureLOFile(context);
@@ -84,9 +80,7 @@ export const selectUDF = async (context: types.IExtensionContext) => {
     defaultPath: path.join(path.dirname(launcherSettings)),
   });
   if (!directory) {
-    return Promise.reject(
-      new util.ProcessCanceled("Cannot proceed without UDF"),
-    );
+    return Promise.reject(new util.ProcessCanceled("Cannot proceed without UDF"));
   }
 
   const segments = directory.split(path.sep);
@@ -124,16 +118,11 @@ export function getModsPath(api: types.IExtensionApi): string {
 
 // We _should_ just export this from vortex-api, but I guess it's not wise to make it
 //  easy for users since we want to move away from bluebird in the future ?
-export function toBlue<T>(
-  func: (...args: any[]) => Promise<T>,
-): (...args: any[]) => Bluebird<T> {
+export function toBlue<T>(func: (...args: any[]) => Promise<T>): (...args: any[]) => Bluebird<T> {
   return (...args: any[]) => Bluebird.resolve(func(...args));
 }
 
-export function genProps(
-  context: types.IExtensionContext,
-  profileId?: string,
-): IProps {
+export function genProps(context: types.IExtensionContext, profileId?: string): IProps {
   const api = context.api;
   const state = api.getState();
   const profile: types.IProfile =
@@ -168,9 +157,7 @@ export async function ensureLOFile(
   }
 
   if (props === undefined) {
-    return Promise.reject(
-      new util.ProcessCanceled("failed to generate game props"),
-    );
+    return Promise.reject(new util.ProcessCanceled("failed to generate game props"));
   }
 
   const targetPath = loadOrderFilePath(props.profile.id);
@@ -197,18 +184,12 @@ export function getPrefixOffset(api: types.IExtensionApi): number {
     return;
   }
 
-  return util.getSafe(
-    state,
-    ["settings", "7daystodie", "prefixOffset", profileId],
-    0,
-  );
+  return util.getSafe(state, ["settings", "7daystodie", "prefixOffset", profileId], 0);
 }
 
 export function reversePrefix(input: string): number {
   if (input.length !== 3 || input.match(/[A-Z][A-Z][A-Z]/g) === null) {
-    throw new util.DataInvalid(
-      "Invalid input, please provide a valid prefix (AAA-ZZZ)",
-    );
+    throw new util.DataInvalid("Invalid input, please provide a valid prefix (AAA-ZZZ)");
   }
   const prefix = input.split("");
 
@@ -246,9 +227,7 @@ export async function getModName(modInfoPath): Promise<any> {
       ? Promise.resolve(modName)
       : Promise.reject(new util.DataInvalid("Unexpected modinfo.xml format"));
   } catch (err) {
-    return Promise.reject(
-      new util.DataInvalid("Failed to parse ModInfo.xml file"),
-    );
+    return Promise.reject(new util.DataInvalid("Failed to parse ModInfo.xml file"));
   }
 }
 
@@ -258,17 +237,14 @@ export async function getModInfoFiles(basePath: string): Promise<string[]> {
     basePath,
     (files) => {
       const filtered = files.filter(
-        (entry) =>
-          !entry.isDirectory && path.basename(entry.filePath) === MOD_INFO,
+        (entry) => !entry.isDirectory && path.basename(entry.filePath) === MOD_INFO,
       );
       filePaths = filePaths.concat(filtered.map((entry) => entry.filePath));
     },
     { recurse: true, skipLinks: true },
   )
     .catch((err) =>
-      ["ENOENT", "ENOTFOUND"].includes(err.code)
-        ? Promise.resolve()
-        : Promise.reject(err),
+      ["ENOENT", "ENOTFOUND"].includes(err.code) ? Promise.resolve() : Promise.reject(err),
     )
     .then(() => Promise.resolve(filePaths));
 }

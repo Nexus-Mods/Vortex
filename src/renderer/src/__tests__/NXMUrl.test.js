@@ -8,8 +8,6 @@ describe("NXMUrl", () => {
     expect(url.fileId).toBe(456);
   });
   it("throws on invalid url", () => {
-    expect(() => new NXMUrl("gugu")).toThrow(
-      new Error('invalid nxm url "gugu"'),
-    );
+    expect(() => new NXMUrl("gugu")).toThrow(new Error('invalid nxm url "gugu"'));
   });
 });

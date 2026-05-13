@@ -3,10 +3,10 @@ import { describe, test, expect, beforeEach } from "vitest";
 import { BaseResolver } from "./resolvers/BaseResolver";
 import { UnixResolver } from "./resolvers/UnixResolver";
 import { WindowsResolver } from "./resolvers/WindowsResolver";
-import { RelativePath, Anchor, ResolvedPath } from "./types";
 import { MockFilesystem } from "./test-helpers/MockFilesystem";
 import { MockUnixFilesystem } from "./test-helpers/MockUnixFilesystem";
 import { MockWindowsFilesystem } from "./test-helpers/MockWindowsFilesystem";
+import { RelativePath, Anchor, ResolvedPath } from "./types";
 
 // Test resolver implementations
 class AppResolver extends BaseResolver<"userData" | "temp"> {
@@ -99,10 +99,7 @@ describe("Integration Tests", () => {
     });
 
     test("navigate parent directories", async () => {
-      const filePath = gameResolver.PathFor(
-        "gameMods",
-        "skyui/interface/skyui.swf",
-      );
+      const filePath = gameResolver.PathFor("gameMods", "skyui/interface/skyui.swf");
       const interfaceDir = filePath.parent();
       const skyuiDir = interfaceDir.parent();
 
@@ -157,9 +154,7 @@ describe("Integration Tests", () => {
       // `toContain()` would let broken path formatting slip through.
       const unixPath = ResolvedPath.make("/home/user/mods");
       expect(unixPath).toBe("/home/user/mods");
-      expect(ResolvedPath.join(unixPath, "skyrim", "data")).toBe(
-        "/home/user/mods/skyrim/data",
-      );
+      expect(ResolvedPath.join(unixPath, "skyrim", "data")).toBe("/home/user/mods/skyrim/data");
 
       const windowsPath = ResolvedPath.make("C:\\Users\\user\\mods");
       expect(windowsPath).toBe("C:\\Users\\user\\mods");
@@ -188,43 +183,28 @@ describe("Integration Tests", () => {
   describe("OS-specific resolvers (WindowsResolver & UnixResolver)", () => {
     test("resolvers work on any platform", async () => {
       // WindowsResolver always works
-      const windowsResolver = new WindowsResolver(
-        undefined,
-        new MockWindowsFilesystem(),
-      );
+      const windowsResolver = new WindowsResolver(undefined, new MockWindowsFilesystem());
       const cDrive = windowsResolver.PathFor("c");
       const windowsResolved = await cDrive.resolve();
       expect(windowsResolved).toBe("C:\\");
 
       // UnixResolver always works
-      const unixResolver = new UnixResolver(
-        undefined,
-        new MockUnixFilesystem(),
-      );
+      const unixResolver = new UnixResolver(undefined, new MockUnixFilesystem());
       const root = unixResolver.PathFor("root");
       const unixResolved = await root.resolve();
       expect(unixResolved).toBe("/");
     });
 
     test("resolvers return all anchors regardless of platform", async () => {
-      const windowsResolver = new WindowsResolver(
-        undefined,
-        new MockWindowsFilesystem(),
-      );
+      const windowsResolver = new WindowsResolver(undefined, new MockWindowsFilesystem());
       expect(windowsResolver.supportedAnchors()).toHaveLength(26);
 
-      const unixResolver = new UnixResolver(
-        undefined,
-        new MockUnixFilesystem(),
-      );
+      const unixResolver = new UnixResolver(undefined, new MockUnixFilesystem());
       expect(unixResolver.supportedAnchors()).toHaveLength(1);
     });
 
     test("WindowsResolver canResolve all 26 drive letters", async () => {
-      const resolver = new WindowsResolver(
-        undefined,
-        new MockWindowsFilesystem(),
-      );
+      const resolver = new WindowsResolver(undefined, new MockWindowsFilesystem());
 
       const letters = "abcdefghijklmnopqrstuvwxyz".split("");
       letters.forEach((letter) => {

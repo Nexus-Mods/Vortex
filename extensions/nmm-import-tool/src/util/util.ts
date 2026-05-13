@@ -1,13 +1,14 @@
 import { createHash } from "crypto";
 import path from "path";
-import { TFunction } from "react-i18next";
 import { pathToFileURL } from "url";
+
+import { TFunction } from "react-i18next";
 import { fs, log, types, util } from "vortex-api";
 import * as winapi from "winapi-bindings";
 
-import { isConfigEmpty } from "./nmmVirtualConfigParser";
 import { ModsCapacityMap, ICapacityInfo } from "../types/capacityTypes";
 import { IModEntry, ModsMap, ProgressCB } from "../types/nmmEntries";
+import { isConfigEmpty } from "./nmmVirtualConfigParser";
 
 // Doesn't seem to be used any longer, but going to keep it here just in case we need it one day.
 const _LINKS = {
@@ -20,8 +21,7 @@ const _LINKS = {
   // tslint:disable-next-line: max-line-length
   FILE_CONFLICTS:
     "https://wiki.nexusmods.com/index.php/File_Conflicts:_Nexus_Mod_Manager_vs_Vortex",
-  MANAGE_CONFLICTS:
-    "https://wiki.nexusmods.com/index.php/Managing_File_Conflicts",
+  MANAGE_CONFLICTS: "https://wiki.nexusmods.com/index.php/Managing_File_Conflicts",
   DOCUMENTATION: "https://wiki.nexusmods.com/index.php/Category:Vortex",
 };
 
@@ -53,14 +53,10 @@ export function getVirtualConfigFilePath(source: string) {
 
 export async function calculateArchiveSize(mod: IModEntry): Promise<number> {
   try {
-    const stats = await fs.statAsync(
-      path.join(mod.archivePath, mod.modFilename),
-    );
+    const stats = await fs.statAsync(path.join(mod.archivePath, mod.modFilename));
     return Promise.resolve(stats.size);
   } catch (err) {
-    return err instanceof util.UserCanceled
-      ? Promise.resolve(0)
-      : Promise.reject(err);
+    return err instanceof util.UserCanceled ? Promise.resolve(0) : Promise.reject(err);
   }
 }
 
@@ -77,8 +73,7 @@ export function getCapacityInformation(dirPath: string): ICapacityInfo {
   //
   //  The import process will create these directories when mod/archive files are copied over
   //  if they're missing.
-  const totalFreeBytes =
-    winapi.GetDiskFreeSpaceEx(rootPath).free - MIN_DISK_SPACE_OFFSET;
+  const totalFreeBytes = winapi.GetDiskFreeSpaceEx(rootPath).free - MIN_DISK_SPACE_OFFSET;
   return {
     rootPath,
     totalFreeBytes,
@@ -157,9 +152,7 @@ export async function getArchives(
   parsedMods: { [id: string]: IModEntry },
 ): Promise<string[]> {
   const knownArchiveExt = (filePath: string): boolean =>
-    !!filePath
-      ? archiveExtLookup.has(path.extname(filePath).toLowerCase())
-      : false;
+    !!filePath ? archiveExtLookup.has(path.extname(filePath).toLowerCase()) : false;
 
   // Set of mod files which we already have meta information on.
   const modFileNames = new Set<string>(
@@ -169,9 +162,7 @@ export async function getArchives(
   return fs
     .readdirAsync(source)
     .filter((filePath: string) => knownArchiveExt(filePath))
-    .then((archives: string[]) =>
-      archives.filter((archive) => !modFileNames.has(archive)),
-    )
+    .then((archives: string[]) => archives.filter((archive) => !modFileNames.has(archive)))
     .catch((err: Error) => {
       this.nextState.error = err.message;
       return Promise.resolve([]);
@@ -196,9 +187,7 @@ export function createModEntry(
   };
 
   const isDuplicate = () => {
-    return existingDownloads !== undefined
-      ? existingDownloads.has(input)
-      : false;
+    return existingDownloads !== undefined ? existingDownloads.has(input) : false;
   };
 
   const id = path.basename(input, path.extname(input));
@@ -209,29 +198,18 @@ export function createModEntry(
       .then((data) => {
         const fields = data.toString().split("@@");
         return fs.readFileAsync(
-          path.join(
-            cacheBasePath,
-            fields[1] === "-" ? "" : fields[1],
-            "fomod",
-            "info.xml",
-          ),
+          path.join(cacheBasePath, fields[1] === "-" ? "" : fields[1], "fomod", "info.xml"),
         );
       })
       .then((infoXmlData) => {
         const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(
-          infoXmlData.toString(),
-          "text/xml",
-        );
+        const xmlDoc = parser.parseFromString(infoXmlData.toString(), "text/xml");
         const modName = getInner(xmlDoc.querySelector("Name")) || id;
         const version = getInner(xmlDoc.querySelector("Version")) || "";
         const modId = getInner(xmlDoc.querySelector("Id")) || "";
         const downloadId = () => {
           try {
-            return Number.parseInt(
-              getInner(xmlDoc.querySelector("DownloadId")),
-              10,
-            );
+            return Number.parseInt(getInner(xmlDoc.querySelector("DownloadId")), 10);
           } catch (err) {
             return 0;
           }
@@ -270,22 +248,16 @@ export function createModEntry(
 
 export function isNMMRunning(): boolean {
   const processes = winapi.GetProcessList();
-  const runningExes: { [exeId: string]: winapi.ProcessEntry } =
-    processes.reduce((prev, entry) => {
-      prev[entry.exeFile.toLowerCase()] = entry;
-      return prev;
-    }, {});
+  const runningExes: { [exeId: string]: winapi.ProcessEntry } = processes.reduce((prev, entry) => {
+    prev[entry.exeFile.toLowerCase()] = entry;
+    return prev;
+  }, {});
 
-  return (
-    Object.keys(runningExes).find((key) => key === "nexusclient.exe") !==
-    undefined
-  );
+  return Object.keys(runningExes).find((key) => key === "nexusclient.exe") !== undefined;
 }
 
 export async function validate(source: string) {
-  const res = await isConfigEmpty(
-    path.join(source, "VirtualInstall", "VirtualModConfig.xml"),
-  );
+  const res = await isConfigEmpty(path.join(source, "VirtualInstall", "VirtualModConfig.xml"));
   const nmmRunning = isNMMRunning();
   return Promise.resolve({
     nmmModsEnabled: !res,
@@ -319,11 +291,7 @@ export async function generateModEntries(
 ): Promise<ModsMap> {
   const state = api.getState();
   let existingDownloads: Set<string>;
-  const downloads = util.getSafe(
-    state,
-    ["persistent", "downloads", "files"],
-    undefined,
-  );
+  const downloads = util.getSafe(state, ["persistent", "downloads", "files"], undefined);
   if (downloads !== undefined && Object.keys(downloads).length > 0) {
     existingDownloads = new Set<string>(
       Object.keys(downloads).map((key) => downloads[key].localPath),

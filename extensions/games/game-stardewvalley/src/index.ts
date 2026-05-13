@@ -6,8 +6,6 @@ import type { types } from "vortex-api";
 
 // Core identifiers and shared state wiring.
 import { GAME_ID } from "./common";
-import sdvReducers from "./state/reducers";
-
 // Feature modules registered during startup.
 import { registerConfigMod } from "./configMod";
 import StardewValleyGame from "./game/StardewValleyGame";
@@ -18,10 +16,8 @@ import { registerModTypes } from "./registration/registerModTypes";
 import { registerTests } from "./registration/registerTests";
 import { registerUi } from "./registration/registerUi";
 import { registerRuntimeEvents } from "./runtime/registerRuntimeEvents";
-import {
-  selectDiscoveredToolPath,
-  selectSdvDiscoveryPath,
-} from "./state/selectors";
+import sdvReducers from "./state/reducers";
+import { selectDiscoveredToolPath, selectSdvDiscoveryPath } from "./state/selectors";
 
 /** Registers all Stardew Valley game, installer, runtime, and UI integrations. */
 export default function init(context: types.IExtensionContext): void {
@@ -58,10 +54,7 @@ export default function init(context: types.IExtensionContext): void {
   registerConfigMod(context);
 
   // Register metadata extraction from manifest.json during install.
-  context.registerAttributeExtractor(
-    25,
-    createManifestAttributeExtractor(context),
-  );
+  context.registerAttributeExtractor(25, createManifestAttributeExtractor(context));
 
   // Register diagnostics and runtime event hooks.
   registerTests(context, modManifestCache);

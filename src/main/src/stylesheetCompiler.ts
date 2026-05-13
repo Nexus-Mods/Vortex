@@ -1,6 +1,7 @@
 import path from "path";
-import sass from "sass";
 import { pathToFileURL } from "url";
+
+import sass from "sass";
 
 import { getVortexPath } from "./getVortexPath";
 import { betterIpcMain } from "./ipc";
@@ -15,18 +16,13 @@ export default class StylesheetCompiler {
 
   constructor() {
     this.#compiler = sass.initCompiler();
-    this.#style =
-      process.env.NODE_ENV === "development" ? "expanded" : "compressed";
+    this.#style = process.env.NODE_ENV === "development" ? "expanded" : "compressed";
 
     const assetsPath = path.join(getVortexPath("assets_unpacked"), "css");
     const modulesPath = getVortexPath("modules_unpacked");
     this.#loadPaths = [assetsPath, modulesPath];
 
-    log(
-      "debug",
-      "using laod paths for stylesheet compilation",
-      this.#loadPaths,
-    );
+    log("debug", "using laod paths for stylesheet compilation", this.#loadPaths);
 
     betterIpcMain.handle("styles:compile", (_, filePaths) => {
       const started = Date.now();
@@ -55,9 +51,7 @@ export default class StylesheetCompiler {
           return importDecleration + "\n";
         }
 
-        const sanitizedName = StylesheetCompiler.sanitize(
-          path.basename(fixedPath, ".scss"),
-        );
+        const sanitizedName = StylesheetCompiler.sanitize(path.basename(fixedPath, ".scss"));
         return `*, #added_by_${sanitizedName} { ${importDecleration} }\n`;
       })
       .join("\n");
@@ -94,10 +88,7 @@ export default class StylesheetCompiler {
 
   private static fixPath(inputPath: string): string {
     if (path.isAbsolute(inputPath)) {
-      inputPath = inputPath.replace(
-        "app.asar" + path.sep,
-        "app.asar.unpacked" + path.sep,
-      );
+      inputPath = inputPath.replace("app.asar" + path.sep, "app.asar.unpacked" + path.sep);
     }
 
     return inputPath.replaceAll("\\", "\\\\");

@@ -1,9 +1,9 @@
-import { ListGroup, ListGroupItem } from "react-bootstrap";
 import React from "react";
+import { ListGroup, ListGroupItem } from "react-bootstrap";
 import { useSelector } from "react-redux";
-import { getSafe } from "../../util/storeHelper";
 
 import type { TFunction } from "../../util/i18n";
+import { getSafe } from "../../util/storeHelper";
 import EnvButton from "./EnvButton";
 
 interface IConnectedProps {

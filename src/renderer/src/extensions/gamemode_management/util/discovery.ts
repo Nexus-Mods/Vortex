@@ -1,11 +1,14 @@
+import * as path from "path";
+
+import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import Bluebird from "bluebird";
+import * as fsExtra from "fs-extra";
+import turbowalk from "turbowalk";
+import * as winapi from "winapi-bindings";
+
 import type { IDiscoveredTool } from "../../../types/IDiscoveredTool";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IGame } from "../../../types/IGame";
-import {
-  getErrorCode,
-  getErrorMessageOrDefault,
-  unknownToError,
-} from "@vortex/shared";
 import { GameEntryNotFound } from "../../../types/IGameStore";
 import type { IGameStoreEntry } from "../../../types/IGameStoreEntry";
 import type { ITool } from "../../../types/ITool";
@@ -20,25 +23,13 @@ import { log } from "../../../util/log";
 import StarterInfo from "../../../util/StarterInfo";
 import { getSafe } from "../../../util/storeHelper";
 import { truthy } from "../../../util/util";
-
 import { modPathsForGame } from "../../mod_management/selectors";
-
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 import type { IToolStored } from "../types/IToolStored";
-
 import Progress from "./Progress";
 
-import Bluebird from "bluebird";
-import * as fsExtra from "fs-extra";
-import * as path from "path";
-import turbowalk from "turbowalk";
-import * as winapi from "winapi-bindings";
-
 export type DiscoveredCB = (gameId: string, result: IDiscoveryResult) => void;
-export type DiscoveredToolCB = (
-  gameId: string,
-  result: IDiscoveredTool,
-) => void;
+export type DiscoveredToolCB = (gameId: string, result: IDiscoveredTool) => void;
 
 interface IFileEntry {
   fileName: string;
@@ -142,11 +133,7 @@ function updateManuallyConfigured(
         }
       })
       .catch((err) => {
-        log(
-          "error",
-          "failed to identify store for game",
-          getErrorMessageOrDefault(err),
-        );
+        log("error", "failed to identify store for game", getErrorMessageOrDefault(err));
       });
   } else {
     log("debug", "leaving alone previously discovered game", {
@@ -181,19 +168,14 @@ function queryByArgs(
       }
       const discoveredStore = discoveredGames[game.id]?.store;
       const prio = (entry: IGameStoreEntry) => {
-        if (
-          discoveredStore !== undefined &&
-          entry.gameStoreId === discoveredStore
-        ) {
+        if (discoveredStore !== undefined && entry.gameStoreId === discoveredStore) {
           return 0;
         } else {
           return entry.priority ?? 100;
         }
       };
 
-      results = results.sort(
-        (lhs: IGameStoreEntry, rhs: IGameStoreEntry) => prio(lhs) - prio(rhs),
-      );
+      results = results.sort((lhs: IGameStoreEntry, rhs: IGameStoreEntry) => prio(lhs) - prio(rhs));
       return Bluebird.resolve(results[0]);
     });
 }
@@ -204,9 +186,7 @@ function queryByCB(game: IGame): Bluebird<Partial<IGameStoreEntry>> {
   try {
     gamePath = game.queryPath();
     if (typeof gamePath === "function") {
-      throw new SetupError(
-        "queryPath must be a string or a promise that resolves to a string",
-      );
+      throw new SetupError("queryPath must be a string or a promise that resolves to a string");
     }
   } catch (err) {
     log("warn", "failed to query game location", {
@@ -227,11 +207,7 @@ function queryByCB(game: IGame): Bluebird<Partial<IGameStoreEntry>> {
       if (typeof resolvedInfo === "string") {
         return GameStoreHelper.identifyStore(resolvedInfo)
           .catch((err) => {
-            log(
-              "error",
-              "failed to identify store for game",
-              getErrorMessageOrDefault(err),
-            );
+            log("error", "failed to identify store for game", getErrorMessageOrDefault(err));
             return undefined;
           })
           .then((storeDetected: string) => {
@@ -254,11 +230,7 @@ function queryByCB(game: IGame): Bluebird<Partial<IGameStoreEntry>> {
             .then(() => ({ gamePath: resolvedPath, gameStoreId: store }))
             .catch((err) => {
               if (err.code === "ENOENT") {
-                log(
-                  "warn",
-                  "rejecting game discovery, directory doesn't exist",
-                  resolvedPath,
-                );
+                log("warn", "rejecting game discovery, directory doesn't exist", resolvedPath);
                 return Bluebird.resolve(undefined);
               }
               return Bluebird.reject(err);
@@ -287,13 +259,7 @@ function handleDiscoveredGame(
   onDiscoveredGame(game.id, disco);
   return getNormalizeFunc(resolvedPath)
     .then((normalize) =>
-      discoverRelativeTools(
-        game,
-        resolvedPath,
-        discoveredGames,
-        onDiscoveredTool,
-        normalize,
-      ),
+      discoverRelativeTools(game, resolvedPath, discoveredGames, onDiscoveredTool, normalize),
     )
     .then(() => game.id)
     .catch((err) => {
@@ -326,39 +292,19 @@ export function quickDiscovery(
 ): Bluebird<string[]> {
   return Bluebird.all(
     knownGames.map((game) =>
-      quickDiscoveryTools(game.id, game.supportedTools, onDiscoveredTool).then(
-        () => {
-          if (getSafe(discoveredGames, [game.id, "pathSetManually"], false)) {
-            // don't override manually set game location but maybe update some settings
-            return updateManuallyConfigured(
-              discoveredGames,
-              game,
-              onDiscoveredGame,
-            ).then(() => Bluebird.resolve(undefined));
-          }
-          log("debug", "discovering game", game.id);
-          let prom: Bluebird<string>;
+      quickDiscoveryTools(game.id, game.supportedTools, onDiscoveredTool).then(() => {
+        if (getSafe(discoveredGames, [game.id, "pathSetManually"], false)) {
+          // don't override manually set game location but maybe update some settings
+          return updateManuallyConfigured(discoveredGames, game, onDiscoveredGame).then(() =>
+            Bluebird.resolve(undefined),
+          );
+        }
+        log("debug", "discovering game", game.id);
+        let prom: Bluebird<string>;
 
-          if (game.queryArgs !== undefined) {
-            prom = queryByArgs(discoveredGames, game).then((result) => {
-              if (result !== undefined) {
-                return handleDiscoveredGame(
-                  game,
-                  result.gamePath,
-                  result.gameStoreId,
-                  discoveredGames,
-                  onDiscoveredGame,
-                  onDiscoveredTool,
-                );
-              } else {
-                return Bluebird.resolve(undefined);
-              }
-            });
-          } else if (game.queryPath !== undefined) {
-            prom = queryByCB(game).then((result) => {
-              if (result === undefined) {
-                return Bluebird.resolve(undefined);
-              }
+        if (game.queryArgs !== undefined) {
+          prom = queryByArgs(discoveredGames, game).then((result) => {
+            if (result !== undefined) {
               return handleDiscoveredGame(
                 game,
                 result.gamePath,
@@ -367,29 +313,45 @@ export function quickDiscovery(
                 onDiscoveredGame,
                 onDiscoveredTool,
               );
-            });
-          } else {
-            prom = Bluebird.resolve(undefined);
-          }
-          return prom.catch((err) => {
-            if (
-              !(err instanceof GameEntryNotFound) &&
-              !(err instanceof ProcessCanceled) &&
-              // probably an extension using registry for discovery but I don't like
-              // ignoring these
-              !(err.name === "WinApiException")
-            ) {
-              log("error", "failed to use game support plugin", {
-                id: game.id,
-                err: err.message,
-                stack: err.stack,
-              });
+            } else {
+              return Bluebird.resolve(undefined);
             }
-            // don't escalate exception because a single game shouldn't break everything
-            return Bluebird.resolve(undefined);
           });
-        },
-      ),
+        } else if (game.queryPath !== undefined) {
+          prom = queryByCB(game).then((result) => {
+            if (result === undefined) {
+              return Bluebird.resolve(undefined);
+            }
+            return handleDiscoveredGame(
+              game,
+              result.gamePath,
+              result.gameStoreId,
+              discoveredGames,
+              onDiscoveredGame,
+              onDiscoveredTool,
+            );
+          });
+        } else {
+          prom = Bluebird.resolve(undefined);
+        }
+        return prom.catch((err) => {
+          if (
+            !(err instanceof GameEntryNotFound) &&
+            !(err instanceof ProcessCanceled) &&
+            // probably an extension using registry for discovery but I don't like
+            // ignoring these
+            !(err.name === "WinApiException")
+          ) {
+            log("error", "failed to use game support plugin", {
+              id: game.id,
+              err: err.message,
+              stack: err.stack,
+            });
+          }
+          // don't escalate exception because a single game shouldn't break everything
+          return Bluebird.resolve(undefined);
+        });
+      }),
     ),
   ).then((gameNames) => gameNames.filter((name) => name !== undefined));
 }
@@ -459,9 +421,7 @@ function walk(
         } else if (entry.isDirectory) {
           ++seenDirectories;
           if (isTL) {
-            if (
-              path.relative(searchPath, entry.filePath).indexOf(path.sep) !== -1
-            ) {
+            if (path.relative(searchPath, entry.filePath).indexOf(path.sep) !== -1) {
               isTL = false;
             } else {
               seenTL.add(entry.filePath);
@@ -477,8 +437,7 @@ function walk(
       if (progress) {
         // count number of directories to be used as the step counter in the progress bar
         if (estimatedDirectories < seenDirectories) {
-          estimatedDirectories =
-            seenDirectories * ((seenTL.size + 1) / Math.max(processedTL, 1));
+          estimatedDirectories = seenDirectories * ((seenTL.size + 1) / Math.max(processedTL, 1));
           progress.setStepCount(estimatedDirectories);
         }
         progress.completed(lastCompleted, doneCount);
@@ -551,31 +510,25 @@ export function discoverRelativeTools(
     .filter((tool) => tool.relative === true)
     .filter(
       (tool) =>
-        discoveredTools[tool.id] === undefined ||
-        discoveredTools[tool.id].executable === undefined,
+        discoveredTools[tool.id] === undefined || discoveredTools[tool.id].executable === undefined,
     );
 
   if (relativeTools.length === 0) {
     return Bluebird.resolve();
   }
 
-  const files: IFileEntry[] = relativeTools.reduce(
-    (prev: IFileEntry[], tool: ITool) => {
-      for (const required of tool.requiredFiles) {
-        prev.push({
-          fileName: normalize(required),
-          gameId: game.id,
-          application: tool,
-        });
-      }
-      return prev;
-    },
-    [],
-  );
+  const files: IFileEntry[] = relativeTools.reduce((prev: IFileEntry[], tool: ITool) => {
+    for (const required of tool.requiredFiles) {
+      prev.push({
+        fileName: normalize(required),
+        gameId: game.id,
+        application: tool,
+      });
+    }
+    return prev;
+  }, []);
 
-  const matchList: Set<string> = new Set(
-    files.map((entry) => path.basename(entry.fileName)),
-  );
+  const matchList: Set<string> = new Set(files.map((entry) => path.basename(entry.fileName)));
 
   const onFileCB = (filePath) =>
     onFile(filePath, files, normalize, discoveredGames, nop, onDiscoveredTool);
@@ -586,17 +539,11 @@ export function discoverRelativeTools(
   });
 }
 
-function autoGenIcon(
-  application: ITool,
-  exePath: string,
-  gameId: string,
-): Bluebird<void> {
+function autoGenIcon(application: ITool, exePath: string, gameId: string): Bluebird<void> {
   const iconPath = StarterInfo.toolIconRW(gameId, application.id);
   return application.logo === "auto"
     ? fs
-        .ensureDirWritableAsync(path.dirname(iconPath), () =>
-          Bluebird.resolve(),
-        )
+        .ensureDirWritableAsync(path.dirname(iconPath), () => Bluebird.resolve())
         .then(() => fs.statAsync(iconPath).then(() => null))
         .catch(() => extractExeIcon(exePath, iconPath))
         .catch((err) => log("warn", "failed to fetch exe icon", err.message))
@@ -623,13 +570,7 @@ function testApplicationDirValid(
         };
         onDiscoveredGame(gameId, disco);
 
-        return discoverRelativeTools(
-          game,
-          testPath,
-          discoveredGames,
-          onDiscoveredTool,
-          normalize,
-        );
+        return discoverRelativeTools(game, testPath, discoveredGames, onDiscoveredTool, normalize);
       } else {
         const exePath = path.join(testPath, application.executable(testPath));
         return autoGenIcon(application, exePath, gameId).then(() => {
@@ -658,9 +599,7 @@ function toolFilesForGame(
     game.supportedTools
       .filter((tool) => tool.relative !== true)
       .forEach((tool: ITool) => {
-        if (
-          getSafe(discoveredTools, [tool.id, "path"], undefined) === undefined
-        ) {
+        if (getSafe(discoveredTools, [tool.id, "path"], undefined) === undefined) {
           for (const required of tool.requiredFiles) {
             result.push({
               fileName: normalize(required),
@@ -683,15 +622,10 @@ function onFile(
   onDiscoveredTool: DiscoveredToolCB,
 ) {
   const normalized = normalize(filePath);
-  const matches: IFileEntry[] = files.filter((entry) =>
-    normalized.endsWith(entry.fileName),
-  );
+  const matches: IFileEntry[] = files.filter((entry) => normalized.endsWith(entry.fileName));
 
   for (const match of matches) {
-    const testPath: string = filePath.substring(
-      0,
-      filePath.length - match.fileName.length,
-    );
+    const testPath: string = filePath.substring(0, filePath.length - match.fileName.length);
     testApplicationDirValid(
       match.application,
       testPath,
@@ -765,11 +699,7 @@ export function searchDiscovery(
             // and its tools
             files.push.apply(
               files,
-              toolFilesForGame(
-                knownGame,
-                getSafe(discoveredGame, ["tools"], {}),
-                normalize,
-              ),
+              toolFilesForGame(knownGame, getSafe(discoveredGame, ["tools"], {}), normalize),
             );
           }, []);
 
@@ -779,21 +709,8 @@ export function searchDiscovery(
             files.map((entry) => path.basename(entry.fileName)),
           );
           const onFileCB = (filePath: string) =>
-            onFile(
-              filePath,
-              files,
-              normalize,
-              discoveredGames,
-              onDiscoveredGame,
-              onDiscoveredTool,
-            );
-          return walk(
-            searchPath,
-            matchList,
-            onFileCB,
-            progressObj,
-            normalize,
-          ).then((numRead) => {
+            onFile(filePath, files, normalize, discoveredGames, onDiscoveredGame, onDiscoveredTool);
+          return walk(searchPath, matchList, onFileCB, progressObj, normalize).then((numRead) => {
             totalRead += numRead;
           });
         })
@@ -807,10 +724,7 @@ export function searchDiscovery(
           });
           return err.code === "ENOENT"
             ? Bluebird.resolve(
-                onError(
-                  "A search path doesn't exist or is not connected",
-                  searchPath,
-                ),
+                onError("A search path doesn't exist or is not connected", searchPath),
               )
             : Bluebird.resolve(onError(err.message, searchPath));
         })
@@ -822,10 +736,7 @@ export function searchDiscovery(
   ).then(() => totalRead);
 }
 
-export async function suggestStagingPath(
-  api: IExtensionApi,
-  gameId: string,
-): Promise<string> {
+export async function suggestStagingPath(api: IExtensionApi, gameId: string): Promise<string> {
   const state = api.getState();
   const modPaths = modPathsForGame(state, gameId);
 
@@ -855,11 +766,7 @@ export async function suggestStagingPath(
   } else {
     // different drives, suggest path on same drive
     const volume = winapi.GetVolumePathName(modPaths[""]);
-    suggestion = path.join(
-      volume,
-      state.settings.mods.suggestInstallPathDirectory,
-      "{game}",
-    );
+    suggestion = path.join(volume, state.settings.mods.suggestInstallPathDirectory, "{game}");
   }
 
   return suggestion;

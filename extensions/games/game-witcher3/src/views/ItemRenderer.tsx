@@ -2,7 +2,6 @@ import * as React from "react";
 import { Checkbox, ListGroupItem } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-
 import {
   actions,
   Icon,
@@ -13,6 +12,7 @@ import {
   util,
   MainContext,
 } from "vortex-api";
+
 import { I18N_NAMESPACE, GAME_ID } from "../common";
 import { IItemRendererProps } from "../types";
 
@@ -53,9 +53,7 @@ function renderValidationError(props: IProps): JSX.Element {
   const { invalidEntries, loEntry } = props.item;
   const invalidEntry =
     invalidEntries !== undefined
-      ? invalidEntries.find(
-          (inv) => inv.id.toLowerCase() === loEntry.id.toLowerCase(),
-        )
+      ? invalidEntries.find((inv) => inv.id.toLowerCase() === loEntry.id.toLowerCase())
       : undefined;
   return invalidEntry !== undefined ? (
     <tooltip.Icon
@@ -79,9 +77,7 @@ function renderViewModIcon(props: IProps): JSX.Element {
     if (mod === undefined) {
       return;
     }
-    const batched = [
-      actions.setAttributeFilter("mods", "name", util.renderModName(mod)),
-    ];
+    const batched = [actions.setAttributeFilter("mods", "name", util.renderModName(mod))];
     util.batchDispatch(context.api.store.dispatch, batched);
     context.api.events.emit("show-main-page", "Mods");
   }, [item, mods, context]);
@@ -107,13 +103,10 @@ function renderExternalBanner(item: types.ILoadOrderEntry): JSX.Element {
 
 function renderDraggable(props: IProps): JSX.Element {
   const { loadOrder, className, item, profile } = props;
-  const key = !!item?.loEntry?.name
-    ? `${item.loEntry.name}`
-    : `${item.loEntry.id}`;
+  const key = !!item?.loEntry?.name ? `${item.loEntry.name}` : `${item.loEntry.id}`;
   const context = React.useContext(MainContext);
   const dispatch = useDispatch();
-  const position =
-    loadOrder.findIndex((entry) => entry.id === item.loEntry.id) + 1;
+  const position = loadOrder.findIndex((entry) => entry.id === item.loEntry.id) + 1;
 
   let classes = ["load-order-entry"];
   if (className !== undefined) {
@@ -166,16 +159,10 @@ function renderDraggable(props: IProps): JSX.Element {
     ) : null;
 
   const lock = () =>
-    isLocked(item.loEntry) ? (
-      <Icon className="locked-entry-logo" name="locked" />
-    ) : null;
+    isLocked(item.loEntry) ? <Icon className="locked-entry-logo" name="locked" /> : null;
 
   return (
-    <ListGroupItem
-      key={key}
-      className={classes.join(" ")}
-      ref={props.item.setRef}
-    >
+    <ListGroupItem key={key} className={classes.join(" ")} ref={props.item.setRef}>
       <Icon className="drag-handle-icon" name="drag-handle" />
       <LoadOrderIndexInput
         className="load-order-index"

@@ -3,11 +3,7 @@ export type FileActionVal = "nop";
 export type FileActionDel = "restore" | "delete";
 export type FileActionSrcDel = "drop" | "import";
 
-export type FileAction =
-  | FileActionRef
-  | FileActionVal
-  | FileActionDel
-  | FileActionSrcDel;
+export type FileAction = FileActionRef | FileActionVal | FileActionDel | FileActionSrcDel;
 
 export interface IFileEntry {
   filePath: string;

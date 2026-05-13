@@ -11,12 +11,7 @@
             ? function (o, m, k, k2) {
                 if (k2 === undefined) k2 = k;
                 var desc = Object.getOwnPropertyDescriptor(m, k);
-                if (
-                  !desc ||
-                  ("get" in desc
-                    ? !m.__esModule
-                    : desc.writable || desc.configurable)
-                ) {
+                if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
                   desc = {
                     enumerable: true,
                     get: function () {
@@ -49,10 +44,7 @@
             var result = {};
             if (mod != null)
               for (var k in mod)
-                if (
-                  k !== "default" &&
-                  Object.prototype.hasOwnProperty.call(mod, k)
-                )
+                if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k))
                   __createBinding(result, mod, k);
             __setModuleDefault(result, mod);
             return result;
@@ -142,12 +134,7 @@
             ? function (o, m, k, k2) {
                 if (k2 === undefined) k2 = k;
                 var desc = Object.getOwnPropertyDescriptor(m, k);
-                if (
-                  !desc ||
-                  ("get" in desc
-                    ? !m.__esModule
-                    : desc.writable || desc.configurable)
-                ) {
+                if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
                   desc = {
                     enumerable: true,
                     get: function () {
@@ -180,10 +167,7 @@
             var result = {};
             if (mod != null)
               for (var k in mod)
-                if (
-                  k !== "default" &&
-                  Object.prototype.hasOwnProperty.call(mod, k)
-                )
+                if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k))
                   __createBinding(result, mod, k);
             __setModuleDefault(result, mod);
             return result;
@@ -214,13 +198,9 @@
                 }
               }
               function step(result) {
-                result.done
-                  ? resolve(result.value)
-                  : adopt(result.value).then(fulfilled, rejected);
+                result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
               }
-              step(
-                (generator = generator.apply(thisArg, _arguments || [])).next(),
-              );
+              step((generator = generator.apply(thisArg, _arguments || [])).next());
             });
           };
         Object.defineProperty(exports, "__esModule", { value: true });
@@ -314,8 +294,7 @@
           } else {
             (0, command_1.issueCommand)("add-path", {}, inputPath);
           }
-          process.env["PATH"] =
-            `${inputPath}${path.delimiter}${process.env["PATH"]}`;
+          process.env["PATH"] = `${inputPath}${path.delimiter}${process.env["PATH"]}`;
         }
         exports.addPath = addPath;
         /**
@@ -328,8 +307,7 @@
          * @returns   string
          */
         function getInput(name, options) {
-          const val =
-            process.env[`INPUT_${name.replace(/ /g, "_").toUpperCase()}`] || "";
+          const val = process.env[`INPUT_${name.replace(/ /g, "_").toUpperCase()}`] || "";
           if (options && options.required && !val) {
             throw new Error(`Input required and not supplied: ${name}`);
           }
@@ -395,11 +373,7 @@
             );
           }
           process.stdout.write(os.EOL);
-          (0, command_1.issueCommand)(
-            "set-output",
-            { name },
-            (0, utils_1.toCommandValue)(value),
-          );
+          (0, command_1.issueCommand)("set-output", { name }, (0, utils_1.toCommandValue)(value));
         }
         exports.setOutput = setOutput;
         /**
@@ -546,11 +520,7 @@
               (0, file_command_1.prepareKeyValueMessage)(name, value),
             );
           }
-          (0, command_1.issueCommand)(
-            "save-state",
-            { name },
-            (0, utils_1.toCommandValue)(value),
-          );
+          (0, command_1.issueCommand)("save-state", { name }, (0, utils_1.toCommandValue)(value));
         }
         exports.saveState = saveState;
         /**
@@ -631,12 +601,7 @@
             ? function (o, m, k, k2) {
                 if (k2 === undefined) k2 = k;
                 var desc = Object.getOwnPropertyDescriptor(m, k);
-                if (
-                  !desc ||
-                  ("get" in desc
-                    ? !m.__esModule
-                    : desc.writable || desc.configurable)
-                ) {
+                if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
                   desc = {
                     enumerable: true,
                     get: function () {
@@ -669,10 +634,7 @@
             var result = {};
             if (mod != null)
               for (var k in mod)
-                if (
-                  k !== "default" &&
-                  Object.prototype.hasOwnProperty.call(mod, k)
-                )
+                if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k))
                   __createBinding(result, mod, k);
             __setModuleDefault(result, mod);
             return result;
@@ -688,20 +650,14 @@
         function issueFileCommand(command, message) {
           const filePath = process.env[`GITHUB_${command}`];
           if (!filePath) {
-            throw new Error(
-              `Unable to find environment variable for file command ${command}`,
-            );
+            throw new Error(`Unable to find environment variable for file command ${command}`);
           }
           if (!fs.existsSync(filePath)) {
             throw new Error(`Missing file at path: ${filePath}`);
           }
-          fs.appendFileSync(
-            filePath,
-            `${(0, utils_1.toCommandValue)(message)}${os.EOL}`,
-            {
-              encoding: "utf8",
-            },
-          );
+          fs.appendFileSync(filePath, `${(0, utils_1.toCommandValue)(message)}${os.EOL}`, {
+            encoding: "utf8",
+          });
         }
         exports.issueFileCommand = issueFileCommand;
         function prepareKeyValueMessage(key, value) {
@@ -758,13 +714,9 @@
                 }
               }
               function step(result) {
-                result.done
-                  ? resolve(result.value)
-                  : adopt(result.value).then(fulfilled, rejected);
+                result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
               }
-              step(
-                (generator = generator.apply(thisArg, _arguments || [])).next(),
-              );
+              step((generator = generator.apply(thisArg, _arguments || [])).next());
             });
           };
         Object.defineProperty(exports, "__esModule", { value: true });
@@ -780,29 +732,21 @@
             };
             return new http_client_1.HttpClient(
               "actions/oidc-client",
-              [
-                new auth_1.BearerCredentialHandler(
-                  OidcClient.getRequestToken(),
-                ),
-              ],
+              [new auth_1.BearerCredentialHandler(OidcClient.getRequestToken())],
               requestOptions,
             );
           }
           static getRequestToken() {
             const token = process.env["ACTIONS_ID_TOKEN_REQUEST_TOKEN"];
             if (!token) {
-              throw new Error(
-                "Unable to get ACTIONS_ID_TOKEN_REQUEST_TOKEN env variable",
-              );
+              throw new Error("Unable to get ACTIONS_ID_TOKEN_REQUEST_TOKEN env variable");
             }
             return token;
           }
           static getIDTokenUrl() {
             const runtimeUrl = process.env["ACTIONS_ID_TOKEN_REQUEST_URL"];
             if (!runtimeUrl) {
-              throw new Error(
-                "Unable to get ACTIONS_ID_TOKEN_REQUEST_URL env variable",
-              );
+              throw new Error("Unable to get ACTIONS_ID_TOKEN_REQUEST_URL env variable");
             }
             return runtimeUrl;
           }
@@ -810,19 +754,14 @@
             var _a;
             return __awaiter(this, void 0, void 0, function* () {
               const httpclient = OidcClient.createHttpClient();
-              const res = yield httpclient
-                .getJson(id_token_url)
-                .catch((error) => {
-                  throw new Error(`Failed to get ID Token. \n 
+              const res = yield httpclient.getJson(id_token_url).catch((error) => {
+                throw new Error(`Failed to get ID Token. \n 
         Error Code : ${error.statusCode}\n 
         Error Message: ${error.message}`);
-                });
-              const id_token =
-                (_a = res.result) === null || _a === void 0 ? void 0 : _a.value;
+              });
+              const id_token = (_a = res.result) === null || _a === void 0 ? void 0 : _a.value;
               if (!id_token) {
-                throw new Error(
-                  "Response json body do not have ID Token field",
-                );
+                throw new Error("Response json body do not have ID Token field");
               }
               return id_token;
             });
@@ -862,12 +801,7 @@
             ? function (o, m, k, k2) {
                 if (k2 === undefined) k2 = k;
                 var desc = Object.getOwnPropertyDescriptor(m, k);
-                if (
-                  !desc ||
-                  ("get" in desc
-                    ? !m.__esModule
-                    : desc.writable || desc.configurable)
-                ) {
+                if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
                   desc = {
                     enumerable: true,
                     get: function () {
@@ -900,19 +834,13 @@
             var result = {};
             if (mod != null)
               for (var k in mod)
-                if (
-                  k !== "default" &&
-                  Object.prototype.hasOwnProperty.call(mod, k)
-                )
+                if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k))
                   __createBinding(result, mod, k);
             __setModuleDefault(result, mod);
             return result;
           };
         Object.defineProperty(exports, "__esModule", { value: true });
-        exports.toPlatformPath =
-          exports.toWin32Path =
-          exports.toPosixPath =
-            void 0;
+        exports.toPlatformPath = exports.toWin32Path = exports.toPosixPath = void 0;
         const path = __importStar(__nccwpck_require__(6928));
         /**
          * toPosixPath converts the given path to the posix form. On Windows, \\ will be
@@ -963,12 +891,7 @@
             ? function (o, m, k, k2) {
                 if (k2 === undefined) k2 = k;
                 var desc = Object.getOwnPropertyDescriptor(m, k);
-                if (
-                  !desc ||
-                  ("get" in desc
-                    ? !m.__esModule
-                    : desc.writable || desc.configurable)
-                ) {
+                if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
                   desc = {
                     enumerable: true,
                     get: function () {
@@ -1001,10 +924,7 @@
             var result = {};
             if (mod != null)
               for (var k in mod)
-                if (
-                  k !== "default" &&
-                  Object.prototype.hasOwnProperty.call(mod, k)
-                )
+                if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k))
                   __createBinding(result, mod, k);
             __setModuleDefault(result, mod);
             return result;
@@ -1035,13 +955,9 @@
                 }
               }
               function step(result) {
-                result.done
-                  ? resolve(result.value)
-                  : adopt(result.value).then(fulfilled, rejected);
+                result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
               }
-              step(
-                (generator = generator.apply(thisArg, _arguments || [])).next(),
-              );
+              step((generator = generator.apply(thisArg, _arguments || [])).next());
             });
           };
         var __importDefault =
@@ -1088,16 +1004,14 @@
             });
             const version =
               (_b =
-                (_a = stdout.match(/ProductVersion:\s*(.+)/)) === null ||
-                _a === void 0
+                (_a = stdout.match(/ProductVersion:\s*(.+)/)) === null || _a === void 0
                   ? void 0
                   : _a[1]) !== null && _b !== void 0
                 ? _b
                 : "";
             const name =
               (_d =
-                (_c = stdout.match(/ProductName:\s*(.+)/)) === null ||
-                _c === void 0
+                (_c = stdout.match(/ProductName:\s*(.+)/)) === null || _c === void 0
                   ? void 0
                   : _c[1]) !== null && _d !== void 0
                 ? _d
@@ -1109,13 +1023,9 @@
           });
         const getLinuxInfo = () =>
           __awaiter(void 0, void 0, void 0, function* () {
-            const { stdout } = yield exec.getExecOutput(
-              "lsb_release",
-              ["-i", "-r", "-s"],
-              {
-                silent: true,
-              },
-            );
+            const { stdout } = yield exec.getExecOutput("lsb_release", ["-i", "-r", "-s"], {
+              silent: true,
+            });
             const [name, version] = stdout.trim().split("\n");
             return {
               name,
@@ -1184,13 +1094,9 @@
                 }
               }
               function step(result) {
-                result.done
-                  ? resolve(result.value)
-                  : adopt(result.value).then(fulfilled, rejected);
+                result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
               }
-              step(
-                (generator = generator.apply(thisArg, _arguments || [])).next(),
-              );
+              step((generator = generator.apply(thisArg, _arguments || [])).next());
             });
           };
         Object.defineProperty(exports, "__esModule", { value: true });
@@ -1227,10 +1133,7 @@
                 );
               }
               try {
-                yield access(
-                  pathFromEnv,
-                  fs_1.constants.R_OK | fs_1.constants.W_OK,
-                );
+                yield access(pathFromEnv, fs_1.constants.R_OK | fs_1.constants.W_OK);
               } catch (_a) {
                 throw new Error(
                   `Unable to access summary file: '${pathFromEnv}'. Check if the file has correct read/write permissions.`,
@@ -1354,9 +1257,7 @@
            */
           addList(items, ordered = false) {
             const tag = ordered ? "ol" : "ul";
-            const listItems = items
-              .map((item) => this.wrap("li", item))
-              .join("");
+            const listItems = items.map((item) => this.wrap("li", item)).join("");
             const element = this.wrap(tag, listItems);
             return this.addRaw(element).addEOL();
           }
@@ -1399,10 +1300,7 @@
            * @returns {Summary} summary instance
            */
           addDetails(label, content) {
-            const element = this.wrap(
-              "details",
-              this.wrap("summary", label) + content,
-            );
+            const element = this.wrap("details", this.wrap("summary", label) + content);
             return this.addRaw(element).addEOL();
           }
           /**
@@ -1420,11 +1318,7 @@
               Object.assign({}, width && { width }),
               height && { height },
             );
-            const element = this.wrap(
-              "img",
-              null,
-              Object.assign({ src, alt }, attrs),
-            );
+            const element = this.wrap("img", null, Object.assign({ src, alt }, attrs));
             return this.addRaw(element).addEOL();
           }
           /**
@@ -1437,11 +1331,7 @@
            */
           addHeading(text, level) {
             const tag = `h${level}`;
-            const allowedTag = ["h1", "h2", "h3", "h4", "h5", "h6"].includes(
-              tag,
-            )
-              ? tag
-              : "h1";
+            const allowedTag = ["h1", "h2", "h3", "h4", "h5", "h6"].includes(tag) ? tag : "h1";
             const element = this.wrap(allowedTag, text);
             return this.addRaw(element).addEOL();
           }
@@ -1616,13 +1506,9 @@
                 }
               }
               function step(result) {
-                result.done
-                  ? resolve(result.value)
-                  : adopt(result.value).then(fulfilled, rejected);
+                result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
               }
-              step(
-                (generator = generator.apply(thisArg, _arguments || [])).next(),
-              );
+              step((generator = generator.apply(thisArg, _arguments || [])).next());
             });
           };
         Object.defineProperty(exports, "__esModule", { value: true });
@@ -1643,9 +1529,7 @@
           return __awaiter(this, void 0, void 0, function* () {
             const commandArgs = tr.argStringToArray(commandLine);
             if (commandArgs.length === 0) {
-              throw new Error(
-                `Parameter 'commandLine' cannot be null or empty.`,
-              );
+              throw new Error(`Parameter 'commandLine' cannot be null or empty.`);
             }
             // Path to tool to execute should be first arg
             const toolPath = commandArgs[0];
@@ -1674,17 +1558,13 @@
             const stdoutDecoder = new string_decoder_1.StringDecoder("utf8");
             const stderrDecoder = new string_decoder_1.StringDecoder("utf8");
             const originalStdoutListener =
-              (_a =
-                options === null || options === void 0
-                  ? void 0
-                  : options.listeners) === null || _a === void 0
+              (_a = options === null || options === void 0 ? void 0 : options.listeners) === null ||
+              _a === void 0
                 ? void 0
                 : _a.stdout;
             const originalStdErrListener =
-              (_b =
-                options === null || options === void 0
-                  ? void 0
-                  : options.listeners) === null || _b === void 0
+              (_b = options === null || options === void 0 ? void 0 : options.listeners) === null ||
+              _b === void 0
                 ? void 0
                 : _b.stderr;
             const stdErrListener = (data) => {
@@ -1702,9 +1582,7 @@
             const listeners = Object.assign(
               Object.assign(
                 {},
-                options === null || options === void 0
-                  ? void 0
-                  : options.listeners,
+                options === null || options === void 0 ? void 0 : options.listeners,
               ),
               { stdout: stdOutListener, stderr: stdErrListener },
             );
@@ -1799,13 +1677,9 @@
                 }
               }
               function step(result) {
-                result.done
-                  ? resolve(result.value)
-                  : adopt(result.value).then(fulfilled, rejected);
+                result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
               }
-              step(
-                (generator = generator.apply(thisArg, _arguments || [])).next(),
-              );
+              step((generator = generator.apply(thisArg, _arguments || [])).next());
             });
           };
         Object.defineProperty(exports, "__esModule", { value: true });
@@ -1906,9 +1780,7 @@
                 let argline = `/D /S /C "${this._windowsQuoteCmdArg(this.toolPath)}`;
                 for (const a of this.args) {
                   argline += " ";
-                  argline += options.windowsVerbatimArguments
-                    ? a
-                    : this._windowsQuoteCmdArg(a);
+                  argline += options.windowsVerbatimArguments ? a : this._windowsQuoteCmdArg(a);
                 }
                 argline += '"';
                 return [argline];
@@ -1921,10 +1793,7 @@
           }
           _isCmdFile() {
             const upperToolPath = this.toolPath.toUpperCase();
-            return (
-              this._endsWith(upperToolPath, ".CMD") ||
-              this._endsWith(upperToolPath, ".BAT")
-            );
+            return this._endsWith(upperToolPath, ".CMD") || this._endsWith(upperToolPath, ".BAT");
           }
           _windowsQuoteCmdArg(arg) {
             // for .exe, apply the normal quoting rules that libuv applies
@@ -2073,11 +1942,7 @@
               // Need double quotation for empty argument
               return '""';
             }
-            if (
-              !arg.includes(" ") &&
-              !arg.includes("\t") &&
-              !arg.includes('"')
-            ) {
+            if (!arg.includes(" ") && !arg.includes("\t") && !arg.includes('"')) {
               // No quotation needed
               return arg;
             }
@@ -2125,8 +1990,7 @@
               cwd: options.cwd || process.cwd(),
               env: options.env || process.env,
               silent: options.silent || false,
-              windowsVerbatimArguments:
-                options.windowsVerbatimArguments || false,
+              windowsVerbatimArguments: options.windowsVerbatimArguments || false,
               failOnStdErr: options.failOnStdErr || false,
               ignoreReturnCode: options.ignoreReturnCode || false,
               delay: options.delay || 10000,
@@ -2161,8 +2025,7 @@
               // root the tool path if it is unrooted and contains relative pathing
               if (
                 !ioUtil.isRooted(this.toolPath) &&
-                (this.toolPath.includes("/") ||
-                  (IS_WINDOWS && this.toolPath.includes("\\")))
+                (this.toolPath.includes("/") || (IS_WINDOWS && this.toolPath.includes("\\")))
               ) {
                 // prefer options.cwd if it is specified, however options.cwd may also need to be rooted
                 this.toolPath = path.resolve(
@@ -2183,21 +2046,14 @@
                   }
                   const optionsNonNull = this._cloneExecOptions(this.options);
                   if (!optionsNonNull.silent && optionsNonNull.outStream) {
-                    optionsNonNull.outStream.write(
-                      this._getCommandString(optionsNonNull) + os.EOL,
-                    );
+                    optionsNonNull.outStream.write(this._getCommandString(optionsNonNull) + os.EOL);
                   }
                   const state = new ExecState(optionsNonNull, this.toolPath);
                   state.on("debug", (message) => {
                     this._debug(message);
                   });
-                  if (
-                    this.options.cwd &&
-                    !(yield ioUtil.exists(this.options.cwd))
-                  ) {
-                    return reject(
-                      new Error(`The cwd: ${this.options.cwd} does not exist!`),
-                    );
+                  if (this.options.cwd && !(yield ioUtil.exists(this.options.cwd))) {
+                    return reject(new Error(`The cwd: ${this.options.cwd} does not exist!`));
                   }
                   const fileName = this._getSpawnFileName();
                   const cp = child.spawn(
@@ -2208,37 +2064,24 @@
                   let stdbuffer = "";
                   if (cp.stdout) {
                     cp.stdout.on("data", (data) => {
-                      if (
-                        this.options.listeners &&
-                        this.options.listeners.stdout
-                      ) {
+                      if (this.options.listeners && this.options.listeners.stdout) {
                         this.options.listeners.stdout(data);
                       }
                       if (!optionsNonNull.silent && optionsNonNull.outStream) {
                         optionsNonNull.outStream.write(data);
                       }
-                      stdbuffer = this._processLineBuffer(
-                        data,
-                        stdbuffer,
-                        (line) => {
-                          if (
-                            this.options.listeners &&
-                            this.options.listeners.stdline
-                          ) {
-                            this.options.listeners.stdline(line);
-                          }
-                        },
-                      );
+                      stdbuffer = this._processLineBuffer(data, stdbuffer, (line) => {
+                        if (this.options.listeners && this.options.listeners.stdline) {
+                          this.options.listeners.stdline(line);
+                        }
+                      });
                     });
                   }
                   let errbuffer = "";
                   if (cp.stderr) {
                     cp.stderr.on("data", (data) => {
                       state.processStderr = true;
-                      if (
-                        this.options.listeners &&
-                        this.options.listeners.stderr
-                      ) {
+                      if (this.options.listeners && this.options.listeners.stderr) {
                         this.options.listeners.stderr(data);
                       }
                       if (
@@ -2251,18 +2094,11 @@
                           : optionsNonNull.outStream;
                         s.write(data);
                       }
-                      errbuffer = this._processLineBuffer(
-                        data,
-                        errbuffer,
-                        (line) => {
-                          if (
-                            this.options.listeners &&
-                            this.options.listeners.errline
-                          ) {
-                            this.options.listeners.errline(line);
-                          }
-                        },
-                      );
+                      errbuffer = this._processLineBuffer(data, errbuffer, (line) => {
+                        if (this.options.listeners && this.options.listeners.errline) {
+                          this.options.listeners.errline(line);
+                        }
+                      });
                     });
                   }
                   cp.on("error", (err) => {
@@ -2274,18 +2110,14 @@
                   cp.on("exit", (code) => {
                     state.processExitCode = code;
                     state.processExited = true;
-                    this._debug(
-                      `Exit code ${code} received from tool '${this.toolPath}'`,
-                    );
+                    this._debug(`Exit code ${code} received from tool '${this.toolPath}'`);
                     state.CheckComplete();
                   });
                   cp.on("close", (code) => {
                     state.processExitCode = code;
                     state.processExited = true;
                     state.processClosed = true;
-                    this._debug(
-                      `STDIO streams have closed for tool '${this.toolPath}'`,
-                    );
+                    this._debug(`STDIO streams have closed for tool '${this.toolPath}'`);
                     state.CheckComplete();
                   });
                   state.on("done", (error, exitCode) => {
@@ -2393,11 +2225,7 @@
             if (this.processClosed) {
               this._setResult();
             } else if (this.processExited) {
-              this.timeout = timers_1.setTimeout(
-                ExecState.HandleTimeout,
-                this.delay,
-                this,
-              );
+              this.timeout = timers_1.setTimeout(ExecState.HandleTimeout, this.delay, this);
             }
           }
           _debug(message) {
@@ -2411,10 +2239,7 @@
                 error = new Error(
                   `There was an error when attempting to execute the process '${this.toolPath}'. This may indicate the process failed to start. Error: ${this.processError}`,
                 );
-              } else if (
-                this.processExitCode !== 0 &&
-                !this.options.ignoreReturnCode
-              ) {
+              } else if (this.processExitCode !== 0 && !this.options.ignoreReturnCode) {
                 error = new Error(
                   `The process '${this.toolPath}' failed with exit code ${this.processExitCode}`,
                 );
@@ -2474,9 +2299,7 @@
                 );
               } else {
                 const path = process.env.GITHUB_EVENT_PATH;
-                process.stdout.write(
-                  `GITHUB_EVENT_PATH ${path} does not exist${os_1.EOL}`,
-                );
+                process.stdout.write(`GITHUB_EVENT_PATH ${path} does not exist${os_1.EOL}`);
               }
             }
             this.eventName = process.env.GITHUB_EVENT_NAME;
@@ -2540,12 +2363,7 @@
             ? function (o, m, k, k2) {
                 if (k2 === undefined) k2 = k;
                 var desc = Object.getOwnPropertyDescriptor(m, k);
-                if (
-                  !desc ||
-                  ("get" in desc
-                    ? !m.__esModule
-                    : desc.writable || desc.configurable)
-                ) {
+                if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
                   desc = {
                     enumerable: true,
                     get: function () {
@@ -2578,10 +2396,7 @@
             var result = {};
             if (mod != null)
               for (var k in mod)
-                if (
-                  k !== "default" &&
-                  Object.prototype.hasOwnProperty.call(mod, k)
-                )
+                if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k))
                   __createBinding(result, mod, k);
             __setModuleDefault(result, mod);
             return result;
@@ -2599,9 +2414,7 @@
          */
         function getOctokit(token, options, ...additionalPlugins) {
           const GitHubWithPlugins = utils_1.GitHub.plugin(...additionalPlugins);
-          return new GitHubWithPlugins(
-            (0, utils_1.getOctokitOptions)(token, options),
-          );
+          return new GitHubWithPlugins((0, utils_1.getOctokitOptions)(token, options));
         }
         exports.getOctokit = getOctokit;
         //# sourceMappingURL=github.js.map
@@ -2619,12 +2432,7 @@
             ? function (o, m, k, k2) {
                 if (k2 === undefined) k2 = k;
                 var desc = Object.getOwnPropertyDescriptor(m, k);
-                if (
-                  !desc ||
-                  ("get" in desc
-                    ? !m.__esModule
-                    : desc.writable || desc.configurable)
-                ) {
+                if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
                   desc = {
                     enumerable: true,
                     get: function () {
@@ -2657,10 +2465,7 @@
             var result = {};
             if (mod != null)
               for (var k in mod)
-                if (
-                  k !== "default" &&
-                  Object.prototype.hasOwnProperty.call(mod, k)
-                )
+                if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k))
                   __createBinding(result, mod, k);
             __setModuleDefault(result, mod);
             return result;
@@ -2691,13 +2496,9 @@
                 }
               }
               function step(result) {
-                result.done
-                  ? resolve(result.value)
-                  : adopt(result.value).then(fulfilled, rejected);
+                result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
               }
-              step(
-                (generator = generator.apply(thisArg, _arguments || [])).next(),
-              );
+              step((generator = generator.apply(thisArg, _arguments || [])).next());
             });
           };
         Object.defineProperty(exports, "__esModule", { value: true });
@@ -2713,13 +2514,9 @@
           if (!token && !options.auth) {
             throw new Error("Parameter token or opts.auth is required");
           } else if (token && options.auth) {
-            throw new Error(
-              "Parameters token and opts.auth may not both be specified",
-            );
+            throw new Error("Parameters token and opts.auth may not both be specified");
           }
-          return typeof options.auth === "string"
-            ? options.auth
-            : `token ${token}`;
+          return typeof options.auth === "string" ? options.auth : `token ${token}`;
         }
         exports.getAuthString = getAuthString;
         function getProxyAgent(destinationUrl) {
@@ -2765,12 +2562,7 @@
             ? function (o, m, k, k2) {
                 if (k2 === undefined) k2 = k;
                 var desc = Object.getOwnPropertyDescriptor(m, k);
-                if (
-                  !desc ||
-                  ("get" in desc
-                    ? !m.__esModule
-                    : desc.writable || desc.configurable)
-                ) {
+                if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
                   desc = {
                     enumerable: true,
                     get: function () {
@@ -2803,20 +2595,13 @@
             var result = {};
             if (mod != null)
               for (var k in mod)
-                if (
-                  k !== "default" &&
-                  Object.prototype.hasOwnProperty.call(mod, k)
-                )
+                if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k))
                   __createBinding(result, mod, k);
             __setModuleDefault(result, mod);
             return result;
           };
         Object.defineProperty(exports, "__esModule", { value: true });
-        exports.getOctokitOptions =
-          exports.GitHub =
-          exports.defaults =
-          exports.context =
-            void 0;
+        exports.getOctokitOptions = exports.GitHub = exports.defaults = exports.context = void 0;
         const Context = __importStar(__nccwpck_require__(3077));
         const Utils = __importStar(__nccwpck_require__(8399));
         // octokit + plugins
@@ -2887,13 +2672,9 @@
                 }
               }
               function step(result) {
-                result.done
-                  ? resolve(result.value)
-                  : adopt(result.value).then(fulfilled, rejected);
+                result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
               }
-              step(
-                (generator = generator.apply(thisArg, _arguments || [])).next(),
-              );
+              step((generator = generator.apply(thisArg, _arguments || [])).next());
             });
           };
         Object.defineProperty(exports, "__esModule", { value: true });
@@ -2970,8 +2751,7 @@
             });
           }
         }
-        exports.PersonalAccessTokenCredentialHandler =
-          PersonalAccessTokenCredentialHandler;
+        exports.PersonalAccessTokenCredentialHandler = PersonalAccessTokenCredentialHandler;
         //# sourceMappingURL=auth.js.map
 
         /***/
@@ -2988,12 +2768,7 @@
             ? function (o, m, k, k2) {
                 if (k2 === undefined) k2 = k;
                 var desc = Object.getOwnPropertyDescriptor(m, k);
-                if (
-                  !desc ||
-                  ("get" in desc
-                    ? !m.__esModule
-                    : desc.writable || desc.configurable)
-                ) {
+                if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
                   desc = {
                     enumerable: true,
                     get: function () {
@@ -3026,10 +2801,7 @@
             var result = {};
             if (mod != null)
               for (var k in mod)
-                if (
-                  k !== "default" &&
-                  Object.prototype.hasOwnProperty.call(mod, k)
-                )
+                if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k))
                   __createBinding(result, mod, k);
             __setModuleDefault(result, mod);
             return result;
@@ -3060,13 +2832,9 @@
                 }
               }
               function step(result) {
-                result.done
-                  ? resolve(result.value)
-                  : adopt(result.value).then(fulfilled, rejected);
+                result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
               }
-              step(
-                (generator = generator.apply(thisArg, _arguments || [])).next(),
-              );
+              step((generator = generator.apply(thisArg, _arguments || [])).next());
             });
           };
         Object.defineProperty(exports, "__esModule", { value: true });
@@ -3094,10 +2862,8 @@
           HttpCodes[(HttpCodes["NotModified"] = 304)] = "NotModified";
           HttpCodes[(HttpCodes["UseProxy"] = 305)] = "UseProxy";
           HttpCodes[(HttpCodes["SwitchProxy"] = 306)] = "SwitchProxy";
-          HttpCodes[(HttpCodes["TemporaryRedirect"] = 307)] =
-            "TemporaryRedirect";
-          HttpCodes[(HttpCodes["PermanentRedirect"] = 308)] =
-            "PermanentRedirect";
+          HttpCodes[(HttpCodes["TemporaryRedirect"] = 307)] = "TemporaryRedirect";
+          HttpCodes[(HttpCodes["PermanentRedirect"] = 308)] = "PermanentRedirect";
           HttpCodes[(HttpCodes["BadRequest"] = 400)] = "BadRequest";
           HttpCodes[(HttpCodes["Unauthorized"] = 401)] = "Unauthorized";
           HttpCodes[(HttpCodes["PaymentRequired"] = 402)] = "PaymentRequired";
@@ -3111,12 +2877,10 @@
           HttpCodes[(HttpCodes["Conflict"] = 409)] = "Conflict";
           HttpCodes[(HttpCodes["Gone"] = 410)] = "Gone";
           HttpCodes[(HttpCodes["TooManyRequests"] = 429)] = "TooManyRequests";
-          HttpCodes[(HttpCodes["InternalServerError"] = 500)] =
-            "InternalServerError";
+          HttpCodes[(HttpCodes["InternalServerError"] = 500)] = "InternalServerError";
           HttpCodes[(HttpCodes["NotImplemented"] = 501)] = "NotImplemented";
           HttpCodes[(HttpCodes["BadGateway"] = 502)] = "BadGateway";
-          HttpCodes[(HttpCodes["ServiceUnavailable"] = 503)] =
-            "ServiceUnavailable";
+          HttpCodes[(HttpCodes["ServiceUnavailable"] = 503)] = "ServiceUnavailable";
           HttpCodes[(HttpCodes["GatewayTimeout"] = 504)] = "GatewayTimeout";
         })(HttpCodes || (exports.HttpCodes = HttpCodes = {}));
         var Headers;
@@ -3224,8 +2988,7 @@
                 this._allowRedirects = requestOptions.allowRedirects;
               }
               if (requestOptions.allowRedirectDowngrade != null) {
-                this._allowRedirectDowngrade =
-                  requestOptions.allowRedirectDowngrade;
+                this._allowRedirectDowngrade = requestOptions.allowRedirectDowngrade;
               }
               if (requestOptions.maxRedirects != null) {
                 this._maxRedirects = Math.max(requestOptions.maxRedirects, 0);
@@ -3243,72 +3006,37 @@
           }
           options(requestUrl, additionalHeaders) {
             return __awaiter(this, void 0, void 0, function* () {
-              return this.request(
-                "OPTIONS",
-                requestUrl,
-                null,
-                additionalHeaders || {},
-              );
+              return this.request("OPTIONS", requestUrl, null, additionalHeaders || {});
             });
           }
           get(requestUrl, additionalHeaders) {
             return __awaiter(this, void 0, void 0, function* () {
-              return this.request(
-                "GET",
-                requestUrl,
-                null,
-                additionalHeaders || {},
-              );
+              return this.request("GET", requestUrl, null, additionalHeaders || {});
             });
           }
           del(requestUrl, additionalHeaders) {
             return __awaiter(this, void 0, void 0, function* () {
-              return this.request(
-                "DELETE",
-                requestUrl,
-                null,
-                additionalHeaders || {},
-              );
+              return this.request("DELETE", requestUrl, null, additionalHeaders || {});
             });
           }
           post(requestUrl, data, additionalHeaders) {
             return __awaiter(this, void 0, void 0, function* () {
-              return this.request(
-                "POST",
-                requestUrl,
-                data,
-                additionalHeaders || {},
-              );
+              return this.request("POST", requestUrl, data, additionalHeaders || {});
             });
           }
           patch(requestUrl, data, additionalHeaders) {
             return __awaiter(this, void 0, void 0, function* () {
-              return this.request(
-                "PATCH",
-                requestUrl,
-                data,
-                additionalHeaders || {},
-              );
+              return this.request("PATCH", requestUrl, data, additionalHeaders || {});
             });
           }
           put(requestUrl, data, additionalHeaders) {
             return __awaiter(this, void 0, void 0, function* () {
-              return this.request(
-                "PUT",
-                requestUrl,
-                data,
-                additionalHeaders || {},
-              );
+              return this.request("PUT", requestUrl, data, additionalHeaders || {});
             });
           }
           head(requestUrl, additionalHeaders) {
             return __awaiter(this, void 0, void 0, function* () {
-              return this.request(
-                "HEAD",
-                requestUrl,
-                null,
-                additionalHeaders || {},
-              );
+              return this.request("HEAD", requestUrl, null, additionalHeaders || {});
             });
           }
           sendStream(verb, requestUrl, stream, additionalHeaders) {
@@ -3322,12 +3050,11 @@
            */
           getJson(requestUrl, additionalHeaders = {}) {
             return __awaiter(this, void 0, void 0, function* () {
-              additionalHeaders[Headers.Accept] =
-                this._getExistingOrDefaultHeader(
-                  additionalHeaders,
-                  Headers.Accept,
-                  MediaTypes.ApplicationJson,
-                );
+              additionalHeaders[Headers.Accept] = this._getExistingOrDefaultHeader(
+                additionalHeaders,
+                Headers.Accept,
+                MediaTypes.ApplicationJson,
+              );
               const res = yield this.get(requestUrl, additionalHeaders);
               return this._processResponse(res, this.requestOptions);
             });
@@ -3335,18 +3062,16 @@
           postJson(requestUrl, obj, additionalHeaders = {}) {
             return __awaiter(this, void 0, void 0, function* () {
               const data = JSON.stringify(obj, null, 2);
-              additionalHeaders[Headers.Accept] =
-                this._getExistingOrDefaultHeader(
-                  additionalHeaders,
-                  Headers.Accept,
-                  MediaTypes.ApplicationJson,
-                );
-              additionalHeaders[Headers.ContentType] =
-                this._getExistingOrDefaultHeader(
-                  additionalHeaders,
-                  Headers.ContentType,
-                  MediaTypes.ApplicationJson,
-                );
+              additionalHeaders[Headers.Accept] = this._getExistingOrDefaultHeader(
+                additionalHeaders,
+                Headers.Accept,
+                MediaTypes.ApplicationJson,
+              );
+              additionalHeaders[Headers.ContentType] = this._getExistingOrDefaultHeader(
+                additionalHeaders,
+                Headers.ContentType,
+                MediaTypes.ApplicationJson,
+              );
               const res = yield this.post(requestUrl, data, additionalHeaders);
               return this._processResponse(res, this.requestOptions);
             });
@@ -3354,18 +3079,16 @@
           putJson(requestUrl, obj, additionalHeaders = {}) {
             return __awaiter(this, void 0, void 0, function* () {
               const data = JSON.stringify(obj, null, 2);
-              additionalHeaders[Headers.Accept] =
-                this._getExistingOrDefaultHeader(
-                  additionalHeaders,
-                  Headers.Accept,
-                  MediaTypes.ApplicationJson,
-                );
-              additionalHeaders[Headers.ContentType] =
-                this._getExistingOrDefaultHeader(
-                  additionalHeaders,
-                  Headers.ContentType,
-                  MediaTypes.ApplicationJson,
-                );
+              additionalHeaders[Headers.Accept] = this._getExistingOrDefaultHeader(
+                additionalHeaders,
+                Headers.Accept,
+                MediaTypes.ApplicationJson,
+              );
+              additionalHeaders[Headers.ContentType] = this._getExistingOrDefaultHeader(
+                additionalHeaders,
+                Headers.ContentType,
+                MediaTypes.ApplicationJson,
+              );
               const res = yield this.put(requestUrl, data, additionalHeaders);
               return this._processResponse(res, this.requestOptions);
             });
@@ -3373,18 +3096,16 @@
           patchJson(requestUrl, obj, additionalHeaders = {}) {
             return __awaiter(this, void 0, void 0, function* () {
               const data = JSON.stringify(obj, null, 2);
-              additionalHeaders[Headers.Accept] =
-                this._getExistingOrDefaultHeader(
-                  additionalHeaders,
-                  Headers.Accept,
-                  MediaTypes.ApplicationJson,
-                );
-              additionalHeaders[Headers.ContentType] =
-                this._getExistingOrDefaultHeader(
-                  additionalHeaders,
-                  Headers.ContentType,
-                  MediaTypes.ApplicationJson,
-                );
+              additionalHeaders[Headers.Accept] = this._getExistingOrDefaultHeader(
+                additionalHeaders,
+                Headers.Accept,
+                MediaTypes.ApplicationJson,
+              );
+              additionalHeaders[Headers.ContentType] = this._getExistingOrDefaultHeader(
+                additionalHeaders,
+                Headers.ContentType,
+                MediaTypes.ApplicationJson,
+              );
               const res = yield this.patch(requestUrl, data, additionalHeaders);
               return this._processResponse(res, this.requestOptions);
             });
@@ -3403,9 +3124,7 @@
               let info = this._prepareRequest(verb, parsedUrl, headers);
               // Only perform retries on reads since writes may not be idempotent.
               const maxTries =
-                this._allowRetries && RetryableHttpVerbs.includes(verb)
-                  ? this._maxRetries + 1
-                  : 1;
+                this._allowRetries && RetryableHttpVerbs.includes(verb) ? this._maxRetries + 1 : 1;
               let numTries = 0;
               let response;
               do {
@@ -3424,11 +3143,7 @@
                     }
                   }
                   if (authenticationHandler) {
-                    return authenticationHandler.handleAuthentication(
-                      this,
-                      info,
-                      data,
-                    );
+                    return authenticationHandler.handleAuthentication(this, info, data);
                   } else {
                     // We have received an unauthorized response but have no handlers to handle it.
                     // Let the response return to the caller.
@@ -3532,10 +3247,7 @@
               if (!info.options.headers) {
                 info.options.headers = {};
               }
-              info.options.headers["Content-Length"] = Buffer.byteLength(
-                data,
-                "utf8",
-              );
+              info.options.headers["Content-Length"] = Buffer.byteLength(data, "utf8");
             }
             let callbackCalled = false;
             function handleResult(err, res) {
@@ -3602,11 +3314,8 @@
             const defaultPort = usingSsl ? 443 : 80;
             info.options = {};
             info.options.host = info.parsedUrl.hostname;
-            info.options.port = info.parsedUrl.port
-              ? parseInt(info.parsedUrl.port)
-              : defaultPort;
-            info.options.path =
-              (info.parsedUrl.pathname || "") + (info.parsedUrl.search || "");
+            info.options.port = info.parsedUrl.port ? parseInt(info.parsedUrl.port) : defaultPort;
+            info.options.path = (info.parsedUrl.pathname || "") + (info.parsedUrl.search || "");
             info.options.method = method;
             info.options.headers = this._mergeHeaders(headers);
             if (this.userAgent != null) {
@@ -3655,8 +3364,7 @@
             const usingSsl = parsedUrl.protocol === "https:";
             let maxSockets = 100;
             if (this.requestOptions) {
-              maxSockets =
-                this.requestOptions.maxSockets || http.globalAgent.maxSockets;
+              maxSockets = this.requestOptions.maxSockets || http.globalAgent.maxSockets;
             }
             // This is `useProxy` again, but we need to check `proxyURl` directly for TypeScripts's flow analysis.
             if (proxyUrl && proxyUrl.hostname) {
@@ -3676,13 +3384,9 @@
               let tunnelAgent;
               const overHttps = proxyUrl.protocol === "https:";
               if (usingSsl) {
-                tunnelAgent = overHttps
-                  ? tunnel.httpsOverHttps
-                  : tunnel.httpsOverHttp;
+                tunnelAgent = overHttps ? tunnel.httpsOverHttps : tunnel.httpsOverHttp;
               } else {
-                tunnelAgent = overHttps
-                  ? tunnel.httpOverHttps
-                  : tunnel.httpOverHttp;
+                tunnelAgent = overHttps ? tunnel.httpOverHttps : tunnel.httpOverHttp;
               }
               agent = tunnelAgent(agentOptions);
               this._proxyAgent = agent;
@@ -3690,9 +3394,7 @@
             // if tunneling agent isn't assigned create a new agent
             if (!agent) {
               const options = { keepAlive: this._keepAlive, maxSockets };
-              agent = usingSsl
-                ? new https.Agent(options)
-                : new http.Agent(options);
+              agent = usingSsl ? new https.Agent(options) : new http.Agent(options);
               this._agent = agent;
             }
             if (usingSsl && this._ignoreSslError) {
@@ -3728,12 +3430,9 @@
               // we don't want to set NODE_TLS_REJECT_UNAUTHORIZED=0 since that will affect request for entire process
               // http.RequestOptions doesn't expose a way to modify RequestOptions.agent.options
               // we have to cast it to any and change it directly
-              proxyAgent.options = Object.assign(
-                proxyAgent.options.requestTls || {},
-                {
-                  rejectUnauthorized: false,
-                },
-              );
+              proxyAgent.options = Object.assign(proxyAgent.options.requestTls || {}, {
+                rejectUnauthorized: false,
+              });
             }
             return proxyAgent;
           }
@@ -3809,10 +3508,7 @@
         }
         exports.HttpClient = HttpClient;
         const lowercaseKeys = (obj) =>
-          Object.keys(obj).reduce(
-            (c, k) => ((c[k.toLowerCase()] = obj[k]), c),
-            {},
-          );
+          Object.keys(obj).reduce((c, k) => ((c[k.toLowerCase()] = obj[k]), c), {});
         //# sourceMappingURL=index.js.map
 
         /***/
@@ -3840,10 +3536,7 @@
             try {
               return new DecodedURL(proxyVar);
             } catch (_a) {
-              if (
-                !proxyVar.startsWith("http://") &&
-                !proxyVar.startsWith("https://")
-              )
+              if (!proxyVar.startsWith("http://") && !proxyVar.startsWith("https://"))
                 return new DecodedURL(`http://${proxyVar}`);
             }
           } else {
@@ -3859,8 +3552,7 @@
           if (isLoopbackAddress(reqHost)) {
             return true;
           }
-          const noProxy =
-            process.env["no_proxy"] || process.env["NO_PROXY"] || "";
+          const noProxy = process.env["no_proxy"] || process.env["NO_PROXY"] || "";
           if (!noProxy) {
             return false;
           }
@@ -3889,8 +3581,7 @@
                 (x) =>
                   x === upperNoProxyItem ||
                   x.endsWith(`.${upperNoProxyItem}`) ||
-                  (upperNoProxyItem.startsWith(".") &&
-                    x.endsWith(`${upperNoProxyItem}`)),
+                  (upperNoProxyItem.startsWith(".") && x.endsWith(`${upperNoProxyItem}`)),
               )
             ) {
               return true;
@@ -3996,13 +3687,9 @@
                 }
               }
               function step(result) {
-                result.done
-                  ? resolve(result.value)
-                  : adopt(result.value).then(fulfilled, rejected);
+                result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
               }
-              step(
-                (generator = generator.apply(thisArg, _arguments || [])).next(),
-              );
+              step((generator = generator.apply(thisArg, _arguments || [])).next());
             });
           };
         var _a;
@@ -4067,9 +3754,7 @@
         exports.exists = exists;
         function isDirectory(fsPath, useStat = false) {
           return __awaiter(this, void 0, void 0, function* () {
-            const stats = useStat
-              ? yield exports.stat(fsPath)
-              : yield exports.lstat(fsPath);
+            const stats = useStat ? yield exports.stat(fsPath) : yield exports.lstat(fsPath);
             return stats.isDirectory();
           });
         }
@@ -4115,11 +3800,7 @@
               if (exports.IS_WINDOWS) {
                 // on Windows, test for valid extension
                 const upperExt = path.extname(filePath).toUpperCase();
-                if (
-                  extensions.some(
-                    (validExt) => validExt.toUpperCase() === upperExt,
-                  )
-                ) {
+                if (extensions.some((validExt) => validExt.toUpperCase() === upperExt)) {
                   return filePath;
                 }
               } else {
@@ -4197,9 +3878,7 @@
         // Get the path of cmd.exe in windows
         function getCmdPath() {
           var _a;
-          return (_a = process.env["COMSPEC"]) !== null && _a !== void 0
-            ? _a
-            : `cmd.exe`;
+          return (_a = process.env["COMSPEC"]) !== null && _a !== void 0 ? _a : `cmd.exe`;
         }
         exports.getCmdPath = getCmdPath;
         //# sourceMappingURL=io-util.js.map
@@ -4277,13 +3956,9 @@
                 }
               }
               function step(result) {
-                result.done
-                  ? resolve(result.value)
-                  : adopt(result.value).then(fulfilled, rejected);
+                result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
               }
-              step(
-                (generator = generator.apply(thisArg, _arguments || [])).next(),
-              );
+              step((generator = generator.apply(thisArg, _arguments || [])).next());
             });
           };
         Object.defineProperty(exports, "__esModule", { value: true });
@@ -4307,11 +3982,8 @@
          */
         function cp(source, dest, options = {}) {
           return __awaiter(this, void 0, void 0, function* () {
-            const { force, recursive, copySourceDirectory } =
-              readCopyOptions(options);
-            const destStat = (yield ioUtil.exists(dest))
-              ? yield ioUtil.stat(dest)
-              : null;
+            const { force, recursive, copySourceDirectory } = readCopyOptions(options);
+            const destStat = (yield ioUtil.exists(dest)) ? yield ioUtil.stat(dest) : null;
             // Dest is an existing file, but not forcing
             if (destStat && destStat.isFile() && !force) {
               return;
@@ -4336,9 +4008,7 @@
             } else {
               if (path.relative(source, newDest) === "") {
                 // a file cannot be copied to itself
-                throw new Error(
-                  `'${newDest}' and '${source}' are the same file`,
-                );
+                throw new Error(`'${newDest}' and '${source}' are the same file`);
               }
               yield copyFile(source, newDest, force);
             }
@@ -4385,9 +4055,7 @@
               // Check for invalid characters
               // https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file
               if (/[*"<>|]/.test(inputPath)) {
-                throw new Error(
-                  'File path must not contain `*`, `"`, `<`, `>` or `|` on Windows',
-                );
+                throw new Error('File path must not contain `*`, `"`, `<`, `>` or `|` on Windows');
               }
             }
             try {
@@ -4468,9 +4136,7 @@
             // build the list of extensions to try
             const extensions = [];
             if (ioUtil.IS_WINDOWS && process.env["PATHEXT"]) {
-              for (const extension of process.env["PATHEXT"].split(
-                path.delimiter,
-              )) {
+              for (const extension of process.env["PATHEXT"].split(path.delimiter)) {
                 if (extension) {
                   extensions.push(extension);
                 }
@@ -4478,10 +4144,7 @@
             }
             // if it's rooted, return it if exists. otherwise return empty.
             if (ioUtil.isRooted(tool)) {
-              const filePath = yield ioUtil.tryGetExecutablePath(
-                tool,
-                extensions,
-              );
+              const filePath = yield ioUtil.tryGetExecutablePath(tool, extensions);
               if (filePath) {
                 return [filePath];
               }
@@ -4524,9 +4187,7 @@
           const force = options.force == null ? true : options.force;
           const recursive = Boolean(options.recursive);
           const copySourceDirectory =
-            options.copySourceDirectory == null
-              ? true
-              : Boolean(options.copySourceDirectory);
+            options.copySourceDirectory == null ? true : Boolean(options.copySourceDirectory);
           return { force, recursive, copySourceDirectory };
         }
         function cpDirRecursive(sourceDir, destDir, currentDepth, force) {
@@ -4569,11 +4230,7 @@
               }
               // Copy over symlink
               const symlinkFull = yield ioUtil.readlink(srcFile);
-              yield ioUtil.symlink(
-                symlinkFull,
-                destFile,
-                ioUtil.IS_WINDOWS ? "junction" : null,
-              );
+              yield ioUtil.symlink(symlinkFull, destFile, ioUtil.IS_WINDOWS ? "junction" : null);
             } else if (!(yield ioUtil.exists(destFile)) || force) {
               yield ioUtil.copyFile(srcFile, destFile);
             }
@@ -4606,10 +4263,7 @@
          *  @see https://clickhouse.com/docs/interfaces/formats/JSONEachRowWithProgress */
         function isRow(row) {
           return (
-            row !== null &&
-            typeof row === "object" &&
-            "row" in row &&
-            Object.keys(row).length === 1
+            row !== null && typeof row === "object" && "row" in row && Object.keys(row).length === 1
           );
         }
         /** Type guard to use with `JSONEachRowWithProgress`, checking if the row contains an exception.
@@ -4653,18 +4307,11 @@
               logger,
               config.impl.handle_specific_url_params ?? null,
             );
-            this.connectionParams = (0, config_1.getConnectionParams)(
-              configWithURL,
-              logger,
-            );
-            this.clientClickHouseSettings =
-              this.connectionParams.clickhouse_settings;
+            this.connectionParams = (0, config_1.getConnectionParams)(configWithURL, logger);
+            this.clientClickHouseSettings = this.connectionParams.clickhouse_settings;
             this.sessionId = config.session_id;
             this.role = config.role;
-            this.connection = config.impl.make_connection(
-              configWithURL,
-              this.connectionParams,
-            );
+            this.connection = config.impl.make_connection(configWithURL, this.connectionParams);
             // Using the connection params log level as it does the parsing.
             // TODO: it would be better to parse the log level in the client itself.
             this.makeResultSet = config.impl.make_result_set;
@@ -4686,11 +4333,10 @@
             const format = params.format ?? "JSON";
             const query = formatQuery(params.query, format);
             const queryParams = this.withClientQueryParams(params);
-            const { stream, query_id, response_headers } =
-              await this.connection.query({
-                query,
-                ...queryParams,
-              });
+            const { stream, query_id, response_headers } = await this.connection.query({
+              query,
+              ...queryParams,
+            });
             const { log_writer, log_level } = this.connectionParams;
             return this.makeResultSet(
               stream,
@@ -4744,8 +4390,7 @@
           async exec(params) {
             const query = removeTrailingSemi(params.query.trim());
             const values = "values" in params ? params.values : undefined;
-            const decompress_response_stream =
-              params.decompress_response_stream ?? true;
+            const decompress_response_stream = params.decompress_response_stream ?? true;
             const ignore_error_response = params.ignore_error_response ?? false;
             const queryParams = this.withClientQueryParams(params);
             return await this.connection.exec({
@@ -4859,10 +4504,7 @@
           if (params.columns !== undefined) {
             if (Array.isArray(params.columns) && params.columns.length > 0) {
               columnsPart = ` (${params.columns.join(", ")})`;
-            } else if (
-              isInsertColumnsExcept(params.columns) &&
-              params.columns.except.length > 0
-            ) {
+            } else if (isInsertColumnsExcept(params.columns) && params.columns.except.length > 0) {
               columnsPart = ` (* EXCEPT (${params.columns.except.join(", ")}))`;
             }
           }
@@ -4896,17 +4538,12 @@
          * Merges these parameters with the base config and implementation-specific defaults.
          * Enforces certain defaults in case of deprecated keys or readonly mode.
          */
-        function prepareConfigWithURL(
-          baseConfigOptions,
-          logger,
-          handleImplURLParams,
-        ) {
+        function prepareConfigWithURL(baseConfigOptions, logger, handleImplURLParams) {
           const baseConfig = { ...baseConfigOptions };
           if (baseConfig.additional_headers !== undefined) {
             logger.warn({
               module: "Config",
-              message:
-                '"additional_headers" is deprecated. Use "http_headers" instead.',
+              message: '"additional_headers" is deprecated. Use "http_headers" instead.',
             });
             baseConfig.http_headers = baseConfig.additional_headers;
             delete baseConfig.additional_headers;
@@ -4922,10 +4559,7 @@
           } else {
             configURL = createUrl(baseConfig.url);
           }
-          const [url, configFromURL] = loadConfigOptionsFromURL(
-            configURL,
-            handleImplURLParams,
-          );
+          const [url, configFromURL] = loadConfigOptionsFromURL(configURL, handleImplURLParams);
           const config = mergeConfigs(baseConfig, configFromURL, logger);
           if (config.pathname !== undefined) {
             url.pathname = config.pathname;
@@ -4936,10 +4570,7 @@
         function getConnectionParams(config, logger) {
           let auth;
           if (config.access_token !== undefined) {
-            if (
-              config.username !== undefined ||
-              config.password !== undefined
-            ) {
+            if (config.username !== undefined || config.password !== undefined) {
               throw new Error(
                 "Both access token and username/password are provided in the configuration. Please use only one authentication method.",
               );
@@ -4952,8 +4583,7 @@
               type: "Credentials",
             };
           }
-          const log_level =
-            config.log?.level ?? logger_1.ClickHouseLogLevel.WARN;
+          const log_level = config.log?.level ?? logger_1.ClickHouseLogLevel.WARN;
           return {
             auth,
             url: config.url,
@@ -5166,9 +4796,7 @@
               }
             }
             if (unknownParams.size > 0) {
-              throw new Error(
-                `Unknown URL parameters: ${Array.from(unknownParams).join(", ")}`,
-              );
+              throw new Error(`Unknown URL parameters: ${Array.from(unknownParams).join(", ")}`);
             }
           }
           // clean up the final ClickHouse URL to be used in the connection
@@ -5186,24 +4814,17 @@
         function numberConfigURLValue({ key, value, min, max }) {
           const trimmed = value.trim();
           const number = Number(trimmed);
-          if (isNaN(number))
-            throw new Error(`"${key}" has invalid numeric value: ${trimmed}`);
+          if (isNaN(number)) throw new Error(`"${key}" has invalid numeric value: ${trimmed}`);
           if (min !== undefined && number < min) {
-            throw new Error(
-              `"${key}" value ${trimmed} is less than min allowed ${min}`,
-            );
+            throw new Error(`"${key}" value ${trimmed} is less than min allowed ${min}`);
           }
           if (max !== undefined && number > max) {
-            throw new Error(
-              `"${key}" value ${trimmed} is greater than max allowed ${max}`,
-            );
+            throw new Error(`"${key}" value ${trimmed} is greater than max allowed ${max}`);
           }
           return number;
         }
         function enumConfigURLValue({ key, value, enumObject }) {
-          const values = Object.keys(enumObject).filter((item) =>
-            isNaN(Number(item)),
-          );
+          const values = Object.keys(enumObject).filter((item) => isNaN(Number(item)));
           const trimmed = value.trim();
           if (!values.includes(trimmed)) {
             const expected = values.join(", ");
@@ -5232,11 +4853,7 @@
           }
         }
         exports.TupleParam = TupleParam;
-        function formatQueryParams({
-          value,
-          wrapStringInQuotes,
-          printNullAsKeyword,
-        }) {
+        function formatQueryParams({ value, wrapStringInQuotes, printNullAsKeyword }) {
           return formatQueryParamsInternal({
             value,
             wrapStringInQuotes,
@@ -5257,8 +4874,7 @@
           if (Number.isNaN(value)) return "nan";
           if (value === Number.POSITIVE_INFINITY) return "+inf";
           if (value === Number.NEGATIVE_INFINITY) return "-inf";
-          if (typeof value === "number" || typeof value === "bigint")
-            return String(value);
+          if (typeof value === "number" || typeof value === "bigint") return String(value);
           if (typeof value === "boolean") {
             if (isInArrayOrTuple) {
               return value ? "TRUE" : "FALSE";
@@ -5476,9 +5092,7 @@
           if (exports.SupportedJSONFormats.includes(format)) {
             return stringifyFn(value) + "\n";
           }
-          throw new Error(
-            `The client does not support JSON encoding in [${format}] format.`,
-          );
+          throw new Error(`The client does not support JSON encoding in [${format}] format.`);
         }
         //# sourceMappingURL=formatter.js.map
 
@@ -5495,12 +5109,7 @@
             ? function (o, m, k, k2) {
                 if (k2 === undefined) k2 = k;
                 var desc = Object.getOwnPropertyDescriptor(m, k);
-                if (
-                  !desc ||
-                  ("get" in desc
-                    ? !m.__esModule
-                    : desc.writable || desc.configurable)
-                ) {
+                if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
                   desc = {
                     enumerable: true,
                     get: function () {
@@ -5518,17 +5127,11 @@
           (this && this.__exportStar) ||
           function (m, exports) {
             for (var p in m)
-              if (
-                p !== "default" &&
-                !Object.prototype.hasOwnProperty.call(exports, p)
-              )
+              if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p))
                 __createBinding(exports, m, p);
           };
         Object.defineProperty(exports, "__esModule", { value: true });
-        exports.formatQuerySettings =
-          exports.formatQueryParams =
-          exports.TupleParam =
-            void 0;
+        exports.formatQuerySettings = exports.formatQueryParams = exports.TupleParam = void 0;
         __exportStar(__nccwpck_require__(883), exports);
         var format_query_params_1 = __nccwpck_require__(1850);
         Object.defineProperty(exports, "TupleParam", {
@@ -5630,12 +5233,7 @@
             ? function (o, m, k, k2) {
                 if (k2 === undefined) k2 = k;
                 var desc = Object.getOwnPropertyDescriptor(m, k);
-                if (
-                  !desc ||
-                  ("get" in desc
-                    ? !m.__esModule
-                    : desc.writable || desc.configurable)
-                ) {
+                if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
                   desc = {
                     enumerable: true,
                     get: function () {
@@ -5653,10 +5251,7 @@
           (this && this.__exportStar) ||
           function (m, exports) {
             for (var p in m)
-              if (
-                p !== "default" &&
-                !Object.prototype.hasOwnProperty.call(exports, p)
-              )
+              if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p))
                 __createBinding(exports, m, p);
           };
         Object.defineProperty(exports, "__esModule", { value: true });
@@ -6004,10 +5599,7 @@
         "use strict";
 
         Object.defineProperty(exports, "__esModule", { value: true });
-        exports.ClickHouseLogLevel =
-          exports.LogWriter =
-          exports.DefaultLogger =
-            void 0;
+        exports.ClickHouseLogLevel = exports.LogWriter = exports.DefaultLogger = void 0;
         class DefaultLogger {
           trace({ module, message, args }) {
             const params = [formatMessage({ module, message, level: "TRACE" })];
@@ -6130,10 +5722,7 @@
            * Logging is turned off.
            */
           ClickHouseLogLevel[(ClickHouseLogLevel["OFF"] = 127)] = "OFF";
-        })(
-          ClickHouseLogLevel ||
-            (exports.ClickHouseLogLevel = ClickHouseLogLevel = {}),
-        );
+        })(ClickHouseLogLevel || (exports.ClickHouseLogLevel = ClickHouseLogLevel = {}));
         function formatMessage({ level, module, message }) {
           const ts = new Date().toISOString();
           return `[${ts}][${level}][@clickhouse/client][${module}] ${message}`;
@@ -6233,10 +5822,7 @@
             result = parseDateTimeType({ sourceType, columnType });
           } else if (columnType.startsWith(FixedStringPrefix)) {
             result = parseFixedStringType({ sourceType, columnType });
-          } else if (
-            columnType.startsWith(Enum8Prefix) ||
-            columnType.startsWith(Enum16Prefix)
-          ) {
+          } else if (columnType.startsWith(Enum8Prefix) || columnType.startsWith(Enum16Prefix)) {
             result = parseEnumType({ sourceType, columnType });
           } else if (columnType.startsWith(ArrayPrefix)) {
             result = parseArrayType({ sourceType, columnType });
@@ -6320,13 +5906,10 @@
             columnType = columnType.slice(Enum16Prefix.length, -1);
             intSize = 16;
           } else {
-            throw new ColumnTypeParseError(
-              "Expected Enum to be either Enum8 or Enum16",
-              {
-                columnType,
-                sourceType,
-              },
-            );
+            throw new ColumnTypeParseError("Expected Enum to be either Enum8 or Enum16", {
+              columnType,
+              sourceType,
+            });
           }
           // The minimal allowed Enum definition is Enum8('' = 0), i.e. 6 chars inside.
           if (columnType.length < 6) {
@@ -6368,10 +5951,7 @@
               }
             }
             // Parsing the index, skipping next iterations until the first non-digit one
-            else if (
-              columnType.charCodeAt(i) < ZeroASCII ||
-              columnType.charCodeAt(i) > NineASCII
-            ) {
+            else if (columnType.charCodeAt(i) < ZeroASCII || columnType.charCodeAt(i) > NineASCII) {
               pushEnumIndex(startIndex, i);
               // the char at this index should be comma.
               i += 2; // skip ` '`, but not the first char - ClickHouse allows something like Enum8('foo' = 0, '' = 42)
@@ -6401,18 +5981,15 @@
           function pushEnumIndex(start, end) {
             const index = parseInt(columnType.slice(start, end), 10);
             if (Number.isNaN(index) || index < 0) {
-              throw new ColumnTypeParseError(
-                "Expected Enum index to be a valid number",
-                {
-                  columnType,
-                  sourceType,
-                  names,
-                  indices,
-                  index,
-                  start,
-                  end,
-                },
-              );
+              throw new ColumnTypeParseError("Expected Enum index to be a valid number", {
+                columnType,
+                sourceType,
+                names,
+                indices,
+                index,
+                start,
+                end,
+              });
             }
             if (indices.includes(index)) {
               throw new ColumnTypeParseError("Duplicate Enum index", {
@@ -6437,10 +6014,7 @@
             });
           }
           columnType = columnType.slice(MapPrefix.length, -1);
-          const [keyType, valueType] = getElementsTypes(
-            { columnType, sourceType },
-            2,
-          );
+          const [keyType, valueType] = getElementsTypes({ columnType, sourceType }, 2);
           const key = parseColumnType(keyType);
           if (
             key.type === "DateTime64" ||
@@ -6474,8 +6048,8 @@
             });
           }
           columnType = columnType.slice(TuplePrefix.length, -1);
-          const elements = getElementsTypes({ columnType, sourceType }, 1).map(
-            (type) => parseColumnType(type),
+          const elements = getElementsTypes({ columnType, sourceType }, 1).map((type) =>
+            parseColumnType(type),
           );
           return {
             type: "Tuple",
@@ -6504,10 +6078,9 @@
           }
           if (dimensions === 0 || dimensions > 10) {
             // TODO: check how many we can handle; max 10 seems more than enough.
-            throw new ColumnTypeParseError(
-              "Expected Array to have between 1 and 10 dimensions",
-              { columnType },
-            );
+            throw new ColumnTypeParseError("Expected Array to have between 1 and 10 dimensions", {
+              columnType,
+            });
           }
           const value = parseColumnType(columnType);
           if (value.type === "Array") {
@@ -6528,10 +6101,7 @@
             columnType.startsWith(DateTimeWithTimezonePrefix) &&
             columnType.length > DateTimeWithTimezonePrefix.length + 4 // DateTime('GB') has the least amount of chars
           ) {
-            const timezone = columnType.slice(
-              DateTimeWithTimezonePrefix.length + 1,
-              -2,
-            );
+            const timezone = columnType.slice(DateTimeWithTimezonePrefix.length + 1, -2);
             return {
               type: "DateTime",
               timezone,
@@ -6593,19 +6163,13 @@
               sourceType,
             });
           }
-          const sizeBytes = parseInt(
-            columnType.slice(FixedStringPrefix.length, -1),
-            10,
-          );
+          const sizeBytes = parseInt(columnType.slice(FixedStringPrefix.length, -1), 10);
           if (Number.isNaN(sizeBytes) || sizeBytes < 1) {
-            throw new ColumnTypeParseError(
-              "Invalid FixedString size in bytes",
-              {
-                columnType,
-                sourceType,
-                sizeBytes,
-              },
-            );
+            throw new ColumnTypeParseError("Invalid FixedString size in bytes", {
+              columnType,
+              sourceType,
+              sizeBytes,
+            });
           }
           return {
             type: "FixedString",
@@ -6625,10 +6189,7 @@
             });
           }
           if (value.sourceType.startsWith(NullablePrefix)) {
-            value.sourceType = value.sourceType.slice(
-              NullablePrefix.length,
-              -1,
-            );
+            value.sourceType = value.sourceType.slice(NullablePrefix.length, -1);
           }
           return {
             type: "Nullable",
@@ -6679,15 +6240,12 @@
             elements.push(columnType.slice(lastElementIndex));
           }
           if (elements.length < minElements) {
-            throw new ColumnTypeParseError(
-              "Expected more elements in the type",
-              {
-                sourceType,
-                columnType,
-                elements,
-                minElements,
-              },
-            );
+            throw new ColumnTypeParseError("Expected more elements in the type", {
+              sourceType,
+              columnType,
+              elements,
+              minElements,
+            });
           }
           return elements;
         }
@@ -6725,12 +6283,7 @@
             ? function (o, m, k, k2) {
                 if (k2 === undefined) k2 = k;
                 var desc = Object.getOwnPropertyDescriptor(m, k);
-                if (
-                  !desc ||
-                  ("get" in desc
-                    ? !m.__esModule
-                    : desc.writable || desc.configurable)
-                ) {
+                if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
                   desc = {
                     enumerable: true,
                     get: function () {
@@ -6748,10 +6301,7 @@
           (this && this.__exportStar) ||
           function (m, exports) {
             for (var p in m)
-              if (
-                p !== "default" &&
-                !Object.prototype.hasOwnProperty.call(exports, p)
-              )
+              if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p))
                 __createBinding(exports, m, p);
           };
         Object.defineProperty(exports, "__esModule", { value: true });
@@ -6821,12 +6371,8 @@
         }) {
           return {
             ...headers,
-            ...(enable_response_compression
-              ? { "Accept-Encoding": "gzip" }
-              : {}),
-            ...(enable_request_compression
-              ? { "Content-Encoding": "gzip" }
-              : {}),
+            ...(enable_response_compression ? { "Accept-Encoding": "gzip" } : {}),
+            ...(enable_request_compression ? { "Content-Encoding": "gzip" } : {}),
           };
         }
         function withHttpSettings(clickhouse_settings, compression) {
@@ -6843,16 +6389,11 @@
           return Boolean(statusCode && 200 <= statusCode && statusCode < 300);
         }
         function isJWTAuth(auth) {
-          return (
-            auth !== null && typeof auth === "object" && "access_token" in auth
-          );
+          return auth !== null && typeof auth === "object" && "access_token" in auth;
         }
         function isCredentialsAuth(auth) {
           return (
-            auth !== null &&
-            typeof auth === "object" &&
-            "username" in auth &&
-            "password" in auth
+            auth !== null && typeof auth === "object" && "username" in auth && "password" in auth
           );
         }
         exports.EXCEPTION_TAG_HEADER_NAME = "x-clickhouse-exception-tag";
@@ -6871,12 +6412,7 @@
             ? function (o, m, k, k2) {
                 if (k2 === undefined) k2 = k;
                 var desc = Object.getOwnPropertyDescriptor(m, k);
-                if (
-                  !desc ||
-                  ("get" in desc
-                    ? !m.__esModule
-                    : desc.writable || desc.configurable)
-                ) {
+                if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
                   desc = {
                     enumerable: true,
                     get: function () {
@@ -6894,10 +6430,7 @@
           (this && this.__exportStar) ||
           function (m, exports) {
             for (var p in m)
-              if (
-                p !== "default" &&
-                !Object.prototype.hasOwnProperty.call(exports, p)
-              )
+              if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p))
                 __createBinding(exports, m, p);
           };
         Object.defineProperty(exports, "__esModule", { value: true });
@@ -6965,18 +6498,14 @@
               2; // \r\n
             let errMsgLenStartIdx = chunk.length - bytesCountAfterErrLenHint;
             if (errMsgLenStartIdx < 1) {
-              return new Error(
-                "there was an error in the stream, but the last chunk is malformed",
-              );
+              return new Error("there was an error in the stream, but the last chunk is malformed");
             }
             do {
               --errMsgLenStartIdx;
             } while (chunk[errMsgLenStartIdx] !== NEWLINE);
             const textDecoder = new TextDecoder("utf-8");
             const errMsgLen = parseInt(
-              textDecoder.decode(
-                chunk.subarray(errMsgLenStartIdx, -bytesCountAfterErrLenHint),
-              ),
+              textDecoder.decode(chunk.subarray(errMsgLenStartIdx, -bytesCountAfterErrLenHint)),
             );
             if (isNaN(errMsgLen) || errMsgLen <= 0) {
               return new Error(
@@ -7048,10 +6577,7 @@
           if (clickhouse_settings !== undefined) {
             for (const [key, value] of Object.entries(clickhouse_settings)) {
               if (value !== undefined) {
-                entries.push([
-                  key,
-                  (0, data_formatter_1.formatQuerySettings)(value),
-                ]);
+                entries.push([key, (0, data_formatter_1.formatQuerySettings)(value)]);
               }
             }
           }
@@ -7173,8 +6699,7 @@
             return connection_1.NodeConnectionFactory.create({
               connection_params: params,
               set_basic_auth_header: nodeConfig.set_basic_auth_header ?? true,
-              capture_enhanced_stack_trace:
-                nodeConfig.capture_enhanced_stack_trace ?? false,
+              capture_enhanced_stack_trace: nodeConfig.capture_enhanced_stack_trace ?? false,
               eagerly_destroy_stale_sockets:
                 nodeConfig.keep_alive?.eagerly_destroy_stale_sockets ?? false,
               http_agent: nodeConfig.http_agent,
@@ -7182,16 +6707,8 @@
               tls,
             });
           },
-          values_encoder: (jsonHandling) =>
-            new utils_1.NodeValuesEncoder(jsonHandling),
-          make_result_set: (
-            stream,
-            format,
-            query_id,
-            log_error,
-            response_headers,
-            jsonHandling,
-          ) =>
+          values_encoder: (jsonHandling) => new utils_1.NodeValuesEncoder(jsonHandling),
+          make_result_set: (stream, format, query_id, log_error, response_headers, jsonHandling) =>
             result_set_1.ResultSet.instance({
               stream,
               format,
@@ -7232,8 +6749,7 @@
                   if (err) {
                     if (log_level <= client_common_1.ClickHouseLogLevel.ERROR) {
                       log_writer.error({
-                        message:
-                          "An error occurred while decompressing the response",
+                        message: "An error occurred while decompressing the response",
                         err,
                       });
                     }
@@ -7278,16 +6794,14 @@
             eagerly_destroy_stale_sockets = false,
           }) {
             if (http_agent !== undefined) {
-              return new node_custom_agent_connection_1.NodeCustomAgentConnection(
-                {
-                  ...connection_params,
-                  set_basic_auth_header,
-                  capture_enhanced_stack_trace,
-                  keep_alive, // only used to enforce proper KeepAlive headers
-                  http_agent,
-                  eagerly_destroy_stale_sockets,
-                },
-              );
+              return new node_custom_agent_connection_1.NodeCustomAgentConnection({
+                ...connection_params,
+                set_basic_auth_header,
+                capture_enhanced_stack_trace,
+                keep_alive, // only used to enforce proper KeepAlive headers
+                http_agent,
+                eagerly_destroy_stale_sockets,
+              });
             }
             switch (connection_params.url.protocol) {
               case "http:":
@@ -7328,12 +6842,7 @@
             ? function (o, m, k, k2) {
                 if (k2 === undefined) k2 = k;
                 var desc = Object.getOwnPropertyDescriptor(m, k);
-                if (
-                  !desc ||
-                  ("get" in desc
-                    ? !m.__esModule
-                    : desc.writable || desc.configurable)
-                ) {
+                if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
                   desc = {
                     enumerable: true,
                     get: function () {
@@ -7351,10 +6860,7 @@
           (this && this.__exportStar) ||
           function (m, exports) {
             for (var p in m)
-              if (
-                p !== "default" &&
-                !Object.prototype.hasOwnProperty.call(exports, p)
-              )
+              if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p))
                 __createBinding(exports, m, p);
           };
         Object.defineProperty(exports, "__esModule", { value: true });
@@ -7408,19 +6914,14 @@
             }
             this.defaultHeaders = {
               // Node.js HTTP agent, for some reason, does not set this on its own when KeepAlive is enabled
-              Connection: this.params.keep_alive.enabled
-                ? "keep-alive"
-                : "close",
-              "User-Agent": (0, utils_1.getUserAgent)(
-                this.params.application_id,
-              ),
+              Connection: this.params.keep_alive.enabled ? "keep-alive" : "close",
+              "User-Agent": (0, utils_1.getUserAgent)(this.params.application_id),
             };
           }
           async ping(params) {
             const { log_writer, log_level } = this.params;
             const query_id = this.getQueryId(params.query_id);
-            const { controller, controllerCleanup } =
-              this.getAbortController(params);
+            const { controller, controllerCleanup } = this.getAbortController(params);
             try {
               let result;
               if (params.select) {
@@ -7511,31 +7012,28 @@
               query_id,
               role: params.role,
             });
-            const { controller, controllerCleanup } =
-              this.getAbortController(params);
+            const { controller, controllerCleanup } = this.getAbortController(params);
             // allows enforcing the compression via the settings even if the client instance has it disabled
-            const enableResponseCompression =
-              clickhouse_settings.enable_http_compression === 1;
+            const enableResponseCompression = clickhouse_settings.enable_http_compression === 1;
             try {
-              const { response_headers, stream, http_status_code } =
-                await this.request(
-                  {
-                    method: "POST",
-                    url: (0, client_common_1.transformUrl)({
-                      url: this.params.url,
-                      searchParams,
-                    }),
-                    body: params.query,
-                    abort_signal: controller.signal,
-                    enable_response_compression: enableResponseCompression,
-                    headers: this.buildRequestHeaders(params),
-                    query: params.query,
-                    query_id,
-                    log_writer,
-                    log_level,
-                  },
-                  "Query",
-                );
+              const { response_headers, stream, http_status_code } = await this.request(
+                {
+                  method: "POST",
+                  url: (0, client_common_1.transformUrl)({
+                    url: this.params.url,
+                    searchParams,
+                  }),
+                  body: params.query,
+                  abort_signal: controller.signal,
+                  enable_response_compression: enableResponseCompression,
+                  headers: this.buildRequestHeaders(params),
+                  query: params.query,
+                  query_id,
+                  log_writer,
+                  log_level,
+                },
+                "Query",
+              );
               return {
                 stream,
                 response_headers,
@@ -7572,30 +7070,27 @@
               role: params.role,
               query_id,
             });
-            const { controller, controllerCleanup } =
-              this.getAbortController(params);
+            const { controller, controllerCleanup } = this.getAbortController(params);
             try {
-              const { stream, summary, response_headers, http_status_code } =
-                await this.request(
-                  {
-                    method: "POST",
-                    url: (0, client_common_1.transformUrl)({
-                      url: this.params.url,
-                      searchParams,
-                    }),
-                    body: params.values,
-                    abort_signal: controller.signal,
-                    enable_request_compression:
-                      this.params.compression.compress_request,
-                    parse_summary: true,
-                    headers: this.buildRequestHeaders(params),
-                    query: params.query,
-                    query_id,
-                    log_writer,
-                    log_level,
-                  },
-                  "Insert",
-                );
+              const { stream, summary, response_headers, http_status_code } = await this.request(
+                {
+                  method: "POST",
+                  url: (0, client_common_1.transformUrl)({
+                    url: this.params.url,
+                    searchParams,
+                  }),
+                  body: params.values,
+                  abort_signal: controller.signal,
+                  enable_request_compression: this.params.compression.compress_request,
+                  parse_summary: true,
+                  headers: this.buildRequestHeaders(params),
+                  query: params.query,
+                  query_id,
+                  log_writer,
+                  log_level,
+                },
+                "Insert",
+              );
               await (0, stream_1.drainStreamInternal)(
                 {
                   op: "Insert",
@@ -7754,9 +7249,7 @@
             };
           }
           logRequestError({ op, err, query_id, query_params, extra_args }) {
-            if (
-              this.params.log_level <= client_common_1.ClickHouseLogLevel.ERROR
-            ) {
+            if (this.params.log_level <= client_common_1.ClickHouseLogLevel.ERROR) {
               this.params.log_writer.error({
                 message: this.httpRequestErrorMessage(op),
                 err: err,
@@ -7791,46 +7284,39 @@
               clickhouse_settings,
               query_id,
             };
-            const searchParams = (0, client_common_1.toSearchParams)(
-              toSearchParamsOptions,
-            );
-            const { controller, controllerCleanup } =
-              this.getAbortController(params);
+            const searchParams = (0, client_common_1.toSearchParams)(toSearchParamsOptions);
+            const { controller, controllerCleanup } = this.getAbortController(params);
             const tryDecompressResponseStream =
               params.op === "Exec"
                 ? // allows disabling stream decompression for the `Exec` operation only
-                  (params.decompress_response_stream ??
-                  this.params.compression.decompress_response)
+                  (params.decompress_response_stream ?? this.params.compression.decompress_response)
                 : // there is nothing useful in the response stream for the `Command` operation,
                   // and it is immediately destroyed; never decompress it
                   false;
             const ignoreErrorResponse = params.ignore_error_response ?? false;
             try {
-              const { stream, summary, response_headers, http_status_code } =
-                await this.request(
-                  {
-                    method: "POST",
-                    url: (0, client_common_1.transformUrl)({
-                      url: this.params.url,
-                      searchParams,
-                    }),
-                    body: sendQueryInParams ? params.values : params.query,
-                    abort_signal: controller.signal,
-                    parse_summary: true,
-                    enable_request_compression:
-                      this.params.compression.compress_request,
-                    enable_response_compression:
-                      this.params.compression.decompress_response,
-                    try_decompress_response_stream: tryDecompressResponseStream,
-                    ignore_error_response: ignoreErrorResponse,
-                    headers: this.buildRequestHeaders(params),
-                    query: params.query,
-                    query_id,
-                    log_writer,
-                    log_level,
-                  },
-                  params.op,
-                );
+              const { stream, summary, response_headers, http_status_code } = await this.request(
+                {
+                  method: "POST",
+                  url: (0, client_common_1.transformUrl)({
+                    url: this.params.url,
+                    searchParams,
+                  }),
+                  body: sendQueryInParams ? params.values : params.query,
+                  abort_signal: controller.signal,
+                  parse_summary: true,
+                  enable_request_compression: this.params.compression.compress_request,
+                  enable_response_compression: this.params.compression.decompress_response,
+                  try_decompress_response_stream: tryDecompressResponseStream,
+                  ignore_error_response: ignoreErrorResponse,
+                  headers: this.buildRequestHeaders(params),
+                  query: params.query,
+                  query_id,
+                  log_writer,
+                  log_level,
+                },
+                params.op,
+              );
               return {
                 stream,
                 query_id,
@@ -7881,15 +7367,11 @@
         const https_1 = __importDefault(__nccwpck_require__(5692));
         const node_base_connection_1 = __nccwpck_require__(2837);
         const client_common_1 = __nccwpck_require__(7743);
-        class NodeCustomAgentConnection
-          extends node_base_connection_1.NodeBaseConnection
-        {
+        class NodeCustomAgentConnection extends node_base_connection_1.NodeBaseConnection {
           httpRequestFn;
           constructor(params) {
             if (!params.http_agent) {
-              throw new Error(
-                "http_agent is required to create NodeCustomAgentConnection",
-              );
+              throw new Error("http_agent is required to create NodeCustomAgentConnection");
             }
             super(params, params.http_agent);
             // See https://github.com/ClickHouse/clickhouse-js/issues/352
@@ -7934,9 +7416,7 @@
         const client_common_1 = __nccwpck_require__(7743);
         const http_1 = __importDefault(__nccwpck_require__(8611));
         const node_base_connection_1 = __nccwpck_require__(2837);
-        class NodeHttpConnection
-          extends node_base_connection_1.NodeBaseConnection
-        {
+        class NodeHttpConnection extends node_base_connection_1.NodeBaseConnection {
           constructor(params) {
             const agent = new http_1.default.Agent({
               keepAlive: params.keep_alive.enabled,
@@ -7979,9 +7459,7 @@
         const client_common_1 = __nccwpck_require__(7743);
         const https_1 = __importDefault(__nccwpck_require__(5692));
         const node_base_connection_1 = __nccwpck_require__(2837);
-        class NodeHttpsConnection
-          extends node_base_connection_1.NodeBaseConnection
-        {
+        class NodeHttpsConnection extends node_base_connection_1.NodeBaseConnection {
           constructor(params) {
             const agent = new https_1.default.Agent({
               keepAlive: params.keep_alive.enabled,
@@ -8127,13 +7605,8 @@
                           // to use a socket that has actually been idle for much longer than `idle_socket_ttl`.
                           // However, this is an edge case that should be clearly visible in the
                           // application monitoring.
-                          if (
-                            socketAge >= this.params.keep_alive.idle_socket_ttl
-                          ) {
-                            if (
-                              log_level <=
-                              client_common_1.ClickHouseLogLevel.TRACE
-                            ) {
+                          if (socketAge >= this.params.keep_alive.idle_socket_ttl) {
+                            if (log_level <= client_common_1.ClickHouseLogLevel.TRACE) {
                               log_writer.trace({
                                 message: `${op}: socket TTL expired based on timestamp, destroying socket`,
                                 args: {
@@ -8142,8 +7615,7 @@
                                   query_id,
                                   socket_id: socketInfo.id,
                                   socket_age_ms: socketAge,
-                                  idle_socket_ttl_ms:
-                                    this.params.keep_alive.idle_socket_ttl,
+                                  idle_socket_ttl_ms: this.params.keep_alive.idle_socket_ttl,
                                 },
                               });
                             }
@@ -8186,13 +7658,9 @@
                         if (socket) {
                           const socketInfo = this.knownSockets.get(socket);
                           if (socketInfo) {
-                            const serverTimeoutMs =
-                              socketInfo.server_keep_alive_timeout_ms;
+                            const serverTimeoutMs = socketInfo.server_keep_alive_timeout_ms;
                             if (serverTimeoutMs !== undefined) {
-                              if (
-                                this.params.keep_alive.idle_socket_ttl >
-                                serverTimeoutMs
-                              ) {
+                              if (this.params.keep_alive.idle_socket_ttl > serverTimeoutMs) {
                                 log_writer.warn({
                                   message: `${op}: idle socket TTL is greater than server keep-alive timeout, try setting idle socket TTL to a value lower than the server keep-alive timeout to prevent unexpected connection resets, see https://c.house/js_keep_alive_econnreset for more details.`,
                                   args: {
@@ -8201,10 +7669,8 @@
                                     query_id,
                                     request_id,
                                     socket_id: socketInfo.id,
-                                    server_keep_alive_timeout_ms:
-                                      serverTimeoutMs,
-                                    idle_socket_ttl:
-                                      this.params.keep_alive.idle_socket_ttl,
+                                    server_keep_alive_timeout_ms: serverTimeoutMs,
+                                    idle_socket_ttl: this.params.keep_alive.idle_socket_ttl,
                                   },
                                   module: "HTTP Adapter",
                                 });
@@ -8215,10 +7681,7 @@
                       }
                     }
                   }
-                  const err = (0, client_common_1.enhanceStackTrace)(
-                    e,
-                    currentStackTrace,
-                  );
+                  const err = (0, client_common_1.enhanceStackTrace)(e, currentStackTrace);
                   reject(err);
                 } else {
                   reject(e);
@@ -8226,10 +7689,7 @@
               };
               let responseStream;
               const onResponse = async (_response) => {
-                if (
-                  this.params.log_level <=
-                  client_common_1.ClickHouseLogLevel.DEBUG
-                ) {
+                if (this.params.log_level <= client_common_1.ClickHouseLogLevel.DEBUG) {
                   const duration = Date.now() - start;
                   this.params.log_writer.debug({
                     module: "HTTP Adapter",
@@ -8249,18 +7709,13 @@
                 if (this.params.keep_alive.enabled) {
                   const keepAliveHeader = _response.headers["keep-alive"];
                   if (keepAliveHeader) {
-                    const [, timeout] =
-                      /timeout=(\d+)/i.exec(String(keepAliveHeader)) ?? [];
+                    const [, timeout] = /timeout=(\d+)/i.exec(String(keepAliveHeader)) ?? [];
                     if (timeout) {
-                      const socketInfo = this.knownSockets.get(
-                        _response.socket,
-                      );
+                      const socketInfo = this.knownSockets.get(_response.socket);
                       if (socketInfo) {
                         const timeoutMs = Number(timeout) * 1000;
                         socketInfo.server_keep_alive_timeout_ms = timeoutMs;
-                        if (
-                          log_level <= client_common_1.ClickHouseLogLevel.TRACE
-                        ) {
+                        if (log_level <= client_common_1.ClickHouseLogLevel.TRACE) {
                           this.params.log_writer.trace({
                             module: "HTTP Adapter",
                             message: `${op}: updated server sent socket keep-alive timeout`,
@@ -8278,26 +7733,19 @@
                     }
                   }
                 }
-                const tryDecompressResponseStream =
-                  params.try_decompress_response_stream ?? true;
-                const ignoreErrorResponse =
-                  params.ignore_error_response ?? false;
+                const tryDecompressResponseStream = params.try_decompress_response_stream ?? true;
+                const ignoreErrorResponse = params.ignore_error_response ?? false;
                 // even if the stream decompression is disabled, we have to decompress it in case of an error
-                const isFailedResponse = !(0,
-                client_common_1.isSuccessfulResponse)(_response.statusCode);
-                if (
-                  tryDecompressResponseStream ||
-                  (isFailedResponse && !ignoreErrorResponse)
-                ) {
-                  const decompressionResult = (0,
-                  compression_1.decompressResponse)(
+                const isFailedResponse = !(0, client_common_1.isSuccessfulResponse)(
+                  _response.statusCode,
+                );
+                if (tryDecompressResponseStream || (isFailedResponse && !ignoreErrorResponse)) {
+                  const decompressionResult = (0, compression_1.decompressResponse)(
                     _response,
                     log_writer,
                     log_level,
                   );
-                  if (
-                    (0, compression_1.isDecompressionError)(decompressionResult)
-                  ) {
+                  if ((0, compression_1.isDecompressionError)(decompressionResult)) {
                     const err = (0, client_common_1.enhanceStackTrace)(
                       decompressionResult.error,
                       currentStackTrace,
@@ -8328,9 +7776,7 @@
                 }
                 if (isFailedResponse && !ignoreErrorResponse) {
                   try {
-                    const errorMessage = await (0, utils_1.getAsText)(
-                      responseStream,
-                    );
+                    const errorMessage = await (0, utils_1.getAsText)(responseStream);
                     const err = (0, client_common_1.enhanceStackTrace)(
                       (0, client_common_1.parseError)(errorMessage),
                       currentStackTrace,
@@ -8338,18 +7784,13 @@
                     reject(err);
                   } catch (e) {
                     // If the ClickHouse response is malformed
-                    const err = (0, client_common_1.enhanceStackTrace)(
-                      e,
-                      currentStackTrace,
-                    );
+                    const err = (0, client_common_1.enhanceStackTrace)(e, currentStackTrace);
                     reject(err);
                   }
                 } else {
                   return resolve({
                     stream: responseStream,
-                    summary: params.parse_summary
-                      ? this.parseSummary(op, _response)
-                      : undefined,
+                    summary: params.parse_summary ? this.parseSummary(op, _response) : undefined,
                     response_headers: { ..._response.headers },
                     http_status_code: _response.statusCode ?? undefined,
                   });
@@ -8388,10 +7829,7 @@
                 const callback = (e) => {
                   if (e) {
                     removeRequestListeners();
-                    const err = (0, client_common_1.enhanceStackTrace)(
-                      e,
-                      currentStackTrace,
-                    );
+                    const err = (0, client_common_1.enhanceStackTrace)(e, currentStackTrace);
                     reject(err);
                   }
                 };
@@ -8417,9 +7855,7 @@
                     // so it doesn't have the idle timeout handler attached to it
                     if (socketInfo === undefined) {
                       const socket_id = this.getNewSocketId();
-                      if (
-                        log_level <= client_common_1.ClickHouseLogLevel.TRACE
-                      ) {
+                      if (log_level <= client_common_1.ClickHouseLogLevel.TRACE) {
                         log_writer.trace({
                           message: `${op}: using a fresh socket, setting up a new 'free' listener`,
                           args: {
@@ -8440,9 +7876,7 @@
                       // When the request is complete and the socket is released,
                       // make sure that the socket is removed after `idle_socket_ttl`.
                       socket.on("free", () => {
-                        if (
-                          log_level <= client_common_1.ClickHouseLogLevel.TRACE
-                        ) {
+                        if (log_level <= client_common_1.ClickHouseLogLevel.TRACE) {
                           log_writer.trace({
                             message: `${op}: socket was released`,
                             args: {
@@ -8455,16 +7889,12 @@
                           });
                         }
                         const freed_at_timestamp_ms = Date.now();
-                        newSocketInfo.freed_at_timestamp_ms =
-                          freed_at_timestamp_ms;
+                        newSocketInfo.freed_at_timestamp_ms = freed_at_timestamp_ms;
                         // Avoiding the built-in socket.timeout() method usage here,
                         // as we don't want to clash with the actual request timeout.
                         const idleTimeoutHandle = setTimeout(() => {
                           const freedAfter = Date.now() - freed_at_timestamp_ms;
-                          if (
-                            log_level <=
-                            client_common_1.ClickHouseLogLevel.TRACE
-                          ) {
+                          if (log_level <= client_common_1.ClickHouseLogLevel.TRACE) {
                             log_writer.trace({
                               message: `${op}: removing idle socket`,
                               args: {
@@ -8473,8 +7903,7 @@
                                 query_id,
                                 request_id,
                                 socket_id,
-                                idle_socket_ttl_ms:
-                                  this.params.keep_alive.idle_socket_ttl,
+                                idle_socket_ttl_ms: this.params.keep_alive.idle_socket_ttl,
                                 freed_after_ms: freedAfter,
                               },
                             });
@@ -8490,9 +7919,7 @@
                         if (maybeSocketInfo?.idle_timeout_handle) {
                           clearTimeout(maybeSocketInfo.idle_timeout_handle);
                         }
-                        if (
-                          log_level <= client_common_1.ClickHouseLogLevel.TRACE
-                        ) {
+                        if (log_level <= client_common_1.ClickHouseLogLevel.TRACE) {
                           log_writer.trace({
                             message: `${op}: received '${eventName}' event, 'free' listener removed`,
                             args: {
@@ -8505,9 +7932,7 @@
                             },
                           });
                         }
-                        if (
-                          log_level <= client_common_1.ClickHouseLogLevel.WARN
-                        ) {
+                        if (log_level <= client_common_1.ClickHouseLogLevel.WARN) {
                           if (responseStream && !responseStream.readableEnded) {
                             log_writer.warn({
                               message:
@@ -8536,14 +7961,11 @@
                         // as the timers don't fire exactly on time which can lead
                         // to a stale socket being reused.
                         const socketAge = Date.now() - freedAt;
-                        const overdueBy =
-                          socketAge - this.params.keep_alive.idle_socket_ttl;
+                        const overdueBy = socketAge - this.params.keep_alive.idle_socket_ttl;
                         // Give some grace period to account for timer inaccuracy and minor
                         // event loop delays, but log if the socket is significantly overdue
                         if (overdueBy > 1000) {
-                          if (
-                            log_level <= client_common_1.ClickHouseLogLevel.WARN
-                          ) {
+                          if (log_level <= client_common_1.ClickHouseLogLevel.WARN) {
                             log_writer.warn({
                               message: `${op}: reusing socket with TTL expired based on timestamp; this may indicate a starved Node.js process or delayed event loop; set keep_alive.eagerly_destroy_stale_sockets=true to mitigate`,
                               args: {
@@ -8552,8 +7974,7 @@
                                 query_id,
                                 socket_id: socketInfo.id,
                                 socket_age_ms: socketAge,
-                                idle_socket_ttl_ms:
-                                  this.params.keep_alive.idle_socket_ttl,
+                                idle_socket_ttl_ms: this.params.keep_alive.idle_socket_ttl,
                               },
                             });
                           }
@@ -8561,9 +7982,7 @@
                       }
                       clearTimeout(socketInfo.idle_timeout_handle);
                       socketInfo.idle_timeout_handle = undefined;
-                      if (
-                        log_level <= client_common_1.ClickHouseLogLevel.TRACE
-                      ) {
+                      if (log_level <= client_common_1.ClickHouseLogLevel.TRACE) {
                         log_writer.trace({
                           message: `${op}: reusing socket`,
                           args: {
@@ -8630,9 +8049,7 @@
                 removeRequestListeners();
                 if (log_level <= client_common_1.ClickHouseLogLevel.TRACE) {
                   const socket = request.socket;
-                  const maybeSocketInfo = socket
-                    ? this.knownSockets.get(socket)
-                    : undefined;
+                  const maybeSocketInfo = socket ? this.knownSockets.get(socket) : undefined;
                   const socketState = request.socket
                     ? {
                         connecting: request.socket.connecting,
@@ -8733,10 +8150,7 @@
               try {
                 return this.jsonHandling.parse(summaryHeader);
               } catch (err) {
-                if (
-                  this.params.log_level <=
-                  client_common_1.ClickHouseLogLevel.ERROR
-                ) {
+                if (this.params.log_level <= client_common_1.ClickHouseLogLevel.ERROR) {
                   this.params.log_writer.error({
                     message: `${op}: failed to parse X-ClickHouse-Summary header.`,
                     args: {
@@ -9144,12 +8558,7 @@
             ? function (o, m, k, k2) {
                 if (k2 === undefined) k2 = k;
                 var desc = Object.getOwnPropertyDescriptor(m, k);
-                if (
-                  !desc ||
-                  ("get" in desc
-                    ? !m.__esModule
-                    : desc.writable || desc.configurable)
-                ) {
+                if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
                   desc = {
                     enumerable: true,
                     get: function () {
@@ -9184,8 +8593,7 @@
                 function (o) {
                   var ar = [];
                   for (var k in o)
-                    if (Object.prototype.hasOwnProperty.call(o, k))
-                      ar[ar.length] = k;
+                    if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
                   return ar;
                 };
               return ownKeys(o);
@@ -9216,14 +8624,7 @@
           exceptionTag = undefined;
           log_error;
           jsonHandling;
-          constructor(
-            _stream,
-            format,
-            query_id,
-            log_error,
-            _response_headers,
-            jsonHandling,
-          ) {
+          constructor(_stream, format, query_id, log_error, _response_headers, jsonHandling) {
             this._stream = _stream;
             this.format = format;
             this.query_id = query_id;
@@ -9235,8 +8636,7 @@
             this.log_error = log_error ?? ((err) => console.error(err));
             if (_response_headers !== undefined) {
               this.response_headers = Object.freeze(_response_headers);
-              this.exceptionTag =
-                _response_headers[client_common_1.EXCEPTION_TAG_HEADER_NAME];
+              this.exceptionTag = _response_headers[client_common_1.EXCEPTION_TAG_HEADER_NAME];
             }
           }
           /** See {@link BaseResultSet.text}. */
@@ -9306,16 +8706,12 @@
                       chunk[idx - 1] === client_common_1.CARET_RETURN
                     ) {
                       return callback(
-                        (0, client_common_1.extractErrorAtTheEndOfChunk)(
-                          chunk,
-                          exceptionTag,
-                        ),
+                        (0, client_common_1.extractErrorAtTheEndOfChunk)(chunk, exceptionTag),
                       );
                     }
                     if (incompleteChunks.length > 0) {
                       incompleteChunks.push(chunk.subarray(lastIdx, idx));
-                      currentChunkPart =
-                        buffer_1.Buffer.concat(incompleteChunks);
+                      currentChunkPart = buffer_1.Buffer.concat(incompleteChunks);
                       // Removing used buffers and reusing the already allocated memory
                       // by setting length to 0
                       incompleteChunks.length = 0;
@@ -9341,11 +8737,7 @@
               this._stream,
               toRows,
               function pipelineCb(err) {
-                if (
-                  err &&
-                  err.name !== "AbortError" &&
-                  err.message !== resultSetClosedMessage
-                ) {
+                if (err && err.name !== "AbortError" && err.message !== resultSetClosedMessage) {
                   logError(err);
                 }
               },
@@ -9366,14 +8758,7 @@
           [Symbol.dispose]() {
             this.close();
           }
-          static instance({
-            stream,
-            format,
-            query_id,
-            log_error,
-            response_headers,
-            jsonHandling,
-          }) {
+          static instance({ stream, format, query_id, log_error, response_headers, jsonHandling }) {
             return new ResultSet(
               stream,
               format,
@@ -9421,11 +8806,7 @@
               return stream_1.default.pipeline(
                 values,
                 (0, stream_2.mapStream)((value) =>
-                  (0, client_common_1.encodeJSON)(
-                    value,
-                    format,
-                    this.json.stringify,
-                  ),
+                  (0, client_common_1.encodeJSON)(value, format, this.json.stringify),
                 ),
                 pipelineCb,
               );
@@ -9433,26 +8814,14 @@
             // JSON* arrays
             if (Array.isArray(values)) {
               return values
-                .map((value) =>
-                  (0, client_common_1.encodeJSON)(
-                    value,
-                    format,
-                    this.json.stringify,
-                  ),
-                )
+                .map((value) => (0, client_common_1.encodeJSON)(value, format, this.json.stringify))
                 .join("");
             }
             // JSON & JSONObjectEachRow format input
             if (typeof values === "object") {
-              return (0, client_common_1.encodeJSON)(
-                values,
-                format,
-                this.json.stringify,
-              );
+              return (0, client_common_1.encodeJSON)(values, format, this.json.stringify);
             }
-            throw new Error(
-              `Cannot encode values of type ${typeof values} with ${format} format`,
-            );
+            throw new Error(`Cannot encode values of type ${typeof values} with ${format} format`);
           }
           validateInsertValues(values, format) {
             if (
@@ -9503,12 +8872,7 @@
             ? function (o, m, k, k2) {
                 if (k2 === undefined) k2 = k;
                 var desc = Object.getOwnPropertyDescriptor(m, k);
-                if (
-                  !desc ||
-                  ("get" in desc
-                    ? !m.__esModule
-                    : desc.writable || desc.configurable)
-                ) {
+                if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
                   desc = {
                     enumerable: true,
                     get: function () {
@@ -9526,10 +8890,7 @@
           (this && this.__exportStar) ||
           function (m, exports) {
             for (var p in m)
-              if (
-                p !== "default" &&
-                !Object.prototype.hasOwnProperty.call(exports, p)
-              )
+              if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p))
                 __createBinding(exports, m, p);
           };
         Object.defineProperty(exports, "__esModule", { value: true });
@@ -9567,12 +8928,7 @@
             ? function (o, m, k, k2) {
                 if (k2 === undefined) k2 = k;
                 var desc = Object.getOwnPropertyDescriptor(m, k);
-                if (
-                  !desc ||
-                  ("get" in desc
-                    ? !m.__esModule
-                    : desc.writable || desc.configurable)
-                ) {
+                if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
                   desc = {
                     enumerable: true,
                     get: function () {
@@ -9607,8 +8963,7 @@
                 function (o) {
                   var ar = [];
                   for (var k in o)
-                    if (Object.prototype.hasOwnProperty.call(o, k))
-                      ar[ar.length] = k;
+                    if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
                   return ar;
                 };
               return ownKeys(o);
@@ -9682,10 +9037,7 @@
             text += textDecoder.decode();
             return text;
           } catch (err) {
-            if (
-              err instanceof RangeError &&
-              err.message.includes("Invalid string length")
-            ) {
+            if (err instanceof RangeError && err.message.includes("Invalid string length")) {
               throw new Error(
                 `The response length exceeds the maximum allowed size of V8 String: ${MAX_STRING_LENGTH} characters.`,
               );
@@ -9725,9 +9077,7 @@
          */
         function getUserAgent(application_id) {
           const defaultUserAgent = `clickhouse-js/${runtime_1.Runtime.package} (lv:nodejs/${runtime_1.Runtime.node}; os:${runtime_1.Runtime.os})`;
-          return application_id
-            ? `${application_id} ${defaultUserAgent}`
-            : defaultUserAgent;
+          return application_id ? `${application_id} ${defaultUserAgent}` : defaultUserAgent;
         }
         //# sourceMappingURL=user_agent.js.map
 
@@ -9754,26 +9104,20 @@
         var __getOwnPropNames = Object.getOwnPropertyNames;
         var __hasOwnProp = Object.prototype.hasOwnProperty;
         var __export = (target, all) => {
-          for (var name in all)
-            __defProp(target, name, { get: all[name], enumerable: true });
+          for (var name in all) __defProp(target, name, { get: all[name], enumerable: true });
         };
         var __copyProps = (to, from, except, desc) => {
-          if (
-            (from && typeof from === "object") ||
-            typeof from === "function"
-          ) {
+          if ((from && typeof from === "object") || typeof from === "function") {
             for (let key of __getOwnPropNames(from))
               if (!__hasOwnProp.call(to, key) && key !== except)
                 __defProp(to, key, {
                   get: () => from[key],
-                  enumerable:
-                    !(desc = __getOwnPropDesc(from, key)) || desc.enumerable,
+                  enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable,
                 });
           }
           return to;
         };
-        var __toCommonJS = (mod) =>
-          __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+        var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
         // pkg/dist-src/index.js
         var dist_src_exports = {};
@@ -9789,8 +9133,7 @@
         async function auth(token) {
           const isApp = token.split(/\./).length === 3;
           const isInstallation =
-            REGEX_IS_INSTALLATION_LEGACY.test(token) ||
-            REGEX_IS_INSTALLATION.test(token);
+            REGEX_IS_INSTALLATION_LEGACY.test(token) || REGEX_IS_INSTALLATION.test(token);
           const isUserToServer = REGEX_IS_USER_TO_SERVER.test(token);
           const tokenType = isApp
             ? "app"
@@ -9824,9 +9167,7 @@
         // pkg/dist-src/index.js
         var createTokenAuth = function createTokenAuth2(token) {
           if (!token) {
-            throw new Error(
-              "[@octokit/auth-token] No token passed to createTokenAuth",
-            );
+            throw new Error("[@octokit/auth-token] No token passed to createTokenAuth");
           }
           if (typeof token !== "string") {
             throw new Error(
@@ -9853,26 +9194,20 @@
         var __getOwnPropNames = Object.getOwnPropertyNames;
         var __hasOwnProp = Object.prototype.hasOwnProperty;
         var __export = (target, all) => {
-          for (var name in all)
-            __defProp(target, name, { get: all[name], enumerable: true });
+          for (var name in all) __defProp(target, name, { get: all[name], enumerable: true });
         };
         var __copyProps = (to, from, except, desc) => {
-          if (
-            (from && typeof from === "object") ||
-            typeof from === "function"
-          ) {
+          if ((from && typeof from === "object") || typeof from === "function") {
             for (let key of __getOwnPropNames(from))
               if (!__hasOwnProp.call(to, key) && key !== except)
                 __defProp(to, key, {
                   get: () => from[key],
-                  enumerable:
-                    !(desc = __getOwnPropDesc(from, key)) || desc.enumerable,
+                  enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable,
                 });
           }
           return to;
         };
-        var __toCommonJS = (mod) =>
-          __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+        var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
         // pkg/dist-src/index.js
         var index_exports = {};
@@ -9951,9 +9286,7 @@
             const NewOctokit = class extends this {
               static {
                 this.plugins = currentPlugins.concat(
-                  newPlugins.filter(
-                    (plugin) => !currentPlugins.includes(plugin),
-                  ),
+                  newPlugins.filter((plugin) => !currentPlugins.includes(plugin)),
                 );
               }
             };
@@ -9986,9 +9319,9 @@
               requestDefaults.headers["time-zone"] = options.timeZone;
             }
             this.request = import_request.request.defaults(requestDefaults);
-            this.graphql = (0, import_graphql.withCustomRequest)(
-              this.request,
-            ).defaults(requestDefaults);
+            this.graphql = (0, import_graphql.withCustomRequest)(this.request).defaults(
+              requestDefaults,
+            );
             this.log = createLogger(options.log);
             this.hook = hook;
             if (!options.authStrategy) {
@@ -9997,9 +9330,7 @@
                   type: "unauthenticated",
                 });
               } else {
-                const auth = (0, import_auth_token.createTokenAuth)(
-                  options.auth,
-                );
+                const auth = (0, import_auth_token.createTokenAuth)(options.auth);
                 hook.wrap("request", auth.hook);
                 this.auth = auth;
               }
@@ -10045,26 +9376,20 @@
         var __getOwnPropNames = Object.getOwnPropertyNames;
         var __hasOwnProp = Object.prototype.hasOwnProperty;
         var __export = (target, all) => {
-          for (var name in all)
-            __defProp(target, name, { get: all[name], enumerable: true });
+          for (var name in all) __defProp(target, name, { get: all[name], enumerable: true });
         };
         var __copyProps = (to, from, except, desc) => {
-          if (
-            (from && typeof from === "object") ||
-            typeof from === "function"
-          ) {
+          if ((from && typeof from === "object") || typeof from === "function") {
             for (let key of __getOwnPropNames(from))
               if (!__hasOwnProp.call(to, key) && key !== except)
                 __defProp(to, key, {
                   get: () => from[key],
-                  enumerable:
-                    !(desc = __getOwnPropDesc(from, key)) || desc.enumerable,
+                  enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable,
                 });
           }
           return to;
         };
-        var __toCommonJS = (mod) =>
-          __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+        var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
         // pkg/dist-src/index.js
         var dist_src_exports = {};
@@ -10107,13 +9432,11 @@
         // pkg/dist-src/util/is-plain-object.js
         function isPlainObject(value) {
           if (typeof value !== "object" || value === null) return false;
-          if (Object.prototype.toString.call(value) !== "[object Object]")
-            return false;
+          if (Object.prototype.toString.call(value) !== "[object Object]") return false;
           const proto = Object.getPrototypeOf(value);
           if (proto === null) return true;
           const Ctor =
-            Object.prototype.hasOwnProperty.call(proto, "constructor") &&
-            proto.constructor;
+            Object.prototype.hasOwnProperty.call(proto, "constructor") && proto.constructor;
           return (
             typeof Ctor === "function" &&
             Ctor instanceof Ctor &&
@@ -10126,8 +9449,7 @@
           const result = Object.assign({}, defaults);
           Object.keys(options).forEach((key) => {
             if (isPlainObject(options[key])) {
-              if (!(key in defaults))
-                Object.assign(result, { [key]: options[key] });
+              if (!(key in defaults)) Object.assign(result, { [key]: options[key] });
               else result[key] = mergeDeep(defaults[key], options[key]);
             } else {
               Object.assign(result, { [key]: options[key] });
@@ -10150,10 +9472,7 @@
         function merge(defaults, route, options) {
           if (typeof route === "string") {
             let [method, url] = route.split(" ");
-            options = Object.assign(
-              url ? { method, url } : { url: method },
-              options,
-            );
+            options = Object.assign(url ? { method, url } : { url: method }, options);
           } else {
             options = Object.assign({}, route);
           }
@@ -10164,15 +9483,12 @@
           if (options.url === "/graphql") {
             if (defaults && defaults.mediaType.previews?.length) {
               mergedOptions.mediaType.previews = defaults.mediaType.previews
-                .filter(
-                  (preview) =>
-                    !mergedOptions.mediaType.previews.includes(preview),
-                )
+                .filter((preview) => !mergedOptions.mediaType.previews.includes(preview))
                 .concat(mergedOptions.mediaType.previews);
             }
-            mergedOptions.mediaType.previews = (
-              mergedOptions.mediaType.previews || []
-            ).map((preview) => preview.replace(/-preview/, ""));
+            mergedOptions.mediaType.previews = (mergedOptions.mediaType.previews || []).map(
+              (preview) => preview.replace(/-preview/, ""),
+            );
           }
           return mergedOptions;
         }
@@ -10190,10 +9506,7 @@
             names
               .map((name) => {
                 if (name === "q") {
-                  return (
-                    "q=" +
-                    parameters.q.split("+").map(encodeURIComponent).join("+")
-                  );
+                  return "q=" + parameters.q.split("+").map(encodeURIComponent).join("+");
                 }
                 return `${name}=${encodeURIComponent(parameters[name])}`;
               })
@@ -10204,9 +9517,7 @@
         // pkg/dist-src/util/extract-url-variable-names.js
         var urlVariableRegex = /\{[^{}}]+\}/g;
         function removeNonChars(variableName) {
-          return variableName
-            .replace(/(?:^\W+)|(?:(?<!\W)\W+$)/g, "")
-            .split(/,/);
+          return variableName.replace(/(?:^\W+)|(?:(?<!\W)\W+$)/g, "").split(/,/);
         }
         function extractUrlVariableNames(url) {
           const matches = url.match(urlVariableRegex);
@@ -10233,9 +9544,7 @@
             .split(/(%[0-9A-Fa-f]{2})/g)
             .map(function (part) {
               if (!/%[0-9A-Fa-f]/.test(part)) {
-                part = encodeURI(part)
-                  .replace(/%5B/g, "[")
-                  .replace(/%5D/g, "]");
+                part = encodeURI(part).replace(/%5B/g, "[").replace(/%5D/g, "]");
               }
               return part;
             })
@@ -10248,9 +9557,7 @@
         }
         function encodeValue(operator, value, key) {
           value =
-            operator === "+" || operator === "#"
-              ? encodeReserved(value)
-              : encodeUnreserved(value);
+            operator === "+" || operator === "#" ? encodeReserved(value) : encodeUnreserved(value);
           if (key) {
             return encodeUnreserved(key) + "=" + value;
           } else {
@@ -10276,24 +9583,12 @@
               if (modifier && modifier !== "*") {
                 value = value.substring(0, parseInt(modifier, 10));
               }
-              result.push(
-                encodeValue(
-                  operator,
-                  value,
-                  isKeyOperator(operator) ? key : "",
-                ),
-              );
+              result.push(encodeValue(operator, value, isKeyOperator(operator) ? key : ""));
             } else {
               if (modifier === "*") {
                 if (Array.isArray(value)) {
                   value.filter(isDefined).forEach(function (value2) {
-                    result.push(
-                      encodeValue(
-                        operator,
-                        value2,
-                        isKeyOperator(operator) ? key : "",
-                      ),
-                    );
+                    result.push(encodeValue(operator, value2, isKeyOperator(operator) ? key : ""));
                   });
                 } else {
                   Object.keys(value).forEach(function (k) {
@@ -10355,9 +9650,7 @@
                 }
                 expression.split(/,/g).forEach(function (variable) {
                   var tmp = /([^:\*]*)(?::(\d+)|(\*))?/.exec(variable);
-                  values.push(
-                    getValues(context, operator, tmp[1], tmp[2] || tmp[3]),
-                  );
+                  values.push(getValues(context, operator, tmp[1], tmp[2] || tmp[3]));
                 });
                 if (operator && operator !== "+") {
                   var separator = ",";
@@ -10366,10 +9659,7 @@
                   } else if (operator !== "#") {
                     separator = operator;
                   }
-                  return (
-                    (values.length !== 0 ? operator : "") +
-                    values.join(separator)
-                  );
+                  return (values.length !== 0 ? operator : "") + values.join(separator);
                 } else {
                   return values.join(",");
                 }
@@ -10408,9 +9698,7 @@
             .filter((option) => urlVariableNames.includes(option))
             .concat("baseUrl");
           const remainingParameters = omit(parameters, omittedParameters);
-          const isBinaryRequest = /application\/octet-stream/i.test(
-            headers.accept,
-          );
+          const isBinaryRequest = /application\/octet-stream/i.test(headers.accept);
           if (!isBinaryRequest) {
             if (options.mediaType.format) {
               headers.accept = headers.accept
@@ -10453,10 +9741,7 @@
           if (!headers["content-type"] && typeof body !== "undefined") {
             headers["content-type"] = "application/json; charset=utf-8";
           }
-          if (
-            ["PATCH", "PUT"].includes(method) &&
-            typeof body === "undefined"
-          ) {
+          if (["PATCH", "PUT"].includes(method) && typeof body === "undefined") {
             body = "";
           }
           return Object.assign(
@@ -10500,26 +9785,20 @@
         var __getOwnPropNames = Object.getOwnPropertyNames;
         var __hasOwnProp = Object.prototype.hasOwnProperty;
         var __export = (target, all) => {
-          for (var name in all)
-            __defProp(target, name, { get: all[name], enumerable: true });
+          for (var name in all) __defProp(target, name, { get: all[name], enumerable: true });
         };
         var __copyProps = (to, from, except, desc) => {
-          if (
-            (from && typeof from === "object") ||
-            typeof from === "function"
-          ) {
+          if ((from && typeof from === "object") || typeof from === "function") {
             for (let key of __getOwnPropNames(from))
               if (!__hasOwnProp.call(to, key) && key !== except)
                 __defProp(to, key, {
                   get: () => from[key],
-                  enumerable:
-                    !(desc = __getOwnPropDesc(from, key)) || desc.enumerable,
+                  enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable,
                 });
           }
           return to;
         };
-        var __toCommonJS = (mod) =>
-          __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+        var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
         // pkg/dist-src/index.js
         var index_exports = {};
@@ -10579,45 +9858,32 @@
           if (options) {
             if (typeof query === "string" && "query" in options) {
               return Promise.reject(
-                new Error(
-                  `[@octokit/graphql] "query" cannot be used as variable name`,
-                ),
+                new Error(`[@octokit/graphql] "query" cannot be used as variable name`),
               );
             }
             for (const key in options) {
               if (!FORBIDDEN_VARIABLE_OPTIONS.includes(key)) continue;
               return Promise.reject(
-                new Error(
-                  `[@octokit/graphql] "${key}" cannot be used as variable name`,
-                ),
+                new Error(`[@octokit/graphql] "${key}" cannot be used as variable name`),
               );
             }
           }
           const parsedOptions =
-            typeof query === "string"
-              ? Object.assign({ query }, options)
-              : query;
-          const requestOptions = Object.keys(parsedOptions).reduce(
-            (result, key) => {
-              if (NON_VARIABLE_OPTIONS.includes(key)) {
-                result[key] = parsedOptions[key];
-                return result;
-              }
-              if (!result.variables) {
-                result.variables = {};
-              }
-              result.variables[key] = parsedOptions[key];
+            typeof query === "string" ? Object.assign({ query }, options) : query;
+          const requestOptions = Object.keys(parsedOptions).reduce((result, key) => {
+            if (NON_VARIABLE_OPTIONS.includes(key)) {
+              result[key] = parsedOptions[key];
               return result;
-            },
-            {},
-          );
-          const baseUrl =
-            parsedOptions.baseUrl || request2.endpoint.DEFAULTS.baseUrl;
+            }
+            if (!result.variables) {
+              result.variables = {};
+            }
+            result.variables[key] = parsedOptions[key];
+            return result;
+          }, {});
+          const baseUrl = parsedOptions.baseUrl || request2.endpoint.DEFAULTS.baseUrl;
           if (GHES_V3_SUFFIX_REGEX.test(baseUrl)) {
-            requestOptions.url = baseUrl.replace(
-              GHES_V3_SUFFIX_REGEX,
-              "/api/graphql",
-            );
+            requestOptions.url = baseUrl.replace(GHES_V3_SUFFIX_REGEX, "/api/graphql");
           }
           return request2(requestOptions).then((response) => {
             if (response.data.errors) {
@@ -10625,11 +9891,7 @@
               for (const key of Object.keys(response.headers)) {
                 headers[key] = response.headers[key];
               }
-              throw new GraphqlResponseError(
-                requestOptions,
-                headers,
-                response.data,
-              );
+              throw new GraphqlResponseError(requestOptions, headers, response.data);
             }
             return response.data.data;
           });
@@ -10676,26 +9938,20 @@
         var __getOwnPropNames = Object.getOwnPropertyNames;
         var __hasOwnProp = Object.prototype.hasOwnProperty;
         var __export = (target, all) => {
-          for (var name in all)
-            __defProp(target, name, { get: all[name], enumerable: true });
+          for (var name in all) __defProp(target, name, { get: all[name], enumerable: true });
         };
         var __copyProps = (to, from, except, desc) => {
-          if (
-            (from && typeof from === "object") ||
-            typeof from === "function"
-          ) {
+          if ((from && typeof from === "object") || typeof from === "function") {
             for (let key of __getOwnPropNames(from))
               if (!__hasOwnProp.call(to, key) && key !== except)
                 __defProp(to, key, {
                   get: () => from[key],
-                  enumerable:
-                    !(desc = __getOwnPropDesc(from, key)) || desc.enumerable,
+                  enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable,
                 });
           }
           return to;
         };
-        var __toCommonJS = (mod) =>
-          __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+        var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
         // pkg/dist-src/index.js
         var dist_src_exports = {};
@@ -10746,8 +10002,7 @@
             typeof route === "function"
               ? route.endpoint(parameters)
               : octokit.request.endpoint(route, parameters);
-          const requestMethod =
-            typeof route === "function" ? route : octokit.request;
+          const requestMethod = typeof route === "function" ? route : octokit.request;
           const method = options.method;
           const headers = options.headers;
           let url = options.url;
@@ -10761,8 +10016,7 @@
                     url,
                     headers,
                   });
-                  const normalizedResponse =
-                    normalizePaginatedListResponse(response);
+                  const normalizedResponse = normalizePaginatedListResponse(response);
                   url = ((normalizedResponse.headers.link || "").match(
                     /<([^<>]+)>;\s*rel="next"/,
                   ) || [])[1];
@@ -10805,9 +10059,7 @@
             function done() {
               earlyExit = true;
             }
-            results = results.concat(
-              mapFn ? mapFn(result.value, done) : result.value.data,
-            );
+            results = results.concat(mapFn ? mapFn(result.value, done) : result.value.data);
             if (earlyExit) {
               return results;
             }
@@ -11091,26 +10343,20 @@
         var __getOwnPropNames = Object.getOwnPropertyNames;
         var __hasOwnProp = Object.prototype.hasOwnProperty;
         var __export = (target, all) => {
-          for (var name in all)
-            __defProp(target, name, { get: all[name], enumerable: true });
+          for (var name in all) __defProp(target, name, { get: all[name], enumerable: true });
         };
         var __copyProps = (to, from, except, desc) => {
-          if (
-            (from && typeof from === "object") ||
-            typeof from === "function"
-          ) {
+          if ((from && typeof from === "object") || typeof from === "function") {
             for (let key of __getOwnPropNames(from))
               if (!__hasOwnProp.call(to, key) && key !== except)
                 __defProp(to, key, {
                   get: () => from[key],
-                  enumerable:
-                    !(desc = __getOwnPropDesc(from, key)) || desc.enumerable,
+                  enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable,
                 });
           }
           return to;
         };
-        var __toCommonJS = (mod) =>
-          __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+        var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
         // pkg/dist-src/index.js
         var dist_src_exports = {};
@@ -11138,130 +10384,78 @@
             addSelectedRepoToOrgVariable: [
               "PUT /orgs/{org}/actions/variables/{name}/repositories/{repository_id}",
             ],
-            approveWorkflowRun: [
-              "POST /repos/{owner}/{repo}/actions/runs/{run_id}/approve",
-            ],
-            cancelWorkflowRun: [
-              "POST /repos/{owner}/{repo}/actions/runs/{run_id}/cancel",
-            ],
+            approveWorkflowRun: ["POST /repos/{owner}/{repo}/actions/runs/{run_id}/approve"],
+            cancelWorkflowRun: ["POST /repos/{owner}/{repo}/actions/runs/{run_id}/cancel"],
             createEnvironmentVariable: [
               "POST /repositories/{repository_id}/environments/{environment_name}/variables",
             ],
             createOrUpdateEnvironmentSecret: [
               "PUT /repositories/{repository_id}/environments/{environment_name}/secrets/{secret_name}",
             ],
-            createOrUpdateOrgSecret: [
-              "PUT /orgs/{org}/actions/secrets/{secret_name}",
-            ],
-            createOrUpdateRepoSecret: [
-              "PUT /repos/{owner}/{repo}/actions/secrets/{secret_name}",
-            ],
+            createOrUpdateOrgSecret: ["PUT /orgs/{org}/actions/secrets/{secret_name}"],
+            createOrUpdateRepoSecret: ["PUT /repos/{owner}/{repo}/actions/secrets/{secret_name}"],
             createOrgVariable: ["POST /orgs/{org}/actions/variables"],
-            createRegistrationTokenForOrg: [
-              "POST /orgs/{org}/actions/runners/registration-token",
-            ],
+            createRegistrationTokenForOrg: ["POST /orgs/{org}/actions/runners/registration-token"],
             createRegistrationTokenForRepo: [
               "POST /repos/{owner}/{repo}/actions/runners/registration-token",
             ],
-            createRemoveTokenForOrg: [
-              "POST /orgs/{org}/actions/runners/remove-token",
-            ],
-            createRemoveTokenForRepo: [
-              "POST /repos/{owner}/{repo}/actions/runners/remove-token",
-            ],
-            createRepoVariable: [
-              "POST /repos/{owner}/{repo}/actions/variables",
-            ],
+            createRemoveTokenForOrg: ["POST /orgs/{org}/actions/runners/remove-token"],
+            createRemoveTokenForRepo: ["POST /repos/{owner}/{repo}/actions/runners/remove-token"],
+            createRepoVariable: ["POST /repos/{owner}/{repo}/actions/variables"],
             createWorkflowDispatch: [
               "POST /repos/{owner}/{repo}/actions/workflows/{workflow_id}/dispatches",
             ],
-            deleteActionsCacheById: [
-              "DELETE /repos/{owner}/{repo}/actions/caches/{cache_id}",
-            ],
-            deleteActionsCacheByKey: [
-              "DELETE /repos/{owner}/{repo}/actions/caches{?key,ref}",
-            ],
-            deleteArtifact: [
-              "DELETE /repos/{owner}/{repo}/actions/artifacts/{artifact_id}",
-            ],
+            deleteActionsCacheById: ["DELETE /repos/{owner}/{repo}/actions/caches/{cache_id}"],
+            deleteActionsCacheByKey: ["DELETE /repos/{owner}/{repo}/actions/caches{?key,ref}"],
+            deleteArtifact: ["DELETE /repos/{owner}/{repo}/actions/artifacts/{artifact_id}"],
             deleteEnvironmentSecret: [
               "DELETE /repositories/{repository_id}/environments/{environment_name}/secrets/{secret_name}",
             ],
             deleteEnvironmentVariable: [
               "DELETE /repositories/{repository_id}/environments/{environment_name}/variables/{name}",
             ],
-            deleteOrgSecret: [
-              "DELETE /orgs/{org}/actions/secrets/{secret_name}",
-            ],
+            deleteOrgSecret: ["DELETE /orgs/{org}/actions/secrets/{secret_name}"],
             deleteOrgVariable: ["DELETE /orgs/{org}/actions/variables/{name}"],
-            deleteRepoSecret: [
-              "DELETE /repos/{owner}/{repo}/actions/secrets/{secret_name}",
-            ],
-            deleteRepoVariable: [
-              "DELETE /repos/{owner}/{repo}/actions/variables/{name}",
-            ],
-            deleteSelfHostedRunnerFromOrg: [
-              "DELETE /orgs/{org}/actions/runners/{runner_id}",
-            ],
+            deleteRepoSecret: ["DELETE /repos/{owner}/{repo}/actions/secrets/{secret_name}"],
+            deleteRepoVariable: ["DELETE /repos/{owner}/{repo}/actions/variables/{name}"],
+            deleteSelfHostedRunnerFromOrg: ["DELETE /orgs/{org}/actions/runners/{runner_id}"],
             deleteSelfHostedRunnerFromRepo: [
               "DELETE /repos/{owner}/{repo}/actions/runners/{runner_id}",
             ],
-            deleteWorkflowRun: [
-              "DELETE /repos/{owner}/{repo}/actions/runs/{run_id}",
-            ],
-            deleteWorkflowRunLogs: [
-              "DELETE /repos/{owner}/{repo}/actions/runs/{run_id}/logs",
-            ],
+            deleteWorkflowRun: ["DELETE /repos/{owner}/{repo}/actions/runs/{run_id}"],
+            deleteWorkflowRunLogs: ["DELETE /repos/{owner}/{repo}/actions/runs/{run_id}/logs"],
             disableSelectedRepositoryGithubActionsOrganization: [
               "DELETE /orgs/{org}/actions/permissions/repositories/{repository_id}",
             ],
-            disableWorkflow: [
-              "PUT /repos/{owner}/{repo}/actions/workflows/{workflow_id}/disable",
-            ],
+            disableWorkflow: ["PUT /repos/{owner}/{repo}/actions/workflows/{workflow_id}/disable"],
             downloadArtifact: [
               "GET /repos/{owner}/{repo}/actions/artifacts/{artifact_id}/{archive_format}",
             ],
-            downloadJobLogsForWorkflowRun: [
-              "GET /repos/{owner}/{repo}/actions/jobs/{job_id}/logs",
-            ],
+            downloadJobLogsForWorkflowRun: ["GET /repos/{owner}/{repo}/actions/jobs/{job_id}/logs"],
             downloadWorkflowRunAttemptLogs: [
               "GET /repos/{owner}/{repo}/actions/runs/{run_id}/attempts/{attempt_number}/logs",
             ],
-            downloadWorkflowRunLogs: [
-              "GET /repos/{owner}/{repo}/actions/runs/{run_id}/logs",
-            ],
+            downloadWorkflowRunLogs: ["GET /repos/{owner}/{repo}/actions/runs/{run_id}/logs"],
             enableSelectedRepositoryGithubActionsOrganization: [
               "PUT /orgs/{org}/actions/permissions/repositories/{repository_id}",
             ],
-            enableWorkflow: [
-              "PUT /repos/{owner}/{repo}/actions/workflows/{workflow_id}/enable",
-            ],
+            enableWorkflow: ["PUT /repos/{owner}/{repo}/actions/workflows/{workflow_id}/enable"],
             forceCancelWorkflowRun: [
               "POST /repos/{owner}/{repo}/actions/runs/{run_id}/force-cancel",
             ],
-            generateRunnerJitconfigForOrg: [
-              "POST /orgs/{org}/actions/runners/generate-jitconfig",
-            ],
+            generateRunnerJitconfigForOrg: ["POST /orgs/{org}/actions/runners/generate-jitconfig"],
             generateRunnerJitconfigForRepo: [
               "POST /repos/{owner}/{repo}/actions/runners/generate-jitconfig",
             ],
             getActionsCacheList: ["GET /repos/{owner}/{repo}/actions/caches"],
-            getActionsCacheUsage: [
-              "GET /repos/{owner}/{repo}/actions/cache/usage",
-            ],
-            getActionsCacheUsageByRepoForOrg: [
-              "GET /orgs/{org}/actions/cache/usage-by-repository",
-            ],
+            getActionsCacheUsage: ["GET /repos/{owner}/{repo}/actions/cache/usage"],
+            getActionsCacheUsageByRepoForOrg: ["GET /orgs/{org}/actions/cache/usage-by-repository"],
             getActionsCacheUsageForOrg: ["GET /orgs/{org}/actions/cache/usage"],
-            getAllowedActionsOrganization: [
-              "GET /orgs/{org}/actions/permissions/selected-actions",
-            ],
+            getAllowedActionsOrganization: ["GET /orgs/{org}/actions/permissions/selected-actions"],
             getAllowedActionsRepository: [
               "GET /repos/{owner}/{repo}/actions/permissions/selected-actions",
             ],
-            getArtifact: [
-              "GET /repos/{owner}/{repo}/actions/artifacts/{artifact_id}",
-            ],
+            getArtifact: ["GET /repos/{owner}/{repo}/actions/artifacts/{artifact_id}"],
             getCustomOidcSubClaimForRepo: [
               "GET /repos/{owner}/{repo}/actions/oidc/customization/sub",
             ],
@@ -11280,15 +10474,11 @@
             getGithubActionsDefaultWorkflowPermissionsRepository: [
               "GET /repos/{owner}/{repo}/actions/permissions/workflow",
             ],
-            getGithubActionsPermissionsOrganization: [
-              "GET /orgs/{org}/actions/permissions",
-            ],
+            getGithubActionsPermissionsOrganization: ["GET /orgs/{org}/actions/permissions"],
             getGithubActionsPermissionsRepository: [
               "GET /repos/{owner}/{repo}/actions/permissions",
             ],
-            getJobForWorkflowRun: [
-              "GET /repos/{owner}/{repo}/actions/jobs/{job_id}",
-            ],
+            getJobForWorkflowRun: ["GET /repos/{owner}/{repo}/actions/jobs/{job_id}"],
             getOrgPublicKey: ["GET /orgs/{org}/actions/secrets/public-key"],
             getOrgSecret: ["GET /orgs/{org}/actions/secrets/{secret_name}"],
             getOrgVariable: ["GET /orgs/{org}/actions/variables/{name}"],
@@ -11300,52 +10490,28 @@
               {},
               { renamed: ["actions", "getGithubActionsPermissionsRepository"] },
             ],
-            getRepoPublicKey: [
-              "GET /repos/{owner}/{repo}/actions/secrets/public-key",
-            ],
-            getRepoSecret: [
-              "GET /repos/{owner}/{repo}/actions/secrets/{secret_name}",
-            ],
-            getRepoVariable: [
-              "GET /repos/{owner}/{repo}/actions/variables/{name}",
-            ],
-            getReviewsForRun: [
-              "GET /repos/{owner}/{repo}/actions/runs/{run_id}/approvals",
-            ],
-            getSelfHostedRunnerForOrg: [
-              "GET /orgs/{org}/actions/runners/{runner_id}",
-            ],
-            getSelfHostedRunnerForRepo: [
-              "GET /repos/{owner}/{repo}/actions/runners/{runner_id}",
-            ],
-            getWorkflow: [
-              "GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}",
-            ],
-            getWorkflowAccessToRepository: [
-              "GET /repos/{owner}/{repo}/actions/permissions/access",
-            ],
+            getRepoPublicKey: ["GET /repos/{owner}/{repo}/actions/secrets/public-key"],
+            getRepoSecret: ["GET /repos/{owner}/{repo}/actions/secrets/{secret_name}"],
+            getRepoVariable: ["GET /repos/{owner}/{repo}/actions/variables/{name}"],
+            getReviewsForRun: ["GET /repos/{owner}/{repo}/actions/runs/{run_id}/approvals"],
+            getSelfHostedRunnerForOrg: ["GET /orgs/{org}/actions/runners/{runner_id}"],
+            getSelfHostedRunnerForRepo: ["GET /repos/{owner}/{repo}/actions/runners/{runner_id}"],
+            getWorkflow: ["GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}"],
+            getWorkflowAccessToRepository: ["GET /repos/{owner}/{repo}/actions/permissions/access"],
             getWorkflowRun: ["GET /repos/{owner}/{repo}/actions/runs/{run_id}"],
             getWorkflowRunAttempt: [
               "GET /repos/{owner}/{repo}/actions/runs/{run_id}/attempts/{attempt_number}",
             ],
-            getWorkflowRunUsage: [
-              "GET /repos/{owner}/{repo}/actions/runs/{run_id}/timing",
-            ],
-            getWorkflowUsage: [
-              "GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/timing",
-            ],
-            listArtifactsForRepo: [
-              "GET /repos/{owner}/{repo}/actions/artifacts",
-            ],
+            getWorkflowRunUsage: ["GET /repos/{owner}/{repo}/actions/runs/{run_id}/timing"],
+            getWorkflowUsage: ["GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/timing"],
+            listArtifactsForRepo: ["GET /repos/{owner}/{repo}/actions/artifacts"],
             listEnvironmentSecrets: [
               "GET /repositories/{repository_id}/environments/{environment_name}/secrets",
             ],
             listEnvironmentVariables: [
               "GET /repositories/{repository_id}/environments/{environment_name}/variables",
             ],
-            listJobsForWorkflowRun: [
-              "GET /repos/{owner}/{repo}/actions/runs/{run_id}/jobs",
-            ],
+            listJobsForWorkflowRun: ["GET /repos/{owner}/{repo}/actions/runs/{run_id}/jobs"],
             listJobsForWorkflowRunAttempt: [
               "GET /repos/{owner}/{repo}/actions/runs/{run_id}/attempts/{attempt_number}/jobs",
             ],
@@ -11357,21 +10523,15 @@
             ],
             listOrgSecrets: ["GET /orgs/{org}/actions/secrets"],
             listOrgVariables: ["GET /orgs/{org}/actions/variables"],
-            listRepoOrganizationSecrets: [
-              "GET /repos/{owner}/{repo}/actions/organization-secrets",
-            ],
+            listRepoOrganizationSecrets: ["GET /repos/{owner}/{repo}/actions/organization-secrets"],
             listRepoOrganizationVariables: [
               "GET /repos/{owner}/{repo}/actions/organization-variables",
             ],
             listRepoSecrets: ["GET /repos/{owner}/{repo}/actions/secrets"],
             listRepoVariables: ["GET /repos/{owner}/{repo}/actions/variables"],
             listRepoWorkflows: ["GET /repos/{owner}/{repo}/actions/workflows"],
-            listRunnerApplicationsForOrg: [
-              "GET /orgs/{org}/actions/runners/downloads",
-            ],
-            listRunnerApplicationsForRepo: [
-              "GET /repos/{owner}/{repo}/actions/runners/downloads",
-            ],
+            listRunnerApplicationsForOrg: ["GET /orgs/{org}/actions/runners/downloads"],
+            listRunnerApplicationsForRepo: ["GET /repos/{owner}/{repo}/actions/runners/downloads"],
             listSelectedReposForOrgSecret: [
               "GET /orgs/{org}/actions/secrets/{secret_name}/repositories",
             ],
@@ -11382,22 +10542,12 @@
               "GET /orgs/{org}/actions/permissions/repositories",
             ],
             listSelfHostedRunnersForOrg: ["GET /orgs/{org}/actions/runners"],
-            listSelfHostedRunnersForRepo: [
-              "GET /repos/{owner}/{repo}/actions/runners",
-            ],
-            listWorkflowRunArtifacts: [
-              "GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts",
-            ],
-            listWorkflowRuns: [
-              "GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/runs",
-            ],
+            listSelfHostedRunnersForRepo: ["GET /repos/{owner}/{repo}/actions/runners"],
+            listWorkflowRunArtifacts: ["GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts"],
+            listWorkflowRuns: ["GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/runs"],
             listWorkflowRunsForRepo: ["GET /repos/{owner}/{repo}/actions/runs"],
-            reRunJobForWorkflowRun: [
-              "POST /repos/{owner}/{repo}/actions/jobs/{job_id}/rerun",
-            ],
-            reRunWorkflow: [
-              "POST /repos/{owner}/{repo}/actions/runs/{run_id}/rerun",
-            ],
+            reRunJobForWorkflowRun: ["POST /repos/{owner}/{repo}/actions/jobs/{job_id}/rerun"],
+            reRunWorkflow: ["POST /repos/{owner}/{repo}/actions/runs/{run_id}/rerun"],
             reRunWorkflowFailedJobs: [
               "POST /repos/{owner}/{repo}/actions/runs/{run_id}/rerun-failed-jobs",
             ],
@@ -11425,9 +10575,7 @@
             reviewPendingDeploymentsForRun: [
               "POST /repos/{owner}/{repo}/actions/runs/{run_id}/pending_deployments",
             ],
-            setAllowedActionsOrganization: [
-              "PUT /orgs/{org}/actions/permissions/selected-actions",
-            ],
+            setAllowedActionsOrganization: ["PUT /orgs/{org}/actions/permissions/selected-actions"],
             setAllowedActionsRepository: [
               "PUT /repos/{owner}/{repo}/actions/permissions/selected-actions",
             ],
@@ -11446,9 +10594,7 @@
             setGithubActionsDefaultWorkflowPermissionsRepository: [
               "PUT /repos/{owner}/{repo}/actions/permissions/workflow",
             ],
-            setGithubActionsPermissionsOrganization: [
-              "PUT /orgs/{org}/actions/permissions",
-            ],
+            setGithubActionsPermissionsOrganization: ["PUT /orgs/{org}/actions/permissions"],
             setGithubActionsPermissionsRepository: [
               "PUT /repos/{owner}/{repo}/actions/permissions",
             ],
@@ -11461,27 +10607,17 @@
             setSelectedRepositoriesEnabledGithubActionsOrganization: [
               "PUT /orgs/{org}/actions/permissions/repositories",
             ],
-            setWorkflowAccessToRepository: [
-              "PUT /repos/{owner}/{repo}/actions/permissions/access",
-            ],
+            setWorkflowAccessToRepository: ["PUT /repos/{owner}/{repo}/actions/permissions/access"],
             updateEnvironmentVariable: [
               "PATCH /repositories/{repository_id}/environments/{environment_name}/variables/{name}",
             ],
             updateOrgVariable: ["PATCH /orgs/{org}/actions/variables/{name}"],
-            updateRepoVariable: [
-              "PATCH /repos/{owner}/{repo}/actions/variables/{name}",
-            ],
+            updateRepoVariable: ["PATCH /repos/{owner}/{repo}/actions/variables/{name}"],
           },
           activity: {
-            checkRepoIsStarredByAuthenticatedUser: [
-              "GET /user/starred/{owner}/{repo}",
-            ],
-            deleteRepoSubscription: [
-              "DELETE /repos/{owner}/{repo}/subscription",
-            ],
-            deleteThreadSubscription: [
-              "DELETE /notifications/threads/{thread_id}/subscription",
-            ],
+            checkRepoIsStarredByAuthenticatedUser: ["GET /user/starred/{owner}/{repo}"],
+            deleteRepoSubscription: ["DELETE /repos/{owner}/{repo}/subscription"],
+            deleteThreadSubscription: ["DELETE /notifications/threads/{thread_id}/subscription"],
             getFeeds: ["GET /feeds"],
             getRepoSubscription: ["GET /repos/{owner}/{repo}/subscription"],
             getThread: ["GET /notifications/threads/{thread_id}"],
@@ -11490,25 +10626,15 @@
             ],
             listEventsForAuthenticatedUser: ["GET /users/{username}/events"],
             listNotificationsForAuthenticatedUser: ["GET /notifications"],
-            listOrgEventsForAuthenticatedUser: [
-              "GET /users/{username}/events/orgs/{org}",
-            ],
+            listOrgEventsForAuthenticatedUser: ["GET /users/{username}/events/orgs/{org}"],
             listPublicEvents: ["GET /events"],
-            listPublicEventsForRepoNetwork: [
-              "GET /networks/{owner}/{repo}/events",
-            ],
+            listPublicEventsForRepoNetwork: ["GET /networks/{owner}/{repo}/events"],
             listPublicEventsForUser: ["GET /users/{username}/events/public"],
             listPublicOrgEvents: ["GET /orgs/{org}/events"],
-            listReceivedEventsForUser: [
-              "GET /users/{username}/received_events",
-            ],
-            listReceivedPublicEventsForUser: [
-              "GET /users/{username}/received_events/public",
-            ],
+            listReceivedEventsForUser: ["GET /users/{username}/received_events"],
+            listReceivedPublicEventsForUser: ["GET /users/{username}/received_events/public"],
             listRepoEvents: ["GET /repos/{owner}/{repo}/events"],
-            listRepoNotificationsForAuthenticatedUser: [
-              "GET /repos/{owner}/{repo}/notifications",
-            ],
+            listRepoNotificationsForAuthenticatedUser: ["GET /repos/{owner}/{repo}/notifications"],
             listReposStarredByAuthenticatedUser: ["GET /user/starred"],
             listReposStarredByUser: ["GET /users/{username}/starred"],
             listReposWatchedByUser: ["GET /users/{username}/subscriptions"],
@@ -11516,19 +10642,13 @@
             listWatchedReposForAuthenticatedUser: ["GET /user/subscriptions"],
             listWatchersForRepo: ["GET /repos/{owner}/{repo}/subscribers"],
             markNotificationsAsRead: ["PUT /notifications"],
-            markRepoNotificationsAsRead: [
-              "PUT /repos/{owner}/{repo}/notifications",
-            ],
+            markRepoNotificationsAsRead: ["PUT /repos/{owner}/{repo}/notifications"],
             markThreadAsDone: ["DELETE /notifications/threads/{thread_id}"],
             markThreadAsRead: ["PATCH /notifications/threads/{thread_id}"],
             setRepoSubscription: ["PUT /repos/{owner}/{repo}/subscription"],
-            setThreadSubscription: [
-              "PUT /notifications/threads/{thread_id}/subscription",
-            ],
+            setThreadSubscription: ["PUT /notifications/threads/{thread_id}/subscription"],
             starRepoForAuthenticatedUser: ["PUT /user/starred/{owner}/{repo}"],
-            unstarRepoForAuthenticatedUser: [
-              "DELETE /user/starred/{owner}/{repo}",
-            ],
+            unstarRepoForAuthenticatedUser: ["DELETE /user/starred/{owner}/{repo}"],
           },
           apps: {
             addRepoToInstallation: [
@@ -11554,52 +10674,37 @@
             getInstallation: ["GET /app/installations/{installation_id}"],
             getOrgInstallation: ["GET /orgs/{org}/installation"],
             getRepoInstallation: ["GET /repos/{owner}/{repo}/installation"],
-            getSubscriptionPlanForAccount: [
-              "GET /marketplace_listing/accounts/{account_id}",
-            ],
+            getSubscriptionPlanForAccount: ["GET /marketplace_listing/accounts/{account_id}"],
             getSubscriptionPlanForAccountStubbed: [
               "GET /marketplace_listing/stubbed/accounts/{account_id}",
             ],
             getUserInstallation: ["GET /users/{username}/installation"],
             getWebhookConfigForApp: ["GET /app/hook/config"],
             getWebhookDelivery: ["GET /app/hook/deliveries/{delivery_id}"],
-            listAccountsForPlan: [
-              "GET /marketplace_listing/plans/{plan_id}/accounts",
-            ],
+            listAccountsForPlan: ["GET /marketplace_listing/plans/{plan_id}/accounts"],
             listAccountsForPlanStubbed: [
               "GET /marketplace_listing/stubbed/plans/{plan_id}/accounts",
             ],
             listInstallationReposForAuthenticatedUser: [
               "GET /user/installations/{installation_id}/repositories",
             ],
-            listInstallationRequestsForAuthenticatedApp: [
-              "GET /app/installation-requests",
-            ],
+            listInstallationRequestsForAuthenticatedApp: ["GET /app/installation-requests"],
             listInstallations: ["GET /app/installations"],
             listInstallationsForAuthenticatedUser: ["GET /user/installations"],
             listPlans: ["GET /marketplace_listing/plans"],
             listPlansStubbed: ["GET /marketplace_listing/stubbed/plans"],
-            listReposAccessibleToInstallation: [
-              "GET /installation/repositories",
-            ],
-            listSubscriptionsForAuthenticatedUser: [
-              "GET /user/marketplace_purchases",
-            ],
+            listReposAccessibleToInstallation: ["GET /installation/repositories"],
+            listSubscriptionsForAuthenticatedUser: ["GET /user/marketplace_purchases"],
             listSubscriptionsForAuthenticatedUserStubbed: [
               "GET /user/marketplace_purchases/stubbed",
             ],
             listWebhookDeliveries: ["GET /app/hook/deliveries"],
-            redeliverWebhookDelivery: [
-              "POST /app/hook/deliveries/{delivery_id}/attempts",
-            ],
+            redeliverWebhookDelivery: ["POST /app/hook/deliveries/{delivery_id}/attempts"],
             removeRepoFromInstallation: [
               "DELETE /user/installations/{installation_id}/repositories/{repository_id}",
               {},
               {
-                renamed: [
-                  "apps",
-                  "removeRepoFromInstallationForAuthenticatedUser",
-                ],
+                renamed: ["apps", "removeRepoFromInstallationForAuthenticatedUser"],
               },
             ],
             removeRepoFromInstallationForAuthenticatedUser: [
@@ -11608,60 +10713,30 @@
             resetToken: ["PATCH /applications/{client_id}/token"],
             revokeInstallationAccessToken: ["DELETE /installation/token"],
             scopeToken: ["POST /applications/{client_id}/token/scoped"],
-            suspendInstallation: [
-              "PUT /app/installations/{installation_id}/suspended",
-            ],
-            unsuspendInstallation: [
-              "DELETE /app/installations/{installation_id}/suspended",
-            ],
+            suspendInstallation: ["PUT /app/installations/{installation_id}/suspended"],
+            unsuspendInstallation: ["DELETE /app/installations/{installation_id}/suspended"],
             updateWebhookConfigForApp: ["PATCH /app/hook/config"],
           },
           billing: {
-            getGithubActionsBillingOrg: [
-              "GET /orgs/{org}/settings/billing/actions",
-            ],
-            getGithubActionsBillingUser: [
-              "GET /users/{username}/settings/billing/actions",
-            ],
-            getGithubPackagesBillingOrg: [
-              "GET /orgs/{org}/settings/billing/packages",
-            ],
-            getGithubPackagesBillingUser: [
-              "GET /users/{username}/settings/billing/packages",
-            ],
-            getSharedStorageBillingOrg: [
-              "GET /orgs/{org}/settings/billing/shared-storage",
-            ],
-            getSharedStorageBillingUser: [
-              "GET /users/{username}/settings/billing/shared-storage",
-            ],
+            getGithubActionsBillingOrg: ["GET /orgs/{org}/settings/billing/actions"],
+            getGithubActionsBillingUser: ["GET /users/{username}/settings/billing/actions"],
+            getGithubPackagesBillingOrg: ["GET /orgs/{org}/settings/billing/packages"],
+            getGithubPackagesBillingUser: ["GET /users/{username}/settings/billing/packages"],
+            getSharedStorageBillingOrg: ["GET /orgs/{org}/settings/billing/shared-storage"],
+            getSharedStorageBillingUser: ["GET /users/{username}/settings/billing/shared-storage"],
           },
           checks: {
             create: ["POST /repos/{owner}/{repo}/check-runs"],
             createSuite: ["POST /repos/{owner}/{repo}/check-suites"],
             get: ["GET /repos/{owner}/{repo}/check-runs/{check_run_id}"],
-            getSuite: [
-              "GET /repos/{owner}/{repo}/check-suites/{check_suite_id}",
-            ],
-            listAnnotations: [
-              "GET /repos/{owner}/{repo}/check-runs/{check_run_id}/annotations",
-            ],
+            getSuite: ["GET /repos/{owner}/{repo}/check-suites/{check_suite_id}"],
+            listAnnotations: ["GET /repos/{owner}/{repo}/check-runs/{check_run_id}/annotations"],
             listForRef: ["GET /repos/{owner}/{repo}/commits/{ref}/check-runs"],
-            listForSuite: [
-              "GET /repos/{owner}/{repo}/check-suites/{check_suite_id}/check-runs",
-            ],
-            listSuitesForRef: [
-              "GET /repos/{owner}/{repo}/commits/{ref}/check-suites",
-            ],
-            rerequestRun: [
-              "POST /repos/{owner}/{repo}/check-runs/{check_run_id}/rerequest",
-            ],
-            rerequestSuite: [
-              "POST /repos/{owner}/{repo}/check-suites/{check_suite_id}/rerequest",
-            ],
-            setSuitesPreferences: [
-              "PATCH /repos/{owner}/{repo}/check-suites/preferences",
-            ],
+            listForSuite: ["GET /repos/{owner}/{repo}/check-suites/{check_suite_id}/check-runs"],
+            listSuitesForRef: ["GET /repos/{owner}/{repo}/commits/{ref}/check-suites"],
+            rerequestRun: ["POST /repos/{owner}/{repo}/check-runs/{check_run_id}/rerequest"],
+            rerequestSuite: ["POST /repos/{owner}/{repo}/check-suites/{check_suite_id}/rerequest"],
+            setSuitesPreferences: ["PATCH /repos/{owner}/{repo}/check-suites/preferences"],
             update: ["PATCH /repos/{owner}/{repo}/check-runs/{check_run_id}"],
           },
           codeScanning: {
@@ -11673,42 +10748,26 @@
               {},
               { renamedParameters: { alert_id: "alert_number" } },
             ],
-            getAnalysis: [
-              "GET /repos/{owner}/{repo}/code-scanning/analyses/{analysis_id}",
-            ],
+            getAnalysis: ["GET /repos/{owner}/{repo}/code-scanning/analyses/{analysis_id}"],
             getCodeqlDatabase: [
               "GET /repos/{owner}/{repo}/code-scanning/codeql/databases/{language}",
             ],
-            getDefaultSetup: [
-              "GET /repos/{owner}/{repo}/code-scanning/default-setup",
-            ],
-            getSarif: [
-              "GET /repos/{owner}/{repo}/code-scanning/sarifs/{sarif_id}",
-            ],
+            getDefaultSetup: ["GET /repos/{owner}/{repo}/code-scanning/default-setup"],
+            getSarif: ["GET /repos/{owner}/{repo}/code-scanning/sarifs/{sarif_id}"],
             listAlertInstances: [
               "GET /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}/instances",
             ],
             listAlertsForOrg: ["GET /orgs/{org}/code-scanning/alerts"],
-            listAlertsForRepo: [
-              "GET /repos/{owner}/{repo}/code-scanning/alerts",
-            ],
+            listAlertsForRepo: ["GET /repos/{owner}/{repo}/code-scanning/alerts"],
             listAlertsInstances: [
               "GET /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}/instances",
               {},
               { renamed: ["codeScanning", "listAlertInstances"] },
             ],
-            listCodeqlDatabases: [
-              "GET /repos/{owner}/{repo}/code-scanning/codeql/databases",
-            ],
-            listRecentAnalyses: [
-              "GET /repos/{owner}/{repo}/code-scanning/analyses",
-            ],
-            updateAlert: [
-              "PATCH /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}",
-            ],
-            updateDefaultSetup: [
-              "PATCH /repos/{owner}/{repo}/code-scanning/default-setup",
-            ],
+            listCodeqlDatabases: ["GET /repos/{owner}/{repo}/code-scanning/codeql/databases"],
+            listRecentAnalyses: ["GET /repos/{owner}/{repo}/code-scanning/analyses"],
+            updateAlert: ["PATCH /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}"],
+            updateDefaultSetup: ["PATCH /repos/{owner}/{repo}/code-scanning/default-setup"],
             uploadSarif: ["POST /repos/{owner}/{repo}/code-scanning/sarifs"],
           },
           codesOfConduct: {
@@ -11729,9 +10788,7 @@
               "GET /user/codespaces/{codespace_name}/machines",
             ],
             createForAuthenticatedUser: ["POST /user/codespaces"],
-            createOrUpdateOrgSecret: [
-              "PUT /orgs/{org}/codespaces/secrets/{secret_name}",
-            ],
+            createOrUpdateOrgSecret: ["PUT /orgs/{org}/codespaces/secrets/{secret_name}"],
             createOrUpdateRepoSecret: [
               "PUT /repos/{owner}/{repo}/codespaces/secrets/{secret_name}",
             ],
@@ -11741,48 +10798,26 @@
             createWithPrForAuthenticatedUser: [
               "POST /repos/{owner}/{repo}/pulls/{pull_number}/codespaces",
             ],
-            createWithRepoForAuthenticatedUser: [
-              "POST /repos/{owner}/{repo}/codespaces",
-            ],
-            deleteForAuthenticatedUser: [
-              "DELETE /user/codespaces/{codespace_name}",
-            ],
+            createWithRepoForAuthenticatedUser: ["POST /repos/{owner}/{repo}/codespaces"],
+            deleteForAuthenticatedUser: ["DELETE /user/codespaces/{codespace_name}"],
             deleteFromOrganization: [
               "DELETE /orgs/{org}/members/{username}/codespaces/{codespace_name}",
             ],
-            deleteOrgSecret: [
-              "DELETE /orgs/{org}/codespaces/secrets/{secret_name}",
-            ],
-            deleteRepoSecret: [
-              "DELETE /repos/{owner}/{repo}/codespaces/secrets/{secret_name}",
-            ],
-            deleteSecretForAuthenticatedUser: [
-              "DELETE /user/codespaces/secrets/{secret_name}",
-            ],
-            exportForAuthenticatedUser: [
-              "POST /user/codespaces/{codespace_name}/exports",
-            ],
-            getCodespacesForUserInOrg: [
-              "GET /orgs/{org}/members/{username}/codespaces",
-            ],
+            deleteOrgSecret: ["DELETE /orgs/{org}/codespaces/secrets/{secret_name}"],
+            deleteRepoSecret: ["DELETE /repos/{owner}/{repo}/codespaces/secrets/{secret_name}"],
+            deleteSecretForAuthenticatedUser: ["DELETE /user/codespaces/secrets/{secret_name}"],
+            exportForAuthenticatedUser: ["POST /user/codespaces/{codespace_name}/exports"],
+            getCodespacesForUserInOrg: ["GET /orgs/{org}/members/{username}/codespaces"],
             getExportDetailsForAuthenticatedUser: [
               "GET /user/codespaces/{codespace_name}/exports/{export_id}",
             ],
             getForAuthenticatedUser: ["GET /user/codespaces/{codespace_name}"],
             getOrgPublicKey: ["GET /orgs/{org}/codespaces/secrets/public-key"],
             getOrgSecret: ["GET /orgs/{org}/codespaces/secrets/{secret_name}"],
-            getPublicKeyForAuthenticatedUser: [
-              "GET /user/codespaces/secrets/public-key",
-            ],
-            getRepoPublicKey: [
-              "GET /repos/{owner}/{repo}/codespaces/secrets/public-key",
-            ],
-            getRepoSecret: [
-              "GET /repos/{owner}/{repo}/codespaces/secrets/{secret_name}",
-            ],
-            getSecretForAuthenticatedUser: [
-              "GET /user/codespaces/secrets/{secret_name}",
-            ],
+            getPublicKeyForAuthenticatedUser: ["GET /user/codespaces/secrets/public-key"],
+            getRepoPublicKey: ["GET /repos/{owner}/{repo}/codespaces/secrets/public-key"],
+            getRepoSecret: ["GET /repos/{owner}/{repo}/codespaces/secrets/{secret_name}"],
+            getSecretForAuthenticatedUser: ["GET /user/codespaces/secrets/{secret_name}"],
             listDevcontainersInRepositoryForAuthenticatedUser: [
               "GET /repos/{owner}/{repo}/codespaces/devcontainers",
             ],
@@ -11792,9 +10827,7 @@
               {},
               { renamedParameters: { org_id: "org" } },
             ],
-            listInRepositoryForAuthenticatedUser: [
-              "GET /repos/{owner}/{repo}/codespaces",
-            ],
+            listInRepositoryForAuthenticatedUser: ["GET /repos/{owner}/{repo}/codespaces"],
             listOrgSecrets: ["GET /orgs/{org}/codespaces/secrets"],
             listRepoSecrets: ["GET /repos/{owner}/{repo}/codespaces/secrets"],
             listRepositoriesForSecretForAuthenticatedUser: [
@@ -11804,47 +10837,31 @@
             listSelectedReposForOrgSecret: [
               "GET /orgs/{org}/codespaces/secrets/{secret_name}/repositories",
             ],
-            preFlightWithRepoForAuthenticatedUser: [
-              "GET /repos/{owner}/{repo}/codespaces/new",
-            ],
-            publishForAuthenticatedUser: [
-              "POST /user/codespaces/{codespace_name}/publish",
-            ],
+            preFlightWithRepoForAuthenticatedUser: ["GET /repos/{owner}/{repo}/codespaces/new"],
+            publishForAuthenticatedUser: ["POST /user/codespaces/{codespace_name}/publish"],
             removeRepositoryForSecretForAuthenticatedUser: [
               "DELETE /user/codespaces/secrets/{secret_name}/repositories/{repository_id}",
             ],
             removeSelectedRepoFromOrgSecret: [
               "DELETE /orgs/{org}/codespaces/secrets/{secret_name}/repositories/{repository_id}",
             ],
-            repoMachinesForAuthenticatedUser: [
-              "GET /repos/{owner}/{repo}/codespaces/machines",
-            ],
+            repoMachinesForAuthenticatedUser: ["GET /repos/{owner}/{repo}/codespaces/machines"],
             setRepositoriesForSecretForAuthenticatedUser: [
               "PUT /user/codespaces/secrets/{secret_name}/repositories",
             ],
             setSelectedReposForOrgSecret: [
               "PUT /orgs/{org}/codespaces/secrets/{secret_name}/repositories",
             ],
-            startForAuthenticatedUser: [
-              "POST /user/codespaces/{codespace_name}/start",
-            ],
-            stopForAuthenticatedUser: [
-              "POST /user/codespaces/{codespace_name}/stop",
-            ],
+            startForAuthenticatedUser: ["POST /user/codespaces/{codespace_name}/start"],
+            stopForAuthenticatedUser: ["POST /user/codespaces/{codespace_name}/stop"],
             stopInOrganization: [
               "POST /orgs/{org}/members/{username}/codespaces/{codespace_name}/stop",
             ],
-            updateForAuthenticatedUser: [
-              "PATCH /user/codespaces/{codespace_name}",
-            ],
+            updateForAuthenticatedUser: ["PATCH /user/codespaces/{codespace_name}"],
           },
           copilot: {
-            addCopilotSeatsForTeams: [
-              "POST /orgs/{org}/copilot/billing/selected_teams",
-            ],
-            addCopilotSeatsForUsers: [
-              "POST /orgs/{org}/copilot/billing/selected_users",
-            ],
+            addCopilotSeatsForTeams: ["POST /orgs/{org}/copilot/billing/selected_teams"],
+            addCopilotSeatsForUsers: ["POST /orgs/{org}/copilot/billing/selected_users"],
             cancelCopilotSeatAssignmentForTeams: [
               "DELETE /orgs/{org}/copilot/billing/selected_teams",
             ],
@@ -11852,41 +10869,25 @@
               "DELETE /orgs/{org}/copilot/billing/selected_users",
             ],
             getCopilotOrganizationDetails: ["GET /orgs/{org}/copilot/billing"],
-            getCopilotSeatDetailsForUser: [
-              "GET /orgs/{org}/members/{username}/copilot",
-            ],
+            getCopilotSeatDetailsForUser: ["GET /orgs/{org}/members/{username}/copilot"],
             listCopilotSeats: ["GET /orgs/{org}/copilot/billing/seats"],
           },
           dependabot: {
             addSelectedRepoToOrgSecret: [
               "PUT /orgs/{org}/dependabot/secrets/{secret_name}/repositories/{repository_id}",
             ],
-            createOrUpdateOrgSecret: [
-              "PUT /orgs/{org}/dependabot/secrets/{secret_name}",
-            ],
+            createOrUpdateOrgSecret: ["PUT /orgs/{org}/dependabot/secrets/{secret_name}"],
             createOrUpdateRepoSecret: [
               "PUT /repos/{owner}/{repo}/dependabot/secrets/{secret_name}",
             ],
-            deleteOrgSecret: [
-              "DELETE /orgs/{org}/dependabot/secrets/{secret_name}",
-            ],
-            deleteRepoSecret: [
-              "DELETE /repos/{owner}/{repo}/dependabot/secrets/{secret_name}",
-            ],
-            getAlert: [
-              "GET /repos/{owner}/{repo}/dependabot/alerts/{alert_number}",
-            ],
+            deleteOrgSecret: ["DELETE /orgs/{org}/dependabot/secrets/{secret_name}"],
+            deleteRepoSecret: ["DELETE /repos/{owner}/{repo}/dependabot/secrets/{secret_name}"],
+            getAlert: ["GET /repos/{owner}/{repo}/dependabot/alerts/{alert_number}"],
             getOrgPublicKey: ["GET /orgs/{org}/dependabot/secrets/public-key"],
             getOrgSecret: ["GET /orgs/{org}/dependabot/secrets/{secret_name}"],
-            getRepoPublicKey: [
-              "GET /repos/{owner}/{repo}/dependabot/secrets/public-key",
-            ],
-            getRepoSecret: [
-              "GET /repos/{owner}/{repo}/dependabot/secrets/{secret_name}",
-            ],
-            listAlertsForEnterprise: [
-              "GET /enterprises/{enterprise}/dependabot/alerts",
-            ],
+            getRepoPublicKey: ["GET /repos/{owner}/{repo}/dependabot/secrets/public-key"],
+            getRepoSecret: ["GET /repos/{owner}/{repo}/dependabot/secrets/{secret_name}"],
+            listAlertsForEnterprise: ["GET /enterprises/{enterprise}/dependabot/alerts"],
             listAlertsForOrg: ["GET /orgs/{org}/dependabot/alerts"],
             listAlertsForRepo: ["GET /repos/{owner}/{repo}/dependabot/alerts"],
             listOrgSecrets: ["GET /orgs/{org}/dependabot/secrets"],
@@ -11900,17 +10901,11 @@
             setSelectedReposForOrgSecret: [
               "PUT /orgs/{org}/dependabot/secrets/{secret_name}/repositories",
             ],
-            updateAlert: [
-              "PATCH /repos/{owner}/{repo}/dependabot/alerts/{alert_number}",
-            ],
+            updateAlert: ["PATCH /repos/{owner}/{repo}/dependabot/alerts/{alert_number}"],
           },
           dependencyGraph: {
-            createRepositorySnapshot: [
-              "POST /repos/{owner}/{repo}/dependency-graph/snapshots",
-            ],
-            diffRange: [
-              "GET /repos/{owner}/{repo}/dependency-graph/compare/{basehead}",
-            ],
+            createRepositorySnapshot: ["POST /repos/{owner}/{repo}/dependency-graph/snapshots"],
+            diffRange: ["GET /repos/{owner}/{repo}/dependency-graph/compare/{basehead}"],
             exportSbom: ["GET /repos/{owner}/{repo}/dependency-graph/sbom"],
           },
           emojis: { get: ["GET /emojis"] },
@@ -11948,9 +10943,7 @@
             getRef: ["GET /repos/{owner}/{repo}/git/ref/{ref}"],
             getTag: ["GET /repos/{owner}/{repo}/git/tags/{tag_sha}"],
             getTree: ["GET /repos/{owner}/{repo}/git/trees/{tree_sha}"],
-            listMatchingRefs: [
-              "GET /repos/{owner}/{repo}/git/matching-refs/{ref}",
-            ],
+            listMatchingRefs: ["GET /repos/{owner}/{repo}/git/matching-refs/{ref}"],
             updateRef: ["PATCH /repos/{owner}/{repo}/git/refs/{ref}"],
           },
           gitignore: {
@@ -11958,106 +10951,63 @@
             getTemplate: ["GET /gitignore/templates/{name}"],
           },
           interactions: {
-            getRestrictionsForAuthenticatedUser: [
-              "GET /user/interaction-limits",
-            ],
+            getRestrictionsForAuthenticatedUser: ["GET /user/interaction-limits"],
             getRestrictionsForOrg: ["GET /orgs/{org}/interaction-limits"],
-            getRestrictionsForRepo: [
-              "GET /repos/{owner}/{repo}/interaction-limits",
-            ],
+            getRestrictionsForRepo: ["GET /repos/{owner}/{repo}/interaction-limits"],
             getRestrictionsForYourPublicRepos: [
               "GET /user/interaction-limits",
               {},
               {
-                renamed: [
-                  "interactions",
-                  "getRestrictionsForAuthenticatedUser",
-                ],
+                renamed: ["interactions", "getRestrictionsForAuthenticatedUser"],
               },
             ],
-            removeRestrictionsForAuthenticatedUser: [
-              "DELETE /user/interaction-limits",
-            ],
+            removeRestrictionsForAuthenticatedUser: ["DELETE /user/interaction-limits"],
             removeRestrictionsForOrg: ["DELETE /orgs/{org}/interaction-limits"],
-            removeRestrictionsForRepo: [
-              "DELETE /repos/{owner}/{repo}/interaction-limits",
-            ],
+            removeRestrictionsForRepo: ["DELETE /repos/{owner}/{repo}/interaction-limits"],
             removeRestrictionsForYourPublicRepos: [
               "DELETE /user/interaction-limits",
               {},
               {
-                renamed: [
-                  "interactions",
-                  "removeRestrictionsForAuthenticatedUser",
-                ],
+                renamed: ["interactions", "removeRestrictionsForAuthenticatedUser"],
               },
             ],
-            setRestrictionsForAuthenticatedUser: [
-              "PUT /user/interaction-limits",
-            ],
+            setRestrictionsForAuthenticatedUser: ["PUT /user/interaction-limits"],
             setRestrictionsForOrg: ["PUT /orgs/{org}/interaction-limits"],
-            setRestrictionsForRepo: [
-              "PUT /repos/{owner}/{repo}/interaction-limits",
-            ],
+            setRestrictionsForRepo: ["PUT /repos/{owner}/{repo}/interaction-limits"],
             setRestrictionsForYourPublicRepos: [
               "PUT /user/interaction-limits",
               {},
               {
-                renamed: [
-                  "interactions",
-                  "setRestrictionsForAuthenticatedUser",
-                ],
+                renamed: ["interactions", "setRestrictionsForAuthenticatedUser"],
               },
             ],
           },
           issues: {
-            addAssignees: [
-              "POST /repos/{owner}/{repo}/issues/{issue_number}/assignees",
-            ],
-            addLabels: [
-              "POST /repos/{owner}/{repo}/issues/{issue_number}/labels",
-            ],
-            checkUserCanBeAssigned: [
-              "GET /repos/{owner}/{repo}/assignees/{assignee}",
-            ],
+            addAssignees: ["POST /repos/{owner}/{repo}/issues/{issue_number}/assignees"],
+            addLabels: ["POST /repos/{owner}/{repo}/issues/{issue_number}/labels"],
+            checkUserCanBeAssigned: ["GET /repos/{owner}/{repo}/assignees/{assignee}"],
             checkUserCanBeAssignedToIssue: [
               "GET /repos/{owner}/{repo}/issues/{issue_number}/assignees/{assignee}",
             ],
             create: ["POST /repos/{owner}/{repo}/issues"],
-            createComment: [
-              "POST /repos/{owner}/{repo}/issues/{issue_number}/comments",
-            ],
+            createComment: ["POST /repos/{owner}/{repo}/issues/{issue_number}/comments"],
             createLabel: ["POST /repos/{owner}/{repo}/labels"],
             createMilestone: ["POST /repos/{owner}/{repo}/milestones"],
-            deleteComment: [
-              "DELETE /repos/{owner}/{repo}/issues/comments/{comment_id}",
-            ],
+            deleteComment: ["DELETE /repos/{owner}/{repo}/issues/comments/{comment_id}"],
             deleteLabel: ["DELETE /repos/{owner}/{repo}/labels/{name}"],
-            deleteMilestone: [
-              "DELETE /repos/{owner}/{repo}/milestones/{milestone_number}",
-            ],
+            deleteMilestone: ["DELETE /repos/{owner}/{repo}/milestones/{milestone_number}"],
             get: ["GET /repos/{owner}/{repo}/issues/{issue_number}"],
-            getComment: [
-              "GET /repos/{owner}/{repo}/issues/comments/{comment_id}",
-            ],
+            getComment: ["GET /repos/{owner}/{repo}/issues/comments/{comment_id}"],
             getEvent: ["GET /repos/{owner}/{repo}/issues/events/{event_id}"],
             getLabel: ["GET /repos/{owner}/{repo}/labels/{name}"],
-            getMilestone: [
-              "GET /repos/{owner}/{repo}/milestones/{milestone_number}",
-            ],
+            getMilestone: ["GET /repos/{owner}/{repo}/milestones/{milestone_number}"],
             list: ["GET /issues"],
             listAssignees: ["GET /repos/{owner}/{repo}/assignees"],
-            listComments: [
-              "GET /repos/{owner}/{repo}/issues/{issue_number}/comments",
-            ],
+            listComments: ["GET /repos/{owner}/{repo}/issues/{issue_number}/comments"],
             listCommentsForRepo: ["GET /repos/{owner}/{repo}/issues/comments"],
-            listEvents: [
-              "GET /repos/{owner}/{repo}/issues/{issue_number}/events",
-            ],
+            listEvents: ["GET /repos/{owner}/{repo}/issues/{issue_number}/events"],
             listEventsForRepo: ["GET /repos/{owner}/{repo}/issues/events"],
-            listEventsForTimeline: [
-              "GET /repos/{owner}/{repo}/issues/{issue_number}/timeline",
-            ],
+            listEventsForTimeline: ["GET /repos/{owner}/{repo}/issues/{issue_number}/timeline"],
             listForAuthenticatedUser: ["GET /user/issues"],
             listForOrg: ["GET /orgs/{org}/issues"],
             listForRepo: ["GET /repos/{owner}/{repo}/issues"],
@@ -12065,32 +11015,18 @@
               "GET /repos/{owner}/{repo}/milestones/{milestone_number}/labels",
             ],
             listLabelsForRepo: ["GET /repos/{owner}/{repo}/labels"],
-            listLabelsOnIssue: [
-              "GET /repos/{owner}/{repo}/issues/{issue_number}/labels",
-            ],
+            listLabelsOnIssue: ["GET /repos/{owner}/{repo}/issues/{issue_number}/labels"],
             listMilestones: ["GET /repos/{owner}/{repo}/milestones"],
             lock: ["PUT /repos/{owner}/{repo}/issues/{issue_number}/lock"],
-            removeAllLabels: [
-              "DELETE /repos/{owner}/{repo}/issues/{issue_number}/labels",
-            ],
-            removeAssignees: [
-              "DELETE /repos/{owner}/{repo}/issues/{issue_number}/assignees",
-            ],
-            removeLabel: [
-              "DELETE /repos/{owner}/{repo}/issues/{issue_number}/labels/{name}",
-            ],
-            setLabels: [
-              "PUT /repos/{owner}/{repo}/issues/{issue_number}/labels",
-            ],
+            removeAllLabels: ["DELETE /repos/{owner}/{repo}/issues/{issue_number}/labels"],
+            removeAssignees: ["DELETE /repos/{owner}/{repo}/issues/{issue_number}/assignees"],
+            removeLabel: ["DELETE /repos/{owner}/{repo}/issues/{issue_number}/labels/{name}"],
+            setLabels: ["PUT /repos/{owner}/{repo}/issues/{issue_number}/labels"],
             unlock: ["DELETE /repos/{owner}/{repo}/issues/{issue_number}/lock"],
             update: ["PATCH /repos/{owner}/{repo}/issues/{issue_number}"],
-            updateComment: [
-              "PATCH /repos/{owner}/{repo}/issues/comments/{comment_id}",
-            ],
+            updateComment: ["PATCH /repos/{owner}/{repo}/issues/comments/{comment_id}"],
             updateLabel: ["PATCH /repos/{owner}/{repo}/labels/{name}"],
-            updateMilestone: [
-              "PATCH /repos/{owner}/{repo}/milestones/{milestone_number}",
-            ],
+            updateMilestone: ["PATCH /repos/{owner}/{repo}/milestones/{milestone_number}"],
           },
           licenses: {
             get: ["GET /licenses/{license}"],
@@ -12120,18 +11056,10 @@
                   "octokit.rest.migrations.cancelImport() is deprecated, see https://docs.github.com/rest/migrations/source-imports#cancel-an-import",
               },
             ],
-            deleteArchiveForAuthenticatedUser: [
-              "DELETE /user/migrations/{migration_id}/archive",
-            ],
-            deleteArchiveForOrg: [
-              "DELETE /orgs/{org}/migrations/{migration_id}/archive",
-            ],
-            downloadArchiveForOrg: [
-              "GET /orgs/{org}/migrations/{migration_id}/archive",
-            ],
-            getArchiveForAuthenticatedUser: [
-              "GET /user/migrations/{migration_id}/archive",
-            ],
+            deleteArchiveForAuthenticatedUser: ["DELETE /user/migrations/{migration_id}/archive"],
+            deleteArchiveForOrg: ["DELETE /orgs/{org}/migrations/{migration_id}/archive"],
+            downloadArchiveForOrg: ["GET /orgs/{org}/migrations/{migration_id}/archive"],
+            getArchiveForAuthenticatedUser: ["GET /user/migrations/{migration_id}/archive"],
             getCommitAuthors: [
               "GET /repos/{owner}/{repo}/import/authors",
               {},
@@ -12156,18 +11084,12 @@
                   "octokit.rest.migrations.getLargeFiles() is deprecated, see https://docs.github.com/rest/migrations/source-imports#get-large-files",
               },
             ],
-            getStatusForAuthenticatedUser: [
-              "GET /user/migrations/{migration_id}",
-            ],
+            getStatusForAuthenticatedUser: ["GET /user/migrations/{migration_id}"],
             getStatusForOrg: ["GET /orgs/{org}/migrations/{migration_id}"],
             listForAuthenticatedUser: ["GET /user/migrations"],
             listForOrg: ["GET /orgs/{org}/migrations"],
-            listReposForAuthenticatedUser: [
-              "GET /user/migrations/{migration_id}/repositories",
-            ],
-            listReposForOrg: [
-              "GET /orgs/{org}/migrations/{migration_id}/repositories",
-            ],
+            listReposForAuthenticatedUser: ["GET /user/migrations/{migration_id}/repositories"],
+            listReposForOrg: ["GET /orgs/{org}/migrations/{migration_id}/repositories"],
             listReposForUser: [
               "GET /user/migrations/{migration_id}/repositories",
               {},
@@ -12215,92 +11137,56 @@
             ],
           },
           oidc: {
-            getOidcCustomSubTemplateForOrg: [
-              "GET /orgs/{org}/actions/oidc/customization/sub",
-            ],
-            updateOidcCustomSubTemplateForOrg: [
-              "PUT /orgs/{org}/actions/oidc/customization/sub",
-            ],
+            getOidcCustomSubTemplateForOrg: ["GET /orgs/{org}/actions/oidc/customization/sub"],
+            updateOidcCustomSubTemplateForOrg: ["PUT /orgs/{org}/actions/oidc/customization/sub"],
           },
           orgs: {
-            addSecurityManagerTeam: [
-              "PUT /orgs/{org}/security-managers/teams/{team_slug}",
-            ],
-            assignTeamToOrgRole: [
-              "PUT /orgs/{org}/organization-roles/teams/{team_slug}/{role_id}",
-            ],
-            assignUserToOrgRole: [
-              "PUT /orgs/{org}/organization-roles/users/{username}/{role_id}",
-            ],
+            addSecurityManagerTeam: ["PUT /orgs/{org}/security-managers/teams/{team_slug}"],
+            assignTeamToOrgRole: ["PUT /orgs/{org}/organization-roles/teams/{team_slug}/{role_id}"],
+            assignUserToOrgRole: ["PUT /orgs/{org}/organization-roles/users/{username}/{role_id}"],
             blockUser: ["PUT /orgs/{org}/blocks/{username}"],
-            cancelInvitation: [
-              "DELETE /orgs/{org}/invitations/{invitation_id}",
-            ],
+            cancelInvitation: ["DELETE /orgs/{org}/invitations/{invitation_id}"],
             checkBlockedUser: ["GET /orgs/{org}/blocks/{username}"],
             checkMembershipForUser: ["GET /orgs/{org}/members/{username}"],
-            checkPublicMembershipForUser: [
-              "GET /orgs/{org}/public_members/{username}",
-            ],
+            checkPublicMembershipForUser: ["GET /orgs/{org}/public_members/{username}"],
             convertMemberToOutsideCollaborator: [
               "PUT /orgs/{org}/outside_collaborators/{username}",
             ],
-            createCustomOrganizationRole: [
-              "POST /orgs/{org}/organization-roles",
-            ],
+            createCustomOrganizationRole: ["POST /orgs/{org}/organization-roles"],
             createInvitation: ["POST /orgs/{org}/invitations"],
-            createOrUpdateCustomProperties: [
-              "PATCH /orgs/{org}/properties/schema",
-            ],
-            createOrUpdateCustomPropertiesValuesForRepos: [
-              "PATCH /orgs/{org}/properties/values",
-            ],
+            createOrUpdateCustomProperties: ["PATCH /orgs/{org}/properties/schema"],
+            createOrUpdateCustomPropertiesValuesForRepos: ["PATCH /orgs/{org}/properties/values"],
             createOrUpdateCustomProperty: [
               "PUT /orgs/{org}/properties/schema/{custom_property_name}",
             ],
             createWebhook: ["POST /orgs/{org}/hooks"],
             delete: ["DELETE /orgs/{org}"],
-            deleteCustomOrganizationRole: [
-              "DELETE /orgs/{org}/organization-roles/{role_id}",
-            ],
+            deleteCustomOrganizationRole: ["DELETE /orgs/{org}/organization-roles/{role_id}"],
             deleteWebhook: ["DELETE /orgs/{org}/hooks/{hook_id}"],
             enableOrDisableSecurityProductOnAllOrgRepos: [
               "POST /orgs/{org}/{security_product}/{enablement}",
             ],
             get: ["GET /orgs/{org}"],
             getAllCustomProperties: ["GET /orgs/{org}/properties/schema"],
-            getCustomProperty: [
-              "GET /orgs/{org}/properties/schema/{custom_property_name}",
-            ],
-            getMembershipForAuthenticatedUser: [
-              "GET /user/memberships/orgs/{org}",
-            ],
+            getCustomProperty: ["GET /orgs/{org}/properties/schema/{custom_property_name}"],
+            getMembershipForAuthenticatedUser: ["GET /user/memberships/orgs/{org}"],
             getMembershipForUser: ["GET /orgs/{org}/memberships/{username}"],
             getOrgRole: ["GET /orgs/{org}/organization-roles/{role_id}"],
             getWebhook: ["GET /orgs/{org}/hooks/{hook_id}"],
             getWebhookConfigForOrg: ["GET /orgs/{org}/hooks/{hook_id}/config"],
-            getWebhookDelivery: [
-              "GET /orgs/{org}/hooks/{hook_id}/deliveries/{delivery_id}",
-            ],
+            getWebhookDelivery: ["GET /orgs/{org}/hooks/{hook_id}/deliveries/{delivery_id}"],
             list: ["GET /organizations"],
             listAppInstallations: ["GET /orgs/{org}/installations"],
             listBlockedUsers: ["GET /orgs/{org}/blocks"],
-            listCustomPropertiesValuesForRepos: [
-              "GET /orgs/{org}/properties/values",
-            ],
+            listCustomPropertiesValuesForRepos: ["GET /orgs/{org}/properties/values"],
             listFailedInvitations: ["GET /orgs/{org}/failed_invitations"],
             listForAuthenticatedUser: ["GET /user/orgs"],
             listForUser: ["GET /users/{username}/orgs"],
-            listInvitationTeams: [
-              "GET /orgs/{org}/invitations/{invitation_id}/teams",
-            ],
+            listInvitationTeams: ["GET /orgs/{org}/invitations/{invitation_id}/teams"],
             listMembers: ["GET /orgs/{org}/members"],
             listMembershipsForAuthenticatedUser: ["GET /user/memberships/orgs"],
-            listOrgRoleTeams: [
-              "GET /orgs/{org}/organization-roles/{role_id}/teams",
-            ],
-            listOrgRoleUsers: [
-              "GET /orgs/{org}/organization-roles/{role_id}/users",
-            ],
+            listOrgRoleTeams: ["GET /orgs/{org}/organization-roles/{role_id}/teams"],
+            listOrgRoleUsers: ["GET /orgs/{org}/organization-roles/{role_id}/users"],
             listOrgRoles: ["GET /orgs/{org}/organization-roles"],
             listOrganizationFineGrainedPermissions: [
               "GET /orgs/{org}/organization-fine-grained-permissions",
@@ -12312,83 +11198,51 @@
             listPatGrantRequestRepositories: [
               "GET /orgs/{org}/personal-access-token-requests/{pat_request_id}/repositories",
             ],
-            listPatGrantRequests: [
-              "GET /orgs/{org}/personal-access-token-requests",
-            ],
+            listPatGrantRequests: ["GET /orgs/{org}/personal-access-token-requests"],
             listPatGrants: ["GET /orgs/{org}/personal-access-tokens"],
             listPendingInvitations: ["GET /orgs/{org}/invitations"],
             listPublicMembers: ["GET /orgs/{org}/public_members"],
             listSecurityManagerTeams: ["GET /orgs/{org}/security-managers"],
-            listWebhookDeliveries: [
-              "GET /orgs/{org}/hooks/{hook_id}/deliveries",
-            ],
+            listWebhookDeliveries: ["GET /orgs/{org}/hooks/{hook_id}/deliveries"],
             listWebhooks: ["GET /orgs/{org}/hooks"],
-            patchCustomOrganizationRole: [
-              "PATCH /orgs/{org}/organization-roles/{role_id}",
-            ],
+            patchCustomOrganizationRole: ["PATCH /orgs/{org}/organization-roles/{role_id}"],
             pingWebhook: ["POST /orgs/{org}/hooks/{hook_id}/pings"],
             redeliverWebhookDelivery: [
               "POST /orgs/{org}/hooks/{hook_id}/deliveries/{delivery_id}/attempts",
             ],
-            removeCustomProperty: [
-              "DELETE /orgs/{org}/properties/schema/{custom_property_name}",
-            ],
+            removeCustomProperty: ["DELETE /orgs/{org}/properties/schema/{custom_property_name}"],
             removeMember: ["DELETE /orgs/{org}/members/{username}"],
-            removeMembershipForUser: [
-              "DELETE /orgs/{org}/memberships/{username}",
-            ],
-            removeOutsideCollaborator: [
-              "DELETE /orgs/{org}/outside_collaborators/{username}",
-            ],
+            removeMembershipForUser: ["DELETE /orgs/{org}/memberships/{username}"],
+            removeOutsideCollaborator: ["DELETE /orgs/{org}/outside_collaborators/{username}"],
             removePublicMembershipForAuthenticatedUser: [
               "DELETE /orgs/{org}/public_members/{username}",
             ],
-            removeSecurityManagerTeam: [
-              "DELETE /orgs/{org}/security-managers/teams/{team_slug}",
-            ],
+            removeSecurityManagerTeam: ["DELETE /orgs/{org}/security-managers/teams/{team_slug}"],
             reviewPatGrantRequest: [
               "POST /orgs/{org}/personal-access-token-requests/{pat_request_id}",
             ],
-            reviewPatGrantRequestsInBulk: [
-              "POST /orgs/{org}/personal-access-token-requests",
-            ],
-            revokeAllOrgRolesTeam: [
-              "DELETE /orgs/{org}/organization-roles/teams/{team_slug}",
-            ],
-            revokeAllOrgRolesUser: [
-              "DELETE /orgs/{org}/organization-roles/users/{username}",
-            ],
+            reviewPatGrantRequestsInBulk: ["POST /orgs/{org}/personal-access-token-requests"],
+            revokeAllOrgRolesTeam: ["DELETE /orgs/{org}/organization-roles/teams/{team_slug}"],
+            revokeAllOrgRolesUser: ["DELETE /orgs/{org}/organization-roles/users/{username}"],
             revokeOrgRoleTeam: [
               "DELETE /orgs/{org}/organization-roles/teams/{team_slug}/{role_id}",
             ],
-            revokeOrgRoleUser: [
-              "DELETE /orgs/{org}/organization-roles/users/{username}/{role_id}",
-            ],
+            revokeOrgRoleUser: ["DELETE /orgs/{org}/organization-roles/users/{username}/{role_id}"],
             setMembershipForUser: ["PUT /orgs/{org}/memberships/{username}"],
-            setPublicMembershipForAuthenticatedUser: [
-              "PUT /orgs/{org}/public_members/{username}",
-            ],
+            setPublicMembershipForAuthenticatedUser: ["PUT /orgs/{org}/public_members/{username}"],
             unblockUser: ["DELETE /orgs/{org}/blocks/{username}"],
             update: ["PATCH /orgs/{org}"],
-            updateMembershipForAuthenticatedUser: [
-              "PATCH /user/memberships/orgs/{org}",
-            ],
-            updatePatAccess: [
-              "POST /orgs/{org}/personal-access-tokens/{pat_id}",
-            ],
+            updateMembershipForAuthenticatedUser: ["PATCH /user/memberships/orgs/{org}"],
+            updatePatAccess: ["POST /orgs/{org}/personal-access-tokens/{pat_id}"],
             updatePatAccesses: ["POST /orgs/{org}/personal-access-tokens"],
             updateWebhook: ["PATCH /orgs/{org}/hooks/{hook_id}"],
-            updateWebhookConfigForOrg: [
-              "PATCH /orgs/{org}/hooks/{hook_id}/config",
-            ],
+            updateWebhookConfigForOrg: ["PATCH /orgs/{org}/hooks/{hook_id}/config"],
           },
           packages: {
             deletePackageForAuthenticatedUser: [
               "DELETE /user/packages/{package_type}/{package_name}",
             ],
-            deletePackageForOrg: [
-              "DELETE /orgs/{org}/packages/{package_type}/{package_name}",
-            ],
+            deletePackageForOrg: ["DELETE /orgs/{org}/packages/{package_type}/{package_name}"],
             deletePackageForUser: [
               "DELETE /users/{username}/packages/{package_type}/{package_name}",
             ],
@@ -12405,20 +11259,14 @@
               "GET /orgs/{org}/packages/{package_type}/{package_name}/versions",
               {},
               {
-                renamed: [
-                  "packages",
-                  "getAllPackageVersionsForPackageOwnedByOrg",
-                ],
+                renamed: ["packages", "getAllPackageVersionsForPackageOwnedByOrg"],
               },
             ],
             getAllPackageVersionsForAPackageOwnedByTheAuthenticatedUser: [
               "GET /user/packages/{package_type}/{package_name}/versions",
               {},
               {
-                renamed: [
-                  "packages",
-                  "getAllPackageVersionsForPackageOwnedByAuthenticatedUser",
-                ],
+                renamed: ["packages", "getAllPackageVersionsForPackageOwnedByAuthenticatedUser"],
               },
             ],
             getAllPackageVersionsForPackageOwnedByAuthenticatedUser: [
@@ -12430,15 +11278,9 @@
             getAllPackageVersionsForPackageOwnedByUser: [
               "GET /users/{username}/packages/{package_type}/{package_name}/versions",
             ],
-            getPackageForAuthenticatedUser: [
-              "GET /user/packages/{package_type}/{package_name}",
-            ],
-            getPackageForOrganization: [
-              "GET /orgs/{org}/packages/{package_type}/{package_name}",
-            ],
-            getPackageForUser: [
-              "GET /users/{username}/packages/{package_type}/{package_name}",
-            ],
+            getPackageForAuthenticatedUser: ["GET /user/packages/{package_type}/{package_name}"],
+            getPackageForOrganization: ["GET /orgs/{org}/packages/{package_type}/{package_name}"],
+            getPackageForUser: ["GET /users/{username}/packages/{package_type}/{package_name}"],
             getPackageVersionForAuthenticatedUser: [
               "GET /user/packages/{package_type}/{package_name}/versions/{package_version_id}",
             ],
@@ -12480,9 +11322,7 @@
             ],
           },
           projects: {
-            addCollaborator: [
-              "PUT /projects/{project_id}/collaborators/{username}",
-            ],
+            addCollaborator: ["PUT /projects/{project_id}/collaborators/{username}"],
             createCard: ["POST /projects/columns/{column_id}/cards"],
             createColumn: ["POST /projects/{project_id}/columns"],
             createForAuthenticatedUser: ["POST /user/projects"],
@@ -12505,63 +11345,41 @@
             listForUser: ["GET /users/{username}/projects"],
             moveCard: ["POST /projects/columns/cards/{card_id}/moves"],
             moveColumn: ["POST /projects/columns/{column_id}/moves"],
-            removeCollaborator: [
-              "DELETE /projects/{project_id}/collaborators/{username}",
-            ],
+            removeCollaborator: ["DELETE /projects/{project_id}/collaborators/{username}"],
             update: ["PATCH /projects/{project_id}"],
             updateCard: ["PATCH /projects/columns/cards/{card_id}"],
             updateColumn: ["PATCH /projects/columns/{column_id}"],
           },
           pulls: {
-            checkIfMerged: [
-              "GET /repos/{owner}/{repo}/pulls/{pull_number}/merge",
-            ],
+            checkIfMerged: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/merge"],
             create: ["POST /repos/{owner}/{repo}/pulls"],
             createReplyForReviewComment: [
               "POST /repos/{owner}/{repo}/pulls/{pull_number}/comments/{comment_id}/replies",
             ],
-            createReview: [
-              "POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews",
-            ],
-            createReviewComment: [
-              "POST /repos/{owner}/{repo}/pulls/{pull_number}/comments",
-            ],
+            createReview: ["POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews"],
+            createReviewComment: ["POST /repos/{owner}/{repo}/pulls/{pull_number}/comments"],
             deletePendingReview: [
               "DELETE /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}",
             ],
-            deleteReviewComment: [
-              "DELETE /repos/{owner}/{repo}/pulls/comments/{comment_id}",
-            ],
+            deleteReviewComment: ["DELETE /repos/{owner}/{repo}/pulls/comments/{comment_id}"],
             dismissReview: [
               "PUT /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}/dismissals",
             ],
             get: ["GET /repos/{owner}/{repo}/pulls/{pull_number}"],
-            getReview: [
-              "GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}",
-            ],
-            getReviewComment: [
-              "GET /repos/{owner}/{repo}/pulls/comments/{comment_id}",
-            ],
+            getReview: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}"],
+            getReviewComment: ["GET /repos/{owner}/{repo}/pulls/comments/{comment_id}"],
             list: ["GET /repos/{owner}/{repo}/pulls"],
             listCommentsForReview: [
               "GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}/comments",
             ],
-            listCommits: [
-              "GET /repos/{owner}/{repo}/pulls/{pull_number}/commits",
-            ],
+            listCommits: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/commits"],
             listFiles: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/files"],
             listRequestedReviewers: [
               "GET /repos/{owner}/{repo}/pulls/{pull_number}/requested_reviewers",
             ],
-            listReviewComments: [
-              "GET /repos/{owner}/{repo}/pulls/{pull_number}/comments",
-            ],
-            listReviewCommentsForRepo: [
-              "GET /repos/{owner}/{repo}/pulls/comments",
-            ],
-            listReviews: [
-              "GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews",
-            ],
+            listReviewComments: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/comments"],
+            listReviewCommentsForRepo: ["GET /repos/{owner}/{repo}/pulls/comments"],
+            listReviews: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews"],
             merge: ["PUT /repos/{owner}/{repo}/pulls/{pull_number}/merge"],
             removeRequestedReviewers: [
               "DELETE /repos/{owner}/{repo}/pulls/{pull_number}/requested_reviewers",
@@ -12573,33 +11391,21 @@
               "POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}/events",
             ],
             update: ["PATCH /repos/{owner}/{repo}/pulls/{pull_number}"],
-            updateBranch: [
-              "PUT /repos/{owner}/{repo}/pulls/{pull_number}/update-branch",
-            ],
-            updateReview: [
-              "PUT /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}",
-            ],
-            updateReviewComment: [
-              "PATCH /repos/{owner}/{repo}/pulls/comments/{comment_id}",
-            ],
+            updateBranch: ["PUT /repos/{owner}/{repo}/pulls/{pull_number}/update-branch"],
+            updateReview: ["PUT /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}"],
+            updateReviewComment: ["PATCH /repos/{owner}/{repo}/pulls/comments/{comment_id}"],
           },
           rateLimit: { get: ["GET /rate_limit"] },
           reactions: {
-            createForCommitComment: [
-              "POST /repos/{owner}/{repo}/comments/{comment_id}/reactions",
-            ],
-            createForIssue: [
-              "POST /repos/{owner}/{repo}/issues/{issue_number}/reactions",
-            ],
+            createForCommitComment: ["POST /repos/{owner}/{repo}/comments/{comment_id}/reactions"],
+            createForIssue: ["POST /repos/{owner}/{repo}/issues/{issue_number}/reactions"],
             createForIssueComment: [
               "POST /repos/{owner}/{repo}/issues/comments/{comment_id}/reactions",
             ],
             createForPullRequestReviewComment: [
               "POST /repos/{owner}/{repo}/pulls/comments/{comment_id}/reactions",
             ],
-            createForRelease: [
-              "POST /repos/{owner}/{repo}/releases/{release_id}/reactions",
-            ],
+            createForRelease: ["POST /repos/{owner}/{repo}/releases/{release_id}/reactions"],
             createForTeamDiscussionCommentInOrg: [
               "POST /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}/reactions",
             ],
@@ -12627,21 +11433,15 @@
             deleteForTeamDiscussionComment: [
               "DELETE /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}/reactions/{reaction_id}",
             ],
-            listForCommitComment: [
-              "GET /repos/{owner}/{repo}/comments/{comment_id}/reactions",
-            ],
-            listForIssue: [
-              "GET /repos/{owner}/{repo}/issues/{issue_number}/reactions",
-            ],
+            listForCommitComment: ["GET /repos/{owner}/{repo}/comments/{comment_id}/reactions"],
+            listForIssue: ["GET /repos/{owner}/{repo}/issues/{issue_number}/reactions"],
             listForIssueComment: [
               "GET /repos/{owner}/{repo}/issues/comments/{comment_id}/reactions",
             ],
             listForPullRequestReviewComment: [
               "GET /repos/{owner}/{repo}/pulls/comments/{comment_id}/reactions",
             ],
-            listForRelease: [
-              "GET /repos/{owner}/{repo}/releases/{release_id}/reactions",
-            ],
+            listForRelease: ["GET /repos/{owner}/{repo}/releases/{release_id}/reactions"],
             listForTeamDiscussionCommentInOrg: [
               "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}/reactions",
             ],
@@ -12663,9 +11463,7 @@
               {},
               { mapToData: "apps" },
             ],
-            addCollaborator: [
-              "PUT /repos/{owner}/{repo}/collaborators/{username}",
-            ],
+            addCollaborator: ["PUT /repos/{owner}/{repo}/collaborators/{username}"],
             addStatusCheckContexts: [
               "POST /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks/contexts",
               {},
@@ -12684,26 +11482,14 @@
             cancelPagesDeployment: [
               "POST /repos/{owner}/{repo}/pages/deployments/{pages_deployment_id}/cancel",
             ],
-            checkAutomatedSecurityFixes: [
-              "GET /repos/{owner}/{repo}/automated-security-fixes",
-            ],
-            checkCollaborator: [
-              "GET /repos/{owner}/{repo}/collaborators/{username}",
-            ],
-            checkVulnerabilityAlerts: [
-              "GET /repos/{owner}/{repo}/vulnerability-alerts",
-            ],
+            checkAutomatedSecurityFixes: ["GET /repos/{owner}/{repo}/automated-security-fixes"],
+            checkCollaborator: ["GET /repos/{owner}/{repo}/collaborators/{username}"],
+            checkVulnerabilityAlerts: ["GET /repos/{owner}/{repo}/vulnerability-alerts"],
             codeownersErrors: ["GET /repos/{owner}/{repo}/codeowners/errors"],
-            compareCommits: [
-              "GET /repos/{owner}/{repo}/compare/{base}...{head}",
-            ],
-            compareCommitsWithBasehead: [
-              "GET /repos/{owner}/{repo}/compare/{basehead}",
-            ],
+            compareCommits: ["GET /repos/{owner}/{repo}/compare/{base}...{head}"],
+            compareCommitsWithBasehead: ["GET /repos/{owner}/{repo}/compare/{basehead}"],
             createAutolink: ["POST /repos/{owner}/{repo}/autolinks"],
-            createCommitComment: [
-              "POST /repos/{owner}/{repo}/commits/{commit_sha}/comments",
-            ],
+            createCommitComment: ["POST /repos/{owner}/{repo}/commits/{commit_sha}/comments"],
             createCommitSignatureProtection: [
               "POST /repos/{owner}/{repo}/branches/{branch}/protection/required_signatures",
             ],
@@ -12723,26 +11509,18 @@
             createForAuthenticatedUser: ["POST /user/repos"],
             createFork: ["POST /repos/{owner}/{repo}/forks"],
             createInOrg: ["POST /orgs/{org}/repos"],
-            createOrUpdateCustomPropertiesValues: [
-              "PATCH /repos/{owner}/{repo}/properties/values",
-            ],
+            createOrUpdateCustomPropertiesValues: ["PATCH /repos/{owner}/{repo}/properties/values"],
             createOrUpdateEnvironment: [
               "PUT /repos/{owner}/{repo}/environments/{environment_name}",
             ],
-            createOrUpdateFileContents: [
-              "PUT /repos/{owner}/{repo}/contents/{path}",
-            ],
+            createOrUpdateFileContents: ["PUT /repos/{owner}/{repo}/contents/{path}"],
             createOrgRuleset: ["POST /orgs/{org}/rulesets"],
-            createPagesDeployment: [
-              "POST /repos/{owner}/{repo}/pages/deployments",
-            ],
+            createPagesDeployment: ["POST /repos/{owner}/{repo}/pages/deployments"],
             createPagesSite: ["POST /repos/{owner}/{repo}/pages"],
             createRelease: ["POST /repos/{owner}/{repo}/releases"],
             createRepoRuleset: ["POST /repos/{owner}/{repo}/rulesets"],
             createTagProtection: ["POST /repos/{owner}/{repo}/tags/protection"],
-            createUsingTemplate: [
-              "POST /repos/{template_owner}/{template_repo}/generate",
-            ],
+            createUsingTemplate: ["POST /repos/{template_owner}/{template_repo}/generate"],
             createWebhook: ["POST /repos/{owner}/{repo}/hooks"],
             declineInvitation: [
               "DELETE /user/repository_invitations/{invitation_id}",
@@ -12759,46 +11537,28 @@
             deleteAdminBranchProtection: [
               "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/enforce_admins",
             ],
-            deleteAnEnvironment: [
-              "DELETE /repos/{owner}/{repo}/environments/{environment_name}",
-            ],
-            deleteAutolink: [
-              "DELETE /repos/{owner}/{repo}/autolinks/{autolink_id}",
-            ],
-            deleteBranchProtection: [
-              "DELETE /repos/{owner}/{repo}/branches/{branch}/protection",
-            ],
-            deleteCommitComment: [
-              "DELETE /repos/{owner}/{repo}/comments/{comment_id}",
-            ],
+            deleteAnEnvironment: ["DELETE /repos/{owner}/{repo}/environments/{environment_name}"],
+            deleteAutolink: ["DELETE /repos/{owner}/{repo}/autolinks/{autolink_id}"],
+            deleteBranchProtection: ["DELETE /repos/{owner}/{repo}/branches/{branch}/protection"],
+            deleteCommitComment: ["DELETE /repos/{owner}/{repo}/comments/{comment_id}"],
             deleteCommitSignatureProtection: [
               "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/required_signatures",
             ],
             deleteDeployKey: ["DELETE /repos/{owner}/{repo}/keys/{key_id}"],
-            deleteDeployment: [
-              "DELETE /repos/{owner}/{repo}/deployments/{deployment_id}",
-            ],
+            deleteDeployment: ["DELETE /repos/{owner}/{repo}/deployments/{deployment_id}"],
             deleteDeploymentBranchPolicy: [
               "DELETE /repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies/{branch_policy_id}",
             ],
             deleteFile: ["DELETE /repos/{owner}/{repo}/contents/{path}"],
-            deleteInvitation: [
-              "DELETE /repos/{owner}/{repo}/invitations/{invitation_id}",
-            ],
+            deleteInvitation: ["DELETE /repos/{owner}/{repo}/invitations/{invitation_id}"],
             deleteOrgRuleset: ["DELETE /orgs/{org}/rulesets/{ruleset_id}"],
             deletePagesSite: ["DELETE /repos/{owner}/{repo}/pages"],
             deletePullRequestReviewProtection: [
               "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/required_pull_request_reviews",
             ],
-            deleteRelease: [
-              "DELETE /repos/{owner}/{repo}/releases/{release_id}",
-            ],
-            deleteReleaseAsset: [
-              "DELETE /repos/{owner}/{repo}/releases/assets/{asset_id}",
-            ],
-            deleteRepoRuleset: [
-              "DELETE /repos/{owner}/{repo}/rulesets/{ruleset_id}",
-            ],
+            deleteRelease: ["DELETE /repos/{owner}/{repo}/releases/{release_id}"],
+            deleteReleaseAsset: ["DELETE /repos/{owner}/{repo}/releases/assets/{asset_id}"],
+            deleteRepoRuleset: ["DELETE /repos/{owner}/{repo}/rulesets/{ruleset_id}"],
             deleteTagProtection: [
               "DELETE /repos/{owner}/{repo}/tags/protection/{tag_protection_id}",
             ],
@@ -12812,9 +11572,7 @@
             disablePrivateVulnerabilityReporting: [
               "DELETE /repos/{owner}/{repo}/private-vulnerability-reporting",
             ],
-            disableVulnerabilityAlerts: [
-              "DELETE /repos/{owner}/{repo}/vulnerability-alerts",
-            ],
+            disableVulnerabilityAlerts: ["DELETE /repos/{owner}/{repo}/vulnerability-alerts"],
             downloadArchive: [
               "GET /repos/{owner}/{repo}/zipball/{ref}",
               {},
@@ -12822,18 +11580,12 @@
             ],
             downloadTarballArchive: ["GET /repos/{owner}/{repo}/tarball/{ref}"],
             downloadZipballArchive: ["GET /repos/{owner}/{repo}/zipball/{ref}"],
-            enableAutomatedSecurityFixes: [
-              "PUT /repos/{owner}/{repo}/automated-security-fixes",
-            ],
+            enableAutomatedSecurityFixes: ["PUT /repos/{owner}/{repo}/automated-security-fixes"],
             enablePrivateVulnerabilityReporting: [
               "PUT /repos/{owner}/{repo}/private-vulnerability-reporting",
             ],
-            enableVulnerabilityAlerts: [
-              "PUT /repos/{owner}/{repo}/vulnerability-alerts",
-            ],
-            generateReleaseNotes: [
-              "POST /repos/{owner}/{repo}/releases/generate-notes",
-            ],
+            enableVulnerabilityAlerts: ["PUT /repos/{owner}/{repo}/vulnerability-alerts"],
+            generateReleaseNotes: ["POST /repos/{owner}/{repo}/releases/generate-notes"],
             get: ["GET /repos/{owner}/{repo}"],
             getAccessRestrictions: [
               "GET /repos/{owner}/{repo}/branches/{branch}/protection/restrictions",
@@ -12854,79 +11606,49 @@
             ],
             getAutolink: ["GET /repos/{owner}/{repo}/autolinks/{autolink_id}"],
             getBranch: ["GET /repos/{owner}/{repo}/branches/{branch}"],
-            getBranchProtection: [
-              "GET /repos/{owner}/{repo}/branches/{branch}/protection",
-            ],
-            getBranchRules: [
-              "GET /repos/{owner}/{repo}/rules/branches/{branch}",
-            ],
+            getBranchProtection: ["GET /repos/{owner}/{repo}/branches/{branch}/protection"],
+            getBranchRules: ["GET /repos/{owner}/{repo}/rules/branches/{branch}"],
             getClones: ["GET /repos/{owner}/{repo}/traffic/clones"],
-            getCodeFrequencyStats: [
-              "GET /repos/{owner}/{repo}/stats/code_frequency",
-            ],
+            getCodeFrequencyStats: ["GET /repos/{owner}/{repo}/stats/code_frequency"],
             getCollaboratorPermissionLevel: [
               "GET /repos/{owner}/{repo}/collaborators/{username}/permission",
             ],
-            getCombinedStatusForRef: [
-              "GET /repos/{owner}/{repo}/commits/{ref}/status",
-            ],
+            getCombinedStatusForRef: ["GET /repos/{owner}/{repo}/commits/{ref}/status"],
             getCommit: ["GET /repos/{owner}/{repo}/commits/{ref}"],
-            getCommitActivityStats: [
-              "GET /repos/{owner}/{repo}/stats/commit_activity",
-            ],
-            getCommitComment: [
-              "GET /repos/{owner}/{repo}/comments/{comment_id}",
-            ],
+            getCommitActivityStats: ["GET /repos/{owner}/{repo}/stats/commit_activity"],
+            getCommitComment: ["GET /repos/{owner}/{repo}/comments/{comment_id}"],
             getCommitSignatureProtection: [
               "GET /repos/{owner}/{repo}/branches/{branch}/protection/required_signatures",
             ],
-            getCommunityProfileMetrics: [
-              "GET /repos/{owner}/{repo}/community/profile",
-            ],
+            getCommunityProfileMetrics: ["GET /repos/{owner}/{repo}/community/profile"],
             getContent: ["GET /repos/{owner}/{repo}/contents/{path}"],
-            getContributorsStats: [
-              "GET /repos/{owner}/{repo}/stats/contributors",
-            ],
+            getContributorsStats: ["GET /repos/{owner}/{repo}/stats/contributors"],
             getCustomDeploymentProtectionRule: [
               "GET /repos/{owner}/{repo}/environments/{environment_name}/deployment_protection_rules/{protection_rule_id}",
             ],
-            getCustomPropertiesValues: [
-              "GET /repos/{owner}/{repo}/properties/values",
-            ],
+            getCustomPropertiesValues: ["GET /repos/{owner}/{repo}/properties/values"],
             getDeployKey: ["GET /repos/{owner}/{repo}/keys/{key_id}"],
-            getDeployment: [
-              "GET /repos/{owner}/{repo}/deployments/{deployment_id}",
-            ],
+            getDeployment: ["GET /repos/{owner}/{repo}/deployments/{deployment_id}"],
             getDeploymentBranchPolicy: [
               "GET /repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies/{branch_policy_id}",
             ],
             getDeploymentStatus: [
               "GET /repos/{owner}/{repo}/deployments/{deployment_id}/statuses/{status_id}",
             ],
-            getEnvironment: [
-              "GET /repos/{owner}/{repo}/environments/{environment_name}",
-            ],
-            getLatestPagesBuild: [
-              "GET /repos/{owner}/{repo}/pages/builds/latest",
-            ],
+            getEnvironment: ["GET /repos/{owner}/{repo}/environments/{environment_name}"],
+            getLatestPagesBuild: ["GET /repos/{owner}/{repo}/pages/builds/latest"],
             getLatestRelease: ["GET /repos/{owner}/{repo}/releases/latest"],
-            getOrgRuleSuite: [
-              "GET /orgs/{org}/rulesets/rule-suites/{rule_suite_id}",
-            ],
+            getOrgRuleSuite: ["GET /orgs/{org}/rulesets/rule-suites/{rule_suite_id}"],
             getOrgRuleSuites: ["GET /orgs/{org}/rulesets/rule-suites"],
             getOrgRuleset: ["GET /orgs/{org}/rulesets/{ruleset_id}"],
             getOrgRulesets: ["GET /orgs/{org}/rulesets"],
             getPages: ["GET /repos/{owner}/{repo}/pages"],
-            getPagesBuild: [
-              "GET /repos/{owner}/{repo}/pages/builds/{build_id}",
-            ],
+            getPagesBuild: ["GET /repos/{owner}/{repo}/pages/builds/{build_id}"],
             getPagesDeployment: [
               "GET /repos/{owner}/{repo}/pages/deployments/{pages_deployment_id}",
             ],
             getPagesHealthCheck: ["GET /repos/{owner}/{repo}/pages/health"],
-            getParticipationStats: [
-              "GET /repos/{owner}/{repo}/stats/participation",
-            ],
+            getParticipationStats: ["GET /repos/{owner}/{repo}/stats/participation"],
             getPullRequestReviewProtection: [
               "GET /repos/{owner}/{repo}/branches/{branch}/protection/required_pull_request_reviews",
             ],
@@ -12934,16 +11656,10 @@
             getReadme: ["GET /repos/{owner}/{repo}/readme"],
             getReadmeInDirectory: ["GET /repos/{owner}/{repo}/readme/{dir}"],
             getRelease: ["GET /repos/{owner}/{repo}/releases/{release_id}"],
-            getReleaseAsset: [
-              "GET /repos/{owner}/{repo}/releases/assets/{asset_id}",
-            ],
+            getReleaseAsset: ["GET /repos/{owner}/{repo}/releases/assets/{asset_id}"],
             getReleaseByTag: ["GET /repos/{owner}/{repo}/releases/tags/{tag}"],
-            getRepoRuleSuite: [
-              "GET /repos/{owner}/{repo}/rulesets/rule-suites/{rule_suite_id}",
-            ],
-            getRepoRuleSuites: [
-              "GET /repos/{owner}/{repo}/rulesets/rule-suites",
-            ],
+            getRepoRuleSuite: ["GET /repos/{owner}/{repo}/rulesets/rule-suites/{rule_suite_id}"],
+            getRepoRuleSuites: ["GET /repos/{owner}/{repo}/rulesets/rule-suites"],
             getRepoRuleset: ["GET /repos/{owner}/{repo}/rulesets/{ruleset_id}"],
             getRepoRulesets: ["GET /repos/{owner}/{repo}/rulesets"],
             getStatusChecksProtection: [
@@ -12953,17 +11669,13 @@
               "GET /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/teams",
             ],
             getTopPaths: ["GET /repos/{owner}/{repo}/traffic/popular/paths"],
-            getTopReferrers: [
-              "GET /repos/{owner}/{repo}/traffic/popular/referrers",
-            ],
+            getTopReferrers: ["GET /repos/{owner}/{repo}/traffic/popular/referrers"],
             getUsersWithAccessToProtectedBranch: [
               "GET /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/users",
             ],
             getViews: ["GET /repos/{owner}/{repo}/traffic/views"],
             getWebhook: ["GET /repos/{owner}/{repo}/hooks/{hook_id}"],
-            getWebhookConfigForRepo: [
-              "GET /repos/{owner}/{repo}/hooks/{hook_id}/config",
-            ],
+            getWebhookConfigForRepo: ["GET /repos/{owner}/{repo}/hooks/{hook_id}/config"],
             getWebhookDelivery: [
               "GET /repos/{owner}/{repo}/hooks/{hook_id}/deliveries/{delivery_id}",
             ],
@@ -12974,13 +11686,9 @@
               "GET /repos/{owner}/{repo}/commits/{commit_sha}/branches-where-head",
             ],
             listCollaborators: ["GET /repos/{owner}/{repo}/collaborators"],
-            listCommentsForCommit: [
-              "GET /repos/{owner}/{repo}/commits/{commit_sha}/comments",
-            ],
+            listCommentsForCommit: ["GET /repos/{owner}/{repo}/commits/{commit_sha}/comments"],
             listCommitCommentsForRepo: ["GET /repos/{owner}/{repo}/comments"],
-            listCommitStatusesForRef: [
-              "GET /repos/{owner}/{repo}/commits/{ref}/statuses",
-            ],
+            listCommitStatusesForRef: ["GET /repos/{owner}/{repo}/commits/{ref}/statuses"],
             listCommits: ["GET /repos/{owner}/{repo}/commits"],
             listContributors: ["GET /repos/{owner}/{repo}/contributors"],
             listCustomDeploymentRuleIntegrations: [
@@ -12999,25 +11707,19 @@
             listForUser: ["GET /users/{username}/repos"],
             listForks: ["GET /repos/{owner}/{repo}/forks"],
             listInvitations: ["GET /repos/{owner}/{repo}/invitations"],
-            listInvitationsForAuthenticatedUser: [
-              "GET /user/repository_invitations",
-            ],
+            listInvitationsForAuthenticatedUser: ["GET /user/repository_invitations"],
             listLanguages: ["GET /repos/{owner}/{repo}/languages"],
             listPagesBuilds: ["GET /repos/{owner}/{repo}/pages/builds"],
             listPublic: ["GET /repositories"],
             listPullRequestsAssociatedWithCommit: [
               "GET /repos/{owner}/{repo}/commits/{commit_sha}/pulls",
             ],
-            listReleaseAssets: [
-              "GET /repos/{owner}/{repo}/releases/{release_id}/assets",
-            ],
+            listReleaseAssets: ["GET /repos/{owner}/{repo}/releases/{release_id}/assets"],
             listReleases: ["GET /repos/{owner}/{repo}/releases"],
             listTagProtection: ["GET /repos/{owner}/{repo}/tags/protection"],
             listTags: ["GET /repos/{owner}/{repo}/tags"],
             listTeams: ["GET /repos/{owner}/{repo}/teams"],
-            listWebhookDeliveries: [
-              "GET /repos/{owner}/{repo}/hooks/{hook_id}/deliveries",
-            ],
+            listWebhookDeliveries: ["GET /repos/{owner}/{repo}/hooks/{hook_id}/deliveries"],
             listWebhooks: ["GET /repos/{owner}/{repo}/hooks"],
             merge: ["POST /repos/{owner}/{repo}/merges"],
             mergeUpstream: ["POST /repos/{owner}/{repo}/merge-upstream"],
@@ -13030,9 +11732,7 @@
               {},
               { mapToData: "apps" },
             ],
-            removeCollaborator: [
-              "DELETE /repos/{owner}/{repo}/collaborators/{username}",
-            ],
+            removeCollaborator: ["DELETE /repos/{owner}/{repo}/collaborators/{username}"],
             removeStatusCheckContexts: [
               "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks/contexts",
               {},
@@ -13051,9 +11751,7 @@
               {},
               { mapToData: "users" },
             ],
-            renameBranch: [
-              "POST /repos/{owner}/{repo}/branches/{branch}/rename",
-            ],
+            renameBranch: ["POST /repos/{owner}/{repo}/branches/{branch}/rename"],
             replaceAllTopics: ["PUT /repos/{owner}/{repo}/topics"],
             requestPagesBuild: ["POST /repos/{owner}/{repo}/pages/builds"],
             setAdminBranchProtection: [
@@ -13079,39 +11777,23 @@
               {},
               { mapToData: "users" },
             ],
-            testPushWebhook: [
-              "POST /repos/{owner}/{repo}/hooks/{hook_id}/tests",
-            ],
+            testPushWebhook: ["POST /repos/{owner}/{repo}/hooks/{hook_id}/tests"],
             transfer: ["POST /repos/{owner}/{repo}/transfer"],
             update: ["PATCH /repos/{owner}/{repo}"],
-            updateBranchProtection: [
-              "PUT /repos/{owner}/{repo}/branches/{branch}/protection",
-            ],
-            updateCommitComment: [
-              "PATCH /repos/{owner}/{repo}/comments/{comment_id}",
-            ],
+            updateBranchProtection: ["PUT /repos/{owner}/{repo}/branches/{branch}/protection"],
+            updateCommitComment: ["PATCH /repos/{owner}/{repo}/comments/{comment_id}"],
             updateDeploymentBranchPolicy: [
               "PUT /repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies/{branch_policy_id}",
             ],
-            updateInformationAboutPagesSite: [
-              "PUT /repos/{owner}/{repo}/pages",
-            ],
-            updateInvitation: [
-              "PATCH /repos/{owner}/{repo}/invitations/{invitation_id}",
-            ],
+            updateInformationAboutPagesSite: ["PUT /repos/{owner}/{repo}/pages"],
+            updateInvitation: ["PATCH /repos/{owner}/{repo}/invitations/{invitation_id}"],
             updateOrgRuleset: ["PUT /orgs/{org}/rulesets/{ruleset_id}"],
             updatePullRequestReviewProtection: [
               "PATCH /repos/{owner}/{repo}/branches/{branch}/protection/required_pull_request_reviews",
             ],
-            updateRelease: [
-              "PATCH /repos/{owner}/{repo}/releases/{release_id}",
-            ],
-            updateReleaseAsset: [
-              "PATCH /repos/{owner}/{repo}/releases/assets/{asset_id}",
-            ],
-            updateRepoRuleset: [
-              "PUT /repos/{owner}/{repo}/rulesets/{ruleset_id}",
-            ],
+            updateRelease: ["PATCH /repos/{owner}/{repo}/releases/{release_id}"],
+            updateReleaseAsset: ["PATCH /repos/{owner}/{repo}/releases/assets/{asset_id}"],
+            updateRepoRuleset: ["PUT /repos/{owner}/{repo}/rulesets/{ruleset_id}"],
             updateStatusCheckPotection: [
               "PATCH /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks",
               {},
@@ -13121,9 +11803,7 @@
               "PATCH /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks",
             ],
             updateWebhook: ["PATCH /repos/{owner}/{repo}/hooks/{hook_id}"],
-            updateWebhookConfigForRepo: [
-              "PATCH /repos/{owner}/{repo}/hooks/{hook_id}/config",
-            ],
+            updateWebhookConfigForRepo: ["PATCH /repos/{owner}/{repo}/hooks/{hook_id}/config"],
             uploadReleaseAsset: [
               "POST /repos/{owner}/{repo}/releases/{release_id}/assets{?name,label}",
               { baseUrl: "https://uploads.github.com" },
@@ -13139,50 +11819,30 @@
             users: ["GET /search/users"],
           },
           secretScanning: {
-            getAlert: [
-              "GET /repos/{owner}/{repo}/secret-scanning/alerts/{alert_number}",
-            ],
-            listAlertsForEnterprise: [
-              "GET /enterprises/{enterprise}/secret-scanning/alerts",
-            ],
+            getAlert: ["GET /repos/{owner}/{repo}/secret-scanning/alerts/{alert_number}"],
+            listAlertsForEnterprise: ["GET /enterprises/{enterprise}/secret-scanning/alerts"],
             listAlertsForOrg: ["GET /orgs/{org}/secret-scanning/alerts"],
-            listAlertsForRepo: [
-              "GET /repos/{owner}/{repo}/secret-scanning/alerts",
-            ],
+            listAlertsForRepo: ["GET /repos/{owner}/{repo}/secret-scanning/alerts"],
             listLocationsForAlert: [
               "GET /repos/{owner}/{repo}/secret-scanning/alerts/{alert_number}/locations",
             ],
-            updateAlert: [
-              "PATCH /repos/{owner}/{repo}/secret-scanning/alerts/{alert_number}",
-            ],
+            updateAlert: ["PATCH /repos/{owner}/{repo}/secret-scanning/alerts/{alert_number}"],
           },
           securityAdvisories: {
-            createFork: [
-              "POST /repos/{owner}/{repo}/security-advisories/{ghsa_id}/forks",
-            ],
+            createFork: ["POST /repos/{owner}/{repo}/security-advisories/{ghsa_id}/forks"],
             createPrivateVulnerabilityReport: [
               "POST /repos/{owner}/{repo}/security-advisories/reports",
             ],
-            createRepositoryAdvisory: [
-              "POST /repos/{owner}/{repo}/security-advisories",
-            ],
+            createRepositoryAdvisory: ["POST /repos/{owner}/{repo}/security-advisories"],
             createRepositoryAdvisoryCveRequest: [
               "POST /repos/{owner}/{repo}/security-advisories/{ghsa_id}/cve",
             ],
             getGlobalAdvisory: ["GET /advisories/{ghsa_id}"],
-            getRepositoryAdvisory: [
-              "GET /repos/{owner}/{repo}/security-advisories/{ghsa_id}",
-            ],
+            getRepositoryAdvisory: ["GET /repos/{owner}/{repo}/security-advisories/{ghsa_id}"],
             listGlobalAdvisories: ["GET /advisories"],
-            listOrgRepositoryAdvisories: [
-              "GET /orgs/{org}/security-advisories",
-            ],
-            listRepositoryAdvisories: [
-              "GET /repos/{owner}/{repo}/security-advisories",
-            ],
-            updateRepositoryAdvisory: [
-              "PATCH /repos/{owner}/{repo}/security-advisories/{ghsa_id}",
-            ],
+            listOrgRepositoryAdvisories: ["GET /orgs/{org}/security-advisories"],
+            listRepositoryAdvisories: ["GET /repos/{owner}/{repo}/security-advisories"],
+            updateRepositoryAdvisory: ["PATCH /repos/{owner}/{repo}/security-advisories/{ghsa_id}"],
           },
           teams: {
             addOrUpdateMembershipForUserInOrg: [
@@ -13204,9 +11864,7 @@
             createDiscussionCommentInOrg: [
               "POST /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments",
             ],
-            createDiscussionInOrg: [
-              "POST /orgs/{org}/teams/{team_slug}/discussions",
-            ],
+            createDiscussionInOrg: ["POST /orgs/{org}/teams/{team_slug}/discussions"],
             deleteDiscussionCommentInOrg: [
               "DELETE /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}",
             ],
@@ -13221,33 +11879,23 @@
             getDiscussionInOrg: [
               "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}",
             ],
-            getMembershipForUserInOrg: [
-              "GET /orgs/{org}/teams/{team_slug}/memberships/{username}",
-            ],
+            getMembershipForUserInOrg: ["GET /orgs/{org}/teams/{team_slug}/memberships/{username}"],
             list: ["GET /orgs/{org}/teams"],
             listChildInOrg: ["GET /orgs/{org}/teams/{team_slug}/teams"],
             listDiscussionCommentsInOrg: [
               "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments",
             ],
-            listDiscussionsInOrg: [
-              "GET /orgs/{org}/teams/{team_slug}/discussions",
-            ],
+            listDiscussionsInOrg: ["GET /orgs/{org}/teams/{team_slug}/discussions"],
             listForAuthenticatedUser: ["GET /user/teams"],
             listMembersInOrg: ["GET /orgs/{org}/teams/{team_slug}/members"],
-            listPendingInvitationsInOrg: [
-              "GET /orgs/{org}/teams/{team_slug}/invitations",
-            ],
+            listPendingInvitationsInOrg: ["GET /orgs/{org}/teams/{team_slug}/invitations"],
             listProjectsInOrg: ["GET /orgs/{org}/teams/{team_slug}/projects"],
             listReposInOrg: ["GET /orgs/{org}/teams/{team_slug}/repos"],
             removeMembershipForUserInOrg: [
               "DELETE /orgs/{org}/teams/{team_slug}/memberships/{username}",
             ],
-            removeProjectInOrg: [
-              "DELETE /orgs/{org}/teams/{team_slug}/projects/{project_id}",
-            ],
-            removeRepoInOrg: [
-              "DELETE /orgs/{org}/teams/{team_slug}/repos/{owner}/{repo}",
-            ],
+            removeProjectInOrg: ["DELETE /orgs/{org}/teams/{team_slug}/projects/{project_id}"],
+            removeRepoInOrg: ["DELETE /orgs/{org}/teams/{team_slug}/repos/{owner}/{repo}"],
             updateDiscussionCommentInOrg: [
               "PATCH /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}",
             ],
@@ -13263,17 +11911,11 @@
               { renamed: ["users", "addEmailForAuthenticatedUser"] },
             ],
             addEmailForAuthenticatedUser: ["POST /user/emails"],
-            addSocialAccountForAuthenticatedUser: [
-              "POST /user/social_accounts",
-            ],
+            addSocialAccountForAuthenticatedUser: ["POST /user/social_accounts"],
             block: ["PUT /user/blocks/{username}"],
             checkBlocked: ["GET /user/blocks/{username}"],
-            checkFollowingForUser: [
-              "GET /users/{username}/following/{target_user}",
-            ],
-            checkPersonIsFollowedByAuthenticated: [
-              "GET /user/following/{username}",
-            ],
+            checkFollowingForUser: ["GET /users/{username}/following/{target_user}"],
+            checkPersonIsFollowedByAuthenticated: ["GET /user/following/{username}"],
             createGpgKeyForAuthenticated: [
               "POST /user/gpg_keys",
               {},
@@ -13286,9 +11928,7 @@
               { renamed: ["users", "createPublicSshKeyForAuthenticatedUser"] },
             ],
             createPublicSshKeyForAuthenticatedUser: ["POST /user/keys"],
-            createSshSigningKeyForAuthenticatedUser: [
-              "POST /user/ssh_signing_keys",
-            ],
+            createSshSigningKeyForAuthenticatedUser: ["POST /user/ssh_signing_keys"],
             deleteEmailForAuthenticated: [
               "DELETE /user/emails",
               {},
@@ -13300,20 +11940,14 @@
               {},
               { renamed: ["users", "deleteGpgKeyForAuthenticatedUser"] },
             ],
-            deleteGpgKeyForAuthenticatedUser: [
-              "DELETE /user/gpg_keys/{gpg_key_id}",
-            ],
+            deleteGpgKeyForAuthenticatedUser: ["DELETE /user/gpg_keys/{gpg_key_id}"],
             deletePublicSshKeyForAuthenticated: [
               "DELETE /user/keys/{key_id}",
               {},
               { renamed: ["users", "deletePublicSshKeyForAuthenticatedUser"] },
             ],
-            deletePublicSshKeyForAuthenticatedUser: [
-              "DELETE /user/keys/{key_id}",
-            ],
-            deleteSocialAccountForAuthenticatedUser: [
-              "DELETE /user/social_accounts",
-            ],
+            deletePublicSshKeyForAuthenticatedUser: ["DELETE /user/keys/{key_id}"],
+            deleteSocialAccountForAuthenticatedUser: ["DELETE /user/social_accounts"],
             deleteSshSigningKeyForAuthenticatedUser: [
               "DELETE /user/ssh_signing_keys/{ssh_signing_key_id}",
             ],
@@ -13378,31 +12012,18 @@
               { renamed: ["users", "listPublicSshKeysForAuthenticatedUser"] },
             ],
             listPublicSshKeysForAuthenticatedUser: ["GET /user/keys"],
-            listSocialAccountsForAuthenticatedUser: [
-              "GET /user/social_accounts",
-            ],
-            listSocialAccountsForUser: [
-              "GET /users/{username}/social_accounts",
-            ],
-            listSshSigningKeysForAuthenticatedUser: [
-              "GET /user/ssh_signing_keys",
-            ],
-            listSshSigningKeysForUser: [
-              "GET /users/{username}/ssh_signing_keys",
-            ],
+            listSocialAccountsForAuthenticatedUser: ["GET /user/social_accounts"],
+            listSocialAccountsForUser: ["GET /users/{username}/social_accounts"],
+            listSshSigningKeysForAuthenticatedUser: ["GET /user/ssh_signing_keys"],
+            listSshSigningKeysForUser: ["GET /users/{username}/ssh_signing_keys"],
             setPrimaryEmailVisibilityForAuthenticated: [
               "PATCH /user/email/visibility",
               {},
               {
-                renamed: [
-                  "users",
-                  "setPrimaryEmailVisibilityForAuthenticatedUser",
-                ],
+                renamed: ["users", "setPrimaryEmailVisibilityForAuthenticatedUser"],
               },
             ],
-            setPrimaryEmailVisibilityForAuthenticatedUser: [
-              "PATCH /user/email/visibility",
-            ],
+            setPrimaryEmailVisibilityForAuthenticatedUser: ["PATCH /user/email/visibility"],
             unblock: ["DELETE /user/blocks/{username}"],
             unfollow: ["DELETE /user/following/{username}"],
             updateAuthenticated: ["PATCH /user"],
@@ -13487,10 +12108,7 @@
         function endpointsToMethods(octokit) {
           const newMethods = {};
           for (const scope of endpointMethodsMap.keys()) {
-            newMethods[scope] = new Proxy(
-              { octokit, scope, cache: {} },
-              handler,
-            );
+            newMethods[scope] = new Proxy({ octokit, scope, cache: {} }, handler);
           }
           return newMethods;
         }
@@ -13516,9 +12134,7 @@
             }
             if (decorations.renamedParameters) {
               const options2 = requestWithDefaults.endpoint.merge(...args);
-              for (const [name, alias] of Object.entries(
-                decorations.renamedParameters,
-              )) {
+              for (const [name, alias] of Object.entries(decorations.renamedParameters)) {
                 if (name in options2) {
                   octokit.log.warn(
                     `"${name}" parameter is deprecated for "octokit.${scope}.${methodName}()". Use "${alias}" instead`,
@@ -13569,20 +12185,15 @@
         var __getProtoOf = Object.getPrototypeOf;
         var __hasOwnProp = Object.prototype.hasOwnProperty;
         var __export = (target, all) => {
-          for (var name in all)
-            __defProp(target, name, { get: all[name], enumerable: true });
+          for (var name in all) __defProp(target, name, { get: all[name], enumerable: true });
         };
         var __copyProps = (to, from, except, desc) => {
-          if (
-            (from && typeof from === "object") ||
-            typeof from === "function"
-          ) {
+          if ((from && typeof from === "object") || typeof from === "function") {
             for (let key of __getOwnPropNames(from))
               if (!__hasOwnProp.call(to, key) && key !== except)
                 __defProp(to, key, {
                   get: () => from[key],
-                  enumerable:
-                    !(desc = __getOwnPropDesc(from, key)) || desc.enumerable,
+                  enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable,
                 });
           }
           return to;
@@ -13600,8 +12211,7 @@
             mod,
           )
         );
-        var __toCommonJS = (mod) =>
-          __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+        var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
         // pkg/dist-src/index.js
         var dist_src_exports = {};
@@ -13611,12 +12221,8 @@
         module.exports = __toCommonJS(dist_src_exports);
         var import_deprecation = __nccwpck_require__(4071);
         var import_once = __toESM(__nccwpck_require__(6367));
-        var logOnceCode = (0, import_once.default)((deprecation) =>
-          console.warn(deprecation),
-        );
-        var logOnceHeaders = (0, import_once.default)((deprecation) =>
-          console.warn(deprecation),
-        );
+        var logOnceCode = (0, import_once.default)((deprecation) => console.warn(deprecation));
+        var logOnceHeaders = (0, import_once.default)((deprecation) => console.warn(deprecation));
         var RequestError = class extends Error {
           constructor(message, statusCode, options) {
             super(message);
@@ -13626,10 +12232,7 @@
             this.name = "HttpError";
             this.status = statusCode;
             let headers;
-            if (
-              "headers" in options &&
-              typeof options.headers !== "undefined"
-            ) {
+            if ("headers" in options && typeof options.headers !== "undefined") {
               headers = options.headers;
             }
             if ("response" in options) {
@@ -13686,26 +12289,20 @@
         var __getOwnPropNames = Object.getOwnPropertyNames;
         var __hasOwnProp = Object.prototype.hasOwnProperty;
         var __export = (target, all) => {
-          for (var name in all)
-            __defProp(target, name, { get: all[name], enumerable: true });
+          for (var name in all) __defProp(target, name, { get: all[name], enumerable: true });
         };
         var __copyProps = (to, from, except, desc) => {
-          if (
-            (from && typeof from === "object") ||
-            typeof from === "function"
-          ) {
+          if ((from && typeof from === "object") || typeof from === "function") {
             for (let key of __getOwnPropNames(from))
               if (!__hasOwnProp.call(to, key) && key !== except)
                 __defProp(to, key, {
                   get: () => from[key],
-                  enumerable:
-                    !(desc = __getOwnPropDesc(from, key)) || desc.enumerable,
+                  enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable,
                 });
           }
           return to;
         };
-        var __toCommonJS = (mod) =>
-          __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+        var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
         // pkg/dist-src/index.js
         var dist_src_exports = {};
@@ -13722,13 +12319,11 @@
         // pkg/dist-src/is-plain-object.js
         function isPlainObject(value) {
           if (typeof value !== "object" || value === null) return false;
-          if (Object.prototype.toString.call(value) !== "[object Object]")
-            return false;
+          if (Object.prototype.toString.call(value) !== "[object Object]") return false;
           const proto = Object.getPrototypeOf(value);
           if (proto === null) return true;
           const Ctor =
-            Object.prototype.hasOwnProperty.call(proto, "constructor") &&
-            proto.constructor;
+            Object.prototype.hasOwnProperty.call(proto, "constructor") && proto.constructor;
           return (
             typeof Ctor === "function" &&
             Ctor instanceof Ctor &&
@@ -13752,13 +12347,9 @@
               ? requestOptions.request.log
               : console;
           const parseSuccessResponseBody =
-            ((_a = requestOptions.request) == null
-              ? void 0
-              : _a.parseSuccessResponseBody) !== false;
-          if (
-            isPlainObject(requestOptions.body) ||
-            Array.isArray(requestOptions.body)
-          ) {
+            ((_a = requestOptions.request) == null ? void 0 : _a.parseSuccessResponseBody) !==
+            false;
+          if (isPlainObject(requestOptions.body) || Array.isArray(requestOptions.body)) {
             requestOptions.body = JSON.stringify(requestOptions.body);
           }
           let headers = {};
@@ -13776,8 +12367,7 @@
           return fetch(requestOptions.url, {
             method: requestOptions.method,
             body: requestOptions.body,
-            redirect:
-              (_c = requestOptions.request) == null ? void 0 : _c.redirect,
+            redirect: (_c = requestOptions.request) == null ? void 0 : _c.redirect,
             headers: requestOptions.headers,
             signal: (_d = requestOptions.request) == null ? void 0 : _d.signal,
             // duplex must be set if request.body is ReadableStream or Async Iterables.
@@ -13791,9 +12381,7 @@
                 headers[keyAndValue[0]] = keyAndValue[1];
               }
               if ("deprecation" in headers) {
-                const matches =
-                  headers.link &&
-                  headers.link.match(/<([^<>]+)>; rel="deprecation"/);
+                const matches = headers.link && headers.link.match(/<([^<>]+)>; rel="deprecation"/);
                 const deprecationLink = matches && matches.pop();
                 log.warn(
                   `[@octokit/request] "${requestOptions.method} ${requestOptions.url}" is deprecated. It is scheduled to be removed on ${headers.sunset}${deprecationLink ? `. See ${deprecationLink}` : ""}`,
@@ -13806,55 +12394,41 @@
                 if (status < 400) {
                   return;
                 }
-                throw new import_request_error.RequestError(
-                  response.statusText,
-                  status,
-                  {
-                    response: {
-                      url,
-                      status,
-                      headers,
-                      data: void 0,
-                    },
-                    request: requestOptions,
+                throw new import_request_error.RequestError(response.statusText, status, {
+                  response: {
+                    url,
+                    status,
+                    headers,
+                    data: void 0,
                   },
-                );
+                  request: requestOptions,
+                });
               }
               if (status === 304) {
-                throw new import_request_error.RequestError(
-                  "Not modified",
-                  status,
-                  {
-                    response: {
-                      url,
-                      status,
-                      headers,
-                      data: await getResponseData(response),
-                    },
-                    request: requestOptions,
+                throw new import_request_error.RequestError("Not modified", status, {
+                  response: {
+                    url,
+                    status,
+                    headers,
+                    data: await getResponseData(response),
                   },
-                );
+                  request: requestOptions,
+                });
               }
               if (status >= 400) {
                 const data = await getResponseData(response);
-                const error = new import_request_error.RequestError(
-                  toErrorMessage(data),
-                  status,
-                  {
-                    response: {
-                      url,
-                      status,
-                      headers,
-                      data,
-                    },
-                    request: requestOptions,
+                const error = new import_request_error.RequestError(toErrorMessage(data), status, {
+                  response: {
+                    url,
+                    status,
+                    headers,
+                    data,
                   },
-                );
+                  request: requestOptions,
+                });
                 throw error;
               }
-              return parseSuccessResponseBody
-                ? await getResponseData(response)
-                : response.body;
+              return parseSuccessResponseBody ? await getResponseData(response) : response.body;
             })
             .then((data) => {
               return {
@@ -13865,8 +12439,7 @@
               };
             })
             .catch((error) => {
-              if (error instanceof import_request_error.RequestError)
-                throw error;
+              if (error instanceof import_request_error.RequestError) throw error;
               else if (error.name === "AbortError") throw error;
               let message = error.message;
               if (error.name === "TypeError" && "cause" in error) {
@@ -13920,9 +12493,7 @@
               return fetchWrapper(endpoint2.parse(endpointOptions));
             }
             const request2 = (route2, parameters2) => {
-              return fetchWrapper(
-                endpoint2.parse(endpoint2.merge(route2, parameters2)),
-              );
+              return fetchWrapper(endpoint2.parse(endpoint2.merge(route2, parameters2)));
             };
             Object.assign(request2, {
               endpoint: endpoint2,
@@ -13967,10 +12538,7 @@
           hook.remove = removeHookRef;
           ["before", "error", "after", "wrap"].forEach(function (kind) {
             var args = name ? [state, kind, name] : [state, kind];
-            hook[kind] = hook.api[kind] = bindable(addHook, null).apply(
-              null,
-              args,
-            );
+            hook[kind] = hook.api[kind] = bindable(addHook, null).apply(null, args);
           });
         }
 
@@ -13979,11 +12547,7 @@
           var singularHookState = {
             registry: {},
           };
-          var singularHook = register.bind(
-            null,
-            singularHookState,
-            singularHookName,
-          );
+          var singularHook = register.bind(null, singularHookState, singularHookName);
           bindApi(singularHook, singularHookState, singularHookName);
           return singularHook;
         }
@@ -14260,8 +12824,7 @@
           var self = this;
           self.options = options || {};
           self.proxyOptions = self.options.proxy || {};
-          self.maxSockets =
-            self.options.maxSockets || http.Agent.defaultMaxSockets;
+          self.maxSockets = self.options.maxSockets || http.Agent.defaultMaxSockets;
           self.requests = [];
           self.sockets = [];
 
@@ -14269,10 +12832,7 @@
             var options = toOptions(host, port, localAddress);
             for (var i = 0, len = self.requests.length; i < len; ++i) {
               var pending = self.requests[i];
-              if (
-                pending.host === options.host &&
-                pending.port === options.port
-              ) {
+              if (pending.host === options.host && pending.port === options.port) {
                 // Detect the request to connect same origin server,
                 // reuse the connection.
                 self.requests.splice(i, 1);
@@ -14286,12 +12846,7 @@
         }
         util.inherits(TunnelingAgent, events.EventEmitter);
 
-        TunnelingAgent.prototype.addRequest = function addRequest(
-          req,
-          host,
-          port,
-          localAddress,
-        ) {
+        TunnelingAgent.prototype.addRequest = function addRequest(req, host, port, localAddress) {
           var self = this;
           var options = mergeOptions(
             { request: req },
@@ -14325,10 +12880,7 @@
           });
         };
 
-        TunnelingAgent.prototype.createSocket = function createSocket(
-          options,
-          cb,
-        ) {
+        TunnelingAgent.prototype.createSocket = function createSocket(options, cb) {
           var self = this;
           var placeholder = {};
           self.sockets.push(placeholder);
@@ -14347,8 +12899,7 @@
           if (connectOptions.proxyAuth) {
             connectOptions.headers = connectOptions.headers || {};
             connectOptions.headers["Proxy-Authorization"] =
-              "Basic " +
-              new Buffer(connectOptions.proxyAuth).toString("base64");
+              "Basic " + new Buffer(connectOptions.proxyAuth).toString("base64");
           }
 
           debug("making CONNECT request");
@@ -14377,15 +12928,10 @@
             socket.removeAllListeners();
 
             if (res.statusCode !== 200) {
-              debug(
-                "tunneling socket could not be established, statusCode=%d",
-                res.statusCode,
-              );
+              debug("tunneling socket could not be established, statusCode=%d", res.statusCode);
               socket.destroy();
               var error = new Error(
-                "tunneling socket could not be established, " +
-                  "statusCode=" +
-                  res.statusCode,
+                "tunneling socket could not be established, " + "statusCode=" + res.statusCode,
               );
               error.code = "ECONNRESET";
               options.request.emit("error", error);
@@ -14415,9 +12961,7 @@
               cause.stack,
             );
             var error = new Error(
-              "tunneling socket could not be established, " +
-                "cause=" +
-                cause.message,
+              "tunneling socket could not be established, " + "cause=" + cause.message,
             );
             error.code = "ECONNRESET";
             options.request.emit("error", error);
@@ -14444,24 +12988,18 @@
 
         function createSecureSocket(options, cb) {
           var self = this;
-          TunnelingAgent.prototype.createSocket.call(
-            self,
-            options,
-            function (socket) {
-              var hostHeader = options.request.getHeader("host");
-              var tlsOptions = mergeOptions({}, self.options, {
-                socket: socket,
-                servername: hostHeader
-                  ? hostHeader.replace(/:.*$/, "")
-                  : options.host,
-              });
+          TunnelingAgent.prototype.createSocket.call(self, options, function (socket) {
+            var hostHeader = options.request.getHeader("host");
+            var tlsOptions = mergeOptions({}, self.options, {
+              socket: socket,
+              servername: hostHeader ? hostHeader.replace(/:.*$/, "") : options.host,
+            });
 
-              // 0 is dummy port for v0.6
-              var secureSocket = tls.connect(0, tlsOptions);
-              self.sockets[self.sockets.indexOf(socket)] = secureSocket;
-              cb(secureSocket);
-            },
-          );
+            // 0 is dummy port for v0.6
+            var secureSocket = tls.connect(0, tlsOptions);
+            self.sockets[self.sockets.indexOf(socket)] = secureSocket;
+            cb(secureSocket);
+          });
         }
 
         function toOptions(host, port, localAddress) {
@@ -14493,10 +13031,7 @@
         }
 
         var debug;
-        if (
-          process.env.NODE_DEBUG &&
-          /\btunnel\b/.test(process.env.NODE_DEBUG)
-        ) {
+        if (process.env.NODE_DEBUG && /\btunnel\b/.test(process.env.NODE_DEBUG)) {
           debug = function () {
             var args = Array.prototype.slice.call(arguments);
             if (typeof args[0] === "string") {
@@ -14534,8 +13069,7 @@
         const mockErrors = __nccwpck_require__(8074);
         const ProxyAgent = __nccwpck_require__(5317);
         const RetryHandler = __nccwpck_require__(5970);
-        const { getGlobalDispatcher, setGlobalDispatcher } =
-          __nccwpck_require__(4662);
+        const { getGlobalDispatcher, setGlobalDispatcher } = __nccwpck_require__(4662);
         const DecoratorHandler = __nccwpck_require__(6459);
         const RedirectHandler = __nccwpck_require__(762);
         const createRedirectInterceptor = __nccwpck_require__(2750);
@@ -14574,9 +13108,7 @@
 
             if (
               !url ||
-              (typeof url !== "string" &&
-                typeof url !== "object" &&
-                !(url instanceof URL))
+              (typeof url !== "string" && typeof url !== "object" && !(url instanceof URL))
             ) {
               throw new InvalidArgumentError("invalid url");
             }
@@ -14607,9 +13139,7 @@
             const { agent, dispatcher = getGlobalDispatcher() } = opts;
 
             if (agent) {
-              throw new InvalidArgumentError(
-                "unsupported opts.agent. Did you mean opts.client?",
-              );
+              throw new InvalidArgumentError("unsupported opts.agent. Did you mean opts.client?");
             }
 
             return fn.call(
@@ -14617,9 +13147,7 @@
               {
                 ...opts,
                 origin: url.origin,
-                path: url.search
-                  ? `${url.pathname}${url.search}`
-                  : url.pathname,
+                path: url.search ? `${url.pathname}${url.search}` : url.pathname,
                 method: opts.method || (opts.body ? "PUT" : "GET"),
               },
               handler,
@@ -14630,10 +13158,7 @@
         module.exports.setGlobalDispatcher = setGlobalDispatcher;
         module.exports.getGlobalDispatcher = getGlobalDispatcher;
 
-        if (
-          util.nodeMajor > 16 ||
-          (util.nodeMajor === 16 && util.nodeMinor >= 8)
-        ) {
+        if (util.nodeMajor > 16 || (util.nodeMajor === 16 && util.nodeMinor >= 8)) {
           let fetchImpl = null;
           module.exports.fetch = async function fetch(resource) {
             if (!fetchImpl) {
@@ -14657,8 +13182,7 @@
           module.exports.File = __nccwpck_require__(374).File;
           module.exports.FileReader = __nccwpck_require__(2151).FileReader;
 
-          const { setGlobalOrigin, getGlobalOrigin } =
-            __nccwpck_require__(2071);
+          const { setGlobalOrigin, getGlobalOrigin } = __nccwpck_require__(2071);
 
           module.exports.setGlobalOrigin = setGlobalOrigin;
           module.exports.getGlobalOrigin = getGlobalOrigin;
@@ -14672,16 +13196,14 @@
         }
 
         if (util.nodeMajor >= 16) {
-          const { deleteCookie, getCookies, getSetCookies, setCookie } =
-            __nccwpck_require__(3001);
+          const { deleteCookie, getCookies, getSetCookies, setCookie } = __nccwpck_require__(3001);
 
           module.exports.deleteCookie = deleteCookie;
           module.exports.getCookies = getCookies;
           module.exports.getSetCookies = getSetCookies;
           module.exports.setCookie = setCookie;
 
-          const { parseMIMEType, serializeAMimeType } =
-            __nccwpck_require__(2059);
+          const { parseMIMEType, serializeAMimeType } = __nccwpck_require__(2059);
 
           module.exports.parseMIMEType = parseMIMEType;
           module.exports.serializeAMimeType = serializeAMimeType;
@@ -14712,14 +13234,8 @@
         "use strict";
 
         const { InvalidArgumentError } = __nccwpck_require__(1970);
-        const {
-          kClients,
-          kRunning,
-          kClose,
-          kDestroy,
-          kDispatch,
-          kInterceptors,
-        } = __nccwpck_require__(4980);
+        const { kClients, kRunning, kClose, kDestroy, kDispatch, kInterceptors } =
+          __nccwpck_require__(4980);
         const DispatcherBase = __nccwpck_require__(4660);
         const Pool = __nccwpck_require__(6607);
         const Client = __nccwpck_require__(6530);
@@ -14737,38 +13253,23 @@
         const kOptions = Symbol("options");
 
         function defaultFactory(origin, opts) {
-          return opts && opts.connections === 1
-            ? new Client(origin, opts)
-            : new Pool(origin, opts);
+          return opts && opts.connections === 1 ? new Client(origin, opts) : new Pool(origin, opts);
         }
 
         class Agent extends DispatcherBase {
-          constructor({
-            factory = defaultFactory,
-            maxRedirections = 0,
-            connect,
-            ...options
-          } = {}) {
+          constructor({ factory = defaultFactory, maxRedirections = 0, connect, ...options } = {}) {
             super();
 
             if (typeof factory !== "function") {
               throw new InvalidArgumentError("factory must be a function.");
             }
 
-            if (
-              connect != null &&
-              typeof connect !== "function" &&
-              typeof connect !== "object"
-            ) {
-              throw new InvalidArgumentError(
-                "connect must be a function or an object",
-              );
+            if (connect != null && typeof connect !== "function" && typeof connect !== "object") {
+              throw new InvalidArgumentError("connect must be a function or an object");
             }
 
             if (!Number.isInteger(maxRedirections) || maxRedirections < 0) {
-              throw new InvalidArgumentError(
-                "maxRedirections must be a positive number",
-              );
+              throw new InvalidArgumentError("maxRedirections must be a positive number");
             }
 
             if (connect && typeof connect !== "function") {
@@ -14831,15 +13332,10 @@
 
           [kDispatch](opts, handler) {
             let key;
-            if (
-              opts.origin &&
-              (typeof opts.origin === "string" || opts.origin instanceof URL)
-            ) {
+            if (opts.origin && (typeof opts.origin === "string" || opts.origin instanceof URL)) {
               key = String(opts.origin);
             } else {
-              throw new InvalidArgumentError(
-                "opts.origin must be a non-empty string or URL.",
-              );
+              throw new InvalidArgumentError("opts.origin must be a non-empty string or URL.");
             }
 
             const ref = this[kClients].get(key);
@@ -14978,9 +13474,7 @@
               typeof signal.on !== "function" &&
               typeof signal.addEventListener !== "function"
             ) {
-              throw new InvalidArgumentError(
-                "signal must be an EventEmitter or EventTarget",
-              );
+              throw new InvalidArgumentError("signal must be an EventEmitter or EventTarget");
             }
 
             super("UNDICI_CONNECT");
@@ -15076,11 +13570,8 @@
         "use strict";
 
         const { Readable, Duplex, PassThrough } = __nccwpck_require__(2203);
-        const {
-          InvalidArgumentError,
-          InvalidReturnValueError,
-          RequestAbortedError,
-        } = __nccwpck_require__(1970);
+        const { InvalidArgumentError, InvalidReturnValueError, RequestAbortedError } =
+          __nccwpck_require__(1970);
         const util = __nccwpck_require__(701);
         const { AsyncResource } = __nccwpck_require__(290);
         const { addSignal, removeSignal } = __nccwpck_require__(6497);
@@ -15147,9 +13638,7 @@
               typeof signal.on !== "function" &&
               typeof signal.addEventListener !== "function"
             ) {
-              throw new InvalidArgumentError(
-                "signal must be an EventEmitter or EventTarget",
-              );
+              throw new InvalidArgumentError("signal must be an EventEmitter or EventTarget");
             }
 
             if (method === "CONNECT") {
@@ -15322,10 +13811,7 @@
         function pipeline(opts, handler) {
           try {
             const pipelineHandler = new PipelineHandler(opts, handler);
-            this.dispatch(
-              { ...opts, body: pipelineHandler.req },
-              pipelineHandler,
-            );
+            this.dispatch({ ...opts, body: pipelineHandler.req }, pipelineHandler);
             return pipelineHandler.ret;
           } catch (err) {
             return new PassThrough().destroy(err);
@@ -15342,8 +13828,7 @@
         "use strict";
 
         const Readable = __nccwpck_require__(2224);
-        const { InvalidArgumentError, RequestAbortedError } =
-          __nccwpck_require__(1970);
+        const { InvalidArgumentError, RequestAbortedError } = __nccwpck_require__(1970);
         const util = __nccwpck_require__(701);
         const { getResolveErrorBodyCallback } = __nccwpck_require__(3924);
         const { AsyncResource } = __nccwpck_require__(290);
@@ -15371,10 +13856,7 @@
                 throw new InvalidArgumentError("invalid callback");
               }
 
-              if (
-                highWaterMark &&
-                (typeof highWaterMark !== "number" || highWaterMark < 0)
-              ) {
+              if (highWaterMark && (typeof highWaterMark !== "number" || highWaterMark < 0)) {
                 throw new InvalidArgumentError("invalid highWaterMark");
               }
 
@@ -15383,9 +13865,7 @@
                 typeof signal.on !== "function" &&
                 typeof signal.addEventListener !== "function"
               ) {
-                throw new InvalidArgumentError(
-                  "signal must be an EventEmitter or EventTarget",
-                );
+                throw new InvalidArgumentError("signal must be an EventEmitter or EventTarget");
               }
 
               if (method === "CONNECT") {
@@ -15435,14 +13915,7 @@
           }
 
           onHeaders(statusCode, rawHeaders, resume, statusMessage) {
-            const {
-              callback,
-              opaque,
-              abort,
-              context,
-              responseHeaders,
-              highWaterMark,
-            } = this;
+            const { callback, opaque, abort, context, responseHeaders, highWaterMark } = this;
 
             const headers =
               responseHeaders === "raw"
@@ -15457,9 +13930,7 @@
             }
 
             const parsedHeaders =
-              responseHeaders === "raw"
-                ? util.parseHeaders(rawHeaders)
-                : headers;
+              responseHeaders === "raw" ? util.parseHeaders(rawHeaders) : headers;
             const contentType = parsedHeaders["content-type"];
             const body = new Readable({
               resume,
@@ -15567,11 +14038,8 @@
         "use strict";
 
         const { finished, PassThrough } = __nccwpck_require__(2203);
-        const {
-          InvalidArgumentError,
-          InvalidReturnValueError,
-          RequestAbortedError,
-        } = __nccwpck_require__(1970);
+        const { InvalidArgumentError, InvalidReturnValueError, RequestAbortedError } =
+          __nccwpck_require__(1970);
         const util = __nccwpck_require__(701);
         const { getResolveErrorBodyCallback } = __nccwpck_require__(3924);
         const { AsyncResource } = __nccwpck_require__(290);
@@ -15583,15 +14051,7 @@
               throw new InvalidArgumentError("invalid opts");
             }
 
-            const {
-              signal,
-              method,
-              opaque,
-              body,
-              onInfo,
-              responseHeaders,
-              throwOnError,
-            } = opts;
+            const { signal, method, opaque, body, onInfo, responseHeaders, throwOnError } = opts;
 
             try {
               if (typeof callback !== "function") {
@@ -15607,9 +14067,7 @@
                 typeof signal.on !== "function" &&
                 typeof signal.addEventListener !== "function"
               ) {
-                throw new InvalidArgumentError(
-                  "signal must be an EventEmitter or EventTarget",
-                );
+                throw new InvalidArgumentError("signal must be an EventEmitter or EventTarget");
               }
 
               if (method === "CONNECT") {
@@ -15659,8 +14117,7 @@
           }
 
           onHeaders(statusCode, rawHeaders, resume, statusMessage) {
-            const { factory, opaque, context, callback, responseHeaders } =
-              this;
+            const { factory, opaque, context, callback, responseHeaders } = this;
 
             const headers =
               responseHeaders === "raw"
@@ -15680,9 +14137,7 @@
 
             if (this.throwOnError && statusCode >= 400) {
               const parsedHeaders =
-                responseHeaders === "raw"
-                  ? util.parseHeaders(rawHeaders)
-                  : headers;
+                responseHeaders === "raw" ? util.parseHeaders(rawHeaders) : headers;
               const contentType = parsedHeaders["content-type"];
               res = new PassThrough();
 
@@ -15846,9 +14301,7 @@
               typeof signal.on !== "function" &&
               typeof signal.addEventListener !== "function"
             ) {
-              throw new InvalidArgumentError(
-                "signal must be an EventEmitter or EventTarget",
-              );
+              throw new InvalidArgumentError("signal must be an EventEmitter or EventTarget");
             }
 
             super("UNDICI_UPGRADE");
@@ -16046,9 +14499,7 @@
           off(ev, ...args) {
             const ret = super.off(ev, ...args);
             if (ev === "data" || ev === "readable") {
-              this[kReading] =
-                this.listenerCount("data") > 0 ||
-                this.listenerCount("readable") > 0;
+              this[kReading] = this.listenerCount("data") > 0 || this.listenerCount("readable") > 0;
             }
             return ret;
           }
@@ -16110,16 +14561,13 @@
           }
 
           dump(opts) {
-            let limit =
-              opts && Number.isFinite(opts.limit) ? opts.limit : 262144;
+            let limit = opts && Number.isFinite(opts.limit) ? opts.limit : 262144;
             const signal = opts && opts.signal;
 
             if (signal) {
               try {
                 if (typeof signal !== "object" || !("aborted" in signal)) {
-                  throw new InvalidArgumentError(
-                    "signal must be an AbortSignal",
-                  );
+                  throw new InvalidArgumentError("signal must be an AbortSignal");
                 }
                 util.throwIfAborted(signal);
               } catch (err) {
@@ -16382,14 +14830,8 @@
 
         const { BalancedPoolMissingUpstreamError, InvalidArgumentError } =
           __nccwpck_require__(1970);
-        const {
-          PoolBase,
-          kClients,
-          kNeedDrain,
-          kAddClient,
-          kRemoveClient,
-          kGetDispatcher,
-        } = __nccwpck_require__(4005);
+        const { PoolBase, kClients, kNeedDrain, kAddClient, kRemoveClient, kGetDispatcher } =
+          __nccwpck_require__(4005);
         const Pool = __nccwpck_require__(6607);
         const { kUrl, kInterceptors } = __nccwpck_require__(4980);
         const { parseOrigin } = __nccwpck_require__(701);
@@ -16413,18 +14855,14 @@
         }
 
         class BalancedPool extends PoolBase {
-          constructor(
-            upstreams = [],
-            { factory = defaultFactory, ...opts } = {},
-          ) {
+          constructor(upstreams = [], { factory = defaultFactory, ...opts } = {}) {
             super();
 
             this[kOptions] = opts;
             this[kIndex] = -1;
             this[kCurrentWeight] = 0;
 
-            this[kMaxWeightPerServer] =
-              this[kOptions].maxWeightPerServer || 100;
+            this[kMaxWeightPerServer] = this[kOptions].maxWeightPerServer || 100;
             this[kErrorPenalty] = this[kOptions].errorPenalty || 15;
 
             if (!Array.isArray(upstreams)) {
@@ -16462,10 +14900,7 @@
             ) {
               return this;
             }
-            const pool = this[kFactory](
-              upstreamOrigin,
-              Object.assign({}, this[kOptions]),
-            );
+            const pool = this[kFactory](upstreamOrigin, Object.assign({}, this[kOptions]));
 
             this[kAddClient](pool);
             pool.on("connect", () => {
@@ -16484,10 +14919,7 @@
               const err = args[2];
               if (err && err.code === "UND_ERR_SOCKET") {
                 // decrease the weight of the pool.
-                pool[kWeight] = Math.max(
-                  1,
-                  pool[kWeight] - this[kErrorPenalty],
-                );
+                pool[kWeight] = Math.max(1, pool[kWeight] - this[kErrorPenalty]);
                 this._updateBalancedPoolStats();
               }
             });
@@ -16526,10 +14958,7 @@
 
           get upstreams() {
             return this[kClients]
-              .filter(
-                (dispatcher) =>
-                  dispatcher.closed !== true && dispatcher.destroyed !== true,
-              )
+              .filter((dispatcher) => dispatcher.closed !== true && dispatcher.destroyed !== true)
               .map((p) => p[kUrl].origin);
           }
 
@@ -16562,27 +14991,21 @@
 
             let counter = 0;
 
-            let maxWeightIndex = this[kClients].findIndex(
-              (pool) => !pool[kNeedDrain],
-            );
+            let maxWeightIndex = this[kClients].findIndex((pool) => !pool[kNeedDrain]);
 
             while (counter++ < this[kClients].length) {
               this[kIndex] = (this[kIndex] + 1) % this[kClients].length;
               const pool = this[kClients][this[kIndex]];
 
               // find pool index with the largest weight
-              if (
-                pool[kWeight] > this[kClients][maxWeightIndex][kWeight] &&
-                !pool[kNeedDrain]
-              ) {
+              if (pool[kWeight] > this[kClients][maxWeightIndex][kWeight] && !pool[kNeedDrain]) {
                 maxWeightIndex = this[kIndex];
               }
 
               // decrease the current weight every `this[kClients].length`.
               if (this[kIndex] === 0) {
                 // Set the current weight to the next lower weight.
-                this[kCurrentWeight] =
-                  this[kCurrentWeight] - this[kGreatestCommonDivisor];
+                this[kCurrentWeight] = this[kCurrentWeight] - this[kGreatestCommonDivisor];
 
                 if (this[kCurrentWeight] <= 0) {
                   this[kCurrentWeight] = this[kMaxWeightPerServer];
@@ -16609,8 +15032,7 @@
         "use strict";
 
         const { kConstruct } = __nccwpck_require__(8081);
-        const { urlEquals, fieldValues: getFieldValues } =
-          __nccwpck_require__(6922);
+        const { urlEquals, fieldValues: getFieldValues } = __nccwpck_require__(6922);
         const { kEnumerableProperty, isDisturbed } = __nccwpck_require__(701);
         const { kHeadersList } = __nccwpck_require__(4980);
         const { webidl } = __nccwpck_require__(185);
@@ -16671,8 +15093,7 @@
           async matchAll(request = undefined, options = {}) {
             webidl.brandCheck(this, Cache);
 
-            if (request !== undefined)
-              request = webidl.converters.RequestInfo(request);
+            if (request !== undefined) request = webidl.converters.RequestInfo(request);
             options = webidl.converters.CacheQueryOptions(options);
 
             // 1.
@@ -16724,9 +15145,7 @@
             // 5.5.2
             for (const response of responses) {
               // 5.5.2.1
-              const responseObject = new Response(
-                response.body?.source ?? null,
-              );
+              const responseObject = new Response(response.body?.source ?? null);
               const body = responseObject[kState].body;
               responseObject[kState] = response;
               responseObject[kState].body = body;
@@ -16831,16 +15250,13 @@
                       responsePromise.reject(
                         webidl.errors.exception({
                           header: "Cache.addAll",
-                          message:
-                            "Received an invalid status code or the request failed.",
+                          message: "Received an invalid status code or the request failed.",
                         }),
                       );
                     } else if (response.headersList.contains("vary")) {
                       // 2.
                       // 2.1
-                      const fieldValues = getFieldValues(
-                        response.headersList.get("vary"),
-                      );
+                      const fieldValues = getFieldValues(response.headersList.get("vary"));
 
                       // 2.2
                       for (const fieldValue of fieldValues) {
@@ -16865,9 +15281,7 @@
                   processResponseEndOfBody(response) {
                     // 1.
                     if (response.aborted) {
-                      responsePromise.reject(
-                        new DOMException("aborted", "AbortError"),
-                      );
+                      responsePromise.reject(new DOMException("aborted", "AbortError"));
                       return;
                     }
 
@@ -16955,10 +15369,7 @@
             }
 
             // 4.
-            if (
-              !urlIsHttpHttpsScheme(innerRequest.url) ||
-              innerRequest.method !== "GET"
-            ) {
+            if (!urlIsHttpHttpsScheme(innerRequest.url) || innerRequest.method !== "GET") {
               throw webidl.errors.exception({
                 header: "Cache.put",
                 message: "Expected an http/s scheme when method is not GET",
@@ -16979,9 +15390,7 @@
             // 7.
             if (innerResponse.headersList.contains("vary")) {
               // 7.1.
-              const fieldValues = getFieldValues(
-                innerResponse.headersList.get("vary"),
-              );
+              const fieldValues = getFieldValues(innerResponse.headersList.get("vary"));
 
               // 7.2.
               for (const fieldValue of fieldValues) {
@@ -16998,8 +15407,7 @@
             // 8.
             if (
               innerResponse.body &&
-              (isDisturbed(innerResponse.body.stream) ||
-                innerResponse.body.stream.locked)
+              (isDisturbed(innerResponse.body.stream) || innerResponse.body.stream.locked)
             ) {
               throw webidl.errors.exception({
                 header: "Cache.put",
@@ -17022,10 +15430,7 @@
               const reader = stream.getReader();
 
               // 11.3
-              readAllBytes(reader).then(
-                bodyReadPromise.resolve,
-                bodyReadPromise.reject,
-              );
+              readAllBytes(reader).then(bodyReadPromise.resolve, bodyReadPromise.reject);
             } else {
               bodyReadPromise.resolve(undefined);
             }
@@ -17148,8 +15553,7 @@
           async keys(request = undefined, options = {}) {
             webidl.brandCheck(this, Cache);
 
-            if (request !== undefined)
-              request = webidl.converters.RequestInfo(request);
+            if (request !== undefined) request = webidl.converters.RequestInfo(request);
             options = webidl.converters.CacheQueryOptions(options);
 
             // 1.
@@ -17255,19 +15659,12 @@
                 if (operation.type === "delete" && operation.response != null) {
                   throw webidl.errors.exception({
                     header: "Cache.#batchCacheOperations",
-                    message:
-                      "delete operation should not have an associated response",
+                    message: "delete operation should not have an associated response",
                   });
                 }
 
                 // 4.2.3
-                if (
-                  this.#queryCache(
-                    operation.request,
-                    operation.options,
-                    addedItems,
-                  ).length
-                ) {
+                if (this.#queryCache(operation.request, operation.options, addedItems).length) {
                   throw new DOMException("???", "InvalidStateError");
                 }
 
@@ -17277,10 +15674,7 @@
                 // 4.2.5
                 if (operation.type === "delete") {
                   // 4.2.5.1
-                  requestResponses = this.#queryCache(
-                    operation.request,
-                    operation.options,
-                  );
+                  requestResponses = this.#queryCache(operation.request, operation.options);
 
                   // TODO: the spec is wrong, this is needed to pass WPTs
                   if (requestResponses.length === 0) {
@@ -17301,8 +15695,7 @@
                   if (operation.response == null) {
                     throw webidl.errors.exception({
                       header: "Cache.#batchCacheOperations",
-                      message:
-                        "put operation should have an associated response",
+                      message: "put operation should have an associated response",
                     });
                   }
 
@@ -17387,12 +15780,7 @@
             for (const requestResponse of storage) {
               const [cachedRequest, cachedResponse] = requestResponse;
               if (
-                this.#requestMatchesCachedItem(
-                  requestQuery,
-                  cachedRequest,
-                  cachedResponse,
-                  options,
-                )
+                this.#requestMatchesCachedItem(requestQuery, cachedRequest, cachedResponse, options)
               ) {
                 resultList.push(requestResponse);
               }
@@ -17409,12 +15797,7 @@
            * @param {import('../../types/cache').CacheQueryOptions | undefined} options
            * @returns {boolean}
            */
-          #requestMatchesCachedItem(
-            requestQuery,
-            request,
-            response = null,
-            options,
-          ) {
+          #requestMatchesCachedItem(requestQuery, request, response = null, options) {
             // if (options?.ignoreMethod === false && request.method === 'GET') {
             //   return false
             // }
@@ -17433,17 +15816,11 @@
               return false;
             }
 
-            if (
-              response == null ||
-              options?.ignoreVary ||
-              !response.headersList.contains("vary")
-            ) {
+            if (response == null || options?.ignoreVary || !response.headersList.contains("vary")) {
               return true;
             }
 
-            const fieldValues = getFieldValues(
-              response.headersList.get("vary"),
-            );
+            const fieldValues = getFieldValues(response.headersList.get("vary"));
 
             for (const fieldValue of fieldValues) {
               if (fieldValue === "*") {
@@ -17861,18 +16238,10 @@
 
         try {
           const diagnosticsChannel = __nccwpck_require__(1637);
-          channels.sendHeaders = diagnosticsChannel.channel(
-            "undici:client:sendHeaders",
-          );
-          channels.beforeConnect = diagnosticsChannel.channel(
-            "undici:client:beforeConnect",
-          );
-          channels.connectError = diagnosticsChannel.channel(
-            "undici:client:connectError",
-          );
-          channels.connected = diagnosticsChannel.channel(
-            "undici:client:connected",
-          );
+          channels.sendHeaders = diagnosticsChannel.channel("undici:client:sendHeaders");
+          channels.beforeConnect = diagnosticsChannel.channel("undici:client:beforeConnect");
+          channels.connectError = diagnosticsChannel.channel("undici:client:connectError");
+          channels.connected = diagnosticsChannel.channel("undici:client:connected");
         } catch {
           channels.sendHeaders = { hasSubscribers: false };
           channels.beforeConnect = { hasSubscribers: false };
@@ -17925,9 +16294,7 @@
             super();
 
             if (keepAlive !== undefined) {
-              throw new InvalidArgumentError(
-                "unsupported keepAlive, use pipelining=0 instead",
-              );
+              throw new InvalidArgumentError("unsupported keepAlive, use pipelining=0 instead");
             }
 
             if (socketTimeout !== undefined) {
@@ -17978,84 +16345,56 @@
 
             if (
               keepAliveMaxTimeout != null &&
-              (!Number.isFinite(keepAliveMaxTimeout) ||
-                keepAliveMaxTimeout <= 0)
+              (!Number.isFinite(keepAliveMaxTimeout) || keepAliveMaxTimeout <= 0)
             ) {
               throw new InvalidArgumentError("invalid keepAliveMaxTimeout");
             }
 
-            if (
-              keepAliveTimeoutThreshold != null &&
-              !Number.isFinite(keepAliveTimeoutThreshold)
-            ) {
-              throw new InvalidArgumentError(
-                "invalid keepAliveTimeoutThreshold",
-              );
+            if (keepAliveTimeoutThreshold != null && !Number.isFinite(keepAliveTimeoutThreshold)) {
+              throw new InvalidArgumentError("invalid keepAliveTimeoutThreshold");
             }
 
             if (
               headersTimeout != null &&
               (!Number.isInteger(headersTimeout) || headersTimeout < 0)
             ) {
-              throw new InvalidArgumentError(
-                "headersTimeout must be a positive integer or zero",
-              );
+              throw new InvalidArgumentError("headersTimeout must be a positive integer or zero");
             }
 
-            if (
-              bodyTimeout != null &&
-              (!Number.isInteger(bodyTimeout) || bodyTimeout < 0)
-            ) {
-              throw new InvalidArgumentError(
-                "bodyTimeout must be a positive integer or zero",
-              );
+            if (bodyTimeout != null && (!Number.isInteger(bodyTimeout) || bodyTimeout < 0)) {
+              throw new InvalidArgumentError("bodyTimeout must be a positive integer or zero");
             }
 
-            if (
-              connect != null &&
-              typeof connect !== "function" &&
-              typeof connect !== "object"
-            ) {
-              throw new InvalidArgumentError(
-                "connect must be a function or an object",
-              );
+            if (connect != null && typeof connect !== "function" && typeof connect !== "object") {
+              throw new InvalidArgumentError("connect must be a function or an object");
             }
 
             if (
               maxRedirections != null &&
               (!Number.isInteger(maxRedirections) || maxRedirections < 0)
             ) {
-              throw new InvalidArgumentError(
-                "maxRedirections must be a positive number",
-              );
+              throw new InvalidArgumentError("maxRedirections must be a positive number");
             }
 
             if (
               maxRequestsPerClient != null &&
-              (!Number.isInteger(maxRequestsPerClient) ||
-                maxRequestsPerClient < 0)
+              (!Number.isInteger(maxRequestsPerClient) || maxRequestsPerClient < 0)
             ) {
-              throw new InvalidArgumentError(
-                "maxRequestsPerClient must be a positive number",
-              );
+              throw new InvalidArgumentError("maxRequestsPerClient must be a positive number");
             }
 
             if (
               localAddress != null &&
               (typeof localAddress !== "string" || net.isIP(localAddress) === 0)
             ) {
-              throw new InvalidArgumentError(
-                "localAddress must be valid string IP address",
-              );
+              throw new InvalidArgumentError("localAddress must be valid string IP address");
             }
 
             if (
               maxResponseSize != null &&
               (!Number.isInteger(maxResponseSize) || maxResponseSize < -1)
             ) {
-              throw new InvalidArgumentError(
-                "maxResponseSize must be a positive number",
-              );
+              throw new InvalidArgumentError("maxResponseSize must be a positive number");
             }
 
             if (
@@ -18070,15 +16409,12 @@
 
             // h2
             if (allowH2 != null && typeof allowH2 !== "boolean") {
-              throw new InvalidArgumentError(
-                "allowH2 must be a valid boolean value",
-              );
+              throw new InvalidArgumentError("allowH2 must be a valid boolean value");
             }
 
             if (
               maxConcurrentStreams != null &&
-              (typeof maxConcurrentStreams !== "number" ||
-                maxConcurrentStreams < 1)
+              (typeof maxConcurrentStreams !== "number" || maxConcurrentStreams < 1)
             ) {
               throw new InvalidArgumentError(
                 "maxConcurrentStreams must be a possitive integer, greater than 0",
@@ -18100,9 +16436,7 @@
             }
 
             this[kInterceptors] =
-              interceptors &&
-              interceptors.Client &&
-              Array.isArray(interceptors.Client)
+              interceptors && interceptors.Client && Array.isArray(interceptors.Client)
                 ? interceptors.Client
                 : [createRedirectInterceptor({ maxRedirections })];
             this[kUrl] = util.parseOrigin(url);
@@ -18110,14 +16444,10 @@
             this[kSocket] = null;
             this[kPipelining] = pipelining != null ? pipelining : 1;
             this[kMaxHeadersSize] = maxHeaderSize || http.maxHeaderSize;
-            this[kKeepAliveDefaultTimeout] =
-              keepAliveTimeout == null ? 4e3 : keepAliveTimeout;
-            this[kKeepAliveMaxTimeout] =
-              keepAliveMaxTimeout == null ? 600e3 : keepAliveMaxTimeout;
+            this[kKeepAliveDefaultTimeout] = keepAliveTimeout == null ? 4e3 : keepAliveTimeout;
+            this[kKeepAliveMaxTimeout] = keepAliveMaxTimeout == null ? 600e3 : keepAliveMaxTimeout;
             this[kKeepAliveTimeoutThreshold] =
-              keepAliveTimeoutThreshold == null
-                ? 1e3
-                : keepAliveTimeoutThreshold;
+              keepAliveTimeoutThreshold == null ? 1e3 : keepAliveTimeoutThreshold;
             this[kKeepAliveTimeoutValue] = this[kKeepAliveDefaultTimeout];
             this[kServerName] = null;
             this[kLocalAddress] = localAddress != null ? localAddress : null;
@@ -18126,15 +16456,12 @@
             this[kHostHeader] =
               `host: ${this[kUrl].hostname}${this[kUrl].port ? `:${this[kUrl].port}` : ""}\r\n`;
             this[kBodyTimeout] = bodyTimeout != null ? bodyTimeout : 300e3;
-            this[kHeadersTimeout] =
-              headersTimeout != null ? headersTimeout : 300e3;
-            this[kStrictContentLength] =
-              strictContentLength == null ? true : strictContentLength;
+            this[kHeadersTimeout] = headersTimeout != null ? headersTimeout : 300e3;
+            this[kStrictContentLength] = strictContentLength == null ? true : strictContentLength;
             this[kMaxRedirections] = maxRedirections;
             this[kMaxRequests] = maxRequestsPerClient;
             this[kClosedResolve] = null;
-            this[kMaxResponseSize] =
-              maxResponseSize > -1 ? maxResponseSize : -1;
+            this[kMaxResponseSize] = maxResponseSize > -1 ? maxResponseSize : -1;
             this[kHTTPConnVersion] = "h1";
 
             // HTTP/2
@@ -18144,11 +16471,9 @@
               : {
                   // streams: null, // Fixed queue of streams - For future support of `push`
                   openStreams: 0, // Keep track of them to decide wether or not unref the session
-                  maxConcurrentStreams:
-                    maxConcurrentStreams != null ? maxConcurrentStreams : 100, // Max peerConcurrentStreams for a Node h2 server
+                  maxConcurrentStreams: maxConcurrentStreams != null ? maxConcurrentStreams : 100, // Max peerConcurrentStreams for a Node h2 server
                 };
-            this[kHost] =
-              `${this[kUrl].hostname}${this[kUrl].port ? `:${this[kUrl].port}` : ""}`;
+            this[kHost] = `${this[kUrl].hostname}${this[kUrl].port ? `:${this[kUrl].port}` : ""}`;
 
             // kQueue is built up of 3 sections separated by
             // the kRunningIdx and kPendingIdx indices.
@@ -18186,16 +16511,13 @@
           }
 
           get [kConnected]() {
-            return (
-              !!this[kSocket] && !this[kConnecting] && !this[kSocket].destroyed
-            );
+            return !!this[kSocket] && !this[kConnecting] && !this[kSocket].destroyed;
           }
 
           get [kBusy]() {
             const socket = this[kSocket];
             return (
-              (socket &&
-                (socket[kReset] || socket[kWriting] || socket[kBlocking])) ||
+              (socket && (socket[kReset] || socket[kWriting] || socket[kBlocking])) ||
               this[kSize] >= (this[kPipelining] || 1) ||
               this[kPending] > 0
             );
@@ -18218,10 +16540,7 @@
             this[kQueue].push(request);
             if (this[kResuming]) {
               // Do nothing.
-            } else if (
-              util.bodyLength(request.body) == null &&
-              util.isIterable(request.body)
-            ) {
+            } else if (util.bodyLength(request.body) == null && util.isIterable(request.body)) {
               // Wait a tick in case stream/iterator is ended in the same tick.
               this[kResuming] = 1;
               process.nextTick(resume, this);
@@ -18308,9 +16627,7 @@
 
         function onHTTP2GoAway(code) {
           const client = this[kClient];
-          const err = new InformationalError(
-            `HTTP/2: "GOAWAY" frame received with code ${code}`,
-          );
+          const err = new InformationalError(`HTTP/2: "GOAWAY" frame received with code ${code}`);
           client[kSocket] = null;
           client[kHTTP2Session] = null;
 
@@ -18345,15 +16662,11 @@
         const EMPTY_BUF = Buffer.alloc(0);
 
         async function lazyllhttp() {
-          const llhttpWasmData = process.env.JEST_WORKER_ID
-            ? __nccwpck_require__(4729)
-            : undefined;
+          const llhttpWasmData = process.env.JEST_WORKER_ID ? __nccwpck_require__(4729) : undefined;
 
           let mod;
           try {
-            mod = await WebAssembly.compile(
-              Buffer.from(__nccwpck_require__(2603), "base64"),
-            );
+            mod = await WebAssembly.compile(Buffer.from(__nccwpck_require__(2603), "base64"));
           } catch (e) {
             /* istanbul ignore next */
 
@@ -18362,10 +16675,7 @@
             // * https://github.com/emscripten-core/emscripten/issues/11495
             // got me to remove that check to avoid breaking Node 12.
             mod = await WebAssembly.compile(
-              Buffer.from(
-                llhttpWasmData || __nccwpck_require__(4729),
-                "base64",
-              ),
+              Buffer.from(llhttpWasmData || __nccwpck_require__(4729), "base64"),
             );
           }
 
@@ -18379,12 +16689,9 @@
               },
               wasm_on_status: (p, at, len) => {
                 assert.strictEqual(currentParser.ptr, p);
-                const start =
-                  at - currentBufferPtr + currentBufferRef.byteOffset;
+                const start = at - currentBufferPtr + currentBufferRef.byteOffset;
                 return (
-                  currentParser.onStatus(
-                    new FastBuffer(currentBufferRef.buffer, start, len),
-                  ) || 0
+                  currentParser.onStatus(new FastBuffer(currentBufferRef.buffer, start, len)) || 0
                 );
               },
               wasm_on_message_begin: (p) => {
@@ -18393,8 +16700,7 @@
               },
               wasm_on_header_field: (p, at, len) => {
                 assert.strictEqual(currentParser.ptr, p);
-                const start =
-                  at - currentBufferPtr + currentBufferRef.byteOffset;
+                const start = at - currentBufferPtr + currentBufferRef.byteOffset;
                 return (
                   currentParser.onHeaderField(
                     new FastBuffer(currentBufferRef.buffer, start, len),
@@ -18403,20 +16709,14 @@
               },
               wasm_on_header_value: (p, at, len) => {
                 assert.strictEqual(currentParser.ptr, p);
-                const start =
-                  at - currentBufferPtr + currentBufferRef.byteOffset;
+                const start = at - currentBufferPtr + currentBufferRef.byteOffset;
                 return (
                   currentParser.onHeaderValue(
                     new FastBuffer(currentBufferRef.buffer, start, len),
                   ) || 0
                 );
               },
-              wasm_on_headers_complete: (
-                p,
-                statusCode,
-                upgrade,
-                shouldKeepAlive,
-              ) => {
+              wasm_on_headers_complete: (p, statusCode, upgrade, shouldKeepAlive) => {
                 assert.strictEqual(currentParser.ptr, p);
                 return (
                   currentParser.onHeadersComplete(
@@ -18428,12 +16728,9 @@
               },
               wasm_on_body: (p, at, len) => {
                 assert.strictEqual(currentParser.ptr, p);
-                const start =
-                  at - currentBufferPtr + currentBufferRef.byteOffset;
+                const start = at - currentBufferPtr + currentBufferRef.byteOffset;
                 return (
-                  currentParser.onBody(
-                    new FastBuffer(currentBufferRef.buffer, start, len),
-                  ) || 0
+                  currentParser.onBody(new FastBuffer(currentBufferRef.buffer, start, len)) || 0
                 );
               },
               wasm_on_message_complete: (p) => {
@@ -18461,10 +16758,7 @@
 
         class Parser {
           constructor(client, socket, { exports }) {
-            assert(
-              Number.isFinite(client[kMaxHeadersSize]) &&
-                client[kMaxHeadersSize] > 0,
-            );
+            assert(Number.isFinite(client[kMaxHeadersSize]) && client[kMaxHeadersSize] > 0);
 
             this.llhttp = exports;
             this.ptr = this.llhttp.llhttp_alloc(constants.TYPE.RESPONSE);
@@ -18561,11 +16855,7 @@
               currentBufferPtr = llhttp.malloc(currentBufferSize);
             }
 
-            new Uint8Array(
-              llhttp.memory.buffer,
-              currentBufferPtr,
-              currentBufferSize,
-            ).set(data);
+            new Uint8Array(llhttp.memory.buffer, currentBufferPtr, currentBufferSize).set(data);
 
             // Call `execute` on the wasm parser.
             // We pass the `llhttp_parser` pointer address, the pointer address of buffer view data,
@@ -18577,11 +16867,7 @@
               try {
                 currentBufferRef = data;
                 currentParser = this;
-                ret = llhttp.llhttp_execute(
-                  this.ptr,
-                  currentBufferPtr,
-                  data.length,
-                );
+                ret = llhttp.llhttp_execute(this.ptr, currentBufferPtr, data.length);
                 /* eslint-disable-next-line no-useless-catch */
               } catch (err) {
                 /* istanbul ignore next: difficult to make a test case for */
@@ -18591,8 +16877,7 @@
                 currentBufferRef = null;
               }
 
-              const offset =
-                llhttp.llhttp_get_error_pos(this.ptr) - currentBufferPtr;
+              const offset = llhttp.llhttp_get_error_pos(this.ptr) - currentBufferPtr;
 
               if (ret === constants.ERROR.PAUSED_UPGRADE) {
                 this.onUpgrade(data.slice(offset));
@@ -18604,19 +16889,13 @@
                 let message = "";
                 /* istanbul ignore else: difficult to make a test case for */
                 if (ptr) {
-                  const len = new Uint8Array(llhttp.memory.buffer, ptr).indexOf(
-                    0,
-                  );
+                  const len = new Uint8Array(llhttp.memory.buffer, ptr).indexOf(0);
                   message =
                     "Response does not match the HTTP/1.1 protocol (" +
                     Buffer.from(llhttp.memory.buffer, ptr, len).toString() +
                     ")";
                 }
-                throw new HTTPParserError(
-                  message,
-                  constants.ERROR[ret],
-                  data.slice(offset),
-                );
+                throw new HTTPParserError(message, constants.ERROR[ret], data.slice(offset));
               }
             } catch (err) {
               util.destroy(socket, err);
@@ -18662,10 +16941,7 @@
             if ((len & 1) === 0) {
               this.headers.push(buf);
             } else {
-              this.headers[len - 1] = Buffer.concat([
-                this.headers[len - 1],
-                buf,
-              ]);
+              this.headers[len - 1] = Buffer.concat([this.headers[len - 1], buf]);
             }
 
             this.trackHeader(buf.length);
@@ -18678,27 +16954,15 @@
               this.headers.push(buf);
               len += 1;
             } else {
-              this.headers[len - 1] = Buffer.concat([
-                this.headers[len - 1],
-                buf,
-              ]);
+              this.headers[len - 1] = Buffer.concat([this.headers[len - 1], buf]);
             }
 
             const key = this.headers[len - 2];
-            if (
-              key.length === 10 &&
-              key.toString().toLowerCase() === "keep-alive"
-            ) {
+            if (key.length === 10 && key.toString().toLowerCase() === "keep-alive") {
               this.keepAlive += buf.toString();
-            } else if (
-              key.length === 10 &&
-              key.toString().toLowerCase() === "connection"
-            ) {
+            } else if (key.length === 10 && key.toString().toLowerCase() === "connection") {
               this.connection += buf.toString();
-            } else if (
-              key.length === 14 &&
-              key.toString().toLowerCase() === "content-length"
-            ) {
+            } else if (key.length === 14 && key.toString().toLowerCase() === "content-length") {
               this.contentLength += buf.toString();
             }
 
@@ -18748,12 +17012,7 @@
 
             client[kSocket] = null;
             client[kQueue][client[kRunningIdx]++] = null;
-            client.emit(
-              "disconnect",
-              client[kUrl],
-              [client],
-              new InformationalError("upgrade"),
-            );
+            client.emit("disconnect", client[kUrl], [client], new InformationalError("upgrade"));
 
             try {
               request.onUpgrade(statusCode, headers, socket);
@@ -18783,19 +17042,13 @@
             assert(this.statusCode < 200);
 
             if (statusCode === 100) {
-              util.destroy(
-                socket,
-                new SocketError("bad response", util.getSocketInfo(socket)),
-              );
+              util.destroy(socket, new SocketError("bad response", util.getSocketInfo(socket)));
               return -1;
             }
 
             /* this can only happen if server is misbehaving */
             if (upgrade && !request.upgrade) {
-              util.destroy(
-                socket,
-                new SocketError("bad upgrade", util.getSocketInfo(socket)),
-              );
+              util.destroy(socket, new SocketError("bad upgrade", util.getSocketInfo(socket)));
               return -1;
             }
 
@@ -18811,9 +17064,7 @@
 
             if (this.statusCode >= 200) {
               const bodyTimeout =
-                request.bodyTimeout != null
-                  ? request.bodyTimeout
-                  : client[kBodyTimeout];
+                request.bodyTimeout != null ? request.bodyTimeout : client[kBodyTimeout];
               this.setTimeout(bodyTimeout, TIMEOUT_BODY);
             } else if (this.timeout) {
               // istanbul ignore else: only for jest
@@ -18854,21 +17105,14 @@
                   client[kKeepAliveTimeoutValue] = timeout;
                 }
               } else {
-                client[kKeepAliveTimeoutValue] =
-                  client[kKeepAliveDefaultTimeout];
+                client[kKeepAliveTimeoutValue] = client[kKeepAliveDefaultTimeout];
               }
             } else {
               // Stop more requests from being dispatched.
               socket[kReset] = true;
             }
 
-            const pause =
-              request.onHeaders(
-                statusCode,
-                headers,
-                this.resume,
-                statusText,
-              ) === false;
+            const pause = request.onHeaders(statusCode, headers, this.resume, statusText) === false;
 
             if (request.aborted) {
               return -1;
@@ -18910,10 +17154,7 @@
 
             assert(statusCode >= 200);
 
-            if (
-              maxResponseSize > -1 &&
-              this.bytesRead + buf.length > maxResponseSize
-            ) {
+            if (maxResponseSize > -1 && this.bytesRead + buf.length > maxResponseSize) {
               util.destroy(socket, new ResponseExceededMaxSizeError());
               return -1;
             }
@@ -19010,15 +17251,8 @@
 
           /* istanbul ignore else */
           if (timeoutType === TIMEOUT_HEADERS) {
-            if (
-              !socket[kWriting] ||
-              socket.writableNeedDrain ||
-              client[kRunning] > 1
-            ) {
-              assert(
-                !parser.paused,
-                "cannot be paused while waiting for headers",
-              );
+            if (!socket[kWriting] || socket.writableNeedDrain || client[kRunning] > 1) {
+              assert(!parser.paused, "cannot be paused while waiting for headers");
               util.destroy(socket, new HeadersTimeoutError());
             }
           } else if (timeoutType === TIMEOUT_BODY) {
@@ -19046,11 +17280,7 @@
           if (client[kHTTPConnVersion] !== "h2") {
             // On Mac OS, we get an ECONNRESET even if there is a full body to be forwarded
             // to the user.
-            if (
-              err.code === "ECONNRESET" &&
-              parser.statusCode &&
-              !parser.shouldKeepAlive
-            ) {
+            if (err.code === "ECONNRESET" && parser.statusCode && !parser.shouldKeepAlive) {
               // We treat all incoming data so for as a valid response.
               parser.onMessageComplete();
               return;
@@ -19093,10 +17323,7 @@
             }
           }
 
-          util.destroy(
-            this,
-            new SocketError("other side closed", util.getSocketInfo(this)),
-          );
+          util.destroy(this, new SocketError("other side closed", util.getSocketInfo(this)));
         }
 
         function onSocketClose() {
@@ -19112,8 +17339,7 @@
             this[kParser] = null;
           }
 
-          const err =
-            this[kError] || new SocketError("closed", util.getSocketInfo(this));
+          const err = this[kError] || new SocketError("closed", util.getSocketInfo(this));
 
           client[kSocket] = null;
 
@@ -19223,8 +17449,7 @@
 
               const session = http2.connect(client[kUrl], {
                 createConnection: () => socket,
-                peerMaxConcurrentStreams:
-                  client[kHTTP2SessionState].maxConcurrentStreams,
+                peerMaxConcurrentStreams: client[kHTTP2SessionState].maxConcurrentStreams,
               });
 
               client[kHTTPConnVersion] = "h2";
@@ -19306,8 +17531,7 @@
               assert(client[kRunning] === 0);
               while (
                 client[kPending] > 0 &&
-                client[kQueue][client[kPendingIdx]].servername ===
-                  client[kServerName]
+                client[kQueue][client[kPendingIdx]].servername === client[kServerName]
               ) {
                 const request = client[kQueue][client[kPendingIdx]++];
                 errorRequest(client, request, err);
@@ -19372,15 +17596,9 @@
 
               if (client[kSize] === 0) {
                 if (socket[kParser].timeoutType !== TIMEOUT_IDLE) {
-                  socket[kParser].setTimeout(
-                    client[kKeepAliveTimeoutValue],
-                    TIMEOUT_IDLE,
-                  );
+                  socket[kParser].setTimeout(client[kKeepAliveTimeoutValue], TIMEOUT_IDLE);
                 }
-              } else if (
-                client[kRunning] > 0 &&
-                socket[kParser].statusCode < 200
-              ) {
+              } else if (client[kRunning] > 0 && socket[kParser].statusCode < 200) {
                 if (socket[kParser].timeoutType !== TIMEOUT_HEADERS) {
                   const request = client[kQueue][client[kRunningIdx]];
                   const headersTimeout =
@@ -19414,10 +17632,7 @@
 
             const request = client[kQueue][client[kPendingIdx]];
 
-            if (
-              client[kUrl].protocol === "https:" &&
-              client[kServerName] !== request.servername
-            ) {
+            if (client[kUrl].protocol === "https:" && client[kServerName] !== request.servername) {
               if (client[kRunning] > 0) {
                 return;
               }
@@ -19425,10 +17640,7 @@
               client[kServerName] = request.servername;
 
               if (socket && socket.servername !== request.servername) {
-                util.destroy(
-                  socket,
-                  new InformationalError("servername changed"),
-                );
+                util.destroy(socket, new InformationalError("servername changed"));
                 return;
               }
             }
@@ -19442,12 +17654,7 @@
               return;
             }
 
-            if (
-              socket.destroyed ||
-              socket[kWriting] ||
-              socket[kReset] ||
-              socket[kBlocking]
-            ) {
+            if (socket.destroyed || socket[kWriting] || socket[kReset] || socket[kBlocking]) {
               return;
             }
 
@@ -19458,10 +17665,7 @@
               return;
             }
 
-            if (
-              client[kRunning] > 0 &&
-              (request.upgrade || request.method === "CONNECT")
-            ) {
+            if (client[kRunning] > 0 && (request.upgrade || request.method === "CONNECT")) {
               // Don't dispatch an upgrade until all preceding requests have completed.
               // A misbehaving server might upgrade the connection before all pipelined
               // request has completed.
@@ -19471,8 +17675,7 @@
             if (
               client[kRunning] > 0 &&
               util.bodyLength(request.body) !== 0 &&
-              (util.isStream(request.body) ||
-                util.isAsyncIterable(request.body))
+              (util.isStream(request.body) || util.isAsyncIterable(request.body))
             ) {
               // Request with stream or iterator body can error while other requests
               // are inflight and indirectly error those as well.
@@ -19510,16 +17713,7 @@
             return;
           }
 
-          const {
-            body,
-            method,
-            path,
-            host,
-            upgrade,
-            headers,
-            blocking,
-            reset,
-          } = request;
+          const { body, method, path, host, upgrade, headers, blocking, reset } = request;
 
           // https://tools.ietf.org/html/rfc7231#section-4.3.1
           // https://tools.ietf.org/html/rfc7231#section-4.3.2
@@ -19530,8 +17724,7 @@
           // servers and corrupt connection state. Do not
           // re-use the connection for further requests.
 
-          const expectsPayload =
-            method === "PUT" || method === "POST" || method === "PATCH";
+          const expectsPayload = method === "PUT" || method === "POST" || method === "PATCH";
 
           if (body && typeof body.read === "function") {
             // Try to read EOF in order to get length.
@@ -19564,11 +17757,7 @@
             request.contentLength !== contentLength
           ) {
             if (client[kStrictContentLength]) {
-              errorRequest(
-                client,
-                request,
-                new RequestContentLengthMismatchError(),
-              );
+              errorRequest(client, request, new RequestContentLengthMismatchError());
               return false;
             }
 
@@ -19614,10 +17803,7 @@
             socket[kReset] = reset;
           }
 
-          if (
-            client[kMaxRequests] &&
-            socket[kCounter]++ >= client[kMaxRequests]
-          ) {
+          if (client[kMaxRequests] && socket[kCounter]++ >= client[kMaxRequests]) {
             socket[kReset] = true;
           }
 
@@ -19654,24 +17840,15 @@
             if (contentLength === 0) {
               socket.write(`${header}content-length: 0\r\n\r\n`, "latin1");
             } else {
-              assert(
-                contentLength === null,
-                "no body must not have content length",
-              );
+              assert(contentLength === null, "no body must not have content length");
               socket.write(`${header}\r\n`, "latin1");
             }
             request.onRequestSent();
           } else if (util.isBuffer(body)) {
-            assert(
-              contentLength === body.byteLength,
-              "buffer body must have content length",
-            );
+            assert(contentLength === body.byteLength, "buffer body must have content length");
 
             socket.cork();
-            socket.write(
-              `${header}content-length: ${contentLength}\r\n\r\n`,
-              "latin1",
-            );
+            socket.write(`${header}content-length: ${contentLength}\r\n\r\n`, "latin1");
             socket.write(body);
             socket.uncork();
             request.onBodySent(body);
@@ -19746,11 +17923,7 @@
           else headers = reqHeaders;
 
           if (upgrade) {
-            errorRequest(
-              client,
-              request,
-              new Error("Upgrade not supported for H2"),
-            );
+            errorRequest(client, request, new Error("Upgrade not supported for H2"));
             return false;
           }
 
@@ -19820,8 +17993,7 @@
           // servers and corrupt connection state. Do not
           // re-use the connection for further requests.
 
-          const expectsPayload =
-            method === "PUT" || method === "POST" || method === "PATCH";
+          const expectsPayload = method === "PUT" || method === "POST" || method === "PATCH";
 
           if (body && typeof body.read === "function") {
             // Try to read EOF in order to get length.
@@ -19852,11 +18024,7 @@
             request.contentLength !== contentLength
           ) {
             if (client[kStrictContentLength]) {
-              errorRequest(
-                client,
-                request,
-                new RequestContentLengthMismatchError(),
-              );
+              errorRequest(client, request, new RequestContentLengthMismatchError());
               return false;
             }
 
@@ -19891,16 +18059,11 @@
           ++h2State.openStreams;
 
           stream.once("response", (headers) => {
-            const { [HTTP2_HEADER_STATUS]: statusCode, ...realHeaders } =
-              headers;
+            const { [HTTP2_HEADER_STATUS]: statusCode, ...realHeaders } = headers;
 
             if (
-              request.onHeaders(
-                Number(statusCode),
-                realHeaders,
-                stream.resume.bind(stream),
-                "",
-              ) === false
+              request.onHeaders(Number(statusCode), realHeaders, stream.resume.bind(stream), "") ===
+              false
             ) {
               stream.pause();
             }
@@ -19976,10 +18139,7 @@
             if (!body) {
               request.onRequestSent();
             } else if (util.isBuffer(body)) {
-              assert(
-                contentLength === body.byteLength,
-                "buffer body must have content length",
-              );
+              assert(contentLength === body.byteLength, "buffer body must have content length");
               stream.cork();
               stream.write(body);
               stream.uncork();
@@ -20048,10 +18208,7 @@
           header,
           expectsPayload,
         }) {
-          assert(
-            contentLength !== 0 || client[kRunning] === 0,
-            "stream body cannot be pipelined",
-          );
+          assert(contentLength !== 0 || client[kRunning] === 0, "stream body cannot be pipelined");
 
           if (client[kHTTPConnVersion] === "h2") {
             // For HTTP/2, is enough to pipe the stream
@@ -20124,9 +18281,7 @@
 
             finished = true;
 
-            assert(
-              socket.destroyed || (socket[kWriting] && client[kRunning] <= 1),
-            );
+            assert(socket.destroyed || (socket[kWriting] && client[kRunning] <= 1));
 
             socket.off("drain", onDrain).off("error", onFinished);
 
@@ -20146,10 +18301,7 @@
 
             writer.destroy(err);
 
-            if (
-              err &&
-              (err.code !== "UND_ERR_INFO" || err.message !== "reset")
-            ) {
+            if (err && (err.code !== "UND_ERR_INFO" || err.message !== "reset")) {
               util.destroy(body, err);
             } else {
               util.destroy(body);
@@ -20179,10 +18331,7 @@
           header,
           expectsPayload,
         }) {
-          assert(
-            contentLength === body.size,
-            "blob body must have content length",
-          );
+          assert(contentLength === body.size, "blob body must have content length");
 
           const isH2 = client[kHTTPConnVersion] === "h2";
           try {
@@ -20198,10 +18347,7 @@
               h2stream.uncork();
             } else {
               socket.cork();
-              socket.write(
-                `${header}content-length: ${contentLength}\r\n\r\n`,
-                "latin1",
-              );
+              socket.write(`${header}content-length: ${contentLength}\r\n\r\n`, "latin1");
               socket.write(buffer);
               socket.uncork();
             }
@@ -20312,14 +18458,7 @@
         }
 
         class AsyncWriter {
-          constructor({
-            socket,
-            request,
-            contentLength,
-            client,
-            expectsPayload,
-            header,
-          }) {
+          constructor({ socket, request, contentLength, client, expectsPayload, header }) {
             this.socket = socket;
             this.request = request;
             this.contentLength = contentLength;
@@ -20332,15 +18471,8 @@
           }
 
           write(chunk) {
-            const {
-              socket,
-              request,
-              contentLength,
-              client,
-              bytesWritten,
-              expectsPayload,
-              header,
-            } = this;
+            const { socket, request, contentLength, client, bytesWritten, expectsPayload, header } =
+              this;
 
             if (socket[kError]) {
               throw socket[kError];
@@ -20372,15 +18504,9 @@
               }
 
               if (contentLength === null) {
-                socket.write(
-                  `${header}transfer-encoding: chunked\r\n`,
-                  "latin1",
-                );
+                socket.write(`${header}transfer-encoding: chunked\r\n`, "latin1");
               } else {
-                socket.write(
-                  `${header}content-length: ${contentLength}\r\n\r\n`,
-                  "latin1",
-                );
+                socket.write(`${header}content-length: ${contentLength}\r\n\r\n`, "latin1");
               }
             }
 
@@ -20397,10 +18523,7 @@
             request.onBodySent(chunk);
 
             if (!ret) {
-              if (
-                socket[kParser].timeout &&
-                socket[kParser].timeoutType === TIMEOUT_HEADERS
-              ) {
+              if (socket[kParser].timeout && socket[kParser].timeoutType === TIMEOUT_HEADERS) {
                 // istanbul ignore else: only for jest
                 if (socket[kParser].timeout.refresh) {
                   socket[kParser].timeout.refresh();
@@ -20412,15 +18535,8 @@
           }
 
           end() {
-            const {
-              socket,
-              contentLength,
-              client,
-              bytesWritten,
-              expectsPayload,
-              header,
-              request,
-            } = this;
+            const { socket, contentLength, client, bytesWritten, expectsPayload, header, request } =
+              this;
             request.onRequestSent();
 
             socket[kWriting] = false;
@@ -20456,10 +18572,7 @@
               }
             }
 
-            if (
-              socket[kParser].timeout &&
-              socket[kParser].timeoutType === TIMEOUT_HEADERS
-            ) {
+            if (socket[kParser].timeout && socket[kParser].timeoutType === TIMEOUT_HEADERS) {
               // istanbul ignore else: only for jest
               if (socket[kParser].timeout.refresh) {
                 socket[kParser].timeout.refresh();
@@ -20475,10 +18588,7 @@
             socket[kWriting] = false;
 
             if (err) {
-              assert(
-                client[kRunning] <= 1,
-                "pipeline should only contain this request",
-              );
+              assert(client[kRunning] <= 1, "pipeline should only contain this request");
               util.destroy(socket, err);
             }
           }
@@ -20512,9 +18622,7 @@
           }
 
           deref() {
-            return this.value[kConnected] === 0 && this.value[kSize] === 0
-              ? undefined
-              : this.value;
+            return this.value[kConnected] === 0 && this.value[kSize] === 0 ? undefined : this.value;
           }
         }
 
@@ -20545,8 +18653,7 @@
           }
           return {
             WeakRef: global.WeakRef || CompatWeakRef,
-            FinalizationRegistry:
-              global.FinalizationRegistry || CompatFinalizer,
+            FinalizationRegistry: global.FinalizationRegistry || CompatFinalizer,
           };
         };
 
@@ -20764,8 +18871,7 @@
       /***/ (module, __unused_webpack_exports, __nccwpck_require__) => {
         "use strict";
 
-        const { maxNameValuePairSize, maxAttributeValueSize } =
-          __nccwpck_require__(976);
+        const { maxNameValuePairSize, maxAttributeValueSize } = __nccwpck_require__(976);
         const { isCTLExcludingHtab } = __nccwpck_require__(8609);
         const { collectASequenceOfCodePointsFast } = __nccwpck_require__(2059);
         const assert = __nccwpck_require__(2613);
@@ -20797,11 +18903,7 @@
             //    (including the %x3B (";") in question).
             const position = { position: 0 };
 
-            nameValuePair = collectASequenceOfCodePointsFast(
-              ";",
-              header,
-              position,
-            );
+            nameValuePair = collectASequenceOfCodePointsFast(";", header, position);
             unparsedAttributes = header.slice(position.position);
           } else {
             // Otherwise:
@@ -20823,11 +18925,7 @@
             //    empty) value string consists of the characters after the first
             //    %x3D ("=") character.
             const position = { position: 0 };
-            name = collectASequenceOfCodePointsFast(
-              "=",
-              nameValuePair,
-              position,
-            );
+            name = collectASequenceOfCodePointsFast("=", nameValuePair, position);
             value = nameValuePair.slice(position.position + 1);
           }
 
@@ -20858,10 +18956,7 @@
          * @param {string} unparsedAttributes
          * @param {[Object.<string, unknown>]={}} cookieAttributeList
          */
-        function parseUnparsedAttributes(
-          unparsedAttributes,
-          cookieAttributeList = {},
-        ) {
+        function parseUnparsedAttributes(unparsedAttributes, cookieAttributeList = {}) {
           // 1. If the unparsed-attributes string is empty, skip the rest of
           //    these steps.
           if (unparsedAttributes.length === 0) {
@@ -20880,11 +18975,7 @@
           if (unparsedAttributes.includes(";")) {
             // 1. Consume the characters of the unparsed-attributes up to, but
             //    not including, the first %x3B (";") character.
-            cookieAv = collectASequenceOfCodePointsFast(
-              ";",
-              unparsedAttributes,
-              { position: 0 },
-            );
+            cookieAv = collectASequenceOfCodePointsFast(";", unparsedAttributes, { position: 0 });
             unparsedAttributes = unparsedAttributes.slice(cookieAv.length);
           } else {
             // Otherwise:
@@ -20908,11 +18999,7 @@
             //    character.
             const position = { position: 0 };
 
-            attributeName = collectASequenceOfCodePointsFast(
-              "=",
-              cookieAv,
-              position,
-            );
+            attributeName = collectASequenceOfCodePointsFast("=", cookieAv, position);
             attributeValue = cookieAv.slice(position.position + 1);
           } else {
             // Otherwise:
@@ -20930,10 +19017,7 @@
           // 6. If the attribute-value is longer than 1024 octets, ignore the
           //    cookie-av string and return to Step 1 of this algorithm.
           if (attributeValue.length > maxAttributeValueSize) {
-            return parseUnparsedAttributes(
-              unparsedAttributes,
-              cookieAttributeList,
-            );
+            return parseUnparsedAttributes(unparsedAttributes, cookieAttributeList);
           }
 
           // 7. Process the attribute-name and attribute-value according to the
@@ -20963,19 +19047,13 @@
             const charCode = attributeValue.charCodeAt(0);
 
             if ((charCode < 48 || charCode > 57) && attributeValue[0] !== "-") {
-              return parseUnparsedAttributes(
-                unparsedAttributes,
-                cookieAttributeList,
-              );
+              return parseUnparsedAttributes(unparsedAttributes, cookieAttributeList);
             }
 
             // 2. If the remainder of attribute-value contains a non-DIGIT
             //    character, ignore the cookie-av.
             if (!/^\d+$/.test(attributeValue)) {
-              return parseUnparsedAttributes(
-                unparsedAttributes,
-                cookieAttributeList,
-              );
+              return parseUnparsedAttributes(unparsedAttributes, cookieAttributeList);
             }
 
             // 3. Let delta-seconds be the attribute-value converted to an integer.
@@ -21087,16 +19165,11 @@
           } else {
             cookieAttributeList.unparsed ??= [];
 
-            cookieAttributeList.unparsed.push(
-              `${attributeName}=${attributeValue}`,
-            );
+            cookieAttributeList.unparsed.push(`${attributeName}=${attributeValue}`);
           }
 
           // 8. Return to Step 1 of this algorithm.
-          return parseUnparsedAttributes(
-            unparsedAttributes,
-            cookieAttributeList,
-          );
+          return parseUnparsedAttributes(unparsedAttributes, cookieAttributeList);
         }
 
         module.exports = {
@@ -21123,13 +19196,7 @@
           for (const char of value) {
             const code = char.charCodeAt(0);
 
-            if (
-              code >= 0x00 ||
-              code <= 0x08 ||
-              code >= 0x0a ||
-              code <= 0x1f ||
-              code === 0x7f
-            ) {
+            if (code >= 0x00 || code <= 0x08 || code >= 0x0a || code <= 0x1f || code === 0x7f) {
               return false;
             }
           }
@@ -21219,11 +19286,7 @@
          * @param {string} domain
          */
         function validateCookieDomain(domain) {
-          if (
-            domain.startsWith("-") ||
-            domain.endsWith(".") ||
-            domain.endsWith("-")
-          ) {
+          if (domain.startsWith("-") || domain.endsWith(".") || domain.endsWith("-")) {
             throw new Error("Invalid cookie domain");
           }
         }
@@ -21404,8 +19467,7 @@
         const net = __nccwpck_require__(9278);
         const assert = __nccwpck_require__(2613);
         const util = __nccwpck_require__(701);
-        const { InvalidArgumentError, ConnectTimeoutError } =
-          __nccwpck_require__(1970);
+        const { InvalidArgumentError, ConnectTimeoutError } = __nccwpck_require__(1970);
 
         let tls; // include tls conditionally since it is not always available
 
@@ -21475,20 +19537,12 @@
           };
         }
 
-        function buildConnector({
-          allowH2,
-          maxCachedSessions,
-          socketPath,
-          timeout,
-          ...opts
-        }) {
+        function buildConnector({ allowH2, maxCachedSessions, socketPath, timeout, ...opts }) {
           if (
             maxCachedSessions != null &&
             (!Number.isInteger(maxCachedSessions) || maxCachedSessions < 0)
           ) {
-            throw new InvalidArgumentError(
-              "maxCachedSessions must be a positive integer or zero",
-            );
+            throw new InvalidArgumentError("maxCachedSessions must be a positive integer or zero");
           }
 
           const options = { path: socketPath, ...opts };
@@ -21498,15 +19552,7 @@
           timeout = timeout == null ? 10e3 : timeout;
           allowH2 = allowH2 != null ? allowH2 : false;
           return function connect(
-            {
-              hostname,
-              host,
-              protocol,
-              port,
-              servername,
-              localAddress,
-              httpSocket,
-            },
+            { hostname, host, protocol, port, servername, localAddress, httpSocket },
             callback,
           ) {
             let socket;
@@ -21514,11 +19560,7 @@
               if (!tls) {
                 tls = __nccwpck_require__(4756);
               }
-              servername =
-                servername ||
-                options.servername ||
-                util.getServerName(host) ||
-                null;
+              servername = servername || options.servername || util.getServerName(host) || null;
 
               const sessionKey = servername || hostname;
               const session = sessionCache.get(sessionKey) || null;
@@ -21556,31 +19598,23 @@
             // Set TCP keep alive options on the socket here instead of in connect() for the case of assigning the socket
             if (options.keepAlive == null || options.keepAlive) {
               const keepAliveInitialDelay =
-                options.keepAliveInitialDelay === undefined
-                  ? 60e3
-                  : options.keepAliveInitialDelay;
+                options.keepAliveInitialDelay === undefined ? 60e3 : options.keepAliveInitialDelay;
               socket.setKeepAlive(true, keepAliveInitialDelay);
             }
 
-            const cancelTimeout = setupTimeout(
-              () => onConnectTimeout(socket),
-              timeout,
-            );
+            const cancelTimeout = setupTimeout(() => onConnectTimeout(socket), timeout);
 
             socket
               .setNoDelay(true)
-              .once(
-                protocol === "https:" ? "secureConnect" : "connect",
-                function () {
-                  cancelTimeout();
+              .once(protocol === "https:" ? "secureConnect" : "connect", function () {
+                cancelTimeout();
 
-                  if (callback) {
-                    const cb = callback;
-                    callback = null;
-                    cb(null, this);
-                  }
-                },
-              )
+                if (callback) {
+                  const cb = callback;
+                  callback = null;
+                  cb(null, this);
+                }
+              })
               .on("error", function (err) {
                 cancelTimeout();
 
@@ -21738,9 +19772,8 @@
         for (let i = 0; i < wellknownHeaderNames.length; ++i) {
           const key = wellknownHeaderNames[i];
           const lowerCasedKey = key.toLowerCase();
-          headerNameLowerCasedRecord[key] = headerNameLowerCasedRecord[
-            lowerCasedKey
-          ] = lowerCasedKey;
+          headerNameLowerCasedRecord[key] = headerNameLowerCasedRecord[lowerCasedKey] =
+            lowerCasedKey;
         }
 
         // Note: object prototypes should not be able to be referenced. e.g. `Object#hasOwnProperty`.
@@ -21865,9 +19898,7 @@
             super(message);
             Error.captureStackTrace(this, RequestContentLengthMismatchError);
             this.name = "RequestContentLengthMismatchError";
-            this.message =
-              message ||
-              "Request body length does not match content-length header";
+            this.message = message || "Request body length does not match content-length header";
             this.code = "UND_ERR_REQ_CONTENT_LENGTH_MISMATCH";
           }
         }
@@ -21877,9 +19908,7 @@
             super(message);
             Error.captureStackTrace(this, ResponseContentLengthMismatchError);
             this.name = "ResponseContentLengthMismatchError";
-            this.message =
-              message ||
-              "Response body length does not match content-length header";
+            this.message = message || "Response body length does not match content-length header";
             this.code = "UND_ERR_RES_CONTENT_LENGTH_MISMATCH";
           }
         }
@@ -21930,8 +19959,7 @@
             super(message);
             Error.captureStackTrace(this, NotSupportedError);
             this.name = "MissingUpstreamError";
-            this.message =
-              message || "No upstream has been added to the BalancedPool";
+            this.message = message || "No upstream has been added to the BalancedPool";
             this.code = "UND_ERR_BPL_MISSING_UPSTREAM";
           }
         }
@@ -21999,8 +20027,7 @@
       /***/ (module, __unused_webpack_exports, __nccwpck_require__) => {
         "use strict";
 
-        const { InvalidArgumentError, NotSupportedError } =
-          __nccwpck_require__(1970);
+        const { InvalidArgumentError, NotSupportedError } = __nccwpck_require__(1970);
         const assert = __nccwpck_require__(2613);
         const { kHTTP2BuildRequest, kHTTP2CopyHeaders, kHTTP1BuildRequest } =
           __nccwpck_require__(4980);
@@ -22036,15 +20063,9 @@
         try {
           const diagnosticsChannel = __nccwpck_require__(1637);
           channels.create = diagnosticsChannel.channel("undici:request:create");
-          channels.bodySent = diagnosticsChannel.channel(
-            "undici:request:bodySent",
-          );
-          channels.headers = diagnosticsChannel.channel(
-            "undici:request:headers",
-          );
-          channels.trailers = diagnosticsChannel.channel(
-            "undici:request:trailers",
-          );
+          channels.bodySent = diagnosticsChannel.channel("undici:request:bodySent");
+          channels.headers = diagnosticsChannel.channel("undici:request:headers");
+          channels.trailers = diagnosticsChannel.channel("undici:request:trailers");
           channels.error = diagnosticsChannel.channel("undici:request:error");
         } catch {
           channels.create = { hasSubscribers: false };
@@ -22081,9 +20102,7 @@
               !(path.startsWith("http://") || path.startsWith("https://")) &&
               method !== "CONNECT"
             ) {
-              throw new InvalidArgumentError(
-                "path must be an absolute URL or start with a slash",
-              );
+              throw new InvalidArgumentError("path must be an absolute URL or start with a slash");
             } else if (invalidPathRegex.exec(path) !== null) {
               throw new InvalidArgumentError("invalid request path");
             }
@@ -22105,10 +20124,7 @@
               throw new InvalidArgumentError("invalid headersTimeout");
             }
 
-            if (
-              bodyTimeout != null &&
-              (!Number.isFinite(bodyTimeout) || bodyTimeout < 0)
-            ) {
+            if (bodyTimeout != null && (!Number.isFinite(bodyTimeout) || bodyTimeout < 0)) {
               throw new InvalidArgumentError("invalid bodyTimeout");
             }
 
@@ -22184,9 +20200,7 @@
             this.origin = origin;
 
             this.idempotent =
-              idempotent == null
-                ? method === "HEAD" || method === "GET"
-                : idempotent;
+              idempotent == null ? method === "HEAD" || method === "GET" : idempotent;
 
             this.blocking = blocking == null ? false : blocking;
 
@@ -22201,8 +20215,7 @@
             this.headers = "";
 
             // Only for H2
-            this.expectContinue =
-              expectContinue != null ? expectContinue : false;
+            this.expectContinue = expectContinue != null ? expectContinue : false;
 
             if (Array.isArray(headers)) {
               if (headers.length % 2 !== 0) {
@@ -22218,16 +20231,11 @@
                 processHeader(this, key, headers[key]);
               }
             } else if (headers != null) {
-              throw new InvalidArgumentError(
-                "headers must be an object or an array",
-              );
+              throw new InvalidArgumentError("headers must be an object or an array");
             }
 
             if (util.isFormDataLike(this.body)) {
-              if (
-                util.nodeMajor < 16 ||
-                (util.nodeMajor === 16 && util.nodeMinor < 8)
-              ) {
+              if (util.nodeMajor < 16 || (util.nodeMajor === 16 && util.nodeMinor < 8)) {
                 throw new InvalidArgumentError(
                   "Form-Data bodies are only supported in node v16.8 and newer.",
                 );
@@ -22244,11 +20252,7 @@
               }
               this.body = bodyStream.stream;
               this.contentLength = bodyStream.length;
-            } else if (
-              util.isBlobLike(body) &&
-              this.contentType == null &&
-              body.type
-            ) {
+            } else if (util.isBlobLike(body) && this.contentType == null && body.type) {
               this.contentType = body.type;
               this.headers += `content-type: ${body.type}\r\n`;
             }
@@ -22312,12 +20316,7 @@
             }
 
             try {
-              return this[kHandler].onHeaders(
-                statusCode,
-                headers,
-                resume,
-                statusText,
-              );
+              return this[kHandler].onHeaders(statusCode, headers, resume, statusText);
             } catch (err) {
               this.abort(err);
             }
@@ -22421,9 +20420,7 @@
                 processHeader(request, key, headers[key], true);
               }
             } else if (headers != null) {
-              throw new InvalidArgumentError(
-                "headers must be an object or an array",
-              );
+              throw new InvalidArgumentError("headers must be an object or an array");
             }
 
             return request;
@@ -22467,11 +20464,7 @@
             return;
           }
 
-          if (
-            request.host === null &&
-            key.length === 4 &&
-            key.toLowerCase() === "host"
-          ) {
+          if (request.host === null && key.length === 4 && key.toLowerCase() === "host") {
             if (headerCharRegex.exec(val) !== null) {
               throw new InvalidArgumentError(`invalid ${key} header`);
             }
@@ -22492,13 +20485,9 @@
             key.toLowerCase() === "content-type"
           ) {
             request.contentType = val;
-            if (skipAppend)
-              request.headers[key] = processHeaderValue(key, val, skipAppend);
+            if (skipAppend) request.headers[key] = processHeaderValue(key, val, skipAppend);
             else request.headers += processHeaderValue(key, val);
-          } else if (
-            key.length === 17 &&
-            key.toLowerCase() === "transfer-encoding"
-          ) {
+          } else if (key.length === 17 && key.toLowerCase() === "transfer-encoding") {
             throw new InvalidArgumentError("invalid transfer-encoding header");
           } else if (key.length === 10 && key.toLowerCase() === "connection") {
             const value = typeof val === "string" ? val.toLowerCase() : null;
@@ -22520,21 +20509,14 @@
               for (let i = 0; i < val.length; i++) {
                 if (skipAppend) {
                   if (request.headers[key])
-                    request.headers[key] +=
-                      `,${processHeaderValue(key, val[i], skipAppend)}`;
-                  else
-                    request.headers[key] = processHeaderValue(
-                      key,
-                      val[i],
-                      skipAppend,
-                    );
+                    request.headers[key] += `,${processHeaderValue(key, val[i], skipAppend)}`;
+                  else request.headers[key] = processHeaderValue(key, val[i], skipAppend);
                 } else {
                   request.headers += processHeaderValue(key, val[i]);
                 }
               }
             } else {
-              if (skipAppend)
-                request.headers[key] = processHeaderValue(key, val, skipAppend);
+              if (skipAppend) request.headers[key] = processHeaderValue(key, val, skipAppend);
               else request.headers += processHeaderValue(key, val);
             }
           }
@@ -22629,9 +20611,7 @@
         const { stringify } = __nccwpck_require__(3480);
         const { headerNameLowerCasedRecord } = __nccwpck_require__(5076);
 
-        const [nodeMajor, nodeMinor] = process.versions.node
-          .split(".")
-          .map((v) => Number(v));
+        const [nodeMajor, nodeMinor] = process.versions.node.split(".").map((v) => Number(v));
 
         function nop() {}
 
@@ -22650,17 +20630,14 @@
             (Blob && object instanceof Blob) ||
             (object &&
               typeof object === "object" &&
-              (typeof object.stream === "function" ||
-                typeof object.arrayBuffer === "function") &&
+              (typeof object.stream === "function" || typeof object.arrayBuffer === "function") &&
               /^(Blob|File)$/.test(object[Symbol.toStringTag]))
           );
         }
 
         function buildURL(url, queryParams) {
           if (url.includes("?") || url.includes("#")) {
-            throw new Error(
-              'Query params cannot be passed when url already contains "?" or "#".',
-            );
+            throw new Error('Query params cannot be passed when url already contains "?" or "#".');
           }
 
           const stringified = stringify(queryParams);
@@ -22698,11 +20675,7 @@
           }
 
           if (!(url instanceof URL)) {
-            if (
-              url.port != null &&
-              url.port !== "" &&
-              !Number.isFinite(parseInt(url.port))
-            ) {
+            if (url.port != null && url.port !== "" && !Number.isFinite(parseInt(url.port))) {
               throw new InvalidArgumentError(
                 "Invalid URL: port must be a valid integer or a string representation of an integer.",
               );
@@ -22732,20 +20705,10 @@
               );
             }
 
-            const port =
-              url.port != null
-                ? url.port
-                : url.protocol === "https:"
-                  ? 443
-                  : 80;
+            const port = url.port != null ? url.port : url.protocol === "https:" ? 443 : 80;
             let origin =
-              url.origin != null
-                ? url.origin
-                : `${url.protocol}//${url.hostname}:${port}`;
-            let path =
-              url.path != null
-                ? url.path
-                : `${url.pathname || ""}${url.search || ""}`;
+              url.origin != null ? url.origin : `${url.protocol}//${url.hostname}:${port}`;
+            let path = url.path != null ? url.path : `${url.pathname || ""}${url.search || ""}`;
 
             if (origin.endsWith("/")) {
               origin = origin.substring(0, origin.length - 1);
@@ -22810,9 +20773,7 @@
         }
 
         function isAsyncIterable(obj) {
-          return !!(
-            obj != null && typeof obj[Symbol.asyncIterator] === "function"
-          );
+          return !!(obj != null && typeof obj[Symbol.asyncIterator] === "function");
         }
 
         function isIterable(obj) {
@@ -22919,9 +20880,7 @@
 
           // See https://github.com/nodejs/node/pull/46528
           if ("content-length" in obj && "content-disposition" in obj) {
-            obj["content-disposition"] = Buffer.from(
-              obj["content-disposition"],
-            ).toString("latin1");
+            obj["content-disposition"] = Buffer.from(obj["content-disposition"]).toString("latin1");
           }
 
           return obj;
@@ -22938,15 +20897,13 @@
 
             if (
               key.length === 14 &&
-              (key === "content-length" ||
-                key.toLowerCase() === "content-length")
+              (key === "content-length" || key.toLowerCase() === "content-length")
             ) {
               ret.push(key, val);
               hasContentLength = true;
             } else if (
               key.length === 19 &&
-              (key === "content-disposition" ||
-                key.toLowerCase() === "content-disposition")
+              (key === "content-disposition" || key.toLowerCase() === "content-disposition")
             ) {
               contentDispositionIdx = ret.push(key, val) - 1;
             } else {
@@ -22956,9 +20913,7 @@
 
           // See https://github.com/nodejs/node/pull/46528
           if (hasContentLength && contentDispositionIdx !== -1) {
-            ret[contentDispositionIdx] = Buffer.from(
-              ret[contentDispositionIdx],
-            ).toString("latin1");
+            ret[contentDispositionIdx] = Buffer.from(ret[contentDispositionIdx]).toString("latin1");
           }
 
           return ret;
@@ -22982,10 +20937,7 @@
             throw new InvalidArgumentError("invalid onError method");
           }
 
-          if (
-            typeof handler.onBodySent !== "function" &&
-            handler.onBodySent !== undefined
-          ) {
+          if (typeof handler.onBodySent !== "function" && handler.onBodySent !== undefined) {
             throw new InvalidArgumentError("invalid onBodySent method");
           }
 
@@ -23082,9 +21034,7 @@
                     controller.close();
                   });
                 } else {
-                  const buf = Buffer.isBuffer(value)
-                    ? value
-                    : Buffer.from(value);
+                  const buf = Buffer.isBuffer(value) ? value : Buffer.from(value);
                   controller.enqueue(new Uint8Array(buf));
                 }
                 return controller.desiredSize > 0;
@@ -23156,8 +21106,7 @@
         // Parsed accordingly to RFC 9110
         // https://www.rfc-editor.org/rfc/rfc9110#field.content-range
         function parseRangeHeader(range) {
-          if (range == null || range === "")
-            return { start: 0, end: null, size: null };
+          if (range == null || range === "") return { start: 0, end: null, size: null };
 
           const m = range ? range.match(/^bytes (\d+)-(\d+)\/(\d+)?$/) : null;
           return m
@@ -23206,8 +21155,7 @@
           parseRangeHeader,
           nodeMajor,
           nodeMinor,
-          nodeHasAutoSelectFamily:
-            nodeMajor > 18 || (nodeMajor === 18 && nodeMinor >= 13),
+          nodeHasAutoSelectFamily: nodeMajor > 18 || (nodeMajor === 18 && nodeMinor >= 13),
           safeHTTPMethods: ["GET", "HEAD", "OPTIONS", "TRACE"],
         };
 
@@ -23219,13 +21167,9 @@
         "use strict";
 
         const Dispatcher = __nccwpck_require__(5872);
-        const {
-          ClientDestroyedError,
-          ClientClosedError,
-          InvalidArgumentError,
-        } = __nccwpck_require__(1970);
-        const { kDestroy, kClose, kDispatch, kInterceptors } =
-          __nccwpck_require__(4980);
+        const { ClientDestroyedError, ClientClosedError, InvalidArgumentError } =
+          __nccwpck_require__(1970);
+        const { kDestroy, kClose, kDispatch, kInterceptors } = __nccwpck_require__(4980);
 
         const kDestroyed = Symbol("destroyed");
         const kClosed = Symbol("closed");
@@ -23260,9 +21204,7 @@
               for (let i = newInterceptors.length - 1; i >= 0; i--) {
                 const interceptor = this[kInterceptors][i];
                 if (typeof interceptor !== "function") {
-                  throw new InvalidArgumentError(
-                    "interceptor must be an function",
-                  );
+                  throw new InvalidArgumentError("interceptor must be an function");
                 }
               }
             }
@@ -23505,9 +21447,7 @@
             stream = new ReadableStream({
               async pull(controller) {
                 controller.enqueue(
-                  typeof source === "string"
-                    ? textEncoder.encode(source)
-                    : source,
+                  typeof source === "string" ? textEncoder.encode(source) : source,
                 );
                 queueMicrotask(() => readableStreamClose(controller));
               },
@@ -23562,10 +21502,7 @@
 
             // Set source to a copy of the bytes held by object.
             source = new Uint8Array(
-              object.buffer.slice(
-                object.byteOffset,
-                object.byteOffset + object.byteLength,
-              ),
+              object.buffer.slice(object.byteOffset, object.byteOffset + object.byteLength),
             );
           } else if (util.isFormDataLike(object)) {
             const boundary = `----formdata-undici-0${`${random(1e11)}`.padStart(11, "0")}`;
@@ -23573,12 +21510,8 @@
 
             /*! formdata-polyfill. MIT License. Jimmy Wärting <https://jimmy.warting.se/opensource> */
             const escape = (str) =>
-              str
-                .replace(/\n/g, "%0A")
-                .replace(/\r/g, "%0D")
-                .replace(/"/g, "%22");
-            const normalizeLinefeeds = (value) =>
-              value.replace(/\r?\n|\r/g, "\r\n");
+              str.replace(/\n/g, "%0A").replace(/\r/g, "%0D").replace(/"/g, "%22");
+            const normalizeLinefeeds = (value) => value.replace(/\r?\n|\r/g, "\r\n");
 
             // Set action to this step: run the multipart/form-data
             // encoding algorithm, with object’s entry list and UTF-8.
@@ -23605,9 +21538,7 @@
                   `${prefix}; name="${escape(normalizeLinefeeds(name))}"` +
                     (value.name ? `; filename="${escape(value.name)}"` : "") +
                     "\r\n" +
-                    `Content-Type: ${
-                      value.type || "application/octet-stream"
-                    }\r\n\r\n`,
+                    `Content-Type: ${value.type || "application/octet-stream"}\r\n\r\n`,
                 );
                 blobParts.push(chunk, value, rn);
                 if (typeof value.size === "number") {
@@ -23664,15 +21595,10 @@
 
             // If object is disturbed or locked, then throw a TypeError.
             if (util.isDisturbed(object) || object.locked) {
-              throw new TypeError(
-                "Response body object should not be disturbed or locked",
-              );
+              throw new TypeError("Response body object should not be disturbed or locked");
             }
 
-            stream =
-              object instanceof ReadableStream
-                ? object
-                : ReadableStreamFrom(object);
+            stream = object instanceof ReadableStream ? object : ReadableStreamFrom(object);
           }
 
           // 11. If source is a byte sequence, then set action to a
@@ -23735,10 +21661,7 @@
           if (object instanceof ReadableStream) {
             // Assert: object is neither disturbed nor locked.
             // istanbul ignore next
-            assert(
-              !util.isDisturbed(object),
-              "The body has already been consumed.",
-            );
+            assert(!util.isDisturbed(object), "The body has already been consumed.");
             // istanbul ignore next
             assert(!object.locked, "The stream is locked.");
           }
@@ -23862,8 +21785,7 @@
               // If mimeType’s essence is "multipart/form-data", then:
               if (/multipart\/form-data/.test(contentType)) {
                 const headers = {};
-                for (const [key, value] of this.headers)
-                  headers[key.toLowerCase()] = value;
+                for (const [key, value] of this.headers) headers[key.toLowerCase()] = value;
 
                 const responseFormData = new FormData();
 
@@ -23881,48 +21803,33 @@
                 busboy.on("field", (name, value) => {
                   responseFormData.append(name, value);
                 });
-                busboy.on(
-                  "file",
-                  (name, value, filename, encoding, mimeType) => {
-                    const chunks = [];
+                busboy.on("file", (name, value, filename, encoding, mimeType) => {
+                  const chunks = [];
 
-                    if (
-                      encoding === "base64" ||
-                      encoding.toLowerCase() === "base64"
-                    ) {
-                      let base64chunk = "";
+                  if (encoding === "base64" || encoding.toLowerCase() === "base64") {
+                    let base64chunk = "";
 
-                      value.on("data", (chunk) => {
-                        base64chunk += chunk.toString().replace(/[\r\n]/gm, "");
+                    value.on("data", (chunk) => {
+                      base64chunk += chunk.toString().replace(/[\r\n]/gm, "");
 
-                        const end =
-                          base64chunk.length - (base64chunk.length % 4);
-                        chunks.push(
-                          Buffer.from(base64chunk.slice(0, end), "base64"),
-                        );
+                      const end = base64chunk.length - (base64chunk.length % 4);
+                      chunks.push(Buffer.from(base64chunk.slice(0, end), "base64"));
 
-                        base64chunk = base64chunk.slice(end);
-                      });
-                      value.on("end", () => {
-                        chunks.push(Buffer.from(base64chunk, "base64"));
-                        responseFormData.append(
-                          name,
-                          new File(chunks, filename, { type: mimeType }),
-                        );
-                      });
-                    } else {
-                      value.on("data", (chunk) => {
-                        chunks.push(chunk);
-                      });
-                      value.on("end", () => {
-                        responseFormData.append(
-                          name,
-                          new File(chunks, filename, { type: mimeType }),
-                        );
-                      });
-                    }
-                  },
-                );
+                      base64chunk = base64chunk.slice(end);
+                    });
+                    value.on("end", () => {
+                      chunks.push(Buffer.from(base64chunk, "base64"));
+                      responseFormData.append(name, new File(chunks, filename, { type: mimeType }));
+                    });
+                  } else {
+                    value.on("data", (chunk) => {
+                      chunks.push(chunk);
+                    });
+                    value.on("end", () => {
+                      responseFormData.append(name, new File(chunks, filename, { type: mimeType }));
+                    });
+                  }
+                });
 
                 const busboyResolve = new Promise((resolve, reject) => {
                   busboy.on("finish", resolve);
@@ -23930,15 +21837,12 @@
                 });
 
                 if (this.body !== null)
-                  for await (const chunk of consumeBody(this[kState].body))
-                    busboy.write(chunk);
+                  for await (const chunk of consumeBody(this[kState].body)) busboy.write(chunk);
                 busboy.end();
                 await busboyResolve;
 
                 return responseFormData;
-              } else if (
-                /application\/x-www-form-urlencoded/.test(contentType)
-              ) {
+              } else if (/application\/x-www-form-urlencoded/.test(contentType)) {
                 // Otherwise, if mimeType’s essence is "application/x-www-form-urlencoded", then:
 
                 // 1. Let entries be the result of parsing bytes.
@@ -24001,11 +21905,7 @@
          * @param {(value: unknown) => unknown} convertBytesToJSValue
          * @param {Response|Request} instance
          */
-        async function specConsumeBody(
-          object,
-          convertBytesToJSValue,
-          instance,
-        ) {
+        async function specConsumeBody(object, convertBytesToJSValue, instance) {
           webidl.brandCheck(object, instance);
 
           throwIfAborted(object[kState]);
@@ -24054,10 +21954,7 @@
           // An object including the Body interface mixin is
           // said to be unusable if its body is non-null and
           // its body’s stream is disturbed or locked.
-          return (
-            body != null &&
-            (body.stream.locked || util.isDisturbed(body.stream))
-          );
+          return body != null && (body.stream.locked || util.isDisturbed(body.stream));
         }
 
         /**
@@ -24123,8 +22020,7 @@
       /***/ (module, __unused_webpack_exports, __nccwpck_require__) => {
         "use strict";
 
-        const { MessageChannel, receiveMessageOnPort } =
-          __nccwpck_require__(8167);
+        const { MessageChannel, receiveMessageOnPort } = __nccwpck_require__(8167);
 
         const corsSafeListedMethods = ["GET", "HEAD", "POST"];
         const corsSafeListedMethodsSet = new Set(corsSafeListedMethods);
@@ -24367,8 +22263,7 @@
         /**
          * @see https://mimesniff.spec.whatwg.org/#http-quoted-string-token-code-point
          */
-        const HTTP_QUOTED_STRING_TOKENS =
-          /[\u0009|\u0020-\u007E|\u0080-\u00FF]/; // eslint-disable-line
+        const HTTP_QUOTED_STRING_TOKENS = /[\u0009|\u0020-\u007E|\u0080-\u00FF]/; // eslint-disable-line
 
         // https://fetch.spec.whatwg.org/#data-url-processor
         /** @param {URL} dataURL */
@@ -24478,9 +22373,7 @@
           const href = url.href;
           const hashLength = url.hash.length;
 
-          return hashLength === 0
-            ? href
-            : href.substring(0, href.length - hashLength);
+          return hashLength === 0 ? href : href.substring(0, href.length - hashLength);
         }
 
         // https://infra.spec.whatwg.org/#collect-a-sequence-of-code-points
@@ -24495,10 +22388,7 @@
 
           // 2. While position doesn’t point past the end of input and the
           // code point at position within input meets the condition condition:
-          while (
-            position.position < input.length &&
-            condition(input[position.position])
-          ) {
+          while (position.position < input.length && condition(input[position.position])) {
             // 1. Append that code point to the end of result.
             result += input[position.position];
 
@@ -24561,9 +22451,7 @@
               // to output.
             } else if (
               byte === 0x25 &&
-              !/^[0-9A-Fa-f]{2}$/i.test(
-                String.fromCharCode(input[i + 1], input[i + 2]),
-              )
+              !/^[0-9A-Fa-f]{2}$/i.test(String.fromCharCode(input[i + 1], input[i + 2]))
             ) {
               output.push(0x25);
 
@@ -24571,10 +22459,7 @@
             } else {
               // 1. Let bytePoint be the two bytes after byte in input,
               // decoded, and then interpreted as hexadecimal number.
-              const nextTwoBytes = String.fromCharCode(
-                input[i + 1],
-                input[i + 2],
-              );
+              const nextTwoBytes = String.fromCharCode(input[i + 1], input[i + 2]);
               const bytePoint = Number.parseInt(nextTwoBytes, 16);
 
               // 2. Append a byte whose value is bytePoint to output.
@@ -24715,18 +22600,10 @@
               // 1. Set parameterValue to the result of collecting
               // a sequence of code points that are not U+003B (;)
               // from input, given position.
-              parameterValue = collectASequenceOfCodePointsFast(
-                ";",
-                input,
-                position,
-              );
+              parameterValue = collectASequenceOfCodePointsFast(";", input, position);
 
               // 2. Remove any trailing HTTP whitespace from parameterValue.
-              parameterValue = removeHTTPWhitespace(
-                parameterValue,
-                false,
-                true,
-              );
+              parameterValue = removeHTTPWhitespace(parameterValue, false, true);
 
               // 3. If parameterValue is the empty string, then continue.
               if (parameterValue.length === 0) {
@@ -24743,8 +22620,7 @@
             if (
               parameterName.length !== 0 &&
               HTTP_TOKEN_CODEPOINTS.test(parameterName) &&
-              (parameterValue.length === 0 ||
-                HTTP_QUOTED_STRING_TOKENS.test(parameterValue)) &&
+              (parameterValue.length === 0 || HTTP_QUOTED_STRING_TOKENS.test(parameterValue)) &&
               !mimeType.parameters.has(parameterName)
             ) {
               mimeType.parameters.set(parameterName, parameterValue);
@@ -24922,9 +22798,7 @@
          * @param {string} char
          */
         function isHTTPWhiteSpace(char) {
-          return (
-            char === "\r" || char === "\n" || char === "\t" || char === " "
-          );
+          return char === "\r" || char === "\n" || char === "\t" || char === " ";
         }
 
         /**
@@ -24951,13 +22825,7 @@
          * @param {string} char
          */
         function isASCIIWhitespace(char) {
-          return (
-            char === "\r" ||
-            char === "\n" ||
-            char === "\t" ||
-            char === "\f" ||
-            char === " "
-          );
+          return char === "\r" || char === "\n" || char === "\t" || char === "\f" || char === " ";
         }
 
         /**
@@ -25277,10 +23145,7 @@
 
               // 3. Append the result of UTF-8 encoding s to bytes.
               bytes.push(encoder.encode(s));
-            } else if (
-              types.isAnyArrayBuffer(element) ||
-              types.isTypedArray(element)
-            ) {
+            } else if (types.isAnyArrayBuffer(element) || types.isTypedArray(element)) {
               // 2. If element is a BufferSource, get a copy of the
               //    bytes held by the buffer source, and append those
               //    bytes to bytes.
@@ -25288,13 +23153,7 @@
                 // ArrayBuffer
                 bytes.push(new Uint8Array(element));
               } else {
-                bytes.push(
-                  new Uint8Array(
-                    element.buffer,
-                    element.byteOffset,
-                    element.byteLength,
-                  ),
-                );
+                bytes.push(new Uint8Array(element.buffer, element.byteOffset, element.byteLength));
               }
             } else if (isBlobLike(element)) {
               // 3. If element is a Blob, append the bytes it represents
@@ -25334,8 +23193,7 @@
             (NativeFile && object instanceof NativeFile) ||
             object instanceof File ||
             (object &&
-              (typeof object.stream === "function" ||
-                typeof object.arrayBuffer === "function") &&
+              (typeof object.stream === "function" || typeof object.arrayBuffer === "function") &&
               object[Symbol.toStringTag] === "File")
           );
         }
@@ -25349,14 +23207,9 @@
       /***/ (module, __unused_webpack_exports, __nccwpck_require__) => {
         "use strict";
 
-        const { isBlobLike, toUSVString, makeIterator } =
-          __nccwpck_require__(8524);
+        const { isBlobLike, toUSVString, makeIterator } = __nccwpck_require__(8524);
         const { kState } = __nccwpck_require__(639);
-        const {
-          File: UndiciFile,
-          FileLike,
-          isFileLike,
-        } = __nccwpck_require__(374);
+        const { File: UndiciFile, FileLike, isFileLike } = __nccwpck_require__(374);
         const { webidl } = __nccwpck_require__(185);
         const { Blob, File: NativeFile } = __nccwpck_require__(181);
 
@@ -25396,10 +23249,7 @@
             value = isBlobLike(value)
               ? webidl.converters.Blob(value, { strict: false })
               : webidl.converters.USVString(value);
-            filename =
-              arguments.length === 3
-                ? webidl.converters.USVString(filename)
-                : undefined;
+            filename = arguments.length === 3 ? webidl.converters.USVString(filename) : undefined;
 
             // 2. Let entry be the result of creating an entry with
             // name, value, and filename if given.
@@ -25457,9 +23307,7 @@
             // then return the empty list.
             // 2. Return the values of all entries whose name is name, in order,
             // from this’s entry list.
-            return this[kState]
-              .filter((entry) => entry.name === name)
-              .map((entry) => entry.value);
+            return this[kState].filter((entry) => entry.name === name).map((entry) => entry.value);
           }
 
           has(name) {
@@ -25473,9 +23321,7 @@
 
             // The has(name) method steps are to return true if there is an entry
             // whose name is name in this’s entry list; otherwise false.
-            return (
-              this[kState].findIndex((entry) => entry.name === name) !== -1
-            );
+            return this[kState].findIndex((entry) => entry.name === name) !== -1;
           }
 
           set(name, value, filename = undefined) {
@@ -25500,8 +23346,7 @@
             value = isBlobLike(value)
               ? webidl.converters.Blob(value, { strict: false })
               : webidl.converters.USVString(value);
-            filename =
-              arguments.length === 3 ? toUSVString(filename) : undefined;
+            filename = arguments.length === 3 ? toUSVString(filename) : undefined;
 
             // 2. Let entry be the result of creating an entry with name, value, and
             // filename if given.
@@ -25514,9 +23359,7 @@
               this[kState] = [
                 ...this[kState].slice(0, idx),
                 entry,
-                ...this[kState]
-                  .slice(idx + 1)
-                  .filter((entry) => entry.name !== name),
+                ...this[kState].slice(idx + 1).filter((entry) => entry.name !== name),
               ];
             } else {
               // 4. Otherwise, append entry to this’s entry list.
@@ -25626,8 +23469,7 @@
               };
 
               value =
-                (NativeFile && value instanceof NativeFile) ||
-                value instanceof UndiciFile
+                (NativeFile && value instanceof NativeFile) || value instanceof UndiciFile
                   ? new File([value], filename, options)
                   : new FileLike(value, filename, options);
             }
@@ -25668,10 +23510,7 @@
 
           const parsedURL = new URL(newOrigin);
 
-          if (
-            parsedURL.protocol !== "http:" &&
-            parsedURL.protocol !== "https:"
-          ) {
+          if (parsedURL.protocol !== "http:" && parsedURL.protocol !== "https:") {
             throw new TypeError(
               `Only http & https urls are allowed, received ${parsedURL.protocol}`,
             );
@@ -25701,8 +23540,7 @@
         const { kHeadersList, kConstruct } = __nccwpck_require__(4980);
         const { kGuard } = __nccwpck_require__(639);
         const { kEnumerableProperty } = __nccwpck_require__(701);
-        const { makeIterator, isValidHeaderName, isValidHeaderValue } =
-          __nccwpck_require__(8524);
+        const { makeIterator, isValidHeaderName, isValidHeaderValue } = __nccwpck_require__(8524);
         const util = __nccwpck_require__(9023);
         const { webidl } = __nccwpck_require__(185);
         const assert = __nccwpck_require__(2613);
@@ -25714,9 +23552,7 @@
          * @param {number} code
          */
         function isHTTPWhiteSpaceCharCode(code) {
-          return (
-            code === 0x00a || code === 0x00d || code === 0x009 || code === 0x020
-          );
+          return code === 0x00a || code === 0x00d || code === 0x009 || code === 0x020;
         }
 
         /**
@@ -25730,16 +23566,8 @@
           let i = 0;
           let j = potentialValue.length;
 
-          while (
-            j > i &&
-            isHTTPWhiteSpaceCharCode(potentialValue.charCodeAt(j - 1))
-          )
-            --j;
-          while (
-            j > i &&
-            isHTTPWhiteSpaceCharCode(potentialValue.charCodeAt(i))
-          )
-            ++i;
+          while (j > i && isHTTPWhiteSpaceCharCode(potentialValue.charCodeAt(j - 1))) --j;
+          while (j > i && isHTTPWhiteSpaceCharCode(potentialValue.charCodeAt(i))) ++i;
 
           return i === 0 && j === potentialValue.length
             ? potentialValue
@@ -25778,10 +23606,7 @@
             throw webidl.errors.conversionFailed({
               prefix: "Headers constructor",
               argument: "Argument 1",
-              types: [
-                "sequence<sequence<ByteString>>",
-                "record<ByteString, ByteString>",
-              ],
+              types: ["sequence<sequence<ByteString>>", "record<ByteString, ByteString>"],
             });
           }
         }
@@ -26150,9 +23975,7 @@
 
             // 2. Let names be the result of convert header names to a sorted-lowercase
             //    set with all the names of the headers in list.
-            const names = [...this[kHeadersList]].sort((a, b) =>
-              a[0] < b[0] ? -1 : 1,
-            );
+            const names = [...this[kHeadersList]].sort((a, b) => (a[0] < b[0] ? -1 : 1));
             const cookies = this[kHeadersList].cookies;
 
             // 3. For each name of names:
@@ -26195,11 +24018,7 @@
               return makeIterator(() => value, "Headers", "key");
             }
 
-            return makeIterator(
-              () => [...this[kHeadersSortedMap].values()],
-              "Headers",
-              "key",
-            );
+            return makeIterator(() => [...this[kHeadersSortedMap].values()], "Headers", "key");
           }
 
           values() {
@@ -26210,11 +24029,7 @@
               return makeIterator(() => value, "Headers", "value");
             }
 
-            return makeIterator(
-              () => [...this[kHeadersSortedMap].values()],
-              "Headers",
-              "value",
-            );
+            return makeIterator(() => [...this[kHeadersSortedMap].values()], "Headers", "value");
           }
 
           entries() {
@@ -26296,10 +24111,7 @@
           throw webidl.errors.conversionFailed({
             prefix: "Headers constructor",
             argument: "Argument 1",
-            types: [
-              "sequence<sequence<ByteString>>",
-              "record<ByteString, ByteString>",
-            ],
+            types: ["sequence<sequence<ByteString>>", "record<ByteString, ByteString>"],
           });
         };
 
@@ -26371,15 +24183,9 @@
         const { kHeadersList } = __nccwpck_require__(4980);
         const EE = __nccwpck_require__(4434);
         const { Readable, pipeline } = __nccwpck_require__(2203);
-        const {
-          addAbortListener,
-          isErrored,
-          isReadable,
-          nodeMajor,
-          nodeMinor,
-        } = __nccwpck_require__(701);
-        const { dataURLProcessor, serializeAMimeType } =
-          __nccwpck_require__(2059);
+        const { addAbortListener, isErrored, isReadable, nodeMajor, nodeMinor } =
+          __nccwpck_require__(701);
+        const { dataURLProcessor, serializeAMimeType } = __nccwpck_require__(2059);
         const { TransformStream } = __nccwpck_require__(3774);
         const { getGlobalDispatcher } = __nccwpck_require__(4662);
         const { webidl } = __nccwpck_require__(185);
@@ -26428,10 +24234,7 @@
             // 2. Let fallbackError be an "AbortError" DOMException.
             // 3. Set error to fallbackError if it is not given.
             if (!error) {
-              error = new DOMException(
-                "The operation was aborted.",
-                "AbortError",
-              );
+              error = new DOMException("The operation was aborted.", "AbortError");
             }
 
             // 4. Let serializedError be StructuredSerialize(error).
@@ -26519,8 +24322,7 @@
 
           // 12. Let handleFetchDone given response response be to finalize and
           // report timing with response, globalObject, and "fetch".
-          const handleFetchDone = (response) =>
-            finalizeAndReportTiming(response, "fetch");
+          const handleFetchDone = (response) => finalizeAndReportTiming(response, "fetch");
 
           // 13. Set controller to the result of calling fetch given request,
           // with processResponseEndOfBody set to handleFetchDone, and processResponse
@@ -26541,12 +24343,7 @@
               // 2. Abort the fetch() call with p, request, responseObject, and
               //    deserializedError.
 
-              abortFetch(
-                p,
-                request,
-                responseObject,
-                controller.serializedAbortReason,
-              );
+              abortFetch(p, request, responseObject, controller.serializedAbortReason);
               return Promise.resolve();
             }
 
@@ -26639,13 +24436,7 @@
 
           // 11. Mark resource timing for timingInfo, originalURL, initiatorType,
           // global, and cacheState.
-          markResourceTiming(
-            timingInfo,
-            originalURL,
-            initiatorType,
-            globalThis,
-            cacheState,
-          );
+          markResourceTiming(timingInfo, originalURL, initiatorType, globalThis, cacheState);
         }
 
         // https://w3c.github.io/resource-timing/#dfn-mark-resource-timing
@@ -26673,10 +24464,7 @@
           // which would give us an undefined error to reject with.
           // Remove this once node v16 is no longer supported.
           if (!error) {
-            error = new DOMException(
-              "The operation was aborted.",
-              "AbortError",
-            );
+            error = new DOMException("The operation was aborted.", "AbortError");
           }
 
           // 1. Reject promise with error.
@@ -26739,8 +24527,7 @@
 
             // 2. Set crossOriginIsolatedCapability to request’s client’s cross-origin
             // isolated capability.
-            crossOriginIsolatedCapability =
-              request.client.crossOriginIsolatedCapability;
+            crossOriginIsolatedCapability = request.client.crossOriginIsolatedCapability;
           }
 
           // 4. If useParallelQueue is true, then set taskDestination to the result of
@@ -26750,9 +24537,7 @@
           // 5. Let timingInfo be a new fetch timing info whose start time and
           // post-redirect start time are the coarsened shared current time given
           // crossOriginIsolatedCapability.
-          const currenTime = coarsenedSharedCurrentTime(
-            crossOriginIsolatedCapability,
-          );
+          const currenTime = coarsenedSharedCurrentTime(crossOriginIsolatedCapability);
           const timingInfo = createOpaqueTimingInfo({
             startTime: currenTime,
           });
@@ -26812,9 +24597,7 @@
             // 1. If request’s client is non-null, then set request’s policy
             // container to a clone of request’s client’s policy container. [HTML]
             if (request.client != null) {
-              request.policyContainer = clonePolicyContainer(
-                request.client.policyContainer,
-              );
+              request.policyContainer = clonePolicyContainer(request.client.policyContainer);
             } else {
               // 2. Otherwise, set request’s policy container to a new policy
               // container.
@@ -26881,10 +24664,7 @@
 
           // 3. If request’s local-URLs-only flag is set and request’s current URL is
           // not local, then set response to a network error.
-          if (
-            request.localURLsOnly &&
-            !urlIsLocal(requestCurrentURL(request))
-          ) {
+          if (request.localURLsOnly && !urlIsLocal(requestCurrentURL(request))) {
             response = makeNetworkError("local URLs only");
           }
 
@@ -26937,8 +24717,7 @@
               if (
                 // - request’s current URL’s origin is same origin with request’s origin,
                 //   and request’s response tainting is "basic"
-                (sameOrigin(currentURL, request.url) &&
-                  request.responseTainting === "basic") ||
+                (sameOrigin(currentURL, request.url) && request.responseTainting === "basic") ||
                 // request’s current URL’s scheme is "data"
                 currentURL.protocol === "data:" ||
                 // - request’s mode is "navigate" or "websocket"
@@ -26963,9 +24742,7 @@
                 // 1. If request’s redirect mode is not "follow", then return a network
                 // error.
                 if (request.redirect !== "follow") {
-                  return makeNetworkError(
-                    'redirect mode cannot be "follow" for "no-cors" request',
-                  );
+                  return makeNetworkError('redirect mode cannot be "follow" for "no-cors" request');
                 }
 
                 // 2. Set request’s response tainting to "opaque".
@@ -27039,8 +24816,7 @@
 
           // 14. Let internalResponse be response, if response is a network error,
           // and response’s internal response otherwise.
-          let internalResponse =
-            response.status === 0 ? response : response.internalResponse;
+          let internalResponse = response.status === 0 ? response : response.internalResponse;
 
           // 15. If internalResponse’s URL list is empty, then set it to a clone of
           // request’s URL list.
@@ -27093,15 +24869,11 @@
           if (request.integrity) {
             // 1. Let processBodyError be this step: run fetch finale given fetchParams
             // and a network error.
-            const processBodyError = (reason) =>
-              fetchFinale(fetchParams, makeNetworkError(reason));
+            const processBodyError = (reason) => fetchFinale(fetchParams, makeNetworkError(reason));
 
             // 2. If request’s response tainting is "opaque", or response’s body is null,
             // then run processBodyError and abort these steps.
-            if (
-              request.responseTainting === "opaque" ||
-              response.body == null
-            ) {
+            if (request.responseTainting === "opaque" || response.body == null) {
               processBodyError(response.error);
               return;
             }
@@ -27137,10 +24909,7 @@
           // cancelled state, we do not want this condition to trigger *unless* there have been
           // no redirects. See https://github.com/nodejs/undici/issues/1776
           // 1. If fetchParams is canceled, then return the appropriate network error for fetchParams.
-          if (
-            isCancelled(fetchParams) &&
-            fetchParams.request.redirectCount === 0
-          ) {
+          if (isCancelled(fetchParams) && fetchParams.request.redirectCount === 0) {
             return Promise.resolve(makeAppropriateNetworkError(fetchParams));
           }
 
@@ -27157,9 +24926,7 @@
               // and body is the empty byte sequence as a body.
 
               // Otherwise, return a network error.
-              return Promise.resolve(
-                makeNetworkError("about scheme is not supported"),
-              );
+              return Promise.resolve(makeNetworkError("about scheme is not supported"));
             }
             case "blob:": {
               if (!resolveObjectURL) {
@@ -27173,15 +24940,11 @@
               // Buffer.resolveObjectURL does not ignore URL queries.
               if (blobURLEntry.search.length !== 0) {
                 return Promise.resolve(
-                  makeNetworkError(
-                    "NetworkError when attempting to fetch resource.",
-                  ),
+                  makeNetworkError("NetworkError when attempting to fetch resource."),
                 );
               }
 
-              const blobURLEntryObject = resolveObjectURL(
-                blobURLEntry.toString(),
-              );
+              const blobURLEntryObject = resolveObjectURL(blobURLEntry.toString());
 
               // 2. If request’s method is not `GET`, blobURLEntry is null, or blobURLEntry’s
               //    object is not a Blob object, then return a network error.
@@ -27224,9 +24987,7 @@
               // 2. If dataURLStruct is failure, then return a
               //    network error.
               if (dataURLStruct === "failure") {
-                return Promise.resolve(
-                  makeNetworkError("failed to fetch the data URL"),
-                );
+                return Promise.resolve(makeNetworkError("failed to fetch the data URL"));
               }
 
               // 3. Let mimeType be dataURLStruct’s MIME type, serialized.
@@ -27238,9 +24999,7 @@
               return Promise.resolve(
                 makeResponse({
                   statusText: "OK",
-                  headersList: [
-                    ["content-type", { name: "Content-Type", value: mimeType }],
-                  ],
+                  headersList: [["content-type", { name: "Content-Type", value: mimeType }]],
                   body: safelyExtractBody(dataURLStruct.body)[0],
                 }),
               );
@@ -27248,17 +25007,13 @@
             case "file:": {
               // For now, unfortunate as it is, file URLs are left as an exercise for the reader.
               // When in doubt, return a network error.
-              return Promise.resolve(
-                makeNetworkError("not implemented... yet..."),
-              );
+              return Promise.resolve(makeNetworkError("not implemented... yet..."));
             }
             case "http:":
             case "https:": {
               // Return the result of running HTTP fetch given fetchParams.
 
-              return httpFetch(fetchParams).catch((err) =>
-                makeNetworkError(err),
-              );
+              return httpFetch(fetchParams).catch((err) => makeNetworkError(err));
             }
             default: {
               return Promise.resolve(makeNetworkError("unknown scheme"));
@@ -27302,9 +25057,7 @@
             // then queue a fetch task to run fetchParams’s process response
             // end-of-body given response with fetchParams’s task destination.
             if (fetchParams.processResponseEndOfBody != null) {
-              queueMicrotask(() =>
-                fetchParams.processResponseEndOfBody(response),
-              );
+              queueMicrotask(() => fetchParams.processResponseEndOfBody(response));
             }
           };
 
@@ -27374,11 +25127,7 @@
             } else {
               // 4. Otherwise, fully read response’s body given processBody, processBodyError,
               // and fetchParams’s task destination.
-              return fullyReadBody(
-                response.body,
-                processBody,
-                processBodyError,
-              );
+              return fullyReadBody(response.body, processBody, processBodyError);
             }
             return Promise.resolve();
           }
@@ -27416,15 +25165,11 @@
 
             // 3. Set response and actualResponse to the result of running
             // HTTP-network-or-cache fetch given fetchParams.
-            actualResponse = response =
-              await httpNetworkOrCacheFetch(fetchParams);
+            actualResponse = response = await httpNetworkOrCacheFetch(fetchParams);
 
             // 4. If request’s response tainting is "cors" and a CORS check
             // for request and response returns failure, then return a network error.
-            if (
-              request.responseTainting === "cors" &&
-              corsCheck(request, response) === "failure"
-            ) {
+            if (request.responseTainting === "cors" && corsCheck(request, response) === "failure") {
               return makeNetworkError("cors failure");
             }
 
@@ -27440,8 +25185,7 @@
           // request’s origin, request’s client, request’s destination,
           // and actualResponse returns blocked, then return a network error.
           if (
-            (request.responseTainting === "opaque" ||
-              response.type === "opaque") &&
+            (request.responseTainting === "opaque" || response.type === "opaque") &&
             crossOriginResourcePolicyCheck(
               request.origin,
               request.client,
@@ -27496,19 +25240,14 @@
 
           // 2. Let actualResponse be response, if response is not a filtered response,
           // and response’s internal response otherwise.
-          const actualResponse = response.internalResponse
-            ? response.internalResponse
-            : response;
+          const actualResponse = response.internalResponse ? response.internalResponse : response;
 
           // 3. Let locationURL be actualResponse’s location URL given request’s current
           // URL’s fragment.
           let locationURL;
 
           try {
-            locationURL = responseLocationURL(
-              actualResponse,
-              requestCurrentURL(request).hash,
-            );
+            locationURL = responseLocationURL(actualResponse, requestCurrentURL(request).hash);
 
             // 4. If locationURL is null, then return response.
             if (locationURL == null) {
@@ -27522,9 +25261,7 @@
           // 6. If locationURL’s scheme is not an HTTP(S) scheme, then return a network
           // error.
           if (!urlIsHttpHttpsScheme(locationURL)) {
-            return Promise.resolve(
-              makeNetworkError("URL scheme must be a HTTP(S) scheme"),
-            );
+            return Promise.resolve(makeNetworkError("URL scheme must be a HTTP(S) scheme"));
           }
 
           // 7. If request’s redirect count is 20, then return a network error.
@@ -27544,9 +25281,7 @@
             !sameOrigin(request, locationURL)
           ) {
             return Promise.resolve(
-              makeNetworkError(
-                'cross origin not allowed for request mode "cors"',
-              ),
+              makeNetworkError('cross origin not allowed for request mode "cors"'),
             );
           }
 
@@ -27557,9 +25292,7 @@
             (locationURL.username || locationURL.password)
           ) {
             return Promise.resolve(
-              makeNetworkError(
-                'URL cannot contain credentials for request mode "cors"',
-              ),
+              makeNetworkError('URL cannot contain credentials for request mode "cors"'),
             );
           }
 
@@ -27577,10 +25310,8 @@
           // - actualResponse’s status is 301 or 302 and request’s method is `POST`
           // - actualResponse’s status is 303 and request’s method is not `GET` or `HEAD`
           if (
-            ([301, 302].includes(actualResponse.status) &&
-              request.method === "POST") ||
-            (actualResponse.status === 303 &&
-              !GET_OR_HEAD.includes(request.method))
+            ([301, 302].includes(actualResponse.status) && request.method === "POST") ||
+            (actualResponse.status === 303 && !GET_OR_HEAD.includes(request.method))
           ) {
             // then:
             // 1. Set request’s method to `GET` and request’s body to null.
@@ -27623,9 +25354,7 @@
           // coarsened shared current time given fetchParams’s cross-origin isolated
           // capability.
           timingInfo.redirectEndTime = timingInfo.postRedirectStartTime =
-            coarsenedSharedCurrentTime(
-              fetchParams.crossOriginIsolatedCapability,
-            );
+            coarsenedSharedCurrentTime(fetchParams.crossOriginIsolatedCapability);
 
           // 17. If timingInfo’s redirect start time is 0, then set timingInfo’s
           //  redirect start time to timingInfo’s start time.
@@ -27695,24 +25424,18 @@
           //    3. Let includeCredentials be true if one of
           const includeCredentials =
             request.credentials === "include" ||
-            (request.credentials === "same-origin" &&
-              request.responseTainting === "basic");
+            (request.credentials === "same-origin" && request.responseTainting === "basic");
 
           //    4. Let contentLength be httpRequest’s body’s length, if httpRequest’s
           //    body is non-null; otherwise null.
-          const contentLength = httpRequest.body
-            ? httpRequest.body.length
-            : null;
+          const contentLength = httpRequest.body ? httpRequest.body.length : null;
 
           //    5. Let contentLengthHeaderValue be null.
           let contentLengthHeaderValue = null;
 
           //    6. If httpRequest’s body is null and httpRequest’s method is `POST` or
           //    `PUT`, then set contentLengthHeaderValue to `0`.
-          if (
-            httpRequest.body == null &&
-            ["POST", "PUT"].includes(httpRequest.method)
-          ) {
+          if (httpRequest.body == null && ["POST", "PUT"].includes(httpRequest.method)) {
             contentLengthHeaderValue = "0";
           }
 
@@ -27726,10 +25449,7 @@
           //    `Content-Length`/contentLengthHeaderValue to httpRequest’s header
           //    list.
           if (contentLengthHeaderValue != null) {
-            httpRequest.headersList.append(
-              "content-length",
-              contentLengthHeaderValue,
-            );
+            httpRequest.headersList.append("content-length", contentLengthHeaderValue);
           }
 
           //    9. If contentLengthHeaderValue is non-null, then append (`Content-Length`,
@@ -27745,10 +25465,7 @@
           //    `Referer`/httpRequest’s referrer, serialized and isomorphic encoded,
           //     to httpRequest’s header list.
           if (httpRequest.referrer instanceof URL) {
-            httpRequest.headersList.append(
-              "referer",
-              isomorphicEncode(httpRequest.referrer.href),
-            );
+            httpRequest.headersList.append("referer", isomorphicEncode(httpRequest.referrer.href));
           }
 
           //    12. Append a request `Origin` header for httpRequest.
@@ -27795,10 +25512,7 @@
           }
 
           //    17. If httpRequest’s cache mode is "no-store" or "reload", then:
-          if (
-            httpRequest.cache === "no-store" ||
-            httpRequest.cache === "reload"
-          ) {
+          if (httpRequest.cache === "no-store" || httpRequest.cache === "reload") {
             // 1. If httpRequest’s header list does not contain `Pragma`, then append
             // `Pragma`/`no-cache` to httpRequest’s header list.
             if (!httpRequest.headersList.contains("pragma")) {
@@ -27823,15 +25537,9 @@
           //    TODO: https://github.com/whatwg/fetch/issues/1285#issuecomment-896560129
           if (!httpRequest.headersList.contains("accept-encoding")) {
             if (urlHasHttpsScheme(requestCurrentURL(httpRequest))) {
-              httpRequest.headersList.append(
-                "accept-encoding",
-                "br, gzip, deflate",
-              );
+              httpRequest.headersList.append("accept-encoding", "br, gzip, deflate");
             } else {
-              httpRequest.headersList.append(
-                "accept-encoding",
-                "gzip, deflate",
-              );
+              httpRequest.headersList.append("accept-encoding", "gzip, deflate");
             }
           }
 
@@ -27861,10 +25569,7 @@
 
           //    24. If httpRequest’s cache mode is neither "no-store" nor "reload",
           //    then:
-          if (
-            httpRequest.mode !== "no-store" &&
-            httpRequest.mode !== "reload"
-          ) {
+          if (httpRequest.mode !== "no-store" && httpRequest.mode !== "reload") {
             // TODO: cache
           }
 
@@ -27981,11 +25686,7 @@
             // https://github.com/whatwg/fetch/issues/1293
             fetchParams.controller.connection.destroy();
 
-            response = await httpNetworkOrCacheFetch(
-              fetchParams,
-              isAuthenticationFetch,
-              true,
-            );
+            response = await httpNetworkOrCacheFetch(fetchParams, isAuthenticationFetch, true);
           }
 
           // 17. If isAuthenticationFetch is true, then create an authentication entry
@@ -28003,10 +25704,7 @@
           includeCredentials = false,
           forceNewConnection = false,
         ) {
-          assert(
-            !fetchParams.controller.connection ||
-              fetchParams.controller.connection.destroyed,
-          );
+          assert(!fetchParams.controller.connection || fetchParams.controller.connection.destroyed);
 
           fetchParams.controller.connection = {
             abort: null,
@@ -28014,13 +25712,7 @@
             destroy(err) {
               if (!this.destroyed) {
                 this.destroyed = true;
-                this.abort?.(
-                  err ??
-                    new DOMException(
-                      "The operation was aborted.",
-                      "AbortError",
-                    ),
-                );
+                this.abort?.(err ?? new DOMException("The operation was aborted.", "AbortError"));
               }
             },
           };
@@ -28186,8 +25878,9 @@
 
           try {
             // socket is only provided for websockets
-            const { body, status, statusText, headersList, socket } =
-              await dispatch({ body: requestBody });
+            const { body, status, statusText, headersList, socket } = await dispatch({
+              body: requestBody,
+            });
 
             if (socket) {
               response = makeResponse({
@@ -28304,10 +25997,7 @@
 
                 bytes = done ? undefined : value;
               } catch (err) {
-                if (
-                  fetchParams.controller.ended &&
-                  !timingInfo.encodedBodySize
-                ) {
+                if (fetchParams.controller.ended && !timingInfo.encodedBodySize) {
                   // zlib doesn't like empty streams.
                   bytes = undefined;
                 } else {
@@ -28405,13 +26095,11 @@
                   origin: url.origin,
                   method: request.method,
                   body: fetchParams.controller.dispatcher.isMockActive
-                    ? request.body &&
-                      (request.body.source || request.body.stream)
+                    ? request.body && (request.body.source || request.body.stream)
                     : body,
                   headers: request.headersList.entries,
                   maxRedirections: 0,
-                  upgrade:
-                    request.mode === "websocket" ? "websocket" : undefined,
+                  upgrade: request.mode === "websocket" ? "websocket" : undefined,
                 },
                 {
                   body: null,
@@ -28422,12 +26110,7 @@
                     const { connection } = fetchParams.controller;
 
                     if (connection.destroyed) {
-                      abort(
-                        new DOMException(
-                          "The operation was aborted.",
-                          "AbortError",
-                        ),
-                      );
+                      abort(new DOMException("The operation was aborted.", "AbortError"));
                     } else {
                       fetchParams.controller.on("terminated", abort);
                       this.abort = connection.abort = abort;
@@ -28488,9 +26171,7 @@
                     const decoders = [];
 
                     const willFollow =
-                      request.redirect === "follow" &&
-                      location &&
-                      redirectStatusSet.has(status);
+                      request.redirect === "follow" && location && redirectStatusSet.has(status);
 
                     // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Encoding
                     if (
@@ -28625,11 +26306,7 @@
         /* globals AbortController */
 
         const { extractBody, mixinBody, cloneBody } = __nccwpck_require__(5472);
-        const {
-          Headers,
-          fill: fillHeaders,
-          HeadersList,
-        } = __nccwpck_require__(824);
+        const { Headers, fill: fillHeaders, HeadersList } = __nccwpck_require__(824);
         const { FinalizationRegistry } = __nccwpck_require__(4375)();
         const util = __nccwpck_require__(701);
         const {
@@ -28650,29 +26327,22 @@
           requestDuplex,
         } = __nccwpck_require__(1411);
         const { kEnumerableProperty } = util;
-        const { kHeaders, kSignal, kState, kGuard, kRealm } =
-          __nccwpck_require__(639);
+        const { kHeaders, kSignal, kState, kGuard, kRealm } = __nccwpck_require__(639);
         const { webidl } = __nccwpck_require__(185);
         const { getGlobalOrigin } = __nccwpck_require__(2071);
         const { URLSerializer } = __nccwpck_require__(2059);
         const { kHeadersList, kConstruct } = __nccwpck_require__(4980);
         const assert = __nccwpck_require__(2613);
-        const {
-          getMaxListeners,
-          setMaxListeners,
-          getEventListeners,
-          defaultMaxListeners,
-        } = __nccwpck_require__(4434);
+        const { getMaxListeners, setMaxListeners, getEventListeners, defaultMaxListeners } =
+          __nccwpck_require__(4434);
 
         let TransformStream = globalThis.TransformStream;
 
         const kAbortController = Symbol("abortController");
 
-        const requestFinalizer = new FinalizationRegistry(
-          ({ signal, abort }) => {
-            signal.removeEventListener("abort", abort);
-          },
-        );
+        const requestFinalizer = new FinalizationRegistry(({ signal, abort }) => {
+          signal.removeEventListener("abort", abort);
+        });
 
         // https://fetch.spec.whatwg.org/#request-class
         class Request {
@@ -28728,8 +26398,7 @@
               // 3. If parsedURL includes credentials, then throw a TypeError.
               if (parsedURL.username || parsedURL.password) {
                 throw new TypeError(
-                  "Request cannot be constructed from a URL that includes credentials: " +
-                    input,
+                  "Request cannot be constructed from a URL that includes credentials: " + input,
                 );
               }
 
@@ -28760,8 +26429,7 @@
             // 9. If request’s window is an environment settings object and its origin
             // is same origin with origin, then set window to request’s window.
             if (
-              request.window?.constructor?.name ===
-                "EnvironmentSettingsObject" &&
+              request.window?.constructor?.name === "EnvironmentSettingsObject" &&
               sameOrigin(request.window, origin)
             ) {
               window = request.window;
@@ -28869,10 +26537,7 @@
                 try {
                   parsedReferrer = new URL(referrer, baseUrl);
                 } catch (err) {
-                  throw new TypeError(
-                    `Referrer "${referrer}" is not a valid URL.`,
-                    { cause: err },
-                  );
+                  throw new TypeError(`Referrer "${referrer}" is not a valid URL.`, { cause: err });
                 }
 
                 // 3. If one of the following is true
@@ -28880,13 +26545,8 @@
                 // - parsedReferrer’s origin is not same origin with origin
                 // then set request’s referrer to "client".
                 if (
-                  (parsedReferrer.protocol === "about:" &&
-                    parsedReferrer.hostname === "client") ||
-                  (origin &&
-                    !sameOrigin(
-                      parsedReferrer,
-                      this[kRealm].settingsObject.baseUrl,
-                    ))
+                  (parsedReferrer.protocol === "about:" && parsedReferrer.hostname === "client") ||
+                  (origin && !sameOrigin(parsedReferrer, this[kRealm].settingsObject.baseUrl))
                 ) {
                   request.referrer = "client";
                 } else {
@@ -28936,13 +26596,8 @@
 
             // 21. If request’s cache mode is "only-if-cached" and request’s mode is
             // not "same-origin", then throw a TypeError.
-            if (
-              request.cache === "only-if-cached" &&
-              request.mode !== "same-origin"
-            ) {
-              throw new TypeError(
-                "'only-if-cached' can be set only with 'same-origin' mode",
-              );
+            if (request.cache === "only-if-cached" && request.mode !== "same-origin") {
+              throw new TypeError("'only-if-cached' can be set only with 'same-origin' mode");
             }
 
             // 22. If init["redirect"] exists, then set request’s redirect mode to it.
@@ -29037,10 +26692,7 @@
                     getMaxListeners(signal) === defaultMaxListeners
                   ) {
                     setMaxListeners(100, signal);
-                  } else if (
-                    getEventListeners(signal, "abort").length >=
-                    defaultMaxListeners
-                  ) {
+                  } else if (getEventListeners(signal, "abort").length >= defaultMaxListeners) {
                     setMaxListeners(100, signal);
                   }
                 } catch {}
@@ -29063,9 +26715,7 @@
               // 1. If this’s request’s method is not a CORS-safelisted method,
               // then throw a TypeError.
               if (!corsSafeListedMethodsSet.has(request.method)) {
-                throw new TypeError(
-                  `'${request.method} is unsupported in no-cors mode.`,
-                );
+                throw new TypeError(`'${request.method} is unsupported in no-cors mode.`);
               }
 
               // 2. Set this’s headers’s guard to "request-no-cors".
@@ -29080,9 +26730,7 @@
               // list.
               // 2. If init["headers"] exists, then set headers to init["headers"].
               const headers =
-                init.headers !== undefined
-                  ? init.headers
-                  : new HeadersList(headersList);
+                init.headers !== undefined ? init.headers : new HeadersList(headersList);
 
               // 3. Empty this’s headers’s header list.
               headersList.clear();
@@ -29103,8 +26751,7 @@
 
             // 33. Let inputBody be input’s request’s body if input is a Request
             // object; otherwise null.
-            const inputBody =
-              input instanceof Request ? input[kState].body : null;
+            const inputBody = input instanceof Request ? input[kState].body : null;
 
             // 34. If either init["body"] exists and is non-null or inputBody is
             // non-null, and request’s method is `GET` or `HEAD`, then throw a
@@ -29113,9 +26760,7 @@
               (init.body != null || inputBody != null) &&
               (request.method === "GET" || request.method === "HEAD")
             ) {
-              throw new TypeError(
-                "Request with GET/HEAD method cannot have body.",
-              );
+              throw new TypeError("Request with GET/HEAD method cannot have body.");
             }
 
             // 35. Let initBody be null.
@@ -29126,19 +26771,13 @@
               // 1. Let Content-Type be null.
               // 2. Set initBody and Content-Type to the result of extracting
               // init["body"], with keepalive set to request’s keepalive.
-              const [extractedBody, contentType] = extractBody(
-                init.body,
-                request.keepalive,
-              );
+              const [extractedBody, contentType] = extractBody(init.body, request.keepalive);
               initBody = extractedBody;
 
               // 3, If Content-Type is non-null and this’s headers’s header list does
               // not contain `Content-Type`, then append `Content-Type`/Content-Type to
               // this’s headers.
-              if (
-                contentType &&
-                !this[kHeaders][kHeadersList].contains("content-type")
-              ) {
+              if (contentType && !this[kHeaders][kHeadersList].contains("content-type")) {
                 this[kHeaders].append("content-type", contentType);
               }
             }
@@ -29153,9 +26792,7 @@
               // 1. If initBody is non-null and init["duplex"] does not exist,
               //    then throw a TypeError.
               if (initBody != null && init.duplex == null) {
-                throw new TypeError(
-                  "RequestInit: duplex option is required when sending a body.",
-                );
+                throw new TypeError("RequestInit: duplex option is required when sending a body.");
               }
 
               // 2. If this’s request’s mode is neither "same-origin" nor "cors",
@@ -29176,10 +26813,7 @@
             // 40. If initBody is null and inputBody is non-null, then:
             if (initBody == null && inputBody != null) {
               // 1. If input is unusable, then throw a TypeError.
-              if (
-                util.isDisturbed(inputBody.stream) ||
-                inputBody.stream.locked
-              ) {
+              if (util.isDisturbed(inputBody.stream) || inputBody.stream.locked) {
                 throw new TypeError(
                   "Cannot construct a Request with a Request object that has already been used.",
                 );
@@ -29371,9 +27005,7 @@
           get bodyUsed() {
             webidl.brandCheck(this, Request);
 
-            return (
-              !!this[kState].body && util.isDisturbed(this[kState].body.stream)
-            );
+            return !!this[kState].body && util.isDisturbed(this[kState].body.stream);
           }
 
           get duplex() {
@@ -29400,8 +27032,7 @@
             clonedRequestObject[kState] = clonedRequest;
             clonedRequestObject[kRealm] = this[kRealm];
             clonedRequestObject[kHeaders] = new Headers(kConstruct);
-            clonedRequestObject[kHeaders][kHeadersList] =
-              clonedRequest.headersList;
+            clonedRequestObject[kHeaders][kHeadersList] = clonedRequest.headersList;
             clonedRequestObject[kHeaders][kGuard] = this[kHeaders][kGuard];
             clonedRequestObject[kHeaders][kRealm] = this[kHeaders][kRealm];
 
@@ -29462,9 +27093,7 @@
             done: false,
             timingAllowFailed: false,
             ...init,
-            headersList: init.headersList
-              ? new HeadersList(init.headersList)
-              : new HeadersList(),
+            headersList: init.headersList ? new HeadersList(init.headersList) : new HeadersList(),
           };
           request.url = request.urlList[0];
           return request;
@@ -29626,8 +27255,7 @@
           isErrorLike,
           isomorphicEncode,
         } = __nccwpck_require__(8524);
-        const { redirectStatusSet, nullBodyStatus, DOMException } =
-          __nccwpck_require__(1411);
+        const { redirectStatusSet, nullBodyStatus, DOMException } = __nccwpck_require__(1411);
         const { kState, kHeaders, kGuard, kRealm } = __nccwpck_require__(639);
         const { webidl } = __nccwpck_require__(185);
         const { FormData } = __nccwpck_require__(98);
@@ -29654,8 +27282,7 @@
             const responseObject = new Response();
             responseObject[kState] = makeNetworkError();
             responseObject[kRealm] = relevantRealm;
-            responseObject[kHeaders][kHeadersList] =
-              responseObject[kState].headersList;
+            responseObject[kHeaders][kHeadersList] = responseObject[kState].headersList;
             responseObject[kHeaders][kGuard] = "immutable";
             responseObject[kHeaders][kRealm] = relevantRealm;
             return responseObject;
@@ -29672,9 +27299,7 @@
             }
 
             // 1. Let bytes the result of running serialize a JavaScript value to JSON bytes on data.
-            const bytes = textEncoder.encode(
-              serializeJavascriptValueToJSONString(data),
-            );
+            const bytes = textEncoder.encode(serializeJavascriptValueToJSONString(data));
 
             // 2. Let body be the result of extracting bytes.
             const body = extractBody(bytes);
@@ -29716,12 +27341,9 @@
             try {
               parsedURL = new URL(url, getGlobalOrigin());
             } catch (err) {
-              throw Object.assign(
-                new TypeError("Failed to parse URL from " + url),
-                {
-                  cause: err,
-                },
-              );
+              throw Object.assign(new TypeError("Failed to parse URL from " + url), {
+                cause: err,
+              });
             }
 
             // 3. If status is not a redirect status, then throw a RangeError.
@@ -29862,9 +27484,7 @@
           get bodyUsed() {
             webidl.brandCheck(this, Response);
 
-            return (
-              !!this[kState].body && util.isDisturbed(this[kState].body.stream)
-            );
+            return !!this[kState].body && util.isDisturbed(this[kState].body.stream);
           }
 
           // Returns a clone of response.
@@ -29887,8 +27507,7 @@
             const clonedResponseObject = new Response();
             clonedResponseObject[kState] = clonedResponse;
             clonedResponseObject[kRealm] = this[kRealm];
-            clonedResponseObject[kHeaders][kHeadersList] =
-              clonedResponse.headersList;
+            clonedResponseObject[kHeaders][kHeadersList] = clonedResponse.headersList;
             clonedResponseObject[kHeaders][kGuard] = this[kHeaders][kGuard];
             clonedResponseObject[kHeaders][kRealm] = this[kHeaders][kRealm];
 
@@ -29929,10 +27548,7 @@
           // filtered response whose internal response is a clone of response’s
           // internal response.
           if (response.internalResponse) {
-            return filterResponse(
-              cloneResponse(response.internalResponse),
-              response.type,
-            );
+            return filterResponse(cloneResponse(response.internalResponse), response.type);
           }
 
           // 2. Let newResponse be a copy of response, except for its body.
@@ -29960,9 +27576,7 @@
             cacheState: "",
             statusText: "",
             ...init,
-            headersList: init.headersList
-              ? new HeadersList(init.headersList)
-              : new HeadersList(),
+            headersList: init.headersList ? new HeadersList(init.headersList) : new HeadersList(),
             urlList: init.urlList ? [...init.urlList] : [],
           };
         }
@@ -29972,9 +27586,7 @@
           return makeResponse({
             type: "error",
             status: 0,
-            error: isError
-              ? reason
-              : new Error(reason ? String(reason) : reason),
+            error: isError ? reason : new Error(reason ? String(reason) : reason),
             aborted: reason && reason.name === "AbortError",
           });
         }
@@ -30060,10 +27672,9 @@
           // otherwise return a network error.
           return isAborted(fetchParams)
             ? makeNetworkError(
-                Object.assign(
-                  new DOMException("The operation was aborted.", "AbortError"),
-                  { cause: err },
-                ),
+                Object.assign(new DOMException("The operation was aborted.", "AbortError"), {
+                  cause: err,
+                }),
               )
             : makeNetworkError(
                 Object.assign(new DOMException("Request was cancelled."), {
@@ -30076,13 +27687,8 @@
         function initializeResponse(response, init, body) {
           // 1. If init["status"] is not in the range 200 to 599, inclusive, then
           //    throw a RangeError.
-          if (
-            init.status !== null &&
-            (init.status < 200 || init.status > 599)
-          ) {
-            throw new RangeError(
-              'init["status"] must be in the range of 200 to 599, inclusive.',
-            );
+          if (init.status !== null && (init.status < 200 || init.status > 599)) {
+            throw new RangeError('init["status"] must be in the range of 200 to 599, inclusive.');
           }
 
           // 2. If init["statusText"] does not match the reason-phrase token production,
@@ -30125,22 +27731,17 @@
 
             // 3. If body's type is non-null and response's header list does not contain
             //    `Content-Type`, then append (`Content-Type`, body's type) to response's header list.
-            if (
-              body.type != null &&
-              !response[kState].headersList.contains("Content-Type")
-            ) {
+            if (body.type != null && !response[kState].headersList.contains("Content-Type")) {
               response[kState].headersList.append("content-type", body.type);
             }
           }
         }
 
-        webidl.converters.ReadableStream =
-          webidl.interfaceConverter(ReadableStream);
+        webidl.converters.ReadableStream = webidl.interfaceConverter(ReadableStream);
 
         webidl.converters.FormData = webidl.interfaceConverter(FormData);
 
-        webidl.converters.URLSearchParams =
-          webidl.interfaceConverter(URLSearchParams);
+        webidl.converters.URLSearchParams = webidl.interfaceConverter(URLSearchParams);
 
         // https://fetch.spec.whatwg.org/#typedefdef-xmlhttprequestbodyinit
         webidl.converters.XMLHttpRequestBodyInit = function (V) {
@@ -30152,11 +27753,7 @@
             return webidl.converters.Blob(V, { strict: false });
           }
 
-          if (
-            types.isArrayBuffer(V) ||
-            types.isTypedArray(V) ||
-            types.isDataView(V)
-          ) {
+          if (types.isArrayBuffer(V) || types.isTypedArray(V) || types.isDataView(V)) {
             return webidl.converters.BufferSource(V);
           }
 
@@ -30242,8 +27839,7 @@
         } = __nccwpck_require__(1411);
         const { getGlobalOrigin } = __nccwpck_require__(2071);
         const { performance } = __nccwpck_require__(2987);
-        const { isBlobLike, toUSVString, ReadableStreamFrom } =
-          __nccwpck_require__(701);
+        const { isBlobLike, toUSVString, ReadableStreamFrom } = __nccwpck_require__(701);
         const assert = __nccwpck_require__(2613);
         const { isUint8Array } = __nccwpck_require__(8253);
 
@@ -30445,9 +28041,7 @@
           // 2. Let policy be the empty string.
           // 3. For each token in policy-tokens, if token is a referrer policy and token is not the empty string, then set policy to token.
           // 4. Return policy.
-          const policyHeader = (headersList.get("referrer-policy") ?? "").split(
-            ",",
-          );
+          const policyHeader = (headersList.get("referrer-policy") ?? "").split(",");
 
           // Note: As the referrer-policy can contain multiple policies
           // separated by comma, we need to loop through all of them
@@ -30521,10 +28115,7 @@
           let serializedOrigin = request.origin;
 
           // 2. If request’s response tainting is "cors" or request’s mode is "websocket", then append (`Origin`, serializedOrigin) to request’s header list.
-          if (
-            request.responseTainting === "cors" ||
-            request.mode === "websocket"
-          ) {
+          if (request.responseTainting === "cors" || request.mode === "websocket") {
             if (serializedOrigin) {
               request.headersList.append("origin", serializedOrigin);
             }
@@ -30649,8 +28240,7 @@
 
           const areSameOrigin = sameOrigin(request, referrerURL);
           const isNonPotentiallyTrustWorthy =
-            isURLPotentiallyTrustworthy(referrerURL) &&
-            !isURLPotentiallyTrustworthy(request.url);
+            isURLPotentiallyTrustworthy(referrerURL) && !isURLPotentiallyTrustworthy(request.url);
 
           // 8. Execute the switch statements corresponding to the value of policy:
           switch (policy) {
@@ -30702,9 +28292,7 @@
              */
 
             default: // eslint-disable-line
-              return isNonPotentiallyTrustWorthy
-                ? "no-referrer"
-                : referrerOrigin;
+              return isNonPotentiallyTrustWorthy ? "no-referrer" : referrerOrigin;
           }
         }
 
@@ -30718,11 +28306,7 @@
           assert(url instanceof URL);
 
           // 2. If url’s scheme is a local scheme, then return no referrer.
-          if (
-            url.protocol === "file:" ||
-            url.protocol === "about:" ||
-            url.protocol === "blank:"
-          ) {
+          if (url.protocol === "file:" || url.protocol === "about:" || url.protocol === "blank:") {
             return "no-referrer";
           }
 
@@ -30773,18 +28357,13 @@
             const originAsURL = new URL(origin);
 
             // If secure, return true
-            if (
-              originAsURL.protocol === "https:" ||
-              originAsURL.protocol === "wss:"
-            ) {
+            if (originAsURL.protocol === "https:" || originAsURL.protocol === "wss:") {
               return true;
             }
 
             // If localhost or variants, return true
             if (
-              /^127(?:\.[0-9]+){0,2}\.[0-9]+$|^\[(?:0*:)*?:?0*1\]$/.test(
-                originAsURL.hostname,
-              ) ||
+              /^127(?:\.[0-9]+){0,2}\.[0-9]+$|^\[(?:0*:)*?:?0*1\]$/.test(originAsURL.hostname) ||
               originAsURL.hostname === "localhost" ||
               originAsURL.hostname.includes("localhost.") ||
               originAsURL.hostname.endsWith(".localhost")
@@ -30830,10 +28409,7 @@
           // 5. Let metadata be the result of getting the strongest
           //    metadata from parsedMetadata.
           const strongest = getStrongestMetadata(parsedMetadata);
-          const metadata = filterMetadataListByAlgorithm(
-            parsedMetadata,
-            strongest,
-          );
+          const metadata = filterMetadataListByAlgorithm(parsedMetadata, strongest);
 
           // 6. For each item in metadata:
           for (const item of metadata) {
@@ -30847,10 +28423,7 @@
             // "be liberal with padding". This is annoying, and it's not even in the spec.
 
             // 3. Let actualValue be the result of applying algorithm to bytes.
-            let actualValue = crypto
-              .createHash(algorithm)
-              .update(bytes)
-              .digest("base64");
+            let actualValue = crypto.createHash(algorithm).update(bytes).digest("base64");
 
             if (actualValue[actualValue.length - 1] === "=") {
               if (actualValue[actualValue.length - 2] === "=") {
@@ -31022,11 +28595,7 @@
 
           // 2. If A and B are both tuple origins and their schemes,
           //    hosts, and port are identical, then return true.
-          if (
-            A.protocol === B.protocol &&
-            A.hostname === B.hostname &&
-            A.port === B.port
-          ) {
+          if (A.protocol === B.protocol && A.hostname === B.hostname && A.port === B.port) {
             return true;
           }
 
@@ -31260,8 +28829,7 @@
 
           return (
             stream instanceof ReadableStream ||
-            (stream[Symbol.toStringTag] === "ReadableStream" &&
-              typeof stream.tee === "function")
+            (stream[Symbol.toStringTag] === "ReadableStream" && typeof stream.tee === "function")
           );
         }
 
@@ -31280,10 +28848,7 @@
             return String.fromCharCode(...input);
           }
 
-          return input.reduce(
-            (previous, current) => previous + String.fromCharCode(current),
-            "",
-          );
+          return input.reduce((previous, current) => previous + String.fromCharCode(current), "");
         }
 
         /**
@@ -31356,11 +28921,7 @@
 
           const protocol = url.protocol;
 
-          return (
-            protocol === "about:" ||
-            protocol === "blob:" ||
-            protocol === "data:"
-          );
+          return protocol === "about:" || protocol === "blob:" || protocol === "data:";
         }
 
         /**
@@ -31390,8 +28951,7 @@
          * Fetch supports node >= 16.8.0, but Object.hasOwn was added in v16.9.0.
          */
         const hasOwn =
-          Object.hasOwn ||
-          ((dict, key) => Object.prototype.hasOwnProperty.call(dict, key));
+          Object.hasOwn || ((dict, key) => Object.prototype.hasOwnProperty.call(dict, key));
 
         module.exports = {
           isAborted,
@@ -31534,12 +29094,7 @@
         };
 
         // https://webidl.spec.whatwg.org/#abstract-opdef-converttoint
-        webidl.util.ConvertToInt = function (
-          V,
-          bitLength,
-          signedness,
-          opts = {},
-        ) {
+        webidl.util.ConvertToInt = function (V, bitLength, signedness, opts = {}) {
           let upperBound;
           let lowerBound;
 
@@ -31826,10 +29381,7 @@
               if (required || hasDefault || value !== undefined) {
                 value = converter(value);
 
-                if (
-                  options.allowedValues &&
-                  !options.allowedValues.includes(value)
-                ) {
+                if (options.allowedValues && !options.allowedValues.includes(value)) {
                   throw webidl.errors.exception({
                     header: "Dictionary",
                     message: `${value} is not an accepted type. Expected one of ${options.allowedValues.join(", ")}.`,
@@ -31866,9 +29418,7 @@
 
           // 2. Let x be ? ToString(V).
           if (typeof V === "symbol") {
-            throw new TypeError(
-              "Could not convert argument of type symbol to string.",
-            );
+            throw new TypeError("Could not convert argument of type symbol to string.");
           }
 
           // 3. Return the IDL DOMString value that represents the
@@ -32017,10 +29567,7 @@
           //    with the [AllowShared] extended attribute, and
           //    IsSharedArrayBuffer(V.[[ViewedArrayBuffer]]) is
           //    true, then throw a TypeError.
-          if (
-            opts.allowShared === false &&
-            types.isSharedArrayBuffer(V.buffer)
-          ) {
+          if (opts.allowShared === false && types.isSharedArrayBuffer(V.buffer)) {
             throw webidl.errors.exception({
               header: "ArrayBuffer",
               message: "SharedArrayBuffer is not allowed.",
@@ -32052,10 +29599,7 @@
           //    with the [AllowShared] extended attribute, and
           //    IsSharedArrayBuffer(V.[[ViewedArrayBuffer]]) is true,
           //    then throw a TypeError.
-          if (
-            opts.allowShared === false &&
-            types.isSharedArrayBuffer(V.buffer)
-          ) {
+          if (opts.allowShared === false && types.isSharedArrayBuffer(V.buffer)) {
             throw webidl.errors.exception({
               header: "ArrayBuffer",
               message: "SharedArrayBuffer is not allowed.",
@@ -32094,14 +29638,14 @@
           webidl.converters.ByteString,
         );
 
-        webidl.converters["sequence<sequence<ByteString>>"] =
-          webidl.sequenceConverter(webidl.converters["sequence<ByteString>"]);
+        webidl.converters["sequence<sequence<ByteString>>"] = webidl.sequenceConverter(
+          webidl.converters["sequence<ByteString>"],
+        );
 
-        webidl.converters["record<ByteString, ByteString>"] =
-          webidl.recordConverter(
-            webidl.converters.ByteString,
-            webidl.converters.ByteString,
-          );
+        webidl.converters["record<ByteString, ByteString>"] = webidl.recordConverter(
+          webidl.converters.ByteString,
+          webidl.converters.ByteString,
+        );
 
         module.exports = {
           webidl,
@@ -32413,8 +29957,7 @@
 
         const { staticPropertyDescriptors, readOperation, fireAProgressEvent } =
           __nccwpck_require__(3350);
-        const { kState, kError, kResult, kEvents, kAborted } =
-          __nccwpck_require__(821);
+        const { kState, kError, kResult, kEvents, kAborted } = __nccwpck_require__(821);
         const { webidl } = __nccwpck_require__(185);
         const { kEnumerableProperty } = __nccwpck_require__(701);
 
@@ -32774,9 +30317,7 @@
         class ProgressEvent extends Event {
           constructor(type, eventInitDict = {}) {
             type = webidl.converters.DOMString(type);
-            eventInitDict = webidl.converters.ProgressEventInit(
-              eventInitDict ?? {},
-            );
+            eventInitDict = webidl.converters.ProgressEventInit(eventInitDict ?? {});
 
             super(type, eventInitDict);
 
@@ -32854,9 +30395,7 @@
           kState: Symbol("FileReader state"),
           kResult: Symbol("FileReader result"),
           kError: Symbol("FileReader error"),
-          kLastProgressEventFired: Symbol(
-            "FileReader last progress event fired timestamp",
-          ),
+          kLastProgressEventFired: Symbol("FileReader last progress event fired timestamp"),
           kEvents: Symbol("FileReader events"),
           kAborted: Symbol("FileReader aborted"),
         };
@@ -32987,12 +30526,7 @@
                     // 2. Let result be the result of package data given
                     //    bytes, type, blob’s type, and encodingName.
                     try {
-                      const result = packageData(
-                        bytes,
-                        type,
-                        blob.type,
-                        encodingName,
-                      );
+                      const result = packageData(bytes, type, blob.type, encodingName);
 
                       // 4. Else:
 
@@ -33102,9 +30636,7 @@
               // parameter  := attribute "=" value
               let dataURL = "data:";
 
-              const parsed = parseMIMEType(
-                mimeType || "application/octet-stream",
-              );
+              const parsed = parseMIMEType(mimeType || "application/octet-stream");
 
               if (parsed !== "failure") {
                 dataURL += serializeAMimeType(parsed);
@@ -33278,9 +30810,7 @@
 
         function setGlobalDispatcher(agent) {
           if (!agent || typeof agent.dispatch !== "function") {
-            throw new InvalidArgumentError(
-              "Argument agent must implement Agent",
-            );
+            throw new InvalidArgumentError("Argument agent must implement Agent");
           }
           Object.defineProperty(globalThis, globalDispatcher, {
             value: agent,
@@ -33376,9 +30906,7 @@
               maxRedirections != null &&
               (!Number.isInteger(maxRedirections) || maxRedirections < 0)
             ) {
-              throw new InvalidArgumentError(
-                "maxRedirections must be a positive number",
-              );
+              throw new InvalidArgumentError("maxRedirections must be a positive number");
             }
 
             util.validateHandler(handler, opts.method, opts.upgrade);
@@ -33407,10 +30935,7 @@
                   this[kBodyUsed] = true;
                 });
               }
-            } else if (
-              this.opts.body &&
-              typeof this.opts.body.pipeTo === "function"
-            ) {
+            } else if (this.opts.body && typeof this.opts.body.pipeTo === "function") {
               // TODO (fix): We can't access ReadableStream internal state
               // to determine whether or not it has been disturbed. This is just
               // a workaround.
@@ -33442,8 +30967,7 @@
 
           onHeaders(statusCode, headers, resume, statusText) {
             this.location =
-              this.history.length >= this.maxRedirections ||
-              util.isDisturbed(this.opts.body)
+              this.history.length >= this.maxRedirections || util.isDisturbed(this.opts.body)
                 ? null
                 : parseLocation(statusCode, headers);
 
@@ -33452,19 +30976,11 @@
             }
 
             if (!this.location) {
-              return this.handler.onHeaders(
-                statusCode,
-                headers,
-                resume,
-                statusText,
-              );
+              return this.handler.onHeaders(statusCode, headers, resume, statusText);
             }
 
             const { origin, pathname, search } = util.parseURL(
-              new URL(
-                this.location,
-                this.opts.origin && new URL(this.opts.path, this.opts.origin),
-              ),
+              new URL(this.location, this.opts.origin && new URL(this.opts.path, this.opts.origin)),
             );
             const path = search ? `${pathname}${search}` : pathname;
 
@@ -33557,24 +31073,15 @@
           if (header.length === 4) {
             return util.headerNameToString(header) === "host";
           }
-          if (
-            removeContent &&
-            util.headerNameToString(header).startsWith("content-")
-          ) {
+          if (removeContent && util.headerNameToString(header).startsWith("content-")) {
             return true;
           }
           if (
             unknownOrigin &&
-            (header.length === 13 ||
-              header.length === 6 ||
-              header.length === 19)
+            (header.length === 13 || header.length === 6 || header.length === 19)
           ) {
             const name = util.headerNameToString(header);
-            return (
-              name === "authorization" ||
-              name === "cookie" ||
-              name === "proxy-authorization"
-            );
+            return name === "authorization" || name === "cookie" || name === "proxy-authorization";
           }
           return false;
         }
@@ -33584,9 +31091,7 @@
           const ret = [];
           if (Array.isArray(headers)) {
             for (let i = 0; i < headers.length; i += 2) {
-              if (
-                !shouldRemoveHeader(headers[i], removeContent, unknownOrigin)
-              ) {
+              if (!shouldRemoveHeader(headers[i], removeContent, unknownOrigin)) {
                 ret.push(headers[i], headers[i + 1]);
               }
             }
@@ -33613,8 +31118,7 @@
 
         const { kRetryHandlerDefaultRetry } = __nccwpck_require__(4980);
         const { RequestRetryError } = __nccwpck_require__(1970);
-        const { isDisturbed, parseHeaders, parseRangeHeader } =
-          __nccwpck_require__(701);
+        const { isDisturbed, parseHeaders, parseRangeHeader } = __nccwpck_require__(701);
 
         function calculateRetryAfterHeader(retryAfter) {
           const current = Date.now();
@@ -33653,14 +31157,7 @@
               timeoutFactor: timeoutFactor ?? 2,
               maxRetries: maxRetries ?? 5,
               // What errors we should retry
-              methods: methods ?? [
-                "GET",
-                "HEAD",
-                "OPTIONS",
-                "PUT",
-                "DELETE",
-                "TRACE",
-              ],
+              methods: methods ?? ["GET", "HEAD", "OPTIONS", "PUT", "DELETE", "TRACE"],
               // Indicates which errors to retry
               statusCodes: statusCodes ?? [500, 502, 503, 504, 429],
               // List of errors to retry
@@ -33732,9 +31229,7 @@
             let { counter, currentTimeout } = state;
 
             currentTimeout =
-              currentTimeout != null && currentTimeout > 0
-                ? currentTimeout
-                : timeout;
+              currentTimeout != null && currentTimeout > 0 ? currentTimeout : timeout;
 
             // Any code that is not a Undici's originated and allowed to retry
             if (
@@ -33780,10 +31275,7 @@
             const retryTimeout =
               retryAfterHeader > 0
                 ? Math.min(retryAfterHeader, maxTimeout)
-                : Math.min(
-                    currentTimeout * timeoutFactor ** counter,
-                    maxTimeout,
-                  );
+                : Math.min(currentTimeout * timeoutFactor ** counter, maxTimeout);
 
             state.currentTimeout = retryTimeout;
 
@@ -33839,10 +31331,7 @@
               const { start, size, end = size } = contentRange;
 
               assert(this.start === start, "content-range mismatch");
-              assert(
-                this.end == null || this.end === end,
-                "content-range mismatch",
-              );
+              assert(this.end == null || this.end === end, "content-range mismatch");
 
               this.resume = resume;
               return true;
@@ -33854,20 +31343,13 @@
                 const range = parseRangeHeader(headers["content-range"]);
 
                 if (range == null) {
-                  return this.handler.onHeaders(
-                    statusCode,
-                    rawHeaders,
-                    resume,
-                    statusMessage,
-                  );
+                  return this.handler.onHeaders(statusCode, rawHeaders, resume, statusMessage);
                 }
 
                 const { start, size, end = size } = range;
 
                 assert(
-                  start != null &&
-                    Number.isFinite(start) &&
-                    this.start !== start,
+                  start != null && Number.isFinite(start) && this.start !== start,
                   "content-range mismatch",
                 );
                 assert(Number.isFinite(start));
@@ -33887,20 +31369,12 @@
               }
 
               assert(Number.isFinite(this.start));
-              assert(
-                this.end == null || Number.isFinite(this.end),
-                "invalid content-length",
-              );
+              assert(this.end == null || Number.isFinite(this.end), "invalid content-length");
 
               this.resume = resume;
               this.etag = headers.etag != null ? headers.etag : null;
 
-              return this.handler.onHeaders(
-                statusCode,
-                rawHeaders,
-                resume,
-                statusMessage,
-              );
+              return this.handler.onHeaders(statusCode, rawHeaders, resume, statusMessage);
             }
 
             const err = new RequestRetryError("Request failed", statusCode, {
@@ -33976,9 +31450,7 @@
 
         const RedirectHandler = __nccwpck_require__(762);
 
-        function createRedirectInterceptor({
-          maxRedirections: defaultMaxRedirections,
-        }) {
+        function createRedirectInterceptor({ maxRedirections: defaultMaxRedirections }) {
           return (dispatch) => {
             return function Intercept(opts, handler) {
               const { maxRedirections = defaultMaxRedirections } = opts;
@@ -33987,12 +31459,7 @@
                 return dispatch(opts, handler);
               }
 
-              const redirectHandler = new RedirectHandler(
-                dispatch,
-                maxRedirections,
-                opts,
-                handler,
-              );
+              const redirectHandler = new RedirectHandler(dispatch, maxRedirections, opts, handler);
               opts = { ...opts, maxRedirections: 0 }; // Stop sub dispatcher from also redirecting.
               return dispatch(opts, redirectHandler);
             };
@@ -34047,21 +31514,18 @@
           ERROR[(ERROR["INTERNAL"] = 1)] = "INTERNAL";
           ERROR[(ERROR["STRICT"] = 2)] = "STRICT";
           ERROR[(ERROR["LF_EXPECTED"] = 3)] = "LF_EXPECTED";
-          ERROR[(ERROR["UNEXPECTED_CONTENT_LENGTH"] = 4)] =
-            "UNEXPECTED_CONTENT_LENGTH";
+          ERROR[(ERROR["UNEXPECTED_CONTENT_LENGTH"] = 4)] = "UNEXPECTED_CONTENT_LENGTH";
           ERROR[(ERROR["CLOSED_CONNECTION"] = 5)] = "CLOSED_CONNECTION";
           ERROR[(ERROR["INVALID_METHOD"] = 6)] = "INVALID_METHOD";
           ERROR[(ERROR["INVALID_URL"] = 7)] = "INVALID_URL";
           ERROR[(ERROR["INVALID_CONSTANT"] = 8)] = "INVALID_CONSTANT";
           ERROR[(ERROR["INVALID_VERSION"] = 9)] = "INVALID_VERSION";
           ERROR[(ERROR["INVALID_HEADER_TOKEN"] = 10)] = "INVALID_HEADER_TOKEN";
-          ERROR[(ERROR["INVALID_CONTENT_LENGTH"] = 11)] =
-            "INVALID_CONTENT_LENGTH";
+          ERROR[(ERROR["INVALID_CONTENT_LENGTH"] = 11)] = "INVALID_CONTENT_LENGTH";
           ERROR[(ERROR["INVALID_CHUNK_SIZE"] = 12)] = "INVALID_CHUNK_SIZE";
           ERROR[(ERROR["INVALID_STATUS"] = 13)] = "INVALID_STATUS";
           ERROR[(ERROR["INVALID_EOF_STATE"] = 14)] = "INVALID_EOF_STATE";
-          ERROR[(ERROR["INVALID_TRANSFER_ENCODING"] = 15)] =
-            "INVALID_TRANSFER_ENCODING";
+          ERROR[(ERROR["INVALID_TRANSFER_ENCODING"] = 15)] = "INVALID_TRANSFER_ENCODING";
           ERROR[(ERROR["CB_MESSAGE_BEGIN"] = 16)] = "CB_MESSAGE_BEGIN";
           ERROR[(ERROR["CB_HEADERS_COMPLETE"] = 17)] = "CB_HEADERS_COMPLETE";
           ERROR[(ERROR["CB_MESSAGE_COMPLETE"] = 18)] = "CB_MESSAGE_COMPLETE";
@@ -34094,13 +31558,9 @@
         var LENIENT_FLAGS;
         (function (LENIENT_FLAGS) {
           LENIENT_FLAGS[(LENIENT_FLAGS["HEADERS"] = 1)] = "HEADERS";
-          LENIENT_FLAGS[(LENIENT_FLAGS["CHUNKED_LENGTH"] = 2)] =
-            "CHUNKED_LENGTH";
+          LENIENT_FLAGS[(LENIENT_FLAGS["CHUNKED_LENGTH"] = 2)] = "CHUNKED_LENGTH";
           LENIENT_FLAGS[(LENIENT_FLAGS["KEEP_ALIVE"] = 4)] = "KEEP_ALIVE";
-        })(
-          (LENIENT_FLAGS =
-            exports.LENIENT_FLAGS || (exports.LENIENT_FLAGS = {})),
-        );
+        })((LENIENT_FLAGS = exports.LENIENT_FLAGS || (exports.LENIENT_FLAGS = {})));
         var METHODS;
         (function (METHODS) {
           METHODS[(METHODS["DELETE"] = 0)] = "DELETE";
@@ -34374,9 +31834,7 @@
           }
         }
         // ',' = \x44
-        exports.CONNECTION_TOKEN_CHARS = exports.HEADER_CHARS.filter(
-          (c) => c !== 44,
-        );
+        exports.CONNECTION_TOKEN_CHARS = exports.HEADER_CHARS.filter((c) => c !== 44);
         exports.MAJOR = exports.NUM_MAP;
         exports.MINOR = exports.MAJOR;
         var HEADER_STATE;
@@ -34384,20 +31842,14 @@
           HEADER_STATE[(HEADER_STATE["GENERAL"] = 0)] = "GENERAL";
           HEADER_STATE[(HEADER_STATE["CONNECTION"] = 1)] = "CONNECTION";
           HEADER_STATE[(HEADER_STATE["CONTENT_LENGTH"] = 2)] = "CONTENT_LENGTH";
-          HEADER_STATE[(HEADER_STATE["TRANSFER_ENCODING"] = 3)] =
-            "TRANSFER_ENCODING";
+          HEADER_STATE[(HEADER_STATE["TRANSFER_ENCODING"] = 3)] = "TRANSFER_ENCODING";
           HEADER_STATE[(HEADER_STATE["UPGRADE"] = 4)] = "UPGRADE";
-          HEADER_STATE[(HEADER_STATE["CONNECTION_KEEP_ALIVE"] = 5)] =
-            "CONNECTION_KEEP_ALIVE";
-          HEADER_STATE[(HEADER_STATE["CONNECTION_CLOSE"] = 6)] =
-            "CONNECTION_CLOSE";
-          HEADER_STATE[(HEADER_STATE["CONNECTION_UPGRADE"] = 7)] =
-            "CONNECTION_UPGRADE";
+          HEADER_STATE[(HEADER_STATE["CONNECTION_KEEP_ALIVE"] = 5)] = "CONNECTION_KEEP_ALIVE";
+          HEADER_STATE[(HEADER_STATE["CONNECTION_CLOSE"] = 6)] = "CONNECTION_CLOSE";
+          HEADER_STATE[(HEADER_STATE["CONNECTION_UPGRADE"] = 7)] = "CONNECTION_UPGRADE";
           HEADER_STATE[(HEADER_STATE["TRANSFER_ENCODING_CHUNKED"] = 8)] =
             "TRANSFER_ENCODING_CHUNKED";
-        })(
-          (HEADER_STATE = exports.HEADER_STATE || (exports.HEADER_STATE = {})),
-        );
+        })((HEADER_STATE = exports.HEADER_STATE || (exports.HEADER_STATE = {})));
         exports.SPECIAL_HEADERS = {
           connection: HEADER_STATE.CONNECTION,
           "content-length": HEADER_STATE.CONTENT_LENGTH,
@@ -34491,14 +31943,8 @@
             this[kIsMockActive] = true;
 
             // Instantiate Agent and encapsulate
-            if (
-              opts &&
-              opts.agent &&
-              typeof opts.agent.dispatch !== "function"
-            ) {
-              throw new InvalidArgumentError(
-                "Argument opts.agent must implement Agent",
-              );
+            if (opts && opts.agent && typeof opts.agent.dispatch !== "function") {
+              throw new InvalidArgumentError("Argument opts.agent must implement Agent");
             }
             const agent = opts && opts.agent ? opts.agent : new Agent(opts);
             this[kAgent] = agent;
@@ -34592,9 +32038,7 @@
             }
 
             // If we match, create a pool and assign the same dispatches
-            for (const [keyMatcher, nonExplicitRef] of Array.from(
-              this[kClients],
-            )) {
+            for (const [keyMatcher, nonExplicitRef] of Array.from(this[kClients])) {
               const nonExplicitDispatcher = nonExplicitRef.deref();
               if (
                 nonExplicitDispatcher &&
@@ -34618,9 +32062,7 @@
 
             return Array.from(mockAgentClients.entries())
               .flatMap(([origin, scope]) =>
-                scope
-                  .deref()
-                  [kDispatches].map((dispatch) => ({ ...dispatch, origin })),
+                scope.deref()[kDispatches].map((dispatch) => ({ ...dispatch, origin })),
               )
               .filter(({ pending }) => pending);
           }
@@ -34634,10 +32076,9 @@
               return;
             }
 
-            const pluralizer = new Pluralizer(
-              "interceptor",
-              "interceptors",
-            ).pluralize(pending.length);
+            const pluralizer = new Pluralizer("interceptor", "interceptors").pluralize(
+              pending.length,
+            );
 
             throw new UndiciError(
               `
@@ -34681,14 +32122,8 @@ ${pendingInterceptorsFormatter.format(pending)}
           constructor(origin, opts) {
             super(origin, opts);
 
-            if (
-              !opts ||
-              !opts.agent ||
-              typeof opts.agent.dispatch !== "function"
-            ) {
-              throw new InvalidArgumentError(
-                "Argument opts.agent must implement Agent",
-              );
+            if (!opts || !opts.agent || typeof opts.agent.dispatch !== "function") {
+              throw new InvalidArgumentError("Argument opts.agent must implement Agent");
             }
 
             this[kMockAgent] = opts.agent;
@@ -34736,9 +32171,7 @@ ${pendingInterceptorsFormatter.format(pending)}
             super(message);
             Error.captureStackTrace(this, MockNotMatchedError);
             this.name = "MockNotMatchedError";
-            this.message =
-              message ||
-              "The request does not match any registered mock dispatches";
+            this.message = message || "The request does not match any registered mock dispatches";
             this.code = "UND_MOCK_ERR_MOCK_NOT_MATCHED";
           }
         }
@@ -34754,8 +32187,7 @@ ${pendingInterceptorsFormatter.format(pending)}
       /***/ (module, __unused_webpack_exports, __nccwpck_require__) => {
         "use strict";
 
-        const { getResponseData, buildKey, addMockDispatch } =
-          __nccwpck_require__(640);
+        const { getResponseData, buildKey, addMockDispatch } = __nccwpck_require__(640);
         const {
           kDispatches,
           kDispatchKey,
@@ -34779,14 +32211,8 @@ ${pendingInterceptorsFormatter.format(pending)}
            * Delay a reply by a set amount in ms.
            */
           delay(waitInMs) {
-            if (
-              typeof waitInMs !== "number" ||
-              !Number.isInteger(waitInMs) ||
-              waitInMs <= 0
-            ) {
-              throw new InvalidArgumentError(
-                "waitInMs must be a valid integer > 0",
-              );
+            if (typeof waitInMs !== "number" || !Number.isInteger(waitInMs) || waitInMs <= 0) {
+              throw new InvalidArgumentError("waitInMs must be a valid integer > 0");
             }
 
             this[kMockDispatch].delay = waitInMs;
@@ -34810,9 +32236,7 @@ ${pendingInterceptorsFormatter.format(pending)}
               !Number.isInteger(repeatTimes) ||
               repeatTimes <= 0
             ) {
-              throw new InvalidArgumentError(
-                "repeatTimes must be a valid integer > 0",
-              );
+              throw new InvalidArgumentError("repeatTimes must be a valid integer > 0");
             }
 
             this[kMockDispatch].times = repeatTimes;
@@ -34883,9 +32307,7 @@ ${pendingInterceptorsFormatter.format(pending)}
               throw new InvalidArgumentError("data must be defined");
             }
             if (typeof responseOptions !== "object") {
-              throw new InvalidArgumentError(
-                "responseOptions must be an object",
-              );
+              throw new InvalidArgumentError("responseOptions must be an object");
             }
           }
 
@@ -34905,25 +32327,15 @@ ${pendingInterceptorsFormatter.format(pending)}
 
                 // Check if it is in the right format
                 if (typeof resolvedData !== "object") {
-                  throw new InvalidArgumentError(
-                    "reply options callback must return an object",
-                  );
+                  throw new InvalidArgumentError("reply options callback must return an object");
                 }
 
-                const {
-                  statusCode,
-                  data = "",
-                  responseOptions = {},
-                } = resolvedData;
+                const { statusCode, data = "", responseOptions = {} } = resolvedData;
                 this.validateReplyParameters(statusCode, data, responseOptions);
                 // Since the values can be obtained immediately we return them
                 // from this higher order function that will be resolved later.
                 return {
-                  ...this.createMockScopeDispatchData(
-                    statusCode,
-                    data,
-                    responseOptions,
-                  ),
+                  ...this.createMockScopeDispatchData(statusCode, data, responseOptions),
                 };
               };
 
@@ -34940,9 +32352,7 @@ ${pendingInterceptorsFormatter.format(pending)}
             // we should have 1-3 parameters. So we spread the arguments of
             // this function to obtain the parameters, since replyData will always
             // just be the statusCode.
-            const [statusCode, data = "", responseOptions = {}] = [
-              ...arguments,
-            ];
+            const [statusCode, data = "", responseOptions = {}] = [...arguments];
             this.validateReplyParameters(statusCode, data, responseOptions);
 
             // Send in-already provided data like usual
@@ -34967,11 +32377,9 @@ ${pendingInterceptorsFormatter.format(pending)}
               throw new InvalidArgumentError("error must be defined");
             }
 
-            const newMockDispatch = addMockDispatch(
-              this[kDispatches],
-              this[kDispatchKey],
-              { error },
-            );
+            const newMockDispatch = addMockDispatch(this[kDispatches], this[kDispatchKey], {
+              error,
+            });
             return new MockScope(newMockDispatch);
           }
 
@@ -35041,14 +32449,8 @@ ${pendingInterceptorsFormatter.format(pending)}
           constructor(origin, opts) {
             super(origin, opts);
 
-            if (
-              !opts ||
-              !opts.agent ||
-              typeof opts.agent.dispatch !== "function"
-            ) {
-              throw new InvalidArgumentError(
-                "Argument opts.agent must implement Agent",
-              );
+            if (!opts || !opts.agent || typeof opts.agent.dispatch !== "function") {
+              throw new InvalidArgumentError("Argument opts.agent must implement Agent");
             }
 
             this[kMockAgent] = opts.agent;
@@ -35119,13 +32521,8 @@ ${pendingInterceptorsFormatter.format(pending)}
         "use strict";
 
         const { MockNotMatchedError } = __nccwpck_require__(8074);
-        const {
-          kDispatches,
-          kMockAgent,
-          kOriginalDispatch,
-          kOrigin,
-          kGetNetConnect,
-        } = __nccwpck_require__(7980);
+        const { kDispatches, kMockAgent, kOriginalDispatch, kOrigin, kGetNetConnect } =
+          __nccwpck_require__(7980);
         const { buildURL, nop } = __nccwpck_require__(701);
         const { STATUS_CODES } = __nccwpck_require__(8611);
         const {
@@ -35190,23 +32587,16 @@ ${pendingInterceptorsFormatter.format(pending)}
               // fetch HeadersList
               headers = buildHeadersFromArray(headers);
             }
-            return mockDispatch.headers(
-              headers ? lowerCaseEntries(headers) : {},
-            );
+            return mockDispatch.headers(headers ? lowerCaseEntries(headers) : {});
           }
           if (typeof mockDispatch.headers === "undefined") {
             return true;
           }
-          if (
-            typeof headers !== "object" ||
-            typeof mockDispatch.headers !== "object"
-          ) {
+          if (typeof headers !== "object" || typeof mockDispatch.headers !== "object") {
             return false;
           }
 
-          for (const [matchHeaderName, matchHeaderValue] of Object.entries(
-            mockDispatch.headers,
-          )) {
+          for (const [matchHeaderName, matchHeaderValue] of Object.entries(mockDispatch.headers)) {
             const headerValue = getHeaderByName(headers, matchHeaderName);
 
             if (!matchValue(matchHeaderValue, headerValue)) {
@@ -35236,9 +32626,7 @@ ${pendingInterceptorsFormatter.format(pending)}
           const pathMatch = matchValue(mockDispatch.path, path);
           const methodMatch = matchValue(mockDispatch.method, method);
           const bodyMatch =
-            typeof mockDispatch.body !== "undefined"
-              ? matchValue(mockDispatch.body, body)
-              : true;
+            typeof mockDispatch.body !== "undefined" ? matchValue(mockDispatch.body, body) : true;
           const headersMatch = matchHeaders(mockDispatch, headers);
           return pathMatch && methodMatch && bodyMatch && headersMatch;
         }
@@ -35255,17 +32643,14 @@ ${pendingInterceptorsFormatter.format(pending)}
 
         function getMockDispatch(mockDispatches, key) {
           const basePath = key.query ? buildURL(key.path, key.query) : key.path;
-          const resolvedPath =
-            typeof basePath === "string" ? safeUrl(basePath) : basePath;
+          const resolvedPath = typeof basePath === "string" ? safeUrl(basePath) : basePath;
 
           // Match path
           let matchedMockDispatches = mockDispatches
             .filter(({ consumed }) => !consumed)
             .filter(({ path }) => matchValue(safeUrl(path), resolvedPath));
           if (matchedMockDispatches.length === 0) {
-            throw new MockNotMatchedError(
-              `Mock dispatch not matched for path '${resolvedPath}'`,
-            );
+            throw new MockNotMatchedError(`Mock dispatch not matched for path '${resolvedPath}'`);
           }
 
           // Match method
@@ -35273,9 +32658,7 @@ ${pendingInterceptorsFormatter.format(pending)}
             matchValue(method, key.method),
           );
           if (matchedMockDispatches.length === 0) {
-            throw new MockNotMatchedError(
-              `Mock dispatch not matched for method '${key.method}'`,
-            );
+            throw new MockNotMatchedError(`Mock dispatch not matched for method '${key.method}'`);
           }
 
           // Match body
@@ -35283,9 +32666,7 @@ ${pendingInterceptorsFormatter.format(pending)}
             typeof body !== "undefined" ? matchValue(body, key.body) : true,
           );
           if (matchedMockDispatches.length === 0) {
-            throw new MockNotMatchedError(
-              `Mock dispatch not matched for body '${key.body}'`,
-            );
+            throw new MockNotMatchedError(`Mock dispatch not matched for body '${key.body}'`);
           }
 
           // Match headers
@@ -35308,8 +32689,7 @@ ${pendingInterceptorsFormatter.format(pending)}
             persist: false,
             consumed: false,
           };
-          const replyData =
-            typeof data === "function" ? { callback: data } : { ...data };
+          const replyData = typeof data === "function" ? { callback: data } : { ...data };
           const newMockDispatch = {
             ...baseData,
             ...key,
@@ -35424,9 +32804,7 @@ ${pendingInterceptorsFormatter.format(pending)}
               ? buildHeadersFromArray(opts.headers)
               : opts.headers;
             const body =
-              typeof _data === "function"
-                ? _data({ ...opts, headers: optsHeaders })
-                : _data;
+              typeof _data === "function" ? _data({ ...opts, headers: optsHeaders }) : _data;
 
             // util.types.isPromise is likely needed for jest.
             if (isPromise(body)) {
@@ -35444,12 +32822,7 @@ ${pendingInterceptorsFormatter.format(pending)}
             const responseTrailers = generateKeyValues(trailers);
 
             handler.abort = nop;
-            handler.onHeaders(
-              statusCode,
-              responseHeaders,
-              resume,
-              getStatusText(statusCode),
-            );
+            handler.onHeaders(statusCode, responseHeaders, resume, getStatusText(statusCode));
             handler.onData(Buffer.from(responseData));
             handler.onComplete(responseTrailers);
             deleteMockDispatch(mockDispatches, key);
@@ -35562,15 +32935,7 @@ ${pendingInterceptorsFormatter.format(pending)}
 
           format(pendingInterceptors) {
             const withPrettyHeaders = pendingInterceptors.map(
-              ({
-                method,
-                path,
-                data: { statusCode },
-                persist,
-                times,
-                timesInvoked,
-                origin,
-              }) => ({
+              ({ method, path, data: { statusCode }, persist, times, timesInvoked, origin }) => ({
                 Method: method,
                 Origin: origin,
                 Path: path,
@@ -35811,9 +33176,7 @@ ${pendingInterceptorsFormatter.format(pending)}
               }
 
               if (pool[kClosedResolve] && queue.isEmpty()) {
-                Promise.all(pool[kClients].map((c) => c.close())).then(
-                  pool[kClosedResolve],
-                );
+                Promise.all(pool[kClients].map((c) => c.close())).then(pool[kClosedResolve]);
               }
             };
 
@@ -35841,9 +33204,8 @@ ${pendingInterceptorsFormatter.format(pending)}
           }
 
           get [kFree]() {
-            return this[kClients].filter(
-              (client) => client[kConnected] && !client[kNeedDrain],
-            ).length;
+            return this[kClients].filter((client) => client[kConnected] && !client[kNeedDrain])
+              .length;
           }
 
           get [kPending]() {
@@ -35962,8 +33324,7 @@ ${pendingInterceptorsFormatter.format(pending)}
 
     /***/ 613:
       /***/ (module, __unused_webpack_exports, __nccwpck_require__) => {
-        const { kFree, kConnected, kPending, kQueued, kRunning, kSize } =
-          __nccwpck_require__(4980);
+        const { kFree, kConnected, kPending, kQueued, kRunning, kSize } = __nccwpck_require__(4980);
         const kPool = Symbol("pool");
 
         class PoolStats {
@@ -36040,10 +33401,7 @@ ${pendingInterceptorsFormatter.format(pending)}
           ) {
             super();
 
-            if (
-              connections != null &&
-              (!Number.isFinite(connections) || connections < 0)
-            ) {
+            if (connections != null && (!Number.isFinite(connections) || connections < 0)) {
               throw new InvalidArgumentError("invalid connections");
             }
 
@@ -36051,14 +33409,8 @@ ${pendingInterceptorsFormatter.format(pending)}
               throw new InvalidArgumentError("factory must be a function.");
             }
 
-            if (
-              connect != null &&
-              typeof connect !== "function" &&
-              typeof connect !== "object"
-            ) {
-              throw new InvalidArgumentError(
-                "connect must be a function or an object",
-              );
+            if (connect != null && typeof connect !== "function" && typeof connect !== "object") {
+              throw new InvalidArgumentError("connect must be a function or an object");
             }
 
             if (typeof connect !== "function") {
@@ -36105,18 +33457,13 @@ ${pendingInterceptorsFormatter.format(pending)}
           }
 
           [kGetDispatcher]() {
-            let dispatcher = this[kClients].find(
-              (dispatcher) => !dispatcher[kNeedDrain],
-            );
+            let dispatcher = this[kClients].find((dispatcher) => !dispatcher[kNeedDrain]);
 
             if (dispatcher) {
               return dispatcher;
             }
 
-            if (
-              !this[kConnections] ||
-              this[kClients].length < this[kConnections]
-            ) {
+            if (!this[kConnections] || this[kClients].length < this[kConnections]) {
               dispatcher = this[kFactory](this[kUrl], this[kOptions]);
               this[kAddClient](dispatcher);
             }
@@ -36134,14 +33481,12 @@ ${pendingInterceptorsFormatter.format(pending)}
       /***/ (module, __unused_webpack_exports, __nccwpck_require__) => {
         "use strict";
 
-        const { kProxy, kClose, kDestroy, kInterceptors } =
-          __nccwpck_require__(4980);
+        const { kProxy, kClose, kDestroy, kInterceptors } = __nccwpck_require__(4980);
         const { URL } = __nccwpck_require__(7016);
         const Agent = __nccwpck_require__(4724);
         const Pool = __nccwpck_require__(6607);
         const DispatcherBase = __nccwpck_require__(4660);
-        const { InvalidArgumentError, RequestAbortedError } =
-          __nccwpck_require__(1970);
+        const { InvalidArgumentError, RequestAbortedError } = __nccwpck_require__(1970);
         const buildConnector = __nccwpck_require__(2667);
 
         const kAgent = Symbol("proxy agent");
@@ -36197,9 +33542,7 @@ ${pendingInterceptorsFormatter.format(pending)}
             const { clientFactory = defaultFactory } = opts;
 
             if (typeof clientFactory !== "function") {
-              throw new InvalidArgumentError(
-                "Proxy opts.clientFactory must be a function.",
-              );
+              throw new InvalidArgumentError("Proxy opts.clientFactory must be a function.");
             }
 
             this[kRequestTls] = opts.requestTls;
@@ -36262,10 +33605,7 @@ ${pendingInterceptorsFormatter.format(pending)}
                   } else {
                     servername = opts.servername;
                   }
-                  this[kConnectEndpoint](
-                    { ...opts, servername, httpSocket: socket },
-                    callback,
-                  );
+                  this[kConnectEndpoint]({ ...opts, servername, httpSocket: socket }, callback);
                 } catch (err) {
                   callback(err);
                 }
@@ -36332,9 +33672,7 @@ ${pendingInterceptorsFormatter.format(pending)}
         function throwIfProxyAuthIsSent(headers) {
           const existProxyAuth =
             headers &&
-            Object.keys(headers).find(
-              (key) => key.toLowerCase() === "proxy-authorization",
-            );
+            Object.keys(headers).find((key) => key.toLowerCase() === "proxy-authorization");
           if (existProxyAuth) {
             throw new InvalidArgumentError(
               "Proxy-Authorization should be sent in ProxyAgent constructor",
@@ -36456,10 +33794,8 @@ ${pendingInterceptorsFormatter.format(pending)}
 
         const diagnosticsChannel = __nccwpck_require__(1637);
         const { uid, states } = __nccwpck_require__(8420);
-        const { kReadyState, kSentClose, kByteParser, kReceivedClose } =
-          __nccwpck_require__(6708);
-        const { fireEvent, failWebsocketConnection } =
-          __nccwpck_require__(8829);
+        const { kReadyState, kSentClose, kByteParser, kReceivedClose } = __nccwpck_require__(6708);
+        const { fireEvent, failWebsocketConnection } = __nccwpck_require__(8829);
         const { CloseEvent } = __nccwpck_require__(6544);
         const { makeRequest } = __nccwpck_require__(8939);
         const { fetching } = __nccwpck_require__(4546);
@@ -36470,9 +33806,7 @@ ${pendingInterceptorsFormatter.format(pending)}
         const channels = {};
         channels.open = diagnosticsChannel.channel("undici:websocket:open");
         channels.close = diagnosticsChannel.channel("undici:websocket:close");
-        channels.socketError = diagnosticsChannel.channel(
-          "undici:websocket:socket_error",
-        );
+        channels.socketError = diagnosticsChannel.channel("undici:websocket:socket_error");
 
         /** @type {import('crypto')} */
         let crypto;
@@ -36488,13 +33822,7 @@ ${pendingInterceptorsFormatter.format(pending)}
          * @param {(response: any) => void} onEstablish
          * @param {Partial<import('../../types/websocket').WebSocketInit>} options
          */
-        function establishWebSocketConnection(
-          url,
-          protocols,
-          ws,
-          onEstablish,
-          options,
-        ) {
+        function establishWebSocketConnection(url, protocols, ws, onEstablish, options) {
           // 1. Let requestURL be a copy of url, with its scheme set to "http", if url’s
           //    scheme is "ws", and to "https" otherwise.
           const requestURL = url;
@@ -36567,10 +33895,7 @@ ${pendingInterceptorsFormatter.format(pending)}
               // 1. If response is a network error or its status is not 101,
               //    fail the WebSocket connection.
               if (response.type === "error" || response.status !== 101) {
-                failWebsocketConnection(
-                  ws,
-                  "Received network error or non-101 status code.",
-                );
+                failWebsocketConnection(ws, "Received network error or non-101 status code.");
                 return;
               }
 
@@ -36578,14 +33903,8 @@ ${pendingInterceptorsFormatter.format(pending)}
               //    list values given `Sec-WebSocket-Protocol` and response’s
               //    header list results in null, failure, or the empty byte
               //    sequence, then fail the WebSocket connection.
-              if (
-                protocols.length !== 0 &&
-                !response.headersList.get("Sec-WebSocket-Protocol")
-              ) {
-                failWebsocketConnection(
-                  ws,
-                  "Server did not respond with sent protocols.",
-                );
+              if (protocols.length !== 0 && !response.headersList.get("Sec-WebSocket-Protocol")) {
+                failWebsocketConnection(ws, "Server did not respond with sent protocols.");
                 return;
               }
 
@@ -36599,14 +33918,8 @@ ${pendingInterceptorsFormatter.format(pending)}
               //    header field contains a value that is not an ASCII case-
               //    insensitive match for the value "websocket", the client MUST
               //    _Fail the WebSocket Connection_.
-              if (
-                response.headersList.get("Upgrade")?.toLowerCase() !==
-                "websocket"
-              ) {
-                failWebsocketConnection(
-                  ws,
-                  'Server did not set Upgrade header to "websocket".',
-                );
+              if (response.headersList.get("Upgrade")?.toLowerCase() !== "websocket") {
+                failWebsocketConnection(ws, 'Server did not set Upgrade header to "websocket".');
                 return;
               }
 
@@ -36614,14 +33927,8 @@ ${pendingInterceptorsFormatter.format(pending)}
               //    |Connection| header field doesn't contain a token that is an
               //    ASCII case-insensitive match for the value "Upgrade", the client
               //    MUST _Fail the WebSocket Connection_.
-              if (
-                response.headersList.get("Connection")?.toLowerCase() !==
-                "upgrade"
-              ) {
-                failWebsocketConnection(
-                  ws,
-                  'Server did not set Connection header to "upgrade".',
-                );
+              if (response.headersList.get("Connection")?.toLowerCase() !== "upgrade") {
+                failWebsocketConnection(ws, 'Server did not set Connection header to "upgrade".');
                 return;
               }
 
@@ -36632,9 +33939,7 @@ ${pendingInterceptorsFormatter.format(pending)}
               //    E914-47DA-95CA-C5AB0DC85B11" but ignoring any leading and
               //    trailing whitespace, the client MUST _Fail the WebSocket
               //    Connection_.
-              const secWSAccept = response.headersList.get(
-                "Sec-WebSocket-Accept",
-              );
+              const secWSAccept = response.headersList.get("Sec-WebSocket-Accept");
               const digest = crypto
                 .createHash("sha1")
                 .update(keyValue + uid)
@@ -36654,9 +33959,7 @@ ${pendingInterceptorsFormatter.format(pending)}
               //    MUST _Fail the WebSocket Connection_.  (The parsing of this
               //    header field to determine which extensions are requested is
               //    discussed in Section 9.1.)
-              const secExtension = response.headersList.get(
-                "Sec-WebSocket-Extensions",
-              );
+              const secExtension = response.headersList.get("Sec-WebSocket-Extensions");
 
               if (secExtension !== null && secExtension !== permessageDeflate) {
                 failWebsocketConnection(
@@ -36671,19 +33974,13 @@ ${pendingInterceptorsFormatter.format(pending)}
               //    not present in the client's handshake (the server has indicated a
               //    subprotocol not requested by the client), the client MUST _Fail
               //    the WebSocket Connection_.
-              const secProtocol = response.headersList.get(
-                "Sec-WebSocket-Protocol",
-              );
+              const secProtocol = response.headersList.get("Sec-WebSocket-Protocol");
 
               if (
                 secProtocol !== null &&
-                secProtocol !==
-                  request.headersList.get("Sec-WebSocket-Protocol")
+                secProtocol !== request.headersList.get("Sec-WebSocket-Protocol")
               ) {
-                failWebsocketConnection(
-                  ws,
-                  "Protocol was not set in the opening handshake.",
-                );
+                failWebsocketConnection(ws, "Protocol was not set in the opening handshake.");
                 return;
               }
 
@@ -36991,9 +34288,7 @@ ${pendingInterceptorsFormatter.format(pending)}
             super(type, eventInitDict);
 
             type = webidl.converters.DOMString(type);
-            eventInitDict = webidl.converters.ErrorEventInit(
-              eventInitDict ?? {},
-            );
+            eventInitDict = webidl.converters.ErrorEventInit(eventInitDict ?? {});
 
             this.#eventInit = eventInitDict;
           }
@@ -37260,15 +34555,10 @@ ${pendingInterceptorsFormatter.format(pending)}
 
         const { Writable } = __nccwpck_require__(2203);
         const diagnosticsChannel = __nccwpck_require__(1637);
-        const { parserStates, opcodes, states, emptyBuffer } =
-          __nccwpck_require__(8420);
-        const { kReadyState, kSentClose, kResponse, kReceivedClose } =
-          __nccwpck_require__(6708);
-        const {
-          isValidStatusCode,
-          failWebsocketConnection,
-          websocketMessageReceived,
-        } = __nccwpck_require__(8829);
+        const { parserStates, opcodes, states, emptyBuffer } = __nccwpck_require__(8420);
+        const { kReadyState, kSentClose, kResponse, kReceivedClose } = __nccwpck_require__(6708);
+        const { isValidStatusCode, failWebsocketConnection, websocketMessageReceived } =
+          __nccwpck_require__(8829);
         const { WebsocketFrameSend } = __nccwpck_require__(2308);
 
         // This code was influenced by ws released under the MIT license.
@@ -37337,10 +34627,7 @@ ${pendingInterceptorsFormatter.format(pending)}
                   this.#info.opcode !== opcodes.TEXT
                 ) {
                   // Only text and binary frames can be fragmented
-                  failWebsocketConnection(
-                    this.ws,
-                    "Invalid frame type was fragmented.",
-                  );
+                  failWebsocketConnection(this.ws, "Invalid frame type was fragmented.");
                   return;
                 }
 
@@ -37357,10 +34644,7 @@ ${pendingInterceptorsFormatter.format(pending)}
 
                 if (this.#info.fragmented && payloadLength > 125) {
                   // A fragmented frame can't be fragmented itself
-                  failWebsocketConnection(
-                    this.ws,
-                    "Fragmented frame exceeded 125 bytes.",
-                  );
+                  failWebsocketConnection(this.ws, "Fragmented frame exceeded 125 bytes.");
                   return;
                 } else if (
                   (this.#info.opcode === opcodes.PING ||
@@ -37376,10 +34660,7 @@ ${pendingInterceptorsFormatter.format(pending)}
                   return;
                 } else if (this.#info.opcode === opcodes.CLOSE) {
                   if (payloadLength === 1) {
-                    failWebsocketConnection(
-                      this.ws,
-                      "Received close frame with a 1-byte body.",
-                    );
+                    failWebsocketConnection(this.ws, "Received close frame with a 1-byte body.");
                     return;
                   }
 
@@ -37426,9 +34707,7 @@ ${pendingInterceptorsFormatter.format(pending)}
                   if (!this.ws[kReceivedClose]) {
                     const frame = new WebsocketFrameSend(body);
 
-                    this.ws[kResponse].socket.write(
-                      frame.createFrame(opcodes.PONG),
-                    );
+                    this.ws[kResponse].socket.write(frame.createFrame(opcodes.PONG));
 
                     if (channels.ping.hasSubscribers) {
                       channels.ping.publish({
@@ -37489,10 +34768,7 @@ ${pendingInterceptorsFormatter.format(pending)}
                 // https://source.chromium.org/chromium/chromium/src/+/main:v8/src/common/globals.h;drc=1946212ac0100668f14eb9e2843bdd846e510a1e;bpv=1;bpt=1;l=1275
                 // https://source.chromium.org/chromium/chromium/src/+/main:v8/src/objects/js-array-buffer.h;l=34;drc=1946212ac0100668f14eb9e2843bdd846e510a1e
                 if (upper > 2 ** 31 - 1) {
-                  failWebsocketConnection(
-                    this.ws,
-                    "Received payload length > 2^31 bytes.",
-                  );
+                  failWebsocketConnection(this.ws, "Received payload length > 2^31 bytes.");
                   return;
                 }
 
@@ -37515,16 +34791,11 @@ ${pendingInterceptorsFormatter.format(pending)}
                   // a message was received
                   if (
                     !this.#info.fragmented ||
-                    (this.#info.fin &&
-                      this.#info.opcode === opcodes.CONTINUATION)
+                    (this.#info.fin && this.#info.opcode === opcodes.CONTINUATION)
                   ) {
                     const fullMessage = Buffer.concat(this.#fragments);
 
-                    websocketMessageReceived(
-                      this.ws,
-                      this.#info.originalOpcode,
-                      fullMessage,
-                    );
+                    websocketMessageReceived(this.ws, this.#info.originalOpcode, fullMessage);
 
                     this.#info = {};
                     this.#fragments.length = 0;
@@ -37610,11 +34881,7 @@ ${pendingInterceptorsFormatter.format(pending)}
             let reason = data.subarray(2);
 
             // Remove BOM
-            if (
-              reason[0] === 0xef &&
-              reason[1] === 0xbb &&
-              reason[2] === 0xbf
-            ) {
+            if (reason[0] === 0xef && reason[1] === 0xbb && reason[2] === 0xbf) {
               reason = reason.subarray(3);
             }
 
@@ -37666,13 +34933,8 @@ ${pendingInterceptorsFormatter.format(pending)}
       /***/ (module, __unused_webpack_exports, __nccwpck_require__) => {
         "use strict";
 
-        const {
-          kReadyState,
-          kController,
-          kResponse,
-          kBinaryType,
-          kWebSocketURL,
-        } = __nccwpck_require__(6708);
+        const { kReadyState, kController, kResponse, kBinaryType, kWebSocketURL } =
+          __nccwpck_require__(6708);
         const { states, opcodes } = __nccwpck_require__(8420);
         const { MessageEvent, ErrorEvent } = __nccwpck_require__(6544);
 
@@ -37746,14 +35008,9 @@ ${pendingInterceptorsFormatter.format(pending)}
             // -> type indicates that the data is Text
             //      a new DOMString containing data
             try {
-              dataForEvent = new TextDecoder("utf-8", { fatal: true }).decode(
-                data,
-              );
+              dataForEvent = new TextDecoder("utf-8", { fatal: true }).decode(data);
             } catch {
-              failWebsocketConnection(
-                ws,
-                "Received invalid UTF-8 in text frame.",
-              );
+              failWebsocketConnection(ws, "Received invalid UTF-8 in text frame.");
               return;
             }
           } else if (type === opcodes.BINARY) {
@@ -37898,13 +35155,8 @@ ${pendingInterceptorsFormatter.format(pending)}
           kSentClose,
           kByteParser,
         } = __nccwpck_require__(6708);
-        const {
-          isEstablished,
-          isClosing,
-          isValidSubprotocol,
-          failWebsocketConnection,
-          fireEvent,
-        } = __nccwpck_require__(8829);
+        const { isEstablished, isClosing, isValidSubprotocol, failWebsocketConnection, fireEvent } =
+          __nccwpck_require__(8829);
         const { establishWebSocketConnection } = __nccwpck_require__(9277);
         const { WebsocketFrameSend } = __nccwpck_require__(2308);
         const { ByteParser } = __nccwpck_require__(4648);
@@ -37949,9 +35201,7 @@ ${pendingInterceptorsFormatter.format(pending)}
             }
 
             const options =
-              webidl.converters[
-                "DOMString or sequence<DOMString> or WebSocketInit"
-              ](protocols);
+              webidl.converters["DOMString or sequence<DOMString> or WebSocketInit"](protocols);
 
             url = webidl.converters.USVString(url);
             protocols = options.protocols;
@@ -38001,24 +35251,12 @@ ${pendingInterceptorsFormatter.format(pending)}
             //    fail to match the requirements for elements that comprise the value
             //    of `Sec-WebSocket-Protocol` fields as defined by The WebSocket
             //    protocol, then throw a "SyntaxError" DOMException.
-            if (
-              protocols.length !==
-              new Set(protocols.map((p) => p.toLowerCase())).size
-            ) {
-              throw new DOMException(
-                "Invalid Sec-WebSocket-Protocol value",
-                "SyntaxError",
-              );
+            if (protocols.length !== new Set(protocols.map((p) => p.toLowerCase())).size) {
+              throw new DOMException("Invalid Sec-WebSocket-Protocol value", "SyntaxError");
             }
 
-            if (
-              protocols.length > 0 &&
-              !protocols.every((p) => isValidSubprotocol(p))
-            ) {
-              throw new DOMException(
-                "Invalid Sec-WebSocket-Protocol value",
-                "SyntaxError",
-              );
+            if (protocols.length > 0 && !protocols.every((p) => isValidSubprotocol(p))) {
+              throw new DOMException("Invalid Sec-WebSocket-Protocol value", "SyntaxError");
             }
 
             // 10. Set this's url to urlRecord.
@@ -38095,20 +35333,14 @@ ${pendingInterceptorsFormatter.format(pending)}
             }
 
             // 3. Run the first matching steps from the following list:
-            if (
-              this[kReadyState] === WebSocket.CLOSING ||
-              this[kReadyState] === WebSocket.CLOSED
-            ) {
+            if (this[kReadyState] === WebSocket.CLOSING || this[kReadyState] === WebSocket.CLOSED) {
               // If this's ready state is CLOSING (2) or CLOSED (3)
               // Do nothing.
             } else if (!isEstablished(this)) {
               // If the WebSocket connection is not yet established
               // Fail the WebSocket connection and set this's ready state
               // to CLOSING (2).
-              failWebsocketConnection(
-                this,
-                "Connection was closed before it was established.",
-              );
+              failWebsocketConnection(this, "Connection was closed before it was established.");
               this[kReadyState] = WebSocket.CLOSING;
             } else if (!isClosing(this)) {
               // If the WebSocket closing handshake has not yet been started
@@ -38178,10 +35410,7 @@ ${pendingInterceptorsFormatter.format(pending)}
             // 1. If this's ready state is CONNECTING, then throw an
             //    "InvalidStateError" DOMException.
             if (this[kReadyState] === WebSocket.CONNECTING) {
-              throw new DOMException(
-                "Sent before connected.",
-                "InvalidStateError",
-              );
+              throw new DOMException("Sent before connected.", "InvalidStateError");
             }
 
             // 2. Run the appropriate set of steps from the following list:
@@ -38440,9 +35669,7 @@ ${pendingInterceptorsFormatter.format(pending)}
             // 2. Change the extensions attribute’s value to the extensions in use, if
             //    it is not the null value.
             // https://datatracker.ietf.org/doc/html/rfc6455#section-9.1
-            const extensions = response.headersList.get(
-              "sec-websocket-extensions",
-            );
+            const extensions = response.headersList.get("sec-websocket-extensions");
 
             if (extensions !== null) {
               this.#extensions = extensions;
@@ -38463,8 +35690,7 @@ ${pendingInterceptorsFormatter.format(pending)}
         }
 
         // https://websockets.spec.whatwg.org/#dom-websocket-connecting
-        WebSocket.CONNECTING = WebSocket.prototype.CONNECTING =
-          states.CONNECTING;
+        WebSocket.CONNECTING = WebSocket.prototype.CONNECTING = states.CONNECTING;
         // https://websockets.spec.whatwg.org/#dom-websocket-open
         WebSocket.OPEN = WebSocket.prototype.OPEN = states.OPEN;
         // https://websockets.spec.whatwg.org/#dom-websocket-closing
@@ -38538,17 +35764,15 @@ ${pendingInterceptorsFormatter.format(pending)}
           },
         ]);
 
-        webidl.converters["DOMString or sequence<DOMString> or WebSocketInit"] =
-          function (V) {
-            if (webidl.util.Type(V) === "Object" && !(Symbol.iterator in V)) {
-              return webidl.converters.WebSocketInit(V);
-            }
+        webidl.converters["DOMString or sequence<DOMString> or WebSocketInit"] = function (V) {
+          if (webidl.util.Type(V) === "Object" && !(Symbol.iterator in V)) {
+            return webidl.converters.WebSocketInit(V);
+          }
 
-            return {
-              protocols:
-                webidl.converters["DOMString or sequence<DOMString>"](V),
-            };
+          return {
+            protocols: webidl.converters["DOMString or sequence<DOMString>"](V),
           };
+        };
 
         webidl.converters.WebSocketSendData = function (V) {
           if (webidl.util.Type(V) === "Object") {
@@ -38606,8 +35830,7 @@ ${pendingInterceptorsFormatter.format(pending)}
         function wrappy(fn, cb) {
           if (fn && cb) return wrappy(fn)(cb);
 
-          if (typeof fn !== "function")
-            throw new TypeError("need wrapper function");
+          if (typeof fn !== "function") throw new TypeError("need wrapper function");
 
           Object.keys(fn).forEach(function (k) {
             wrapper[k] = fn[k];
@@ -38953,18 +36176,12 @@ ${pendingInterceptorsFormatter.format(pending)}
             if (!this._finished) {
               const self = this;
               process.nextTick(function () {
-                self.emit(
-                  "error",
-                  new Error("Unexpected end of multipart data"),
-                );
+                self.emit("error", new Error("Unexpected end of multipart data"));
                 if (self._part && !self._ignoreData) {
                   const type = self._isPreamble ? "Preamble" : "Part";
                   self._part.emit(
                     "error",
-                    new Error(
-                      type +
-                        " terminated early due to unexpected end of multipart data",
-                    ),
+                    new Error(type + " terminated early due to unexpected end of multipart data"),
                   );
                   self._part.push(null);
                   process.nextTick(function () {
@@ -39094,10 +36311,7 @@ ${pendingInterceptorsFormatter.format(pending)}
             };
             if (this._isPreamble && this.listenerCount("preamble") !== 0) {
               this.emit("preamble", this._part);
-            } else if (
-              this._isPreamble !== true &&
-              this.listenerCount("part") !== 0
-            ) {
+            } else if (this._isPreamble !== true && this.listenerCount("part") !== 0) {
               this.emit("part", this._part);
             } else {
               this._ignore();
@@ -39427,10 +36641,7 @@ ${pendingInterceptorsFormatter.format(pending)}
             while (pos < 0 && pos <= len - needleLength) {
               ch = this._sbmh_lookup_char(data, pos + needleLength - 1);
 
-              if (
-                ch === lastNeedleChar &&
-                this._sbmh_memcmp(data, pos, needleLength - 1)
-              ) {
+              if (ch === lastNeedleChar && this._sbmh_memcmp(data, pos, needleLength - 1)) {
                 this._lookbehind_size = 0;
                 ++this.matches;
                 this.emit("info", true);
@@ -39458,13 +36669,7 @@ ${pendingInterceptorsFormatter.format(pending)}
 
             if (pos >= 0) {
               // Discard lookbehind buffer.
-              this.emit(
-                "info",
-                false,
-                this._lookbehind,
-                0,
-                this._lookbehind_size,
-              );
+              this.emit("info", false, this._lookbehind, 0, this._lookbehind_size);
               this._lookbehind_size = 0;
             } else {
               // Cut off part of the lookbehind buffer that has
@@ -39519,10 +36724,8 @@ ${pendingInterceptorsFormatter.format(pending)}
           while (
             pos < len &&
             (data[pos] !== needle[0] ||
-              Buffer.compare(
-                data.subarray(pos, pos + len - pos),
-                needle.subarray(0, len - pos),
-              ) !== 0)
+              Buffer.compare(data.subarray(pos, pos + len - pos), needle.subarray(0, len - pos)) !==
+                0)
           ) {
             ++pos;
           }
@@ -39541,9 +36744,7 @@ ${pendingInterceptorsFormatter.format(pending)}
         };
 
         SBMH.prototype._sbmh_lookup_char = function (data, pos) {
-          return pos < 0
-            ? this._lookbehind[this._lookbehind_size + pos]
-            : data[pos];
+          return pos < 0 ? this._lookbehind[this._lookbehind_size + pos] : data[pos];
         };
 
         SBMH.prototype._sbmh_memcmp = function (data, pos, len) {
@@ -39582,9 +36783,7 @@ ${pendingInterceptorsFormatter.format(pending)}
             throw new TypeError("Busboy expected an options-Object.");
           }
           if (typeof opts.headers !== "object") {
-            throw new TypeError(
-              "Busboy expected an options-Object with headers-attribute.",
-            );
+            throw new TypeError("Busboy expected an options-Object with headers-attribute.");
           }
           if (typeof opts.headers["content-type"] !== "string") {
             throw new TypeError("Missing Content-Type-header.");
@@ -39690,18 +36889,14 @@ ${pendingInterceptorsFormatter.format(pending)}
           const isPartAFile =
             cfg.isPartAFile ||
             ((fieldName, contentType, fileName) =>
-              contentType === "application/octet-stream" ||
-              fileName !== undefined);
+              contentType === "application/octet-stream" || fileName !== undefined);
           const parsedConType = cfg.parsedConType || [];
           const defCharset = cfg.defCharset || "utf8";
           const preservePath = cfg.preservePath;
           const fileOpts = { highWaterMark: cfg.fileHwm };
 
           for (i = 0, len = parsedConType.length; i < len; ++i) {
-            if (
-              Array.isArray(parsedConType[i]) &&
-              RE_BOUNDARY.test(parsedConType[i][0])
-            ) {
+            if (Array.isArray(parsedConType[i]) && RE_BOUNDARY.test(parsedConType[i][0])) {
               boundary = parsedConType[i][1];
               break;
             }
@@ -39825,8 +37020,7 @@ ${pendingInterceptorsFormatter.format(pending)}
                   }
 
                   if (header["content-transfer-encoding"]) {
-                    encoding =
-                      header["content-transfer-encoding"][0].toLowerCase();
+                    encoding = header["content-transfer-encoding"][0].toLowerCase();
                   } else {
                     encoding = "7bit";
                   }
@@ -39874,14 +37068,7 @@ ${pendingInterceptorsFormatter.format(pending)}
                         cb();
                       }
                     };
-                    boy.emit(
-                      "file",
-                      fieldname,
-                      file,
-                      filename,
-                      encoding,
-                      contype,
-                    );
+                    boy.emit("file", fieldname, file, filename, encoding, contype);
 
                     onData = function (data) {
                       if ((nsize += data.length) > fileSizeLimit) {
@@ -39937,15 +37124,7 @@ ${pendingInterceptorsFormatter.format(pending)}
                       if (buffer.length) {
                         buffer = decodeText(buffer, "binary", charset);
                       }
-                      boy.emit(
-                        "field",
-                        fieldname,
-                        buffer,
-                        false,
-                        truncated,
-                        encoding,
-                        contype,
-                      );
+                      boy.emit("field", fieldname, buffer, false, truncated, encoding, contype);
                       --nends;
                       checkFinished();
                     };
@@ -40043,10 +37222,7 @@ ${pendingInterceptorsFormatter.format(pending)}
           let charset;
           for (var i = 0, len = parsedConType.length; i < len; ++i) {
             // eslint-disable-line no-var
-            if (
-              Array.isArray(parsedConType[i]) &&
-              RE_CHARSET.test(parsedConType[i][0])
-            ) {
+            if (Array.isArray(parsedConType[i]) && RE_CHARSET.test(parsedConType[i][0])) {
               charset = parsedConType[i][1].toLowerCase();
               break;
             }
@@ -40099,10 +37275,7 @@ ${pendingInterceptorsFormatter.format(pending)}
                   idxamp = i;
                   break;
                 }
-                if (
-                  this._checkingBytes &&
-                  this._bytesKey === this.fieldNameSizeLimit
-                ) {
+                if (this._checkingBytes && this._bytesKey === this.fieldNameSizeLimit) {
                   this._hitLimit = true;
                   break;
                 } else if (this._checkingBytes) {
@@ -40113,9 +37286,7 @@ ${pendingInterceptorsFormatter.format(pending)}
               if (idxeq !== undefined) {
                 // key with assignment
                 if (idxeq > p) {
-                  this._key += this.decoder.write(
-                    data.toString("binary", p, idxeq),
-                  );
+                  this._key += this.decoder.write(data.toString("binary", p, idxeq));
                 }
                 this._state = "val";
 
@@ -40133,9 +37304,7 @@ ${pendingInterceptorsFormatter.format(pending)}
                 let key;
                 const keyTrunc = this._keyTrunc;
                 if (idxamp > p) {
-                  key = this._key += this.decoder.write(
-                    data.toString("binary", p, idxamp),
-                  );
+                  key = this._key += this.decoder.write(data.toString("binary", p, idxamp));
                 } else {
                   key = this._key;
                 }
@@ -40164,15 +37333,10 @@ ${pendingInterceptorsFormatter.format(pending)}
               } else if (this._hitLimit) {
                 // we may not have hit the actual limit if there are encoded bytes...
                 if (i > p) {
-                  this._key += this.decoder.write(
-                    data.toString("binary", p, i),
-                  );
+                  this._key += this.decoder.write(data.toString("binary", p, i));
                 }
                 p = i;
-                if (
-                  (this._bytesKey = this._key.length) ===
-                  this.fieldNameSizeLimit
-                ) {
+                if ((this._bytesKey = this._key.length) === this.fieldNameSizeLimit) {
                   // yep, we actually did hit the limit
                   this._checkingBytes = false;
                   this._keyTrunc = true;
@@ -40193,10 +37357,7 @@ ${pendingInterceptorsFormatter.format(pending)}
                   idxamp = i;
                   break;
                 }
-                if (
-                  this._checkingBytes &&
-                  this._bytesVal === this.fieldSizeLimit
-                ) {
+                if (this._checkingBytes && this._bytesVal === this.fieldSizeLimit) {
                   this._hitLimit = true;
                   break;
                 } else if (this._checkingBytes) {
@@ -40207,9 +37368,7 @@ ${pendingInterceptorsFormatter.format(pending)}
               if (idxamp !== undefined) {
                 ++this._fields;
                 if (idxamp > p) {
-                  this._val += this.decoder.write(
-                    data.toString("binary", p, idxamp),
-                  );
+                  this._val += this.decoder.write(data.toString("binary", p, idxamp));
                 }
                 this.boy.emit(
                   "field",
@@ -40234,9 +37393,7 @@ ${pendingInterceptorsFormatter.format(pending)}
               } else if (this._hitLimit) {
                 // we may not have hit the actual limit if there are encoded bytes...
                 if (i > p) {
-                  this._val += this.decoder.write(
-                    data.toString("binary", p, i),
-                  );
+                  this._val += this.decoder.write(data.toString("binary", p, i));
                 }
                 p = i;
                 if (
@@ -40296,12 +37453,11 @@ ${pendingInterceptorsFormatter.format(pending)}
         const RE_PLUS = /\+/g;
 
         const HEX = [
-          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-          0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1,
-          1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-          0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
+          0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+          0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+          0, 0, 0, 0, 0, 0, 0, 0,
         ];
 
         function Decoder() {
@@ -41053,10 +38209,7 @@ ${pendingInterceptorsFormatter.format(pending)}
                 tmp += "\\";
               }
               escaping = false;
-              if (
-                (state === STATE_CHARSET || state === STATE_LANG) &&
-                char === "'"
-              ) {
+              if ((state === STATE_CHARSET || state === STATE_LANG) && char === "'") {
                 if (state === STATE_CHARSET) {
                   state = STATE_LANG;
                   charset = tmp.substring(1);
@@ -41065,11 +38218,7 @@ ${pendingInterceptorsFormatter.format(pending)}
                 }
                 tmp = "";
                 continue;
-              } else if (
-                state === STATE_KEY &&
-                (char === "*" || char === "=") &&
-                res.length
-              ) {
+              } else if (state === STATE_KEY && (char === "*" || char === "=") && res.length) {
                 state = char === "*" ? STATE_CHARSET : STATE_VALUE;
                 res[p] = [tmp, undefined];
                 tmp = "";
@@ -41078,11 +38227,7 @@ ${pendingInterceptorsFormatter.format(pending)}
                 state = STATE_KEY;
                 if (charset) {
                   if (tmp.length) {
-                    tmp = decodeText(
-                      tmp.replace(RE_ENCODED, encodedReplacer),
-                      "binary",
-                      charset,
-                    );
+                    tmp = decodeText(tmp.replace(RE_ENCODED, encodedReplacer), "binary", charset);
                   }
                   charset = "";
                 } else if (tmp.length) {
@@ -41103,11 +38248,7 @@ ${pendingInterceptorsFormatter.format(pending)}
             tmp += char;
           }
           if (charset && tmp.length) {
-            tmp = decodeText(
-              tmp.replace(RE_ENCODED, encodedReplacer),
-              "binary",
-              charset,
-            );
+            tmp = decodeText(tmp.replace(RE_ENCODED, encodedReplacer), "binary", charset);
           } else if (tmp) {
             tmp = decodeText(tmp, "binary", "utf8");
           }
@@ -41174,8 +38315,7 @@ ${pendingInterceptorsFormatter.format(pending)}
   /************************************************************************/
   /******/ /* webpack/runtime/compat */
   /******/
-  /******/ if (typeof __nccwpck_require__ !== "undefined")
-    __nccwpck_require__.ab = __dirname + "/";
+  /******/ if (typeof __nccwpck_require__ !== "undefined") __nccwpck_require__.ab = __dirname + "/";
   /******/
   /************************************************************************/
   var __webpack_exports__ = {};
@@ -41243,16 +38383,12 @@ ${pendingInterceptorsFormatter.format(pending)}
      * lines. The capture group is the raw fingerprint list — split it on
      * `[\s,]+` to get individual values.
      */
-    const PR_FINGERPRINT_RE =
-      /^Fixes fingerprints? ([a-f0-9]{8}(?:[\s,]+[a-f0-9]{8})*)\b/gim;
+    const PR_FINGERPRINT_RE = /^Fixes fingerprints? ([a-f0-9]{8}(?:[\s,]+[a-f0-9]{8})*)\b/gim;
     // CONCATENATED MODULE: ./src/clickhouse.ts
 
     const TABLE = "vortex.resolved_fingerprints";
     const insertRows = async (client, rows) => {
-      const updatedAt = new Date()
-        .toISOString()
-        .replace("T", " ")
-        .substring(0, 19);
+      const updatedAt = new Date().toISOString().replace("T", " ").substring(0, 19);
       const values = rows.map((r) => ({
         fingerprint: r.fingerprint,
         pr_url: r.pr_url ?? "",
@@ -41286,9 +38422,7 @@ ${pendingInterceptorsFormatter.format(pending)}
     const applyToClickHouse = async (dbMode, rows) => {
       for (const r of rows) {
         if (!r.fingerprint || !FINGERPRINT_RE.test(r.fingerprint)) {
-          throw new Error(
-            `Invalid or missing fingerprint: ${JSON.stringify(r)}`,
-          );
+          throw new Error(`Invalid or missing fingerprint: ${JSON.stringify(r)}`);
         }
       }
       const url = core.getInput("clickhouse-url", { required: true });
@@ -41326,9 +38460,7 @@ ${pendingInterceptorsFormatter.format(pending)}
       const remove = core.getBooleanInput("remove");
       const rawStatus = core.getInput("status");
       if (!isStatus(rawStatus)) {
-        throw new Error(
-          `Invalid status "${rawStatus}" — must be one of: ${STATUSES.join(", ")}`,
-        );
+        throw new Error(`Invalid status "${rawStatus}" — must be one of: ${STATUSES.join(", ")}`);
       }
       const status = rawStatus;
       const releaseVersion = core.getInput("release-version");
@@ -41350,9 +38482,7 @@ ${pendingInterceptorsFormatter.format(pending)}
         );
       }
       if (!remove && status === "released" && !releaseVersion) {
-        throw new Error(
-          'release-version is required when status is "released".',
-        );
+        throw new Error('release-version is required when status is "released".');
       }
       const dbMode = remove ? "delete" : "insert";
       const runUrl = `${ctx.serverUrl}/${ctx.repo.owner}/${ctx.repo.repo}/actions/runs/${ctx.runId}`;
@@ -41432,26 +38562,18 @@ ${pendingInterceptorsFormatter.format(pending)}
      * `updated_at < sinceDate` is reached — `merged_at <= updated_at` guarantees
      * no later page can contain anything still relevant.
      */
-    const collectFingerprintRowsSince = async (
-      octokit,
-      ctx,
-      sinceDate,
-      version,
-    ) => {
+    const collectFingerprintRowsSince = async (octokit, ctx, sinceDate, version) => {
       const seen = new Set();
       const rows = [];
       let mergedCount = 0;
-      for await (const { data } of octokit.paginate.iterator(
-        octokit.rest.pulls.list,
-        {
-          owner: ctx.repo.owner,
-          repo: ctx.repo.repo,
-          state: "closed",
-          sort: "updated",
-          direction: "desc",
-          per_page: 100,
-        },
-      )) {
+      for await (const { data } of octokit.paginate.iterator(octokit.rest.pulls.list, {
+        owner: ctx.repo.owner,
+        repo: ctx.repo.repo,
+        state: "closed",
+        sort: "updated",
+        direction: "desc",
+        per_page: 100,
+      })) {
         for (const pr of data) {
           if (new Date(pr.updated_at) < sinceDate) {
             return { rows, mergedCount };
@@ -41504,20 +38626,14 @@ ${pendingInterceptorsFormatter.format(pending)}
       const tagNames = tags.map((t) => t.name).filter((n) => n.startsWith("v"));
       const currentIndex = tagNames.indexOf(version);
       if (currentIndex < 0) {
-        throw new Error(
-          `Current tag ${version} not found in repository tag list.`,
-        );
+        throw new Error(`Current tag ${version} not found in repository tag list.`);
       }
       const previousTag = tagNames[currentIndex + 1];
       if (!previousTag) {
         core.info("No previous tag found, nothing to mark as released.");
         return { rows: [], dbMode: "insert" };
       }
-      const previousCommitSha = await resolvePreviousTagCommitSha(
-        octokit,
-        ctx,
-        previousTag,
-      );
+      const previousCommitSha = await resolvePreviousTagCommitSha(octokit, ctx, previousTag);
       const { data: previousCommit } = await octokit.rest.git.getCommit({
         owner: ctx.repo.owner,
         repo: ctx.repo.repo,
@@ -41532,9 +38648,7 @@ ${pendingInterceptorsFormatter.format(pending)}
         sinceDate,
         version,
       );
-      core.info(
-        `Found ${mergedCount} merged PR(s), ${rows.length} unique fingerprint(s).`,
-      );
+      core.info(`Found ${mergedCount} merged PR(s), ${rows.length} unique fingerprint(s).`);
       return { rows, dbMode: "insert" };
     };
     // CONCATENATED MODULE: ./src/index.ts
@@ -41552,9 +38666,7 @@ ${pendingInterceptorsFormatter.format(pending)}
           return collectFromInput();
         default: {
           const exhaustive = mode;
-          throw new Error(
-            `Unknown mode "${exhaustive}" — must be one of: ${MODES.join(", ")}`,
-          );
+          throw new Error(`Unknown mode "${exhaustive}" — must be one of: ${MODES.join(", ")}`);
         }
       }
     };
@@ -41565,9 +38677,7 @@ ${pendingInterceptorsFormatter.format(pending)}
     const run = async () => {
       const mode = core.getInput("mode", { required: true });
       if (!isMode(mode)) {
-        throw new Error(
-          `Invalid mode "${mode}" — must be one of: ${MODES.join(", ")}`,
-        );
+        throw new Error(`Invalid mode "${mode}" — must be one of: ${MODES.join(", ")}`);
       }
       const result = await dispatch(mode);
       if (result.rows.length === 0) {

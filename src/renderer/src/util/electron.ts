@@ -4,7 +4,6 @@
 import * as electron from "electron";
 
 import type { AppPath } from "./getVortexPath";
-
 import getVortexPath from "./getVortexPath";
 
 // In the renderer process, electron.app is undefined.
@@ -36,9 +35,7 @@ const appShim = {
   },
   getName: (): string => {
     return (
-      (window as unknown as { appName: string }).appName ??
-      electron.app?.getName?.() ??
-      "Vortex"
+      (window as unknown as { appName: string }).appName ?? electron.app?.getName?.() ?? "Vortex"
     );
   },
 };

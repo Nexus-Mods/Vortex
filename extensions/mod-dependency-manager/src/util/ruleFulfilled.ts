@@ -1,7 +1,7 @@
-import { IModLookupInfo } from "../types/IModLookupInfo";
-
 import { IReference, IRule } from "modmeta-db";
 import { util } from "vortex-api";
+
+import { IModLookupInfo } from "../types/IModLookupInfo";
 
 function findReference(
   reference: IReference,
@@ -20,9 +20,7 @@ function findReference(
       return refMod;
     }
   }
-  return mods.find((mod) =>
-    (util as any).testModReference(mod, reference, source),
-  );
+  return mods.find((mod) => (util as any).testModReference(mod, reference, source));
 }
 
 function ruleFulfilled(

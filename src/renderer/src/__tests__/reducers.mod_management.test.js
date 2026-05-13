@@ -1,5 +1,5 @@
-import { settingsReducer } from "../extensions/mod_management/reducers/settings";
 import { modsReducer } from "../extensions/mod_management/reducers/mods";
+import { settingsReducer } from "../extensions/mod_management/reducers/settings";
 
 describe("setInstallPath", () => {
   it("sets the install path for a game", () => {

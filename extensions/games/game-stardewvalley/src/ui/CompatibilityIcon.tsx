@@ -1,9 +1,8 @@
+import React from "react";
 /**
  * Renders Stardew mod compatibility status in the mods table.
  */
 import type { types } from "vortex-api";
-
-import React from "react";
 import { tooltip } from "vortex-api";
 
 import type { CompatibilityStatus } from "../types";
@@ -36,9 +35,7 @@ export default function CompatibilityIcon(props: ICompatibilityIconProps) {
     );
   }
 
-  const status = (
-    mod.attributes?.compatibilityStatus ?? "unknown"
-  ).toLowerCase();
+  const status = (mod.attributes?.compatibilityStatus ?? "unknown").toLowerCase();
   const icon = iconMap[status] ?? iconMap["unknown"];
   return (
     <tooltip.Icon

@@ -12,17 +12,14 @@ function findGame() {
 }
 
 function prepareForModding(discovery) {
-  return fs.ensureDirWritableAsync(
-    path.join(discovery.path, "data", "packed"),
-    () => Promise.resolve(),
+  return fs.ensureDirWritableAsync(path.join(discovery.path, "data", "packed"), () =>
+    Promise.resolve(),
   );
 }
 
 function installContent(files) {
   // The .pak file is expected to always be positioned in the mods directory we're going to disregard anything placed outside the root.
-  const modFile = files.find(
-    (file) => path.extname(file).toLowerCase() === MOD_FILE_EXT,
-  );
+  const modFile = files.find((file) => path.extname(file).toLowerCase() === MOD_FILE_EXT);
   const idx = modFile.indexOf(path.basename(modFile));
   const rootPath = path.dirname(modFile);
 
@@ -46,8 +43,7 @@ function testSupportedContent(files, gameId) {
   // Make sure we're able to support this mod.
   let supported =
     gameId === ELEX_ID &&
-    files.find((file) => path.extname(file).toLowerCase() === MOD_FILE_EXT) !==
-      undefined;
+    files.find((file) => path.extname(file).toLowerCase() === MOD_FILE_EXT) !== undefined;
 
   if (
     supported &&
@@ -86,12 +82,7 @@ function main(context) {
     },
   });
 
-  context.registerInstaller(
-    "elex-mod",
-    25,
-    testSupportedContent,
-    installContent,
-  );
+  context.registerInstaller("elex-mod", 25, testSupportedContent, installContent);
 
   return true;
 }

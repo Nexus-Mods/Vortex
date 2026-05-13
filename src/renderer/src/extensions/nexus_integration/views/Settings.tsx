@@ -1,29 +1,23 @@
-import { addNotification } from "../../../actions";
-import { showDialog } from "../../../actions/notifications";
-import Icon from "../../../controls/Icon";
-import More from "../../../controls/More";
-import Toggle from "../../../controls/Toggle";
-import { Button } from "../../../controls/TooltipControls";
-import type {
-  DialogActions,
-  DialogType,
-  IDialogContent,
-} from "../../../types/IDialog";
-import type { IErrorOptions } from "../../../types/IExtensionContext";
-import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
-import { showError } from "../../../util/message";
-import opn from "../../../util/opn";
-import { setAssociatedWithNXMURLs } from "../actions/settings";
-
-import chromeAllowScheme from "../util/chromeAllowScheme";
-
-import { NEXUS_BASE_URL } from "../constants";
-import getText from "../texts";
-
 import * as React from "react";
 import { Alert, FormGroup, HelpBlock } from "react-bootstrap";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
+
+import { addNotification } from "../../../actions";
+import { showDialog } from "../../../actions/notifications";
+import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
+import Icon from "../../../controls/Icon";
+import More from "../../../controls/More";
+import Toggle from "../../../controls/Toggle";
+import { Button } from "../../../controls/TooltipControls";
+import type { DialogActions, DialogType, IDialogContent } from "../../../types/IDialog";
+import type { IErrorOptions } from "../../../types/IExtensionContext";
+import { showError } from "../../../util/message";
+import opn from "../../../util/opn";
+import { setAssociatedWithNXMURLs } from "../actions/settings";
+import { NEXUS_BASE_URL } from "../constants";
+import getText from "../texts";
+import chromeAllowScheme from "../util/chromeAllowScheme";
 
 function nop() {
   // nop
@@ -54,11 +48,7 @@ interface IActionProps {
     content: IDialogContent,
     actions: DialogActions,
   ) => void;
-  onShowError: (
-    message: string,
-    details: string | Error,
-    options?: IErrorOptions,
-  ) => void;
+  onShowError: (message: string, details: string | Error, options?: IErrorOptions) => void;
   onShowInfo: (message: string) => void;
 }
 
@@ -199,9 +189,7 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, null, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onAssociate: (associate: boolean): void => {
       dispatch(setAssociatedWithNXMURLs(associate));
@@ -214,11 +202,7 @@ function mapDispatchToProps(
     ) => {
       dispatch(showDialog(type, title, content, actions));
     },
-    onShowError: (
-      message: string,
-      details: string | Error,
-      options: IErrorOptions,
-    ) => {
+    onShowError: (message: string, details: string | Error, options: IErrorOptions) => {
       showError(dispatch, message, details, options);
     },
     onShowInfo: (message: string) =>

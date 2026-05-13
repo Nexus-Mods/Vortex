@@ -1,21 +1,14 @@
+import * as React from "react";
+import { Alert, Button, FormControl, FormGroup, HelpBlock } from "react-bootstrap";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
+
 import { setMultiUser } from "../../actions/user";
+import { ComponentEx, connect, translate } from "../../controls/ComponentEx";
 import More from "../../controls/More";
 import type { IState } from "../../types/IState";
 import { relaunch } from "../../util/commandLine";
-import { ComponentEx, connect, translate } from "../../controls/ComponentEx";
-
 import getText from "./texts";
-
-import * as React from "react";
-import {
-  Alert,
-  Button,
-  FormControl,
-  FormGroup,
-  HelpBlock,
-} from "react-bootstrap";
-import type * as Redux from "redux";
-import type { ThunkDispatch } from "redux-thunk";
 
 interface IConnectedProps {
   multiUser: boolean;
@@ -95,9 +88,7 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, null, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetMultiUser: (multiUser: boolean) => dispatch(setMultiUser(multiUser)),
   };

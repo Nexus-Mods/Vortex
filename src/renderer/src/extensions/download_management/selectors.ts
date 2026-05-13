@@ -1,11 +1,12 @@
-import { activeGameId } from "../profile_management/selectors";
-import type { IDownload, IState } from "../../types/IState";
-import { log } from "../../util/log";
-import getDownloadPath from "./util/getDownloadPath";
 import type { OutputParametricSelector } from "re-reselect";
 import { createCachedSelector } from "re-reselect";
 import { createSelector } from "reselect";
+
+import type { IDownload, IState } from "../../types/IState";
+import { log } from "../../util/log";
+import { activeGameId } from "../profile_management/selectors";
 import type { DownloadState } from "./types/IDownload";
+import getDownloadPath from "./util/getDownloadPath";
 
 const downloadPathPattern = (state: IState) => state.settings.downloads.path;
 
@@ -17,23 +18,15 @@ export const downloadPath: (state: IState) => string = createSelector(
   (inPath: string, inGameId: string) => getDownloadPath(inPath, inGameId),
 );
 
-const downloadPathForGameImpl: OutputParametricSelector<
-  IState,
-  string,
-  string,
-  DLPathCB,
-  any
-> = createCachedSelector(
-  downloadPathPattern,
-  (state: IState, gameId: string) => gameId,
-  (inPath: string, gameId: string) => getDownloadPath(inPath, gameId),
-)((state, gameId) => gameId);
+const downloadPathForGameImpl: OutputParametricSelector<IState, string, string, DLPathCB, any> =
+  createCachedSelector(
+    downloadPathPattern,
+    (state: IState, gameId: string) => gameId,
+    (inPath: string, gameId: string) => getDownloadPath(inPath, gameId),
+  )((state, gameId) => gameId);
 
 export function downloadPathForGame(state: IState, gameId?: string) {
-  return downloadPathForGameImpl(
-    state,
-    gameId ?? activeGameId(state) ?? "__invalid",
-  );
+  return downloadPathForGameImpl(state, gameId ?? activeGameId(state) ?? "__invalid");
 }
 
 const downloadFiles = (state: IState) => state.persistent.downloads.files;
@@ -41,10 +34,7 @@ export const downloadsForGame = (state: IState, gameId: string) => {
   return Object.keys(downloadFiles(state)).reduce(
     (prev, id) => {
       const download = downloadFiles(state)[id];
-      if (
-        download.game.includes(gameId) &&
-        ["finished"].includes(download.state)
-      ) {
+      if (download.game.includes(gameId) && ["finished"].includes(download.state)) {
         prev[id] = download;
       }
       return prev;
@@ -54,9 +44,7 @@ export const downloadsForGame = (state: IState, gameId: string) => {
 };
 
 export const downloadsForActiveGame = (state: IState) =>
-  createSelector(activeGameId, (inGameId: string) =>
-    downloadsForGame(state, inGameId),
-  );
+  createSelector(activeGameId, (inGameId: string) => downloadsForGame(state, inGameId));
 
 const ACTIVE_STATES: DownloadState[] = ["finalizing", "started"];
 
@@ -85,10 +73,7 @@ export const activeDownloads = createSelector(
 
 export const getDownloadByIds = createSelector(
   downloadFiles,
-  (
-    state: IState,
-    identifiers: { fileId: number; modId: number; gameId: string },
-  ) => identifiers,
+  (state: IState, identifiers: { fileId: number; modId: number; gameId: string }) => identifiers,
   (
     files: { [dlId: string]: IDownload },
     identifiers: { fileId: number; modId: number; gameId: string },

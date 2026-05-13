@@ -34,32 +34,23 @@ let tools = [
     name: "OCS.Patcher.Scar.PathFinding fix",
     logo: "OCS logo.png",
     executable: () => "OCS.Patcher.Scar.PathFinding.Steam.exe",
-    requiredFiles: [
-      "OCS.Patcher.Scar.PathFinding.exe",
-      "OpenConstructionSet.dll",
-    ],
+    requiredFiles: ["OCS.Patcher.Scar.PathFinding.exe", "OpenConstructionSet.dll"],
   },
 ];
 function prepareForModding(discovery) {
-  return fs.ensureDirWritableAsync(path.join(discovery.path, "mods"), () =>
-    Promise.resolve(),
-  );
+  return fs.ensureDirWritableAsync(path.join(discovery.path, "mods"), () => Promise.resolve());
 }
 
 // Kenshi's Steam version requires the game to be executed
 //  via Steam in order for it to add workshop mods.
 function requiresLauncher(gamePath, store) {
-  return store === "steam"
-    ? Promise.resolve({ launcher: "steam" })
-    : Promise.resolve(undefined);
+  return store === "steam" ? Promise.resolve({ launcher: "steam" }) : Promise.resolve(undefined);
 }
 
 function installContent(files) {
   // The .mod file is expected to always be positioned in the root directory
   //  of the mod itself; we're going to disregard anything placed outside the root.
-  const modFile = files.find(
-    (file) => path.extname(file).toLowerCase() === MOD_FILE_EXT,
-  );
+  const modFile = files.find((file) => path.extname(file).toLowerCase() === MOD_FILE_EXT);
   const idx = modFile.indexOf(path.basename(modFile));
   const rootPath = path.dirname(modFile);
 
@@ -86,8 +77,7 @@ function testSupportedContent(files, gameId) {
   // Make sure we're able to support this mod.
   const supported =
     gameId === KENSHI_ID &&
-    files.find((file) => path.extname(file).toLowerCase() === MOD_FILE_EXT) !==
-      undefined;
+    files.find((file) => path.extname(file).toLowerCase() === MOD_FILE_EXT) !== undefined;
   return Promise.resolve({
     supported,
     requiredFiles: [],
@@ -137,12 +127,7 @@ function main(context) {
     },
   });
 
-  context.registerInstaller(
-    "kenshi-mod",
-    25,
-    testSupportedContent,
-    installContent,
-  );
+  context.registerInstaller("kenshi-mod", 25, testSupportedContent, installContent);
 
   return true;
 }

@@ -16,11 +16,7 @@ export function addGameEntry(gameEntry: ILoadOrderGameInfo, extPath: string) {
     gameSupport.find((game) => game.gameId === gameEntry.gameId) !== undefined;
 
   if (isDuplicate) {
-    log(
-      "debug",
-      "attempted to add duplicate gameEntry to load order extension",
-      gameEntry.gameId,
-    );
+    log("debug", "attempted to add duplicate gameEntry to load order extension", gameEntry.gameId);
     return;
   }
 

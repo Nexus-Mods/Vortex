@@ -1,5 +1,6 @@
-import Bluebird from "bluebird";
 import path from "path";
+
+import Bluebird from "bluebird";
 import { fs, log, types, util } from "vortex-api";
 
 import { migrate020 } from "./migrations";
@@ -25,15 +26,11 @@ function ensureBIXConfig(discovery: types.IDiscoveryResult): Bluebird<void> {
 function requiresLauncher() {
   return util.epicGamesLauncher
     .isGameInstalled(EPIC_APP_ID)
-    .then((epic) =>
-      epic ? { launcher: "epic", addInfo: EPIC_APP_ID } : undefined,
-    );
+    .then((epic) => (epic ? { launcher: "epic", addInfo: EPIC_APP_ID } : undefined));
 }
 
 function findGame() {
-  return util.epicGamesLauncher
-    .findByAppId(EPIC_APP_ID)
-    .then((epicEntry) => epicEntry.gamePath);
+  return util.epicGamesLauncher.findByAppId(EPIC_APP_ID).then((epicEntry) => epicEntry.gamePath);
 }
 
 function modPath() {

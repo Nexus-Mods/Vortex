@@ -6,7 +6,6 @@
 import { mdiPalette } from "@mdi/js";
 
 import type { IExtensionContext } from "../../types/IExtensionContext";
-
 import DesignSystemPage from "./views/DesignSystemPage";
 
 function init(context: IExtensionContext): boolean {

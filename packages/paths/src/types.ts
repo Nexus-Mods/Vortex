@@ -56,8 +56,7 @@ export const ResolvedPathSchema = z.string().refine(
     return posix.isAbsolute(s) || win32.isAbsolute(s);
   },
   {
-    message:
-      "Resolved paths must be absolute (Unix: /path or Windows: C:\\path)",
+    message: "Resolved paths must be absolute (Unix: /path or Windows: C:\\path)",
   },
 );
 
@@ -112,9 +111,7 @@ export namespace RelativePath {
   export function make(input: string): RelativePath {
     const result = RelativePathSchema.safeParse(input);
     if (!result.success) {
-      const errors =
-        result.error.issues?.map((e) => e.message).join(", ") ||
-        result.error.message;
+      const errors = result.error.issues?.map((e) => e.message).join(", ") || result.error.message;
       throw new Error(`Invalid RelativePath: ${errors}`);
     }
     return result.data as RelativePath;
@@ -149,13 +146,8 @@ export namespace RelativePath {
    * RelativePath.join(RelativePath.make('mods'), 'skyrim\\data', 'meshes')
    * // => 'mods/skyrim/data/meshes'
    */
-  export function join(
-    base: RelativePath,
-    ...segments: string[]
-  ): RelativePath {
-    const combined = [base as string, ...segments]
-      .filter((s) => s.length > 0)
-      .join("/");
+  export function join(base: RelativePath, ...segments: string[]): RelativePath {
+    const combined = [base as string, ...segments].filter((s) => s.length > 0).join("/");
     return combined === "" ? EMPTY : make(combined);
   }
 
@@ -264,9 +256,7 @@ export namespace ResolvedPath {
   export function make(osPath: string): ResolvedPath {
     const result = ResolvedPathSchema.safeParse(osPath);
     if (!result.success) {
-      const errors =
-        result.error.issues?.map((e) => e.message).join(", ") ||
-        result.error.message;
+      const errors = result.error.issues?.map((e) => e.message).join(", ") || result.error.message;
       throw new Error(`Invalid ResolvedPath: ${errors}`);
     }
     return result.data as ResolvedPath;
@@ -303,10 +293,7 @@ export namespace ResolvedPath {
    * ResolvedPath.join(base, 'mods', 'skyrim')
    * // => 'C:\\Vortex\\mods\\skyrim' (Windows)
    */
-  export function join(
-    base: ResolvedPath,
-    ...segments: string[]
-  ): ResolvedPath {
+  export function join(base: ResolvedPath, ...segments: string[]): ResolvedPath {
     const pathMod = detectPathModule(base as string);
     const joined = pathMod.join(base as string, ...segments);
     return make(joined);
@@ -400,9 +387,7 @@ export namespace Extension {
   export function make(input: string): Extension {
     const result = ExtensionSchema.safeParse(input);
     if (!result.success) {
-      const errors =
-        result.error.issues?.map((e) => e.message).join(", ") ||
-        result.error.message;
+      const errors = result.error.issues?.map((e) => e.message).join(", ") || result.error.message;
       throw new Error(`Invalid Extension: ${errors}`);
     }
     return result.data as Extension;

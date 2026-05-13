@@ -1,10 +1,10 @@
-import DraggableList from "./DraggableList";
-import PluginEntry from "./PluginEntry";
-
 import * as React from "react";
 import { Panel } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { ComponentEx, DNDContainer, FlexLayout, MainPage } from "vortex-api";
+
+import DraggableList from "./DraggableList";
+import PluginEntry from "./PluginEntry";
 
 const PanelX: any = Panel;
 
@@ -21,9 +21,7 @@ class PluginList extends ComponentEx<IPluginListProps, {}> {
   public render(): JSX.Element {
     const { t } = this.props;
     const { knownPlugins, pluginOrder } = this.props.localState;
-    const disabledPlugins = knownPlugins.filter(
-      (plugin) => pluginOrder.indexOf(plugin) === -1,
-    );
+    const disabledPlugins = knownPlugins.filter((plugin) => pluginOrder.indexOf(plugin) === -1);
 
     return (
       <MainPage>

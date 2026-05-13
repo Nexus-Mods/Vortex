@@ -1,9 +1,5 @@
 import type { Context } from "@opentelemetry/api";
-import type {
-  ReadableSpan,
-  Span,
-  SpanProcessor,
-} from "@opentelemetry/sdk-trace-base";
+import type { ReadableSpan, Span, SpanProcessor } from "@opentelemetry/sdk-trace-base";
 
 /** SpanStatusCode.ERROR from @opentelemetry/api (value import not allowed in shared/) */
 const SPAN_STATUS_ERROR = 2;
@@ -46,9 +42,7 @@ export class RingBufferSpanProcessor implements SpanProcessor {
 
   constructor(options: RingBufferOptions = {}) {
     this.#maxSpans = options.maxSpans ?? DEFAULT_MAX_SPANS;
-    this.#buffer = new Array<ReadableSpan | undefined>(this.#maxSpans).fill(
-      undefined,
-    );
+    this.#buffer = new Array<ReadableSpan | undefined>(this.#maxSpans).fill(undefined);
     this.#onExportSpans = options.onExportSpans;
   }
 
@@ -86,10 +80,7 @@ export class RingBufferSpanProcessor implements SpanProcessor {
     const raw =
       this.#count < this.#maxSpans
         ? this.#buffer.slice(0, this.#count)
-        : [
-            ...this.#buffer.slice(this.#head),
-            ...this.#buffer.slice(0, this.#head),
-          ];
+        : [...this.#buffer.slice(this.#head), ...this.#buffer.slice(0, this.#head)];
 
     return raw.filter((s): s is ReadableSpan => s !== undefined);
   }
@@ -120,10 +111,7 @@ export class RingBufferSpanProcessor implements SpanProcessor {
   #markTraceExported(traceId: string): void {
     this.#exportedTraceIds.add(traceId);
     if (this.#exportedTraceIds.size > MAX_EXPORTED_TRACE_IDS) {
-      const next = this.#exportedTraceIds.values().next() as IteratorResult<
-        string,
-        never
-      >;
+      const next = this.#exportedTraceIds.values().next() as IteratorResult<string, never>;
       if (!next.done) {
         this.#exportedTraceIds.delete(next.value);
       }

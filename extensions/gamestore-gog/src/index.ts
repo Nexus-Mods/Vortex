@@ -1,9 +1,8 @@
-import Bluebird from "bluebird";
-
 import * as path from "path";
-import * as winapi from "winapi-bindings";
 
+import Bluebird from "bluebird";
 import { fs, log, types } from "vortex-api";
+import * as winapi from "winapi-bindings";
 
 const STORE_ID = "gog";
 const STORE_NAME = "GOG";
@@ -56,9 +55,7 @@ class GoGLauncher implements types.IGameStore {
       .then((entries) => entries.find((entry) => re.test(entry.name)))
       .then((entry) => {
         if (entry === undefined) {
-          return Bluebird.reject(
-            new types.GameEntryNotFound(namePattern, STORE_ID),
-          );
+          return Bluebird.reject(new types.GameEntryNotFound(namePattern, STORE_ID));
         } else {
           return Bluebird.resolve(entry);
         }
@@ -98,9 +95,7 @@ class GoGLauncher implements types.IGameStore {
   /**
    * find the first game with the specified appid or one of the specified appids
    */
-  public findByAppId(
-    appId: string | string[],
-  ): Bluebird<types.IGameStoreEntry> {
+  public findByAppId(appId: string | string[]): Bluebird<types.IGameStoreEntry> {
     const matcher = Array.isArray(appId)
       ? (entry: types.IGameStoreEntry) => appId.includes(entry.appid)
       : (entry: types.IGameStoreEntry) => appId === entry.appid;
@@ -109,10 +104,7 @@ class GoGLauncher implements types.IGameStore {
       const gameEntry = entries.find(matcher);
       if (gameEntry === undefined) {
         return Bluebird.reject(
-          new types.GameEntryNotFound(
-            Array.isArray(appId) ? appId.join(", ") : appId,
-            STORE_ID,
-          ),
+          new types.GameEntryNotFound(Array.isArray(appId) ? appId.join(", ") : appId, STORE_ID),
         );
       } else {
         return Bluebird.resolve(gameEntry);
@@ -146,19 +138,18 @@ class GoGLauncher implements types.IGameStore {
     gamePath: string,
     fallback: (gamePath: string) => PromiseLike<boolean>,
   ): Bluebird<boolean> {
-    return Bluebird.all([
-      this.fileExists(path.join(gamePath, "gog.ico")),
-      fallback(gamePath),
-    ]).then(([custom, fallback]) => {
-      if (custom !== fallback) {
-        log("warn", "(gog) game identification inconclusive", {
-          gamePath,
-          custom,
-          fallback,
-        });
-      }
-      return custom || fallback;
-    });
+    return Bluebird.all([this.fileExists(path.join(gamePath, "gog.ico")), fallback(gamePath)]).then(
+      ([custom, fallback]) => {
+        if (custom !== fallback) {
+          log("warn", "(gog) game identification inconclusive", {
+            gamePath,
+            custom,
+            fallback,
+          });
+        }
+        return custom || fallback;
+      },
+    );
   }
 
   private fileExists(filePath: string): PromiseLike<boolean> {
@@ -178,21 +169,14 @@ class GoGLauncher implements types.IGameStore {
                 .map((key) => {
                   try {
                     const gameEntry: types.IGameStoreEntry = {
-                      appid: winapi.RegGetValue(hkey, key.key, "gameID")
-                        .value as string,
-                      gamePath: winapi.RegGetValue(hkey, key.key, "path")
-                        .value as string,
-                      name: winapi.RegGetValue(hkey, key.key, "startMenu")
-                        .value as string,
+                      appid: winapi.RegGetValue(hkey, key.key, "gameID").value as string,
+                      gamePath: winapi.RegGetValue(hkey, key.key, "path").value as string,
+                      name: winapi.RegGetValue(hkey, key.key, "startMenu").value as string,
                       gameStoreId: STORE_ID,
                     };
                     return gameEntry;
                   } catch (err) {
-                    log(
-                      "error",
-                      "gamestore-gog: failed to create game entry",
-                      err,
-                    );
+                    log("error", "gamestore-gog: failed to create game entry", err);
                     // Don't stop, keep going.
                     return undefined;
                   }
@@ -209,8 +193,7 @@ class GoGLauncher implements types.IGameStore {
 }
 
 function main(context: types.IExtensionContext) {
-  const instance: types.IGameStore =
-    process.platform === "win32" ? new GoGLauncher() : undefined;
+  const instance: types.IGameStore = process.platform === "win32" ? new GoGLauncher() : undefined;
 
   if (instance !== undefined) {
     context.registerGameStore(instance);

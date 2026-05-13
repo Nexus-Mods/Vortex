@@ -1,8 +1,7 @@
-import type { SortDirection } from "../../types/SortDirection";
-
-import Icon from "../Icon";
-
 import * as React from "react";
+
+import type { SortDirection } from "../../types/SortDirection";
+import Icon from "../Icon";
 
 export interface IProps {
   direction: SortDirection;

@@ -9,7 +9,6 @@ function replacer(_key: string, value: unknown): unknown {
 }
 
 export function log(level: Level, message: string, metadata?: unknown) {
-  const meta =
-    metadata === undefined ? undefined : JSON.stringify(metadata, replacer);
+  const meta = metadata === undefined ? undefined : JSON.stringify(metadata, replacer);
   window.api.log(level, message, meta);
 }

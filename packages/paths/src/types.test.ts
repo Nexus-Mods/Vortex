@@ -40,27 +40,23 @@ describe("RelativePath", () => {
     });
 
     test("join handles segments containing forward slashes", () => {
-      expect(
-        RelativePath.join(RelativePath.make("mods"), "skyrim/data", "meshes"),
-      ).toBe("mods/skyrim/data/meshes");
+      expect(RelativePath.join(RelativePath.make("mods"), "skyrim/data", "meshes")).toBe(
+        "mods/skyrim/data/meshes",
+      );
     });
 
     test("join handles segments containing backslashes", () => {
-      expect(
-        RelativePath.join(RelativePath.make("mods"), "skyrim\\data", "meshes"),
-      ).toBe("mods/skyrim/data/meshes");
+      expect(RelativePath.join(RelativePath.make("mods"), "skyrim\\data", "meshes")).toBe(
+        "mods/skyrim/data/meshes",
+      );
     });
 
     test("join handles segments with leading slashes", () => {
-      expect(RelativePath.join(RelativePath.make("a"), "/b", "c")).toBe(
-        "a/b/c",
-      );
+      expect(RelativePath.join(RelativePath.make("a"), "/b", "c")).toBe("a/b/c");
     });
 
     test("join handles segments with trailing slashes", () => {
-      expect(RelativePath.join(RelativePath.make("a"), "b/", "c")).toBe(
-        "a/b/c",
-      );
+      expect(RelativePath.join(RelativePath.make("a"), "b/", "c")).toBe("a/b/c");
     });
   });
 
@@ -131,9 +127,7 @@ describe("RelativePath", () => {
     });
 
     test("EMPTY is not in EMPTY", () => {
-      expect(RelativePath.isIn(RelativePath.EMPTY, RelativePath.EMPTY)).toBe(
-        false,
-      );
+      expect(RelativePath.isIn(RelativePath.EMPTY, RelativePath.EMPTY)).toBe(false);
     });
 
     test("parent is not in child", () => {
@@ -163,9 +157,7 @@ describe("RelativePath", () => {
     });
 
     test("EMPTY equals EMPTY", () => {
-      expect(RelativePath.equals(RelativePath.EMPTY, RelativePath.EMPTY)).toBe(
-        true,
-      );
+      expect(RelativePath.equals(RelativePath.EMPTY, RelativePath.EMPTY)).toBe(true);
     });
   });
 
@@ -223,12 +215,9 @@ describe("ResolvedPath", () => {
       expect(() => ResolvedPath.make(input)).not.toThrow();
     });
 
-    test.each([["relative/path"], ["../parent"], [""]])(
-      "rejects relative path: %s",
-      (input) => {
-        expect(() => ResolvedPath.make(input)).toThrow(/absolute/);
-      },
-    );
+    test.each([["relative/path"], ["../parent"], [""]])("rejects relative path: %s", (input) => {
+      expect(() => ResolvedPath.make(input)).toThrow(/absolute/);
+    });
   });
 
   describe("parse", () => {
@@ -294,13 +283,9 @@ describe("ResolvedPath", () => {
     });
 
     test("normalizes UNC path", () => {
-      const path = ResolvedPath.make(
-        "\\\\server\\share\\mods\\..\\downloads\\file.txt",
-      );
+      const path = ResolvedPath.make("\\\\server\\share\\mods\\..\\downloads\\file.txt");
 
-      expect(ResolvedPath.normalize(path)).toBe(
-        "\\\\server\\share\\downloads\\file.txt",
-      );
+      expect(ResolvedPath.normalize(path)).toBe("\\\\server\\share\\downloads\\file.txt");
     });
 
     test("computes relative path for UNC paths", () => {

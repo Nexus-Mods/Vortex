@@ -33,10 +33,7 @@ const gameSupport = {
   },
 };
 
-export function getGameVersion(
-  api: types.IExtensionApi,
-  gameMode: string,
-): Promise<string> {
+export function getGameVersion(api: types.IExtensionApi, gameMode: string): Promise<string> {
   // allow games to have specific functions to get at the version
   // otherwise take the version stored in the executable
   const state: types.IState = api.store.getState();
@@ -67,16 +64,9 @@ function compareQuadVer(lhs: string, rhs: string) {
   return 0;
 }
 
-export function versionCompare(
-  gameMode: string,
-  lhs: string,
-  rhs: string,
-): number {
+export function versionCompare(gameMode: string, lhs: string, rhs: string): number {
   // allow games to have specific functions to compare versions
-  if (
-    gameSupport[gameMode] !== undefined &&
-    gameSupport[gameMode].versionCompare !== undefined
-  ) {
+  if (gameSupport[gameMode] !== undefined && gameSupport[gameMode].versionCompare !== undefined) {
     return gameSupport[gameMode].versionCompare(lhs, rhs);
   }
 
@@ -95,9 +85,5 @@ export function updateInvalidatesMods(gameMode: string): UpdateInvalidate {
 }
 
 export function updateInvalidationText(gameMode: string): string {
-  return util.getSafe(
-    gameSupport,
-    [gameMode, "updateInvalidationText"],
-    undefined,
-  );
+  return util.getSafe(gameSupport, [gameMode, "updateInvalidationText"], undefined);
 }

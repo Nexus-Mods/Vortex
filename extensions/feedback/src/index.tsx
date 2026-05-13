@@ -1,3 +1,11 @@
+import * as path from "path";
+
+import { mdiCommentTextOutline } from "@mdi/js";
+import Promise from "bluebird";
+import * as tmp from "tmp";
+import { fs, log, types, util } from "vortex-api";
+import * as winapiT from "winapi-bindings";
+
 import {
   addFeedbackFile,
   setFeedbackHash,
@@ -7,15 +15,7 @@ import {
 } from "./actions/session";
 import { sessionReducer } from "./reducers/session";
 import { IFeedbackFile } from "./types/IFeedbackFile";
-
 import FeedbackView from "./views/FeedbackView";
-
-import Promise from "bluebird";
-import * as path from "path";
-import * as tmp from "tmp";
-import { fs, log, types, util } from "vortex-api";
-import * as winapiT from "winapi-bindings";
-import { mdiCommentTextOutline } from "@mdi/js";
 
 const FEEDBACK_GOOGLE_FORM = "https://forms.gle/YF9ED2Xe4ef9jKf99";
 
@@ -33,18 +33,9 @@ function originalUserData() {
 }
 
 function findCrashDumps(): Promise<string[]> {
-  const nativeCrashesPath = path.join(
-    util.getVortexPath("userData"),
-    "temp",
-    "dumps",
-  );
+  const nativeCrashesPath = path.join(util.getVortexPath("userData"), "temp", "dumps");
   // this directory isn't even actually used?
-  const electronCrashesPath = path.join(
-    originalUserData(),
-    "temp",
-    "Vortex Crashes",
-    "reports",
-  );
+  const electronCrashesPath = path.join(originalUserData(), "temp", "Vortex Crashes", "reports");
 
   return fs
     .ensureDirAsync(nativeCrashesPath)
@@ -58,9 +49,7 @@ function findCrashDumps(): Promise<string[]> {
         .catch(() => [])
         .filter((filePath: string) => path.extname(filePath) === ".dmp")
         .map((iterPath: string) => path.join(electronCrashesPath, iterPath))
-        .then((electronPaths: string[]) =>
-          [].concat(nativeCrashes, electronPaths),
-        ),
+        .then((electronPaths: string[]) => [].concat(nativeCrashes, electronPaths)),
     );
 }
 
@@ -80,9 +69,7 @@ const KNOWN_ERRORS = {
 function oldMSXMLLoaded() {
   const winapi: typeof winapiT = require("winapi-bindings");
   const reMatch = /msxml[56].dll/;
-  const msxml = winapi
-    .GetModuleList(null)
-    .find((mod) => mod.module.match(reMatch));
+  const msxml = winapi.GetModuleList(null).find((mod) => mod.module.match(reMatch));
   return msxml !== undefined;
 }
 
@@ -145,11 +132,7 @@ function recognisedError(crashDumps: string[]): Promise<ErrorType> {
     .then((codes) => (codes.length > 0 ? KNOWN_ERRORS[codes[0]] : undefined));
 }
 
-function reportKnownError(
-  api: types.IExtensionApi,
-  dismiss: () => void,
-  errType: ErrorType,
-) {
+function reportKnownError(api: types.IExtensionApi, dismiss: () => void, errType: ErrorType) {
   const bbcode =
     errorText(errType) +
     "<br/><br/>Please visit " +
@@ -165,11 +148,7 @@ function reportKnownError(
   );
 }
 
-function sendCrashFeedback(
-  api: types.IExtensionApi,
-  dismiss: () => void,
-  crashDumps: string[],
-) {
+function sendCrashFeedback(api: types.IExtensionApi, dismiss: () => void, crashDumps: string[]) {
   api.store.dispatch(setFeedbackType("bugreport", "crash"));
   return (
     Promise.map(
@@ -181,9 +160,7 @@ function sendCrashFeedback(
           // This shouldn't happen unless the user deleted the
           //  crashdump before hitting the Send Report button.
           //  Either way the application shouldn't crash; keep going.
-          .catch((err) =>
-            err.code === "ENOENT" ? undefined : Promise.reject(err),
-          ),
+          .catch((err) => (err.code === "ENOENT" ? undefined : Promise.reject(err))),
     )
       .filter((iter) => iter !== undefined)
       .each((iter: { filePath: string; stats: fs.Stats }) => {
@@ -291,10 +268,7 @@ function readReferenceIssues() {
     });
 }
 
-function identifyAttachment(
-  filePath: string,
-  type?: string,
-): Promise<IFeedbackFile> {
+function identifyAttachment(filePath: string, type?: string): Promise<IFeedbackFile> {
   return fs.statAsync(filePath).then((stats) => ({
     filename: path.basename(filePath),
     filePath,
@@ -313,9 +287,7 @@ function dumpStateToFileImpl(
   name: string,
 ): Promise<IFeedbackFile> {
   return new Promise<IFeedbackFile>((resolve, reject) => {
-    const data: Buffer = Buffer.from(
-      JSON.stringify(api.store.getState()[stateKey]),
-    );
+    const data: Buffer = Buffer.from(JSON.stringify(api.store.getState()[stateKey]));
     tmp.file(
       {
         prefix: `${stateKey}-`,
@@ -373,9 +345,7 @@ function dumpReduxActionsToFile(name: string): Promise<IFeedbackFile> {
 }
 
 function removeFiles(fileNames: string[]): Promise<void> {
-  return Promise.all(
-    fileNames.map((removeFile) => fs.removeAsync(removeFile)),
-  ).then(() => null);
+  return Promise.all(fileNames.map((removeFile) => fs.removeAsync(removeFile))).then(() => null);
 }
 
 function init(context: types.IExtensionContext) {
@@ -417,10 +387,7 @@ function init(context: types.IExtensionContext) {
   );
 
   context.once(() => {
-    context.api.setStylesheet(
-      "feedback",
-      path.join(__dirname, "feedback.scss"),
-    );
+    context.api.setStylesheet("feedback", path.join(__dirname, "feedback.scss"));
 
     context.api.events.on(
       "report-feedback",

@@ -71,11 +71,7 @@ class ColorPreview extends React.Component<IColorProps, never> {
     const { color, disabled } = this.props;
     const popover = (
       <Popover id="color-preview">
-        <ChromePicker
-          color={color}
-          disableAlpha={true}
-          onChange={this.onUpdate}
-        />
+        <ChromePicker color={color} disableAlpha={true} onChange={this.onUpdate} />
       </Popover>
     );
 
@@ -89,12 +85,7 @@ class ColorPreview extends React.Component<IColorProps, never> {
     return disabled ? (
       content
     ) : (
-      <OverlayTrigger
-        trigger="click"
-        rootClose
-        placement="top"
-        overlay={popover}
-      >
+      <OverlayTrigger trigger="click" rootClose placement="top" overlay={popover}>
         {content}
       </OverlayTrigger>
     );
@@ -240,16 +231,13 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
       availableFonts.push(fontFamily);
     }
 
-    const buckets: IColorEntry[][] = colorDefaults.reduce(
-      (prev, value, idx) => {
-        if (idx < ThemeEditor.BUCKETS) {
-          prev[idx % ThemeEditor.BUCKETS] = [];
-        }
-        prev[idx % ThemeEditor.BUCKETS].push(value);
-        return prev;
-      },
-      new Array(ThemeEditor.BUCKETS),
-    );
+    const buckets: IColorEntry[][] = colorDefaults.reduce((prev, value, idx) => {
+      if (idx < ThemeEditor.BUCKETS) {
+        prev[idx % ThemeEditor.BUCKETS] = [];
+      }
+      prev[idx % ThemeEditor.BUCKETS].push(value);
+      return prev;
+    }, new Array(ThemeEditor.BUCKETS));
     return (
       <div>
         <Form disabled={disabled} horizontal>
@@ -313,9 +301,7 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
           </FormGroup>
           <FormGroup>
             <Col smOffset={4} sm={8}>
-              <FormControl.Static
-                style={{ fontFamily, fontSize: fontSize.toString() + "px" }}
-              >
+              <FormControl.Static style={{ fontFamily, fontSize: fontSize.toString() + "px" }}>
                 {t("The quick brown fox jumps over the lazy dog")}
               </FormControl.Static>
             </Col>
@@ -405,10 +391,7 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
                   <Row key={idx}>
                     {buckets.map((bucket) =>
                       bucket[idx] !== undefined
-                        ? this.renderEntry(
-                            bucket[idx],
-                            colors[bucket[idx].name],
-                          )
+                        ? this.renderEntry(bucket[idx], colors[bucket[idx].name])
                         : null,
                     )}
                   </Row>
@@ -428,9 +411,7 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
             )}
           </More>
         </Toggle>
-        {disabled ? null : (
-          <a onClick={this.editManually}>{t("Edit CSS manually...")}</a>
-        )}
+        {disabled ? null : <a onClick={this.editManually}>{t("Edit CSS manually...")}</a>}
         {disabled ? null : (
           <div className="pull-right">
             <Button bsStyle="primary" onClick={this.revert}>
@@ -446,21 +427,13 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
   }
 
   private readFont = () => {
-    this.props
-      .getAvailableFonts()
-      .then((fonts) => (this.nextState.availableFonts = fonts));
+    this.props.getAvailableFonts().then((fonts) => (this.nextState.availableFonts = fonts));
   };
 
   private renderEntry = (entry: IColorEntry, value: string) => {
     const { disabled } = this.props;
     return (
-      <Col
-        key={entry.name}
-        sm={4}
-        md={4}
-        lg={4}
-        style={{ display: "inline-flex" }}
-      >
+      <Col key={entry.name} sm={4} md={4} lg={4} style={{ display: "inline-flex" }}>
         <span style={{ marginRight: "auto" }}>{entry.name}</span>
         <ColorPreview
           name={entry.name}
@@ -512,13 +485,7 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
       "dark-theme": this.state.dark ? "true" : "false",
       "titlebar-rows": this.state.titlebarRows.toString(),
     };
-    const grayNames = [
-      "gray-lighter",
-      "gray-light",
-      "gray",
-      "gray-dark",
-      "gray-darker",
-    ];
+    const grayNames = ["gray-lighter", "gray-light", "gray", "gray-dark", "gray-darker"];
     let grayColors = ["#D4D4D8", "#A1A1AA", "#3F3F46", "#27272A", "#18181B"];
     if (this.state.dark) {
       grayColors.reverse();
@@ -587,8 +554,7 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
   }
 
   private setFontFamilyHeadings(theme: { [name: string]: string }) {
-    const fontFamily =
-      theme["font-family-headings"] || defaultTheme.fontFamilyHeadings;
+    const fontFamily = theme["font-family-headings"] || defaultTheme.fontFamilyHeadings;
     this.nextState.fontFamilyHeadings = fontFamily.replace(/^"|"$/g, "");
   }
 
@@ -608,9 +574,7 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
 
   private setDark(theme: { [name: string]: string }) {
     this.nextState.dark =
-      theme["dark-theme"] !== undefined
-        ? theme["dark-theme"] === "true"
-        : defaultTheme.dark;
+      theme["dark-theme"] !== undefined ? theme["dark-theme"] === "true" : defaultTheme.dark;
   }
 
   private setTitlebarRows(theme: { [name: string]: string }) {

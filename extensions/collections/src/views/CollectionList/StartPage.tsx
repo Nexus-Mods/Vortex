@@ -1,20 +1,3 @@
-/* eslint-disable */
-import { setSortAdded, setSortWorkshop } from "../../actions/settings";
-import { initFromProfile } from "../../collectionCreate";
-import {
-  MAX_COLLECTION_NAME_LENGTH,
-  MIN_COLLECTION_NAME_LENGTH,
-  MOD_TYPE,
-  NAMESPACE,
-  NEXUS_BASE_URL,
-} from "../../constants";
-import InfoCache from "../../util/InfoCache";
-import { validateName } from "../../util/transformCollection";
-import { hasEditPermissions } from "../../util/util";
-
-import CollectionThumbnail from "../CollectionTile";
-import CollectionThumbnailRemote from "../CollectionTile/RemoteTile";
-
 import { IRevision } from "@nexusmods/nexus-api";
 import type { TFunction } from "i18next";
 import * as _ from "lodash";
@@ -33,6 +16,22 @@ import {
   types,
   util,
 } from "vortex-api";
+
+/* eslint-disable */
+import { setSortAdded, setSortWorkshop } from "../../actions/settings";
+import { initFromProfile } from "../../collectionCreate";
+import {
+  MAX_COLLECTION_NAME_LENGTH,
+  MIN_COLLECTION_NAME_LENGTH,
+  MOD_TYPE,
+  NAMESPACE,
+  NEXUS_BASE_URL,
+} from "../../constants";
+import InfoCache from "../../util/InfoCache";
+import { validateName } from "../../util/transformCollection";
+import { hasEditPermissions } from "../../util/util";
+import CollectionThumbnail from "../CollectionTile";
+import CollectionThumbnailRemote from "../CollectionTile/RemoteTile";
 
 const FEEDBACK_URL =
   "https://docs.google.com/forms/d/e/1FAIpQLSc3csy4ycVBECvHQDgri37Gqq1gOuTQ7LcpiIaOkGHpDsW4kA/viewform?usp=sf_link";
@@ -97,10 +96,7 @@ const nop = () => null;
 const validRE = /^[\p{L}\p{N} -]*$/u;
 
 function validateCollectionName(t: TFunction, input: string): string {
-  if (
-    input.length < MIN_COLLECTION_NAME_LENGTH ||
-    input.length > MAX_COLLECTION_NAME_LENGTH
-  ) {
+  if (input.length < MIN_COLLECTION_NAME_LENGTH || input.length > MAX_COLLECTION_NAME_LENGTH) {
     return t("The name bust be between {{min}}-{{max}} characters long", {
       replace: {
         min: MIN_COLLECTION_NAME_LENGTH,
@@ -110,9 +106,7 @@ function validateCollectionName(t: TFunction, input: string): string {
   }
 
   if (input.match(validRE) === null) {
-    return t(
-      "Invalid characters, only letters, numbers, space and - are allowed.",
-    );
+    return t("Invalid characters, only letters, numbers, space and - are allowed.");
   }
 
   return undefined;
@@ -131,10 +125,7 @@ function AddCard(props: IAddCardProps) {
   return (
     <Panel className={classes.join(" ")} bsStyle="default" onClick={onClick}>
       <Panel.Body className="collection-thumbnail-body">
-        <EmptyPlaceholder
-          icon="folder-add"
-          text={t("Discover more collections")}
-        />
+        <EmptyPlaceholder icon="folder-add" text={t("Discover more collections")} />
       </Panel.Body>
     </Panel>
   );
@@ -182,11 +173,7 @@ function CreateCard(props: ICreateCardProps) {
         },
       },
     ];
-  }, [
-    props.onCreateFromProfile,
-    props.onCreateEmpty,
-    props.onCreateQuickCollection,
-  ]);
+  }, [props.onCreateFromProfile, props.onCreateEmpty, props.onCreateQuickCollection]);
 
   return (
     <Panel className={classes.join(" ")} bsStyle="default">
@@ -225,22 +212,10 @@ class StartPage extends ComponentEx<IProps, IComponentState> {
   }
 
   public componentDidMount(): void {
-    const collectionsNow = Object.values(this.props.mods).filter(
-      (mod) => mod.type === MOD_TYPE,
-    );
-    this.updateSorted(
-      collectionsNow,
-      this.props.sortAdded,
-      this.props.sortWorkshop,
-      false,
-    )
+    const collectionsNow = Object.values(this.props.mods).filter((mod) => mod.type === MOD_TYPE);
+    this.updateSorted(collectionsNow, this.props.sortAdded, this.props.sortWorkshop, false)
       .then(() =>
-        this.updateSorted(
-          collectionsNow,
-          this.props.sortAdded,
-          this.props.sortWorkshop,
-          false,
-        ),
+        this.updateSorted(collectionsNow, this.props.sortAdded, this.props.sortWorkshop, false),
       )
       .catch((err) => {
         log("error", "failed to update list of collections", {
@@ -249,30 +224,17 @@ class StartPage extends ComponentEx<IProps, IComponentState> {
       });
   }
 
-  public componentDidUpdate(
-    prevProps: IProps,
-    prevState: Readonly<IComponentState>,
-  ): void {
-    const collectionsPrev = Object.values(prevProps.mods).filter(
-      (mod) => mod.type === MOD_TYPE,
-    );
-    const collectionsNow = Object.values(this.props.mods).filter(
-      (mod) => mod.type === MOD_TYPE,
-    );
+  public componentDidUpdate(prevProps: IProps, prevState: Readonly<IComponentState>): void {
+    const collectionsPrev = Object.values(prevProps.mods).filter((mod) => mod.type === MOD_TYPE);
+    const collectionsNow = Object.values(this.props.mods).filter((mod) => mod.type === MOD_TYPE);
 
     if (
       !_.isEqual(collectionsPrev, collectionsNow) ||
       prevProps.sortAdded !== this.props.sortAdded ||
       prevProps.sortWorkshop !== this.props.sortWorkshop ||
-      prevProps.localState.ownCollections !==
-        this.props.localState.ownCollections
+      prevProps.localState.ownCollections !== this.props.localState.ownCollections
     ) {
-      this.updateSorted(
-        collectionsNow,
-        this.props.sortAdded,
-        this.props.sortWorkshop,
-        true,
-      );
+      this.updateSorted(collectionsNow, this.props.sortAdded, this.props.sortWorkshop, true);
     }
   }
 
@@ -301,11 +263,7 @@ class StartPage extends ComponentEx<IProps, IComponentState> {
     const { added, workshop } = collectionsEx;
 
     return (
-      <Tabs
-        id="collection-start-page"
-        activeKey={activeTab}
-        onSelect={this.setActiveTab}
-      >
+      <Tabs id="collection-start-page" activeKey={activeTab} onSelect={this.setActiveTab}>
         <Tab
           tabClassName="collection-tab"
           eventKey="active-collections"
@@ -318,9 +276,7 @@ class StartPage extends ComponentEx<IProps, IComponentState> {
         >
           <Panel>
             <Panel.Heading>
-              <Panel.Title>
-                {t("View and manage collections created by other users.")}
-              </Panel.Title>
+              <Panel.Title>{t("View and manage collections created by other users.")}</Panel.Title>
               <div className="flex-fill" />
               <div className="collection-sort-container">
                 {t("Sort by:")}
@@ -379,8 +335,8 @@ class StartPage extends ComponentEx<IProps, IComponentState> {
             <Panel.Heading>
               <Panel.Title>
                 <Trans ns={NAMESPACE} i18nKey="collection-own-page">
-                  Build your own collections and share them with the Nexus Mods
-                  community. You can view all your uploaded collections&nbsp;
+                  Build your own collections and share them with the Nexus Mods community. You can
+                  view all your uploaded collections&nbsp;
                   <a
                     onClick={this.openMyCollectionsPage}
                     className="my-collections-page-link"
@@ -428,8 +384,7 @@ class StartPage extends ComponentEx<IProps, IComponentState> {
                       imageTime={imageTime}
                       mods={mods}
                       incomplete={
-                        mod.mod === undefined ||
-                        matchedReferences[mod.mod.id]?.includes?.(null)
+                        mod.mod === undefined || matchedReferences[mod.mod.id]?.includes?.(null)
                       }
                       onEdit={onEdit}
                       onRemove={onRemove}
@@ -443,8 +398,7 @@ class StartPage extends ComponentEx<IProps, IComponentState> {
                       revision={mod.revision}
                       added={mod.added}
                       incomplete={
-                        mod.added === undefined ||
-                        matchedReferences[mod.added.id]?.includes?.(null)
+                        mod.added === undefined || matchedReferences[mod.added.id]?.includes?.(null)
                       }
                       onInstallCollection={onInstallCollection}
                       onCloneCollection={onClone}
@@ -476,10 +430,7 @@ class StartPage extends ComponentEx<IProps, IComponentState> {
         datedownloaded: (lhs: ISortItem, rhs: ISortItem) =>
           // we install collections immediately and remove the archive, so this is the best
           // approximation but also should be 100% correct
-          dateCompare(
-            rhs.mod?.attributes?.installTime,
-            lhs.mod?.attributes?.installTime,
-          ),
+          dateCompare(rhs.mod?.attributes?.installTime, lhs.mod?.attributes?.installTime),
         datecreated: (lhs: ISortItem, rhs: ISortItem) =>
           dateCompare(
             rhs.mod?.attributes?.installTime ?? rhs.revision?.createdAt,
@@ -502,8 +453,7 @@ class StartPage extends ComponentEx<IProps, IComponentState> {
   ): Promise<void> {
     return Promise.all(
       collections.map(async (mod) => {
-        const { revisionId, collectionSlug, revisionNumber } =
-          mod.attributes ?? {};
+        const { revisionId, collectionSlug, revisionNumber } = mod.attributes ?? {};
         const revision =
           revisionNumber !== undefined
             ? await this.props.infoCache.getRevisionInfo(
@@ -516,22 +466,19 @@ class StartPage extends ComponentEx<IProps, IComponentState> {
         return { mod, revision };
       }),
     ).then((result: ISortItem[]) => {
-      let { foreign, own }: { foreign: ISortItem[]; own: ISortItem[] } =
-        result.reduce(
-          (prev, mod) => {
-            if (util.getSafe(mod.mod.attributes, ["editable"], false)) {
-              prev.own.push(mod);
-            } else {
-              prev.foreign.push(mod);
-            }
-            return prev;
-          },
-          { foreign: [], own: [] },
-        );
-
-      const installed = new Set(
-        own.map((res) => res.mod.attributes?.["collectionSlug"]),
+      let { foreign, own }: { foreign: ISortItem[]; own: ISortItem[] } = result.reduce(
+        (prev, mod) => {
+          if (util.getSafe(mod.mod.attributes, ["editable"], false)) {
+            prev.own.push(mod);
+          } else {
+            prev.foreign.push(mod);
+          }
+          return prev;
+        },
+        { foreign: [], own: [] },
       );
+
+      const installed = new Set(own.map((res) => res.mod.attributes?.["collectionSlug"]));
 
       const userId = this.props.userInfo?.userId;
       own.push(
@@ -546,10 +493,8 @@ class StartPage extends ComponentEx<IProps, IComponentState> {
           })
           .map((coll) => ({
             mod: undefined,
-            added: foreign.find(
-              (iter) =>
-                iter.revision?.collection?.slug === coll.collection?.slug,
-            )?.mod,
+            added: foreign.find((iter) => iter.revision?.collection?.slug === coll.collection?.slug)
+              ?.mod,
             revision: coll,
           })),
       );
@@ -574,21 +519,12 @@ class StartPage extends ComponentEx<IProps, IComponentState> {
 
   private setActiveTab = (tabId: any) => {
     this.props.onSetActiveTab(tabId);
-    this.context.api.events.emit(
-      "analytics-track-navigation",
-      `collections/${tabId}`,
-    );
+    this.context.api.events.emit("analytics-track-navigation", `collections/${tabId}`);
   };
 
   private openCollections = () => {
-    this.context.api.events.emit(
-      "analytics-track-click-event",
-      "Collections",
-      "Discover more",
-    );
-    this.context.api.store?.dispatch(
-      actions.setOpenMainPage("Browse Nexus Mods", false),
-    );
+    this.context.api.events.emit("analytics-track-click-event", "Collections", "Discover more");
+    this.context.api.store?.dispatch(actions.setOpenMainPage("Browse Nexus Mods", false));
   };
 
   private openMyCollectionsPage = () => {
@@ -601,11 +537,7 @@ class StartPage extends ComponentEx<IProps, IComponentState> {
   };
 
   private trackEvent = (namespace: string, eventName: string) => {
-    this.context.api.events.emit(
-      "analytics-track-click-event",
-      namespace,
-      eventName,
-    );
+    this.context.api.events.emit("analytics-track-click-event", namespace, eventName);
   };
 
   private openFeedback = () => {
@@ -622,10 +554,7 @@ class StartPage extends ComponentEx<IProps, IComponentState> {
       this.refreshImages();
     } catch (err) {
       if (!(err instanceof util.UserCanceled)) {
-        this.context.api.showErrorNotification(
-          "Failed to create quick collection",
-          err,
-        );
+        this.context.api.showErrorNotification("Failed to create quick collection", err);
       }
     }
   };
@@ -639,10 +568,7 @@ class StartPage extends ComponentEx<IProps, IComponentState> {
       this.refreshImages();
     } catch (err) {
       if (!(err instanceof util.UserCanceled)) {
-        this.context.api.showErrorNotification(
-          "Failed to init collection",
-          err,
-        );
+        this.context.api.showErrorNotification("Failed to init collection", err);
       }
     }
   };

@@ -14,10 +14,7 @@ async function fetchWikiCategory(name) {
     if (member.title.startsWith("File:")) {
       return await prev;
     } else if (member.title.startsWith("Category:")) {
-      return [].concat(
-        await prev,
-        await fetchWikiCategory(member.title.split(":")[1]),
-      );
+      return [].concat(await prev, await fetchWikiCategory(member.title.split(":")[1]));
     } else {
       return [].concat(await prev, [member.title]);
     }
@@ -76,18 +73,13 @@ function makeUniqueByKey(input, key) {
 async function main() {
   const keywords = JSON.parse(await fs.readFile("keywords.json"));
   const wiki = makeUniqueByKey(
-    (await fetchWikiCategory("Vortex")).map((w) =>
-      transformWikiPages(w, keywords),
-    ),
+    (await fetchWikiCategory("Vortex")).map((w) => transformWikiPages(w, keywords)),
     (w) => w.title,
   );
   const faq = (await fetchFAQ()).map((f) => transformFAQ(f, keywords));
   const issues = (await fetchIssues()).map((i) => transformIssue(i, keywords));
 
-  await fs.writeFile(
-    "issues.json",
-    JSON.stringify([...wiki, ...faq, ...issues], undefined, 2),
-  );
+  await fs.writeFile("issues.json", JSON.stringify([...wiki, ...faq, ...issues], undefined, 2));
 }
 
 main();

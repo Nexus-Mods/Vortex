@@ -21,9 +21,7 @@ function findGame() {
 }
 
 function prepareForModding(discovery) {
-  return fs.ensureDirWritableAsync(path.join(discovery.path, "mods"), () =>
-    Promise.resolve(),
-  );
+  return fs.ensureDirWritableAsync(path.join(discovery.path, "mods"), () => Promise.resolve());
 }
 
 function main(context) {

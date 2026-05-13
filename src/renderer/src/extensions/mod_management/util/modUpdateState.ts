@@ -4,7 +4,6 @@ import type { IDownload } from "../../download_management/types/IDownload";
 import type { IMod } from "../types/IMod";
 import type { IModSource } from "../types/IModSource";
 import { getModSource } from "./modSource";
-
 import versionClean from "./versionClean";
 
 export function isIdValid(mod: IMod) {
@@ -58,16 +57,8 @@ function updateState(attributes: { [id: string]: any }): UpdateState {
   }
   const fileId: number = getSafe(attributes, ["fileId"], undefined);
   const version: string = getSafe(attributes, ["version"], undefined);
-  const newestFileId: number | "unknown" = getSafe(
-    attributes,
-    ["newestFileId"],
-    undefined,
-  );
-  const newestVersion: string = getSafe(
-    attributes,
-    ["newestVersion"],
-    undefined,
-  );
+  const newestFileId: number | "unknown" = getSafe(attributes, ["newestFileId"], undefined);
+  const newestVersion: string = getSafe(attributes, ["newestVersion"], undefined);
   const bugMessage: string = getSafe(attributes, ["bugMessage"], undefined);
 
   // for mods we point out any change in version number including downgrades because we
@@ -84,9 +75,7 @@ function updateState(attributes: { [id: string]: any }): UpdateState {
   const hasUpdate =
     newestFileId === "unknown" ||
     // we know the newest file id and the current file id and they are not the same
-    (truthy(newestFileId) &&
-      truthy(fileId) &&
-      newestFileId.toString() !== fileId.toString()) ||
+    (truthy(newestFileId) && truthy(fileId) && newestFileId.toString() !== fileId.toString()) ||
     // we know the newest version and the current version and the are not the same
     hasNewerVersion;
 

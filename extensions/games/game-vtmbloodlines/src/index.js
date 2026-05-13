@@ -42,11 +42,7 @@ function findGame() {
       ),
     )
     .catch(() =>
-      readRegistryKey(
-        "HKEY_LOCAL_MACHINE",
-        `SOFTWARE\\GOG.com\\Games\\${GOG_ID}`,
-        "PATH",
-      ),
+      readRegistryKey("HKEY_LOCAL_MACHINE", `SOFTWARE\\GOG.com\\Games\\${GOG_ID}`, "PATH"),
     );
 }
 
@@ -60,20 +56,14 @@ function prepareForModding(discovery) {
 
 function getUnofficialModPath(api) {
   const state = api.getState();
-  const discovery = util.getSafe(
-    state,
-    ["settings", "gameMode", "discovered", GAME_ID],
-    undefined,
-  );
+  const discovery = util.getSafe(state, ["settings", "gameMode", "discovered", GAME_ID], undefined);
   return path.join(discovery.path, "Unofficial_Patch");
 }
 
 function isUPModType(api, instructions) {
   return fs
     .readdirAsync(getUnofficialModPath(api))
-    .then((dirEntries) =>
-      dirEntries.length > 0 ? Promise.resolve(true) : Promise.resolve(false),
-    )
+    .then((dirEntries) => (dirEntries.length > 0 ? Promise.resolve(true) : Promise.resolve(false)))
     .catch(() => Promise.resolve(false));
 }
 

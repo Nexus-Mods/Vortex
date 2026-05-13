@@ -103,13 +103,9 @@ describe("Path Normalization and Cross-Platform Handling", () => {
       });
 
       test("should handle basePath with . segments correctly", async () => {
-        const child = resolver.PathFor(
-          "userData",
-          "mods/SkyUI/interface/skyui.swf",
-        );
+        const child = resolver.PathFor("userData", "mods/SkyUI/interface/skyui.swf");
         // basePath with . segment — pathMod.normalize() normalizes it
-        const basePath =
-          "C:\\Users\\TestUser\\AppData\\Roaming\\Vortex\\mods\\.";
+        const basePath = "C:\\Users\\TestUser\\AppData\\Roaming\\Vortex\\mods\\.";
 
         const relative = await child.relativeTo(basePath);
 
@@ -117,13 +113,9 @@ describe("Path Normalization and Cross-Platform Handling", () => {
       });
 
       test("should handle basePath with .. segments correctly", async () => {
-        const child = resolver.PathFor(
-          "userData",
-          "mods/SkyUI/interface/skyui.swf",
-        );
+        const child = resolver.PathFor("userData", "mods/SkyUI/interface/skyui.swf");
         // basePath with .. segment — normalizes to the mods dir
-        const basePath =
-          "C:\\Users\\TestUser\\AppData\\Roaming\\Vortex\\mods\\SkyUI\\..";
+        const basePath = "C:\\Users\\TestUser\\AppData\\Roaming\\Vortex\\mods\\SkyUI\\..";
 
         const relative = await child.relativeTo(basePath);
 
@@ -131,10 +123,7 @@ describe("Path Normalization and Cross-Platform Handling", () => {
       });
 
       test("should handle mixed separators in basePath correctly", async () => {
-        const child = resolver.PathFor(
-          "userData",
-          "mods/SkyUI/interface/skyui.swf",
-        );
+        const child = resolver.PathFor("userData", "mods/SkyUI/interface/skyui.swf");
         const basePath = "C:\\Users\\TestUser\\AppData\\Roaming\\Vortex/mods";
 
         const relative = await child.relativeTo(basePath);
@@ -143,10 +132,7 @@ describe("Path Normalization and Cross-Platform Handling", () => {
       });
 
       test("should extract correct relative path", async () => {
-        const child = resolver.PathFor(
-          "userData",
-          "mods/SkyUI/interface/skyui.swf",
-        );
+        const child = resolver.PathFor("userData", "mods/SkyUI/interface/skyui.swf");
         const parentPath = await resolver.PathFor("userData", "mods").resolve();
 
         const relative = await child.relativeTo(parentPath);
@@ -156,10 +142,7 @@ describe("Path Normalization and Cross-Platform Handling", () => {
       });
 
       test("should handle case-insensitive comparisons correctly", async () => {
-        const child = resolver.PathFor(
-          "userData",
-          "mods/skyui/interface/skyui.swf",
-        );
+        const child = resolver.PathFor("userData", "mods/skyui/interface/skyui.swf");
         const basePath = "c:\\users\\testuser\\appdata\\roaming\\vortex\\mods";
 
         const relative = await child.relativeTo(basePath);
@@ -195,10 +178,7 @@ describe("Path Normalization and Cross-Platform Handling", () => {
       });
 
       test("should handle basePath with . segments", async () => {
-        const child = resolver.PathFor(
-          "home",
-          "mods/SkyUI/interface/skyui.swf",
-        );
+        const child = resolver.PathFor("home", "mods/SkyUI/interface/skyui.swf");
         // basePath with . segment — pathMod.normalize() normalizes it
         const basePath = "/home/user/mods/.";
 
@@ -208,10 +188,7 @@ describe("Path Normalization and Cross-Platform Handling", () => {
       });
 
       test("should handle basePath with .. segments", async () => {
-        const child = resolver.PathFor(
-          "home",
-          "mods/SkyUI/interface/skyui.swf",
-        );
+        const child = resolver.PathFor("home", "mods/SkyUI/interface/skyui.swf");
         // basePath with .. segment — normalizes to /home/user/mods
         const basePath = "/home/user/mods/SkyUI/..";
 
@@ -221,10 +198,7 @@ describe("Path Normalization and Cross-Platform Handling", () => {
       });
 
       test("should handle case-sensitive comparisons correctly", async () => {
-        const child = resolver.PathFor(
-          "home",
-          "mods/SkyUI/interface/skyui.swf",
-        );
+        const child = resolver.PathFor("home", "mods/SkyUI/interface/skyui.swf");
         const parentPath = await resolver.PathFor("home", "mods").resolve();
 
         const relative = await child.relativeTo(parentPath);
@@ -234,10 +208,7 @@ describe("Path Normalization and Cross-Platform Handling", () => {
       });
 
       test("should return null for case mismatch on Unix", async () => {
-        const child = resolver.PathFor(
-          "home",
-          "mods/SkyUI/interface/skyui.swf",
-        );
+        const child = resolver.PathFor("home", "mods/SkyUI/interface/skyui.swf");
         const basePath = "/home/user/Mods"; // capital M — child resolves under /home/user/mods
 
         const relative = await child.relativeTo(basePath);
@@ -266,10 +237,7 @@ describe("Path Normalization and Cross-Platform Handling", () => {
       });
 
       test("should handle deep nesting", async () => {
-        const child = resolver.PathFor(
-          "home",
-          "mods/SkyUI/interface/mcguffins/skyui.swf",
-        );
+        const child = resolver.PathFor("home", "mods/SkyUI/interface/mcguffins/skyui.swf");
         const basePath = await resolver.PathFor("home", "mods").resolve();
 
         const relative = await child.relativeTo(basePath);
@@ -297,10 +265,7 @@ describe("Path Normalization and Cross-Platform Handling", () => {
       });
 
       test("should handle paths with multiple consecutive separators", async () => {
-        const child = resolver.PathFor(
-          "home",
-          "mods/SkyUI/interface/skyui.swf",
-        );
+        const child = resolver.PathFor("home", "mods/SkyUI/interface/skyui.swf");
         const basePath = "/home//user//mods///";
 
         const relative = await child.relativeTo(basePath);
@@ -323,9 +288,7 @@ describe("Path Normalization and Cross-Platform Handling", () => {
       const osPath = await filePath.resolve();
 
       // Convert to lowercase
-      const lowercasePath = ResolvedPath.unsafe(
-        (osPath as string).toLowerCase(),
-      );
+      const lowercasePath = ResolvedPath.unsafe((osPath as string).toLowerCase());
 
       const result = await resolver.tryReverse(lowercasePath);
 
@@ -350,9 +313,7 @@ describe("Path Normalization and Cross-Platform Handling", () => {
       // Mix case in the path
       const mixedPath = (osPath as string)
         .split("\\")
-        .map((part, i) =>
-          i % 2 === 0 ? part.toLowerCase() : part.toUpperCase(),
-        )
+        .map((part, i) => (i % 2 === 0 ? part.toLowerCase() : part.toUpperCase()))
         .join("\\");
 
       const result = await resolver.tryReverse(ResolvedPath.unsafe(mixedPath));
@@ -370,10 +331,7 @@ describe("Path Normalization and Cross-Platform Handling", () => {
     });
 
     test("should not produce relative paths with .. segments", async () => {
-      const child = resolver.PathFor(
-        "userData",
-        "mods/SkyUI/interface/skyui.swf",
-      );
+      const child = resolver.PathFor("userData", "mods/SkyUI/interface/skyui.swf");
       const basePath = await resolver.PathFor("userData", "mods").resolve();
 
       const relative = await child.relativeTo(basePath);
@@ -390,10 +348,7 @@ describe("Path Normalization and Cross-Platform Handling", () => {
     });
 
     test("should produce valid forward-slash paths", async () => {
-      const child = resolver.PathFor(
-        "userData",
-        "mods/SkyUI/interface/skyui.swf",
-      );
+      const child = resolver.PathFor("userData", "mods/SkyUI/interface/skyui.swf");
       const basePath = await resolver.PathFor("userData", "mods").resolve();
 
       const relative = await child.relativeTo(basePath);
@@ -439,9 +394,7 @@ describe("Path Normalization and Cross-Platform Handling", () => {
     });
 
     test("should reverse-resolve an exact base path match", async () => {
-      const osPath = ResolvedPath.make(
-        "C:\\Users\\TestUser\\AppData\\Roaming\\Vortex",
-      );
+      const osPath = ResolvedPath.make("C:\\Users\\TestUser\\AppData\\Roaming\\Vortex");
       const result = await resolver.tryReverse(osPath);
 
       expect(result).not.toBeNull();
@@ -476,9 +429,7 @@ describe("Path Normalization and Cross-Platform Handling", () => {
   describe("Reverse resolution with trailing-separator bases", () => {
     test("should reverse-resolve an exact match when the anchor base keeps a trailing separator", async () => {
       const resolver = new TrailingBaseResolver();
-      const result = await resolver.tryReverse(
-        ResolvedPath.make("/home/user/mods"),
-      );
+      const result = await resolver.tryReverse(ResolvedPath.make("/home/user/mods"));
 
       expect(result).not.toBeNull();
       expect(Anchor.name(result.anchor)).toBe("mods");

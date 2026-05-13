@@ -2,11 +2,7 @@ import type { IReference, IRule } from "modmeta-db";
 
 export type { IReference, IRule };
 
-export type ModState =
-  | "downloading"
-  | "downloaded"
-  | "installing"
-  | "installed";
+export type ModState = "downloading" | "downloaded" | "installing" | "installed";
 
 /**
  * Attributes specific to Nexus Mods Collections (when IMod.type === "collection")
@@ -110,9 +106,7 @@ export interface ICommonModAttributes {
  * Comprehensive type for mod attributes that can be either common mod attributes,
  * collection-specific attributes, or any custom attributes
  */
-export type IModAttributes = Partial<
-  ICommonModAttributes & ICollectionAttributes
-> & {
+export type IModAttributes = Partial<ICommonModAttributes & ICollectionAttributes> & {
   [key: string]: any;
 };
 

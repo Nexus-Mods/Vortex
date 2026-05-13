@@ -1,16 +1,3 @@
-import { addRule, removeRule } from "../actions/userlist";
-import {
-  setCreateRule,
-  setQuickEdit,
-  setSource,
-  setTarget,
-} from "../actions/userlistEdit";
-
-import { ILOOTList, ILOOTPlugin, ILootReference } from "../types/ILOOTList";
-import { IPluginCombined } from "../types/IPlugins";
-
-import { NAMESPACE } from "../statics";
-
 import I18next from "i18next";
 import * as PropTypes from "prop-types";
 import * as React from "react";
@@ -29,17 +16,16 @@ import {
   DropTargetSpec,
 } from "react-dnd";
 import { getEmptyImage } from "react-dnd-html5-backend";
-import ReactMarkdown from "react-markdown";
 import { findDOMNode } from "react-dom";
+import ReactMarkdown from "react-markdown";
 import { connect } from "react-redux";
-import {
-  Advanced,
-  ComponentEx,
-  log,
-  selectors,
-  tooltip,
-  util,
-} from "vortex-api";
+import { Advanced, ComponentEx, log, selectors, tooltip, util } from "vortex-api";
+
+import { addRule, removeRule } from "../actions/userlist";
+import { setCreateRule, setQuickEdit, setSource, setTarget } from "../actions/userlistEdit";
+import { NAMESPACE } from "../statics";
+import { ILOOTList, ILOOTPlugin, ILootReference } from "../types/ILOOTList";
+import { IPluginCombined } from "../types/IPlugins";
 
 type TranslationFunction = typeof I18next.t;
 
@@ -64,11 +50,7 @@ interface IConnectedProps {
 interface IActionProps {
   onSetSource: (id: string, pos: { x: number; y: number }) => void;
   onSetTarget: (id: string, pos: { x: number; y: number }) => void;
-  onEditDialog: (
-    referenceId: string,
-    reference: string,
-    defaultType: string,
-  ) => void;
+  onEditDialog: (referenceId: string, reference: string, defaultType: string) => void;
   onAddRule: (referenceId: string, reference: string, type: string) => void;
   onRemoveRule: (referenceId: string, reference: string, type: string) => void;
   onQuickEdit: (pluginId: string, mode: string) => void;
@@ -91,11 +73,7 @@ interface IDropProps {
   canDrop: boolean;
 }
 
-type IProps = IBaseProps &
-  IConnectedProps &
-  IActionProps &
-  IDragProps &
-  IDropProps;
+type IProps = IBaseProps & IConnectedProps & IActionProps & IDragProps & IDropProps;
 
 function componentCenter(component: React.Component<any, any>) {
   try {
@@ -122,9 +100,7 @@ function updateCursorPos(
 ) {
   if (monitor.getClientOffset() !== null) {
     const curPos = monitor.getClientOffset();
-    const dist =
-      Math.abs(curPos.x - lastUpdatePos.x) +
-      Math.abs(curPos.y - lastUpdatePos.y);
+    const dist = Math.abs(curPos.x - lastUpdatePos.x) + Math.abs(curPos.y - lastUpdatePos.y);
     if (dist > 2) {
       /*
       const sourceId = (monitor.getItem() as any).id;
@@ -148,11 +124,7 @@ const dependencySource: DragSourceSpec<IProps, any> = {
     };
   },
 
-  endDrag(
-    props: IProps,
-    monitor: DragSourceMonitor,
-    component: React.Component<IProps, {}>,
-  ) {
+  endDrag(props: IProps, monitor: DragSourceMonitor, component: React.Component<IProps, {}>) {
     clearTimeout(cursorPosUpdater);
     cursorPosUpdater = undefined;
 
@@ -168,13 +140,8 @@ const dependencySource: DragSourceSpec<IProps, any> = {
     const dest: string = destPlugin.id;
 
     if (source !== dest) {
-      if (
-        component !== null &&
-        (component.context as any).getModifiers().ctrl
-      ) {
-        const plugin = props.userlist.find(
-          (iter) => iter.name === sourcePlugin.id,
-        );
+      if (component !== null && (component.context as any).getModifiers().ctrl) {
+        const plugin = props.userlist.find((iter) => iter.name === sourcePlugin.id);
         if (plugin !== undefined) {
           if ((plugin.after || []).indexOf(destPlugin.id) !== -1) {
             // don't add a duplicate rule
@@ -198,10 +165,7 @@ const dependencyTarget: DropTargetSpec<IProps> = {
   },
 };
 
-function collectDrag(
-  dragConnect: DragSourceConnector,
-  monitor: DragSourceMonitor,
-): IDragProps {
+function collectDrag(dragConnect: DragSourceConnector, monitor: DragSourceMonitor): IDragProps {
   return {
     connectDragSource: dragConnect.dragSource(),
     connectDragPreview: dragConnect.dragPreview(),
@@ -209,10 +173,7 @@ function collectDrag(
   };
 }
 
-function collectDrop(
-  dropConnect: DropTargetConnector,
-  monitor: DropTargetMonitor,
-): IDropProps {
+function collectDrop(dropConnect: DropTargetConnector, monitor: DropTargetMonitor): IDropProps {
   return {
     connectDropTarget: dropConnect.dropTarget(),
     isOver: monitor.isOver(),
@@ -289,15 +250,11 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
   private renderQuickEditCheckbox(): JSX.Element {
     const { t, masterlist, plugin, quickEdit, userlist } = this.props;
     const refPlugin = userlist.find((iter) => iter.name === quickEdit.plugin);
-    const refMasterPlugin = masterlist.find(
-      (iter) => iter.name === quickEdit.plugin,
-    );
+    const refMasterPlugin = masterlist.find((iter) => iter.name === quickEdit.plugin);
     const masterEnabled =
-      util.getSafe(refMasterPlugin, [quickEdit.mode], []).indexOf(plugin.id) !==
-      -1;
+      util.getSafe(refMasterPlugin, [quickEdit.mode], []).indexOf(plugin.id) !== -1;
     const thisEnabled =
-      masterEnabled ||
-      util.getSafe(refPlugin, [quickEdit.mode], []).indexOf(plugin.id) !== -1;
+      masterEnabled || util.getSafe(refPlugin, [quickEdit.mode], []).indexOf(plugin.id) !== -1;
 
     const tooltipText = t("load {{ reference }} after {{ name }}", {
       replace: {
@@ -331,24 +288,17 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderConnector(): JSX.Element {
-    const {
-      t,
-      connectDragSource,
-      connectDropTarget,
-      masterlist,
-      plugin,
-      userlist,
-    } = this.props;
+    const { t, connectDragSource, connectDropTarget, masterlist, plugin, userlist } = this.props;
 
     // TODO: this is quite inefficient...
     const lootRules: { name: string; ro: ILOOTPlugin; rw: ILOOTPlugin } = {
       name: plugin.name,
-      ro: (masterlist || []).find((rule) =>
-        this.nameMatch(rule.name, plugin.name),
-      ) || { name: plugin.name },
-      rw: (userlist || []).find((rule) =>
-        this.nameMatch(rule.name, plugin.name),
-      ) || { name: plugin.name },
+      ro: (masterlist || []).find((rule) => this.nameMatch(rule.name, plugin.name)) || {
+        name: plugin.name,
+      },
+      rw: (userlist || []).find((rule) => this.nameMatch(rule.name, plugin.name)) || {
+        name: plugin.name,
+      },
     };
 
     const popoverBlocks = [];
@@ -427,9 +377,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
     if (popoverBlocks.length > 0) {
       classes.push("btn-dependency-hasrules");
     } else {
-      popoverBlocks.push(
-        t("Drag to another connector to define load order rules."),
-      );
+      popoverBlocks.push(t("Drag to another connector to define load order rules."));
     }
 
     const popover = (
@@ -473,15 +421,10 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private renderRule = (
-    ref: string | ILootReference,
-    ruleType: string,
-    readOnly: boolean,
-  ) => {
+  private renderRule = (ref: string | ILootReference, ruleType: string, readOnly: boolean) => {
     const { t } = this.props;
 
-    const { name, display } =
-      typeof ref === "string" ? { name: ref, display: ref } : ref;
+    const { name, display } = typeof ref === "string" ? { name: ref, display: ref } : ref;
 
     if (readOnly) {
       return (
@@ -519,8 +462,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
   private toggleQuick = () => {
     const { onAddRule, onRemoveRule, plugin, quickEdit, userlist } = this.props;
     const refPlugin = userlist.find((iter) => iter.name === quickEdit.plugin);
-    const thisEnabled =
-      util.getSafe(refPlugin, [quickEdit.mode], []).indexOf(plugin.id) !== -1;
+    const thisEnabled = util.getSafe(refPlugin, [quickEdit.mode], []).indexOf(plugin.id) !== -1;
     if (thisEnabled) {
       onRemoveRule(quickEdit.plugin, plugin.id, quickEdit.mode);
     } else {
@@ -576,15 +518,11 @@ function mapDispatchToProps(dispatch): IActionProps {
     onSetTarget: (id, pos) => dispatch(setTarget(id, pos)),
     onEditDialog: (pluginId, reference, defaultType) =>
       dispatch(setCreateRule(pluginId, reference, defaultType)),
-    onAddRule: (pluginId, reference, ruleType) =>
-      dispatch(addRule(pluginId, reference, ruleType)),
+    onAddRule: (pluginId, reference, ruleType) => dispatch(addRule(pluginId, reference, ruleType)),
     onRemoveRule: (pluginId, reference, ruleType) =>
       dispatch(removeRule(pluginId, reference, ruleType)),
     onQuickEdit: (pluginId, mode) => dispatch(setQuickEdit(pluginId, mode)),
   };
 }
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(DependencyIconDrag) as any;
+export default connect(mapStateToProps, mapDispatchToProps)(DependencyIconDrag) as any;

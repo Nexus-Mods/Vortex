@@ -43,9 +43,7 @@ export interface IHealthCheckResult {
   isLegacyTest?: boolean;
 }
 
-export type HealthCheckFunction = (
-  api: IExtensionApi,
-) => Promise<IHealthCheckResult>;
+export type HealthCheckFunction = (api: IExtensionApi) => Promise<IHealthCheckResult>;
 export type HealthCheckFixFunction = (api: IExtensionApi) => Promise<void>;
 
 export interface IHealthCheck {

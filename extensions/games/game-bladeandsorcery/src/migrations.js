@@ -32,9 +32,7 @@ async function migrate0212(api, oldVersion) {
   const state = api.getState();
   const discovery = selectors.discoveryByGame(state, GAME_ID);
   const mods = util.getSafe(state, ["persistent", "mods", GAME_ID], {});
-  const modKeys = Object.keys(mods).filter(
-    (id) => mods[id].modType === "bas-legacy-modtype",
-  );
+  const modKeys = Object.keys(mods).filter((id) => mods[id].modType === "bas-legacy-modtype");
   if (discovery?.path === undefined || modKeys.length === 0) {
     return Promise.resolve();
   }
@@ -55,12 +53,7 @@ async function migrate0212(api, oldVersion) {
   let batched = [actions.setDeploymentNecessary(GAME_ID, true)];
   await api.awaitUI();
   const baseFolder = path.join(discovery.path, streamingAssetsPath());
-  await api.emitAndAwait(
-    "purge-mods-in-path",
-    GAME_ID,
-    "bas-legacy-modtype",
-    baseFolder,
-  );
+  await api.emitAndAwait("purge-mods-in-path", GAME_ID, "bas-legacy-modtype", baseFolder);
   for (const key of modKeys) {
     batched.push(actions.setModType(GAME_ID, key, "bas-official-modtype"));
   }
@@ -80,11 +73,7 @@ function migrate020(api, oldVersion) {
     return Promise.resolve();
   }
 
-  const activatorId = util.getSafe(
-    state,
-    ["settings", "mods", "activator", GAME_ID],
-    undefined,
-  );
+  const activatorId = util.getSafe(state, ["settings", "mods", "activator", GAME_ID], undefined);
 
   const gameDiscovery = util.getSafe(
     state,
@@ -94,10 +83,7 @@ function migrate020(api, oldVersion) {
 
   if (gameDiscovery?.path === undefined || activatorId === undefined) {
     // we can't migrate if this game is not discovered or has an no deployment method
-    log(
-      "debug",
-      "skipping blade and sorcery migration because no deployment set up for it",
-    );
+    log("debug", "skipping blade and sorcery migration because no deployment set up for it");
     return Promise.resolve();
   }
 
@@ -123,18 +109,11 @@ function migrate020(api, oldVersion) {
     })
     .then((res) =>
       Promise.each(res.deployedModTypes, (modType) =>
-        api.emitAndAwait(
-          "purge-mods-in-path",
-          GAME_ID,
-          modType,
-          res.modTypes[modType],
-        ),
+        api.emitAndAwait("purge-mods-in-path", GAME_ID, modType, res.modTypes[modType]),
       ),
     )
     .then(() => {
-      const officialMods = modKeys.filter((key) =>
-        isOfficialModType(mods[key].type),
-      );
+      const officialMods = modKeys.filter((key) => isOfficialModType(mods[key].type));
       return Promise.each(officialMods, (mod) =>
         migrateMod020(api, mods[mod]).catch((err) => {
           log("error", "failed to migrate BaS mod", err.message);
@@ -191,10 +170,7 @@ function migrateMod020(api, mod) {
         (entry) => path.basename(entry).toLowerCase() === MOD_MANIFEST,
       );
 
-      if (
-        manifestFiles.length !== 1 ||
-        path.dirname(manifestFiles[0]) !== modPath
-      ) {
+      if (manifestFiles.length !== 1 || path.dirname(manifestFiles[0]) !== modPath) {
         // mods with multiple manifests were not compatible with the previous
         //  LO system, so it's probably not installed correctly anyway.
 
@@ -230,9 +206,7 @@ function migrateMod020(api, mod) {
         )
           .then(() =>
             Promise.each(files, (file) =>
-              fs
-                .linkAsync(file.src, file.dest)
-                .tap(() => newFiles.push(file.dest)),
+              fs.linkAsync(file.src, file.dest).tap(() => newFiles.push(file.dest)),
             ),
           )
           .catch((err) => {
@@ -243,9 +217,7 @@ function migrateMod020(api, mod) {
             ).then(() => Promise.reject(err));
           })
           .then(() => Promise.each(files, (file) => fs.removeAsync(file.src)))
-          .then(() =>
-            Promise.each(directories, (dir) => fs.removeAsync(dir.src)),
-          );
+          .then(() => Promise.each(directories, (dir) => fs.removeAsync(dir.src)));
       });
     });
 }

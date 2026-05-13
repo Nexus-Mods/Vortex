@@ -5,15 +5,7 @@ import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import * as Redux from "redux";
 import { ThunkDispatch } from "redux-thunk";
-import {
-  actions,
-  ComponentEx,
-  Dashlet,
-  Icon,
-  tooltip,
-  types,
-  util,
-} from "vortex-api";
+import { actions, ComponentEx, Dashlet, Icon, tooltip, types, util } from "vortex-api";
 
 import { NAMESPACE, NUM_DISPLAY_ITEMS } from "./constants";
 
@@ -48,11 +40,9 @@ class ExtensionsDashlet extends ComponentEx<IProps, IExtensionsDashletState> {
     }, {}),
   );
 
-  private downloadsByFileId = memoizeOne(
-    (downloads: { [dlId: string]: types.IDownload }) => {
-      const res: { [fileId: number]: string } = Object.keys(
-        downloads ?? {},
-      ).reduce((prev, dlId: string) => {
+  private downloadsByFileId = memoizeOne((downloads: { [dlId: string]: types.IDownload }) => {
+    const res: { [fileId: number]: string } = Object.keys(downloads ?? {}).reduce(
+      (prev, dlId: string) => {
         const nexusFileId = util.getSafe(
           downloads[dlId],
           ["modInfo", "nexus", "ids", "fileId"],
@@ -62,10 +52,11 @@ class ExtensionsDashlet extends ComponentEx<IProps, IExtensionsDashletState> {
           prev[nexusFileId] = dlId;
         }
         return prev;
-      }, {});
-      return res;
-    },
-  );
+      },
+      {},
+    );
+    return res;
+  });
 
   constructor(props: IProps) {
     super(props);
@@ -77,38 +68,28 @@ class ExtensionsDashlet extends ComponentEx<IProps, IExtensionsDashletState> {
     const { t, extensions, installed } = this.props;
     const { skipEndorsing } = this.state;
 
-    const installedModIds = new Set(
-      Object.values(installed).map((inst) => inst.modId),
-    );
+    const installedModIds = new Set(Object.values(installed).map((inst) => inst.modId));
 
     const sortedAvailable = extensions
-      .filter(
-        (ext) => ext.timestamp !== undefined && !installedModIds.has(ext.modId),
-      )
+      .filter((ext) => ext.timestamp !== undefined && !installedModIds.has(ext.modId))
       .sort((lhs, rhs) => rhs.timestamp - lhs.timestamp)
       .slice(0, NUM_DISPLAY_ITEMS);
 
-    const unendorsed = Object.keys(installed).filter((iter) =>
-      this.isUnendorsed(iter),
-    );
+    const unendorsed = Object.keys(installed).filter((iter) => this.isUnendorsed(iter));
 
     const newsMode = skipEndorsing || unendorsed.length === 0;
 
     return (
       <Dashlet className="dashlet-extensions" title={t("Latest Extensions")}>
         {newsMode ? null : (
-          <div className="extension-title">
-            {t("Please endorse extensions you like")}
-          </div>
+          <div className="extension-title">{t("Please endorse extensions you like")}</div>
         )}
         <ListGroup>
           {newsMode
             ? sortedAvailable.map((ext, idx) => this.renderExt(ext, idx))
             : unendorsed.map((extId, idx) => this.renderEndorse(extId, idx))}
         </ListGroup>
-        {newsMode ? null : (
-          <Button onClick={this.notNow}>{t("Not now")}</Button>
-        )}
+        {newsMode ? null : <Button onClick={this.notNow}>{t("Not now")}</Button>}
       </Dashlet>
     );
   }
@@ -127,10 +108,7 @@ class ExtensionsDashlet extends ComponentEx<IProps, IExtensionsDashletState> {
     return (
       <ListGroupItem className="extension-item" key={idx}>
         <div className="extension-type">{ext.type || "extension"}</div>
-        <div
-          className="extension-image"
-          style={{ background: `url(${ext.image})` }}
-        />
+        <div className="extension-image" style={{ background: `url(${ext.image})` }} />
         <h4>
           <a onClick={onClick} href={this.nexusUrl(ext)}>
             {ext.name}
@@ -139,8 +117,7 @@ class ExtensionsDashlet extends ComponentEx<IProps, IExtensionsDashletState> {
         <p className="extension-summary">{ext.description.short}</p>
         <div className="extension-extra">
           <div>
-            <Icon name="author" />{" "}
-            {t("By {{author}}", { replace: { author: ext.author } })}
+            <Icon name="author" /> {t("By {{author}}", { replace: { author: ext.author } })}
           </div>
           <Button data-modid={ext.modId} onClick={this.installExt}>
             {t("Install")}
@@ -162,10 +139,7 @@ class ExtensionsDashlet extends ComponentEx<IProps, IExtensionsDashletState> {
     return (
       <ListGroupItem className="endorse-item" key={idx}>
         <div className="extension-type">{ext.type || "extension"}</div>
-        <div
-          className="extension-image"
-          style={{ background: `url(${ext.image})` }}
-        />
+        <div className="extension-image" style={{ background: `url(${ext.image})` }} />
         <div className="extension-name">
           {ext.name}
           <div>
@@ -188,8 +162,7 @@ class ExtensionsDashlet extends ComponentEx<IProps, IExtensionsDashletState> {
   };
 
   private isUnendorsed(extId: any) {
-    const { downloads, extensions, extensionState, installed, user } =
-      this.props;
+    const { downloads, extensions, extensionState, installed, user } = this.props;
 
     if (installed[extId].modId === undefined) {
       return false;
@@ -205,19 +178,14 @@ class ExtensionsDashlet extends ComponentEx<IProps, IExtensionsDashletState> {
       return false;
     }
 
-    const dlId =
-      ext !== undefined
-        ? this.downloadsByFileId(downloads)[ext.fileId]
-        : undefined;
+    const dlId = ext !== undefined ? this.downloadsByFileId(downloads)[ext.fileId] : undefined;
 
     const now = Date.now();
 
     return (
       ext.uploader !== user &&
-      (dlId === undefined ||
-        now - downloads[dlId].fileTime > ENDORSEMENT_DELAY) &&
-      util.getSafe(extensionState, [extId, "endorsed"], "Undecided") ===
-        "Undecided"
+      (dlId === undefined || now - downloads[dlId].fileTime > ENDORSEMENT_DELAY) &&
+      util.getSafe(extensionState, [extId, "endorsed"], "Undecided") === "Undecided"
     );
   }
 
@@ -278,11 +246,7 @@ function mapStateToProps(state: types.IState): IConnectedProps {
     extensions: state.session.extensions.available,
     installed: state.session.extensions.installed,
     downloads: state.persistent.downloads.files,
-    user: util.getSafe(
-      state,
-      ["persistent", "nexus", "userInfo", "name"],
-      undefined,
-    ),
+    user: util.getSafe(state, ["persistent", "nexus", "userInfo", "name"], undefined),
   };
 }
 

@@ -1,16 +1,14 @@
+import type { TFunction } from "i18next";
+import * as React from "react";
+import * as winapi from "winapi-bindings";
+
 import { setSettingsPage } from "../../actions/session";
 import Icon from "../../controls/Icon";
 import Spinner from "../../controls/Spinner";
 import type { IExtensionApi, ToDoType } from "../../types/IExtensionContext";
 import * as selectors from "../../util/selectors";
-
 import { setProfilesVisible } from "../settings_interface/actions/interface";
-
 import type { IToDo } from "./IToDo";
-
-import type { TFunction } from "i18next";
-import * as React from "react";
-import * as winapi from "winapi-bindings";
 
 const ONE_GB = 1024 * 1024 * 1024;
 const MIN_DISK_SPACE = 200 * ONE_GB;
@@ -76,8 +74,7 @@ function todos(api: IExtensionApi): IToDo[] {
         profilesVisible: state.settings.interface.profilesVisible,
       }),
       text: "Profile Management",
-      value: (t: TFunction, props: any) =>
-        props.profilesVisible ? t("Yes") : t("No"),
+      value: (t: TFunction, props: any) => (props.profilesVisible ? t("Yes") : t("No")),
       action: (props: any) => {
         api.store.dispatch(setProfilesVisible(!props.profilesVisible));
         api.events.emit(
@@ -104,11 +101,7 @@ function todos(api: IExtensionApi): IToDo[] {
       },
       action: () => {
         openSettingsPage("Download");
-        api.events.emit(
-          "analytics-track-click-event",
-          "Dashboard",
-          "Download drive",
-        );
+        api.events.emit("analytics-track-click-event", "Dashboard", "Download drive");
         api.highlightControl(
           "#settings-tab-pane-Download #download-path-form",
           5000,
@@ -136,11 +129,7 @@ function todos(api: IExtensionApi): IToDo[] {
       },
       action: () => {
         openSettingsPage("Mods");
-        api.events.emit(
-          "analytics-track-click-event",
-          "Dashboard",
-          "Staged drive",
-        );
+        api.events.emit("analytics-track-click-event", "Dashboard", "Staged drive");
         api.highlightControl(
           "#settings-tab-pane-Mods #install-path-form",
           5000,
@@ -151,8 +140,7 @@ function todos(api: IExtensionApi): IToDo[] {
     },
     {
       id: "manual-scan",
-      icon: (props) =>
-        props.discoveryRunning ? <Spinner /> : <Icon name="search" />,
+      icon: (props) => (props.discoveryRunning ? <Spinner /> : <Icon name="search" />),
       type: "search" as ToDoType,
       priority: 40,
       props: (state) => ({
@@ -160,9 +148,7 @@ function todos(api: IExtensionApi): IToDo[] {
       }),
       condition: (props) => props.searchPaths !== undefined,
       text: (t: TFunction, props: any): JSX.Element =>
-        props.discoveryRunning
-          ? t("Discovery running")
-          : t("Scan for missing games"),
+        props.discoveryRunning ? t("Discovery running") : t("Scan for missing games"),
       action: startManualSearch,
     },
   ];

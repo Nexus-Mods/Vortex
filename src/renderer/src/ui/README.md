@@ -162,11 +162,7 @@ function MyTabs() {
     const [selectedTab, setSelectedTab] = useState("overview");
 
     return (
-        <TabProvider
-            tab={selectedTab}
-            tabListId="my-tabs"
-            onSetSelectedTab={setSelectedTab}
-        >
+        <TabProvider tab={selectedTab} tabListId="my-tabs" onSetSelectedTab={setSelectedTab}>
             <TabBar>
                 <TabButton name="Overview" />
                 <TabButton name="Files" count={42} />

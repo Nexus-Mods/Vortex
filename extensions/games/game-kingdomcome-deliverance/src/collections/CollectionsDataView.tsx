@@ -3,9 +3,6 @@ import * as React from "react";
 import { Button, ListGroup, ListGroupItem } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
-
-import { genCollectionLoadOrder, getModId } from "./util";
-
 import {
   ComponentEx,
   EmptyPlaceholder,
@@ -15,6 +12,8 @@ import {
   Usage,
   util,
 } from "vortex-api";
+
+import { genCollectionLoadOrder, getModId } from "./util";
 
 const NAMESPACE: string = "generic-load-order-extension";
 
@@ -39,10 +38,7 @@ type IProps = IActionProps & IExtendedInterfaceProps & IConnectedProps;
 type IComponentState = IBaseState;
 
 class CollectionsDataView extends ComponentEx<IProps, IComponentState> {
-  public static getDerivedStateFromProps(
-    newProps: IProps,
-    state: IComponentState,
-  ) {
+  public static getDerivedStateFromProps(newProps: IProps, state: IComponentState) {
     const { loadOrder, mods, collection } = newProps;
     const sortedMods = genCollectionLoadOrder(loadOrder, mods, collection);
     return sortedMods !== state.sortedMods ? { sortedMods } : null;
@@ -58,11 +54,7 @@ class CollectionsDataView extends ComponentEx<IProps, IComponentState> {
 
   public componentDidMount() {
     const { loadOrder, mods, collection } = this.props;
-    this.nextState.sortedMods = genCollectionLoadOrder(
-      loadOrder,
-      mods,
-      collection,
-    );
+    this.nextState.sortedMods = genCollectionLoadOrder(loadOrder, mods, collection);
   }
 
   public render(): JSX.Element {
@@ -110,9 +102,7 @@ class CollectionsDataView extends ComponentEx<IProps, IComponentState> {
     return (
       <EmptyPlaceholder
         icon="sort-none"
-        text={t(
-          "You have no load order entries (for the current mods in the collection)",
-        )}
+        text={t("You have no load order entries (for the current mods in the collection)")}
         subtext={this.renderOpenLOButton()}
       />
     );
@@ -138,18 +128,11 @@ class CollectionsDataView extends ComponentEx<IProps, IComponentState> {
   };
 }
 
-function mapStateToProps(
-  state: types.IState,
-  ownProps: IProps,
-): IConnectedProps {
+function mapStateToProps(state: types.IState, ownProps: IProps): IConnectedProps {
   const profile = selectors.activeProfile(state) || undefined;
   let loadOrder: string[] = [];
   if (!!profile?.gameId) {
-    loadOrder = util.getSafe(
-      state,
-      ["persistent", "loadOrder", profile.id],
-      [],
-    );
+    loadOrder = util.getSafe(state, ["persistent", "loadOrder", profile.id], []);
   }
 
   return {

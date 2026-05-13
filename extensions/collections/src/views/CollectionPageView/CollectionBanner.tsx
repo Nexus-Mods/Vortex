@@ -2,6 +2,7 @@ import type { TFunction } from "i18next";
 import * as React from "react";
 import { Button } from "react-bootstrap";
 import { ComponentEx, FlexLayout, Icon, util, Image } from "vortex-api";
+
 import { PREMIUM_PATH } from "../../constants";
 
 export interface ICollectionBannerProps {
@@ -22,15 +23,10 @@ class CollectionBanner extends ComponentEx<ICollectionBannerProps, {}> {
           <FlexLayout.Fixed>
             <FlexLayout type="row" id="collection-premium-banner-header">
               <FlexLayout.Fixed>
-                <Image
-                  className="premium-pictogram"
-                  srcs={[premiumPictogramPath]}
-                />
+                <Image className="premium-pictogram" srcs={[premiumPictogramPath]} />
               </FlexLayout.Fixed>
               <FlexLayout.Flex>
-                <div className="collections-premium-banner-title">
-                  {t("Premium")}
-                </div>
+                <div className="collections-premium-banner-title">{t("Premium")}</div>
               </FlexLayout.Flex>
             </FlexLayout>
           </FlexLayout.Fixed>
@@ -40,11 +36,7 @@ class CollectionBanner extends ComponentEx<ICollectionBannerProps, {}> {
             </div>
           </FlexLayout.Flex>
           <FlexLayout.Fixed>
-            <Button
-              id="get-premium-button"
-              className="small"
-              onClick={this.goGetPremium}
-            >
+            <Button id="get-premium-button" className="small" onClick={this.goGetPremium}>
               <Image srcs={[electricBoltIconPath]} />
               {t("Unlock max download speeds")}
             </Button>

@@ -10,14 +10,7 @@ function copyExtension(extension, target) {
   const outputDir = path.basename(extension);
 
   const sourceDir = path.join(EXTENSIONS_DIR, extension, "dist");
-  const destDir = path.join(
-    BASE_DIR,
-    "src",
-    "main",
-    target,
-    "bundledPlugins",
-    outputDir,
-  );
+  const destDir = path.join(BASE_DIR, "src", "main", target, "bundledPlugins", outputDir);
 
   if (!fs.existsSync(sourceDir)) {
     console.error(`Error: Source directory does not exist: ${sourceDir}`);

@@ -1,9 +1,9 @@
-import type { DuckDBConnection } from "@duckdb/node-api";
-import type { IPersistor } from "@vortex/shared/state";
+import * as path from "node:path";
 
+import type { DuckDBConnection } from "@duckdb/node-api";
 import { unknownToError } from "@vortex/shared";
 import { DataInvalid } from "@vortex/shared/errors";
-import * as path from "node:path";
+import type { IPersistor } from "@vortex/shared/state";
 
 import { getVortexPath } from "../getVortexPath";
 import { log } from "../logging";
@@ -69,10 +69,7 @@ class LevelPersist implements IPersistor {
     }
     try {
       const singleton = DuckDBSingleton.getInstance();
-      const extensionDir = path.join(
-        getVortexPath("base_unpacked"),
-        "duckdb-extensions",
-      );
+      const extensionDir = path.join(getVortexPath("base_unpacked"), "duckdb-extensions");
       await singleton.initialize(extensionDir);
 
       const alias = singleton.nextAlias();
@@ -136,11 +133,7 @@ class LevelPersist implements IPersistor {
   // line before the await and an exit line after - so an indefinite hang
   // (where the exit line never appears in vortex.log) pinpoints the
   // wedged call.
-  private async timedWrite<T>(
-    method: string,
-    count: number,
-    op: () => Promise<T>,
-  ): Promise<T> {
+  private async timedWrite<T>(method: string, count: number, op: () => Promise<T>): Promise<T> {
     const trace = traceWritesEnabled();
     const start = Date.now();
     if (trace) {
@@ -195,9 +188,7 @@ class LevelPersist implements IPersistor {
   }
 
   public async getAllKeys(): Promise<string[][]> {
-    const reader = await this.#mConnection.runAndReadAll(
-      `SELECT key FROM ${this.#mAlias}.kv`,
-    );
+    const reader = await this.#mConnection.runAndReadAll(`SELECT key FROM ${this.#mAlias}.kv`);
     const rows = reader.getRows();
     return rows.map((row) => (row[0] as string).split(SEPARATOR));
   }
@@ -219,14 +210,10 @@ class LevelPersist implements IPersistor {
     return rows.map((row) => row[0] as string);
   }
 
-  public async getAllKVs(
-    prefix?: string,
-  ): Promise<Array<{ key: string[]; value: string }>> {
+  public async getAllKVs(prefix?: string): Promise<Array<{ key: string[]; value: string }>> {
     let reader;
     if (prefix === undefined) {
-      reader = await this.#mConnection.runAndReadAll(
-        `SELECT key, value FROM ${this.#mAlias}.kv`,
-      );
+      reader = await this.#mConnection.runAndReadAll(`SELECT key, value FROM ${this.#mAlias}.kv`);
     } else {
       reader = await this.#mConnection.runAndReadAll(
         `SELECT key, value FROM ${this.#mAlias}.kv WHERE key > $1 AND key < $2`,
@@ -286,9 +273,7 @@ class LevelPersist implements IPersistor {
    * to chunk large diffs to bound failure granularity (see
    * ReduxPersistorIPC.processOperations).
    */
-  public async bulkSetItem(
-    items: ReadonlyArray<{ key: string[]; value: string }>,
-  ): Promise<void> {
+  public async bulkSetItem(items: ReadonlyArray<{ key: string[]; value: string }>): Promise<void> {
     if (items.length === 0) {
       return;
     }
@@ -328,10 +313,7 @@ class LevelPersist implements IPersistor {
       params.push(key, `${key}${SEPARATOR}`);
     }
     await this.timedWrite("bulkRemoveItem", keys.length, () =>
-      this.#mConnection.run(
-        `DELETE FROM ${this.#mAlias}.kv WHERE ${clauses.join(" OR ")}`,
-        params,
-      ),
+      this.#mConnection.run(`DELETE FROM ${this.#mAlias}.kv WHERE ${clauses.join(" OR ")}`, params),
     );
   }
 
@@ -370,9 +352,7 @@ class LevelPersist implements IPersistor {
    * Get dirty tables from level_pivot (tables modified in the current transaction).
    * Returns array of {database, table, type} tuples.
    */
-  public async getDirtyTables(): Promise<
-    Array<{ database: string; table: string; type: string }>
-  > {
+  public async getDirtyTables(): Promise<Array<{ database: string; table: string; type: string }>> {
     const reader = await this.#mConnection.runAndReadAll(
       "SELECT * FROM level_pivot_dirty_tables()",
     );

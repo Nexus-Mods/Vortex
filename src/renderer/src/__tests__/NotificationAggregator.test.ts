@@ -20,27 +20,18 @@ describe("NotificationAggregator", () => {
   });
 
   test("should show notifications immediately when aggregation is not active", async () => {
-    aggregator.addNotification(
-      "test-session",
-      "error",
-      "Test Error",
-      "Test message",
-      "TestMod",
-      { allowReport: false },
-    );
+    aggregator.addNotification("test-session", "error", "Test Error", "Test message", "TestMod", {
+      allowReport: false,
+    });
 
     // Run any pending timers/setImmediate
     jest.runAllTimers();
 
-    expect(mockApi.showErrorNotification).toHaveBeenCalledWith(
-      "Test Error",
-      "Test message",
-      {
-        message: "TestMod",
-        allowReport: false,
-        actions: undefined,
-      },
-    );
+    expect(mockApi.showErrorNotification).toHaveBeenCalledWith("Test Error", "Test message", {
+      message: "TestMod",
+      allowReport: false,
+      actions: undefined,
+    });
   });
 
   test("should aggregate similar notifications", async () => {
@@ -94,13 +85,7 @@ describe("NotificationAggregator", () => {
       "Connection error",
       "Mod1",
     );
-    aggregator.addNotification(
-      "test-session",
-      "error",
-      "Invalid URL",
-      "Malformed URL",
-      "Mod2",
-    );
+    aggregator.addNotification("test-session", "error", "Invalid URL", "Malformed URL", "Mod2");
 
     await aggregator.flushAggregation("test-session");
 
@@ -128,9 +113,7 @@ describe("NotificationAggregator", () => {
       expect.stringContaining("and 2 more"),
       expect.objectContaining({
         allowReport: undefined,
-        id: expect.stringContaining(
-          "aggregated-error-Failed to install dependency",
-        ),
+        id: expect.stringContaining("aggregated-error-Failed to install dependency"),
       }),
     );
   });
@@ -138,13 +121,7 @@ describe("NotificationAggregator", () => {
   test("should auto-flush on timeout", async () => {
     aggregator.startAggregation("test-session", 100); // 100ms timeout
 
-    aggregator.addNotification(
-      "test-session",
-      "error",
-      "Test Error",
-      "Test message",
-      "TestMod",
-    );
+    aggregator.addNotification("test-session", "error", "Test Error", "Test message", "TestMod");
 
     // Advance timers past the timeout to trigger the auto-flush
     jest.advanceTimersByTime(150);
@@ -157,13 +134,7 @@ describe("NotificationAggregator", () => {
 
   test("should stop aggregation and flush notifications", async () => {
     aggregator.startAggregation("test-session", 0);
-    aggregator.addNotification(
-      "test-session",
-      "error",
-      "Test Error",
-      "Test message",
-      "TestMod",
-    );
+    aggregator.addNotification("test-session", "error", "Test Error", "Test message", "TestMod");
 
     await aggregator.stopAggregation("test-session");
 

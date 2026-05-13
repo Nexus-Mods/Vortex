@@ -19,13 +19,13 @@
  * robustness testing for invalid inputs and edge cases.
  */
 
+import { IMod, IModReference } from "../extensions/mod_management/types/IMod";
 import {
   testModReference,
   isFuzzyVersion,
   sanitizeExpression,
   coerceToSemver,
 } from "../extensions/mod_management/util/testModReference";
-import { IMod, IModReference } from "../extensions/mod_management/types/IMod";
 
 // Mock the log function to avoid console output during tests
 jest.mock("../util/log", () => ({
@@ -60,23 +60,22 @@ describe("testModReference", () => {
           game: ["skyrimse"],
         },
       ),
-      "Actor Limit Fix - Anniversary Edition (1.6.629.0 and later)-32349-9-1678780488":
-        createMod(
-          "Actor Limit Fix - Anniversary Edition (1.6.629.0 and later)-32349-9-1678780488",
-          {
-            fileMD5: "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d",
-            fileName:
-              "Actor Limit Fix - Anniversary Edition (1.6.629.0 and later)-32349-9-1678780488.7z",
-            name: "Actor Limit Fix - Anniversary Edition",
-            version: "9",
-            logicalFileName: "Actor Limit Fix AE.7z",
-            fileSizeBytes: 2048000,
-            modId: "32349",
-            fileId: "67890",
-            source: "nexus",
-            game: ["skyrimse"],
-          },
-        ),
+      "Actor Limit Fix - Anniversary Edition (1.6.629.0 and later)-32349-9-1678780488": createMod(
+        "Actor Limit Fix - Anniversary Edition (1.6.629.0 and later)-32349-9-1678780488",
+        {
+          fileMD5: "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d",
+          fileName:
+            "Actor Limit Fix - Anniversary Edition (1.6.629.0 and later)-32349-9-1678780488.7z",
+          name: "Actor Limit Fix - Anniversary Edition",
+          version: "9",
+          logicalFileName: "Actor Limit Fix AE.7z",
+          fileSizeBytes: 2048000,
+          modId: "32349",
+          fileId: "67890",
+          source: "nexus",
+          game: ["skyrimse"],
+        },
+      ),
       "Adamant - Bard Perks Addon-30191-1-1-1-1702323805": createMod(
         "Adamant - Bard Perks Addon-30191-1-1-1-1702323805",
         {
@@ -109,36 +108,32 @@ describe("testModReference", () => {
           additionalLogicalFileNames: ["AnimMotionRev.rar", "AMR_Full.rar"],
         },
       ),
-      "BSA Version-68139-3-0-1685378500": createMod(
-        "BSA Version-68139-3-0-1685378500",
-        {
-          fileMD5: "8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f",
-          fileName: "BSA Version-68139-3-0-1685378500.zip",
-          name: "BSA Version",
-          version: "3.0",
-          logicalFileName: "BSA_Version.zip",
-          fileSizeBytes: 256000,
-          modId: "68139",
-          fileId: "33333",
-          source: "nexus",
-          game: ["skyrimse"],
-          installerChoices: {
-            choice1: "option1",
-            choice2: "option2",
-          },
-          patches: {
-            patch1: "value1",
-            patch2: "value2",
-          },
+      "BSA Version-68139-3-0-1685378500": createMod("BSA Version-68139-3-0-1685378500", {
+        fileMD5: "8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f",
+        fileName: "BSA Version-68139-3-0-1685378500.zip",
+        name: "BSA Version",
+        version: "3.0",
+        logicalFileName: "BSA_Version.zip",
+        fileSizeBytes: 256000,
+        modId: "68139",
+        fileId: "33333",
+        source: "nexus",
+        game: ["skyrimse"],
+        installerChoices: {
+          choice1: "option1",
+          choice2: "option2",
         },
-      ),
+        patches: {
+          patch1: "value1",
+          patch2: "value2",
+        },
+      }),
     },
   };
 
   describe("ID-based matching", () => {
     it("should match by exact mod ID", () => {
-      const mod =
-        sampleMods.skyrimse["Tweaks for TTW 1.71-77934-1-71-1739639832"];
+      const mod = sampleMods.skyrimse["Tweaks for TTW 1.71-77934-1-71-1739639832"];
       const reference: IModReference = {
         id: "Tweaks for TTW 1.71-77934-1-71-1739639832",
       };
@@ -147,8 +142,7 @@ describe("testModReference", () => {
     });
 
     it("should fail when ID does not match", () => {
-      const mod =
-        sampleMods.skyrimse["Tweaks for TTW 1.71-77934-1-71-1739639832"];
+      const mod = sampleMods.skyrimse["Tweaks for TTW 1.71-77934-1-71-1739639832"];
       const reference: IModReference = {
         id: "different-mod-id",
       };
@@ -172,8 +166,7 @@ describe("testModReference", () => {
 
   describe("MD5 hash matching", () => {
     it("should match by exact MD5 hash", () => {
-      const mod =
-        sampleMods.skyrimse["Tweaks for TTW 1.71-77934-1-71-1739639832"];
+      const mod = sampleMods.skyrimse["Tweaks for TTW 1.71-77934-1-71-1739639832"];
       const reference: IModReference = {
         fileMD5: "5f8a7b2c9d3e1f4a6b8c0d2e5f7a9b1c",
       };
@@ -182,8 +175,7 @@ describe("testModReference", () => {
     });
 
     it("should fail when MD5 hash does not match", () => {
-      const mod =
-        sampleMods.skyrimse["Tweaks for TTW 1.71-77934-1-71-1739639832"];
+      const mod = sampleMods.skyrimse["Tweaks for TTW 1.71-77934-1-71-1739639832"];
       const reference: IModReference = {
         fileMD5: "different-hash",
       };
@@ -192,8 +184,7 @@ describe("testModReference", () => {
     });
 
     it("should fail MD5 mismatch even for fuzzy version matches when MD5 is specified", () => {
-      const mod =
-        sampleMods.skyrimse["Tweaks for TTW 1.71-77934-1-71-1739639832"];
+      const mod = sampleMods.skyrimse["Tweaks for TTW 1.71-77934-1-71-1739639832"];
       const reference: IModReference = {
         fileMD5: "different-hash",
         versionMatch: ">=1.0.0", // This makes it fuzzy
@@ -273,10 +264,7 @@ describe("testModReference", () => {
 
   describe("Logical filename matching", () => {
     it("should match by exact logical filename", () => {
-      const mod =
-        sampleMods.skyrimse[
-          "Adamant - Bard Perks Addon-30191-1-1-1-1702323805"
-        ];
+      const mod = sampleMods.skyrimse["Adamant - Bard Perks Addon-30191-1-1-1-1702323805"];
       const reference: IModReference = {
         logicalFileName: "Adamant Bard Perks.zip",
       };
@@ -285,10 +273,7 @@ describe("testModReference", () => {
     });
 
     it("should match additional logical filenames", () => {
-      const mod =
-        sampleMods.skyrimse[
-          "Animation Motion Revolution-50258-1-5-3-1664395662"
-        ];
+      const mod = sampleMods.skyrimse["Animation Motion Revolution-50258-1-5-3-1664395662"];
       const reference: IModReference = {
         logicalFileName: "AnimMotionRev.rar",
       };
@@ -297,10 +282,7 @@ describe("testModReference", () => {
     });
 
     it("should match another additional logical filename", () => {
-      const mod =
-        sampleMods.skyrimse[
-          "Animation Motion Revolution-50258-1-5-3-1664395662"
-        ];
+      const mod = sampleMods.skyrimse["Animation Motion Revolution-50258-1-5-3-1664395662"];
       const reference: IModReference = {
         logicalFileName: "AMR_Full.rar",
       };
@@ -309,10 +291,7 @@ describe("testModReference", () => {
     });
 
     it("should fail when logical filename does not match", () => {
-      const mod =
-        sampleMods.skyrimse[
-          "Adamant - Bard Perks Addon-30191-1-1-1-1702323805"
-        ];
+      const mod = sampleMods.skyrimse["Adamant - Bard Perks Addon-30191-1-1-1-1702323805"];
       const reference: IModReference = {
         logicalFileName: "NonExistent.zip",
       };
@@ -323,8 +302,7 @@ describe("testModReference", () => {
 
   describe("File expression matching", () => {
     it("should match by exact file expression against sanitized filename", () => {
-      const mod =
-        sampleMods.skyrimse["Tweaks for TTW 1.71-77934-1-71-1739639832"];
+      const mod = sampleMods.skyrimse["Tweaks for TTW 1.71-77934-1-71-1739639832"];
       const reference: IModReference = {
         fileExpression: "Tweaks for TTW 1.71-77934-1-71-1739639832", // This should match the sanitized filename
       };
@@ -345,10 +323,7 @@ describe("testModReference", () => {
     });
 
     it("should match file expression with question mark wildcard", () => {
-      const mod =
-        sampleMods.skyrimse[
-          "Adamant - Bard Perks Addon-30191-1-1-1-1702323805"
-        ];
+      const mod = sampleMods.skyrimse["Adamant - Bard Perks Addon-30191-1-1-1-1702323805"];
       const reference: IModReference = {
         fileExpression: "Adamant - Bard Perks Addon-30191-?-?-?-*",
       };
@@ -357,8 +332,7 @@ describe("testModReference", () => {
     });
 
     it("should fail when file expression does not match", () => {
-      const mod =
-        sampleMods.skyrimse["Tweaks for TTW 1.71-77934-1-71-1739639832"];
+      const mod = sampleMods.skyrimse["Tweaks for TTW 1.71-77934-1-71-1739639832"];
       const reference: IModReference = {
         fileExpression: "Completely Different Name*",
       };
@@ -369,10 +343,7 @@ describe("testModReference", () => {
 
   describe("Version matching", () => {
     it("should match exact version", () => {
-      const mod =
-        sampleMods.skyrimse[
-          "Adamant - Bard Perks Addon-30191-1-1-1-1702323805"
-        ];
+      const mod = sampleMods.skyrimse["Adamant - Bard Perks Addon-30191-1-1-1-1702323805"];
       const reference: IModReference = {
         versionMatch: "1.1.1",
         logicalFileName: "Adamant Bard Perks.zip", // Need identifier
@@ -382,10 +353,7 @@ describe("testModReference", () => {
     });
 
     it("should match wildcard version", () => {
-      const mod =
-        sampleMods.skyrimse[
-          "Animation Motion Revolution-50258-1-5-3-1664395662"
-        ];
+      const mod = sampleMods.skyrimse["Animation Motion Revolution-50258-1-5-3-1664395662"];
       const reference: IModReference = {
         versionMatch: "*",
         logicalFileName: "AMR.rar",
@@ -395,10 +363,7 @@ describe("testModReference", () => {
     });
 
     it("should match semver range", () => {
-      const mod =
-        sampleMods.skyrimse[
-          "Animation Motion Revolution-50258-1-5-3-1664395662"
-        ];
+      const mod = sampleMods.skyrimse["Animation Motion Revolution-50258-1-5-3-1664395662"];
       const reference: IModReference = {
         versionMatch: ">=1.5.0",
         logicalFileName: "AMR.rar",
@@ -408,10 +373,7 @@ describe("testModReference", () => {
     });
 
     it("should fail when version does not satisfy range", () => {
-      const mod =
-        sampleMods.skyrimse[
-          "Animation Motion Revolution-50258-1-5-3-1664395662"
-        ];
+      const mod = sampleMods.skyrimse["Animation Motion Revolution-50258-1-5-3-1664395662"];
       const reference: IModReference = {
         versionMatch: ">=2.0.0",
         logicalFileName: "AMR.rar",
@@ -436,8 +398,7 @@ describe("testModReference", () => {
 
   describe("Game ID matching", () => {
     it("should match when game ID is in supported games list", () => {
-      const mod =
-        sampleMods.skyrimse["Tweaks for TTW 1.71-77934-1-71-1739639832"];
+      const mod = sampleMods.skyrimse["Tweaks for TTW 1.71-77934-1-71-1739639832"];
       const reference: IModReference = {
         gameId: "skyrimse",
         fileMD5: "5f8a7b2c9d3e1f4a6b8c0d2e5f7a9b1c",
@@ -447,8 +408,7 @@ describe("testModReference", () => {
     });
 
     it("should fail when game ID is not supported", () => {
-      const mod =
-        sampleMods.skyrimse["Tweaks for TTW 1.71-77934-1-71-1739639832"];
+      const mod = sampleMods.skyrimse["Tweaks for TTW 1.71-77934-1-71-1739639832"];
       const reference: IModReference = {
         gameId: "fallout4",
         logicalFileName: "Tweaks for TTW 1.71.7z",
@@ -461,10 +421,7 @@ describe("testModReference", () => {
 
   describe("Reference tag matching", () => {
     it("should match by reference tag", () => {
-      const mod =
-        sampleMods.skyrimse[
-          "Adamant - Bard Perks Addon-30191-1-1-1-1702323805"
-        ];
+      const mod = sampleMods.skyrimse["Adamant - Bard Perks Addon-30191-1-1-1-1702323805"];
       const reference: IModReference = {
         tag: "adamant-bard-v1.1.1",
       };
@@ -473,10 +430,7 @@ describe("testModReference", () => {
     });
 
     it("should match when tag does not match but has ID identifier", () => {
-      const mod =
-        sampleMods.skyrimse[
-          "Adamant - Bard Perks Addon-30191-1-1-1-1702323805"
-        ];
+      const mod = sampleMods.skyrimse["Adamant - Bard Perks Addon-30191-1-1-1-1702323805"];
       const reference: IModReference = {
         tag: "different-tag",
         id: "Adamant - Bard Perks Addon-30191-1-1-1-1702323805", // ID match should succeed despite tag mismatch
@@ -486,10 +440,7 @@ describe("testModReference", () => {
     });
 
     it("should continue checking other identifiers when tag does not match", () => {
-      const mod =
-        sampleMods.skyrimse[
-          "Adamant - Bard Perks Addon-30191-1-1-1-1702323805"
-        ];
+      const mod = sampleMods.skyrimse["Adamant - Bard Perks Addon-30191-1-1-1-1702323805"];
       const reference: IModReference = {
         tag: "different-tag",
         fileMD5: "9f8e7d6c5b4a3928374658392847562", // This should match
@@ -501,10 +452,7 @@ describe("testModReference", () => {
 
   describe("Complex matching scenarios", () => {
     it("should match with multiple criteria", () => {
-      const mod =
-        sampleMods.skyrimse[
-          "Animation Motion Revolution-50258-1-5-3-1664395662"
-        ];
+      const mod = sampleMods.skyrimse["Animation Motion Revolution-50258-1-5-3-1664395662"];
       const reference: IModReference = {
         logicalFileName: "AMR.rar",
         versionMatch: "1.5.3",
@@ -520,10 +468,7 @@ describe("testModReference", () => {
     });
 
     it("should match with multiple criteria even when one optional criterion matches", () => {
-      const mod =
-        sampleMods.skyrimse[
-          "Animation Motion Revolution-50258-1-5-3-1664395662"
-        ];
+      const mod = sampleMods.skyrimse["Animation Motion Revolution-50258-1-5-3-1664395662"];
       const reference: IModReference = {
         logicalFileName: "AMR.rar", // This matches
         versionMatch: "1.5.3", // This matches
@@ -547,8 +492,7 @@ describe("testModReference", () => {
     });
 
     it("should handle empty reference", () => {
-      const mod =
-        sampleMods.skyrimse["Tweaks for TTW 1.71-77934-1-71-1739639832"];
+      const mod = sampleMods.skyrimse["Tweaks for TTW 1.71-77934-1-71-1739639832"];
       const reference: IModReference = {};
       expect(testModReference(mod, reference)).toBe(false);
     });
@@ -611,10 +555,7 @@ describe("testModReference", () => {
 
   describe("Edge cases and real-world scenarios", () => {
     it("should match by custom filename when logical filename differs", () => {
-      const mod =
-        sampleMods.skyrimse[
-          "Adamant - Bard Perks Addon-30191-1-1-1-1702323805"
-        ];
+      const mod = sampleMods.skyrimse["Adamant - Bard Perks Addon-30191-1-1-1-1702323805"];
       if (mod.attributes) {
         mod.attributes.customFileName = "Custom_Bard_Perks.zip";
       }
@@ -627,10 +568,7 @@ describe("testModReference", () => {
     });
 
     it("should handle version matching with prefer suffix", () => {
-      const mod =
-        sampleMods.skyrimse[
-          "Animation Motion Revolution-50258-1-5-3-1664395662"
-        ];
+      const mod = sampleMods.skyrimse["Animation Motion Revolution-50258-1-5-3-1664395662"];
       const reference: IModReference = {
         logicalFileName: "AMR.rar",
         versionMatch: "1.5.3+prefer",
@@ -773,8 +711,7 @@ describe("testModReference", () => {
     });
 
     describe("Reference parameter edge cases", () => {
-      const validMod =
-        sampleMods.skyrimse["Tweaks for TTW 1.71-77934-1-71-1739639832"];
+      const validMod = sampleMods.skyrimse["Tweaks for TTW 1.71-77934-1-71-1739639832"];
 
       it("should return false when reference is null", () => {
         expect(testModReference(validMod, null as any)).toBe(false);
@@ -789,9 +726,7 @@ describe("testModReference", () => {
       });
 
       it("should return false when reference is string type", () => {
-        expect(testModReference(validMod, "not-a-reference" as any)).toBe(
-          false,
-        );
+        expect(testModReference(validMod, "not-a-reference" as any)).toBe(false);
       });
 
       it("should return false when reference is boolean type", () => {
@@ -877,9 +812,7 @@ describe("testModReference", () => {
       });
 
       it("should handle both mod and reference as undefined", () => {
-        expect(testModReference(undefined as any, undefined as any)).toBe(
-          false,
-        );
+        expect(testModReference(undefined as any, undefined as any)).toBe(false);
       });
 
       it("should handle mod with corrupted attributes structure", () => {
@@ -906,8 +839,7 @@ describe("testModReference", () => {
       });
 
       it("should handle reference with corrupted repo structure", () => {
-        const validMod =
-          sampleMods.skyrimse["Tweaks for TTW 1.71-77934-1-71-1739639832"];
+        const validMod = sampleMods.skyrimse["Tweaks for TTW 1.71-77934-1-71-1739639832"];
         const reference: IModReference = {
           repo: {
             repository: null as any,
@@ -956,9 +888,7 @@ describe("testModReference", () => {
     describe("sanitizeExpression", () => {
       it("should remove file extension", () => {
         expect(sanitizeExpression("mod.zip")).toBe("mod");
-        expect(sanitizeExpression("complex-mod-name.7z")).toBe(
-          "complex-mod-name",
-        );
+        expect(sanitizeExpression("complex-mod-name.7z")).toBe("complex-mod-name");
       });
 
       it("should remove duplicate indicators", () => {
@@ -969,11 +899,9 @@ describe("testModReference", () => {
       });
 
       it("should handle complex filenames", () => {
-        expect(
-          sanitizeExpression(
-            "Animation Motion Revolution-50258-1-5-3-1664395662.rar",
-          ),
-        ).toBe("Animation Motion Revolution-50258-1-5-3-1664395662");
+        expect(sanitizeExpression("Animation Motion Revolution-50258-1-5-3-1664395662.rar")).toBe(
+          "Animation Motion Revolution-50258-1-5-3-1664395662",
+        );
       });
     });
 

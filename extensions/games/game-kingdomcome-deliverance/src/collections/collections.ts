@@ -1,7 +1,7 @@
 import { selectors, types, util } from "vortex-api";
-import { IKCDCollectionsData } from "./types";
 
 import { exportLoadOrder, importLoadOrder } from "./loadOrder";
+import { IKCDCollectionsData } from "./types";
 
 export async function genCollectionsData(
   context: types.IExtensionContext,
@@ -10,10 +10,7 @@ export async function genCollectionsData(
 ) {
   const api = context.api;
   try {
-    const loadOrder: string[] = await exportLoadOrder(
-      api.getState(),
-      includedMods,
-    );
+    const loadOrder: string[] = await exportLoadOrder(api.getState(), includedMods);
     const collectionData: IKCDCollectionsData = {
       loadOrder,
     };
@@ -33,9 +30,7 @@ export async function parseCollectionsData(
   const profileId = selectors.lastActiveProfileForGame(state, gameId);
   const profile = selectors.profileById(state, profileId);
   if (profile?.gameId !== gameId) {
-    return Promise.reject(
-      new util.ProcessCanceled("Last active profile is missing"),
-    );
+    return Promise.reject(new util.ProcessCanceled("Last active profile is missing"));
   }
   try {
     await importLoadOrder(api, collection);

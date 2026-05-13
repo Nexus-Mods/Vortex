@@ -11,15 +11,9 @@ import {
   INSTALLER_PRIORITY_ROOT,
   INSTALLER_PRIORITY_SMAPI,
 } from "../common";
-import {
-  installRootFolder,
-  testRootFolder,
-} from "../installers/rootFolderInstaller";
+import { installRootFolder, testRootFolder } from "../installers/rootFolderInstaller";
 import { installSMAPI, testSMAPI } from "../installers/smapi";
-import {
-  installStardewValley,
-  testSupported,
-} from "../installers/stardewValleyInstaller";
+import { installStardewValley, testSupported } from "../installers/stardewValleyInstaller";
 
 /**
  * Registers archive installers used by the Stardew Valley extension.
@@ -37,8 +31,7 @@ export function registerInstallers(
     INSTALLER_ID_SMAPI,
     INSTALLER_PRIORITY_SMAPI,
     testSMAPI,
-    (files, destinationPath) =>
-      installSMAPI(getGameInstallPath, files, destinationPath),
+    (files, destinationPath) => installSMAPI(getGameInstallPath, files, destinationPath),
   );
 
   context.registerInstaller(
@@ -52,7 +45,6 @@ export function registerInstallers(
     INSTALLER_ID_MANIFEST,
     INSTALLER_PRIORITY_MANIFEST,
     testSupported,
-    (files, destinationPath) =>
-      installStardewValley(context.api, files, destinationPath),
+    (files, destinationPath) => installStardewValley(context.api, files, destinationPath),
   );
 }

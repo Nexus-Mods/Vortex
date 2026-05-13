@@ -1,14 +1,14 @@
-import got from "got";
 import { createWriteStream } from "node:fs";
 import { type FileHandle, open } from "node:fs/promises";
 import { pipeline } from "node:stream/promises";
 import { type URL } from "node:url";
+
+import got from "got";
 import PQueue from "p-queue";
 
 import type { Chunk, Chunker } from "./chunking";
-import type { Resolver, NormalizedResource } from "./resolver";
-
 import { staticChunker } from "./chunking";
+import type { Resolver, NormalizedResource } from "./resolver";
 import { normalize } from "./resolver";
 
 export type DownloaderOptions = {
@@ -75,9 +75,7 @@ export class Downloader {
   }
 
   async #downloadSingle(url: URL, dest: string) {
-    return this.#chunkQueue.add(() =>
-      pipeline(got.stream(url), createWriteStream(dest)),
-    );
+    return this.#chunkQueue.add(() => pipeline(got.stream(url), createWriteStream(dest)));
   }
 
   async #downloadChunked(
@@ -92,20 +90,14 @@ export class Downloader {
       await fd.truncate(probeResult.size);
 
       await Promise.all(
-        chunks.map((chunk) =>
-          this.#chunkQueue.add(() => this.#downloadChunk(resource, chunk, fd)),
-        ),
+        chunks.map((chunk) => this.#chunkQueue.add(() => this.#downloadChunk(resource, chunk, fd))),
       );
     } finally {
       await fd.close();
     }
   }
 
-  async #downloadChunk(
-    resource: NormalizedResource,
-    chunk: Chunk,
-    fd: FileHandle,
-  ): Promise<void> {
+  async #downloadChunk(resource: NormalizedResource, chunk: Chunk, fd: FileHandle): Promise<void> {
     const url = await resource.chunkUrl(chunk);
 
     const stream = got.stream(url, {

@@ -1,12 +1,12 @@
+import { IncomingHttpHeaders, IncomingMessage } from "http";
 import * as https from "https";
-import * as _ from "lodash";
-import * as semver from "semver";
 import * as url from "url";
 
-import { GAME_ID, LSLIB_URL } from "./common";
-
-import { IncomingHttpHeaders, IncomingMessage } from "http";
+import * as _ from "lodash";
+import * as semver from "semver";
 import { actions, log, selectors, types, util } from "vortex-api";
+
+import { GAME_ID, LSLIB_URL } from "./common";
 
 const GITHUB_URL = "https://api.github.com/repos/Norbyte/lslib";
 
@@ -22,10 +22,7 @@ function query(baseUrl: string, request: string): Promise<any> {
           10,
         );
         if (res.statusCode === 403 && callsRemaining === 0) {
-          const resetDate = parseInt(
-            util.getSafe(msgHeaders, ["x-ratelimit-reset"], "0"),
-            10,
-          );
+          const resetDate = parseInt(util.getSafe(msgHeaders, ["x-ratelimit-reset"], "0"), 10);
           log("info", "GitHub rate limit exceeded", {
             reset_at: new Date(resetDate).toString(),
           });
@@ -80,9 +77,7 @@ async function downloadConsent(api: types.IExtensionApi): Promise<void> {
       [{ label: "Cancel" }, { label: "Download" }],
     )
     .then((result) =>
-      result.action === "Cancel"
-        ? Promise.reject(new util.UserCanceled())
-        : Promise.resolve(),
+      result.action === "Cancel" ? Promise.reject(new util.UserCanceled()) : Promise.resolve(),
     );
 }
 
@@ -151,9 +146,7 @@ export async function getLatestReleases(currentVersion: string) {
   if (GITHUB_URL) {
     return query(GITHUB_URL, "releases").then((releases) => {
       if (!Array.isArray(releases)) {
-        return Promise.reject(
-          new util.DataInvalid("expected array of github releases"),
-        );
+        return Promise.reject(new util.DataInvalid("expected array of github releases"));
       }
       const current = releases
         .filter((rel) => {
@@ -164,8 +157,7 @@ export async function getLatestReleases(currentVersion: string) {
           return (
             !isPreRelease &&
             version !== null &&
-            (currentVersion === undefined ||
-              semver.gte(version, currentVersion))
+            (currentVersion === undefined || semver.gte(version, currentVersion))
           );
         })
         .sort((lhs, rhs) => semver.compare(rhs.tag_name, lhs.tag_name));
@@ -196,10 +188,7 @@ async function startDownload(api: types.IExtensionApi, downloadLink: string) {
     undefined,
     (error, id) => {
       if (error !== null) {
-        if (
-          error.name === "AlreadyDownloaded" &&
-          error.downloadId !== undefined
-        ) {
+        if (error.name === "AlreadyDownloaded" && error.downloadId !== undefined) {
           id = error.downloadId;
         } else {
           api.showErrorNotification("Download failed", error, {
@@ -233,9 +222,7 @@ async function resolveDownloadLink(currentReleases: any[]) {
 
   const downloadLink = archives[0]?.browser_download_url;
   return downloadLink === undefined
-    ? Promise.reject(
-        new util.DataInvalid("Failed to resolve browser download url"),
-      )
+    ? Promise.reject(new util.DataInvalid("Failed to resolve browser download url"))
     : Promise.resolve(downloadLink);
 }
 
@@ -266,10 +253,7 @@ export async function checkForUpdates(
       }
     })
     .catch((err) => {
-      if (
-        err instanceof util.UserCanceled ||
-        err instanceof util.ProcessCanceled
-      ) {
+      if (err instanceof util.UserCanceled || err instanceof util.ProcessCanceled) {
         return Promise.resolve(currentVersion);
       }
 
@@ -287,10 +271,7 @@ export async function downloadDivine(api: types.IExtensionApi): Promise<void> {
       return downloadConsent(api).then(() => startDownload(api, downloadLink));
     })
     .catch((err) => {
-      if (
-        err instanceof util.UserCanceled ||
-        err instanceof util.ProcessCanceled
-      ) {
+      if (err instanceof util.UserCanceled || err instanceof util.ProcessCanceled) {
         return Promise.resolve();
       } else {
         api.showErrorNotification("Unable to download/install LSLib", err);

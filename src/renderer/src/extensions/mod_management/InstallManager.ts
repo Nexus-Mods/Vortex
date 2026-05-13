@@ -1,5 +1,5 @@
-import type { IHashResult, ILookupResult, IRule } from "modmeta-db";
-import type * as Redux from "redux";
+import * as os from "os";
+import * as path from "path";
 
 import { HTTPError } from "@nexusmods/nexus-api";
 import {
@@ -9,44 +9,10 @@ import {
   unknownToError,
 } from "@vortex/shared";
 import * as _ from "lodash";
+import type { IHashResult, ILookupResult, IRule } from "modmeta-db";
 import Zip from "node-7z";
-import * as os from "os";
-import * as path from "path";
+import type * as Redux from "redux";
 import { generate as shortid } from "shortid";
-
-import type { ICheckbox, IDialogResult } from "../../types/IDialog";
-import type { IExtensionApi, ThunkStore } from "../../types/IExtensionContext";
-import type { IProfile, IState } from "../../types/IState";
-import type { TFunction } from "../../util/i18n";
-import type { IDownload } from "../download_management/types/IDownload";
-import type { IModType } from "../gamemode_management/types/IModType";
-import type {
-  Dependency,
-  IDependency,
-  IDependencyError,
-  IModInfoEx,
-} from "./types/IDependency";
-import type { IInstallContext } from "./types/IInstallContext";
-import type { IInstallOptions } from "./types/IInstallOptions";
-import type {
-  IInstallResult,
-  IInstruction,
-  InstructionType,
-} from "./types/IInstallResult";
-import type {
-  IFileListItem,
-  IMod,
-  IModAttributes,
-  IModReference,
-  IModRule,
-} from "./types/IMod";
-import type { IModInstaller, ISupportedInstaller } from "./types/IModInstaller";
-import type { IInstallationDetails, InstallFunc } from "./types/InstallFunc";
-import type {
-  ISupportedResult,
-  ITestSupportedDetails,
-  TestSupported,
-} from "./types/TestSupported";
 
 /**
  * InstallManager - Handles mod installation with phased collection support.
@@ -89,12 +55,7 @@ import type {
  *
  * See AGENTS-COLLECTIONS.md for architectural overview.
  */
-import {
-  removeDownload,
-  setDownloadModInfo,
-  startActivity,
-  stopActivity,
-} from "../../actions";
+import { removeDownload, setDownloadModInfo, startActivity, stopActivity } from "../../actions";
 import {
   type IConditionResult,
   type IDialogContent,
@@ -102,6 +63,9 @@ import {
   dismissNotification,
 } from "../../actions/notifications";
 import { log } from "../../logging";
+import type { ICheckbox, IDialogResult } from "../../types/IDialog";
+import type { IExtensionApi, ThunkStore } from "../../types/IExtensionContext";
+import type { IProfile, IState } from "../../types/IState";
 import { getBatchContext, type IBatchContext } from "../../util/BatchContext";
 import calculateFolderSize from "../../util/calculateFolderSize";
 import ConcurrencyLimiter from "../../util/ConcurrencyLimiter";
@@ -122,6 +86,7 @@ import {
   withTrackedActivity,
 } from "../../util/errorHandling";
 import * as fs from "../../util/fs";
+import type { TFunction } from "../../util/i18n";
 import { prettifyNodeErrorMessage } from "../../util/message";
 import {
   activeGameId,
@@ -155,18 +120,14 @@ import {
 } from "../collections_integration/selectors";
 import { generateCollectionSessionId } from "../collections_integration/util";
 import { finishDownload } from "../download_management/actions/state";
-import {
-  AlreadyDownloaded,
-  DownloadIsHTML,
-} from "../download_management/DownloadManager";
+import { AlreadyDownloaded, DownloadIsHTML } from "../download_management/DownloadManager";
+import type { IDownload } from "../download_management/types/IDownload";
 import getDownloadGames from "../download_management/util/getDownloadGames";
 import { discoveryByGame } from "../gamemode_management/selectors";
+import type { IModType } from "../gamemode_management/types/IModType";
 import { getGame } from "../gamemode_management/util/getGame";
 import { convertGameIdReverse } from "../nexus_integration/util/convertGameId";
-import {
-  setModEnabled,
-  setModsEnabled,
-} from "../profile_management/actions/profiles";
+import { setModEnabled, setModsEnabled } from "../profile_management/actions/profiles";
 import {
   addModRule,
   removeModRule,
@@ -185,6 +146,14 @@ import InstallContext from "./InstallContext";
 import makeListInstaller from "./listInstaller";
 import deriveModInstallName from "./modIdManager";
 import { NotificationAggregator } from "./NotificationAggregator";
+import type { Dependency, IDependency, IDependencyError, IModInfoEx } from "./types/IDependency";
+import type { IInstallContext } from "./types/IInstallContext";
+import type { IInstallOptions } from "./types/IInstallOptions";
+import type { IInstallResult, IInstruction, InstructionType } from "./types/IInstallResult";
+import type { IFileListItem, IMod, IModAttributes, IModReference, IModRule } from "./types/IMod";
+import type { IModInstaller, ISupportedInstaller } from "./types/IModInstaller";
+import type { IInstallationDetails, InstallFunc } from "./types/InstallFunc";
+import type { ISupportedResult, ITestSupportedDetails, TestSupported } from "./types/TestSupported";
 import { getCSharpScriptAllowListForGame } from "./util/cSharpScriptAllowList";
 import gatherDependencies, {
   findDownloadByRef,
@@ -438,8 +407,7 @@ function findCollectionByDownload(
     // Download lookups will not hold any patch/filelist/installerChoices info.
     //  Which is why in this case we want to ensure that we only match using regular reference fields.
     const matchingRule = collectionMod.rules?.find((rule) => {
-      const { patches, fileList, installerChoices, ...refWithoutExtras } =
-        rule.reference;
+      const { patches, fileList, installerChoices, ...refWithoutExtras } = rule.reference;
       return testModReference(lookup, refWithoutExtras);
     });
 
@@ -469,8 +437,7 @@ function findCollectionByDownload(
     return null;
   }
 
-  const collectionMod =
-    state.persistent.mods[gameId]?.[activeCollection.collectionId];
+  const collectionMod = state.persistent.mods[gameId]?.[activeCollection.collectionId];
   if (!collectionMod) {
     log("debug", "Collection mod not found in state", {
       gameId,
@@ -486,8 +453,7 @@ function findCollectionByDownload(
  */
 function filterDependencyRules(rules: IModRule[]): IModRule[] {
   return (rules ?? []).filter(
-    (rule: IModRule) =>
-      ["recommends", "requires"].includes(rule.type) && !rule.ignored,
+    (rule: IModRule) => ["recommends", "requires"].includes(rule.type) && !rule.ignored,
   );
 }
 
@@ -502,29 +468,16 @@ function checkAndEmitDependencyInstallStart(
   isRecommended: boolean,
 ): boolean {
   let canceled = false;
-  api.events.emit(
-    "will-install-dependencies",
-    gameId,
-    modId,
-    isRecommended,
-    () => {
-      canceled = true;
-    },
-  );
+  api.events.emit("will-install-dependencies", gameId, modId, isRecommended, () => {
+    canceled = true;
+  });
   return !canceled;
 }
 
-function validateVariantName(
-  t: TFunction,
-  content: IDialogContent,
-): IConditionResult[] {
-  const variantName =
-    content.input.find((inp) => inp.id === "variant")?.value ?? "";
+function validateVariantName(t: TFunction, content: IDialogContent): IConditionResult[] {
+  const variantName = content.input.find((inp) => inp.id === "variant")?.value ?? "";
 
-  if (
-    variantName.length < MIN_VARIANT_NAME ||
-    variantName.length > MAX_VARIANT_NAME
-  ) {
+  if (variantName.length < MIN_VARIANT_NAME || variantName.length > MAX_VARIANT_NAME) {
     return [
       {
         id: "variant",
@@ -570,9 +523,7 @@ async function mapWithConcurrency<T, R>(
       results[idx] = await fn(items[idx], idx);
     }
   }
-  await Promise.all(
-    Array.from({ length: Math.min(concurrency, items.length) }, () => worker()),
-  );
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, () => worker()));
   return results;
 }
 
@@ -593,9 +544,7 @@ class InstallManager {
   private mNotificationAggregationTimeoutMS: number = 5000;
 
   // This limiter drives the DownloadManager to queue up new downloads.
-  private mDependencyInstallsLimit: ConcurrencyLimiter = new ConcurrencyLimiter(
-    10,
-  );
+  private mDependencyInstallsLimit: ConcurrencyLimiter = new ConcurrencyLimiter(10);
 
   // Queues installations for processing - primarily used to keep track of pending installations
   //  for the current dependency phase if/when concurrent download and installation is disabled.
@@ -632,21 +581,10 @@ class InstallManager {
 
     api.onAsync(
       "install-from-dependencies",
-      (
-        dependentId: string,
-        rules: IModRule[],
-        recommended: boolean,
-        profileId?: string,
-      ) => {
+      (dependentId: string, rules: IModRule[], recommended: boolean, profileId?: string) => {
         profileId =
-          profileId ||
-          lastActiveProfileForGame(
-            api.getState(),
-            activeGameId(api.getState()),
-          );
-        const contextName = recommended
-          ? "install-recommendations"
-          : "install-dependencies";
+          profileId || lastActiveProfileForGame(api.getState(), activeGameId(api.getState()));
+        const contextName = recommended ? "install-recommendations" : "install-dependencies";
         const batchedContext = getBatchContext(contextName, "", true);
         batchedContext?.set("profileId", profileId);
         const profile = profileById(api.getState(), profileId);
@@ -663,9 +601,7 @@ class InstallManager {
         const instPath = this.mGetInstallPath(profile.gameId);
 
         const filtered = rules.filter(
-          (iter) =>
-            collection.rules?.find((rule) => _.isEqual(iter, rule)) !==
-            undefined,
+          (iter) => collection.rules?.find((rule) => _.isEqual(iter, rule)) !== undefined,
         );
 
         if (recommended) {
@@ -673,20 +609,17 @@ class InstallManager {
             api,
             "installing_dependencies",
             dependentId,
-            this.withDependenciesContext(
-              "install-recommendations",
-              profile.id,
-              () =>
-                this.installRecommendationsImpl(
-                  api,
-                  profile,
-                  profile.gameId,
-                  dependentId,
-                  modName(collection),
-                  filtered,
-                  instPath,
-                  true,
-                ),
+            this.withDependenciesContext("install-recommendations", profile.id, () =>
+              this.installRecommendationsImpl(
+                api,
+                profile,
+                profile.gameId,
+                dependentId,
+                modName(collection),
+                filtered,
+                instPath,
+                true,
+              ),
             ),
           );
         } else {
@@ -694,20 +627,17 @@ class InstallManager {
             api,
             "installing_dependencies",
             dependentId,
-            this.withDependenciesContext(
-              "install-collections",
-              profile.id,
-              () =>
-                this.installDependenciesImpl(
-                  api,
-                  profile,
-                  profile.gameId,
-                  dependentId,
-                  modName(collection),
-                  filtered,
-                  instPath,
-                  true,
-                ),
+            this.withDependenciesContext("install-collections", profile.id, () =>
+              this.installDependenciesImpl(
+                api,
+                profile,
+                profile.gameId,
+                dependentId,
+                modName(collection),
+                filtered,
+                instPath,
+                true,
+              ),
             ),
           );
         }
@@ -727,9 +657,7 @@ class InstallManager {
       this.mDependencyInstalls = {};
 
       // Reset concurrency limiters
-      this.mDependencyDownloadsLimit = new DynamicDownloadConcurrencyLimiter(
-        api,
-      );
+      this.mDependencyDownloadsLimit = new DynamicDownloadConcurrencyLimiter(api);
       this.mDependencyInstallsLimit = new ConcurrencyLimiter(10);
 
       // Clear all retry counters
@@ -738,18 +666,15 @@ class InstallManager {
       return Promise.resolve();
     });
 
-    api.events.on(
-      "did-finish-download",
-      (downloadId: string, state: string) => {
-        if (state === "finished") {
-          const context = getBatchContext("install-recommendations", "");
-          const sourceModId = context?.get?.("sourceModId", null);
-          this.handleDownloadFinished(api, downloadId, sourceModId);
-        } else if (state === "failed") {
-          this.handleDownloadFailed(api, downloadId);
-        }
-      },
-    );
+    api.events.on("did-finish-download", (downloadId: string, state: string) => {
+      if (state === "finished") {
+        const context = getBatchContext("install-recommendations", "");
+        const sourceModId = context?.get?.("sourceModId", null);
+        this.handleDownloadFinished(api, downloadId, sourceModId);
+      } else if (state === "failed") {
+        this.handleDownloadFailed(api, downloadId);
+      }
+    });
   }
 
   private handleDownloadFinished(
@@ -769,11 +694,7 @@ class InstallManager {
     }
 
     // Check if this download is part of a collection installation
-    const collectionInfo = findCollectionByDownload(
-      state,
-      download,
-      sourceModId,
-    );
+    const collectionInfo = findCollectionByDownload(state, download, sourceModId);
     if (!collectionInfo) {
       return false;
     }
@@ -804,16 +725,10 @@ class InstallManager {
       if (phaseState) {
         // Add this download to the cache
         if (download.modInfo?.referenceTag) {
-          phaseState.downloadLookupCache.byTag.set(
-            download.modInfo.referenceTag,
-            downloadId,
-          );
+          phaseState.downloadLookupCache.byTag.set(download.modInfo.referenceTag, downloadId);
         }
         if (download.fileMD5) {
-          phaseState.downloadLookupCache.byMd5.set(
-            download.fileMD5,
-            downloadId,
-          );
+          phaseState.downloadLookupCache.byMd5.set(download.fileMD5, downloadId);
         }
       }
     }
@@ -861,11 +776,7 @@ class InstallManager {
     }
 
     // Check if this download is part of a collection installation
-    const collectionInfo = findCollectionByDownload(
-      state,
-      download,
-      downloadId,
-    );
+    const collectionInfo = findCollectionByDownload(state, download, downloadId);
     if (!collectionInfo) {
       return;
     }
@@ -879,22 +790,19 @@ class InstallManager {
 
     // Check if we're currently in collection installation for this collection
     const isInstallingCollection =
-      !!this.mDependencyInstalls[collectionId] ||
-      this.mInstallPhaseState.has(collectionId);
+      !!this.mDependencyInstalls[collectionId] || this.mInstallPhaseState.has(collectionId);
 
     if (!isInstallingCollection) {
-      log(
-        "debug",
-        "Collection is not currently installing - ignoring download failure",
-        { collectionId, downloadId },
-      );
+      log("debug", "Collection is not currently installing - ignoring download failure", {
+        collectionId,
+        downloadId,
+      });
       return;
     }
 
     // Get the download error message
     const errorMessage =
-      download.failCause?.message ||
-      "Download failed due to network or server error";
+      download.failCause?.message || "Download failed due to network or server error";
     const modName = renderModReference(matchingRule.reference);
     // Report the download failure via aggregated notifications for collections
     if (this.mNotificationAggregator) {
@@ -918,31 +826,23 @@ class InstallManager {
     }
   }
 
-  private handleDownloadSkipped(
-    api: IExtensionApi,
-    sourceModId: string,
-    dep: IDependency,
-  ) {
+  private handleDownloadSkipped(api: IExtensionApi, sourceModId: string, dep: IDependency) {
     if (!sourceModId || !dep) {
       return;
     }
 
     // Check if we're currently in collection installation for this collection
     const isInstallingCollection =
-      !!this.mDependencyInstalls[sourceModId] ||
-      this.mInstallPhaseState.has(sourceModId);
+      !!this.mDependencyInstalls[sourceModId] || this.mInstallPhaseState.has(sourceModId);
     if (!isInstallingCollection) {
-      log(
-        "debug",
-        "Collection is not currently installing - ignoring skipped download",
-        { sourceModId },
-      );
+      log("debug", "Collection is not currently installing - ignoring skipped download", {
+        sourceModId,
+      });
       return;
     }
 
     const downloads = api.getState().persistent.downloads.files;
-    const dlId =
-      dep.download ?? findDownloadByReferenceTag(downloads, dep.reference);
+    const dlId = dep.download ?? findDownloadByReferenceTag(downloads, dep.reference);
     if (dlId != null) {
       // Remove any active or pending installation for this dependency
       const installKey = this.generateDependencyInstallKey(sourceModId, dlId);
@@ -967,9 +867,7 @@ class InstallManager {
   /**
    * Get information about a specific active installation
    */
-  public getActiveInstallation(
-    installId: string,
-  ): IActiveInstallation | undefined {
+  public getActiveInstallation(installId: string): IActiveInstallation | undefined {
     return this.mActiveInstalls.get(installId);
   }
 
@@ -1062,10 +960,7 @@ class InstallManager {
    * Force cleanup of stuck installations (for debugging)
    * @param maxAgeMinutes - installations older than this will be force-cleaned
    */
-  public forceCleanupStuckInstalls(
-    api: IExtensionApi,
-    maxAgeMinutes: number = 10,
-  ): number {
+  public forceCleanupStuckInstalls(api: IExtensionApi, maxAgeMinutes: number = 10): number {
     const now = Date.now();
     const maxAgeMs = maxAgeMinutes * 60 * 1000;
     const stuckInstalls: IActiveInstallation[] = [];
@@ -1082,9 +977,7 @@ class InstallManager {
       const { installId, modId, callback } = install;
       this.mActiveInstalls.delete(installId);
       try {
-        const timeoutError = new Error(
-          `Installation timed out after ${maxAgeMinutes} minutes`,
-        );
+        const timeoutError = new Error(`Installation timed out after ${maxAgeMinutes} minutes`);
         timeoutError.name = "InstallationTimeoutError";
         callback(timeoutError, modId);
         log("info", "InstallManager: Called callback for stuck installation", {
@@ -1092,23 +985,17 @@ class InstallManager {
           modId,
         });
       } catch (callbackError) {
-        log(
-          "error",
-          "InstallManager: Error calling callback for stuck installation",
-          {
-            installId,
-            modId,
-            error: getErrorMessageOrDefault(callbackError),
-          },
-        );
+        log("error", "InstallManager: Error calling callback for stuck installation", {
+          installId,
+          modId,
+          error: getErrorMessageOrDefault(callbackError),
+        });
       }
 
       // Try to dismiss any lingering notifications
       try {
         api.store.dispatch(dismissNotification(`install_${installId}`));
-        api.store.dispatch(
-          dismissNotification(`ready-to-install-${installId}`),
-        );
+        api.store.dispatch(dismissNotification(`ready-to-install-${installId}`));
       } catch (err) {
         log("warn", "Error dismissing notification during force cleanup", {
           installId,
@@ -1159,10 +1046,7 @@ class InstallManager {
     let extractProm: Promise<any>;
     if (FILETYPES_AVOID.includes(path.extname(archivePath).toLowerCase())) {
       extractProm = Promise.reject(
-        new ArchiveBrokenError(
-          path.basename(archivePath),
-          "file type on avoidlist",
-        ),
+        new ArchiveBrokenError(path.basename(archivePath), "file type on avoidlist"),
       );
     } else {
       extractProm = Promise.resolve(
@@ -1176,12 +1060,7 @@ class InstallManager {
           )
           .catch((err: Error) =>
             this.isCritical(err.message)
-              ? Promise.reject(
-                  new ArchiveBrokenError(
-                    path.basename(archivePath),
-                    err.message,
-                  ),
-                )
+              ? Promise.reject(new ArchiveBrokenError(path.basename(archivePath), err.message))
               : Promise.reject(err),
           ),
       );
@@ -1206,9 +1085,7 @@ class InstallManager {
         if (code !== 0) {
           const critical = errors.find((err) => this.isCritical(err));
           if (critical !== undefined) {
-            return Promise.reject(
-              new ArchiveBrokenError(path.basename(archivePath), critical),
-            );
+            return Promise.reject(new ArchiveBrokenError(path.basename(archivePath), critical));
           }
           return this.queryContinue(api, errors, archivePath);
         } else {
@@ -1230,18 +1107,14 @@ class InstallManager {
         }
 
         const { installer, requiredFiles } = supportedInstaller;
-        const collectionInstallState = getCollectionActiveSession(
-          api.getState(),
-        );
+        const collectionInstallState = getCollectionActiveSession(api.getState());
         const overrideInstructionsFilePresentInArchive = fileList.some(
-          (file) =>
-            path.basename(file) === VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME,
+          (file) => path.basename(file) === VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME,
         );
         const details: IInstallationDetails = collectionInstallState
           ? null
           : {
-              hasInstructionsOverrideFile:
-                overrideInstructionsFilePresentInArchive,
+              hasInstructionsOverrideFile: overrideInstructionsFilePresentInArchive,
             };
         return installer.install(
           fileList,
@@ -1300,9 +1173,7 @@ class InstallManager {
     sourceModId?: string,
     modReference?: IModReference,
   ): void {
-    const baseName =
-      path.basename(archivePath, path.extname(archivePath)).trim() ||
-      "EMPTY_NAME";
+    const baseName = path.basename(archivePath, path.extname(archivePath)).trim() || "EMPTY_NAME";
     const installId = this.generateDependencyInstallKey(sourceModId, archiveId);
     const dummyArchiveId = archiveId || "direct-install-" + shortid();
     const installInfo: IActiveInstallation = {
@@ -1344,9 +1215,7 @@ class InstallManager {
     if (archiveId != null) {
       const download = api.getState().persistent.downloads.files[archiveId];
       if (download && download.state !== "finished") {
-        const error = new Error(
-          `Cannot install: download not finished (state: ${download.state})`,
-        );
+        const error = new Error(`Cannot install: download not finished (state: ${download.state})`);
         trackedCallback(error, undefined);
         return;
       } else if (download) {
@@ -1359,14 +1228,9 @@ class InstallManager {
     };
 
     const state = api.getState();
-    const batchContext = getBatchContext(
-      ["install-dependencies", "install-recommendations"],
-      "",
-    );
-    const profileId =
-      batchContext?.get<string>("profileId") ?? activeProfile(state)?.id;
-    const currentProfile =
-      profileById(state, profileId) ?? activeProfile(state);
+    const batchContext = getBatchContext(["install-dependencies", "install-recommendations"], "");
+    const profileId = batchContext?.get<string>("profileId") ?? activeProfile(state)?.id;
+    const currentProfile = profileById(state, profileId) ?? activeProfile(state);
 
     // Use parallel installation concurrency limiter instead of sequential mQueue
     this.mMainInstallsLimit
@@ -1388,9 +1252,7 @@ class InstallManager {
             return;
           }
 
-          api.dismissNotification(
-            `ready-to-install-${archiveId ?? dummyArchiveId}`,
-          );
+          api.dismissNotification(`ready-to-install-${archiveId ?? dummyArchiveId}`);
           let installProfile = currentProfile;
           let modId = baseName;
           let installGameId: string;
@@ -1417,9 +1279,7 @@ class InstallManager {
           let installingFileId: number;
           // Start the installation process - the promise will resolve when callback is called
           const dlInfo =
-            archiveId != null
-              ? api.getState().persistent.downloads.files[archiveId]
-              : undefined;
+            archiveId != null ? api.getState().persistent.downloads.files[archiveId] : undefined;
           const installationPromise = withTrackedActivity(
             "vortex.mod-management",
             "mod.install",
@@ -1429,9 +1289,7 @@ class InstallManager {
               "mod.numericModId": dlInfo?.modInfo?.nexus?.ids?.modId ?? "",
               "mod.fileId": dlInfo?.modInfo?.nexus?.ids?.fileId ?? "",
               "mod.installerChoices":
-                fullInfo.choices != null
-                  ? JSON.stringify(fullInfo.choices)
-                  : "",
+                fullInfo.choices != null ? JSON.stringify(fullInfo.choices) : "",
               "mod.hasPatches": fullInfo.patches != null,
               "mod.hasFileList": fileList != null,
             },
@@ -1449,15 +1307,10 @@ class InstallManager {
 
                   if (installGameId === undefined) {
                     return Promise.reject(
-                      new ProcessCanceled(
-                        "You need to select a game before installing this mod",
-                      ),
+                      new ProcessCanceled("You need to select a game before installing this mod"),
                     );
                   }
-                  if (
-                    installGameId === "site" &&
-                    baseName.toLowerCase().includes("extension")
-                  ) {
+                  if (installGameId === "site" && baseName.toLowerCase().includes("extension")) {
                     // Assumption here is that anything we try to install from the "Modding Tools"/"site" domain
                     //  that contains "extension" in its archive name is an extension... If a non-extension tool
                     //  contains "extension" in its archive name... well, that's not good but there's nothing we can
@@ -1466,10 +1319,7 @@ class InstallManager {
                     //  the current game which I guess should be fine.
                     return Promise.resolve(installGameId);
                   }
-                  if (
-                    games.find((iter) => iter.id === installGameId) ===
-                    undefined
-                  ) {
+                  if (games.find((iter) => iter.id === installGameId) === undefined) {
                     // Game extension for this download is not installed, this is theoretically fine as
                     //  it may be a requirement which fits multiple game extensions. Assume the game extension
                     //  and/or user know what they're doing.
@@ -1479,9 +1329,7 @@ class InstallManager {
                     });
                     if (currentProfile === undefined) {
                       return Promise.reject(
-                        new ProcessCanceled(
-                          "You need to manage a game before installing this mod",
-                        ),
+                        new ProcessCanceled("You need to manage a game before installing this mod"),
                       );
                     }
                     installGameId = currentProfile.gameId;
@@ -1489,22 +1337,14 @@ class InstallManager {
                   const discovery = discoveryByGame(state, installGameId);
                   if (discovery?.path === undefined) {
                     return Promise.reject(
-                      new ProcessCanceled(
-                        "You need to manage a game before installing this mod",
-                      ),
+                      new ProcessCanceled("You need to manage a game before installing this mod"),
                     );
                   }
                   if (installGameId !== currentProfile?.gameId) {
-                    const installProfileId = lastActiveProfileForGame(
-                      state,
-                      installGameId,
-                    );
+                    const installProfileId = lastActiveProfileForGame(state, installGameId);
                     batchContext?.set("profileId", installProfileId);
                     installProfile = profileById(state, installProfileId);
-                  } else if (
-                    info.profileId &&
-                    info.profileId !== currentProfile?.id
-                  ) {
+                  } else if (info.profileId && info.profileId !== currentProfile?.id) {
                     // Use the target profile from install options (e.g., when installing for a collection
                     // on a different profile than the active one)
                     installProfile = profileById(state, info.profileId);
@@ -1524,16 +1364,8 @@ class InstallManager {
                 // otherwise we'd not remember the hash when installing from external file
                 .then((gameId) => {
                   // Check if we already have the hash from the download to avoid recalculation
-                  const existingHash = getSafe(
-                    fullInfo,
-                    ["download", "fileMD5"],
-                    undefined,
-                  );
-                  const existingSize = getSafe(
-                    fullInfo,
-                    ["download", "size"],
-                    undefined,
-                  );
+                  const existingHash = getSafe(fullInfo, ["download", "fileMD5"], undefined);
+                  const existingSize = getSafe(fullInfo, ["download", "size"], undefined);
                   if (existingHash && existingSize) {
                     archiveMD5 = existingHash;
                     archiveSize = existingSize;
@@ -1561,10 +1393,7 @@ class InstallManager {
                   if (installGameId === "site") {
                     // install an already-downloaded extension
                     return api
-                      .emitAndAwait(
-                        "install-extension-from-download",
-                        archiveId,
-                      )
+                      .emitAndAwait("install-extension-from-download", archiveId)
                       .then(() => Promise.reject(new UserCanceled()));
                   }
                   installContext = new InstallContext(
@@ -1575,11 +1404,7 @@ class InstallManager {
                     sourceModId,
                   );
                   installContext.startIndicator(baseName);
-                  let dlGame: string | string[] = getSafe(
-                    fullInfo,
-                    ["download", "game"],
-                    gameId,
-                  );
+                  let dlGame: string | string[] = getSafe(fullInfo, ["download", "game"], gameId);
                   if (Array.isArray(dlGame)) {
                     dlGame = dlGame[0];
                   }
@@ -1595,11 +1420,7 @@ class InstallManager {
                     archivePath,
                     resultCount: modInfo.length,
                   });
-                  const match = metaLookupMatch(
-                    modInfo,
-                    path.basename(archivePath),
-                    installGameId,
-                  );
+                  const match = metaLookupMatch(modInfo, path.basename(archivePath), installGameId);
                   if (match !== undefined) {
                     fullInfo.meta = match.value;
                   }
@@ -1619,11 +1440,7 @@ class InstallManager {
                       });
                       return Promise.resolve(testModId);
                     }
-                    const modNameMatches = this.checkModNameExists(
-                      testModId,
-                      api,
-                      installGameId,
-                    );
+                    const modNameMatches = this.checkModNameExists(testModId, api, installGameId);
                     const variantMatches = this.checkModVariantsExist(
                       api,
                       installGameId,
@@ -1632,9 +1449,7 @@ class InstallManager {
                     const existingIds = (
                       replacementChoice === "variant"
                         ? modNameMatches
-                        : Array.from(
-                            new Set([].concat(modNameMatches, variantMatches)),
-                          )
+                        : Array.from(new Set([].concat(modNameMatches, variantMatches)))
                     ).filter((id) => id !== undefined);
                     if (existingIds.length === 0) {
                       log("debug", "(nameloop) no existing ids", {
@@ -1667,9 +1482,7 @@ class InstallManager {
                           enable = true;
                         }
 
-                        const activeSession = getCollectionActiveSession(
-                          api.getState(),
-                        );
+                        const activeSession = getCollectionActiveSession(api.getState());
                         if (!activeSession) {
                           // When user chooses to replace or create a variant, clear any pre-set
                           // installer options so they get a fresh installation experience
@@ -1677,8 +1490,7 @@ class InstallManager {
                           delete fullInfo.patches;
                           fileList = undefined;
                         }
-                        setdefault(fullInfo, "custom", {} as any).variant =
-                          choice.variant;
+                        setdefault(fullInfo, "custom", {} as any).variant = choice.variant;
                         rules = choice.rules || [];
                         fullInfo.previous = choice.attributes;
                         return checkNameLoop();
@@ -1704,16 +1516,12 @@ class InstallManager {
                   // installed it and different collection versions can coexist.
                   if (
                     sourceModId != null &&
-                    getSafe(fullInfo, ["custom", "variant"], undefined) ===
-                      undefined
+                    getSafe(fullInfo, ["custom", "variant"], undefined) === undefined
                   ) {
                     const collectionMod =
-                      api.getState().persistent.mods?.[installGameId]?.[
-                        sourceModId
-                      ];
+                      api.getState().persistent.mods?.[installGameId]?.[sourceModId];
                     if (collectionMod != null) {
-                      setdefault(fullInfo, "custom", {} as any).variant =
-                        modName(collectionMod);
+                      setdefault(fullInfo, "custom", {} as any).variant = modName(collectionMod);
                     }
                   }
 
@@ -1741,8 +1549,7 @@ class InstallManager {
                         )
                       : undefined;
 
-                  const mods =
-                    api.getState().persistent.mods[installGameId] ?? {};
+                  const mods = api.getState().persistent.mods[installGameId] ?? {};
                   const dependentRule: {
                     [modId: string]: { owner: string; rule: IModRule };
                   } = Object.keys(mods).reduce(
@@ -1759,8 +1566,7 @@ class InstallManager {
                       }
                       const depRule = (mods[iter].rules ?? []).find(
                         (rule) =>
-                          rule.type === "requires" &&
-                          testModReference(existingMod, rule.reference),
+                          rule.type === "requires" && testModReference(existingMod, rule.reference),
                       );
                       if (depRule !== undefined) {
                         prev[iter] = { owner: iter, rule: depRule };
@@ -1772,17 +1578,13 @@ class InstallManager {
 
                   let broken: string[] = [];
                   if (truthy(archiveId)) {
-                    const download =
-                      api.getState().persistent.downloads.files[archiveId];
+                    const download = api.getState().persistent.downloads.files[archiveId];
                     if (download !== undefined) {
                       const lookup = lookupFromDownload(download);
                       broken = Object.keys(dependentRule).filter(
                         (iter) =>
                           !idOnlyRef(dependentRule[iter].rule.reference) &&
-                          !testModReference(
-                            lookup,
-                            dependentRule[iter].rule.reference,
-                          ),
+                          !testModReference(lookup, dependentRule[iter].rule.reference),
                       );
                     }
                   }
@@ -1804,10 +1606,7 @@ class InstallManager {
                   // may have different installer steps.
                   if (fullInfo.choices === undefined) {
                     const prevFileId = fullInfo.previous?.fileId;
-                    if (
-                      prevFileId !== undefined &&
-                      prevFileId === installingFileId
-                    ) {
+                    if (prevFileId !== undefined && prevFileId === installingFileId) {
                       const prevChoices = fullInfo.previous?.installerChoices;
                       if (prevChoices !== undefined) {
                         fullInfo.choices = prevChoices;
@@ -1815,79 +1614,61 @@ class InstallManager {
                     }
                   }
 
-                  if (
-                    existingMod !== undefined &&
-                    installProfile !== undefined
-                  ) {
+                  if (existingMod !== undefined && installProfile !== undefined) {
                     const wasEnabled = getSafe(
                       installProfile.modState,
                       [existingMod.id, "enabled"],
                       false,
                     );
-                    return this.userVersionChoice(existingMod, api.store).then(
-                      (action: string) => {
-                        if (action === INSTALL_ACTION) {
-                          enable = enable || wasEnabled;
-                          if (wasEnabled) {
-                            setModsEnabled(
-                              api,
-                              installProfile.id,
-                              [existingMod.id],
-                              false,
-                              {
-                                allowAutoDeploy,
-                                installed: true,
-                              },
-                            );
-                          }
-                          rules = existingMod.rules || [];
-                          overrides = existingMod.fileOverrides;
-                          fullInfo.previous = existingMod.attributes;
-                          return Promise.resolve();
-                        } else if (action === REPLACE_ACTION) {
-                          rules = existingMod.rules || [];
-                          overrides = existingMod.fileOverrides;
-                          fullInfo.previous = existingMod.attributes;
-                          // we need to remove the old mod before continuing. This ensures
-                          // the mod is deactivated and undeployed (so we're not leave dangling
-                          // links) and it ensures we do a clean install of the mod
-                          return new Promise<void>((resolve, reject) => {
-                            api.events.emit(
-                              "remove-mod",
-                              installGameId,
-                              existingMod.id,
-                              (error: Error) => {
-                                if (error != null) {
-                                  reject(error);
-                                } else {
-                                  // use the same mod id as the old version so that all profiles
-                                  // keep using it.
-                                  modId = existingMod.id;
-                                  enable = enable || wasEnabled;
-                                  resolve();
-                                }
-                              },
-                              { willBeReplaced: true },
-                            );
+                    return this.userVersionChoice(existingMod, api.store).then((action: string) => {
+                      if (action === INSTALL_ACTION) {
+                        enable = enable || wasEnabled;
+                        if (wasEnabled) {
+                          setModsEnabled(api, installProfile.id, [existingMod.id], false, {
+                            allowAutoDeploy,
+                            installed: true,
                           });
                         }
-                      },
-                    );
+                        rules = existingMod.rules || [];
+                        overrides = existingMod.fileOverrides;
+                        fullInfo.previous = existingMod.attributes;
+                        return Promise.resolve();
+                      } else if (action === REPLACE_ACTION) {
+                        rules = existingMod.rules || [];
+                        overrides = existingMod.fileOverrides;
+                        fullInfo.previous = existingMod.attributes;
+                        // we need to remove the old mod before continuing. This ensures
+                        // the mod is deactivated and undeployed (so we're not leave dangling
+                        // links) and it ensures we do a clean install of the mod
+                        return new Promise<void>((resolve, reject) => {
+                          api.events.emit(
+                            "remove-mod",
+                            installGameId,
+                            existingMod.id,
+                            (error: Error) => {
+                              if (error != null) {
+                                reject(error);
+                              } else {
+                                // use the same mod id as the old version so that all profiles
+                                // keep using it.
+                                modId = existingMod.id;
+                                enable = enable || wasEnabled;
+                                resolve();
+                              }
+                            },
+                            { willBeReplaced: true },
+                          );
+                        });
+                      }
+                    });
                   } else {
                     return Promise.resolve();
                   }
                 })
                 .then(() => {
-                  installContext.startInstallCB(
-                    modId,
-                    installGameId,
-                    archiveId,
-                  );
+                  installContext.startInstallCB(modId, installGameId, archiveId);
 
-                  destinationPath = path.join(
-                    this.mGetInstallPath(installGameId),
-                    modId,
-                  );
+                  destinationPath = path.join(this.mGetInstallPath(installGameId), modId);
                   log("info", "installing to", { modId, destinationPath });
                   installContext.setInstallPathCB(modId, destinationPath);
                   tempPath = destinationPath + ".installing";
@@ -1908,14 +1689,9 @@ class InstallManager {
                 })
                 .then((result: IInstallResult & { installerId?: string }) => {
                   setAttribute("mod.modId", modId);
-                  setAttribute(
-                    "mod.installerId",
-                    result.installerId ?? "unknown",
-                  );
+                  setAttribute("mod.installerId", result.installerId ?? "unknown");
                   if (!Array.isArray(result.instructions)) {
-                    return Promise.reject(
-                      new DataInvalid("Installer produced no instructions"),
-                    );
+                    return Promise.reject(new DataInvalid("Installer produced no instructions"));
                   }
                   setAttribute(
                     "mod.fileCount",
@@ -1923,37 +1699,28 @@ class InstallManager {
                   );
                   // update choices now that the installer may have produced new ones
                   if (fullInfo.choices != null) {
-                    setAttribute(
-                      "mod.installerChoices",
-                      JSON.stringify(fullInfo.choices),
-                    );
+                    setAttribute("mod.installerChoices", JSON.stringify(fullInfo.choices));
                   }
                   const state: IState = api.store.getState();
 
                   if (
-                    getSafe(
-                      state,
-                      ["persistent", "mods", installGameId, modId, "type"],
-                      "",
-                    ) === ""
+                    getSafe(state, ["persistent", "mods", installGameId, modId, "type"], "") === ""
                   ) {
-                    return this.determineModType(
-                      installGameId,
-                      result.instructions,
-                    ).then((type) => {
-                      installContext.setModType(modId, type);
-                      setAttribute("mod.modType", type);
-                      return result;
-                    });
+                    return this.determineModType(installGameId, result.instructions).then(
+                      (type) => {
+                        installContext.setModType(modId, type);
+                        setAttribute("mod.modType", type);
+                        return result;
+                      },
+                    );
                   } else {
                     return Promise.resolve(result);
                   }
                 })
                 .then(async (result: { instructions: IInstruction[] }) => {
-                  const setModTypeInstr: IInstruction =
-                    result.instructions.find(
-                      (instr) => instr.type === "setmodtype",
-                    );
+                  const setModTypeInstr: IInstruction = result.instructions.find(
+                    (instr) => instr.type === "setmodtype",
+                  );
                   if (setModTypeInstr) {
                     setAttribute("mod.modType", setModTypeInstr.value);
                   }
@@ -1961,8 +1728,7 @@ class InstallManager {
                     const overrideFile = result.instructions.find(
                       (iter) =>
                         iter.type === "copy" &&
-                        path.basename(iter.source) ===
-                          VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME,
+                        path.basename(iter.source) === VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME,
                     );
                     if (!overrideFile) {
                       return result;
@@ -1979,13 +1745,9 @@ class InstallManager {
                     const rawInstructions: IInstruction[] = JSON.parse(content);
 
                     // filter out any instructions that could potentially be malicious.
-                    const overrideInstructions: IInstruction[] =
-                      rawInstructions.filter(
-                        (iter) =>
-                          !["generatefile", "unsupported", "error"].includes(
-                            iter.type,
-                          ),
-                      );
+                    const overrideInstructions: IInstruction[] = rawInstructions.filter(
+                      (iter) => !["generatefile", "unsupported", "error"].includes(iter.type),
+                    );
                     return {
                       instructions: result.instructions,
                       overrideInstructions,
@@ -2035,8 +1797,7 @@ class InstallManager {
                   // Refresh download data from current state to get any Nexus info
                   // (like category_id) that was fetched asynchronously after installation started
                   if (archiveId) {
-                    const currentDownload =
-                      api.getState().persistent.downloads.files[archiveId];
+                    const currentDownload = api.getState().persistent.downloads.files[archiveId];
                     if (currentDownload) {
                       fullInfo.download = currentDownload;
                     }
@@ -2046,19 +1807,13 @@ class InstallManager {
                 .then((modInfo) => {
                   const state = api.getState();
                   const existingKeys = Object.keys(
-                    state.persistent.mods[installGameId]?.[modId]?.attributes ||
-                      {},
+                    state.persistent.mods[installGameId]?.[modId]?.attributes || {},
                   );
                   installContext.beginBatch();
-                  installContext.finishInstallCB(
-                    "success",
-                    _.omit(modInfo, existingKeys),
-                  );
+                  installContext.finishInstallCB("success", _.omit(modInfo, existingKeys));
                   batchDispatch(api.store, [
                     ...installContext.flushBatch(),
-                    ...(rules ?? []).map((rule) =>
-                      addModRule(installGameId, modId, rule),
-                    ),
+                    ...(rules ?? []).map((rule) => addModRule(installGameId, modId, rule)),
                     setFileOverride(installGameId, modId, overrides),
                   ]);
                   if (installProfile !== undefined) {
@@ -2071,13 +1826,7 @@ class InstallManager {
                   }
                   this.setModSize(api, modId, installGameId);
                   promiseCallback?.(null, modId);
-                  api.events.emit(
-                    "did-install-mod",
-                    installGameId,
-                    archiveId,
-                    modId,
-                    modInfo,
-                  );
+                  api.events.emit("did-install-mod", installGameId, archiveId, modId, modInfo);
                   return null;
                 })
                 .catch((err) => {
@@ -2091,16 +1840,12 @@ class InstallManager {
                     !truthy(err) ||
                     errObj.message === "Canceled" ||
                     (truthy(errObj.stack) &&
-                      errObj.stack.startsWith(
-                        "UserCanceled: canceled by user",
-                      ));
+                      errObj.stack.startsWith("UserCanceled: canceled by user"));
                   if (!canceled && err instanceof Error) {
                     setError(err);
                   }
                   let prom: Promise<void> = Promise.resolve(
-                    destinationPath !== undefined
-                      ? fs.removeAsync(destinationPath)
-                      : undefined,
+                    destinationPath !== undefined ? fs.removeAsync(destinationPath) : undefined,
                   )
                     .then(() => undefined)
                     .catch((innerErr: unknown) => {
@@ -2162,20 +1907,16 @@ class InstallManager {
                             {
                               title: "Delete",
                               action: (dismiss) => {
-                                api.events.emit(
-                                  "remove-download",
-                                  archiveId,
-                                  dismiss,
-                                  { confirmed: true },
-                                );
+                                api.events.emit("remove-download", archiveId, dismiss, {
+                                  confirmed: true,
+                                });
                               },
                             },
                             {
                               title: "Delete & Redownload",
                               action: (dismiss) => {
                                 const state: IState = api.store.getState();
-                                const download =
-                                  state.persistent.downloads.files[archiveId];
+                                const download = state.persistent.downloads.files[archiveId];
                                 api.events.emit(
                                   "remove-download",
                                   archiveId,
@@ -2200,15 +1941,10 @@ class InstallManager {
                   } else if (err instanceof SetupError) {
                     return prom.then(() => {
                       if (installContext !== undefined) {
-                        installContext.reportError(
-                          "Installation failed",
-                          err,
-                          false,
-                          {
-                            installerPath: path.basename(archivePath),
-                            message: err.message,
-                          },
-                        );
+                        installContext.reportError("Installation failed", err, false, {
+                          installerPath: path.basename(archivePath),
+                          message: err.message,
+                        });
                       }
                       promiseCallback?.(err, null);
                     });
@@ -2229,12 +1965,8 @@ class InstallManager {
                       promiseCallback?.(err, null);
                     });
                   } else if (getErrorCode(err) === "MODULE_NOT_FOUND") {
-                    const requireStack = (err as { requireStack?: string[] })
-                      .requireStack;
-                    const location =
-                      requireStack !== undefined
-                        ? ` (at ${requireStack[0]})`
-                        : "";
+                    const requireStack = (err as { requireStack?: string[] }).requireStack;
+                    const location = requireStack !== undefined ? ` (at ${requireStack[0]})` : "";
                     installContext.reportError(
                       "Installation failed",
                       "Module failed to load:\n{{message}}{{location}}\n\n" +
@@ -2257,8 +1989,7 @@ class InstallManager {
                         let replace = {};
                         let errMessage: string;
                         if (typeof err === "string") {
-                          errMessage =
-                            'The installer "{{ id }}" failed: {{ message }}';
+                          errMessage = 'The installer "{{ id }}" failed: {{ message }}';
                           replace = {
                             id,
                             message: errMessage,
@@ -2271,14 +2002,9 @@ class InstallManager {
                             '"Browser Assistant". This application inserts itself globally ' +
                             "and breaks any other application that uses the same libraries as it does.\n\n" +
                             'To use Vortex, please uninstall "Browser Assistant".';
-                          const errorMessage =
-                            typeof err === "string" ? err : errObj.message;
+                          const errorMessage = typeof err === "string" ? err : errObj.message;
                           let allowReport: boolean;
-                          if (
-                            errObj.message.includes(
-                              "No compatible .NET installation",
-                            )
-                          ) {
+                          if (errObj.message.includes("No compatible .NET installation")) {
                             allowReport = false;
                           }
                           !this.isBrowserAssistantError(errorMessage)
@@ -2311,16 +2037,12 @@ class InstallManager {
                       installContext.stopIndicator(mod);
                     } catch (stopError) {
                       const err = unknownToError(stopError);
-                      log(
-                        "error",
-                        "InstallManager: Error in stopIndicator during cleanup",
-                        {
-                          installId,
-                          modId: modId || "unknown",
-                          error: err.message,
-                          stack: err.stack,
-                        },
-                      );
+                      log("error", "InstallManager: Error in stopIndicator during cleanup", {
+                        installId,
+                        modId: modId || "unknown",
+                        error: err.message,
+                        stack: err.stack,
+                      });
                     }
                   }
                 }),
@@ -2333,11 +2055,10 @@ class InstallManager {
               // Installation completed successfully - the callback should have been called
               // If we reach here without the callback being called, something went wrong
               if (this.mActiveInstalls.has(installId)) {
-                log(
-                  "warn",
-                  "Installation completed but callback was not called",
-                  { installId, modId },
-                );
+                log("warn", "Installation completed but callback was not called", {
+                  installId,
+                  modId,
+                });
 
                 if (installContext !== undefined) {
                   try {
@@ -2352,24 +2073,18 @@ class InstallManager {
                     }
 
                     // Manually dismiss the notification
-                    const notificationId =
-                      "install_" + (installContext?.["mIndicatorId"] || modId);
+                    const notificationId = "install_" + (installContext?.["mIndicatorId"] || modId);
                     api.store.dispatch(dismissNotification(notificationId));
-                    log(
-                      "info",
-                      "InstallManager: Manually dismissed notification",
-                      { installId, notificationId },
-                    );
+                    log("info", "InstallManager: Manually dismissed notification", {
+                      installId,
+                      notificationId,
+                    });
                   } catch (cleanupError) {
                     const message = getErrorMessageOrDefault(cleanupError);
-                    log(
-                      "error",
-                      "InstallManager: Error during manual cleanup",
-                      {
-                        installId,
-                        error: message,
-                      },
-                    );
+                    log("error", "InstallManager: Error during manual cleanup", {
+                      installId,
+                      error: message,
+                    });
                   }
                 }
                 this.mActiveInstalls.delete(installId);
@@ -2406,9 +2121,7 @@ class InstallManager {
     const mod: IMod = state.persistent.mods[gameId]?.[modId];
 
     if (mod === undefined) {
-      return Promise.reject(
-        new ProcessCanceled(`Invalid mod specified "${modId}"`),
-      );
+      return Promise.reject(new ProcessCanceled(`Invalid mod specified "${modId}"`));
     }
 
     this.repairRules(api, mod, gameId);
@@ -2453,16 +2166,10 @@ class InstallManager {
     modId: string,
   ): Promise<void> {
     const state: IState = api.store.getState();
-    const mod: IMod = getSafe(
-      state,
-      ["persistent", "mods", gameId, modId],
-      undefined,
-    );
+    const mod: IMod = getSafe(state, ["persistent", "mods", gameId, modId], undefined);
 
     if (mod === undefined) {
-      return Promise.reject(
-        new ProcessCanceled(`Invalid mod specified "${modId}"`),
-      );
+      return Promise.reject(new ProcessCanceled(`Invalid mod specified "${modId}"`));
     }
 
     this.repairRules(api, mod, gameId);
@@ -2495,11 +2202,7 @@ class InstallManager {
     );
   }
 
-  private augmentRules(
-    api: IExtensionApi,
-    gameId: string,
-    mod: IMod,
-  ): Promise<IRule[]> {
+  private augmentRules(api: IExtensionApi, gameId: string, mod: IMod): Promise<IRule[]> {
     // const rules = (mod.rules ?? []).slice();
     //if (mod.attributes === undefined) {
     return Promise.resolve(mod.rules ?? []);
@@ -2543,11 +2246,7 @@ class InstallManager {
     );
   }
 
-  private setModSize(
-    api: IExtensionApi,
-    modId: string,
-    gameId: string,
-  ): Promise<void> {
+  private setModSize(api: IExtensionApi, modId: string, gameId: string): Promise<void> {
     const state = api.getState();
     const stagingFolder = installPathForGame(state, gameId);
     const mod = state.persistent.mods[gameId]?.[modId];
@@ -2558,9 +2257,7 @@ class InstallManager {
     const modPath = path.join(stagingFolder, mod.installationPath);
     return Promise.resolve(calculateFolderSize(modPath))
       .then((totalSize) => {
-        api.store.dispatch(
-          setModAttribute(gameId, mod.id, "modSize", totalSize),
-        );
+        api.store.dispatch(setModAttribute(gameId, mod.id, "modSize", totalSize));
         return Promise.resolve();
       })
       .catch((err) => {
@@ -2572,26 +2269,23 @@ class InstallManager {
   /**
    * Clean up pending and active installations for a specific source mod
    */
-  private cleanupPendingInstalls(
-    sourceModId: string,
-    hard: boolean = false,
-  ): void {
+  private cleanupPendingInstalls(sourceModId: string, hard: boolean = false): void {
     // Clean up pending installs
-    const pendingKeysToRemove = Array.from(this.mPendingInstalls.keys()).filter(
-      (key) => key.includes(sourceModId),
+    const pendingKeysToRemove = Array.from(this.mPendingInstalls.keys()).filter((key) =>
+      key.includes(sourceModId),
     );
     pendingKeysToRemove.forEach((key) => this.mPendingInstalls.delete(key));
 
     // Clean up active installs (for dependencies that might be installing for this source mod)
-    const activeKeysToRemove = Array.from(this.mActiveInstalls.keys()).filter(
-      (key) => key.includes(sourceModId),
+    const activeKeysToRemove = Array.from(this.mActiveInstalls.keys()).filter((key) =>
+      key.includes(sourceModId),
     );
     activeKeysToRemove.forEach((key) => this.mActiveInstalls.delete(key));
 
     // Clean up retry counters for this source mod
-    const retryKeysToRemove = Array.from(
-      this.mDependencyRetryCount.keys(),
-    ).filter((key) => key.startsWith(`${sourceModId}:`));
+    const retryKeysToRemove = Array.from(this.mDependencyRetryCount.keys()).filter((key) =>
+      key.startsWith(`${sourceModId}:`),
+    );
     retryKeysToRemove.forEach((key) => this.mDependencyRetryCount.delete(key));
 
     if (hard) {
@@ -2619,10 +2313,7 @@ class InstallManager {
     const phaseNum = phase ?? 0;
 
     // Check if this installation is already active or pending
-    const installKey = this.generateDependencyInstallKey(
-      sourceModId,
-      downloadId,
-    );
+    const installKey = this.generateDependencyInstallKey(sourceModId, downloadId);
     const alreadyActive = this.mActiveInstalls.has(installKey);
     const alreadyPending = this.mPendingInstalls.has(installKey);
 
@@ -2654,19 +2345,12 @@ class InstallManager {
 
     const downloads = api.getState().persistent.downloads.files;
     const download = downloads[downloadId];
-    const canStartNow = canStartTasks
-      ? phaseNum <= phaseState.allowedPhase
-      : false;
+    const canStartNow = canStartTasks ? phaseNum <= phaseState.allowedPhase : false;
 
     // Don't start installations if deployment is in progress
-    const canStartWithoutDeploymentBlock =
-      canStartNow && !phaseState.isDeploying;
+    const canStartWithoutDeploymentBlock = canStartNow && !phaseState.isDeploying;
 
-    if (
-      canStartWithoutDeploymentBlock &&
-      download?.state === "finished" &&
-      download?.size > 0
-    ) {
+    if (canStartWithoutDeploymentBlock && download?.state === "finished" && download?.size > 0) {
       startTask();
     } else {
       if (this.mPendingInstalls.has(installKey)) {
@@ -2679,10 +2363,7 @@ class InstallManager {
     }
   }
 
-  private generateDependencyInstallKey(
-    sourceModId: string,
-    downloadId: string,
-  ): string {
+  private generateDependencyInstallKey(sourceModId: string, downloadId: string): string {
     return `${sourceModId}:${downloadId}`;
   }
 
@@ -2697,17 +2378,11 @@ class InstallManager {
     phase: number,
   ): void {
     const phaseState = this.mInstallPhaseState.get(sourceModId);
-    const installKey = this.generateDependencyInstallKey(
-      sourceModId,
-      downloadId,
-    );
+    const installKey = this.generateDependencyInstallKey(sourceModId, downloadId);
     this.mPendingInstalls.set(installKey, dep);
 
     // Track active count for the phase
-    phaseState.activeByPhase.set(
-      phase,
-      (phaseState.activeByPhase.get(phase) ?? 0) + 1,
-    );
+    phaseState.activeByPhase.set(phase, (phaseState.activeByPhase.get(phase) ?? 0) + 1);
 
     // Process installation immediately in parallel using concurrency limiter
     this.mDependencyInstallsLimit
@@ -2738,10 +2413,7 @@ class InstallManager {
 
           // Verify download is still finished before installing
           const downloads = api.getState().persistent.downloads.files;
-          if (
-            downloads[downloadId]?.state !== "finished" ||
-            downloads[downloadId]?.size === 0
-          ) {
+          if (downloads[downloadId]?.state !== "finished" || downloads[downloadId]?.size === 0) {
             log("info", "Download no longer finished, skipping installation", {
               downloadId,
             });
@@ -2755,17 +2427,14 @@ class InstallManager {
           // Mods with patches are always reinstalled as variants so the
           // correct diffs are applied to clean files - skip the lookup.
           const hasPatches =
-            currentDep.patches != null &&
-            Object.keys(currentDep.patches).length > 0;
+            currentDep.patches != null && Object.keys(currentDep.patches).length > 0;
           const fullReference: IModReference = {
             ...currentDep.reference,
             installerChoices: currentDep.installerChoices,
             patches: currentDep.patches,
             fileList: currentDep.fileList,
           };
-          const existingMod = hasPatches
-            ? undefined
-            : findModByRef(fullReference, mods);
+          const existingMod = hasPatches ? undefined : findModByRef(fullReference, mods);
           const modId =
             existingMod != null
               ? existingMod.id
@@ -2808,61 +2477,36 @@ class InstallManager {
             const batchedActions = [];
             // Enable the mod only for the target profile to avoid affecting other profiles
             const batchContext = getBatchContext(
-              [
-                "install-dependencies",
-                "install-collections",
-                "install-recommendations",
-              ],
+              ["install-dependencies", "install-collections", "install-recommendations"],
               "",
             );
             const targetProfileId =
-              batchContext?.get<string>("profileId") ??
-              activeProfile(state)?.id;
-            const targetProfile = targetProfileId
-              ? profileById(state, targetProfileId)
-              : undefined;
+              batchContext?.get<string>("profileId") ?? activeProfile(state)?.id;
+            const targetProfile = targetProfileId ? profileById(state, targetProfileId) : undefined;
 
             if (targetProfile) {
               // Only modify the target profile - disable other variants and enable this one
-              const otherModIds = this.checkModVariantsExist(
-                api,
-                gameId,
-                downloadId,
-              );
+              const otherModIds = this.checkModVariantsExist(api, gameId, downloadId);
               for (const otherModId of otherModIds) {
-                batchedActions.push(
-                  setModEnabled(targetProfile.id, otherModId, false),
-                );
+                batchedActions.push(setModEnabled(targetProfile.id, otherModId, false));
               }
               batchedActions.push(setModEnabled(targetProfile.id, modId, true));
             } else {
               // Fallback: enable in profiles where source mod is enabled (original behavior)
-              const profiles = Object.values(
-                api.getState().persistent.profiles,
-              ).filter(
-                (prof) =>
-                  prof.gameId === gameId &&
-                  prof.modState?.[sourceModId]?.enabled,
+              const profiles = Object.values(api.getState().persistent.profiles).filter(
+                (prof) => prof.gameId === gameId && prof.modState?.[sourceModId]?.enabled,
               );
               profiles.forEach((prof) => {
-                const otherModIds = this.checkModVariantsExist(
-                  api,
-                  gameId,
-                  downloadId,
-                );
+                const otherModIds = this.checkModVariantsExist(api, gameId, downloadId);
                 for (const otherModId of otherModIds) {
-                  batchedActions.push(
-                    setModEnabled(prof.id, otherModId, false),
-                  );
+                  batchedActions.push(setModEnabled(prof.id, otherModId, false));
                 }
                 batchedActions.push(setModEnabled(prof.id, modId, true));
               });
             }
 
             // Mark as installed as dependency
-            batchedActions.push(
-              setModAttribute(gameId, modId, "installedAsDependency", true),
-            );
+            batchedActions.push(setModAttribute(gameId, modId, "installedAsDependency", true));
             batchDispatch(api.store, batchedActions);
 
             // Clear retry counter on successful installation
@@ -2888,13 +2532,10 @@ class InstallManager {
         } catch (unknownError) {
           const err = unknownToError(unknownError);
           this.mActiveInstalls.delete(installKey);
-          const currentRetryCount =
-            this.mDependencyRetryCount.get(installKey) || 0;
+          const currentRetryCount = this.mDependencyRetryCount.get(installKey) || 0;
           const isCanceled =
-            unknownError instanceof UserCanceled ||
-            unknownError instanceof ProcessCanceled;
-          const hasRetriesLeft =
-            currentRetryCount < InstallManager.MAX_DEPENDENCY_RETRIES;
+            unknownError instanceof UserCanceled || unknownError instanceof ProcessCanceled;
+          const hasRetriesLeft = currentRetryCount < InstallManager.MAX_DEPENDENCY_RETRIES;
           if (!isCanceled && hasRetriesLeft) {
             this.mPendingInstalls.set(installKey, dep); // Re-queue for potential retry
             this.mDependencyRetryCount.set(installKey, currentRetryCount + 1);
@@ -2993,10 +2634,7 @@ class InstallManager {
     }
   }
 
-  private pollAllPhasesComplete(
-    api: IExtensionApi,
-    sourceModId: string,
-  ): Promise<void> {
+  private pollAllPhasesComplete(api: IExtensionApi, sourceModId: string): Promise<void> {
     const POLL_MS = 500;
     // If no progress (new mods reaching terminal state) is made for this
     // duration, attempt a rescue (force-clean stuck installs + requeue).
@@ -3062,23 +2700,17 @@ class InstallManager {
             return;
           } else {
             // Second timeout after rescue: give up
-            log(
-              "warn",
-              "Collection install stalled after rescue attempt, resolving",
-              {
-                sourceModId,
-                terminalCount: lastTerminalCount,
-                activeInstalls: this.mActiveInstalls.size,
-                pendingInstalls: this.mPendingInstalls.size,
-              },
-            );
+            log("warn", "Collection install stalled after rescue attempt, resolving", {
+              sourceModId,
+              terminalCount: lastTerminalCount,
+              activeInstalls: this.mActiveInstalls.size,
+              pendingInstalls: this.mPendingInstalls.size,
+            });
             return resolve();
           }
         }
 
-        const collectionInstallProgress = getCollectionInstallProgress(
-          api.getState(),
-        );
+        const collectionInstallProgress = getCollectionInstallProgress(api.getState());
         if (!collectionInstallProgress) {
           const activeCollection = getCollectionActiveSession(api.getState());
           if (!activeCollection) {
@@ -3087,11 +2719,9 @@ class InstallManager {
             // still in flight).  Only tear down engine state if there is
             // truly nothing left to process for this collection.
             if (!this.hasActiveOrPendingInstallation(sourceModId)) {
-              log(
-                "debug",
-                "No active collection session and no pending work, cleaning up",
-                { sourceModId },
-              );
+              log("debug", "No active collection session and no pending work, cleaning up", {
+                sourceModId,
+              });
               delete this.mDependencyInstalls[sourceModId];
               this.cleanupPendingInstalls(sourceModId, true);
               return resolve();
@@ -3136,28 +2766,19 @@ class InstallManager {
               phaseState.allowedPhase ?? 0,
             );
           }
-          if (
-            !hasQueuedDeployments &&
-            !this.hasActiveOrPendingInstallation(sourceModId)
-          ) {
+          if (!hasQueuedDeployments && !this.hasActiveOrPendingInstallation(sourceModId)) {
             if (phaseState.deployedPhases.has(phaseState.allowedPhase ?? 0)) {
               // Phase already deployed, maybe advance
               this.maybeAdvancePhase(sourceModId, api);
             } else {
-              this.scheduleDeployOnPhaseSettled(
-                api,
-                sourceModId,
-                phaseState.allowedPhase ?? 0,
-              );
+              this.scheduleDeployOnPhaseSettled(api, sourceModId, phaseState.allowedPhase ?? 0);
             }
           }
           const canStartTasks = this.canStartInstallationTasks(sourceModId);
           const active = this.mActiveInstalls.size;
           const pendingInstalls = this.mPendingInstalls.size;
           if (canStartTasks) {
-            const pendingTasks = phaseState.pendingByPhase.get(
-              phaseState.allowedPhase ?? 0,
-            );
+            const pendingTasks = phaseState.pendingByPhase.get(phaseState.allowedPhase ?? 0);
             const pending = pendingTasks ? pendingTasks.length : 0;
             if (active === 0 && pending === 0) {
               if (pendingInstalls > 0) {
@@ -3171,10 +2792,7 @@ class InstallManager {
                 );
               }
             } else if (active === 0 && pendingInstalls > 0) {
-              this.startPendingForPhase(
-                sourceModId,
-                phaseState.allowedPhase ?? 0,
-              );
+              this.startPendingForPhase(sourceModId, phaseState.allowedPhase ?? 0);
             }
           }
           setTimeout(poll, POLL_MS);
@@ -3210,11 +2828,9 @@ class InstallManager {
         // Check if the dependency installation has been cancelled
         // If mDependencyInstalls entry is missing, installation was cancelled and cleaned up
         if (!this.mDependencyInstalls[sourceModId]) {
-          log(
-            "debug",
-            "Stopping phase polling - dependency installation cancelled",
-            { sourceModId },
-          );
+          log("debug", "Stopping phase polling - dependency installation cancelled", {
+            sourceModId,
+          });
           return resolve();
         }
 
@@ -3253,11 +2869,7 @@ class InstallManager {
         // });
 
         // Check collection completion status
-        const collectionStatus = this.checkCollectionPhaseStatus(
-          api,
-          sourceModId,
-          checkPhase,
-        );
+        const collectionStatus = this.checkCollectionPhaseStatus(api, sourceModId, checkPhase);
         const existing = phaseState?.deploymentPromises.get(checkPhase);
         if (existing?.deployOnSettle && !hasDeployed) {
           // CRITICAL: Block new installations during deployment to prevent file conflicts.
@@ -3308,19 +2920,11 @@ class InstallManager {
           ) {
             // Requeue downloaded mods if phase is not complete and there are no active installations
             // This handles cases where downloads finish after installations start, or MD5 lookups complete late
-            this.reQueueDownloadedMods(
-              api,
-              sourceModId,
-              collectionStatus.allMods,
-              checkPhase,
-            );
+            this.reQueueDownloadedMods(api, sourceModId, collectionStatus.allMods, checkPhase);
             // Continue polling after re-queue
             setTimeout(poll, POLL_MS);
           } else {
-            if (
-              this.mActiveInstalls.size === 0 &&
-              this.mPendingInstalls.size > 0
-            ) {
+            if (this.mActiveInstalls.size === 0 && this.mPendingInstalls.size > 0) {
               // Start any pending installations if none are active
               this.startPendingForPhase(sourceModId, checkPhase);
             }
@@ -3347,12 +2951,8 @@ class InstallManager {
     modsNeedingRequeue: number;
   } {
     const state = api.getState();
-    const batchContext = getBatchContext(
-      ["install-dependencies", "install-recommendations"],
-      "",
-    );
-    const profileId =
-      batchContext?.get<string>("profileId") ?? activeProfile(state)?.id;
+    const batchContext = getBatchContext(["install-dependencies", "install-recommendations"], "");
+    const profileId = batchContext?.get<string>("profileId") ?? activeProfile(state)?.id;
     const profile = profileById(state, profileId);
     const sessionId = generateCollectionSessionId(sourceModId, profile?.id);
     const activeCollectionSession = getCollectionSessionById(state, sessionId);
@@ -3374,9 +2974,7 @@ class InstallManager {
     const phaseComplete = isCollectionPhaseComplete(api.getState(), phase);
 
     // Only count downloaded mods from the current phase being checked
-    const allDownloadedMods = currentPhaseMods.filter(
-      (mod: any) => mod.status === "downloaded",
-    );
+    const allDownloadedMods = currentPhaseMods.filter((mod: any) => mod.status === "downloaded");
     const downloadedCount = allDownloadedMods.length;
 
     // Debug: Show status distribution
@@ -3420,10 +3018,7 @@ class InstallManager {
             this.hasActiveOrPendingInstallation(sourceModId, id),
           );
         }
-        if (
-          downloadId &&
-          this.hasActiveOrPendingInstallation(sourceModId, downloadId)
-        ) {
+        if (downloadId && this.hasActiveOrPendingInstallation(sourceModId, downloadId)) {
           downloadId = null; // Invalidate if already installing
         }
       } else {
@@ -3464,12 +3059,8 @@ class InstallManager {
    */
   private getTerminalModCount(api: IExtensionApi, sourceModId: string): number {
     const state = api.getState();
-    const batchContext = getBatchContext(
-      ["install-dependencies", "install-recommendations"],
-      "",
-    );
-    const profileId =
-      batchContext?.get<string>("profileId") ?? activeProfile(state)?.id;
+    const batchContext = getBatchContext(["install-dependencies", "install-recommendations"], "");
+    const profileId = batchContext?.get<string>("profileId") ?? activeProfile(state)?.id;
     const sessionId = generateCollectionSessionId(sourceModId, profileId);
     const session = getCollectionSessionById(state, sessionId);
     if (!session?.mods) {
@@ -3482,18 +3073,12 @@ class InstallManager {
   }
 
   // Helper to check if an archiveId has pending or active installations
-  private hasActiveOrPendingInstallation(
-    sourceModId: string,
-    archiveId?: string,
-  ): boolean {
+  private hasActiveOrPendingInstallation(sourceModId: string, archiveId?: string): boolean {
     let hasPending = false;
     if (!archiveId) {
       return this.mPendingInstalls.size > 0 || this.mActiveInstalls.size > 0;
     }
-    const installKey = this.generateDependencyInstallKey(
-      sourceModId,
-      archiveId,
-    );
+    const installKey = this.generateDependencyInstallKey(sourceModId, archiveId);
     if (this.mPendingInstalls.get(installKey)) {
       hasPending = true;
     }
@@ -3567,10 +3152,7 @@ class InstallManager {
       const downloadState = downloads[downloadId]?.state;
       log("debug", "Download state check", { downloadId, downloadState });
       if (downloads[downloadId].state === "finished") {
-        const hasPendingOrActive = this.hasActiveOrPendingInstallation(
-          sourceModId,
-          downloadId,
-        );
+        const hasPendingOrActive = this.hasActiveOrPendingInstallation(sourceModId, downloadId);
 
         // Check if mod is already installed with matching installer choices and patches
         const gameId = activeGameId(api.getState());
@@ -3578,8 +3160,7 @@ class InstallManager {
         const fullReference: IModReference | undefined = mod.rule?.reference
           ? {
               ...mod.rule.reference,
-              installerChoices:
-                mod.rule.installerChoices ?? mod.rule.extra?.installerChoices,
+              installerChoices: mod.rule.installerChoices ?? mod.rule.extra?.installerChoices,
               patches: mod.rule.extra?.patches,
               fileList: mod.rule.fileList ?? mod.rule.reference?.fileList,
             }
@@ -3593,25 +3174,14 @@ class InstallManager {
         });
         if (!hasPendingOrActive && !existingMod) {
           log("info", "Requeuing download for installation", { downloadId });
-          const success = this.handleDownloadFinished(
-            api,
-            downloadId,
-            sourceModId,
-          );
+          const success = this.handleDownloadFinished(api, downloadId, sourceModId);
           if (success) {
             anyQueued = true;
           } else {
-            log(
-              "debug",
-              "Requeue failed - collection not currently installing",
-              { downloadId },
-            );
+            log("debug", "Requeue failed - collection not currently installing", { downloadId });
           }
         } else if (!hasPendingOrActive && existingMod) {
-          const installKey = this.generateDependencyInstallKey(
-            sourceModId,
-            downloadId,
-          );
+          const installKey = this.generateDependencyInstallKey(sourceModId, downloadId);
           this.mPendingInstalls.delete(installKey);
           this.mActiveInstalls.delete(installKey);
           api.events.emit(
@@ -3640,10 +3210,7 @@ class InstallManager {
         (p) => p <= (phaseState.allowedPhase ?? 0),
       );
       phasesToCheck.forEach((checkPhase) => {
-        const completion = isCollectionPhaseComplete(
-          api.getState(),
-          checkPhase,
-        );
+        const completion = isCollectionPhaseComplete(api.getState(), checkPhase);
 
         // If all required mods are complete and phase not already deployed, schedule deployment
         if (completion && !phaseState.deployedPhases.has(checkPhase)) {
@@ -3748,11 +3315,7 @@ class InstallManager {
   }
 
   // Called when downloads for a phase have been queued/processed
-  private markPhaseDownloadsFinished(
-    sourceModId: string,
-    phase: number,
-    api: IExtensionApi,
-  ) {
+  private markPhaseDownloadsFinished(sourceModId: string, phase: number, api: IExtensionApi) {
     this.ensurePhaseState(sourceModId);
     const state = this.mInstallPhaseState.get(sourceModId);
     state.downloadsFinished.add(phase);
@@ -3787,10 +3350,7 @@ class InstallManager {
     tasks.forEach((run) => run());
   }
 
-  private canStartInstallationTasks(
-    sourceModId: string,
-    allowOptional?: boolean,
-  ): boolean {
+  private canStartInstallationTasks(sourceModId: string, allowOptional?: boolean): boolean {
     const state = this.mApi.getState();
     const installWhileDownloading = getSafe(
       state,
@@ -3800,20 +3360,15 @@ class InstallManager {
     if (installWhileDownloading) {
       return true;
     }
-    const batchContext = getBatchContext(
-      ["install-dependencies", "install-recommendations"],
-      "",
-    );
-    const profileId =
-      batchContext?.get<string>("profileId") ?? activeProfile(state)?.id;
+    const batchContext = getBatchContext(["install-dependencies", "install-recommendations"], "");
+    const profileId = batchContext?.get<string>("profileId") ?? activeProfile(state)?.id;
     const sessionId = generateCollectionSessionId(sourceModId, profileId);
     if (!sessionId) {
       // No active collection session, allow installations.
       return true;
     }
     const breakdown = getCollectionStatusBreakdown(state, sessionId);
-    const relevant =
-      allowOptional === true ? breakdown.total : breakdown.required;
+    const relevant = allowOptional === true ? breakdown.total : breakdown.required;
     const pending = Object.entries(relevant).reduce((sum, [status, value]) => {
       if (["pending", "downloading"].includes(status)) {
         return sum + value;
@@ -3860,28 +3415,21 @@ class InstallManager {
       (phaseState.pendingByPhase.get(curr) ?? []).length === 0
     ) {
       // Check if the phase is actually complete according to collection session
-      const collectionStatus = this.checkCollectionPhaseStatus(
-        api,
-        sourceModId,
-        curr,
-      );
+      const collectionStatus = this.checkCollectionPhaseStatus(api, sourceModId, curr);
       if (!collectionStatus.phaseComplete) {
         this.startPendingForPhase(sourceModId, curr);
         break;
       }
 
       // Determine previous finished phase (by order in downloadsFinished)
-      const finished = Array.from(phaseState.downloadsFinished).sort(
-        (a, b) => a - b,
-      );
+      const finished = Array.from(phaseState.downloadsFinished).sort((a, b) => a - b);
       const currIdx = finished.findIndex((p) => p === curr);
       // Only advance past curr if the current phase has been deployed
       if (!phaseState.deployedPhases.has(curr)) {
-        log(
-          "debug",
-          "phase gating: phase complete but not deployed, scheduling deployment",
-          { sourceModId, currPhase: curr },
-        );
+        log("debug", "phase gating: phase complete but not deployed, scheduling deployment", {
+          sourceModId,
+          currPhase: curr,
+        });
         // Schedule deployment to mark the phase as deployed when it settles
         this.scheduleDeployOnPhaseSettled(api, sourceModId, curr);
         // Start any pending installations for this phase to avoid deadlocks
@@ -3903,8 +3451,7 @@ class InstallManager {
           ["install-dependencies", "install-recommendations"],
           "",
         );
-        const profileId =
-          batchContext?.get<string>("profileId") ?? activeProfile(state)?.id;
+        const profileId = batchContext?.get<string>("profileId") ?? activeProfile(state)?.id;
         const gameId = profileById(apiState, profileId)?.gameId;
         if (!gameId) {
           continue;
@@ -3920,10 +3467,8 @@ class InstallManager {
           collectionMod.rules.forEach((rule: any) => {
             const rulePhase = rule.extra?.phase ?? 0;
             if (rulePhase === curr && rule.reference?.tag) {
-              const downloadId = getReadyDownloadId(
-                downloads,
-                rule.reference,
-                (id) => this.hasActiveOrPendingInstallation(sourceModId, id),
+              const downloadId = getReadyDownloadId(downloads, rule.reference, (id) =>
+                this.hasActiveOrPendingInstallation(sourceModId, id),
               );
 
               if (downloadId) {
@@ -3964,10 +3509,7 @@ class InstallManager {
   }
 
   private isBrowserAssistantError(error: string): boolean {
-    return (
-      process.platform === "win32" &&
-      error.indexOf("Roaming\\Browser Assistant") !== -1
-    );
+    return process.platform === "win32" && error.indexOf("Roaming\\Browser Assistant") !== -1;
   }
 
   private isFileInUse(errorMessage: string, errorCode?: string): boolean {
@@ -4004,22 +3546,15 @@ class InstallManager {
     maxRetries: number = 3,
     retryDelayMs: number = 1000,
   ): Promise<{ code: number; errors: string[] }> {
-    const attemptExtract = (
-      retriesLeft: number,
-    ): Promise<{ code: number; errors: string[] }> => {
+    const attemptExtract = (retriesLeft: number): Promise<{ code: number; errors: string[] }> => {
       const retryIfFileInUse = (errorMessages: string[]) => {
-        if (
-          retriesLeft > 0 &&
-          errorMessages.some((msg) => this.isFileInUse(msg))
-        ) {
+        if (retriesLeft > 0 && errorMessages.some((msg) => this.isFileInUse(msg))) {
           log("info", "archive file in use, retrying extraction", {
             archivePath: path.basename(archivePath),
             retriesLeft,
             retryDelayMs,
           });
-          return delay(retryDelayMs).then(() =>
-            attemptExtract(retriesLeft - 1),
-          );
+          return delay(retryDelayMs).then(() => attemptExtract(retriesLeft - 1));
         }
         return undefined;
       };
@@ -4044,13 +3579,7 @@ class InstallManager {
       return Promise.resolve(fs.removeAsync(tempPath)).then(() =>
         Promise.resolve(
           zip
-            .extractFull(
-              archivePath,
-              tempPath,
-              { ssc: false },
-              progress,
-              queryPassword as any,
-            )
+            .extractFull(archivePath, tempPath, { ssc: false }, progress, queryPassword as any)
             .then((result: { code: number; errors: string[] }) => {
               // 7z can resolve (not reject) with a non-zero exit code and
               // file-in-use errors. Retry in that case instead of proceeding
@@ -4066,10 +3595,7 @@ class InstallManager {
                 retryIfFileInUse([error.message]) ??
                 (this.isCritical(error.message)
                   ? Promise.reject(
-                      new ArchiveBrokenError(
-                        path.basename(archivePath),
-                        error.message,
-                      ),
+                      new ArchiveBrokenError(path.basename(archivePath), error.message),
                     )
                   : Promise.reject(error))
               );
@@ -4110,18 +3636,11 @@ class InstallManager {
     const extractionStart = Date.now();
     if (FILETYPES_AVOID.includes(path.extname(archivePath).toLowerCase())) {
       extractProm = Promise.reject(
-        new ArchiveBrokenError(
-          path.basename(archivePath),
-          "file type on avoidlist",
-        ),
+        new ArchiveBrokenError(path.basename(archivePath), "file type on avoidlist"),
       );
     } else {
-      extractProm = this.extractWithRetry(
-        installationZip,
-        archivePath,
-        tempPath,
-        progress,
-        () => this.queryPassword(api.store),
+      extractProm = this.extractWithRetry(installationZip, archivePath, tempPath, progress, () =>
+        this.queryPassword(api.store),
       );
       (extractProm as any).startTime = extractionStart;
     }
@@ -4159,15 +3678,12 @@ class InstallManager {
         };
         const hasCSScripts = fileList.some(
           (file) =>
-            hasFomodSegment(file) &&
-            ["script.cs"].includes(path.basename(file).toLowerCase()),
+            hasFomodSegment(file) && ["script.cs"].includes(path.basename(file).toLowerCase()),
         );
         const hasXmlConfigXML = fileList.some(
           (file) =>
             hasFomodSegment(file) &&
-            ["moduleconfig.xml", "script.xml"].includes(
-              path.basename(file).toLowerCase(),
-            ),
+            ["moduleconfig.xml", "script.xml"].includes(path.basename(file).toLowerCase()),
         );
         const testDetails: ITestSupportedDetails = {
           hasCSScripts,
@@ -4175,13 +3691,9 @@ class InstallManager {
         };
 
         const allowList = getCSharpScriptAllowListForGame(gameId);
-        if (
-          hasCSScripts &&
-          !allowList.has(details?.modReference?.repo?.modId || "")
-        ) {
+        if (hasCSScripts && !allowList.has(details?.modReference?.repo?.modId || "")) {
           const modName =
-            details?.modReference?.id ||
-            path.basename(archivePath, path.extname(archivePath));
+            details?.modReference?.id || path.basename(archivePath, path.extname(archivePath));
           const t = api.translate;
 
           const no = t("Cancel installation");
@@ -4210,10 +3722,7 @@ class InstallManager {
         }
 
         if (truthy(extractList) && extractList.length > 0) {
-          const supportedInstaller = await makeListInstaller(
-            extractList,
-            tempPath,
-          );
+          const supportedInstaller = await makeListInstaller(extractList, tempPath);
           return { ...supportedInstaller, ...testDetails };
         } else if (forceInstaller === undefined) {
           const supportedInstaller = await this.getInstaller(
@@ -4225,15 +3734,8 @@ class InstallManager {
           );
           return { ...supportedInstaller, ...testDetails };
         } else {
-          const forced = this.mInstallers.find(
-            (inst) => inst.id === forceInstaller,
-          );
-          const testResult = await forced.testSupported(
-            fileList,
-            gameId,
-            archivePath,
-            testDetails,
-          );
+          const forced = this.mInstallers.find((inst) => inst.id === forceInstaller);
+          const testResult = await forced.testSupported(fileList, gameId, archivePath, testDetails);
 
           if (!testResult.supported) {
             return undefined;
@@ -4253,8 +3755,7 @@ class InstallManager {
 
         const { installer, requiredFiles } = supportedInstaller;
         const overrideInstructionsFilePresentInArchive = fileList.some(
-          (file) =>
-            path.basename(file) === VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME,
+          (file) => path.basename(file) === VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME,
         );
         const innerDetails: IInstallationDetails = {
           hasInstructionsOverrideFile: overrideInstructionsFilePresentInArchive,
@@ -4266,20 +3767,19 @@ class InstallManager {
           installer: installer.id,
           enforced: forceInstaller !== undefined,
         });
-        const installerResult: IInstallResult & { installerId?: string } =
-          await installer.install(
-            fileList,
-            tempPath,
-            gameId,
-            (perc: number) => {
-              log("info", "progress", perc);
-              progress([], perc);
-            },
-            installChoices,
-            unattended,
-            archivePath,
-            innerDetails,
-          );
+        const installerResult: IInstallResult & { installerId?: string } = await installer.install(
+          fileList,
+          tempPath,
+          gameId,
+          (perc: number) => {
+            log("info", "progress", perc);
+            progress([], perc);
+          },
+          installChoices,
+          unattended,
+          archivePath,
+          innerDetails,
+        );
         installerResult.installerId = installer.id;
         if (!installerResult.instructions) {
           return installerResult;
@@ -4287,14 +3787,10 @@ class InstallManager {
 
         const overrideCopyInstructionExists = installerResult.instructions.some(
           (instr) =>
-            instr.type === "copy" &&
-            instr.source === VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME,
+            instr.type === "copy" && instr.source === VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME,
         );
 
-        if (
-          overrideInstructionsFilePresentInArchive &&
-          !overrideCopyInstructionExists
-        ) {
+        if (overrideInstructionsFilePresentInArchive && !overrideCopyInstructionExists) {
           installerResult.instructions.push({
             type: "copy",
             source: VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME,
@@ -4339,14 +3835,8 @@ class InstallManager {
     return "";
   }
 
-  private queryContinue(
-    api: IExtensionApi,
-    errors: string[],
-    archivePath: string,
-  ): Promise<void> {
-    const terminal = errors.find(
-      (err) => err.indexOf("Can not open the file as archive") !== -1,
-    );
+  private queryContinue(api: IExtensionApi, errors: string[], archivePath: string): Promise<void> {
+    const terminal = errors.find((err) => err.indexOf("Can not open the file as archive") !== -1);
 
     return new Promise<void>((resolve, reject) => {
       const actions = [
@@ -4363,8 +3853,7 @@ class InstallManager {
               .finally(() => {
                 const { files } = api.getState().persistent.downloads;
                 const dlId = Object.keys(files).find(
-                  (iter) =>
-                    files[iter].localPath === path.basename(archivePath),
+                  (iter) => files[iter].localPath === path.basename(archivePath),
                 );
                 if (dlId !== undefined) {
                   api.store.dispatch(removeDownload(dlId));
@@ -4432,9 +3921,7 @@ class InstallManager {
     });
   }
 
-  private validateInstructions(
-    instructions: IInstruction[],
-  ): IInvalidInstruction[] {
+  private validateInstructions(instructions: IInstruction[]): IInvalidInstruction[] {
     const sanitizeSep = new RegExp("/", "g");
     // Validate the ungrouped instructions and return errors (if any)
     const invalidDestinationErrors: IInvalidInstruction[] = instructions
@@ -4451,9 +3938,7 @@ class InstallManager {
           // Ensure we use windows path separators as scripted installers
           //  will sometime return *nix separators.
           const sanitized =
-            process.platform === "win32"
-              ? destination.replace(sanitizeSep, path.sep)
-              : destination;
+            process.platform === "win32" ? destination.replace(sanitizeSep, path.sep) : destination;
           return !isPathValid(sanitized, true);
         }
 
@@ -4478,11 +3963,7 @@ class InstallManager {
     }, new InstructionGroups());
   }
 
-  private reportUnsupported(
-    api: IExtensionApi,
-    unsupported: IInstruction[],
-    archivePath: string,
-  ) {
+  private reportUnsupported(api: IExtensionApi, unsupported: IInstruction[], archivePath: string) {
     if (unsupported.length === 0) {
       return;
     }
@@ -4530,14 +4011,9 @@ class InstallManager {
     });
   }
 
-  private async processMKDir(
-    instructions: IInstruction[],
-    destinationPath: string,
-  ): Promise<void> {
+  private async processMKDir(instructions: IInstruction[], destinationPath: string): Promise<void> {
     for (const instruction of instructions) {
-      await fs.ensureDirAsync(
-        path.join(destinationPath, instruction.destination),
-      );
+      await fs.ensureDirAsync(path.join(destinationPath, instruction.destination));
     }
   }
 
@@ -4636,9 +4112,7 @@ class InstallManager {
     modId: string,
   ): Promise<void> {
     if (enableAll.length > 0) {
-      api.store.dispatch(
-        setModAttribute(gameId, modId, "enableallplugins", true),
-      );
+      api.store.dispatch(setModAttribute(gameId, modId, "enableallplugins", true));
     }
     return Promise.resolve();
   }
@@ -4695,44 +4169,31 @@ class InstallManager {
       {},
     );
 
-    return Promise.resolve(
-      fs.ensureDirAsync(path.join(destinationPath, INI_TWEAKS_PATH)),
-    )
+    return Promise.resolve(fs.ensureDirAsync(path.join(destinationPath, INI_TWEAKS_PATH)))
       .then(() =>
         Promise.all(
           Object.keys(byDest).map((destination) => {
-            const bySection: { [section: string]: IInstruction[] } = byDest[
-              destination
-            ].reduce((prev: { [section: string]: IInstruction[] }, value) => {
-              setdefault(prev, value.section, []).push(value);
-              return prev;
-            }, {});
+            const bySection: { [section: string]: IInstruction[] } = byDest[destination].reduce(
+              (prev: { [section: string]: IInstruction[] }, value) => {
+                setdefault(prev, value.section, []).push(value);
+                return prev;
+              },
+              {},
+            );
 
             const renderKV = (instruction: IInstruction): string =>
               `${instruction.key} = ${instruction.value}`;
 
             const renderSection = (section: string) =>
-              [`[${section}]`]
-                .concat(bySection[section].map(renderKV))
-                .join(os.EOL);
+              [`[${section}]`].concat(bySection[section].map(renderKV)).join(os.EOL);
 
-            const content = Object.keys(bySection)
-              .map(renderSection)
-              .join(os.EOL);
+            const content = Object.keys(bySection).map(renderSection).join(os.EOL);
 
-            const basename = path.basename(
-              destination,
-              path.extname(destination),
-            );
+            const basename = path.basename(destination, path.extname(destination));
             const tweakId = `From Installer [${basename}].ini`;
-            api.store.dispatch(
-              setINITweakEnabled(gameId, modId, tweakId, true),
-            );
+            api.store.dispatch(setINITweakEnabled(gameId, modId, tweakId, true));
 
-            return fs.writeFileAsync(
-              path.join(destinationPath, INI_TWEAKS_PATH, tweakId),
-              content,
-            );
+            return fs.writeFileAsync(path.join(destinationPath, INI_TWEAKS_PATH, tweakId), content);
           }),
         ),
       )
@@ -4773,17 +4234,11 @@ class InstallManager {
     }
 
     if (result.instructions === undefined || result.instructions.length === 0) {
-      return Promise.reject(
-        new ProcessCanceled("Empty archive or no options selected"),
-      );
+      return Promise.reject(new ProcessCanceled("Empty archive or no options selected"));
     }
 
     const isActivityRunning = (activity: string) =>
-      getSafe(
-        api.getState(),
-        ["session", "base", "activity", "mods"],
-        [],
-      ).includes(activity); // purge/deploy
+      getSafe(api.getState(), ["session", "base", "activity", "mods"], []).includes(activity); // purge/deploy
     if (isActivityRunning("installing_dependencies")) {
       // we don't want to override any instructions when installing as part of a collection!
       //  this will just add extra complexity to an already complex process.
@@ -4796,10 +4251,7 @@ class InstallManager {
         return;
       }
       key = key.toUpperCase();
-      if (
-        instr.type !== "setmodtype" ||
-        this.modTypeExists(gameId, instr?.value)
-      ) {
+      if (instr.type !== "setmodtype" || this.modTypeExists(gameId, instr?.value)) {
         overrideMap.set(key, instr);
       } else {
         log("warn", "mod type does not exist", instr);
@@ -4824,9 +4276,7 @@ class InstallManager {
     // Add instructions from result.overrideInstructions that are not already present in finalInstructions
     if (Array.isArray(result.overrideInstructions)) {
       const existingKeys = new Set(
-        finalInstructions.map((instr) =>
-          (instr.source ?? instr.type).toUpperCase(),
-        ),
+        finalInstructions.map((instr) => (instr.source ?? instr.type).toUpperCase()),
       );
       for (const instr of result.overrideInstructions) {
         let key = instr.source ?? instr.type;
@@ -4838,8 +4288,7 @@ class InstallManager {
         if (instr.type === "copy") {
           const isDuplicate = finalInstructions.some(
             (existingInstr) =>
-              existingInstr.type === "copy" &&
-              existingInstr.destination === instr.destination,
+              existingInstr.type === "copy" && existingInstr.destination === instr.destination,
           );
           if (isDuplicate) {
             // The assumption here is that the override instruction does not contain
@@ -4849,8 +4298,7 @@ class InstallManager {
         }
         if (
           !existingKeys.has(key) &&
-          (instr.type !== "setmodtype" ||
-            this.modTypeExists(gameId, instr?.value))
+          (instr.type !== "setmodtype" || this.modTypeExists(gameId, instr?.value))
         ) {
           finalInstructions.push(instr);
         }
@@ -4873,9 +4321,7 @@ class InstallManager {
         {
           invalid:
             "\n" +
-            invalidInstructions
-              .map((inval) => `(${inval.type}) - ${inval.error}`)
-              .join("\n"),
+            invalidInstructions.map((inval) => `(${inval.type}) - ${inval.error}`).join("\n"),
           message: error,
         },
         {
@@ -4886,19 +4332,14 @@ class InstallManager {
           allowReport,
         },
       );
-      return Promise.reject(
-        new ProcessCanceled("Invalid installer instructions"),
-      );
+      return Promise.reject(new ProcessCanceled("Invalid installer instructions"));
     }
 
     const instructionGroups = this.transformInstructions(finalInstructions);
 
     if (instructionGroups.error.length > 0) {
-      const fatal = instructionGroups.error.find(
-        (err) => err.value === "fatal",
-      );
-      let error =
-        'Errors were reported processing the installer for "{{ modId }}". ';
+      const fatal = instructionGroups.error.find((err) => err.value === "fatal");
+      let error = 'Errors were reported processing the installer for "{{ modId }}". ';
 
       if (fatal === undefined) {
         error +=
@@ -4907,18 +4348,14 @@ class InstallManager {
           "report a problem with this installer doesn't mean it doesn't have any.";
       }
 
-      api.showErrorNotification(
-        "Installer reported errors",
-        error + "\n{{ errors }}",
-        {
-          replace: {
-            errors: instructionGroups.error.map((err) => err.source).join("\n"),
-            modId,
-          },
-          allowReport: false,
-          message: modId,
+      api.showErrorNotification("Installer reported errors", error + "\n{{ errors }}", {
+        replace: {
+          errors: instructionGroups.error.map((err) => err.source).join("\n"),
+          modId,
         },
-      );
+        allowReport: false,
+        message: modId,
+      });
       if (fatal !== undefined) {
         const errorMessages = instructionGroups.error.map((err) => err.source);
         const errorSummary = errorMessages.join("; ");
@@ -4949,20 +4386,9 @@ class InstallManager {
           gameId,
         ),
       )
+      .then(() => this.processGenerateFiles(instructionGroups.generatefile, destinationPath))
       .then(() =>
-        this.processGenerateFiles(
-          instructionGroups.generatefile,
-          destinationPath,
-        ),
-      )
-      .then(() =>
-        this.processIniEdits(
-          api,
-          instructionGroups.iniedit,
-          destinationPath,
-          gameId,
-          modId,
-        ),
+        this.processIniEdits(api, instructionGroups.iniedit, destinationPath, gameId, modId),
       )
       .then(() =>
         this.processSubmodule(
@@ -4977,25 +4403,12 @@ class InstallManager {
           details,
         ),
       )
+      .then(() => this.processAttribute(api, instructionGroups.attribute, gameId, modId))
       .then(() =>
-        this.processAttribute(api, instructionGroups.attribute, gameId, modId),
+        this.processEnableAllPlugins(api, instructionGroups.enableallplugins, gameId, modId),
       )
       .then(() =>
-        this.processEnableAllPlugins(
-          api,
-          instructionGroups.enableallplugins,
-          gameId,
-          modId,
-        ),
-      )
-      .then(() =>
-        this.processSetModType(
-          api,
-          installContext,
-          instructionGroups.setmodtype,
-          gameId,
-          modId,
-        ),
+        this.processSetModType(api, installContext, instructionGroups.setmodtype, gameId, modId),
       )
       .then(() => {
         this.processRule(api, instructionGroups.rule, gameId, modId);
@@ -5003,26 +4416,16 @@ class InstallManager {
       });
   }
 
-  private checkModVariantsExist(
-    api: IExtensionApi,
-    gameMode: string,
-    archiveId: string,
-  ): string[] {
+  private checkModVariantsExist(api: IExtensionApi, gameMode: string, archiveId: string): string[] {
     if (archiveId == null) {
       return [];
     }
     const state = api.getState();
     const mods = Object.values(state.persistent.mods[gameMode] || []);
-    return mods
-      .filter((mod) => mod.archiveId === archiveId)
-      .map((mod) => mod.id);
+    return mods.filter((mod) => mod.archiveId === archiveId).map((mod) => mod.id);
   }
 
-  private checkModNameExists(
-    installName: string,
-    api: IExtensionApi,
-    gameMode: string,
-  ): string[] {
+  private checkModNameExists(installName: string, api: IExtensionApi, gameMode: string): string[] {
     const state = api.getState();
     const mods = Object.values(state.persistent.mods[gameMode] || []);
     // Yes I know that only 1 mod id can ever match the install name, but it's more consistent
@@ -5037,14 +4440,9 @@ class InstallManager {
     nexusModId?: number,
     logicalFileName?: string,
   ): IMod | undefined {
-    const mods = (store.getState().persistent.mods[gameMode] || {}) as Record<
-      string,
-      IMod
-    >;
+    const mods = (store.getState().persistent.mods[gameMode] || {}) as Record<string, IMod>;
 
-    const candidates: IMod[] = Object.values(mods).filter(
-      (m: IMod) => m.type !== "collection",
-    );
+    const candidates: IMod[] = Object.values(mods).filter((m: IMod) => m.type !== "collection");
 
     // Primary: the update check already told us which fileId is newest
     const byNewestId: IMod | undefined = candidates.find((m: IMod) => {
@@ -5063,8 +4461,7 @@ class InstallManager {
       return candidates.find(
         (m: IMod) =>
           m.attributes?.modId === nexusModId &&
-          (logicalFileName == null ||
-            m.attributes?.logicalFileName === logicalFileName) &&
+          (logicalFileName == null || m.attributes?.logicalFileName === logicalFileName) &&
           m.attributes?.fileId !== fileId,
       );
     }
@@ -5146,10 +4543,7 @@ class InstallManager {
     return profiles.length;
   }
 
-  private userVersionChoice(
-    oldMod: IMod,
-    store: ThunkStore<IState>,
-  ): Promise<string> {
+  private userVersionChoice(oldMod: IMod, store: ThunkStore<IState>): Promise<string> {
     const totalProfiles = this.queryProfileCount(store);
     const batchAction = "remember-user-version-choice-action";
     const handleAction = (action: string, remember: boolean) => {
@@ -5193,16 +4587,10 @@ class InstallManager {
                       },
                     ],
                   },
-                  [
-                    { label: "Cancel" },
-                    { label: REPLACE_ACTION },
-                    { label: INSTALL_ACTION },
-                  ],
+                  [{ label: "Cancel" }, { label: REPLACE_ACTION }, { label: INSTALL_ACTION }],
                 ),
               )
-              .then((result: IDialogResult) =>
-                handleAction(result.action, result.input.remember),
-              )
+              .then((result: IDialogResult) => handleAction(result.action, result.input.remember))
               .then(resolve)
               .catch(reject);
           });
@@ -5219,12 +4607,8 @@ class InstallManager {
       const mods: IMod[] = Object.values(state.persistent.mods[gameId]).filter(
         (mod) => modIds.includes(mod.id) && mod.state === "installed",
       );
-      const batchContext = getBatchContext(
-        ["install-dependencies", "install-recommendations"],
-        "",
-      );
-      const profileId =
-        batchContext?.get<string>("profileId") ?? activeProfile(state)?.id;
+      const batchContext = getBatchContext(["install-dependencies", "install-recommendations"], "");
+      const profileId = batchContext?.get<string>("profileId") ?? activeProfile(state)?.id;
       const currentProfile = profileById(api.store.getState(), profileId);
       if (mods.length === 0) {
         // Technically for this to happen the timing must be *perfect*,
@@ -5237,11 +4621,7 @@ class InstallManager {
         return resolve({
           id: modIds[0],
           variant: "",
-          enable: getSafe(
-            currentProfile,
-            ["modState", modIds[0], "enabled"],
-            false,
-          ),
+          enable: getSafe(currentProfile, ["modState", modIds[0], "enabled"], false),
           attributes: {},
           rules: [],
           replaceChoice: "replace",
@@ -5259,12 +4639,9 @@ class InstallManager {
             checkVariantRemember.push({
               id: "remember",
               value: false,
-              text: api.translate(
-                "Use this name for all remaining variants ({{count}} more)",
-                {
-                  count: itemsLeft - 1,
-                },
-              ),
+              text: api.translate("Use this name for all remaining variants ({{count}} more)", {
+                count: itemsLeft - 1,
+              }),
             });
           }
         }
@@ -5292,8 +4669,7 @@ class InstallManager {
               parameters: {
                 modName: modName(mods[0], { version: false }),
               },
-              condition: (content: IDialogContent) =>
-                validateVariantName(api.translate, content),
+              condition: (content: IDialogContent) => validateVariantName(api.translate, content),
               options: {
                 order: ["text", "input", "md", "checkboxes"],
               },
@@ -5323,8 +4699,7 @@ class InstallManager {
         patches: installOptions?.patches,
       };
       const isDependency =
-        installOptions?.unattended === true &&
-        testModReference(mods[0], modReference) === false;
+        installOptions?.unattended === true && testModReference(mods[0], modReference) === false;
       const addendum = isDependency
         ? " and is trying to be reinstalled as a dependency by another mod or collection."
         : ".";
@@ -5344,11 +4719,8 @@ class InstallManager {
                 {
                   id: "replace",
                   value: true,
-                  text:
-                    "Replace the existing mod" +
-                    (isDependency ? " (recommended)" : ""),
-                  subText:
-                    "This will replace the existing mod on all your profiles.",
+                  text: "Replace the existing mod" + (isDependency ? " (recommended)" : ""),
+                  subText: "This will replace the existing mod on all your profiles.",
                 },
                 {
                   id: "variant",
@@ -5377,14 +4749,12 @@ class InstallManager {
               context?.set?.("canceled", true);
               return Promise.reject(new UserCanceled());
             } else if (result.input.variant) {
-              return queryVariantNameDialog(result.input.remember).then(
-                (variant) => ({
-                  action: "variant",
-                  variant,
-                  remember: result.input.remember,
-                  preserveChoices: result.input.preserveChoices ?? true,
-                }),
-              );
+              return queryVariantNameDialog(result.input.remember).then((variant) => ({
+                action: "variant",
+                variant,
+                remember: result.input.remember,
+                preserveChoices: result.input.preserveChoices ?? true,
+              }));
             } else if (result.input.replace) {
               return {
                 action: "replace",
@@ -5412,9 +4782,7 @@ class InstallManager {
                   {
                     replace: {
                       version: getSafe(modAttributes, ["version"], "Unknown"),
-                      installTime: new Date(
-                        getSafe(modAttributes, ["installTime"], 0),
-                      ),
+                      installTime: new Date(getSafe(modAttributes, ["installTime"], 0)),
                       variant: truthy(variant) ? variant : "Not set",
                     },
                   },
@@ -5449,27 +4817,19 @@ class InstallManager {
             checkRoVRemember.push({
               id: "remember",
               value: false,
-              text: api.translate(
-                "Do this for all remaining reinstalls ({{count}} more)",
-                {
-                  count: itemsLeft - 1,
-                },
-              ),
+              text: api.translate("Do this for all remaining reinstalls ({{count}} more)", {
+                count: itemsLeft - 1,
+              }),
             });
           }
         }
 
         if (action !== undefined) {
           let variant: string = context.get("variant-name");
-          const preserveChoices: boolean = context.get(
-            "preserve-choices",
-            true,
-          );
+          const preserveChoices: boolean = context.get("preserve-choices", true);
           if (action === "variant" && variant === undefined) {
             choices = Promise.resolve(
-              queryVariantNameDialog(
-                context.get("replace-or-variant") !== undefined,
-              ),
+              queryVariantNameDialog(context.get("replace-or-variant") !== undefined),
             ).then((variantName) => ({
               action,
               variant: variantName,
@@ -5490,16 +4850,12 @@ class InstallManager {
         }
       }
 
-      const hasInstallerChoices = mods.some(
-        (m) => m.attributes?.installerChoices?.options != null,
-      );
+      const hasInstallerChoices = mods.some((m) => m.attributes?.installerChoices?.options != null);
       if (hasInstallerChoices) {
         checkRoVRemember.push({
           id: "preserveChoices",
           value: true,
-          text: api.translate(
-            "Pre-populate installer options from existing mod",
-          ),
+          text: api.translate("Pre-populate installer options from existing mod"),
         });
       }
 
@@ -5514,21 +4870,16 @@ class InstallManager {
           (prof) => prof.gameId === gameId && prof.id !== targetProfileId,
         );
         const isEnabledInOtherProfile = modIds.some((modId) =>
-          profiles.some((prof) =>
-            getSafe(prof.modState, [modId, "enabled"], false),
-          ),
+          profiles.some((prof) => getSafe(prof.modState, [modId, "enabled"], false)),
         );
 
         if (isEnabledInOtherProfile && activeSession?.collectionId != null) {
           // Create a variant so the other profile keeps its version
           const collectionMod =
-            api.getState().persistent.mods?.[gameId]?.[
-              activeSession.collectionId
-            ];
+            api.getState().persistent.mods?.[gameId]?.[activeSession.collectionId];
           const variantNum = installOptions.variantNumber?.toString() ?? "1";
           const maxLength = MAX_VARIANT_NAME - variantNum.length + 1;
-          const rawName =
-            collectionMod?.attributes?.customFileName?.trim() ?? "";
+          const rawName = collectionMod?.attributes?.customFileName?.trim() ?? "";
           const autoVariant =
             rawName.length > maxLength
               ? `${rawName.substring(0, maxLength)}.${variantNum}`
@@ -5567,10 +4918,7 @@ class InstallManager {
 
             const replaceMod = (modId: string) => {
               const mod = mods.find((m) => m.id === modId);
-              const variant =
-                mod !== undefined
-                  ? getSafe(mod.attributes, ["variant"], "")
-                  : "";
+              const variant = mod !== undefined ? getSafe(mod.attributes, ["variant"], "") : "";
               api.events.emit(
                 "remove-mod",
                 gameId,
@@ -5580,11 +4928,7 @@ class InstallManager {
                     const error = unknownToError(err);
                     reject(error);
                   } else {
-                    const omittedAttributes = [
-                      "version",
-                      "fileName",
-                      "fileVersion",
-                    ];
+                    const omittedAttributes = ["version", "fileName", "fileVersion"];
                     if (!result.preserveChoices) {
                       omittedAttributes.push("installerChoices");
                     }
@@ -5605,25 +4949,17 @@ class InstallManager {
             if (result.action === "variant") {
               if (result.remember === true) {
                 context?.set?.("replace-or-variant", "variant");
-                context?.set?.(
-                  "preserve-choices",
-                  result.preserveChoices ?? true,
-                );
+                context?.set?.("preserve-choices", result.preserveChoices ?? true);
               }
               if (currentProfile !== undefined) {
-                const actions = modIds.map((id) =>
-                  setModEnabled(currentProfile.id, id, false),
-                );
+                const actions = modIds.map((id) => setModEnabled(currentProfile.id, id, false));
                 batchDispatch(api.store.dispatch, actions);
               }
               // We want the shortest possible modId paired against this archive
               //  before adding the variant name to it.
               const archiveId = mods[0].archiveId;
-              const relevantIds = Object.keys(
-                state.persistent.mods[gameId],
-              ).filter(
-                (id) =>
-                  state.persistent.mods[gameId][id]?.archiveId === archiveId,
+              const relevantIds = Object.keys(state.persistent.mods[gameId]).filter(
+                (id) => state.persistent.mods[gameId][id]?.archiveId === archiveId,
               );
               const modId = relevantIds.reduce(
                 (prev, iter) => (iter.length < prev.length ? iter : prev),
@@ -5631,20 +4967,13 @@ class InstallManager {
               );
               // We just disabled all variants - if any of the variants was enabled previously
               //  it's safe to assume that the user wants this new variant enabled.
-              const enable = modIds.reduce(
-                (prev, iter) => (wasEnabled(iter) ? true : prev),
-                false,
-              );
+              const enable = modIds.reduce((prev, iter) => (wasEnabled(iter) ? true : prev), false);
               resolve({
                 id: modId + "+" + result.variant,
                 variant: result.variant,
                 enable,
                 attributes: result.preserveChoices
-                  ? _.pick(mod.attributes, [
-                      "modId",
-                      "fileId",
-                      "installerChoices",
-                    ])
+                  ? _.pick(mod.attributes, ["modId", "fileId", "installerChoices"])
                   : {},
                 rules: [],
                 replaceChoice: "variant",
@@ -5652,10 +4981,7 @@ class InstallManager {
             } else if (result.action === "replace") {
               if (result.remember === true) {
                 context?.set?.("replace-or-variant", "replace");
-                context?.set?.(
-                  "preserve-choices",
-                  result.preserveChoices ?? true,
-                );
+                context?.set?.("preserve-choices", result.preserveChoices ?? true);
               }
               if (modIds.length > 1) {
                 queryVariantReplacement().then((res: IDialogResult) => {
@@ -5663,9 +4989,7 @@ class InstallManager {
                     context?.set?.("canceled", true);
                     reject(new UserCanceled());
                   } else {
-                    const selected = Object.keys(res.input).find(
-                      (iter) => res.input[iter],
-                    );
+                    const selected = Object.keys(res.input).find((iter) => res.input[iter]);
                     replaceMod(selected);
                   }
                 });
@@ -5685,10 +5009,7 @@ class InstallManager {
         )
         .then((result) => {
           if (context !== undefined) {
-            context.set(
-              "items-completed",
-              context.get("items-completed", 0) + 1,
-            );
+            context.set("items-completed", context.get("items-completed", 0) + 1);
           }
           return result;
         })
@@ -5710,12 +5031,7 @@ class InstallManager {
       return Promise.resolve(undefined);
     }
     return Promise.resolve(
-      this.mInstallers[offset].testSupported(
-        fileList,
-        gameId,
-        archivePath,
-        details,
-      ),
+      this.mInstallers[offset].testSupported(fileList, gameId, archivePath, details),
     ).then((testResult: ISupportedResult) => {
       if (testResult === undefined) {
         log("error", "Buggy installer", this.mInstallers[offset].id);
@@ -5753,9 +5069,7 @@ class InstallManager {
     campaign?: string,
     fileName?: string,
   ): Promise<string> {
-    const call = (
-      input: string | (() => PromiseLike<string>),
-    ): Promise<string> =>
+    const call = (input: string | (() => PromiseLike<string>)): Promise<string> =>
       input !== undefined && typeof input === "function"
         ? Promise.resolve(input())
         : Promise.resolve(input as string);
@@ -5765,9 +5079,7 @@ class InstallManager {
 
     return call(lookupResult.sourceURI)
       .then((res) => (resolvedSource = res))
-      .then(() =>
-        call(lookupResult.referer).then((res) => (resolvedReferer = res)),
-      )
+      .then(() => call(lookupResult.referer).then((res) => (resolvedReferer = res)))
       .then(
         () =>
           new Promise<string>((resolve, reject) => {
@@ -5855,24 +5167,10 @@ class InstallManager {
     campaign: string,
     fileName?: string,
   ): Promise<string> {
-    const modId: string = getSafe(
-      lookupResult,
-      ["details", "modId"],
-      undefined,
-    );
-    const fileId: string = getSafe(
-      lookupResult,
-      ["details", "fileId"],
-      undefined,
-    );
+    const modId: string = getSafe(lookupResult, ["details", "modId"], undefined);
+    const fileId: string = getSafe(lookupResult, ["details", "fileId"], undefined);
     if (modId === undefined && fileId === undefined) {
-      return this.downloadURL(
-        api,
-        lookupResult,
-        wasCanceled,
-        referenceTag,
-        fileName,
-      );
+      return this.downloadURL(api, lookupResult, wasCanceled, referenceTag, fileName);
     }
 
     const gameId = convertGameIdReverse(
@@ -5894,9 +5192,7 @@ class InstallManager {
         )
         .then((results: Array<{ error: Error; dlId: string }>) => {
           if (results === undefined || results.length === 0) {
-            return Promise.reject(
-              new NotFound(`source not supported "${lookupResult.source}"`),
-            );
+            return Promise.reject(new NotFound(`source not supported "${lookupResult.source}"`));
           } else {
             if (!truthy(results[0])) {
               return Promise.reject(
@@ -5910,11 +5206,7 @@ class InstallManager {
                 return Promise.reject(results[0].error);
               } else {
                 api.store.dispatch(
-                  setDownloadModInfo(
-                    results[0].dlId,
-                    "referenceTag",
-                    referenceTag,
-                  ),
+                  setDownloadModInfo(results[0].dlId, "referenceTag", referenceTag),
                 );
                 return Promise.resolve(results[0].dlId);
               }
@@ -5936,8 +5228,7 @@ class InstallManager {
 
     if (
       requirement.versionMatch !== undefined &&
-      (!requirement.versionMatch.endsWith("+prefer") ||
-        lookupResult.archived) &&
+      (!requirement.versionMatch.endsWith("+prefer") || lookupResult.archived) &&
       isFuzzyVersion(requirement.versionMatch)
     ) {
       // seems to be a fuzzy matcher so we may have to look for an update
@@ -5961,14 +5252,7 @@ class InstallManager {
         })
         .then((res) =>
           res === undefined
-            ? this.downloadURL(
-                api,
-                lookupResult,
-                wasCanceled,
-                referenceTag,
-                campaign,
-                fileName,
-              )
+            ? this.downloadURL(api, lookupResult, wasCanceled, referenceTag, campaign, fileName)
             : res,
         );
     } else {
@@ -6085,8 +5369,7 @@ class InstallManager {
         {
           title: "More",
           action: () => {
-            const sourceMod =
-              api.getState().persistent.mods[gameId]?.[sourceModId];
+            const sourceMod = api.getState().persistent.mods[gameId]?.[sourceModId];
             api.showDialog(
               "info",
               "Unfulfillable rule disabled",
@@ -6117,9 +5400,7 @@ class InstallManager {
     gameId: string,
     sourceModId: string,
     recommended: boolean,
-    doDownload: (
-      dep: IDependency,
-    ) => PromiseLike<{ updatedDep: IDependency; downloadId: string }>,
+    doDownload: (dep: IDependency) => PromiseLike<{ updatedDep: IDependency; downloadId: string }>,
     abort: AbortController,
     silent: boolean,
   ): Promise<IDependency[]> {
@@ -6143,61 +5424,36 @@ class InstallManager {
             }
             log("info", "installed as dependency", { modId });
             if (!alreadyInstalled) {
-              api.store.dispatch(
-                setModAttribute(gameId, modId, "installedAsDependency", true),
-              );
+              api.store.dispatch(setModAttribute(gameId, modId, "installedAsDependency", true));
             }
 
             const state = api.getState();
             const batchedActions = [];
             // Enable the mod only for the target profile to avoid affecting other profiles
             const batchContext = getBatchContext(
-              [
-                "install-dependencies",
-                "install-collections",
-                "install-recommendations",
-              ],
+              ["install-dependencies", "install-collections", "install-recommendations"],
               "",
             );
             const targetProfileId =
-              batchContext?.get<string>("profileId") ??
-              activeProfile(state)?.id;
-            const targetProfile = targetProfileId
-              ? profileById(state, targetProfileId)
-              : undefined;
+              batchContext?.get<string>("profileId") ?? activeProfile(state)?.id;
+            const targetProfile = targetProfileId ? profileById(state, targetProfileId) : undefined;
 
             if (targetProfile) {
               // Only modify the target profile - disable other variants and enable this one
-              const otherModIds = this.checkModVariantsExist(
-                api,
-                gameId,
-                downloadId,
-              );
+              const otherModIds = this.checkModVariantsExist(api, gameId, downloadId);
               for (const otherModId of otherModIds) {
-                batchedActions.push(
-                  setModEnabled(targetProfile.id, otherModId, false),
-                );
+                batchedActions.push(setModEnabled(targetProfile.id, otherModId, false));
               }
               batchedActions.push(setModEnabled(targetProfile.id, modId, true));
             } else {
               // Fallback: enable in profiles where source mod is enabled (original behavior)
-              const profiles = Object.values(
-                api.getState().persistent.profiles,
-              ).filter(
-                (prof) =>
-                  prof.gameId === gameId &&
-                  prof.modState?.[sourceModId]?.enabled,
+              const profiles = Object.values(api.getState().persistent.profiles).filter(
+                (prof) => prof.gameId === gameId && prof.modState?.[sourceModId]?.enabled,
               );
               profiles.forEach((prof) => {
-                const otherModIds = this.checkModVariantsExist(
-                  api,
-                  gameId,
-                  downloadId,
-                );
+                const otherModIds = this.checkModVariantsExist(api, gameId, downloadId);
                 for (const otherModId of otherModIds) {
-                  batchedActions.push(
-                    setModEnabled(prof.id, otherModId, false),
-                  );
+                  batchedActions.push(setModEnabled(prof.id, otherModId, false));
                 }
                 batchedActions.push(setModEnabled(prof.id, modId, true));
               });
@@ -6222,10 +5478,7 @@ class InstallManager {
             }
             // don't cancel the whole process if one dependency fails to install
             if (innerErr instanceof ProcessCanceled) {
-              if (
-                innerErr.extraInfo !== undefined &&
-                innerErr.extraInfo.alreadyReported
-              ) {
+              if (innerErr.extraInfo !== undefined && innerErr.extraInfo.alreadyReported) {
                 return undefined;
               }
               const refName = renderModReference(dep.reference, undefined);
@@ -6307,9 +5560,7 @@ class InstallManager {
                 },
               );
             } else if (
-              [403, 404, 410].includes(
-                (innerErr as { statusCode?: number })?.statusCode,
-              )
+              [403, 404, 410].includes((innerErr as { statusCode?: number })?.statusCode)
             ) {
               const message = `${err.message}\n\nThis error is usually caused by an invalid request, maybe you followed a link that has expired or you lack permission to access it.`;
               this.showDependencyError(
@@ -6381,11 +5632,9 @@ class InstallManager {
         delete this.mDependencyInstalls[sourceModId];
         this.cleanupPendingInstalls(sourceModId, true);
 
-        api.showErrorNotification(
-          "Failed to install dependencies",
-          outerErr.message,
-          { allowReport: false },
-        );
+        api.showErrorNotification("Failed to install dependencies", outerErr.message, {
+          allowReport: false,
+        });
         return [];
       }
       if (outerErr instanceof UserCanceled) {
@@ -6418,10 +5667,8 @@ class InstallManager {
         const downloads = state.persistent.downloads.files;
         let foundCount = 0;
         dependencies.forEach((dep: IDependency) => {
-          const downloadId = getReadyDownloadId(
-            downloads,
-            dep.reference,
-            (id) => this.hasActiveOrPendingInstallation(sourceModId, id),
+          const downloadId = getReadyDownloadId(downloads, dep.reference, (id) =>
+            this.hasActiveOrPendingInstallation(sourceModId, id),
           );
 
           if (downloadId) {
@@ -6451,8 +5698,7 @@ class InstallManager {
     silent: boolean,
   ): Promise<IDependency[]> {
     const state: IState = api.getState();
-    let downloads: { [id: string]: IDownload } =
-      state.persistent.downloads.files;
+    let downloads: { [id: string]: IDownload } = state.persistent.downloads.files;
 
     const sourceMod = state.persistent.mods[gameId][sourceModId];
     const stagingPath = installPathForGame(state, gameId);
@@ -6527,48 +5773,34 @@ class InstallManager {
                   errMsg?.includes("already downloaded");
 
                 if (isAlreadyDownloaded) {
-                  if (
-                    err instanceof AlreadyDownloaded &&
-                    err.downloadId !== undefined
-                  ) {
-                    log(
-                      "info",
-                      "File already downloaded, using existing download ID",
-                      { downloadId: err.downloadId },
-                    );
+                  if (err instanceof AlreadyDownloaded && err.downloadId !== undefined) {
+                    log("info", "File already downloaded, using existing download ID", {
+                      downloadId: err.downloadId,
+                    });
                     return Promise.resolve(err.downloadId);
                   }
                   // If file is already downloaded, check if we can find the download
                   // Try to find the download by filename
-                  const alreadyDlErr =
-                    err instanceof AlreadyDownloaded ? err : undefined;
-                  const currentDownloads =
-                    api.getState().persistent.downloads.files;
+                  const alreadyDlErr = err instanceof AlreadyDownloaded ? err : undefined;
+                  const currentDownloads = api.getState().persistent.downloads.files;
                   const downloadId = Object.keys(currentDownloads).find(
                     (dlId) =>
-                      currentDownloads[dlId].localPath ===
-                        alreadyDlErr?.fileName ||
-                      currentDownloads[dlId].modInfo?.referenceTag ===
-                        dep.reference?.tag,
+                      currentDownloads[dlId].localPath === alreadyDlErr?.fileName ||
+                      currentDownloads[dlId].modInfo?.referenceTag === dep.reference?.tag,
                   );
 
                   if (downloadId) {
-                    log(
-                      "info",
-                      "Download already completed, using existing download",
-                      { downloadId },
-                    );
+                    log("info", "Download already completed, using existing download", {
+                      downloadId,
+                    });
                     return Promise.resolve(downloadId);
                   } else {
                     // The download file exists but we can't find its record - refresh downloads and try again
                     return new Promise((resolve) => {
                       api.events.emit("refresh-downloads", gameId, () => {
-                        const currentDownloads =
-                          api.getState().persistent.downloads.files;
+                        const currentDownloads = api.getState().persistent.downloads.files;
                         const downloadId = Object.keys(currentDownloads).find(
-                          (dlId) =>
-                            currentDownloads[dlId].localPath ===
-                            alreadyDlErr?.fileName,
+                          (dlId) => currentDownloads[dlId].localPath === alreadyDlErr?.fileName,
                         );
                         return downloadId ? resolve(downloadId) : resolve(null);
                       });
@@ -6580,18 +5812,12 @@ class InstallManager {
                   // For network errors, check if the download ended up in paused state
                   // and if so, try to resume it through the concurrent queue
                   setTimeout(() => {
-                    const currentDownloads =
-                      api.getState().persistent.downloads.files;
+                    const currentDownloads = api.getState().persistent.downloads.files;
                     const downloadId = Object.keys(currentDownloads).find(
-                      (dlId) =>
-                        currentDownloads[dlId].modInfo?.referenceTag ===
-                        dep.reference?.tag,
+                      (dlId) => currentDownloads[dlId].modInfo?.referenceTag === dep.reference?.tag,
                     );
 
-                    if (
-                      downloadId &&
-                      currentDownloads[downloadId].state === "paused"
-                    ) {
+                    if (downloadId && currentDownloads[downloadId].state === "paused") {
                       log(
                         "info",
                         "Network error resulted in paused download, will attempt resume",
@@ -6618,8 +5844,7 @@ class InstallManager {
           ? Promise.reject(new UserCanceled(false))
           : new Promise((resolve, reject) => {
               // First check current download state to avoid unnecessary resume attempts
-              const currentDownloads =
-                api.getState().persistent.downloads.files;
+              const currentDownloads = api.getState().persistent.downloads.files;
               let resolvedId: string = dep.download;
               let currentDownload = currentDownloads[resolvedId];
 
@@ -6628,15 +5853,14 @@ class InstallManager {
                 const tag = dep.reference?.tag;
                 if (truthy(tag)) {
                   const foundId = Object.keys(currentDownloads).find(
-                    (dlId) =>
-                      currentDownloads[dlId]?.modInfo?.referenceTag === tag,
+                    (dlId) => currentDownloads[dlId]?.modInfo?.referenceTag === tag,
                   );
                   if (foundId) {
-                    log(
-                      "info",
-                      "Resolved missing download id from referenceTag",
-                      { from: dep.download, to: foundId, tag },
-                    );
+                    log("info", "Resolved missing download id from referenceTag", {
+                      from: dep.download,
+                      to: foundId,
+                      tag,
+                    });
                     resolvedId = foundId;
                     currentDownload = currentDownloads[resolvedId];
                   }
@@ -6682,11 +5906,9 @@ class InstallManager {
                       err.message?.includes("File already downloaded") ||
                       err.message?.includes("already downloaded")
                     ) {
-                      log(
-                        "info",
-                        "Download already completed during resume attempt",
-                        { downloadId: resolvedId },
-                      );
+                      log("info", "Download already completed during resume attempt", {
+                        downloadId: resolvedId,
+                      });
                       return resolve(resolvedId);
                     }
                     reject(err);
@@ -6700,10 +5922,7 @@ class InstallManager {
       );
     };
 
-    const installDownload = (
-      dep: IDependency,
-      downloadId: string,
-    ): Promise<string> => {
+    const installDownload = (dep: IDependency, downloadId: string): Promise<string> => {
       return new Promise<string>((resolve, reject) => {
         return this.mDependencyInstallsLimit.do(async () => {
           return abort.signal.aborted
@@ -6761,30 +5980,18 @@ class InstallManager {
           }
           dlPromise = Promise.resolve(fs.statAsync(targetPath))
             .then(() =>
-              Object.keys(downloads).find(
-                (dlId) => downloads[dlId].localPath === fileName,
-              ),
+              Object.keys(downloads).find((dlId) => downloads[dlId].localPath === fileName),
             )
             .catch(
               (err) =>
                 new Promise((resolve, reject) => {
                   api.events.emit(
                     "import-downloads",
-                    [
-                      path.join(
-                        stagingPath,
-                        sourceMod.installationPath,
-                        dep.extra.localPath,
-                      ),
-                    ],
+                    [path.join(stagingPath, sourceMod.installationPath, dep.extra.localPath)],
                     (dlIds: string[]) => {
                       if (dlIds.length > 0) {
                         api.store.dispatch(
-                          setDownloadModInfo(
-                            dlIds[0],
-                            "referenceTag",
-                            dep.reference.tag,
-                          ),
+                          setDownloadModInfo(dlIds[0], "referenceTag", dep.reference.tag),
                         );
                         resolve(dlIds[0]);
                       } else {
@@ -6799,15 +6006,11 @@ class InstallManager {
           // Always allow downloads to be queued - installations will be deferred if needed
           dlPromise =
             (dep.lookupResults[0]?.value?.sourceURI ?? "") === ""
-              ? Promise.reject(
-                  new ProcessCanceled("Failed to determine download url"),
-                )
+              ? Promise.reject(new ProcessCanceled("Failed to determine download url"))
               : queueDownload(dep);
         }
       } else if (dep.download == null) {
-        dlPromise = Promise.reject(
-          new ProcessCanceled("Failed to determine download url"),
-        );
+        dlPromise = Promise.reject(new ProcessCanceled("Failed to determine download url"));
       } else if (downloads[dep.download]?.state === "paused") {
         // Get fresh state to ensure accurate paused detection
         const freshDownloads = api.getState().persistent.downloads.files;
@@ -6845,10 +6048,7 @@ class InstallManager {
         .then((downloadId: string) => {
           // Get fresh state before checking if download is paused
           const freshDownloads = api.getState().persistent.downloads.files;
-          if (
-            downloadId !== undefined &&
-            freshDownloads[downloadId]?.state === "paused"
-          ) {
+          if (downloadId !== undefined && freshDownloads[downloadId]?.state === "paused") {
             return resumeDownload(dep);
           } else {
             return Promise.resolve(downloadId);
@@ -6885,19 +6085,10 @@ class InstallManager {
               tag: downloads[downloadId].modInfo.referenceTag,
             };
             dep.reference =
-              this.updateModRule(
-                api,
-                gameId,
-                sourceModId,
-                dep,
-                reference,
-                recommended,
-              )?.reference ?? reference;
+              this.updateModRule(api, gameId, sourceModId, dep, reference, recommended)
+                ?.reference ?? reference;
 
-            dep.mod = findModByRef(
-              dep.reference,
-              api.getState().persistent.mods[gameId],
-            );
+            dep.mod = findModByRef(dep.reference, api.getState().persistent.mods[gameId]);
           } else {
             log("info", "downloaded as dependency", {
               dependency: dep.reference.logicalFileName,
@@ -6921,8 +6112,7 @@ class InstallManager {
                   // (e.g. from a prior cancelled install) would never be queued
                   // because the did-finish-download event only fires for NEW
                   // downloads. queueInstallation deduplicates internally.
-                  const freshDownloads =
-                    api.getState().persistent.downloads.files;
+                  const freshDownloads = api.getState().persistent.downloads.files;
                   if (
                     downloadId &&
                     freshDownloads[downloadId]?.state === "finished" &&
@@ -6945,17 +6135,13 @@ class InstallManager {
                     return Promise.reject(err);
                   }
                   const newState = api.getState();
-                  const download =
-                    newState.persistent.downloads.files[downloadId];
+                  const download = newState.persistent.downloads.files[downloadId];
 
                   let removeProm = Promise.resolve();
                   if (download !== undefined) {
                     // Convert download game ID from Nexus domain ID to internal ID for path resolution
                     const games = knownGames(newState);
-                    const convertedGameId = convertGameIdReverse(
-                      games,
-                      download.game[0],
-                    );
+                    const convertedGameId = convertGameIdReverse(games, download.game[0]);
                     const pathGameId = convertedGameId || download.game[0];
 
                     const fullPath: string = path.join(
@@ -6975,9 +6161,7 @@ class InstallManager {
 
     const phases: { [phase: number]: IDependency[] } = {};
 
-    dependencies.forEach((dep) =>
-      setdefault(phases, dep.phase ?? 0, []).push(dep),
-    );
+    dependencies.forEach((dep) => setdefault(phases, dep.phase ?? 0, []).push(dep));
 
     // Initialize phase state immediately after determining what phases we have
     if (dependencies.length > 0) {
@@ -6990,10 +6174,7 @@ class InstallManager {
       const lowestPhase = phaseNumbers[0];
 
       // Check collection session to determine actual current phase
-      const activeCollectionSession = getCollectionSessionById(
-        api.getState(),
-        sourceModId,
-      );
+      const activeCollectionSession = getCollectionSessionById(api.getState(), sourceModId);
 
       if (activeCollectionSession) {
         // Determine the highest completed phase from the collection session
@@ -7011,10 +6192,7 @@ class InstallManager {
         Array.from(allPhases)
           .sort((a, b) => a - b)
           .forEach((phase) => {
-            const isPhaseComplete = isCollectionPhaseComplete(
-              api.getState(),
-              phase,
-            );
+            const isPhaseComplete = isCollectionPhaseComplete(api.getState(), phase);
 
             if (isPhaseComplete) {
               highestCompletedPhase = phase;
@@ -7024,10 +6202,7 @@ class InstallManager {
         // Set allowed phase to the next phase after the highest completed one
         // or to the lowest phase in our current dependencies if higher
         const nextPhaseAfterCompleted = highestCompletedPhase + 1;
-        const effectiveStartPhase = Math.max(
-          lowestPhase,
-          nextPhaseAfterCompleted,
-        );
+        const effectiveStartPhase = Math.max(lowestPhase, nextPhaseAfterCompleted);
 
         if (
           phaseState.allowedPhase === undefined ||
@@ -7108,14 +6283,8 @@ class InstallManager {
     recommended: boolean,
   ): IModRule | undefined {
     const state: IState = api.store.getState();
-    const rules: IModRule[] = getSafe(
-      state.persistent.mods,
-      [gameId, sourceModId, "rules"],
-      [],
-    );
-    const oldRule = rules.find((iter) =>
-      referenceEqual(iter.reference, dep.reference),
-    );
+    const rules: IModRule[] = getSafe(state.persistent.mods, [gameId, sourceModId, "rules"], []);
+    const oldRule = rules.find((iter) => referenceEqual(iter.reference, dep.reference));
 
     const type = recommended ? "recommends" : "requires";
 
@@ -7147,14 +6316,7 @@ class InstallManager {
       updatedRef.installerChoices = dep.installerChoices;
       updatedRef.patches = dep.patches;
       updatedRef.fileList = dep.fileList;
-      this.updateModRule(
-        api,
-        gameId,
-        sourceModId,
-        dep,
-        updatedRef,
-        recommended,
-      );
+      this.updateModRule(api, gameId, sourceModId, dep, updatedRef, recommended);
     });
     return Promise.resolve();
   }
@@ -7180,9 +6342,7 @@ class InstallManager {
 
     // get updated mod state
     const modState =
-      profile !== undefined
-        ? (api.getState().persistent.profiles[profile.id]?.modState ?? {})
-        : {};
+      profile !== undefined ? (api.getState().persistent.profiles[profile.id]?.modState ?? {}) : {};
 
     const mods = api.getState().persistent.mods?.[gameId] ?? {};
 
@@ -7199,8 +6359,7 @@ class InstallManager {
           if (
             mod === undefined ||
             !(modState[mod.id]?.enabled ?? false) ||
-            (!!mods[mod.id] &&
-              testModReference(mods[mod.id], modReference) !== true)
+            (!!mods[mod.id] && testModReference(mods[mod.id], modReference) !== true)
           ) {
             prev.success.push(dep as IDependency);
           } else {
@@ -7218,21 +6377,8 @@ class InstallManager {
     });
 
     if (silent && error.length === 0) {
-      return this.doInstallDependencies(
-        api,
-        gameId,
-        modId,
-        success,
-        false,
-        silent,
-      ).then((updated) =>
-        this.updateRules(
-          api,
-          gameId,
-          modId,
-          [].concat(existing, updated),
-          false,
-        ),
+      return this.doInstallDependencies(api, gameId, modId, success, false, silent).then(
+        (updated) => this.updateRules(api, gameId, modId, [].concat(existing, updated), false),
       );
     }
 
@@ -7242,30 +6388,15 @@ class InstallManager {
 
     const context = getBatchContext("install-dependencies", "", true);
 
-    return this.showMemoDialog(api, context, name, success, error).then(
-      (result) => {
-        if (result.action === "Install") {
-          return this.doInstallDependencies(
-            api,
-            gameId,
-            modId,
-            success,
-            false,
-            silent,
-          ).then((updated) =>
-            this.updateRules(
-              api,
-              gameId,
-              modId,
-              [].concat(existing, updated),
-              false,
-            ),
-          );
-        } else {
-          return Promise.resolve();
-        }
-      },
-    );
+    return this.showMemoDialog(api, context, name, success, error).then((result) => {
+      if (result.action === "Install") {
+        return this.doInstallDependencies(api, gameId, modId, success, false, silent).then(
+          (updated) => this.updateRules(api, gameId, modId, [].concat(existing, updated), false),
+        );
+      } else {
+        return Promise.resolve();
+      }
+    });
   }
 
   private showMemoDialog(
@@ -7301,20 +6432,14 @@ class InstallManager {
       if (requiredDownloads.length > 0) {
         list +=
           `[h4]${t("Require Download & Install")}[/h4]<br/>[list]` +
-          requiredDownloads
-            .map((mod) => "[*]" + renderModReference(mod.reference))
-            .join("\n") +
+          requiredDownloads.map((mod) => "[*]" + renderModReference(mod.reference)).join("\n") +
           "[/list]<br/>";
       }
-      const requireInstallOnly = requiredInstalls.filter(
-        (mod) => !requiredDownloads.includes(mod),
-      );
+      const requireInstallOnly = requiredInstalls.filter((mod) => !requiredDownloads.includes(mod));
       if (requireInstallOnly.length > 0) {
         list +=
           `[h4]${t("Require Install")}[/h4]<br/>[list]` +
-          requireInstallOnly
-            .map((mod) => "[*]" + renderModReference(mod.reference))
-            .join("\n") +
+          requireInstallOnly.map((mod) => "[*]" + renderModReference(mod.reference)).join("\n") +
           "[/list]<br/>";
       }
       if (requireEnableOnly.length > 0) {
@@ -7333,10 +6458,9 @@ class InstallManager {
       if (error.length > 0) {
         bbcode +=
           "[color=red]" +
-          t(
-            "{{modName}} has unsolved dependencies that could not be found automatically. ",
-            { replace: { modName: name } },
-          ) +
+          t("{{modName}} has unsolved dependencies that could not be found automatically. ", {
+            replace: { modName: name },
+          }) +
           t("Please install them manually") +
           ":<br/>" +
           "{{errors}}" +
@@ -7393,16 +6517,12 @@ class InstallManager {
 
   private addToPhaseStateCache = (api: IExtensionApi) => {
     return (download: IDownload) => {
-      const activeCollectionSession = getCollectionActiveSession(
-        api.getState(),
-      );
+      const activeCollectionSession = getCollectionActiveSession(api.getState());
       if (activeCollectionSession == null) {
         return;
       }
       this.ensurePhaseState(activeCollectionSession.collectionId);
-      const phaseState = this.mInstallPhaseState.get(
-        activeCollectionSession.collectionId,
-      );
+      const phaseState = this.mInstallPhaseState.get(activeCollectionSession.collectionId);
       if (phaseState === undefined) {
         return;
       }
@@ -7465,13 +6585,7 @@ class InstallManager {
     api.store.dispatch(startActivity("dependencies", "gathering"));
 
     log("debug", "installing dependencies", { modId, name });
-    return gatherDependencies(
-      filteredRules,
-      api,
-      false,
-      progress,
-      this.addToPhaseStateCache(api),
-    )
+    return gatherDependencies(filteredRules, api, false, progress, this.addToPhaseStateCache(api))
       .then((dependencies: IDependency[]) => {
         api.store.dispatch(stopActivity("dependencies", "gathering"));
         api.dismissNotification(notificationId);
@@ -7559,11 +6673,7 @@ class InstallManager {
               modName,
             },
           },
-          [
-            { label: "Skip" },
-            { label: "Manually Select" },
-            { label: "Install All" },
-          ],
+          [{ label: "Skip" }, { label: "Manually Select" }, { label: "Install All" }],
         ),
       ),
     );
@@ -7647,13 +6757,7 @@ class InstallManager {
       message: "Checking dependencies",
     });
     api.store.dispatch(startActivity("dependencies", "gathering"));
-    return gatherDependencies(
-      filteredRules,
-      api,
-      true,
-      undefined,
-      this.addToPhaseStateCache(api),
-    )
+    return gatherDependencies(filteredRules, api, true, undefined, this.addToPhaseStateCache(api))
       .then((dependencies: Dependency[]) => {
         api.store.dispatch(stopActivity("dependencies", "gathering"));
         if (dependencies.length === 0) {
@@ -7671,10 +6775,7 @@ class InstallManager {
               prev.error.push(dep as IDependencyError);
             } else {
               const { mod } = dep as IDependency;
-              if (
-                mod === undefined ||
-                !getSafe(profile?.modState, [mod.id, "enabled"], false)
-              ) {
+              if (mod === undefined || !getSafe(profile?.modState, [mod.id, "enabled"], false)) {
                 prev.success.push(dep as IDependency);
               } else {
                 prev.existing.push(dep as IDependency);
@@ -7692,8 +6793,7 @@ class InstallManager {
         const context = getBatchContext("install-recommendations", "", true);
         context.set<number>(
           "num-instructions",
-          success.filter((succ) => succ.extra?.["instructions"] !== undefined)
-            .length,
+          success.filter((succ) => succ.extra?.["instructions"] !== undefined).length,
         );
         const remember = context.get<boolean>("remember", null);
         let queryProm: Promise<IDependency[]> = Promise.resolve(success);
@@ -7718,39 +6818,24 @@ class InstallManager {
               }
               return success;
             } else {
-              return this.installRecommendationsQuerySelect(
-                api,
-                name,
-                success,
-              ).then((selectResult) => {
-                if (selectResult.action === "Continue") {
-                  return Object.keys(selectResult.input)
-                    .filter((key) => selectResult.input[key])
-                    .map((key) => success[parseInt(key, 10)]);
-                } else {
-                  return [];
-                }
-              });
+              return this.installRecommendationsQuerySelect(api, name, success).then(
+                (selectResult) => {
+                  if (selectResult.action === "Continue") {
+                    return Object.keys(selectResult.input)
+                      .filter((key) => selectResult.input[key])
+                      .map((key) => success[parseInt(key, 10)]);
+                  } else {
+                    return [];
+                  }
+                },
+              );
             }
           });
         }
 
         return queryProm.then((result) => {
-          return this.doInstallDependencies(
-            api,
-            gameId,
-            modId,
-            result,
-            true,
-            silent,
-          ).then((updated) =>
-            this.updateRules(
-              api,
-              gameId,
-              modId,
-              [].concat(existing, updated),
-              true,
-            ),
+          return this.doInstallDependencies(api, gameId, modId, result, true, silent).then(
+            (updated) => this.updateRules(api, gameId, modId, [].concat(existing, updated), true),
           );
         });
       })
@@ -7826,15 +6911,9 @@ class InstallManager {
         })(),
       );
     } else {
-      api.ext.showOverlay?.(
-        `install-instructions-${id}`,
-        title,
-        instructions,
-        undefined,
-        {
-          id,
-        },
-      );
+      api.ext.showOverlay?.(`install-instructions-${id}`, title, instructions, undefined, {
+        id,
+      });
 
       return Promise.resolve(cb());
     }
@@ -7863,10 +6942,7 @@ class InstallManager {
     const convertedGameId = convertGameIdReverse(games, downloadGame[0]);
     const pathGameId = convertedGameId || downloadGame[0];
 
-    let fullPath: string = path.join(
-      downloadPathForGame(state, pathGameId),
-      download.localPath,
-    );
+    let fullPath: string = path.join(downloadPathForGame(state, pathGameId), download.localPath);
 
     // If converted path doesn't exist and we have a different original ID, try original path
     if (convertedGameId && convertedGameId !== downloadGame[0]) {
@@ -7936,9 +7012,7 @@ class InstallManager {
     //  - link files in parallel with a bounded concurrency
     //  - if link fails (different fs, permission) fallback to copying
     //  - unlink sources in parallel after successful transfers
-    const sorted = copies
-      .slice()
-      .sort((a, b) => a.destination.length - b.destination.length);
+    const sorted = copies.slice().sort((a, b) => a.destination.length - b.destination.length);
     const dirs = new Set<string>();
     const jobs: Array<{ src: string; dst: string; rel: string }> = [];
     const missingFiles = new Set<string>();
@@ -7969,13 +7043,9 @@ class InstallManager {
       jobs.push({ src, dst, rel: copy.destination });
     }
     if (folderCopies.length > 0) {
-      log(
-        "warn",
-        "installer generated copy instructions for directories, these will be skipped",
-        {
-          directories: folderCopies,
-        },
-      );
+      log("warn", "installer generated copy instructions for directories, these will be skipped", {
+        directories: folderCopies,
+      });
     }
 
     const cpuCount = os && os.cpus ? Math.max(1, os.cpus().length) : 1;
@@ -7984,11 +7054,7 @@ class InstallManager {
 
     try {
       // create parent directories
-      await mapWithConcurrency(
-        Array.from(dirs),
-        (d) => fs.ensureDirAsync(d),
-        dirConcurrency,
-      );
+      await mapWithConcurrency(Array.from(dirs), (d) => fs.ensureDirAsync(d), dirConcurrency);
 
       // perform hard links in parallel; fallback to copy on failure
       await mapWithConcurrency(
@@ -8008,10 +7074,7 @@ class InstallManager {
               // failed install?) - remove it and fall back to copy
               await fs.removeAsync(job.dst);
               await copyAsyncWrap(job.src, job.dst);
-            } else if (
-              code &&
-              ["EXDEV", "EPERM", "EACCES", "ENOTSUP"].includes(code)
-            ) {
+            } else if (code && ["EXDEV", "EPERM", "EACCES", "ENOTSUP"].includes(code)) {
               await copyAsyncWrap(job.src, job.dst);
             } else {
               throw err;
@@ -8058,8 +7121,7 @@ class InstallManager {
   ): string | null {
     const relevantDownloads = Object.fromEntries(
       Object.entries(downloads).filter(
-        ([dlId, dl]) =>
-          dl.state === "finished" && dl.game.includes(reference.gameId),
+        ([dlId, dl]) => dl.state === "finished" && dl.game.includes(reference.gameId),
       ),
     );
     // Try the primary lookup first
@@ -8091,10 +7153,8 @@ class InstallManager {
         const altDownloadId = Object.keys(relevantDownloads).find((dlId) => {
           const download = relevantDownloads[dlId];
           return (
-            download.modInfo?.nexus?.ids?.modId?.toString() ===
-              modId.toString() &&
-            download.modInfo?.nexus?.ids?.fileId?.toString() ===
-              fileId.toString() &&
+            download.modInfo?.nexus?.ids?.modId?.toString() === modId.toString() &&
+            download.modInfo?.nexus?.ids?.fileId?.toString() === fileId.toString() &&
             download.state === "finished"
           );
         });
@@ -8108,8 +7168,8 @@ class InstallManager {
         const altDownloadId = Object.keys(relevantDownloads).find((dlId) => {
           const download = relevantDownloads[dlId];
           return (
-            download.modInfo?.nexus?.ids?.modId?.toString() ===
-              modId.toString() && download.state === "finished"
+            download.modInfo?.nexus?.ids?.modId?.toString() === modId.toString() &&
+            download.state === "finished"
           );
         });
         if (altDownloadId) {
@@ -8131,17 +7191,13 @@ class InstallManager {
         fileIdsSet.add(download.modInfo?.nexus?.ids?.fileId?.toString?.());
         nameSet.add(
           download.localPath
-            ? path.basename(
-                download.localPath,
-                path.extname(download.localPath),
-              )
+            ? path.basename(download.localPath, path.extname(download.localPath))
             : undefined,
         );
         const identifiers = {
           fileNames: Array.from(nameSet).filter((x) => x != null),
           fileIds: Array.from(fileIdsSet).filter((x) => x != null),
-          gameId:
-            download.modInfo?.nexus?.ids?.gameId || download.modInfo?.gameId,
+          gameId: download.modInfo?.nexus?.ids?.gameId || download.modInfo?.gameId,
           modId: download.modInfo?.nexus?.ids?.modId,
           fileId: download.modInfo?.nexus?.ids?.fileId,
         };

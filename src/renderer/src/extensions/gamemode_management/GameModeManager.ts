@@ -1,5 +1,12 @@
+import * as path from "path";
+
+import PromiseBB from "bluebird";
+import * as _ from "lodash";
+import type * as Redux from "redux";
+
 import { setNextProfile } from "../../actions";
 import { addNotification, showDialog } from "../../actions/notifications";
+import type { IExtensionDownloadInfo } from "../../types/extensions";
 import type { IDiscoveredTool } from "../../types/IDiscoveredTool";
 import type { IExtensionApi, ThunkStore } from "../../types/IExtensionContext";
 import type { IGame } from "../../types/IGame";
@@ -7,11 +14,7 @@ import type { GameEntryNotFound, IGameStore } from "../../types/IGameStore";
 import type { IState } from "../../types/IState";
 import type { ITool } from "../../types/ITool";
 import { getNormalizeFunc } from "../../util/api";
-import {
-  ProcessCanceled,
-  SetupError,
-  UserCanceled,
-} from "../../util/CustomErrors";
+import { ProcessCanceled, SetupError, UserCanceled } from "../../util/CustomErrors";
 import EpicGamesLauncher from "../../util/EpicGamesLauncher";
 import * as fs from "../../util/fs";
 import GameStoreHelper from "../../util/GameStoreHelper";
@@ -20,25 +23,10 @@ import { activeProfile, discoveryByGame } from "../../util/selectors";
 import Steam from "../../util/Steam";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, truthy } from "../../util/util";
-
-import type { IExtensionDownloadInfo } from "../../types/extensions";
 import { setPrimaryTool } from "../starter_dashlet/actions";
-
-import {
-  discoveryFinished,
-  discoveryProgress,
-  setPhaseCount,
-} from "./actions/discovery";
-import {
-  clearGameDisabled,
-  setGameDisabled,
-  setKnownGames,
-} from "./actions/session";
-import {
-  addDiscoveredGame,
-  addDiscoveredTool,
-  clearDiscoveredGame,
-} from "./actions/settings";
+import { discoveryFinished, discoveryProgress, setPhaseCount } from "./actions/discovery";
+import { clearGameDisabled, setGameDisabled, setKnownGames } from "./actions/session";
+import { addDiscoveredGame, addDiscoveredTool, clearDiscoveredGame } from "./actions/settings";
 import type { IDiscoveryResult } from "./types/IDiscoveryResult";
 import type { IGameStored } from "./types/IGameStored";
 import type { IToolStored } from "./types/IToolStored";
@@ -50,11 +38,6 @@ import {
   searchDiscovery,
 } from "./util/discovery";
 import { getGame } from "./util/getGame";
-
-import PromiseBB from "bluebird";
-import * as _ from "lodash";
-import * as path from "path";
-import type * as Redux from "redux";
 
 export interface IGameStub {
   ext: IExtensionDownloadInfo;
@@ -118,11 +101,7 @@ class GameModeManager {
    *
    * @memberOf GameModeManager
    */
-  public setGameMode(
-    oldMode: string,
-    newMode: string,
-    profileId: string,
-  ): PromiseBB<void> {
+  public setGameMode(oldMode: string, newMode: string, profileId: string): PromiseBB<void> {
     log("debug", "set game mode", { oldMode, newMode });
     const game = this.mKnownGames.find((knownGame) => knownGame.id === newMode);
     const discoveredGames = this.mStore.getState().settings.gameMode.discovered;
@@ -165,11 +144,8 @@ class GameModeManager {
           this.mOnGameModeActivated(newMode);
           const { gameId } = currentProfile;
           if (
-            getSafe(
-              state,
-              ["settings", "interface", "primaryTool", gameId],
-              undefined,
-            ) === undefined
+            getSafe(state, ["settings", "interface", "primaryTool", gameId], undefined) ===
+            undefined
           ) {
             const discovery = discoveryByGame(state, gameId);
             if (truthy(discovery.tools)) {
@@ -187,9 +163,7 @@ class GameModeManager {
       })
       .catch((err) => {
         return ["ENOENT", "ENOTFOUND"].includes(err.code)
-          ? PromiseBB.reject(
-              new SetupError("Missing: " + (err.filename || modPath)),
-            )
+          ? PromiseBB.reject(new SetupError("Missing: " + (err.filename || modPath)))
           : PromiseBB.reject(err);
       });
   }
@@ -204,8 +178,7 @@ class GameModeManager {
    */
   public setupGameMode(gameMode: string): PromiseBB<void> {
     const game = getGame(gameMode);
-    const gameDiscovery =
-      this.mStore.getState().settings.gameMode.discovered[gameMode];
+    const gameDiscovery = this.mStore.getState().settings.gameMode.discovered[gameMode];
 
     log("debug", "setup game mode", gameMode);
     if (gameDiscovery?.path === undefined) {
@@ -219,9 +192,7 @@ class GameModeManager {
       // situation.
       return PromiseBB.reject(new ProcessCanceled("game not discovered"));
     } else if (game?.setup === undefined) {
-      return game
-        .getInstalledVersion(gameDiscovery)
-        .then(() => PromiseBB.resolve());
+      return game.getInstalledVersion(gameDiscovery).then(() => PromiseBB.resolve());
     } else {
       try {
         return (
@@ -292,15 +263,9 @@ class GameModeManager {
   public startToolDiscovery(gameId: string) {
     const game = this.mKnownGames.find((iter) => iter.id === gameId);
     if (game !== undefined) {
-      const discoveredGames =
-        this.mStore.getState().settings.gameMode.discovered;
-      const discovery =
-        this.mStore.getState().settings.gameMode.discovered[game.id];
-      return quickDiscoveryTools(
-        gameId,
-        game.supportedTools,
-        this.onDiscoveredTool,
-      )
+      const discoveredGames = this.mStore.getState().settings.gameMode.discovered;
+      const discovery = this.mStore.getState().settings.gameMode.discovered[game.id];
+      return quickDiscoveryTools(gameId, game.supportedTools, this.onDiscoveredTool)
         .then(() => getNormalizeFunc(discovery.path))
         .then((normalize) =>
           discoverRelativeTools(
@@ -332,9 +297,7 @@ class GameModeManager {
     const state: IState = this.mStore.getState();
 
     if (!Array.isArray(searchPaths)) {
-      throw new Error(
-        "invalid search paths: " + require("util").inspect(searchPaths),
-      );
+      throw new Error("invalid search paths: " + require("util").inspect(searchPaths));
     }
 
     if (state.session.discovery.running) {
@@ -371,9 +334,7 @@ class GameModeManager {
             replace: {
               searched: directoriesRead,
               numDiscovered,
-              numTotal: Object.values(discovered).filter(
-                (iter) => iter.path !== undefined,
-              ).length,
+              numTotal: Object.values(discovered).filter((iter) => iter.path !== undefined).length,
             },
             displayMS: 10000,
           }),
@@ -416,8 +377,7 @@ class GameModeManager {
             game.overrides.forEach((override) => {
               if (
                 discovered[override]?.path !== undefined &&
-                normalize(discovered[override].path) ===
-                  normalize(discovery.path)
+                normalize(discovered[override].path) === normalize(discovery.path)
               ) {
                 this.mStore.dispatch(setGameDisabled(override, gameId));
               }
@@ -467,9 +427,7 @@ class GameModeManager {
 
   private isValidGame(game: IGameStored): boolean {
     return (
-      game.executable !== undefined &&
-      game.requiredFiles !== undefined &&
-      game.name !== undefined
+      game.executable !== undefined && game.requiredFiles !== undefined && game.name !== undefined
     );
   }
 
@@ -483,9 +441,7 @@ class GameModeManager {
       parameters: game.parameters || [],
       requiredFiles: game.requiredFiles,
       supportedTools:
-        game.supportedTools !== undefined
-          ? game.supportedTools.map(this.storeTool)
-          : [],
+        game.supportedTools !== undefined ? game.supportedTools.map(this.storeTool) : [],
       executable: game.executable(),
       environment: game.environment,
       details: game.details,

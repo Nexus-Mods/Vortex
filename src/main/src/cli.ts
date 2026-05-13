@@ -1,9 +1,9 @@
-import type { IParameters, ISetItem } from "@vortex/shared/cli";
-
-import program from "commander";
-import { app, BrowserWindow } from "electron";
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+
+import type { IParameters, ISetItem } from "@vortex/shared/cli";
+import program from "commander";
+import { app, BrowserWindow } from "electron";
 
 import { getVortexPath } from "./getVortexPath";
 import { log } from "./logging";
@@ -31,8 +31,7 @@ const ARG_COUNTS: Record<string, number> = {
   "--user-data": 1,
 };
 
-const electronExecutable =
-  process.platform === "win32" ? "electron.exe" : "electron";
+const electronExecutable = process.platform === "win32" ? "electron.exe" : "electron";
 
 // Chrome rearranges the command line parameters it passes to processes it spawns internally
 // by putting switches (--foo) first, arguments (bar) after.
@@ -46,9 +45,7 @@ const electronExecutable =
 // switches expect an argument and as long as the
 // command line passed in is valid, we should be able to reconstruct it.
 function electronIsShitArgumentSort(argv: string[]): string[] {
-  const firstArgumentIdx = argv.findIndex(
-    (arg, idx) => idx > 1 && !arg.startsWith("-"),
-  );
+  const firstArgumentIdx = argv.findIndex((arg, idx) => idx > 1 && !arg.startsWith("-"));
   const switches = argv.slice(1, firstArgumentIdx - 1);
   const args = argv.slice(firstArgumentIdx);
   let nextArg = 0;
@@ -169,9 +166,7 @@ export function getStartupSettings(): IParameters {
   }
 }
 
-export function updateStartupSettings(
-  updater: (current: IParameters) => IParameters,
-): void {
+export function updateStartupSettings(updater: (current: IParameters) => IParameters): void {
   const filePath = getStartupSettingsPath();
   const current = getStartupSettings();
   const updated = updater(current);
@@ -179,10 +174,7 @@ export function updateStartupSettings(
   writeFileSync(filePath, json);
 }
 
-export function parseCommandline(
-  argv: string[],
-  electronIsShitHack: boolean,
-): IParameters {
+export function parseCommandline(argv: string[], electronIsShitHack: boolean): IParameters {
   // lets look and replace epic stuff?!
   argv = transformEpicArguments(argv);
 
@@ -207,8 +199,7 @@ export function parseCommandline(
     .version(version)
     .option(
       "-d, --download <url>",
-      "Start downloading the specified url " +
-        "(any supported protocol like nxm:, https:, ...).",
+      "Start downloading the specified url " + "(any supported protocol like nxm:, https:, ...).",
     )
     .option(
       "-i, --install <url>",
@@ -263,10 +254,7 @@ export function parseCommandline(
       "Maximum amount of memory Vortex may use in MB " + "(defaults to 4096)",
     )
     .option("--inspector", "Start Vortex with the chrome inspector opened")
-    .option(
-      "--profile <profile id>",
-      "Start Vortex with a specific profile active",
-    )
+    .option("--profile <profile id>", "Start Vortex with a specific profile active")
     .option("--epic-auth-login <login>")
     .option("--epic-auth-password <password>")
     .option("--epic-auth-type <type>")

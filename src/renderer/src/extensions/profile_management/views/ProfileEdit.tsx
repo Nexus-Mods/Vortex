@@ -2,13 +2,12 @@ import update from "immutability-helper";
 import * as React from "react";
 import { FormControl, ListGroupItem, Panel } from "react-bootstrap";
 
-import type { IProfile } from "../types/IProfile";
-import type { IProfileFeature } from "../types/IProfileFeature";
-
 import { ComponentEx } from "../../../controls/ComponentEx";
 import Toggle from "../../../controls/Toggle";
 import { Button } from "../../../controls/TooltipControls";
 import { getSafe, setSafe } from "../../../util/storeHelper";
+import type { IProfile } from "../types/IProfile";
+import type { IProfileFeature } from "../types/IProfileFeature";
 
 const MIN_PROFILE_NAME_LENGTH = 3;
 
@@ -85,9 +84,7 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
     return (
       <Panel className="profile-edit-panel">
         <Panel.Body>
-          {profile === undefined
-            ? t("Create a new profile")
-            : t("Edit profile")}
+          {profile === undefined ? t("Create a new profile") : t("Edit profile")}
 
           <ListGroupItem key={profileId}>
             <div className="inline-form">

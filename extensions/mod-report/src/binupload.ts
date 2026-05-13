@@ -1,9 +1,11 @@
-import Base58 from "bs58";
 import * as crypto from "crypto";
 import * as http from "http";
 import * as https from "https";
-import { log, util } from "vortex-api";
 import { deflateRaw } from "zlib";
+
+import Base58 from "bs58";
+import { log, util } from "vortex-api";
+
 import { PRIVATEBIN_HOST } from "./constants";
 import format, { FormatterMarkdown } from "./format";
 import { IReport } from "./IReport";
@@ -15,15 +17,7 @@ type TagSize = 32 | 64 | 96 | 104 | 112 | 120 | 128;
 type Compression = "zlib" | "none";
 type Format = "plaintext" | "syntaxhighlighting" | "markdown";
 // not sure what options exist
-type ExpireTime =
-  | "5min"
-  | "10min"
-  | "1hour"
-  | "1day"
-  | "1week"
-  | "1month"
-  | "1year"
-  | "never";
+type ExpireTime = "5min" | "10min" | "1hour" | "1day" | "1week" | "1month" | "1year" | "never";
 
 type InitializationVector = string;
 type Salt = string;
@@ -108,23 +102,12 @@ async function doRequest(data: any): Promise<string> {
   });
 }
 
-async function cipherText(
-  cipher: crypto.CipherGCM,
-  data: crypto.BinaryLike,
-): Promise<Buffer> {
-  const compressed = await (util as any).toPromise((cb) =>
-    deflateRaw(data, cb),
-  );
-  return Buffer.concat([
-    cipher.update(compressed),
-    cipher.final(),
-    cipher.getAuthTag(),
-  ]);
+async function cipherText(cipher: crypto.CipherGCM, data: crypto.BinaryLike): Promise<Buffer> {
+  const compressed = await (util as any).toPromise((cb) => deflateRaw(data, cb));
+  return Buffer.concat([cipher.update(compressed), cipher.final(), cipher.getAuthTag()]);
 }
 
-async function binUpload(
-  report: IReport,
-): Promise<{ id: string; url: string }> {
+async function binUpload(report: IReport): Promise<{ id: string; url: string }> {
   let formatted = format(new FormatterMarkdown(), report);
   // the privatebin pages have a footer with no visual separation from the content so
   // we append a horizontal line to work around that

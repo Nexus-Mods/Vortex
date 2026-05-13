@@ -7,10 +7,7 @@ interface NotificationContentProps {
   lines: string[];
 }
 
-export const NotificationContent: FC<NotificationContentProps> = ({
-  title,
-  lines,
-}) => {
+export const NotificationContent: FC<NotificationContentProps> = ({ title, lines }) => {
   return (
     <Typography appearance="moderate" as="div" typographyType="body-sm">
       {!!title && <p className="font-semibold">{title}</p>}

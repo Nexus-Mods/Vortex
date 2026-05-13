@@ -1,29 +1,25 @@
+import * as path from "path";
+
+import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
 import PromiseBB from "bluebird";
 // we don't want errors from this function to be reported to the user, there is
 // sensible fallbacks for if fs calls fail
 import * as fsOrig from "fs-extra";
-import * as path from "path";
+
 import { restackErr } from "./util";
-import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
 
 export type Normalize = (input: string) => string;
 
-function genNormalizeSeparator(
-  func: (input: string) => string,
-): (input: string) => string {
+function genNormalizeSeparator(func: (input: string) => string): (input: string) => string {
   const sepRE = /\//g;
   return (input: string) => func(input).replace(sepRE, path.sep);
 }
 
-function genNormalizeUnicode(
-  func: (input: string) => string,
-): (input: string) => string {
+function genNormalizeUnicode(func: (input: string) => string): (input: string) => string {
   return (input: string) => func(input).normalize();
 }
 
-function genNormalizeRelative(
-  func: (input: string) => string,
-): (input: string) => string {
+function genNormalizeRelative(func: (input: string) => string): (input: string) => string {
   return (input: string) => path.normalize(func(input)).replace(/[\\/]$/, "");
 }
 
@@ -40,10 +36,7 @@ export interface INormalizeParameters {
   relative?: boolean;
 }
 
-function isCaseSensitiveFailed(
-  testPath: string,
-  reason: string,
-): PromiseBB<boolean> {
+function isCaseSensitiveFailed(testPath: string, reason: string): PromiseBB<boolean> {
   if (testPath === undefined) {
     return PromiseBB.resolve(process.platform !== "win32");
   }
@@ -71,10 +64,8 @@ function isCaseSensitive(testPath: string): PromiseBB<boolean> {
 
       // to find out if case sensitive, stat the file itself and the upper and lower case variants.
       // if they are all the same file, it's case insensitive
-      return PromiseBB.map(
-        [fileName, fileName.toLowerCase(), fileName.toUpperCase()],
-        (file) =>
-          PromiseBB.resolve(fsOrig.stat(path.join(testPath, file))).reflect(),
+      return PromiseBB.map([fileName, fileName.toLowerCase(), fileName.toUpperCase()], (file) =>
+        PromiseBB.resolve(fsOrig.stat(path.join(testPath, file))).reflect(),
       );
     })
     .then((stats: Array<PromiseBB.Inspection<fsOrig.Stats>>) => {
@@ -121,9 +112,7 @@ function getNormalizeFunc(
 
   return isCaseSensitive(testPath)
     .then((caseSensitive) => {
-      let funcOut = caseSensitive
-        ? (input: string) => input
-        : genNormalizeCase();
+      let funcOut = caseSensitive ? (input: string) => input : genNormalizeCase();
 
       if (parameters["separators"] !== false && process.platform === "win32") {
         funcOut = genNormalizeSeparator(funcOut);
@@ -208,10 +197,7 @@ class NormalizationHandler<T extends object> {
  * creates a proxy for a dictionary that makes all key access normalized with the specified
  * normalization function
  */
-export function makeNormalizingDict<T extends object>(
-  input: T,
-  normalize: Normalize,
-): T {
+export function makeNormalizingDict<T extends object>(input: T, normalize: Normalize): T {
   return new Proxy(input, new NormalizationHandler(input, normalize));
 }
 

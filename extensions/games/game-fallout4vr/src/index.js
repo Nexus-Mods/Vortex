@@ -9,9 +9,7 @@ Ignore the Meshes\AnimTextData\AnimationOffsets\PersistantSubgraphInfoAndOffsetD
 It's present in a lot of weapon mods but doesn't matter if it's overwritten. 
 This issue is compounded by users extracting all their BA2s. 
 */
-const IGNORED_FILES = [
-  path.join("**", "PersistantSubgraphInfoAndOffsetData.txt"),
-];
+const IGNORED_FILES = [path.join("**", "PersistantSubgraphInfoAndOffsetData.txt")];
 
 function findGame() {
   try {

@@ -2,9 +2,7 @@ const path = require("path");
 const { fs, util } = require("vortex-api");
 
 function findGame() {
-  return util.steam
-    .findByName("Shadowrun Returns")
-    .then((game) => game.gamePath);
+  return util.steam.findByName("Shadowrun Returns").then((game) => game.gamePath);
 }
 
 function modPath() {
@@ -12,9 +10,7 @@ function modPath() {
 }
 
 function prepareForModding(discovery) {
-  return fs.ensureDirWritableAsync(path.join(discovery.path, modPath()), () =>
-    Promise.resolve(),
-  );
+  return fs.ensureDirWritableAsync(path.join(discovery.path, modPath()), () => Promise.resolve());
 }
 const supportedTools = [
   {

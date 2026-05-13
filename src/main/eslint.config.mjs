@@ -12,11 +12,7 @@ export default defineConfig([
 
   {
     files: ["src/**/*.ts"],
-    extends: [
-      eslint.configs.recommended,
-      tseslint.configs.recommendedTypeChecked,
-      prettierConfig,
-    ],
+    extends: [eslint.configs.recommended, tseslint.configs.recommendedTypeChecked, prettierConfig],
     languageOptions: {
       globals: { ...globals.node },
       parserOptions: {
@@ -56,11 +52,7 @@ export default defineConfig([
 
   {
     files: ["*.mjs"],
-    extends: [
-      eslint.configs.recommended,
-      tseslint.configs.recommended,
-      prettierConfig,
-    ],
+    extends: [eslint.configs.recommended, tseslint.configs.recommended, prettierConfig],
     languageOptions: {
       globals: { ...globals.node },
     },

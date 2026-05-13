@@ -1,5 +1,4 @@
 import type { IPersistor, PersistorKey } from "@vortex/shared/state";
-
 import { describe, it, expect, vi } from "vitest";
 
 import SubPersistor from "./SubPersistor";

@@ -1,5 +1,6 @@
 /** eslint-disable */
 import path from "path";
+
 import { generate } from "shortid";
 import turbowalk, { IEntry } from "turbowalk";
 import { fs, log, types, util } from "vortex-api";
@@ -15,9 +16,7 @@ export class CollectionGenerateError extends Error {
 
 export class CollectionParseError extends Error {
   constructor(collectionName: string, why: string) {
-    super(
-      `Failed to parse game specific data for collection ${collectionName}: ${why}`,
-    );
+    super(`Failed to parse game specific data for collection ${collectionName}: ${why}`);
     this.name = "CollectionGenerateError";
   }
 }
@@ -32,9 +31,7 @@ export function isModInCollection(collectionMod: types.IMod, mod: types.IMod) {
   }
 
   return (
-    collectionMod.rules.find((rule) =>
-      util.testModReference(mod, rule.reference),
-    ) !== undefined
+    collectionMod.rules.find((rule) => util.testModReference(mod, rule.reference)) !== undefined
   );
 }
 
@@ -49,8 +46,7 @@ export function genCollectionLoadOrder(
       return (
         isLocked ||
         (collection !== undefined
-          ? isValidMod(mods[entry.modId]) &&
-            isModInCollection(collection, mods[entry.modId])
+          ? isValidMod(mods[entry.modId]) && isModInCollection(collection, mods[entry.modId])
           : isValidMod(mods[entry.modId]))
       );
     })
@@ -69,9 +65,7 @@ export async function walkDirPath(dirPath: string): Promise<IEntry[]> {
   })
     .catch({ systemCode: 3 }, () => Promise.resolve())
     .catch((err) =>
-      ["ENOTFOUND", "ENOENT"].includes(err.code)
-        ? Promise.resolve()
-        : Promise.reject(err),
+      ["ENOTFOUND", "ENOENT"].includes(err.code) ? Promise.resolve() : Promise.reject(err),
     );
 
   return fileEntries;
@@ -108,10 +102,7 @@ export async function cleanUpEntries(fileEntries: IEntry[]) {
   }
 }
 
-export async function restoreFileData(
-  fileData: Buffer,
-  destination: string,
-): Promise<void> {
+export async function restoreFileData(fileData: Buffer, destination: string): Promise<void> {
   const sevenZip = new util.SevenZip();
   let archivePath;
   let fileEntries: IEntry[] = [];
@@ -119,10 +110,7 @@ export async function restoreFileData(
     await fs.ensureDirWritableAsync(W3_TEMP_DATA_DIR);
     archivePath = path.join(W3_TEMP_DATA_DIR, generate() + ".zip");
     await fs.writeFileAsync(archivePath, fileData);
-    const targetDirPath = path.join(
-      W3_TEMP_DATA_DIR,
-      path.basename(archivePath, ".zip"),
-    );
+    const targetDirPath = path.join(W3_TEMP_DATA_DIR, path.basename(archivePath, ".zip"));
     await sevenZip.extractFull(archivePath, targetDirPath);
     fileEntries = await walkDirPath(targetDirPath);
     for (const entry of fileEntries) {

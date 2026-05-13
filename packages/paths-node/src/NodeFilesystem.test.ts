@@ -5,9 +5,9 @@
 import { Buffer } from "node:buffer";
 import { join, sep } from "node:path";
 
-import { describe, test, expect, vi, beforeEach } from "vitest";
 import type { IFilesystem } from "@vortex/paths";
 import { FileEntry, ResolvedPath, RelativePath } from "@vortex/paths";
+import { describe, test, expect, vi, beforeEach } from "vitest";
 
 type MockDirent = {
   name: string;
@@ -45,39 +45,17 @@ const fsExtraMocks = vi.hoisted(() => ({
         options?: { encoding: BufferEncoding },
       ) => Promise<void>
     >(),
-  copy: vi.fn<
-    (
-      src: string,
-      dest: string,
-      options: { overwrite: boolean },
-    ) => Promise<void>
-  >(),
+  copy: vi.fn<(src: string, dest: string, options: { overwrite: boolean }) => Promise<void>>(),
   ensureDir: vi.fn<(dirPath: string) => Promise<void>>(),
   // Metadata lookups. `stat` follows symlinks, `lstat` does not.
   lstat: vi.fn<(filePath: string) => Promise<MockStat>>(),
   mkdir:
-    vi.fn<
-      (
-        dirPath: string,
-        options?: { recursive?: boolean; mode?: number },
-      ) => Promise<void>
-    >(),
+    vi.fn<(dirPath: string, options?: { recursive?: boolean; mode?: number }) => Promise<void>>(),
   pathExists: vi.fn<(filePath: string) => Promise<boolean>>(),
   readFile:
-    vi.fn<
-      (
-        filePath: string,
-        options?: { encoding: BufferEncoding },
-      ) => Promise<string | Buffer>
-    >(),
+    vi.fn<(filePath: string, options?: { encoding: BufferEncoding }) => Promise<string | Buffer>>(),
   // Directory listing returns mocked dirents, then the tests pair them with `stat`.
-  readdir:
-    vi.fn<
-      (
-        dirPath: string,
-        options: { withFileTypes: true },
-      ) => Promise<MockDirent[]>
-    >(),
+  readdir: vi.fn<(dirPath: string, options: { withFileTypes: true }) => Promise<MockDirent[]>>(),
   remove: vi.fn<(dirPath: string) => Promise<void>>(),
   rename: vi.fn<(src: string, dest: string) => Promise<void>>(),
   rmdir: vi.fn<(dirPath: string) => Promise<void>>(),
@@ -131,10 +109,7 @@ function makeMockStat(
 /**
  * Builds the small `Dirent` shape used by the `readdir` tests.
  */
-function makeMockDirent(
-  name: string,
-  type: "file" | "dir" | "link",
-): MockDirent {
+function makeMockDirent(name: string, type: "file" | "dir" | "link"): MockDirent {
   return {
     name,
     isFile: vi.fn(() => type === "file"),
@@ -170,18 +145,15 @@ describe("NodeFilesystem", () => {
 
   describe("normalizePath", () => {
     test("uses Windows or Unix separators when normalizing", () => {
-      const input =
-        nodeFs.platform === "windows" ? "c:/foo//bar/./baz" : "/foo//bar/./baz";
-      const expected =
-        nodeFs.platform === "windows" ? "c:\\foo\\bar\\baz" : "/foo/bar/baz";
+      const input = nodeFs.platform === "windows" ? "c:/foo//bar/./baz" : "/foo//bar/./baz";
+      const expected = nodeFs.platform === "windows" ? "c:\\foo\\bar\\baz" : "/foo/bar/baz";
 
       expect(nodeFs.normalizePath(input)).toBe(expected);
     });
 
     test("lowercases on Windows but preserves case on Unix", () => {
       const input = nodeFs.platform === "windows" ? "C:/Foo/Bar" : "/Foo/Bar";
-      const expected =
-        nodeFs.platform === "windows" ? "c:\\foo\\bar" : "/Foo/Bar";
+      const expected = nodeFs.platform === "windows" ? "c:\\foo\\bar" : "/Foo/Bar";
 
       expect(nodeFs.normalizePath(input)).toBe(expected);
     });
@@ -191,10 +163,7 @@ describe("NodeFilesystem", () => {
     test("reads file with encoding", async () => {
       fsExtraMocks.readFile.mockResolvedValue("file content");
 
-      const result = await nodeFs.readFile(
-        ResolvedPath.make("/test/file.txt"),
-        "utf8",
-      );
+      const result = await nodeFs.readFile(ResolvedPath.make("/test/file.txt"), "utf8");
 
       expect(result).toBe("file content");
       expect(fsExtraMocks.readFile).toHaveBeenCalledWith("/test/file.txt", {
@@ -205,9 +174,7 @@ describe("NodeFilesystem", () => {
     test("defaults to utf8 when encoding is omitted", async () => {
       fsExtraMocks.readFile.mockResolvedValue("default content");
 
-      const result = await nodeFs.readFile(
-        ResolvedPath.make("/test/default.txt"),
-      );
+      const result = await nodeFs.readFile(ResolvedPath.make("/test/default.txt"));
 
       expect(result).toBe("default content");
       expect(fsExtraMocks.readFile).toHaveBeenCalledWith("/test/default.txt", {
@@ -219,10 +186,7 @@ describe("NodeFilesystem", () => {
       const buffer = Buffer.from("binary data");
       fsExtraMocks.readFile.mockResolvedValue(buffer);
 
-      const result = await nodeFs.readFile(
-        ResolvedPath.make("/test/file.bin"),
-        null,
-      );
+      const result = await nodeFs.readFile(ResolvedPath.make("/test/file.bin"), null);
 
       expect(result).toBeInstanceOf(Uint8Array);
       expect(Buffer.from(result)).toEqual(buffer);
@@ -235,22 +199,16 @@ describe("NodeFilesystem", () => {
       fsExtraMocks.ensureDir.mockResolvedValue(undefined);
       fsExtraMocks.writeFile.mockResolvedValue(undefined);
 
-      await nodeFs.writeFile(
-        ResolvedPath.make("/test/dir/file.txt"),
-        "content",
-        "utf8",
-      );
+      await nodeFs.writeFile(ResolvedPath.make("/test/dir/file.txt"), "content", "utf8");
 
       // `writeFile` makes sure the parent folder exists first.
       expect(fsExtraMocks.ensureDir).toHaveBeenCalledWith("/test/dir");
       expect(fsExtraMocks.ensureDir.mock.invocationCallOrder[0]).toBeLessThan(
         fsExtraMocks.writeFile.mock.invocationCallOrder[0],
       );
-      expect(fsExtraMocks.writeFile).toHaveBeenCalledWith(
-        "/test/dir/file.txt",
-        "content",
-        { encoding: "utf8" },
-      );
+      expect(fsExtraMocks.writeFile).toHaveBeenCalledWith("/test/dir/file.txt", "content", {
+        encoding: "utf8",
+      });
     });
 
     test("writes without encoding option when not provided", async () => {
@@ -259,11 +217,7 @@ describe("NodeFilesystem", () => {
 
       await nodeFs.writeFile(ResolvedPath.make("/test/file.txt"), "content");
 
-      expect(fsExtraMocks.writeFile).toHaveBeenCalledWith(
-        "/test/file.txt",
-        "content",
-        undefined,
-      );
+      expect(fsExtraMocks.writeFile).toHaveBeenCalledWith("/test/file.txt", "content", undefined);
     });
 
     test("does not write when ensuring the parent dir fails", async () => {
@@ -282,17 +236,11 @@ describe("NodeFilesystem", () => {
     test("appends data to file", async () => {
       fsExtraMocks.appendFile.mockResolvedValue(undefined);
 
-      await nodeFs.appendFile(
-        ResolvedPath.make("/test/file.txt"),
-        "more data",
-        "utf8",
-      );
+      await nodeFs.appendFile(ResolvedPath.make("/test/file.txt"), "more data", "utf8");
 
-      expect(fsExtraMocks.appendFile).toHaveBeenCalledWith(
-        "/test/file.txt",
-        "more data",
-        { encoding: "utf8" },
-      );
+      expect(fsExtraMocks.appendFile).toHaveBeenCalledWith("/test/file.txt", "more data", {
+        encoding: "utf8",
+      });
     });
   });
 
@@ -308,10 +256,7 @@ describe("NodeFilesystem", () => {
 
   describe("readdir", () => {
     test("returns file entries with correct types", async () => {
-      const dirEntries = [
-        makeMockDirent("file.txt", "file"),
-        makeMockDirent("subdir", "dir"),
-      ];
+      const dirEntries = [makeMockDirent("file.txt", "file"), makeMockDirent("subdir", "dir")];
       fsExtraMocks.readdir.mockResolvedValue(dirEntries);
 
       // `readdir` provides names and coarse types, while `stat` fills in metadata.
@@ -331,9 +276,7 @@ describe("NodeFilesystem", () => {
         size: 0,
         mode: 0o755,
       });
-      fsExtraMocks.stat
-        .mockResolvedValueOnce(fileStat)
-        .mockResolvedValueOnce(dirStat);
+      fsExtraMocks.stat.mockResolvedValueOnce(fileStat).mockResolvedValueOnce(dirStat);
 
       const results = await nodeFs.readdir(ResolvedPath.make("/test/dir"));
 
@@ -367,9 +310,7 @@ describe("NodeFilesystem", () => {
       fsExtraMocks.readdir.mockResolvedValue(dirEntries);
 
       // `stat` follows the link target, while `Dirent` preserves the link bit.
-      fsExtraMocks.stat.mockResolvedValue(
-        makeMockStat({ isFile: true, size: 50 }),
-      );
+      fsExtraMocks.stat.mockResolvedValue(makeMockStat({ isFile: true, size: 50 }));
 
       const results = await nodeFs.readdir(ResolvedPath.make("/test/dir"));
 
@@ -477,9 +418,7 @@ describe("NodeFilesystem", () => {
 
   describe("lstat", () => {
     test("stat follows the target while lstat reports the link", async () => {
-      fsExtraMocks.stat.mockResolvedValue(
-        makeMockStat({ isFile: true, size: 50 }),
-      );
+      fsExtraMocks.stat.mockResolvedValue(makeMockStat({ isFile: true, size: 50 }));
       const linkStat = makeMockStat({
         isSymbolicLink: true,
         isFile: false,
@@ -518,11 +457,7 @@ describe("NodeFilesystem", () => {
         options,
       );
 
-      expect(fsExtraMocks.copy).toHaveBeenCalledWith(
-        "/test/src.txt",
-        "/test/dest.txt",
-        expected,
-      );
+      expect(fsExtraMocks.copy).toHaveBeenCalledWith("/test/src.txt", "/test/dest.txt", expected);
     });
   });
 
@@ -530,15 +465,9 @@ describe("NodeFilesystem", () => {
     test("renames file", async () => {
       fsExtraMocks.rename.mockResolvedValue(undefined);
 
-      await nodeFs.rename(
-        ResolvedPath.make("/test/old.txt"),
-        ResolvedPath.make("/test/new.txt"),
-      );
+      await nodeFs.rename(ResolvedPath.make("/test/old.txt"), ResolvedPath.make("/test/new.txt"));
 
-      expect(fsExtraMocks.rename).toHaveBeenCalledWith(
-        "/test/old.txt",
-        "/test/new.txt",
-      );
+      expect(fsExtraMocks.rename).toHaveBeenCalledWith("/test/old.txt", "/test/new.txt");
     });
   });
 

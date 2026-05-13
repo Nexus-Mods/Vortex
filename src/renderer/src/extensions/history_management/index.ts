@@ -1,21 +1,13 @@
 import type { Action } from "redux";
 import { generate as shortid } from "shortid";
+
 import { showDialog } from "../../actions";
-import type {
-  IExtensionApi,
-  IExtensionContext,
-} from "../../types/IExtensionContext";
+import type { IExtensionApi, IExtensionContext } from "../../types/IExtensionContext";
 import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
 import Debouncer from "../../util/Debouncer";
 import local from "../../util/local";
 import { batchDispatch } from "../../util/util";
-
-import {
-  addHistoryEvent,
-  markHistoryReverted,
-  setHistoryEvent,
-  showHistory,
-} from "./actions";
+import { addHistoryEvent, markHistoryReverted, setHistoryEvent, showHistory } from "./actions";
 import HistoryDialog from "./HistoryDialog";
 import { persistentReducer, sessionReducer } from "./reducers";
 import type { IHistoryEvent, IHistoryStack } from "./types";
@@ -61,15 +53,8 @@ function makeAddToHistory(api: IExtensionApi) {
   };
 }
 
-function onErrorImpl(
-  api: IExtensionApi,
-  err: Error,
-  evt: IHistoryEvent,
-  stackId: string,
-) {
-  const allowReport = !(
-    err instanceof ProcessCanceled || err instanceof UserCanceled
-  );
+function onErrorImpl(api: IExtensionApi, err: Error, evt: IHistoryEvent, stackId: string) {
+  const allowReport = !(err instanceof ProcessCanceled || err instanceof UserCanceled);
   api.showErrorNotification("Failed to revert event", err, { allowReport });
   if (evt.reverted) {
     api.store.dispatch(setHistoryEvent(stackId, { ...evt, reverted: false }));

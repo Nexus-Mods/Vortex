@@ -1,17 +1,16 @@
+import * as https from "https";
+
 /**
  * Adapts SMAPI.io compatibility data into Vortex modmeta lookup responses.
  */
 import type { IFileInfo } from "@nexusmods/nexus-api";
 import type { ILookupResult, IQuery } from "modmeta-db";
-import type { types } from "vortex-api";
-
-import * as https from "https";
 import * as semver from "semver";
+import type { types } from "vortex-api";
 import { log } from "vortex-api";
 
-import type { ISMAPIIOQuery, ISMAPIResult } from "../types";
-
 import { GAME_ID, SMAPI_IO_API_VERSION } from "../common";
+import type { ISMAPIIOQuery, ISMAPIResult } from "../types";
 import { coerce, semverCompare } from "./version";
 
 /**
@@ -64,11 +63,7 @@ export class SMAPIProxy {
 
     const key = this.makeKey(query);
     if (firstResult.metadata.nexusID !== undefined) {
-      return this.lookupOnNexus(
-        query,
-        firstResult.metadata.nexusID,
-        main.version,
-      );
+      return this.lookupOnNexus(query, firstResult.metadata.nexusID, main.version);
     }
 
     return [
@@ -140,8 +135,7 @@ export class SMAPIProxy {
       await this.mAPI.ext.ensureLoggedIn();
     }
 
-    const files: IFileInfo[] =
-      (await this.mAPI.ext.nexusGetModFiles?.(GAME_ID, nexusId)) ?? [];
+    const files: IFileInfo[] = (await this.mAPI.ext.nexusGetModFiles?.(GAME_ID, nexusId)) ?? [];
 
     const versionPattern = version !== undefined ? `>=${version}` : "*";
 

@@ -7,7 +7,6 @@
 import React, { useState } from "react";
 
 import type { IExtensionApi } from "../../../types/IExtensionContext";
-
 import { ButtonDemo } from "../../../ui/components/button/ButtonDemo";
 import { CollectionTileDemo } from "../../../ui/components/collectiontile/CollectionTileDemo";
 import { DropdownDemo } from "../../../ui/components/dropdown/DropdownDemo";
@@ -39,8 +38,8 @@ export const DesignSystemPage = ({ api }: { api: IExtensionApi }) => {
             <Typography typographyType="heading-md">Design system</Typography>
 
             <Typography appearance="subdued" typographyType="body-md">
-              This page is only visible in development mode and provides a
-              testing ground for design system components.
+              This page is only visible in development mode and provides a testing ground for design
+              system components.
             </Typography>
           </div>
 

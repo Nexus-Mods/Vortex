@@ -3,15 +3,14 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import * as semver from "semver";
 
-import type { IActionDefinition } from "../../types/IActionDefinition";
-import type { IState } from "../../types/IState";
-
 import Banner from "../../controls/Banner";
 import DynDiv from "../../controls/DynDiv";
 import FlexLayout from "../../controls/FlexLayout";
 import Icon from "../../controls/Icon";
 import IconBar from "../../controls/IconBar";
 import { useSwitchingProfile } from "../../hooks";
+import type { IActionDefinition } from "../../types/IActionDefinition";
+import type { IState } from "../../types/IState";
 import { NotificationButton } from "../NotificationButton";
 import { QuickLauncher } from "../QuickLauncher";
 
@@ -22,16 +21,13 @@ const globalButtons: IActionDefinition[] = [];
 
 export const Toolbar: FC = () => {
   const { t } = useTranslation();
-  const customTitlebar = useSelector(
-    (state: IState) => state.settings.window.customTitlebar,
-  );
+  const customTitlebar = useSelector((state: IState) => state.settings.window.customTitlebar);
   const version = useSelector((state: IState) => state.app.appVersion);
   const switchingProfile = useSwitchingProfile();
 
   const parsedVersion = semver.parse(version);
   const prerelease = parsedVersion?.prerelease[0] ?? "stable";
-  const updateChannelClassName =
-    "toolbar-version-container toolbar-version-" + prerelease;
+  const updateChannelClassName = "toolbar-version-container toolbar-version-" + prerelease;
 
   const className = customTitlebar ? "toolbar-app-region" : "toolbar-default";
 
@@ -88,10 +84,7 @@ export const Toolbar: FC = () => {
             t={t}
           />
 
-          <NotificationButton
-            hide={switchingProfile}
-            id="notification-button"
-          />
+          <NotificationButton hide={switchingProfile} id="notification-button" />
 
           <IconBar
             className="global-icons"

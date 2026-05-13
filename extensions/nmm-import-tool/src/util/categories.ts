@@ -6,12 +6,8 @@ function parseCategories(data: string): { [id: string]: string } {
 
   const xmlDoc = parser.parseFromString(data, "text/xml");
 
-  const categories = xmlDoc.querySelectorAll(
-    "categoryManager categoryList category",
-  );
-  const items = [...Array(categories.length).keys()].map((i) =>
-    categories.item(i),
-  );
+  const categories = xmlDoc.querySelectorAll("categoryManager categoryList category");
+  const items = [...Array(categories.length).keys()].map((i) => categories.item(i));
 
   return items.reduce((prev: { [id: string]: string }, item) => {
     const categoryName = item.getElementsByTagName("name")[0].textContent;
@@ -24,9 +20,7 @@ function parseCategories(data: string): { [id: string]: string } {
   }, {});
 }
 
-export function getCategories(
-  categoriesPath: string,
-): Promise<{ [id: string]: string }> {
+export function getCategories(categoriesPath: string): Promise<{ [id: string]: string }> {
   return fs.readFileAsync(categoriesPath).then((data) => {
     if (data.compare(Buffer.from([0xef, 0xbb, 0xbf]), 0, 3, 0, 3) === 0) {
       data = data.slice(3);

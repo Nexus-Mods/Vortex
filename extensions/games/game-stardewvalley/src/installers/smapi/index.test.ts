@@ -7,7 +7,6 @@ import { describe, expect, test } from "vitest";
 
 // Arrange: load the mock before the module under test.
 import "./fixtures/vortexApi.mock";
-
 import {
   isSMAPIModType,
   linuxSMAPIPlatform,
@@ -57,14 +56,10 @@ describe("installers/smapi platform resolution", () => {
 describe("installers/smapi isSMAPIModType", () => {
   test("matches windows executable instructions from extracted install.dat payload", async () => {
     // Arrange: include the Windows executable.
-    const instructions = [
-      { type: "copy", source: "StardewModdingAPI.exe" },
-    ] as any;
+    const instructions = [{ type: "copy", source: "StardewModdingAPI.exe" }] as any;
 
     // Act + assert: match it as SMAPI.
-    await expect(
-      isSMAPIModType(instructions, windowsSMAPIPlatform),
-    ).resolves.toBe(true);
+    await expect(isSMAPIModType(instructions, windowsSMAPIPlatform)).resolves.toBe(true);
   });
 
   test("matches linux executable instructions from extracted install.dat payload", async () => {
@@ -72,9 +67,7 @@ describe("installers/smapi isSMAPIModType", () => {
     const instructions = [{ type: "copy", source: "StardewModdingAPI" }] as any;
 
     // Act + assert: match it as SMAPI.
-    await expect(
-      isSMAPIModType(instructions, linuxSMAPIPlatform),
-    ).resolves.toBe(true);
+    await expect(isSMAPIModType(instructions, linuxSMAPIPlatform)).resolves.toBe(true);
   });
 
   test("does not match instructions for a different platform executable", async () => {
@@ -84,8 +77,6 @@ describe("installers/smapi isSMAPIModType", () => {
     ] as any;
 
     // Act + assert: do not match the wrong platform.
-    await expect(
-      isSMAPIModType(instructions, linuxSMAPIPlatform),
-    ).resolves.toBe(false);
+    await expect(isSMAPIModType(instructions, linuxSMAPIPlatform)).resolves.toBe(false);
   });
 });

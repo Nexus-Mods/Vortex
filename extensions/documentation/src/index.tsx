@@ -1,5 +1,7 @@
 import * as path from "path";
+
 import * as React from "react";
+import { types, util } from "vortex-api";
 
 import { closeTutorials, setTutorialOpen } from "./actions/session";
 import TutorialButton from "./controls/TutorialButton";
@@ -8,19 +10,15 @@ import sessionReducer from "./reducers/session";
 import { getTutorialData, TODO_GROUP } from "./tutorialManager";
 import DocumentationView from "./views/DocumentationView";
 
-import { types, util } from "vortex-api";
-
 const WIKI_TOPICS = {
   ["adding-games"]: "MODDINGWIKI-Users-UI-Games-section",
   ["creating-themes"]: "MODDINGWIKI-Developers-General-Creating-a-theme",
   ["deployment-methods"]: "MODDINGWIKI-Users-General-Deployment-Methods",
   ["downloading"]: "MODDINGWIKI-Users-General-Downloading-from-Nexus-Mods",
   ["external-changes"]: "MODDINGWIKI-Users-General-Managing-External-Changes",
-  ["keyboard-shortcuts"]:
-    "MODDINGWIKI-Users-General-Managing-Keyboard-Shortcuts",
+  ["keyboard-shortcuts"]: "MODDINGWIKI-Users-General-Managing-Keyboard-Shortcuts",
   ["file-conflicts"]: "MODDINGWIKI-Users-General-Managing-File-Conflicts",
-  ["load-order-about"]:
-    "MODDINGWIKI-Users-General-The-Vortex-Approach-to-Load-Order",
+  ["load-order-about"]: "MODDINGWIKI-Users-General-The-Vortex-Approach-to-Load-Order",
   ["load-order"]: "MODDINGWIKI-Users-General-Managing-your-Load-Order",
   ["profiles"]: "MODDINGWIKI-Users-General-Setting-up-Profiles",
 };
@@ -69,11 +67,7 @@ export default function init(context: types.IExtensionContext) {
               ),
             ),
           );
-          context.api.events.emit(
-            "analytics-track-click-event",
-            "Dashboard",
-            "Intro Video",
-          );
+          context.api.events.emit("analytics-track-click-event", "Dashboard", "Intro Video");
         },
         undefined,
         (t) => <TutorialButton video={element} />,
@@ -96,10 +90,7 @@ export default function init(context: types.IExtensionContext) {
   });
 
   context.once(() => {
-    context.api.setStylesheet(
-      "documentation",
-      path.join(__dirname, "documentation.scss"),
-    );
+    context.api.setStylesheet("documentation", path.join(__dirname, "documentation.scss"));
 
     // User has moved onto a different page; we can close any open tutorial
     //  videos.
@@ -107,11 +98,7 @@ export default function init(context: types.IExtensionContext) {
       const { store } = context.api;
       if (
         false !==
-        util.getSafe(
-          store.getState(),
-          ["session", "tutorials", "currentTutorial", "isOpen"],
-          false,
-        )
+        util.getSafe(store.getState(), ["session", "tutorials", "currentTutorial", "isOpen"], false)
       ) {
         store.dispatch(closeTutorials());
       }

@@ -21,11 +21,7 @@ export const initTelemetryIpcHandler = (): void => {
   betterIpcMain.on("persist:diff", (_event, hive, operations) => {
     if (hive !== "settings") return;
     for (const op of operations) {
-      if (
-        op.path.length === 2 &&
-        op.path[0] === "analytics" &&
-        op.path[1] === "enabled"
-      ) {
+      if (op.path.length === 2 && op.path[0] === "analytics" && op.path[1] === "enabled") {
         setTelemetryEnabled(op.type === "set" && op.value === true);
         break;
       }

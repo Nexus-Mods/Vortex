@@ -1,6 +1,6 @@
-import * as fs from "./fs";
-
 import { createHash } from "crypto";
+
+import * as fs from "./fs";
 
 export function checksum(input: Buffer): string {
   return createHash("md5").update(input).digest("hex");

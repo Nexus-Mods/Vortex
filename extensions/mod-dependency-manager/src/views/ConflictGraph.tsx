@@ -1,12 +1,3 @@
-import { IBiDirRule } from "../types/IBiDirRule";
-import { IConflict } from "../types/IConflict";
-import genGraphStyle from "../util/genGraphStyle";
-
-import { setEditCycle } from "../actions";
-import { NAMESPACE } from "../statics";
-
-import GraphView, { IGraphElement, IGraphSelection } from "./GraphView";
-
 import * as _ from "lodash";
 import { IReference, IRule } from "modmeta-db";
 import * as React from "react";
@@ -26,6 +17,13 @@ import {
   Usage,
   util,
 } from "vortex-api";
+
+import { setEditCycle } from "../actions";
+import { NAMESPACE } from "../statics";
+import { IBiDirRule } from "../types/IBiDirRule";
+import { IConflict } from "../types/IConflict";
+import genGraphStyle from "../util/genGraphStyle";
+import GraphView, { IGraphElement, IGraphSelection } from "./GraphView";
 
 interface ILocalState {
   modRules: IBiDirRule[];
@@ -176,11 +174,7 @@ class ConflictGraph extends ComponentEx<IProps, IComponentState> {
     }
 
     return (
-      <Modal
-        id="conflict-graph-dialog"
-        show={editCycle !== undefined}
-        onHide={this.close}
-      >
+      <Modal id="conflict-graph-dialog" show={editCycle !== undefined} onHide={this.close}>
         <Modal.Header>
           <Modal.Title>{t("Cycle")}</Modal.Title>
         </Modal.Header>
@@ -200,11 +194,7 @@ class ConflictGraph extends ComponentEx<IProps, IComponentState> {
             actions={contextActions}
           />
           <Usage infoId="conflicting-mods" persistent>
-            <div>
-              {t(
-                "This screen shows a cluster of mods that form one or more cycles.",
-              )}
-            </div>
+            <div>{t("This screen shows a cluster of mods that form one or more cycles.")}</div>
             <div>
               {t(
                 'Arrows can be read as "then" (A ->- B reads "A, then B"), meaning the mod the ' +
@@ -264,15 +254,9 @@ class ConflictGraph extends ComponentEx<IProps, IComponentState> {
   private getAllLinks(props: IProps, modId: string): string[] {
     const { editCycle, localState, mods } = props;
     return localState.modRules
-      .filter(
-        (rule) =>
-          rule.type === "after" &&
-          util.testModReference(mods[modId], rule.source),
-      )
+      .filter((rule) => rule.type === "after" && util.testModReference(mods[modId], rule.source))
       .map((rule) =>
-        editCycle.modIds.filter((refId) =>
-          util.testModReference(mods[refId], rule.reference),
-        ),
+        editCycle.modIds.filter((refId) => util.testModReference(mods[refId], rule.reference)),
       )
       .reduce((prev, refs) => {
         const newRefs = refs.filter((refId) => !prev.includes(refId));
@@ -288,20 +272,17 @@ class ConflictGraph extends ComponentEx<IProps, IComponentState> {
       return;
     }
 
-    const elements: { [id: string]: IGraphElement } = editCycle.modIds.reduce(
-      (prev, modId) => {
-        if (mods[modId] !== undefined) {
-          prev[modId] = {
-            title: util.renderModName(mods[modId]),
-            connections: this.getAllLinks(props, modId),
-            class: `conflictnode`,
-            readonly: false,
-          };
-        }
-        return prev;
-      },
-      {},
-    );
+    const elements: { [id: string]: IGraphElement } = editCycle.modIds.reduce((prev, modId) => {
+      if (mods[modId] !== undefined) {
+        prev[modId] = {
+          title: util.renderModName(mods[modId]),
+          connections: this.getAllLinks(props, modId),
+          class: `conflictnode`,
+          readonly: false,
+        };
+      }
+      return prev;
+    }, {});
 
     this.nextState.elements = elements;
   }
@@ -349,10 +330,8 @@ class ConflictGraph extends ComponentEx<IProps, IComponentState> {
     const beforeRules = localState.modRules.filter(
       (rule) =>
         rule.original &&
-        ((rule.type === "before" &&
-          util.testModReference(mods[id], rule.source)) ||
-          (rule.type === "after" &&
-            util.testModReference(mods[id], rule.reference))),
+        ((rule.type === "before" && util.testModReference(mods[id], rule.source)) ||
+          (rule.type === "after" && util.testModReference(mods[id], rule.reference))),
     );
 
     const connReferences: IReference[] = [];
@@ -382,9 +361,7 @@ class ConflictGraph extends ComponentEx<IProps, IComponentState> {
 
     const modIds: Set<string> = new Set();
     connReferences.forEach((connRef) => {
-      const destId = editCycle.modIds.find((modId) =>
-        util.testModReference(mods[modId], connRef),
-      );
+      const destId = editCycle.modIds.find((modId) => util.testModReference(mods[modId], connRef));
 
       if (!modIds.has(destId)) {
         modIds.add(destId);
@@ -453,8 +430,7 @@ const emptyObj = {};
 
 function mapStateToProps(state: types.IState, props: IProps): IConnectedProps {
   let editCycle =
-    util.getSafe(state, ["session", "dependencies", "editCycle"], undefined) ||
-    undefined;
+    util.getSafe(state, ["session", "dependencies", "editCycle"], undefined) || undefined;
   const gameMode = selectors.activeGameId(state);
   let gameId = editCycle !== undefined ? editCycle.gameId : undefined;
   if (gameMode !== gameId) {
@@ -462,25 +438,17 @@ function mapStateToProps(state: types.IState, props: IProps): IConnectedProps {
     gameId = undefined;
   }
   return {
-    conflicts: util.getSafe(
-      state,
-      ["session", "dependencies", "conflicts"],
-      emptyObj,
-    ),
+    conflicts: util.getSafe(state, ["session", "dependencies", "conflicts"], emptyObj),
     mods: gameId !== undefined ? state.persistent.mods[gameId] : emptyObj,
     editCycle,
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, null, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onClose: () => dispatch(setEditCycle(undefined, undefined)),
-    onAddRule: (gameId, modId, rule) =>
-      dispatch(actions.addModRule(gameId, modId, rule)),
-    onRemoveRule: (gameId, modId, rule) =>
-      dispatch(actions.removeModRule(gameId, modId, rule)),
+    onAddRule: (gameId, modId, rule) => dispatch(actions.addModRule(gameId, modId, rule)),
+    onRemoveRule: (gameId, modId, rule) => dispatch(actions.removeModRule(gameId, modId, rule)),
   };
 }
 

@@ -1,6 +1,6 @@
-import { IConflict } from "../types/IConflict";
-
 import { types, util } from "vortex-api";
+
+import { IConflict } from "../types/IConflict";
 
 export type RuleChoice = undefined | "before" | "after" | "conflicts";
 
@@ -23,9 +23,7 @@ function getRuleTypes(
     );
 
     res[conflict.otherMod.id] =
-      existingRule !== undefined
-        ? (existingRule.type as RuleChoice)
-        : undefined;
+      existingRule !== undefined ? (existingRule.type as RuleChoice) : undefined;
   });
   return res;
 }

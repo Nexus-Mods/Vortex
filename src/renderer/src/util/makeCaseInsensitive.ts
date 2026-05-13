@@ -16,9 +16,7 @@ function makeInsensitive(input: any): any {
     has: (target: any, key: string | symbol) =>
       Reflect.has(target, key) || Reflect.has(target, normalize(key)),
     get: (target: any, key: string | symbol) =>
-      target[key] !== undefined
-        ? target[key]
-        : Reflect.get(target, normalize(key)),
+      target[key] !== undefined ? target[key] : Reflect.get(target, normalize(key)),
     set: (target: any, key: string | symbol, value, receiver) =>
       Reflect.set(target, normalize(key), value, receiver),
     getOwnPropertyDescriptor: (target: any, key: string | symbol) =>

@@ -10,11 +10,7 @@ const MS_ID = "BethesdaSoftworks.Fallout3";
 const GAME_ID = "fallout3";
 
 const gameStoreIds = {
-  steam: [
-    { id: STEAMAPP_ID, prefer: 0 },
-    { id: STEAMAPP_ID2 },
-    { name: "Fallout 3.*" },
-  ],
+  steam: [{ id: STEAMAPP_ID, prefer: 0 }, { id: STEAMAPP_ID2 }, { name: "Fallout 3.*" }],
   xbox: [{ id: MS_ID }],
   gog: [{ id: GOG_ID }],
   epic: [{ id: EPIC_ID }],
@@ -75,9 +71,7 @@ const localeFoldersXbox = {
 };
 
 async function findGame() {
-  const storeGames = await util.GameStoreHelper.find(gameStoreIds).catch(
-    () => [],
-  );
+  const storeGames = await util.GameStoreHelper.find(gameStoreIds).catch(() => []);
 
   if (!storeGames.length) return;
 
@@ -90,10 +84,7 @@ async function findGame() {
 
   const selectedGame = storeGames[0];
   if (["epic", "xbox"].includes(selectedGame.gameStoreId)) {
-    const folderList =
-      selectedGame.gameStoreId === "epic"
-        ? localeFoldersEpic
-        : localeFoldersXbox;
+    const folderList = selectedGame.gameStoreId === "epic" ? localeFoldersEpic : localeFoldersXbox;
     // Get the user's chosen language
     // state.interface.language || 'en';
     log("debug", "Defaulting to the English game version", {
@@ -109,8 +100,7 @@ function prepareForModding(api, discovery) {
   const gameName = util.getGame(GAME_ID)?.name || "This game";
 
   if (discovery.store && ["epic", "xbox"].includes(discovery.store)) {
-    const storeName =
-      discovery.store === "epic" ? "Epic Games" : "Xbox Game Pass";
+    const storeName = discovery.store === "epic" ? "Epic Games" : "Xbox Game Pass";
     // If this is an Epic or Xbox game we've defaulted to English, so we should let the user know.
     api.sendNotification({
       id: `${GAME_ID}-locale-message`,
@@ -136,8 +126,7 @@ function prepareForModding(api, discovery) {
               [
                 {
                   label: "Close",
-                  action: () =>
-                    api.suppressNotification(`${GAME_ID}-locale-message`),
+                  action: () => api.suppressNotification(`${GAME_ID}-locale-message`),
                 },
               ],
             );
@@ -176,8 +165,7 @@ async function requiresLauncher(gamePath, store) {
   try {
     const game = await util.GameStoreHelper.findByAppId([MS_ID], "xbox");
     const normalizeFunc = await util.getNormalizeFunc(gamePath);
-    if (normalizeFunc(game.gamePath) === normalizeFunc(gamePath))
-      return xboxSettings;
+    if (normalizeFunc(game.gamePath) === normalizeFunc(gamePath)) return xboxSettings;
     else return undefined;
   } catch (err) {
     return undefined;

@@ -1,15 +1,14 @@
 /* eslint-disable */
 import path from "path";
+
 import { actions, selectors, types, util } from "vortex-api";
 
 import { GAME_ID, I18N_NAMESPACE, LOCKED_PREFIX } from "./common";
-import { PriorityManager } from "./priorityManager";
-
 import TW3LoadOrder, { importLoadOrder } from "./loadOrder";
 import { makeOnContextImport } from "./mergeBackup";
-
-import { forceRefresh } from "./util";
 import { getPersistentLoadOrder } from "./migrations";
+import { PriorityManager } from "./priorityManager";
+import { forceRefresh } from "./util";
 
 interface IProps {
   context: types.IExtensionContext;
@@ -136,14 +135,9 @@ export const registerActions = (props: IProps) => {
               const gameMods = state.persistent.mods?.[GAME_ID] || {};
               const profile = selectors.activeProfile(state);
               const mods = Object.keys(gameMods)
-                .filter((key) =>
-                  util.getSafe(profile, ["modState", key, "enabled"], false),
-                )
+                .filter((key) => util.getSafe(profile, ["modState", key, "enabled"], false))
                 .map((key) => gameMods[key]);
-              const findIndex = (
-                entry: types.ILoadOrderEntry,
-                modList: types.IMod[],
-              ) => {
+              const findIndex = (entry: types.ILoadOrderEntry, modList: types.IMod[]) => {
                 return modList.findIndex((m) => m.id === entry.modId);
               };
               return util
@@ -151,43 +145,35 @@ export const registerActions = (props: IProps) => {
                 .then((sorted) => {
                   const loadOrder = getPersistentLoadOrder(context.api);
                   const filtered = loadOrder.filter(
-                    (entry) =>
-                      sorted.find((mod) => mod.id === entry.id) !== undefined,
+                    (entry) => sorted.find((mod) => mod.id === entry.id) !== undefined,
                   );
                   const sortedLO = filtered.sort(
                     (a, b) => findIndex(a, sorted) - findIndex(b, sorted),
                   );
-                  const locked = loadOrder.filter((entry) =>
-                    entry.name.includes(LOCKED_PREFIX),
-                  );
+                  const locked = loadOrder.filter((entry) => entry.name.includes(LOCKED_PREFIX));
                   const manuallyAdded = loadOrder.filter(
                     (key) => !filtered.includes(key) && !locked.includes(key),
                   );
-                  const newLO = [
-                    ...locked,
-                    ...sortedLO,
-                    ...manuallyAdded,
-                  ].reduce((accum, entry, idx) => {
-                    accum.push({
-                      ...entry,
-                      data: {
-                        prefix: idx + 1,
-                      },
-                    });
-                    return accum;
-                  }, []);
-
-                  context.api.store.dispatch(
-                    actions.setLoadOrder(profile.id, newLO as any),
+                  const newLO = [...locked, ...sortedLO, ...manuallyAdded].reduce(
+                    (accum, entry, idx) => {
+                      accum.push({
+                        ...entry,
+                        data: {
+                          prefix: idx + 1,
+                        },
+                      });
+                      return accum;
+                    },
+                    [],
                   );
+
+                  context.api.store.dispatch(actions.setLoadOrder(profile.id, newLO as any));
                 })
                 .catch((err) => {
                   const allowReport = !(err instanceof util.CycleError);
-                  context.api.showErrorNotification(
-                    "Failed to sort by deployment order",
-                    err,
-                    { allowReport },
-                  );
+                  context.api.showErrorNotification("Failed to sort by deployment order", err, {
+                    allowReport,
+                  });
                 })
                 .finally(() => {
                   forceRefresh(context.api);

@@ -1,11 +1,12 @@
+import { createCachedSelector } from "re-reselect";
+import { createSelector } from "reselect";
+
 import type { IState } from "../../types/IState";
 import { activeGameId } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
+import { SITE_ID } from "./constants";
 import type { IDiscoveryResult } from "./types/IDiscoveryResult";
 import type { IGameStored } from "./types/IGameStored";
-import { SITE_ID } from "./constants";
-import { createCachedSelector } from "re-reselect";
-import { createSelector } from "reselect";
 
 export function knownGames(state: IState): IGameStored[] {
   return state.session.gameMode.known ?? [];
@@ -15,10 +16,8 @@ export function discovered(state: IState): { [id: string]: IDiscoveryResult } {
   return state.settings.gameMode.discovered;
 }
 
-export const currentGame = createSelector(
-  knownGames,
-  activeGameId,
-  (games, currentGameMode) => games.find((game) => game.id === currentGameMode),
+export const currentGame = createSelector(knownGames, activeGameId, (games, currentGameMode) =>
+  games.find((game) => game.id === currentGameMode),
 );
 
 export const gameById = createCachedSelector(
@@ -36,11 +35,7 @@ export const gameById = createCachedSelector(
  */
 export function currentGameDiscovery(state: any): IDiscoveryResult {
   const gameMode = activeGameId(state);
-  return getSafe(
-    state,
-    ["settings", "gameMode", "discovered", gameMode],
-    undefined,
-  );
+  return getSafe(state, ["settings", "gameMode", "discovered", gameMode], undefined);
 }
 
 export const discoveryByGame = createCachedSelector(
@@ -62,11 +57,9 @@ export function gameName(state: any, gameId: string): string {
     return fromDiscovery;
   }
 
-  const known = getSafe(
-    state,
-    ["session", "gameMode", "known"],
-    [] as IGameStored[],
-  ).find((game) => game.id === gameId);
+  const known = getSafe(state, ["session", "gameMode", "known"], [] as IGameStored[]).find(
+    (game) => game.id === gameId,
+  );
   if (known !== undefined) {
     return known.name;
   } else {

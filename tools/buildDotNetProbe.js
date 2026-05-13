@@ -15,11 +15,7 @@ const outputFile = path.join(__dirname, "..", "assets", filename);
 // Check if dotnetprobe.exe already exists
 if (fs.existsSync(outputFile)) {
   const stats = fs.statSync(outputFile);
-  console.log(
-    `dotnetprobe already exists (${Math.round(
-      stats.size / 1024,
-    )}KB) - skipping build`,
-  );
+  console.log(`dotnetprobe already exists (${Math.round(stats.size / 1024)}KB) - skipping build`);
   process.exit(0);
 }
 
@@ -48,9 +44,7 @@ try {
   // Verify the output file exists
   if (fs.existsSync(outputFile)) {
     const stats = fs.statSync(outputFile);
-    console.log(
-      `✓ dotnetprobe built successfully (${Math.round(stats.size / 1024)}KB)`,
-    );
+    console.log(`✓ dotnetprobe built successfully (${Math.round(stats.size / 1024)}KB)`);
   } else {
     console.error("✗ dotnetprobe was not created");
     process.exit(1);

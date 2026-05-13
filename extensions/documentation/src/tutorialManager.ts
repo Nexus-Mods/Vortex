@@ -126,11 +126,7 @@ export function getTutorialData(group?: string) {
   return TUTORIAL_DATA;
 }
 
-function getEmbedLink(
-  id: string,
-  start: string | number,
-  end: string | number,
-): string {
+function getEmbedLink(id: string, start: string | number, end: string | number): string {
   const srcLink = YOUTUBE_LINK;
   let startSeconds: number = 0;
   let endSeconds: number = 0;

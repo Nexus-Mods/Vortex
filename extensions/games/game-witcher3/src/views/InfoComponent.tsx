@@ -1,10 +1,10 @@
 /* eslint-disable */
 import * as React from "react";
 import * as BS from "react-bootstrap";
-import { I18N_NAMESPACE } from "../common";
-
-import { FlexLayout, util } from "vortex-api";
 import { useTranslation } from "react-i18next";
+import { FlexLayout, util } from "vortex-api";
+
+import { I18N_NAMESPACE } from "../common";
 
 interface InfoComponentProps {
   onToggleModsState: (enable: boolean) => void;
@@ -39,9 +39,7 @@ export default function InfoComponent(props: InfoComponentProps) {
           )}
           <a
             onClick={() =>
-              util.opn(
-                "https://wiki.nexusmods.com/index.php/Modding_The_Witcher_3_with_Vortex",
-              )
+              util.opn("https://wiki.nexusmods.com/index.php/Modding_The_Witcher_3_with_Vortex")
             }
           >
             {t("Modding The Witcher 3 with Vortex.", { ns: I18N_NAMESPACE })}

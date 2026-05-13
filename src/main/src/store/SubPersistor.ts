@@ -1,19 +1,15 @@
 import type { IPersistor, PersistorKey } from "@vortex/shared/state";
 
 class SubPersistor implements IPersistor {
-  public getAllKVs:
-    | (() => PromiseLike<Array<{ key: string[]; value: string }>>)
-    | undefined = undefined;
+  public getAllKVs: (() => PromiseLike<Array<{ key: string[]; value: string }>>) | undefined =
+    undefined;
   // Bulk variants are exposed only when the wrapped persistor exposes them,
   // so callers can feature-detect via a simple presence check.
   public bulkSetItem:
-    | ((
-        items: ReadonlyArray<{ key: PersistorKey; value: string }>,
-      ) => PromiseLike<void>)
+    | ((items: ReadonlyArray<{ key: PersistorKey; value: string }>) => PromiseLike<void>)
     | undefined = undefined;
-  public bulkRemoveItem:
-    | ((keys: ReadonlyArray<PersistorKey>) => PromiseLike<void>)
-    | undefined = undefined;
+  public bulkRemoveItem: ((keys: ReadonlyArray<PersistorKey>) => PromiseLike<void>) | undefined =
+    undefined;
 
   private mWrapped: IPersistor;
   private mHive: string;
@@ -26,9 +22,7 @@ class SubPersistor implements IPersistor {
       this.getAllKVs = () =>
         this.mWrapped.getAllKVs?.(hive).then((kvs) =>
           kvs
-            .filter(
-              (kv: { key: PersistorKey; value: string }) => kv.key[0] === hive,
-            )
+            .filter((kv: { key: PersistorKey; value: string }) => kv.key[0] === hive)
             .map((kv: { key: PersistorKey; value: string }) => ({
               key: kv.key.slice(1),
               value: kv.value,
@@ -41,17 +35,13 @@ class SubPersistor implements IPersistor {
         items: ReadonlyArray<{ key: PersistorKey; value: string }>,
       ) => PromiseLike<void> = this.mWrapped.bulkSetItem.bind(this.mWrapped);
       this.bulkSetItem = (items) =>
-        wrappedBulkSet(
-          items.map((it) => ({ key: [hive, ...it.key], value: it.value })),
-        );
+        wrappedBulkSet(items.map((it) => ({ key: [hive, ...it.key], value: it.value })));
     }
 
     if (this.mWrapped.bulkRemoveItem) {
-      const wrappedBulkRemove: (
-        keys: ReadonlyArray<PersistorKey>,
-      ) => PromiseLike<void> = this.mWrapped.bulkRemoveItem.bind(this.mWrapped);
-      this.bulkRemoveItem = (keys) =>
-        wrappedBulkRemove(keys.map((k) => [hive, ...k]));
+      const wrappedBulkRemove: (keys: ReadonlyArray<PersistorKey>) => PromiseLike<void> =
+        this.mWrapped.bulkRemoveItem.bind(this.mWrapped);
+      this.bulkRemoveItem = (keys) => wrappedBulkRemove(keys.map((k) => [hive, ...k]));
     }
   }
 
@@ -74,9 +64,7 @@ class SubPersistor implements IPersistor {
   public getAllKeys(): PromiseLike<string[][]> {
     return this.mWrapped
       .getAllKeys()
-      .then((keys) =>
-        keys.filter((key) => key[0] === this.mHive).map((key) => key.slice(1)),
-      );
+      .then((keys) => keys.filter((key) => key[0] === this.mHive).map((key) => key.slice(1)));
   }
 }
 

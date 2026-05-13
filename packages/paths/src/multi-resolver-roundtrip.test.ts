@@ -1,12 +1,11 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { posix } from "./pathUtils";
 
 import type { IResolverBase } from "./IResolver";
-
+import { posix } from "./pathUtils";
 import { MappingResolver, fromRecord } from "./resolvers/MappingResolver";
 import { UnixResolver } from "./resolvers/UnixResolver";
-import { Anchor, RelativePath, ResolvedPath } from "./types";
 import { MockUnixFilesystem } from "./test-helpers/MockUnixFilesystem";
+import { Anchor, RelativePath, ResolvedPath } from "./types";
 
 // ============================================================================
 // Test-only resolvers
@@ -58,19 +57,14 @@ describe("Multi-Resolver Roundtrip", () => {
       const filePath = appResolver.PathFor("userData", "mods/skyrim");
       const resolved = await filePath.resolve();
 
-      expect(normalizePath(resolved as string)).toBe(
-        "/home/user/.vortex/userData/mods/skyrim",
-      );
+      expect(normalizePath(resolved as string)).toBe("/home/user/.vortex/userData/mods/skyrim");
     });
 
     it("should throw for unknown anchors instead of delegating to parent", async () => {
       // 'root' is handled by UnixResolver parent, not TestAppResolver
       // Forward resolve() does NOT delegate — unknown anchors throw immediately
       await expect(
-        appResolver.resolve(
-          Anchor.make("root"),
-          RelativePath.make("etc/hosts"),
-        ),
+        appResolver.resolve(Anchor.make("root"), RelativePath.make("etc/hosts")),
       ).rejects.toThrow(/cannot resolve anchor/i);
     });
   });
@@ -87,9 +81,7 @@ describe("Multi-Resolver Roundtrip", () => {
       expect(reversed.relative).toBe("mods/skyrim/data.esp");
 
       const resolved2 = await reversed.resolve();
-      expect(normalizePath(resolved2 as string)).toBe(
-        normalizePath(resolved1 as string),
-      );
+      expect(normalizePath(resolved2 as string)).toBe(normalizePath(resolved1 as string));
     });
 
     it("should return null for paths outside own anchors", async () => {
@@ -103,10 +95,7 @@ describe("Multi-Resolver Roundtrip", () => {
 
   describe("Two-layer roundtrip", () => {
     it("should survive Unix → App → Unix conversion chain", async () => {
-      const unixPath = unixResolver.PathFor(
-        "root",
-        "home/user/.vortex/temp/downloads/mod.zip",
-      );
+      const unixPath = unixResolver.PathFor("root", "home/user/.vortex/temp/downloads/mod.zip");
       const originalResolved = await unixPath.resolve();
 
       // Convert to app anchor via reverse resolution
@@ -118,9 +107,7 @@ describe("Multi-Resolver Roundtrip", () => {
 
       // Resolve through app resolver
       const appResolved = await appResult.resolve();
-      expect(normalizePath(appResolved as string)).toBe(
-        normalizePath(originalResolved as string),
-      );
+      expect(normalizePath(appResolved as string)).toBe(normalizePath(originalResolved as string));
 
       // Convert back to Unix
       const unixFirst = new UnixResolver(appResolver);
@@ -136,10 +123,7 @@ describe("Multi-Resolver Roundtrip", () => {
     });
 
     it("should maintain path structure through multiple conversions", async () => {
-      const original = appResolver.PathFor(
-        "userData",
-        "mods/skyrim/meshes/armor/plate.nif",
-      );
+      const original = appResolver.PathFor("userData", "mods/skyrim/meshes/armor/plate.nif");
       const step1 = await original.resolve();
 
       // Convert to Unix
@@ -147,17 +131,13 @@ describe("Multi-Resolver Roundtrip", () => {
       const unixResult = await unixFirst.tryReverse(step1);
       expect(unixResult).not.toBeNull();
       const step2 = await unixResult.resolve();
-      expect(normalizePath(step2 as string)).toBe(
-        normalizePath(step1 as string),
-      );
+      expect(normalizePath(step2 as string)).toBe(normalizePath(step1 as string));
 
       // Convert back to App
       const appResult = await appResolver.tryReverse(step2);
       expect(appResult).not.toBeNull();
       const step3 = await appResult.resolve();
-      expect(normalizePath(step3 as string)).toBe(
-        normalizePath(step1 as string),
-      );
+      expect(normalizePath(step3 as string)).toBe(normalizePath(step1 as string));
 
       expect(Anchor.name(appResult.anchor)).toBe("userData");
       expect(appResult.relative).toBe("mods/skyrim/meshes/armor/plate.nif");
@@ -167,9 +147,7 @@ describe("Multi-Resolver Roundtrip", () => {
   describe("Nested anchor preference", () => {
     it("should prefer most specific (longest) matching anchor", async () => {
       // 'userData' → '/home/user/.vortex/userData' is more specific than 'home' → '/home/user'
-      const osPath = ResolvedPath.make(
-        "/home/user/.vortex/userData/mods/skyrim.esp",
-      );
+      const osPath = ResolvedPath.make("/home/user/.vortex/userData/mods/skyrim.esp");
 
       const result = await appResolver.tryReverse(osPath);
 
@@ -200,9 +178,7 @@ describe("Multi-Resolver Roundtrip", () => {
     });
 
     it("should resolve own anchors independently of parent", async () => {
-      const osPath = ResolvedPath.make(
-        "/home/user/.vortex/userData/mods/mod.esp",
-      );
+      const osPath = ResolvedPath.make("/home/user/.vortex/userData/mods/mod.esp");
 
       // App resolver matches its own userData anchor
       const appResult = await appResolver.tryReverse(osPath);
@@ -233,16 +209,11 @@ describe("Multi-Resolver Roundtrip", () => {
       expect(result.relative).toBe("backups/2024/mods/skyrim/mesh.nif");
 
       const finalResolved = await result.resolve();
-      expect(normalizePath(finalResolved as string)).toBe(
-        normalizePath(resolved as string),
-      );
+      expect(normalizePath(finalResolved as string)).toBe(normalizePath(resolved as string));
     });
 
     it("should handle withBase() across resolver boundaries", async () => {
-      const original = unixResolver.PathFor(
-        "root",
-        "tmp/extracted/mod/data.esp",
-      );
+      const original = unixResolver.PathFor("root", "tmp/extracted/mod/data.esp");
       const appBase = appResolver.PathFor("userData", "staging");
       const moved = original.withBase(appBase);
 
@@ -274,17 +245,13 @@ describe("Multi-Resolver Roundtrip", () => {
       const orphan = new OrphanResolver();
       const filePath = orphan.PathFor("data", "file.txt");
 
-      await expect(filePath.resolve()).rejects.toThrow(
-        /cannot create OS paths.*platform resolver/,
-      );
+      await expect(filePath.resolve()).rejects.toThrow(/cannot create OS paths.*platform resolver/);
     });
   });
 
   describe("Cache behavior", () => {
     it("should cache base paths for performance", async () => {
-      const osPath = ResolvedPath.make(
-        "/home/user/.vortex/userData/mods/skyrim.esp",
-      );
+      const osPath = ResolvedPath.make("/home/user/.vortex/userData/mods/skyrim.esp");
 
       const result1 = await appResolver.tryReverse(osPath);
       expect(result1).not.toBeNull();
@@ -297,9 +264,7 @@ describe("Multi-Resolver Roundtrip", () => {
     });
 
     it("should still work after clearing caches", async () => {
-      const osPath = ResolvedPath.make(
-        "/home/user/.vortex/temp/cache/file.dat",
-      );
+      const osPath = ResolvedPath.make("/home/user/.vortex/temp/cache/file.dat");
 
       await appResolver.tryReverse(osPath);
 

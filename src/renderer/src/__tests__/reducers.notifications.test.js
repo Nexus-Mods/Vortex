@@ -4,19 +4,13 @@ describe("startNotification", () => {
   let input = { notifications: [] };
   it("appends the notification", () => {
     let notification = { id: "42", message: "test", type: "info" };
-    let result = notificationsReducer.reducers.ADD_NOTIFICATION(
-      input,
-      notification,
-    );
+    let result = notificationsReducer.reducers.ADD_NOTIFICATION(input, notification);
     expect(result.notifications).toContain(notification);
   });
 
   it("generates an id if required", () => {
     let notification = { message: "test", type: "info" };
-    let result = notificationsReducer.reducers.ADD_NOTIFICATION(
-      input,
-      notification,
-    );
+    let result = notificationsReducer.reducers.ADD_NOTIFICATION(input, notification);
     expect(result.notifications[0].id).not.toBeUndefined();
   });
 });

@@ -2,13 +2,12 @@ import React, { useMemo, type FC } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
-import type { IMainPage } from "../../types/IMainPage";
-
-import { getGame } from "../../extensions/gamemode_management/util/getGame";
 import { useWindowContext } from "../../contexts";
 import FlexLayout from "../../controls/FlexLayout";
 import Icon from "../../controls/Icon";
 import { Button } from "../../controls/TooltipControls";
+import { getGame } from "../../extensions/gamemode_management/util/getGame";
+import type { IMainPage } from "../../types/IMainPage";
 import {
   activeProfile as activeProfileSelector,
   mainPage as mainPageSelector,

@@ -1,22 +1,16 @@
-import { SITE_GAME_NAME } from "../../../controls/constants";
-import FlexLayout from "../../../controls/FlexLayout";
-import { IconButton } from "../../../controls/TooltipControls";
-import type { IGameStored } from "../../../types/IState";
-import { PureComponentEx } from "../../../controls/ComponentEx";
-import * as selectors from "../../../util/selectors";
-
-import { SITE_ID } from "../../gamemode_management/constants";
-
 import type PromiseBB from "bluebird";
 import * as fuzz from "fuzzball";
 import type { TFunction } from "i18next";
 import * as React from "react";
-import {
-  DropdownButton,
-  ListGroup,
-  ListGroupItem,
-  MenuItem,
-} from "react-bootstrap";
+import { DropdownButton, ListGroup, ListGroupItem, MenuItem } from "react-bootstrap";
+
+import { PureComponentEx } from "../../../controls/ComponentEx";
+import { SITE_GAME_NAME } from "../../../controls/constants";
+import FlexLayout from "../../../controls/FlexLayout";
+import { IconButton } from "../../../controls/TooltipControls";
+import type { IGameStored } from "../../../types/IState";
+import * as selectors from "../../../util/selectors";
+import { SITE_ID } from "../../gamemode_management/constants";
 
 export interface IDownloadGameListProps {
   t: TFunction;
@@ -32,19 +26,13 @@ class DownloadGameList extends PureComponentEx<IDownloadGameListProps, {}> {
     const notSelectedGames = games
       .filter((game) => currentGames.indexOf(game.id) === -1)
       .sort(
-        (lhs, rhs) =>
-          fuzz.ratio(currentGames[0], rhs.name) -
-          fuzz.ratio(currentGames[0], lhs.name),
+        (lhs, rhs) => fuzz.ratio(currentGames[0], rhs.name) - fuzz.ratio(currentGames[0], lhs.name),
       );
 
     return (
       <FlexLayout type="column">
         <FlexLayout.Fixed className="game-list-container">
-          <DropdownButton
-            id="game-list-add-button"
-            title={t("Add")}
-            onSelect={this.addGame}
-          >
+          <DropdownButton id="game-list-add-button" title={t("Add")} onSelect={this.addGame}>
             {notSelectedGames.map(this.renderGame)}
           </DropdownButton>
         </FlexLayout.Fixed>
@@ -72,10 +60,7 @@ class DownloadGameList extends PureComponentEx<IDownloadGameListProps, {}> {
         ? t(SITE_GAME_NAME)
         : selectors.gameName(this.context.api.store.getState(), gameId);
     return (
-      <ListGroupItem
-        key={gameId}
-        className={idx === 0 ? "primary-game" : undefined}
-      >
+      <ListGroupItem key={gameId} className={idx === 0 ? "primary-game" : undefined}>
         {gameName || gameId}
         <IconButton
           icon="remove"

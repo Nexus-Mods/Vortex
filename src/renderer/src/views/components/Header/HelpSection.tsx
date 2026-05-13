@@ -9,10 +9,9 @@ import React, { type FC, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 
-import type { IActionDefinition } from "../../../types/IActionDefinition";
-
 import { setDialogVisible } from "../../../actions/session";
 import { useExtensionContext } from "../../../ExtensionProvider";
+import type { IActionDefinition } from "../../../types/IActionDefinition";
 import { Dropdown } from "../../../ui/components/dropdown/Dropdown";
 import { DropdownDivider } from "../../../ui/components/dropdown/DropdownDivider";
 import { DropdownItem } from "../../../ui/components/dropdown/DropdownItem";
@@ -50,11 +49,7 @@ export const HelpSection: FC = () => {
 
   return (
     <Dropdown>
-      <Menu.Button
-        as={IconButton}
-        iconPath={mdiHelpCircleOutline}
-        title={t("Help")}
-      />
+      <Menu.Button as={IconButton} iconPath={mdiHelpCircleOutline} title={t("Help")} />
 
       <DropdownItems>
         {globalIconActions.map((action) => (
@@ -69,24 +64,15 @@ export const HelpSection: FC = () => {
 
         {globalIconActions.length > 0 && <DropdownDivider />}
 
-        <DropdownItem
-          leftIconPath={mdiHelpCircleOutline}
-          onClick={handleHelpCentre}
-        >
+        <DropdownItem leftIconPath={mdiHelpCircleOutline} onClick={handleHelpCentre}>
           {t("Help centre")}
         </DropdownItem>
 
-        <DropdownItem
-          leftIconPath={mdiFileDocumentOutline}
-          onClick={handleDiagnosticFiles}
-        >
+        <DropdownItem leftIconPath={mdiFileDocumentOutline} onClick={handleDiagnosticFiles}>
           {t("View logs")}
         </DropdownItem>
 
-        <DropdownItem
-          leftIconPath={mdiInformationOutline}
-          onClick={handleAbout}
-        >
+        <DropdownItem leftIconPath={mdiInformationOutline} onClick={handleAbout}>
           {t("About")}
         </DropdownItem>
       </DropdownItems>

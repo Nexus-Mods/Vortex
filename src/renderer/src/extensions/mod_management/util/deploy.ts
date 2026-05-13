@@ -1,6 +1,8 @@
 import { getErrorCode } from "@vortex/shared";
 import { generate as shortid } from "shortid";
 
+import { startActivity, stopActivity } from "../../../actions/session";
+import { log } from "../../../logging";
 import type {
   IDeployedFile,
   IDeploymentMethod,
@@ -8,11 +10,6 @@ import type {
 } from "../../../types/IExtensionContext";
 import type { IGame } from "../../../types/IGame";
 import type { IProfile } from "../../../types/IState";
-import type { IModType } from "../../gamemode_management/types/IModType";
-import type { IMod } from "../types/IMod";
-
-import { startActivity, stopActivity } from "../../../actions/session";
-import { log } from "../../../logging";
 import { ProcessCanceled, TemporaryError } from "../../../util/CustomErrors";
 import { withTrackedActivity } from "../../../util/errorHandling";
 import {
@@ -23,8 +20,10 @@ import {
 } from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
 import { truthy } from "../../../util/util";
+import type { IModType } from "../../gamemode_management/types/IModType";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { installPath, installPathForGame } from "../selectors";
+import type { IMod } from "../types/IMod";
 import {
   fallbackPurgeType,
   getManifest,
@@ -37,19 +36,14 @@ import { NoDeployment } from "./exceptions";
 import { dealWithExternalChanges } from "./externalChanges";
 const MERGE_SUBDIR = "zzz_merge";
 
-export function genSubDirFunc(
-  game: IGame,
-  modType: IModType,
-): (mod: IMod) => string {
+export function genSubDirFunc(game: IGame, modType: IModType): (mod: IMod) => string {
   const mergeModsOpt =
     modType !== undefined && modType.options.mergeMods !== undefined
       ? modType.options.mergeMods
       : game.mergeMods;
 
   if (typeof mergeModsOpt === "boolean") {
-    return mergeModsOpt
-      ? () => ""
-      : (mod: IMod) => (mod !== null ? mod.id : MERGE_SUBDIR);
+    return mergeModsOpt ? () => "" : (mod: IMod) => (mod !== null ? mod.id : MERGE_SUBDIR);
   } else {
     return (mod: IMod) => {
       try {
@@ -89,9 +83,7 @@ export async function loadAllManifests(
   modPaths: { [typeId: string]: string },
   stagingPath: string,
 ) {
-  const modTypes = Object.keys(modPaths).filter((typeId) =>
-    truthy(modPaths[typeId]),
-  );
+  const modTypes = Object.keys(modPaths).filter((typeId) => truthy(modPaths[typeId]));
 
   const prev: { [typeId: string]: IDeployedFile[] } = {};
   for (const typeId of modTypes) {
@@ -161,19 +153,17 @@ export function purgeMods(
           const deployedActivator = getActivator(manifest?.deploymentMethod);
           return purgeModsImpl(api, deployedActivator, profile);
         } else {
-          return purgeModsImpl(api, undefined, profile).catch(
-            (err: unknown) => {
-              // If the user is unmanaging the game and the purge was unable to find any
-              //  of the game's mods path during the purge, that suggests that the user
-              //  has uninstalled the game and is trying to "unmanage" the game.
-              //  In this case, there's nothing left to purge so we can safely resolve.
-              if (["ENOENT"].includes(getErrorCode(err)) && isUnmanaging) {
-                return Promise.resolve();
-              } else {
-                return Promise.reject(err);
-              }
-            },
-          );
+          return purgeModsImpl(api, undefined, profile).catch((err: unknown) => {
+            // If the user is unmanaging the game and the purge was unable to find any
+            //  of the game's mods path during the purge, that suggests that the user
+            //  has uninstalled the game and is trying to "unmanage" the game.
+            //  In this case, there's nothing left to purge so we can safely resolve.
+            if (["ENOENT"].includes(getErrorCode(err)) && isUnmanaging) {
+              return Promise.resolve();
+            } else {
+              return Promise.reject(err);
+            }
+          });
         }
       }),
   );
@@ -213,10 +203,7 @@ async function purgeModsImpl(
     throw new NoDeployment();
   }
 
-  if (
-    Object.keys(getSafe(state, ["session", "base", "toolsRunning"], {}))
-      .length > 0
-  ) {
+  if (Object.keys(getSafe(state, ["session", "base", "toolsRunning"], {})).length > 0) {
     api.sendNotification({
       type: "info",
       id: "purge-not-possible",
@@ -243,9 +230,7 @@ async function purgeModsImpl(
   const game: IGame = getGame(gameId);
   const modPaths = game.getModPaths(gameDiscovery.path);
 
-  const modTypes = Object.keys(modPaths).filter((typeId) =>
-    truthy(modPaths[typeId]),
-  );
+  const modTypes = Object.keys(modPaths).filter((typeId) => truthy(modPaths[typeId]));
 
   try {
     await withActivationLock(async () => {
@@ -262,13 +247,7 @@ async function purgeModsImpl(
       try {
         await activator.prePurge(stagingPath);
 
-        const deployments = await loadAllManifests(
-          api,
-          activator,
-          gameId,
-          modPaths,
-          stagingPath,
-        );
+        const deployments = await loadAllManifests(api, activator, gameId, modPaths, stagingPath);
         lastDeployment = deployments;
 
         await api.emitAndAwait("will-purge", profile.id, lastDeployment);
@@ -287,17 +266,9 @@ async function purgeModsImpl(
         for (const [idx, typeId] of modTypes.entries()) {
           const cover = 50 / modTypes.length;
           const progressType = (num: number, total: number) => {
-            onProgress(
-              25 + idx * cover + Math.floor((num * cover) / total),
-              "Removing links",
-            );
+            onProgress(25 + idx * cover + Math.floor((num * cover) / total), "Removing links");
           };
-          await activator.purge(
-            stagingPath,
-            modPaths[typeId],
-            gameId,
-            progressType,
-          );
+          await activator.purge(stagingPath, modPaths[typeId], gameId, progressType);
         }
 
         onProgress(75, "Saving updated manifest");
@@ -319,21 +290,17 @@ async function purgeModsImpl(
         if (lastDeployment !== undefined) {
           await Promise.all(
             modTypes.map((typeId) =>
-              filterManifest(
-                activator,
-                modPaths[typeId],
-                stagingPath,
-                lastDeployment[typeId],
-              ).then((files) =>
-                saveActivation(
-                  gameId,
-                  typeId,
-                  state.app.instanceId,
-                  modPaths[typeId],
-                  stagingPath,
-                  files,
-                  activator.id,
-                ),
+              filterManifest(activator, modPaths[typeId], stagingPath, lastDeployment[typeId]).then(
+                (files) =>
+                  saveActivation(
+                    gameId,
+                    typeId,
+                    state.app.instanceId,
+                    modPaths[typeId],
+                    stagingPath,
+                    files,
+                    activator.id,
+                  ),
               ),
             ),
           );
@@ -380,10 +347,7 @@ export function purgeModsInPath(
     return Promise.reject(new NoDeployment());
   }
 
-  if (
-    Object.keys(getSafe(state, ["session", "base", "toolsRunning"], {}))
-      .length > 0
-  ) {
+  if (Object.keys(getSafe(state, ["session", "base", "toolsRunning"], {})).length > 0) {
     api.sendNotification({
       type: "info",
       id: "purge-not-possible",
@@ -429,14 +393,7 @@ export function purgeModsInPath(
           // In this case there is probably nothing to purge but if that's true
           // there will also be no manifest so we can just as easily try a fallback
           // purge just to be safe.
-          return fallbackPurgeType(
-            api,
-            activator,
-            gameId,
-            typeId,
-            modPath,
-            stagingPath,
-          );
+          return fallbackPurgeType(api, activator, gameId, typeId, modPath, stagingPath);
         }
 
         // TODO: we really should be using the deployment specified in the manifest,

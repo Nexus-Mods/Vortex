@@ -106,11 +106,7 @@ class AppResolver extends BaseResolver<"userData" | "temp"> {
     }
 }
 
-const app = new AppResolver(
-    "app" /* name */,
-    unix /* parent */,
-    fs /* filesystem */,
-);
+const app = new AppResolver("app" /* name */, unix /* parent */, fs /* filesystem */);
 ```
 
 ## Building paths
@@ -134,10 +130,7 @@ const file = RelativePath.basename("mods/skyrim/data.esp");
 
 // Other useful methods
 const depth = RelativePath.depth("mods/skyrim/data"); // -> 3
-const isIn = RelativePath.isIn(
-    RelativePath.make("mods/skyrim/data"),
-    RelativePath.make("mods"),
-); // -> true
+const isIn = RelativePath.isIn(RelativePath.make("mods/skyrim/data"), RelativePath.make("mods")); // -> true
 const hash = RelativePath.hash("mods/skyrim"); // FNV-1a hash
 ```
 
@@ -271,9 +264,7 @@ Convert an OS path back to a `FilePath`:
 
 ```typescript
 // Convert an absolute path back to a FilePath
-const filePath = await resolver.tryReverse(
-    ResolvedPath.make("/home/user/.vortex/mods/skyrim"),
-);
+const filePath = await resolver.tryReverse(ResolvedPath.make("/home/user/.vortex/mods/skyrim"));
 // -> FilePath with anchor 'userData' and relative 'mods/skyrim'
 
 // Or get all base paths

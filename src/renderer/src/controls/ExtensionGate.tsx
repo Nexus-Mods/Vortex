@@ -1,9 +1,9 @@
+import * as _ from "lodash";
+import * as React from "react";
+
 import { log } from "../util/log";
 import { truthy } from "../util/util";
 import { Icon } from "./TooltipControls";
-
-import * as _ from "lodash";
-import * as React from "react";
 
 /**
  * wraps a control that was added by an extension.
@@ -28,9 +28,7 @@ class ExtensionGate extends React.Component<{ id: string }, {}> {
 
   public componentWillUnmount() {
     if (this.mValid) {
-      const props = (
-        React.Children.only(this.props.children) as React.ReactElement<any>
-      ).props;
+      const props = (React.Children.only(this.props.children) as React.ReactElement<any>).props;
       Object.keys(props).forEach((key) => {
         if (
           truthy(props[key]) &&
@@ -63,8 +61,7 @@ class ExtensionGate extends React.Component<{ id: string }, {}> {
       );
     }
     this.updateWrappers(
-      (React.Children.only(this.props.children) as React.ReactElement<any>)
-        .props,
+      (React.Children.only(this.props.children) as React.ReactElement<any>).props,
     );
     return React.cloneElement(
       React.Children.only(this.props.children) as React.ReactElement<any>,
@@ -77,9 +74,7 @@ class ExtensionGate extends React.Component<{ id: string }, {}> {
       return;
     }
     try {
-      const props = (
-        React.Children.only(this.props.children) as React.ReactElement<any>
-      ).props;
+      const props = (React.Children.only(this.props.children) as React.ReactElement<any>).props;
       Object.keys(props).forEach((key) => {
         if (
           truthy(props[key]) &&

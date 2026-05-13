@@ -1,6 +1,6 @@
-import * as actions from "../actions/session";
-
 import { types, util } from "vortex-api";
+
+import * as actions from "../actions/session";
 
 /**
  * reducer for changes to the feedback files
@@ -21,11 +21,7 @@ export const sessionReducer: types.IReducerSpec = {
       util.setSafe(state, ["feedbackHash"], payload),
     [actions.addFeedbackFile as any]: (state, payload) => {
       const { feedbackFile } = payload;
-      return util.setSafe(
-        state,
-        ["feedbackFiles", feedbackFile.filename],
-        feedbackFile,
-      );
+      return util.setSafe(state, ["feedbackFiles", feedbackFile.filename], feedbackFile);
     },
     [actions.removeFeedbackFile as any]: (state, payload) => {
       const { feedbackFileId } = payload;

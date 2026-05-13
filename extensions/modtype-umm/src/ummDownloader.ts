@@ -1,7 +1,9 @@
 import path from "path";
 import { setTimeout } from "timers";
+
 import { actions, fs, log, selectors, types, util } from "vortex-api";
 import * as winapi from "winapi-bindings";
+
 import { getDownload, getSupportMap, NEXUS, UMM_EXE } from "./common";
 import { AutoInstallDisabledError, NotPremiumError } from "./Errors";
 import { INexusDownloadInfo, IUMMGameConfig } from "./types";
@@ -13,8 +15,7 @@ export async function ensureUMM(
   force?: boolean,
 ): Promise<string> {
   const state = api.getState();
-  const gameId =
-    gameMode === undefined ? selectors.activeGameId(state) : gameMode;
+  const gameId = gameMode === undefined ? selectors.activeGameId(state) : gameMode;
   const gameConf: IUMMGameConfig = getSupportMap()[gameId];
   if (gameConf === undefined || !gameConf.autoDownloadUMM) {
     return undefined;
@@ -81,10 +82,7 @@ export async function ensureUMM(
                 await downloadFromGithub(api, dl);
               } catch (err2) {
                 err["attachLogOnReport"] = true;
-                api.showErrorNotification(
-                  "Failed to download UMM dependency",
-                  err2,
-                );
+                api.showErrorNotification("Failed to download UMM dependency", err2);
               }
             },
             default: true,
@@ -98,10 +96,7 @@ export async function ensureUMM(
   }
 }
 
-async function downloadFromGithub(
-  api: types.IExtensionApi,
-  dlInfo: INexusDownloadInfo,
-) {
+async function downloadFromGithub(api: types.IExtensionApi, dlInfo: INexusDownloadInfo) {
   const t = api.translate;
   const replace = {
     archiveName: dlInfo.archiveName,
@@ -173,11 +168,7 @@ function setRegistryKey(hive, key, name, value) {
 }
 
 async function findUMMPath(): Promise<string> {
-  const value = readRegistryKey(
-    "HKEY_CURRENT_USER",
-    "Software\\UnityModManager",
-    "Path",
-  );
+  const value = readRegistryKey("HKEY_CURRENT_USER", "Software\\UnityModManager", "Path");
   try {
     await fs.statAsync(path.join(value.toString(), UMM_EXE));
     return value.toString();
@@ -203,14 +194,9 @@ async function install(
     const isInjectorInstalled = force ? false : modId !== undefined;
     if (!isInjectorInstalled) {
       return new Promise<string>((resolve, reject) => {
-        api.events.emit(
-          "start-install-download",
-          downloadId,
-          true,
-          (err, modId) => {
-            return err ? reject(err) : resolve(modId);
-          },
-        );
+        api.events.emit("start-install-download", downloadId, true, (err, modId) => {
+          return err ? reject(err) : resolve(modId);
+        });
       });
     } else {
       return Promise.resolve(modId);
@@ -235,18 +221,8 @@ async function finalize(
     const staging = selectors.installPathForGame(state, downloadInfo.gameId);
     const mod = api.getState().persistent.mods[downloadInfo.gameId][modId];
     const ummPath = path.join(staging, mod.installationPath, UMM_EXE);
-    setRegistryKey(
-      "HKEY_CURRENT_USER",
-      "Software\\UnityModManager",
-      "Path",
-      path.dirname(ummPath),
-    );
-    setRegistryKey(
-      "HKEY_CURRENT_USER",
-      "Software\\UnityModManager",
-      "ExePath",
-      ummPath,
-    );
+    setRegistryKey("HKEY_CURRENT_USER", "Software\\UnityModManager", "Path", path.dirname(ummPath));
+    setRegistryKey("HKEY_CURRENT_USER", "Software\\UnityModManager", "ExePath", ummPath);
     setUMMPath(api, path.dirname(ummPath), downloadInfo.gameId);
     return Promise.resolve(modId);
   } catch (err) {
@@ -259,16 +235,9 @@ async function download(
   downloadInfo: INexusDownloadInfo,
   force?: boolean,
 ): Promise<string> {
-  const { domainId, modId, fileId, archiveName, allowAutoInstall } =
-    downloadInfo;
+  const { domainId, modId, fileId, archiveName, allowAutoInstall } = downloadInfo;
   const state = api.getState();
-  if (
-    !util.getSafe(
-      state,
-      ["persistent", "nexus", "userInfo", "isPremium"],
-      false,
-    )
-  ) {
+  if (!util.getSafe(state, ["persistent", "nexus", "userInfo", "isPremium"], false)) {
     return Promise.reject(new NotPremiumError());
   }
 
@@ -286,14 +255,7 @@ async function download(
   }
 
   return api
-    .emitAndAwait(
-      "nexus-download",
-      domainId,
-      modId,
-      fileId,
-      archiveName,
-      allowAutoInstall,
-    )
+    .emitAndAwait("nexus-download", domainId, modId, fileId, archiveName, allowAutoInstall)
     .then(async () => {
       const dlData = genDownloadInfo(api, downloadInfo.archiveName);
       return finalize(api, downloadInfo, dlData.downloadId, force) as any;
@@ -330,30 +292,19 @@ function genDownloadInfo(api: types.IExtensionApi, archiveName: string) {
     {},
   );
   const downloadId = Object.keys(downloads).find(
-    (dId) =>
-      downloads[dId].localPath.toUpperCase() === archiveName.toUpperCase(),
+    (dId) => downloads[dId].localPath.toUpperCase() === archiveName.toUpperCase(),
   );
   return { downloads, downloadId, state };
 }
 
-function updateSupportedGames(
-  api: types.IExtensionApi,
-  downloadInfo: INexusDownloadInfo,
-) {
-  const { downloadId, downloads } = genDownloadInfo(
-    api,
-    downloadInfo.archiveName,
-  );
+function updateSupportedGames(api: types.IExtensionApi, downloadInfo: INexusDownloadInfo) {
+  const { downloadId, downloads } = genDownloadInfo(api, downloadInfo.archiveName);
   if (downloadId === undefined) {
-    throw new util.NotFound(
-      `UMM download is missing: ${downloadInfo.archiveName}`,
-    );
+    throw new util.NotFound(`UMM download is missing: ${downloadInfo.archiveName}`);
   }
 
   const currentlySupported = downloads[downloadId].game;
-  const supportedGames = new Set<string>(
-    currentlySupported.concat(Object.keys(getSupportMap())),
-  );
+  const supportedGames = new Set<string>(currentlySupported.concat(Object.keys(getSupportMap())));
   api.store.dispatch(
     actions.setCompatibleGames(
       downloadId,

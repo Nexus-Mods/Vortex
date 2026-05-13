@@ -1,6 +1,5 @@
 import type { DiffOperation } from "@vortex/shared/ipc";
 import type { IPersistor, PersistorKey } from "@vortex/shared/state";
-
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Stub terminate so a faulted processOperations doesn't try to show a dialog.
@@ -95,11 +94,7 @@ describe("ReduxPersistorIPC: run grouping", () => {
     const persistor = createBulkPersistor();
     const { ipc } = await setupIPC(persistor);
 
-    ipc.applyDiffOperations("test", [
-      set(["a"], "1"),
-      set(["b"], "2"),
-      set(["c"], "3"),
-    ]);
+    ipc.applyDiffOperations("test", [set(["a"], "1"), set(["b"], "2"), set(["c"], "3")]);
     await ipc.finalizeWrite();
 
     expect(persistor.bulkSetItem).toHaveBeenCalledTimes(1);
@@ -116,11 +111,7 @@ describe("ReduxPersistorIPC: run grouping", () => {
     const persistor = createBulkPersistor();
     const { ipc } = await setupIPC(persistor);
 
-    ipc.applyDiffOperations("test", [
-      remove(["a"]),
-      remove(["b"]),
-      remove(["c"]),
-    ]);
+    ipc.applyDiffOperations("test", [remove(["a"]), remove(["b"]), remove(["c"])]);
     await ipc.finalizeWrite();
 
     expect(persistor.bulkRemoveItem).toHaveBeenCalledTimes(1);
@@ -184,12 +175,8 @@ describe("ReduxPersistorIPC: chunking at BULK_CHUNK_SIZE (256)", () => {
     await ipc.finalizeWrite();
 
     expect(persistor.bulkSetItem).toHaveBeenCalledTimes(2);
-    expect(
-      (persistor.bulkSetItem.mock.calls[0][0] as Array<unknown>).length,
-    ).toBe(256);
-    expect(
-      (persistor.bulkSetItem.mock.calls[1][0] as Array<unknown>).length,
-    ).toBe(1);
+    expect((persistor.bulkSetItem.mock.calls[0][0] as Array<unknown>).length).toBe(256);
+    expect((persistor.bulkSetItem.mock.calls[1][0] as Array<unknown>).length).toBe(1);
   });
 
   it("splits a 1002-op set run into 4 chunks (256+256+256+234)", async () => {
@@ -201,9 +188,7 @@ describe("ReduxPersistorIPC: chunking at BULK_CHUNK_SIZE (256)", () => {
     await ipc.finalizeWrite();
 
     expect(persistor.bulkSetItem).toHaveBeenCalledTimes(4);
-    const sizes = persistor.bulkSetItem.mock.calls.map(
-      (c) => (c[0] as Array<unknown>).length,
-    );
+    const sizes = persistor.bulkSetItem.mock.calls.map((c) => (c[0] as Array<unknown>).length);
     expect(sizes).toEqual([256, 256, 256, 234]);
 
     // First key of each chunk advances by 256, last chunk has the tail.
@@ -223,9 +208,7 @@ describe("ReduxPersistorIPC: chunking at BULK_CHUNK_SIZE (256)", () => {
     await ipc.finalizeWrite();
 
     expect(persistor.bulkRemoveItem).toHaveBeenCalledTimes(2);
-    const sizes = persistor.bulkRemoveItem.mock.calls.map(
-      (c) => (c[0] as Array<unknown>).length,
-    );
+    const sizes = persistor.bulkRemoveItem.mock.calls.map((c) => (c[0] as Array<unknown>).length);
     expect(sizes).toEqual([256, 44]);
   });
 });
@@ -237,11 +220,7 @@ describe("ReduxPersistorIPC: fallback when bulk methods are absent", () => {
     const persistor = createNonBulkPersistor();
     const { ipc } = await setupIPC(persistor);
 
-    ipc.applyDiffOperations("test", [
-      set(["a"], "1"),
-      set(["b"], "2"),
-      set(["c"], "3"),
-    ]);
+    ipc.applyDiffOperations("test", [set(["a"], "1"), set(["b"], "2"), set(["c"], "3")]);
     await ipc.finalizeWrite();
 
     expect(persistor.setItem).toHaveBeenCalledTimes(3);
@@ -267,9 +246,7 @@ describe("ReduxPersistorIPC: transaction wrapping and dirty-table notify", () =>
   it("wraps each diff in BEGIN…COMMIT and notifies dirty tables", async () => {
     const persistor = createBulkPersistor();
     const { ipc, levelPersist, invalidator } = await setupIPC(persistor);
-    levelPersist.getDirtyTables.mockResolvedValue([
-      { database: "db", table: "kv", type: "raw" },
-    ]);
+    levelPersist.getDirtyTables.mockResolvedValue([{ database: "db", table: "kv", type: "raw" }]);
 
     ipc.applyDiffOperations("test", [set(["a"], "1")]);
     await ipc.finalizeWrite();
@@ -355,9 +332,7 @@ describe("ReduxPersistorIPC: atomicity under partial failure (force-close simula
     persistor.bulkSetItem.mockRejectedValueOnce(new Error("write failed"));
 
     const { ipc, levelPersist } = await setupIPC(persistor);
-    levelPersist.rollbackTransaction.mockRejectedValueOnce(
-      new Error("rollback failed"),
-    );
+    levelPersist.rollbackTransaction.mockRejectedValueOnce(new Error("rollback failed"));
 
     // First diff fails.
     ipc.applyDiffOperations("test", [set(["a"], "1")]);

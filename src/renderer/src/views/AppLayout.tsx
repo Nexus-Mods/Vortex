@@ -4,16 +4,10 @@ import { Button as ReactButton } from "react-bootstrap";
 import { addStyle } from "react-bootstrap/lib/utils/bootstrapUtils";
 import { useDispatch, useSelector } from "react-redux";
 
-import type { IState } from "../types/IState";
-
 import { setUseModernLayout } from "../actions/window";
-import {
-  MainProvider,
-  MenuLayerProvider,
-  PagesProvider,
-  WindowProvider,
-} from "../contexts";
+import { MainProvider, MenuLayerProvider, PagesProvider, WindowProvider } from "../contexts";
 import Spinner from "../controls/Spinner";
+import type { IState } from "../types/IState";
 import { Button } from "../ui/components/button/Button";
 import { MutexProvider } from "../util/MutexContext";
 import { ClassicLayout, ModernLayout } from "./layout";
@@ -30,9 +24,7 @@ const LayoutSwitcher = () => {
   }
 
   const dispatch = useDispatch();
-  const useModernLayout = useSelector(
-    (state: IState) => state.settings.window.useModernLayout,
-  );
+  const useModernLayout = useSelector((state: IState) => state.settings.window.useModernLayout);
 
   return (
     <Button
@@ -51,9 +43,7 @@ export interface IBaseProps {
 }
 
 export const AppLayout: FC<IBaseProps> = () => {
-  const useModernLayout = useSelector(
-    (state: IState) => state.settings.window.useModernLayout,
-  );
+  const useModernLayout = useSelector((state: IState) => state.settings.window.useModernLayout);
 
   return (
     <Suspense fallback={<Spinner className="suspense-spinner" />}>

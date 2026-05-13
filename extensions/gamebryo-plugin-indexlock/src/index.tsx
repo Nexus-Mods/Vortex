@@ -1,14 +1,12 @@
-import LockIndex from "./LockIndex";
-import { indexReducer } from "./reducers";
-import { IPlugin } from "./types";
-
 import Promise from "bluebird";
 import * as React from "react";
 import { selectors, types, util } from "vortex-api";
 
-function genAttribute(
-  api: types.IExtensionApi,
-): types.ITableAttribute<IPlugin> {
+import LockIndex from "./LockIndex";
+import { indexReducer } from "./reducers";
+import { IPlugin } from "./types";
+
+function genAttribute(api: types.IExtensionApi): types.ITableAttribute<IPlugin> {
   return {
     id: "lockIndex",
     name: "Lock Mod Index",
@@ -24,21 +22,12 @@ function genAttribute(
         "will not load them in this order.",
     ),
     customRenderer: (plugin: IPlugin) => (
-      <LockIndex
-        plugin={plugin}
-        gameMode={selectors.activeGameId(api.store.getState())}
-      />
+      <LockIndex plugin={plugin} gameMode={selectors.activeGameId(api.store.getState())} />
     ),
     calc: (plugin: IPlugin) => {
       const state: types.IState = api.store.getState();
       const gameMode = selectors.activeGameId(state);
-      const statePath = [
-        "persistent",
-        "plugins",
-        "lockedIndices",
-        gameMode,
-        plugin.name,
-      ];
+      const statePath = ["persistent", "plugins", "lockedIndices", gameMode, plugin.name];
       return util.getSafe(state, statePath, undefined);
     },
     placement: "detail",
@@ -62,11 +51,7 @@ function genApplyIndexlock(api: types.IExtensionApi) {
 
     const state: types.IState = api.store.getState();
     const gameMode = selectors.activeGameId(state);
-    const fixed = util.getSafe(
-      state,
-      ["persistent", "plugins", "lockedIndices", gameMode],
-      {},
-    );
+    const fixed = util.getSafe(state, ["persistent", "plugins", "lockedIndices", gameMode], {});
     if (Object.keys(fixed).length === 0) {
       // hopefully the default case: nothing locked
       return;
@@ -81,20 +66,15 @@ function genApplyIndexlock(api: types.IExtensionApi) {
     // create sorted order without any locked plugins
     const sorted = Object.keys(newLoadOrder)
       .filter((key) => fixed[key] === undefined)
-      .sort(
-        (lhs, rhs) => newLoadOrder[lhs].loadOrder - newLoadOrder[rhs].loadOrder,
-      );
+      .sort((lhs, rhs) => newLoadOrder[lhs].loadOrder - newLoadOrder[rhs].loadOrder);
 
     // locked index -> locked plugin
-    const toInsert: { [idx: number]: string } = Object.keys(fixed).reduce(
-      (prev, key) => {
-        if (newLoadOrder[key] !== undefined) {
-          prev[fixed[key]] = key;
-        }
-        return prev;
-      },
-      {},
-    );
+    const toInsert: { [idx: number]: string } = Object.keys(fixed).reduce((prev, key) => {
+      if (newLoadOrder[key] !== undefined) {
+        prev[fixed[key]] = key;
+      }
+      return prev;
+    }, {});
 
     let currentIndex: number = 0;
 
@@ -118,22 +98,13 @@ function genApplyIndexlock(api: types.IExtensionApi) {
     }
 
     const isNative = (id: string) =>
-      util.getSafe(
-        state.session,
-        ["plugins", "pluginList", id, "isNative"],
-        false,
-      );
+      util.getSafe(state.session, ["plugins", "pluginList", id, "isNative"], false);
 
-    const isEnabled = (id: string, entry: ILoadOrderEntry) =>
-      entry.enabled || isNative(id);
+    const isEnabled = (id: string, entry: ILoadOrderEntry) => entry.enabled || isNative(id);
 
     // this inserts all fixed-index plugins in the middle of the list
     // tslint:disable-next-line:prefer-for-of
-    for (
-      let idx = 0;
-      idx < sorted.length && Object.keys(toInsert).length > 0;
-      ++idx
-    ) {
+    for (let idx = 0; idx < sorted.length && Object.keys(toInsert).length > 0; ++idx) {
       if (
         newLoadOrder[sorted[idx]] === undefined ||
         !isEnabled(sorted[idx], newLoadOrder[sorted[idx]]) ||
@@ -156,9 +127,7 @@ function genApplyIndexlock(api: types.IExtensionApi) {
       updating = true;
       api.events.emit(
         "set-plugin-list",
-        sorted.map((id) =>
-          newLoadOrder[id] !== undefined ? newLoadOrder[id].name || id : id,
-        ),
+        sorted.map((id) => (newLoadOrder[id] !== undefined ? newLoadOrder[id].name || id : id)),
         false,
       );
     } finally {
@@ -169,10 +138,7 @@ function genApplyIndexlock(api: types.IExtensionApi) {
 
 function init(context: types.IExtensionContext) {
   context.requireExtension("gamebryo-plugin-management");
-  context.registerReducer(
-    ["persistent", "plugins", "lockedIndices"],
-    indexReducer,
-  );
+  context.registerReducer(["persistent", "plugins", "lockedIndices"], indexReducer);
 
   context.registerTableAttribute("gamebryo-plugins", genAttribute(context.api));
 
@@ -204,12 +170,9 @@ function init(context: types.IExtensionContext) {
       const state = store.getState();
       applyIndexlock(state.loadOrder);
     });
-    context.api.onStateChange(
-      ["persistent", "plugins", "lockedIndices"],
-      () => {
-        liDebouncer.schedule();
-      },
-    );
+    context.api.onStateChange(["persistent", "plugins", "lockedIndices"], () => {
+      liDebouncer.schedule();
+    });
   });
   return true;
 }

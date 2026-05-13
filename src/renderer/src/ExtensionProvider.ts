@@ -1,13 +1,9 @@
 import * as _ from "lodash";
 import * as React from "react";
 
-import type { IExtensionContext } from "./types/IExtensionContext";
-import type {
-  IExtendedProps,
-  IExtensibleProps,
-} from "./types/IExtensionProvider";
-
 import ExtensionManager from "./ExtensionManager";
+import type { IExtensionContext } from "./types/IExtensionContext";
+import type { IExtendedProps, IExtensibleProps } from "./types/IExtensionProvider";
 
 // Cache for extension objects to avoid re-collecting on every render
 const extensionCache: Map<string, unknown[]> = new Map();
@@ -66,16 +62,12 @@ export function useExtensionObjects<T>(
 
 type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 
-export const ExtensionContext = React.createContext<ExtensionManager | null>(
-  null,
-);
+export const ExtensionContext = React.createContext<ExtensionManager | null>(null);
 
 export const useExtensionContext = (): ExtensionManager => {
   const context = React.useContext(ExtensionContext);
   if (context === null) {
-    throw new Error(
-      "useExtensionContext must be used within an ExtensionProvider",
-    );
+    throw new Error("useExtensionContext must be used within an ExtensionProvider");
   }
   return context;
 };
@@ -146,10 +138,7 @@ export function extend(
         }
 
         if (this.mObjects === undefined) {
-          this.mObjects = [].concat(
-            staticElements || [],
-            extensions[this.props[groupProp]] || [],
-          );
+          this.mObjects = [].concat(staticElements || [], extensions[this.props[groupProp]] || []);
         }
 
         const wrapProps: any = {

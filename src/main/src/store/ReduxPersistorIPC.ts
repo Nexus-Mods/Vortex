@@ -11,10 +11,9 @@
  * - Provides hydration data to renderer on startup
  */
 
+import { unknownToError } from "@vortex/shared";
 import type { DiffOperation, Serializable } from "@vortex/shared/ipc";
 import type { IPersistor, PersistorKey } from "@vortex/shared/state";
-
-import { unknownToError } from "@vortex/shared";
 
 import { terminate } from "../errorHandling";
 import { log } from "../logging";
@@ -51,9 +50,7 @@ function insertValueAtLeaf<T extends Record<string, unknown>, V>(
       }
     }, target);
   } catch (err) {
-    const newErr = new Error(
-      `Failed to load application state ${hive}.${key.join(".")}`,
-    );
+    const newErr = new Error(`Failed to load application state ${hive}.${key.join(".")}`);
     if (err instanceof Error) {
       newErr.stack = err.stack;
     }
@@ -85,10 +82,7 @@ class ReduxPersistorIPC {
   /**
    * Set the LevelPersist instance and QueryInvalidator for dirty table tracking.
    */
-  public setQueryInvalidator(
-    levelPersist: LevelPersist,
-    invalidator: QueryInvalidator,
-  ): void {
+  public setQueryInvalidator(levelPersist: LevelPersist, invalidator: QueryInvalidator): void {
     this.#mLevelPersist = levelPersist;
     this.#mInvalidator = invalidator;
   }
@@ -210,8 +204,7 @@ class ReduxPersistorIPC {
   ): Promise<void> {
     const levelPersist = this.#mLevelPersist;
     const invalidator = this.#mInvalidator;
-    const useTransaction =
-      levelPersist !== undefined && invalidator !== undefined;
+    const useTransaction = levelPersist !== undefined && invalidator !== undefined;
 
     try {
       if (useTransaction) {
@@ -260,9 +253,7 @@ class ReduxPersistorIPC {
         // Retry on user ignore
         return this.processOperations(hive, persistor, operations);
       } else {
-        terminate(
-          new Error(`Failed to store application state: ${err.message}`),
-        );
+        terminate(new Error(`Failed to store application state: ${err.message}`));
       }
     }
   }
@@ -292,21 +283,11 @@ class ReduxPersistorIPC {
     }
   }
 
-  private async applySetRun(
-    persistor: IPersistor,
-    run: DiffOperation[],
-  ): Promise<void> {
+  private async applySetRun(persistor: IPersistor, run: DiffOperation[]): Promise<void> {
     if (persistor.bulkSetItem !== undefined) {
       const bulk = persistor.bulkSetItem.bind(persistor);
-      for (
-        let start = 0;
-        start < run.length;
-        start += ReduxPersistorIPC.BULK_CHUNK_SIZE
-      ) {
-        const chunk = run.slice(
-          start,
-          start + ReduxPersistorIPC.BULK_CHUNK_SIZE,
-        );
+      for (let start = 0; start < run.length; start += ReduxPersistorIPC.BULK_CHUNK_SIZE) {
+        const chunk = run.slice(start, start + ReduxPersistorIPC.BULK_CHUNK_SIZE);
         await bulk(
           chunk.map((op) => ({
             key: op.path,
@@ -321,21 +302,11 @@ class ReduxPersistorIPC {
     }
   }
 
-  private async applyRemoveRun(
-    persistor: IPersistor,
-    run: DiffOperation[],
-  ): Promise<void> {
+  private async applyRemoveRun(persistor: IPersistor, run: DiffOperation[]): Promise<void> {
     if (persistor.bulkRemoveItem !== undefined) {
       const bulk = persistor.bulkRemoveItem.bind(persistor);
-      for (
-        let start = 0;
-        start < run.length;
-        start += ReduxPersistorIPC.BULK_CHUNK_SIZE
-      ) {
-        const chunk = run.slice(
-          start,
-          start + ReduxPersistorIPC.BULK_CHUNK_SIZE,
-        );
+      for (let start = 0; start < run.length; start += ReduxPersistorIPC.BULK_CHUNK_SIZE) {
+        const chunk = run.slice(start, start + ReduxPersistorIPC.BULK_CHUNK_SIZE);
         await bulk(chunk.map((op) => op.path));
       }
     } else {
@@ -382,8 +353,7 @@ class ReduxPersistorIPC {
       );
       // Filter out undefined values (keys that weren't found)
       kvPairs = results.filter(
-        (kvPair): kvPair is { key: PersistorKey; value: Serializable } =>
-          kvPair !== undefined,
+        (kvPair): kvPair is { key: PersistorKey; value: Serializable } => kvPair !== undefined,
       );
     }
 

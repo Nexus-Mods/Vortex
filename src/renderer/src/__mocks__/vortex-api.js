@@ -24,8 +24,7 @@ if (typeof global.clearImmediate === "undefined") {
 }
 
 function getVortexPath(key) {
-  const testBasePath =
-    global.testBasePath || path.join(os.tmpdir(), "vortex-test-default");
+  const testBasePath = global.testBasePath || path.join(os.tmpdir(), "vortex-test-default");
   switch (key) {
     case "userData":
       return testBasePath;
@@ -147,8 +146,7 @@ class MockTestAPI {
     // Initialize state with defaults or provided state
     this.state = {
       app: {
-        instanceId:
-          initialState.app?.instanceId || "test-instance-" + Date.now(),
+        instanceId: initialState.app?.instanceId || "test-instance-" + Date.now(),
       },
       persistent: {
         profiles: initialState.persistent?.profiles || {},
@@ -206,10 +204,7 @@ class MockTestAPI {
     this.eventListeners = new Map();
     this.events = {
       emit: (event, ...args) => {
-        if (
-          event === "get-download-free-slots" &&
-          typeof args[0] === "function"
-        ) {
+        if (event === "get-download-free-slots" && typeof args[0] === "function") {
           args[0](5); // Mock 5 free download slots
           return;
         }
@@ -227,10 +222,7 @@ class MockTestAPI {
           try {
             listener(...args);
           } catch (error) {
-            console.error(
-              `❌ Error in event listener for ${event}:`,
-              error.message,
-            );
+            console.error(`❌ Error in event listener for ${event}:`, error.message);
           }
         });
 
@@ -286,9 +278,7 @@ class MockTestAPI {
 
         if (
           action.type === "BATCHED_ACTIONS" ||
-          (Array.isArray(action.payload) &&
-            action.payload.length > 0 &&
-            action.payload[0].type)
+          (Array.isArray(action.payload) && action.payload.length > 0 && action.payload[0].type)
         ) {
           const actions = action.payload || [];
           actions.forEach((batchedAction) => {
@@ -317,11 +307,8 @@ class MockTestAPI {
 
         if (action.type === "SET_DOWNLOAD_HASH_BY_FILE") {
           const { fileName, fileMD5, fileSize } = action.payload;
-          const downloadId = Object.keys(
-            this.state.persistent.downloads.files,
-          ).find(
-            (id) =>
-              this.state.persistent.downloads.files[id].localPath === fileName,
+          const downloadId = Object.keys(this.state.persistent.downloads.files).find(
+            (id) => this.state.persistent.downloads.files[id].localPath === fileName,
           );
           if (downloadId) {
             this.state.persistent.downloads.files[downloadId].fileMD5 = fileMD5;
@@ -352,8 +339,7 @@ class MockTestAPI {
           (action.type && action.type.includes("SHOW")) ||
           (action.payload &&
             typeof action.payload === "object" &&
-            (action.payload.title === "Install Dependencies" ||
-              action.payload.type === "question"))
+            (action.payload.title === "Install Dependencies" || action.payload.type === "question"))
         ) {
           return Promise.resolve({
             action: "Install",
@@ -366,49 +352,45 @@ class MockTestAPI {
           });
         }
 
-        Object.entries(this.registeredReducers).forEach(
-          ([statePath, reducerSpec]) => {
-            try {
-              const pathParts = statePath.split(".");
-              let current = this.state;
-              for (const part of pathParts.slice(0, -1)) {
-                current = current[part];
-              }
-              const lastPart = pathParts[pathParts.length - 1];
-              const oldState = current[lastPart];
-              let newState = oldState;
-              if (reducerSpec.reducers) {
-                Object.entries(reducerSpec.reducers).forEach(
-                  ([key, reducerFn]) => {
-                    try {
-                      let matches = false;
-                      if (typeof key === "function" && key.getType) {
-                        matches = key.getType() === action.type;
-                      } else if (typeof key === "string") {
-                        matches = key === action.type;
-                      } else if (key.toString) {
-                        matches = key.toString() === action.type;
-                      }
-
-                      if (matches) {
-                        newState = reducerFn(newState, action.payload);
-                      }
-                    } catch (err) {
-                      // noop
-                    }
-                  },
-                );
-              }
-
-              // Update state if changed
-              if (newState !== oldState) {
-                current[lastPart] = newState;
-              }
-            } catch (err) {
-              // Ignore reducer errors
+        Object.entries(this.registeredReducers).forEach(([statePath, reducerSpec]) => {
+          try {
+            const pathParts = statePath.split(".");
+            let current = this.state;
+            for (const part of pathParts.slice(0, -1)) {
+              current = current[part];
             }
-          },
-        );
+            const lastPart = pathParts[pathParts.length - 1];
+            const oldState = current[lastPart];
+            let newState = oldState;
+            if (reducerSpec.reducers) {
+              Object.entries(reducerSpec.reducers).forEach(([key, reducerFn]) => {
+                try {
+                  let matches = false;
+                  if (typeof key === "function" && key.getType) {
+                    matches = key.getType() === action.type;
+                  } else if (typeof key === "string") {
+                    matches = key === action.type;
+                  } else if (key.toString) {
+                    matches = key.toString() === action.type;
+                  }
+
+                  if (matches) {
+                    newState = reducerFn(newState, action.payload);
+                  }
+                } catch (err) {
+                  // noop
+                }
+              });
+            }
+
+            // Update state if changed
+            if (newState !== oldState) {
+              current[lastPart] = newState;
+            }
+          } catch (err) {
+            // Ignore reducer errors
+          }
+        });
 
         return Promise.resolve();
       },
@@ -461,12 +443,10 @@ class MockTestAPI {
 
     // Game methods
     this.getGames = () => {
-      return Object.keys(this.state.session.gameMode.known || {}).map(
-        (gameId) => ({
-          id: gameId,
-          name: this.state.session.gameMode.known[gameId].name || gameId,
-        }),
-      );
+      return Object.keys(this.state.session.gameMode.known || {}).map((gameId) => ({
+        id: gameId,
+        name: this.state.session.gameMode.known[gameId].name || gameId,
+      }));
     };
 
     this.getGame = (gameId) => {
@@ -547,9 +527,7 @@ class MockTestAPI {
         final: !!game.final,
       };
 
-      const existingIndex = this.state.session.gameMode.known.findIndex(
-        (g) => g.id === game.id,
-      );
+      const existingIndex = this.state.session.gameMode.known.findIndex((g) => g.id === game.id);
       if (existingIndex >= 0) {
         this.state.session.gameMode.known[existingIndex] = gameStored;
       } else {
@@ -575,13 +553,7 @@ class MockTestAPI {
       // Silent registration
     };
 
-    this.registerAction = (
-      group,
-      position,
-      iconOrComponent,
-      options,
-      titleOrAction,
-    ) => {
+    this.registerAction = (group, position, iconOrComponent, options, titleOrAction) => {
       // Silent registration
     };
 
@@ -589,14 +561,7 @@ class MockTestAPI {
       // Silent registration
     };
 
-    this.registerModType = (
-      typeId,
-      priority,
-      isSupported,
-      getPath,
-      test,
-      options,
-    ) => {
+    this.registerModType = (typeId, priority, isSupported, getPath, test, options) => {
       // Silent registration
     };
 
@@ -713,10 +678,8 @@ class MockTestAPI {
             },
             gameId: details.gameId || "stardewvalley",
             source: "nexus",
-            logicalFileName:
-              matchingMod.source?.logicalFilename || `${matchingMod.name}.zip`,
-            fileName:
-              matchingMod.source?.logicalFilename || `${matchingMod.name}.zip`,
+            logicalFileName: matchingMod.source?.logicalFilename || `${matchingMod.name}.zip`,
+            fileName: matchingMod.source?.logicalFilename || `${matchingMod.name}.zip`,
             fileMD5: targetMD5,
             fileSize: details.fileSize,
             nexus: {
@@ -750,8 +713,7 @@ class MockTestAPI {
             mod.source &&
             (mod.source.md5 === reference.archiveId ||
               (mod.source.modId?.toString() === reference.id?.toString() &&
-                mod.source.fileId?.toString() ===
-                  reference.fileId?.toString())),
+                mod.source.fileId?.toString() === reference.fileId?.toString())),
         );
 
         if (matchingMod && matchingMod.source) {
@@ -764,8 +726,7 @@ class MockTestAPI {
           const lookupResult = {
             key: {
               fileMD5: matchingMod.source.md5,
-              fileSize:
-                reference.fileSizeBytes || matchingMod.source.fileSize || 0,
+              fileSize: reference.fileSizeBytes || matchingMod.source.fileSize || 0,
               gameId: gameId,
             },
             value: {
@@ -792,10 +753,8 @@ class MockTestAPI {
                 matchingMod.source?.logicalFilename ||
                 `${matchingMod.name}.zip`,
               fileMD5: matchingMod.source.md5,
-              fileSize:
-                reference.fileSizeBytes || matchingMod.source.fileSize || 0,
-              fileSizeBytes:
-                reference.fileSizeBytes || matchingMod.source.fileSize || 0,
+              fileSize: reference.fileSizeBytes || matchingMod.source.fileSize || 0,
+              fileSizeBytes: reference.fileSizeBytes || matchingMod.source.fileSize || 0,
               nexus: {
                 modId: modId,
                 fileId: fileId,
@@ -1024,11 +983,7 @@ const vortexApi = {
     }
 
     // Increment counter when installation completes successfully
-    if (
-      message === "Installation completed successfully" &&
-      meta &&
-      meta.modId
-    ) {
+    if (message === "Installation completed successfully" && meta && meta.modId) {
       global.modsInstalled = (global.modsInstalled || 0) + 1;
       if (!global.suppressLogging) {
         console.log(
@@ -1053,9 +1008,7 @@ const vortexApi = {
     }),
     currentProfile: (state) => {
       const profiles = state?.persistent?.profiles || {};
-      return (
-        Object.values(profiles)[0] || { id: "default", gameId: "stardewvalley" }
-      );
+      return Object.values(profiles)[0] || { id: "default", gameId: "stardewvalley" };
     },
     profileById: (state, profileId) => {
       return (
@@ -1100,20 +1053,15 @@ const vortexApi = {
       const totalRequired = session.totalRequired || 25;
       const totalOptional = session.totalOptional || 0;
       const downloadedCount = session.downloadedCount || 0;
-      const installedCount =
-        session.installedCount || global.modsInstalled || 0;
+      const installedCount = session.installedCount || global.modsInstalled || 0;
       const failedCount = session.failedCount || 0;
       const skippedCount = session.skippedCount || 0;
 
       const downloadProgress =
-        totalRequired > 0
-          ? Math.round((downloadedCount / totalRequired) * 100)
-          : 0;
+        totalRequired > 0 ? Math.round((downloadedCount / totalRequired) * 100) : 0;
 
       const installProgress =
-        totalRequired > 0
-          ? Math.round((installedCount / totalRequired) * 100)
-          : 0;
+        totalRequired > 0 ? Math.round((installedCount / totalRequired) * 100) : 0;
 
       // isComplete is true ONLY when compatibility info has been added (debug log emitted)
       const isComplete = global.modsInstalled >= totalRequired;
@@ -1145,9 +1093,7 @@ const vortexApi = {
 
       // First try to find by modId if provided (most direct match)
       if (searchParams.modId) {
-        const byModId = Object.values(mods).find(
-          (mod) => mod.modId === searchParams.modId,
-        );
+        const byModId = Object.values(mods).find((mod) => mod.modId === searchParams.modId);
         if (byModId) return byModId;
       }
 
@@ -1158,14 +1104,9 @@ const vortexApi = {
 
         // Check each available identifier
         if (searchParams.tag && ref.tag === searchParams.tag) return true;
-        if (searchParams.fileMD5 && ref.fileMD5 === searchParams.fileMD5)
-          return true;
-        if (searchParams.fileId && ref.fileId === searchParams.fileId)
-          return true;
-        if (
-          searchParams.logicalFileName &&
-          ref.logicalFileName === searchParams.logicalFileName
-        )
+        if (searchParams.fileMD5 && ref.fileMD5 === searchParams.fileMD5) return true;
+        if (searchParams.fileId && ref.fileId === searchParams.fileId) return true;
+        if (searchParams.logicalFileName && ref.logicalFileName === searchParams.logicalFileName)
           return true;
 
         return false;

@@ -1,34 +1,24 @@
+import path from "path";
+
 /* eslint-disable */
 import Bluebird from "bluebird";
-import path from "path";
+import { fs, log, types, util } from "vortex-api";
 import { parseStringPromise } from "xml2js";
 
 import { GAME_ID, SCRIPT_MERGER_ID, MERGE_INV_MANIFEST } from "./common";
-
-import { fs, log, types, util } from "vortex-api";
 
 function getMergeInventory(api: types.IExtensionApi) {
   // Provided with a pattern, attempts to retrieve element values
   //  from any element keys that match the pattern inside the merge inventory file.
   const state = api.getState();
-  const discovery = util.getSafe(
-    state,
-    ["settings", "gameMode", "discovered", GAME_ID],
-    undefined,
-  );
-  const scriptMerger = util.getSafe(
-    discovery,
-    ["tools", SCRIPT_MERGER_ID],
-    undefined,
-  );
+  const discovery = util.getSafe(state, ["settings", "gameMode", "discovered", GAME_ID], undefined);
+  const scriptMerger = util.getSafe(discovery, ["tools", SCRIPT_MERGER_ID], undefined);
   if (scriptMerger === undefined || scriptMerger.path === undefined) {
     return Bluebird.resolve([]);
   }
 
   return fs
-    .readFileAsync(
-      path.join(path.dirname(scriptMerger.path), MERGE_INV_MANIFEST),
-    )
+    .readFileAsync(path.join(path.dirname(scriptMerger.path), MERGE_INV_MANIFEST))
     .then(async (xmlData) => {
       try {
         const mergeData = await parseStringPromise(xmlData);
@@ -40,11 +30,7 @@ function getMergeInventory(api: types.IExtensionApi) {
     .catch((err) =>
       err.code === "ENOENT" // No merge file? - no problem.
         ? Promise.resolve(undefined)
-        : Promise.reject(
-            new util.DataInvalid(
-              `Failed to parse ${MERGE_INV_MANIFEST}: ${err}`,
-            ),
-          ),
+        : Promise.reject(new util.DataInvalid(`Failed to parse ${MERGE_INV_MANIFEST}: ${err}`)),
     );
 }
 
@@ -104,9 +90,7 @@ export function getMergedModNames(api: types.IExtensionApi) {
     });
 }
 
-export function getNamesOfMergedMods(
-  api: types.IExtensionApi,
-): Bluebird<string[]> {
+export function getNamesOfMergedMods(api: types.IExtensionApi): Bluebird<string[]> {
   // This retrieves a unique list of mod names included in the merged mod
   return getMergeInventory(api).then(async (mergeInventory) => {
     if (mergeInventory === undefined) {
@@ -119,27 +103,24 @@ export function getNamesOfMergedMods(
       undefined,
     );
     const modsPath = path.join(discovery.path, "Mods");
-    const modNames = await mergeInventory.MergeInventory.Merge.reduce(
-      async (accumP, iter) => {
-        const accum = await accumP;
-        const mergedMods = iter?.IncludedMod;
-        for (const modName of mergedMods) {
-          if (modName === undefined) {
-            return accum;
-          }
-          if (!accum.includes(modName?._)) {
-            try {
-              await fs.statAsync(path.join(modsPath, modName?._));
-              accum.push(modName?._);
-            } catch (err) {
-              log("debug", "merged mod is missing", modName?._);
-            }
+    const modNames = await mergeInventory.MergeInventory.Merge.reduce(async (accumP, iter) => {
+      const accum = await accumP;
+      const mergedMods = iter?.IncludedMod;
+      for (const modName of mergedMods) {
+        if (modName === undefined) {
+          return accum;
+        }
+        if (!accum.includes(modName?._)) {
+          try {
+            await fs.statAsync(path.join(modsPath, modName?._));
+            accum.push(modName?._);
+          } catch (err) {
+            log("debug", "merged mod is missing", modName?._);
           }
         }
-        return accum;
-      },
-      [],
-    );
+      }
+      return accum;
+    }, []);
     return Promise.resolve(modNames);
   });
 }

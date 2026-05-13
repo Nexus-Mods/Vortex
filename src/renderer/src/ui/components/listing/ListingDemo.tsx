@@ -51,9 +51,8 @@ export const ListingDemo = () => {
         </Typography>
 
         <Typography appearance="subdued">
-          Container that manages loading, error, and empty states for lists of
-          content. Provide a SkeletonTile component and the Listing handles
-          state transitions automatically.
+          Container that manages loading, error, and empty states for lists of content. Provide a
+          SkeletonTile component and the Listing handles state transitions automatically.
         </Typography>
       </div>
 
@@ -127,8 +126,8 @@ export const ListingDemo = () => {
         </Typography>
 
         <Typography appearance="subdued" typographyType="body-sm">
-          With appendLoader, existing content stays visible while skeleton tiles
-          appear below — useful for infinite scroll or "load more" patterns.
+          With appendLoader, existing content stays visible while skeleton tiles appear below —
+          useful for infinite scroll or "load more" patterns.
         </Typography>
 
         <div className="rounded-sm border border-stroke-weak p-4">
@@ -153,8 +152,8 @@ export const ListingDemo = () => {
         </Typography>
 
         <Typography appearance="subdued" typographyType="body-sm">
-          The skeletonCount prop controls how many placeholder tiles appear
-          during loading. Default is 4.
+          The skeletonCount prop controls how many placeholder tiles appear during loading. Default
+          is 4.
         </Typography>
 
         <div className="rounded-sm border border-stroke-weak p-4">
@@ -173,8 +172,7 @@ export const ListingDemo = () => {
         </Typography>
 
         <Typography appearance="subdued" typographyType="body-sm">
-          Use the customNoResults prop to replace the default empty state with
-          your own content.
+          Use the customNoResults prop to replace the default empty state with your own content.
         </Typography>
 
         <div className="rounded-sm border border-stroke-weak p-4">
@@ -202,9 +200,9 @@ export const ListingDemo = () => {
         </Typography>
 
         <Typography appearance="subdued" typographyType="body-sm">
-          Use the errorTitle and errorMessage props to display API errors or
-          other failure messages. The default error icon and "Contact support"
-          link are shown automatically when isError is true.
+          Use the errorTitle and errorMessage props to display API errors or other failure messages.
+          The default error icon and "Contact support" link are shown automatically when isError is
+          true.
         </Typography>
 
         <div className="rounded-sm border border-stroke-weak p-4">
@@ -223,35 +221,25 @@ export const ListingDemo = () => {
           Design Notes
         </Typography>
 
-        <Typography
-          appearance="subdued"
-          as="ul"
-          className="list-inside list-disc space-y-2"
-        >
+        <Typography appearance="subdued" as="ul" className="list-inside list-disc space-y-2">
+          <li>Listing renders one of three states: loading/content, error, or no results</li>
+
           <li>
-            Listing renders one of three states: loading/content, error, or no
-            results
+            SkeletonTile is a required prop — provide a component that matches the shape of your
+            content tiles
           </li>
 
           <li>
-            SkeletonTile is a required prop — provide a component that matches
-            the shape of your content tiles
+            The className prop is passed to the grid container, so layout classes like CSS grid work
+            directly
           </li>
 
           <li>
-            The className prop is passed to the grid container, so layout
-            classes like CSS grid work directly
+            Use additionalContent for elements like pagination that should appear after the list
+            when not loading
           </li>
 
-          <li>
-            Use additionalContent for elements like pagination that should
-            appear after the list when not loading
-          </li>
-
-          <li>
-            Use customError or customNoResults to fully override the default
-            empty states
-          </li>
+          <li>Use customError or customNoResults to fully override the default empty states</li>
         </Typography>
       </div>
     </div>

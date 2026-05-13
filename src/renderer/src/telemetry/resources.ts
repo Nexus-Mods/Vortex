@@ -1,10 +1,8 @@
-import { Resource } from "@opentelemetry/resources";
-import {
-  ATTR_SERVICE_NAME,
-  ATTR_SERVICE_VERSION,
-} from "@opentelemetry/semantic-conventions";
-import { SHARED_TELEMETRY_ATTRIBUTES } from "@vortex/shared/telemetry";
 import os from "os";
+
+import { Resource } from "@opentelemetry/resources";
+import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from "@opentelemetry/semantic-conventions";
+import { SHARED_TELEMETRY_ATTRIBUTES } from "@vortex/shared/telemetry";
 
 /**
  * Create the standard Vortex OTel Resource for the renderer process.

@@ -19,7 +19,6 @@ import type { FilePath } from "../FilePath";
 import type { IFilesystem } from "../IFilesystem";
 import type { IResolverBase } from "../IResolver";
 import type { Anchor, ResolvedPath } from "../types";
-
 import { Anchor as AnchorNS, ResolvedPath as ResolvedPathNS } from "../types";
 import { BaseResolver } from "./BaseResolver";
 
@@ -151,8 +150,7 @@ export function fromRecord<K extends string, V extends ResolvedPath | string>(
   record: Record<K, V>,
   transform?: (value: V) => Promise<ResolvedPath> | ResolvedPath,
 ): MappingStrategy<K> {
-  const hasOwn = (name: K): boolean =>
-    Object.prototype.hasOwnProperty.call(record, name);
+  const hasOwn = (name: K): boolean => Object.prototype.hasOwnProperty.call(record, name);
 
   return {
     canResolve: (name) => hasOwn(name),
@@ -189,9 +187,7 @@ export function fromRecord<K extends string, V extends ResolvedPath | string>(
  * return fromMap(gamePaths);
  * ```
  */
-export function fromMap<K extends string>(
-  map: Map<K, FilePath>,
-): MappingStrategy<K> {
+export function fromMap<K extends string>(map: Map<K, FilePath>): MappingStrategy<K> {
   return {
     canResolve: (name) => map.has(name),
     supportedAnchors: () => Array.from(map.keys()),
