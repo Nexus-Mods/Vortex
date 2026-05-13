@@ -38,11 +38,40 @@ on:
         default: true
   pull_request:
     paths:
+      # workflow logic changed
       - .github/workflows/package.yml
       - .github/actions/package/**
+      # content filter logic changed
+      - .github/scripts/package-ci-filter.mjs
+      # deploy/security settings checked by filter
+      - pnpm-workspace.yaml
+      # package runtime/scripts checked by filter
+      - package.json
+      # package/publish targets checked by filter
+      - src/main/package.json
+      # electron-builder config always needs packaging validation
+      - src/main/electron-builder.config.json
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      run_package: ${{ steps.filter.outputs.run_package }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Check package-relevant changes
+        id: filter
+        env:
+          BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || '' }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: node .github/scripts/package-ci-filter.mjs
+
   build:
+    needs: changes
+    if: ${{ needs.changes.outputs.run_package == 'true' }}
     runs-on: windows-latest
     env:
       NO_PARALLEL: true
