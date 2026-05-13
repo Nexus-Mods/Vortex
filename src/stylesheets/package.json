@@ -32,7 +32,8 @@
         "cache": true,
         "inputs": [
           "default",
-          "{projectRoot}/**/*.css"
+          "{projectRoot}/**/*.css",
+          "{workspaceRoot}/src/renderer/src/**/*.{ts,tsx,html}"
         ],
         "outputs": [
           "{projectRoot}/dist/tailwind-v4.css"
