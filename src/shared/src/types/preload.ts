@@ -88,15 +88,9 @@ export interface Api {
 
   /** Telemetry APIs - span export from renderer to main */
   telemetry: TelemetryApi;
-<<<<<<< HEAD
-=======
-
-  /** Downloader APIs */
-  downloader: DownloaderApi;
 
   /** Diagnostic APIs */
   diag: Diag;
->>>>>>> ac5e6aa10 (Merge pull request #23179 from Nexus-Mods/task/app-459)
 }
 
 export interface Example {
