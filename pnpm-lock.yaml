@@ -65,7 +65,7 @@ catalogs:
       specifier: ^0.13.1
       version: 0.13.1
     '@nexusmods/nexus-api':
-      specifier: github:Nexus-Mods/node-nexus-api#2d92fd2bdc4aa6b9813a1e7043d412e13f4aa1d7
+      specifier: git+https://github.com/Nexus-Mods/node-nexus-api#2d92fd2bdc4aa6b9813a1e7043d412e13f4aa1d7
       version: 1.6.1
     '@opentelemetry/api':
       specifier: ^1.9.0
