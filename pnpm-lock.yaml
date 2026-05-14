@@ -560,16 +560,8 @@ catalogs:
       specifier: git+https://github.com/Nexus-Mods/node-native-errors#51913db07e4c9b68a96ba7fcf741b32796758f18
       version: 2.0.3
     nexus-api:
-<<<<<<< HEAD
-      specifier: git+https://github.com/Nexus-Mods/node-nexus-api#4dd3460c2d02d93ba8f1bbeeeb2c5fa9af039a67
-      version: 1.6.0
-=======
       specifier: git+https://github.com/Nexus-Mods/node-nexus-api#2d92fd2bdc4aa6b9813a1e7043d412e13f4aa1d7
       version: 1.6.1
-    node:
-      specifier: runtime:24.15.0
-      version: 24.15.0
->>>>>>> b1f962ac6 (Merge pull request #23178 from Nexus-Mods/fix/app-458)
     node-7z:
       specifier: git+https://github.com/Nexus-Mods/node-7z#b75def8d0d7d81a03f4526c52b8ada9a34a06479
       version: 0.8.1
@@ -1010,14 +1002,10 @@ importers:
         version: https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/3298c42e69e3220dc39694bc2f610c077c3e213a
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-<<<<<<< HEAD
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4dd3460c2d02d93ba8f1bbeeeb2c5fa9af039a67
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/2d92fd2bdc4aa6b9813a1e7043d412e13f4aa1d7
       '@types/jest':
         specifier: 'catalog:'
         version: 29.5.14
-=======
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/2d92fd2bdc4aa6b9813a1e7043d412e13f4aa1d7
->>>>>>> b1f962ac6 (Merge pull request #23178 from Nexus-Mods/fix/app-458)
       '@types/lodash':
         specifier: 'catalog:'
         version: 4.17.24
@@ -6078,15 +6066,9 @@ packages:
     resolution: {integrity: sha512-6fcow0nDO8I4KFYG1ffa5z9FcKkZsW/D1Axjkb5ebmV47JKg10nJALv8sVkd0hCrKCW8oJZEEvgHKOkF2Pn9ww==}
     engines: {node: '>=22'}
 
-<<<<<<< HEAD
-  '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4dd3460c2d02d93ba8f1bbeeeb2c5fa9af039a67':
-    resolution: {tarball: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4dd3460c2d02d93ba8f1bbeeeb2c5fa9af039a67}
-    version: 1.6.0
-=======
   '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/2d92fd2bdc4aa6b9813a1e7043d412e13f4aa1d7':
     resolution: {gitHosted: true, tarball: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/2d92fd2bdc4aa6b9813a1e7043d412e13f4aa1d7}
     version: 1.6.1
->>>>>>> b1f962ac6 (Merge pull request #23178 from Nexus-Mods/fix/app-458)
 
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
