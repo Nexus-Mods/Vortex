@@ -23,7 +23,9 @@ const earlyErrHandler = (evt: ErrorEvent | PromiseRejectionEvent) => {
     value = evt.error;
     fallbackMessage = evt.message;
   }
-  const stack = (value as Error | undefined)?.stack ?? String(value ?? fallbackMessage ?? evt.type);
+  const errLike = value as Error | undefined;
+  const valueString = typeof value === "string" ? value : errLike?.message;
+  const stack = errLike?.stack ?? valueString ?? fallbackMessage ?? evt.type;
 
   // diag.fatal is sync; the line is on disk before we exit, so it survives
   // any main-process teardown crash that would lose winston-buffered logs.

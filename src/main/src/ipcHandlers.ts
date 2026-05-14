@@ -179,12 +179,12 @@ export function init() {
   // Sync write: the caller is typically about to die, so the line must be on
   // disk before we return. Raw ipcMain because betterIpcMain has no sync
   // handler.
-  ipcMain.on("diag:fatal", (event, message: unknown) => {
+  ipcMain.on("diag:fatal", (event, message: string) => {
     try {
       const line =
         new Date().toISOString() +
         " [ERRO] [RENDERER] [diag] " +
-        String(message).replace(/\r?\n/g, "\\n") +
+        message.replace(/\r?\n/g, "\\n") +
         "\n";
       appendFileSync(path.join(app.getPath("userData"), "vortex.log"), line);
     } catch {
