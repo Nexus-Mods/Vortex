@@ -205,6 +205,40 @@ try {
     telemetry: {
       forwardSpan: (span) => betterIpcRenderer.send("telemetry:forward-span", span),
     },
+<<<<<<< HEAD
+=======
+
+    downloader: {
+      start: (dest, collationId) => betterIpcRenderer.invoke("download:start", dest, collationId),
+      pause: (downloadId) => betterIpcRenderer.invoke("download:pause", downloadId),
+      resume: (checkpoint) => betterIpcRenderer.invoke("download:resume", checkpoint),
+      cancel: (downloadId) => betterIpcRenderer.invoke("download:cancel", downloadId),
+      getState: (downloadId) => betterIpcRenderer.invoke("download:getState", downloadId),
+      getStates: (downloadIds) => betterIpcRenderer.invoke("download:getStates", downloadIds),
+      onResolve: (handler) => {
+        const listener = (_event: Electron.IpcRendererEvent, collationId: number) => {
+          handler(collationId)
+            .then((result) => {
+              betterIpcRenderer.send("callback:download:resolve", collationId, result);
+            })
+            .catch((err) => console.error(err));
+        };
+        ipcRenderer.on("download:resolve", listener);
+        return () => ipcRenderer.removeListener("download:resolve", listener);
+      },
+    },
+
+    diag: {
+      // Raw ipcRenderer because betterIpcRenderer has no sendSync helper.
+      fatal: (message: string) => {
+        try {
+          ipcRenderer.sendSync("diag:fatal", message);
+        } catch {
+          // diagnostic must never throw
+        }
+      },
+    },
+>>>>>>> ac5e6aa10 (Merge pull request #23179 from Nexus-Mods/task/app-459)
   });
 } catch (err) {
   console.error("failed to run preload code", err);
