@@ -65,7 +65,7 @@ catalogs:
       specifier: ^0.13.1
       version: 0.13.1
     '@nexusmods/nexus-api':
-      specifier: git+https://github.com/Nexus-Mods/node-nexus-api#2d92fd2bdc4aa6b9813a1e7043d412e13f4aa1d7
+      specifier: github:Nexus-Mods/node-nexus-api#2d92fd2bdc4aa6b9813a1e7043d412e13f4aa1d7
       version: 1.6.1
     '@opentelemetry/api':
       specifier: ^1.9.0
@@ -4929,12 +4929,12 @@ importers:
 packages:
 
   7z-bin@https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/025786f01319526b56400b0410af6268adc1125c:
-    resolution: {gitHosted: true, integrity: sha512-Wbq5MzOOBewAXp89Fyev4Q5u2yU2VMo/xhQo2TzSJ784NrTv4AXTrcrwmci2vUhOFtylX79ERowiWG+RuiEMsA==, tarball: https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/025786f01319526b56400b0410af6268adc1125c}
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/025786f01319526b56400b0410af6268adc1125c}
     version: 26.0.1
     hasBin: true
 
   7z-bin@https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/3298c42e69e3220dc39694bc2f610c077c3e213a:
-    resolution: {gitHosted: true, integrity: sha512-5CSzuhfDSqMUAz2sHpwgD8sUjg+VLqp30xeSyPnLQvWX9gLTxG5Sk6CkF0ckuDGnbE1zHduU2DvSCAl7CxQZZw==, tarball: https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/3298c42e69e3220dc39694bc2f610c077c3e213a}
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/3298c42e69e3220dc39694bc2f610c077c3e213a}
     version: 24.0.1
     hasBin: true
 
@@ -5857,7 +5857,7 @@ packages:
     engines: {node: '>=22'}
 
   '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/2d92fd2bdc4aa6b9813a1e7043d412e13f4aa1d7':
-    resolution: {gitHosted: true, integrity: sha512-CtyiIxCnPh3XOAxvdfyXef9JWRpq3Pf5o3upK11nuYcQejVixfuCuFut/qzAgboGvWj5rsAp0Czdcc/7PP+DGw==, tarball: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/2d92fd2bdc4aa6b9813a1e7043d412e13f4aa1d7}
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/2d92fd2bdc4aa6b9813a1e7043d412e13f4aa1d7}
     version: 1.6.1
 
   '@nodelib/fs.scandir@2.1.5':
@@ -7937,7 +7937,7 @@ packages:
     hasBin: true
 
   bbcode-to-react@https://codeload.github.com/TanninOne/bbcode-to-react/tar.gz/c67356006470e5066ea447e04a3968dca367339d:
-    resolution: {gitHosted: true, integrity: sha512-JCnCmMGZ0KRA5ZNnt0/fSA925S+tEiod6UwS+h5G2veMJHWhNMRv26udPcQ4Yj6EBG593dE+jbbfm22cN9K06Q==, tarball: https://codeload.github.com/TanninOne/bbcode-to-react/tar.gz/c67356006470e5066ea447e04a3968dca367339d}
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/TanninOne/bbcode-to-react/tar.gz/c67356006470e5066ea447e04a3968dca367339d}
     version: 0.2.11
     peerDependencies:
       react: ^0.14.0 || ^15.0.0 || ^16.0.0
@@ -8000,7 +8000,7 @@ packages:
     resolution: {integrity: sha512-Ok3Wdf5vOIlBrgCvTq96gBkJw+JUEzdBgyaza5HLtPm7yTHkjRy8+JzNyHF7BHa0bNWOQIp3m5YF0nnFcOIKLw==}
 
   bsatk@https://codeload.github.com/Nexus-Mods/node-bsatk/tar.gz/5a3d15fae2177bfb0a42b794d3afb21eda563c59:
-    resolution: {gitHosted: true, integrity: sha512-x0ygf1FRt9qc22ffqKoSpwZwct/dNw8CVh3R9Djiyi3OzmGf1soOdWwFXwysHC3JEkSoeXKV0EXzPeGdOG8Q4Q==, tarball: https://codeload.github.com/Nexus-Mods/node-bsatk/tar.gz/5a3d15fae2177bfb0a42b794d3afb21eda563c59}
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/Nexus-Mods/node-bsatk/tar.gz/5a3d15fae2177bfb0a42b794d3afb21eda563c59}
     version: 2.1.0
     os: [win32, linux]
 
@@ -8653,7 +8653,7 @@ packages:
     resolution: {integrity: sha512-HHHLPEPZqRXIDQDFRFdK7RONZausNlJ4WkA73ST7Z6O2HPWttxFHVwHo8nccuDLzXWwiVKRVuc6fTkW+CQA++A==}
 
   drivelist@https://codeload.github.com/TanninOne/drivelist/tar.gz/720d1890db11482ec05fc0f6aa176cfa6e6844dd:
-    resolution: {gitHosted: true, integrity: sha512-hhu4lTOqu9NsxCdlmBU6IiG5q4CmfTIEaREKilE53AxTdAqaJeV8TFn/gds8i0MCw4KXD66y/scwlIRu2L/yAQ==, tarball: https://codeload.github.com/TanninOne/drivelist/tar.gz/720d1890db11482ec05fc0f6aa176cfa6e6844dd}
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/TanninOne/drivelist/tar.gz/720d1890db11482ec05fc0f6aa176cfa6e6844dd}
     version: 10.0.2
     engines: {node: '>=10'}
 
@@ -8717,7 +8717,7 @@ packages:
     resolution: {integrity: sha512-2ZgdEqJ8e9D17Hwp5LEq5mLQPjqU3lv/IALvgp+4W8VeNhryfGhYEQC/PgDPMrnWUp+l60Ou5SJLsu+k4mhQ8A==}
 
   electron-redux@https://codeload.github.com/TanninOne/electron-redux/tar.gz/66bbd9d389579806e8c4ebd87bd513a668cc64a8:
-    resolution: {gitHosted: true, integrity: sha512-3JEjTg+Sj6ABicP0k7xhE0xNyC2Dc6oTdhPWrHxSrCY7PXGHFBfubaaD4c0u+GfKxhsSxDBOT+GqywBXjVzc9w==, tarball: https://codeload.github.com/TanninOne/electron-redux/tar.gz/66bbd9d389579806e8c4ebd87bd513a668cc64a8}
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/TanninOne/electron-redux/tar.gz/66bbd9d389579806e8c4ebd87bd513a668cc64a8}
     version: 1.4.9-sync
 
   electron-to-chromium@1.5.325:
@@ -9938,7 +9938,7 @@ packages:
     resolution: {integrity: sha512-es94M3nTIfsEPisRafak+HDLfHXnKBhV3vU5eqPcS3flIWqcxJWgXHXiey3YrpaNsanY5ei1VoYEbOzijuq9BA==}
 
   json-socket@https://codeload.github.com/foi/node-json-socket/tar.gz/d56c8e2938fa4284c4001b815d9b6e4a92b5c07b:
-    resolution: {gitHosted: true, integrity: sha512-UQ1HXQfzmW4YvvKaMVnZa0eTtr9y0fkvNBLFSQT7ulOm+U2231U+7Pw+kM7k3AzB6lBT7s9nzK1avEOFqctxUQ==, tarball: https://codeload.github.com/foi/node-json-socket/tar.gz/d56c8e2938fa4284c4001b815d9b6e4a92b5c07b}
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/foi/node-json-socket/tar.gz/d56c8e2938fa4284c4001b815d9b6e4a92b5c07b}
     version: 0.3.0
 
   json-stable-stringify-without-jsonify@1.0.1:
@@ -10252,7 +10252,7 @@ packages:
     hasBin: true
 
   loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/7b6028fb2caeb3a2af6a0c3d68630c033cc01e8d:
-    resolution: {gitHosted: true, integrity: sha512-/bqsW+y5n7JJNUiclZpvIFxT4DWVa7PXnQLHpiWQZvQ4FB1zW1XbC8brJTh6SAebh9E8MyUEnst/jQZhJ1hwtA==, tarball: https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/7b6028fb2caeb3a2af6a0c3d68630c033cc01e8d}
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/7b6028fb2caeb3a2af6a0c3d68630c033cc01e8d}
     version: 6.2.2
 
   lowercase-keys@3.0.0:
@@ -10473,7 +10473,7 @@ packages:
     engines: {node: '>=0.10.0'}
 
   modmeta-db@https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336:
-    resolution: {gitHosted: true, integrity: sha512-TCtHcETebXwNlKz4h4sSbod4aUCycvS8J9mlknKJFhCxJZoU3VmZUzKYi7GHe6ERTMM5dYZc8FBePy72Jgu/Vw==, tarball: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336}
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336}
     version: 0.9.3
     peerDependencies:
       commander: ^6.1.0
@@ -10533,7 +10533,7 @@ packages:
     resolution: {integrity: sha512-1nh45deeb5olNY7eX82BkPO7SSxR5SSYJiPTrTdFUVYwAl8CKMA5N9PjTYkHiRjisVcxcQ1HXdLhx2qxxJzLNQ==}
 
   node-7z@https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/b75def8d0d7d81a03f4526c52b8ada9a34a06479:
-    resolution: {gitHosted: true, integrity: sha512-hFgO6i7T1ZGj3QwgI4OhpbevPJRQI6DBJq1h2VFxPnyO6Nx9NLTu76EmokUDqUMo0ei7IqMOwwD1soEC3IqWUQ==, tarball: https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/b75def8d0d7d81a03f4526c52b8ada9a34a06479}
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/b75def8d0d7d81a03f4526c52b8ada9a34a06479}
     version: 0.8.1
 
   node-abi@3.89.0:
@@ -10952,7 +10952,7 @@ packages:
     resolution: {integrity: sha512-7EAHlyLHI56VEIdK57uwHdHKIaAGbnXPiw0yWbarQZOKaKpvUIgW0jWRVLiatnM+XXlSwsanIBH/hzGMJulMow==}
 
   permissions@https://codeload.github.com/Nexus-Mods/node-permissions/tar.gz/7c1b6f1d6437f2238be51316de823b0fbd63e4c0:
-    resolution: {gitHosted: true, integrity: sha512-fhaMTn3oR2R31Xpp2Prb849j4tVh2Skav4IskygXGCQquP1ZgqrwrkvT9krDywxY85gRi5QGYdKN/9uysrgTCg==, tarball: https://codeload.github.com/Nexus-Mods/node-permissions/tar.gz/7c1b6f1d6437f2238be51316de823b0fbd63e4c0}
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/Nexus-Mods/node-permissions/tar.gz/7c1b6f1d6437f2238be51316de823b0fbd63e4c0}
     version: 2.1.0
 
   picocolors@1.1.1:
@@ -11543,7 +11543,7 @@ packages:
     hasBin: true
 
   rimraf@https://codeload.github.com/TanninOne/rimraf/tar.gz/7b8b70d4e8783cd233fca3283cf1f930af4e39c2:
-    resolution: {gitHosted: true, integrity: sha512-bUluJfpyNMy+q3xCiB5KjLVxPl+MHfS2qJj0eZupLvo9+PlLgoDnO37hkj+wnofxEhstXq+d10XbGIkyyjHmKA==, tarball: https://codeload.github.com/TanninOne/rimraf/tar.gz/7b8b70d4e8783cd233fca3283cf1f930af4e39c2}
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/TanninOne/rimraf/tar.gz/7b8b70d4e8783cd233fca3283cf1f930af4e39c2}
     version: 2.6.2
     hasBin: true
 
@@ -11752,7 +11752,7 @@ packages:
     engines: {node: '>=10'}
 
   simple-vdf@https://codeload.github.com/Nexus-Mods/vdf-parser/tar.gz/df279ff89cb480597544d3029e12f90cb8c79464:
-    resolution: {gitHosted: true, integrity: sha512-H52FVQ84mJle6bqHMDCRpQMFjzgdJMdJznliEG41ZZvhsGZTK1RaJPYWrkx+ce7+zRqNjvCUMWo3b7vEVTZ1PA==, tarball: https://codeload.github.com/Nexus-Mods/vdf-parser/tar.gz/df279ff89cb480597544d3029e12f90cb8c79464}
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/Nexus-Mods/vdf-parser/tar.gz/df279ff89cb480597544d3029e12f90cb8c79464}
     version: 1.1.3
 
   sirv@3.0.2:
@@ -12177,7 +12177,7 @@ packages:
     resolution: {integrity: sha512-McnNiV1l8RYeY8tBgEpuodCC1mLUdbSN+CYBL7kJsJNInOP8UjDDEwdk6Mw60vdLLrr5NHKZhMAOSrR2NZuQ+w==}
 
   turbowalk@https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f:
-    resolution: {gitHosted: true, integrity: sha512-GPt3rDAkgrD72xxVLWKVXuLhcTP0Wg6Pt3S8t97WZ9S9O1ifZ2QOoMhLocKStHTkLlAEkisnB81QidQ/PxsdZA==, tarball: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f}
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f}
     version: 3.1.1
 
   tweetnacl@0.14.5:
@@ -12391,7 +12391,7 @@ packages:
 
   uuid@3.4.0:
     resolution: {integrity: sha512-HjSDRw6gZE5JMggctHBcjVak08+KEVhSIiDzFnT9S9aegmp85S/bReBVTb4QTFaRNptJ9kuYaNhnbNEOkbKb/A==}
-    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
+    deprecated: Please upgrade  to version 7 or higher.  Older versions may use Math.random() in certain circumstances, which is known to be problematic.  See https://v8.dev/blog/math-random for details.
     hasBin: true
 
   valibot@1.3.1:
@@ -12510,7 +12510,7 @@ packages:
     engines: {node: '>=0.10.0'}
 
   vortex-parse-ini@https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d:
-    resolution: {gitHosted: true, integrity: sha512-iB8Btg2VWED+nYlOqyt0xFoGbZIbQkiAny3J1ftI9IcbKwQweEfQ0uTYgXZZba9p6O8EaTCLXBvRe/m/uMUCqg==, tarball: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d}
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d}
     version: 0.4.0
 
   warning@3.0.0:
@@ -12606,7 +12606,7 @@ packages:
     hasBin: true
 
   wholocks@https://codeload.github.com/Nexus-Mods/node-wholocks/tar.gz/28da3bcf312312e577d7c636799a59011998b4af:
-    resolution: {gitHosted: true, integrity: sha512-lWy1M2tsoySZShiQZrfFKJi02k3y2Cx1XahGB5Tz5AI2P166F0o4d3lpUM81/AQsTV8NfRdhHNrNsjYst9H3Ww==, tarball: https://codeload.github.com/Nexus-Mods/node-wholocks/tar.gz/28da3bcf312312e577d7c636799a59011998b4af}
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/Nexus-Mods/node-wholocks/tar.gz/28da3bcf312312e577d7c636799a59011998b4af}
     version: 1.1.0
 
   why-is-node-running@2.3.0:
@@ -12621,7 +12621,7 @@ packages:
     resolution: {integrity: sha512-CC1bOL87PIWSBhDcTrdeLo6eGT7mCFtrg0uIJtqJUFyK+eJnzl8A1niH56uu7KMa5XFrtiV+AQuHO3n7DsHnLQ==}
 
   winapi-bindings@https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1:
-    resolution: {gitHosted: true, integrity: sha512-6EWxHP64L7nc/VBb/szJflKBvG2VnZ5cSd//R8ocau7UgrtMINm7MMHxcw8+EX9Z4BU+L0dF4rz6yQpwt5/Alw==, tarball: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1}
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1}
     version: 2.7.3
 
   winston@2.4.7:
