@@ -14,12 +14,40 @@ if (process.env.DEBUG_REACT_RENDERS === "true") {
 const requireRemap = require("./util/requireRemap").default;
 requireRemap();
 
-const earlyErrHandler = (evt: ErrorEvent) => {
-  const error = evt.error as Error | undefined;
-  // Use preload API for dialog and app access
-  void window.api.dialog.showErrorBox("Unhandled error", error?.stack ?? String(evt.error));
+const earlyErrHandler = (evt: ErrorEvent | PromiseRejectionEvent) => {
+  let value: unknown;
+  let fallbackMessage = "";
+  if (evt instanceof PromiseRejectionEvent) {
+    value = evt.reason;
+  } else {
+    value = evt.error;
+    fallbackMessage = evt.message;
+  }
+  const errLike = value as Error | undefined;
+  const valueString = typeof value === "string" ? value : errLike?.message;
+  const stack = errLike?.stack ?? valueString ?? fallbackMessage ?? evt.type;
+
+  // diag.fatal is sync; the line is on disk before we exit, so it survives
+  // any main-process teardown crash that would lose winston-buffered logs.
+  try {
+    window.api.diag.fatal(`early-renderer-error type=${evt.type}: ${stack}`);
+  } catch {
+    // diagnostics must never throw
+  }
+
+  void window.api.dialog.showErrorBox("Unhandled error", stack);
   void window.api.app.exit(1);
 };
+
+// 'error' / 'unhandledrejection' don't cover clean process.exit or
+// chromium-side kills; this hook catches those.
+process.on("exit", (code: number) => {
+  try {
+    window.api.diag.fatal(`renderer-process-exit code=${code}`);
+  } catch {
+    // diagnostics must never throw
+  }
+});
 
 // turn all error logs into a single parameter. The reason is that (at least in production)
 // these only get reported by the main process and due to a "bug" only one parameter gets

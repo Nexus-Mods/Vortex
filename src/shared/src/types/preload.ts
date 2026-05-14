@@ -88,6 +88,9 @@ export interface Api {
 
   /** Telemetry APIs - span export from renderer to main */
   telemetry: TelemetryApi;
+
+  /** Diagnostic APIs */
+  diag: Diag;
 }
 
 export interface Example {
@@ -101,6 +104,13 @@ export interface Shell {
 
   /** Opens the file using the default application for the file extension */
   openFile(filePath: string): void;
+}
+
+export interface Diag {
+  /** Synchronously append one line to vortex.log. Blocks until main has
+   *  flushed the line, so it survives the caller dying or main crashing in
+   *  the same message-loop tick. Sync IPC; reserve for fatal diagnostics. */
+  fatal(message: string): void;
 }
 
 export interface Dialog {
