@@ -1,3 +1,4 @@
+import { appendFileSync } from "node:fs";
 import * as path from "path";
 import { pathToFileURL } from "url";
 
@@ -156,6 +157,20 @@ class MainWindow {
     this.mWindow.webContents.on(
       "render-process-gone",
       (_evt, details: Electron.RenderProcessGoneDetails) => {
+        // Winston is buffered; if main crashes in the same message-loop tick
+        // (e.g. the WebContents teardown re-entrancy that can follow
+        // render-process-gone), the buffered line is lost. Sync write first.
+        try {
+          const line =
+            new Date().toISOString() +
+            " [ERRO] [MAIN] [diag] render-process-gone " +
+            JSON.stringify({ exitCode: details.exitCode, reason: details.reason }) +
+            "\n";
+          appendFileSync(path.join(app.getPath("userData"), "vortex.log"), line);
+        } catch {
+          // diagnostics must never throw
+        }
+
         log("error", "render process gone", {
           exitCode: details.exitCode,
           reason: details.reason,
@@ -407,6 +422,17 @@ class MainWindow {
       }
       this.mWindow.webContents.send("window:event:close");
       closeAllViews(this.mWindow);
+      // hide() before destroy(): destroy's aura teardown synthesizes a Win32
+      // mouse move that SendMessage's WM_NCHITTEST back into
+      // WebContentsView::NonClientHitTest, which dereferences a null
+      // InspectableWebContents mid-teardown and faults inside
+      // electron::InspectableWebContents::GetView. ShowWindow(SW_HIDE) takes
+      // us out of screen hit-test so the message routes elsewhere.
+      try {
+        this.mWindow.hide();
+      } catch {
+        // webContents may already be gone
+      }
       this.mWindow.destroy();
     });
     this.mWindow.on("closed", () => {

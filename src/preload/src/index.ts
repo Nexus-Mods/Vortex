@@ -237,6 +237,17 @@ try {
         return () => ipcRenderer.removeListener("download:resolve", listener);
       },
     },
+
+    diag: {
+      // Raw ipcRenderer because betterIpcRenderer has no sendSync helper.
+      fatal: (message: string) => {
+        try {
+          ipcRenderer.sendSync("diag:fatal", message);
+        } catch {
+          // diagnostic must never throw
+        }
+      },
+    },
   });
 } catch (err) {
   console.error("failed to run preload code", err);
