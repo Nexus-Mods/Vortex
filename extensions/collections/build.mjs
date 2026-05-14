@@ -10,8 +10,16 @@ const output = path.resolve(extensionPath, "dist", "index.cjs");
 const config = createConfig(entryPoint, output);
 await bundle(config);
 
-// bsdiff worker — runs in a separate thread, needs its own bundle
-const workerEntry = path.resolve(extensionPath, "src", "util", "bsdiffWorker.ts");
-const workerOutput = path.resolve(extensionPath, "dist", "bsdiffWorker.cjs");
-const workerConfig = createConfig(workerEntry, workerOutput);
-await bundle(workerConfig);
+// bsdiff workers — run in a separate thread, need their own bundles.
+// The .dom variant is what production uses (DOM Worker in the renderer);
+// the worker_threads variant is kept for vitest, which runs in Node.
+const workers = [
+  { entry: "bsdiffWorker.ts", output: "bsdiffWorker.cjs" },
+  { entry: "bsdiffWorker.dom.ts", output: "bsdiffWorker.dom.cjs" },
+];
+for (const w of workers) {
+  const workerEntry = path.resolve(extensionPath, "src", "util", w.entry);
+  const workerOutput = path.resolve(extensionPath, "dist", w.output);
+  const workerConfig = createConfig(workerEntry, workerOutput);
+  await bundle(workerConfig);
+}
