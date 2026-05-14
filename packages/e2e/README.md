@@ -4,18 +4,11 @@ Automated E2E tests for Vortex using [Playwright for Electron](https://playwrigh
 
 ## Prerequisites
 
-1. **Build Vortex for development**:
+**Install Playwright browsers** (one-time):
 
-    ```bash
-    pnpm run build
-    pnpm run build:assets
-    pnpm run build:extensions  # optional, needed for extension-dependent tests
-    ```
-
-2. **Install Playwright browsers** (one-time):
-    ```bash
-    pnpm -F @vortex/e2e exec playwright install chromium
-    ```
+```bash
+pnpm -F @vortex/e2e exec playwright install chromium
+```
 
 ## Running Tests
 

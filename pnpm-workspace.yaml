@@ -16,7 +16,6 @@ allowBuilds:
   "@parcel/watcher": true
   bsatk: true
   core-js: true
-
   drivelist: true
   electron: true
   esbuild: true
@@ -24,6 +23,7 @@ allowBuilds:
   gamebryo-savegame: true
   leveldown: true
   loot: true
+  node: true
   nx: false
   protobufjs: true
   unrs-resolver: true
@@ -38,6 +38,7 @@ catalog:
   "@babel/preset-typescript": 7.16.7
   "@babel/register": 7.16.8
   "@duckdb/node-api": 1.5.1-r.1
+  "@electron/rebuild": ^4.0.4
   "@electron/remote": ^2.0.12
   "@eslint-react/eslint-plugin": 2.3.7
   "@eslint/js": 9.39.1
@@ -201,6 +202,7 @@ catalog:
   mixpanel-browser: ^2.71.0
   modmeta-db: git+https://github.com/Nexus-Mods/modmeta-db#daa8935b6e38e255ec192c908adfce35d47c0336
   nexus-api: git+https://github.com/Nexus-Mods/node-nexus-api#2d92fd2bdc4aa6b9813a1e7043d412e13f4aa1d7
+  node: runtime:24.15.0
   node-7z: git+https://github.com/Nexus-Mods/node-7z#b75def8d0d7d81a03f4526c52b8ada9a34a06479
   normalize-url: ^6.0.1
   numeral: ^2.0.6
@@ -281,6 +283,7 @@ catalog:
   xxhash-addon: ^2.0.3
   zod: ^4.3.5
 
+blockExoticSubdeps: false
 catalogMode: strict
 cleanupUnusedCatalogs: true
 
@@ -288,11 +291,15 @@ dedupePeers: true
 
 engineStrict: true
 failIfNoMatch: true
-forceLegacyDeploy: true
+
+minimumReleaseAge: 2880
+minimumReleaseAgeIgnoreMissingTime: true
+minimumReleaseAgeStrict: false # TODO: set true after they fixed their shit
 
 overrides:
   "@types/react": "16"
   "@types/react-dom": "16"
   node-addon-api: 8.5.0
+  node-gyp: 12.3.0
 patchedDependencies:
   playwright-core@1.58.2: patches/playwright-core@1.58.2.patch
