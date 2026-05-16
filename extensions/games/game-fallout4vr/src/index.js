@@ -149,9 +149,6 @@ function main(context) {
   });
 
   context.registerInstaller("fallout4vr-esl-enabler", 10, testEslEnabler, installEslEnabler);
-
-  context.registerTest("fallout4vr-esl-support-missing", "did-deploy", () => {});
-
   return true;
 }
 
