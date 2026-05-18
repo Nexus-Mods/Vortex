@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { createReadStream } from "node:fs";
-import { access, rename, rm } from "node:fs/promises";
+import { access, mkdir, rename, rm } from "node:fs/promises";
 import * as path from "node:path";
 import { pipeline } from "node:stream/promises";
 
@@ -435,6 +435,11 @@ export class IPCDownloadAdapter {
 
     const state = this.#api.getState();
     const dlPath = downloadPathForGame(state, modInfo.game ?? activeGameId(state));
+
+    // The per-game subfolder may not exist yet - ensureDownloadsDirectory only
+    // creates the active game's folder, but downloads can target any game
+    // (SITE_ID extension downloads, compatible domains, collection downloads, etc.).
+    await mkdir(dlPath, { recursive: true });
 
     // Check for an existing file using the caller-supplied name before queuing.
     // We can only do this when a name is provided; temp-named downloads are always new.
