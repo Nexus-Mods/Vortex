@@ -13,6 +13,14 @@
   },
   "nx": {
     "targets": {
+      "build": {
+        "outputs": [
+          "{workspaceRoot}/src/main/build/renderer.js",
+          "{workspaceRoot}/src/main/build/renderer.js.map",
+          "{workspaceRoot}/src/main/build/splash.js",
+          "{workspaceRoot}/src/main/build/splash.js.map"
+        ]
+      },
       "api": {
         "dependsOn": [
           "^build"
