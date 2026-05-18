@@ -293,10 +293,8 @@ engineStrict: true
 failIfNoMatch: true
 
 minimumReleaseAge: 2880
-minimumReleaseAgeExclude:
-  - commander
-  - express
 minimumReleaseAgeIgnoreMissingTime: true
+minimumReleaseAgeStrict: true
 
 overrides:
   "@types/react": "16"
