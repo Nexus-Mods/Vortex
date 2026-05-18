@@ -52,7 +52,33 @@ jobs:
       - name: Install dependencies
         run: pnpm install
         env:
-          VORTEX_SKIP_ELECTRON_REBUILD: "1"
+          VORTEX_DEFER_ELECTRON_REBUILD: "1"
+
+      - name: Cache Electron native rebuild outputs
+        id: electron-native-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.electron-gyp
+            ~/.cache/node-gyp
+            node_modules/.pnpm/@nexusmods+fomod-installer-native@*/node_modules/@nexusmods/fomod-installer-native/build
+            node_modules/.pnpm/@nexusmods+fomod-installer-native@*/node_modules/@nexusmods/fomod-installer-native/bin
+            node_modules/.pnpm/drivelist@*/node_modules/drivelist/build
+            node_modules/.pnpm/drivelist@*/node_modules/drivelist/bin
+            node_modules/.pnpm/leveldown@*/node_modules/leveldown/build
+            node_modules/.pnpm/leveldown@*/node_modules/leveldown/bin
+            node_modules/.pnpm/winapi-bindings@*/node_modules/winapi-bindings/build
+            node_modules/.pnpm/winapi-bindings@*/node_modules/winapi-bindings/bin
+            node_modules/.pnpm/xxhash-addon@*/node_modules/xxhash-addon/build
+            node_modules/.pnpm/xxhash-addon@*/node_modules/xxhash-addon/bin
+            node_modules/.pnpm/@parcel+watcher@*/node_modules/@parcel/watcher/build
+            node_modules/.pnpm/@parcel+watcher@*/node_modules/@parcel/watcher/bin
+          key: electron-native-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'src/main/package.json', 'src/main/postinstall.mjs') }}
+
+      - name: Rebuild Electron native modules
+        run: |
+          echo "Electron native cache hit: ${{ steps.electron-native-cache.outputs.cache-hit }}"
+          pnpm --filter @vortex/main exec electron-rebuild
 
       - name: Cache DuckDB extensions
         uses: actions/cache@v4

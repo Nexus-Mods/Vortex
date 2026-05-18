@@ -5,6 +5,11 @@ if (process.env.VORTEX_SKIP_ELECTRON_REBUILD === "1") {
   process.exit(0);
 }
 
+if (process.env.VORTEX_DEFER_ELECTRON_REBUILD === "1") {
+  console.log("Deferring electron-rebuild because VORTEX_DEFER_ELECTRON_REBUILD=1.");
+  process.exit(0);
+}
+
 const pnpm = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
 const result = spawnSync(pnpm, ["exec", "electron-rebuild"], { stdio: "inherit" });
 
