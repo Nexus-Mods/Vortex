@@ -25,6 +25,9 @@ catalogs:
     '@babel/register':
       specifier: 7.16.8
       version: 7.16.8
+    '@cyclonedx/cyclonedx-library':
+      specifier: ^10.0.0
+      version: 10.0.0
     '@duckdb/node-api':
       specifier: 1.5.1-r.1
       version: 1.5.1-r.1
@@ -4423,6 +4426,10 @@ importers:
         version: 42.0.0
 
   src/renderer:
+    dependencies:
+      '@cyclonedx/cyclonedx-library':
+        specifier: 'catalog:'
+        version: 10.0.0(ajv-formats@3.0.1)(ajv@8.18.0)
     devDependencies:
       '@babel/polyfill':
         specifier: 'catalog:'
@@ -5541,6 +5548,33 @@ packages:
   '@colors/colors@1.5.0':
     resolution: {integrity: sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==}
     engines: {node: '>=0.1.90'}
+
+  '@cyclonedx/cyclonedx-library@10.0.0':
+    resolution: {integrity: sha512-xDXf2eqzeFHdjamj6oBV3duRSfrlmsJ5+2z9tXp7q5qxJP5Awmjf4ABSutS4qkVHHj7JzKFL/EM0V0Nihc7zPg==}
+    engines: {node: '>=20.18.0'}
+    peerDependencies:
+      ajv: ^8.12.0
+      ajv-formats: ^3.0.1
+      ajv-formats-draft2019: ^1.6.1
+      libxmljs2: ^0.35||^0.37
+      packageurl-js: '*'
+      spdx-expression-parse: '*'
+      xmlbuilder2: ^3.0.2||^4.0.0
+    peerDependenciesMeta:
+      ajv:
+        optional: true
+      ajv-formats:
+        optional: true
+      ajv-formats-draft2019:
+        optional: true
+      libxmljs2:
+        optional: true
+      packageurl-js:
+        optional: true
+      spdx-expression-parse:
+        optional: true
+      xmlbuilder2:
+        optional: true
 
   '@develar/schema-utils@2.6.5':
     resolution: {integrity: sha512-0cp4PsWQ/9avqTVMCtZ+GirikIA36ikvjtHweU4/j8yLtgObI0+JUPhYFScgwlteveGB1rt3Cm8UhN04XayDig==}
@@ -13709,6 +13743,11 @@ snapshots:
 
   '@colors/colors@1.5.0':
     optional: true
+
+  '@cyclonedx/cyclonedx-library@10.0.0(ajv-formats@3.0.1)(ajv@8.18.0)':
+    optionalDependencies:
+      ajv: 8.18.0
+      ajv-formats: 3.0.1(ajv@8.18.0)
 
   '@develar/schema-utils@2.6.5':
     dependencies:
