@@ -13,6 +13,14 @@
   },
   "nx": {
     "targets": {
+      "build": {
+        "outputs": [
+          "{workspaceRoot}/src/main/build/renderer.js",
+          "{workspaceRoot}/src/main/build/renderer.js.map",
+          "{workspaceRoot}/src/main/build/splash.js",
+          "{workspaceRoot}/src/main/build/splash.js.map"
+        ]
+      },
       "api": {
         "dependsOn": [
           "^build"
@@ -40,6 +48,8 @@
     "@mdi/js": "catalog:",
     "@microsoft/api-extractor": "catalog:",
     "@msgpack/msgpack": "catalog:",
+    "@nexusmods/fomod-installer-ipc": "catalog:",
+    "@nexusmods/fomod-installer-native": "catalog:",
     "@nexusmods/nexus-api": "catalog:",
     "@opentelemetry/api": "catalog:",
     "@opentelemetry/context-zone": "catalog:",
@@ -117,8 +127,6 @@
     "encoding-down": "catalog:",
     "exe-version": "workspace:*",
     "feedparser": "catalog:",
-    "@nexusmods/fomod-installer-ipc": "catalog:",
-    "@nexusmods/fomod-installer-native": "catalog:",
     "fs-extra": "catalog:",
     "fuzzball": "catalog:",
     "glob": "catalog:",
@@ -191,5 +199,8 @@
     "xml2js": "catalog:",
     "xxhash-addon": "catalog:",
     "zod": "catalog:"
+  },
+  "dependencies": {
+    "@cyclonedx/cyclonedx-library": "catalog:"
   }
 }

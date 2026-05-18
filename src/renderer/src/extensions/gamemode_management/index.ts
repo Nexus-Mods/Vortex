@@ -1076,7 +1076,18 @@ function init(context: IExtensionContext): boolean {
         .then(() => $.gameModeManager.setGameMode(oldGameId, newGameId, currentProfileId))
         .catch((err) => {
           if (err instanceof UserCanceled || err instanceof ProcessCanceled) {
-            // nop
+            // The other branches all surface the failure via showError /
+            // sendNotification (which log themselves). UserCanceled and
+            // ProcessCanceled are intentionally silent for the user, but
+            // they still cause setNextProfile(undefined) below, so log
+            // here. Otherwise the resulting profile clear is invisible
+            // when diagnosing reports of "Vortex bounced me back to the
+            // dashboard".
+            log("info", "game mode change canceled", {
+              newGameId,
+              reason: err instanceof UserCanceled ? "UserCanceled" : "ProcessCanceled",
+              error: err.message,
+            });
           } else if (err instanceof SetupError || err instanceof DataInvalid) {
             showError(store.dispatch, "Failed to set game mode", err, {
               allowReport: false,

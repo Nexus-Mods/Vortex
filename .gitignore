@@ -16,7 +16,6 @@ sourcemaps
 *.env
 CodeSignTool*
 BuildPatchTool*
-assets/modules.json
 
 # User-specific files
 *.suo

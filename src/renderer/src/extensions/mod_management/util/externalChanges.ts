@@ -2,22 +2,22 @@ import * as path from "path";
 
 import { getErrorCode, unknownToError } from "@vortex/shared";
 
+import { log } from "../../../logging";
 import type {
   IDeployedFile,
   IDeploymentMethod,
   IExtensionApi,
   IFileChange,
 } from "../../../types/IExtensionContext";
+import type { IState } from "../../../types/IState";
 import { ProcessCanceled } from "../../../util/CustomErrors";
 import * as fs from "../../../util/fs";
-import { log } from "../../../util/log";
 import {
   activeGameId,
   activeProfile,
   getCollectionActiveSession,
   profileById,
 } from "../../../util/selectors";
-import { getSafe } from "../../../util/storeHelper";
 import { setdefault, truthy } from "../../../util/util";
 import { showExternalChanges } from "../actions/session";
 import { MERGED_PATH } from "../modMerging";
@@ -175,6 +175,32 @@ function defaultAction(changeType: string): FileAction {
   }
 }
 
+export type ExternalChangeBucket = "merged" | "autoResolved" | "rest";
+
+/**
+ * Decide which bucket an external file change belongs to. Pure function so the
+ * decision is testable in isolation (see externalChanges.test.ts).
+ *
+ *   - merged:       file originates from the __merged folder; always resolved
+ *                   silently via defaultInternalAction.
+ *   - autoResolved: change is expected because Vortex just touched the source
+ *                   mod (collection install, or installationPath in
+ *                   recentChanges); resolved silently.
+ *   - rest:         surfaced to the user via the external-changes dialog.
+ */
+export function classifyExternalChange(
+  change: IFileChange,
+  context: { isInstallingCollection: boolean; recentChanges?: Set<string> },
+): ExternalChangeBucket {
+  if (path.basename(change.source).startsWith(MERGED_PATH)) {
+    return "merged";
+  }
+  if (context.isInstallingCollection || context.recentChanges?.has(change.source)) {
+    return "autoResolved";
+  }
+  return "rest";
+}
+
 export function changeToEntry(modTypeId: string, change: IFileChange): IFileEntry {
   return {
     modTypeId,
@@ -188,7 +214,7 @@ export function changeToEntry(modTypeId: string, change: IFileChange): IFileEntr
 }
 
 function defaultInternalAction(typeId: string, input: IFileChange): IFileEntry {
-  // Internal changes are from mod updates/reinstalls/merges — always drop the old
+  // Internal changes are from mod updates/reinstalls/merges; always drop the old
   // deployed file so deployment recreates it from the updated staging files.
   const action: FileAction = {
     refchange: "drop",
@@ -217,12 +243,9 @@ async function checkForExternalChanges(
   // update mod state again because if the user did have to confirm,
   // it's more intuitive if we deploy the state at the time he confirmed, not when
   // the deployment was triggered
-  const state = api.store.getState();
+  const state = api.store.getState() as IState;
 
-  const profile =
-    profileId !== undefined
-      ? getSafe(state, ["persistent", "profiles", profileId], undefined)
-      : activeProfile(state);
+  const profile = profileById(state, profileId) ?? activeProfile(state);
   if (profile === undefined) {
     throw new ProcessCanceled("Profile no longer exists.");
   }
@@ -253,58 +276,48 @@ export function dealWithExternalChanges(
   lastDeployment: { [typeId: string]: IDeployedFile[] },
   // Installation paths whose mods Vortex itself just installed or removed.
   // change.source is set from mod.installationPath (see LinkingDeployment),
-  // so we match against installation paths, not mod IDs — these can differ in
+  // so we match against installation paths, not mod IDs; these can differ in
   // the update-via-replace flow.
   recentChanges?: Set<string>,
 ) {
   return checkForExternalChanges(api, activator, profileId, stagingPath, modPaths, lastDeployment)
     .then((changes: { [typeId: string]: IFileChange[] }) => {
       const automaticActions: IFileEntry[] = [];
-      const isInstallingCollection = getCollectionActiveSession(api.store.getState()) !== undefined;
-      const userChanges = Object.keys(changes).reduce((prev, typeId) => {
-        const { merged, rest, autoResolved } = changes[typeId].reduce(
-          (prevInner, change) => {
-            const isMerged = path.basename(change.source).startsWith(MERGED_PATH);
-            if (isMerged) {
-              prevInner.merged.push(change);
-              return prevInner;
-            }
-            if (isInstallingCollection || recentChanges?.has(change.source)) {
-              prevInner.autoResolved.push(change);
-              return prevInner;
-            }
+      const userChanges: { [typeId: string]: IFileChange[] } = {};
+      let count = 0;
+      const state = api.store.getState() as IState;
+      const isInstallingCollection = getCollectionActiveSession(state) !== undefined;
+      const context = { isInstallingCollection, recentChanges };
 
-            prevInner.rest.push(change);
-
-            return prevInner;
-          },
-          { merged: [], rest: [], autoResolved: [] },
-        );
-
-        if (merged.length > 0) {
-          merged.forEach((change) => automaticActions.push(defaultInternalAction(typeId, change)));
+      for (const typeId of Object.keys(changes)) {
+        for (const change of changes[typeId]) {
+          if (classifyExternalChange(change, context) === "rest") {
+            (userChanges[typeId] ??= []).push(change);
+            count++;
+          } else {
+            automaticActions.push(defaultInternalAction(typeId, change));
+          }
         }
+      }
 
-        if (autoResolved.length > 0) {
-          autoResolved.forEach((change) =>
-            automaticActions.push(defaultInternalAction(typeId, change)),
-          );
-        }
-
-        if (rest.length > 0) {
-          prev[typeId] = rest;
-        }
-        return prev;
-      }, {});
-
-      const count: number = Object.values(userChanges).reduce(
-        (prev: number, list: any[]) => prev + list.length,
-        0,
-      ) as number;
       if (count > 0) {
         log("info", "found external changes", {
           automated: automaticActions.length,
           user: count,
+        });
+        // Diagnostic: dump the surfaced changes plus the recentChanges set
+        // so update-via-replace false positives can be diagnosed from logs.
+        log("debug", "external changes diagnostic", {
+          isInstallingCollection,
+          recentChanges: Array.from(recentChanges ?? []),
+          surfaced: Object.entries(userChanges).flatMap(([typeId, list]) =>
+            list.map((change) => ({
+              typeId,
+              filePath: change.filePath,
+              source: change.source,
+              changeType: change.changeType,
+            })),
+          ),
         });
         return api.store
           .dispatch(showExternalChanges(userChanges))
