@@ -2,7 +2,7 @@
   description = "Vortex development environment";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/master";
     flake-utils.url = "github:numtide/flake-utils";
     flake-compat = {
       url = "github:NixOS/flake-compat";
@@ -43,7 +43,7 @@
             dotnetCorePackages.sdk_9_0
 
             # Electron (wrapped with GTK dependencies)
-            electron_42
+            electron_42-bin
 
             # GTK dependencies for Electron runtime
             gtk3
@@ -66,7 +66,7 @@
             ELECTRON_SKIP_BINARY_DOWNLOAD = "1";
 
             # Point to Nix-provided Electron
-            ELECTRON_OVERRIDE_DIST_PATH = "${pkgs.electron_41.dist}";
+            ELECTRON_OVERRIDE_DIST_PATH = "${pkgs.electron_42-bin.dist}";
 
             # Make the dotnet runtime available
             DOTNET_ROOT = "${pkgs.dotnetCorePackages.runtime_9_0}/share/dotnet";
@@ -84,7 +84,7 @@
             export GDK_PIXBUF_MODULE_FILE="${pkgs.librsvg}/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache"
 
             # Chromium sandbox
-            export CHROME_DEVEL_SANDBOX="${pkgs.electron_41}/libexec/electron/chrome-sandbox"
+            export CHROME_DEVEL_SANDBOX="${pkgs.electron_42-bin}/libexec/electron/chrome-sandbox"
 
           '';
         };
