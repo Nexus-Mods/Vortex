@@ -2,8 +2,20 @@
   "$schema": "https://www.schemastore.org/package.json",
   "name": "vortex-api",
   "version": "1.0.0",
-  "main": "index.js",
-  "private": true,
+  "license": "GPL-3.0-only",
+  "author": {
+    "name": "Black Tree Gaming Ltd.",
+    "url": "https://nexusmods.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Nexus-Mods/Vortex.git",
+    "directory": "packages/vortex-api"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "type": "module",
   "types": "./src/index.ts",
   "bin": {
@@ -11,8 +23,7 @@
   },
   "exports": {
     ".": {
-      "types": "./lib/api.d.ts",
-      "default": "./lib/api.js"
+      "types": "./lib/api.d.ts"
     }
   },
   "files": [
