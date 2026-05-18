@@ -37,6 +37,7 @@ catalog:
   "@babel/preset-react": ^7.24.4
   "@babel/preset-typescript": 7.16.7
   "@babel/register": 7.16.8
+  "@cyclonedx/cyclonedx-library": ^10.0.0
   "@duckdb/node-api": 1.5.1-r.1
   "@electron/rebuild": ^4.0.4
   "@electron/remote": ^2.0.12

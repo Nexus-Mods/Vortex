@@ -1,3 +1,8 @@
+import type { Serialize } from "@cyclonedx/cyclonedx-library";
+type BOM = Serialize.JSON.Types.Normalized.Bom;
+type BOMComponent = NonNullable<BOM["components"]>[number];
+type BOMLicense = NonNullable<BOMComponent["licenses"]>[number];
+
 import * as fs from "fs";
 import * as path from "path";
 
@@ -13,23 +18,58 @@ import { getApplication } from "../../../util/application";
 import getVortexPath from "../../../util/getVortexPath";
 import github from "../../../util/github";
 import { log } from "../../../util/log";
+import opn from "../../../util/opn";
 import MainPage from "../../../views/MainPage";
-import type { ILicense } from "../types/ILicense";
 
-let modules = {};
-let ownLicenseText: string = "";
-if (process.type === "renderer") {
-  try {
-    const modulesPath = path.join(getVortexPath("assets"), "modules.json");
-    modules = JSON.parse(fs.readFileSync(modulesPath, { encoding: "utf8" }));
-    ownLicenseText = fs
-      .readFileSync(path.join(getVortexPath("package_unpacked"), "LICENSE.md"))
-      .toString();
-  } catch (err) {
-    // should we display this in the ui? It shouldn't ever happen in the release and 99% of users
-    // won't care anyway.
-    log("error", "failed to read license files", getErrorMessageOrDefault(err));
+interface IBomModule {
+  key: string;
+  name: string;
+  version: string;
+  licenseLabel: string;
+  licenseUrl: string | undefined;
+}
+
+function licenseInfo(lic: BOMLicense): { label: string; url: string | undefined } {
+  if ("expression" in lic) {
+    return { label: lic.expression, url: undefined };
   }
+  if ("id" in lic.license) {
+    return {
+      label: lic.license.id,
+      url: lic.license.url ?? `https://spdx.org/licenses/${lic.license.id}.html`,
+    };
+  }
+  return { label: lic.license.name, url: lic.license.url };
+}
+
+function bomKey(c: BOMComponent, idx: number): string {
+  return c["bom-ref"] ?? `${c.name}@${c.version ?? ""}#${idx}`;
+}
+
+let moduleList: IBomModule[] = [];
+let ownLicenseText: string = "";
+
+try {
+  const bomPath = path.join(getVortexPath("assets"), "bom.json");
+  const bom: BOM = JSON.parse(fs.readFileSync(bomPath, "utf8"));
+  moduleList = (bom.components ?? []).map((c, idx) => {
+    const lic = c.licenses?.[0];
+    const info = lic !== undefined ? licenseInfo(lic) : { label: "", url: undefined };
+    return {
+      key: bomKey(c, idx),
+      name: c.name,
+      version: c.version ?? "",
+      licenseLabel: info.label,
+      licenseUrl: info.url,
+    };
+  });
+  ownLicenseText = fs
+    .readFileSync(path.join(getVortexPath("package_unpacked"), "LICENSE.md"))
+    .toString();
+} catch (err) {
+  // should we display this in the ui? It shouldn't ever happen in the release and 99% of users
+  // won't care anyway.
+  log("error", "failed to read license files", getErrorMessageOrDefault(err));
 }
 
 export interface IBaseProps {
@@ -37,8 +77,6 @@ export interface IBaseProps {
 }
 
 interface IComponentState {
-  selectedLicense: string;
-  licenseText: string;
   ownLicense: boolean;
   releaseDate: Date;
   changelog: string;
@@ -50,12 +88,11 @@ type IProps = IBaseProps;
 class AboutPage extends ComponentEx<IProps, IComponentState> {
   private mMounted: boolean;
   private mVersion: string;
+
   constructor(props) {
     super(props);
     this.mMounted = false;
     this.initState({
-      selectedLicense: undefined,
-      licenseText: undefined,
       ownLicense: false,
       releaseDate: undefined,
       changelog: undefined,
@@ -104,11 +141,6 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
   public render(): JSX.Element {
     const { t } = this.props;
     const { changelog, ownLicense, tag, releaseDate } = this.state;
-
-    const moduleList = Object.keys(modules).map((key) => ({
-      key,
-      ...modules[key],
-    }));
 
     const imgPath = path.resolve(getVortexPath("assets"), "images", "vortex.png");
 
@@ -171,45 +203,24 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
     this.nextState.ownLicense = !this.state.ownLicense;
   };
 
-  private selectLicense = (evt) => {
-    const { t } = this.props;
-
-    const modKey = evt.currentTarget.href.split("#")[1];
-    if (this.state.selectedLicense === modKey) {
-      this.nextState.selectedLicense = undefined;
-      return;
+  private openLicense = (evt: React.MouseEvent<HTMLAnchorElement>) => {
+    evt.preventDefault();
+    const url = evt.currentTarget.getAttribute("data-url");
+    if (url !== null) {
+      opn(url).catch(() => null);
     }
-
-    this.nextState.selectedLicense = modKey;
-
-    const mod: ILicense = modules[modKey];
-    const license = typeof mod.licenses === "string" ? mod.licenses : mod.licenses[0];
-    const licenseFile =
-      mod.licenseFile !== undefined
-        ? path.resolve(getVortexPath("modules"), "..", ...mod.licenseFile)
-        : path.join(getVortexPath("assets"), "licenses", license + ".md");
-    fs.readFile(licenseFile, {}, (err, licenseText) => {
-      if (!this.mMounted) {
-        return;
-      }
-      if (err !== null) {
-        this.nextState.licenseText = t("Missing license {{licenseFile}}", {
-          replace: { licenseFile },
-        });
-      } else {
-        this.nextState.licenseText = licenseText.toString();
-      }
-    });
   };
 
-  private renderModule = (mod: ILicense) => {
+  private renderModule = (mod: IBomModule) => {
     const { t } = this.props;
-    const { licenseText, selectedLicense } = this.state;
-    const licenseBox =
-      mod.key !== selectedLicense ? null : (
-        <ReactMarkdown className="license-text" disallowedElements={["link"]}>
-          {licenseText || ""}
-        </ReactMarkdown>
+    const labelText = `${mod.licenseLabel} ${t("License")}`;
+    const label =
+      mod.licenseUrl !== undefined ? (
+        <a href={mod.licenseUrl} data-url={mod.licenseUrl} onClick={this.openLicense}>
+          {labelText}
+        </a>
+      ) : (
+        labelText
       );
     return (
       <div key={mod.key}>
@@ -217,13 +228,8 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
           {mod.name} ({mod.version})
         </h5>{" "}
         <h6 style={{ display: "inline" }}>
-          <sup>
-            <a href={`#${mod.key}`} onClick={this.selectLicense}>
-              {mod.licenses} {t("License")}
-            </a>
-          </sup>
+          <sup>{label}</sup>
         </h6>
-        {licenseBox}
       </div>
     );
   };
