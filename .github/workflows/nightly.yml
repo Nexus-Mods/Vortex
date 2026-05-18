@@ -1,0 +1,38 @@
+name: Nightly Package
+
+on:
+  schedule:
+    - cron: "0 19 * * *" # Nightly at 19:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      NO_PARALLEL: true
+      ES_USERNAME: ${{ secrets.ES_USERNAME }}
+      ES_PASSWORD: ${{ secrets.ES_PASSWORD }}
+      ES_CREDENTIAL_ID: ${{ secrets.ES_CREDENTIAL_ID }}
+      ES_TOTP_SECRET: ${{ secrets.ES_TOTP_SECRET }}
+      NEXUS_API_KEY: ${{ secrets.NEXUS_API_KEY }}
+      ACTIONS_ALLOW_UNSECURE_COMMANDS: true # Allows AddPAth and SetEnv commands
+      CERT_PATH: Release
+      VORTEX_BUILD_CONFIG: Release # Could just use CERT_PATH but this is more explicit
+      DEBUG: electron-builder # gives electron more verbose logs
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: "recursive"
+
+      - name: Package Vortex nightly
+        uses: ./.github/actions/package
+        with:
+          nightly: "true"
+          create-artifacts: "true"
+          use-codesigning: "true"
+          release: "false"
+          staging-release: "false"

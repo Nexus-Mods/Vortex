@@ -37,6 +37,7 @@ catalog:
   "@babel/preset-react": ^7.24.4
   "@babel/preset-typescript": 7.16.7
   "@babel/register": 7.16.8
+  "@cyclonedx/cyclonedx-library": ^10.0.0
   "@duckdb/node-api": 1.5.1-r.1
   "@electron/rebuild": ^4.0.4
   "@electron/remote": ^2.0.12
@@ -50,7 +51,7 @@ catalog:
   "@msgpack/msgpack": ^2.7.0
   "@nexusmods/fomod-installer-ipc": ^0.13.1
   "@nexusmods/fomod-installer-native": ^0.13.1
-  "@nexusmods/nexus-api": git+https://github.com/Nexus-Mods/node-nexus-api#4dd3460c2d02d93ba8f1bbeeeb2c5fa9af039a67
+  "@nexusmods/nexus-api": git+https://github.com/Nexus-Mods/node-nexus-api#2d92fd2bdc4aa6b9813a1e7043d412e13f4aa1d7
   "@opentelemetry/api": ^1.9.0
   "@opentelemetry/context-async-hooks": ^2.5.1
   "@opentelemetry/context-zone": ^2.5.1
@@ -201,7 +202,7 @@ catalog:
   minimist: ^1.2.8
   mixpanel-browser: ^2.71.0
   modmeta-db: git+https://github.com/Nexus-Mods/modmeta-db#daa8935b6e38e255ec192c908adfce35d47c0336
-  nexus-api: git+https://github.com/Nexus-Mods/node-nexus-api#4dd3460c2d02d93ba8f1bbeeeb2c5fa9af039a67
+  nexus-api: git+https://github.com/Nexus-Mods/node-nexus-api#2d92fd2bdc4aa6b9813a1e7043d412e13f4aa1d7
   node: runtime:24.15.0
   node-7z: git+https://github.com/Nexus-Mods/node-7z#b75def8d0d7d81a03f4526c52b8ada9a34a06479
   normalize-url: ^6.0.1
@@ -260,6 +261,7 @@ catalog:
   ts-v-gen: ^1.0.1
   tsconfig-paths-webpack-plugin: ^4.2.0
   tsdown: 0.21.0-beta.1
+  tsx: ^4.22.0
   turbowalk: git+https://github.com/Nexus-Mods/node-turbowalk#3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
   typed-binary: ^4.3.3
   typescript: 5.9.3
@@ -296,7 +298,7 @@ failIfNoMatch: true
 
 minimumReleaseAge: 2880
 minimumReleaseAgeIgnoreMissingTime: true
-minimumReleaseAgeStrict: false # TODO: set true after they fixed their shit
+minimumReleaseAgeStrict: true
 
 overrides:
   "@types/react": "16"

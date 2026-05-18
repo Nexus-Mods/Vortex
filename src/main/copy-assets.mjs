@@ -55,10 +55,6 @@ for (const file of await glob("assets/*.json", { cwd: WORKSPACE })) {
   await copy(join(WORKSPACE, file), join(ASSETS, basename(file)));
 }
 
-for (const file of await glob("assets/licenses/*", { cwd: WORKSPACE })) {
-  await copy(join(WORKSPACE, file), join(ASSETS, "licenses", basename(file)));
-}
-
 // Platform binaries (may not exist on current platform)
 for (const bin of ["dotnetprobe", "dotnetprobe.exe", "dotnetprobe.pdb"]) {
   try {

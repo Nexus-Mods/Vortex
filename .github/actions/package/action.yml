@@ -1,0 +1,195 @@
+name: Package Vortex
+description: Build, optionally sign, release, and upload Vortex package artifacts.
+
+inputs:
+  version:
+    description: "The version to release (eg: 'v1.0.0'). Ignored when nightly is true."
+    required: false
+    default: ""
+  nightly:
+    description: "Nightly build? (auto-versioned, signed, no releases, 48h artifacts)"
+    required: false
+    default: "false"
+  create-artifacts:
+    description: "Create artifacts?"
+    required: false
+    default: "true"
+  use-codesigning:
+    description: "Use codesigning?"
+    required: false
+    default: "true"
+  release:
+    description: "Create a draft release?"
+    required: false
+    default: "true"
+  staging-release:
+    description: "Create a draft staging release?"
+    required: false
+    default: "true"
+  staging-token:
+    description: "Token used to create releases in Nexus-Mods/Vortex-Staging."
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Show Inputs
+      shell: pwsh
+      run: |
+        Write-Output "version=${{ inputs.version }}"
+        Write-Output "nightly=${{ inputs.nightly }}"
+        Write-Output "create-artifacts=${{ inputs.create-artifacts }}"
+        Write-Output "use-codesigning=${{ inputs.use-codesigning }}"
+        Write-Output "release=${{ inputs.release }}"
+        Write-Output "staging-release=${{ inputs.staging-release }}"
+
+    - name: Determine nightly mode
+      id: nightly-flag
+      shell: bash
+      run: |
+        is_nightly="${{ inputs.nightly == 'true' || github.event_name == 'pull_request' }}"
+        echo "is_nightly=$is_nightly" >> "$GITHUB_OUTPUT"
+
+    - name: Set version
+      id: setOutputs
+      shell: pwsh
+      env:
+        IS_NIGHTLY: ${{ steps.nightly-flag.outputs.is_nightly }}
+        INPUT_VERSION: ${{ inputs.version }}
+      run: |
+        if ($env:IS_NIGHTLY -eq "true") {
+          $pkg = Get-Content package.json | ConvertFrom-Json
+          $date = Get-Date -Format "yyyyMMdd"
+          $rawVersion = "$($pkg.version)-nightly.$date"
+        } else {
+          $rawVersion = $env:INPUT_VERSION
+          if ($rawVersion.StartsWith('v')) { $rawVersion = $rawVersion.Substring(1) }
+        }
+        echo "tagVersion=v$rawVersion" >> $env:GITHUB_OUTPUT
+        echo "rawVersion=$rawVersion" >> $env:GITHUB_OUTPUT
+        echo "artifactNameUnpacked=vortex-setup-$rawVersion-unpacked" >> $env:GITHUB_OUTPUT
+        echo "artifactNameInstaller=vortex-setup-$rawVersion-installer" >> $env:GITHUB_OUTPUT
+        echo "VORTEX_VERSION=$rawVersion" >> $env:GITHUB_ENV
+
+    - uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: "9.0.x"
+
+    - name: Print dotnet info
+      shell: pwsh
+      run: dotnet --info
+
+    - name: Setup Python 3.11
+      uses: actions/setup-python@v6
+      with:
+        python-version: "3.11"
+
+    - name: Download CodeSignTool
+      if: ${{ inputs.use-codesigning == 'true' || steps.nightly-flag.outputs.is_nightly == 'true' }}
+      shell: pwsh
+      run: .\download-codesigntool.ps1
+
+    - name: Read Node.js version from package.json
+      id: node-version
+      shell: pwsh
+      run: |
+        $packageJson = Get-Content package.json | ConvertFrom-Json
+        $nodeVersion = $packageJson.engines.node
+        echo "NODE_VERSION=$nodeVersion" >> $env:GITHUB_OUTPUT
+        echo "Using Node.js version: $nodeVersion"
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v6
+
+    - name: Use Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version: ${{ steps.node-version.outputs.NODE_VERSION }}
+        cache: "pnpm"
+
+    - name: Install dependencies
+      shell: pwsh
+      run: pnpm install --frozen-lockfile
+
+    - name: Build Installer
+      shell: pwsh
+      run: |
+        $signingAvailable = -not [string]::IsNullOrWhiteSpace($env:ES_USERNAME)
+        $wantSigning = "${{ inputs.use-codesigning }}" -eq "true" -or "${{ steps.nightly-flag.outputs.is_nightly }}" -eq "true"
+        if ($wantSigning -and $signingAvailable) {
+          pnpm run package
+        } else {
+          if ($wantSigning -and -not $signingAvailable) {
+            Write-Warning "::warning::Codesigning requested but secrets unavailable - building unsigned"
+          }
+          pnpm run package:nosign
+        }
+
+    - name: Validate Package Creation
+      shell: pwsh
+      run: |
+        $installerExists = Test-Path "./dist/vortex-setup-*.*.*.exe"
+        $latestYmlExists = Test-Path "./dist/latest.yml"
+
+        if (-not $installerExists) {
+          Write-Error "Installer executable not found in ./dist/"
+          exit 1
+        }
+
+        if (-not $latestYmlExists) {
+          Write-Error "latest.yml not found in ./dist/"
+          exit 1
+        }
+
+        Write-Output "✅ Package validation successful - installer and metadata files created"
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v3.0.0
+      if: ${{ inputs.release == 'true' && steps.nightly-flag.outputs.is_nightly != 'true' }}
+      with:
+        files: |
+          ./dist/vortex-setup-*.*.*.exe
+          ./dist/latest.yml
+          ./dist/alpha.yml
+          ./dist/beta.yml
+        prerelease: true
+        draft: true
+        name: ${{ steps.setOutputs.outputs.rawVersion }}
+        tag_name: ${{ steps.setOutputs.outputs.tagVersion }}
+
+    - name: Create GitHub Release on Vortex-Staging
+      uses: softprops/action-gh-release@v3.0.0
+      if: ${{ inputs.staging-release == 'true' && steps.nightly-flag.outputs.is_nightly != 'true' }}
+      with:
+        files: |
+          ./dist/vortex-setup-*.*.*.exe
+          ./dist/latest.yml
+          ./dist/alpha.yml
+          ./dist/beta.yml
+        prerelease: true
+        draft: true
+        name: ${{ steps.setOutputs.outputs.rawVersion }}
+        tag_name: ${{ steps.setOutputs.outputs.tagVersion }}
+        token: ${{ inputs.staging-token }}
+        repository: "Nexus-Mods/Vortex-Staging"
+
+    - name: Create Unpacked Artifact
+      uses: actions/upload-artifact@v7
+      if: ${{ inputs.create-artifacts == 'true' || steps.nightly-flag.outputs.is_nightly == 'true' }}
+      with:
+        name: ${{ steps.setOutputs.outputs.artifactNameUnpacked }}
+        path: ./dist/win-unpacked
+        if-no-files-found: error
+        retention-days: ${{ steps.nightly-flag.outputs.is_nightly == 'true' && 2 || 90 }}
+
+    - name: Create Installer Artifact
+      uses: actions/upload-artifact@v7
+      if: ${{ inputs.create-artifacts == 'true' || steps.nightly-flag.outputs.is_nightly == 'true' }}
+      with:
+        name: ${{ steps.setOutputs.outputs.artifactNameInstaller }}
+        path: |
+          ./dist/vortex-setup-*.*.*.exe
+          ./dist/latest.yml
+        if-no-files-found: error
+        retention-days: ${{ steps.nightly-flag.outputs.is_nightly == 'true' && 2 || 90 }}

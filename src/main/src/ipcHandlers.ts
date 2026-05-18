@@ -3,6 +3,7 @@
  * These handlers respond to requests from the renderer process via preload.
  */
 
+import { appendFileSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
 
@@ -23,6 +24,7 @@ import {
   clipboard,
   contentTracing,
   dialog,
+  ipcMain,
   Menu,
   powerSaveBlocker,
   WebContentsView,
@@ -172,6 +174,23 @@ export function init() {
 
   betterIpcMain.handle("app:exit", (_event: IpcMainInvokeEvent, exitCode: number) => {
     app.exit(exitCode);
+  });
+
+  // Sync write: the caller is typically about to die, so the line must be on
+  // disk before we return. Raw ipcMain because betterIpcMain has no sync
+  // handler.
+  ipcMain.on("diag:fatal", (event, message: string) => {
+    try {
+      const line =
+        new Date().toISOString() +
+        " [ERRO] [RENDERER] [diag] " +
+        message.replace(/\r?\n/g, "\\n") +
+        "\n";
+      appendFileSync(path.join(app.getPath("userData"), "vortex.log"), line);
+    } catch {
+      // diagnostics must never throw
+    }
+    event.returnValue = null;
   });
 
   // Shell

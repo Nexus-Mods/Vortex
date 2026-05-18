@@ -1110,7 +1110,14 @@ function init(context: IExtensionContext): boolean {
           );
 
           if (game !== undefined) {
-            manageGame(context.api, game.id);
+            // Wait for discovery to populate before deciding undiscovered vs
+            // discovered; otherwise this races the fire-and-forget
+            // startQuickDiscovery in gamemode_management.once() and pops the
+            // "Game not discovered" dialog even though discovery would have
+            // succeeded.
+            context.api
+              .emitAndAwait("discover-game", game.id)
+              .then(() => manageGame(context.api, game.id));
           } else {
             log("warn", "game specified on command line not found", {
               game: commandLine.game,

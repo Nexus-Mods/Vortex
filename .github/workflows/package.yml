@@ -1,12 +1,21 @@
 name: Package
 
+# Nightly builds (nightly input) override: version is auto-derived,
+# codesigning is always true, releases are always false, artifacts always true with 2-day retention.
+# Scheduled nightly builds run nightly.yml, which uses the same composite action.
+
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: "The version to release (eg: 'v1.0.0')"
-        required: true
+        description: "The version to release (eg: 'v1.0.0'). Ignored when nightly is true."
+        required: false
         type: string
+      nightly:
+        description: "Nightly build? (auto-versioned, signed, no releases, 48h artifacts)"
+        required: false
+        type: boolean
+        default: false
       create-artifacts:
         description: "Create artifacts?"
         required: true
@@ -27,6 +36,10 @@ on:
         required: false
         type: boolean
         default: true
+  pull_request:
+    paths:
+      - .github/workflows/package.yml
+      - .github/actions/package/**
 
 jobs:
   build:
@@ -44,157 +57,17 @@ jobs:
       DEBUG: electron-builder # gives electron more verbose logs
 
     steps:
-      - name: Show Inputs
-        run: echo "${{ toJSON(github.event.inputs) }}"
-
-      - name: Set Outputs
-        id: setOutputs
-        shell: pwsh
-        env:
-          InputVersion: ${{ inputs.version }}
-          GITHUB_RUN_NUMBER: ${{ github.run_number }}
-        run: |
-          $semverRegex = '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$'
-          $tagVersion = If ($env:InputVersion.StartsWith('v')) {$env:InputVersion} Else {"v" + $env:InputVersion} 
-          $rawVersion = If ($env:InputVersion.StartsWith('v')) {$env:InputVersion.Substring(1)} Else {$env:InputVersion} 
-          # validation
-          If ($rawVersion -notmatch $semverRegex) { 
-              Write-Error "Invalid version format. Must be semver." 
-              Exit 1 
-          }
-          echo "tagVersion=$tagVersion" >> $env:GITHUB_OUTPUT 
-          echo "rawVersion=$rawVersion" >> $env:GITHUB_OUTPUT 
-          echo "artifactNameUnpacked=vortex-setup-$rawVersion-unpacked" >> $env:GITHUB_OUTPUT 
-          echo "artifactNameInstaller=vortex-setup-$rawVersion-installer" >> $env:GITHUB_OUTPUT
-          echo "VORTEX_VERSION=$rawVersion" >> $env:GITHUB_ENV
-
-      - name: Get current time
-        uses: josStorer/get-current-time@v2
-        id: current-time
-        with:
-          format: "YYYY-MM-DD HHmm"
-
-      - name: Use current time
-        env:
-          TIME: "${{ steps.current-time.outputs.time }}"
-          R_TIME: "${{ steps.current-time.outputs.readableTime }}"
-          F_TIME: "${{ steps.current-time.outputs.formattedTime }}"
-          YEAR: "${{ steps.current-time.outputs.year }}"
-          DAY: "${{ steps.current-time.outputs.day }}"
-        run: echo $TIME $R_TIME $F_TIME $YEAR $DAY
-
       - uses: actions/checkout@v6
         with:
           submodules: "recursive"
 
-      - uses: actions/setup-dotnet@v5
+      - name: Package Vortex
+        uses: ./.github/actions/package
         with:
-          dotnet-version: "9.0.x"
-
-      - name: Print dotnet info
-        run: dotnet --info
-
-      - name: Setup Python 3.11
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.11"
-
-      - name: Download CodeSignTool
-        id: codesign
-        shell: pwsh
-        run: .\download-codesigntool.ps1
-
-      - name: Read Node.js version from package.json
-        id: node-version
-        shell: pwsh
-        run: |
-          $packageJson = Get-Content package.json | ConvertFrom-Json
-          $nodeVersion = $packageJson.engines.node
-          echo "NODE_VERSION=$nodeVersion" >> $env:GITHUB_OUTPUT
-          echo "Using Node.js version: $nodeVersion"
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v6
-
-      - name: Use Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: ${{ steps.node-version.outputs.NODE_VERSION }}
-          cache: "pnpm"
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Create Signed Installer
-        if: ${{ inputs.use-codesigning == true }}
-        run: pnpm run package
-
-      - name: Create Unsigned Installer
-        if: ${{ inputs.use-codesigning == false }}
-        run: pnpm run package:nosign
-
-      - name: Validate Package Creation
-        shell: pwsh
-        run: |
-          $installerExists = Test-Path "./dist/vortex-setup-*.*.*.exe"
-          $latestYmlExists = Test-Path "./dist/latest.yml"
-
-          if (-not $installerExists) {
-            Write-Error "Installer executable not found in ./dist/"
-            exit 1
-          }
-
-          if (-not $latestYmlExists) {
-            Write-Error "latest.yml not found in ./dist/"
-            exit 1
-          }
-
-          Write-Output "✅ Package validation successful - installer and metadata files created"
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v3.0.0
-        if: ${{ inputs.release == true }}
-        with:
-          files: |
-            ./dist/vortex-setup-*.*.*.exe 
-            ./dist/latest.yml 
-            ./dist/alpha.yml 
-            ./dist/beta.yml
-          prerelease: true
-          draft: true
-          name: ${{ steps.setOutputs.outputs.rawVersion }}
-          tag_name: ${{ steps.setOutputs.outputs.tagVersion }}
-
-      - name: Create GitHub Release on Vortex-Staging
-        uses: softprops/action-gh-release@v3.0.0
-        if: ${{ inputs.staging-release == true }}
-        with:
-          files: |
-            ./dist/vortex-setup-*.*.*.exe 
-            ./dist/latest.yml 
-            ./dist/alpha.yml 
-            ./dist/beta.yml
-          prerelease: true
-          draft: true
-          name: ${{ steps.setOutputs.outputs.rawVersion }}
-          tag_name: ${{ steps.setOutputs.outputs.tagVersion }}
-          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-          repository: "Nexus-Mods/Vortex-Staging"
-
-      - name: Create Unpacked Artifact
-        uses: actions/upload-artifact@v7
-        if: ${{ inputs.create-artifacts == true }}
-        with:
-          name: ${{ steps.setOutputs.outputs.artifactNameUnpacked }}
-          path: ./dist/win-unpacked
-          if-no-files-found: error
-
-      - name: Create Installer Artifact
-        uses: actions/upload-artifact@v7
-        if: ${{ inputs.create-artifacts == true }}
-        with:
-          name: ${{ steps.setOutputs.outputs.artifactNameInstaller }}
-          path: |
-            ./dist/vortex-setup-*.*.*.exe
-            ./dist/latest.yml
-          if-no-files-found: error
+          version: ${{ inputs.version }}
+          nightly: ${{ inputs.nightly }}
+          create-artifacts: ${{ inputs.create-artifacts }}
+          use-codesigning: ${{ inputs.use-codesigning }}
+          release: ${{ inputs.release }}
+          staging-release: ${{ inputs.staging-release }}
+          staging-token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
