@@ -24,7 +24,7 @@
     "preinstall": "node ./scripts/create-env-file.mjs",
     "start": "pnpm nx run @vortex/main:start",
     "build": "pnpm nx run-many -t build lint typecheck && pnpm run assets",
-    "assets": "npx tsx scripts/download-duckdb-extensions.ts && node ./scripts/dependency-report.mjs",
+    "assets": "pnpm tsx scripts/download-duckdb-extensions.ts && node ./scripts/dependency-report.mjs",
     "package": "pnpm cross-env NODE_ENV=production pnpm run build && pnpm cross-env NODE_ENV=production pnpm nx run @vortex/main:package",
     "package:nosign": "pnpm cross-env NODE_ENV=production pnpm run build && pnpm cross-env NODE_ENV=production pnpm nx run @vortex/main:package:nosign",
     "typecheck": "pnpm nx run-many -t typecheck",
@@ -39,7 +39,7 @@
     "e2e": "pnpm nx run @vortex/e2e:test",
     "e2e:headed": "pnpm nx run @vortex/e2e:test:headed",
     "e2e:debug": "pnpm nx run @vortex/e2e:test:debug",
-    "generate:query-types": "npx tsx scripts/generate-query-types.ts"
+    "generate:query-types": "pnpm tsx scripts/generate-query-types.ts"
   },
   "lint-staged": {
     "*": "pnpm oxfmt --no-error-on-unmatched-pattern"
@@ -87,6 +87,7 @@
     "ts-loader": "catalog:",
     "tsconfig-paths-webpack-plugin": "catalog:",
     "tsdown": "catalog:",
+    "tsx": "catalog:",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:",
     "vite": "catalog:",
