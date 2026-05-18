@@ -1,7 +1,7 @@
 import createClient, { type Middleware } from "openapi-fetch";
 
-import type { paths } from "./generated/nexus-api-v3";
 import { V3ApiError } from "./errors";
+import type { paths } from "./generated/nexus-api-v3";
 
 export interface NexusV3ClientOptions {
   baseUrl: string;
@@ -45,23 +45,17 @@ export function createNexusV3Client(options: NexusV3ClientOptions) {
     },
 
     async createMultipartUpload(sizeBytes: number, filename: string) {
-      const { data, error, response } = await client.POST(
-        "/uploads/multipart",
-        {
-          body: { size_bytes: sizeBytes, filename },
-        },
-      );
+      const { data, error, response } = await client.POST("/uploads/multipart", {
+        body: { size_bytes: sizeBytes, filename },
+      });
       if (error) throw toV3Error(error, response);
       return data.data;
     },
 
     async finaliseUpload(uploadId: string) {
-      const { data, error, response } = await client.POST(
-        "/uploads/{id}/finalise",
-        {
-          params: { path: { id: uploadId } },
-        },
-      );
+      const { data, error, response } = await client.POST("/uploads/{id}/finalise", {
+        params: { path: { id: uploadId } },
+      });
       if (error) throw toV3Error(error, response);
       return data.data;
     },
@@ -90,15 +84,23 @@ export function createNexusV3Client(options: NexusV3ClientOptions) {
       uploadId: string,
       collectionData: paths["/collections/{id}/revisions"]["post"]["requestBody"]["content"]["application/json"]["collection_data"],
     ) {
-      const { data, error, response } = await client.POST(
-        "/collections/{id}/revisions",
-        {
-          params: { path: { id: collectionId } },
-          body: { upload_id: uploadId, collection_data: collectionData },
-        },
-      );
+      const { data, error, response } = await client.POST("/collections/{id}/revisions", {
+        params: { path: { id: collectionId } },
+        body: { upload_id: uploadId, collection_data: collectionData },
+      });
       if (error) throw toV3Error(error, response);
       return data.data;
+    },
+
+    async editCollection(
+      collectionId: number,
+      patch: paths["/collections/{id}"]["patch"]["requestBody"]["content"]["application/json"],
+    ) {
+      const { error, response } = await client.PATCH("/collections/{id}", {
+        params: { path: { id: collectionId } },
+        body: patch,
+      });
+      if (error) throw toV3Error(error, response);
     },
   };
 }
@@ -108,8 +110,7 @@ function toV3Error(error: unknown, response: Response): V3ApiError {
   // this will be a ProblemDetails or ValidationProblem object — but proxies,
   // 502 pages, and transport errors can all produce other shapes, so we fall
   // back to the HTTP response whenever a field is missing.
-  const problem =
-    error && typeof error === "object" ? (error as Record<string, unknown>) : {};
+  const problem = error && typeof error === "object" ? (error as Record<string, unknown>) : {};
 
   return new V3ApiError({
     type: typeof problem.type === "string" ? problem.type : "about:blank",
@@ -117,16 +118,14 @@ function toV3Error(error: unknown, response: Response): V3ApiError {
       typeof problem.title === "string" && problem.title.length > 0
         ? problem.title
         : `HTTP ${response.status}`,
-    status:
-      typeof problem.status === "number" ? problem.status : response.status,
+    status: typeof problem.status === "number" ? problem.status : response.status,
     detail:
       typeof problem.detail === "string"
         ? problem.detail
         : error instanceof Error
           ? error.message
           : "",
-    instance:
-      typeof problem.instance === "string" ? problem.instance : response.url,
+    instance: typeof problem.instance === "string" ? problem.instance : response.url,
     errors: Array.isArray(problem.errors)
       ? (problem.errors as V3ApiError["validationErrors"])
       : undefined,

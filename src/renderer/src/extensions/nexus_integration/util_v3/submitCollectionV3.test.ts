@@ -1,6 +1,5 @@
-import type { ICollectionManifest, default as Nexus } from "@nexusmods/nexus-api";
+import type { ICollectionManifest } from "@nexusmods/nexus-api";
 import type { NexusV3Client } from "@vortex/nexus-api-v3";
-
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("../../../logging", () => ({
@@ -39,7 +38,6 @@ import { createNexusV3Client } from "@vortex/nexus-api-v3";
 import { stat } from "fs-extra";
 
 import type { IState } from "../../../types/IState";
-
 import { isLoggedIn } from "../selectors";
 import { submitCollectionV3 } from "./submitCollectionV3";
 import { uploadMultipart, uploadSinglePart } from "./uploadV3";
@@ -74,12 +72,6 @@ function makeManifest(): ICollectionManifest {
   };
 }
 
-function makeNexus(): Nexus {
-  return {
-    editCollection: vi.fn().mockResolvedValue(true),
-  } as unknown as Nexus;
-}
-
 function makeMockClient(): Pick<
   NexusV3Client,
   | "createUpload"
@@ -88,67 +80,54 @@ function makeMockClient(): Pick<
   | "getUpload"
   | "createCollection"
   | "createCollectionRevision"
+  | "editCollection"
 > {
   return {
-    createUpload: vi
-      .fn<NexusV3Client["createUpload"]>()
-      .mockResolvedValue({
-        id: "upload-123",
-        presigned_url: "https://s3.example.com/upload",
-        user: { id: "1" },
-        state: "created",
-      }),
-    createMultipartUpload: vi
-      .fn<NexusV3Client["createMultipartUpload"]>()
-      .mockResolvedValue({
-        id: "upload-456",
-        part_size_bytes: 100 * 1024 * 1024,
-        part_presigned_urls: [
-          "https://s3.example.com/part1",
-          "https://s3.example.com/part2",
-        ],
-        complete_presigned_url: "https://s3.example.com/complete",
-        user: { id: "1" },
-        state: "created",
-      }),
+    createUpload: vi.fn<NexusV3Client["createUpload"]>().mockResolvedValue({
+      id: "upload-123",
+      presigned_url: "https://s3.example.com/upload",
+      user: { id: "1" },
+      state: "created",
+    }),
+    createMultipartUpload: vi.fn<NexusV3Client["createMultipartUpload"]>().mockResolvedValue({
+      id: "upload-456",
+      part_size_bytes: 100 * 1024 * 1024,
+      part_presigned_urls: ["https://s3.example.com/part1", "https://s3.example.com/part2"],
+      complete_presigned_url: "https://s3.example.com/complete",
+      user: { id: "1" },
+      state: "created",
+    }),
     finaliseUpload: vi
       .fn<NexusV3Client["finaliseUpload"]>()
       .mockResolvedValue({ id: "upload-123", user: { id: "1" }, state: "created" }),
-    getUpload: vi
-      .fn<NexusV3Client["getUpload"]>()
-      .mockResolvedValue({
-        id: "upload-123",
-        user: { id: "1" },
-        state: "available",
-      }),
-    createCollection: vi
-      .fn<NexusV3Client["createCollection"]>()
-      .mockResolvedValue({
-        id: "999",
-        slug: "test-slug",
-        revision_id: "1",
-        revision_number: 1,
-        revision_status: "draft",
-      }),
-    createCollectionRevision: vi
-      .fn<NexusV3Client["createCollectionRevision"]>()
-      .mockResolvedValue({
-        id: "42",
-        collection_id: "888",
-        revision_number: 2,
-        revision_status: "draft",
-      }),
+    getUpload: vi.fn<NexusV3Client["getUpload"]>().mockResolvedValue({
+      id: "upload-123",
+      user: { id: "1" },
+      state: "available",
+    }),
+    createCollection: vi.fn<NexusV3Client["createCollection"]>().mockResolvedValue({
+      id: "999",
+      slug: "test-slug",
+      revision_id: "1",
+      revision_number: 1,
+      revision_status: "draft",
+    }),
+    createCollectionRevision: vi.fn<NexusV3Client["createCollectionRevision"]>().mockResolvedValue({
+      id: "42",
+      collection_id: "888",
+      revision_number: 2,
+      revision_status: "draft",
+    }),
+    editCollection: vi.fn<NexusV3Client["editCollection"]>().mockResolvedValue(undefined),
   };
 }
 
 describe("submitCollectionV3", () => {
   let mockClient: ReturnType<typeof makeMockClient>;
-  let mockNexus: Nexus;
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockClient = makeMockClient();
-    mockNexus = makeNexus();
     mockCreateClient.mockReturnValue(mockClient as NexusV3Client);
     mockStat.mockResolvedValue({ size: SMALL_FILE_SIZE });
   });
@@ -157,18 +136,9 @@ describe("submitCollectionV3", () => {
     it("uses single-part upload for small files", async () => {
       mockStat.mockResolvedValue({ size: SMALL_FILE_SIZE });
 
-      await submitCollectionV3(
-        makeState(),
-        mockNexus,
-        makeManifest(),
-        "/tmp/small.zip",
-        undefined,
-      );
+      await submitCollectionV3(makeState(), makeManifest(), "/tmp/small.zip", undefined);
 
-      expect(mockClient.createUpload).toHaveBeenCalledWith(
-        SMALL_FILE_SIZE,
-        "small.zip",
-      );
+      expect(mockClient.createUpload).toHaveBeenCalledWith(SMALL_FILE_SIZE, "small.zip");
       expect(vi.mocked(uploadSinglePart)).toHaveBeenCalled();
       expect(mockClient.createMultipartUpload).not.toHaveBeenCalled();
       expect(vi.mocked(uploadMultipart)).not.toHaveBeenCalled();
@@ -177,18 +147,9 @@ describe("submitCollectionV3", () => {
     it("uses multipart upload for large files", async () => {
       mockStat.mockResolvedValue({ size: LARGE_FILE_SIZE });
 
-      await submitCollectionV3(
-        makeState(),
-        mockNexus,
-        makeManifest(),
-        "/tmp/large.zip",
-        undefined,
-      );
+      await submitCollectionV3(makeState(), makeManifest(), "/tmp/large.zip", undefined);
 
-      expect(mockClient.createMultipartUpload).toHaveBeenCalledWith(
-        LARGE_FILE_SIZE,
-        "large.zip",
-      );
+      expect(mockClient.createMultipartUpload).toHaveBeenCalledWith(LARGE_FILE_SIZE, "large.zip");
       expect(vi.mocked(uploadMultipart)).toHaveBeenCalled();
       expect(mockClient.createUpload).not.toHaveBeenCalled();
       expect(vi.mocked(uploadSinglePart)).not.toHaveBeenCalled();
@@ -199,16 +160,12 @@ describe("submitCollectionV3", () => {
     it("returns id, slug, revisionNumber, and revisionStatus from V3 response", async () => {
       const result = await submitCollectionV3(
         makeState(),
-        mockNexus,
         makeManifest(),
         "/tmp/file.zip",
         undefined,
       );
 
-      expect(mockClient.createCollection).toHaveBeenCalledWith(
-        "upload-123",
-        expect.any(Object),
-      );
+      expect(mockClient.createCollection).toHaveBeenCalledWith("upload-123", expect.any(Object));
       expect(mockClient.createCollectionRevision).not.toHaveBeenCalled();
       expect(result.success).toBe(true);
       expect(result.collection?.id).toBe(999);
@@ -221,13 +178,7 @@ describe("submitCollectionV3", () => {
 
   describe("revision update", () => {
     it("returns id, revisionNumber, and revisionStatus from V3 response (slug unchanged)", async () => {
-      const result = await submitCollectionV3(
-        makeState(),
-        mockNexus,
-        makeManifest(),
-        "/tmp/file.zip",
-        888,
-      );
+      const result = await submitCollectionV3(makeState(), makeManifest(), "/tmp/file.zip", 888);
 
       expect(mockClient.createCollectionRevision).toHaveBeenCalledWith(
         "888",
@@ -244,45 +195,28 @@ describe("submitCollectionV3", () => {
       expect(result.revision?.revisionStatus).toBe("draft");
     });
 
-    it("calls nexus.editCollection with the current name before the revision upload", async () => {
-      await submitCollectionV3(
-        makeState(),
-        mockNexus,
-        makeManifest(),
-        "/tmp/file.zip",
-        888,
-      );
+    it("patches the collection name via V3 before the revision upload", async () => {
+      await submitCollectionV3(makeState(), makeManifest(), "/tmp/file.zip", 888);
 
-      expect(mockNexus.editCollection).toHaveBeenCalledWith(888, "Test");
-      const editOrder = vi.mocked(mockNexus.editCollection).mock
-        .invocationCallOrder[0];
+      expect(mockClient.editCollection).toHaveBeenCalledWith(888, {
+        name: "Test",
+      });
+      const editOrder = vi.mocked(mockClient.editCollection).mock.invocationCallOrder[0];
       const revisionOrder = vi.mocked(mockClient.createCollectionRevision).mock
         .invocationCallOrder[0];
       expect(editOrder).toBeLessThan(revisionOrder);
     });
 
-    it("does not call nexus.editCollection when creating a new collection", async () => {
-      await submitCollectionV3(
-        makeState(),
-        mockNexus,
-        makeManifest(),
-        "/tmp/file.zip",
-        undefined,
-      );
+    it("does not patch the collection when creating a new one", async () => {
+      await submitCollectionV3(makeState(), makeManifest(), "/tmp/file.zip", undefined);
 
-      expect(mockNexus.editCollection).not.toHaveBeenCalled();
+      expect(mockClient.editCollection).not.toHaveBeenCalled();
     });
   });
 
   describe("upload lifecycle", () => {
     it("calls finalise and poll after upload", async () => {
-      await submitCollectionV3(
-        makeState(),
-        mockNexus,
-        makeManifest(),
-        "/tmp/file.zip",
-        undefined,
-      );
+      await submitCollectionV3(makeState(), makeManifest(), "/tmp/file.zip", undefined);
 
       expect(mockClient.finaliseUpload).toHaveBeenCalledWith("upload-123");
     });
@@ -293,13 +227,7 @@ describe("submitCollectionV3", () => {
       vi.mocked(isLoggedIn).mockReturnValueOnce(false);
 
       await expect(
-        submitCollectionV3(
-          makeState(),
-          mockNexus,
-          makeManifest(),
-          "/tmp/file.zip",
-          undefined,
-        ),
+        submitCollectionV3(makeState(), makeManifest(), "/tmp/file.zip", undefined),
       ).rejects.toThrow("Not logged in");
     });
   });

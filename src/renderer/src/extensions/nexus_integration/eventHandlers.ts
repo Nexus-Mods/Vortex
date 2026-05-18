@@ -1184,7 +1184,7 @@ export function onSubmitFeedback(nexus: Nexus) {
   };
 }
 
-export function onSubmitCollection(api: IExtensionApi, nexus: Nexus) {
+export function onSubmitCollection(api: IExtensionApi) {
   return (
     collectionInfo: ICollectionManifest,
     assetFilePath: string,
@@ -1194,7 +1194,6 @@ export function onSubmitCollection(api: IExtensionApi, nexus: Nexus) {
   ) => {
     submitCollectionV3(
       api.getState(),
-      nexus,
       collectionInfo,
       assetFilePath,
       collectionId || undefined,

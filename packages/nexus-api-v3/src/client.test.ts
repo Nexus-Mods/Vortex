@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
 import { createNexusV3Client } from "./client";
 import { V3ApiError } from "./errors";
 
@@ -8,6 +9,7 @@ vi.mock("openapi-fetch", () => ({
     GET: vi.fn(),
     POST: vi.fn(),
     PUT: vi.fn(),
+    PATCH: vi.fn(),
   })),
 }));
 
@@ -19,6 +21,7 @@ describe("createNexusV3Client", () => {
   let mockClient: {
     GET: ReturnType<typeof vi.fn>;
     POST: ReturnType<typeof vi.fn>;
+    PATCH: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(() => {
@@ -26,6 +29,7 @@ describe("createNexusV3Client", () => {
     mockClient = {
       GET: vi.fn(),
       POST: vi.fn(),
+      PATCH: vi.fn(),
     };
     mockCreateClient.mockReturnValue(mockClient as any);
   });
@@ -68,10 +72,7 @@ describe("createNexusV3Client", () => {
         bearerToken: "my-jwt-token",
       });
 
-      const headers = mockCreateClient.mock.calls[0][0].headers as Record<
-        string,
-        string
-      >;
+      const headers = mockCreateClient.mock.calls[0][0].headers as Record<string, string>;
       expect(headers["Authorization"]).toBe("Bearer my-jwt-token");
       expect(headers["apikey"]).toBeUndefined();
     });
@@ -116,9 +117,7 @@ describe("createNexusV3Client", () => {
         apiKey: "key",
       });
 
-      await expect(client.createUpload(-1, "file.zip")).rejects.toThrow(
-        V3ApiError,
-      );
+      await expect(client.createUpload(-1, "file.zip")).rejects.toThrow(V3ApiError);
     });
   });
 
@@ -241,21 +240,59 @@ describe("createNexusV3Client", () => {
         baseUrl: "https://api.nexusmods.com/v3",
         apiKey: "key",
       });
-      const result = await client.createCollectionRevision(
-        "col-1",
-        "upload-1",
-        {} as any,
-      );
+      const result = await client.createCollectionRevision("col-1", "upload-1", {} as any);
 
-      expect(mockClient.POST).toHaveBeenCalledWith(
-        "/collections/{id}/revisions",
-        {
-          params: { path: { id: "col-1" } },
-          body: { upload_id: "upload-1", collection_data: {} },
-        },
-      );
+      expect(mockClient.POST).toHaveBeenCalledWith("/collections/{id}/revisions", {
+        params: { path: { id: "col-1" } },
+        body: { upload_id: "upload-1", collection_data: {} },
+      });
       expect(result.id).toBe("rev-2");
       expect(result.collection_id).toBe("col-1");
+    });
+  });
+
+  describe("editCollection", () => {
+    it("calls PATCH /collections/{id} with the patch body", async () => {
+      mockClient.PATCH.mockResolvedValue({
+        data: undefined,
+        error: undefined,
+        response: { status: 204 },
+      });
+
+      const client = createNexusV3Client({
+        baseUrl: "https://api.nexusmods.com/v3",
+        apiKey: "key",
+      });
+      await client.editCollection(42, { name: "Renamed" });
+
+      expect(mockClient.PATCH).toHaveBeenCalledWith("/collections/{id}", {
+        params: { path: { id: 42 } },
+        body: { name: "Renamed" },
+      });
+    });
+
+    it("throws V3ApiError on error response", async () => {
+      mockClient.PATCH.mockResolvedValue({
+        data: undefined,
+        error: {
+          type: "about:blank",
+          title: "Forbidden",
+          status: 403,
+          detail: "Not the owner",
+          instance: "/collections/42",
+        },
+        response: {
+          status: 403,
+          url: "https://api.nexusmods.com/v3/collections/42",
+        },
+      });
+
+      const client = createNexusV3Client({
+        baseUrl: "https://api.nexusmods.com/v3",
+        apiKey: "key",
+      });
+
+      await expect(client.editCollection(42, { name: "Renamed" })).rejects.toThrow(V3ApiError);
     });
   });
 });

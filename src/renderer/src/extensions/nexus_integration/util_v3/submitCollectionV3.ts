@@ -2,23 +2,16 @@ import type {
   ICollectionManifest,
   ICreateCollectionResult,
   IOAuthCredentials,
-  default as Nexus,
 } from "@nexusmods/nexus-api";
-
 import { createNexusV3Client } from "@vortex/nexus-api-v3";
 import * as fs from "fs-extra";
 
-import type { IState } from "../../../types/IState";
-
 import { log } from "../../../logging";
+import type { IState } from "../../../types/IState";
 import { MULTIPART_THRESHOLD, NEXUS_V3_BASE_URL } from "../constants";
 import { apiKey as apiKeySelector, isLoggedIn } from "../selectors";
 import { toV3CollectionPayload } from "./manifestMapping";
-import {
-  pollUploadAvailable,
-  uploadMultipart,
-  uploadSinglePart,
-} from "./uploadV3";
+import { pollUploadAvailable, uploadMultipart, uploadSinglePart } from "./uploadV3";
 
 function createClientFromState(state: IState) {
   if (!isLoggedIn(state)) {
@@ -26,8 +19,7 @@ function createClientFromState(state: IState) {
   }
 
   const apiKey = apiKeySelector(state);
-  const oauthCred: IOAuthCredentials =
-    state.confidential.account?.["nexus"]?.["OAuthCredentials"];
+  const oauthCred: IOAuthCredentials = state.confidential.account?.["nexus"]?.["OAuthCredentials"];
   const oauthToken = oauthCred?.token;
 
   return createNexusV3Client({
@@ -39,7 +31,6 @@ function createClientFromState(state: IState) {
 
 export async function submitCollectionV3(
   state: IState,
-  nexus: Nexus,
   collectionInfo: ICollectionManifest,
   assetFilePath: string,
   collectionId: number | undefined,
@@ -62,12 +53,7 @@ export async function submitCollectionV3(
   if (fileSize <= MULTIPART_THRESHOLD) {
     const upload = await client.createUpload(fileSize, filename);
     uploadId = upload.id;
-    await uploadSinglePart(
-      upload.presigned_url,
-      assetFilePath,
-      fileSize,
-      signal,
-    );
+    await uploadSinglePart(upload.presigned_url, assetFilePath, fileSize, signal);
   } else {
     const multipart = await client.createMultipartUpload(fileSize, filename);
     uploadId = multipart.id;
@@ -95,10 +81,9 @@ export async function submitCollectionV3(
   }
 
   // V3 revision creation doesn't propagate collection-level metadata (name)
-  // to the parent collection. Preserve the legacy behaviour by calling
-  // GraphQL editCollection first, mirroring the pre-v3 flow which ran
-  // editCollection unconditionally before every revision upload.
-  await nexus.editCollection(collectionId, collectionInfo.info.name);
+  // to the parent collection, so patch the name first — mirrors the pre-v3
+  // flow which ran editCollection unconditionally before every revision upload.
+  await client.editCollection(collectionId, { name: collectionInfo.info.name });
 
   const revisionResult = await client.createCollectionRevision(
     String(collectionId),
