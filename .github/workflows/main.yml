@@ -23,6 +23,10 @@ jobs:
         with:
           submodules: "recursive"
 
+      - name: Fetch PR base
+        if: github.event_name == 'pull_request'
+        run: git fetch origin "${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}" --depth=1
+
       - name: Setup Python 3.11
         uses: actions/setup-python@v6
         with:
@@ -54,7 +58,12 @@ jobs:
           path: src/main/build/duckdb-extensions
           key: duckdb-${{ runner.os }}-${{ hashFiles('scripts/duckdb-extensions.json', 'scripts/download-duckdb-extensions.ts', 'pnpm-lock.yaml') }}
 
-      - name: Build, lint, and typecheck
+      - name: Build, lint, and typecheck affected projects
+        if: github.event_name == 'pull_request'
+        run: pnpm exec nx affected -t build lint typecheck --base=origin/${{ github.base_ref }} --head=HEAD
+
+      - name: Build, lint, and typecheck all projects
+        if: github.event_name != 'pull_request'
         run: pnpm exec nx run-many -t build lint typecheck
 
       - name: Assets
