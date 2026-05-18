@@ -1,12 +1,9 @@
 import type { ICollectionManifest } from "@nexusmods/nexus-api";
-
 import { describe, it, expect } from "vitest";
 
 import { toV3CollectionPayload } from "./manifestMapping";
 
-const makeManifest = (
-  overrides: Partial<ICollectionManifest> = {},
-): ICollectionManifest => ({
+const makeManifest = (overrides: Partial<ICollectionManifest> = {}): ICollectionManifest => ({
   info: overrides.info ?? {
     author: "TestAuthor",
     authorUrl: "https://nexusmods.com/users/123",

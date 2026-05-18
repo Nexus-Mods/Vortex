@@ -1,4 +1,5 @@
 import { Readable } from "stream";
+
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("../../../logging", () => ({
@@ -17,11 +18,7 @@ vi.mock("fs", () => ({
 import type { NexusV3Client } from "@vortex/nexus-api-v3";
 
 import { uploadWithHeaders } from "../../../util/network";
-import {
-  uploadMultipart,
-  uploadSinglePart,
-  pollUploadAvailable,
-} from "./uploadV3";
+import { uploadMultipart, uploadSinglePart, pollUploadAvailable } from "./uploadV3";
 
 const mockUploadWithHeaders = vi.mocked(uploadWithHeaders);
 
@@ -104,9 +101,7 @@ describe("pollUploadAvailable", () => {
     const controller = new AbortController();
     controller.abort();
 
-    await expect(
-      pollUploadAvailable(client, "upload-123", controller.signal),
-    ).rejects.toThrow();
+    await expect(pollUploadAvailable(client, "upload-123", controller.signal)).rejects.toThrow();
     expect(getUpload).not.toHaveBeenCalled();
   });
 
@@ -115,11 +110,7 @@ describe("pollUploadAvailable", () => {
     const client = makeClient({ getUpload });
     const controller = new AbortController();
 
-    const promise = pollUploadAvailable(
-      client,
-      "upload-123",
-      controller.signal,
-    );
+    const promise = pollUploadAvailable(client, "upload-123", controller.signal);
     const settled = promise.catch((err: unknown) => err);
     // Let the first poll run and enter the sleep.
     await vi.advanceTimersByTimeAsync(0);
@@ -144,11 +135,7 @@ describe("uploadSinglePart", () => {
       statusCode: 200,
     });
 
-    await uploadSinglePart(
-      "https://s3.example.com/upload",
-      "/tmp/file.zip",
-      1024,
-    );
+    await uploadSinglePart("https://s3.example.com/upload", "/tmp/file.zip", 1024);
 
     expect(mockUploadWithHeaders).toHaveBeenCalledOnce();
     const [url, , size] = mockUploadWithHeaders.mock.calls[0];
@@ -184,10 +171,7 @@ describe("uploadMultipart", () => {
     await uploadMultipart(
       {
         part_size_bytes: 100,
-        part_presigned_urls: [
-          "https://s3.example.com/part1",
-          "https://s3.example.com/part2",
-        ],
+        part_presigned_urls: ["https://s3.example.com/part1", "https://s3.example.com/part2"],
         complete_presigned_url: "https://s3.example.com/complete",
       },
       "/tmp/bigfile.zip",
@@ -270,9 +254,7 @@ describe("uploadMultipart", () => {
 
     const err = await settled;
     expect(err).toBeInstanceOf(Error);
-    expect((err as Error).message).toMatch(
-      /Failed to complete multipart upload/,
-    );
+    expect((err as Error).message).toMatch(/Failed to complete multipart upload/);
     // Completion POST is retried up to RETRY_ATTEMPTS (3) times.
     expect(fetchSpy).toHaveBeenCalledTimes(3);
   });

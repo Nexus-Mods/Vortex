@@ -10,9 +10,7 @@ export class V3ApiError extends Error {
   public readonly instance: string;
   public readonly validationErrors?: ValidationProblemItem[];
 
-  constructor(
-    problem: Partial<ProblemDetails> & { errors?: ValidationProblemItem[] },
-  ) {
+  constructor(problem: Partial<ProblemDetails> & { errors?: ValidationProblemItem[] }) {
     super(problem.title || "Request failed");
     this.name = "V3ApiError";
     this.status = problem.status ?? 0;

@@ -1,6 +1,6 @@
-import type { NexusV3Client } from "@vortex/nexus-api-v3";
-
 import { createReadStream } from "fs";
+
+import type { NexusV3Client } from "@vortex/nexus-api-v3";
 
 import { log } from "../../../logging";
 import { uploadWithHeaders, type IUploadResult } from "../../../util/network";
@@ -172,22 +172,13 @@ export async function uploadSinglePart(
   signal?: AbortSignal,
 ): Promise<void> {
   await withRetry<IUploadResult>(
-    () =>
-      uploadWithHeaders(
-        presignedUrl,
-        createReadStream(filePath),
-        fileSize,
-        undefined,
-        signal,
-      ),
+    () => uploadWithHeaders(presignedUrl, createReadStream(filePath), fileSize, undefined, signal),
     "single-part upload",
     { signal },
   );
 }
 
-function buildCompleteMultipartXml(
-  etags: Array<{ partNumber: number; etag: string }>,
-): string {
+function buildCompleteMultipartXml(etags: Array<{ partNumber: number; etag: string }>): string {
   const parts = etags
     .map(
       ({ partNumber, etag }) =>
@@ -219,9 +210,7 @@ async function uploadPart(
   const rawEtag = result.headers["etag"];
   const etag = Array.isArray(rawEtag) ? rawEtag[0] : rawEtag;
   if (!etag) {
-    throw new Error(
-      `S3 did not return an ETag for part ${partNumber} of multipart upload`,
-    );
+    throw new Error(`S3 did not return an ETag for part ${partNumber} of multipart upload`);
   }
 
   log("debug", "multipart part uploaded", {
@@ -242,8 +231,7 @@ export async function uploadMultipart(
   fileSize: number,
   signal?: AbortSignal,
 ): Promise<void> {
-  const { part_size_bytes, part_presigned_urls, complete_presigned_url } =
-    multipart;
+  const { part_size_bytes, part_presigned_urls, complete_presigned_url } = multipart;
   const totalParts = part_presigned_urls.length;
   const expectedParts = Math.ceil(fileSize / part_size_bytes);
   if (expectedParts !== totalParts) {
@@ -258,15 +246,7 @@ export async function uploadMultipart(
     const start = i * part_size_bytes;
     const end = Math.min(start + part_size_bytes, fileSize);
     etags.push(
-      await uploadPart(
-        part_presigned_urls[i],
-        filePath,
-        start,
-        end,
-        i + 1,
-        totalParts,
-        signal,
-      ),
+      await uploadPart(part_presigned_urls[i], filePath, start, end, i + 1, totalParts, signal),
     );
   }
 

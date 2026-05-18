@@ -4,8 +4,7 @@ import type { components } from "@vortex/nexus-api-v3";
 type V3CollectionPayload = components["schemas"]["CollectionPayload"];
 type V3CollectionManifest = components["schemas"]["CollectionManifest"];
 type V3CollectionManifestMod = components["schemas"]["CollectionManifestMod"];
-type V3CollectionManifestModSource =
-  components["schemas"]["CollectionManifestModSource"];
+type V3CollectionManifestModSource = components["schemas"]["CollectionManifestModSource"];
 
 function toV3ManifestModSource(
   source: ICollectionManifest["mods"][number]["source"],
@@ -21,8 +20,7 @@ function toV3ManifestModSource(
     file_id: source.fileId?.toString() ?? "",
     md5: source.md5 ?? null,
     file_size: source.fileSize ?? null,
-    update_policy:
-      source.updatePolicy satisfies V3CollectionManifestModSource["update_policy"],
+    update_policy: source.updatePolicy satisfies V3CollectionManifestModSource["update_policy"],
     logical_filename: source.logicalFilename ?? null,
     file_expression: source.fileExpression ?? null,
     url: source.url ?? null,
@@ -30,9 +28,7 @@ function toV3ManifestModSource(
   };
 }
 
-function toV3ManifestMod(
-  mod: ICollectionManifest["mods"][number],
-): V3CollectionManifestMod {
+function toV3ManifestMod(mod: ICollectionManifest["mods"][number]): V3CollectionManifestMod {
   return {
     name: mod.name,
     version: mod.version,
