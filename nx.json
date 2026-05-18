@@ -8,8 +8,10 @@
   },
   "namedInputs": {
     "default": [
+      "{workspaceRoot}/package.json",
       "{projectRoot}/package.json",
       "{workspaceRoot}/pnpm-workspace.yaml",
+      "{workspaceRoot}/pnpm-lock.yaml",
       { "env": "NODE_ENV" }
     ],
     "typescript": [
@@ -28,6 +30,7 @@
       "inputs": [
         "default",
         "typescript",
+        "{workspaceRoot}/rolldown.base.mjs",
         "!{projectRoot}/src/**/*.test.{ts,tsx}",
         { "dependentTasksOutputFiles": "**/dist/**" }
       ],

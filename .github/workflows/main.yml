@@ -35,6 +35,10 @@ jobs:
         uses: pnpm/action-setup@v6
         with:
           cache: true
+          cache_dependency_path: |
+            pnpm-lock.yaml
+            pnpm-workspace.yaml
+            package.json
 
       # NOTE(erri120): fontconfig required by font-scanner required by theme-switcher
       - name: Install fontconfig
@@ -44,8 +48,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build
-        run: pnpm run build
+      - name: Cache DuckDB extensions
+        uses: actions/cache@v4
+        with:
+          path: src/main/build/duckdb-extensions
+          key: duckdb-${{ runner.os }}-${{ hashFiles('scripts/duckdb-extensions.json', 'scripts/download-duckdb-extensions.ts', 'pnpm-lock.yaml') }}
+
+      - name: Build, lint, and typecheck
+        run: pnpm exec nx run-many -t build lint typecheck
+
+      - name: Assets
+        run: pnpm run assets
 
       - name: Test
         run: pnpm run test
