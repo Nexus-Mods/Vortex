@@ -301,6 +301,31 @@ function installExtension(
             () => undefined,
             () => undefined,
           )
+          .then((result: { code: number; errors: string[] }) => {
+            // node-7z can resolve (not reject) with a non-zero exit code or
+            // a populated errors array on partial/failed extraction. Without
+            // this check, validateInstall runs against an empty or partial
+            // tempPath and we surface a misleading "needs index.js and
+            // info.json on top-level" error instead of the real cause
+            // (locked file, AV quarantine, corrupt download, etc.).
+            const code = result?.code ?? 0;
+            const errors = result?.errors ?? [];
+            if (code !== 0 || errors.length > 0) {
+              log(code !== 0 ? "error" : "warn", "extension extraction reported issues", {
+                archivePath,
+                tempPath,
+                code,
+                errors: errors.join("; "),
+              });
+            }
+            if (code !== 0) {
+              const detail = errors.length > 0 ? errors.join("; ") : `exit code ${code}`;
+              return PromiseBB.reject(
+                new DataInvalid(`Failed to extract extension archive: ${detail}`),
+              );
+            }
+            return PromiseBB.resolve();
+          })
           .then(() => validateInstall(tempPath, info).then((guessedType) => (type = guessedType)))
           .then(() => readExtensionInfo(tempPath, false, info))
           // merge the caller-provided info with the stuff parsed from the info.json file because there
