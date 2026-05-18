@@ -51,6 +51,8 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
+        env:
+          VORTEX_SKIP_ELECTRON_REBUILD: "1"
 
       - name: Cache DuckDB extensions
         uses: actions/cache@v4
