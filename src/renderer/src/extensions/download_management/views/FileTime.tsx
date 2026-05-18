@@ -1,12 +1,12 @@
+import * as path from "path";
+
+import type { TFunction } from "i18next";
+import * as React from "react";
+
 import { ComponentEx } from "../../../controls/ComponentEx";
 import * as fs from "../../../util/fs";
 import { userFriendlyTime } from "../../../util/relativeTime";
-
 import type { IDownload } from "../types/IDownload";
-
-import type { TFunction } from "i18next";
-import * as path from "path";
-import * as React from "react";
 
 interface IFileTimeProps {
   t: TFunction;

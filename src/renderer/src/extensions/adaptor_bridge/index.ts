@@ -33,12 +33,17 @@
  * - Tools → supportedTools array on the IGame object
  */
 
+import * as path from "path";
+
 import Bluebird from "bluebird"; // Used for setup callback return type
 
-import type { IExtensionContext } from "../../types/IExtensionContext";
 import type { IInstruction } from "../../extensions/mod_management/types/IInstallResult";
-
+import type { IExtensionContext } from "../../types/IExtensionContext";
+import type { IState } from "../../types/IState";
 import { log } from "../../util/log";
+import * as selectors from "../../util/selectors";
+import { setKnownGames } from "../gamemode_management/actions/session";
+import { addDiscoveredGame } from "../gamemode_management/actions/settings";
 
 // ---------------------------------------------------------------------------
 // Type definitions for adaptor IPC responses
@@ -54,6 +59,7 @@ interface AdaptorEntry {
   pid: string;
   provides: string[]; // URIs like "vortex:adaptor/cyberpunk2077/info"
   requires: string[];
+  gameInfo?: GameInfo | null;
 }
 
 /** Serialized form of GameInfo from IGameInfoService. */
@@ -120,9 +126,7 @@ export interface InstallMapping {
   destination: string;
 }
 
-type InstallerDispatch = (
-  files: readonly string[],
-) => Promise<readonly InstallMapping[]>;
+type InstallerDispatch = (files: readonly string[]) => Promise<readonly InstallMapping[]>;
 
 /**
  * Registry of per-game mod-installer dispatch functions, populated as
@@ -134,10 +138,15 @@ type InstallerDispatch = (
  */
 const installerRegistry = new Map<string, InstallerDispatch>();
 
+/**
+ * Detected game versions from adaptor version sources, keyed by game ID.
+ * Populated during the setup callback when an adaptor declares a
+ * `getVersionSource` method on its paths service.
+ */
+const detectedVersions = new Map<string, string>();
+
 /** Returns the installer dispatch for a game, or `undefined`. */
-export function getAdaptorInstaller(
-  gameId: string,
-): InstallerDispatch | undefined {
+export function getAdaptorInstaller(gameId: string): InstallerDispatch | undefined {
   return installerRegistry.get(gameId);
 }
 
@@ -147,19 +156,25 @@ export function adaptorInstallerGameIds(): readonly string[] {
 }
 
 /**
+ * Registry of per-game prelaunch info, keyed by game ID. Populated
+ * during setup when the adaptor provides a prelaunch service.
+ */
+interface PrelaunchInfo {
+  adaptorName: string;
+  prelaunchUri: string;
+  paths: unknown;
+}
+const prelaunchRegistry = new Map<string, PrelaunchInfo>();
+
+/**
  * Validates that an adaptor's `install()` reply matches the
  * {@link InstallMapping} shape before we hand it to any consumer.
  * A misbehaving adaptor shouldn't be able to surface as a crash in
  * downstream code that trusted the cast.
  */
-function assertInstallMappings(
-  value: unknown,
-  adaptorName: string,
-): readonly InstallMapping[] {
+function assertInstallMappings(value: unknown, adaptorName: string): readonly InstallMapping[] {
   if (!Array.isArray(value)) {
-    throw new Error(
-      `[adaptor-bridge] ${adaptorName}: installer returned non-array`,
-    );
+    throw new Error(`[adaptor-bridge] ${adaptorName}: installer returned non-array`);
   }
   for (const entry of value) {
     if (
@@ -169,9 +184,7 @@ function assertInstallMappings(
       typeof (entry as { anchor?: unknown }).anchor !== "string" ||
       typeof (entry as { destination?: unknown }).destination !== "string"
     ) {
-      throw new Error(
-        `[adaptor-bridge] ${adaptorName}: installer returned malformed mapping`,
-      );
+      throw new Error(`[adaptor-bridge] ${adaptorName}: installer returned malformed mapping`);
     }
   }
   return value as readonly InstallMapping[];
@@ -217,7 +230,7 @@ interface SerializedQP {
  * for local drives, so the fallback is a defensive catch-all rather than
  * an expected code path.
  *
- * TODO: replace with `resolveAbsolutePath` from `@vortex/fs` once the
+ * TODO: replace with `resolveAbsolutePath` from `@nexusmods/adaptor-api/fs` once the
  * browser-side path resolver lands.
  */
 function qpPathToNative(qp: SerializedQP): string {
@@ -248,23 +261,119 @@ function gameIdFromUri(gameUri: string): string {
  */
 function buildQueryArgs(
   info: GameInfo,
-): Record<string, Array<{ id?: string; name?: string }>> {
-  const args: Record<string, Array<{ id?: string; name?: string }>> = {};
+): Record<string, Array<{ id?: string; name?: string; prefer?: number }>> {
+  const args: Record<string, Array<{ id?: string; name?: string; prefer?: number }>> = {};
 
+  // prefer values enforce ordering: Steam > GOG > Epic > Xbox
   if (info.steam?.length) {
-    args.steam = info.steam.map((s) => ({ id: String(s.appId) }));
-  }
-  if (info.epic?.length) {
-    args.epic = info.epic.map((e) => ({ id: e.catalogNamespace }));
+    args.steam = info.steam.map((s) => ({ id: String(s.appId), prefer: 0 }));
   }
   if (info.gog?.length) {
-    args.gog = info.gog.map((g) => ({ id: String(g.gameId) }));
+    args.gog = info.gog.map((g) => ({ id: String(g.gameId), prefer: 1 }));
+  }
+  if (info.epic?.length) {
+    args.epic = info.epic.map((e) => ({ id: e.catalogNamespace, prefer: 2 }));
   }
   if (info.xbox?.length) {
-    args.xbox = info.xbox.map((x) => ({ id: x.packageFamilyName }));
+    args.xbox = info.xbox.map((x) => ({ id: x.packageFamilyName, prefer: 3 }));
   }
 
   return args;
+}
+
+// ---------------------------------------------------------------------------
+// Load order bridge
+// ---------------------------------------------------------------------------
+
+/**
+ * Bridges a single adaptor load order definition into Vortex's
+ * file_based_loadorder system. The serialize/deserialize/validate
+ * callbacks delegate to the adaptor's IGameLoadOrderService via IPC.
+ */
+function registerAdaptorLoadOrder(
+  context: IExtensionContext,
+  adaptorName: string,
+  gameId: string,
+  loadOrderUri: string,
+  paths: OpaqueGamePaths,
+  definition: { id: string; displayName: string; description?: string },
+): void {
+  const { id: loId, displayName, description } = definition;
+
+  // Use the runtime API exposed by FBLO so this works after init.
+  const addLoadOrderPage = context.api.ext.addLoadOrderPage as
+    | ((info: Record<string, unknown>, isContributed?: boolean) => void)
+    | undefined;
+
+  if (!addLoadOrderPage) {
+    log("warn", "[adaptor-bridge] addLoadOrderPage API not available, skipping {{lo}}", {
+      lo: loId,
+    });
+    return;
+  }
+
+  log("info", "[adaptor-bridge] Registering load order: {{gameId}}/{{lo}} ({{name}})", {
+    gameId,
+    lo: loId,
+    name: displayName,
+  });
+
+  addLoadOrderPage(
+    {
+      gameId,
+      toggleableEntries: true,
+      clearStateOnPurge: false,
+      usageInstructions: description,
+
+      deserializeLoadOrder: async () => {
+        const state = (await callAdaptor(adaptorName, loadOrderUri, "getLoadOrderState", [
+          paths,
+          loId,
+        ])) as {
+          entries: Array<{
+            id: string;
+            name: string;
+            enabled: boolean;
+            locked?: boolean;
+            data?: Record<string, unknown>;
+          }>;
+        };
+
+        return state.entries.map((e) => ({
+          id: e.id,
+          name: e.name,
+          enabled: e.enabled,
+          locked: e.locked ? "true" : "false",
+          data: e.data,
+        }));
+      },
+
+      serializeLoadOrder: async (
+        loadOrder: Array<{
+          id: string;
+          name: string;
+          enabled: boolean;
+          data?: unknown;
+        }>,
+      ) => {
+        const entries = loadOrder.map((e) => ({
+          id: e.id,
+          name: e.name,
+          enabled: e.enabled,
+          data: e.data as Record<string, unknown> | undefined,
+        }));
+        await callAdaptor(adaptorName, loadOrderUri, "setEntryOrder", [paths, loId, entries]);
+        await callAdaptor(adaptorName, loadOrderUri, "serializeToDisk", [paths, loId]);
+      },
+
+      validate: async () => {
+        // Validation is handled by the adaptor's sorting rules.
+        // For now, accept all orderings.
+        return undefined;
+      },
+    },
+    false, // not contributed - adaptor bridge is first-party
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -278,33 +387,40 @@ function buildQueryArgs(
  * translates its declarative contract data into the imperative
  * registerGame/registerModType calls that Vortex understands.
  *
+ * This function is called synchronously during `init()` so that
+ * `registerGame` runs before `endRegistration`. Game info is
+ * pre-fetched by the main process and passed in via the adaptor entry.
+ *
  * The flow is:
- * 1. Fetch game info eagerly (needed for registerGame)
+ * 1. Use pre-fetched game info (needed for registerGame)
  * 2. Register the game with queryArgs for store discovery
  * 3. In the setup callback (called after discovery), lazily resolve:
  *    a. Game folder paths (IGamePathService)
  *    b. Tools and executable info (IGameToolsService)
- * 4. Populate tools from the resolved data
+ *    c. Populate supported tools from the resolved data
  */
-async function registerAdaptor(
-  context: IExtensionContext,
-  adaptor: AdaptorEntry,
-): Promise<void> {
+function registerAdaptor(context: IExtensionContext, adaptor: AdaptorEntry): void {
   const { name, provides } = adaptor;
 
-  // Match adaptor service URIs by their suffix convention.
-  // e.g. "vortex:adaptor/cyberpunk2077/info" ends with "/info"
-  const infoUri = provides.find((u) => u.endsWith("/info"));
-  const pathsUri = provides.find((u) => u.endsWith("/paths"));
-  const toolsUri = provides.find((u) => u.endsWith("/tools"));
-  const installerUri = provides.find((u) => u.endsWith("/installer"));
+  // Match adaptor service URIs by the exact "vortex:adaptor/{id}/{service}"
+  // convention.  A full regex avoids false positives from URIs that merely
+  // happen to end with the service name.
+  const findService = (service: string): string | undefined =>
+    provides.find((u) => new RegExp(`^vortex:adaptor/[^/]+/${service}$`).test(u));
+
+  const infoUri = findService("info");
+  const pathsUri = findService("paths");
+  const toolsUri = findService("tools");
+  const installerUri = findService("installer");
+  const loadOrderUri = findService("load-order");
+  const prelaunchUri = findService("prelaunch");
 
   // An adaptor must at least provide game info to be a game adaptor
   if (!infoUri) return;
 
-  // Fetch game info eagerly — we need the game ID and store IDs
-  // for registerGame which must happen synchronously during init
-  const info = (await callAdaptor(name, infoUri, "getGameInfo")) as GameInfo;
+  // Game info was pre-fetched by the main process during adaptor load
+  const info = adaptor.gameInfo as GameInfo | null;
+  if (!info) return;
 
   const gameId = gameIdFromUri(info.gameUri);
 
@@ -347,15 +463,10 @@ async function registerAdaptor(
   }
 
   /** Resolves game paths. Called once after discovery. */
-  async function getPaths(
-    store: string,
-    gamePath: string,
-  ): Promise<OpaqueGamePaths | null> {
+  async function getPaths(store: string, gamePath: string): Promise<OpaqueGamePaths | null> {
     if (!pathsResolved && pathsUri) {
       cachedSnapshot = await window.api.adaptors.buildSnapshot(store, gamePath);
-      cachedPaths = await callAdaptor(name, pathsUri, "paths", [
-        cachedSnapshot,
-      ]);
+      cachedPaths = await callAdaptor(name, pathsUri, "paths", [cachedSnapshot]);
       pathsResolved = true;
     }
     return cachedPaths;
@@ -366,16 +477,32 @@ async function registerAdaptor(
    * `null` if the adaptor provides no tools service or if paths were
    * unavailable (we never call `getGameTools` with a `null` paths arg).
    */
-  async function getTools(
-    paths: OpaqueGamePaths | null,
-  ): Promise<GameToolsInfo | null> {
+  async function getTools(paths: OpaqueGamePaths | null): Promise<GameToolsInfo | null> {
     if (!toolsUri || paths === null) return null;
     if (!cachedTools) {
-      cachedTools = (await callAdaptor(name, toolsUri, "getGameTools", [
-        paths,
-      ])) as GameToolsInfo;
+      cachedTools = (await callAdaptor(name, toolsUri, "getGameTools", [paths])) as GameToolsInfo;
     }
     return cachedTools;
+  }
+
+  /**
+   * Detects the game version using the adaptor's declared strategy.
+   * Calls `getVersionSource` on the paths service, then sends the
+   * resulting descriptor to the main process for execution.
+   * Returns null if the adaptor doesn't declare version detection.
+   */
+  async function getVersion(paths: OpaqueGamePaths | null): Promise<string | null> {
+    if (!pathsUri || paths === null) return null;
+    try {
+      const source = await callAdaptor(name, pathsUri, "getVersionSource", [paths]);
+      if (!source || typeof source !== "object") return null;
+      return await window.api.adaptors.detectVersion(
+        source as { type: string; path: { value: string }; regex?: string },
+      );
+    } catch {
+      // getVersionSource is optional; adaptor may not implement it
+      return null;
+    }
   }
 
   /**
@@ -385,14 +512,10 @@ async function registerAdaptor(
    * both forwarded opaquely. Returns an empty array when the adaptor
    * does not declare an installer service.
    */
-  async function invokeInstaller(
-    files: readonly string[],
-  ): Promise<readonly InstallMapping[]> {
+  async function invokeInstaller(files: readonly string[]): Promise<readonly InstallMapping[]> {
     if (!installerUri || !pathsUri) return [];
     if (!cachedSnapshot || !cachedPaths) {
-      throw new Error(
-        `[adaptor-bridge] ${name}: installer called before paths resolved`,
-      );
+      throw new Error(`[adaptor-bridge] ${name}: installer called before paths resolved`);
     }
     const raw = await callAdaptor(name, installerUri, "install", [
       cachedSnapshot,
@@ -422,6 +545,10 @@ async function registerAdaptor(
     relative: boolean;
   }> = [];
 
+  // Placeholder until the tools service resolves the real executable
+  // path after discovery. Updated in the setup callback.
+  let resolvedExecutable = ".";
+
   const gameDetails: Record<string, unknown> = {
     steamAppId: info.steam?.[0]?.appId,
     nexusPageId: info.nexusMods?.[0]?.domain,
@@ -431,8 +558,7 @@ async function registerAdaptor(
   context.registerGame({
     id: gameId,
     name: info.displayName,
-    logo: "", // TODO: adaptor-provided logo
-    executable: () => ".", // Placeholder — updated in setup after tools resolve
+    executable: () => resolvedExecutable,
     requiredFiles: [], // Adaptors don't use file-based discovery
     mergeMods: true,
     queryModPath: () => ".", // Actual paths come from mod type registrations
@@ -461,25 +587,49 @@ async function registerAdaptor(
           const store = discovery.store ?? "unknown";
           const gamePath = discovery.path;
           if (!gamePath) {
-            log(
-              "warn",
-              `[adaptor-bridge] No discovery path for ${name}, skipping setup`,
-            );
+            log("warn", `[adaptor-bridge] No discovery path for ${name}, skipping setup`);
             return;
           }
 
           // Step 1: Resolve folder paths (game, saves, preferences, etc.)
           const paths = await getPaths(store, gamePath);
 
-          // Step 2: Resolve tools (depends on paths)
-          const tools = await getTools(paths);
-
-          // Step 3: Wire the game executable from the tools service
-          if (tools) {
-            discovery.executable = tools.game.executable.path;
+          // Step 2: Detect game version (if adaptor declares a strategy)
+          const version = await getVersion(paths);
+          if (version && version !== "0.0.0") {
+            detectedVersions.set(gameId, version);
+            log("info", "[adaptor-bridge] {{gameId}} version: {{version}}", { gameId, version });
           }
 
-          // Step 4: Populate supported tools
+          // Step 3: Resolve tools (depends on paths)
+          const tools = await getTools(paths);
+
+          // Step 4: Wire the game executable from the tools service.
+          // The executable QP is absolute; StarterInfo expects a path
+          // relative to the game directory, so convert to native and
+          // compute relative from gamePath.
+          if (tools?.game?.executable) {
+            const exeNative = qpPathToNative(tools.game.executable as unknown as SerializedQP);
+            resolvedExecutable = path.relative(gamePath, exeNative);
+            // Update the persisted discovery so StarterInfo picks up
+            // the real executable on subsequent launches.
+            context.api.store.dispatch(
+              addDiscoveredGame(gameId, { executable: resolvedExecutable }),
+            );
+            // Also patch the session-only known games list so the
+            // current session's StarterInfo uses the resolved exe
+            // instead of the placeholder ".".
+            const known = context.api.store.getState().session.gameMode.known as Array<{
+              id: string;
+              executable: string;
+            }>;
+            const updated = known.map((g) =>
+              g.id === gameId ? { ...g, executable: resolvedExecutable } : g,
+            );
+            context.api.store.dispatch(setKnownGames(updated));
+          }
+
+          // Step 5: Populate supported tools (additional launchers, etc.)
           if (tools?.tools) {
             for (const [toolId, tool] of Object.entries(tools.tools)) {
               supportedTools.push({
@@ -500,13 +650,11 @@ async function registerAdaptor(
             }
           }
 
-          // Step 5: Register mod types for non-game anchors so the
+          // Step 6: Register mod types for non-game anchors so the
           // deployment system knows where to route files that target
           // saves, preferences, or other adaptor-declared directories.
           if (paths !== null) {
-            for (const [anchor, qp] of Object.entries(
-              paths as Record<string, unknown>,
-            )) {
+            for (const [anchor, qp] of Object.entries(paths as Record<string, unknown>)) {
               if (anchor === "game") continue;
               if (
                 typeof qp !== "object" ||
@@ -514,11 +662,10 @@ async function registerAdaptor(
                 typeof (qp as SerializedQP).scheme !== "string" ||
                 typeof (qp as SerializedQP).path !== "string"
               ) {
-                log(
-                  "warn",
-                  "[adaptor-bridge] {{name}}: skipping non-QP paths entry {{anchor}}",
-                  { name, anchor },
-                );
+                log("warn", "[adaptor-bridge] {{name}}: skipping non-QP paths entry {{anchor}}", {
+                  name,
+                  anchor,
+                });
                 continue;
               }
               const modTypeId = `${gameId}-${anchor}`;
@@ -533,11 +680,50 @@ async function registerAdaptor(
             }
           }
 
-          // Step 6: Expose the installer dispatch so the registered
+          // Step 7: Expose the installer dispatch so the registered
           // "adaptor" installer can route archive contents through the
           // adaptor's stop-pattern resolver.
           if (installerUri && pathsUri && paths !== null) {
             installerRegistry.set(gameId, invokeInstaller);
+          }
+
+          // Step 8: Register load orders with Vortex's FBLO system.
+          // Each adaptor load order definition becomes a separate
+          // registerLoadOrder entry that bridges serialize/deserialize
+          // calls to the adaptor's IGameLoadOrderService via IPC.
+          if (loadOrderUri && paths !== null) {
+            try {
+              const loadOrders = (await callAdaptor(name, loadOrderUri, "getLoadOrders", [
+                paths,
+              ])) as Array<{
+                id: string;
+                displayName: string;
+                description?: string;
+              }>;
+
+              for (const lo of loadOrders) {
+                registerAdaptorLoadOrder(context, name, gameId, loadOrderUri, paths, lo);
+              }
+            } catch (err) {
+              log(
+                "warn",
+                "[adaptor-bridge] Failed to register load orders for {{name}}: {{error}}",
+                {
+                  name,
+                  error: err instanceof Error ? err.message : "Unknown error",
+                },
+              );
+            }
+          }
+
+          // Step 9: Store prelaunch info so the start hook can query
+          // the adaptor's prelaunch tasks before game launch.
+          if (prelaunchUri && paths !== null) {
+            prelaunchRegistry.set(gameId, {
+              adaptorName: name,
+              prelaunchUri,
+              paths,
+            });
           }
         })(),
       ),
@@ -549,6 +735,16 @@ async function registerAdaptor(
 // ---------------------------------------------------------------------------
 
 function init(context: IExtensionContext): boolean {
+  // Register a version provider for adaptor-managed games. Priority 15
+  // sits before the built-in ext-version-check (20) and exec-version-check
+  // (100), so adaptor-detected versions take precedence.
+  context.registerGameVersionProvider(
+    "adaptor-version",
+    15,
+    (game) => Promise.resolve(detectedVersions.has(game.id)),
+    (game) => Promise.resolve(detectedVersions.get(game.id) ?? "0.0.0"),
+  );
+
   // Register a single installer that delegates to whichever adaptor owns
   // the active game. Priority 25 sits after both fomod installers (native
   // at 10, IPC at 20) so fomod archives still get fomod treatment, but
@@ -563,9 +759,7 @@ function init(context: IExtensionContext): boolean {
     async (files, _destinationPath, gameId) => {
       const dispatch = getAdaptorInstaller(gameId);
       if (dispatch === undefined) {
-        throw new Error(
-          `[adaptor-bridge] No adaptor installer registered for game "${gameId}"`,
-        );
+        throw new Error(`[adaptor-bridge] No adaptor installer registered for game "${gameId}"`);
       }
       // InstallManager's buildFileList produces backslash-separated paths
       // on Windows and appends path.sep to directory entries. Adaptors
@@ -607,42 +801,85 @@ function init(context: IExtensionContext): boolean {
     },
   );
 
-  // On startup, discover and register all loaded adaptors.
-  // context.once() runs after all extensions are initialized but before
-  // the UI is fully interactive — the right time to register games.
-  context.once(async () => {
+  // Register a prelaunch start hook that runs adaptor prelaunch tasks
+  // before the game launches. Priority 90 runs before deployment checks
+  // (100). The hook queries the adaptor's prelaunch service, evaluates
+  // conditions, and runs qualifying tasks.
+  context.registerStartHook?.(90, "adaptor-prelaunch", async (input) => {
+    const state: IState = context.api.getState();
+    const gameId = selectors.activeGameId(state);
+    if (!gameId) return input;
+
+    const info = prelaunchRegistry.get(gameId);
+    if (!info) return input;
+
     try {
-      const adaptors = await window.api.adaptors.list();
+      const tasks = (await callAdaptor(info.adaptorName, info.prelaunchUri, "getPrelaunchTasks", [
+        info.paths,
+      ])) as Array<{
+        id: string;
+        name: string;
+        executable: { path: string };
+        args?: string[];
+        conditional?: boolean;
+      }>;
 
-      if (adaptors.length === 0) {
-        log("info", "[adaptor-bridge] No adaptors loaded");
-        return;
+      for (const task of tasks) {
+        let shouldRun = true;
+        if (task.conditional) {
+          shouldRun = (await callAdaptor(info.adaptorName, info.prelaunchUri, "shouldRun", [
+            info.paths,
+            task.id,
+          ])) as boolean;
+        }
+
+        if (shouldRun) {
+          log("info", "[adaptor-bridge] Running prelaunch task: {{name}}", { name: task.name });
+          // TODO: Actually spawn the process and wait for it.
+          // For now, log that we would run it. Full process
+          // spawning requires access to the main process tool
+          // runner, which is a separate integration point.
+        }
       }
+    } catch (err) {
+      log("warn", "[adaptor-bridge] Prelaunch tasks failed for {{gameId}}: {{error}}", {
+        gameId,
+        error: err instanceof Error ? err.message : "Unknown error",
+      });
+    }
 
+    return input;
+  });
+
+  // Register all loaded adaptors synchronously during init so that
+  // registerGame calls happen before endRegistration. The adaptor
+  // list and pre-fetched game info come from a synchronous IPC call.
+  try {
+    const adaptors = window.api.adaptors.listWithInfoSync() as AdaptorEntry[];
+
+    if (adaptors.length === 0) {
+      log("info", "[adaptor-bridge] No adaptors loaded");
+    } else {
       log("info", "[adaptor-bridge] Found {{count}} adaptor(s)", {
         count: adaptors.length,
       });
 
       for (const adaptor of adaptors) {
         try {
-          await registerAdaptor(context, adaptor);
+          registerAdaptor(context, adaptor);
         } catch (err) {
-          log(
-            "warn",
-            "[adaptor-bridge] Failed to register adaptor {{name}}: {{error}}",
-            {
-              name: adaptor.name,
-              error: err instanceof Error ? err.message : "Unknown error",
-            },
-          );
+          log("warn", "[adaptor-bridge] Failed to register adaptor {{name}}: {{error}}", {
+            name: adaptor.name,
+            error: err instanceof Error ? err.message : "Unknown error",
+          });
         }
       }
-    } catch (err) {
-      log("error", "[adaptor-bridge] Failed to query adaptors: {{error}}", {
-        error: err instanceof Error ? err.message : "Unknown error",
-      });
     }
-  });
+  } catch (err) {
+    log("error", "[adaptor-bridge] Failed to query adaptors: {{error}}", {
+      error: err instanceof Error ? err.message : "Unknown error",
+    });
+  }
 
   return true;
 }

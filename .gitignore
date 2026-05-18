@@ -107,3 +107,6 @@ flatpak/scripts/__pycache__/
 test-results/
 
 .codemogger
+
+.nx/cache
+.nx/workspace-data

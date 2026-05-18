@@ -1,11 +1,11 @@
-import LoadOrder from "./views/LoadOrder";
+import * as path from "path";
+
+import Promise from "bluebird";
+import { fs, log, selectors, types, util } from "vortex-api";
 
 import { getLoadOrder, setLoadOrder, startWatch, stopWatch } from "./sync";
 import { ILoadOrder } from "./types";
-
-import Promise from "bluebird";
-import * as path from "path";
-import { fs, log, selectors, types, util } from "vortex-api";
+import LoadOrder from "./views/LoadOrder";
 
 const poe2LocalLowPath = path.resolve(
   util.getVortexPath("appData"),
@@ -36,16 +36,8 @@ function genAttributeExtractor(api: types.IExtensionApi) {
           const data = JSON.parse((util as any).deBOM(jsonData));
           const res: { [key: string]: any } = {
             // is this case insensitive?
-            minGameVersion: (util as any).getSafeCI(
-              data,
-              ["SupportedGameVersion", "min"],
-              "1.0",
-            ),
-            maxGameVersion: (util as any).getSafeCI(
-              data,
-              ["SupportedGameVersion", "max"],
-              "9.0",
-            ),
+            minGameVersion: (util as any).getSafeCI(data, ["SupportedGameVersion", "min"], "1.0"),
+            maxGameVersion: (util as any).getSafeCI(data, ["SupportedGameVersion", "max"], "9.0"),
           };
           return res;
         } catch (err) {
@@ -58,9 +50,7 @@ function genAttributeExtractor(api: types.IExtensionApi) {
 
 function findGame(): Promise<string> {
   return util.GameStoreHelper.findByAppId([STEAM_ID, MS_ID])
-    .catch((err) =>
-      (util.steam as any).findByName("Pillars of Eternity II: Deadfire"),
-    )
+    .catch((err) => (util.steam as any).findByName("Pillars of Eternity II: Deadfire"))
     .then((game) => game.gamePath);
 }
 
@@ -76,9 +66,7 @@ function modConfig(): string {
 
 function prepareForModding(discovery: types.IDiscoveryResult): Promise<void> {
   return createModConfigFile().then(() =>
-    fs.ensureDirWritableAsync(
-      path.join(discovery.path, modPath(discovery.path)),
-    ),
+    fs.ensureDirWritableAsync(path.join(discovery.path, modPath(discovery.path))),
   );
 }
 
@@ -117,8 +105,7 @@ function writeModConfigFile(): Promise<void> {
 }
 
 function requiresLauncher(gamePath: string, store?: string) {
-  return store === "xbox" ||
-    gamePath.toLowerCase().includes(MODIFIABLE_WIN_APPS)
+  return store === "xbox" || gamePath.toLowerCase().includes(MODIFIABLE_WIN_APPS)
     ? Promise.resolve({
         launcher: "xbox",
         addInfo: {
@@ -159,9 +146,7 @@ function init(context: types.IExtensionContext) {
     id: "pillars2-loadorder",
     hotkey: "E",
     group: "per-game",
-    visible: () =>
-      selectors.activeGameId(context.api.store.getState()) ===
-      "pillarsofeternity2",
+    visible: () => selectors.activeGameId(context.api.store.getState()) === "pillarsofeternity2",
     props: () => {
       const state: types.IState = context.api.store.getState();
       return {
@@ -188,11 +173,9 @@ function init(context: types.IExtensionContext) {
               "located in: " +
               // tslint:disable-next-line:max-line-length
               '"C:\\Users\\{YOUR_USERNAME}\\AppData\\LocalLow\\Obsidian Entertainment\\Pillars of Eternity II\\modconfig.json"';
-            context.api.showErrorNotification(
-              "Invalid modconfig.json file",
-              errorMessage,
-              { allowReport: false },
-            );
+            context.api.showErrorNotification("Invalid modconfig.json file", errorMessage, {
+              allowReport: false,
+            });
           })
           .catch((err) => {
             context.api.showErrorNotification("Failed to update modorder", err);
@@ -202,10 +185,7 @@ function init(context: types.IExtensionContext) {
       }
     });
 
-    context.api.setStylesheet(
-      "game-pillarsofeternity2",
-      path.join(__dirname, "stylesheet.scss"),
-    );
+    context.api.setStylesheet("game-pillarsofeternity2", path.join(__dirname, "stylesheet.scss"));
   });
 
   return true;

@@ -23,6 +23,7 @@ import type {
   UpdateStatus,
   VortexPaths,
   WireDownloadCheckpoint,
+  WireDownloadState,
   WireResolvedResource,
 } from "./ipc";
 import type { Level } from "./logging";
@@ -296,9 +297,7 @@ export interface Menu {
 
 export interface ContentTracing {
   /** Start recording performance trace */
-  startRecording(
-    options: TraceCategoriesAndOptions | TraceConfig,
-  ): Promise<void>;
+  startRecording(options: TraceCategoriesAndOptions | TraceConfig): Promise<void>;
 
   /** Stop recording and save to file, returns the path to the trace file */
   stopRecording(resultPath: string): Promise<string>;
@@ -322,9 +321,7 @@ export interface Clipboard {
 
 export interface PowerSaveBlocker {
   /** Start blocking power save mode */
-  start(
-    type: "prevent-app-suspension" | "prevent-display-sleep",
-  ): Promise<number>;
+  start(type: "prevent-app-suspension" | "prevent-display-sleep"): Promise<number>;
 
   /** Stop blocking power save mode */
   stop(id: number): Promise<void>;
@@ -365,9 +362,7 @@ export interface PersistApi {
    * The renderer applies these via __persist_push, which is excluded from
    * persistDiffMiddleware to prevent feedback loops.
    */
-  onPush(
-    callback: (hive: PersistedHive, operations: DiffOperation[]) => void,
-  ): void;
+  onPush(callback: (hive: PersistedHive, operations: DiffOperation[]) => void): void;
 }
 
 /** API for requesting extension main process initialization */
@@ -390,20 +385,33 @@ export interface AdaptorsApi {
       requires: string[];
     }>
   >;
+  /**
+   * Synchronous version of `list` that also includes pre-fetched game info.
+   * Used by the adaptor bridge during extension init where only synchronous
+   * work is allowed (registerGame must be called before endRegistration).
+   */
+  listWithInfoSync(): Array<{
+    name: string;
+    pid: string;
+    provides: string[];
+    requires: string[];
+    gameInfo: unknown;
+  }>;
   /** Calls a service method on a loaded adaptor. */
-  call(
-    adaptorName: string,
-    serviceUri: string,
-    method: string,
-    args: unknown[],
-  ): Promise<unknown>;
+  call(adaptorName: string, serviceUri: string, method: string, args: unknown[]): Promise<unknown>;
   /**
    * Builds a store-path snapshot for a discovered game. The returned
-   * value is a `StorePathSnapshot` from `@vortex/adaptor-api/stores/lib`
+   * value is a `StorePathSnapshot` from `@nexusmods/adaptor-api/stores/lib`
    * (the renderer sees it as `unknown` to avoid dragging the adaptor-api
    * types into the preload surface; the bridge casts locally).
    */
   buildSnapshot(store: string, gamePath: string): Promise<unknown>;
+  /**
+   * Executes a declarative version detection strategy on the main
+   * process side. The source describes what to read (PE header, text
+   * file, etc.) and where.
+   */
+  detectVersion(source: { type: string; path: { value: string }; regex?: string }): Promise<string>;
 }
 
 /** API for querying update status from main process */
@@ -447,26 +455,24 @@ export interface DownloaderApi {
   /** Pauses an active download and returns a checkpoint for later resumption. */
   pause(downloadId: string): Promise<WireDownloadCheckpoint>;
 
-  /**
-   * Resumes a download from a checkpoint. The caller must generate `collationId`
-   * and register any resolve handler before calling this.
-   */
-  resume(
-    checkpoint: WireDownloadCheckpoint,
-    collationId: number,
-  ): Promise<void>;
+  /** Resumes a download from a checkpoint. */
+  resume(checkpoint: WireDownloadCheckpoint): Promise<void>;
 
   /** Cancels an active download. */
   cancel(downloadId: string): Promise<void>;
+
+  /** Returns the current state of a download, including status and any terminal error. */
+  getState(downloadId: string): Promise<WireDownloadState>;
+
+  /** Returns the current state for multiple downloads in one call. Unknown IDs are omitted. */
+  getStates(downloadIds: string[]): Promise<Record<string, WireDownloadState>>;
 
   /**
    * Registers a handler invoked by main when it needs the renderer to resolve a download URL.
    * The `collationId` maps to the download started via `start()`.
    * Returns an unsubscribe function.
    */
-  onResolve(
-    handler: (collationId: number) => Promise<WireResolvedResource>,
-  ): () => void;
+  onResolve(handler: (collationId: number) => Promise<WireResolvedResource>): () => void;
 }
 
 /** API for forwarding telemetry spans from renderer to main for buffering/export */

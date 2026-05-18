@@ -1,5 +1,6 @@
-import Promise from "bluebird";
 import * as path from "path";
+
+import Promise from "bluebird";
 import { fs, types, util } from "vortex-api";
 
 function missingSkyrimFonts(
@@ -32,9 +33,7 @@ function missingSkyrimFonts(
           );
 
         // filter the known fonts shipped with the game
-        const removedFonts = fonts.filter(
-          (font: string) => !skyrimDefaultFonts.has(font),
-        );
+        const removedFonts = fonts.filter((font: string) => !skyrimDefaultFonts.has(font));
 
         // test the remaining files for existence
         // TODO: I guess we should also check in bsas, right?

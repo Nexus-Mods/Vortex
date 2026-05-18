@@ -8,11 +8,7 @@ import type { types } from "vortex-api";
 
 /** Opens the latest available SMAPI log dialog or shows a missing-log notice. */
 export async function onShowSMAPILog(api: types.IExtensionApi) {
-  const basePath = path.join(
-    util.getVortexPath("appData"),
-    "StardewValley",
-    "ErrorLogs",
-  );
+  const basePath = path.join(util.getVortexPath("appData"), "StardewValley", "ErrorLogs");
   try {
     await showSMAPILog(api, basePath, "SMAPI-crash.txt");
   } catch (err) {
@@ -31,11 +27,7 @@ export async function onShowSMAPILog(api: types.IExtensionApi) {
 
 const { clipboard } = require("electron");
 
-async function showSMAPILog(
-  api: types.IExtensionApi,
-  basePath: string,
-  logFile: string,
-) {
+async function showSMAPILog(api: types.IExtensionApi, basePath: string, logFile: string) {
   const logData = await fs.readFileAsync(path.join(basePath, logFile), {
     encoding: "utf-8",
   });
@@ -55,9 +47,7 @@ async function showSMAPILog(
       {
         label: "Copy & Share log",
         action: () => {
-          const timestamp = new Date()
-            .toISOString()
-            .replace(/^.+T([^\.]+).+/, "$1");
+          const timestamp = new Date().toISOString().replace(/^.+T([^\.]+).+/, "$1");
           clipboard.writeText(
             `[${timestamp} INFO Vortex] Log exported by Vortex ${util.getApplication().version}.\n` +
               logData,

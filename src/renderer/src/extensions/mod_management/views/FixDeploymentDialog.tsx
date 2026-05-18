@@ -1,24 +1,20 @@
+import * as React from "react";
+import { Button } from "react-bootstrap";
+import { Trans } from "react-i18next";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
+
+import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
 import Modal from "../../../controls/Modal";
 import type { IDeploymentMethod } from "../../../types/api";
-import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
-import {
-  activeGameId,
-  currentGameDiscovery,
-  modPathsForGame,
-} from "../../../util/selectors";
+import { log } from "../../../util/log";
+import { activeGameId, currentGameDiscovery, modPathsForGame } from "../../../util/selectors";
 import { truthy } from "../../../util/util";
 import { getGame } from "../../gamemode_management/util/getGame";
 import type { IDeploymentProblem } from "../actions/session";
 import { setDeploymentProblem } from "../actions/session";
 import allTypesSupported from "../util/allTypesSupported";
 import { getAllActivators } from "../util/deploymentMethods";
-
-import * as React from "react";
-import { Button } from "react-bootstrap";
-import { Trans } from "react-i18next";
-import type * as Redux from "redux";
-import type { ThunkDispatch } from "redux-thunk";
-import { log } from "../../../util/log";
 
 export interface IFixDeploymentDialogProps {}
 
@@ -41,10 +37,7 @@ function nop() {
   // nop
 }
 
-class FixDeploymentDialog extends ComponentEx<
-  IProps,
-  IFixDeploymentDialogState
-> {
+class FixDeploymentDialog extends ComponentEx<IProps, IFixDeploymentDialogState> {
   private deploymentMethods: IDeploymentMethod[];
   constructor(props: IProps) {
     super(props);
@@ -74,9 +67,7 @@ class FixDeploymentDialog extends ComponentEx<
         <Modal.Header>
           <Modal.Title>{t("Deployment Methods")}</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          {step === -1 ? this.renderStartPage() : this.renderFixPage()}
-        </Modal.Body>
+        <Modal.Body>{step === -1 ? this.renderStartPage() : this.renderFixPage()}</Modal.Body>
         <Modal.Footer>
           <Button onClick={this.cancel}>{t("Close")}</Button>
           <Button onClick={this.back} disabled={step <= 0}>
@@ -97,15 +88,13 @@ class FixDeploymentDialog extends ComponentEx<
     return (
       // tslint:disable:max-line-length
       <Trans i18nKey="fix-deployment-instructions">
-        Vortex supports different Deployment Methods to support a wide variety
-        of systems and games, but some may only be available with the right
-        settings.
+        Vortex supports different Deployment Methods to support a wide variety of systems and games,
+        but some may only be available with the right settings.
         <br />
-        Right now, none of the available deployment methods seem to be usable,
-        but this is usually easy to fix.
+        Right now, none of the available deployment methods seem to be usable, but this is usually
+        easy to fix.
         <br />
-        On the following screens we will offer possible solutions, simplest one
-        first.
+        On the following screens we will offer possible solutions, simplest one first.
       </Trans>
       // tslint:enable:max-line-length
     );
@@ -115,9 +104,7 @@ class FixDeploymentDialog extends ComponentEx<
     const { t, problems } = this.props;
     const { step } = this.state;
 
-    const method = this.deploymentMethods.find(
-      (iter) => iter.id === problems[step].activator,
-    );
+    const method = this.deploymentMethods.find((iter) => iter.id === problems[step].activator);
 
     return (
       <div>
@@ -126,9 +113,7 @@ class FixDeploymentDialog extends ComponentEx<
         <div>{problems[step].message}</div>
         <h5>{t("Solution")}</h5>
         <div>
-          {problems[step].solution !== undefined
-            ? problems[step].solution
-            : t("Can't be solved.")}
+          {problems[step].solution !== undefined ? problems[step].solution : t("Can't be solved.")}
         </div>
       </div>
     );
@@ -137,9 +122,7 @@ class FixDeploymentDialog extends ComponentEx<
   private applyFix = () => {
     const { t, gameId, problems, onClear } = this.props;
     const { step } = this.state;
-    const method = this.deploymentMethods.find(
-      (iter) => iter.id === problems[step].activator,
-    );
+    const method = this.deploymentMethods.find((iter) => iter.id === problems[step].activator);
     const state = this.context.api.store.getState();
 
     if (gameId === undefined) {
@@ -153,19 +136,12 @@ class FixDeploymentDialog extends ComponentEx<
       // the actual fix function (since we can't put functions into the store)
       // However, it's technically possible that we find a different fail reason this time around
       // and that may not have a fix callback
-      const reason = allTypesSupported(
-        method,
-        state,
-        gameId,
-        Object.keys(modPaths),
-      );
+      const reason = allTypesSupported(method, state, gameId, Object.keys(modPaths));
       if (reason.errors.length === 0) {
         // the failure no longer applies? Hrmm...
-        log(
-          "warn",
-          "The reason the deployment method was unavailable was apparently temporary",
-          { reason: method.description },
-        );
+        log("warn", "The reason the deployment method was unavailable was apparently temporary", {
+          reason: method.description,
+        });
         onClear();
       } else if (reason.errors[0].fixCallback !== undefined) {
         onClear();
@@ -216,9 +192,7 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, null, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onClear: () => dispatch(setDeploymentProblem([])),
   };

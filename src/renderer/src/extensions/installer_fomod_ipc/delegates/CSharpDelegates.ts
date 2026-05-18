@@ -1,18 +1,17 @@
 import path from "path";
+
 import minimatch from "minimatch";
 import type { IEntry } from "turbowalk";
 import turbowalk from "turbowalk";
 import IniParser, { WinapiFormat } from "vortex-parse-ini";
-import { getIniFilePath } from "../../installer_fomod_shared/utils/gameSupport";
+
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import { statAsync, readFileAsync } from "../../../util/fs";
-import {
-  currentGame,
-  currentGameDiscovery,
-} from "../../gamemode_management/selectors";
-import { getGame } from "../../gamemode_management/util/getGame";
 import { showError } from "../../../util/message";
 import { isNullOrWhitespace } from "../../../util/util";
+import { currentGame, currentGameDiscovery } from "../../gamemode_management/selectors";
+import { getGame } from "../../gamemode_management/util/getGame";
+import { getIniFilePath } from "../../installer_fomod_shared/utils/gameSupport";
 
 const extenderForGame = (gameId: string) => {
   return {
@@ -54,11 +53,7 @@ export class CSharpDelegates {
         message: msg,
       });
     } catch (err) {
-      showError(
-        this.mApi.store.dispatch,
-        "Failed to display error message from installer",
-        err,
-      );
+      showError(this.mApi.store.dispatch, "Failed to display error message from installer", err);
     }
   };
 
@@ -136,8 +131,7 @@ export class CSharpDelegates {
 
     const filterFunc = isNullOrWhitespace(searchFilter)
       ? () => true
-      : (input: IEntry) =>
-          minimatch(path.basename(input.filePath), searchFilter);
+      : (input: IEntry) => minimatch(path.basename(input.filePath), searchFilter);
 
     return this.readDir(fullPath, isRecursive, filterFunc);
   };
@@ -145,11 +139,7 @@ export class CSharpDelegates {
   /**
    * Get a string value from an INI file
    */
-  public getIniString = async (
-    selectedFile: string,
-    iniSection: string,
-    iniKey: string,
-  ) => {
+  public getIniString = async (selectedFile: string, iniSection: string, iniKey: string) => {
     const state = this.mApi.getState();
     const game = currentGame(state);
     const gameInfo = getGame(game.id);
@@ -177,11 +167,7 @@ export class CSharpDelegates {
   /**
    * Get an integer value from an INI file
    */
-  public getIniInt = async (
-    selectedFile: string,
-    iniSection: string,
-    iniKey: string,
-  ) => {
+  public getIniInt = async (selectedFile: string, iniSection: string, iniKey: string) => {
     const state = this.mApi.getState();
     const game = currentGame(state);
     const gameInfo = getGame(game.id);

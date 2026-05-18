@@ -1,4 +1,5 @@
 import * as path from "path";
+
 import * as React from "react";
 import { useSelector } from "react-redux";
 import { fs, selectors, Spinner, ToolIcon, types, util } from "vortex-api";
@@ -38,12 +39,7 @@ interface IToolStarterIconProps {
 }
 
 function toolIconRW(gameId: string, toolId: string) {
-  return path.join(
-    (util as any).getVortexPath("userData"),
-    gameId,
-    "icons",
-    toolId + ".png",
-  );
+  return path.join((util as any).getVortexPath("userData"), gameId, "icons", toolId + ".png");
 }
 
 async function toolIcon(
@@ -83,11 +79,7 @@ function ToolStarterIcon(props: IToolStarterIconProps) {
   );
 
   const startCB = React.useCallback(() => {
-    api.events.emit(
-      "analytics-track-click-event",
-      "Tools",
-      "Manually ran tool",
-    );
+    api.events.emit("analytics-track-click-event", "Tools", "Manually ran tool");
     util.StarterInfo.run(props.tool as any, api, onShowError);
   }, [props]);
 
@@ -125,11 +117,7 @@ function ToolStarter(props: IToolStarterProps) {
 
   const [toolImages, setToolImages] = React.useState({});
   const [validStarters, setValidStarters] = React.useState([]);
-  const starters = onGetStarters(
-    game,
-    discovery,
-    Object.values(discoveredTools) || [],
-  );
+  const starters = onGetStarters(game, discovery, Object.values(discoveredTools) || []);
   const idxOfTool = (tool) => {
     const idx = toolsOrder.findIndex((id) => tool.id === id);
     return idx !== -1 ? idx : starters.length;
@@ -137,11 +125,7 @@ function ToolStarter(props: IToolStarterProps) {
   starters.sort((lhs, rhs) => idxOfTool(lhs) - idxOfTool(rhs));
   React.useEffect(() => {
     const hasValidTools = async () => {
-      const starters = await onGetValidStarters(
-        game,
-        discovery,
-        Object.values(discoveredTools),
-      );
+      const starters = await onGetValidStarters(game, discovery, Object.values(discoveredTools));
       setValidStarters(starters);
     };
     const getImagePath = async () => {
@@ -166,8 +150,7 @@ function ToolStarter(props: IToolStarterProps) {
     <div id="titlebar-starter">
       {starters.map((starter, idx) => {
         const running =
-          starter.exePath !== undefined &&
-          toolsRunning[makeExeId(starter.exePath)] !== undefined;
+          starter.exePath !== undefined && toolsRunning[makeExeId(starter.exePath)] !== undefined;
 
         return (
           <ToolStarterIcon
@@ -187,8 +170,7 @@ const emptyObj = {};
 
 function mapStateToProps(state: types.IState): IConnectedProps {
   const game: types.IGameStored = selectors.currentGame(state);
-  const discovery: types.IDiscoveryResult =
-    selectors.currentGameDiscovery(state);
+  const discovery: types.IDiscoveryResult = selectors.currentGameDiscovery(state);
 
   if (!game?.id || !discovery?.path) {
     return {
@@ -208,28 +190,16 @@ function mapStateToProps(state: types.IState): IConnectedProps {
       ["settings", "interface", "tools", "addToolsToTitleBar"],
       false,
     ),
-    toolsOrder: util.getSafe(
-      state,
-      ["settings", "interface", "tools", "order", game.id],
-      [],
-    ),
+    toolsOrder: util.getSafe(state, ["settings", "interface", "tools", "order", game.id], []),
     game,
     discovery,
     discoveredTools:
       game !== undefined
-        ? util.getSafe(
-            state,
-            ["settings", "gameMode", "discovered", game.id, "tools"],
-            emptyObj,
-          )
+        ? util.getSafe(state, ["settings", "gameMode", "discovered", game.id, "tools"], emptyObj)
         : undefined,
     primaryTool:
       game !== undefined
-        ? util.getSafe(
-            state,
-            ["settings", "interface", "primaryTool", game.id],
-            undefined,
-          )
+        ? util.getSafe(state, ["settings", "interface", "primaryTool", game.id], undefined)
         : undefined,
     toolsRunning: state.session.base.toolsRunning,
     mods:

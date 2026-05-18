@@ -1,0 +1,5 @@
+# Declares this directory as its own pnpm workspace root so `pnpm install`
+# stops walking up to the repo-root workspace. The action ships its own
+# bundled dist/index.js and is not part of the Vortex workspace.
+packages:
+  - .

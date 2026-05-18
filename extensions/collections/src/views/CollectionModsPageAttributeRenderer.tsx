@@ -49,9 +49,7 @@ function CollectionCount(props: { collectionNames: string[]; modId: string }) {
 function CollectionModsPageAttributeRenderer(props: IProps) {
   const { collections, detailCell, modId } = props;
 
-  const collectionNames = collections.map((collection) =>
-    util.renderModName(collection),
-  );
+  const collectionNames = collections.map((collection) => util.renderModName(collection));
 
   const count = collectionNames.length;
   return count > 0 ? (

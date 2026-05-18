@@ -1,8 +1,9 @@
-import { IModEntry } from "../types/moEntries";
+import * as path from "path";
 
 import Promise from "bluebird";
-import * as path from "path";
 import { fs, log, util } from "vortex-api";
+
+import { IModEntry } from "../types/moEntries";
 
 /**
  * copy or move a list of mod archives
@@ -17,14 +18,13 @@ export function transferArchive(
 ): Promise<void> {
   const operation = keepSource ? fs.copyAsync : fs.renameAsync;
 
-  return operation(
-    archivePath,
-    path.join(downloadPath, path.basename(archivePath)),
-  ).catch((err) => {
-    if (err.code !== "ENOENT") {
-      return Promise.reject(err);
-    }
-  });
+  return operation(archivePath, path.join(downloadPath, path.basename(archivePath))).catch(
+    (err) => {
+      if (err.code !== "ENOENT") {
+        return Promise.reject(err);
+      }
+    },
+  );
 }
 
 function byLength(lhs: string, rhs: string): number {
@@ -53,7 +53,5 @@ export function transferUnpackedMod(
   // for each file individually
   const directories = new Set<string>();
 
-  return operation(moModPath, destPath).then(() =>
-    fs.removeAsync(path.join(destPath, "meta.ini")),
-  );
+  return operation(moModPath, destPath).then(() => fs.removeAsync(path.join(destPath, "meta.ini")));
 }

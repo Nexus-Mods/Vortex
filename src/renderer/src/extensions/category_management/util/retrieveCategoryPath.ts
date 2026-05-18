@@ -66,11 +66,7 @@ export function resolveCategoryPath(category: string | number, state: IState) {
   let completePath: string = "";
   const gameId: string = activeGameId(state);
 
-  const categories: ICategoryDictionary = getSafe(
-    state,
-    ["persistent", "categories", gameId],
-    {},
-  );
+  const categories: ICategoryDictionary = getSafe(state, ["persistent", "categories", gameId], {});
   const hideTopLevel: boolean = getSafe(
     state,
     ["settings", "interface", "hideTopLevelCategory"],
@@ -92,9 +88,7 @@ export function resolveCategoryId(name: string, state: IState): number {
   const gameId: string = activeGameId(state);
 
   const categories = state.persistent.categories[gameId];
-  const key = Object.keys(categories ?? {}).find(
-    (iter) => categories[iter].name === name,
-  );
+  const key = Object.keys(categories ?? {}).find((iter) => categories[iter].name === name);
   if (key !== undefined) {
     return parseInt(key, 10);
   } else {
@@ -124,9 +118,5 @@ export function resolveCategoryName(category: string | number, state: IState) {
 
   const gameId: string = activeGameId(state);
 
-  return getSafe(
-    state,
-    ["persistent", "categories", gameId, categoryId, "name"],
-    "",
-  );
+  return getSafe(state, ["persistent", "categories", gameId, categoryId, "name"], "");
 }

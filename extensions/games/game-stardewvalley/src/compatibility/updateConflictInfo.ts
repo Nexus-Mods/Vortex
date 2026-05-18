@@ -1,9 +1,8 @@
+import { getErrorMessageOrDefault } from "@vortex/shared";
 /**
  * Updates persisted mod compatibility attributes using SMAPI metadata.
  */
 import * as semver from "semver";
-import { getErrorMessageOrDefault } from "@vortex/shared";
-
 import { actions, log } from "vortex-api";
 import type { types } from "vortex-api";
 
@@ -58,9 +57,7 @@ export function updateConflictInfo(
     const res = {
       id: name,
     };
-    const ver =
-      mod.attributes?.manifestVersion ??
-      semver.coerce(mod.attributes?.version)?.version;
+    const ver = mod.attributes?.manifestVersion ?? semver.coerce(mod.attributes?.version)?.version;
     if (!!ver) {
       res["installedVersion"] = ver;
     }
@@ -77,8 +74,7 @@ export function updateConflictInfo(
     }
   };
 
-  const compatibilityPrio = (item: ISMAPIResult) =>
-    compatibilityOptions.indexOf(stat(item));
+  const compatibilityPrio = (item: ISMAPIResult) => compatibilityOptions.indexOf(stat(item));
 
   return smapi
     .findByNames(query)
@@ -97,15 +93,11 @@ export function updateConflictInfo(
         );
       } else {
         log("debug", "no manifest");
-        store.dispatch(
-          actions.setModAttribute(gameId, modId, "lastSMAPIQuery", now),
-        );
+        store.dispatch(actions.setModAttribute(gameId, modId, "lastSMAPIQuery", now));
       }
     })
     .catch((err) => {
       log("warn", "error reading manifest", getErrorMessageOrDefault(err));
-      store.dispatch(
-        actions.setModAttribute(gameId, modId, "lastSMAPIQuery", now),
-      );
+      store.dispatch(actions.setModAttribute(gameId, modId, "lastSMAPIQuery", now));
     });
 }

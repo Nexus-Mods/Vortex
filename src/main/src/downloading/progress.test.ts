@@ -1,6 +1,5 @@
-import { describe, it, expect, beforeEach } from "vitest";
-
 import type { Chunk } from "@vortex/shared/download";
+import { describe, it, expect, beforeEach } from "vitest";
 
 import { ProgressReporter } from "./progress";
 
@@ -103,12 +102,8 @@ describe("ProgressReporter", () => {
         [makeChunk(0, 0, 499), makeChunk(1, 500, 999)],
         1000,
       );
-      expect(chunkProgress.values().every((c) => c.bytesReceived === 0)).toBe(
-        true,
-      );
-      expect(chunkProgress.values().every((c) => c.bytesWritten === 0)).toBe(
-        true,
-      );
+      expect(chunkProgress.values().every((c) => c.bytesReceived === 0)).toBe(true);
+      expect(chunkProgress.values().every((c) => c.bytesWritten === 0)).toBe(true);
     });
 
     it("returns an empty array when called with no chunks", () => {

@@ -1,5 +1,6 @@
-import { BrowserWindow, Menu, Tray } from "electron";
 import path from "node:path";
+
+import { BrowserWindow, Menu, Tray } from "electron";
 
 import { getVortexPath } from "./getVortexPath";
 import { log } from "./logging";

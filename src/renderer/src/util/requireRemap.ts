@@ -18,10 +18,7 @@ class ChildProcessProxy {
     } else if (key === "spawn") {
       return (command: string, ...args: readonly unknown[]) => {
         const appAsar = `${path.sep}app.asar${path.sep}`;
-        command = command.replace(
-          appAsar,
-          `${path.sep}app.asar.unpacked${path.sep}`,
-        );
+        command = command.replace(appAsar, `${path.sep}app.asar.unpacked${path.sep}`);
         return target.spawn(command, ...args);
       };
     } else {
@@ -44,8 +41,7 @@ function patchedLoad(orig: InternalModule["_load"]): InternalModule["_load"] {
   return function (request, parent, ...rest) {
     if (
       request === "fs" &&
-      (parent.filename.indexOf("graceful-fs") !== -1 ||
-        parent.filename.indexOf("rimraf") !== -1)
+      (parent.filename.indexOf("graceful-fs") !== -1 || parent.filename.indexOf("rimraf") !== -1)
     ) {
       request = "original-fs";
     } else if (request === "electron") {

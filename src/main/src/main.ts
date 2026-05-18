@@ -1,11 +1,7 @@
 // IPC handler for forked child processes requesting Electron app info
 if (process.send) {
   process.on("message", (msg: unknown) => {
-    if (
-      typeof msg === "object" &&
-      "type" in msg &&
-      msg.type === "get-app-info"
-    ) {
+    if (typeof msg === "object" && "type" in msg && msg.type === "get-app-info") {
       // You can expand this object with more info as needed
       process.send({
         type: "app-info",
@@ -22,17 +18,15 @@ if (process.send) {
   });
 }
 
-import {
-  DEBUG_PORT,
-  getErrorMessageOrDefault,
-  HTTP_HEADER_SIZE,
-} from "@vortex/shared";
-import { app, dialog } from "electron";
-import i18next from "i18next";
 import child_process from "node:child_process";
+import { appendFileSync } from "node:fs";
 import { stat } from "node:fs/promises";
 import path from "node:path";
 import os from "os";
+
+import { DEBUG_PORT, getErrorMessageOrDefault, HTTP_HEADER_SIZE } from "@vortex/shared";
+import { app, dialog } from "electron";
+import i18next from "i18next";
 import * as sourceMapSupport from "source-map-support";
 import winapi from "winapi-bindings";
 
@@ -47,18 +41,14 @@ if (process.env.VORTEX_E2E === "1") {
   }
 }
 
+import { initAdaptorHost } from "./adaptors";
 import Application from "./Application";
 import { parseCommandline } from "./cli";
-import { terminateAsync } from "./errorHandling";
-import {
-  reportCrash,
-  errorToReportableError,
-  sendReportFile,
-} from "./errorReporting";
-import { initAdaptorHost } from "./adaptors";
-import { getVortexPath } from "./getVortexPath";
 import { init as initDownloadIpc } from "./downloading/ipc";
 import { DownloadManager } from "./downloading/manager";
+import { terminateAsync } from "./errorHandling";
+import { reportCrash, errorToReportableError, sendReportFile } from "./errorReporting";
+import { getVortexPath } from "./getVortexPath";
 import { init as initIpcHandlers } from "./ipcHandlers";
 import { log } from "./logging";
 import StylesheetCompiler from "./stylesheetCompiler";
@@ -131,11 +121,9 @@ if (process.platform === "win32" && process.env.NODE_ENV !== "development") {
   // The most common problem this should prevent is the edge dll being loaded from
   // "Browser Assistant" instead of our own.
 
-  const userPath =
-    (process.env.HOMEDRIVE || "c:") + (process.env.HOMEPATH || "\\Users");
+  const userPath = (process.env.HOMEDRIVE || "c:") + (process.env.HOMEPATH || "\\Users");
   const programFiles = process.env.ProgramFiles || "C:\\Program Files";
-  const programFilesX86 =
-    process.env["ProgramFiles(x86)"] || "C:\\Program Files (x86)";
+  const programFilesX86 = process.env["ProgramFiles(x86)"] || "C:\\Program Files (x86)";
   const programData = process.env.ProgramData || "C:\\ProgramData";
 
   const pathFilter = (envPath: string): boolean => {
@@ -148,10 +136,7 @@ if (process.platform === "win32" && process.env.NODE_ENV !== "development") {
   };
 
   process.env["PATH_ORIG"] = process.env["PATH"].slice(0);
-  process.env["PATH"] = process.env["PATH"]
-    .split(";")
-    .filter(pathFilter)
-    .join(";");
+  process.env["PATH"] = process.env["PATH"].split(";").filter(pathFilter).join(";");
 }
 
 try {
@@ -177,6 +162,29 @@ const handleError = (error: Error) => {
 async function main(): Promise<void> {
   // important: The following has to be synchronous!
   const mainArgs = parseCommandline(process.argv, false);
+
+  // Elevation diagnostics (issue #23043). Uses synchronous fs.appendFileSync
+  // (not winston) because the elevated Vortex.exe app.quit()s immediately
+  // after the --run handler spawns the inner Node child; winston's buffered
+  // writes can be lost in that window, and winston itself isn't initialised
+  // until later in Application's constructor.
+  const traceElevation = (stage: string, data?: Record<string, unknown>): void => {
+    try {
+      const line =
+        new Date().toISOString() +
+        " [DEBG] [MAIN] [elevation-trace] " +
+        stage +
+        " " +
+        JSON.stringify({ pid: process.pid, ...(data || {}) }) +
+        "\n";
+      appendFileSync(path.join(app.getPath("userData"), "vortex.log"), line);
+    } catch {
+      // diagnostics must never throw
+    }
+  };
+
+  traceElevation("main entry", { argv: process.argv });
+
   if (mainArgs.report) {
     return sendReportFile(mainArgs.report)
       .catch((err: unknown) => {
@@ -187,11 +195,61 @@ async function main(): Promise<void> {
       .then(() => app.quit());
   }
 
+  // --run is the entry point for the elevated helper chain (see
+  // src/renderer/src/util/elevated.ts). The renderer-side monitorConsent
+  // watchdog is tight, so this must run before the telemetry / IPC /
+  // stylesheet init below; in v2.0 those steps burned the budget and broke
+  // deployment elevation (issue #23043).
+  if (mainArgs.run !== undefined) {
+    traceElevation("--run detected, spawning inner Node child", {
+      tmpScript: mainArgs.run,
+    });
+    const appAsar = `${path.sep}app.asar${path.sep}`;
+    const execPath = process.execPath.replace(appAsar, `${path.sep}app.asar.unpacked${path.sep}`);
+
+    child_process
+      .spawn(execPath, [mainArgs.run], {
+        env: {
+          ...process.env,
+          ELECTRON_RUN_AS_NODE: "1",
+          ELECTRON_USERDATA: app.getPath("userData"),
+          ELECTRON_TEMP: app.getPath("temp"),
+          ELECTRON_APPDATA: app.getPath("appData"),
+          ELECTRON_HOME: app.getPath("home"),
+          ELECTRON_DOCUMENTS: app.getPath("documents"),
+          ELECTRON_EXE: app.getPath("exe"),
+          ELECTRON_DESKTOP: app.getPath("desktop"),
+          ELECTRON_APP_PATH: app.getAppPath(),
+          ELECTRON_ASSETS: path.join(app.getAppPath(), "assets"),
+          ELECTRON_ASSETS_UNPACKED: path.join(app.getAppPath() + ".unpacked", "assets"),
+          ELECTRON_MODULES: path.join(app.getAppPath(), "node_modules"),
+          ELECTRON_MODULES_UNPACKED: path.join(app.getAppPath() + ".unpacked", "node_modules"),
+          ELECTRON_BUNDLEDPLUGINS: path.join(app.getAppPath() + ".unpacked", "bundledPlugins"),
+          ELECTRON_LOCALES: path.resolve(app.getAppPath(), "..", "locales"),
+          ELECTRON_BASE: app.getAppPath(),
+          ELECTRON_BASE_UNPACKED: app.getAppPath() + ".unpacked",
+          ELECTRON_APPLICATION: path.resolve(app.getAppPath(), ".."),
+          ELECTRON_PACKAGE: app.getAppPath(),
+          ELECTRON_PACKAGE_UNPACKED: path.join(path.dirname(app.getAppPath()), "app.asar.unpacked"),
+        },
+        stdio: "inherit",
+        detached: true,
+      })
+      .on("error", (err) => {
+        traceElevation("inner child spawn error", { error: err.message });
+        // TODO: In practice we have practically no information about what we're running
+        //       at this point
+        dialog.showErrorBox("Failed to run script", err.message);
+      });
+    traceElevation("inner child spawn issued, quitting");
+    // quit this process, the new one is detached
+    app.quit();
+    return;
+  }
+
   const NODE_OPTIONS = process.env.NODE_OPTIONS || "";
   process.env.NODE_OPTIONS =
-    NODE_OPTIONS +
-    ` --max-http-header-size=${HTTP_HEADER_SIZE}` +
-    " --no-force-async-hooks-checks";
+    NODE_OPTIONS + ` --max-http-header-size=${HTTP_HEADER_SIZE}` + " --no-force-async-hooks-checks";
 
   if (mainArgs.disableGPU) {
     app.disableHardwareAcceleration();
@@ -200,10 +258,7 @@ async function main(): Promise<void> {
   }
 
   app.commandLine.appendSwitch("disable-features", "WidgetLayering");
-  app.commandLine.appendSwitch(
-    "disable-features",
-    "UseEcoQoSForBackgroundProcess",
-  );
+  app.commandLine.appendSwitch("disable-features", "UseEcoQoSForBackgroundProcess");
 
   createMainTelemetryProvider();
 
@@ -225,64 +280,6 @@ async function main(): Promise<void> {
   });
   initTelemetryIpcHandler();
   StylesheetCompiler.init();
-
-  // --run has to be evaluated *before* we request the single instance lock!
-  if (mainArgs.run !== undefined) {
-    const appAsar = `${path.sep}app.asar${path.sep}`;
-    const execPath = process.execPath.replace(
-      appAsar,
-      `${path.sep}app.asar.unpacked${path.sep}`,
-    );
-
-    child_process
-      .spawn(execPath, [mainArgs.run], {
-        env: {
-          ...process.env,
-          ELECTRON_RUN_AS_NODE: "1",
-          ELECTRON_USERDATA: app.getPath("userData"),
-          ELECTRON_TEMP: app.getPath("temp"),
-          ELECTRON_APPDATA: app.getPath("appData"),
-          ELECTRON_HOME: app.getPath("home"),
-          ELECTRON_DOCUMENTS: app.getPath("documents"),
-          ELECTRON_EXE: app.getPath("exe"),
-          ELECTRON_DESKTOP: app.getPath("desktop"),
-          ELECTRON_APP_PATH: app.getAppPath(),
-          ELECTRON_ASSETS: path.join(app.getAppPath(), "assets"),
-          ELECTRON_ASSETS_UNPACKED: path.join(
-            app.getAppPath() + ".unpacked",
-            "assets",
-          ),
-          ELECTRON_MODULES: path.join(app.getAppPath(), "node_modules"),
-          ELECTRON_MODULES_UNPACKED: path.join(
-            app.getAppPath() + ".unpacked",
-            "node_modules",
-          ),
-          ELECTRON_BUNDLEDPLUGINS: path.join(
-            app.getAppPath() + ".unpacked",
-            "bundledPlugins",
-          ),
-          ELECTRON_LOCALES: path.resolve(app.getAppPath(), "..", "locales"),
-          ELECTRON_BASE: app.getAppPath(),
-          ELECTRON_BASE_UNPACKED: app.getAppPath() + ".unpacked",
-          ELECTRON_APPLICATION: path.resolve(app.getAppPath(), ".."),
-          ELECTRON_PACKAGE: app.getAppPath(),
-          ELECTRON_PACKAGE_UNPACKED: path.join(
-            path.dirname(app.getAppPath()),
-            "app.asar.unpacked",
-          ),
-        },
-        stdio: "inherit",
-        detached: true,
-      })
-      .on("error", (err) => {
-        // TODO: In practice we have practically no information about what we're running
-        //       at this point
-        dialog.showErrorBox("Failed to run script", err.message);
-      });
-    // quit this process, the new one is detached
-    app.quit();
-    return;
-  }
 
   if (process.env.VORTEX_E2E === "1") {
     // Skip single-instance lock in e2e tests — each test worker runs its

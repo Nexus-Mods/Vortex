@@ -3,9 +3,7 @@
   "version": "1.0.5",
   "description": "Check BSA/BA2 archives are valid for the current game after updating your load order.",
   "scripts": {
-    "_build": "node build.mjs && pnpm extractInfo",
-    "build": "pnpm run _build && node ../copy-extension.mjs out",
-    "dist": "pnpm run _build && node ../copy-extension.mjs dist",
+    "build": "node build.mjs && pnpm extractInfo",
     "typecheck": "pnpm tsc"
   },
   "author": "Pickysaurus",
@@ -21,5 +19,26 @@
     "react-bootstrap": "catalog:",
     "typescript": "catalog:",
     "vortex-api": "workspace:*"
+  },
+  "nx": {
+    "tags": [
+      "vortex:extension"
+    ],
+    "targets": {
+      "build": {
+        "inputs": [
+          "default",
+          "typescript",
+          "vortex-api"
+        ]
+      },
+      "typecheck": {
+        "inputs": [
+          "default",
+          "typescript",
+          "vortex-api"
+        ]
+      }
+    }
   }
 }

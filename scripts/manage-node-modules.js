@@ -70,13 +70,6 @@ const MODULE_CONFIG = {
     description: "BSA (Bethesda Softworks Archive) toolkit",
     type: "cpp",
   },
-  esptk: {
-    path: "extensions/gamebryo-plugin-management/node_modules/esptk",
-    repository: "https://github.com/Nexus-Mods/node-esptk.git",
-    sshRepository: "git@github.com:Nexus-Mods/node-esptk.git",
-    description: "ESP (Elder Scrolls Plugin) toolkit",
-    type: "cpp",
-  },
   loot: {
     path: "extensions/gamebryo-plugin-management/node_modules/loot",
     repository: "https://github.com/Nexus-Mods/node-loot.git",
@@ -89,13 +82,6 @@ const MODULE_CONFIG = {
     repository: "https://github.com/Nexus-Mods/node-gamebryo-savegames.git",
     sshRepository: "git@github.com:Nexus-Mods/node-gamebryo-savegames.git",
     description: "Gamebryo savegame management library",
-    type: "cpp",
-  },
-  "bsdiff-node": {
-    path: "extensions/collections/node_modules/bsdiff-node",
-    repository: "https://github.com/Nexus-Mods/bsdiff-node.git",
-    sshRepository: "git@github.com:Nexus-Mods/bsdiff-node.git",
-    description: "Binary diff/patch library for Node.js",
     type: "cpp",
   },
 };
@@ -135,9 +121,7 @@ class ModuleManager {
    */
   isGitRepo(modulePath) {
     const fullPath = path.join(this.rootDir, modulePath);
-    return (
-      fs.existsSync(fullPath) && fs.existsSync(path.join(fullPath, ".git"))
-    );
+    return fs.existsSync(fullPath) && fs.existsSync(path.join(fullPath, ".git"));
   }
 
   /**
@@ -161,11 +145,9 @@ class ModuleManager {
       filters.some((f) => {
         if (f === "git") return config.repository !== null;
         if (f === "local") return config.type === "local-csharp";
-        if (f === "csharp")
-          return config.type === "csharp" || config.type === "local-csharp";
+        if (f === "csharp") return config.type === "csharp" || config.type === "local-csharp";
         if (f === "cpp") return config.type === "cpp";
-        if (f === "nexus")
-          return config.repository && config.repository.includes("Nexus-Mods");
+        if (f === "nexus") return config.repository && config.repository.includes("Nexus-Mods");
         if (f === "third-party") return config.thirdParty === true;
         return config.type === f;
       }),
@@ -187,9 +169,7 @@ class ModuleManager {
       }
 
       if (!this.isGitRepo(config.path)) {
-        console.log(
-          `⚠️  ${moduleName}: Not a Git repository at ${config.path}`,
-        );
+        console.log(`⚠️  ${moduleName}: Not a Git repository at ${config.path}`);
         continue;
       }
 
@@ -269,11 +249,7 @@ class ModuleManager {
         console.log(`📦 ${moduleName} (${config.description}):`);
 
         // Show current branch and status
-        const branch = this.execInDir(
-          config.path,
-          "git branch --show-current",
-          { silent: true },
-        );
+        const branch = this.execInDir(config.path, "git branch --show-current", { silent: true });
         if (branch) {
           console.log(`   Branch: ${branch.trim()}`);
         }
@@ -282,9 +258,7 @@ class ModuleManager {
           silent: true,
         });
         if (status && status.trim()) {
-          console.log(
-            `   Changes: ${status.split("\n").length} modified files`,
-          );
+          console.log(`   Changes: ${status.split("\n").length} modified files`);
         } else {
           console.log(`   Status: Clean`);
         }
@@ -306,9 +280,7 @@ class ModuleManager {
 
     for (const [moduleName, config] of modules) {
       if (!config.repository) {
-        console.log(
-          `📦 ${moduleName}: Local project (skipping branch creation)`,
-        );
+        console.log(`📦 ${moduleName}: Local project (skipping branch creation)`);
         continue;
       }
 
@@ -360,9 +332,7 @@ class ModuleManager {
 
     for (const [moduleName, config] of modules) {
       if (!config.repository) {
-        console.log(
-          `📦 ${moduleName}: Local project (skipping branch deletion)`,
-        );
+        console.log(`📦 ${moduleName}: Local project (skipping branch deletion)`);
         continue;
       }
 
@@ -385,36 +355,25 @@ class ModuleManager {
           const remoteBranches = this.execInDir(config.path, "git branch -r", {
             silent: true,
           });
-          if (
-            remoteBranches &&
-            remoteBranches.includes(`origin/${branchName}`)
-          ) {
+          if (remoteBranches && remoteBranches.includes(`origin/${branchName}`)) {
             console.log(`   🌐 Deleting remote branch 'origin/${branchName}'`);
-            this.execInDir(
-              config.path,
-              `git push origin --delete ${branchName}`,
-              { ignoreErrors: true },
-            );
+            this.execInDir(config.path, `git push origin --delete ${branchName}`, {
+              ignoreErrors: true,
+            });
             console.log(`   ✅ Deleted remote branch`);
           } else {
-            console.log(
-              `   ⚠️  Remote branch 'origin/${branchName}' does not exist`,
-            );
+            console.log(`   ⚠️  Remote branch 'origin/${branchName}' does not exist`);
           }
         }
         continue;
       }
 
       // Check if we're currently on the branch we want to delete
-      const currentBranch = this.execInDir(
-        config.path,
-        "git branch --show-current",
-        { silent: true },
-      );
+      const currentBranch = this.execInDir(config.path, "git branch --show-current", {
+        silent: true,
+      });
       if (currentBranch && currentBranch.trim() === branchName) {
-        console.log(
-          `   🔄 Currently on branch '${branchName}', switching to default branch`,
-        );
+        console.log(`   🔄 Currently on branch '${branchName}', switching to default branch`);
         const defaultBranch = config.branch || "master";
         this.execInDir(config.path, `git checkout ${defaultBranch}`, {
           ignoreErrors: true,
@@ -437,11 +396,9 @@ class ModuleManager {
         // Delete remote branch if requested
         if (deleteRemote) {
           console.log(`   🌐 Deleting remote branch 'origin/${branchName}'`);
-          this.execInDir(
-            config.path,
-            `git push origin --delete ${branchName}`,
-            { ignoreErrors: true },
-          );
+          this.execInDir(config.path, `git push origin --delete ${branchName}`, {
+            ignoreErrors: true,
+          });
           console.log(`   ✅ Deleted remote branch`);
         }
       } catch (error) {
@@ -517,14 +474,10 @@ class ModuleManager {
 
       // Get current branch if not specified
       if (!branchName) {
-        const currentBranch = this.execInDir(
-          config.path,
-          "git branch --show-current",
-          { silent: true },
-        );
-        branchName = currentBranch
-          ? currentBranch.trim()
-          : config.branch || "master";
+        const currentBranch = this.execInDir(config.path, "git branch --show-current", {
+          silent: true,
+        });
+        branchName = currentBranch ? currentBranch.trim() : config.branch || "master";
       }
 
       // Push to origin
@@ -576,13 +529,11 @@ class ModuleManager {
 
     // Count by type
     for (const [name, config] of modules) {
-      if (config.type === "csharp" || config.type === "local-csharp")
-        stats.csharp++;
+      if (config.type === "csharp" || config.type === "local-csharp") stats.csharp++;
       if (config.type === "cpp") stats.cpp++;
       if (config.type === "local-csharp") stats.local++;
       if (config.repository) stats.git++;
-      if (config.repository && config.repository.includes("Nexus-Mods"))
-        stats.nexus++;
+      if (config.repository && config.repository.includes("Nexus-Mods")) stats.nexus++;
       if (config.thirdParty) stats.thirdParty++;
     }
 
@@ -682,10 +633,8 @@ PROJECT TYPES MANAGED:
 
 • Gamebryo Extension C++ Projects:
   - bsatk (BSA archive toolkit)
-  - esptk (ESP plugin toolkit)  
   - loot (Load order optimization)
   - gamebryo-savegame (Savegame management)
-  - bsdiff-node (Binary diff/patch)
 
 WORKFLOW INTEGRATION:
 These tools integrate seamlessly with the Visual Studio solution (vortex.sln).

@@ -1,15 +1,17 @@
-import type {
-  IExtensionApi,
-  IExtensionContext,
-} from "../../types/IExtensionContext";
+import * as path from "path";
+
+import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
+import PromiseBB from "bluebird";
+
+import type { IExtensionApi, IExtensionContext } from "../../types/IExtensionContext";
 import type { IGame } from "../../types/IGame";
 import { UserCanceled } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
+import getVortexPath from "../../util/getVortexPath";
 import type { TFunction } from "../../util/i18n";
 import { log } from "../../util/log";
 import { activeGameId, gameName } from "../../util/selectors";
 import walk from "../../util/walk";
-
 import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
 import { getGame } from "../gamemode_management/util/getGame";
 import LinkingDeployment from "../mod_management/LinkingDeployment";
@@ -17,11 +19,6 @@ import type {
   IDeploymentMethod,
   IUnavailableReason,
 } from "../mod_management/types/IDeploymentMethod";
-
-import PromiseBB from "bluebird";
-import * as path from "path";
-import getVortexPath from "../../util/getVortexPath";
-import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
 
 class DeploymendMethod extends LinkingDeployment {
   public compatible: string[] = ["symlink_activator_elevated"];
@@ -60,11 +57,7 @@ class DeploymendMethod extends LinkingDeployment {
     );
   }
 
-  public isSupported(
-    state: any,
-    gameId: string,
-    typeId: string,
-  ): IUnavailableReason {
+  public isSupported(state: any, gameId: string, typeId: string): IUnavailableReason {
     if (gameId === undefined) {
       gameId = activeGameId(state);
     }
@@ -81,8 +74,7 @@ class DeploymendMethod extends LinkingDeployment {
       };
     }
 
-    const discovery: IDiscoveryResult =
-      state.settings.gameMode.discovered[gameId];
+    const discovery: IDiscoveryResult = state.settings.gameMode.discovered[gameId];
 
     if (discovery === undefined || discovery.path === undefined) {
       return { description: (t) => t("Game not discovered.") };
@@ -91,10 +83,7 @@ class DeploymendMethod extends LinkingDeployment {
     const game: IGame = getGame(gameId);
     const modPaths = game.getModPaths(discovery.path);
 
-    if (
-      game.details?.supportsSymlinks === false ||
-      game.compatible?.symlinks === false
-    ) {
+    if (game.details?.supportsSymlinks === false || game.compatible?.symlinks === false) {
       return { description: (t) => t("Game doesn't support symlinks") };
     }
 
@@ -116,10 +105,7 @@ class DeploymendMethod extends LinkingDeployment {
       } catch (err) {
         // nop
       }
-      fs.writeFileSync(
-        canary,
-        "Should only exist temporarily, feel free to delete",
-      );
+      fs.writeFileSync(canary, "Should only exist temporarily, feel free to delete");
       fs.symlinkSync(canary, canary + ".link");
     } catch (err) {
       const code = getErrorCode(err);
@@ -135,10 +121,9 @@ class DeploymendMethod extends LinkingDeployment {
         // unexpected error code
         res = {
           description: (t) =>
-            t(
-              'Filesystem doesn\'t support symbolic links. Error: "{{error}}"',
-              { replace: { error: getErrorMessageOrDefault(err) } },
-            ),
+            t('Filesystem doesn\'t support symbolic links. Error: "{{error}}"', {
+              replace: { error: getErrorMessageOrDefault(err) },
+            }),
         };
       }
     }
@@ -166,20 +151,14 @@ class DeploymendMethod extends LinkingDeployment {
     return res;
   }
 
-  protected linkFile(
-    linkPath: string,
-    sourcePath: string,
-    dirTags?: boolean,
-  ): Promise<void> {
+  protected linkFile(linkPath: string, sourcePath: string, dirTags?: boolean): Promise<void> {
     return this.ensureDir(path.dirname(linkPath), dirTags).then(() =>
       fs
         .symlinkAsync(sourcePath, linkPath)
         .catch((err) =>
           err.code !== "EEXIST"
             ? Promise.reject(err)
-            : fs
-                .removeAsync(linkPath)
-                .then(() => fs.symlinkAsync(sourcePath, linkPath)),
+            : fs.removeAsync(linkPath).then(() => fs.symlinkAsync(sourcePath, linkPath)),
         ),
     );
   }
@@ -230,9 +209,7 @@ class DeploymendMethod extends LinkingDeployment {
         });
     }).then(() => {
       if (hadErrors) {
-        const err = new Error(
-          "Some files could not be purged, please check the log file",
-        );
+        const err = new Error("Some files could not be purged, please check the log file");
         err["attachLogOnReport"] = true;
         return Promise.reject(err);
       } else {

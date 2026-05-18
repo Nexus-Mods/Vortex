@@ -1,45 +1,25 @@
-import { setUpdateDetails, updateIssueList } from "./actions/persistent";
-import { openFeedbackResponder, setOutstandingIssues } from "./actions/session";
-
-import {
-  IGithubComment,
-  IGithubCommentCache,
-  IGithubIssue,
-  IGithubIssueCache,
-} from "./IGithubIssue";
-
-import { IOutstandingIssue } from "./types";
-
 import { IIssue } from "@nexusmods/nexus-api";
 import Promise from "bluebird";
-
 import * as React from "react";
 import { Button, OverlayTrigger, Popover } from "react-bootstrap";
 import * as ReactDOM from "react-dom";
 import { withTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
 import { connect } from "react-redux";
-
-import {
-  actions,
-  ComponentEx,
-  Dashlet,
-  log,
-  Spinner,
-  tooltip,
-  types,
-  util,
-} from "vortex-api";
+import { actions, ComponentEx, Dashlet, log, Spinner, tooltip, types, util } from "vortex-api";
 import * as va from "vortex-api";
 
-import { UPDATE_FREQUENCY } from "./statics";
-
+import { setUpdateDetails, updateIssueList } from "./actions/persistent";
+import { openFeedbackResponder, setOutstandingIssues } from "./actions/session";
 import {
-  cacheEntry,
-  getLastDevComment,
-  isFeedbackRequiredLabel,
-  requestFromApi,
-} from "./util";
+  IGithubComment,
+  IGithubCommentCache,
+  IGithubIssue,
+  IGithubIssueCache,
+} from "./IGithubIssue";
+import { UPDATE_FREQUENCY } from "./statics";
+import { IOutstandingIssue } from "./types";
+import { cacheEntry, getLastDevComment, isFeedbackRequiredLabel, requestFromApi } from "./util";
 
 const { EmptyPlaceholder } = va as any;
 
@@ -86,8 +66,7 @@ class IssueList extends ComponentEx<IProps, IIssueListState> {
   // hide closed issues without any update after a month
   private static HIDE_AFTER = 30 * 24 * 60 * 60 * 1000;
   // allow refresh once every minute. This is mostly to prevent people from spamming the button
-  private static MIN_REFRESH_DELAY =
-    process.env.NODE_ENV === "development" ? 0 : 60 * 1000;
+  private static MIN_REFRESH_DELAY = process.env.NODE_ENV === "development" ? 0 : 60 * 1000;
   private mMounted: boolean = false;
   private mLastRefresh: number = 0;
 
@@ -174,8 +153,7 @@ class IssueList extends ComponentEx<IProps, IIssueListState> {
     }
 
     const completion =
-      issue.milestone.closed_issues /
-      (issue.milestone.closed_issues + issue.milestone.open_issues);
+      issue.milestone.closed_issues / (issue.milestone.closed_issues + issue.milestone.open_issues);
 
     const state =
       issue.milestone.state === "closed"
@@ -188,9 +166,9 @@ class IssueList extends ComponentEx<IProps, IIssueListState> {
                   ? ""
                   : t(", planned for {{date}}", {
                       replace: {
-                        date: new Date(
-                          issue.milestone.due_on,
-                        ).toLocaleDateString(this.context.api.locale()),
+                        date: new Date(issue.milestone.due_on).toLocaleDateString(
+                          this.context.api.locale(),
+                        ),
                       },
                     }),
             },
@@ -225,9 +203,7 @@ class IssueList extends ComponentEx<IProps, IIssueListState> {
 
     const popover = (
       <Popover id={`issue-popover-${issueId}`}>
-        <ReactMarkdown className="issue-description">
-          {issue.body}
-        </ReactMarkdown>
+        <ReactMarkdown className="issue-description">{issue.body}</ReactMarkdown>
       </Popover>
     );
 
@@ -242,9 +218,7 @@ class IssueList extends ComponentEx<IProps, IIssueListState> {
           {issue.labels.map((label) =>
             isFeedbackRequiredLabel(label) ? null : this.renderLabel(label),
           )}
-          {feedbackRequiredLabels.length > 0
-            ? this.renderLabel(feedbackRequiredLabels[0])
-            : null}
+          {feedbackRequiredLabels.length > 0 ? this.renderLabel(feedbackRequiredLabels[0]) : null}
         </div>
         <div className="issue-item-title">
           <OverlayTrigger trigger={["hover", "focus"]} overlay={popover}>
@@ -294,9 +268,7 @@ class IssueList extends ComponentEx<IProps, IIssueListState> {
     }
 
     return (
-      <div className="list-issues">
-        {distinct.map((id) => this.renderIssue(id, issues[id]))}
-      </div>
+      <div className="list-issues">{distinct.map((id) => this.renderIssue(id, issues[id]))}</div>
     );
   }
 
@@ -313,9 +285,7 @@ class IssueList extends ComponentEx<IProps, IIssueListState> {
     const node: Element = ReactDOM.findDOMNode(evt.currentTarget) as Element;
     const milestoneId = node.getAttribute("data-milestone");
     (util as any)
-      .opn(
-        `https://www.github.com/${IssueList.GITHUB_PROJ}/milestone/${milestoneId}`,
-      )
+      .opn(`https://www.github.com/${IssueList.GITHUB_PROJ}/milestone/${milestoneId}`)
       .catch(() => null);
   };
 
@@ -334,22 +304,20 @@ class IssueList extends ComponentEx<IProps, IIssueListState> {
   }
 
   private followDuplicate(issue: IGithubIssue): Promise<IGithubIssue> {
-    return requestFromApi(issue.comments_url).then(
-      (comments: IGithubComment[]) => {
-        const redir = comments
-          .reverse()
-          .find((comment) => IssueList.DUPLICATE_EXP.test(comment.body));
-        if (redir === undefined) {
-          // if there is no comment saying what this is a duplicate of,
-          // show the original issue after all
-          return issue;
-        } else {
-          // extract the referenced id and return that issue
-          const refId = IssueList.DUPLICATE_EXP.exec(redir.body)[1];
-          return this.requestIssue(refId);
-        }
-      },
-    );
+    return requestFromApi(issue.comments_url).then((comments: IGithubComment[]) => {
+      const redir = comments
+        .reverse()
+        .find((comment) => IssueList.DUPLICATE_EXP.test(comment.body));
+      if (redir === undefined) {
+        // if there is no comment saying what this is a duplicate of,
+        // show the original issue after all
+        return issue;
+      } else {
+        // extract the referenced id and return that issue
+        const refId = IssueList.DUPLICATE_EXP.exec(redir.body)[1];
+        return this.requestIssue(refId);
+      }
+    });
   }
 
   private refresh = () => {
@@ -385,16 +353,10 @@ class IssueList extends ComponentEx<IProps, IIssueListState> {
     this.mLastRefresh = Date.now();
     return queryIssues(this.context.api)
       .then((res: Array<{ issue_title: string; issue_number: number }>) => {
-        const filteredRes = res.filter(
-          (issue) => !issue.issue_title.startsWith("Response to #"),
-        );
-        onUpdateIssueList(
-          filteredRes.map((issue) => issue.issue_number.toString()),
-        );
+        const filteredRes = res.filter((issue) => !issue.issue_title.startsWith("Response to #"));
+        onUpdateIssueList(filteredRes.map((issue) => issue.issue_number.toString()));
         const now = Date.now();
-        let outstanding: IOutstandingIssue[] = force
-          ? []
-          : (this.props.outstandingIssues ?? []);
+        let outstanding: IOutstandingIssue[] = force ? [] : (this.props.outstandingIssues ?? []);
         return Promise.mapSeries(filteredRes, (issue) => {
           const issueId = issue.issue_number.toString();
           const isIssueClosed = !force
@@ -415,52 +377,37 @@ class IssueList extends ComponentEx<IProps, IIssueListState> {
           ) {
             return this.requestIssue(issueId).then((issueDetails) => {
               const replyRequired =
-                issueDetails.labels.find((lbl) =>
-                  isFeedbackRequiredLabel(lbl.name),
-                ) !== undefined;
+                issueDetails.labels.find((lbl) => isFeedbackRequiredLabel(lbl.name)) !== undefined;
               const isClosed = issueDetails.state === "closed";
-              const updateIssueDetails = (
-                id: string,
-                cached: IGithubIssueCache,
-              ) => {
+              const updateIssueDetails = (id: string, cached: IGithubIssueCache) => {
                 onSetUpdateDetails(id, cached);
                 return Promise.resolve();
               };
 
               return isClosed
-                ? updateIssueDetails(
-                    issueId,
-                    cacheEntry(issueDetails, undefined),
-                  )
-                : getLastDevComment(
-                    issueDetails,
-                    issues[issueId],
-                    username,
-                    force,
-                  ).then((comment: IGithubCommentCache) => {
-                    const cachedEntry = cacheEntry(issueDetails, comment);
-                    if (comment !== undefined) {
-                      const lastResponseMS =
-                        cachedEntry.cachedComment.lastCommentResponseMS;
-                      const commentDate = new Date(comment.comment.updated_at);
-                      if (
-                        replyRequired &&
-                        lastResponseMS < commentDate.getTime()
-                      ) {
-                        // Only add this if we confirm that:
-                        //  1. The waiting for response label is set.
-                        //  2. The issue is still open.
-                        //  3. The latest comment's date is more recent than the date of the
-                        //     comment to which the user has responded last.
-                        outstanding.push({
-                          issue: issueDetails,
-                          lastDevComment: comment.comment,
-                        });
+                ? updateIssueDetails(issueId, cacheEntry(issueDetails, undefined))
+                : getLastDevComment(issueDetails, issues[issueId], username, force).then(
+                    (comment: IGithubCommentCache) => {
+                      const cachedEntry = cacheEntry(issueDetails, comment);
+                      if (comment !== undefined) {
+                        const lastResponseMS = cachedEntry.cachedComment.lastCommentResponseMS;
+                        const commentDate = new Date(comment.comment.updated_at);
+                        if (replyRequired && lastResponseMS < commentDate.getTime()) {
+                          // Only add this if we confirm that:
+                          //  1. The waiting for response label is set.
+                          //  2. The issue is still open.
+                          //  3. The latest comment's date is more recent than the date of the
+                          //     comment to which the user has responded last.
+                          outstanding.push({
+                            issue: issueDetails,
+                            lastDevComment: comment.comment,
+                          });
+                        }
                       }
-                    }
 
-                    return updateIssueDetails(issueId, cachedEntry);
-                  });
+                      return updateIssueDetails(issueId, cachedEntry);
+                    },
+                  );
             });
           }
         })
@@ -469,9 +416,8 @@ class IssueList extends ComponentEx<IProps, IIssueListState> {
             outstanding = outstanding.reduce(
               (accum: IOutstandingIssue[], iter: IOutstandingIssue) => {
                 if (
-                  accum.find(
-                    (existing) => existing.issue.number === iter.issue.number,
-                  ) === undefined
+                  accum.find((existing) => existing.issue.number === iter.issue.number) ===
+                  undefined
                 ) {
                   accum.push(iter);
                 }
@@ -487,9 +433,7 @@ class IssueList extends ComponentEx<IProps, IIssueListState> {
           .tapCatch((err) => {
             if (err.message.includes("Status Code: 403") && force) {
               this.context.api.sendNotification({
-                message: t(
-                  "Sent too many github API requests - try again later",
-                ),
+                message: t("Sent too many github API requests - try again later"),
                 type: "info",
                 displayMS: 3000,
               });
@@ -514,32 +458,21 @@ class IssueList extends ComponentEx<IProps, IIssueListState> {
 
 function mapStateToProps(state: any): IConnectedProps {
   return {
-    outstandingIssues: util.getSafe(
-      state,
-      ["session", "issues", "oustandingIssues"],
-      [],
-    ),
-    username: util.getSafe(
-      state,
-      ["persistent", "nexus", "userInfo", "name"],
-      undefined,
-    ),
+    outstandingIssues: util.getSafe(state, ["session", "issues", "oustandingIssues"], []),
+    username: util.getSafe(state, ["persistent", "nexus", "userInfo", "name"], undefined),
     issues: state.persistent.issues.issues,
   };
 }
 
 function mapDispatchToProps(dispatch: any): IActionProps {
   return {
-    onUpdateIssueList: (issueIds: string[]) =>
-      dispatch(updateIssueList(issueIds)),
+    onUpdateIssueList: (issueIds: string[]) => dispatch(updateIssueList(issueIds)),
     onSetUpdateDetails: (issueId: string, details: IGithubIssueCache) =>
       dispatch(setUpdateDetails(issueId, details)),
     onShowDialog: (type, title, content, dialogActions) =>
       dispatch(actions.showDialog(type, title, content, dialogActions)),
-    onOpenFeedbackResponder: (open: boolean) =>
-      dispatch(openFeedbackResponder(open)),
-    onSetOustandingIssues: (issues: IOutstandingIssue[]) =>
-      dispatch(setOutstandingIssues(issues)),
+    onOpenFeedbackResponder: (open: boolean) => dispatch(openFeedbackResponder(open)),
+    onSetOustandingIssues: (issues: IOutstandingIssue[]) => dispatch(setOutstandingIssues(issues)),
   };
 }
 

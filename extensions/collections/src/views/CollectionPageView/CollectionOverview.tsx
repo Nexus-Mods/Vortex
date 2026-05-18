@@ -1,15 +1,4 @@
-/* eslint-disable */
-import CollectionReleaseStatus from "../CollectionReleaseStatus";
-import CollectionThumbnail from "../CollectionTile";
-
-import HealthIndicator from "./HealthIndicator";
-
-import {
-  EndorsedStatus,
-  ICollection,
-  IRevision,
-  RatingOptions,
-} from "@nexusmods/nexus-api";
+import { EndorsedStatus, ICollection, IRevision, RatingOptions } from "@nexusmods/nexus-api";
 import type { TFunction } from "i18next";
 import * as _ from "lodash";
 import * as React from "react";
@@ -26,8 +15,13 @@ import {
   types,
   util,
 } from "vortex-api";
+
 import { updateCollectionInfo } from "../../actions/persistent";
 import { healthDownvoteDialog } from "../../actions/session";
+/* eslint-disable */
+import CollectionReleaseStatus from "../CollectionReleaseStatus";
+import CollectionThumbnail from "../CollectionTile";
+import HealthIndicator from "./HealthIndicator";
 
 const ENDORSE_DELAY_MS = 43200000; // 12 hours
 //const ENDORSE_DELAY_MS = 60000; // 1 minute
@@ -62,11 +56,7 @@ function EndorseButton(props: IEndorseButtonProps) {
       : "Undecided";
 
     context.api.events.emit("endorse-mod", gameId, mod.id, endorsedStatus);
-    context.api.events.emit(
-      "analytics-track-click-event",
-      "Collections",
-      endorsedStatus,
-    );
+    context.api.events.emit("analytics-track-click-event", "Collections", endorsedStatus);
 
     setTimeout(async () => {
       refreshCollection(context.api, collection);
@@ -128,11 +118,7 @@ function CommentButton(props: ICommentButtonProps) {
 
   const click = React.useCallback(() => {
     if (collection?.["commentLink"] !== undefined) {
-      context.api.events.emit(
-        "analytics-track-click-event",
-        "Collections",
-        "Comments",
-      );
+      context.api.events.emit("analytics-track-click-event", "Collections", "Comments");
       util.opn(collection["commentLink"]);
     }
   }, [collection]);
@@ -146,19 +132,14 @@ function CommentButton(props: ICommentButtonProps) {
       className="collection-ghost-button"
       tooltip={tip}
       onClick={click}
-      disabled={
-        collection?.["commentLink"] === undefined || collection?.viewerIsBlocked
-      }
+      disabled={collection?.["commentLink"] === undefined || collection?.viewerIsBlocked}
     >
       {collection?.forumTopic?.postsCount ?? 0}
     </tooltip.IconButton>
   );
 }
 
-async function refreshCollection(
-  api: types.IExtensionApi,
-  collection: ICollection,
-) {
+async function refreshCollection(api: types.IExtensionApi, collection: ICollection) {
   if (!collection?.slug) {
     return;
   }
@@ -166,14 +147,10 @@ async function refreshCollection(
   log("info", `refreshCollection ${collection.slug}`);
 
   // get collection info from nexus api
-  const result: ICollection = (
-    await api.emitAndAwait("get-nexus-collection", collection.slug)
-  )[0];
+  const result: ICollection = (await api.emitAndAwait("get-nexus-collection", collection.slug))[0];
 
   // update local state with new collection info
-  api.store.dispatch(
-    updateCollectionInfo(collection.id.toString(), result, Date.now()),
-  );
+  api.store.dispatch(updateCollectionInfo(collection.id.toString(), result, Date.now()));
 }
 
 interface ICollectionOverviewProps {
@@ -196,10 +173,7 @@ interface ICollectionOverviewProps {
   onVoteSuccess?: (collectionId: string, success: boolean) => void;
 }
 
-class CollectionOverview extends ComponentEx<
-  ICollectionOverviewProps,
-  { selIdx: number }
-> {
+class CollectionOverview extends ComponentEx<ICollectionOverviewProps, { selIdx: number }> {
   private mWorkshopActions: types.IActionDefinition[];
 
   constructor(props: ICollectionOverviewProps) {
@@ -213,9 +187,7 @@ class CollectionOverview extends ComponentEx<
         action: this.enable,
         condition: () => {
           const { collection, incomplete, profile } = this.props;
-          return (
-            !incomplete && profile.modState?.[collection.id]?.enabled !== true
-          );
+          return !incomplete && profile.modState?.[collection.id]?.enabled !== true;
         },
         icon: "toggle-enabled",
       },
@@ -232,9 +204,7 @@ class CollectionOverview extends ComponentEx<
         action: this.disable,
         condition: () => {
           const { collection, incomplete, profile } = this.props;
-          return (
-            !incomplete && profile.modState?.[collection.id]?.enabled === true
-          );
+          return !incomplete && profile.modState?.[collection.id]?.enabled === true;
         },
         icon: "toggle-disabled",
       },
@@ -265,8 +235,7 @@ class CollectionOverview extends ComponentEx<
   }
 
   public render(): JSX.Element {
-    const { t, collection, incomplete, profile, revision, votedSuccess } =
-      this.props;
+    const { t, collection, incomplete, profile, revision, votedSuccess } = this.props;
 
     const classes = ["collection-overview"];
 
@@ -279,8 +248,7 @@ class CollectionOverview extends ComponentEx<
       ).getTime();
 
     const viewerIsBlocked = revision.collection?.viewerIsBlocked ?? false;
-    const voteAllowed =
-      !viewerIsBlocked && timeSinceInstall >= ENDORSE_DELAY_MS;
+    const voteAllowed = !viewerIsBlocked && timeSinceInstall >= ENDORSE_DELAY_MS;
 
     const rating = {
       average: parseFloat(revision.collection?.overallRating ?? "100"),
@@ -303,15 +271,11 @@ class CollectionOverview extends ComponentEx<
             <FlexLayout type="column">
               <FlexLayout.Fixed>
                 <div className="collection-overview-title">
-                  <div className="collection-title">
-                    {util.renderModName(collection)}
-                  </div>
+                  <div className="collection-title">{util.renderModName(collection)}</div>
                   <CollectionReleaseStatus
                     t={t}
                     active={true}
-                    enabled={
-                      profile.modState?.[collection.id]?.enabled ?? false
-                    }
+                    enabled={profile.modState?.[collection.id]?.enabled ?? false}
                     collection={collection}
                     incomplete={incomplete}
                   />
@@ -320,18 +284,16 @@ class CollectionOverview extends ComponentEx<
               </FlexLayout.Fixed>
               <FlexLayout.Flex className="collection-description-container">
                 <div className="collection-description">
-                  {collection.attributes?.shortDescription ??
-                    t("No description")}
+                  {collection.attributes?.shortDescription ?? t("No description")}
                 </div>
               </FlexLayout.Flex>
               <FlexLayout.Fixed className="collection-page-detail-bar">
                 <FlexLayout type="row">
-                  <FlexLayout.Fixed className="collection-detail-cell ">
+                  <FlexLayout.Fixed className="collection-detail-cell">
                     <FlexLayout type="row">
                       <Image
                         srcs={[
-                          collection.attributes?.uploaderAvatar ??
-                            "assets/images/noavatar.png",
+                          collection.attributes?.uploaderAvatar ?? "assets/images/noavatar.png",
                         ]}
                         circle
                       />
@@ -347,17 +309,11 @@ class CollectionOverview extends ComponentEx<
                   </FlexLayout.Fixed>
                   <FlexLayout.Fixed className="collection-detail-cell">
                     <div className="title">{t("Last updated")}</div>
-                    <div>
-                      {this.renderTime(collection.attributes?.updatedTimestamp)}
-                    </div>
+                    <div>{this.renderTime(collection.attributes?.updatedTimestamp)}</div>
                   </FlexLayout.Fixed>
                   <FlexLayout.Fixed className="collection-detail-cell hideable">
                     <div className="title">{t("Uploaded")}</div>
-                    <div>
-                      {this.renderTime(
-                        collection.attributes?.uploadedTimestamp,
-                      )}
-                    </div>
+                    <div>{this.renderTime(collection.attributes?.uploadedTimestamp)}</div>
                   </FlexLayout.Fixed>
                   {/*
                   <FlexLayout.Fixed className='collection-detail-cell'>
@@ -397,14 +353,11 @@ class CollectionOverview extends ComponentEx<
                       ownSuccess={votedSuccess}
                       voteAllowed={voteAllowed}
                       gameVersion={
-                        (
-                          this.context.api.getState().persistent
-                            ?.gameMode as any
-                        )?.versions?.[profile.gameId] ?? "?"
+                        (this.context.api.getState().persistent?.gameMode as any)?.versions?.[
+                          profile.gameId
+                        ] ?? "?"
                       }
-                      collectionGameVersion={
-                        revision?.gameVersions?.[0]?.reference ?? "?"
-                      }
+                      collectionGameVersion={revision?.gameVersions?.[0]?.reference ?? "?"}
                     />
                   ) : null}
                 </FlexLayout.Fixed>
@@ -436,7 +389,11 @@ class CollectionOverview extends ComponentEx<
   private openUrl = () => {
     const { revision } = this.props;
     const { collection } = revision;
-    if (collection !== undefined && collection.game !== undefined && revision?.revisionNumber !== undefined) {
+    if (
+      collection !== undefined &&
+      collection.game !== undefined &&
+      revision?.revisionNumber !== undefined
+    ) {
       this.context.api.events.emit(
         "analytics-track-click-event",
         "Collections",
@@ -464,11 +421,7 @@ class CollectionOverview extends ComponentEx<
     const { onClone, collection } = this.props;
     if (onClone !== undefined && collection !== undefined) {
       onClone(collection.id);
-      this.context.api.events.emit(
-        "analytics-track-click-event",
-        "Collections",
-        "Clone",
-      );
+      this.context.api.events.emit("analytics-track-click-event", "Collections", "Clone");
     }
   };
 
@@ -499,10 +452,7 @@ class CollectionOverview extends ComponentEx<
     } = this.props;
 
     if (revision.collection === undefined) {
-      log(
-        "error",
-        "failed to show vote response dialog, missing collection info",
-      );
+      log("error", "failed to show vote response dialog, missing collection info");
       return;
     }
 
@@ -531,9 +481,7 @@ class CollectionOverview extends ComponentEx<
             text:
               "Congratulations! Please consider endorsing this collection if you are enjoying it. " +
               "Endorsing helps others discover this collection and lets the curator know you enjoyed it.",
-            checkboxes: [
-              { id: "dont_show_again", value: false, text: "Don't show again" },
-            ],
+            checkboxes: [{ id: "dont_show_again", value: false, text: "Don't show again" }],
           },
           [
             { label: "Close" },

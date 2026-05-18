@@ -1,26 +1,18 @@
 /* eslint-disable */
 import * as path from "path";
+
 import { actions, log, selectors, types, util } from "vortex-api";
 
 import AttribDashlet from "./AttribDashlet";
-
 import { ensureBepInExPack } from "./bepInExDownloader";
-import {
-  addGameSupport,
-  getDownload,
-  getSupportMap,
-  MODTYPE_BIX_INJECTOR,
-} from "./common";
+import { addGameSupport, getDownload, getSupportMap, MODTYPE_BIX_INJECTOR } from "./common";
 import {
   installInjector,
   installRootMod,
   testSupportedBepInExInjector,
   testSupportedRootMod,
 } from "./installers";
-import {
-  IBepInExGameConfig,
-  INexusDownloadInfo,
-} from "./types";
+import { IBepInExGameConfig, INexusDownloadInfo } from "./types";
 import { createDirectories, dismissNotifications, toBlue } from "./util";
 
 function showAttrib(state: types.IState) {
@@ -52,9 +44,7 @@ async function onCheckModVersion(
   if (profile === undefined) {
     return;
   }
-  const injectorModIds = Object.keys(mods).filter(
-    (id) => mods[id]?.type === MODTYPE_BIX_INJECTOR,
-  );
+  const injectorModIds = Object.keys(mods).filter((id) => mods[id]?.type === MODTYPE_BIX_INJECTOR);
   const enabledId = injectorModIds.find((id) =>
     util.getSafe(profile, ["modState", id, "enabled"], false),
   );
@@ -73,10 +63,7 @@ async function onCheckModVersion(
     return;
   }
 
-  if (
-    gameConf.bepinexVersion &&
-    gameConf.bepinexVersion === injectorMod.attributes?.version
-  ) {
+  if (gameConf.bepinexVersion && gameConf.bepinexVersion === injectorMod.attributes?.version) {
     // If a specific bepinex version is specified, and the injector mod already has that version.
     //  We do not want to update it! BIX updates will break mods.
     return;
@@ -142,8 +129,7 @@ function init(context: types.IExtensionContext) {
 
   const genTestProps = (gameId?: string) => {
     const state = context.api.getState();
-    const activeGameId =
-      gameId === undefined ? selectors.activeGameId(state) : gameId;
+    const activeGameId = gameId === undefined ? selectors.activeGameId(state) : gameId;
     const gameConf = getSupportMap()[activeGameId];
     const game: types.IGameStored = selectors.gameById(state, activeGameId);
     return { gameConf, game };
@@ -155,14 +141,11 @@ function init(context: types.IExtensionContext) {
   // Regular DLL plugin modType test
   const pluginModTypeTest = async (instructions: types.IInstruction[]) => {
     const copyInstructions = instructions.filter(
-      (instr) =>
-        instr.type === "copy" && path.extname(path.basename(instr.destination)),
+      (instr) => instr.type === "copy" && path.extname(path.basename(instr.destination)),
     );
 
     return (
-      copyInstructions.find(
-        (instr) => path.extname(instr.destination) === ".dll",
-      ) !== undefined
+      copyInstructions.find((instr) => path.extname(instr.destination) === ".dll") !== undefined
     );
   };
 
@@ -171,8 +154,7 @@ function init(context: types.IExtensionContext) {
     const isRootSegment = (seg: string) =>
       seg !== undefined ? bixRootFolders.includes(seg.toLowerCase()) : false;
     const copyInstructions = instructions.filter(
-      (instr) =>
-        instr.type === "copy" && path.extname(path.basename(instr.destination)),
+      (instr) => instr.type === "copy" && path.extname(path.basename(instr.destination)),
     );
 
     for (const instr of copyInstructions) {
@@ -203,16 +185,11 @@ function init(context: types.IExtensionContext) {
   context.registerAPI(
     "bepinexAddGame",
     (bepinexConf: IBepInExGameConfig, callback?: (err: Error) => void) => {
-      if (
-        bepinexConf !== undefined ||
-        (bepinexConf as IBepInExGameConfig) === undefined
-      ) {
+      if (bepinexConf !== undefined || (bepinexConf as IBepInExGameConfig) === undefined) {
         addGameSupport(bepinexConf);
       } else {
         callback?.(
-          new util.DataInvalid(
-            "failed to register bepinex game, invalid object received",
-          ),
+          new util.DataInvalid("failed to register bepinex game, invalid object received"),
         );
       }
     },
@@ -220,17 +197,10 @@ function init(context: types.IExtensionContext) {
   );
 
   // This modType is assigned by the BepInEx injector installer.
-  context.registerModType(
-    MODTYPE_BIX_INJECTOR,
-    10,
-    isSupported,
-    getPath,
-    modTypeTest,
-    {
-      mergeMods: true,
-      name: "Bepis Injector Extensible",
-    },
-  );
+  context.registerModType(MODTYPE_BIX_INJECTOR, 10, isSupported, getPath, modTypeTest, {
+    mergeMods: true,
+    name: "Bepis Injector Extensible",
+  });
 
   // There's currently no reliable way to differentiate BepInEx plugins from patchers,
   //  apart from the mod's description specifying where to deploy the mod. Unlike regular
@@ -315,91 +285,58 @@ function init(context: types.IExtensionContext) {
   );
 
   context.once(() => {
-    context.api.events.on(
-      "did-install-mod",
-      async (gameId, archiveId, modId) => {
-        const gameConf = getSupportMap()[gameId];
-        if (gameConf === undefined) {
-          return;
+    context.api.events.on("did-install-mod", async (gameId, archiveId, modId) => {
+      const gameConf = getSupportMap()[gameId];
+      if (gameConf === undefined) {
+        return;
+      }
+      const state = context.api.getState();
+      const mod: types.IMod = util.getSafe(state, ["persistent", "mods", gameId, modId], undefined);
+      if (mod?.type !== MODTYPE_BIX_INJECTOR) {
+        return;
+      }
+      if (
+        mod.attributes != undefined &&
+        mod.attributes.modId &&
+        mod.attributes.fileId &&
+        mod.attributes.version
+      ) {
+        // Mod already has attributes set
+        return;
+      }
+      const metaDataDetails: types.ILookupDetails = {
+        gameId: "site",
+        fileName: mod.attributes?.fileName,
+        fileMD5: mod.attributes?.fileMD5,
+        fileSize: mod.attributes?.fileSize,
+      };
+      context.api.lookupModMeta(metaDataDetails, true).then((meta) => {
+        const profileId = selectors.lastActiveProfileForGame(state, gameId);
+        const batched = [actions.setModEnabled(profileId, modId, true)];
+        if (meta.length > 0 && !!meta[0].value?.details) {
+          batched.push(
+            actions.setDownloadModInfo(archiveId, "nexus.modInfo", meta[0].value) as any,
+          );
+          batched.push(
+            actions.setModAttribute(gameId, modId, "version", meta[0].value.fileVersion) as any,
+          );
+          batched.push(
+            actions.setModAttribute(gameId, modId, "modId", meta[0].value.details.modId) as any,
+          );
+          batched.push(
+            actions.setModAttribute(gameId, modId, "fileId", meta[0].value.details.fileId) as any,
+          );
+          // batched.push(actions.setModAttributes(gameId, modId, meta[0].value) as any);
+        } else if (!!gameConf.bepinexVersion && !mod?.attributes?.version) {
+          batched.push(
+            actions.setModAttribute(gameId, modId, "version", gameConf.bepinexVersion) as any,
+          );
+        } else {
+          batched.push(actions.setModAttribute(gameId, modId, "version", "0.0.0") as any);
         }
-        const state = context.api.getState();
-        const mod: types.IMod = util.getSafe(
-          state,
-          ["persistent", "mods", gameId, modId],
-          undefined,
-        );
-        if (mod?.type !== MODTYPE_BIX_INJECTOR) {
-          return;
-        }
-        if (
-          mod.attributes != undefined &&
-          mod.attributes.modId &&
-          mod.attributes.fileId &&
-          mod.attributes.version
-        ) {
-          // Mod already has attributes set
-          return;
-        }
-        const metaDataDetails: types.ILookupDetails = {
-          gameId: "site",
-          fileName: mod.attributes?.fileName,
-          fileMD5: mod.attributes?.fileMD5,
-          fileSize: mod.attributes?.fileSize,
-        };
-        context.api.lookupModMeta(metaDataDetails, true).then((meta) => {
-          const profileId = selectors.lastActiveProfileForGame(state, gameId);
-          const batched = [actions.setModEnabled(profileId, modId, true)];
-          if (meta.length > 0 && !!meta[0].value?.details) {
-            batched.push(
-              actions.setDownloadModInfo(
-                archiveId,
-                "nexus.modInfo",
-                meta[0].value,
-              ) as any,
-            );
-            batched.push(
-              actions.setModAttribute(
-                gameId,
-                modId,
-                "version",
-                meta[0].value.fileVersion,
-              ) as any,
-            );
-            batched.push(
-              actions.setModAttribute(
-                gameId,
-                modId,
-                "modId",
-                meta[0].value.details.modId,
-              ) as any,
-            );
-            batched.push(
-              actions.setModAttribute(
-                gameId,
-                modId,
-                "fileId",
-                meta[0].value.details.fileId,
-              ) as any,
-            );
-            // batched.push(actions.setModAttributes(gameId, modId, meta[0].value) as any);
-          } else if (!!gameConf.bepinexVersion && !mod?.attributes?.version) {
-            batched.push(
-              actions.setModAttribute(
-                gameId,
-                modId,
-                "version",
-                gameConf.bepinexVersion,
-              ) as any,
-            );
-          } else {
-            batched.push(
-              actions.setModAttribute(gameId, modId, "version", "0.0.0") as any,
-            );
-          }
-          util.batchDispatch(context.api.store, batched);
-        });
-      },
-    );
+        util.batchDispatch(context.api.store, batched);
+      });
+    });
     context.api.events.on("profile-will-change", () => {
       const state = context.api.getState();
       const oldProfileId = util.getSafe(
@@ -430,32 +367,31 @@ function init(context: types.IExtensionContext) {
       const replace = {
         game: util.getGame(gameMode)?.name || gameMode,
         bl: "[br][/br][br][/br]",
-        bixUrl:
-          "[url=https://github.com/BepInEx/BepInEx/releases]BepInEx Release[/url]",
+        bixUrl: "[url=https://github.com/BepInEx/BepInEx/releases]BepInEx Release[/url]",
       };
       const dialogContents = gameConf.autoDownloadBepInEx
         ? t(
-          'The "{{game}}" game extension requires a widely used 3rd party assembly ' +
-          "patching/injection library called Bepis Injector Extensible (BepInEx).{{bl}}" +
-          "Vortex has downloaded and installed this library automatically for you, and is currently " +
-          "available in your mods page to enable/disable just like any other regular mod. " +
-          'Depending on the modding pattern of "{{game}}", BepInEx may be a hard requirement ' +
-          "for mods to function in-game in which case you MUST have the library enabled and deployed " +
-          "at all times for the mods to work!{{bl}}" +
-          "To remove the library, simply disable the mod entry for BepInEx.",
-          { replace },
-        )
+            'The "{{game}}" game extension requires a widely used 3rd party assembly ' +
+              "patching/injection library called Bepis Injector Extensible (BepInEx).{{bl}}" +
+              "Vortex has downloaded and installed this library automatically for you, and is currently " +
+              "available in your mods page to enable/disable just like any other regular mod. " +
+              'Depending on the modding pattern of "{{game}}", BepInEx may be a hard requirement ' +
+              "for mods to function in-game in which case you MUST have the library enabled and deployed " +
+              "at all times for the mods to work!{{bl}}" +
+              "To remove the library, simply disable the mod entry for BepInEx.",
+            { replace },
+          )
         : t(
-          'The "{{game}}" game extension requires a widely used 3rd party assembly ' +
-          "patching/injection library called Bepis Injector Extensible (BepInEx).{{bl}}" +
-          "BepInEx may be a hard requirement for some mods to function in-game in which case you should " +
-          "manually download and install the latest {{bixUrl}} in order for the mods to work!{{bl}}" +
-          'Choose the "BepInEx_x64_...zip" variant - you can then drag and drop it inside the mods page\'s ' +
-          '"Drop area" to have Vortex install it as any other mod.{{bl}}' +
-          'If you installed the BepInEx package through Vortex, don\'t forget to enable it and click "Deploy Mods", ' +
-          "for the package to be linked to your game's directory.",
-          { replace },
-        );
+            'The "{{game}}" game extension requires a widely used 3rd party assembly ' +
+              "patching/injection library called Bepis Injector Extensible (BepInEx).{{bl}}" +
+              "BepInEx may be a hard requirement for some mods to function in-game in which case you should " +
+              "manually download and install the latest {{bixUrl}} in order for the mods to work!{{bl}}" +
+              'Choose the "BepInEx_x64_...zip" variant - you can then drag and drop it inside the mods page\'s ' +
+              '"Drop area" to have Vortex install it as any other mod.{{bl}}' +
+              'If you installed the BepInEx package through Vortex, don\'t forget to enable it and click "Deploy Mods", ' +
+              "for the package to be linked to your game's directory.",
+            { replace },
+          );
 
       return ensureBepInExPack(context.api)
         .then(() =>
@@ -482,10 +418,7 @@ function init(context: types.IExtensionContext) {
           }),
         )
         .catch((err) =>
-          context.api.showErrorNotification(
-            "Failed to download/install BepInEx",
-            err,
-          ),
+          context.api.showErrorNotification("Failed to download/install BepInEx", err),
         )
         .finally(() => {
           const state = context.api.getState();
@@ -500,10 +433,7 @@ function init(context: types.IExtensionContext) {
           if (hasInjectorMod) {
             dismissNotifications(
               context.api,
-              selectors.lastActiveProfileForGame(
-                context.api.getState(),
-                gameMode,
-              ),
+              selectors.lastActiveProfileForGame(context.api.getState(), gameMode),
             );
           }
         });
@@ -513,10 +443,7 @@ function init(context: types.IExtensionContext) {
       const state = context.api.getState();
       const activeProfile: types.IProfile = selectors.activeProfile(state);
       const profile = selectors.profileById(state, profileId);
-      if (
-        profile?.gameId === undefined ||
-        profile.gameId !== activeProfile?.gameId
-      ) {
+      if (profile?.gameId === undefined || profile.gameId !== activeProfile?.gameId) {
         return;
       }
 
@@ -524,10 +451,7 @@ function init(context: types.IExtensionContext) {
         return;
       }
       return ensureBepInExPack(context.api, profile.gameId).catch((err) =>
-        context.api.showErrorNotification(
-          "Failed to download/install BepInEx",
-          err,
-        ),
+        context.api.showErrorNotification("Failed to download/install BepInEx", err),
       );
     });
 

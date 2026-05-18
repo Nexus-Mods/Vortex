@@ -49,12 +49,7 @@ class MyDropdown extends React.Component<IProps, { up: boolean }> {
   }
 
   public render(): JSX.Element {
-    const relayProps: any = _.omit(this.props, [
-      "container",
-      "dropup",
-      "onToggle",
-      "children",
-    ]);
+    const relayProps: any = _.omit(this.props, ["container", "dropup", "onToggle", "children"]);
     const filt = this.mOpen
       ? this.props.children
       : React.Children.map(this.props.children, (child) =>
@@ -84,9 +79,7 @@ class MyDropdown extends React.Component<IProps, { up: boolean }> {
     this.mOpen = isOpen;
     if (isOpen) {
       const bounds = this.bounds;
-      const newUp =
-        this.mNode.getBoundingClientRect().bottom >
-        bounds.top + bounds.height / 2;
+      const newUp = this.mNode.getBoundingClientRect().bottom > bounds.top + bounds.height / 2;
       // force redraw to ensure the menu gets rendered too
       this.setState({ up: newUp });
     }

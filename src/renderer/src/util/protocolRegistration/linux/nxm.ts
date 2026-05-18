@@ -11,20 +11,18 @@
  * ref: https://github.com/Nexus-Mods/NexusMods.App/blob/main/src/NexusMods.Backend/RuntimeDependency/UpdateDesktopDatabaseDependency.cs
  */
 
-import * as fs from "fs-extra";
 import * as path from "path";
 
+import * as fs from "fs-extra";
+
 import { log } from "../../log";
-import {
-  escapeDesktopExecFilePath,
-  escapeDesktopFilePath,
-} from "./desktopFileEscaping";
 import {
   applicationsDirectory,
   getDefaultUrlSchemeHandler,
   refreshDesktopDatabase,
   setDefaultUrlSchemeHandler,
 } from "./common";
+import { escapeDesktopExecFilePath, escapeDesktopFilePath } from "./desktopFileEscaping";
 
 const NXM_PROTOCOL = "nxm";
 const PACKAGE_DESKTOP_ID = "com.nexusmods.vortex.desktop";
@@ -132,10 +130,7 @@ function escapeShellScriptArgument(input: string): string {
  * The desktop-entry escaping rules are applied separately to Exec/TryExec fields.
  * Vortex adds `appPath` because Electron launches as: <electron> <appPath> ...
  */
-function generateWrapperScript(
-  executablePath: string,
-  appPath: string,
-): string {
+function generateWrapperScript(executablePath: string, appPath: string): string {
   // Persist GTK/Electron environment variables used to run Vortex.
   // This is needed for Nix, such that you can launch the desktop entry outside
   // of the Nix devShell during development. For other environments, this will
@@ -182,11 +177,7 @@ function generateWrapperScript(
   );
 }
 
-function writeFileIfChanged(
-  filePath: string,
-  content: string,
-  mode?: number,
-): boolean {
+function writeFileIfChanged(filePath: string, content: string, mode?: number): boolean {
   let changed = true;
 
   try {
@@ -256,11 +247,7 @@ function ensureDevDesktopEntry(
     "StartupNotify=true\n" +
     "Keywords=mod;mods;modding;nexus;games;skyrim;fallout;\n";
 
-  const desktopChanged = writeFileIfChanged(
-    desktopFilePath,
-    desktopFileContent,
-    0o755,
-  );
+  const desktopChanged = writeFileIfChanged(desktopFilePath, desktopFileContent, 0o755);
 
   return wrapperChanged || desktopChanged;
 }

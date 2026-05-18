@@ -5,10 +5,23 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "playwright test",
-    "test:headed": "playwright test --headed",
-    "test:debug": "playwright test --debug",
-    "test:report": "playwright show-report"
+    "test": "pnpm playwright test",
+    "test:headed": "pnpm playwright test --headed",
+    "test:debug": "pnpm playwright test --debug",
+    "test:report": "pnpm playwright show-report"
+  },
+  "nx": {
+    "targets": {
+      "test*": {
+        "cache": false,
+        "dependsOn": [
+          {
+            "target": "build",
+            "projects": "@vortex/main"
+          }
+        ]
+      }
+    }
   },
   "devDependencies": {
     "@playwright/test": "catalog:",

@@ -1,14 +1,13 @@
-import HighlightButton from "./views/HighlightButton";
-import TextareaNotes from "./views/TextareaNotes";
+import * as path from "path";
+
+import * as React from "react";
+import { selectors, tooltip, types, util } from "vortex-api";
 
 import { setSelectedMods } from "./actions/session";
 import { sessionReducer } from "./reducers/session";
-
+import HighlightButton from "./views/HighlightButton";
 import HighlightIconBar from "./views/HighlightIconBar";
-
-import * as path from "path";
-import * as React from "react";
-import { selectors, tooltip, types, util } from "vortex-api";
+import TextareaNotes from "./views/TextareaNotes";
 
 function init(context: types.IExtensionContext) {
   context.registerReducer(["session", "modhighlight"], sessionReducer);
@@ -38,9 +37,7 @@ function init(context: types.IExtensionContext) {
       const note = util.getSafe(mod.attributes, ["notes"], undefined);
       return (
         <div className="highlight-container">
-          {!!note && note.length > 0 ? (
-            <tooltip.Icon tooltip={note} name="changelog" />
-          ) : null}
+          {!!note && note.length > 0 ? <tooltip.Icon tooltip={note} name="changelog" /> : null}
           <HighlightButton mod={mod} />
         </div>
       );
@@ -66,11 +63,7 @@ function init(context: types.IExtensionContext) {
       const state = context.api.store.getState();
       const profile = selectors.activeProfile(state);
       if (profile !== undefined) {
-        const mods = util.getSafe(
-          state,
-          ["persistent", "mods", profile.gameId],
-          {},
-        );
+        const mods = util.getSafe(state, ["persistent", "mods", profile.gameId], {});
         const selectedMods = Object.keys(mods).filter(
           (key) => instanceIds.includes(key) && mods[key].state === "installed",
         );
@@ -81,10 +74,7 @@ function init(context: types.IExtensionContext) {
   );
 
   context.once(() => {
-    context.api.setStylesheet(
-      "mod-highlight",
-      path.join(__dirname, "mod-highlight.scss"),
-    );
+    context.api.setStylesheet("mod-highlight", path.join(__dirname, "mod-highlight.scss"));
   });
 
   return true;

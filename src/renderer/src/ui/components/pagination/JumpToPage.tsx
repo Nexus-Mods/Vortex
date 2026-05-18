@@ -1,19 +1,17 @@
 import React, { useState, type FormEvent } from "react";
 
-import type { PaginationProps } from "./Pagination";
-
 import { Button } from "../button/Button";
 import { Input } from "../form/input/Input";
+import type { PaginationProps } from "./Pagination";
 
 export const JumpToPage = ({
   currentPage,
   onPaginationUpdate,
   recordsPerPage,
   totalPages,
-}: Pick<
-  PaginationProps,
-  "currentPage" | "onPaginationUpdate" | "recordsPerPage"
-> & { totalPages: number }) => {
+}: Pick<PaginationProps, "currentPage" | "onPaginationUpdate" | "recordsPerPage"> & {
+  totalPages: number;
+}) => {
   const [page, setPage] = useState(currentPage);
   const [prevCurrentPage, setPrevCurrentPage] = useState(currentPage);
 
@@ -39,9 +37,7 @@ export const JumpToPage = ({
       <Input
         aria-label="Jump to page"
         className="nxm-pagination-page-input"
-        errorMessage={
-          !isValid ? `Enter a page between 1 and ${totalPages}` : undefined
-        }
+        errorMessage={!isValid ? `Enter a page between 1 and ${totalPages}` : undefined}
         fieldClassName="w-auto!"
         hideErrors={true}
         hideLabel={true}
@@ -58,13 +54,7 @@ export const JumpToPage = ({
         }}
       />
 
-      <Button
-        aria-disabled={!isValid}
-        buttonType="secondary"
-        filled="weak"
-        size="sm"
-        type="submit"
-      >
+      <Button aria-disabled={!isValid} buttonType="secondary" filled="weak" size="sm" type="submit">
         Go
       </Button>
     </form>

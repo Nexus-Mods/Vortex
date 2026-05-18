@@ -1,9 +1,11 @@
-import { actions, log, selectors, types, util } from "vortex-api";
-import * as path from "path";
 import * as http from "http";
 import { IncomingMessage } from "http";
-import * as semver from "semver";
+import * as path from "path";
 import * as url from "url";
+
+import * as semver from "semver";
+import { actions, log, selectors, types, util } from "vortex-api";
+
 import { IGameSupport } from "./types";
 
 export function checkForUpdate(
@@ -54,9 +56,7 @@ export function checkForUpdate(
               .replace(/\_/g, ".")
               .replace(/([a-z]+)/g, "")
               .replace(/[0]+/g, "0")
-              .replace(/(0)[1-9]/g, (replacement) =>
-                replacement.replace("0", ""),
-              );
+              .replace(/(0)[1-9]/g, (replacement) => replacement.replace("0", ""));
 
             // If it's still not semantic, try coercing it.
             const latestVersion: string = semver.valid(newVersion)
@@ -67,19 +67,11 @@ export function checkForUpdate(
             if (!semver.valid(latestVersion)) {
               return resolve(scriptExtenderVersion);
             }
-            log("debug", "Latest Version script extender", [
-              gameSupport.name,
-              latestVersion,
-            ]);
+            log("debug", "Latest Version script extender", [gameSupport.name, latestVersion]);
 
             // If the version from the website is greater than the installed version, inform the user.
             if (semver.gt(latestVersion, scriptExtenderVersion)) {
-              notifyNewVersion(
-                latestVersion,
-                scriptExtenderVersion,
-                gameSupport,
-                api,
-              );
+              notifyNewVersion(latestVersion, scriptExtenderVersion, gameSupport, api);
             }
 
             return resolve(latestVersion);
@@ -141,10 +133,7 @@ function notifyNewVersion(
   });
 }
 
-export function notifyNotInstalled(
-  gameSupportData: IGameSupport,
-  api: types.IExtensionApi,
-) {
+export function notifyNotInstalled(gameSupportData: IGameSupport, api: types.IExtensionApi) {
   const t = api.translate;
 
   api.sendNotification({
@@ -209,19 +198,13 @@ function dialogActions(
         );
         // Open the script extender site in Vortex.
         api
-          .emitAndAwait(
-            "browse-for-download",
-            gameSupportData.website,
-            instructions,
-          )
+          .emitAndAwait("browse-for-download", gameSupportData.website, instructions)
           .then((result: string[]) => {
             if (!result || !result.length) {
               // If the user clicks outside the window without downloading.
               return Promise.reject(new util.UserCanceled());
             }
-            const downloadUrl = result[0].indexOf("<")
-              ? result[0].split("<")[0]
-              : result[0];
+            const downloadUrl = result[0].indexOf("<") ? result[0].split("<")[0] : result[0];
             const correctFile = downloadUrl.match(gameSupportData.regex);
             if (!!correctFile) {
               const dlInfo = {
@@ -235,10 +218,7 @@ function dialogActions(
                 undefined,
                 (error, id) => {
                   if (error !== null) {
-                    if (
-                      error.name === "AlreadyDownloaded" &&
-                      error.downloadId !== undefined
-                    ) {
+                    if (error.name === "AlreadyDownloaded" && error.downloadId !== undefined) {
                       // if the file was already downloaded then that's fine, just install
                       // that file
                       id = error.downloadId;
@@ -251,91 +231,69 @@ function dialogActions(
                       return Promise.resolve();
                     }
                   }
-                  api.events.emit(
-                    "start-install-download",
-                    id,
-                    true,
-                    async (err, modId) => {
-                      if (err) {
-                        // Error notification gets reported by the event listener
-                        log("error", "Error installing download", err.message);
-                      } else {
-                        // It's safe to assume that if the user chose to download and install
-                        //  the new script extender, he also expects it to be enabled and deployed
-                        //  straight away.
-                        if (activeProfile?.id !== undefined) {
-                          // Disable existing SE mods
-                          const mods = util.getSafe(
-                            api.store.getState(),
-                            ["persistent", "mods", activeProfile.gameId],
-                            {},
+                  api.events.emit("start-install-download", id, true, async (err, modId) => {
+                    if (err) {
+                      // Error notification gets reported by the event listener
+                      log("error", "Error installing download", err.message);
+                    } else {
+                      // It's safe to assume that if the user chose to download and install
+                      //  the new script extender, he also expects it to be enabled and deployed
+                      //  straight away.
+                      if (activeProfile?.id !== undefined) {
+                        // Disable existing SE mods
+                        const mods = util.getSafe(
+                          api.store.getState(),
+                          ["persistent", "mods", activeProfile.gameId],
+                          {},
+                        );
+
+                        const modArray = Object.keys(mods).map((k) => mods[k]);
+                        const scriptExtenders = modArray.filter((mod) => {
+                          const isScriptExtender = util.getSafe(
+                            mod,
+                            ["attributes", "scriptExtender"],
+                            false,
                           );
 
-                          const modArray = Object.keys(mods).map(
-                            (k) => mods[k],
+                          const isEnabled = util.getSafe(
+                            activeProfile,
+                            ["modState", mod.id, "enabled"],
+                            false,
                           );
-                          const scriptExtenders = modArray.filter((mod) => {
-                            const isScriptExtender = util.getSafe(
-                              mod,
-                              ["attributes", "scriptExtender"],
-                              false,
-                            );
 
-                            const isEnabled = util.getSafe(
-                              activeProfile,
-                              ["modState", mod.id, "enabled"],
-                              false,
-                            );
-
-                            return isScriptExtender && isEnabled;
-                          });
-                          // Disable any other copies of the script extender
-                          scriptExtenders.forEach((se) =>
-                            api.store.dispatch(
-                              actions.setModEnabled(
-                                activeProfile.id,
-                                se.id,
-                                false,
-                              ),
-                            ),
-                          );
-                          // Enable the new script extender mod
-                          api.store.dispatch(
-                            actions.setModEnabled(
-                              activeProfile.id,
-                              modId,
-                              true,
-                            ),
-                          );
-                          // Force-deploy the xSE files
-                          await api.emitAndAwait(
-                            "deploy-single-mod",
-                            activeProfile.gameId,
-                            modId,
-                            true,
-                          );
-                          // Refresh the tools dashlet (does this actually work?)
-                          await api.emitAndAwait(
-                            "discover-tools",
-                            activeProfile.gameId,
-                          );
-                          // Set the xSE tool as primary.
-                          api.store.dispatch({
-                            type: "SET_PRIMARY_TOOL",
-                            payload: {
-                              gameId: activeProfile.gameId,
-                              toolId: gameSupportData.toolId,
-                            },
-                          });
-                          // api.store.dispatch(
-                          //   actions.setDeploymentNecessary(activeProfile.gameId, true)
-                          // );
-                        }
+                          return isScriptExtender && isEnabled;
+                        });
+                        // Disable any other copies of the script extender
+                        scriptExtenders.forEach((se) =>
+                          api.store.dispatch(actions.setModEnabled(activeProfile.id, se.id, false)),
+                        );
+                        // Enable the new script extender mod
+                        api.store.dispatch(actions.setModEnabled(activeProfile.id, modId, true));
+                        // Force-deploy the xSE files
+                        await api.emitAndAwait(
+                          "deploy-single-mod",
+                          activeProfile.gameId,
+                          modId,
+                          true,
+                        );
+                        // Refresh the tools dashlet (does this actually work?)
+                        await api.emitAndAwait("discover-tools", activeProfile.gameId);
+                        // Set the xSE tool as primary.
+                        api.store.dispatch({
+                          type: "SET_PRIMARY_TOOL",
+                          payload: {
+                            gameId: activeProfile.gameId,
+                            toolId: gameSupportData.toolId,
+                          },
+                        });
+                        // api.store.dispatch(
+                        //   actions.setDeploymentNecessary(activeProfile.gameId, true)
+                        // );
                       }
-                      dismiss();
-                      return Promise.resolve();
-                    },
-                  );
+                    }
+                    dismiss();
+                    return Promise.resolve();
+                  });
                 },
                 "never",
                 { allowInstall: false },
@@ -347,9 +305,7 @@ function dialogActions(
                 title: t("Script Extender Mismatch - {{file}}", {
                   replace: { file: path.basename(downloadUrl) },
                 }),
-                message: t(
-                  "Looks like you selected the wrong file. Please try again.",
-                ),
+                message: t("Looks like you selected the wrong file. Please try again."),
               });
             }
           })

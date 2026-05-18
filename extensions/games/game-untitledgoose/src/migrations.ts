@@ -1,10 +1,11 @@
 // import { runPatcher } from 'harmony-patcher';
-import path from 'path';
-import semver from 'semver';
-import { fs } from 'vortex-api';
+import path from "path";
 
-import { DATAPATH, ENTRY_POINT, GAME_ID } from './statics';
-import { getDiscoveryPath } from './util';
+import semver from "semver";
+import { fs } from "vortex-api";
+
+import { DATAPATH, ENTRY_POINT, GAME_ID } from "./statics";
+import { getDiscoveryPath } from "./util";
 
 /*
 export function migrate010(context, oldVersion) {
@@ -31,7 +32,7 @@ export function migrate010(context, oldVersion) {
 */
 
 export function migrate020(context, oldVersion) {
-  if (semver.gte(oldVersion, '0.2.0')) {
+  if (semver.gte(oldVersion, "0.2.0")) {
     return Promise.resolve();
   }
 
@@ -41,9 +42,10 @@ export function migrate020(context, oldVersion) {
     //  User might not own the game.
     return Promise.resolve();
   }
-  const modsPath = path.join(discoveryPath, DATAPATH, 'VortexMods');
+  const modsPath = path.join(discoveryPath, DATAPATH, "VortexMods");
 
-  return context.api.awaitUI()
+  return context.api
+    .awaitUI()
     .then(() => fs.ensureDirWritableAsync(modsPath))
-    .then(() => context.api.emitAndAwait('purge-mods-in-path', GAME_ID, '', modsPath));
+    .then(() => context.api.emitAndAwait("purge-mods-in-path", GAME_ID, "", modsPath));
 }

@@ -1,0 +1,29 @@
+{
+  "v103": {
+    "version": 103,
+    "files": {
+      "meshes\\weapons\\sword.nif": "FAKE_NIF_sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data ",
+      "meshes\\weapons\\shield.nif": "FAKE_NIF_shield mesh triangle data shield mesh triangle data shield mesh triangle data shield mesh triangle data shield mesh triangle data shield mesh triangle data shield mesh triangle data shield mesh triangle data shield mesh triangle data shield mesh triangle data shield mesh triangle data shield mesh triangle data shield mesh triangle data shield mesh triangle data shield mesh triangle data ",
+      "textures\\armor\\iron.dds": "FAKE_DDS_iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data ",
+      "scripts\\quest\\main.pex": "FAKE_PEX_compiled papyrus bytecode data"
+    }
+  },
+  "v104": {
+    "version": 104,
+    "files": {
+      "meshes\\weapons\\sword.nif": "FAKE_NIF_sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data ",
+      "meshes\\weapons\\shield.nif": "FAKE_NIF_shield mesh triangle data shield mesh triangle data shield mesh triangle data shield mesh triangle data shield mesh triangle data shield mesh triangle data shield mesh triangle data shield mesh triangle data shield mesh triangle data shield mesh triangle data shield mesh triangle data shield mesh triangle data shield mesh triangle data shield mesh triangle data shield mesh triangle data ",
+      "textures\\armor\\iron.dds": "FAKE_DDS_iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data ",
+      "scripts\\quest\\main.pex": "FAKE_PEX_compiled papyrus bytecode data"
+    }
+  },
+  "v105": {
+    "version": 105,
+    "files": {
+      "meshes\\weapons\\sword.nif": "FAKE_NIF_sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data sword mesh vertex data ",
+      "meshes\\weapons\\shield.nif": "FAKE_NIF_shield mesh triangle data shield mesh triangle data shield mesh triangle data shield mesh triangle data shield mesh triangle data shield mesh triangle data shield mesh triangle data shield mesh triangle data shield mesh triangle data shield mesh triangle data shield mesh triangle data shield mesh triangle data shield mesh triangle data shield mesh triangle data shield mesh triangle data ",
+      "textures\\armor\\iron.dds": "FAKE_DDS_iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data iron texture pixel data ",
+      "scripts\\quest\\main.pex": "FAKE_PEX_compiled papyrus bytecode data"
+    }
+  }
+}

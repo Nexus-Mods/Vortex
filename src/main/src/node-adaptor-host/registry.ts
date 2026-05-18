@@ -1,4 +1,4 @@
-import type { IAdaptorManifest, PID, URI } from "@vortex/adaptor-api";
+import type { IAdaptorManifest, PID, URI } from "@nexusmods/adaptor-api";
 
 // --- Name Service (URI → PID resolution) ---
 

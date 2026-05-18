@@ -1,5 +1,4 @@
-import type { RedownloadMode } from "../DownloadManager";
-import type { IChunk } from "./IChunk";
+export type RedownloadMode = "always" | "never" | "ask" | "replace";
 
 export type DownloadState =
   | "init"
@@ -185,11 +184,6 @@ export interface IDownload {
    * number of bytes hashed during finalizing
    */
   verified: number;
-
-  /**
-   * for paused downloads, this contains the list segments that are still missing
-   */
-  chunks?: IChunk[];
 
   /**
    * whether the download server supports resuming downloads

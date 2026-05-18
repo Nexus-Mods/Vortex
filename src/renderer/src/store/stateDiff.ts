@@ -48,13 +48,22 @@ export function computeStateDiff<T>(
       const currentPath = [...path, key];
 
       if (newState[key] === undefined) {
-        // Key was removed - collect all remove operations for this subtree
-        operations.push(...collectRemoveOperations(currentPath, oldState[key]));
+        // Key was removed. Emit a remove at the container path first - the
+        // persistence layer treats removes as subtree removals (key + any
+        // descendants), so this single op handles the case where the value
+        // was stored as a JSON blob at the intermediate path (non-plain
+        // objects, e.g. Date or Error instances, take that branch in
+        // collectSetOperations and end up as one row at currentPath).
+        // For object subtrees, also emit leaf removes as a fallback for
+        // exact-match persistors (tests, mocks). For primitives the
+        // container-path remove already covers it.
+        operations.push({ type: "remove", path: currentPath });
+        if (isObject(oldState[key])) {
+          operations.push(...collectRemoveOperations(currentPath, oldState[key]));
+        }
       } else if (oldState[key] !== newState[key]) {
         // Key exists in both but value changed - recurse
-        operations.push(
-          ...computeStateDiff(oldState[key], newState[key], currentPath),
-        );
+        operations.push(...computeStateDiff(oldState[key], newState[key], currentPath));
       }
       // If oldState[key] === newState[key], no operation needed
     }
@@ -79,13 +88,13 @@ export function computeStateDiff<T>(
         operations.push({ type: "set", path, value: newState });
       }
     } else {
-      // Value was removed
+      // Value was removed. Always emit a remove at this path (see the
+      // object-key removal branch above for why the container-path remove
+      // matters under prefix-delete). For object subtrees, also emit the
+      // leaf removes as a fallback for exact-match persistors.
+      operations.push({ type: "remove", path });
       if (isObject(oldState)) {
-        // Old value was an object - remove all its leaf values
         operations.push(...collectRemoveOperations(path, oldState));
-      } else {
-        // Old value was a primitive
-        operations.push({ type: "remove", path });
       }
     }
   }
@@ -118,10 +127,7 @@ function collectSetOperations(path: string[], state: unknown): DiffOperation[] {
  * Collect all remove operations needed to clear an entire state subtree.
  * Recursively traverses objects to find all leaf values.
  */
-function collectRemoveOperations(
-  path: string[],
-  state: unknown,
-): DiffOperation[] {
+function collectRemoveOperations(path: string[], state: unknown): DiffOperation[] {
   if (isObject(state)) {
     const operations: DiffOperation[] = [];
     for (const key of Object.keys(state)) {

@@ -4,11 +4,10 @@ import { Button } from "react-bootstrap";
 import * as ReactDOM from "react-dom";
 import ReactMarkdown from "react-markdown";
 
-import type { IOverlay, IPosition } from "../../types/IState";
-
 import { tooltip } from "../../controls/api";
 import FlexLayout from "../../controls/FlexLayout";
 import Icon from "../../controls/Icon";
+import type { IOverlay, IPosition } from "../../types/IState";
 import { type TFunction } from "../../util/i18n";
 import { MainContext } from "../../views/api";
 import { getOverlayComponent } from "./index";
@@ -69,11 +68,7 @@ function InstructionsOverlay(props: IInstructionsOverlayProps) {
   const applyPos = React.useCallback(
     (posIn: IPosition) => {
       if (ref.current !== null) {
-        posIn.x = clamp(
-          posIn.x,
-          BORDER,
-          container.clientWidth - ref.current.clientWidth - BORDER,
-        );
+        posIn.x = clamp(posIn.x, BORDER, container.clientWidth - ref.current.clientWidth - BORDER);
         posIn.y = clamp(
           posIn.y,
           BORDER,
@@ -165,7 +160,11 @@ function InstructionsOverlay(props: IInstructionsOverlayProps) {
   };
 
   return ReactDOM.createPortal(
-    <div className={className} ref={ref} style={{ left: pos.x, top: pos.y, height: open ? undefined : "auto" }}>
+    <div
+      className={className}
+      ref={ref}
+      style={{ left: pos.x, top: pos.y, height: open ? undefined : "auto" }}
+    >
       <FlexLayout type="column">
         <FlexLayout.Fixed>
           <FlexLayout className="instructions-overlay-header" type="row">
@@ -211,9 +210,7 @@ function InstructionsOverlay(props: IInstructionsOverlayProps) {
             (() => {
               if (overlay.componentId) {
                 // Handle component rendering
-                const registeredComponent = getOverlayComponent(
-                  overlay.componentId,
-                );
+                const registeredComponent = getOverlayComponent(overlay.componentId);
                 if (registeredComponent) {
                   let componentProps = overlayComponentProps;
                   if (overlay.options?.props) {
@@ -230,10 +227,7 @@ function InstructionsOverlay(props: IInstructionsOverlayProps) {
                       };
                     }
                   }
-                  return React.createElement(
-                    registeredComponent,
-                    componentProps,
-                  );
+                  return React.createElement(registeredComponent, componentProps);
                 } else {
                   return (
                     <div className="instructions-overlay-error">
@@ -255,11 +249,7 @@ function InstructionsOverlay(props: IInstructionsOverlayProps) {
                   </ReactMarkdown>
                 );
               }
-              return (
-                <div className="instructions-overlay-error">
-                  No content provided
-                </div>
-              );
+              return <div className="instructions-overlay-error">No content provided</div>;
             })()
           ) : (
             <div className="instructions-overlay-error">Overlay closed</div>

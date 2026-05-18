@@ -1,8 +1,7 @@
-import type { IMethodMessage, MessageId, PID } from "@vortex/adaptor-api";
-import type { StorePathSnapshot } from "@vortex/adaptor-api/stores/lib";
-
-import { messageId, pid } from "@vortex/adaptor-api";
-import { createStorePathProvider } from "@vortex/adaptor-api/stores/lib";
+import type { IMethodMessage, MessageId, PID } from "@nexusmods/adaptor-api";
+import type { StorePathSnapshot } from "@nexusmods/adaptor-api";
+import { messageId, pid } from "@nexusmods/adaptor-api";
+import { createStorePathProvider } from "@nexusmods/adaptor-api";
 
 /**
  * Creates a closure-based PID allocator. Each call returns a unique PID.
@@ -28,10 +27,7 @@ export type SendFn = (msg: IMethodMessage) => Promise<unknown>;
  * IMethodMessage objects dispatched via the given send function.
  * Returns undefined for `then` so `await proxy` does not trigger thenable unwrapping.
  */
-export function createServiceProxy<T extends object>(
-  uri: string,
-  send: SendFn,
-): T {
+export function createServiceProxy<T extends object>(uri: string, send: SendFn): T {
   return new Proxy({} as T, {
     get(_target, prop) {
       if (typeof prop === "symbol" || prop === "then" || prop === "toJSON") {
@@ -65,9 +61,7 @@ function isSnapshotLike(arg: unknown): arg is StorePathSnapshot {
  * directly, without needing to call `createStorePathProvider` themselves.
  */
 function transformArgs(args: unknown[]): unknown[] {
-  return args.map((arg) =>
-    isSnapshotLike(arg) ? createStorePathProvider(arg) : arg,
-  );
+  return args.map((arg) => (isSnapshotLike(arg) ? createStorePathProvider(arg) : arg));
 }
 
 /**
@@ -85,10 +79,16 @@ export function createMethodDispatcher(
   return (msg: IMethodMessage) => {
     const fn = instance[msg.method];
     if (typeof fn !== "function") {
-      throw new Error(`No method "${msg.method}" on service ${uri}`);
+      return Promise.reject(new Error(`No method "${msg.method}" on service ${uri}`));
     }
 
-    const res = fn.apply(instance, transformArgs(msg.args));
-    return Promise.resolve(res as unknown);
+    try {
+      const res = fn.apply(instance, transformArgs(msg.args));
+      return Promise.resolve(res as unknown);
+    } catch (err) {
+      const wrapped =
+        err instanceof Error ? err : new Error(typeof err === "string" ? err : "Non-Error throw");
+      return Promise.reject(wrapped);
+    }
   };
 }

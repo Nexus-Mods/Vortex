@@ -1,12 +1,11 @@
 import * as path from "path";
+
 import { types, util } from "vortex-api";
+
 import supportData from "./gameSupport";
 import { getScriptExtenderVersion } from "./util";
 
-function testSupported(
-  files: string[],
-  gameId: string,
-): Promise<types.ISupportedResult> {
+function testSupported(files: string[], gameId: string): Promise<types.ISupportedResult> {
   return new Promise((resolve, reject) => {
     if (!supportData[gameId]) {
       return resolve({ supported: false, requiredFiles: [] });
@@ -26,13 +25,10 @@ async function installScriptExtender(
   // Install the script extender.
   const gameData = supportData[gameId];
   const scriptExtender = files.find(
-    (file) =>
-      path.basename(file).toLowerCase() === gameData.scriptExtExe.toLowerCase(),
+    (file) => path.basename(file).toLowerCase() === gameData.scriptExtExe.toLowerCase(),
   );
   if (!scriptExtender)
-    throw new util.DataInvalid(
-      `Could not locate ${gameData.scriptExtExe} in the mod archive.`,
-    );
+    throw new util.DataInvalid(`Could not locate ${gameData.scriptExtExe} in the mod archive.`);
   const idx = scriptExtender.indexOf(path.basename(scriptExtender));
   const rootPath = path.dirname(scriptExtender);
 

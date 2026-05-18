@@ -61,6 +61,12 @@ corepack install
 pnpm install
 ```
 
+6. Install the git pre-commit hook for auto-formatting:
+
+```bash
+pnpm run prepare
+```
+
 ## Verify Setup
 
 ```bash

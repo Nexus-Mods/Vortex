@@ -3,10 +3,8 @@ import memoize from "memoize-one";
 import * as React from "react";
 import { ControlLabel, ListGroup, ListGroupItem } from "react-bootstrap";
 import { ComponentEx, Toggle, types, util } from "vortex-api";
-import {
-  ICollectionModRule,
-  ICollectionModRuleEx,
-} from "../../types/ICollection";
+
+import { ICollectionModRule, ICollectionModRuleEx } from "../../types/ICollection";
 import { renderReference, ruleId } from "../../util/util";
 
 export interface IModsPageProps {
@@ -23,9 +21,8 @@ class ModRulesPage extends ComponentEx<IProps, {}> {
   private mAugmentedRules = memoize((rules: ICollectionModRule[]) =>
     rules.map((rule) => this.augmentRule(rule)),
   );
-  private mFilteredRules = memoize(
-    (collection: types.IMod, rules: ICollectionModRuleEx[]) =>
-      rules.filter((rule) => !util.testModReference(collection, rule.source)),
+  private mFilteredRules = memoize((collection: types.IMod, rules: ICollectionModRuleEx[]) =>
+    rules.filter((rule) => !util.testModReference(collection, rule.source)),
   );
 
   public shouldComponentUpdate(nextProps: IProps) {
@@ -106,11 +103,7 @@ class ModRulesPage extends ComponentEx<IProps, {}> {
     return lhs.sourceName.localeCompare(rhs.sourceName);
   };
 
-  private renderRule(
-    rule: ICollectionModRuleEx,
-    idx: number,
-    separator: boolean,
-  ): JSX.Element {
+  private renderRule(rule: ICollectionModRuleEx, idx: number, separator: boolean): JSX.Element {
     const { collection } = this.props;
 
     const id = ruleId(rule);

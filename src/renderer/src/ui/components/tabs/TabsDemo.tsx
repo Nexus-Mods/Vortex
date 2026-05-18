@@ -23,8 +23,8 @@ export const TabsDemo = () => {
         </Typography>
 
         <Typography appearance="subdued">
-          A tabbed interface system with context-based state management,
-          keyboard navigation, and accessibility support.
+          A tabbed interface system with context-based state management, keyboard navigation, and
+          accessibility support.
         </Typography>
       </div>
 
@@ -33,11 +33,7 @@ export const TabsDemo = () => {
           Primary Tabs
         </Typography>
 
-        <TabProvider
-          tab={selectedTab1}
-          tabListId="demo-tabs"
-          onSetSelectedTab={setSelectedTab1}
-        >
+        <TabProvider tab={selectedTab1} tabListId="demo-tabs" onSetSelectedTab={setSelectedTab1}>
           <TabBar>
             <TabButton name="Overview" />
 
@@ -55,10 +51,7 @@ export const TabsDemo = () => {
               <Typography appearance="subdued" as="div" className="space-y-4">
                 <p className="font-semibold">Overview Tab Content</p>
 
-                <p>
-                  This is the overview panel. Click other tabs to see different
-                  content.
-                </p>
+                <p>This is the overview panel. Click other tabs to see different content.</p>
               </Typography>
             </TabPanel>
 
@@ -66,23 +59,15 @@ export const TabsDemo = () => {
               <Typography appearance="subdued" as="div" className="space-y-4">
                 <p className="font-semibold">Files Tab Content (42 files)</p>
 
-                <p>
-                  Notice the count badge showing 42 files. This tab demonstrates
-                  count badges.
-                </p>
+                <p>Notice the count badge showing 42 files. This tab demonstrates count badges.</p>
               </Typography>
             </TabPanel>
 
             <TabPanel name="Comments">
               <Typography appearance="subdued" as="div" className="space-y-4">
-                <p className="font-semibold">
-                  Comments Tab Content (156 comments)
-                </p>
+                <p className="font-semibold">Comments Tab Content (156 comments)</p>
 
-                <p>
-                  The count badge uses the numeral library for proper formatting
-                  (e.g., 1,234).
-                </p>
+                <p>The count badge uses the numeral library for proper formatting (e.g., 1,234).</p>
               </Typography>
             </TabPanel>
 
@@ -131,10 +116,7 @@ export const TabsDemo = () => {
               <Typography appearance="subdued" as="div" className="space-y-4">
                 <p className="font-semibold">Overview Tab Content</p>
 
-                <p>
-                  This is the overview panel. Click other tabs to see different
-                  content.
-                </p>
+                <p>This is the overview panel. Click other tabs to see different content.</p>
               </Typography>
             </TabPanel>
 
@@ -142,23 +124,15 @@ export const TabsDemo = () => {
               <Typography appearance="subdued" as="div" className="space-y-4">
                 <p className="font-semibold">Files Tab Content (42 files)</p>
 
-                <p>
-                  Notice the count badge showing 42 files. This tab demonstrates
-                  count badges.
-                </p>
+                <p>Notice the count badge showing 42 files. This tab demonstrates count badges.</p>
               </Typography>
             </TabPanel>
 
             <TabPanel name="Comments">
               <Typography appearance="subdued" as="div" className="space-y-4">
-                <p className="font-semibold">
-                  Comments Tab Content (156 comments)
-                </p>
+                <p className="font-semibold">Comments Tab Content (156 comments)</p>
 
-                <p>
-                  The count badge uses the numeral library for proper formatting
-                  (e.g., 1,234).
-                </p>
+                <p>The count badge uses the numeral library for proper formatting (e.g., 1,234).</p>
               </Typography>
             </TabPanel>
 
@@ -184,14 +158,9 @@ export const TabsDemo = () => {
           Keyboard Navigation
         </Typography>
 
-        <Typography
-          appearance="subdued"
-          as="ul"
-          className="list-inside list-disc space-y-2"
-        >
+        <Typography appearance="subdued" as="ul" className="list-inside list-disc space-y-2">
           <li>
-            <span className="font-semibold">Arrow Left/Right:</span> Navigate
-            between tabs
+            <span className="font-semibold">Arrow Left/Right:</span> Navigate between tabs
           </li>
 
           <li>
@@ -203,8 +172,8 @@ export const TabsDemo = () => {
           </li>
 
           <li>
-            <span className="font-semibold">Tab wrapping:</span> Last tab →
-            First tab (and vice versa)
+            <span className="font-semibold">Tab wrapping:</span> Last tab → First tab (and vice
+            versa)
           </li>
         </Typography>
       </div>
@@ -214,11 +183,7 @@ export const TabsDemo = () => {
           Features
         </Typography>
 
-        <Typography
-          appearance="subdued"
-          as="ul"
-          className="list-inside list-disc space-y-2"
-        >
+        <Typography appearance="subdued" as="ul" className="list-inside list-disc space-y-2">
           <li>Context-based state management with TabProvider</li>
 
           <li>Primary and secondary tab styles</li>

@@ -1,35 +1,150 @@
 {
   "$schema": "https://www.schemastore.org/package.json",
   "name": "@vortex/main",
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0-only",
   "version": "1.0.0",
   "private": true,
   "type": "commonjs",
-  "main": "out/main.cjs",
+  "main": "build/main.cjs",
   "scripts": {
-    "start": "pnpm cross-env NODE_ENV=development pnpm electron .",
-    "build": "pnpm cross-env NODE_ENV=development node ./build.mjs",
-    "dist": "pnpm cross-env NODE_ENV=production node ./build.mjs",
+    "start": "pnpm electron .",
+    "postinstall": "pnpm exec electron-rebuild",
+    "build": "node ./build.mjs",
     "typecheck": "pnpm tsc",
-    "lint": "pnpm eslint --concurrency auto .",
-    "lint:quiet": "pnpm eslint --concurrency auto --quiet .",
+    "lint": "pnpm eslint --quiet --concurrency auto .",
+    "lint:verbose": "pnpm eslint --concurrency auto .",
     "test": "pnpm vitest run --config ./vitest.config.ts",
     "test:downloader": "pnpm vitest run --config ./vitest.downloader.config.ts",
     "test:adaptor": "pnpm vitest run --config ./vitest.integration.config.ts",
-    "package": "node ./prepare-dist-package.mjs && pnpm install --dir=./dist && pnpm electron-builder --config ./electron-builder.config.json --config.win.forceCodeSigning=true --config.win.sign=./sign.cjs --publish never",
-    "package:nosign": "node ./prepare-dist-package.mjs && pnpm install --dir=./dist && pnpm electron-builder --config ./electron-builder.config.json --publish never",
-    "prepare:win": "curl -L \"https://aka.ms/vs/17/release/vc_redist.x64.exe\" -o \"./build/VC_redist.x64.exe\" --create-dirs && curl -L \"https://aka.ms/dotnet/9.0/windowsdesktop-runtime-win-x64.exe\" -o \"./build/windowsdesktop-runtime-win-x64.exe\" --create-dirs"
+    "publish": "pnpm exec rimraf ./dist && pnpm cross-env pnpm_config_inject_workspace_packages=true pnpm_config_node_linker=hoisted pnpm -F @vortex/main deploy ./dist && node ./dist/prepare-dist-package.mjs",
+    "package": "cd ./dist && pnpm electron-builder --config ./electron-builder.config.json --config.win.forceCodeSigning=true --config.win.sign=./sign.cjs --publish never",
+    "package:nosign": "cd ./dist && pnpm electron-builder --config ./electron-builder.config.json --publish never"
   },
+  "nx": {
+    "targets": {
+      "start": {
+        "continuous": true,
+        "cache": false,
+        "dependsOn": [
+          "build"
+        ]
+      },
+      "build": {
+        "dependsOn": [
+          "copy-assets",
+          "copy-extensions",
+          "^build"
+        ],
+        "cache": false
+      },
+      "publish": {
+        "cache": false,
+        "dependsOn": [
+          "build"
+        ]
+      },
+      "package": {
+        "cache": false,
+        "dependsOn": [
+          "publish"
+        ],
+        "executor": "nx:run-script",
+        "options": {
+          "script": "package"
+        }
+      },
+      "package:nosign": {
+        "cache": false,
+        "dependsOn": [
+          "publish"
+        ],
+        "executor": "nx:run-script",
+        "options": {
+          "script": "package:nosign"
+        }
+      },
+      "copy-assets": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "node ./copy-assets.mjs",
+          "cwd": "{projectRoot}"
+        },
+        "dependsOn": [
+          {
+            "target": "build",
+            "projects": "@vortex/stylesheets"
+          }
+        ],
+        "cache": true,
+        "inputs": [
+          "default",
+          {
+            "dependentTasksOutputFiles": "**/dist/**"
+          },
+          "{projectRoot}/copy-assets.mjs",
+          "{workspaceRoot}/src/stylesheets/**/*.scss",
+          "{workspaceRoot}/src/renderer/src/index.html",
+          "{workspaceRoot}/src/renderer/src/splash.html",
+          "{workspaceRoot}/src/queries/**/*",
+          "{workspaceRoot}/assets/**/*",
+          "{workspaceRoot}/LICENSE.md"
+        ],
+        "outputs": [
+          "{projectRoot}/build/assets/",
+          "{projectRoot}/build/queries/",
+          "{projectRoot}/build/index.html",
+          "{projectRoot}/build/splash.html",
+          "{projectRoot}/build/LICENSE.md",
+          "{projectRoot}/build/modules.json"
+        ]
+      },
+      "copy-extensions": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "node ./copy-extensions.mjs",
+          "cwd": "{projectRoot}"
+        },
+        "dependsOn": [
+          {
+            "target": "build",
+            "projects": "tag:vortex:extension"
+          }
+        ],
+        "cache": true,
+        "inputs": [
+          "default",
+          {
+            "dependentTasksOutputFiles": "**/dist/**"
+          },
+          "{projectRoot}/copy-extensions.mjs"
+        ],
+        "outputs": [
+          "{projectRoot}/build/bundledPlugins/"
+        ]
+      }
+    }
+  },
+  "files": [
+    "./build",
+    "./nsis/",
+    "./electron-builder.config.json",
+    "./prepare-dist-package.mjs",
+    "./sign.cjs"
+  ],
   "dependencies": {
     "@duckdb/node-api": "catalog:",
     "@electron/remote": "catalog:",
     "@headlessui/react": "catalog:",
     "@mdi/js": "catalog:",
     "@msgpack/msgpack": "catalog:",
+    "@nexusmods/adaptor-api": "workspace:*",
     "@nexusmods/fomod-installer-ipc": "catalog:",
     "@nexusmods/fomod-installer-native": "catalog:",
     "@nexusmods/nexus-api": "catalog:",
     "@opentelemetry/api": "catalog:",
     "@opentelemetry/context-async-hooks": "catalog:",
+    "@opentelemetry/context-zone": "catalog:",
     "@opentelemetry/exporter-trace-otlp-http": "catalog:",
     "@opentelemetry/resources": "catalog:",
     "@opentelemetry/sdk-trace-base": "catalog:",
@@ -37,8 +152,6 @@
     "@tailwindcss/cli": "catalog:",
     "@types/bluebird": "catalog:",
     "@types/uuid": "catalog:",
-    "@vortex/adaptor-api": "workspace:*",
-    "@vortex/fs": "workspace:*",
     "bbcode-to-react": "catalog:",
     "big.js": "catalog:",
     "bluebird": "catalog:",
@@ -47,12 +160,10 @@
     "commander": "catalog:",
     "content-disposition": "catalog:",
     "content-type": "catalog:",
-    "crash-dump": "catalog:",
     "d3": "catalog:",
     "date-fns": "catalog:",
     "dayjs": "catalog:",
     "dequal": "catalog:",
-    "diskusage": "catalog:",
     "dnd-core": "catalog:",
     "draggabilly": "catalog:",
     "drivelist": "catalog:",
@@ -60,7 +171,7 @@
     "electron-redux": "catalog:",
     "electron-updater": "catalog:",
     "encoding-down": "catalog:",
-    "exe-version": "catalog:",
+    "exe-version": "workspace:*",
     "feedparser": "catalog:",
     "fs-extra": "catalog:",
     "fuzzball": "catalog:",
@@ -84,7 +195,6 @@
     "minimatch": "catalog:",
     "mixpanel-browser": "catalog:",
     "modmeta-db": "catalog:",
-    "native-errors": "catalog:",
     "node-7z": "catalog:",
     "normalize-url": "catalog:",
     "numeral": "catalog:",
@@ -131,7 +241,6 @@
     "universal-analytics": "catalog:",
     "uuid": "catalog:",
     "vortex-parse-ini": "catalog:",
-    "vortexmt": "catalog:",
     "wholocks": "catalog:",
     "winapi-bindings": "catalog:",
     "winston": "catalog:",
@@ -142,6 +251,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@electron/rebuild": "catalog:",
     "@types/bbcode-to-react": "catalog:",
     "@types/big.js": "catalog:",
     "@types/content-disposition": "catalog:",
@@ -174,6 +284,7 @@
     "@types/write-file-atomic": "catalog:",
     "@types/ws": "catalog:",
     "@types/xml2js": "catalog:",
+    "@vortex/adaptor-cyberpunk2077": "workspace:*",
     "@vortex/shared": "workspace:*",
     "@welldone-software/why-did-you-render": "catalog:",
     "cross-env": "catalog:",

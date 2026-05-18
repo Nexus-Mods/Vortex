@@ -4,18 +4,18 @@
 import { beforeEach, describe, expect, test } from "vitest";
 
 import {
+  archiveFileEntries,
+  linuxInstallDatEntries,
+  smapiInstallerArchiveEntries,
+  walkArchiveEntries,
+} from "./fixtures/archiveListings";
+import {
   SevenZipMock,
   extractFullMock,
   resetVortexApiMocks,
   walkMock,
 } from "./fixtures/vortexApi.mock";
 import { installSMAPI, linuxSMAPIPlatform } from "./index";
-import {
-  archiveFileEntries,
-  linuxInstallDatEntries,
-  smapiInstallerArchiveEntries,
-  walkArchiveEntries,
-} from "./fixtures/archiveListings";
 
 const normalizePathSeparators = (input: string) => input.replace(/\\/g, "/");
 
@@ -34,56 +34,33 @@ describe("installers/smapi installSMAPI (linux)", () => {
         cb: (iter: string, stats: { isFile: () => boolean }) => Promise<void>,
       ) => {
         // Arrange: replay the staged archive contents.
-        await walkArchiveEntries(
-          "/staging",
-          [...files, ...linuxInstallDatEntries],
-          cb,
-        );
+        await walkArchiveEntries("/staging", [...files, ...linuxInstallDatEntries], cb);
       },
     );
 
     // Act: run the Linux install flow.
-    const result = await installSMAPI(
-      () => "/game",
-      files,
-      "/staging",
-      linuxSMAPIPlatform,
-    );
-    const [extractSource, extractDestination] =
-      extractFullMock.mock.lastCall ?? [];
-    const copyInstructions = result.instructions.filter(
-      (instr) => instr.type === "copy",
-    );
+    const result = await installSMAPI(() => "/game", files, "/staging", linuxSMAPIPlatform);
+    const [extractSource, extractDestination] = extractFullMock.mock.lastCall ?? [];
+    const copyInstructions = result.instructions.filter((instr) => instr.type === "copy");
 
     // Assert: extract the Linux payload and emit the right files.
     expect(SevenZipMock).toHaveBeenCalledTimes(1);
-    expect(normalizePathSeparators(extractSource)).toBe(
-      "/staging/internal/linux/install.dat",
-    );
+    expect(normalizePathSeparators(extractSource)).toBe("/staging/internal/linux/install.dat");
     expect(extractDestination).toBe("/staging");
-    expect(copyInstructions).toHaveLength(
-      archiveFileEntries(linuxInstallDatEntries).length,
+    expect(copyInstructions).toHaveLength(archiveFileEntries(linuxInstallDatEntries).length);
+    expect(copyInstructions.some((instr) => instr.source === "StardewModdingAPI")).toBe(true);
+    expect(copyInstructions.some((instr) => instr.source === "smapi-internal/config.json")).toBe(
+      true,
     );
     expect(
-      copyInstructions.some((instr) => instr.source === "StardewModdingAPI"),
-    ).toBe(true);
-    expect(
       copyInstructions.some(
-        (instr) => instr.source === "smapi-internal/config.json",
-      ),
-    ).toBe(true);
-    expect(
-      copyInstructions.some(
-        (instr) =>
-          typeof instr.source === "string" &&
-          instr.source.startsWith("internal/linux/"),
+        (instr) => typeof instr.source === "string" && instr.source.startsWith("internal/linux/"),
       ),
     ).toBe(false);
     expect(
       result.instructions.some(
         (instr) =>
-          instr.type === "generatefile" &&
-          instr.destination === "StardewModdingAPI.deps.json",
+          instr.type === "generatefile" && instr.destination === "StardewModdingAPI.deps.json",
       ),
     ).toBe(true);
   });

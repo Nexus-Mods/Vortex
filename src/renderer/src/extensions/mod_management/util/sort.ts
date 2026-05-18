@@ -1,18 +1,16 @@
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import { log } from "../../../util/log";
-import { getSafe } from "../../../util/storeHelper";
-
-import { downloadPathForGame } from "../../download_management/selectors";
-
-import type { IMod } from "../types/IMod";
-
-import testModReference, { isFuzzyVersion } from "./testModReference";
+import * as path from "path";
 
 import { alg, Graph } from "graphlib";
 import * as _ from "lodash";
 import type { ILookupResult, IReference, IRule } from "modmeta-db";
-import * as path from "path";
+
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import { log } from "../../../util/log";
+import { getSafe } from "../../../util/storeHelper";
+import { downloadPathForGame } from "../../download_management/selectors";
 import { setModAttribute } from "../actions/mods";
+import type { IMod } from "../types/IMod";
+import testModReference, { isFuzzyVersion } from "./testModReference";
 
 export class CycleError extends Error {
   private mCycles: string[][];
@@ -32,9 +30,7 @@ function findByRef(
   source: { gameId: string; modId: string },
 ): IMod {
   const fuzzy = isFuzzyVersion(reference.versionMatch);
-  return mods.find((mod: IMod) =>
-    testModReference(mod, reference, source, fuzzy),
-  );
+  return mods.find((mod: IMod) => testModReference(mod, reference, source, fuzzy));
 }
 
 let sortModsCache: {
@@ -45,20 +41,13 @@ let sortModsCache: {
   sorted: Promise.resolve([]),
 };
 
-function sortMods(
-  gameId: string,
-  mods: IMod[],
-  api: IExtensionApi,
-): Promise<IMod[]> {
+function sortMods(gameId: string, mods: IMod[], api: IExtensionApi): Promise<IMod[]> {
   if (mods.length === 0) {
     // don't flush the cache if the input is empty
     return Promise.resolve([]);
   }
 
-  if (
-    sortModsCache.id.gameId === gameId &&
-    _.isEqual(sortModsCache.id.mods, mods)
-  ) {
+  if (sortModsCache.id.gameId === gameId && _.isEqual(sortModsCache.id.mods, mods)) {
     return sortModsCache.sorted;
   }
 
@@ -82,8 +71,7 @@ function sortMods(
     const state = api.getState();
     const downloadPath = downloadPathForGame(state, downloadGame);
     const fileName = getSafe(mod.attributes, ["fileName"], undefined);
-    const filePath =
-      fileName !== undefined ? path.join(downloadPath, fileName) : undefined;
+    const filePath = fileName !== undefined ? path.join(downloadPath, fileName) : undefined;
     const effectiveGameId = mod.attributes?.downloadGame || gameId;
 
     return api
@@ -96,19 +84,9 @@ function sortMods(
       .catch(() => [])
       .then((metaInfo: ILookupResult[]) => {
         if (metaInfo.length > 0 && mod.attributes.fileMD5 === undefined) {
-          api.store.dispatch(
-            setModAttribute(
-              gameId,
-              mod.id,
-              "fileMD5",
-              metaInfo[0].value.fileMD5,
-            ),
-          );
+          api.store.dispatch(setModAttribute(gameId, mod.id, "fileMD5", metaInfo[0].value.fileMD5));
         }
-        const rules = [].concat(
-          getSafe(metaInfo, [0, "value", "rules"], []),
-          mod.rules || [],
-        );
+        const rules = [].concat(getSafe(metaInfo, [0, "value", "rules"], []), mod.rules || []);
         rules.forEach((rule: IRule) => {
           const ref = findByRef(mods, rule.reference, {
             modId: mod.id,

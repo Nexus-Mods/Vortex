@@ -30,10 +30,7 @@ export function sanitizeProfileName(input: string): string {
 }
 
 /** Returns mod ids tracked by the synthetic config mod attribute payload. */
-export function extractConfigModAttributes(
-  state: types.IState,
-  configModId: string,
-): string[] {
+export function extractConfigModAttributes(state: types.IState, configModId: string): string[] {
   return selectConfigModAttributes(state, configModId);
 }
 
@@ -43,9 +40,7 @@ export function setConfigModAttribute(
   configModId: string,
   attributes: string[],
 ): void {
-  api.store?.dispatch(
-    actions.setModAttribute(GAME_ID, configModId, "configMod", attributes),
-  );
+  api.store?.dispatch(actions.setModAttribute(GAME_ID, configModId, "configMod", attributes));
 }
 
 /** Removes tracked owner ids from the synthetic config mod attribute payload. */
@@ -94,10 +89,7 @@ export async function initializeConfigMod(
   }
 }
 
-function resolveProfile(
-  state: types.IState,
-  profileId?: string,
-): types.IProfile | undefined {
+function resolveProfile(state: types.IState, profileId?: string): types.IProfile | undefined {
   // Runtime events may target non-active profiles; prefer explicit ids when provided.
   return profileId !== undefined
     ? selectors.profileById(state, profileId)
@@ -115,9 +107,7 @@ async function ensureConfigMod(
   const state = api.getState();
   const mods: { [modId: string]: types.IMod } = selectSdvMods(state);
   // There should be only one synthetic config mod per game/profile context.
-  const modInstalled = Object.values(mods).find(
-    (iter) => iter.type === MOD_TYPE_CONFIG,
-  );
+  const modInstalled = Object.values(mods).find((iter) => iter.type === MOD_TYPE_CONFIG);
   if (modInstalled !== undefined) {
     return modInstalled;
   }
@@ -145,9 +135,7 @@ async function createConfigMod(
       logicalFileName: "Stardew Valley Mod Configuration",
       modId: 42,
       version: "1.0.0",
-      variant: sanitizeProfileName(
-        profile.name.replace(RGX_INVALID_CHARS_WINDOWS, "_"),
-      ),
+      variant: sanitizeProfileName(profile.name.replace(RGX_INVALID_CHARS_WINDOWS, "_")),
       installTime: new Date(),
       source: "user-generated",
     },

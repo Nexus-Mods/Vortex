@@ -2,7 +2,6 @@
   // NOTE(erri120): This TSConfig file is only for node scripts and config files used during development
   "$schema": "https://www.schemastore.org/tsconfig.json",
   "include": [
-    "./InstallAssets.mjs",
     "./eslint-rules/*.mjs",
     "./eslint.config.mjs",
     "./scripts/*.mjs",

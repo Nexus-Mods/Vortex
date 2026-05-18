@@ -4,9 +4,7 @@
   "description": "Add mod column indicating the content it contains",
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/icons.svg src/mod-content.scss dist",
-    "_build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
-    "build": "pnpm run _build && node ../copy-extension.mjs out",
-    "dist": "pnpm run _build && node ../copy-extension.mjs dist",
+    "build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
     "typecheck": "pnpm tsc"
   },
   "author": "Black Tree Gaming Ltd.",
@@ -28,5 +26,26 @@
     "redux": "catalog:",
     "turbowalk": "catalog:",
     "vortex-api": "workspace:*"
+  },
+  "nx": {
+    "tags": [
+      "vortex:extension"
+    ],
+    "targets": {
+      "build": {
+        "inputs": [
+          "default",
+          "typescript",
+          "vortex-api"
+        ]
+      },
+      "typecheck": {
+        "inputs": [
+          "default",
+          "typescript",
+          "vortex-api"
+        ]
+      }
+    }
   }
 }

@@ -14,13 +14,10 @@ function ModNameWrapper(props: React.PropsWithChildren<IModNameWrapper>) {
 
   const gameId = useSelector(selectors.activeGameId);
   const filter = useSelector<types.IState, string[]>(
-    (state) =>
-      state.settings.tables["mods"]?.filter?.["dependencies"] ?? emptyArray,
+    (state) => state.settings.tables["mods"]?.filter?.["dependencies"] ?? emptyArray,
   );
   const columnEnabled = useSelector<types.IState, any>(
-    (state) =>
-      state.settings.tables["mods"]?.attributes?.["dependencies"]?.enabled ??
-      false,
+    (state) => state.settings.tables["mods"]?.attributes?.["dependencies"]?.enabled ?? false,
   );
   const mod = useSelector<types.IState, types.IMod>(
     (state) => state.persistent.mods[gameId]?.[rowId],
@@ -49,8 +46,7 @@ function ModNameWrapper(props: React.PropsWithChildren<IModNameWrapper>) {
     util.batchDispatch(store, batch);
   }, [store, rowId]);
 
-  const indent =
-    filter.length >= 2 && filter[0] === "depends" && filter[1] !== rowId;
+  const indent = filter.length >= 2 && filter[0] === "depends" && filter[1] !== rowId;
   const icons = [];
 
   const classes = ["modname-filter-wrapper"];
@@ -58,20 +54,11 @@ function ModNameWrapper(props: React.PropsWithChildren<IModNameWrapper>) {
     classes.push("modname-filter-indented");
 
     icons.push(
-      <Icon
-        key="dependency"
-        name="turn-s"
-        rotate={270}
-        className="filter-dependencies-icon"
-      />,
+      <Icon key="dependency" name="turn-s" rotate={270} className="filter-dependencies-icon" />,
     );
   }
 
-  if (
-    (mod?.rules ?? []).find((iter) =>
-      ["requires", "recommends"].includes(iter.type),
-    )
-  ) {
+  if ((mod?.rules ?? []).find((iter) => ["requires", "recommends"].includes(iter.type))) {
     icons.push(
       <tooltip.IconButton
         key="filter-dependencies"
@@ -84,12 +71,8 @@ function ModNameWrapper(props: React.PropsWithChildren<IModNameWrapper>) {
     );
   }
 
-  return (
-    <div className={classes.join(" ")}>
-      {...icons}
-      {props.children}
-    </div>
-  );
+  return <div className={classes.join(" ")}>{...icons}
+    {props.children}</div>;
 }
 
 export default ModNameWrapper;

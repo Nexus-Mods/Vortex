@@ -40,12 +40,7 @@ class MyOverlay extends React.Component<IProps, { placement: string }> {
 
   public render() {
     const { placement } = this.state;
-    const relayProps: any = _.omit(this.props, [
-      "getBounds",
-      "placement",
-      "onEnter",
-      "triggerRef",
-    ]);
+    const relayProps: any = _.omit(this.props, ["getBounds", "placement", "onEnter", "triggerRef"]);
     return (
       <Overlay
         placement={placement}
@@ -59,21 +54,16 @@ class MyOverlay extends React.Component<IProps, { placement: string }> {
   }
 
   private onEnter = (input: HTMLElement) => {
-    const node =
-      typeof this.props.target === "function"
-        ? this.props.target()
-        : this.props.target;
+    const node = typeof this.props.target === "function" ? this.props.target() : this.props.target;
     if (node) {
       const bounds: ClientRect = this.props.getBounds();
       if (this.props.orientation === "horizontal") {
-        const rightOfMid =
-          node.getBoundingClientRect().left > bounds.left + bounds.width / 2;
+        const rightOfMid = node.getBoundingClientRect().left > bounds.left + bounds.width / 2;
         this.setState({
           placement: rightOfMid ? "left" : "right",
         });
       } else {
-        const belowMid =
-          node.getBoundingClientRect().top > bounds.top + bounds.height / 2;
+        const belowMid = node.getBoundingClientRect().top > bounds.top + bounds.height / 2;
         this.setState({
           placement: belowMid ? "top" : "bottom",
         });

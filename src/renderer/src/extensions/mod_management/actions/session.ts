@@ -1,6 +1,5 @@
 import safeCreateAction from "../../../actions/safeCreateAction";
 import { UserCanceled } from "../../../util/CustomErrors";
-
 import type { IFileChange } from "../types/IDeploymentMethod";
 import type { IFileEntry } from "../types/IFileEntry";
 import { changeToEntry } from "../util/externalChanges";
@@ -30,10 +29,7 @@ export const setDeploymentProblem = safeCreateAction(
  * stores info about files that were changed outside the control of Vortex. The user
  * will be asked how to deal with them
  */
-export const setExternalChanges = safeCreateAction(
-  "SET_EXTERNAL_CHANGES",
-  (entries) => entries,
-);
+export const setExternalChanges = safeCreateAction("SET_EXTERNAL_CHANGES", (entries) => entries);
 
 export const setExternalChangeAction = safeCreateAction(
   "SET_EXTERNAL_CHANGE_ACTION",
@@ -43,27 +39,20 @@ export const setExternalChangeAction = safeCreateAction(
 let curResolve;
 let curReject;
 
-export function showExternalChanges(changes: {
-  [typeId: string]: IFileChange[];
-}) {
+export function showExternalChanges(changes: { [typeId: string]: IFileChange[] }) {
   return (dispatch) =>
     new Promise<IFileEntry[]>((resolve, reject) => {
       curResolve = resolve;
       curReject = reject;
       const entries: IFileEntry[] = [];
       Object.keys(changes).forEach((typeId) => {
-        changes[typeId].forEach((fileChange) =>
-          entries.push(changeToEntry(typeId, fileChange)),
-        );
+        changes[typeId].forEach((fileChange) => entries.push(changeToEntry(typeId, fileChange)));
       });
       dispatch(setExternalChanges(entries));
     });
 }
 
-export function confirmExternalChanges(
-  changes: IFileEntry[],
-  canceled: boolean,
-) {
+export function confirmExternalChanges(changes: IFileEntry[], canceled: boolean) {
   return (dispatch) => {
     if (canceled) {
       if (curReject !== undefined) {

@@ -1,9 +1,8 @@
+import { getErrorMessageOrDefault } from "@vortex/shared";
 /**
  * Creates the manifest-based mod attribute extractor used during installation.
  */
 import * as semver from "semver";
-import { getErrorMessageOrDefault } from "@vortex/shared";
-
 import { log, selectors } from "vortex-api";
 import type { types } from "vortex-api";
 
@@ -21,17 +20,9 @@ import { parseManifest } from "./parseManifest";
  * - `customFileName` (except for SMAPI itself)
  * - `manifestVersion`
  */
-export function createManifestAttributeExtractor(
-  context: types.IExtensionContext,
-) {
-  return async (
-    modInfo: any,
-    modPath: string,
-  ): Promise<{ [key: string]: any }> => {
-    if (
-      selectors.activeGameId(context.api.getState()) !== GAME_ID ||
-      modPath === undefined
-    ) {
+export function createManifestAttributeExtractor(context: types.IExtensionContext) {
+  return async (modInfo: any, modPath: string): Promise<{ [key: string]: any }> => {
+    if (selectors.activeGameId(context.api.getState()) !== GAME_ID || modPath === undefined) {
       return {};
     }
 

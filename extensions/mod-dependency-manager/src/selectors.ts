@@ -1,9 +1,9 @@
-/* eslint-disable */
-import { IModLookupInfo } from "./types/IModLookupInfo";
-
 import * as _ from "lodash";
 import { createSelector } from "reselect";
 import { selectors, types, util } from "vortex-api";
+
+/* eslint-disable */
+import { IModLookupInfo } from "./types/IModLookupInfo";
 
 const allMods = (state: types.IState) => state.persistent.mods;
 
@@ -13,9 +13,8 @@ const currentGameMods = createSelector(
   (inMods, gameId) => inMods[gameId],
 );
 
-export const currentModState = createSelector(
-  selectors.activeProfile,
-  (profile) => (profile ? profile.modState : {}),
+export const currentModState = createSelector(selectors.activeProfile, (profile) =>
+  profile ? profile.modState : {},
 );
 
 let lastLookupInfo: IModLookupInfo[];

@@ -2,20 +2,19 @@
  * top level reducer. This combines all reducers into one
  */
 
-import type { Reducer, ReducersMapObject } from "redux";
+import * as path from "path";
 
 import { unknownToError } from "@vortex/shared";
 import { pick } from "lodash";
-import * as path from "path";
+import type { Reducer, ReducersMapObject } from "redux";
 import { combineReducers } from "redux";
 import { createReducer } from "redux-act";
 import { enableBatching } from "redux-batched-actions";
 
+import { log } from "../logging";
 import type { IExtensionReducer } from "../types/extensions";
 import type { IReducerSpec, IStateVerifier } from "../types/IExtensionContext";
 import type { IState } from "../types/IState";
-
-import { log } from "../logging";
 import { UserCanceled } from "../util/CustomErrors";
 import { verify } from "./verify";
 export { verify, verifyElement } from "./verify";
@@ -24,6 +23,7 @@ import * as fs from "../util/fs";
 import getVortexPath from "../util/getVortexPath";
 import { deleteOrNop, getSafe, rehydrate, setSafe } from "../util/storeHelper";
 import { appReducer } from "./app";
+import { downloadsReducer } from "./downloads";
 import { loReducer } from "./loadOrder";
 import { notificationsReducer } from "./notifications";
 import { notificationSettingsReducer } from "./notificationSettings";
@@ -37,10 +37,7 @@ export const STATE_BACKUP_PATH = "state_backups";
 /**
  * wrapper for combineReducers that doesn't drop unexpected keys
  */
-function safeCombineReducers(
-  reducer: ReducersMapObject,
-  onError: (error: Error) => void,
-) {
+function safeCombineReducers(reducer: ReducersMapObject, onError: (error: Error) => void) {
   const redKeys = Object.keys(reducer);
   const combined = combineReducers<Partial<IState>>(reducer);
   return (state: IState, action): IState => {
@@ -159,10 +156,9 @@ function hydrateRed(
         log("info", "sanitizing application state");
         let backupData;
         if (backupTime !== undefined) {
-          const oldBackup = fs.readFileSync(
-            path.join(backupPath, `backup_${backupTime}.json`),
-            { encoding: "utf-8" },
-          );
+          const oldBackup = fs.readFileSync(path.join(backupPath, `backup_${backupTime}.json`), {
+            encoding: "utf-8",
+          });
           backupData = { ...JSON.parse(oldBackup), ...payload };
         } else {
           backupData = payload;
@@ -191,10 +187,7 @@ function deriveReducer(
 ): Reducer<any> {
   const attributes: string[] = Object.keys(ele);
 
-  if (
-    attributes.indexOf("reducers") !== -1 &&
-    attributes.indexOf("defaults") !== -1
-  ) {
+  if (attributes.indexOf("reducers") !== -1 && attributes.indexOf("defaults") !== -1) {
     let red = ele.reducers;
     if (red["__hydrate"] === undefined) {
       red = {
@@ -203,8 +196,7 @@ function deriveReducer(
           hydrateRed(state, payload, ele, statePath, false, querySanitize),
         ["__hydrate_replace"]: (state, payload) =>
           hydrateRed(state, payload, ele, statePath, true, querySanitize),
-        ["__persist_push"]: (state, payload) =>
-          pushRed(state, payload, statePath),
+        ["__persist_push"]: (state, payload) => pushRed(state, payload, statePath),
       };
     }
     return createReducer(red, ele.defaults);
@@ -251,14 +243,13 @@ function addToTree(tree: any, statePath: string[], spec: IReducerSpec) {
  * @param {IExtensionReducer[]} extensionReducers
  * @returns
  */
-export function buildReducerTree(
-  extensionReducers: IExtensionReducer[],
-): ReducerTree {
+export function buildReducerTree(extensionReducers: IExtensionReducer[]): ReducerTree {
   const tree = {
     user: userReducer,
     app: appReducer,
     persistent: {
       loadOrder: loReducer,
+      downloads: downloadsReducer,
     },
     session: {
       base: sessionReducer,
@@ -285,10 +276,7 @@ interface VerifierSpec {
   defaults: { [key: string]: any };
 }
 
-function collectVerifierSpecs(
-  tree: ReducerTree,
-  statePath: string = "",
-): VerifierSpec[] {
+function collectVerifierSpecs(tree: ReducerTree, statePath: string = ""): VerifierSpec[] {
   const specs: VerifierSpec[] = [];
 
   if ("reducers" in tree && "defaults" in tree) {
@@ -389,16 +377,11 @@ export async function sanitizeHydrationState(
   return hydratedState;
 }
 
-function reducers(
-  extensionReducers: IExtensionReducer[],
-  onError: (err: Error) => void,
-) {
+function reducers(extensionReducers: IExtensionReducer[], onError: (err: Error) => void) {
   const tree = buildReducerTree(extensionReducers);
   // querySanitize is no longer needed — sanitization is handled
   // asynchronously before hydration via sanitizeHydrationState()
-  return enableBatching(
-    deriveReducer("", tree, () => Decision.SANITIZE, onError),
-  );
+  return enableBatching(deriveReducer("", tree, () => Decision.SANITIZE, onError));
 }
 
 export default reducers;

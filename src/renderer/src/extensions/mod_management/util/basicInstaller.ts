@@ -1,7 +1,7 @@
+import * as path from "path";
+
 import type { ProgressDelegate } from "../types/InstallFunc";
 import type { ISupportedResult } from "../types/TestSupported";
-
-import * as path from "path";
 
 export function testSupported(files: string[]): Promise<ISupportedResult> {
   const result: ISupportedResult = { supported: true, requiredFiles: [] };

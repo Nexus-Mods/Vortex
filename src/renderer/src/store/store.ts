@@ -1,10 +1,9 @@
-import type * as Redux from "redux";
-
-import _ from "lodash";
 import * as path from "path";
 
-import type { IState } from "../types/IState";
+import _ from "lodash";
+import type * as Redux from "redux";
 
+import type { IState } from "../types/IState";
 import { DataInvalid } from "../util/CustomErrors";
 import * as fs from "../util/fs";
 import { writeFileAtomic } from "../util/fsAtomic";
@@ -20,12 +19,7 @@ export async function createFullStateBackup(
 ): Promise<string> {
   const before = Date.now();
   // not backing up confidential, session or extension persistors
-  const state = _.pick(store.getState(), [
-    "settings",
-    "persistent",
-    "app",
-    "user",
-  ]);
+  const state = _.pick(store.getState(), ["settings", "persistent", "app", "user"]);
   let serialized: string;
   try {
     serialized = JSON.stringify(state, undefined, 2);
@@ -34,11 +28,7 @@ export async function createFullStateBackup(
     throw new DataInvalid("Failed to create state backup");
   }
 
-  const basePath = path.join(
-    getVortexPath("userData"),
-    "temp",
-    FULL_BACKUP_PATH,
-  );
+  const basePath = path.join(getVortexPath("userData"), "temp", FULL_BACKUP_PATH);
 
   const backupFilePath = path.join(basePath, backupName + ".json");
 

@@ -1,18 +1,16 @@
-import { IconButton } from "../../../controls/TooltipControls";
-import type { IState } from "../../../types/IState";
-import { ComponentEx, translate } from "../../../controls/ComponentEx";
-import { getSafe } from "../../../util/storeHelper";
-import { truthy } from "../../../util/util";
-
-import type { IMod } from "../../mod_management/types/IMod";
-
-import { setModEnabled } from "../actions/profiles";
-import { closeDialog } from "../actions/transferSetup";
-import type { IProfile } from "../types/IProfile";
-
 import * as React from "react";
 import { Button, Checkbox, FormControl, Modal } from "react-bootstrap";
 import { connect } from "react-redux";
+
+import { ComponentEx, translate } from "../../../controls/ComponentEx";
+import { IconButton } from "../../../controls/TooltipControls";
+import type { IState } from "../../../types/IState";
+import { getSafe } from "../../../util/storeHelper";
+import { truthy } from "../../../util/util";
+import type { IMod } from "../../mod_management/types/IMod";
+import { setModEnabled } from "../actions/profiles";
+import { closeDialog } from "../actions/transferSetup";
+import type { IProfile } from "../types/IProfile";
 
 interface IDialog {
   gameId: string;
@@ -130,8 +128,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
 }
 
 function mapStateToProps(state: IState): IConnectedProps {
-  const dialog: IDialog =
-    (state.session as any).profileTransfer.dialog || undefined;
+  const dialog: IDialog = (state.session as any).profileTransfer.dialog || undefined;
   return {
     dialog,
     profiles: state.persistent.profiles,

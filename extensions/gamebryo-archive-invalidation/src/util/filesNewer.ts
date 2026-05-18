@@ -1,5 +1,6 @@
-import Promise from "bluebird";
 import * as path from "path";
+
+import Promise from "bluebird";
 import { fs } from "vortex-api";
 
 /**
@@ -31,9 +32,7 @@ function filesNewer(
       );
     })
     .then((fileStats: Array<{ name: string; stats: fs.Stats }>) =>
-      fileStats
-        .filter((file) => file.stats.mtime > minAge)
-        .map((file) => file.name),
+      fileStats.filter((file) => file.stats.mtime > minAge).map((file) => file.name),
     );
 }
 

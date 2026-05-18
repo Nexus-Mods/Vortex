@@ -1,13 +1,12 @@
-import { PathProviderError, QualifiedPath } from "@vortex/fs";
-
-import {
-  OS,
-  type Base,
-  type LinuxStorePathProvider,
-  type StorePathProvider,
-  type StorePathSnapshot,
-  type WindowsStorePathProvider,
+import { PathProviderError, QualifiedPath } from "../fs/paths";
+import type {
+  Base,
+  LinuxStorePathProvider,
+  StorePathProvider,
+  StorePathSnapshot,
+  WindowsStorePathProvider,
 } from "./providers";
+import { OS } from "./providers";
 
 /**
  * Wraps a {@link StorePathSnapshot} received over IPC into a
@@ -21,13 +20,8 @@ import {
  * adaptors receive the resulting {@link StorePathProvider} directly.
  *
  * @internal */
-export function createStorePathProvider(
-  snapshot: StorePathSnapshot,
-): StorePathProvider {
-  const rebuilt = new Map<
-    (typeof OS)[keyof typeof OS],
-    Map<Base, QualifiedPath>
-  >();
+export function createStorePathProvider(snapshot: StorePathSnapshot): StorePathProvider {
+  const rebuilt = new Map<(typeof OS)[keyof typeof OS], Map<Base, QualifiedPath>>();
   for (const [os, bases] of snapshot.bases) {
     const inner = new Map<Base, QualifiedPath>();
     for (const [base, value] of bases) {
@@ -43,17 +37,13 @@ export function createStorePathProvider(
     const forOS = rebuilt.get(os);
     if (!forOS) {
       return Promise.reject(
-        new PathProviderError(
-          `StorePathProvider has no bases resolved for OS "${os}"`,
-        ),
+        new PathProviderError(`StorePathProvider has no bases resolved for OS "${os}"`),
       );
     }
     const resolved = forOS.get(base);
     if (!resolved) {
       return Promise.reject(
-        new PathProviderError(
-          `StorePathProvider has no "${base}" base for OS "${os}"`,
-        ),
+        new PathProviderError(`StorePathProvider has no "${base}" base for OS "${os}"`),
       );
     }
     return Promise.resolve(resolved);
@@ -89,9 +79,7 @@ function rehydrate(value: QualifiedPath): QualifiedPath {
   // the `.value` property that QualifiedPath.parse accepts.
   const raw = (value as { value?: string }).value;
   if (typeof raw !== "string") {
-    throw new PathProviderError(
-      "StorePathSnapshot contained a non-QualifiedPath value",
-    );
+    throw new PathProviderError("StorePathSnapshot contained a non-QualifiedPath value");
   }
   return QualifiedPath.parse(raw);
 }

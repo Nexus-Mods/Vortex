@@ -1,7 +1,6 @@
 import { mdiAlertCircleOutline, mdiOpenInNew } from "@mdi/js";
 import React, { type PropsWithChildren } from "react";
 
-import { getPreloadApi } from "../../../util/preloadAccess";
 import { joinClasses } from "../../utils/joinClasses";
 import { Button } from "../button/Button";
 import { Icon } from "../icon/Icon";
@@ -34,12 +33,7 @@ export const NoResults = ({
   message?: string;
   title: string;
 }>) => (
-  <div
-    className={joinClasses([
-      "mx-auto flex max-w-lg flex-col items-center gap-y-4",
-      className,
-    ])}
-  >
+  <div className={joinClasses(["mx-auto flex max-w-lg flex-col items-center gap-y-4", className])}>
     <div className="flex flex-col items-center gap-y-2">
       {(!!iconPath || isError) && (
         <Icon
@@ -49,20 +43,11 @@ export const NoResults = ({
         />
       )}
 
-      <Typography
-        appearance="subdued"
-        as="div"
-        className="space-y-2 text-center"
-      >
-        {(!!title || isError) && (
-          <p className="font-semibold">{title ?? "Something went wrong"}</p>
-        )}
+      <Typography appearance="subdued" as="div" className="space-y-2 text-center">
+        {(!!title || isError) && <p className="font-semibold">{title ?? "Something went wrong"}</p>}
 
         {(!!message || isError) && (
-          <p>
-            {message ??
-              "If the issue persists, please contact our support team."}
-          </p>
+          <p>{message ?? "If the issue persists, please contact our support team."}</p>
         )}
       </Typography>
     </div>
@@ -76,9 +61,7 @@ export const NoResults = ({
             leftIconPath={mdiOpenInNew}
             size="sm"
             onClick={() =>
-              getPreloadApi().shell.openUrl(
-                "https://help.nexusmods.com/article/125-contact-us",
-              )
+              window.api.shell.openUrl("https://help.nexusmods.com/article/125-contact-us")
             }
           >
             Contact support

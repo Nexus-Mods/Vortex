@@ -4,11 +4,9 @@
   "description": "Support for Stardew Valley",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist/assets && copyfiles -u 2 -f ./src/ui/sdvstyle.scss dist/ui",
-    "_build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
     "typecheck": "pnpm exec tsc -p tsconfig.json",
     "test": "vitest run --config vitest.config.ts",
-    "build": "pnpm run _build && node ../../copy-extension.mjs out",
-    "dist": "pnpm run _build && node ../../copy-extension.mjs dist"
+    "build": "node build.mjs && pnpm run _assets && pnpm extractInfo"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
@@ -42,5 +40,26 @@
     "typescript": "catalog:",
     "vitest": "catalog:",
     "vortex-api": "workspace:*"
+  },
+  "nx": {
+    "tags": [
+      "vortex:extension"
+    ],
+    "targets": {
+      "build": {
+        "inputs": [
+          "default",
+          "typescript",
+          "vortex-api"
+        ]
+      },
+      "typecheck": {
+        "inputs": [
+          "default",
+          "typescript",
+          "vortex-api"
+        ]
+      }
+    }
   }
 }

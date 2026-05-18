@@ -1,18 +1,17 @@
-/* eslint-disable */
-import { ICollection, ICollectionTool } from "./types/ICollection";
-
-import { findExtensions, IExtensionFeature } from "./util/extension";
-import { parseGameSpecifics } from "./util/gameSupport";
-import { collectionModToRule } from "./util/transformCollection";
-
-import { BUNDLED_PATH, MOD_TYPE } from "./constants";
+import * as path from "path";
 
 import * as _ from "lodash";
-import * as path from "path";
 import { actions, fs, log, selectors, types, util } from "vortex-api";
-import { readCollection } from "./util/importCollection";
+
+import { BUNDLED_PATH, MOD_TYPE } from "./constants";
+/* eslint-disable */
+import { ICollection, ICollectionTool } from "./types/ICollection";
 import { ICollectionConfig } from "./types/ICollectionConfig";
 import { parseConfig } from "./util/collectionConfig";
+import { findExtensions, IExtensionFeature } from "./util/extension";
+import { parseGameSpecifics } from "./util/gameSupport";
+import { readCollection } from "./util/importCollection";
+import { collectionModToRule } from "./util/transformCollection";
 
 /**
  * supported test for use in registerInstaller
@@ -43,23 +42,20 @@ export function makeInstall(api: types.IExtensionApi) {
     );
 
     const config: ICollectionConfig = await parseConfig({ collection, gameId });
-    const configInstructions: types.IInstruction[] = Object.entries(
-      config,
-    ).reduce((accum, [key, value]) => {
-      const instr: types.IInstruction = { type: "attribute", key, value };
-      accum.push(instr);
-      return accum;
-    }, []);
+    const configInstructions: types.IInstruction[] = Object.entries(config).reduce(
+      (accum, [key, value]) => {
+        const instr: types.IInstruction = { type: "attribute", key, value };
+        accum.push(instr);
+        return accum;
+      },
+      [],
+    );
     const filesToCopy = files.filter(
-      (filePath) =>
-        !filePath.endsWith(path.sep) &&
-        filePath.split(path.sep)[0] !== BUNDLED_PATH,
+      (filePath) => !filePath.endsWith(path.sep) && filePath.split(path.sep)[0] !== BUNDLED_PATH,
     );
 
     const bundled = files.filter(
-      (filePath) =>
-        !filePath.endsWith(path.sep) &&
-        filePath.split(path.sep)[0] === BUNDLED_PATH,
+      (filePath) => !filePath.endsWith(path.sep) && filePath.split(path.sep)[0] === BUNDLED_PATH,
     );
 
     const knownGames = selectors.knownGames(api.getState());
@@ -143,9 +139,7 @@ function applyCollectionRules(
           if (!exists && _.isEqual(copy, rule)) {
             exists = true;
           } else {
-            prev.push(
-              actions.removeModRule(gameId, sourceMod.id, exSourceRule),
-            );
+            prev.push(actions.removeModRule(gameId, sourceMod.id, exSourceRule));
           }
         });
         const exDestRules = (destMod.rules ?? []).filter(

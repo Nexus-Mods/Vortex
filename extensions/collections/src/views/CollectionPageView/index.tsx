@@ -1,21 +1,3 @@
-/* eslint-disable */
-import {
-  AUTHOR_UNKNOWN,
-  AVATAR_FALLBACK,
-  INSTALLING_NOTIFICATION_ID,
-} from "../../constants";
-import { testDownloadReference } from "../../util/findModByRef";
-import InstallDriver from "../../util/InstallDriver";
-
-import { IModEx } from "../../types/IModEx";
-import { IStateEx } from "../../types/IStateEx";
-
-import CollectionInstructions from "./CollectionInstructions";
-import CollectionItemStatus from "./CollectionItemStatus";
-import CollectionOverview from "./CollectionOverview";
-import CollectionOverviewSelection from "./CollectionOverviewSelection";
-import CollectionProgress from "./CollectionProgress";
-
 import {
   ICollection,
   ICollectionRevisionMod,
@@ -47,6 +29,18 @@ import {
   types,
   util,
 } from "vortex-api";
+
+/* eslint-disable */
+import { AUTHOR_UNKNOWN, AVATAR_FALLBACK, INSTALLING_NOTIFICATION_ID } from "../../constants";
+import { IModEx } from "../../types/IModEx";
+import { IStateEx } from "../../types/IStateEx";
+import { testDownloadReference } from "../../util/findModByRef";
+import InstallDriver from "../../util/InstallDriver";
+import CollectionInstructions from "./CollectionInstructions";
+import CollectionItemStatus from "./CollectionItemStatus";
+import CollectionOverview from "./CollectionOverview";
+import CollectionOverviewSelection from "./CollectionOverviewSelection";
+import CollectionProgress from "./CollectionProgress";
 
 export interface ICollectionPageProps {
   t: TFunction;
@@ -82,17 +76,9 @@ interface IConnectedProps {
 
 interface IActionProps {
   onSetModEnabled: (profileId: string, modId: string, enable: boolean) => void;
-  onSetAttributeFilter: (
-    tableId: string,
-    filterId: string,
-    filterValue: any,
-  ) => void;
+  onSetAttributeFilter: (tableId: string, filterId: string, filterValue: any) => void;
   onRemoveRule: (gameId: string, modId: string, rule: types.IModRule) => void;
-  onShowError: (
-    message: string,
-    details?: string | Error | any,
-    allowReport?: boolean,
-  ) => void;
+  onShowError: (message: string, details?: string | Error | any, allowReport?: boolean) => void;
   onSuppressVoteResponse: (response: "upvote" | "downvote") => void;
 }
 
@@ -138,10 +124,8 @@ function matchRepo(mod: IModEx, ref: IModFile) {
     return false;
   }
 
-  const modId =
-    mod.attributes?.modId || mod.collectionRule?.reference?.repo?.modId;
-  const fileId =
-    mod.attributes?.fileId || mod.collectionRule?.reference?.repo?.fileId;
+  const modId = mod.attributes?.modId || mod.collectionRule?.reference?.repo?.modId;
+  const fileId = mod.attributes?.fileId || mod.collectionRule?.reference?.repo?.fileId;
 
   if (
     modId === undefined ||
@@ -152,10 +136,7 @@ function matchRepo(mod: IModEx, ref: IModFile) {
     return false;
   }
 
-  return (
-    modId.toString() === ref.modId.toString() &&
-    fileId.toString() === ref.fileId.toString()
-  );
+  return modId.toString() === ref.modId.toString() && fileId.toString() === ref.fileId.toString();
 }
 
 class CollectionPage extends ComponentEx<IProps, IComponentState> {
@@ -195,9 +176,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
           if (isInstallingCollection) {
             return false;
           }
-          const instanceId: string = Array.isArray(instanceIds)
-            ? instanceIds[0]
-            : instanceIds;
+          const instanceId: string = Array.isArray(instanceIds) ? instanceIds[0] : instanceIds;
           const mod = this.state.modsEx[instanceId];
           return [null, "downloaded"].includes(mod.state);
         },
@@ -214,9 +193,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
             return false;
           }
           return typeof instanceId === "string"
-            ? ["downloaded", "installed"].includes(
-              this.state.modsEx[instanceId].state,
-            )
+            ? ["downloaded", "installed"].includes(this.state.modsEx[instanceId].state)
             : true;
         },
         hotKey: { code: 46 },
@@ -257,9 +234,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
         icon: "check-o",
         customRenderer: (mod: IModEx) => {
           const download =
-            mod.archiveId !== undefined
-              ? this.props.downloads[mod.archiveId]
-              : undefined;
+            mod.archiveId !== undefined ? this.props.downloads[mod.archiveId] : undefined;
 
           return (
             <CollectionItemStatus
@@ -337,11 +312,11 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
         calc: (mod) =>
           mod.state !== null
             ? util.renderModReference(mod.collectionRule.reference, mod, {
-              version: false,
-            })
+                version: false,
+              })
             : util.renderModReference(mod.collectionRule.reference, undefined, {
-              version: false,
-            }),
+                version: false,
+              }),
         placement: "table",
         edit: {},
         isToggleable: false,
@@ -358,19 +333,15 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
           const prefer = "+prefer";
           let verString =
             (mod.state !== null
-              ? (mod.attributes.version ??
-                mod.collectionRule.reference.versionMatch)
+              ? (mod.attributes.version ?? mod.collectionRule.reference.versionMatch)
               : mod.collectionRule.reference.versionMatch) ?? "0.0.0";
           if (verString.endsWith(prefer)) {
             let sv: { version: string };
             try {
               sv = semver.minVersion(verString);
             } catch (e) {
-              const { version, comparator } =
-                this.extractAndRemoveComparators(verString);
-              const coerced = util.coerceToSemver(
-                version.slice(0, -prefer.length),
-              );
+              const { version, comparator } = this.extractAndRemoveComparators(verString);
+              const coerced = util.coerceToSemver(version.slice(0, -prefer.length));
               const range = (comparator ?? "") + coerced + prefer;
               try {
                 sv = semver.minVersion(range);
@@ -395,13 +366,11 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
           let name: string;
           let avatar: string;
           if (this.props.revisionInfo !== undefined) {
-            const revMods: ICollectionRevisionMod[] =
-              this.props.revisionInfo?.modFiles || [];
+            const revMods: ICollectionRevisionMod[] = this.props.revisionInfo?.modFiles || [];
             const revMod = revMods.find((iter) => matchRepo(mod, iter.file));
 
             name = mod.attributes?.uploader || revMod?.file?.owner?.name;
-            avatar =
-              mod.attributes?.uploaderAvatar || revMod?.file?.owner?.avatar;
+            avatar = mod.attributes?.uploaderAvatar || revMod?.file?.owner?.avatar;
           } else if (mod.attributes !== undefined) {
             name = mod.attributes?.uploader;
             avatar = mod.attributes?.uploaderAvatar;
@@ -458,17 +427,10 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
 
     const { attributes } = collection ?? {};
     const { revisionId, collectionSlug, revisionNumber } = attributes ?? {};
-    if (
-      (revisionId !== undefined || collectionSlug !== undefined) &&
-      userInfo !== undefined
-    ) {
+    if ((revisionId !== undefined || collectionSlug !== undefined) && userInfo !== undefined) {
       const { infoCache } = this.props.driver;
       try {
-        await infoCache.getRevisionInfo(
-          revisionId,
-          collectionSlug,
-          revisionNumber,
-        );
+        await infoCache.getRevisionInfo(revisionId, collectionSlug, revisionNumber);
       } catch (err) {
         log("error", "failed to get remote info for revision", {
           revisionId,
@@ -490,8 +452,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
       }
       const currentMods = state.persistent.mods[gameId] ?? {};
       const currentDownloads = state.persistent.downloads.files;
-      if ((currentMods !== this.props.mods)
-        || (currentDownloads !== this.props.downloads)) {
+      if (currentMods !== this.props.mods || currentDownloads !== this.props.downloads) {
         this.nextState.modsEx = this.updateModsEx(this.props, {
           ...this.props,
           mods: currentMods,
@@ -504,9 +465,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
     });
   }
 
-  public async UNSAFE_componentWillReceiveProps(
-    newProps: ICollectionPageProps,
-  ) {
+  public async UNSAFE_componentWillReceiveProps(newProps: ICollectionPageProps) {
     // Note: notification changes are intentionally NOT checked here because
     // updateModsEx() is expensive (multiple iterations over all mods) and
     // notification updates fire very frequently during collection installation.
@@ -607,9 +566,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
       // during installation we display only the remote information in the header area,
       // that's why we require driver.collectionInfo to be set
       this.mInstalling =
-        incomplete &&
-        !driver.installDone &&
-        driver.collection?.id === collection?.id;
+        incomplete && !driver.installDone && driver.collection?.id === collection?.id;
     } else {
       this.mInstalling = undefined;
     }
@@ -617,9 +574,9 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
     const selection =
       (this.mInstalling && driver.collectionInfo !== undefined
         ? revisionInfo?.modFiles?.map?.((file) => ({
-          local: undefined,
-          remote: file,
-        }))
+            local: undefined,
+            remote: file,
+          }))
         : modSelection) ?? [];
 
     return (
@@ -664,11 +621,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
             unmountOnExit={true}
             mountOnEnter={true}
           >
-            <Tab
-              key="instructions"
-              eventKey="instructions"
-              title={t("Instructions")}
-            >
+            <Tab key="instructions" eventKey="instructions" title={t("Instructions")}>
               <Panel>
                 <Panel.Body>
                   <CollectionInstructions
@@ -749,9 +702,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
         return received / size;
       }
     } else if (mod.state === "installing") {
-      const notification = notifications.find(
-        (noti) => noti.id === "install_" + mod.id,
-      );
+      const notification = notifications.find((noti) => noti.id === "install_" + mod.id);
       if (notification !== undefined) {
         return (notification.progress ?? 100) / 100;
       } else {
@@ -776,12 +727,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
 
   private setEnabled = (enable: boolean) => {
     const { collection, profile } = this.props;
-    actions.setModsEnabled(
-      this.context.api,
-      profile.id,
-      [collection.id],
-      enable,
-    );
+    actions.setModsEnabled(this.context.api, profile.id, [collection.id], enable);
   };
 
   private showMods = () => {
@@ -814,9 +760,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
   private clone = (collectionId: string) => {
     const { modsEx } = this.state;
 
-    const incomplete = Object.values(modsEx).filter(
-      (mod) => mod.state !== "installed",
-    );
+    const incomplete = Object.values(modsEx).filter((mod) => mod.state !== "installed");
 
     if (incomplete.length > 0) {
       return this.context.api.showDialog(
@@ -856,16 +800,13 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
       const mod = modsEx[modId];
       return {
         local: mod,
-        remote: revisionInfo?.modFiles?.find?.((file) =>
-          matchRepo(mod, file.file),
-        ),
+        remote: revisionInfo?.modFiles?.find?.((file) => matchRepo(mod, file.file)),
       };
     });
   };
 
   private setTableContainerRef = (ref: any) => {
-    this.mTableContainerRef =
-      ref !== null ? (findDOMNode(ref) as Element) : null;
+    this.mTableContainerRef = ref !== null ? (findDOMNode(ref) as Element) : null;
   };
 
   private toggleInstructions = (evt: React.MouseEvent<any>) => {
@@ -876,7 +817,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
       // The button is only rendered when instructions exist (customRenderer guards this).
       // If reached anyway (race condition/state desync), log for debugging but don't
       // surface a confusing error dialog to the user or auto-report via VortexFeedback.
-      log('warn', 'toggleInstructions called but no instructions found', {
+      log("warn", "toggleInstructions called but no instructions found", {
         modId,
         collectionSlug: this.props.collection?.attributes?.collectionSlug,
         revisionNumber: this.props.collection?.attributes?.revisionNumber,
@@ -899,9 +840,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
   private getModInstructions = (modId: string) => {
     const { collection, mods } = this.props;
     const mod = mods[modId];
-    const modRule = collection.rules?.find((rule) =>
-      util.testModReference(mod, rule.reference),
-    );
+    const modRule = collection.rules?.find((rule) => util.testModReference(mod, rule.reference));
     return modRule?.["extra"]?.["instructions"];
   };
 
@@ -924,9 +863,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
   }
 
   private modAtLeastDownloaded = (instanceIds: string | string[]) => {
-    const instanceId: string = Array.isArray(instanceIds)
-      ? instanceIds[0]
-      : instanceIds;
+    const instanceId: string = Array.isArray(instanceIds) ? instanceIds[0] : instanceIds;
     const mod = this.state.modsEx[instanceId];
     return mod.state !== null;
   };
@@ -994,10 +931,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
 
     const filteredIds = modIds
       .filter((modId) => modsEx[modId] !== undefined)
-      .filter(
-        (modId) =>
-          ["downloaded", "installed", null].indexOf(modsEx[modId].state) !== -1,
-      );
+      .filter((modId) => ["downloaded", "installed", null].indexOf(modsEx[modId].state) !== -1);
 
     if (filteredIds.length === 0) {
       return;
@@ -1006,10 +940,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
     const modNames = filteredIds.map((modId) =>
       modsEx[modId].state !== null
         ? util.renderModName(modsEx[modId], { version: true })
-        : util.renderModReference(
-          modsEx[modId].collectionRule.reference,
-          undefined,
-        ),
+        : util.renderModReference(modsEx[modId].collectionRule.reference, undefined),
     );
 
     const checkboxes = [
@@ -1041,16 +972,11 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
       )
       .then((result: types.IDialogResult) => {
         const removeMods = result.action === "Remove" && result.input.mod;
-        const removeArchive =
-          result.action === "Remove" && result.input.archive;
-        const removeRule =
-          result.action === "Remove" && result.input.collection;
+        const removeArchive = result.action === "Remove" && result.input.archive;
+        const removeRule = result.action === "Remove" && result.input.collection;
 
         const wereInstalled = filteredIds
-          .filter(
-            (key) =>
-              modsEx[key] !== undefined && modsEx[key].state === "installed",
-          )
+          .filter((key) => modsEx[key] !== undefined && modsEx[key].state === "installed")
           .map((key) => modsEx[key].id);
 
         const archiveIds = filteredIds
@@ -1062,9 +988,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
           )
           .map((key) => modsEx[key].archiveId);
 
-        const rulesToRemove = filteredIds.filter(
-          (key) => modsEx[key] !== undefined,
-        );
+        const rulesToRemove = filteredIds.filter((key) => modsEx[key] !== undefined);
 
         return (
           removeMods
@@ -1074,12 +998,9 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
           .then(() => {
             if (removeArchive) {
               archiveIds.forEach((archiveId) => {
-                this.context.api.events.emit(
-                  "remove-download",
-                  archiveId,
-                  undefined,
-                  { confirmed: true },
-                );
+                this.context.api.events.emit("remove-download", archiveId, undefined, {
+                  confirmed: true,
+                });
               });
             }
             return Bluebird.resolve();
@@ -1087,11 +1008,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
           .then(() => {
             if (removeRule) {
               rulesToRemove.forEach((key) => {
-                onRemoveRule(
-                  profile.gameId,
-                  collection.id,
-                  modsEx[key].collectionRule,
-                );
+                onRemoveRule(profile.gameId, collection.id, modsEx[key].collectionRule);
               });
             }
           });
@@ -1106,10 +1023,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
       })
       .catch(util.UserCanceled, () => null)
       .catch((err) => {
-        this.context.api.showErrorNotification(
-          "Failed to remove selected mods",
-          err,
-        );
+        this.context.api.showErrorNotification("Failed to remove selected mods", err);
       });
   };
 
@@ -1142,11 +1056,10 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
       newProps.mods,
     );
 
-    const modifiedState: { [modId: string]: { enabled: boolean } } =
-      util.objDiff(
-        oldProps.profile.modState ?? {},
-        newProps.profile.modState ?? {},
-      );
+    const modifiedState: { [modId: string]: { enabled: boolean } } = util.objDiff(
+      oldProps.profile.modState ?? {},
+      newProps.profile.modState ?? {},
+    );
 
     const genRuleMap = (rules: types.IModRule[]) => {
       return (rules || []).reduce((prev, rule) => {
@@ -1165,17 +1078,13 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
     Object.keys(modifiedDownloads)
       .filter((dlId) => dlId.startsWith("-"))
       .forEach((dlId) => {
-        const refId = Object.keys(result).find(
-          (iter) => result[iter]?.archiveId === dlId.slice(1),
-        );
+        const refId = Object.keys(result).find((iter) => result[iter]?.archiveId === dlId.slice(1));
         delete result[refId];
       });
 
     const invalidateMod = (modId) => {
       const realId = modId.slice(1);
-      const refId = Object.keys(result).find(
-        (iter) => result[iter]?.id === realId,
-      );
+      const refId = Object.keys(result).find((iter) => result[iter]?.id === realId);
       delete result[refId];
     };
 
@@ -1184,11 +1093,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
       .forEach(invalidateMod);
 
     Object.keys(modifiedState)
-      .filter(
-        (modId) =>
-          modId.startsWith("-") ||
-          modifiedState[modId]?.["-enabled"] !== undefined,
-      )
+      .filter((modId) => modId.startsWith("-") || modifiedState[modId]?.["-enabled"] !== undefined)
       .forEach(invalidateMod);
 
     // refresh for any rule that doesn't currently have an entry or that was modified
@@ -1208,18 +1113,13 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
       if (ruleId.startsWith("-")) {
         delete result[ruleId.slice(1)];
       } else if (ruleId.startsWith("+")) {
-        result[ruleId.slice(1)] = this.modFromRule(
-          newProps,
-          modifiedRules[ruleId],
-        );
+        result[ruleId.slice(1)] = this.modFromRule(newProps, modifiedRules[ruleId]);
       }
     });
 
     const { profile } = newProps;
     const { modsEx } = this.state;
-    const pendingDL = Object.keys(modsEx).filter(
-      (modId) => modsEx[modId]?.state === null,
-    );
+    const pendingDL = Object.keys(modsEx).filter((modId) => modsEx[modId]?.state === null);
     const pendingInstall = Object.keys(modsEx).filter((modId) =>
       ["downloading", "downloaded", null].includes(modsEx[modId]?.state),
     );
@@ -1234,10 +1134,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
       .forEach((dlId) => {
         const download = newProps.downloads[dlId.slice(1)];
         const match = pendingDL.find((modId) =>
-          testDownloadReference(
-            download,
-            modsEx[modId].collectionRule.reference,
-          ),
+          testDownloadReference(download, modsEx[modId].collectionRule.reference),
         );
         if (match !== undefined) {
           result[match] = this.modFromDownload(
@@ -1263,18 +1160,11 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
         const dlId = mod.archiveId;
         const download = newProps.downloads[dlId];
         const match = pendingInstall.find((iter) =>
-          testDownloadReference(
-            download,
-            modsEx[iter].collectionRule.reference,
-          ),
+          testDownloadReference(download, modsEx[iter].collectionRule.reference),
         );
         if (match !== undefined) {
           result[match] = {
-            ...this.modFromDownload(
-              dlId,
-              download,
-              modsEx[match].collectionRule,
-            ),
+            ...this.modFromDownload(dlId, download, modsEx[match].collectionRule),
             id: modId.slice(1),
             state: "installing",
           };
@@ -1311,20 +1201,12 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
     Object.keys(modifiedDownloads)
       .filter((dlId) => !dlId.startsWith("-") && !dlId.startsWith("+"))
       .forEach((dlId) => {
-        let ruleId = Object.keys(result).find(
-          (modId) => result[modId]?.archiveId === dlId,
-        );
-        if (
-          ruleId === undefined &&
-          newProps.downloads[dlId]?.modInfo?.referenceTag !== undefined
-        ) {
+        let ruleId = Object.keys(result).find((modId) => result[modId]?.archiveId === dlId);
+        if (ruleId === undefined && newProps.downloads[dlId]?.modInfo?.referenceTag !== undefined) {
           ruleId = Object.keys(result).find(
             (id) =>
               result[id]?.archiveId === undefined &&
-              testDownloadReference(
-                newProps.downloads[dlId],
-                result[id]?.collectionRule.reference,
-              ),
+              testDownloadReference(newProps.downloads[dlId], result[id]?.collectionRule.reference),
           );
           if (ruleId !== undefined) {
             result[ruleId] = {
@@ -1342,10 +1224,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
           };
 
           const dl = newProps.downloads[result[ruleId]?.archiveId];
-          if (
-            ["finished", "failed"].includes(dl.state) &&
-            !pendingFinish.includes(ruleId)
-          ) {
+          if (["finished", "failed"].includes(dl.state) && !pendingFinish.includes(ruleId)) {
             result[ruleId].state = "downloaded";
           }
         }
@@ -1354,9 +1233,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
     newProps.notifications.forEach((noti) => {
       if (noti.id !== undefined && noti.id.startsWith("install_")) {
         const modId = noti.id.slice(8);
-        const ruleId = Object.keys(result).find(
-          (iter) => result[iter]?.id === modId,
-        );
+        const ruleId = Object.keys(result).find((iter) => result[iter]?.id === modId);
         if (ruleId !== undefined) {
           result[ruleId] = {
             ...result[ruleId],
@@ -1369,14 +1246,8 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
     return result;
   }
 
-  private modFromDownload(
-    dlId: string,
-    download: types.IDownload,
-    rule: types.IModRule,
-  ): IModEx {
-    const modId =
-      download.modInfo?.meta?.details?.modId ??
-      download.modInfo?.nexus?.ids?.modId;
+  private modFromDownload(dlId: string, download: types.IDownload, rule: types.IModRule): IModEx {
+    const modId = download.modInfo?.meta?.details?.modId ?? download.modInfo?.nexus?.ids?.modId;
 
     return {
       id: dlId,
@@ -1390,8 +1261,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
       attributes: {
         customFileName: download?.modInfo?.name,
         fileName:
-          download.modInfo?.nexus?.fileInfo?.name ??
-          util.renderModReference(rule.reference),
+          download.modInfo?.nexus?.fileInfo?.name ?? util.renderModReference(rule.reference),
         fileSize: download.size ?? rule.reference.fileSize,
         name: dlId,
         version: download.modInfo?.nexus?.fileInfo?.mod_version,
@@ -1401,17 +1271,12 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
         category: download.modInfo?.nexus?.modInfo?.category_id,
         source: download.modInfo?.nexus !== undefined ? "nexus" : undefined,
         id: modId,
-        downloadGame: Array.isArray(download.game)
-          ? download.game[0]
-          : download.game,
+        downloadGame: Array.isArray(download.game) ? download.game[0] : download.game,
       },
     };
   }
 
-  private modFromRule(
-    props: ICollectionPageProps,
-    rule: types.IModRule,
-  ): IModEx {
+  private modFromRule(props: ICollectionPageProps, rule: types.IModRule): IModEx {
     const { downloads, mods, profile } = props;
 
     const mod: types.IMod = util.findModByRef(rule.reference, mods);
@@ -1463,10 +1328,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
   }
 }
 
-function mapStateToProps(
-  state: IStateEx,
-  ownProps: ICollectionPageProps,
-): IConnectedProps {
+function mapStateToProps(state: IStateEx, ownProps: ICollectionPageProps): IConnectedProps {
   const { nexus } = state.persistent as any;
   const { collection } = ownProps;
 
@@ -1476,13 +1338,9 @@ function mapStateToProps(
   let collectionInfo: ICollection;
 
   if (collection?.attributes?.revisionId !== undefined) {
-    revisionInfo =
-      state.persistent.collections.revisions?.[collection.attributes.revisionId]
-        ?.info;
+    revisionInfo = state.persistent.collections.revisions?.[collection.attributes.revisionId]?.info;
     if (revisionInfo?.collection !== undefined) {
-      collectionInfo =
-        state.persistent.collections.collections?.[revisionInfo.collection.id]
-          ?.info;
+      collectionInfo = state.persistent.collections.collections?.[revisionInfo.collection.id]?.info;
     }
     votedSuccess = revisionInfo?.metadata?.ratingValue ?? "abstained";
   }
@@ -1496,12 +1354,9 @@ function mapStateToProps(
     overlays: state.session.overlays.overlays,
     collectionInfo,
     revisionInfo,
-    showUpvoteResponse:
-      state.settings.interface.usage["collection-upvote-response-dialog"] ??
-      true,
+    showUpvoteResponse: state.settings.interface.usage["collection-upvote-response-dialog"] ?? true,
     showDownvoteResponse:
-      state.settings.interface.usage["collection-downvote-response-dialog"] ??
-      true,
+      state.settings.interface.usage["collection-downvote-response-dialog"] ?? true,
   };
 }
 
@@ -1509,25 +1364,14 @@ function mapDispatchToProps(dispatch: Redux.Dispatch): IActionProps {
   return {
     onSetModEnabled: (profileId: string, modId: string, enable: boolean) =>
       dispatch(actions.setModEnabled(profileId, modId, enable)),
-    onSetAttributeFilter: (
-      tableId: string,
-      filterId: string,
-      filterValue: any,
-    ) => dispatch(actions.setAttributeFilter(tableId, filterId, filterValue)),
+    onSetAttributeFilter: (tableId: string, filterId: string, filterValue: any) =>
+      dispatch(actions.setAttributeFilter(tableId, filterId, filterValue)),
     onRemoveRule: (gameId: string, modId: string, rule: types.IModRule) =>
       dispatch(actions.removeModRule(gameId, modId, rule)),
-    onShowError: (
-      message: string,
-      details?: string | Error | any,
-      allowReport?: boolean,
-    ) => util.showError(dispatch, message, details, { allowReport }),
+    onShowError: (message: string, details?: string | Error | any, allowReport?: boolean) =>
+      util.showError(dispatch, message, details, { allowReport }),
     onSuppressVoteResponse: (response: "upvote" | "downvote") =>
-      dispatch(
-        actions.showUsageInstruction(
-          `collection-${response}-response-dialog`,
-          false,
-        ),
-      ),
+      dispatch(actions.showUsageInstruction(`collection-${response}-response-dialog`, false)),
   };
 }
 

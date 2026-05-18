@@ -4,9 +4,7 @@
   "description": "Support for Pillars of Eternity 2: Deadfire",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/gameart.png src/stylesheet.scss dist",
-    "_build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
-    "build": "pnpm run _build && node ../../copy-extension.mjs out",
-    "dist": "pnpm run _build && node ../../copy-extension.mjs dist"
+    "build": "node build.mjs && pnpm run _assets && pnpm extractInfo"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
@@ -34,5 +32,26 @@
     "semver": "catalog:",
     "typescript": "catalog:",
     "vortex-api": "workspace:*"
+  },
+  "nx": {
+    "tags": [
+      "vortex:extension"
+    ],
+    "targets": {
+      "build": {
+        "inputs": [
+          "default",
+          "typescript",
+          "vortex-api"
+        ]
+      },
+      "typecheck": {
+        "inputs": [
+          "default",
+          "typescript",
+          "vortex-api"
+        ]
+      }
+    }
   }
 }

@@ -5,9 +5,7 @@
   "description": "Adds support for running java, python, ... executables",
   "license": "GPL-3.0",
   "scripts": {
-    "_build": "node build.mjs && pnpm extractInfo",
-    "build": "pnpm run _build && node ../copy-extension.mjs out",
-    "dist": "pnpm run _build && node ../copy-extension.mjs dist",
+    "build": "node build.mjs && pnpm extractInfo",
     "typecheck": "pnpm tsc"
   },
   "devDependencies": {
@@ -22,5 +20,26 @@
     "typescript": "catalog:",
     "vortex-api": "workspace:*",
     "which": "catalog:"
+  },
+  "nx": {
+    "tags": [
+      "vortex:extension"
+    ],
+    "targets": {
+      "build": {
+        "inputs": [
+          "default",
+          "typescript",
+          "vortex-api"
+        ]
+      },
+      "typecheck": {
+        "inputs": [
+          "default",
+          "typescript",
+          "vortex-api"
+        ]
+      }
+    }
   }
 }

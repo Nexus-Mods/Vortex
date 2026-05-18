@@ -1,15 +1,10 @@
 import * as path from "node:path";
+
 import { defineConfig } from "rolldown";
 
-export const mode =
-  process.env.NODE_ENV === "production" ? "production" : "development";
+export const mode = process.env.NODE_ENV === "production" ? "production" : "development";
 
-export const mainOutputDirectory = path.resolve(
-  import.meta.dirname,
-  "src",
-  "main",
-  mode === "production" ? "dist" : "out",
-);
+export const mainOutputDirectory = path.resolve(import.meta.dirname, "src", "main", "build");
 
 /**
  * @param {import("rolldown").InputOptions} input
@@ -19,13 +14,7 @@ export const mainOutputDirectory = path.resolve(
  * @param {import("rolldown").ExternalOption} [external=undefined]
  * @returns {import("rolldown").RolldownOptions}
  * */
-export function createConfig(
-  input,
-  output,
-  format,
-  customPlugins = [],
-  external = undefined,
-) {
+export function createConfig(input, output, format, customPlugins = [], external = undefined) {
   return defineConfig({
     input: input,
     platform: "node",
@@ -56,10 +45,7 @@ export function createConfig(
           ? undefined
           : (relativeSourcePath, sourcemapPath) => {
               // Turn relative sourcemap paths into absolute paths
-              return path.resolve(
-                path.dirname(sourcemapPath),
-                relativeSourcePath,
-              );
+              return path.resolve(path.dirname(sourcemapPath), relativeSourcePath);
             },
     },
   });

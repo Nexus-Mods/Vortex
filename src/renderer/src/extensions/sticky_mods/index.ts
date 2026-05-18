@@ -3,20 +3,12 @@
  * savegame in such a way that it can't be removed (at least not automatically)
  */
 
-import type {
-  IExtensionApi,
-  IExtensionContext,
-} from "../../types/IExtensionContext";
+import type { IExtensionApi, IExtensionContext } from "../../types/IExtensionContext";
 import type { IState } from "../../types/IState";
-
 import renderModName from "../mod_management/util/modName";
 import type { IProfile } from "../profile_management/types/IProfile";
 
-function testModSticky(
-  api: IExtensionApi,
-  previous: IProfile,
-  current: IProfile,
-) {
+function testModSticky(api: IExtensionApi, previous: IProfile, current: IProfile) {
   const state: IState = api.store.getState();
 
   const mods = state.persistent.mods[current.gameId] || {};
@@ -42,18 +34,12 @@ function init(context: IExtensionContext): boolean {
   context.once(() => {
     context.api.onStateChange(
       ["persistent", "profiles"],
-      (
-        previous: { [profileId: string]: IProfile },
-        current: { [profileId: string]: IProfile },
-      ) => {
+      (previous: { [profileId: string]: IProfile }, current: { [profileId: string]: IProfile }) => {
         if (previous === undefined || current === undefined) {
           return;
         }
         Object.keys(previous).forEach((profileId) => {
-          if (
-            previous[profileId] !== current[profileId] &&
-            current[profileId] !== undefined
-          ) {
+          if (previous[profileId] !== current[profileId] && current[profileId] !== undefined) {
             testModSticky(context.api, previous[profileId], current[profileId]);
           }
         });

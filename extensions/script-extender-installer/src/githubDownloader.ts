@@ -1,14 +1,13 @@
+import { IncomingHttpHeaders, IncomingMessage } from "http";
 import * as https from "https";
-import * as _ from "lodash";
-import * as semver from "semver";
 import * as url from "url";
 
+import * as _ from "lodash";
+import * as semver from "semver";
 import { actions, log, selectors, types, util } from "vortex-api";
 
-import { ignoreNotifications } from "./util";
 import { IGameSupport } from "./types";
-
-import { IncomingHttpHeaders, IncomingMessage } from "http";
+import { ignoreNotifications } from "./util";
 
 function query(baseUrl: string, request: string): Promise<any> {
   return new Promise((resolve, reject) => {
@@ -22,10 +21,7 @@ function query(baseUrl: string, request: string): Promise<any> {
           10,
         );
         if (res.statusCode === 403 && callsRemaining === 0) {
-          const resetDate = parseInt(
-            util.getSafe(msgHeaders, ["x-ratelimit-reset"], "0"),
-            10,
-          );
+          const resetDate = parseInt(util.getSafe(msgHeaders, ["x-ratelimit-reset"], "0"), 10);
           log("info", "GitHub rate limit exceeded", {
             reset_at: new Date(resetDate).toString(),
           });
@@ -135,16 +131,11 @@ async function notifyUpdate(
   });
 }
 
-export async function getLatestReleases(
-  gameSupport: IGameSupport,
-  currentVersion: string,
-) {
+export async function getLatestReleases(gameSupport: IGameSupport, currentVersion: string) {
   if (!!gameSupport?.gitHubAPIUrl) {
     return query(gameSupport.gitHubAPIUrl, "releases").then((releases) => {
       if (!Array.isArray(releases)) {
-        return Promise.reject(
-          new util.DataInvalid("expected array of github releases"),
-        );
+        return Promise.reject(new util.DataInvalid("expected array of github releases"));
       }
       // TODO: Right now we can only download NVSE through Github and
       //  it appears we can pull the trimmed release version through the tag_name
@@ -159,13 +150,10 @@ export async function getLatestReleases(
           return (
             !isPreRelease &&
             version !== null &&
-            (currentVersion === undefined ||
-              semver.gte(version, currentVersion))
+            (currentVersion === undefined || semver.gte(version, currentVersion))
           );
         })
-        .sort((lhs, rhs) =>
-          semver.compare(rhs["tag_name_sv"], lhs["tag_name_sv"]),
-        );
+        .sort((lhs, rhs) => semver.compare(rhs["tag_name_sv"], lhs["tag_name_sv"]));
 
       return Promise.resolve(current);
     });
@@ -197,10 +185,7 @@ async function startDownload(
     undefined,
     (error, id) => {
       if (error !== null) {
-        if (
-          error.name === "AlreadyDownloaded" &&
-          error.downloadId !== undefined
-        ) {
+        if (error.name === "AlreadyDownloaded" && error.downloadId !== undefined) {
           id = error.downloadId;
         } else {
           api.showErrorNotification("Download failed", error, {
@@ -216,18 +201,8 @@ async function startDownload(
           });
         }
         const batch = [
-          actions.setModAttribute(
-            gameSupport.gameId,
-            modId,
-            "source",
-            "website",
-          ),
-          actions.setModAttribute(
-            gameSupport.gameId,
-            modId,
-            "url",
-            downloadLink,
-          ),
+          actions.setModAttribute(gameSupport.gameId, modId, "source", "website"),
+          actions.setModAttribute(gameSupport.gameId, modId, "url", downloadLink),
         ];
         util.batchDispatch(api.store, batch);
         return Promise.resolve();
@@ -237,19 +212,12 @@ async function startDownload(
   );
 }
 
-async function resolveDownloadLink(
-  currentReleases: any[],
-  gameSupport: IGameSupport,
-) {
-  const archives = currentReleases[0].assets.filter((asset) =>
-    asset.name.match(gameSupport.regex),
-  );
+async function resolveDownloadLink(currentReleases: any[], gameSupport: IGameSupport) {
+  const archives = currentReleases[0].assets.filter((asset) => asset.name.match(gameSupport.regex));
 
   const downloadLink = archives[0]?.browser_download_url;
   return downloadLink === undefined
-    ? Promise.reject(
-        new util.DataInvalid("Failed to resolve browser download url"),
-      )
+    ? Promise.reject(new util.DataInvalid("Failed to resolve browser download url"))
     : Promise.resolve(downloadLink);
 }
 
@@ -261,20 +229,12 @@ export async function checkForUpdates(
   return getLatestReleases(gameSupport, currentVersion)
     .then(async (currentReleases) => {
       const mostRecentVersion = currentReleases[0].tag_name;
-      const downloadLink = await resolveDownloadLink(
-        currentReleases,
-        gameSupport,
-      );
+      const downloadLink = await resolveDownloadLink(currentReleases, gameSupport);
       if (semver.valid(mostRecentVersion) === null) {
         return Promise.resolve(currentVersion);
       } else {
         if (semver.gt(mostRecentVersion, currentVersion)) {
-          return notifyUpdate(
-            api,
-            gameSupport,
-            mostRecentVersion,
-            currentVersion,
-          )
+          return notifyUpdate(api, gameSupport, mostRecentVersion, currentVersion)
             .then(() => startDownload(api, gameSupport, downloadLink))
             .then(() => Promise.resolve(mostRecentVersion));
         } else {
@@ -283,10 +243,7 @@ export async function checkForUpdates(
       }
     })
     .catch((err) => {
-      if (
-        err instanceof util.UserCanceled ||
-        err instanceof util.ProcessCanceled
-      ) {
+      if (err instanceof util.UserCanceled || err instanceof util.ProcessCanceled) {
         return Promise.resolve(currentVersion);
       }
 
@@ -295,37 +252,23 @@ export async function checkForUpdates(
     });
 }
 
-export async function downloadScriptExtender(
-  api: types.IExtensionApi,
-  gameSupport: IGameSupport,
-) {
+export async function downloadScriptExtender(api: types.IExtensionApi, gameSupport: IGameSupport) {
   const state = api.store.getState();
   const gameId = selectors.activeGameId(state);
   if (gameSupport?.gitHubAPIUrl === undefined) {
-    return Promise.reject(
-      new util.ArgumentInvalid("Game entry invalid or missing gitHubUrl"),
-    );
+    return Promise.reject(new util.ArgumentInvalid("Game entry invalid or missing gitHubUrl"));
   }
 
   return getLatestReleases(gameSupport, undefined)
     .then(async (currentReleases) => {
-      const downloadLink = await resolveDownloadLink(
-        currentReleases,
-        gameSupport,
-      );
+      const downloadLink = await resolveDownloadLink(currentReleases, gameSupport);
       return startDownload(api, gameSupport, downloadLink);
     })
     .catch((err) => {
-      if (
-        err instanceof util.UserCanceled ||
-        err instanceof util.ProcessCanceled
-      ) {
+      if (err instanceof util.UserCanceled || err instanceof util.ProcessCanceled) {
         return Promise.resolve();
       } else {
-        api.showErrorNotification(
-          "Unable to download/install script extender",
-          err,
-        );
+        api.showErrorNotification("Unable to download/install script extender", err);
         return Promise.resolve();
       }
     });

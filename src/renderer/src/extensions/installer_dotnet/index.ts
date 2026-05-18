@@ -1,14 +1,10 @@
-import Bluebird from "bluebird";
 import { execFile, spawn } from "child_process";
 import path from "path";
 import { promisify } from "util";
 
-import type {
-  ITestResult,
-  IExtensionApi,
-  IExtensionContext,
-} from "../../types/api";
+import Bluebird from "bluebird";
 
+import type { ITestResult, IExtensionApi, IExtensionContext } from "../../types/api";
 import { getVortexPath, UserCanceled } from "../../util/api";
 import { log } from "../../util/log";
 import { delayed, toPromise } from "../../util/util";
@@ -39,9 +35,7 @@ const spawnRetry = async (
   } catch (err: any) {
     if (err.code === "EBUSY") {
       if (tries > 0) {
-        return delayed(100).then(() =>
-          spawnRetry(api, command, args, tries - 1),
-        );
+        return delayed(100).then(() => spawnRetry(api, command, args, tries - 1));
       } else {
         return api
           .showDialog?.(
@@ -92,9 +86,7 @@ const installDotNet = async (
   dotnetVersion: number,
 ): Promise<void> => {
   if (process.platform !== "win32") {
-    const error = new Error(
-      `Failed to download .NET Desktop Runtime ${dotnetVersion}`,
-    );
+    const error = new Error(`Failed to download .NET Desktop Runtime ${dotnetVersion}`);
     throw "Automatic installation of .NET is only supported on Windows";
   }
 
@@ -112,9 +104,7 @@ const installDotNet = async (
     );
 
     if (dlId === undefined) {
-      const error = new Error(
-        `Failed to download .NET Desktop Runtime ${dotnetVersion}`,
-      );
+      const error = new Error(`Failed to download .NET Desktop Runtime ${dotnetVersion}`);
       log("warn", "failed to download .NET");
       onDotNetFailure(error);
       throw error;
@@ -164,11 +154,7 @@ const installDotNet = async (
     log("info", `.NET Desktop Runtime ${dotnetVersion} installed successfully`);
     onDotNetSuccess();
   } catch (err) {
-    log(
-      "error",
-      `Failed to install .NET Desktop Runtime ${dotnetVersion}`,
-      err,
-    );
+    log("error", `Failed to install .NET Desktop Runtime ${dotnetVersion}`, err);
     onDotNetFailure(err);
     throw err;
   }
@@ -206,22 +192,13 @@ function execFileWrapper(
   });
 }
 
-async function checkNetInstall(
-  api: IExtensionApi,
-  dotnetVersion: number,
-): Promise<ITestResult> {
+async function checkNetInstall(api: IExtensionApi, dotnetVersion: number): Promise<ITestResult> {
   let probeExecutable: string | null = null;
 
   if (process.platform === "win32") {
-    probeExecutable = path.join(
-      getVortexPath("assets_unpacked"),
-      "dotnetprobe.exe",
-    );
+    probeExecutable = path.join(getVortexPath("assets_unpacked"), "dotnetprobe.exe");
   } else if (process.platform === "linux") {
-    probeExecutable = path.join(
-      getVortexPath("assets_unpacked"),
-      "dotnetprobe",
-    );
+    probeExecutable = path.join(getVortexPath("assets_unpacked"), "dotnetprobe");
   } else {
     const error = new Error(
       `.NET installation check is not supported on this platform ${process.platform}`,
@@ -234,9 +211,7 @@ async function checkNetInstall(
   let exitCode: number;
 
   try {
-    const result = await execFileWrapper(probeExecutable, [
-      dotnetVersion.toString(),
-    ]);
+    const result = await execFileWrapper(probeExecutable, [dotnetVersion.toString()]);
     stderr = result.stderr;
     exitCode = result.exitCode;
   } catch (e) {
@@ -279,8 +254,7 @@ async function checkNetInstall(
         '[spoiler label="Show detailed error"]{{stderr}}[/spoiler]',
       replace: { stderr: stderr.replace(/\n/g, "[br][/br]") },
     },
-    automaticFix: () =>
-      Bluebird.resolve(installDotNet(api, false, dotnetVersion)),
+    automaticFix: () => Bluebird.resolve(installDotNet(api, false, dotnetVersion)),
     severity: "fatal",
   };
 

@@ -1,12 +1,12 @@
-import { getSafe } from "../../util/storeHelper";
-import type { IProfile } from "./types/IProfile";
 import { createCachedSelector } from "re-reselect";
 import { createSelector } from "reselect";
+
 import type { IState } from "../../types/IState";
+import { getSafe } from "../../util/storeHelper";
+import type { IProfile } from "./types/IProfile";
 
 export const profiles = (state: IState) => state.persistent.profiles;
-export const lastActiveProfiles = (state: IState) =>
-  state.settings.profiles.lastActiveProfile;
+export const lastActiveProfiles = (state: IState) => state.settings.profiles.lastActiveProfile;
 
 export const activeGameId = (state: IState): string => {
   const profile = activeProfile(state);
@@ -40,8 +40,7 @@ export const activeProfile = (state: IState): IProfile | undefined => {
 const profileByIdImpl = createCachedSelector(
   profiles,
   (state: IState, profileId: string) => profileId,
-  (profilesIn: { [profileId: string]: IProfile }, profileId: string) =>
-    profilesIn[profileId],
+  (profilesIn: { [profileId: string]: IProfile }, profileId: string) => profilesIn[profileId],
 )((state, profileId) => profileId);
 
 export function profileById(state: IState, profileId: string) {
@@ -61,9 +60,7 @@ export const enabledModCountForProfile = createCachedSelector(
     }
     const gameMods = mods[profile.gameId] ?? {};
     return Object.keys(profile.modState).filter(
-      (id) =>
-        profile.modState[id]?.enabled &&
-        gameMods[id]?.state === "installed",
+      (id) => profile.modState[id]?.enabled && gameMods[id]?.state === "installed",
     ).length;
   },
 )((state, profileId) => profileId ?? "___empty");

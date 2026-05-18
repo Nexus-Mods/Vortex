@@ -1,5 +1,5 @@
-import { provides } from "@vortex/adaptor-api";
-import type { IEchoService } from "@vortex/adaptor-api/contracts/ping";
+import { provides } from "@nexusmods/adaptor-api";
+import type { IEchoService } from "@nexusmods/adaptor-api/contracts/ping";
 import { ping } from "virtual:services";
 
 @provides("vortex:adaptor/ping-test/echo")

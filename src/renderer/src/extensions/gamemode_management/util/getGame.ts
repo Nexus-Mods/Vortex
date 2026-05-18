@@ -1,23 +1,20 @@
+import * as path from "path";
+
+import type { IExtensionDownloadInfo } from "../../../types/extensions";
 import type { IGame } from "../../../types/IGame";
 import type { IGameStore } from "../../../types/IGameStore";
 import local from "../../../util/local";
-import type { IExtensionDownloadInfo } from "../../../types/extensions";
 import type GameVersionManager from "../../gameversion_management/GameVersionManager";
 import type { IGameStub } from "../GameModeManager";
 import type GameModeManager from "../GameModeManager";
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
-
 import { getModTypeExtensions } from "./modTypeExtensions";
-
-import * as path from "path";
 
 // "decorate" IGame objects with added functionality
 const gameExHandler = {
   get: (target: IGame, key: PropertyKey) => {
     if (key === "getModPaths") {
-      const applicableExtensions = getModTypeExtensions().filter((ex) =>
-        ex.isSupported(target.id),
-      );
+      const applicableExtensions = getModTypeExtensions().filter((ex) => ex.isSupported(target.id));
       const extTypes = applicableExtensions.reduce((prev, val) => {
         const typePath = val.getPath(target);
         if (typePath !== undefined) {
@@ -94,9 +91,7 @@ export function getGame(gameId: string): IGame {
   return makeGameProxy(game);
 }
 
-export function getGameStubDownloadInfo(
-  gameId: string,
-): IExtensionDownloadInfo | undefined {
+export function getGameStubDownloadInfo(gameId: string): IExtensionDownloadInfo | undefined {
   const stub = $.extensionStubs.find((iter) => iter.game.id === gameId);
   return stub?.ext;
 }

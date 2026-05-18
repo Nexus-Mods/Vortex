@@ -56,15 +56,7 @@ function sanitize(svg, iconCfg) {
     if (key === "$") {
       svg[key] = _.pick(svg.$, ["viewBox"]);
     } else if (
-      [
-        "g",
-        "path",
-        "rect",
-        "ellipsis",
-        "circle",
-        "polygon",
-        "polyline",
-      ].indexOf(key) !== -1
+      ["g", "path", "rect", "ellipsis", "circle", "polygon", "polyline"].indexOf(key) !== -1
     ) {
       svg[key] = svg[key].map((item) => applyTransforms(item, iconCfg));
     } else if (["style"].indexOf(key) !== -1) {
@@ -120,10 +112,7 @@ function processConfig(basePath, config) {
           ? extractMDI(iconId, iconCfg.value)
           : extractLegacy(
               iconId,
-              path.join(
-                basePath,
-                format(iconCfg.path, config.variables) + ".svg",
-              ),
+              path.join(basePath, format(iconCfg.path, config.variables) + ".svg"),
               iconCfg,
             );
       return iconDat
@@ -179,14 +168,12 @@ async function main() {
   const params = commandLine();
 
   try {
-    const legacyIcons = await fs.promises.readFile(
-      params.config || "iconconfig.json",
-      { encoding: "utf8" },
-    );
-    const materialIcons = await fs.promises.readFile(
-      params.mdiconfig || "mdiconfig.json",
-      { encoding: "utf8" },
-    );
+    const legacyIcons = await fs.promises.readFile(params.config || "iconconfig.json", {
+      encoding: "utf8",
+    });
+    const materialIcons = await fs.promises.readFile(params.mdiconfig || "mdiconfig.json", {
+      encoding: "utf8",
+    });
 
     const data = mergeIcons(JSON.parse(legacyIcons), JSON.parse(materialIcons));
     processConfig(params.base || "../icons", data);

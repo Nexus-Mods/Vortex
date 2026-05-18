@@ -17,7 +17,6 @@ import { ComplexActionCreator1 } from 'redux-act';
 import { ComplexActionCreator2 } from 'redux-act';
 import { ComplexActionCreator3 } from 'redux-act';
 import { ComplexActionCreator4 } from 'redux-act';
-import { ComplexActionCreator5 } from 'redux-act';
 import { ComplexActionCreator6 } from 'redux-act';
 import { constants } from 'fs';
 import { createReadStream } from 'original-fs';
@@ -876,14 +875,11 @@ const downloadPath: (state: IState) => string;
 // @public (undocumented)
 function downloadPathForGame(state: IState, gameId?: string): string;
 
-// Warning: (ae-forgotten-export) The symbol "IChunk" needs to be exported by the entry point api.d.ts
-//
 // @public
-const downloadProgress: ComplexActionCreator5<string, number, number, IChunk[], string[], {
+const downloadProgress: ComplexActionCreator4<string, number, number, string[], {
 id: string;
 received: number;
 total: number;
-chunks: IChunk[];
 urls: string[];
 }, {}>;
 
@@ -988,7 +984,7 @@ export const ErrorBoundary: any;
 function extractExeIcon(exePath: string, destPath: string): Promise<void>;
 
 // @public (undocumented)
-function fileMD5(filePath: string): Promise<string>;
+function fileMD5(input: string | Buffer, progress?: (bytesProcessed: number, totalBytes: number) => void): Promise<string>;
 
 // @public
 const finalizingDownload: ComplexActionCreator1<string, {
@@ -2016,7 +2012,6 @@ interface IDiscoveryState {
 
 // @public
 interface IDownload {
-    chunks?: IChunk[];
     // Warning: (ae-forgotten-export) The symbol "IDownloadFailCause" needs to be exported by the entry point api.d.ts
     failCause?: IDownloadFailCause;
     fileMD5?: string;
@@ -2236,7 +2231,7 @@ interface IExtensionContext {
     registerDashlet: RegisterDashlet;
     registerDeploymentMethod: (method: IDeploymentMethod) => void;
     registerDialog: RegisterDialog;
-    registerDownloadProtocol: (scheme: string, handler: (inputUrl: string, name: string, friendlyName: string) => PromiseLike<{
+    registerDownloadProtocol: (scheme: string, handler: (inputUrl: string) => PromiseLike<{
         urls: string[];
         updatedUrl?: string;
         meta: unknown;
@@ -3089,6 +3084,13 @@ interface IOverlaysState {
 // @public
 interface IPersistor {
     // (undocumented)
+    bulkRemoveItem?(keys: ReadonlyArray<PersistorKey>): PromiseLike<void>;
+    // (undocumented)
+    bulkSetItem?(items: ReadonlyArray<{
+        key: PersistorKey;
+        value: string;
+    }>): PromiseLike<void>;
+    // (undocumented)
     getAllKeys(): PromiseLike<PersistorKey[]>;
     // (undocumented)
     getAllKVs?(prefix?: string): PromiseLike<Array<{
@@ -3224,7 +3226,7 @@ interface IRegisteredExtension {
 // @public (undocumented)
 interface IRegisterProtocol {
     // (undocumented)
-    (protocol: string, def: boolean, callback: (url: string, install: boolean) => void): any;
+    (protocol: string, def: boolean, callback: (url: string, install: boolean) => void): Promise<boolean>;
 }
 
 // @public (undocumented)
@@ -3703,6 +3705,10 @@ interface IState {
 
 // @public (undocumented)
 interface IStateDownloads {
+    // (undocumented)
+    checkpoints: {
+        [id: string]: DownloadCheckpoint<string>;
+    };
     // (undocumented)
     files: {
         [id: string]: IDownload;
@@ -4384,7 +4390,7 @@ const nexusIdsFromDownloadId: ((state: IState, downloadId: string) => {
     modId: string;
     numericGameId: number;
     collectionSlug: string;
-    collectionId: any;
+    collectionId: string;
     revisionId: string;
 }) & OutputSelectorFields<(args_0: {
 [id: string]: IDownload;
@@ -4394,7 +4400,7 @@ fileId: string;
 modId: string;
 numericGameId: number;
 collectionSlug: string;
-collectionId: any;
+collectionId: string;
 revisionId: string;
 }, {
 clearCache: () => void;
@@ -4500,10 +4506,9 @@ export class OverlayTrigger extends React_2.Component<IProps_7, {
 function pad(value: number, padding: string, width: number): string;
 
 // @public
-const pauseDownload: ComplexActionCreator3<string, boolean, IChunk[], {
+const pauseDownload: ComplexActionCreator2<string, boolean, {
 id: string;
 paused: boolean;
-chunks: IChunk[];
 }, {}>;
 
 // @public (undocumented)
@@ -6322,10 +6327,11 @@ export class ZoomableImage extends React_2.Component<IZoomableImageProps, {
 //
 // lib/extensions/mod_management/selectors.d.ts:59:5 - (ae-forgotten-export) The symbol "INeedToDeployMap" needs to be exported by the entry point api.d.ts
 // lib/types/IDialog.d.ts:84:9 - (ae-forgotten-export) The symbol "IBBCodeContext" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:356:9 - (ae-forgotten-export) The symbol "IHistoryState" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:358:9 - (ae-forgotten-export) The symbol "IHealthCheckSessionState" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:390:9 - (ae-forgotten-export) The symbol "IHistoryPersistent" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:391:9 - (ae-forgotten-export) The symbol "IHealthCheckPersistentState" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:161:9 - (ae-forgotten-export) The symbol "DownloadCheckpoint" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:360:9 - (ae-forgotten-export) The symbol "IHistoryState" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:362:9 - (ae-forgotten-export) The symbol "IHealthCheckSessionState" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:394:9 - (ae-forgotten-export) The symbol "IHistoryPersistent" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:395:9 - (ae-forgotten-export) The symbol "IHealthCheckPersistentState" needs to be exported by the entry point api.d.ts
 // lib/views/MainPage.d.ts:12:5 - (ae-forgotten-export) The symbol "MainPageBody" needs to be exported by the entry point api.d.ts
 // lib/views/MainPage.d.ts:13:5 - (ae-forgotten-export) The symbol "MainPageHeader" needs to be exported by the entry point api.d.ts
 

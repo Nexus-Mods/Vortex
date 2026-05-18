@@ -1,10 +1,6 @@
-import {
-  getErrorMessageOrDefault,
-  unknownToError,
-} from "@vortex/shared";
+import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 
 import type { AttributeExtractor } from "../../../types/IExtensionContext";
-
 import { log } from "../../../util/log";
 
 const attributeExtractors: Array<{
@@ -12,10 +8,7 @@ const attributeExtractors: Array<{
   extractor: AttributeExtractor;
 }> = [];
 
-export function registerAttributeExtractor(
-  priority: number,
-  extractor: AttributeExtractor,
-) {
+export function registerAttributeExtractor(priority: number, extractor: AttributeExtractor) {
   attributeExtractors.push({ priority, extractor });
   attributeExtractors.sort((lhs, rhs) => rhs.priority - lhs.priority);
 }
@@ -60,9 +53,7 @@ export function debugListExtractors(): Array<{
 }
 
 function filterNullish(input: { [key: string]: any }) {
-  return Object.fromEntries(
-    Object.entries(input ?? {}).filter(([_, val]) => val != null),
-  );
+  return Object.fromEntries(Object.entries(input ?? {}).filter(([_, val]) => val != null));
 }
 
 // Every mod installation is run through the attributeExtractors in order of priority.
@@ -70,11 +61,7 @@ function filterNullish(input: { [key: string]: any }) {
 //  that's at a minimum 25 minutes of waiting for the user. Keep in mind that incorrect usage of the attributeExtractors in community
 //  extensions will raise this time even further. This is why we have a timeout of 5 seconds for each extractor (this is already quite generous).
 // All core extractors should never take more than a few milliseconds to run.
-function extractorOrSkip(
-  extractor: AttributeExtractor,
-  input: any,
-  modPath: string,
-): Promise<any> {
+function extractorOrSkip(extractor: AttributeExtractor, input: any, modPath: string): Promise<any> {
   // Enhanced extractor identification for better debugging
   let extractorName = "[unknown extractor]";
   let extractorDetails = "";
@@ -119,26 +106,20 @@ function extractorOrSkip(
     const duration = Date.now() - startTime;
 
     const err = unknownToError(unknownError);
-    log(
-      "error",
-      `Extractor skipped: "${extractorName}" (modPath: "${modPath}") - ${err.message}`,
-      {
-        extractorName,
-        duration,
-        modPath,
-        extractorDetails,
-        errorType: err.name || "Unknown",
-      },
-    );
+    log("error", `Extractor skipped: "${extractorName}" (modPath: "${modPath}") - ${err.message}`, {
+      extractorName,
+      duration,
+      modPath,
+      extractorDetails,
+      errorType: err.name || "Unknown",
+    });
     return {};
   });
 }
 
 function filterModInfo(input: any, modPath: string): Promise<any> {
   return Promise.all(
-    attributeExtractors.map((extractor) =>
-      extractorOrSkip(extractor.extractor, input, modPath),
-    ),
+    attributeExtractors.map((extractor) => extractorOrSkip(extractor.extractor, input, modPath)),
   ).then((infoBlobs) => Object.assign({}, ...infoBlobs.map(filterNullish)));
 }
 

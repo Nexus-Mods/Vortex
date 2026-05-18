@@ -1,17 +1,12 @@
-import { truthy } from "../../../util/util";
-
-import type {
-  IMod,
-  IModReference,
-  IFileListItem,
-  IModAttributes,
-} from "../types/IMod";
-import type { IDownload } from "../../download_management/types/IDownload";
+import * as path from "path";
 
 import * as _ from "lodash";
 import minimatch from "minimatch";
-import * as path from "path";
 import * as semver from "semver";
+
+import { truthy } from "../../../util/util";
+import type { IDownload } from "../../download_management/types/IDownload";
+import type { IMod, IModReference, IFileListItem, IModAttributes } from "../types/IMod";
 
 export interface IModLookupInfo {
   id?: string;
@@ -40,8 +35,7 @@ export function modAttributesToLookupInfo(
   if (gameAttrib && Array.isArray(gameAttrib) && gameAttrib.length > 0) {
     return mod as IModLookupInfo;
   }
-  const attrs: IModAttributes =
-    (mod as IMod).attributes ?? (mod as IModAttributes);
+  const attrs: IModAttributes = (mod as IMod).attributes ?? (mod as IModAttributes);
   return {
     id: (mod as IMod).id,
     fileMD5: attrs.fileMD5,
@@ -67,8 +61,7 @@ export function modAttributesToLookupInfo(
 export function idOnlyRef(ref: IModReference) {
   return (
     ref?.id !== undefined &&
-    Object.keys(_.omit(ref, ["archiveId", "versionMatch", "idHint"])).length ===
-      1
+    Object.keys(_.omit(ref, ["archiveId", "versionMatch", "idHint"])).length === 1
   );
 }
 
@@ -81,18 +74,12 @@ const REFERENCE_FIELDS = [
   "repo",
   "tag",
 ];
-export function referenceEqual(
-  lhs: IModReference,
-  rhs: IModReference,
-): boolean {
+export function referenceEqual(lhs: IModReference, rhs: IModReference): boolean {
   // the id is only used if it's the only matching field (apart from the archive id)
   if (idOnlyRef(lhs) || idOnlyRef(rhs)) {
     return lhs.id === rhs.id;
   }
-  return _.isEqual(
-    _.pick(lhs, REFERENCE_FIELDS),
-    _.pick(rhs, REFERENCE_FIELDS),
-  );
+  return _.isEqual(_.pick(lhs, REFERENCE_FIELDS), _.pick(rhs, REFERENCE_FIELDS));
 }
 
 /**
@@ -107,11 +94,9 @@ export function downloadToModRef(download: IDownload): IModReference {
   // Extract modId and fileId from nested structures
   // Priority: nexus.ids (preferred) -> meta.details (fallback)
   const modId =
-    download.modInfo?.nexus?.ids?.modId?.toString() ??
-    download.modInfo?.meta?.details?.modId;
+    download.modInfo?.nexus?.ids?.modId?.toString() ?? download.modInfo?.meta?.details?.modId;
   const fileId =
-    download.modInfo?.nexus?.ids?.fileId?.toString() ??
-    download.modInfo?.meta?.details?.fileId;
+    download.modInfo?.nexus?.ids?.fileId?.toString() ?? download.modInfo?.meta?.details?.fileId;
 
   const ref: IModReference = {
     archiveId: download.id,
@@ -124,8 +109,7 @@ export function downloadToModRef(download: IDownload): IModReference {
       : undefined,
     fileMD5: download.fileMD5,
     gameId: download.game?.[0],
-    logicalFileName:
-      download.modInfo?.meta?.logicalFileName ?? download.localPath,
+    logicalFileName: download.modInfo?.meta?.logicalFileName ?? download.localPath,
   };
   return ref;
 }
@@ -222,8 +206,7 @@ function hasIdentifyingMarker(
   return (
     (ref.id !== undefined && modId !== undefined) ||
     (!fuzzyVersion && ref.fileMD5 !== undefined && mod.fileMD5 !== undefined) ||
-    (ref.fileExpression !== undefined &&
-      (mod.fileName ?? mod.name) !== undefined) ||
+    (ref.fileExpression !== undefined && (mod.fileName ?? mod.name) !== undefined) ||
     (ref.logicalFileName !== undefined && mod.logicalFileName !== undefined) ||
     (ref.repo !== undefined && mod.source !== undefined) ||
     (allowTag && ref.tag !== undefined && mod.referenceTag !== undefined)
@@ -276,19 +259,13 @@ function testRef(
   }
 
   // Right hashes?
-  if (
-    ref.fileList != null &&
-    ref.fileList.length > 0 &&
-    !_.isEqual(ref.fileList, mod.fileList)
-  ) {
+  if (ref.fileList != null && ref.fileList.length > 0 && !_.isEqual(ref.fileList, mod.fileList)) {
     return false;
   }
 
   // Right patches?
-  const refHasPatches =
-    ref.patches != null && Object.keys(ref.patches).length > 0;
-  const modHasPatches =
-    mod.patches != null && Object.keys(mod.patches).length > 0;
+  const refHasPatches = ref.patches != null && Object.keys(ref.patches).length > 0;
+  const modHasPatches = mod.patches != null && Object.keys(mod.patches).length > 0;
   if (refHasPatches) {
     if (!_.isEqual(mod.patches, ref.patches)) {
       return false;
@@ -316,10 +293,7 @@ function testRef(
   }
 
   if (ref.repo != null) {
-    if (
-      ref.repo.repository !== mod.source ||
-      ref.repo.modId !== (mod.modId || -1).toString()
-    ) {
+    if (ref.repo.repository !== mod.source || ref.repo.modId !== (mod.modId || -1).toString()) {
       return false;
     }
 
@@ -342,17 +316,13 @@ function testRef(
     if (mod.additionalLogicalFileNames != null) {
       if (
         !mod.additionalLogicalFileNames.includes(ref.logicalFileName) &&
-        ![mod.logicalFileName, mod.customFileName].includes(
-          ref.logicalFileName,
-        ) &&
+        ![mod.logicalFileName, mod.customFileName].includes(ref.logicalFileName) &&
         ref.fileExpression == null
       ) {
         return false;
       }
     } else if (
-      ![mod.logicalFileName, mod.customFileName].includes(
-        ref.logicalFileName,
-      ) &&
+      ![mod.logicalFileName, mod.customFileName].includes(ref.logicalFileName) &&
       ref.fileExpression == null
     ) {
       return false;
@@ -368,21 +338,14 @@ function testRef(
       }
     } else {
       const baseName = sanitizeExpression(mod.fileName);
-      if (
-        baseName !== ref.fileExpression &&
-        !minimatch(baseName, ref.fileExpression)
-      ) {
+      if (baseName !== ref.fileExpression && !minimatch(baseName, ref.fileExpression)) {
         return false;
       }
     }
   }
 
   // right version?
-  if (
-    truthy(ref.versionMatch) &&
-    ref.versionMatch !== "*" &&
-    truthy(mod.version)
-  ) {
+  if (truthy(ref.versionMatch) && ref.versionMatch !== "*" && truthy(mod.version)) {
     const versionMatch = ref.versionMatch.split("+")[0];
     const doesMatch =
       mod.version === ref.versionMatch ||
@@ -407,11 +370,7 @@ function testRef(
   }
 
   // right game?
-  if (
-    ref.gameId !== undefined &&
-    mod.game !== undefined &&
-    mod.game.indexOf(ref.gameId) === -1
-  ) {
+  if (ref.gameId !== undefined && mod.game !== undefined && mod.game.indexOf(ref.gameId) === -1) {
     return false;
   }
 
@@ -434,11 +393,7 @@ export function testRefByIdentifiers(
   },
   ref: IModReference,
 ): boolean {
-  if (
-    identifiers == null ||
-    typeof identifiers !== "object" ||
-    Array.isArray(identifiers)
-  ) {
+  if (identifiers == null || typeof identifiers !== "object" || Array.isArray(identifiers)) {
     return false;
   }
 
@@ -468,11 +423,7 @@ export function testRefByIdentifiers(
     }
   }
   // right file?
-  if (
-    ref.fileExpression == null &&
-    ref.logicalFileName != null &&
-    fileNames != null
-  ) {
+  if (ref.fileExpression == null && ref.logicalFileName != null && fileNames != null) {
     if (fileNames.includes(ref.logicalFileName)) {
       return true;
     }
@@ -483,10 +434,7 @@ export function testRefByIdentifiers(
     // a glob match against the archive name (without file extension)
     for (const fileName of fileNames) {
       const baseName = sanitizeExpression(fileName);
-      if (
-        baseName === ref.fileExpression ||
-        minimatch(baseName, ref.fileExpression)
-      ) {
+      if (baseName === ref.fileExpression || minimatch(baseName, ref.fileExpression)) {
         return true;
       }
     }
@@ -503,12 +451,7 @@ export function testRefByIdentifiers(
  * sets the callback for when a (fuzzy) mod reference is resolved, so the cache can be updated
  */
 export function setResolvedCB(
-  cb: (
-    gameId: string,
-    sourceModId: string,
-    ref: IModReference,
-    modId: string,
-  ) => void,
+  cb: (gameId: string, sourceModId: string, ref: IModReference, modId: string) => void,
 ) {
   onRefResolved = cb;
 }
@@ -523,22 +466,12 @@ export function testModReference(
     return false;
   }
 
-  if (
-    reference == null ||
-    typeof reference !== "object" ||
-    Array.isArray(reference)
-  ) {
+  if (reference == null || typeof reference !== "object" || Array.isArray(reference)) {
     return false;
   }
 
   if ((mod as IMod).attributes) {
-    return testRef(
-      modAttributesToLookupInfo(mod),
-      mod.id,
-      reference,
-      source,
-      fuzzyVersion,
-    );
+    return testRef(modAttributesToLookupInfo(mod), mod.id, reference, source, fuzzyVersion);
   } else {
     const lookup = mod as IModLookupInfo;
     return testRef(lookup, lookup.id, reference, source, fuzzyVersion);

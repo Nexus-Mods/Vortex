@@ -1,29 +1,7 @@
-import { IBiDirRule } from "../types/IBiDirRule";
-import { IConflict } from "../types/IConflict";
-import { IModLookupInfo } from "../types/IModLookupInfo";
-
-import ruleFulfilled from "../util/ruleFulfilled";
-
-import {
-  setConflictDialog,
-  setCreateRule,
-  setFileOverrideDialog,
-  setSource,
-  setTarget,
-} from "../actions";
-
-import { enabledModKeys } from "../selectors";
-
 import I18next from "i18next";
 import * as _ from "lodash";
 import memoizeOne from "memoize-one";
-import {
-  ILookupResult,
-  IModInfo,
-  IReference,
-  IRule,
-  RuleType,
-} from "modmeta-db";
+import { ILookupResult, IModInfo, IReference, IRule, RuleType } from "modmeta-db";
 import * as React from "react";
 import { Overlay, Popover } from "react-bootstrap";
 import {
@@ -43,15 +21,20 @@ import { getEmptyImage } from "react-dnd-html5-backend";
 import { findDOMNode } from "react-dom";
 import { connect } from "react-redux";
 import * as semver from "semver";
+import { actions, ComponentEx, log, selectors, tooltip, types, util } from "vortex-api";
+
 import {
-  actions,
-  ComponentEx,
-  log,
-  selectors,
-  tooltip,
-  types,
-  util,
-} from "vortex-api";
+  setConflictDialog,
+  setCreateRule,
+  setFileOverrideDialog,
+  setSource,
+  setTarget,
+} from "../actions";
+import { enabledModKeys } from "../selectors";
+import { IBiDirRule } from "../types/IBiDirRule";
+import { IConflict } from "../types/IConflict";
+import { IModLookupInfo } from "../types/IModLookupInfo";
+import ruleFulfilled from "../util/ruleFulfilled";
 
 interface IDescriptionProps {
   t: typeof I18next.t;
@@ -158,11 +141,7 @@ class RuleDescription extends React.Component<IDescriptionProps, {}> {
     const { mod } = this.props;
 
     if (mod !== undefined) {
-      return (
-        <p className="rule-mod-name">
-          {util.renderModName(mod, { version: true })}
-        </p>
-      );
+      return <p className="rule-mod-name">{util.renderModName(mod, { version: true })}</p>;
     }
 
     let version = "*";
@@ -222,18 +201,9 @@ interface IConnectedProps {
 interface IActionProps {
   onSetSource: (id: string, pos: { x: number; y: number }) => void;
   onSetTarget: (id: string, pos: { x: number; y: number }) => void;
-  onEditDialog: (
-    gameId: string,
-    modId: string,
-    reference: IReference,
-    defaultType: string,
-  ) => void;
+  onEditDialog: (gameId: string, modId: string, reference: IReference, defaultType: string) => void;
   onRemoveRule: (gameId: string, modId: string, rule: IRule) => void;
-  onConflictDialog: (
-    gameId: string,
-    modIds: string[],
-    modRules: IBiDirRule[],
-  ) => void;
+  onConflictDialog: (gameId: string, modIds: string[], modRules: IBiDirRule[]) => void;
   onOverrideDialog: (gameId: string, modId: string) => void;
 }
 
@@ -256,11 +226,7 @@ interface IDropProps {
   canDrop: boolean;
 }
 
-type IProps = IBaseProps &
-  IConnectedProps &
-  IActionProps &
-  IDragProps &
-  IDropProps;
+type IProps = IBaseProps & IConnectedProps & IActionProps & IDragProps & IDropProps;
 
 function componentCenter(component: React.Component<any, any>) {
   const box = (findDOMNode(component) as Element).getBoundingClientRect();
@@ -283,9 +249,7 @@ function updateCursorPos(
 ) {
   if (monitor.getClientOffset() !== null) {
     const curPos = monitor.getClientOffset();
-    const dist =
-      Math.abs(curPos.x - lastUpdatePos.x) +
-      Math.abs(curPos.y - lastUpdatePos.y);
+    const dist = Math.abs(curPos.x - lastUpdatePos.x) + Math.abs(curPos.y - lastUpdatePos.y);
     if (dist > 2 && monitor.getItem() !== null) {
       const sourceId = (monitor.getItem() as any).id;
       lastUpdatePos = curPos;
@@ -347,10 +311,7 @@ const dependencyTarget: DropTargetSpec<IProps> = {
   },
 };
 
-function collectDrag(
-  conn: DragSourceConnector,
-  monitor: DragSourceMonitor,
-): IDragProps {
+function collectDrag(conn: DragSourceConnector, monitor: DragSourceMonitor): IDragProps {
   return {
     connectDragSource: conn.dragSource(),
     connectDragPreview: conn.dragPreview(),
@@ -358,10 +319,7 @@ function collectDrag(
   };
 }
 
-function collectDrop(
-  conn: DropTargetConnector,
-  monitor: DropTargetMonitor,
-): IDropProps {
+function collectDrop(conn: DropTargetConnector, monitor: DropTargetMonitor): IDropProps {
   return {
     connectDropTarget: conn.dropTarget(),
     isOver: monitor.isOver(),
@@ -483,19 +441,14 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
 
     const source = { gameId, modId };
 
-    staticRules.forEach((rule) =>
-      res.set(rule, ruleFulfilled(enabledMods, rule, source)),
-    );
-    customRules.forEach((rule) =>
-      res.set(rule, ruleFulfilled(enabledMods, rule, source)),
-    );
+    staticRules.forEach((rule) => res.set(rule, ruleFulfilled(enabledMods, rule, source)));
+    customRules.forEach((rule) => res.set(rule, ruleFulfilled(enabledMods, rule, source)));
 
     return res;
   }
 
   private renderConnectorIcon(mod: types.IMod) {
-    const { t, connectDragSource, enabledMods, gameId, modState, mods } =
-      this.props;
+    const { t, connectDragSource, enabledMods, gameId, modState, mods } = this.props;
 
     const classes = ["btn-dependency"];
 
@@ -506,18 +459,11 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
 
     const rulesFulfilled =
       modState?.[mod.id]?.enabled === true
-        ? this.mRuleFulfillmentMemo(
-            staticRules,
-            customRules,
-            enabledMods,
-            gameId,
-            mod.id,
-          )
+        ? this.mRuleFulfillmentMemo(staticRules, customRules, enabledMods, gameId, mod.id)
         : null;
 
     const renderRule = (rule: IRule, onRemove: (rule: IRule) => void) => {
-      const isFulfilled =
-        rulesFulfilled !== null ? rulesFulfilled.get(rule) : true;
+      const isFulfilled = rulesFulfilled !== null ? rulesFulfilled.get(rule) : true;
 
       // isFulfilled could be null
       if (isFulfilled === false && !rule["ignored"]) {
@@ -550,11 +496,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
           {customRules.map((rule) => renderRule(rule, this.removeRule))}
         </Popover>
       );
-      classes.push(
-        anyUnfulfilled
-          ? "btn-dependency-unfulfilledrule"
-          : "btn-dependency-hasrules",
-      );
+      classes.push(anyUnfulfilled ? "btn-dependency-unfulfilledrule" : "btn-dependency-hasrules");
     } else {
       classes.push("btn-dependency-norules");
       popover = <Popover id={`popover-${mod.id}`}>{t("No rules")}</Popover>;
@@ -588,19 +530,14 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
     const { mod } = this.props;
     return this.state.modRules.find(
       (rule) =>
-        (util.testModReference(mod, rule.source) &&
-          util.testModReference(ref, rule.reference)) ||
-        (util.testModReference(ref, rule.source) &&
-          util.testModReference(mod, rule.reference)),
+        (util.testModReference(mod, rule.source) && util.testModReference(ref, rule.reference)) ||
+        (util.testModReference(ref, rule.source) && util.testModReference(mod, rule.reference)),
     );
   }
 
   private renderOverrideIcon(mod: types.IMod) {
     const { t } = this.props;
-    if (
-      (mod as any).fileOverrides === undefined ||
-      (mod as any).fileOverrides.length === 0
-    ) {
+    if ((mod as any).fileOverrides === undefined || (mod as any).fileOverrides.length === 0) {
       return null;
     }
 
@@ -660,10 +597,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderModLookup(lookupInfo: IModLookupInfo) {
-    const id =
-      lookupInfo.customFileName ||
-      lookupInfo.logicalFileName ||
-      lookupInfo.name;
+    const id = lookupInfo.customFileName || lookupInfo.logicalFileName || lookupInfo.name;
 
     const version = lookupInfo.version;
 
@@ -755,19 +689,11 @@ function mapStateToProps(state: types.IState): IConnectedProps {
 
   return {
     gameId,
-    conflicts: util.getSafe(
-      state.session,
-      ["dependencies", "conflicts"],
-      emptyObj,
-    ),
+    conflicts: util.getSafe(state.session, ["dependencies", "conflicts"], emptyObj),
     mods: state.persistent.mods[gameId],
     enabledMods: enabledModKeys(state),
     modState: profile !== undefined ? profile.modState : undefined,
-    source: util.getSafe(
-      state,
-      ["session", "dependencies", "connection", "source"],
-      undefined,
-    ),
+    source: util.getSafe(state, ["session", "dependencies", "connection", "source"], undefined),
     highlightConflict: util.getSafe(
       state,
       ["session", "dependencies", "highlightConflicts"],
@@ -782,8 +708,7 @@ function mapDispatchToProps(dispatch): IActionProps {
     onSetTarget: (id, pos) => dispatch(setTarget(id, pos)),
     onEditDialog: (gameId, modId, reference, defaultType) =>
       dispatch(setCreateRule(gameId, modId, reference, defaultType)),
-    onRemoveRule: (gameId, modId, rule) =>
-      dispatch(actions.removeModRule(gameId, modId, rule)),
+    onRemoveRule: (gameId, modId, rule) => dispatch(actions.removeModRule(gameId, modId, rule)),
     onConflictDialog: (gameId, modIds, modRules) =>
       dispatch(setConflictDialog(gameId, modIds, modRules)),
     onOverrideDialog: (gameId: string, modId: string) =>

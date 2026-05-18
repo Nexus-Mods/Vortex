@@ -1,18 +1,16 @@
+import { mdiClockOutline, mdiMagnify, mdiOpenInNew, mdiRefresh } from "@mdi/js";
 import type {
   ICollection,
   ICollectionSearchOptions,
   CollectionSortField,
   SortDirection,
 } from "@nexusmods/nexus-api";
-
-import { mdiClockOutline, mdiMagnify, mdiOpenInNew, mdiRefresh } from "@mdi/js";
 import numeral from "numeral";
 import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IState } from "../../../types/IState";
-
 import { Button } from "../../../ui/components/button/Button";
 import { CollectionTile } from "../../../ui/components/collectiontile/CollectionTile";
 import { CollectionTileSkeleton } from "../../../ui/components/collectiontile/CollectionTileSkeleton";
@@ -27,7 +25,6 @@ import { TabPanel } from "../../../ui/components/tabs/TabPanel";
 import { TabProvider } from "../../../ui/components/tabs/tabs.context";
 import { Typography } from "../../../ui/components/typography/Typography";
 import { UserCanceled } from "../../../util/api";
-import { getPreloadApi } from "../../../util/preloadAccess";
 import { activeGameId } from "../../../util/selectors";
 import MainPage from "../../../views/MainPage";
 import { CollectionsDownloadClickedEvent } from "../../analytics/mixpanel/MixpanelEvents";
@@ -67,13 +64,10 @@ async function adultContentDialog(
           { replace: { collectionName: collection.name } },
         ),
       },
-      [
-        { label: api.translate("Cancel") },
-        { label: api.translate("Open site preferences") },
-      ],
+      [{ label: api.translate("Cancel") }, { label: api.translate("Open site preferences") }],
     );
     return result.action === "Cancel" ? false : true;
-  } catch (err) {
+  } catch {
     return adultContent;
   }
 }
@@ -110,8 +104,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [selectedTab, setSelectedTab] = useState<string>("collections");
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
-  const [searchValidationError, setSearchValidationError] =
-    React.useState<string>("");
+  const [searchValidationError, setSearchValidationError] = React.useState<string>("");
   const itemsPerPage = 20;
 
   const handleSearch = () => {
@@ -137,8 +130,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
   };
 
   const handleAddCollection = (collection: ICollection) => {
-    const revisionNumber =
-      collection.latestPublishedRevision?.revisionNumber || "latest";
+    const revisionNumber = collection.latestPublishedRevision?.revisionNumber || "latest";
     // Use the game domain name from the collection data (already converted)
     const nxmUrl = `nxm://${collection.game.domainName}/collections/${collection.slug}/revisions/${revisionNumber}`;
 
@@ -148,15 +140,10 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
       new CollectionsDownloadClickedEvent(collection.slug, collection.game.id),
     );
 
-    if (
-      adultContentFilter === false &&
-      collection.latestPublishedRevision?.adultContent
-    ) {
-      adultContentDialog(api, collection, false).then((proceed) => {
+    if (adultContentFilter === false && collection.latestPublishedRevision?.adultContent) {
+      void adultContentDialog(api, collection, false).then((proceed) => {
         if (proceed) {
-          getPreloadApi().shell.openUrl(
-            "https://next.nexusmods.com/settings/content-blocking",
-          );
+          window.api.shell.openUrl("https://next.nexusmods.com/settings/content-blocking");
         }
       });
     } else {
@@ -178,8 +165,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
               collectionId: collection.id,
               revisionId: collection.latestPublishedRevision?.id,
               collectionSlug: collection.slug,
-              revisionNumber:
-                collection.latestPublishedRevision?.revisionNumber,
+              revisionNumber: collection.latestPublishedRevision?.revisionNumber,
             },
           },
         },
@@ -230,13 +216,8 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
       })
       .catch((err: Error) => {
         // Provide user-friendly error message for wildcard search requirement
-        if (
-          err.message &&
-          err.message.includes("Wildcard value must have 2 or more characters")
-        ) {
-          const friendlyError = new Error(
-            t("collection:browse.searchTooShort"),
-          );
+        if (err.message && err.message.includes("Wildcard value must have 2 or more characters")) {
+          const friendlyError = new Error(t("collection:browse.searchTooShort"));
           setError(friendlyError);
           // Also clear the invalid search so user can try again
           setActiveSearch("");
@@ -268,10 +249,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
           onSetSelectedTab={setSelectedTab}
         >
           <TabBar className="pl-6">
-            <TabButton
-              count={allCollectionsTotal}
-              name={t("collection:browse.tabs.collections")}
-            />
+            <TabButton count={allCollectionsTotal} name={t("collection:browse.tabs.collections")} />
 
             <TabButton name={t("collection:browse.tabs.mods")} />
           </TabBar>
@@ -324,11 +302,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                     onClick={handleRefresh}
                   />
 
-                  <Typography
-                    appearance="moderate"
-                    isTranslucent={true}
-                    typographyType="body-sm"
-                  >
+                  <Typography appearance="moderate" isTranslucent={true} typographyType="body-sm">
                     {t("collection:browse.resultsCount", {
                       total: numeral(totalCount).format("0,0"),
                     })}
@@ -360,7 +334,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                     leftIconPath={mdiOpenInNew}
                     size="sm"
                     onClick={() =>
-                      getPreloadApi().shell.openUrl(
+                      window.api.shell.openUrl(
                         `https://www.nexusmods.com/games/${gameDomainName}/mods`,
                       )
                     }
@@ -381,7 +355,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                     key={collection.id}
                     onAddCollection={() => handleAddCollection(collection)}
                     onViewPage={() =>
-                      getPreloadApi().shell.openUrl(
+                      window.api.shell.openUrl(
                         `https://www.nexusmods.com/games/${collection.game.domainName}/collections/${collection.slug}`,
                       )
                     }
@@ -412,9 +386,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                 leftIconPath={mdiOpenInNew}
                 size="sm"
                 onClick={() =>
-                  getPreloadApi().shell.openUrl(
-                    `https://www.nexusmods.com/games/${gameDomainName}/mods`,
-                  )
+                  window.api.shell.openUrl(`https://www.nexusmods.com/games/${gameDomainName}/mods`)
                 }
               >
                 {t("collection:browse.modsComingSoon.openWebsite")}

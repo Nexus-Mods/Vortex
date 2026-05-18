@@ -4,10 +4,7 @@ export class ObserverProxyHandler<T extends object> implements ProxyHandler<T> {
   private mSubscribers: Array<React.Component<any, any>> = [];
 
   public has(target: T, key: PropertyKey): boolean {
-    return (
-      key in target ||
-      (typeof key === "string" && ["attach", "detach"].indexOf(key) !== -1)
-    );
+    return key in target || (typeof key === "string" && ["attach", "detach"].indexOf(key) !== -1);
   }
 
   public get(target: T, key: PropertyKey): any {

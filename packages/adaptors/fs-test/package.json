@@ -1,0 +1,18 @@
+{
+  "$schema": "https://www.schemastore.org/package.json",
+  "name": "@vortex/adaptor-fs-test",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node ./build.mjs",
+    "typecheck": "pnpm tsc --noEmit -p tsconfig.json"
+  },
+  "module": "./dist/index.mjs",
+  "vortex:requires": [
+    "vortex:host/filesystem"
+  ],
+  "peerDependencies": {
+    "@nexusmods/adaptor-api": "workspace:*"
+  }
+}

@@ -1,14 +1,11 @@
-import PromiseBB from "bluebird";
 import * as path from "node:path";
-import * as winapi from "winapi-bindings";
-
-import { parseStringPromise } from "xml2js";
-
 import * as queryParser from "querystring";
 
+import PromiseBB from "bluebird";
 import turbowalk, { IEntry } from "turbowalk";
-
 import { fs, log, types, util } from "vortex-api";
+import * as winapi from "winapi-bindings";
+import { parseStringPromise } from "xml2js";
 
 const STORE_ID = "origin";
 const STORE_NAME = "Origin";
@@ -97,11 +94,11 @@ class OriginLauncher implements types.IGameStore {
       .then((entry) =>
         entry === undefined
           ? Promise.reject(
-            new types.GameEntryNotFound(
-              Array.isArray(appId) ? appId.join(", ") : appId,
-              STORE_ID,
-            ),
-          )
+              new types.GameEntryNotFound(
+                Array.isArray(appId) ? appId.join(", ") : appId,
+                STORE_ID,
+              ),
+            )
           : Promise.resolve(entry),
       );
   }
@@ -135,10 +132,7 @@ class OriginLauncher implements types.IGameStore {
     });
   }
 
-  private async getGameName(
-    installerPath: string,
-    manifestType: ManifestType,
-  ): Promise<string> {
+  private async getGameName(installerPath: string, manifestType: ManifestType): Promise<string> {
     const installerData = await fs.readFileBOM(installerPath, "utf8");
     let xmlDoc;
     try {
@@ -178,75 +172,66 @@ class OriginLauncher implements types.IGameStore {
         return PromiseBB.reduce(
           manifests,
           (accum: types.IGameStoreEntry[], manifest: IEntry) =>
-            fs
-              .readFileAsync(manifest.filePath, { encoding: "utf-8" })
-              .then((data) => {
-                let query;
-                try {
-                  // Ignore the preceding '?'
-                  query = queryParser.parse(data.substr(1));
-                } catch (err) {
-                  log("error", "failed to parse manifest file", err);
-                  return accum;
-                }
+            fs.readFileAsync(manifest.filePath, { encoding: "utf-8" }).then((data) => {
+              let query;
+              try {
+                // Ignore the preceding '?'
+                query = queryParser.parse(data.substr(1));
+              } catch (err) {
+                log("error", "failed to parse manifest file", err);
+                return accum;
+              }
 
-                if (!!query.dipinstallpath && !!query.id) {
-                  // We have the installation path and the game's ID which we can
-                  //  use to launch the game, but we need the game's name as well.
-                  const gamePath = query.dipinstallpath as string;
-                  const appid = query.id as string;
-                  const installerFilepath = path.join(gamePath, INSTALLER_DATA);
+              if (!!query.dipinstallpath && !!query.id) {
+                // We have the installation path and the game's ID which we can
+                //  use to launch the game, but we need the game's name as well.
+                const gamePath = query.dipinstallpath as string;
+                const appid = query.id as string;
+                const installerFilepath = path.join(gamePath, INSTALLER_DATA);
 
-                  // Uninstalling Origin games does NOT remove manifest files, we need
-                  //  to ensure that the installer data file exists before we do anything.
-                  return fs
-                    .statAsync(installerFilepath)
-                    .then(() =>
-                      PromiseBB.any([
-                        this.getGameName(installerFilepath, "DiPManifest"),
-                        this.getGameName(installerFilepath, "default"),
-                      ]),
-                    )
-                    .then((name) => {
-                      // We found the name.
-                      const launcherEntry: types.IGameStoreEntry = {
-                        name,
-                        appid,
-                        gamePath,
-                        gameStoreId: STORE_ID,
-                      };
+                // Uninstalling Origin games does NOT remove manifest files, we need
+                //  to ensure that the installer data file exists before we do anything.
+                return fs
+                  .statAsync(installerFilepath)
+                  .then(() =>
+                    PromiseBB.any([
+                      this.getGameName(installerFilepath, "DiPManifest"),
+                      this.getGameName(installerFilepath, "default"),
+                    ]),
+                  )
+                  .then((name) => {
+                    // We found the name.
+                    const launcherEntry: types.IGameStoreEntry = {
+                      name,
+                      appid,
+                      gamePath,
+                      gameStoreId: STORE_ID,
+                    };
 
-                      accum.push(launcherEntry);
-                      return accum;
-                    })
-                    .catch((err) => {
-                      if (
-                        err.code === "ENOENT" &&
-                        err.message.indexOf(installerFilepath) !== -1
-                      ) {
-                        // Game does not appear to be installed...
-                        // tslint:disable-next-line: max-line-length
-                        log(
-                          "debug",
-                          "Origin game manifest found, but does not appear to be installed",
-                          appid,
-                        );
-                        return accum;
-                      }
-                      const meta = Array.isArray(err)
-                        ? err.map((errInst) => errInst.message).join(";")
-                        : err;
-
+                    accum.push(launcherEntry);
+                    return accum;
+                  })
+                  .catch((err) => {
+                    if (err.code === "ENOENT" && err.message.indexOf(installerFilepath) !== -1) {
+                      // Game does not appear to be installed...
+                      // tslint:disable-next-line: max-line-length
                       log(
-                        "error",
-                        `failed to find game name for ${appid}`,
-                        meta,
+                        "debug",
+                        "Origin game manifest found, but does not appear to be installed",
+                        appid,
                       );
                       return accum;
-                    });
-                }
-                return accum;
-              }),
+                    }
+                    const meta = Array.isArray(err)
+                      ? err.map((errInst) => errInst.message).join(";")
+                      : err;
+
+                    log("error", `failed to find game name for ${appid}`, meta);
+                    return accum;
+                  });
+              }
+              return accum;
+            }),
           [],
         );
       })

@@ -49,9 +49,7 @@ export type RegistryKey = string & { readonly __brand: "RegistryKey" };
  */
 export function steamAppId(value: number): SteamAppId {
   if (!Number.isInteger(value) || value <= 0) {
-    throw new Error(
-      `Invalid SteamAppId: ${value} — must be a positive integer`,
-    );
+    throw new Error(`Invalid SteamAppId: ${value} — must be a positive integer`);
   }
   return value as SteamAppId;
 }
@@ -64,9 +62,7 @@ const EPIC_HEX_PATTERN = /^[a-f0-9]+$/;
  */
 export function epicCatalogNamespace(value: string): EpicCatalogNamespace {
   if (!EPIC_HEX_PATTERN.test(value)) {
-    throw new Error(
-      `Invalid EpicCatalogNamespace: "${value}" — must be a non-empty hex string`,
-    );
+    throw new Error(`Invalid EpicCatalogNamespace: "${value}" — must be a non-empty hex string`);
   }
   return value as EpicCatalogNamespace;
 }
@@ -77,9 +73,7 @@ export function epicCatalogNamespace(value: string): EpicCatalogNamespace {
  */
 export function epicCatalogItemId(value: string): EpicCatalogItemId {
   if (!EPIC_HEX_PATTERN.test(value)) {
-    throw new Error(
-      `Invalid EpicCatalogItemId: "${value}" — must be a non-empty hex string`,
-    );
+    throw new Error(`Invalid EpicCatalogItemId: "${value}" — must be a non-empty hex string`);
   }
   return value as EpicCatalogItemId;
 }

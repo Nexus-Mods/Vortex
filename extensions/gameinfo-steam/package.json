@@ -3,9 +3,7 @@
   "version": "0.0.1",
   "description": "Retrieve information about supported games from Steam",
   "scripts": {
-    "_build": "node build.mjs && pnpm extractInfo",
-    "build": "pnpm run _build && node ../copy-extension.mjs out",
-    "dist": "pnpm run _build && node ../copy-extension.mjs dist",
+    "build": "node build.mjs && pnpm extractInfo",
     "typecheck": "pnpm tsc"
   },
   "author": "Black Tree Gaming Ltd.",
@@ -25,5 +23,26 @@
     "react-dom": "catalog:",
     "react-i18next": "catalog:",
     "vortex-api": "workspace:*"
+  },
+  "nx": {
+    "tags": [
+      "vortex:extension"
+    ],
+    "targets": {
+      "build": {
+        "inputs": [
+          "default",
+          "typescript",
+          "vortex-api"
+        ]
+      },
+      "typecheck": {
+        "inputs": [
+          "default",
+          "typescript",
+          "vortex-api"
+        ]
+      }
+    }
   }
 }

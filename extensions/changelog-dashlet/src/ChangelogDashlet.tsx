@@ -1,10 +1,11 @@
 import * as React from "react";
 import { Pager } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
+import ReactMarkdown from "react-markdown";
 import { connect } from "react-redux";
 import * as semver from "semver";
 import { ComponentEx, Dashlet, util } from "vortex-api";
-import ReactMarkdown from "react-markdown";
+
 import { Changelog } from "./types";
 
 interface IConnectedProps {
@@ -71,10 +72,7 @@ class ChangelogDashlet extends ComponentEx<IProps, IIssueListState> {
       //  return changelog.prerelease === !(channel === 'stable');
 
       // we only want to show changelogs that are same or older than the current version
-      const comparisonResult = semver.compare(
-        changelog.version,
-        this.mAppVersion,
-      );
+      const comparisonResult = semver.compare(changelog.version, this.mAppVersion);
 
       return comparisonResult === 0 || comparisonResult === -1;
 
@@ -93,9 +91,7 @@ class ChangelogDashlet extends ComponentEx<IProps, IIssueListState> {
           filteredChangelogs.slice(0, 10).map((changelog) => (
             <div className="changelog-entry" key={changelog.version}>
               <h4 className="changelog-title">Version {changelog.version}</h4>
-              <ReactMarkdown className="changelog-text">
-                {changelog.text}
-              </ReactMarkdown>
+              <ReactMarkdown className="changelog-text">{changelog.text}</ReactMarkdown>
             </div>
           ))
         )}
@@ -104,25 +100,14 @@ class ChangelogDashlet extends ComponentEx<IProps, IIssueListState> {
   }
 
   private prev = () => {
-    this.context.api.events.emit(
-      "analytics-track-click-event",
-      "Dashboard",
-      "Previous Changelog",
-    );
+    this.context.api.events.emit("analytics-track-click-event", "Dashboard", "Previous Changelog");
     this.nextState.current = Math.max(0, this.state.current - 1);
   };
 
   private next = () => {
     const { changelogs } = this.props;
-    this.context.api.events.emit(
-      "analytics-track-click-event",
-      "Dashboard",
-      "Next Changelog",
-    );
-    this.nextState.current = Math.min(
-      changelogs.length - 1,
-      this.state.current + 1,
-    );
+    this.context.api.events.emit("analytics-track-click-event", "Dashboard", "Next Changelog");
+    this.nextState.current = Math.min(changelogs.length - 1, this.state.current + 1);
   };
 }
 

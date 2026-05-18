@@ -1,0 +1,44 @@
+name: Fingerprints - Manually resolve
+on:
+  workflow_dispatch:
+    inputs:
+      fingerprints:
+        description: "Fingerprint(s) — comma- or whitespace-separated, 8 hex chars each"
+        required: true
+      remove:
+        description: "Remove the fingerprint(s) from the table instead of adding"
+        required: false
+        default: false
+        type: boolean
+      status:
+        description: "Status (only used when remove is false)"
+        required: true
+        default: "fixed"
+        type: choice
+        options:
+          - fixed
+          - released
+          - ignored
+      release_version:
+        description: "Release version (required when status is released and remove is false)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: [self-hosted]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/fingerprints
+        with:
+          mode: resolve
+          fingerprints: ${{ inputs.fingerprints }}
+          remove: ${{ inputs.remove }}
+          status: ${{ inputs.status }}
+          release-version: ${{ inputs.release_version }}
+          clickhouse-url: ${{ secrets.CLICKHOUSE_URL }}
+          clickhouse-user: ${{ secrets.CLICKHOUSE_USER }}
+          clickhouse-password: ${{ secrets.CLICKHOUSE_PASSWORD }}

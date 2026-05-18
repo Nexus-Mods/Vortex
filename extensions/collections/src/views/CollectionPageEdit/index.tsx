@@ -1,19 +1,3 @@
-/* eslint-disable */
-import { ICollectionInfo, ICollectionModRule } from "../../types/ICollection";
-import { IExtensionFeature } from "../../util/extension";
-import { getInterface } from "../../util/gameSupport";
-import InstallDriver from "../../util/InstallDriver";
-import { makeBiDirRule } from "../../util/transformCollection";
-
-import { NAMESPACE } from "../../constants";
-
-import { startAddModsToCollection } from "../../actions/session";
-
-import FileOverrides, { IPathTools } from "./FileOverrides";
-import CollectionGeneralPage from "./Instructions";
-import ModRules from "./ModRules";
-import ModsEditPage from "./ModsEditPage";
-
 import { IRevision } from "@nexusmods/nexus-api";
 import memoize from "memoize-one";
 import * as React from "react";
@@ -21,15 +5,20 @@ import { Badge, Panel, Tab, Tabs } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import * as Redux from "redux";
-import {
-  actions,
-  ComponentEx,
-  FlexLayout,
-  log,
-  tooltip,
-  types,
-  util,
-} from "vortex-api";
+import { actions, ComponentEx, FlexLayout, log, tooltip, types, util } from "vortex-api";
+
+import { startAddModsToCollection } from "../../actions/session";
+import { NAMESPACE } from "../../constants";
+/* eslint-disable */
+import { ICollectionInfo, ICollectionModRule } from "../../types/ICollection";
+import { IExtensionFeature } from "../../util/extension";
+import { getInterface } from "../../util/gameSupport";
+import InstallDriver from "../../util/InstallDriver";
+import { makeBiDirRule } from "../../util/transformCollection";
+import FileOverrides, { IPathTools } from "./FileOverrides";
+import CollectionGeneralPage from "./Instructions";
+import ModRules from "./ModRules";
+import ModsEditPage from "./ModsEditPage";
 
 const INIT_PAGE = "mods";
 
@@ -51,12 +40,7 @@ interface IConnectedProps {
 }
 
 interface IActionProps {
-  onSetModAttribute: (
-    gameId: string,
-    modId: string,
-    key: string,
-    value: any,
-  ) => void;
+  onSetModAttribute: (gameId: string, modId: string, key: string, value: any) => void;
   onAddRule: (gameId: string, modId: string, rule: types.IModRule) => void;
   onRemoveRule: (gameId: string, modId: string, rule: types.IModRule) => void;
   onAddModsDialog: (collectionId: string) => void;
@@ -65,9 +49,7 @@ interface IActionProps {
   onShowPhaseColumn: () => void;
 }
 
-type ICollectionEditProps = ICollectionEditBaseProps &
-  IConnectedProps &
-  IActionProps;
+type ICollectionEditProps = ICollectionEditBaseProps & IConnectedProps & IActionProps;
 
 interface ICollectionEditState {
   page: string;
@@ -87,15 +69,9 @@ const emptyCollectionInfo: ICollectionInfo = {
 
 const emptyList = [];
 
-class CollectionEdit extends ComponentEx<
-  ICollectionEditProps,
-  ICollectionEditState
-> {
+class CollectionEdit extends ComponentEx<ICollectionEditProps, ICollectionEditState> {
   private collectionRules = memoize(
-    (
-      rules: types.IModRule[],
-      mods: { [modId: string]: types.IMod },
-    ): ICollectionModRule[] => {
+    (rules: types.IModRule[], mods: { [modId: string]: types.IMod }): ICollectionModRule[] => {
       const includedMods = rules
         .filter((rule) => ["requires", "recommends"].includes(rule.type))
         .reduce((prev, rule) => {
@@ -106,24 +82,21 @@ class CollectionEdit extends ComponentEx<
           return prev;
         }, {});
 
-      return Object.values(includedMods).reduce<ICollectionModRule[]>(
-        (prev, mod: types.IMod) => {
-          const source = util.makeModReference(mod);
-          prev = [].concat(
-            prev,
-            (mod.rules || [])
-              .filter(
-                (rule) =>
-                  !["requires", "recommends"].includes(rule.type) &&
-                  rule.extra?.["automatic"] !== true,
-              )
-              .map((rule) => makeBiDirRule(source, rule)),
-          );
+      return Object.values(includedMods).reduce<ICollectionModRule[]>((prev, mod: types.IMod) => {
+        const source = util.makeModReference(mod);
+        prev = [].concat(
+          prev,
+          (mod.rules || [])
+            .filter(
+              (rule) =>
+                !["requires", "recommends"].includes(rule.type) &&
+                rule.extra?.["automatic"] !== true,
+            )
+            .map((rule) => makeBiDirRule(source, rule)),
+        );
 
-          return prev;
-        },
-        [],
-      );
+        return prev;
+      }, []);
     },
   );
 
@@ -223,11 +196,7 @@ class CollectionEdit extends ComponentEx<
           {t("Set up your mod collection's rules and site preferences.")}
         </FlexLayout.Fixed>
         <FlexLayout.Flex>
-          <Tabs
-            id="collection-edit-tabs"
-            activeKey={page}
-            onSelect={this.setCurrentPage}
-          >
+          <Tabs id="collection-edit-tabs" activeKey={page} onSelect={this.setCurrentPage}>
             <Tab
               key="mods"
               eventKey="mods"
@@ -267,11 +236,7 @@ class CollectionEdit extends ComponentEx<
                 />
               </Panel>
             </Tab>
-            <Tab
-              key="file-overrides"
-              eventKey="file-overrides"
-              title={t("File Overrides")}
-            >
+            <Tab key="file-overrides" eventKey="file-overrides" title={t("File Overrides")}>
               <Panel>
                 <FileOverrides
                   t={t}
@@ -289,6 +254,7 @@ class CollectionEdit extends ComponentEx<
             >
               <Panel>
                 <CollectionGeneralPage
+                  gameId={profile.gameId}
                   collection={collection}
                   onSetCollectionAttribute={this.setCollectionAttribute}
                 />
@@ -343,8 +309,7 @@ class CollectionEdit extends ComponentEx<
     if (props.collection !== undefined) {
       const { collection } = props;
 
-      const { revisionId, collectionSlug, revisionNumber } =
-        collection.attributes ?? {};
+      const { revisionId, collectionSlug, revisionNumber } = collection.attributes ?? {};
 
       if (revisionId !== undefined || collectionSlug !== undefined) {
         try {
@@ -392,18 +357,14 @@ class CollectionEdit extends ComponentEx<
 
   private openUrl = () => {
     const collectionSlug =
-      this.state.revision?.collection?.slug ??
-      this.props.collection.attributes?.collectionSlug;
+      this.state.revision?.collection?.slug ?? this.props.collection.attributes?.collectionSlug;
     if (collectionSlug === undefined) {
       return;
     }
     const { revision } = this.state;
     const { collection } = revision;
 
-    if (
-      collection?.game !== undefined &&
-      revision?.revisionNumber !== undefined
-    ) {
+    if (collection?.game !== undefined && revision?.revisionNumber !== undefined) {
       this.context.api.events.emit(
         "analytics-track-click-event",
         "Collections",
@@ -445,12 +406,7 @@ class CollectionEdit extends ComponentEx<
     const attr = util.getSafe(this.mAttributes, ["collection"], {});
     const updated = util.setSafe(attr, attrPath, value);
     this.mAttributes = util.setSafe(this.mAttributes, ["collection"], updated);
-    this.props.onSetModAttribute(
-      profile.gameId,
-      collection.id,
-      "collection",
-      updated,
-    );
+    this.props.onSetModAttribute(profile.gameId, collection.id, "collection", updated);
   };
 
   private addModsDialog = (collectionId: string) => {
@@ -464,14 +420,10 @@ class CollectionEdit extends ComponentEx<
   };
 }
 
-function mapStateToProps(
-  state: types.IState,
-  ownProps: ICollectionEditBaseProps,
-): IConnectedProps {
+function mapStateToProps(state: types.IState, ownProps: ICollectionEditBaseProps): IConnectedProps {
   const { settings } = state;
   return {
-    phaseColumnVisible:
-      settings.tables["collection-mods"]?.attributes?.phase?.enabled ?? false,
+    phaseColumnVisible: settings.tables["collection-mods"]?.attributes?.phase?.enabled ?? false,
     showPhaseUsage: settings.interface.usage["collection-phase"] ?? true,
     showBinpatchWarning: settings.interface.usage["binpatch-warning"] ?? true,
   };
@@ -479,20 +431,14 @@ function mapStateToProps(
 
 function mapDispatchToProps(dispatch: Redux.Dispatch): IActionProps {
   return {
-    onSetModAttribute: (
-      gameId: string,
-      modId: string,
-      key: string,
-      value: any,
-    ) => dispatch(actions.setModAttribute(gameId, modId, key, value)),
+    onSetModAttribute: (gameId: string, modId: string, key: string, value: any) =>
+      dispatch(actions.setModAttribute(gameId, modId, key, value)),
     onAddRule: (gameId: string, modId: string, rule: types.IModRule) =>
       dispatch(actions.addModRule(gameId, modId, rule)),
     onRemoveRule: (gameId: string, modId: string, rule: types.IModRule) =>
       dispatch(actions.removeModRule(gameId, modId, rule)),
-    onAddModsDialog: (collectionId: string) =>
-      dispatch(startAddModsToCollection(collectionId)),
-    onDismissPhaseUsage: () =>
-      dispatch(actions.showUsageInstruction("collection-phase", false)),
+    onAddModsDialog: (collectionId: string) => dispatch(startAddModsToCollection(collectionId)),
+    onDismissPhaseUsage: () => dispatch(actions.showUsageInstruction("collection-phase", false)),
     onDismissBinpatchWarning: () =>
       dispatch(actions.showUsageInstruction("binpatch-warning", false)),
     onShowPhaseColumn: () =>

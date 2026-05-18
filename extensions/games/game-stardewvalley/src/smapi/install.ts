@@ -3,7 +3,6 @@
  * Stardew Valley mods.
  */
 import type { types } from "vortex-api";
-
 import { actions, selectors, util } from "vortex-api";
 
 import { GAME_ID } from "../common";
@@ -21,12 +20,7 @@ export async function installDownloadedSMAPI(
   downloadId: string,
 ): Promise<string> {
   return util.toPromise<string>((cb) =>
-    api.events.emit(
-      "start-install-download",
-      downloadId,
-      { allowAutoEnable: false },
-      cb,
-    ),
+    api.events.emit("start-install-download", downloadId, { allowAutoEnable: false }, cb),
   );
 }
 
@@ -39,10 +33,7 @@ export async function installDownloadedSMAPI(
  * `installDownloadedSMAPI`.
  * @returns Resolves when the mod is enabled in profile state.
  */
-export async function enableSMAPIMod(
-  api: types.IExtensionApi,
-  modId: string,
-): Promise<void> {
+export async function enableSMAPIMod(api: types.IExtensionApi, modId: string): Promise<void> {
   const profileId = selectors.lastActiveProfileForGame(api.getState(), GAME_ID);
   await actions.setModsEnabled(api, profileId, [modId], true, {
     allowAutoDeploy: false,

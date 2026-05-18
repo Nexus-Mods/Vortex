@@ -1,0 +1,59 @@
+{
+  "$schema": "./node_modules/nx/schemas/nx-schema.json",
+  "defaultBase": "master",
+  "neverConnectToCloud": true,
+  "analytics": false,
+  "tui": {
+    "autoExit": true
+  },
+  "namedInputs": {
+    "default": [
+      "{projectRoot}/package.json",
+      "{workspaceRoot}/pnpm-workspace.yaml",
+      { "env": "NODE_ENV" }
+    ],
+    "typescript": [
+      "{workspaceRoot}/tsconfig*.json",
+      "{projectRoot}/tsconfig*.json",
+      "{projectRoot}/build.mjs",
+      "{projectRoot}/tsdown.config.ts",
+      "{projectRoot}/src/**/*.{ts,tsx}"
+    ],
+    "vortex-api": [{ "dependentTasksOutputFiles": "packages/vortex-api/lib/api.d.ts" }]
+  },
+  "targetDefaults": {
+    "build": {
+      "dependsOn": ["^build"],
+      "cache": true,
+      "inputs": [
+        "default",
+        "typescript",
+        "!{projectRoot}/src/**/*.test.{ts,tsx}",
+        { "dependentTasksOutputFiles": "**/dist/**" }
+      ],
+      "outputs": ["{projectRoot}/dist/"]
+    },
+    "test*": {
+      "dependsOn": ["^build"],
+      "cache": false
+    },
+    "typecheck": {
+      "dependsOn": ["^build"],
+      "cache": true,
+      "inputs": ["default", "typescript"],
+      "outputs": ["{projectRoot}/tsconfig*.tsbuildinfo"]
+    },
+    "lint*": {
+      "dependsOn": ["^build"],
+      "cache": true,
+      "inputs": [
+        "default",
+        "typescript",
+        "{projectRoot}/*.mjs",
+
+        "{workspaceRoot}/eslint.config.base.mjs"
+      ],
+      "outputs": []
+    }
+  }
+}

@@ -1,17 +1,16 @@
-import type { IWindow } from "@vortex/shared/state";
-
-import { getErrorMessageOrDefault } from "@vortex/shared";
-import { app, ipcMain, screen, webContents, BrowserWindow } from "electron";
 import * as path from "path";
 import { pathToFileURL } from "url";
 
-import type TrayIcon from "./TrayIcon";
+import { getErrorMessageOrDefault } from "@vortex/shared";
+import type { IWindow } from "@vortex/shared/state";
+import { app, ipcMain, screen, webContents, BrowserWindow } from "electron";
 
 import { terminate } from "./errorHandling";
 import { getVortexPath } from "./getVortexPath";
 import { log } from "./logging";
 import Debouncer from "./NodeDebouncer";
 import { openUrl } from "./open";
+import type TrayIcon from "./TrayIcon";
 import { closeAllViews } from "./webview";
 
 const MIN_HEIGHT = 700;
@@ -20,11 +19,7 @@ const REQUEST_HEADER_FILTER = {
 };
 
 const YOUTUBE_HEADER_FILTER = {
-  urls: [
-    "*://www.youtube-nocookie.com/*",
-    "*://www.youtube.com/*",
-    "*://*.ytimg.com/*",
-  ],
+  urls: ["*://www.youtube-nocookie.com/*", "*://www.youtube.com/*", "*://*.ytimg.com/*"],
 };
 
 interface IRect {
@@ -122,14 +117,10 @@ class MainWindow {
       return Promise.resolve(undefined);
     }
 
-    this.mWindow = new BrowserWindow(
-      this.getWindowSettings(this.mInitialWindowSettings),
-    );
+    this.mWindow = new BrowserWindow(this.getWindowSettings(this.mInitialWindowSettings));
 
     this.mWindow
-      .loadURL(
-        pathToFileURL(path.join(getVortexPath("base"), "index.html")).href,
-      )
+      .loadURL(pathToFileURL(path.join(getVortexPath("base"), "index.html")).href)
       .catch((err: unknown) => log("error", "error loading window URL", err));
 
     let cancelTimer: NodeJS.Timeout;
@@ -172,8 +163,6 @@ class MainWindow {
         if (details.reason !== "killed") {
           // workaround for electron issue #19887
           setImmediate(() => {
-            process.env.CRASH_REPORTING =
-              Math.random() > 0.5 ? "vortex" : "electron";
             if (this.mWindow !== null) {
               this.mWindow
                 .loadURL(`file://${getVortexPath("base")}/index.html`)
@@ -188,21 +177,14 @@ class MainWindow {
       },
     );
 
-    this.mWindow.webContents.on(
-      "did-fail-load",
-      (_evt, code, description, url) => {
-        log("error", "failed to load page", { code, description, url });
-      },
-    );
+    this.mWindow.webContents.on("did-fail-load", (_evt, code, description, url) => {
+      log("error", "failed to load page", { code, description, url });
+    });
 
     const signalUrl = (item: Electron.DownloadItem) => {
       if (this.mWindow && !this.mWindow.isDestroyed()) {
         try {
-          this.mWindow.webContents.send(
-            "received-url",
-            item.getURL(),
-            item.getFilename(),
-          );
+          this.mWindow.webContents.send("received-url", item.getURL(), item.getFilename());
         } catch (err) {
           log("warn", "starting download failed", err);
         }
@@ -326,8 +308,7 @@ class MainWindow {
         const pBounds = screen.getPrimaryDisplay().bounds;
         log(
           "warn",
-          "The Vortex window was found to be mostly offscreen. " +
-            "Moving to a sensible location.",
+          "The Vortex window was found to be mostly offscreen. " + "Moving to a sensible location.",
           { bounds },
         );
         this.mWindow.setPosition(pBounds.x, pBounds.y);
@@ -373,10 +354,7 @@ class MainWindow {
     windowMetrics: IWindow | null | undefined,
   ): Electron.BrowserWindowConstructorOptions {
     const screenArea = screen.getPrimaryDisplay().workAreaSize;
-    const width = Math.max(
-      1024,
-      windowMetrics?.size?.width ?? Math.floor(screenArea.width * 0.8),
-    );
+    const width = Math.max(1024, windowMetrics?.size?.width ?? Math.floor(screenArea.width * 0.8));
     const height = Math.max(
       MIN_HEIGHT,
       windowMetrics?.size?.height ?? Math.floor(screenArea.height * 0.8),
@@ -393,8 +371,7 @@ class MainWindow {
       frame: !(windowMetrics?.customTitlebar ?? true),
       show: false,
       title: "Vortex",
-      titleBarStyle:
-        windowMetrics?.customTitlebar === true ? "hidden" : "default",
+      titleBarStyle: windowMetrics?.customTitlebar === true ? "hidden" : "default",
       webPreferences: {
         preload: path.join(getVortexPath("base"), "preload.cjs"),
         nodeIntegration: true, // Required for @electron/remote compatibility
@@ -435,12 +412,8 @@ class MainWindow {
     this.mWindow.on("closed", () => {
       this.mWindow = null;
     });
-    this.mWindow.on("maximize", () =>
-      this.sendWindowEvent("window:maximized", true),
-    );
-    this.mWindow.on("unmaximize", () =>
-      this.sendWindowEvent("window:maximized", false),
-    );
+    this.mWindow.on("maximize", () => this.sendWindowEvent("window:maximized", true));
+    this.mWindow.on("unmaximize", () => this.sendWindowEvent("window:maximized", false));
     this.mWindow.on("focus", () => this.sendWindowEvent("window:focus"));
     this.mWindow.on("blur", () => this.sendWindowEvent("window:blur"));
     this.mWindow.on("resize", () => this.mResizeDebouncer.schedule());

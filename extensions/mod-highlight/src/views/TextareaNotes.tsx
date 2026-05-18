@@ -10,12 +10,7 @@ export interface IBaseProps {
 }
 
 interface IActionProps {
-  onSetModAttribute: (
-    gameMode: string,
-    modId: string,
-    attributeId: string,
-    value: any,
-  ) => void;
+  onSetModAttribute: (gameMode: string, modId: string, attributeId: string, value: any) => void;
 }
 
 interface IConnectedProps {}
@@ -85,9 +80,7 @@ class TextareaNotes extends ComponentEx<IProps, IComponentState> {
         className="textarea-notes"
         onChange={this.handleChange}
         placeholder={
-          valueCache !== null
-            ? t("Write your own notes on this mod")
-            : t("Multiple values")
+          valueCache !== null ? t("Write your own notes on this mod") : t("Multiple values")
         }
       />
     );
@@ -96,9 +89,8 @@ class TextareaNotes extends ComponentEx<IProps, IComponentState> {
   private getValue(props: IProps) {
     const value = util.getSafe(props.mods[0].attributes, ["notes"], "");
     const different =
-      props.mods.find(
-        (iter) => util.getSafe(iter, ["attributes", "notes"], "") !== value,
-      ) !== undefined;
+      props.mods.find((iter) => util.getSafe(iter, ["attributes", "notes"], "") !== value) !==
+      undefined;
 
     return different ? null : value;
   }
@@ -115,16 +107,9 @@ function mapStateToProps(state: types.IState): IConnectedProps {
   return {};
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, any, any>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, any, any>): IActionProps {
   return {
-    onSetModAttribute: (
-      gameMode: string,
-      modId: string,
-      attributeId: string,
-      value: any,
-    ) => {
+    onSetModAttribute: (gameMode: string, modId: string, attributeId: string, value: any) => {
       dispatch(actions.setModAttribute(gameMode, modId, attributeId, value));
     },
   };

@@ -12,9 +12,7 @@ describe("objDiff edge cases that could cause TypeError", () => {
     });
 
     it("handles undefined values safely", () => {
-      expect(() =>
-        util.objDiff({ key: undefined }, { key: undefined }),
-      ).not.toThrow();
+      expect(() => util.objDiff({ key: undefined }, { key: undefined })).not.toThrow();
       expect(() => util.objDiff(undefined, { key: "value" })).not.toThrow();
       expect(() => util.objDiff({ key: "value" }, undefined)).not.toThrow();
     });

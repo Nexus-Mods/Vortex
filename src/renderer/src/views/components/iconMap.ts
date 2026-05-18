@@ -36,9 +36,6 @@ const iconMap: Record<string, string> = {
   tune: mdiTune,
 };
 
-export const getIconPath = (
-  iconName: string,
-  fallbackIcon: string = mdiShapeOutline,
-): string => {
+export const getIconPath = (iconName: string, fallbackIcon: string = mdiShapeOutline): string => {
   return iconMap[iconName] ?? fallbackIcon;
 };

@@ -1,7 +1,7 @@
-import Step from "./Step";
-
 import * as _ from "lodash";
 import * as React from "react";
+
+import Step from "./Step";
 
 export interface IStepsProps {
   step: string;
@@ -19,16 +19,10 @@ class Steps extends React.Component<IProps, {}> {
       this.props.children,
     ) as any[];
 
-    const stepIdx = childArray.findIndex(
-      (child) => child.props.stepId === step,
-    );
+    const stepIdx = childArray.findIndex((child) => child.props.stepId === step);
 
     const newChildren = childArray.reduce(
-      (
-        prev: Array<React.ReactElement<any>>,
-        value: React.ReactElement<any>,
-        idx: number,
-      ) => {
+      (prev: Array<React.ReactElement<any>>, value: React.ReactElement<any>, idx: number) => {
         if (idx !== 0) {
           prev.push(<hr key={idx} />);
         }
@@ -50,11 +44,7 @@ class Steps extends React.Component<IProps, {}> {
   }
 
   private classByIdx(currentIdx: number, itemIdx: number) {
-    return itemIdx < currentIdx
-      ? "done"
-      : itemIdx === currentIdx
-        ? "current"
-        : "future";
+    return itemIdx < currentIdx ? "done" : itemIdx === currentIdx ? "current" : "future";
   }
 }
 

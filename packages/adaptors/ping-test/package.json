@@ -6,7 +6,6 @@
   "type": "module",
   "scripts": {
     "build": "node ./build.mjs",
-    "dist": "node ./build.mjs",
     "typecheck": "pnpm tsc --noEmit -p tsconfig.json",
     "test": "vitest run --config vitest.config.ts"
   },
@@ -15,9 +14,9 @@
     "vortex:host/ping"
   ],
   "devDependencies": {
-    "@vortex/adaptor-api": "workspace:*"
+    "@nexusmods/adaptor-api": "workspace:*"
   },
   "peerDependencies": {
-    "@vortex/adaptor-api": "workspace:*"
+    "@nexusmods/adaptor-api": "workspace:*"
   }
 }

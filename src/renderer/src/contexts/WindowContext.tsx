@@ -13,10 +13,9 @@ import React, {
 } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
+import { setTabsMinimized } from "../actions/window";
 import type { IModifiers } from "../types/IModifiers";
 import type { IState } from "../types/IState";
-
-import { setTabsMinimized } from "../actions/window";
 
 export interface IWindowContext {
   isFocused: boolean;
@@ -42,13 +41,9 @@ export interface IWindowProviderProps {
 
 export const WindowProvider: FC<IWindowProviderProps> = ({ children }) => {
   const dispatch = useDispatch();
-  const tabsMinimized = useSelector(
-    (state: IState) => state.settings.window.tabsMinimized,
-  );
+  const tabsMinimized = useSelector((state: IState) => state.settings.window.tabsMinimized);
 
-  const [isHidpi, setIsHidpi] = useState(
-    () => (global.screen?.width ?? 0) > 1920,
-  );
+  const [isHidpi, setIsHidpi] = useState(() => (global.screen?.width ?? 0) > 1920);
   const [isFocused, setIsFocused] = useState(true);
 
   const modifiersRef = useRef<IModifiers>({
@@ -79,8 +74,7 @@ export const WindowProvider: FC<IWindowProviderProps> = ({ children }) => {
 
   const setMenuIsCollapsed = useCallback(
     (value: boolean | ((prev: boolean) => boolean)) => {
-      const newValue =
-        typeof value === "function" ? value(tabsMinimizedRef.current) : value;
+      const newValue = typeof value === "function" ? value(tabsMinimizedRef.current) : value;
       dispatch(setTabsMinimized(newValue));
     },
     [dispatch],
@@ -131,11 +125,7 @@ export const WindowProvider: FC<IWindowProviderProps> = ({ children }) => {
     [isFocused, isHidpi, tabsMinimized, setMenuIsCollapsed, getModifiers],
   );
 
-  return (
-    <WindowContext.Provider value={contextValue}>
-      {children}
-    </WindowContext.Provider>
-  );
+  return <WindowContext.Provider value={contextValue}>{children}</WindowContext.Provider>;
 };
 
 export const WindowConsumer = WindowContext.Consumer;

@@ -2,7 +2,6 @@
  * User-facing SMAPI provisioning workflow.
  */
 import type { types } from "vortex-api";
-
 import { util } from "vortex-api";
 
 import { SMAPI_URL } from "../common";

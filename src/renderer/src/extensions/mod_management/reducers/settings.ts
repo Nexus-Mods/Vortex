@@ -1,6 +1,5 @@
 import type { IReducerSpec } from "../../../types/IExtensionContext";
 import { setSafe } from "../../../util/storeHelper";
-
 import * as actions from "../actions/settings";
 
 /**
@@ -22,8 +21,7 @@ export const settingsReducer: IReducerSpec = {
     },
     [actions.setShowModDropzone as any]: (state, payload) =>
       setSafe(state, ["showDropzone"], payload),
-    [actions.setConfirmPurge as any]: (state, payload) =>
-      setSafe(state, ["confirmPurge"], payload),
+    [actions.setConfirmPurge as any]: (state, payload) => setSafe(state, ["confirmPurge"], payload),
     [actions.setCleanupOnDeploy as any]: (state, payload) =>
       setSafe(state, ["cleanupOnDeploy"], payload),
   },
@@ -43,8 +41,7 @@ export const settingsReducer: IReducerSpec = {
       description: () => "Severe! Invalid set of staging folders",
       elements: {
         _: {
-          description: () =>
-            "Severe! A mod staging folder was corrupted and has to be reset",
+          description: () => "Severe! A mod staging folder was corrupted and has to be reset",
           type: "string",
         },
       },

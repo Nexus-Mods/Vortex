@@ -43,15 +43,8 @@
   */
 
     background-image:
-        repeating-linear-gradient(
-            $brand-menu 0 3px,
-            transparent 3px $dashlet-height
-        ),
-        repeating-linear-gradient(
-            90deg,
-            $brand-menu 0 3px,
-            transparent 1px 33.3%
-        );
+        repeating-linear-gradient($brand-menu 0 3px, transparent 3px $dashlet-height),
+        repeating-linear-gradient(90deg, $brand-menu 0 3px, transparent 1px 33.3%);
 
     border-bottom: 3px solid $brand-menu;
 }

@@ -1,7 +1,6 @@
 import type { IReducerSpec } from "../../../types/IExtensionContext";
 import { log } from "../../../util/log";
 import { deleteOrNop, getSafe, setSafe } from "../../../util/storeHelper";
-
 import * as actions from "../actions/profiles";
 import type { IProfile } from "../types/IProfile";
 
@@ -15,8 +14,7 @@ export const profilesReducer: IReducerSpec = {
         ...getSafe(state, [payload.id], {}),
         ...payload,
       }),
-    [actions.removeProfile as any]: (state, payload) =>
-      deleteOrNop(state, [payload]),
+    [actions.removeProfile as any]: (state, payload) => deleteOrNop(state, [payload]),
     [actions.willRemoveProfile as any]: (state, payload) => {
       if (state[payload] === undefined) {
         return state;
@@ -31,11 +29,7 @@ export const profilesReducer: IReducerSpec = {
       }
 
       if (enable) {
-        state = setSafe(
-          state,
-          [profileId, "modState", modId, "enabledTime"],
-          Date.now(),
-        );
+        state = setSafe(state, [profileId, "modState", modId, "enabledTime"], Date.now());
       }
 
       return setSafe(state, [profileId, "modState", modId, "enabled"], enable);
@@ -67,8 +61,7 @@ export const profilesReducer: IReducerSpec = {
       elements: {
         gameId: {
           type: "string",
-          description: (input) =>
-            `Profile ${input.id} has no game assigned and will be removed`,
+          description: (input) => `Profile ${input.id} has no game assigned and will be removed`,
           noUndefined: true,
           noNull: true,
           required: true,
@@ -76,8 +69,7 @@ export const profilesReducer: IReducerSpec = {
         },
         name: {
           type: "string",
-          description: (input) =>
-            `Profile ${input.id} is missing a name, will set a default`,
+          description: (input) => `Profile ${input.id} is missing a name, will set a default`,
           noUndefined: true,
           noNull: true,
           required: true,

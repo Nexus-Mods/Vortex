@@ -3,9 +3,7 @@
   "version": "0.1.1",
   "description": "Support for arc archives used in MT Framework (Capcom) games",
   "scripts": {
-    "_build": "node build.mjs && node download_arctool.js && pnpm extractInfo",
-    "build": "pnpm run _build && node ../copy-extension.mjs out",
-    "dist": "pnpm run _build && node ../copy-extension.mjs dist",
+    "build": "node build.mjs && node download_arctool.js && pnpm extractInfo",
     "typecheck": "pnpm tsc"
   },
   "author": "Black Tree Gaming Ltd.",
@@ -26,5 +24,26 @@
     "react-i18next": "catalog:",
     "shortid": "catalog:",
     "vortex-api": "workspace:*"
+  },
+  "nx": {
+    "tags": [
+      "vortex:extension"
+    ],
+    "targets": {
+      "build": {
+        "inputs": [
+          "default",
+          "typescript",
+          "vortex-api"
+        ]
+      },
+      "typecheck": {
+        "inputs": [
+          "default",
+          "typescript",
+          "vortex-api"
+        ]
+      }
+    }
   }
 }

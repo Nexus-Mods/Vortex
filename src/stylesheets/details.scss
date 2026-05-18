@@ -73,16 +73,12 @@ $input-border-focus: $brand-primary;
 
 $input-color-placeholder: $gray-dark;
 
-$input-height-base: (
-    $line-height-computed + ($padding-base-vertical * 2) + 0.6
-);
+$input-height-base: ($line-height-computed + ($padding-base-vertical * 2) + 0.6);
 $input-height-large: (
-    math.ceil($font-size-large * $line-height-large) +
-        ($padding-large-vertical * 2) + 0.3
+    math.ceil($font-size-large * $line-height-large) + ($padding-large-vertical * 2) + 0.3
 );
 $input-height-small: (
-    math.floor($font-size-small * $line-height-small) +
-        ($padding-small-vertical * 2) + 0.3
+    math.floor($font-size-small * $line-height-small) + ($padding-small-vertical * 2) + 0.3
 );
 
 $form-group-margin-bottom: math.floor($gutter-width * 0.5);
@@ -314,10 +310,7 @@ $popover-arrow-color: $popover-bg;
 
 $popover-arrow-outer-width: ($popover-arrow-width + 1);
 $popover-arrow-outer-color: $popover-border-color;
-$popover-arrow-outer-fallback-color: color.adjust(
-    $popover-fallback-border-color,
-    $lightness: -20%
-);
+$popover-arrow-outer-fallback-color: color.adjust($popover-fallback-border-color, $lightness: -20%);
 
 //== Labels
 

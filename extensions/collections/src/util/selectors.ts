@@ -1,9 +1,7 @@
 import { createSelector } from "reselect";
 import { types } from "vortex-api";
 
-const getCollectionInstallState = (
-  state: types.IState,
-): types.ICollectionInstallState =>
+const getCollectionInstallState = (state: types.IState): types.ICollectionInstallState =>
   (state as any).session?.collections || {
     activeSession: undefined,
     lastActiveSessionId: undefined,
@@ -12,8 +10,7 @@ const getCollectionInstallState = (
 
 export const getActiveInstallSession = createSelector(
   [getCollectionInstallState],
-  (installState): types.ICollectionInstallSession | undefined =>
-    installState.activeSession,
+  (installState): types.ICollectionInstallSession | undefined => installState.activeSession,
 );
 
 export const isInstallationActive = createSelector(
@@ -22,14 +19,8 @@ export const isInstallationActive = createSelector(
 );
 
 export const getCollectionInstallProgress = createSelector(
-  [
-    getActiveInstallSession,
-    (_state: types.IState, collectionId: string) => collectionId,
-  ],
-  (
-    activeSession,
-    collectionId,
-  ): { installed: number; total: number } | null => {
+  [getActiveInstallSession, (_state: types.IState, collectionId: string) => collectionId],
+  (activeSession, collectionId): { installed: number; total: number } | null => {
     if (!activeSession || activeSession.collectionId !== collectionId) {
       return null;
     }
@@ -42,24 +33,14 @@ export const getCollectionInstallProgress = createSelector(
 );
 
 export const getRequiredModsProgress = createSelector(
-  [
-    getActiveInstallSession,
-    (_state: types.IState, collectionId: string) => collectionId,
-  ],
-  (
-    activeSession,
-    collectionId,
-  ): { installed: number; total: number; failed: number } | null => {
+  [getActiveInstallSession, (_state: types.IState, collectionId: string) => collectionId],
+  (activeSession, collectionId): { installed: number; total: number; failed: number } | null => {
     if (!activeSession || activeSession.collectionId !== collectionId) {
       return null;
     }
 
-    const requiredMods = Object.values(activeSession.mods).filter(
-      (mod) => mod.type === "requires",
-    );
-    const installed = requiredMods.filter(
-      (mod) => mod.status === "installed",
-    ).length;
+    const requiredMods = Object.values(activeSession.mods).filter((mod) => mod.type === "requires");
+    const installed = requiredMods.filter((mod) => mod.status === "installed").length;
     const failed = requiredMods.filter((mod) => mod.status === "failed").length;
 
     return {
@@ -71,14 +52,8 @@ export const getRequiredModsProgress = createSelector(
 );
 
 export const getOptionalModsProgress = createSelector(
-  [
-    getActiveInstallSession,
-    (_state: types.IState, collectionId: string) => collectionId,
-  ],
-  (
-    activeSession,
-    collectionId,
-  ): { installed: number; total: number; skipped: number } | null => {
+  [getActiveInstallSession, (_state: types.IState, collectionId: string) => collectionId],
+  (activeSession, collectionId): { installed: number; total: number; skipped: number } | null => {
     if (!activeSession || activeSession.collectionId !== collectionId) {
       return null;
     }
@@ -86,12 +61,8 @@ export const getOptionalModsProgress = createSelector(
     const optionalMods = Object.values(activeSession.mods).filter(
       (mod) => mod.type === "recommends",
     );
-    const installed = optionalMods.filter(
-      (mod) => mod.status === "installed",
-    ).length;
-    const skipped = optionalMods.filter(
-      (mod) => mod.status === "skipped",
-    ).length;
+    const installed = optionalMods.filter((mod) => mod.status === "installed").length;
+    const skipped = optionalMods.filter((mod) => mod.status === "skipped").length;
 
     return {
       installed,
@@ -102,10 +73,7 @@ export const getOptionalModsProgress = createSelector(
 );
 
 export const getCollectionModsStatus = createSelector(
-  [
-    getActiveInstallSession,
-    (_state: types.IState, collectionId: string) => collectionId,
-  ],
+  [getActiveInstallSession, (_state: types.IState, collectionId: string) => collectionId],
   (activeSession, collectionId) => {
     if (!activeSession || activeSession.collectionId !== collectionId) {
       return [];
@@ -124,27 +92,24 @@ export const getCollectionModsStatus = createSelector(
   },
 );
 
-export const getInstallationSummary = createSelector(
-  [getActiveInstallSession],
-  (activeSession) => {
-    if (!activeSession) {
-      return {
-        isActive: false,
-      };
-    }
-
+export const getInstallationSummary = createSelector([getActiveInstallSession], (activeSession) => {
+  if (!activeSession) {
     return {
-      isActive: true,
-      collectionId: activeSession.collectionId,
-      gameId: activeSession.gameId,
-      installedMods: activeSession.installedCount,
-      totalMods: activeSession.totalRequired + activeSession.totalOptional,
-      requiredMods: {
-        installed: Object.values(activeSession.mods).filter(
-          (m) => m.type === "requires" && m.status === "installed",
-        ).length,
-        total: activeSession.totalRequired,
-      },
+      isActive: false,
     };
-  },
-);
+  }
+
+  return {
+    isActive: true,
+    collectionId: activeSession.collectionId,
+    gameId: activeSession.gameId,
+    installedMods: activeSession.installedCount,
+    totalMods: activeSession.totalRequired + activeSession.totalOptional,
+    requiredMods: {
+      installed: Object.values(activeSession.mods).filter(
+        (m) => m.type === "requires" && m.status === "installed",
+      ).length,
+      total: activeSession.totalRequired,
+    },
+  };
+});

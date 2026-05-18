@@ -60,14 +60,10 @@ class PackageUpdater {
             }
 
             const subDirPath = path.join(dirPath, entry.name);
-            const relativeSubPath = relativePath
-              ? path.join(relativePath, entry.name)
-              : entry.name;
+            const relativeSubPath = relativePath ? path.join(relativePath, entry.name) : entry.name;
             scanDirectory(subDirPath, relativeSubPath);
           } else if (entry.name === "package.json") {
-            const packagePath = relativePath
-              ? path.join(relativePath, entry.name)
-              : entry.name;
+            const packagePath = relativePath ? path.join(relativePath, entry.name) : entry.name;
             packageFiles.push(packagePath.replace(/\\/g, "/"));
           }
         }
@@ -145,10 +141,8 @@ class PackageUpdater {
     const keyMap = {
       "winapi-bindings": "winapi-bindings",
       bsatk: "bsatk",
-      esptk: "esptk",
       loot: "loot",
       "gamebryo-savegame": "gamebryo-savegame",
-      "bsdiff-node": "bsdiff-node",
       "xxhash-addon": "xxhash-addon",
     };
     return keyMap[moduleName] || moduleName;
@@ -174,9 +168,7 @@ class PackageUpdater {
       "peerDependencies",
       "optionalDependencies",
     ];
-    const managedKeys = Object.keys(this.moduleConfig).map((name) =>
-      this.getDependencyKey(name),
-    );
+    const managedKeys = Object.keys(this.moduleConfig).map((name) => this.getDependencyKey(name));
 
     for (const section of depSections) {
       if (packageData[section]) {
@@ -200,9 +192,7 @@ class PackageUpdater {
 
     // Filter modules to update
     const moduleEntries = modules
-      ? Object.entries(this.moduleConfig).filter(([name]) =>
-          modules.includes(name),
-        )
+      ? Object.entries(this.moduleConfig).filter(([name]) => modules.includes(name))
       : Object.entries(this.moduleConfig);
 
     // Check all dependency sections
@@ -249,9 +239,7 @@ class PackageUpdater {
   updateAllPackagesForBranch(branchName, options = {}) {
     const { modules = null, createBackups = true } = options;
 
-    console.log(
-      `🔄 Updating package.json files to use branch: ${branchName}\n`,
-    );
+    console.log(`🔄 Updating package.json files to use branch: ${branchName}\n`);
 
     const allPackageFiles = this.findPackageJsonFiles();
     const relevantPackageFiles = [];
@@ -290,9 +278,7 @@ class PackageUpdater {
         totalChanges += result.changes;
         allChanges.push(...result.appliedChanges);
       } else {
-        console.log(
-          `   ℹ️  No matching dependencies found (or already up to date)`,
-        );
+        console.log(`   ℹ️  No matching dependencies found (or already up to date)`);
       }
     }
 
@@ -303,9 +289,7 @@ class PackageUpdater {
     if (allChanges.length > 0) {
       console.log(`🔗 Changes made:`);
       allChanges.forEach((change) => {
-        console.log(
-          `   ${change.file}: ${change.key}: ${change.oldValue} → ${change.newValue}`,
-        );
+        console.log(`   ${change.file}: ${change.key}: ${change.oldValue} → ${change.newValue}`);
       });
       console.log("");
     }
@@ -357,21 +341,15 @@ class PackageUpdater {
       }
 
       try {
-        const branch = this.manager.execInDir(
-          config.path,
-          "git branch --show-current",
-          { silent: true },
-        );
-        const status = this.manager.execInDir(
-          config.path,
-          "git status --porcelain",
-          { silent: true },
-        );
+        const branch = this.manager.execInDir(config.path, "git branch --show-current", {
+          silent: true,
+        });
+        const status = this.manager.execInDir(config.path, "git status --porcelain", {
+          silent: true,
+        });
         const hasChanges = status && status.trim() !== "";
 
-        console.log(
-          `📦 ${moduleName}: ${branch.trim()}${hasChanges ? " (modified)" : ""}`,
-        );
+        console.log(`📦 ${moduleName}: ${branch.trim()}${hasChanges ? " (modified)" : ""}`);
       } catch (error) {
         console.log(`📦 ${moduleName}: Error reading branch`);
       }
@@ -382,9 +360,7 @@ class PackageUpdater {
    * Generate package.json update for specific modules and branch
    */
   generateBranchUpdate(branchName, moduleNames) {
-    console.log(
-      `🔧 Generating package.json updates for branch: ${branchName}\n`,
-    );
+    console.log(`🔧 Generating package.json updates for branch: ${branchName}\n`);
 
     const modules = Object.entries(this.moduleConfig).filter(
       ([name]) => !moduleNames || moduleNames.includes(name),
@@ -450,9 +426,7 @@ class PackageUpdater {
     }
 
     if (affectedFiles.length === 0) {
-      console.log(
-        "ℹ️  No package.json files would be affected by this update.",
-      );
+      console.log("ℹ️  No package.json files would be affected by this update.");
     } else {
       console.log(
         `\n📊 Summary: ${affectedFiles.length} package.json files would be updated with ${Object.keys(updates).length} different dependencies.`,
@@ -486,9 +460,7 @@ class PackageUpdater {
    * Scan and show which package.json files contain managed dependencies
    */
   scanPackageFiles() {
-    console.log(
-      "🔍 Scanning workspace for package.json files with managed dependencies...\n",
-    );
+    console.log("🔍 Scanning workspace for package.json files with managed dependencies...\n");
 
     const allPackageFiles = this.findPackageJsonFiles();
     const relevantFiles = [];
@@ -509,9 +481,7 @@ class PackageUpdater {
         ];
         for (const section of depSections) {
           if (packageData[section]) {
-            for (const [depKey, version] of Object.entries(
-              packageData[section],
-            )) {
+            for (const [depKey, version] of Object.entries(packageData[section])) {
               if (managedDeps.has(depKey)) {
                 foundDeps.push({ section, key: depKey, version });
               }
@@ -527,9 +497,7 @@ class PackageUpdater {
       }
     }
 
-    console.log(
-      `📋 Found ${relevantFiles.length} package.json files with managed dependencies:\n`,
-    );
+    console.log(`📋 Found ${relevantFiles.length} package.json files with managed dependencies:\n`);
 
     for (const { filePath, dependencies } of relevantFiles) {
       console.log(`📄 ${filePath}:`);
@@ -576,7 +544,7 @@ EXAMPLES:
   node scripts/update-package-branches.js update feature-branch
 
   # Update only specific modules to use 'fix-headers' branch
-  node scripts/update-package-branches.js update fix-headers bsatk esptk
+  node scripts/update-package-branches.js update fix-headers bsatk
 
   # Show what would be updated (preview only)
   node scripts/update-package-branches.js generate feature-branch

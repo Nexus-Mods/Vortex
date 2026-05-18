@@ -1,4 +1,5 @@
 import { types } from "vortex-api";
+
 import { ICollectionGamebryo } from "../util/gameSupport/gamebryo";
 import { ICollectionConfig } from "./ICollectionConfig";
 
@@ -60,13 +61,7 @@ export interface ICollectionMod {
   fileOverrides?: string[];
 }
 
-export type RuleType =
-  | "before"
-  | "after"
-  | "requires"
-  | "conflicts"
-  | "recommends"
-  | "provides";
+export type RuleType = "before" | "after" | "requires" | "conflicts" | "recommends" | "provides";
 
 export interface ICollectionModRule {
   source: types.IModReference;

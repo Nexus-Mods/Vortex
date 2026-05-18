@@ -1,9 +1,4 @@
-import type {
-  Chunk,
-  Resolver,
-  ResolvedEndpoint,
-  ResolvedResource,
-} from "@vortex/shared/download";
+import type { Chunk, Resolver, ResolvedEndpoint, ResolvedResource } from "@vortex/shared/download";
 
 export const urlResolver: Resolver<URL> = (url) => Promise.resolve({ url });
 

@@ -1,13 +1,13 @@
-import * as actions from "./actions";
 import { types, util } from "vortex-api";
+
+import * as actions from "./actions";
 
 /**
  * reducer for changes to ephemeral session state
  */
 const settingsReducer: types.IReducerSpec = {
   reducers: {
-    [actions.setAutoRun as any]: (state, payload) =>
-      util.setSafe(state, ["autoRun"], payload),
+    [actions.setAutoRun as any]: (state, payload) => util.setSafe(state, ["autoRun"], payload),
     [actions.setPatches as any]: (state, payload) =>
       util.setSafe(state, ["patches", payload.profileId], payload.patches),
     [actions.setNeedToRun as any]: (state, payload) =>

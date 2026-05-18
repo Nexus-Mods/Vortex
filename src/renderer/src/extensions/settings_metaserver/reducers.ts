@@ -1,6 +1,5 @@
 import type { IReducerSpec } from "../../types/IExtensionContext";
 import { deleteOrNop, setSafe } from "../../util/storeHelper";
-
 import * as actions from "./actions";
 
 /**

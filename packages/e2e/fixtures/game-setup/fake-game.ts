@@ -2,9 +2,9 @@
  * Helpers for creating fake game installations during e2e tests.
  * Ported from the root playwright/src/game-setup-helpers.ts.
  */
-import fs from 'node:fs';
-import path from 'node:path';
-import os from 'node:os';
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 
 export interface GameConfig {
   gameId: string;
@@ -18,43 +18,43 @@ export interface GameConfig {
 
 export const GAME_CONFIGS: Record<string, GameConfig> = {
   stardewvalley: {
-    gameId: 'stardewvalley',
-    gameName: 'Stardew Valley',
-    executable: process.platform === 'win32' ? 'Stardew Valley.exe' : 'StardewValley',
+    gameId: "stardewvalley",
+    gameName: "Stardew Valley",
+    executable: process.platform === "win32" ? "Stardew Valley.exe" : "StardewValley",
     requiredFiles: [
-      process.platform === 'win32' ? 'Stardew Valley.exe' : 'StardewValley',
-      'Stardew Valley.deps.json',
-      'Stardew Valley.dll',
-      'Stardew Valley.pdb',
-      'Stardew Valley.runtimeconfig.json',
+      process.platform === "win32" ? "Stardew Valley.exe" : "StardewValley",
+      "Stardew Valley.deps.json",
+      "Stardew Valley.dll",
+      "Stardew Valley.pdb",
+      "Stardew Valley.runtimeconfig.json",
     ],
-    directories: ['Content', 'Content/Characters', 'Content/Data', 'Content/Maps', 'Mods'],
+    directories: ["Content", "Content/Characters", "Content/Data", "Content/Maps", "Mods"],
     optionalFiles: [
-      { path: 'steam_appid.txt', content: '413150' },
-      { path: 'Content/XACT/FarmerSounds.xwb', content: 'FAKE_AUDIO_FILE' },
+      { path: "steam_appid.txt", content: "413150" },
+      { path: "Content/XACT/FarmerSounds.xwb", content: "FAKE_AUDIO_FILE" },
     ],
-    modFolderPath: 'Mods',
+    modFolderPath: "Mods",
   },
   skyrimse: {
-    gameId: 'skyrimse',
-    gameName: 'Skyrim Special Edition',
-    executable: 'SkyrimSE.exe',
-    requiredFiles: ['SkyrimSE.exe', 'SkyrimSELauncher.exe', 'binkw64.dll', 'steam_api64.dll'],
-    directories: ['Data', 'Data/Scripts', 'Data/Meshes', 'Data/Textures'],
+    gameId: "skyrimse",
+    gameName: "Skyrim Special Edition",
+    executable: "SkyrimSE.exe",
+    requiredFiles: ["SkyrimSE.exe", "SkyrimSELauncher.exe", "binkw64.dll", "steam_api64.dll"],
+    directories: ["Data", "Data/Scripts", "Data/Meshes", "Data/Textures"],
     optionalFiles: [
-      { path: 'steam_appid.txt', content: '489830' },
-      { path: 'Data/Skyrim.esm', content: 'TES4\x00\x00\x00\x00' },
+      { path: "steam_appid.txt", content: "489830" },
+      { path: "Data/Skyrim.esm", content: "TES4\x00\x00\x00\x00" },
     ],
-    modFolderPath: 'Data',
+    modFolderPath: "Data",
   },
 };
 
 /** Creates a minimal fake PE executable header that passes file type checks. */
 function createFakeExecutable(): Buffer {
   const buffer = Buffer.alloc(512);
-  buffer.write('MZ', 0);
+  buffer.write("MZ", 0);
   buffer.writeUInt32LE(0x40, 0x3c);
-  buffer.write('PE\0\0', 0x40);
+  buffer.write("PE\0\0", 0x40);
   buffer.writeUInt16LE(0x8664, 0x44);
   return buffer;
 }
@@ -70,10 +70,10 @@ export function createFakeGameInstallation(gameConfig: GameConfig, basePath: str
 
   for (const file of gameConfig.requiredFiles) {
     const filePath = path.join(gamePath, file);
-    if (file.endsWith('.exe')) {
+    if (file.endsWith(".exe")) {
       fs.writeFileSync(filePath, createFakeExecutable());
     } else {
-      fs.writeFileSync(filePath, '');
+      fs.writeFileSync(filePath, "");
     }
   }
 
@@ -81,7 +81,7 @@ export function createFakeGameInstallation(gameConfig: GameConfig, basePath: str
     for (const optFile of gameConfig.optionalFiles) {
       const filePath = path.join(gamePath, optFile.path);
       fs.mkdirSync(path.dirname(filePath), { recursive: true });
-      fs.writeFileSync(filePath, optFile.content || '');
+      fs.writeFileSync(filePath, optFile.content || "");
     }
   }
 
@@ -93,7 +93,7 @@ export function setupFakeGame(configKey: string): { basePath: string; gamePath: 
   const config = GAME_CONFIGS[configKey];
   if (!config) throw new Error(`Unknown game config: ${configKey}`);
 
-  const basePath = fs.mkdtempSync(path.join(os.tmpdir(), 'vortex-e2e-games-'));
+  const basePath = fs.mkdtempSync(path.join(os.tmpdir(), "vortex-e2e-games-"));
   const gamePath = createFakeGameInstallation(config, basePath);
   return { basePath, gamePath };
 }

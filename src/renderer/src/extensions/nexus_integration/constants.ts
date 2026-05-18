@@ -1,19 +1,15 @@
 export const NEXUS_DOMAIN = process.env["NEXUS_DOMAIN"] || "nexusmods.com";
 
 export const NEXUS_API_SUBDOMAIN = process.env["API_SUBDOMAIN"] || "api";
-export const NEXUS_FLAMEWORK_SUBDOMAIN =
-  process.env["FLAMEWORK_SUBDOMAIN"] || "www";
+export const NEXUS_FLAMEWORK_SUBDOMAIN = process.env["FLAMEWORK_SUBDOMAIN"] || "www";
 export const NEXUS_NEXT_SUBDOMAIN = process.env["NEXT_SUBDOMAIN"] || "next";
 export const NEXUS_USERS_SUBDOMAIN = process.env["USERS_SUBDOMAIN"] || "users";
 
 export const NEXUS_BASE_URL =
-  process.env["NEXUS_BASE_URL"] ||
-  `https://${NEXUS_FLAMEWORK_SUBDOMAIN}.${NEXUS_DOMAIN}`;
-export const NEXUS_GAMES_URL =
-  process.env["NEXUS_GAMES_URL"] || `https://${NEXUS_DOMAIN}/games`;
+  process.env["NEXUS_BASE_URL"] || `https://${NEXUS_FLAMEWORK_SUBDOMAIN}.${NEXUS_DOMAIN}`;
+export const NEXUS_GAMES_URL = process.env["NEXUS_GAMES_URL"] || `https://${NEXUS_DOMAIN}/games`;
 export const NEXUS_V3_BASE_URL =
-  process.env["NEXUS_V3_BASE_URL"] ||
-  `https://${NEXUS_API_SUBDOMAIN}.${NEXUS_DOMAIN}/v3`;
+  process.env["NEXUS_V3_BASE_URL"] || `https://${NEXUS_API_SUBDOMAIN}.${NEXUS_DOMAIN}/v3`;
 export const MULTIPART_THRESHOLD = 100 * 1024 * 1024; // 100 MiB
 
 export const NEXUS_PROTOCOL = "https:";
@@ -26,8 +22,7 @@ export const OAUTH_URL = `https://${NEXUS_USERS_SUBDOMAIN}.${NEXUS_DOMAIN}/oauth
 export const USERINFO_ENDPOINT = `https://${NEXUS_USERS_SUBDOMAIN}.${NEXUS_DOMAIN}/oauth/userinfo`;
 // export const OAUTH_REDIRECT_URL = 'nxm://oauth/callback';
 export const OAUTH_REDIRECT_BASE = "http://127.0.0.1";
-export const getOAuthRedirectUrl = (port: number) =>
-  `${OAUTH_REDIRECT_BASE}:${port}`;
+export const getOAuthRedirectUrl = (port: number) => `${OAUTH_REDIRECT_BASE}:${port}`;
 // Deprecated: Use getOAuthRedirectUrl() instead
 export const OAUTH_REDIRECT_URL = "http://127.0.0.1:PORT";
 

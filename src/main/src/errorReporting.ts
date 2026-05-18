@@ -1,13 +1,11 @@
-import type { ReportableError } from "@vortex/shared/errors";
+import { readFile } from "node:fs/promises";
 
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
-import {
-  BasicTracerProvider,
-  SimpleSpanProcessor,
-} from "@opentelemetry/sdk-trace-base";
+import { BasicTracerProvider, SimpleSpanProcessor } from "@opentelemetry/sdk-trace-base";
+import { sanitizeFramePath } from "@vortex/shared";
+import type { ReportableError } from "@vortex/shared/errors";
 import { recordErrorOnSpan } from "@vortex/shared/telemetry";
 import { app } from "electron";
-import { readFile } from "node:fs/promises";
 
 import { createVortexResource } from "./telemetry/resources";
 import { COLLECTOR_URL, OTLP_HEADERS } from "./telemetry/setup";
@@ -78,7 +76,7 @@ export async function reportCrash(
       attributes: {
         "crash.type": type,
         "crash.sourceProcess": sourceProcess ?? "unknown",
-        "error.message": error.message,
+        "error.message": sanitizeFramePath(error.message),
         "error.code": error.code ?? "",
       },
     });

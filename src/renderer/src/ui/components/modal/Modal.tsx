@@ -79,11 +79,7 @@ export const Modal = ({
   ...props
 }: ModalProps & ModalPanelProps) => (
   <ModalWrapper {...props} onClose={onClose}>
-    <ModalPanel
-      showCloseButton={showCloseButton}
-      title={title}
-      onClose={onClose}
-    >
+    <ModalPanel showCloseButton={showCloseButton} title={title} onClose={onClose}>
       {children}
     </ModalPanel>
   </ModalWrapper>

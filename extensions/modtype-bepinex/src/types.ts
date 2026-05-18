@@ -26,9 +26,7 @@ export interface IDoorstopConfig {
 
   // Some game extensions may want to validate the doorstop's configuration
   //  or assembly version, etc. This test will be kicked off on extension activation.
-  validateDoorStopConfig?: (
-    doorStopAssemblyPath: string,
-  ) => Promise<types.ITestResult>;
+  validateDoorStopConfig?: (doorStopAssemblyPath: string) => Promise<types.ITestResult>;
 }
 
 export interface IGithubAsset {
@@ -119,16 +117,12 @@ export interface IBepInExGameConfig {
   //  from the website. The vortexTempDirPath property will provide the user
   //  with a suggested location where the archive should/could be created without
   //  fearing permissions related issues (hopefully)
-  customPackDownloader?: (
-    vortexTempDirPath: string,
-  ) => Promise<string | INexusDownloadInfo>;
+  customPackDownloader?: (vortexTempDirPath: string) => Promise<string | INexusDownloadInfo>;
 
   // Allows the game extension to validate the bepinex configuration/installation
   //  and inform the user if something is off. This test will be kicked off on
   //  extension activation.
-  validateBepInExConfiguration?: (
-    bepinexPath: string,
-  ) => Promise<types.ITestResult>;
+  validateBepInExConfiguration?: (bepinexPath: string) => Promise<types.ITestResult>;
 }
 
 export interface INexusDownloadInfoExt extends INexusDownloadInfo {

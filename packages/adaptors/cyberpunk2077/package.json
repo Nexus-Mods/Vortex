@@ -6,18 +6,15 @@
   "type": "module",
   "scripts": {
     "build": "node ./build.mjs",
-    "dist": "node ./build.mjs",
     "typecheck": "pnpm tsc",
-    "lint": "pnpm eslint --concurrency auto --quiet ."
+    "lint": "pnpm eslint --quiet --concurrency auto .",
+    "lint:verbose": "pnpm eslint --concurrency auto ."
   },
   "main": "./dist/index.mjs",
-  "vortex:requires": [],
-  "devDependencies": {
-    "@vortex/adaptor-api": "workspace:*",
-    "@vortex/fs": "workspace:*"
-  },
+  "vortex:requires": [
+    "vortex:host/filesystem"
+  ],
   "peerDependencies": {
-    "@vortex/adaptor-api": "workspace:*",
-    "@vortex/fs": "workspace:*"
+    "@nexusmods/adaptor-api": "workspace:*"
   }
 }

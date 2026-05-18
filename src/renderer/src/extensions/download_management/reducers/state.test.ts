@@ -28,7 +28,6 @@ describe("addLocalDownload", () => {
           localPath: "localPath",
           size: 42,
           received: 42,
-          chunks: [],
           urls: [],
           modInfo: {},
         },
@@ -95,7 +94,7 @@ describe("finishDownload", () => {
     });
     _.unset(result, ["files", "id", "fileTime"]);
     expect(result).toEqual({
-      files: { id: { chunks: [], failCause: undefined, state: "finished" } },
+      files: { id: { failCause: undefined, state: "finished" } },
     });
   });
   it("stores failure reason", () => {
@@ -108,7 +107,7 @@ describe("finishDownload", () => {
     _.unset(result, ["files", "id", "fileTime"]);
     expect(result).toEqual({
       files: {
-        id: { chunks: [], state: "failed", failCause: "because error" },
+        id: { state: "failed", failCause: "because error" },
       },
     });
   });
@@ -136,7 +135,6 @@ describe("initDownload", () => {
       files: {
         id: {
           id: "id",
-          chunks: [],
           state: "init",
           urls: ["url1", "url2"],
           modInfo: { key: "value" },
@@ -300,9 +298,7 @@ describe("startDownload", () => {
   it("sets the download state as started", () => {
     const input = { files: { id: { state: "init" } } };
     const result = stateReducer.reducers.START_DOWNLOAD(input, { id: "id" });
-    expect(
-      (result.files as Record<string, { state: string }>).id.state,
-    ).toEqual("started");
+    expect((result.files as Record<string, { state: string }>).id.state).toEqual("started");
   });
   it("does nothing if the download is already finished", () => {
     const input = { files: { id: { state: "finished" } } };

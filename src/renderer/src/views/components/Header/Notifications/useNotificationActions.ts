@@ -1,27 +1,17 @@
 import { useCallback, useRef } from "react";
 import { useDispatch } from "react-redux";
 
-import type {
-  INotification,
-  INotificationAction,
-} from "../../../../types/INotification";
-
-import {
-  dismissNotification,
-  fireNotificationAction,
-} from "../../../../actions/notifications";
+import { dismissNotification, fireNotificationAction } from "../../../../actions/notifications";
 import { suppressNotification } from "../../../../actions/notificationSettings";
 import { useExtensionContext } from "../../../../ExtensionProvider";
+import type { INotification, INotificationAction } from "../../../../types/INotification";
 
 interface UseNotificationActionsProps {
   notifications: INotification[];
   expand: string | undefined;
 }
 
-export const useNotificationActions = ({
-  notifications,
-  expand,
-}: UseNotificationActionsProps) => {
+export const useNotificationActions = ({ notifications, expand }: UseNotificationActionsProps) => {
   const dispatch = useDispatch();
   const extensions = useExtensionContext();
   const api = extensions.getApi();
@@ -57,10 +47,7 @@ export const useNotificationActions = ({
    * Otherwise, applies only to the single notification.
    */
   const applyToNotificationGroup = useCallback(
-    (
-      notificationId: string,
-      callback: (notification: INotification) => void,
-    ) => {
+    (notificationId: string, callback: (notification: INotification) => void) => {
       const { notifications: notis, expand: currentExpand } = stateRef.current;
       const noti = notis.find((iter) => iter.id === notificationId);
 
@@ -71,9 +58,7 @@ export const useNotificationActions = ({
       if (noti.group === undefined || noti.group === currentExpand) {
         callback(noti);
       } else {
-        notis
-          .filter((iter) => iter.group === noti.group)
-          .forEach((iter) => callback(iter));
+        notis.filter((iter) => iter.group === noti.group).forEach((iter) => callback(iter));
       }
     },
     [],
@@ -87,11 +72,7 @@ export const useNotificationActions = ({
         return;
       }
 
-      const callAction = (
-        actionId: string,
-        action: INotificationAction,
-        idx: number,
-      ) => {
+      const callAction = (actionId: string, action: INotificationAction, idx: number) => {
         if (idx === -1) {
           return;
         }
@@ -99,16 +80,12 @@ export const useNotificationActions = ({
         if (action.action !== undefined) {
           action.action(() => onDismiss(actionId));
         } else {
-          fireNotificationAction(actionId, noti.process, idx, () =>
-            onDismiss(actionId),
-          );
+          fireNotificationAction(actionId, noti.process, idx, () => onDismiss(actionId));
         }
       };
 
       applyToNotificationGroup(notificationId, (iter) => {
-        const actionIdx = iter.actions.findIndex(
-          (actIter) => actIter.title === actionTitle,
-        );
+        const actionIdx = iter.actions.findIndex((actIter) => actIter.title === actionTitle);
         callAction(iter.id, iter.actions[actionIdx], actionIdx);
       });
     },
@@ -117,11 +94,7 @@ export const useNotificationActions = ({
 
   const dismissAll = useCallback(
     (notificationId: string) => {
-      api.events.emit(
-        "analytics-track-click-event",
-        "Notifications",
-        "Dismiss",
-      );
+      api.events.emit("analytics-track-click-event", "Notifications", "Dismiss");
       applyToNotificationGroup(notificationId, (iter) => {
         onDismiss(iter.id);
       });

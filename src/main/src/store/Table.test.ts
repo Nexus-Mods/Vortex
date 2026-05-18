@@ -1,5 +1,4 @@
 import type { DuckDBConnection } from "@duckdb/node-api";
-
 import { describe, it, vi, expect } from "vitest";
 
 import { Table } from "./Table";
@@ -15,9 +14,7 @@ type MockConnection = {
   run: ReturnType<typeof vi.fn>;
 };
 
-function createMockConnection(
-  rows: TestRow[] = [],
-): MockConnection & DuckDBConnection {
+function createMockConnection(rows: TestRow[] = []): MockConnection & DuckDBConnection {
   const mock: MockConnection = {
     runAndReadAll: vi.fn().mockResolvedValue({
       getRowObjectsJson: () => rows,
@@ -75,10 +72,10 @@ describe("Table", () => {
 
       await table.update({ id: "1" }, { name: "updated" });
 
-      expect(conn.run).toHaveBeenCalledWith(
-        'UPDATE test_table SET "name" = $1 WHERE "id" = $2',
-        ["updated", "1"],
-      );
+      expect(conn.run).toHaveBeenCalledWith('UPDATE test_table SET "name" = $1 WHERE "id" = $2', [
+        "updated",
+        "1",
+      ]);
     });
 
     it("is a no-op when set is empty", async () => {
@@ -98,19 +95,14 @@ describe("Table", () => {
 
       await table.delete({ id: "1" });
 
-      expect(conn.run).toHaveBeenCalledWith(
-        'DELETE FROM test_table WHERE "id" = $1',
-        ["1"],
-      );
+      expect(conn.run).toHaveBeenCalledWith('DELETE FROM test_table WHERE "id" = $1', ["1"]);
     });
 
     it("throws on empty filter to prevent full-table delete", async () => {
       const conn = createMockConnection();
       const table = new Table<TestRow>(conn, "test_table");
 
-      await expect(table.delete({})).rejects.toThrow(
-        "delete() requires at least one filter",
-      );
+      await expect(table.delete({})).rejects.toThrow("delete() requires at least one filter");
       expect(conn.run).not.toHaveBeenCalled();
     });
   });

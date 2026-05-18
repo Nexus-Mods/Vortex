@@ -21,8 +21,7 @@ export const InputDemo = () => {
         </Typography>
 
         <Typography appearance="subdued">
-          Text inputs for various data types with validation, hints, and
-          character counting.
+          Text inputs for various data types with validation, hints, and character counting.
         </Typography>
       </div>
 
@@ -59,12 +58,7 @@ export const InputDemo = () => {
             onChange={(e) => setPasswordValue(e.target.value)}
           />
 
-          <Input
-            id="url-input"
-            label="URL Input"
-            placeholder="https://example.com"
-            type="url"
-          />
+          <Input id="url-input" label="URL Input" placeholder="https://example.com" type="url" />
 
           <Input
             defaultValue={42}
@@ -268,10 +262,7 @@ export const InputDemo = () => {
 
         <div className="flex flex-wrap gap-4">
           <Input
-            hints={[
-              "Username must be unique",
-              "Only alphanumeric characters allowed",
-            ]}
+            hints={["Username must be unique", "Only alphanumeric characters allowed"]}
             id="full-featured-input"
             label="Username"
             maxLength={30}

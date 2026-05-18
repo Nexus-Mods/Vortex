@@ -1,27 +1,19 @@
-import { BUNDLED_PATH, PATCHES_PATH } from "./constants";
-import {
-  ICollection,
-  ICollectionMod,
-  ICollectionSourceInfo,
-} from "./types/ICollection";
-import { modToCollection as modToCollection } from "./util/transformCollection";
-import { hasEditPermissions, makeProgressFunction } from "./util/util";
+import * as path from "path";
 
-import {
-  ICreateCollectionResult,
-  IGraphErrorDetail,
-} from "@nexusmods/nexus-api";
+import { ICreateCollectionResult, IGraphErrorDetail } from "@nexusmods/nexus-api";
 import { V3ApiError } from "@vortex/nexus-api-v3";
 import Bluebird from "bluebird";
 import * as _ from "lodash";
 import Zip from "node-7z";
-import * as path from "path";
 import { dir as tmpDir } from "tmp";
 import { actions, fs, log, selectors, types, util } from "vortex-api";
 
-async function withTmpDir(
-  cb: (tmpPath: string) => Promise<void>,
-): Promise<void> {
+import { BUNDLED_PATH, PATCHES_PATH } from "./constants";
+import { ICollection, ICollectionMod, ICollectionSourceInfo } from "./types/ICollection";
+import { modToCollection as modToCollection } from "./util/transformCollection";
+import { hasEditPermissions, makeProgressFunction } from "./util/util";
+
+async function withTmpDir(cb: (tmpPath: string) => Promise<void>): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     tmpDir((err, tmpPath, cleanup) => {
       if (err !== null) {
@@ -66,15 +58,7 @@ async function generateCollectionInfo(
   const state = api.getState();
   const mods = state.persistent.mods[gameId];
   const stagingPath = selectors.installPath(state);
-  return modToCollection(
-    api,
-    gameId,
-    stagingPath,
-    collection,
-    mods,
-    progress,
-    error,
-  );
+  return modToCollection(api, gameId, stagingPath, collection, mods, progress, error);
 }
 
 async function writeCollectionToFile(
@@ -107,20 +91,10 @@ async function writeCollectionToFile(
     } // else: no ini tweak, no problem
   }
 
-  await fs.copyAsync(
-    path.join(modPath, BUNDLED_PATH),
-    path.join(outputPath, BUNDLED_PATH),
-  );
-  await fs.copyAsync(
-    path.join(modPath, PATCHES_PATH),
-    path.join(outputPath, PATCHES_PATH),
-  );
+  await fs.copyAsync(path.join(modPath, BUNDLED_PATH), path.join(outputPath, BUNDLED_PATH));
+  await fs.copyAsync(path.join(modPath, PATCHES_PATH), path.join(outputPath, PATCHES_PATH));
 
-  const zipPath = path.join(
-    modPath,
-    "export",
-    `collection_${mod.attributes?.version ?? "0"}.7z`,
-  );
+  const zipPath = path.join(modPath, "export", `collection_${mod.attributes?.version ?? "0"}.7z`);
   try {
     await fs.removeAsync(zipPath);
   } catch (err) {
@@ -133,9 +107,7 @@ async function writeCollectionToFile(
   return zipPath;
 }
 
-function filterInfoModSource(
-  source: ICollectionSourceInfo,
-): ICollectionSourceInfo {
+function filterInfoModSource(source: ICollectionSourceInfo): ICollectionSourceInfo {
   return _.omit(source, ["instructions", "fileSize", "tag"]);
 }
 
@@ -155,10 +127,10 @@ function filterInfoMod(mod: ICollectionMod): ICollectionMod {
 
 type RecursivePartial<T> = {
   [P in keyof T]?: T[P] extends (infer U)[]
-  ? RecursivePartial<U>[]
-  : T[P] extends object
-  ? RecursivePartial<T[P]>
-  : T[P];
+    ? RecursivePartial<U>[]
+    : T[P] extends object
+      ? RecursivePartial<T[P]>
+      : T[P];
 };
 
 function filterInfo(input: ICollection): RecursivePartial<ICollection> {
@@ -178,9 +150,7 @@ async function queryErrorsContinue(
     "Errors creating collection",
     {
       text: "There were errors creating the collection, do you want to proceed anyway?",
-      message: errors
-        .map((err) => api.translate(err.message, { replace: err.replace }))
-        .join("\n"),
+      message: errors.map((err) => api.translate(err.message, { replace: err.replace })).join("\n"),
     },
     [{ label: "Cancel" }, { label: "Continue" }],
   );
@@ -207,7 +177,7 @@ function renderGraphLocateError(
       if (missingMod !== undefined) {
         return t(
           "Mod not found on nexusmods.com: {{modName}} (modId: {{modId}}), " +
-          "it may have been removed.",
+            "it may have been removed.",
           {
             replace: {
               modName: util.renderModName(missingMod),
@@ -223,14 +193,13 @@ function renderGraphLocateError(
     }
     case "fileId": {
       const missingMod = Object.values(mods).find(
-        (iter) =>
-          iter.attributes?.fileId?.toString?.() === det.value.toString(),
+        (iter) => iter.attributes?.fileId?.toString?.() === det.value.toString(),
       );
       if (missingMod !== undefined) {
         return t(
           "Mod not found on nexusmods.com: {{modName}} " +
-          "(modId: {{modId}}, fileId: {{fileId}}), " +
-          "it may have been removed.",
+            "(modId: {{modId}}, fileId: {{fileId}}), " +
+            "it may have been removed.",
           {
             replace: {
               modName: util.renderModName(missingMod, { version: true }),
@@ -251,10 +220,7 @@ function renderGraphLocateError(
   }
 }
 
-function renderGraphErrorFallback(
-  message: string,
-  det: IGraphErrorDetail,
-): string {
+function renderGraphErrorFallback(message: string, det: IGraphErrorDetail): string {
   return det.message || message;
 }
 
@@ -325,75 +291,32 @@ export async function doExportToAPI(
         modUploader !== uploaderName &&
         !hasEditPermissions(mod.attributes?.permissions)
       ) {
-        log(
-          "info",
-          "user doesn't match original author, creating new collection",
-        );
+        log("info", "user doesn't match original author, creating new collection");
         collectionId = undefined;
       }
       const result: ICreateCollectionResult = await util.toPromise((cb) =>
-        api.events.emit(
-          "submit-collection",
-          filterInfo(info),
-          filePath,
-          collectionId,
-          signal,
-          cb,
-        ),
+        api.events.emit("submit-collection", filterInfo(info), filePath, collectionId, signal, cb),
       );
       collectionId = result.collection.id;
       // V3 revision endpoint omits slug (it never changes), so fall back to
       // the previously stored slug on the mod.
-      collectionSlug =
-        result.collection.slug ?? mod.attributes?.collectionSlug;
-      api.store.dispatch(
-        actions.setModAttribute(gameId, modId, "collectionId", collectionId),
-      );
-      api.store.dispatch(
-        actions.setModAttribute(
-          gameId,
-          modId,
-          "collectionSlug",
-          collectionSlug,
-        ),
-      );
-      api.store.dispatch(
-        actions.setModAttribute(gameId, modId, "source", "nexus"),
-      );
+      collectionSlug = result.collection.slug ?? mod.attributes?.collectionSlug;
+      api.store.dispatch(actions.setModAttribute(gameId, modId, "collectionId", collectionId));
+      api.store.dispatch(actions.setModAttribute(gameId, modId, "collectionSlug", collectionSlug));
+      api.store.dispatch(actions.setModAttribute(gameId, modId, "source", "nexus"));
       const revisionId = result.revision?.id;
       revisionNumber = result.revision?.revisionNumber;
+      api.store.dispatch(actions.setModAttribute(gameId, modId, "revisionId", revisionId));
+      api.store.dispatch(actions.setModAttribute(gameId, modId, "revisionNumber", revisionNumber));
       api.store.dispatch(
-        actions.setModAttribute(gameId, modId, "revisionId", revisionId),
+        actions.setModAttribute(gameId, modId, "version", ((revisionNumber ?? 0) + 1).toString()),
       );
       api.store.dispatch(
-        actions.setModAttribute(
-          gameId,
-          modId,
-          "revisionNumber",
-          revisionNumber,
-        ),
-      );
-      api.store.dispatch(
-        actions.setModAttribute(
-          gameId,
-          modId,
-          "version",
-          ((revisionNumber ?? 0) + 1).toString(),
-        ),
-      );
-      api.store.dispatch(
-        actions.setModAttribute(
-          gameId,
-          modId,
-          "revisionStatus",
-          result.revision?.revisionStatus,
-        ),
+        actions.setModAttribute(gameId, modId, "revisionStatus", result.revision?.revisionStatus),
       );
 
       if (userInfo?.userId) {
-        const eventName = isNewUpload
-          ? "collection_draft_uploaded"
-          : "collection_draft_updated";
+        const eventName = isNewUpload ? "collection_draft_uploaded" : "collection_draft_updated";
         api.events.emit("analytics-track-mixpanel-event", {
           eventName,
           properties: {
@@ -443,9 +366,7 @@ export async function doExportToAPI(
                   text:
                     validationErrors.length === 0
                       ? message
-                      : validationErrors
-                        .map((ve) => `${ve.pointer}: ${ve.detail}`)
-                        .join("\n"),
+                      : validationErrors.map((ve) => `${ve.pointer}: ${ve.detail}`).join("\n"),
                 },
                 [{ label: "Close" }],
               );
@@ -472,16 +393,10 @@ export async function doExportToAPI(
                     details.length === 0
                       ? message
                       : details
-                        .map((detail) =>
-                          renderGraphErrorDetail(
-                            api,
-                            gameId,
-                            modId,
-                            message,
-                            detail,
-                          ),
-                        )
-                        .join("\n"),
+                          .map((detail) =>
+                            renderGraphErrorDetail(api, gameId, modId, message, detail),
+                          )
+                          .join("\n"),
                 },
                 [{ label: "Close" }],
               );
@@ -502,11 +417,7 @@ export async function doExportToAPI(
   return { slug: collectionSlug, revisionNumber };
 }
 
-export async function doExportToFile(
-  api: types.IExtensionApi,
-  gameId: string,
-  modId: string,
-) {
+export async function doExportToFile(api: types.IExtensionApi, gameId: string, modId: string) {
   const state: types.IState = api.store.getState();
   const mod = state.persistent.mods[gameId][modId];
 
@@ -522,21 +433,13 @@ export async function doExportToFile(
     const stagingPath = selectors.installPathForGame(state, gameId);
     const modPath = path.join(stagingPath, mod.installationPath);
     const outputPath = path.join(modPath, "build");
-    const info = await generateCollectionInfo(
-      api,
-      gameId,
-      mod,
-      progress,
-      onError,
-    );
+    const info = await generateCollectionInfo(api, gameId, mod, progress, onError);
     const zipPath = await writeCollectionToFile(state, info, mod, outputPath);
     const dialogActions = [
       {
         title: "Open",
         action: () => {
-          util
-            .opn(path.join(stagingPath, mod.installationPath, "export"))
-            .catch(() => null);
+          util.opn(path.join(stagingPath, mod.installationPath, "export")).catch(() => null);
         },
       },
     ];
@@ -552,9 +455,7 @@ export async function doExportToFile(
             {
               bbcode:
                 "[list]" +
-                errors.map((err) =>
-                  li(api.translate(err.message, { replace: err.replace })),
-                ) +
+                errors.map((err) => li(api.translate(err.message, { replace: err.replace }))) +
                 "[/list]",
             },
             [{ label: "Close" }],
@@ -565,10 +466,7 @@ export async function doExportToFile(
 
     api.sendNotification({
       id: "collection-exported",
-      title:
-        errors.length > 0
-          ? "Collection exported, there were errors"
-          : "Collection exported",
+      title: errors.length > 0 ? "Collection exported, there were errors" : "Collection exported",
       message: zipPath,
       type: errors.length > 0 ? "warning" : "success",
       actions: dialogActions,

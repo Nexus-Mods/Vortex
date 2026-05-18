@@ -4,8 +4,7 @@
   "description": "Provides discovery and launch support for Microsoft Store (Xbox Pass) games",
   "scripts": {
     "_build": "node build.mjs && pnpm extractInfo",
-    "build": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build && node ../copy-extension.mjs out)",
-    "dist": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build && node ../copy-extension.mjs dist)",
+    "build": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build)",
     "typecheck": "pnpm tsc"
   },
   "author": "Black Tree Gaming Ltd.",
@@ -28,5 +27,26 @@
     "vortex-api": "workspace:*",
     "winapi-bindings": "catalog:",
     "xml2js": "catalog:"
+  },
+  "nx": {
+    "tags": [
+      "vortex:extension"
+    ],
+    "targets": {
+      "build": {
+        "inputs": [
+          "default",
+          "typescript",
+          "vortex-api"
+        ]
+      },
+      "typecheck": {
+        "inputs": [
+          "default",
+          "typescript",
+          "vortex-api"
+        ]
+      }
+    }
   }
 }

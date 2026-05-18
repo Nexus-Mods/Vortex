@@ -1,9 +1,10 @@
+import * as path from "path";
+
+import { fs, selectors, types, util } from "vortex-api";
+
 import { setImportStep } from "./actions/session";
 import { sessionReducer } from "./reducers/session";
 import ImportDialog from "./views/ImportDialog";
-
-import * as path from "path";
-import { fs, selectors, types, util } from "vortex-api";
 
 let appPath: string;
 
@@ -91,11 +92,7 @@ function init(context: types.IExtensionContext): boolean {
     "Import from NMM",
     () => {
       context.api.store.dispatch(setImportStep("start"));
-      context.api.events.emit(
-        "analytics-track-click-event",
-        "Dashboard",
-        "NMM Import",
-      );
+      context.api.events.emit("analytics-track-click-event", "Dashboard", "NMM Import");
     },
     () => nmmConfigExists() && gameModeActive(context.api.store),
     "",
@@ -103,10 +100,7 @@ function init(context: types.IExtensionContext): boolean {
   );
 
   context.once(() => {
-    context.api.setStylesheet(
-      "nmm-import-tool",
-      path.join(__dirname, "import-tool.scss"),
-    );
+    context.api.setStylesheet("nmm-import-tool", path.join(__dirname, "import-tool.scss"));
   });
 
   return true;

@@ -1,39 +1,32 @@
+import { clipboard } from "electron";
+import type { TFunction } from "i18next";
+import * as React from "react";
+import type { ModalBody } from "react-bootstrap";
+import { Alert, ControlLabel, FormControl, FormGroup, InputGroup } from "react-bootstrap";
+import { findDOMNode } from "react-dom";
+import type { WithTranslation } from "react-i18next";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
+
 import { showDialog } from "../../../actions/notifications";
+import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
 import ContextMenu from "../../../controls/ContextMenu";
+import CopyClipboardInput from "../../../controls/CopyClipboardInput";
 import FormFeedback from "../../../controls/FormFeedback";
 import Icon from "../../../controls/Icon";
 import Modal from "../../../controls/Modal";
-import Spinner from "../../../controls/Spinner";
-import CopyClipboardInput from "../../../controls/CopyClipboardInput";
 import PlaceholderTextArea from "../../../controls/PlaceholderTextArea";
+import Spinner from "../../../controls/Spinner";
 import { Button, IconButton } from "../../../controls/TooltipControls";
-import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
 import { UserCanceled } from "../../../util/CustomErrors";
 import { log } from "../../../util/log";
 import opn from "../../../util/opn";
-
 import { setUserAPIKey } from "../actions/account";
 import { setLoginId, setOauthPending } from "../actions/session";
 import { NEXUS_BASE_URL } from "../constants";
 import { OAUTH_URL } from "../constants";
 import type { IValidateKeyData } from "../types/IValidateKeyData";
 import { getPageURL } from "../util/sso";
-
-import { clipboard } from "electron";
-import type { TFunction } from "i18next";
-import * as React from "react";
-import type { ModalBody } from "react-bootstrap";
-import {
-  Alert,
-  ControlLabel,
-  FormControl,
-  FormGroup,
-  InputGroup,
-} from "react-bootstrap";
-import { findDOMNode } from "react-dom";
-import type { WithTranslation } from "react-i18next";
-import type * as Redux from "redux";
-import type { ThunkDispatch } from "redux-thunk";
 
 const API_ACCESS_URL = `${NEXUS_BASE_URL}/users/myaccount?tab=api+access`;
 
@@ -76,11 +69,7 @@ function LoginInProgress(props: ILoginInProgressProps) {
           )}
         </ControlLabel>
         <InputGroup>
-          <FormControl
-            type="text"
-            value={getPageURL(loginId)}
-            disabled={true}
-          />
+          <FormControl type="text" value={getPageURL(loginId)} disabled={true} />
           <InputGroup.Addon>
             <IconButton
               className="btn-embed"
@@ -133,10 +122,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
       this.nextState.troubleshoot = false;
       this.nextState.apiKeyInput = "";
     }
-    if (
-      newProps.loginId !== this.props.loginId &&
-      this.props.loginId === undefined
-    ) {
+    if (newProps.loginId !== this.props.loginId && this.props.loginId === undefined) {
       this.nextState.troubleshoot = false;
       this.nextState.apiKeyInput = "";
     }
@@ -184,16 +170,8 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
         {visible && oauthPending === undefined ? (
           <div>
             <h2>{t("Log in or register on the Nexus Mods website")}</h2>
-            <p>
-              {t(
-                "To access this content, please login to the Nexus Mods website.",
-              )}
-            </p>
-            <p>
-              {t(
-                "Click the button below to start the login/registration process.",
-              )}
-            </p>
+            <p>{t("To access this content, please login to the Nexus Mods website.")}</p>
+            <p>{t("Click the button below to start the login/registration process.")}</p>
             <Button tooltip={t("Start login")} onClick={this.login}>
               {t("Login")}
             </Button>
@@ -225,11 +203,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
           <div>
             <h2>{t("Log in or register on the Nexus Mods website")}</h2>
 
-            <p>
-              {t(
-                "Look out for a browser window opening and log in/register if required.",
-              )}
-            </p>
+            <p>{t("Look out for a browser window opening and log in/register if required.")}</p>
 
             <div className="login-please-click">
               <Spinner />
@@ -312,13 +286,9 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
           className="login-invalid-key-group"
           style={{ visibility: invalidToken ? "visible" : "hidden" }}
         >
-          <p className="login-invalid-key-danger">
-            {t("Your token was not recognised.")}
-          </p>
+          <p className="login-invalid-key-danger">{t("Your token was not recognised.")}</p>
           <p className="login-invalid-key-details">
-            {t(
-              "Please try again. Copy the token using the button on the website.",
-            )}
+            {t("Please try again. Copy the token using the button on the website.")}
           </p>
         </div>
       </div>
@@ -422,11 +392,9 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
       setTimeout(() => (this.nextState.showElement = false), 3000);
     } catch (err) {
       // apparently clipboard gets lazy-loaded and that load may fail for some reason
-      this.context.api.showErrorNotification(
-        "Failed to access clipboard",
-        err,
-        { allowReport: false },
-      );
+      this.context.api.showErrorNotification("Failed to access clipboard", err, {
+        allowReport: false,
+      });
     }
   }
 
@@ -436,11 +404,10 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
     this.context.api.events.emit("request-nexus-login", (err: Error) => {
       this.nextState.requested = false;
       if (err !== null && !(err instanceof UserCanceled)) {
-        this.context.api.showErrorNotification(
-          "Failed to get access key",
-          err,
-          { id: "failed-get-nexus-key", allowReport: false },
-        );
+        this.context.api.showErrorNotification("Failed to get access key", err, {
+          id: "failed-get-nexus-key",
+          allowReport: false,
+        });
       }
       onHide();
     });
@@ -456,9 +423,7 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, null, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetAPIKey: (APIKey: string) => dispatch(setUserAPIKey(APIKey)),
     onShowLoginError: (message: string) =>

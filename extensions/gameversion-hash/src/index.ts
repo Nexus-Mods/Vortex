@@ -1,24 +1,16 @@
 import crypto from "crypto";
 import path from "path";
+
 import { fs, log, selectors, types, util } from "vortex-api";
 
+import { DEBUG_MODE, HASHMAP_LOCAL_PATH, TEMP_PATH, WD_NAME } from "./constants";
 import { HashMapper } from "./hashMapper";
-
 import {
   GameVersionProviderFunc,
   GameVersionProviderTest,
   IHashEntry,
   IHashingDetails,
 } from "./types/types";
-
-import {
-  DEBUG_MODE,
-  HASHMAP_LOCAL_PATH,
-  TEMP_PATH,
-  WD_NAME,
-} from "./constants";
-
-import { fileMD5 } from "vortexmt";
 
 type GameHashCache = { [gameId: string]: string };
 const CACHE: GameHashCache = {};
@@ -58,24 +50,10 @@ async function insertCacheEntry(
   }
 }
 
-function nop() {
-  // nop
-}
-
-const fileMD5Async = (fileName: string) =>
-  new Promise<string>((resolve, reject) => {
-    fileMD5(
-      fileName,
-      (err: Error, result: string) =>
-        err !== null ? reject(err) : resolve(result),
-      nop,
-    );
-  });
-
 async function generateHash(filePaths: string[]): Promise<string> {
   const hashes: string[] = [];
   for (const filePath of filePaths) {
-    const fileHash = await fileMD5Async(filePath);
+    const fileHash = await util.fileMD5(filePath);
     hashes.push(fileHash);
   }
   const hash = crypto.createHash("md5");
@@ -83,9 +61,7 @@ async function generateHash(filePaths: string[]): Promise<string> {
   return buf.toString("hex");
 }
 
-async function queryPath(
-  filePath: string,
-): Promise<{ exists: boolean; isFile: boolean }> {
+async function queryPath(filePath: string): Promise<{ exists: boolean; isFile: boolean }> {
   try {
     const stats = await fs.statAsync(filePath);
     const isFile = !stats.isDirectory();
@@ -95,10 +71,7 @@ async function queryPath(
   }
 }
 
-function isGameValid(
-  game: types.IGame,
-  discovery: types.IDiscoveryResult,
-): boolean {
+function isGameValid(game: types.IGame, discovery: types.IDiscoveryResult): boolean {
   return !!discovery?.path && !!game?.executable;
 }
 
@@ -135,11 +108,7 @@ async function testViability(
         return false;
       }
       if (!filePathInfo.isFile) {
-        log(
-          "warn",
-          "details.files should only contain filepaths, not directories",
-          filePath,
-        );
+        log("warn", "details.files should only contain filepaths, not directories", filePath);
         return false;
       }
     }
@@ -214,9 +183,7 @@ function raiseHashEntryDialog(api: types.IExtensionApi, gameId?: string) {
     {
       text: "Insert below information",
       input,
-      checkboxes: [
-        { id: "openFileLocation", value: false, text: "Open File Location" },
-      ],
+      checkboxes: [{ id: "openFileLocation", value: false, text: "Open File Location" }],
     },
     [{ label: "Cancel" }, { label: "Save" }],
   );
@@ -226,11 +193,8 @@ function main(context: types.IExtensionContext) {
   const hashMapper = new HashMapper(context.api);
   const testFunc: GameVersionProviderTest = testViability;
   const getGameVersionFunc: GameVersionProviderFunc = getHashVersion;
-  context?.["registerGameVersionProvider"](
-    "hash-version-check",
-    75,
-    testFunc,
-    (game, discovery) => getGameVersionFunc(hashMapper, game, discovery),
+  context?.["registerGameVersionProvider"]("hash-version-check", 75, testFunc, (game, discovery) =>
+    getGameVersionFunc(hashMapper, game, discovery),
   );
 
   context.registerAPI(
@@ -289,20 +253,12 @@ function main(context: types.IExtensionContext) {
         const res = await raiseHashEntryDialog(context.api, gameId);
         if (res.action === "Save") {
           try {
-            const discovery = selectors.discoveryByGame(
-              state,
-              res.input["gameId"],
-            );
+            const discovery = selectors.discoveryByGame(state, res.input["gameId"]);
             if (!discovery?.path) {
-              throw new util.ProcessCanceled(
-                "Game is not discovered",
-                res.input["gameId"],
-              );
+              throw new util.ProcessCanceled("Game is not discovered", res.input["gameId"]);
             }
             const entry: IHashEntry = {
-              files: filePaths.map((file) =>
-                path.relative(discovery.path, file),
-              ),
+              files: filePaths.map((file) => path.relative(discovery.path, file)),
               hashValue: hash,
               userFacingVersion: res.input["userFacingVersion"],
               variant: res.input["variant"],
@@ -312,19 +268,14 @@ function main(context: types.IExtensionContext) {
               data[res.input["gameId"]] = {};
             }
             data[res.input["gameId"]][entry.hashValue] = entry;
-            await util.writeFileAtomic(
-              HASHMAP_LOCAL_PATH,
-              JSON.stringify(data, undefined, 2),
-            );
+            await util.writeFileAtomic(HASHMAP_LOCAL_PATH, JSON.stringify(data, undefined, 2));
             if (res.input["openFileLocation"]) {
               util.opn(path.dirname(HASHMAP_LOCAL_PATH)).catch((err) => null);
             }
           } catch (err) {
-            context.api.showErrorNotification(
-              "Failed to save hash entry",
-              err,
-              { allowReport: false },
-            );
+            context.api.showErrorNotification("Failed to save hash entry", err, {
+              allowReport: false,
+            });
           }
         }
         context.api.dismissNotification("generating-hash-notif");
@@ -352,19 +303,14 @@ function main(context: types.IExtensionContext) {
             };
             const data = await hashMapper.hashMapFromFile();
             data[res.input["gameId"]][entry.hashValue] = entry;
-            await util.writeFileAtomic(
-              HASHMAP_LOCAL_PATH,
-              JSON.stringify(data, undefined, 2),
-            );
+            await util.writeFileAtomic(HASHMAP_LOCAL_PATH, JSON.stringify(data, undefined, 2));
             if (res.input["openFileLocation"]) {
               util.opn(path.dirname(HASHMAP_LOCAL_PATH)).catch((err) => null);
             }
           } catch (err) {
-            context.api.showErrorNotification(
-              "Failed to save hash entry",
-              err,
-              { allowReport: false },
-            );
+            context.api.showErrorNotification("Failed to save hash entry", err, {
+              allowReport: false,
+            });
           }
         }
       });
@@ -380,9 +326,7 @@ function main(context: types.IExtensionContext) {
       gitBootstrap
         .clone("https://github.com/Nexus-Mods/Vortex-Backend.git", wdPath)
         .catch((err) =>
-          err.message.includes("already exists")
-            ? git(wdPath).pull()
-            : Promise.reject(err),
+          err.message.includes("already exists") ? git(wdPath).pull() : Promise.reject(err),
         );
     }
   });

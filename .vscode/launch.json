@@ -13,10 +13,7 @@
     },
     {
       "name": "Debug Electron (System Electron)",
-      "configurations": [
-        "Debug Main Process (System Electron)",
-        "Debug Renderer Process"
-      ],
+      "configurations": ["Debug Main Process (System Electron)", "Debug Renderer Process"],
       "presentation": {
         "hidden": false,
         "group": "",
@@ -26,17 +23,14 @@
     },
     {
       "name": "Debug Electron (Staging)",
-      "configurations": [
-        "Debug Main Process (Staging)",
-        "Debug Renderer Process"
-      ],
+      "configurations": ["Debug Main Process (Staging)", "Debug Renderer Process"],
       "presentation": {
         "hidden": false,
         "group": "",
         "order": 1
       },
       "stopAll": true
-    },
+    }
   ],
   "configurations": [
     {
@@ -56,11 +50,8 @@
       "envFile": "${workspaceFolder}/.env",
       "console": "integratedTerminal",
       "sourceMaps": true,
-      "outFiles": ["${workspaceFolder}/src/main/out/**/*.{js,cjs}"],
-      "resolveSourceMapLocations": [
-        "${workspaceFolder}/**",
-        "!**/node_modules/**"
-      ],
+      "outFiles": ["${workspaceFolder}/src/main/build/**/*.{js,cjs}"],
+      "resolveSourceMapLocations": ["${workspaceFolder}/**", "!**/node_modules/**"],
       "autoAttachChildProcesses": false,
       "timeout": 60000,
       "skipFiles": ["<node_internals>/**", "${workspaceFolder}/node_modules/**"]
@@ -85,11 +76,8 @@
       "envFile": "${workspaceFolder}/.env",
       "console": "integratedTerminal",
       "sourceMaps": true,
-      "outFiles": ["${workspaceFolder}/src/main/out/**/*.{js,cjs}"],
-      "resolveSourceMapLocations": [
-        "${workspaceFolder}/**",
-        "!**/node_modules/**"
-      ],
+      "outFiles": ["${workspaceFolder}/src/main/build/**/*.{js,cjs}"],
+      "resolveSourceMapLocations": ["${workspaceFolder}/**", "!**/node_modules/**"],
       "timeout": 60000,
       "skipFiles": ["<node_internals>/**", "${workspaceFolder}/node_modules/**"]
     },
@@ -111,11 +99,8 @@
       "envFile": "${workspaceFolder}/.env",
       "console": "internalConsole",
       "sourceMaps": true,
-      "outFiles": ["${workspaceFolder}/src/main/out/**/*.{js,cjs}"],
-      "skipFiles": [
-        "<node_internals>/**",
-        "${workspaceFolder}/node_modules/**"
-      ],
+      "outFiles": ["${workspaceFolder}/src/main/build/**/*.{js,cjs}"],
+      "skipFiles": ["<node_internals>/**", "${workspaceFolder}/node_modules/**"],
       "autoAttachChildProcesses": false,
       "timeout": 60000
     },
@@ -127,7 +112,7 @@
       "timeout": 60000,
       "webRoot": "${workspaceFolder}",
       "sourceMaps": true,
-      "outFiles": ["${workspaceFolder}/src/main/out/**/*.{js,cjs}"],
+      "outFiles": ["${workspaceFolder}/src/main/build/**/*.{js,cjs}"],
       "sourceMapPathOverrides": {
         "webpack://@vortex/renderer/./*": "${workspaceFolder}/src/renderer/*",
         "webpack://@vortex/renderer/*": "${workspaceFolder}/src/renderer/*"
@@ -152,7 +137,7 @@
       "env": { "NODE_ENV": "development" },
       "console": "integratedTerminal",
       "sourceMaps": true,
-      "outFiles": ["${workspaceRoot}/src/main/out/**/*.{js,cjs}"],
+      "outFiles": ["${workspaceRoot}/src/main/build/**/*.{js,cjs}"],
       "timeout": 60000,
       "skipFiles": ["<node_internals>/**", "${workspaceFolder}/node_modules/**"]
     },

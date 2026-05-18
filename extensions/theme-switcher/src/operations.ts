@@ -1,6 +1,7 @@
 import * as path from "path";
-import { fs, log, types, util } from "vortex-api";
+
 import Bluebird from "bluebird";
+import { fs, log, types, util } from "vortex-api";
 
 import * as actions from "./actions";
 import { themesPath } from "./util";
@@ -9,11 +10,9 @@ let themes: string[] = [];
 
 export function readThemes() {
   const bundledPath = path.join(__dirname, "themes");
-  return util
-    .readExtensibleDir("theme", bundledPath, themesPath())
-    .tap((extThemes) => {
-      themes = extThemes;
-    });
+  return util.readExtensibleDir("theme", bundledPath, themesPath()).tap((extThemes) => {
+    themes = extThemes;
+  });
 }
 
 export function themeName(location: string): string {
@@ -24,17 +23,12 @@ export function themePath(themeName: string): string | undefined {
   return themes.find((theme) => path.basename(theme) === themeName);
 }
 
-function saveThemeInternal(
-  outputPath: string,
-  variables: { [name: string]: string },
-) {
-  const theme = Object.keys(variables).map(
-    (name) => `\$${name}: ${variables[name]};`,
-  );
+function saveThemeInternal(outputPath: string, variables: { [name: string]: string }) {
+  const theme = Object.keys(variables).map((name) => `\$${name}: ${variables[name]};`);
   return fs.writeFileAsync(
     path.join(outputPath, "variables.scss"),
     "// Automatically generated. Changes to this file will be overwritten.\r\n" +
-    theme.join("\r\n"),
+      theme.join("\r\n"),
   );
 }
 
@@ -73,33 +67,25 @@ export function cloneTheme(
 ): Bluebird<void> {
   const t = api.translate;
 
-  if (
-    newName &&
-    themes.findIndex((iter) => path.basename(iter) === newName) === -1
-  ) {
+  if (newName && themes.findIndex((iter) => path.basename(iter) === newName) === -1) {
     const targetPath = path.join(themesPath(), newName);
     const sourcePath = themePath(themeName);
     if (sourcePath === undefined) {
-      return Bluebird.reject(new Error("no path for current theme"));
+      // Defense-in-depth — the Clone button is disabled in this state, so
+      // this should be unreachable from the UI.
+      const err = new Error("no path for current theme");
+      (err as { allowReport?: boolean }).allowReport = false;
+      return Bluebird.reject(err);
     }
     api.events.emit("analytics-track-click-event", "Themes", "Clone theme");
 
     return fs
       .ensureDirAsync(targetPath)
       .then(() => readThemeVariables(themeName))
-      .then((variables) =>
-        saveThemeInternal(path.join(themesPath(), newName), variables),
-      )
-      .then(() =>
-        sourcePath !== undefined
-          ? fs.readdirAsync(sourcePath)
-          : Bluebird.resolve([]),
-      )
+      .then((variables) => saveThemeInternal(path.join(themesPath(), newName), variables))
+      .then(() => (sourcePath !== undefined ? fs.readdirAsync(sourcePath) : Bluebird.resolve([])))
       .map((files: string) =>
-        fs.copyAsync(
-          path.join(sourcePath, files),
-          path.join(targetPath, files),
-        ),
+        fs.copyAsync(path.join(sourcePath, files), path.join(targetPath, files)),
       )
       .then(() => {
         themes.push(targetPath);
@@ -120,9 +106,7 @@ export function cloneTheme(
   }
 }
 
-export function readThemeVariables(
-  themeName: string,
-): Bluebird<{ [key: string]: string }> {
+export function readThemeVariables(themeName: string): Bluebird<{ [key: string]: string }> {
   const currentThemePath = themePath(themeName);
   if (currentThemePath === undefined) {
     // likely was deleted outside Vortex

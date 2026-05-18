@@ -4,9 +4,7 @@
   "description": "Feedback page",
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/stylesheets/feedback.scss issues.json dist",
-    "_build": "node build.mjs && pnpm extractInfo && pnpm run _assets",
-    "build": "pnpm run _build && node ../copy-extension.mjs out",
-    "dist": "pnpm run _build && node ../copy-extension.mjs dist",
+    "build": "node build.mjs && pnpm extractInfo && pnpm run _assets",
     "typecheck": "pnpm tsc"
   },
   "author": "Black Tree Gaming Ltd.",
@@ -31,5 +29,26 @@
     "tmp": "catalog:",
     "vortex-api": "workspace:*",
     "winapi-bindings": "catalog:"
+  },
+  "nx": {
+    "tags": [
+      "vortex:extension"
+    ],
+    "targets": {
+      "build": {
+        "inputs": [
+          "default",
+          "typescript",
+          "vortex-api"
+        ]
+      },
+      "typecheck": {
+        "inputs": [
+          "default",
+          "typescript",
+          "vortex-api"
+        ]
+      }
+    }
   }
 }

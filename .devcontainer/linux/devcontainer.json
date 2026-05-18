@@ -7,19 +7,19 @@
   "name": "Vortex Linux Build",
   "build": {
     "dockerfile": "../../docker/linux/Dockerfile.devcontainer",
-    "context": "../..",
+    "context": "../.."
   },
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
   "workspaceFolder": "/workspace",
-  "postCreateCommand": "volta install node@22 yarn@v1 && npm install --global corepack@latest && corepack install",
+  "postCreateCommand": "volta install node@24 yarn@v1 && npm install --global corepack@latest && corepack install",
   "postStartCommand": "git config --global --add safe.directory /workspace",
   "remoteUser": "root",
   "containerEnv": {
     "ELECTRON_DISABLE_GPU": "true",
     "DISPLAY": "${localEnv:DISPLAY}",
-    "NO_PARALLEL": "true",
+    "NO_PARALLEL": "true"
   },
   "runArgs": ["--init"],
   "forwardPorts": [],
-  "portsAttributes": {},
+  "portsAttributes": {}
 }

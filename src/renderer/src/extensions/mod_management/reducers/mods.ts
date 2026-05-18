@@ -1,3 +1,6 @@
+import * as _ from "lodash";
+import type { IRule } from "modmeta-db";
+
 import type { IReducerSpec } from "../../../types/IExtensionContext";
 import { log } from "../../../util/log";
 import { removeValue } from "../../../util/storeHelper";
@@ -9,13 +12,9 @@ import {
   removeValueIf,
   setSafe,
 } from "../../../util/storeHelper";
-
 import * as actions from "../actions/mods";
 import type { IMod } from "../types/IMod";
 import { referenceEqual } from "../util/testModReference";
-
-import * as _ from "lodash";
-import type { IRule } from "modmeta-db";
 
 function reduceRule(input: IRule): IRule {
   if (input === undefined) {
@@ -45,13 +44,10 @@ export const modsReducer: IReducerSpec = {
     },
     [actions.addMods as any]: (state, payload) => {
       const { gameId, mods } = payload;
-      const modDict = mods.reduce(
-        (prev: { [key: string]: IMod }, value: IMod) => {
-          prev[value.id] = value;
-          return prev;
-        },
-        {},
-      );
+      const modDict = mods.reduce((prev: { [key: string]: IMod }, value: IMod) => {
+        prev[value.id] = value;
+        return prev;
+      }, {});
       return merge(state, [gameId], modDict);
     },
     [actions.removeMod as any]: (state, payload) => {
@@ -131,13 +127,11 @@ export const modsReducer: IReducerSpec = {
         group = [rule.type];
       }
 
-      idx = getSafe(state, [gameId, modId, "rules"], []).findIndex(
-        (iterRule: IRule) => {
-          const typeMatch = group.indexOf(rule.type) !== -1;
-          const filteredIter = _.omitBy(iterRule.reference, _.isUndefined);
-          return typeMatch && referenceEqual(filteredRef, filteredIter);
-        },
-      );
+      idx = getSafe(state, [gameId, modId, "rules"], []).findIndex((iterRule: IRule) => {
+        const typeMatch = group.indexOf(rule.type) !== -1;
+        const filteredIter = _.omitBy(iterRule.reference, _.isUndefined);
+        return typeMatch && referenceEqual(filteredRef, filteredIter);
+      });
 
       if (idx !== -1) {
         return setSafe(state, [gameId, modId, "rules", idx], rule);
@@ -171,11 +165,7 @@ export const modsReducer: IReducerSpec = {
         }
       }
       indices.forEach((idx) => {
-        state = setSafe(
-          state,
-          [gameId, modId, "rules", idx, "reference", "idHint"],
-          refModId,
-        );
+        state = setSafe(state, [gameId, modId, "rules", idx, "reference", "idHint"], refModId);
       });
       return state;
     },
@@ -199,8 +189,7 @@ export const modsReducer: IReducerSpec = {
       if (state[gameId]?.[modId] === undefined) {
         return state;
       }
-      const hasInvalidEntry =
-        files.find((file) => typeof file !== "string") !== undefined;
+      const hasInvalidEntry = files.find((file) => typeof file !== "string") !== undefined;
       if (hasInvalidEntry) {
         return state;
       }
@@ -248,8 +237,7 @@ export const modsReducer: IReducerSpec = {
                 downloadGame: {
                   type: "string",
                   description: () => "Invalid download game id will be fixed",
-                  repair: (input) =>
-                    Array.isArray(input) ? input[0] : undefined,
+                  repair: (input) => (Array.isArray(input) ? input[0] : undefined),
                 },
               },
             },

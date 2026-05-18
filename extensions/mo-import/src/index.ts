@@ -1,7 +1,8 @@
-import ImportDialog from "./views/ImportDialog";
-
 import * as path from "path";
+
 import { actions, selectors, types } from "vortex-api";
+
+import ImportDialog from "./views/ImportDialog";
 
 const isGameSupported = (context: types.IExtensionContext): boolean => {
   const state = context.api.store.getState();
@@ -45,10 +46,7 @@ function init(context: types.IExtensionContext): boolean {
 
   context.once(() => {
     const store = context.api.store;
-    context.api.setStylesheet(
-      "mo-import",
-      path.join(__dirname, "mo-import.scss"),
-    );
+    context.api.setStylesheet("mo-import", path.join(__dirname, "mo-import.scss"));
   });
 
   return true;

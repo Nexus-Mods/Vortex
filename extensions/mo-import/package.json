@@ -4,9 +4,7 @@
   "description": "Import mods from Mod Organizer (MO)",
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/stylesheets/mo-import.scss dist",
-    "_build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
-    "build": "pnpm run _build && node ../copy-extension.mjs out",
-    "dist": "pnpm run _build && node ../copy-extension.mjs dist",
+    "build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
     "typecheck": "pnpm tsc"
   },
   "author": "Black Tree Gaming Ltd.",
@@ -39,5 +37,26 @@
     "shortid": "catalog:",
     "vortex-api": "workspace:*",
     "vortex-parse-ini": "catalog:"
+  },
+  "nx": {
+    "tags": [
+      "vortex:extension"
+    ],
+    "targets": {
+      "build": {
+        "inputs": [
+          "default",
+          "typescript",
+          "vortex-api"
+        ]
+      },
+      "typecheck": {
+        "inputs": [
+          "default",
+          "typescript",
+          "vortex-api"
+        ]
+      }
+    }
   }
 }

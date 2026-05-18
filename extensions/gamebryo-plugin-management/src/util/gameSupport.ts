@@ -1,12 +1,11 @@
-/* eslint-disable */
-import { PluginFormat } from "../util/PluginPersistor";
-import memoizeOne from "memoize-one";
+import * as path from "path";
 
 import Promise from "bluebird";
-
-import * as path from "path";
+import memoizeOne from "memoize-one";
 import { fs, log, selectors, types, util } from "vortex-api";
 
+/* eslint-disable */
+import { PluginFormat } from "../util/PluginPersistor";
 import { patternMatchNativePlugins } from "./patternMatchNativePlugins";
 
 type PluginTXTFormat = "original" | "fallout4";
@@ -267,8 +266,7 @@ function applyNativePlugins(
 ): Promise<void> {
   const state = api.store.getState();
   const game = selectors.gameById(state, gameMode);
-  const nativePlugins =
-    game?.details?.nativePlugins || gameSupport[gameMode].nativePlugins;
+  const nativePlugins = game?.details?.nativePlugins || gameSupport[gameMode].nativePlugins;
   const gameNativePlugins = new Set<string>(nativePlugins);
   const discovery = discoveryForGame(gameMode);
   if (discovery?.path === undefined || !game) {
@@ -276,9 +274,7 @@ function applyNativePlugins(
   } else {
     const cccFilePath = path.join(discovery.path, fileName);
     return Promise.resolve()
-      .then(() =>
-        patternMatchNativePlugins(gameMode, discovery, gameSupport[gameMode]),
-      )
+      .then(() => patternMatchNativePlugins(gameMode, discovery, gameSupport[gameMode]))
       .then((patternMatched) => {
         patternMatched.forEach((fileName) => {
           gameNativePlugins.add(fileName.toLowerCase());
@@ -307,10 +303,7 @@ export function getGameSupport() {
   return gameSupport;
 }
 
-export function syncGameSupport(
-  gameId: string,
-  gameSupportData: IGameSupport,
-): void {
+export function syncGameSupport(gameId: string, gameSupportData: IGameSupport): void {
   if (process.type === "browser" && gameSupport.has(gameId)) {
     // Synchronize the game support data in the main thread with the one in the renderer.
     const currentSupportData = gameSupport[gameId];
@@ -319,12 +312,10 @@ export function syncGameSupport(
   }
 }
 
-let discoveryForGame: (gameId: string) => types.IDiscoveryResult = () =>
-  undefined;
+let discoveryForGame: (gameId: string) => types.IDiscoveryResult = () => undefined;
 let getApi: () => types.IExtensionApi = () => undefined;
 export function initGameSupport(api: types.IExtensionApi): Promise<void> {
-  discoveryForGame = (gameId: string) =>
-    selectors.discoveryByGame(api.store.getState(), gameId);
+  discoveryForGame = (gameId: string) => selectors.discoveryByGame(api.store.getState(), gameId);
   getApi = () => api;
   const state: types.IState = api.store.getState();
   const { discovered } = state.settings.gameMode;
@@ -351,10 +342,7 @@ export function initGameSupport(api: types.IExtensionApi): Promise<void> {
         if (dataModType && process.type === "renderer") {
           // The main thread can't deal with most selectors. We rely on the IPC channels
           //  to sync the data over to it.
-          const pluginsPath = selectors.modPathsForGame(
-            state,
-            "oblivionremastered",
-          )[dataModType];
+          const pluginsPath = selectors.modPathsForGame(state, "oblivionremastered")[dataModType];
           gameSupport["oblivionremastered"].pluginsPath = pluginsPath;
           gameSupport["oblivionremastered"].gameDataPath = pluginsPath;
         }
@@ -406,16 +394,10 @@ export function gameSupported(gameMode: string, sort?: boolean): boolean {
     return gameSupport.has(gameMode);
   }
   const state = getApi().getState();
-  const defaultVal = ["starfield", "oblivionremastered"].includes(gameMode)
-    ? false
-    : true;
+  const defaultVal = ["starfield", "oblivionremastered"].includes(gameMode) ? false : true;
   const profileId = selectors.lastActiveProfileForGame(state, gameMode);
   if (
-    !util.getSafe(
-      state,
-      ["settings", "plugins", "pluginManagementEnabled", profileId],
-      defaultVal,
-    )
+    !util.getSafe(state, ["settings", "plugins", "pluginManagementEnabled", profileId], defaultVal)
   ) {
     return false;
   }
@@ -423,9 +405,7 @@ export function gameSupported(gameMode: string, sort?: boolean): boolean {
 }
 
 export function isNativePlugin(gameMode: string, pluginName: string): boolean {
-  return gameSupport
-    .get(gameMode, "nativePlugins")
-    .includes(pluginName.toLowerCase());
+  return gameSupport.get(gameMode, "nativePlugins").includes(pluginName.toLowerCase());
 }
 
 export function nativePlugins(gameMode: string): string[] {
@@ -447,27 +427,23 @@ export const supportsMediumMasters = memoizeOne((gameMode: string): boolean => {
   if (!gameSupport.has(gameMode)) {
     return false;
   }
-  const supportsMediumMasters =
-    gameSupport.get(gameMode, "supportsMediumMasters") ?? false;
+  const supportsMediumMasters = gameSupport.get(gameMode, "supportsMediumMasters") ?? false;
   if (typeof supportsMediumMasters === "function") {
     return supportsMediumMasters();
   }
   return supportsMediumMasters;
 });
 
-export const supportsBlueprintPlugins = memoizeOne(
-  (gameMode: string): boolean => {
-    if (!gameSupport.has(gameMode)) {
-      return false;
-    }
-    const supported =
-      gameSupport.get(gameMode, "supportsBlueprintPlugins") ?? false;
-    if (typeof supported === "function") {
-      return supported();
-    }
-    return supported;
-  },
-);
+export const supportsBlueprintPlugins = memoizeOne((gameMode: string): boolean => {
+  if (!gameSupport.has(gameMode)) {
+    return false;
+  }
+  const supported = gameSupport.get(gameMode, "supportsBlueprintPlugins") ?? false;
+  if (typeof supported === "function") {
+    return supported();
+  }
+  return supported;
+});
 
 export function pluginExtensions(gameMode: string): string[] {
   return supportsESL(gameMode) ? [".esm", ".esp", ".esl"] : [".esm", ".esp"];

@@ -1,0 +1,34 @@
+{
+  "fileName": "fallout3_3.fos",
+  "quick": {
+    "characterName": "Player Name",
+    "characterLevel": 1,
+    "location": "Vault 101 Entrance",
+    "saveNumber": 562,
+    "creationTime": 1639065875,
+    "playTime": "000.28.16"
+  },
+  "full": {
+    "characterName": "Player Name",
+    "characterLevel": 1,
+    "location": "Vault 101 Entrance",
+    "saveNumber": 562,
+    "creationTime": 1639065875,
+    "playTime": "000.28.16",
+    "plugins": [
+      "Fallout3.esm",
+      "Anchorage.esm",
+      "ThePitt.esm",
+      "BrokenSteel.esm",
+      "PointLookout.esm",
+      "Zeta.esm"
+    ],
+    "screenshotSize": {
+      "width": 512,
+      "height": 320
+    },
+    "screenshotHash": "a95f41296f23a903dda5be74674187f76f326813ab4fd6b9c95fd3b9332cbf8a",
+    "screenshotLength": 655360,
+    "screenshotHead": "CQ0M/wgMDP8JDQz/BwsK/wcLCv8HCwr/Cg8O/wsQD/8KDg3/Cg8O/woPDv8KDg3/Cg4M/wsQDv8PFBP/MDgv/xwiHv8fJR//Ki8n/yInIP8nLib/KjEp/ycuJ/8iKCL/HCEd/wkNDP8JDQz/CAsL/wcLC/8JDg3/DRIS/w8VFP8PFRX/MTk0/x8mI/8aIh//LTYw/zxGPP8+SD7/N0A3/zE6Mv88Rjz/OkI3/zM6MP8aIBv/HiQf/xUbGv8SGBb/OEI6/0BLQP85QTf/OkA1/yMpI/8NEhD/DhMR/xceHP8IDAv/CAsL/w0SEv8LDw//DBIS/w4TE/8kLCn/Exoa/w=="
+  }
+}

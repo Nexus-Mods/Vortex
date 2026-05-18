@@ -3,9 +3,7 @@
   "version": "0.1.1",
   "description": "Report an error if a mod isn't compatible with the current game version",
   "scripts": {
-    "_build": "node build.mjs && pnpm extractInfo",
-    "build": "pnpm run _build && node ../copy-extension.mjs out",
-    "dist": "pnpm run _build && node ../copy-extension.mjs dist",
+    "build": "node build.mjs && pnpm extractInfo",
     "typecheck": "pnpm tsc"
   },
   "author": "Black Tree Gaming Ltd.",
@@ -15,7 +13,7 @@
     "@types/redux": "catalog:",
     "bluebird": "catalog:",
     "copyfiles": "catalog:",
-    "exe-version": "catalog:",
+    "exe-version": "workspace:*",
     "i18next": "catalog:",
     "immutability-helper": "catalog:",
     "json-loader": "catalog:",
@@ -27,5 +25,26 @@
     "redux-thunk": "catalog:",
     "vortex-api": "workspace:*",
     "vortex-parse-ini": "catalog:"
+  },
+  "nx": {
+    "tags": [
+      "vortex:extension"
+    ],
+    "targets": {
+      "build": {
+        "inputs": [
+          "default",
+          "typescript",
+          "vortex-api"
+        ]
+      },
+      "typecheck": {
+        "inputs": [
+          "default",
+          "typescript",
+          "vortex-api"
+        ]
+      }
+    }
   }
 }

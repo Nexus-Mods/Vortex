@@ -1,14 +1,4 @@
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import { log } from "../../../util/log";
-import { getSafe } from "../../../util/storeHelper";
-import { batchDispatch, truthy } from "../../../util/util";
-import { nexusGameId } from "./convertGameId";
-
-import { gameById } from "../../gamemode_management/selectors";
-import { setModAttribute } from "../../mod_management/actions/mods";
-import type { IMod } from "../../mod_management/types/IMod";
-
-import { setLastUpdateCheck } from "../actions/session";
+import * as path from "path";
 
 import type {
   IFileInfo,
@@ -22,9 +12,18 @@ import type NexusT from "@nexusmods/nexus-api";
 import { RateLimitError } from "@nexusmods/nexus-api";
 import PromiseBB from "bluebird";
 import type { TFunction } from "i18next";
-import * as path from "path";
 import type * as Redux from "redux";
 import * as semver from "semver";
+
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import { log } from "../../../util/log";
+import { getSafe } from "../../../util/storeHelper";
+import { batchDispatch, truthy } from "../../../util/util";
+import { gameById } from "../../gamemode_management/selectors";
+import { setModAttribute } from "../../mod_management/actions/mods";
+import type { IMod } from "../../mod_management/types/IMod";
+import { setLastUpdateCheck } from "../actions/session";
+import { nexusGameId } from "./convertGameId";
 
 export const ONE_MINUTE = 60 * 1000;
 export const ONE_DAY = 24 * 60 * ONE_MINUTE;
@@ -49,36 +48,24 @@ export function fetchRecentUpdates(
 ): PromiseBB<IUpdateEntry[]> {
   const state = store.getState();
   const now = Date.now();
-  const lastUpdate = getSafe(
-    state,
-    ["session", "nexus", "lastUpdate", gameId],
-    {
-      time: 0,
-      range: 0,
-      updateList: [],
-    },
-  );
+  const lastUpdate = getSafe(state, ["session", "nexus", "lastUpdate", gameId], {
+    time: 0,
+    range: 0,
+    updateList: [],
+  });
 
   const timeSinceUpdate = now - lastUpdate.time;
 
-  if (
-    timeSinceUpdate < UPDATE_CHECK_TIMEOUT &&
-    now - minAge < lastUpdate.range
-  ) {
+  if (timeSinceUpdate < UPDATE_CHECK_TIMEOUT && now - minAge < lastUpdate.range) {
     // don't fetch same or smaller range again within 5 minutes
     return PromiseBB.resolve(
-      getSafe(
-        state,
-        ["session", "nexus", "lastUpdate", gameId, "updateList"],
-        [],
-      ),
+      getSafe(state, ["session", "nexus", "lastUpdate", gameId, "updateList"], []),
     );
   } else {
     log("debug", "[update check] lru", new Date(minAge).toISOString());
 
     // round elapsed time since minAge to day/week/month
-    const period =
-      now - minAge < ONE_DAY ? "1d" : now - minAge < ONE_WEEK ? "1w" : "1m";
+    const period = now - minAge < ONE_DAY ? "1d" : now - minAge < ONE_WEEK ? "1w" : "1m";
 
     const range = {
       "1d": ONE_DAY,
@@ -89,16 +76,11 @@ export function fetchRecentUpdates(
     log("debug", "[update check] using range", { gameId, period });
 
     return PromiseBB.resolve(
-      nexus.getRecentlyUpdatedMods(
-        period,
-        nexusGameId(gameById(state, gameId), gameId),
-      ),
+      nexus.getRecentlyUpdatedMods(period, nexusGameId(gameById(state, gameId), gameId)),
     ).then((recentUpdates) => {
       // store 5 minutes ago for the time of the last update check, since
       // the list is cached and might be that outdated
-      store.dispatch(
-        setLastUpdateCheck(gameId, now - 5 * ONE_MINUTE, range, recentUpdates),
-      );
+      store.dispatch(setLastUpdateCheck(gameId, now - 5 * ONE_MINUTE, range, recentUpdates));
       return PromiseBB.resolve(recentUpdates);
     });
   }
@@ -122,26 +104,18 @@ export function checkModVersion(
   gameMode: string,
   mod: IMod,
 ): PromiseBB<void> {
-  const nexusModId: number = parseInt(
-    getSafe(mod.attributes, ["modId"], undefined),
-    10,
-  );
+  const nexusModId: number = parseInt(getSafe(mod.attributes, ["modId"], undefined), 10);
 
   if (isNaN(nexusModId)) {
     return PromiseBB.resolve();
   }
 
-  const gameId =
-    getSafe(mod.attributes, ["downloadGame"], undefined) || gameMode;
+  const gameId = getSafe(mod.attributes, ["downloadGame"], undefined) || gameMode;
   const game = gameById(store.getState(), gameId);
   const fallBackGameId = gameId === "site" ? "site" : gameId;
 
-  return PromiseBB.resolve(
-    nexus.getModFiles(nexusModId, nexusGameId(game, fallBackGameId)),
-  )
-    .then((result) =>
-      updateFileAttributes(store.dispatch, gameMode, mod, result),
-    )
+  return PromiseBB.resolve(nexus.getModFiles(nexusModId, nexusGameId(game, fallBackGameId)))
+    .then((result) => updateFileAttributes(store.dispatch, gameMode, mod, result))
     .tapCatch((err) => {
       log("warn", "dropping update info", {
         gameMode,
@@ -166,11 +140,7 @@ export function findLatestUpdate(
 ): IFileUpdate[] {
   const updatedFile = fileUpdates.find((file) => file.old_file_id === fileId);
   return updatedFile !== undefined
-    ? findLatestUpdate(
-        fileUpdates,
-        updateChain.concat([updatedFile]),
-        updatedFile.new_file_id,
-      )
+    ? findLatestUpdate(fileUpdates, updateChain.concat([updatedFile]), updatedFile.new_file_id)
     : updateChain;
 }
 
@@ -221,10 +191,7 @@ function updateLatestFileAttributes(
 ) {
   update(dispatch, gameId, mod, "newestVersion", file.version);
 
-  if (
-    ["OLD_VERSION", "ARCHIVED"].includes(file.category_name) ||
-    !truthy(file.category_name)
-  ) {
+  if (["OLD_VERSION", "ARCHIVED"].includes(file.category_name) || !truthy(file.category_name)) {
     // file was removed from mod or is old, either way there should be a new version available
     // but we have no way of determining which it is.
     update(dispatch, gameId, mod, "newestFileId", "unknown");
@@ -233,11 +200,7 @@ function updateLatestFileAttributes(
   }
 }
 
-function setNoUpdateAttributes(
-  dispatch: Redux.Dispatch<any>,
-  gameId: string,
-  mod: IMod,
-) {
+function setNoUpdateAttributes(dispatch: Redux.Dispatch<any>, gameId: string, mod: IMod) {
   update(dispatch, gameId, mod, "newestVersion", undefined);
   update(dispatch, gameId, mod, "newestFileId", undefined);
   update(dispatch, gameId, mod, "lastUpdateTime", undefined);
@@ -282,11 +245,7 @@ function updateFileAttributes(
     }
   }
   const latestFileId = fileId;
-  let fileUpdates: IFileUpdate[] = findLatestUpdate(
-    files.file_updates,
-    [],
-    latestFileId,
-  );
+  let fileUpdates: IFileUpdate[] = findLatestUpdate(files.file_updates, [], latestFileId);
   // at this point there is the possibility that the latest file in the update
   // chain has been deleted, so we have to traverse _back_ through the chain to
   // the latest file that actually exists
@@ -296,10 +255,7 @@ function updateFileAttributes(
     return fileInfo === undefined || [6, 7].includes(fileInfo.category_id);
   };
 
-  while (
-    fileUpdates.length > 0 &&
-    isFileDeleted(fileUpdates[fileUpdates.length - 1].new_file_id)
-  ) {
+  while (fileUpdates.length > 0 && isFileDeleted(fileUpdates[fileUpdates.length - 1].new_file_id)) {
     log("debug", "update discarded because new version was deleted", {
       update: JSON.stringify(fileUpdates[fileUpdates.length - 1]),
     });
@@ -309,9 +265,7 @@ function updateFileAttributes(
   if (fileUpdates.length === 0) {
     // update not found through update-chain. If there is only a single file that
     // isn't marked as old we assume that is the right update.
-    const notOld = files.files.filter(
-      (file) => ![4, 6, 7].includes(file.category_id),
-    );
+    const notOld = files.files.filter((file) => ![4, 6, 7].includes(file.category_id));
     if (notOld.length === 1 && notOld[0].file_id !== fileId) {
       const fallbackUpdate: IFileUpdate = {
         old_file_id: fileId,
@@ -334,11 +288,9 @@ function updateFileAttributes(
       //  manually.
       const latestUpdate =
         potentialCandidates.length === 1
-          ? findLatestUpdate(
-              potentialCandidates,
-              [],
-              potentialCandidates[0].new_file_id,
-            ) || [fallbackUpdate]
+          ? findLatestUpdate(potentialCandidates, [], potentialCandidates[0].new_file_id) || [
+              fallbackUpdate,
+            ]
           : [fallbackUpdate];
       fileUpdates = latestUpdate;
     } else {
@@ -347,9 +299,7 @@ function updateFileAttributes(
       if (isPrimary) {
         const primaryFile = notOld.find((file) => file.is_primary);
         const potentialCandidates = files.file_updates.filter(
-          (up) =>
-            !isFileDeleted(up.new_file_id) &&
-            up.old_file_id === primaryFile?.file_id,
+          (up) => !isFileDeleted(up.new_file_id) && up.old_file_id === primaryFile?.file_id,
         );
         if (potentialCandidates.length === 1) {
           // There should be only one primary file at this point
@@ -366,9 +316,7 @@ function updateFileAttributes(
   // collect the changelogs of all the versions > currently installed and <= newest
   const changelog = fileUpdates
     .map((fileUpdate) => {
-      const file = files.files.find(
-        (iter) => iter.file_id === fileUpdate.new_file_id,
-      );
+      const file = files.files.find((iter) => iter.file_id === fileUpdate.new_file_id);
       return file !== undefined ? file.changelog_html : undefined;
     })
     .filter((change) => change !== undefined)
@@ -385,18 +333,12 @@ function updateFileAttributes(
 
   let updatedFile =
     fileUpdates.length > 0
-      ? files.files.find(
-          (file) =>
-            file.file_id === fileUpdates[fileUpdates.length - 1].new_file_id,
-        )
+      ? files.files.find((file) => file.file_id === fileUpdates[fileUpdates.length - 1].new_file_id)
       : files.files.find((file) => file.file_id === fileId);
   if (updatedFile === undefined && truthy(mod.attributes.version)) {
     try {
       updatedFile = files.files.find((file) =>
-        semver.eq(
-          semver.coerce(file.mod_version),
-          semver.coerce(mod.attributes.version),
-        ),
+        semver.eq(semver.coerce(file.mod_version), semver.coerce(mod.attributes.version)),
       );
     } catch (err) {
       // nop
@@ -411,14 +353,9 @@ function updateFileAttributes(
 
 function errorFromNexus(err: NexusError): Error {
   if (err.statusCode >= 500) {
-    return new Error(
-      `Internal server error (${err.statusCode}, ${err.request}):` +
-        err.message,
-    );
+    return new Error(`Internal server error (${err.statusCode}, ${err.request}):` + err.message);
   } else if (err.statusCode >= 400) {
-    return new Error(
-      `Not found (${err.statusCode}, ${err.request}): ` + err.message,
-    );
+    return new Error(`Not found (${err.statusCode}, ${err.request}): ` + err.message);
   } else {
     return new Error(`${err.message} (${err.statusCode}, ${err.request})`);
   }
@@ -440,10 +377,7 @@ export function retrieveModInfo(
   const nexusIdNum = parseInt(nexusModId, 10);
   // if the endorsement state is unknown, request it
   return PromiseBB.resolve(
-    nexus.getModInfo(
-      nexusIdNum,
-      nexusGameId(gameById(store.getState(), gameId)),
-    ),
+    nexus.getModInfo(nexusIdNum, nexusGameId(gameById(store.getState(), gameId))),
   )
     .then((modInfo: IModInfo) => {
       if (modInfo !== undefined) {
@@ -455,8 +389,7 @@ export function retrieveModInfo(
         id: "rate-limit-exceeded",
         type: "warning",
         title: "Rate-limit exceeded",
-        message:
-          "You wont be able to use network features until the next full hour.",
+        message: "You wont be able to use network features until the next full hour.",
       });
     })
     .catch((err: NexusError) => {

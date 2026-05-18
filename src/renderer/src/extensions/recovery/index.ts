@@ -1,26 +1,20 @@
 // features to help restore vortex to a working state
 
-import type { IDialogResult } from "../../types/IDialog";
-import type {
-  IExtensionApi,
-  IExtensionContext,
-} from "../../types/IExtensionContext";
-import { activeProfile, currentGameDiscovery } from "../../util/selectors";
-
-import { getGame } from "../gamemode_management/util/getGame";
-
-import { createFullStateBackup } from "../../store/store";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 
 import { setModEnabled } from "../../actions";
+import { createFullStateBackup } from "../../store/store";
 import type { IDeploymentManifest } from "../../types/api";
+import type { IDialogResult } from "../../types/IDialog";
+import type { IExtensionApi, IExtensionContext } from "../../types/IExtensionContext";
 import { UserCanceled } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
 import { log } from "../../util/log";
+import { activeProfile, currentGameDiscovery } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
+import { getGame } from "../gamemode_management/util/getGame";
 import { getManifest } from "../mod_management/util/activationStore";
 import Workarounds from "./Workarounds";
-
-import { getErrorMessageOrDefault } from "@vortex/shared";
 
 const ONE_HOUR = 60 * 60 * 1000;
 
@@ -71,11 +65,7 @@ async function resetToManifest(api: IExtensionApi) {
 
     await Promise.all(
       modTypes.map(async (modType) => {
-        const manifest: IDeploymentManifest = await getManifest(
-          api,
-          modType,
-          profile.gameId,
-        );
+        const manifest: IDeploymentManifest = await getManifest(api, modType, profile.gameId);
         manifest.files.forEach((file) => {
           enabledMods.add(file.source);
           (file.merged || []).forEach((merged) => enabledMods.add(merged));
@@ -107,13 +97,10 @@ async function resetToManifest(api: IExtensionApi) {
     }
 
     const mods = getSafe(state, ["persistent", "mods", profile.gameId], {});
-    const isEnabled = (modId) =>
-      getSafe(profile, ["modState", modId, "enabled"], false);
+    const isEnabled = (modId) => getSafe(profile, ["modState", modId, "enabled"], false);
     Object.keys(mods).forEach((modId) => {
       if (isEnabled(modId) !== enabledMods.has(modId)) {
-        api.store.dispatch(
-          setModEnabled(profile.id, modId, enabledMods.has(modId)),
-        );
+        api.store.dispatch(setModEnabled(profile.id, modId, enabledMods.has(modId)));
       }
     });
   } catch (err) {
@@ -150,13 +137,9 @@ function init(context: IExtensionContext): boolean {
                         : Promise.resolve(),
                     )
                     .catch((err) => {
-                      context.api.showErrorNotification(
-                        "Failed to copy state backup",
-                        err,
-                        {
-                          allowReport: false,
-                        },
-                      );
+                      context.api.showErrorNotification("Failed to copy state backup", err, {
+                        allowReport: false,
+                      });
                     });
                 },
               },
@@ -169,16 +152,9 @@ function init(context: IExtensionContext): boolean {
     5000,
   );
 
-  context.registerAction(
-    "mod-icons",
-    115,
-    "undo",
-    {},
-    "Reset to manifest",
-    () => {
-      void resetToManifest(context.api);
-    },
-  );
+  context.registerAction("mod-icons", 115, "undo", {}, "Reset to manifest", () => {
+    void resetToManifest(context.api);
+  });
 
   context.once(() => {
     setInterval(() => void createBackup(context.api, "hourly"), ONE_HOUR);

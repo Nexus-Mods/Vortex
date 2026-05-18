@@ -68,10 +68,7 @@ export const MainLayout: FC = () => {
   const handleSidebarRef = useCallback((ref: HTMLElement | null) => {
     sidebarRef.current = ref;
     if (ref !== null) {
-      ref.setAttribute(
-        "style",
-        "min-width: " + ref.getBoundingClientRect().width + "px",
-      );
+      ref.setAttribute("style", "min-width: " + ref.getBoundingClientRect().width + "px");
     }
   }, []);
 
@@ -90,9 +87,7 @@ export const MainLayout: FC = () => {
           sidebarTimer.current = undefined;
           sidebarRef.current?.setAttribute?.(
             "style",
-            "min-width:" +
-              sidebarRef.current.getBoundingClientRect().width +
-              "px",
+            "min-width:" + sidebarRef.current.getBoundingClientRect().width + "px",
           );
         }, 500);
       }

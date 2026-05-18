@@ -1,12 +1,13 @@
+import * as fs from "fs";
+import * as path from "path";
+
+import Promise from "bluebird";
+import { log, selectors, types } from "vortex-api";
+
 import ARCWrapper from "./ARCWrapper";
 import AttribDashlet from "./AttribDashlet";
 import { arcGameId, arcVersion } from "./gameSupport";
 import { ArcGame } from "./types";
-
-import Promise from "bluebird";
-import * as fs from "fs";
-import * as path from "path";
-import { log, selectors, types } from "vortex-api";
 
 class ARCHandler implements types.IArchiveHandler {
   private mArc: ARCWrapper;
@@ -14,11 +15,7 @@ class ARCHandler implements types.IArchiveHandler {
   private mGame: ArcGame;
   private mVersion: number;
 
-  constructor(
-    api: types.IExtensionApi,
-    fileName: string,
-    options: types.IArchiveOptions,
-  ) {
+  constructor(api: types.IExtensionApi, fileName: string, options: types.IArchiveOptions) {
     this.mArchivePath = fileName;
     this.mGame = arcGameId(options.gameId);
     this.mVersion = arcVersion(options.gameId);

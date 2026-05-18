@@ -9,11 +9,11 @@ base-version: "25.08"
 command: run.sh
 
 sdk-extensions:
-  - org.freedesktop.Sdk.Extension.node22
+  - org.freedesktop.Sdk.Extension.node24
   - org.freedesktop.Sdk.Extension.dotnet9
 
 build-options:
-  prepend-path: /usr/lib/sdk/node22/bin:/usr/lib/sdk/dotnet9/bin
+  prepend-path: /usr/lib/sdk/node24/bin:/usr/lib/sdk/dotnet9/bin
   append-ld-library-path: /usr/lib/sdk/dotnet9/lib
   env:
     # Electron install behavior (global): prevent Electron downloads because BaseApp provides it.
@@ -24,7 +24,7 @@ build-options:
     # Flatpak builds run offline by default; these paths are inside the build sandbox.
     # Ref: https://docs.flatpak.org/en/latest/electron.html#the-application-module
     npm_config_cache: /run/build/vortex/flatpak-node/npm-cache
-    npm_config_nodedir: /usr/lib/sdk/node22
+    npm_config_nodedir: /usr/lib/sdk/node24
     npm_config_offline: "true"
     XDG_CACHE_HOME: /run/build/vortex/flatpak-node/cache
     YARN_CACHE_FOLDER: /run/build/vortex/flatpak-node/yarn-cache

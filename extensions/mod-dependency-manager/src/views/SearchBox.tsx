@@ -42,9 +42,7 @@ class SearchBox extends ComponentEx<ISearchBoxProps, ISearchBoxState> {
     const { searchFoundCount } = this.state;
     return (
       <div className="search-box">
-        <div
-          style={{ display: "inline-block", position: "relative", height: 30 }}
-        >
+        <div style={{ display: "inline-block", position: "relative", height: 30 }}>
           <FormControl
             className="search-box-input"
             type="text"
@@ -86,9 +84,7 @@ class SearchBox extends ComponentEx<ISearchBoxProps, ISearchBoxState> {
     const { onSetSearchFocus, searchFocusIndex } = this.props;
     const { searchFoundCount } = this.state;
 
-    onSetSearchFocus(
-      (searchFoundCount + searchFocusIndex - 1) % searchFoundCount,
-    );
+    onSetSearchFocus((searchFoundCount + searchFocusIndex - 1) % searchFoundCount);
   };
 
   private selectNextMatch = () => {
@@ -112,8 +108,7 @@ class SearchBox extends ComponentEx<ISearchBoxProps, ISearchBoxState> {
     if (this.state.searchFoundCount !== matches.length) {
       this.nextState.searchFoundCount = matches.length;
     }
-    const newFocusIndex =
-      matches.length > 0 ? searchFocusIndex % matches.length : 0;
+    const newFocusIndex = matches.length > 0 ? searchFocusIndex % matches.length : 0;
     if (searchFocusIndex !== newFocusIndex) {
       onSetSearchFocus(newFocusIndex);
     }

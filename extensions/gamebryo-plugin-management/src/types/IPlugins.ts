@@ -1,8 +1,8 @@
+import { Message, PluginCleaningData, Tag } from "loot";
+
+import { IDialog } from "../views/UserlistEditor";
 import { ILoadOrder } from "./ILoadOrder";
 import { ILootReference } from "./ILOOTList";
-
-import { Message, PluginCleaningData, Tag } from "loot";
-import { IDialog } from "../views/UserlistEditor";
 
 /**
  * generic information about a plugin
@@ -56,7 +56,7 @@ export interface IPlugins {
 }
 
 /**
- * details retrieved from the content of a plugin through esptk
+ * details retrieved from parsing the plugin's TES4 header record
  *
  * @export
  * @interface IPluginParsed

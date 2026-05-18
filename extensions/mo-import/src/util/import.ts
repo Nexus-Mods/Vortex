@@ -1,17 +1,17 @@
-import { IModEntry } from "../types/moEntries";
-import { transferArchive, transferUnpackedMod } from "../util/modFileMigration";
-
-import { IMOConfig } from "./parseMOIni";
-import toVortexMod from "./toVortexMod";
-import TraceImport from "./TraceImport";
+import * as path from "path";
 
 import Promise from "bluebird";
 import * as I18next from "i18next";
 import { genHash } from "modmeta-db";
-import * as path from "path";
 import * as Redux from "redux";
 import { generate as shortid } from "shortid";
 import { actions, fs, selectors, types } from "vortex-api";
+
+import { IModEntry } from "../types/moEntries";
+import { transferArchive, transferUnpackedMod } from "../util/modFileMigration";
+import { IMOConfig } from "./parseMOIni";
+import toVortexMod from "./toVortexMod";
+import TraceImport from "./TraceImport";
 
 function getInner(ele: Element): string {
   if (ele !== undefined && ele !== null) {
@@ -49,24 +49,17 @@ function importMods(
           mod.archiveName === undefined || path.isAbsolute(mod.archiveName)
             ? mod.archiveName
             : path.join(moConfig.downloadPath, mod.archiveName);
-        return transferUnpackedMod(
-          mod,
-          path.join(moConfig.modPath, mod.modName),
-          installPath,
-          true,
-        )
+        return transferUnpackedMod(mod, path.join(moConfig.modPath, mod.modName), installPath, true)
           .then(() =>
             mod.archiveName === undefined || mod.archiveName === ""
               ? Promise.resolve("")
               : genHash(archivePath)
-                .then((hash) => hash.md5sum)
-                .catch((err) => ""),
+                  .then((hash) => hash.md5sum)
+                  .catch((err) => ""),
           )
           .then((md5Hash) => {
             const archiveId = shortid();
-            store.dispatch(
-              actions.addMod(gameId, toVortexMod(mod, md5Hash, archiveId)),
-            );
+            store.dispatch(actions.addMod(gameId, toVortexMod(mod, md5Hash, archiveId)));
 
             if (importArchives && !!mod.archiveName) {
               trace.log("info", "transferring archive", archivePath);
@@ -87,9 +80,7 @@ function importMods(
                 .tap(() => {
                   // Attempt to set metadata information for the newly added archive.
                   if (mod.nexusId !== "0") {
-                    store.dispatch(
-                      actions.setDownloadModInfo(archiveId, "source", "nexus"),
-                    );
+                    store.dispatch(actions.setDownloadModInfo(archiveId, "source", "nexus"));
                     store.dispatch(
                       actions.setDownloadModInfo(
                         archiveId,
@@ -98,32 +89,16 @@ function importMods(
                       ),
                     );
                     store.dispatch(
-                      actions.setDownloadModInfo(
-                        archiveId,
-                        "nexus.ids.gameId",
-                        gameId,
-                      ),
+                      actions.setDownloadModInfo(archiveId, "nexus.ids.gameId", gameId),
                     );
 
                     if (!!mod.modVersion) {
                       store.dispatch(
-                        actions.setDownloadModInfo(
-                          archiveId,
-                          "version",
-                          mod.modVersion,
-                        ),
+                        actions.setDownloadModInfo(archiveId, "version", mod.modVersion),
                       );
                     }
-                    store.dispatch(
-                      actions.setDownloadModInfo(archiveId, "game", gameId),
-                    );
-                    store.dispatch(
-                      actions.setDownloadModInfo(
-                        archiveId,
-                        "name",
-                        mod.modName,
-                      ),
-                    );
+                    store.dispatch(actions.setDownloadModInfo(archiveId, "game", gameId));
+                    store.dispatch(actions.setDownloadModInfo(archiveId, "name", mod.modName));
                   }
                 })
                 .catch((err) => {

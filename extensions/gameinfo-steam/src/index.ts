@@ -17,9 +17,7 @@ function safeGetTimestamp(input: Date): number {
 
 type IGameCombo = types.IGameStored & types.IDiscoveryResult;
 
-function findLocalInfo(
-  game: IGameCombo,
-): Promise<{ appid: string; lastUpdated: Date }> {
+function findLocalInfo(game: IGameCombo): Promise<{ appid: string; lastUpdated: Date }> {
   let normalize: (input: string) => string;
 
   if (game.path === undefined) {
@@ -41,14 +39,9 @@ function findLocalInfo(
     })
     .then((entries: types.IGameStoreEntry[]) => {
       const searchPath = normalize(game.path);
-      const steamGame = entries.find(
-        (entry) => normalize(entry.gamePath) === searchPath,
-      );
+      const steamGame = entries.find((entry) => normalize(entry.gamePath) === searchPath);
       if (steamGame === undefined) {
-        if (
-          game.details !== undefined &&
-          game.details["steamAppId"] !== undefined
-        ) {
+        if (game.details !== undefined && game.details["steamAppId"] !== undefined) {
           return Promise.resolve({
             appid: game.details["steamAppId"],
             lastUpdated: null,
@@ -59,10 +52,7 @@ function findLocalInfo(
       } else {
         return Promise.resolve({
           appid: steamGame.appid,
-          lastUpdated:
-            steamGame.lastUpdated !== undefined
-              ? new Date(steamGame.lastUpdated)
-              : null,
+          lastUpdated: steamGame.lastUpdated !== undefined ? new Date(steamGame.lastUpdated) : null,
         });
       }
     });

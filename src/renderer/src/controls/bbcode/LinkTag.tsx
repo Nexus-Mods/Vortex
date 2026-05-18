@@ -1,15 +1,14 @@
-import { ErrorContext } from "../ErrorBoundary";
-import opn from "../../util/opn";
+import * as url from "url";
 
 import { Tag } from "bbcode-to-react";
 import * as React from "react";
-import * as url from "url";
+
+import opn from "../../util/opn";
+import { ErrorContext } from "../ErrorBoundary";
 
 class LinkTag extends Tag {
   public toHTML() {
-    let linkUrl = this.renderer.strip(
-      this.params[this.name] || this.getContent(true),
-    );
+    let linkUrl = this.renderer.strip(this.params[this.name] || this.getContent(true));
     if (/javascript:/i.test(linkUrl)) {
       linkUrl = "";
     }
@@ -26,9 +25,7 @@ class LinkTag extends Tag {
   }
 
   public toReact() {
-    let linkUrl = this.renderer.strip(
-      this.params[this.name] || this.getContent(true),
-    );
+    let linkUrl = this.renderer.strip(this.params[this.name] || this.getContent(true));
     if (/javascript:/i.test(linkUrl)) {
       linkUrl = "";
     }
@@ -63,11 +60,7 @@ class LinkTag extends Tag {
     );
   }
 
-  private clicked = (
-    evt: React.MouseEvent<any>,
-    callbacks,
-    allowLocal: boolean,
-  ) => {
+  private clicked = (evt: React.MouseEvent<any>, callbacks, allowLocal: boolean) => {
     evt.preventDefault();
     const uri = evt.currentTarget.href;
     let parsed: URL;
@@ -77,9 +70,7 @@ class LinkTag extends Tag {
       // Invalid URL, don't handle it
       return;
     }
-    const protocols = allowLocal
-      ? ["http:", "https:", "file:"]
-      : ["http:", "https:"];
+    const protocols = allowLocal ? ["http:", "https:", "file:"] : ["http:", "https:"];
 
     if (parsed.protocol === "cb:" && callbacks?.[parsed.host] !== undefined) {
       try {

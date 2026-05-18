@@ -1,11 +1,8 @@
-import type { RelativePath } from "@vortex/fs";
-
-import { relativePath } from "@vortex/fs";
-
-import type { StorePathProvider } from "../stores/providers.js";
-import type { GamePaths } from "./game-paths.js";
-
-import { compileGlob } from "./glob.js";
+import type { RelativePath } from "../fs/paths";
+import { relativePath } from "../fs/paths";
+import type { StorePathProvider } from "../stores/providers";
+import type { GamePaths } from "./game-paths";
+import { compileGlob } from "./glob";
 
 /**
  * One archive file's destination, rooted at an anchor from the same

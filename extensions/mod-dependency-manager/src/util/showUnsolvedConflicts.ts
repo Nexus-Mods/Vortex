@@ -1,4 +1,5 @@
 import { selectors, types, util } from "vortex-api";
+
 import { setConflictDialog } from "../actions";
 import { IBiDirRule } from "../types/IBiDirRule";
 import { findRuleBiDir, isConflictResolved } from "./findRule";
@@ -15,11 +16,7 @@ function showUnsolvedConflictsDialog(
   }
   const mods = state.persistent.mods[gameId] ?? {};
 
-  const conflicts = util.getSafe(
-    state.session,
-    ["dependencies", "conflicts"],
-    undefined,
-  );
+  const conflicts = util.getSafe(state.session, ["dependencies", "conflicts"], undefined);
 
   if (conflicts === undefined) {
     api.sendNotification({
@@ -42,8 +39,7 @@ function showUnsolvedConflictsDialog(
           }
           return (
             !isConflictResolved(mods, modId, conflict.otherMod) &&
-            findRuleBiDir(modRules, mods[modId], conflict.otherMod) ===
-              undefined
+            findRuleBiDir(modRules, mods[modId], conflict.otherMod) === undefined
           );
         }) !== undefined,
     );

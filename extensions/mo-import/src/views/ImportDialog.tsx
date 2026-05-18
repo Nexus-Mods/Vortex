@@ -1,14 +1,3 @@
-import { IModEntry } from "../types/moEntries";
-import findInstances, {
-  convertGameId,
-  instancesPath,
-} from "../util/findInstances";
-import importMods from "../util/import";
-import parseMOIni, { IMOConfig } from "../util/parseMOIni";
-import readModEntries from "../util/readModEntries";
-import TraceImport from "../util/TraceImport";
-import { joinPaths } from "../util/util";
-
 import Promise from "bluebird";
 import * as I18next from "i18next";
 import * as React from "react";
@@ -43,6 +32,14 @@ import {
   util,
 } from "vortex-api";
 
+import { IModEntry } from "../types/moEntries";
+import findInstances, { convertGameId, instancesPath } from "../util/findInstances";
+import importMods from "../util/import";
+import parseMOIni, { IMOConfig } from "../util/parseMOIni";
+import readModEntries from "../util/readModEntries";
+import TraceImport from "../util/TraceImport";
+import { joinPaths } from "../util/util";
+
 type Step = "start" | "setup" | "working" | "review" | "wait";
 
 interface IBaseProps {
@@ -56,7 +53,7 @@ interface IConnectedProps {
   mods: { [modId: string]: types.IMod };
 }
 
-interface IActionProps { }
+interface IActionProps {}
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
 
@@ -105,8 +102,8 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
             moconfig.game === convertGameId(gameId)
               ? undefined
               : t("Can't import mods from different game: {{gameId}}", {
-                replace: { gameId: moconfig.game },
-              });
+                  replace: { gameId: moconfig.game },
+                });
         })
         .catch((err) => {
           log("warn", "invalid MO directory", { error: err.messag });
@@ -141,16 +138,10 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
           {this.renderStep(importStep)}
         </Modal.Header>
         <Modal.Body>
-          {error !== undefined ? (
-            <Alert>{error}</Alert>
-          ) : (
-            this.renderContent(importStep)
-          )}
+          {error !== undefined ? <Alert>{error}</Alert> : this.renderContent(importStep)}
         </Modal.Body>
         <Modal.Footer>
-          {canCancel ? (
-            <Button onClick={this.cancel}>{t("Cancel")}</Button>
-          ) : null}
+          {canCancel ? <Button onClick={this.cancel}>{t("Cancel")}</Button> : null}
           {nextLabel ? (
             <Button disabled={this.nextDisabled()} onClick={this.next}>
               {nextLabel}
@@ -167,12 +158,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
 
     return (
       <Steps step={importStep} style={{ marginBottom: 32 }}>
-        <Steps.Step
-          key="start"
-          stepId="start"
-          title={t("Start")}
-          description={t("Introduction")}
-        />
+        <Steps.Step key="start" stepId="start" title={t("Start")} description={t("Introduction")} />
         <Steps.Step
           key="setup"
           stepId="setup"
@@ -228,22 +214,14 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
       <span className="start-content">
         {t(
           "This tool is an easy way of transferring your current " +
-          "MO configuration into Vortex.",
+            "MO configuration into Vortex.",
         )}
         <div>
           {t("Before you continue, please take note of a few things:")}
           <ul>
-            <li>
-              {t(
-                "Mods will be copied from MO to Vortex. This may take a while.",
-              )}
-            </li>
+            <li>{t("Mods will be copied from MO to Vortex. This may take a while.")}</li>
             <li>{t("Your original MO installation is not modified.")}</li>
-            <li>
-              {t(
-                "Please make sure you have enough disk space to copy the selected mods.",
-              )}
-            </li>
+            <li>{t("Please make sure you have enough disk space to copy the selected mods.")}</li>
           </ul>
         </div>
         {instances === undefined ? (
@@ -292,15 +270,9 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
     const { t } = this.props;
     const { importPath, importPathInvalid } = this.state;
     return (
-      <FormGroup
-        validationState={importPathInvalid !== undefined ? "error" : undefined}
-      >
+      <FormGroup validationState={importPathInvalid !== undefined ? "error" : undefined}>
         <InputGroup>
-          <FormControl
-            type="text"
-            value={importPath || ""}
-            onChange={this.setImportPathEvt}
-          />
+          <FormControl type="text" value={importPath || ""} onChange={this.setImportPathEvt} />
           <InputGroup.Button>
             <tooltip.IconButton
               className="btn-embed"
@@ -310,9 +282,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
             />
           </InputGroup.Button>
         </InputGroup>
-        {importPathInvalid !== undefined ? (
-          <ControlLabel>{importPathInvalid}</ControlLabel>
-        ) : null}
+        {importPathInvalid !== undefined ? <ControlLabel>{importPathInvalid}</ControlLabel> : null}
       </FormGroup>
     );
   }
@@ -344,11 +314,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
           actions={this.mActions}
           staticElements={this.mAttributes}
         />
-        <Toggle
-          checked={importArchives}
-          onToggle={this.toggleArchives}
-          style={{ marginTop: 10 }}
-        >
+        <Toggle checked={importArchives} onToggle={this.toggleArchives} style={{ marginTop: 10 }}>
           <a
             className="fake-link"
             title={t("Imports only the archives referenced by imported mods")}
@@ -397,8 +363,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
           </span>
         )}
         <span className="import-review-text">
-          {t("You can review the log at")}{" "}
-          <a onClick={this.openLog}>{this.mTrace.logFilePath}</a>
+          {t("You can review the log at")} <a onClick={this.openLog}>{this.mTrace.logFilePath}</a>
         </span>
       </div>
     );
@@ -502,9 +467,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
     return parseMOIni(discovered, importPath)
       .then((moConfig) => {
         this.nextState.importMOConfig = moConfig;
-        return moConfig.modPath !== undefined
-          ? readModEntries(moConfig.modPath, mods)
-          : [];
+        return moConfig.modPath !== undefined ? readModEntries(moConfig.modPath, mods) : [];
       })
       .then((modEntries) => {
         this.nextState.modsToImport = modEntries.reduce((prev, value) => {
@@ -525,17 +488,13 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
   private isModEnabled(mod: IModEntry): boolean {
     return (
       this.state.importEnabled[mod.modName] !== false &&
-      !(
-        this.state.importEnabled[mod.modName] === undefined &&
-        mod.isAlreadyManaged
-      )
+      !(this.state.importEnabled[mod.modName] === undefined && mod.isAlreadyManaged)
     );
   }
 
   private startImport(): Promise<void> {
     const { t } = this.props;
-    const { modsToImport, importArchives, importPath, importMOConfig } =
-      this.state;
+    const { modsToImport, importArchives, importPath, importMOConfig } = this.state;
 
     this.mTrace = new TraceImport();
 
@@ -551,14 +510,12 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
         const errorMessage =
           err.code === "EPERM"
             ? "Vortex does not have sufficient permissions to run file operations. " +
-            "Please ensure your user has full read/write permissions and/or that Vortex " +
-            "is not being blocked by your Anti-Virus and then try again."
+              "Please ensure your user has full read/write permissions and/or that Vortex " +
+              "is not being blocked by your Anti-Virus and then try again."
             : err;
-        this.context.api.showErrorNotification(
-          "Failed to start import process",
-          errorMessage,
-          { allowReport: err.code !== "EPERM" },
-        );
+        this.context.api.showErrorNotification("Failed to start import process", errorMessage, {
+          allowReport: err.code !== "EPERM",
+        });
         this.nextState.failedImports = modList.map((mod) => mod.modName);
         this.setStep("review");
         return Promise.resolve();
@@ -591,9 +548,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
         icon: "checkbox-checked",
         title: "Enable",
         action: (instanceIds: string[]) => {
-          instanceIds.forEach(
-            (id) => (this.nextState.importEnabled[id] = true),
-          );
+          instanceIds.forEach((id) => (this.nextState.importEnabled[id] = true));
           ++this.nextState.counter;
         },
         singleRowAction: false,
@@ -602,9 +557,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
         icon: "checkbox-unchecked",
         title: "Disable",
         action: (instanceIds: string[]) => {
-          instanceIds.forEach(
-            (id) => (this.nextState.importEnabled[id] = false),
-          );
+          instanceIds.forEach((id) => (this.nextState.importEnabled[id] = false));
           ++this.nextState.counter;
         },
         singleRowAction: false,
@@ -705,11 +658,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
         name: "Duplicate",
         description: "Whether the mod is already managed by Vortex",
         icon: "level-up",
-        customRenderer: (
-          mod: IModEntry,
-          detail: boolean,
-          t: I18next.TFunction,
-        ) => {
+        customRenderer: (mod: IModEntry, detail: boolean, t: I18next.TFunction) => {
           return mod.isAlreadyManaged ? (
             <tooltip.Icon
               id={`import-duplicate-${mod.nexusId}`}
@@ -738,9 +687,7 @@ function mapStateToProps(state: types.IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(
-  dispatch: Redux.Dispatch<Redux.AnyAction>,
-): IActionProps {
+function mapDispatchToProps(dispatch: Redux.Dispatch<Redux.AnyAction>): IActionProps {
   return {};
 }
 

@@ -1,6 +1,7 @@
+import * as path from "path";
+
 import Bluebird from "bluebird";
 import * as crc32 from "crc-32";
-import * as path from "path";
 import { fs, log, selectors, types, util } from "vortex-api";
 
 import { ReplicateHashMismatchError } from "../util/errors";
@@ -42,13 +43,9 @@ export async function matchChecksums(
             sourceChecksums.add(entry["crc"].toUpperCase());
           }
         } catch (err) {
-          api.showErrorNotification!(
-            "Failed to determine checksum for file",
-            err,
-            {
-              message: entry.name,
-            },
-          );
+          api.showErrorNotification!("Failed to determine checksum for file", err, {
+            message: entry.name,
+          });
         }
       }
     }

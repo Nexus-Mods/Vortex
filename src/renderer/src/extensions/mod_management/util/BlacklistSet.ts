@@ -1,7 +1,8 @@
 import minimatch from "minimatch";
-import { DEPLOY_BLACKLIST } from "../constants";
-import type { Normalize } from "../../../util/getNormalizeFunc";
+
 import type { IGame } from "../../../types/IGame";
+import type { Normalize } from "../../../util/getNormalizeFunc";
+import { DEPLOY_BLACKLIST } from "../constants";
 
 export default class BlacklistSet extends Set<string> {
   private mPatterns: string[];
@@ -17,8 +18,7 @@ export default class BlacklistSet extends Set<string> {
     }
     try {
       return (
-        super.has(value) ||
-        this.mPatterns.some((pat) => minimatch(value, pat, { nocase: true }))
+        super.has(value) || this.mPatterns.some((pat) => minimatch(value, pat, { nocase: true }))
       );
     } catch {
       return false;

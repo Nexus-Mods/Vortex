@@ -1,6 +1,6 @@
-import * as actions from "../actions/loadOrder";
-
 import { types, util } from "vortex-api";
+
+import * as actions from "../actions/loadOrder";
 
 /**
  * reducer for changes to the plugin list
@@ -9,11 +9,7 @@ export const loadOrderReducer: types.IReducerSpec = {
   reducers: {
     [actions.setPluginEnabled as any]: (state, payload) => {
       return state[payload.pluginName] !== undefined
-        ? util.setSafe(
-            state,
-            [payload.pluginName.toLowerCase(), "enabled"],
-            payload.enabled,
-          )
+        ? util.setSafe(state, [payload.pluginName.toLowerCase(), "enabled"], payload.enabled)
         : util.merge(state, [payload.pluginName.toLowerCase()], {
             name: payload.pluginName,
             enabled: payload.enabled,
@@ -42,9 +38,7 @@ export const loadOrderReducer: types.IReducerSpec = {
         const id = pluginName.toLowerCase();
         result[id] = {
           name: pluginName,
-          enabled: setEnabled
-            ? true
-            : util.getSafe(state, [id, "enabled"], defaultEnable),
+          enabled: setEnabled ? true : util.getSafe(state, [id, "enabled"], defaultEnable),
           loadOrder: idx,
         };
       });

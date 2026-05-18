@@ -1,10 +1,4 @@
-import React, {
-  useState,
-  type FC,
-  useLayoutEffect,
-  useRef,
-  useEffect,
-} from "react";
+import React, { useState, type FC, useLayoutEffect, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 
@@ -39,8 +33,7 @@ const MenuContent: FC = () => {
   const [canScrollUp, setCanScrollUp] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
 
-  const onScroll = (event: Event) =>
-    setCanScrollUp((event.target as HTMLDivElement).scrollTop > 0);
+  const onScroll = (event: Event) => setCanScrollUp((event.target as HTMLDivElement).scrollTop > 0);
 
   useEffect(() => {
     if (!scrollRef.current) {

@@ -1,24 +1,22 @@
+import * as url from "url";
+
 import * as React from "react";
 import { Checkbox, ListGroupItem } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
-import * as url from "url";
-import { ComponentEx, translate } from "../../../controls/ComponentEx";
 
+import { Icon } from "../../../controls/api";
+import { ComponentEx, translate } from "../../../controls/ComponentEx";
+import type { IProfile, IState } from "../../../types/api";
+import * as selectors from "../../../util/selectors";
+import { getSafe } from "../../../util/storeHelper";
+import { setLoadOrderEntry } from "../actions/loadOrder";
 import type {
   IItemRendererOptions,
   ILoadOrder,
   ILoadOrderDisplayItem,
   ILoadOrderEntry,
 } from "../types/types";
-
-import { Icon } from "../../../controls/api";
-import type { IProfile, IState } from "../../../types/api";
-
-import * as selectors from "../../../util/selectors";
-import { getSafe } from "../../../util/storeHelper";
-
-import { setLoadOrderEntry } from "../actions/loadOrder";
 
 interface IConnectedProps {
   modState: any;
@@ -28,11 +26,7 @@ interface IConnectedProps {
 }
 
 interface IActionProps {
-  onSetLoadOrderEntry: (
-    profileId: string,
-    modId: string,
-    entry: ILoadOrderEntry,
-  ) => void;
+  onSetLoadOrderEntry: (profileId: string, modId: string, entry: ILoadOrderEntry) => void;
 }
 
 interface IBaseProps {
@@ -86,8 +80,7 @@ class DefaultItemRenderer extends ComponentEx<IProps, {}> {
 
   private renderLocked(item: ILoadOrderDisplayItem): JSX.Element {
     const { loadOrder, className } = this.props;
-    const position =
-      item.prefix !== undefined ? item.prefix : loadOrder[item.id].pos + 1;
+    const position = item.prefix !== undefined ? item.prefix : loadOrder[item.id].pos + 1;
 
     const key = `${item.name}-${position}`;
 
@@ -114,8 +107,7 @@ class DefaultItemRenderer extends ComponentEx<IProps, {}> {
 
   private renderDraggable(item: ILoadOrderDisplayItem): JSX.Element {
     const { loadOrder, className, itemRendererOptions } = this.props;
-    const position =
-      item.prefix !== undefined ? item.prefix : loadOrder[item.id].pos + 1;
+    const position = item.prefix !== undefined ? item.prefix : loadOrder[item.id].pos + 1;
 
     const key = `${item.name}-${position}`;
 

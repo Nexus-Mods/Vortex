@@ -1,8 +1,8 @@
-import { IModEx } from "../../types/IModEx";
-
 import type { TFunction } from "i18next";
 import * as React from "react";
 import { Icon, RadialProgress, types } from "vortex-api";
+
+import { IModEx } from "../../types/IModEx";
 
 interface ICollectionItemStatusProps {
   t: TFunction;
@@ -15,10 +15,7 @@ interface ICollectionItemStatusProps {
 
 const RadialProgressT: any = RadialProgress;
 
-class CollectionItemStatus extends React.Component<
-  ICollectionItemStatusProps,
-  {}
-> {
+class CollectionItemStatus extends React.Component<ICollectionItemStatusProps, {}> {
   public render(): JSX.Element {
     const { t, download, mod } = this.props;
 

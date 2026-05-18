@@ -1,9 +1,10 @@
-/* eslint-disable max-lines-per-function */
-import { IPluginCombined } from "../types/IPlugins";
-import { NAMESPACE } from "../statics";
-import { tooltip } from "vortex-api";
 import I18next from "i18next";
 import * as React from "react";
+import { tooltip } from "vortex-api";
+
+import { NAMESPACE } from "../statics";
+/* eslint-disable max-lines-per-function */
+import { IPluginCombined } from "../types/IPlugins";
 
 type TranslationFunction = typeof I18next.t;
 
@@ -31,10 +32,7 @@ export function getPluginFlags(
   if (supportsESL) {
     if (plugin.isLight) {
       result.push("Light");
-    } else if (
-      plugin.isValidAsLightPlugin &&
-      plugin.filePath.toLowerCase().endsWith(".esp")
-    ) {
+    } else if (plugin.isValidAsLightPlugin && plugin.filePath.toLowerCase().endsWith(".esp")) {
       result.push("Could be light");
     } else {
       result.push("Not light");
@@ -72,9 +70,7 @@ export function getPluginFlags(
   if (
     plugin.enabled &&
     plugin.warnings !== undefined &&
-    Object.keys(plugin.warnings).find(
-      (key) => plugin.warnings![key] !== false,
-    ) !== undefined
+    Object.keys(plugin.warnings).find((key) => plugin.warnings![key] !== false) !== undefined
   ) {
     result.push("Warnings");
   }
@@ -116,15 +112,8 @@ function warningText(t: TranslationFunction, key: string) {
 }
 
 const PluginFlags = (props: IProps): JSX.Element => {
-  const {
-    plugin,
-    gameMode,
-    t,
-    supportsESL,
-    supportsMediumPlugins,
-    minRevision,
-    gameSupported,
-  } = props;
+  const { plugin, gameMode, t, supportsESL, supportsMediumPlugins, minRevision, gameSupported } =
+    props;
 
   const flags: JSX.Element[] = [];
 
@@ -134,14 +123,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
 
   if (plugin.isMaster) {
     const key = `ico-master-${plugin.id}`;
-    flags.push(
-      <tooltip.Icon
-        id={key}
-        key={key}
-        name="plugin-master"
-        tooltip={t("Master")}
-      />,
-    );
+    flags.push(<tooltip.Icon id={key} key={key} name="plugin-master" tooltip={t("Master")} />);
   }
 
   if (plugin.isBlueprint) {
@@ -163,18 +145,8 @@ const PluginFlags = (props: IProps): JSX.Element => {
   if (supportsESL(gameMode)) {
     if (plugin.isLight) {
       const key = `ico-light-${plugin.id}`;
-      flags.push(
-        <tooltip.Icon
-          id={key}
-          key={key}
-          name="plugin-light"
-          tooltip={t("Light")}
-        />,
-      );
-    } else if (
-      plugin.isValidAsLightPlugin &&
-      plugin.filePath.toLowerCase().endsWith(".esp")
-    ) {
+      flags.push(<tooltip.Icon id={key} key={key} name="plugin-light" tooltip={t("Light")} />);
+    } else if (plugin.isValidAsLightPlugin && plugin.filePath.toLowerCase().endsWith(".esp")) {
       const key = `ico-couldbelight-${plugin.id}`;
       // stroke and hollow props not currently in the api typings atm
       const IconX: any = tooltip.Icon;
@@ -219,48 +191,28 @@ const PluginFlags = (props: IProps): JSX.Element => {
 
   if (plugin.loadsArchive) {
     const key = `ico-archive-${plugin.id}`;
-    flags.push(
-      <tooltip.Icon
-        id={key}
-        key={key}
-        name="archive"
-        tooltip={t("Loads an archive")}
-      />,
-    );
+    flags.push(<tooltip.Icon id={key} key={key} name="archive" tooltip={t("Loads an archive")} />);
   }
 
   if (plugin.isEmpty) {
     const key = `ico-dummy-${plugin.id}`;
     flags.push(
-      <tooltip.Icon
-        id={key}
-        key={key}
-        name="checkbox-unchecked"
-        tooltip={t("Dummy plugin")}
-      />,
+      <tooltip.Icon id={key} key={key} name="checkbox-unchecked" tooltip={t("Dummy plugin")} />,
     );
   }
 
-  if (
-    (plugin.currentTags ?? []).length > 0 ||
-    (plugin.suggestedTags ?? []).length > 0
-  ) {
+  if ((plugin.currentTags ?? []).length > 0 || (plugin.suggestedTags ?? []).length > 0) {
     const key = `ico-tags-${plugin.id}`;
     const tags = [].concat(
       (plugin.currentTags ?? []).map((tag) => tag.name),
-      (plugin.suggestedTags ?? []).map(
-        (tag) => (tag.isAddition ? "+" : "-") + tag.name,
-      ),
+      (plugin.suggestedTags ?? []).map((tag) => (tag.isAddition ? "+" : "-") + tag.name),
     );
-    flags.push(
-      <tooltip.Icon id={key} key={key} name="tags" tooltip={tags.join("\n")} />,
-    );
+    flags.push(<tooltip.Icon id={key} key={key} name="tags" tooltip={tags.join("\n")} />);
   }
 
   if (plugin.enabled) {
     const warningKeys = Object.keys(plugin.warnings);
-    const hasWarning = (notification) =>
-      plugin.warnings[notification] !== false;
+    const hasWarning = (notification) => plugin.warnings[notification] !== false;
     if (
       warningKeys !== undefined &&
       warningKeys.length > 0 &&
@@ -293,10 +245,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
         tooltip={t("Requires cleaning (LOOT)", { ns: NAMESPACE })}
       />,
     );
-  } else if (
-    plugin.cleanliness !== undefined &&
-    plugin.cleanliness.length > 0
-  ) {
+  } else if (plugin.cleanliness !== undefined && plugin.cleanliness.length > 0) {
     flags.push(
       <tooltip.Icon
         id={cleanKey}
@@ -332,8 +281,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
   }
 
   if ((plugin.messages || []).length > 0) {
-    const hasWarnings =
-      plugin.messages.find((msg) => msg.type > 0) !== undefined;
+    const hasWarnings = plugin.messages.find((msg) => msg.type > 0) !== undefined;
     const hasRelevantMessages = plugin.messages.some((msg) => msg.type !== -1);
 
     const key = `ico-messages-${plugin.id}`;

@@ -1,3 +1,7 @@
+import { type FileHandle as NodeFileHandle, open } from "node:fs/promises";
+import type { IncomingHttpHeaders } from "node:http";
+
+import { unknownToError } from "@vortex/shared";
 import type {
   ByteRange,
   Chunk,
@@ -7,26 +11,16 @@ import type {
   Resolver,
   RetryStrategy,
 } from "@vortex/shared/download";
-import type {
-  Got,
-  Headers,
-  Delays as GotTimeoutOptions,
-  ExtendOptions,
-} from "got";
+import { DownloadError } from "@vortex/shared/errors";
+import type { Got, Headers, Delays as GotTimeoutOptions, ExtendOptions } from "got";
+import got from "got";
 import type { RateLimiter } from "limiter";
-import type { IncomingHttpHeaders } from "node:http";
+import PQueue from "p-queue";
 import type { CookieJar } from "tough-cookie";
 
-import { unknownToError } from "@vortex/shared";
-import { DownloadError } from "@vortex/shared/errors";
-import got from "got";
-import { type FileHandle as NodeFileHandle, open } from "node:fs/promises";
-import PQueue from "p-queue";
-
+import { isCancellation, toNetworkError } from "./errors";
 import type { ProgressReporter } from "./progress";
 import type { NormalizedResource } from "./resolver";
-
-import { isCancellation, toNetworkError } from "./errors";
 import { normalize } from "./resolver";
 import { sleep } from "./retry";
 
@@ -98,43 +92,32 @@ export async function download<T>(
   let probe: ProbeResult;
   try {
     probe = await withRetry(
-      () =>
-        probeUrl(
-          sessionGot,
-          resolved.probeEndpoint,
-          options?.checkpoint?.etag ?? null,
-        ),
+      () => probeUrl(sessionGot, resolved.probeEndpoint, options?.checkpoint?.etag ?? null),
       strategy.retry,
       options?.abortSignal,
     );
   } catch (err) {
     if (isCancellation(err)) {
-      throw new DownloadError(
-        { code: "cancellation" },
-        "Download cancelled",
-        err,
-      );
+      throw new DownloadError({ code: "cancellation" }, "Download cancelled", err);
     }
 
     throw toNetworkError(resolved.probeEndpoint, err);
   }
 
-  if (probe.etag && options?.progressReporter)
-    options.progressReporter.etag = probe.etag;
+  if (options?.progressReporter) {
+    if (probe.etag) options.progressReporter.etag = probe.etag;
+    if (probe.fileName) options.progressReporter.fileName = probe.fileName;
+  }
 
   const canChunk = probe.acceptsRanges && probe.size > 0;
-  const chunks = canChunk
-    ? await Promise.resolve(strategy.chunker(probe.size, resource))
-    : [];
+  const chunks = canChunk ? await Promise.resolve(strategy.chunker(probe.size, resource)) : [];
 
   const isChunked = chunks.length > 1;
 
   const completedRanges = options?.checkpoint?.completedRanges ?? [];
   const pendingChunks = chunks.filter(
     (chunk) =>
-      !completedRanges.some(
-        (r) => r.start <= chunk.range.start && r.end >= chunk.range.end,
-      ),
+      !completedRanges.some((r) => r.start <= chunk.range.start && r.end >= chunk.range.end),
   );
 
   let handle: FileHandle;
@@ -147,11 +130,7 @@ export async function download<T>(
     const fd = await open(dest, flag);
     handle = { fd, path: dest };
   } catch (err) {
-    throw new DownloadError(
-      { code: "fs-error", path: dest },
-      `Failed to open ${dest}`,
-      err,
-    );
+    throw new DownloadError({ code: "fs-error", path: dest }, `Failed to open ${dest}`, err);
   }
 
   if (options?.checkpoint && probe.size > 0) {
@@ -174,10 +153,7 @@ export async function download<T>(
 
       let chunkProgress: Map<number, ChunkProgress> | null = null;
       if (options?.progressReporter) {
-        chunkProgress = options.progressReporter.initChunked(
-          chunks,
-          probe.size,
-        );
+        chunkProgress = options.progressReporter.initChunked(chunks, probe.size);
 
         // fast forward progress reporter to checkpoint
         for (const chunk of chunks) {
@@ -206,20 +182,11 @@ export async function download<T>(
                   progress.bytesWritten = 0;
                 }
 
-                return downloadChunk(
-                  sessionGot,
-                  chunk,
-                  resolved,
-                  probe,
-                  handle,
-                  {
-                    abortSignal: options?.abortSignal,
-                    rateLimiter: strategy.rateLimiter,
-                    progress: chunkProgress
-                      ? chunkProgress.get(chunk.index)
-                      : undefined,
-                  },
-                );
+                return downloadChunk(sessionGot, chunk, resolved, probe, handle, {
+                  abortSignal: options?.abortSignal,
+                  rateLimiter: strategy.rateLimiter,
+                  progress: chunkProgress ? chunkProgress.get(chunk.index) : undefined,
+                });
               },
               strategy.retry,
               options?.abortSignal,
@@ -234,9 +201,7 @@ export async function download<T>(
       let checkpointPosition = 0;
 
       if (options?.checkpoint && completedRanges.length > 0) {
-        const sortedRanges = completedRanges.toSorted(
-          (a, b) => a.start - b.start,
-        );
+        const sortedRanges = completedRanges.toSorted((a, b) => a.start - b.start);
 
         let currentEnd = -1;
 
@@ -286,20 +251,14 @@ export async function download<T>(
             expectedRemainingBytes = probe.size - writePosition;
           }
 
-          return downloadStream(
-            sessionGot,
-            resolved.probeEndpoint,
-            handle,
-            writePosition,
-            {
-              progress: progress,
-              abortSignal: options?.abortSignal,
-              rateLimiter: strategy.rateLimiter,
-              etag: probe.etag,
-              chunk: rangeChunk,
-              expectedRemainingBytes,
-            },
-          );
+          return downloadStream(sessionGot, resolved.probeEndpoint, handle, writePosition, {
+            progress: progress,
+            abortSignal: options?.abortSignal,
+            rateLimiter: strategy.rateLimiter,
+            etag: probe.etag,
+            chunk: rangeChunk,
+            expectedRemainingBytes,
+          });
         },
         strategy.retry,
         options?.abortSignal,
@@ -307,11 +266,7 @@ export async function download<T>(
     }
   } catch (err) {
     if (isCancellation(err)) {
-      throw new DownloadError(
-        { code: "cancellation" },
-        "Download cancelled",
-        err,
-      );
+      throw new DownloadError({ code: "cancellation" }, "Download cancelled", err);
     }
 
     throw err;
@@ -355,7 +310,10 @@ async function probeUrl(
     );
   }
 
-  return { size, acceptsRanges, etag };
+  const fileName =
+    getContentDispositionFileName(response.headers) ?? getFileNameFromUrl(endpoint.url.toString());
+
+  return { size, acceptsRanges, etag, fileName };
 }
 
 /**
@@ -385,9 +343,7 @@ function createGotStream(
   return stream;
 }
 
-function createGotTimeoutOptions(
-  timeout?: TimeoutOptions,
-): GotTimeoutOptions | undefined {
+function createGotTimeoutOptions(timeout?: TimeoutOptions): GotTimeoutOptions | undefined {
   if (!timeout) return undefined;
 
   return {
@@ -453,20 +409,11 @@ async function downloadStream(
       }
 
       if (options.rateLimiter) {
-        await consumeTokens(
-          options.rateLimiter,
-          buffer.length,
-          options.abortSignal,
-        );
+        await consumeTokens(options.rateLimiter, buffer.length, options.abortSignal);
       }
 
       try {
-        const result = await handle.fd.write(
-          buffer,
-          0,
-          buffer.length,
-          writePosition,
-        );
+        const result = await handle.fd.write(buffer, 0, buffer.length, writePosition);
 
         if (progress) progress.bytesWritten += result.bytesWritten;
         writePosition += result.bytesWritten;
@@ -542,9 +489,7 @@ function createHeaders(
   chunk: Chunk | undefined,
   additionalHeaders?: Record<string, string>,
 ): Headers {
-  const range = chunk
-    ? `bytes=${chunk.range.start}-${chunk.range.end}`
-    : undefined;
+  const range = chunk ? `bytes=${chunk.range.start}-${chunk.range.end}` : undefined;
 
   // Weak ETags MUST NOT be used with preconditions. The "W/" prefix is case sensitive.
   // https://www.rfc-editor.org/rfc/rfc9110#name-etag
@@ -587,10 +532,36 @@ function getSize(
   return isNaN(parsed) ? null : parsed;
 }
 
+function getContentDispositionFileName(headers: IncomingHttpHeaders): string | null {
+  const raw = headers["content-disposition"];
+  if (!raw) return null;
+  // RFC 6266: filename* (encoded) takes priority over filename.
+  const starMatch = /filename\*\s*=\s*[^']*'[^']*'([^;]+)/i.exec(raw);
+  if (starMatch) {
+    try {
+      return decodeURIComponent(starMatch[1].trim());
+    } catch {
+      // fall through to plain filename
+    }
+  }
+  const plainMatch = /filename\s*=\s*"?([^";]+)"?/i.exec(raw);
+  return plainMatch ? plainMatch[1].trim() : null;
+}
+
+function getFileNameFromUrl(url: string): string | null {
+  try {
+    const basename = decodeURIComponent(new URL(url).pathname.split("/").at(-1) ?? "");
+    return basename.length > 0 ? basename : null;
+  } catch {
+    return null;
+  }
+}
+
 type ProbeResult = {
   size: number | null;
   acceptsRanges: boolean;
   etag: string | null;
+  fileName: string | null;
 };
 
 type FileHandle = { fd: NodeFileHandle; path: string };

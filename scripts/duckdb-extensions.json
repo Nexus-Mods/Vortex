@@ -5,7 +5,7 @@
     {
       "name": "level_pivot",
       "type": "http",
-      "repository": "https://halgari.github.io/duckdb-level-pivot/current_release"
+      "repository": "https://nexus-mods.github.io/duckdb-level-pivot/current_release"
     }
   ]
 }

@@ -158,10 +158,7 @@ export type TestServer = {
 };
 
 export async function createTestServer(): Promise<TestServer> {
-  const routes = new Map<
-    string,
-    { handler: RequestHandler; record: RouteRecord }
-  >();
+  const routes = new Map<string, { handler: RequestHandler; record: RouteRecord }>();
   const middlewares: Middleware[] = [];
   let routeCounter = 0;
 
@@ -187,9 +184,7 @@ export async function createTestServer(): Promise<TestServer> {
     entry.record.waiters
       .splice(0)
       .forEach(
-        (w) =>
-          entry.record.requests.length >= w.count &&
-          w.resolve(entry.record.requests.slice()),
+        (w) => entry.record.requests.length >= w.count && w.resolve(entry.record.requests.slice()),
       );
 
     const ctx: RequestContext = {
@@ -230,11 +225,8 @@ export async function createTestServer(): Promise<TestServer> {
         requests: record.requests,
         responses: record.responses,
         waitForRequests(count) {
-          if (record.requests.length >= count)
-            return Promise.resolve(record.requests.slice());
-          return new Promise((resolve) =>
-            record.waiters.push({ count, resolve }),
-          );
+          if (record.requests.length >= count) return Promise.resolve(record.requests.slice());
+          return new Promise((resolve) => record.waiters.push({ count, resolve }));
         },
         deregister: () => routes.delete(path),
         [Symbol.dispose]() {
@@ -326,13 +318,7 @@ export type ServeFileOptions = {
 };
 
 export function serveFile(opts: ServeFileOptions): RequestHandler {
-  const {
-    body,
-    acceptRanges = false,
-    headers: extraHeaders = {},
-    etag,
-    chunkSize,
-  } = opts;
+  const { body, acceptRanges = false, headers: extraHeaders = {}, etag, chunkSize } = opts;
 
   const toChunks = (buf: Buffer): Buffer | Buffer[] => {
     if (!chunkSize) return buf;
@@ -421,10 +407,7 @@ export function serveDropConnection(): RequestHandler {
   };
 }
 
-export function serveTruncated(
-  body: Buffer,
-  bytesBeforeDrop: number,
-): RequestHandler {
+export function serveTruncated(body: Buffer, bytesBeforeDrop: number): RequestHandler {
   return (ctx) => {
     ctx.res.writeHead(200, { "content-length": body.length });
     ctx.res.write(body.subarray(0, bytesBeforeDrop));
@@ -446,15 +429,12 @@ export function connectionClose(): Middleware {
 
 export function injectHeaders(headers: http.OutgoingHttpHeaders): Middleware {
   return (ctx, next) => {
-    for (const [k, v] of Object.entries(headers))
-      ctx.res.setHeader(k, v as string);
+    for (const [k, v] of Object.entries(headers)) ctx.res.setHeader(k, v as string);
     return next();
   };
 }
 
-export function requireHeaders(
-  required: Record<string, string | RegExp>,
-): Middleware {
+export function requireHeaders(required: Record<string, string | RegExp>): Middleware {
   return (ctx, next) => {
     for (const [name, expected] of Object.entries(required)) {
       const actual = ctx.req.headers[name.toLowerCase()];
@@ -483,13 +463,9 @@ export function delayAt(
   return { [point]: () => delay(ms) };
 }
 
-export function delayBeforeChunk(
-  targetIndex: number,
-  ms: number,
-): LifecycleHooks {
+export function delayBeforeChunk(targetIndex: number, ms: number): LifecycleHooks {
   return {
-    beforeChunk: (_, { index }) =>
-      index === targetIndex ? delay(ms) : undefined,
+    beforeChunk: (_, { index }) => (index === targetIndex ? delay(ms) : undefined),
   };
 }
 
@@ -512,12 +488,8 @@ export function abortBeforeChunk(targetIndex: number): LifecycleHooks {
 }
 
 export function mergeHooks(...hookSets: LifecycleHooks[]): LifecycleHooks {
-  const pick = <K extends keyof LifecycleHooks>(
-    point: K,
-  ): NonNullable<LifecycleHooks[K]>[] =>
-    hookSets
-      .map((h) => h[point])
-      .filter((f): f is NonNullable<LifecycleHooks[K]> => f != null);
+  const pick = <K extends keyof LifecycleHooks>(point: K): NonNullable<LifecycleHooks[K]>[] =>
+    hookSets.map((h) => h[point]).filter((f): f is NonNullable<LifecycleHooks[K]> => f != null);
 
   const fns = {
     onRequest: pick("onRequest"),
@@ -562,10 +534,7 @@ export function mergeHooks(...hookSets: LifecycleHooks[]): LifecycleHooks {
   };
 }
 
-export function withHooks(
-  handler: RequestHandler,
-  hooks: LifecycleHooks,
-): RequestHandler {
+export function withHooks(handler: RequestHandler, hooks: LifecycleHooks): RequestHandler {
   return (ctx) => {
     ctx.hooks = mergeHooks(ctx.hooks, hooks);
     return handler(ctx);
@@ -587,8 +556,7 @@ export function failAfter(
 ): FailHandle {
   let count = 0;
   return {
-    handler: (ctx) =>
-      ++count <= successCount ? opts.success(ctx) : opts.failure(ctx),
+    handler: (ctx) => (++count <= successCount ? opts.success(ctx) : opts.failure(ctx)),
     reset: () => {
       count = 0;
     },
@@ -611,8 +579,7 @@ export function failEveryNth(
 ): FailHandle {
   let count = 0;
   return {
-    handler: (ctx) =>
-      ++count % n === 0 ? opts.failure(ctx) : opts.success(ctx),
+    handler: (ctx) => (++count % n === 0 ? opts.failure(ctx) : opts.success(ctx)),
     reset: () => {
       count = 0;
     },
@@ -624,9 +591,7 @@ export function failEveryNth(
 // ---------------------------------------------------------------------------
 
 function closeServer(server: http.Server): Promise<void> {
-  return new Promise((resolve, reject) =>
-    server.close((err) => (err ? reject(err) : resolve())),
-  );
+  return new Promise((resolve, reject) => server.close((err) => (err ? reject(err) : resolve())));
 }
 
 function listen(server: http.Server): Promise<URL> {
@@ -678,10 +643,7 @@ function parseRange(header: string | undefined): Range | null {
   return null;
 }
 
-function resolveRange(
-  range: Range,
-  totalLength: number,
-): { start: number; end: number } | null {
+function resolveRange(range: Range, totalLength: number): { start: number; end: number } | null {
   if (range.kind === "bounded") {
     if (range.start >= totalLength) return null;
     return { start: range.start, end: Math.min(range.end, totalLength - 1) };

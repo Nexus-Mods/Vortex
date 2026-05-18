@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 
 import type { IState } from "../../types/IState";
-
 import { currentGameDiscovery, gameName, knownGames } from "./selectors";
 
 describe("knownGames", () => {

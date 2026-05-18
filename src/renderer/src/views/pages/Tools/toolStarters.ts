@@ -2,7 +2,6 @@ import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 
 import type { IDiscoveredTool, IToolStored } from "../../../types/api";
 import type { IDiscoveryResult, IGameStored } from "../../../types/IState";
-
 import { log } from "../../../util/log";
 import StarterInfo from "../../../util/StarterInfo";
 import { getSafe } from "../../../util/storeHelper";
@@ -53,9 +52,7 @@ export const generateToolStarters = (
 
   knownTools.forEach((tool: IToolStored) => {
     try {
-      starters.push(
-        new StarterInfo(game, discoveredGame, tool, discoveredTools[tool.id]),
-      );
+      starters.push(new StarterInfo(game, discoveredGame, tool, discoveredTools[tool.id]));
     } catch (err) {
       log("warn", "invalid tool", { err });
     }
@@ -70,14 +67,7 @@ export const generateToolStarters = (
     })
     .forEach((toolId) => {
       try {
-        starters.push(
-          new StarterInfo(
-            game,
-            discoveredGame,
-            undefined,
-            discoveredTools[toolId],
-          ),
-        );
+        starters.push(new StarterInfo(game, discoveredGame, undefined, discoveredTools[toolId]));
       } catch (err) {
         log("error", "tool configuration invalid", {
           gameId,

@@ -73,10 +73,7 @@ class DuckDBSingleton {
    * Attach a LevelDB database with a unique alias.
    * Returns a connection to the shared instance.
    */
-  public async attachDatabase(
-    persistPath: string,
-    alias: string,
-  ): Promise<DuckDBConnection> {
+  public async attachDatabase(persistPath: string, alias: string): Promise<DuckDBConnection> {
     if (!this.#mInitialized || this.#mDuckDB === undefined) {
       throw new Error("DuckDBSingleton not initialized");
     }

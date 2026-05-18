@@ -123,10 +123,7 @@ output {
     border: 1px solid $input-border;
     border-radius: $input-border-radius; // Note: This has no effect on <select>s in some browsers, due to the limited stylability of <select>s in CSS.
     @include box-shadow(inset 0 1px 1px rgba(0, 0, 0, 0.075));
-    @include transition(
-        border-color ease-in-out 0.15s,
-        box-shadow ease-in-out 0.15s
-    );
+    @include transition(border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s);
 
     // Customize the `:focus` state to imitate native WebKit styles.
     @include form-control-focus;
@@ -437,33 +434,19 @@ input[type="checkbox"] {
 
 // Feedback states
 .has-success {
-    @include form-control-validation(
-        $state-success-text,
-        $state-success-text,
-        $state-success-bg
-    );
+    @include form-control-validation($state-success-text, $state-success-text, $state-success-bg);
 }
 .has-warning {
-    @include form-control-validation(
-        $state-warning-text,
-        $state-warning-text,
-        $state-warning-bg
-    );
+    @include form-control-validation($state-warning-text, $state-warning-text, $state-warning-bg);
 }
 .has-error {
-    @include form-control-validation(
-        $state-danger-text,
-        $state-danger-text,
-        $state-danger-bg
-    );
+    @include form-control-validation($state-danger-text, $state-danger-text, $state-danger-bg);
 }
 
 // Reposition feedback icon if input has visible label above
 .has-feedback label {
     & ~ .form-control-feedback {
-        top: (
-            $line-height-computed + 0.4
-        ); // Height of the `label` and its margin
+        top: ($line-height-computed + 0.4); // Height of the `label` and its margin
     }
     &.sr-only ~ .form-control-feedback {
         top: 0;
@@ -582,9 +565,7 @@ input[type="checkbox"] {
     .checkbox-inline {
         margin-top: 0;
         margin-bottom: 0;
-        padding-top: (
-            $padding-base-vertical + 1
-        ); // Default padding plus a border
+        padding-top: ($padding-base-vertical + 1); // Default padding plus a border
     }
     // Account for padding we're adding to ensure the alignment and of help text
     // and other content below items
@@ -604,9 +585,7 @@ input[type="checkbox"] {
         .control-label {
             text-align: right;
             margin-bottom: 0;
-            padding-top: (
-                $padding-base-vertical + 1
-            ); // Default padding plus a border
+            padding-top: ($padding-base-vertical + 1); // Default padding plus a border
         }
     }
 

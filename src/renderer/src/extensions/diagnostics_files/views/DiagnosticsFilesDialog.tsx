@@ -1,31 +1,23 @@
-import type * as Redux from "redux";
-import type { ThunkDispatch } from "redux-thunk";
+import * as os from "os";
+import * as path from "path";
 
 import PromiseBB from "bluebird";
 import update from "immutability-helper";
-import * as os from "os";
-import * as path from "path";
 import * as React from "react";
-import {
-  Button,
-  Checkbox,
-  Jumbotron,
-  ListGroup,
-  ListGroupItem,
-  Modal,
-} from "react-bootstrap";
-
-import type { IState } from "../../../types/IState";
-import type { ILog, ISession } from "../types/ISession";
+import { Button, Checkbox, Jumbotron, ListGroup, ListGroupItem, Modal } from "react-bootstrap";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 
 import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
 import FlexLayout from "../../../controls/FlexLayout";
 import Spinner from "../../../controls/Spinner";
+import type { IState } from "../../../types/IState";
 import { UserCanceled } from "../../../util/CustomErrors";
 import { didIgnoreError, isOutdated } from "../../../util/errorHandling";
 import * as fs from "../../../util/fs";
 import getVortexPath from "../../../util/getVortexPath";
 import { showError } from "../../../util/message";
+import type { ILog, ISession } from "../types/ISession";
 import { loadVortexLogs } from "../util/loadVortexLogs";
 
 export interface IBaseProps {
@@ -161,9 +153,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
     let isCrashed = "";
     if (
       session.from === undefined &&
-      !session.logs[session.logs.length - 1].text.endsWith(
-        "clean application end",
-      )
+      !session.logs[session.logs.length - 1].text.endsWith("clean application end")
     ) {
       isCrashed = ` - ${t("Crashed")}!`;
     }
@@ -184,9 +174,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
         <span className="session-to">{to.toLocaleString(language)}</span>
 
         {errors.length > 0 ? (
-          <span>
-            {" - " + t("{{ count }} error", { count: errors.length })}
-          </span>
+          <span>{" - " + t("{{ count }} error", { count: errors.length })}</span>
         ) : null}
 
         <span className="session-crashed">{isCrashed}</span>
@@ -210,9 +198,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
     const { logSessions, sessionIdx, show } = this.state;
 
     const errors =
-      sessionIdx === -1
-        ? []
-        : logSessions[sessionIdx].logs.filter((item) => item.type === "error");
+      sessionIdx === -1 ? [] : logSessions[sessionIdx].logs.filter((item) => item.type === "error");
 
     return (
       <FlexLayout type="row">
@@ -250,9 +236,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
 
         {" - "}
 
-        <span className={`log-type-${line.type}`}>
-          {line.type.toUpperCase()}
-        </span>
+        <span className={`log-type-${line.type}`}>{line.type.toUpperCase()}</span>
 
         {" - "}
 
@@ -303,9 +287,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
   private toggleFilter = (evt) => {
     const { show } = this.state;
     const filter = evt.currentTarget.value;
-    this.setState(
-      update(this.state, { show: { [filter]: { $set: !show[filter] } } }),
-    );
+    this.setState(update(this.state, { show: { [filter]: { $set: !show[filter] } } }));
   };
 
   private selectSession = (evt) => {
@@ -361,9 +343,7 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, null, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onShowError: (message: string, details?: string | Error) =>
       showError(dispatch, message, details),

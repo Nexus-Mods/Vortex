@@ -64,14 +64,14 @@ function init(context: IExtensionContext): boolean {
               },
               {
                 title: status.downloaded ? "Restart" : "Install",
-                action: () => {
+                action: (dismiss) => {
                   if (status.downloaded) {
                     window.api.updater.restartAndInstall();
                   } else {
-                    const channel =
-                      context.api.store.getState().settings.update.channel;
+                    const channel = context.api.store.getState().settings.update.channel;
                     window.api.updater.downloadUpdate(channel, true);
                   }
+                  dismiss();
                 },
               },
             ],

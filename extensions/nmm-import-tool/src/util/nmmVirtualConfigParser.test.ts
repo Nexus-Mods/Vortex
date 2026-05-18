@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 
-import { parseModEntries } from "./nmmVirtualConfigParser";
 import { ParseError } from "../types/nmmEntries";
+import { parseModEntries } from "./nmmVirtualConfigParser";
 
 describe("parseModEntries", () => {
   it("parse the NMM virtual config file", () => {
@@ -16,18 +16,20 @@ describe("parseModEntries", () => {
                       </modList>
                       </virtualModActivator>`;
 
-    const modEntry = [{
-      nexusId: "1",
-      vortexId: "TestMod",
-      downloadId: 1,
-      modName: "TestMod",
-      modFilename: "TestMod",
-      archivePath: "",
-      modVersion: "1.0.0",
-      archiveMD5: "fake hash",
-      importFlag: true,
-      isAlreadyManaged: false,
-    }];
+    const modEntry = [
+      {
+        nexusId: "1",
+        vortexId: "TestMod",
+        downloadId: 1,
+        modName: "TestMod",
+        modFilename: "TestMod",
+        archivePath: "",
+        modVersion: "1.0.0",
+        archiveMD5: "fake hash",
+        importFlag: true,
+        isAlreadyManaged: false,
+      },
+    ];
     return parseModEntries(inputXML, undefined).then((result) => {
       expect(result).toEqual(modEntry);
     });

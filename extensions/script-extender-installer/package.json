@@ -3,9 +3,7 @@
   "version": "1.1.14",
   "description": "Install script extenders for Gamebyro games",
   "scripts": {
-    "_build": "node build.mjs && pnpm extractInfo",
-    "build": "pnpm run _build && node ../copy-extension.mjs out",
-    "dist": "pnpm run _build && node ../copy-extension.mjs dist",
+    "build": "node build.mjs && pnpm extractInfo",
     "typecheck": "pnpm tsc"
   },
   "author": "Pickysaurus",
@@ -19,7 +17,7 @@
     "bluebird": "catalog:",
     "copyfiles": "catalog:",
     "electron": "catalog:",
-    "exe-version": "catalog:",
+    "exe-version": "workspace:*",
     "lodash": "catalog:",
     "nexus-api": "catalog:",
     "react": "catalog:",
@@ -30,5 +28,26 @@
   },
   "dependencies": {
     "semver": "catalog:"
+  },
+  "nx": {
+    "tags": [
+      "vortex:extension"
+    ],
+    "targets": {
+      "build": {
+        "inputs": [
+          "default",
+          "typescript",
+          "vortex-api"
+        ]
+      },
+      "typecheck": {
+        "inputs": [
+          "default",
+          "typescript",
+          "vortex-api"
+        ]
+      }
+    }
   }
 }

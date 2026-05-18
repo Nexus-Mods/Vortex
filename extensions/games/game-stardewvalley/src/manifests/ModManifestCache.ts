@@ -1,15 +1,16 @@
+import path from "path";
+
+import { log, selectors, util } from "vortex-api";
+import type { types } from "vortex-api";
+
+import { GAME_ID, MOD_MANIFEST } from "../common";
+import { selectSdvMods } from "../state/selectors";
 /**
  * Caches parsed manifests for currently active Stardew Valley mods.
  */
 import type { ISDVModManifest } from "../types";
-import { log, selectors, util } from "vortex-api";
-import type { types } from "vortex-api";
-import { GAME_ID, MOD_MANIFEST } from "../common";
-import { selectSdvMods } from "../state/selectors";
 import { getModManifests } from "./getModManifests";
 import { parseManifest } from "./parseManifest";
-
-import path from "path";
 
 /**
  * Caches parsed manifests for currently active/installed Stardew mods.

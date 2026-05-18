@@ -8,18 +8,13 @@
  */
 import path from "path";
 
+import type { IEntry } from "turbowalk";
 import { fs, log, selectors, util } from "vortex-api";
 import type { types } from "vortex-api";
-import type { IEntry } from "turbowalk";
 
-import { setMergeConfigs } from "../state/actions";
-import {
-  GAME_ID,
-  MOD_CONFIG,
-  MODS_REL_PATH,
-  NOTIF_ACTIVITY_CONFIG_MOD,
-} from "../common";
+import { GAME_ID, MOD_CONFIG, MODS_REL_PATH, NOTIF_ACTIVITY_CONFIG_MOD } from "../common";
 import { findSMAPITool, getSMAPIMods } from "../smapi/selectors";
+import { setMergeConfigs } from "../state/actions";
 import { selectMergeConfigsEnabled } from "../state/selectors";
 import type { IFileEntry } from "../types";
 import { walkPath } from "./filesystem";
@@ -123,9 +118,7 @@ export async function onSyncModConfigurations(
         return accum;
       }
 
-      if (
-        !util.getSafe(profile, ["modState", candidateName, "enabled"], false)
-      ) {
+      if (!util.getSafe(profile, ["modState", candidateName, "enabled"], false)) {
         return accum;
       }
 
@@ -157,9 +150,7 @@ export async function addModConfig(
   const isInstallPath = modsPath !== undefined;
   const resolvedModsPath =
     modsPath ??
-    (discovery?.path !== undefined
-      ? path.join(discovery.path, MODS_REL_PATH)
-      : undefined);
+    (discovery?.path !== undefined ? path.join(discovery.path, MODS_REL_PATH) : undefined);
   if (resolvedModsPath === undefined) {
     return;
   }
@@ -168,10 +159,7 @@ export async function addModConfig(
     return;
   }
 
-  const configModAttributes = extractConfigModAttributes(
-    state,
-    configMod.mod.id,
-  );
+  const configModAttributes = extractConfigModAttributes(state, configMod.mod.id);
   const nextAttributes = Array.from(new Set(configModAttributes));
   for (const file of files) {
     const primaryCandidate = file.candidates[0];
@@ -194,12 +182,9 @@ export async function addModConfig(
       const installRelPath = path.relative(resolvedModsPath, file.filePath);
       const segments = installRelPath.split(path.sep);
       // When scanning the install path, drop the leading mod-id segment.
-      const relPath = isInstallPath
-        ? segments.slice(1).join(path.sep)
-        : installRelPath;
+      const relPath = isInstallPath ? segments.slice(1).join(path.sep) : installRelPath;
       const targetPath = path.join(configMod.configModPath, relPath);
-      const targetDir =
-        path.extname(targetPath) !== "" ? path.dirname(targetPath) : targetPath;
+      const targetDir = path.extname(targetPath) !== "" ? path.dirname(targetPath) : targetPath;
       await fs.ensureDirWritableAsync(targetDir);
       log("debug", "importing config file from", {
         source: file.filePath,
@@ -209,16 +194,19 @@ export async function addModConfig(
       await fs.copyAsync(file.filePath, targetPath, { overwrite: true });
       await fs.removeAsync(file.filePath);
     } catch (err) {
+      // When a mod has been deployed via hardlink, the source and target
+      // share an inode and copyAsync rejects with SelfCopyCheckError. The
+      // file is already in the config mod, so there is nothing to do.
+      const message = err instanceof Error ? err.message : String(err);
+      if (message.includes("are the same file")) {
+        continue;
+      }
       api.showErrorNotification?.("Failed to write mod config", err);
     }
   }
 
   api.dismissNotification?.(NOTIF_ACTIVITY_CONFIG_MOD);
-  setConfigModAttribute(
-    api,
-    configMod.mod.id,
-    Array.from(new Set(nextAttributes)),
-  );
+  setConfigModAttribute(api, configMod.mod.id, Array.from(new Set(nextAttributes)));
 }
 
 function emitLifecycleEvent(
