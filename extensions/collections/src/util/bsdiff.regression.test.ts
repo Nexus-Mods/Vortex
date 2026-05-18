@@ -11,7 +11,7 @@
  * constructed the DOM Worker (and only the DOM Worker).
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from "vitest";
 
 // getWasmPath() in bsdiff.ts probes `fs.existsSync` to find a bundled hdiff.wasm.
 // We can't spy on fs (ESM namespace is non-configurable) so we vi.mock the
@@ -28,14 +28,14 @@ vi.mock("fs", async () => {
 
 describe("bsdiff renderer dispatch (regression for APP-461)", () => {
   let originalWorker: typeof globalThis.Worker | undefined;
-  let workerSpy: ReturnType<typeof vi.fn>;
+  let workerSpy: Mock<(url: string) => void>;
   let workerThreadsTouched: boolean;
 
   beforeEach(() => {
     originalWorker = (globalThis as { Worker?: typeof Worker }).Worker;
 
     workerThreadsTouched = false;
-    workerSpy = vi.fn();
+    workerSpy = vi.fn<(url: string) => void>();
     const recordUrl = workerSpy;
 
     class MockWorker {
