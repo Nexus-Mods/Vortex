@@ -166,7 +166,7 @@ catalog:
   electron: 39.8.0
   electron-builder: 24.13.3
   electron-context-menu: ^3.1.1
-  electron-devtools-installer: ^3.2.0
+  electron-extension-installer: ^2.0.1
   electron-redux: git+https://github.com/TanninOne/electron-redux#66bbd9d389579806e8c4ebd87bd513a668cc64a8
   electron-updater: ^4.2.0
   encoding-down: ^6.3.0
