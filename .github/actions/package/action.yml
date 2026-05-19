@@ -70,7 +70,6 @@ runs:
         echo "rawVersion=$rawVersion" >> $env:GITHUB_OUTPUT
         echo "artifactNameUnpacked=vortex-setup-$rawVersion-unpacked" >> $env:GITHUB_OUTPUT
         echo "artifactNameInstaller=vortex-setup-$rawVersion-installer" >> $env:GITHUB_OUTPUT
-        echo "VORTEX_VERSION=$rawVersion" >> $env:GITHUB_ENV
 
     - uses: actions/setup-dotnet@v5
       with:
@@ -107,6 +106,10 @@ runs:
       with:
         node-version: ${{ steps.node-version.outputs.NODE_VERSION }}
         cache: "pnpm"
+
+    - name: Bump versions
+      shell: pwsh
+      run: pnpm -F "@vortex/main" -F "@nexusmods/vortex-api" version ${{ steps.setOutputs.outputs.rawVersion }} --no-git-tag-version --no-git-checks --allow-same-version
 
     - name: Install dependencies
       shell: pwsh
