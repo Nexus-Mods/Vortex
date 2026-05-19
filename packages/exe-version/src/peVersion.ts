@@ -24,7 +24,7 @@
 
 import * as fs from "fs";
 
-import { findResourceSection, findResourceType, findFirstDataEntry } from "pe-resources";
+import { findResourceSectionSync, findResourceType, findFirstDataEntry } from "pe-resources";
 
 // --- Constants ---
 
@@ -179,7 +179,7 @@ export function readVersionInfo(filePath: string): VersionInfo | undefined {
   }
 
   try {
-    const section = findResourceSection(fd);
+    const section = findResourceSectionSync(fd);
     if (section === undefined) return undefined;
 
     const { buf: sectionBuf, sectionVA, resourceRVA } = section;

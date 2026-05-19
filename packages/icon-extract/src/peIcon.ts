@@ -28,7 +28,7 @@
  *   6. If DIB, convert to PNG; if already PNG, use directly
  */
 
-import * as fs from "fs";
+import * as fs from "fs/promises";
 import { deflateSync, crc32 } from "zlib";
 
 import { findResourceSection, findResourceType, collectDataEntries } from "pe-resources";
@@ -352,16 +352,19 @@ export interface ExtractedIcon {
  * Extract the icon from a Windows PE executable.
  * Returns the icon as a PNG buffer, or undefined if no icon is found.
  */
-export function extractIcon(filePath: string, width: number = 32): ExtractedIcon | undefined {
-  let fd: number;
+export async function extractIcon(
+  filePath: string,
+  width: number = 32,
+): Promise<ExtractedIcon | undefined> {
+  let fh;
   try {
-    fd = fs.openSync(filePath, "r");
+    fh = await fs.open(filePath, "r");
   } catch {
     return undefined;
   }
 
   try {
-    const section = findResourceSection(fd);
+    const section = await findResourceSection(fh);
     if (section === undefined) return undefined;
 
     const { buf: sectionBuf, sectionVA, resourceRVA } = section;
@@ -418,17 +421,21 @@ export function extractIcon(filePath: string, width: number = 32): ExtractedIcon
 
     return { width: actualWidth, height: actualHeight, png };
   } finally {
-    fs.closeSync(fd);
+    await fh.close();
   }
 }
 
 /**
  * Extract the icon from a PE executable and write it to a PNG file.
  */
-export function extractIconToFile(exePath: string, outputPath: string, width: number = 32): void {
-  const icon = extractIcon(exePath, width);
+export async function extractIconToFile(
+  exePath: string,
+  outputPath: string,
+  width: number = 32,
+): Promise<void> {
+  const icon = await extractIcon(exePath, width);
   if (icon === undefined) {
     throw new Error(`failed to extract icon from ${exePath}`);
   }
-  fs.writeFileSync(outputPath, icon.png);
+  await fs.writeFile(outputPath, icon.png);
 }

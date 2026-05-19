@@ -29,6 +29,7 @@
  */
 
 import * as fs from "fs";
+import type { FileHandle } from "fs/promises";
 
 // --- PE constants ---
 
@@ -57,16 +58,84 @@ export interface ResourceDataEntry {
 // --- PE header parsing ---
 
 /**
- * Locate the resource section in a PE file.
+ * Locate the resource section in a PE file (async).
  *
  * Reads the DOS header, PE header, optional header, and section table to find
  * the section containing the resource directory. Returns the section data as a
  * Buffer along with addressing info needed to convert RVAs to buffer offsets.
  *
+ * @param fh An open file handle (from fs.promises.open)
+ * @param maxReadSize Cap on how many bytes to read from the section (default 20MB)
+ */
+export async function findResourceSection(
+  fh: FileHandle,
+  maxReadSize: number = 20 * 1024 * 1024,
+): Promise<ResourceSection | undefined> {
+  const dosHeader = Buffer.alloc(64);
+  await fh.read(dosHeader, 0, 64, 0);
+  if (dosHeader.readUInt16LE(0) !== 0x5a4d) return undefined; // "MZ"
+
+  const peOffset = dosHeader.readUInt32LE(0x3c);
+  const peHeader = Buffer.alloc(264); // enough for PE sig + COFF + largest optional header
+  await fh.read(peHeader, 0, 264, peOffset);
+
+  if (peHeader.readUInt32LE(0) !== PE_SIGNATURE) return undefined;
+
+  // COFF header starts at offset 4
+  const numberOfSections = peHeader.readUInt16LE(6);
+  const sizeOfOptionalHeader = peHeader.readUInt16LE(20);
+
+  // Optional header starts at offset 24
+  const optMagic = peHeader.readUInt16LE(24);
+  let dataDirOffset: number;
+  if (optMagic === PE32_MAGIC) {
+    dataDirOffset = 24 + 96; // offset within peHeader
+  } else if (optMagic === PE32PLUS_MAGIC) {
+    dataDirOffset = 24 + 112;
+  } else {
+    return undefined;
+  }
+
+  // Resource directory is data directory index 2
+  const resourceRVA = peHeader.readUInt32LE(dataDirOffset + 2 * 8);
+  const resourceSize = peHeader.readUInt32LE(dataDirOffset + 2 * 8 + 4);
+  if (resourceRVA === 0 || resourceSize === 0) return undefined;
+
+  // Read section headers
+  const sectionsOffset = peOffset + 24 + sizeOfOptionalHeader;
+  const sectionsSize = numberOfSections * 40;
+  const sections = Buffer.alloc(sectionsSize);
+  await fh.read(sections, 0, sectionsSize, sectionsOffset);
+
+  // Find the section containing the resource RVA
+  for (let i = 0; i < numberOfSections; i++) {
+    const sectionVA = sections.readUInt32LE(i * 40 + 12);
+    const rawSize = sections.readUInt32LE(i * 40 + 16);
+    const rawOffset = sections.readUInt32LE(i * 40 + 20);
+    const virtualSize = sections.readUInt32LE(i * 40 + 8);
+    const endVA = sectionVA + Math.max(rawSize, virtualSize);
+
+    if (resourceRVA >= sectionVA && resourceRVA < endVA) {
+      const readSize = Math.min(rawSize, maxReadSize);
+      const buf = Buffer.alloc(readSize);
+      await fh.read(buf, 0, readSize, rawOffset);
+      return { buf, sectionVA, resourceRVA };
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * Locate the resource section in a PE file (synchronous).
+ *
+ * Same as {@link findResourceSection} but uses synchronous I/O. Prefer the
+ * async version in event-loop-sensitive contexts (renderer process, servers).
+ *
  * @param fd An open file descriptor (from fs.openSync)
  * @param maxReadSize Cap on how many bytes to read from the section (default 20MB)
  */
-export function findResourceSection(
+export function findResourceSectionSync(
   fd: number,
   maxReadSize: number = 20 * 1024 * 1024,
 ): ResourceSection | undefined {
