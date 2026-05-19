@@ -61,7 +61,9 @@ export default defineConfig([
     },
     rules: {
       // React
+      "@eslint-react/component-hook-factories": "warn",
       "@eslint-react/no-useless-fragment": "warn",
+      "@eslint-react/rules-of-hooks": "warn",
 
       // Tailwind
       "better-tailwindcss/enforce-consistent-line-wrapping": "off",

@@ -1337,10 +1337,6 @@ class InstallManager {
                     sourceModId,
                   );
                   installContext.startIndicator(baseName);
-                  let dlGame: string | string[] = getSafe(fullInfo, ["download", "game"], gameId);
-                  if (Array.isArray(dlGame)) {
-                    dlGame = dlGame[0];
-                  }
 
                   return api.lookupModMeta({
                     fileMD5: archiveMD5,
@@ -2930,8 +2926,7 @@ class InstallManager {
         return;
       }
 
-      let downloadId = null;
-
+      let downloadId: string;
       const md5Value = reference.md5Hint ?? reference.fileMD5;
       if (cache) {
         // Use cache for fast lookup

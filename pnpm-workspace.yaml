@@ -41,7 +41,7 @@ catalog:
   "@duckdb/node-api": 1.5.1-r.1
   "@electron/rebuild": ^4.0.4
   "@electron/remote": ^2.0.12
-  "@eslint-react/eslint-plugin": 5.8.1
+  "@eslint-react/eslint-plugin": 3.0.0
   "@eslint/js": 10.0.1
   "@headlessui/react": ^1.7.19
   "@hot-updater/bsdiff": ^0.30.6

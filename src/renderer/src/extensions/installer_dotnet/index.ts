@@ -193,7 +193,7 @@ function execFileWrapper(
 }
 
 async function checkNetInstall(api: IExtensionApi, dotnetVersion: number): Promise<ITestResult> {
-  let probeExecutable: string | null = null;
+  let probeExecutable: string;
 
   if (process.platform === "win32") {
     probeExecutable = path.join(getVortexPath("assets_unpacked"), "dotnetprobe.exe");

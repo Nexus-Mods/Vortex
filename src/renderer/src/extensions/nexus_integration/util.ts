@@ -105,8 +105,6 @@ interface IUserInfo {
   premium_expiry: number;
 }
 
-let cancelLogin: () => void;
-
 /**
  * Search for collections using the GraphQL API
  *
@@ -124,15 +122,6 @@ export function searchCollections(
 }
 
 export function onCancelLoginImpl(api: IExtensionApi) {
-  if (cancelLogin !== undefined) {
-    try {
-      cancelLogin();
-    } catch (err) {
-      // the only time we ever see this happen is a case where the websocket connection
-      // wasn't established yet so the cancelation failed because it wasn't necessary.
-      log("info", "login not canceled", getErrorMessageOrDefault(err));
-    }
-  }
   api.store.dispatch(setLoginId(undefined));
   api.events.emit("did-login", new UserCanceled());
 }

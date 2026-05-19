@@ -132,17 +132,16 @@ function lookupDownloadHint(api: IExtensionApi, input: IDownloadHint): Promise<I
   }
 
   if (input.mode === "direct") {
-    let urlNorm: string = "";
     try {
-      urlNorm = normalizeUrl(input.url ?? "", { defaultProtocol: "https:" });
+      const urlNorm = normalizeUrl(input.url ?? "", { defaultProtocol: "https:" });
+      return Promise.resolve({ url: urlNorm });
     } catch (err) {
       return Promise.reject(
         new NotFound(`Invalid url set for external dependency: "${input.url ?? "<unset>"}"`),
       );
     }
-    return Promise.resolve({ url: urlNorm });
   } else if (input.mode === "browse" || (input.mode === "manual" && input.url)) {
-    let urlNorm: string = "";
+    let urlNorm: string;
     try {
       urlNorm = normalizeUrl(input.url ?? "", { defaultProtocol: "https:" });
     } catch (err) {
@@ -407,7 +406,6 @@ async function gatherDependenciesGraph(
   const mod = findModByRef(modReference, mods);
 
   let urlFromHint: IBrowserResult | undefined;
-  let lookupResults = [];
 
   const limit = new ConcurrencyLimiter(20);
 
@@ -422,7 +420,7 @@ async function gatherDependenciesGraph(
       }
     }
 
-    lookupResults = await api.lookupModReference(rule.reference, {
+    const lookupResults = await api.lookupModReference(rule.reference, {
       requireURL: true,
     });
 
@@ -446,7 +444,9 @@ async function gatherDependenciesGraph(
       download: downloadId,
       mod,
       reference: rule.reference,
-      lookupResults: lookupResults.map((iter) => makeLookupResult(iter, urlFromHint)),
+      lookupResults: lookupResults.map((iter) =>
+        makeLookupResult(iter as ILookupResult, urlFromHint),
+      ),
       dependencies: dependencies.filter(Boolean),
       redundant: false,
       extra: rule.extra,

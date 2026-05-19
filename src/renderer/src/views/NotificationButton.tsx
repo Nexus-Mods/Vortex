@@ -1,7 +1,3 @@
-/* eslint-disable @eslint-react/hooks-extra/no-direct-set-state-in-use-effect */
-// Disabled: This component legitimately syncs derived state (filtered notifications)
-// in effects based on notification changes and timers.
-
 import * as _ from "lodash";
 import React from "react";
 import { Badge, Button, Overlay, Popover } from "react-bootstrap";
