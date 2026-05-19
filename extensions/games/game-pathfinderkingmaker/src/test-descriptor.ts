@@ -9,5 +9,13 @@ export const testDescriptor = {
     all: true,
   } as const,
   syntheticContent: {},
-  skipHeuristics: [],
+  skipHeuristics: [
+    {
+      reason: "directory-only manifest (source code or empty archive, no installable files)",
+      matches: (files: string[]): boolean => {
+        const dataFiles = files.filter((f) => !f.endsWith("/") && !f.endsWith("\\"));
+        return dataFiles.length === 0;
+      },
+    },
+  ],
 };

@@ -17,6 +17,7 @@
     "gameExtensionTest": true
   },
   "devDependencies": {
+    "@vortex/game-extension-helpers": "workspace:*",
     "@vortex/game-extension-test": "workspace:*",
     "vortex-api": "workspace:*"
   },

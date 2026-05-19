@@ -1,0 +1,25 @@
+{
+  "$schema": "https://www.schemastore.org/package.json",
+  "name": "@vortex/game-extension-helpers",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vortex-api": "workspace:*"
+  },
+  "nx": {
+    "tags": [
+      "vortex:tooling"
+    ]
+  }
+}

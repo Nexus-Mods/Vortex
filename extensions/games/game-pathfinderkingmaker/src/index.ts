@@ -1,5 +1,6 @@
 import path from "path";
 
+import { registerDefaultModInstaller, registerUmmSupport } from "@vortex/game-extension-helpers";
 import { actions, fs, util } from "vortex-api";
 import type { types } from "vortex-api";
 
@@ -8,6 +9,7 @@ const NAME = "Pathfinder:\tKingmaker";
 const EXE_NAME = "Kingmaker";
 const STEAM_ID = "640820";
 const UMM_DLL = "UnityModManager.dll";
+const GAME_IDS = new Set([NEXUS_ID]);
 
 function readRegistryKey(hive: string, key: string, name: string): Promise<string> {
   try {
@@ -63,8 +65,17 @@ async function setup(
   }
 }
 
+function getDiscoveryPath(api: types.IExtensionApi, gameId: string): string | undefined {
+  const state = api.store!.getState();
+  const discovery = util.getSafe(
+    state,
+    ["settings", "gameMode", "discovered", gameId],
+    undefined,
+  ) as types.IDiscoveryResult | undefined;
+  return discovery?.path;
+}
+
 function main(context: types.IExtensionContext): boolean {
-  context.requireExtension("modtype-umm");
   context.registerGame({
     id: NEXUS_ID,
     name: NAME,
@@ -78,6 +89,12 @@ function main(context: types.IExtensionContext): boolean {
     setup: ((discovery: types.IDiscoveryResult) =>
       setup(context, discovery)) as unknown as types.IGame["setup"],
   });
+
+  registerUmmSupport(context, GAME_IDS, {
+    getDiscoveryPath: (gameId) => getDiscoveryPath(context.api, gameId),
+  });
+
+  registerDefaultModInstaller(context, NEXUS_ID + "-default", GAME_IDS);
 
   return true;
 }
