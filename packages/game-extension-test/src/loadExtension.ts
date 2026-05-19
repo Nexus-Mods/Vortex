@@ -95,21 +95,6 @@ interface IStubContext {
   [hook: string]: unknown;
 }
 
-/**
- * Mirrors Vortex's `basicInstaller` (registered at priority 1000). Accepts any
- * file list and produces a copy instruction for every non-directory entry.
- */
-const BASIC_INSTALLER: IInstallerEntry = {
-  id: "basic",
-  priority: 1000,
-  testSupported: async () => ({ supported: true, requiredFiles: [] }),
-  install: async (files) => ({
-    instructions: files
-      .filter((f) => !f.endsWith("/") && !f.endsWith("\\"))
-      .map((f) => ({ type: "copy" as const, source: f, destination: f })),
-  }),
-};
-
 export async function loadExtension(extensionDir: string): Promise<ILoadedExtension> {
   const stubContext = makeStubContext();
   const indexPath = path.join(extensionDir, "src", "index.ts");
@@ -160,12 +145,12 @@ export async function loadExtension(extensionDir: string): Promise<ILoadedExtens
     );
   }
 
-  // Vortex always registers a basic fallback installer at priority 1000 that
-  // accepts any files and produces copy instructions. Mirror that here so
-  // games that rely solely on the default installer (no custom registerInstaller
-  // calls) still get tested.
-  const allInstallers: IInstallerEntry[] = [...stubContext._installers, BASIC_INSTALLER];
-  const installers: IInstallerEntry[] = allInstallers.sort((a, b) => a.priority - b.priority);
+  if (stubContext._installers.length === 0) {
+    throw new Error(`Extension ${extensionDir} did not call registerInstaller`);
+  }
+  const installers: IInstallerEntry[] = [...stubContext._installers].sort(
+    (a, b) => a.priority - b.priority,
+  );
 
   return {
     installers,

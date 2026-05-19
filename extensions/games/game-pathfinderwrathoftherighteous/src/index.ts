@@ -3,7 +3,15 @@ import path from "node:path";
 import { fs, util } from "vortex-api";
 import type { types } from "vortex-api";
 
-const GAME_ID = "pathfinderwrathoftherighteous";
+import { healthChecks } from "./diagnostic";
+import {
+  WOTR_GAME_ID,
+  WOTR_INSTALLER_SPECS,
+  installUmmMod,
+  installUmmTool,
+  testUmmMod,
+  testUmmTool,
+} from "./installers";
 
 async function setup(discovery: types.IDiscoveryResult): Promise<void> {
   await fs.ensureDirWritableAsync(path.join(discovery.path!, "Mods"));
@@ -21,9 +29,8 @@ async function resolveGameVersion(discoveryPath: string): Promise<string> {
 }
 
 function main(context: types.IExtensionContext): boolean {
-  context.requireExtension("modtype-umm");
   context.registerGame({
-    id: GAME_ID,
+    id: WOTR_GAME_ID,
     name: "Pathfinder: Wrath\tof the Righteous",
     queryArgs: {
       steam: "1184370",
@@ -36,14 +43,14 @@ function main(context: types.IExtensionContext): boolean {
     requiredFiles: ["Wrath.exe"],
     setup,
   });
-  context.once(() => {
-    if (context.api.ext.ummAddGame !== undefined) {
-      context.api.ext.ummAddGame({
-        gameId: GAME_ID,
-        autoDownloadUMM: true,
-      });
-    }
-  });
+
+  context.registerInstaller("wotr-umm-tool", 20, testUmmTool, installUmmTool);
+  context.registerInstaller("wotr-umm-mod", 30, testUmmMod, installUmmMod);
+  util.declareInstallers(context, WOTR_GAME_ID, WOTR_INSTALLER_SPECS);
+
+  for (const check of healthChecks) {
+    context.registerHealthCheck(check);
+  }
 
   return true;
 }
