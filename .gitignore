@@ -64,7 +64,7 @@ log.txt
 nul
 
 # Claude Code directory
-.claude
+.claude/settings.local.json
 
 # direnv
 .direnv/
