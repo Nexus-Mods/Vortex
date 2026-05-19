@@ -4056,7 +4056,11 @@ importers:
         specifier: 'catalog:'
         version: 1.58.2
 
-  packages/exe-version: {}
+  packages/exe-version:
+    devDependencies:
+      pe-resources:
+        specifier: workspace:*
+        version: link:../pe-resources
 
   packages/extension-test-mocks:
     devDependencies:
@@ -4097,7 +4101,13 @@ importers:
         specifier: workspace:*
         version: link:../vortex-api
 
-  packages/icon-extract: {}
+  packages/icon-extract:
+    devDependencies:
+      pe-resources:
+        specifier: workspace:*
+        version: link:../pe-resources
+
+  packages/pe-resources: {}
 
   packages/vortex-api:
     dependencies:
@@ -5201,7 +5211,7 @@ importers:
 packages:
 
   7z-bin@https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/025786f01319526b56400b0410af6268adc1125c:
-    resolution: {gitHosted: true, integrity: sha512-Wbq5MzOOBewAXp89Fyev4Q5u2yU2VMo/xhQo2TzSJ784NrTv4AXTrcrwmci2vUhOFtylX79ERowiWG+RuiEMsA==, tarball: https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/025786f01319526b56400b0410af6268adc1125c}
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/025786f01319526b56400b0410af6268adc1125c}
     version: 26.0.1
     hasBin: true
 

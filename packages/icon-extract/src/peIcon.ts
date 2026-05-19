@@ -2,12 +2,12 @@
  * Pure TypeScript PE icon resource extractor.
  *
  * Parses Windows PE (Portable Executable) files to extract embedded icon
- * resources without native addons. Follows the PE/COFF spec for resource
- * directory navigation and ICO/BMP icon data extraction.
+ * resources without native addons. Uses the shared pe-resources package for
+ * PE header parsing and resource directory navigation, then handles the
+ * icon-specific data formats (GRPICONDIR, DIB, PNG).
  *
  * ## PE resource layout for icons
  *
- * The resource directory tree has three levels: Type -> Name -> Language.
  * Icons use two resource types:
  *
  *   RT_GROUP_ICON (14): Contains a GRPICONDIR header listing all available
@@ -20,7 +20,7 @@
  *
  * ## Extraction flow
  *
- *   1. Parse PE headers -> locate resource section
+ *   1. Parse PE headers -> locate resource section (via pe-resources)
  *   2. Navigate resource tree to find RT_GROUP_ICON entries
  *   3. Parse GRPICONDIR to find the best size match
  *   4. Navigate resource tree to find the matching RT_ICON entry
@@ -31,22 +31,15 @@
 import * as fs from "fs";
 import { deflateSync, crc32 } from "zlib";
 
-// --- PE constants ---
+import { findResourceSection, findResourceType, collectDataEntries } from "pe-resources";
 
-const PE_SIGNATURE = 0x00004550; // "PE\0\0"
-const PE32_MAGIC = 0x10b;
-const PE32PLUS_MAGIC = 0x20b;
+// --- Constants ---
+
 const RT_ICON = 3;
 const RT_GROUP_ICON = 14;
 const PNG_SIGNATURE = 0x89504e47;
 
 // --- Types ---
-
-interface SectionInfo {
-  buf: Buffer;
-  sectionVA: number;
-  resourceRVA: number;
-}
 
 interface GrpIconDirEntry {
   bWidth: number;
@@ -56,132 +49,6 @@ interface GrpIconDirEntry {
   wBitCount: number;
   dwBytesInRes: number;
   nId: number;
-}
-
-interface ResourceDataEntry {
-  dataRVA: number;
-  dataSize: number;
-}
-
-// --- PE parsing ---
-
-function findResourceSection(fd: number): SectionInfo | undefined {
-  const dosHeader = Buffer.alloc(64);
-  fs.readSync(fd, dosHeader, 0, 64, 0);
-  if (dosHeader.readUInt16LE(0) !== 0x5a4d) return undefined; // "MZ"
-
-  const peOffset = dosHeader.readUInt32LE(0x3c);
-  const peHeader = Buffer.alloc(264);
-  fs.readSync(fd, peHeader, 0, 264, peOffset);
-
-  if (peHeader.readUInt32LE(0) !== PE_SIGNATURE) return undefined;
-
-  const numberOfSections = peHeader.readUInt16LE(6);
-  const sizeOfOptionalHeader = peHeader.readUInt16LE(20);
-
-  const optMagic = peHeader.readUInt16LE(24);
-  let dataDirOffset: number;
-  if (optMagic === PE32_MAGIC) {
-    dataDirOffset = 24 + 96;
-  } else if (optMagic === PE32PLUS_MAGIC) {
-    dataDirOffset = 24 + 112;
-  } else {
-    return undefined;
-  }
-
-  // Resource directory is data directory index 2
-  const resourceRVA = peHeader.readUInt32LE(dataDirOffset + 2 * 8);
-  const resourceSize = peHeader.readUInt32LE(dataDirOffset + 2 * 8 + 4);
-  if (resourceRVA === 0 || resourceSize === 0) return undefined;
-
-  // Read section headers
-  const sectionsOffset = peOffset + 24 + sizeOfOptionalHeader;
-  const sectionsSize = numberOfSections * 40;
-  const sections = Buffer.alloc(sectionsSize);
-  fs.readSync(fd, sections, 0, sectionsSize, sectionsOffset);
-
-  for (let i = 0; i < numberOfSections; i++) {
-    const sectionVA = sections.readUInt32LE(i * 40 + 12);
-    const rawSize = sections.readUInt32LE(i * 40 + 16);
-    const rawOffset = sections.readUInt32LE(i * 40 + 20);
-    const virtualSize = sections.readUInt32LE(i * 40 + 8);
-    const endVA = sectionVA + Math.max(rawSize, virtualSize);
-
-    if (resourceRVA >= sectionVA && resourceRVA < endVA) {
-      const readSize = Math.min(rawSize, 20 * 1024 * 1024); // cap at 20MB for icon resources
-      const buf = Buffer.alloc(readSize);
-      fs.readSync(fd, buf, 0, readSize, rawOffset);
-      return { buf, sectionVA, resourceRVA };
-    }
-  }
-
-  return undefined;
-}
-
-// --- Resource directory navigation ---
-
-function findResourceTypeEntries(
-  buf: Buffer,
-  baseOffset: number,
-  resourceType: number,
-): number | undefined {
-  const numberOfNamedEntries = buf.readUInt16LE(baseOffset + 12);
-  const numberOfIdEntries = buf.readUInt16LE(baseOffset + 14);
-  const totalEntries = numberOfNamedEntries + numberOfIdEntries;
-
-  for (let i = 0; i < totalEntries; i++) {
-    const entryOffset = baseOffset + 16 + i * 8;
-    const nameOrId = buf.readUInt32LE(entryOffset);
-    const offsetOrData = buf.readUInt32LE(entryOffset + 4);
-
-    if (nameOrId === resourceType && offsetOrData & 0x80000000) {
-      return offsetOrData & 0x7fffffff;
-    }
-  }
-
-  return undefined;
-}
-
-/** Collect all data entries under a resource type subtree, keyed by their name/ID. */
-function collectDataEntries(buf: Buffer, dirOffset: number): Map<number, ResourceDataEntry> {
-  const entries = new Map<number, ResourceDataEntry>();
-  const numberOfNamedEntries = buf.readUInt16LE(dirOffset + 12);
-  const numberOfIdEntries = buf.readUInt16LE(dirOffset + 14);
-  const totalEntries = numberOfNamedEntries + numberOfIdEntries;
-
-  for (let i = 0; i < totalEntries; i++) {
-    const entryOffset = dirOffset + 16 + i * 8;
-    const nameOrId = buf.readUInt32LE(entryOffset);
-    const offsetOrData = buf.readUInt32LE(entryOffset + 4);
-
-    const dataEntry = resolveToDataEntry(buf, offsetOrData);
-    if (dataEntry !== undefined) {
-      entries.set(nameOrId, dataEntry);
-    }
-  }
-
-  return entries;
-}
-
-function resolveToDataEntry(buf: Buffer, offsetOrData: number): ResourceDataEntry | undefined {
-  if (offsetOrData & 0x80000000) {
-    // Subdirectory — take the first entry and recurse
-    const subDirOffset = offsetOrData & 0x7fffffff;
-    const subNamedCount = buf.readUInt16LE(subDirOffset + 12);
-    const subIdCount = buf.readUInt16LE(subDirOffset + 14);
-    if (subNamedCount + subIdCount === 0) return undefined;
-
-    const firstSubEntry = subDirOffset + 16;
-    const firstSubData = buf.readUInt32LE(firstSubEntry + 4);
-    return resolveToDataEntry(buf, firstSubData);
-  }
-
-  // Data entry: IMAGE_RESOURCE_DATA_ENTRY
-  if (offsetOrData + 16 > buf.length) return undefined;
-  return {
-    dataRVA: buf.readUInt32LE(offsetOrData),
-    dataSize: buf.readUInt32LE(offsetOrData + 4),
-  };
 }
 
 // --- GRPICONDIR parsing ---
@@ -247,7 +114,7 @@ function selectBestIcon(
 
 // --- DIB to PNG conversion ---
 
-function dibToPng(data: Buffer, declaredWidth: number, declaredHeight: number): Buffer {
+function dibToPng(data: Buffer): Buffer {
   // Check if it's already PNG
   if (data.length >= 4 && data.readUInt32BE(0) === PNG_SIGNATURE) {
     return data;
@@ -501,7 +368,7 @@ export function extractIcon(filePath: string, width: number = 32): ExtractedIcon
     const resourceOffset = resourceRVA - sectionVA;
 
     // Find RT_GROUP_ICON entries
-    const groupIconDirOffset = findResourceTypeEntries(sectionBuf, resourceOffset, RT_GROUP_ICON);
+    const groupIconDirOffset = findResourceType(sectionBuf, resourceOffset, RT_GROUP_ICON);
     if (groupIconDirOffset === undefined) return undefined;
 
     // Get all group icon entries (usually just one group)
@@ -523,7 +390,7 @@ export function extractIcon(filePath: string, width: number = 32): ExtractedIcon
     if (bestEntry === undefined) return undefined;
 
     // Find RT_ICON entries
-    const iconDirOffset = findResourceTypeEntries(sectionBuf, resourceOffset, RT_ICON);
+    const iconDirOffset = findResourceType(sectionBuf, resourceOffset, RT_ICON);
     if (iconDirOffset === undefined) return undefined;
 
     const iconDataEntries = collectDataEntries(sectionBuf, iconDirOffset);
@@ -536,7 +403,7 @@ export function extractIcon(filePath: string, width: number = 32): ExtractedIcon
     }
 
     const iconData = sectionBuf.subarray(iconDataOffset, iconDataOffset + iconDataEntry.dataSize);
-    const png = dibToPng(Buffer.from(iconData), bestEntry.bWidth, bestEntry.bHeight);
+    const png = dibToPng(Buffer.from(iconData));
 
     // Determine actual dimensions from the icon data
     let actualWidth = bestEntry.bWidth;
