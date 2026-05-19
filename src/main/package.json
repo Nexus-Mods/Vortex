@@ -9,7 +9,7 @@
   "main": "build/main.cjs",
   "scripts": {
     "start": "pnpm electron .",
-    "postinstall": "pnpm exec electron-rebuild",
+    "postinstall": "node ./postinstall.mjs",
     "build": "node ./build.mjs",
     "typecheck": "pnpm tsc",
     "lint": "pnpm eslint --quiet --concurrency auto .",
@@ -144,6 +144,7 @@
     "./build",
     "./nsis/",
     "./electron-builder.config.json",
+    "./postinstall.mjs",
     "./prepare-dist-package.mjs",
     "./sign.cjs"
   ],
