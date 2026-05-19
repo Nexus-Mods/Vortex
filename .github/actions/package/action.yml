@@ -115,6 +115,55 @@ runs:
     - name: Install dependencies
       shell: pwsh
       run: pnpm install --frozen-lockfile
+      env:
+        VORTEX_ELECTRON_REBUILD: "defer"
+
+    - name: Cache Electron native build headers
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.electron-gyp
+          ~/.cache/node-gyp
+        key: package-native-headers-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('package.json', 'pnpm-lock.yaml', 'src/main/package.json') }}
+
+    - name: Build workspace
+      shell: pwsh
+      env:
+        NODE_ENV: production
+      run: pnpm run build
+
+    - name: Publish dist package
+      shell: pwsh
+      env:
+        NODE_ENV: production
+        VORTEX_ELECTRON_REBUILD: "skip"
+      run: pnpm nx run @vortex/main:publish
+
+    - name: Cache packaged Electron native rebuild outputs
+      id: packaged-native-cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          src/main/dist/node_modules/@nexusmods/fomod-installer-native/build
+          src/main/dist/node_modules/@nexusmods/fomod-installer-native/bin
+          src/main/dist/node_modules/drivelist/build
+          src/main/dist/node_modules/drivelist/bin
+          src/main/dist/node_modules/leveldown/build
+          src/main/dist/node_modules/leveldown/bin
+          src/main/dist/node_modules/winapi-bindings/build
+          src/main/dist/node_modules/winapi-bindings/bin
+          src/main/dist/node_modules/xxhash-addon/build
+          src/main/dist/node_modules/xxhash-addon/bin
+          src/main/dist/node_modules/@parcel/watcher/build
+          src/main/dist/node_modules/@parcel/watcher/bin
+        key: package-dist-electron-native-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'src/main/package.json', 'src/main/postinstall.mjs') }}
+
+    - name: Rebuild packaged Electron native modules
+      shell: pwsh
+      working-directory: src/main/dist
+      run: |
+        Write-Output "Packaged Electron native cache hit: ${{ steps.packaged-native-cache.outputs.cache-hit }}"
+        node ./node_modules/@electron/rebuild/lib/cli.js
 
     - name: Build Installer
       shell: pwsh
@@ -122,12 +171,12 @@ runs:
         $signingAvailable = -not [string]::IsNullOrWhiteSpace($env:ES_USERNAME)
         $wantSigning = "${{ inputs.use-codesigning }}" -eq "true" -or "${{ steps.nightly-flag.outputs.is_nightly }}" -eq "true"
         if ($wantSigning -and $signingAvailable) {
-          pnpm run package
+          pnpm --dir src/main run package
         } else {
           if ($wantSigning -and -not $signingAvailable) {
             Write-Warning "::warning::Codesigning requested but secrets unavailable - building unsigned"
           }
-          pnpm run package:nosign
+          pnpm --dir src/main run package:nosign
         }
 
     - name: Validate Package Creation
