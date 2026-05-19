@@ -64,7 +64,8 @@
     "re-reselect": "catalog:",
     "react": "catalog:",
     "redux": "catalog:",
-    "reselect": "catalog:"
+    "reselect": "catalog:",
+    "vitest": "catalog:"
   },
   "peerDependencies": {
     "@types/bluebird": "catalog:",

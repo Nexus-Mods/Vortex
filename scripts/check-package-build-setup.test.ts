@@ -94,9 +94,13 @@ function findBrokenExportConditions(exports: unknown): { path: string; value: st
   return violations;
 }
 
-// vortex-api is a type-only shim -- its "main" file doesn't exist on disk and
-// it's resolved via webpack aliases at runtime, not through Node's require().
-const EXCLUDED = new Set(["vortex-api"]);
+// Excluded packages:
+// - vortex-api: type-only shim; its "main" file doesn't exist on disk and it's
+//   resolved via webpack aliases at runtime, not Node's require().
+// - @vortex/extension-test-mocks: vitest-only tooling. Vitest loads the .ts
+//   source directly via vite's transform; no build step. Mirrors vortex-api's
+//   `exports."default": "./src/...ts"` pattern.
+const EXCLUDED = new Set(["vortex-api", "@vortex/extension-test-mocks"]);
 
 const packages = discoverPackages().filter(
   (p) => hasRuntimeEntryPoint(p.pkg) && !EXCLUDED.has(p.name),

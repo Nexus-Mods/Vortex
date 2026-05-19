@@ -4,15 +4,18 @@ import type {
   IHealthCheckEntry,
   IHealthCheckResult,
   ILegacyTestAdapter,
+  IModHealthCheck,
 } from "../../../types/IHealthCheck";
 import {
   HealthCheckCategory,
   HealthCheckTrigger,
   HealthCheckSeverity,
+  isModHealthCheck,
 } from "../../../types/IHealthCheck";
 import { log } from "../../../util/log";
 import { setHealthCheckResult } from "../actions/session";
 import type { HealthCheckId } from "../types";
+import { runPerModCheck } from "./perModRunner";
 
 export class HealthCheckRegistry {
   private mHealthChecks: Map<HealthCheckId, IHealthCheckEntry> = new Map();
@@ -33,7 +36,7 @@ export class HealthCheckRegistry {
   /**
    * Register a new health check
    */
-  public register(healthCheck: IHealthCheck | ILegacyTestAdapter): void {
+  public register(healthCheck: IHealthCheck | IModHealthCheck | ILegacyTestAdapter): void {
     const entry: IHealthCheckEntry = {
       healthCheck,
       enabled: true,
@@ -166,7 +169,9 @@ export class HealthCheckRegistry {
         setTimeout(() => reject(new Error(`Health check timed out after ${timeout}ms`)), timeout);
       });
 
-      const result = await Promise.race([entry.healthCheck.check(api), timeoutPromise]);
+      const hc = entry.healthCheck;
+      const checkPromise = isModHealthCheck(hc) ? runPerModCheck(hc, api) : hc.check(api);
+      const result = await Promise.race([checkPromise, timeoutPromise]);
 
       result.checkId = checkId;
       result.timestamp = new Date();

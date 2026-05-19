@@ -52,6 +52,7 @@ import type { IBannerOptions } from "./IBannerOptions";
 import type { DialogType, IDialogResult } from "./IDialog";
 import type { IGame } from "./IGame";
 import type { IGameStore } from "./IGameStore";
+import type { IHealthCheck, IModHealthCheck } from "./IHealthCheck";
 import type { ILookupOptions, IModLookupResult } from "./IModLookupResult";
 import type { INotification, INotificationAction } from "./INotification";
 import type { IDiscoveryResult, IMod, IState } from "./IState";
@@ -1183,6 +1184,17 @@ export interface IExtensionContext {
    * @memberOf IExtensionContext
    */
   registerTest: (id: string, event: string, check: CheckFunction) => void;
+
+  /**
+   * register a health check. Pass an IHealthCheck for whole-game checks, or
+   * an IModHealthCheck for per-mod checks (the registry iterates mods and
+   * aggregates per-mod results).
+   *
+   * Prefer this over the legacy `registerTest` for new code.
+   *
+   * @memberOf IExtensionContext
+   */
+  registerHealthCheck: (healthCheck: IHealthCheck | IModHealthCheck) => void;
 
   /**
    * register a handler for archive types so the content of such archives is exposed to
