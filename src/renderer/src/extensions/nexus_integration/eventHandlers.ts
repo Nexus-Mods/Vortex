@@ -83,6 +83,7 @@ import {
 import type { ITokenReply } from "./util/oauth";
 import submitFeedback from "./util/submitFeedback";
 import { makeModUID } from "./util/UIDs";
+import { submitCollectionV3 } from "./util_v3/submitCollectionV3";
 
 export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
   const state: IState = api.store.getState();
@@ -1183,52 +1184,21 @@ export function onSubmitFeedback(nexus: Nexus) {
   };
 }
 
-function sendCollection(
-  nexus: Nexus,
-  collectionInfo: ICollectionManifest,
-  collectionId: number,
-  uuid: string,
-) {
-  if (collectionId === undefined) {
-    return nexus.createCollection(
-      {
-        adultContent: false,
-        collectionManifest: collectionInfo,
-        collectionSchemaId: 1,
-      },
-      uuid,
-    );
-  } else {
-    return nexus.editCollection(collectionId as any, collectionInfo.info.name).then(() =>
-      nexus.createOrUpdateRevision(
-        {
-          adultContent: false,
-          collectionManifest: collectionInfo,
-          collectionSchemaId: 1,
-        },
-        uuid,
-        collectionId,
-      ),
-    );
-  }
-}
-
-export function onSubmitCollection(nexus: Nexus) {
+export function onSubmitCollection(api: IExtensionApi) {
   return (
     collectionInfo: ICollectionManifest,
     assetFilePath: string,
     collectionId: number,
+    signal: AbortSignal | undefined,
     callback: (err: Error, response?: any) => void,
   ) => {
-    nexus
-      .getRevisionUploadUrl()
-      .then(({ url, uuid }) => {
-        return fs
-          .statAsync(assetFilePath)
-          .then((stat) => upload(url, fs.createReadStream(assetFilePath), stat.size))
-          .then(() => uuid);
-      })
-      .then((uuid: string) => sendCollection(nexus, collectionInfo, collectionId, uuid))
+    submitCollectionV3(
+      api.getState(),
+      collectionInfo,
+      assetFilePath,
+      collectionId || undefined,
+      signal,
+    )
       .then((response) => callback(null, response))
       .catch((err) => callback(unknownToError(err)));
   };

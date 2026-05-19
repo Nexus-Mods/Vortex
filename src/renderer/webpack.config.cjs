@@ -76,7 +76,7 @@ const config = {
     devtool: "source-map",
     externals: [
         nodeExternals({
-            allowlist: [/@vortex\/shared/],
+            allowlist: [/@vortex\/shared/, /@vortex\/nexus-api-v3/],
         }),
     ],
 };

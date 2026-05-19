@@ -51,6 +51,7 @@
     "@nexusmods/fomod-installer-ipc": "catalog:",
     "@nexusmods/fomod-installer-native": "catalog:",
     "@nexusmods/nexus-api": "catalog:",
+    "@vortex/nexus-api-v3": "workspace:*",
     "@opentelemetry/api": "catalog:",
     "@opentelemetry/context-zone": "catalog:",
     "@opentelemetry/resources": "catalog:",

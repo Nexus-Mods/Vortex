@@ -22,12 +22,30 @@ export function hasEditPermissions(permissions: ICollectionPermission[]): boolea
   return allPermissions.includes("collection:edit");
 }
 
-export function makeProgressFunction(api: types.IExtensionApi) {
+interface IProgressOptions {
+  cancellable?: boolean;
+}
+
+export function makeProgressFunction(api: types.IExtensionApi, options: IProgressOptions = {}) {
+  const controller = new AbortController();
+
+  const cancelAction = options.cancellable
+    ? [
+        {
+          title: "Cancel",
+          action: () => {
+            controller.abort(new util.UserCanceled());
+          },
+        },
+      ]
+    : undefined;
+
   const notificationId = api.sendNotification({
     type: "activity",
     title: "Building Collection",
     message: "",
     progress: 0,
+    actions: cancelAction,
   });
 
   let notiPerc = 0;
@@ -69,6 +87,7 @@ export function makeProgressFunction(api: types.IExtensionApi) {
         title: "Building Collection",
         progress: notiPerc,
         message: notiText,
+        actions: cancelAction,
       });
     }
   };
@@ -77,7 +96,7 @@ export function makeProgressFunction(api: types.IExtensionApi) {
     api.dismissNotification(notificationId);
   };
 
-  return { progress, progressEnd };
+  return { progress, progressEnd, signal: controller.signal };
 }
 
 export function bbProm<T>(func: (...args: any[]) => Promise<T>): (...args: any[]) => Bluebird<T> {
