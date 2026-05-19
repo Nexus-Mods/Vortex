@@ -44,13 +44,6 @@
           "typescript",
           "vortex-api"
         ]
-      },
-      "typecheck": {
-        "inputs": [
-          "default",
-          "typescript",
-          "vortex-api"
-        ]
       }
     }
   }

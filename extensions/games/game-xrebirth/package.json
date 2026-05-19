@@ -37,13 +37,6 @@
           "vortex-api"
         ]
       },
-      "typecheck": {
-        "inputs": [
-          "default",
-          "typescript",
-          "vortex-api"
-        ]
-      },
       "test:game-extensions": {
         "executor": "nx:run-commands",
         "options": {
