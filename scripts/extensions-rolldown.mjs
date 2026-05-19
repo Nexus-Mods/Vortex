@@ -44,7 +44,7 @@ export function getExternals() {
   const rawPackageJson = readFileSync(packageJsonPath, "utf8");
   const packageJson = JSON.parse(rawPackageJson);
 
-  const injectedExternals = ["electron", "vortex-api"];
+  const injectedExternals = ["electron", "vortex-api", "@nexusmods/vortex-api"];
 
   /** @type {string[]} */
   const externalIds = [
