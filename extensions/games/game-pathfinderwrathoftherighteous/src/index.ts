@@ -7,8 +7,15 @@ import { healthChecks } from "./diagnostic";
 import {
   WOTR_GAME_ID,
   WOTR_INSTALLER_SPECS,
+  WOTR_MOD_TYPES,
+  getOwlcatModPath,
+  getPortraitPath,
+  installOwlcatMod,
+  installPortrait,
   installUmmMod,
   installUmmTool,
+  testOwlcatMod,
+  testPortrait,
   testUmmMod,
   testUmmTool,
 } from "./installers";
@@ -44,8 +51,28 @@ function main(context: types.IExtensionContext): boolean {
     setup,
   });
 
+  context.registerModType(
+    WOTR_MOD_TYPES.portrait,
+    25,
+    (gameId) => gameId === WOTR_GAME_ID,
+    getPortraitPath,
+    () => Promise.resolve(false),
+    { mergeMods: true, name: "Portrait" },
+  );
+
+  context.registerModType(
+    WOTR_MOD_TYPES.owlcatMod,
+    25,
+    (gameId) => gameId === WOTR_GAME_ID,
+    getOwlcatModPath,
+    () => Promise.resolve(false),
+    { mergeMods: true, name: "Owlcat Modification" },
+  );
+
   context.registerInstaller("wotr-umm-tool", 20, testUmmTool, installUmmTool);
   context.registerInstaller("wotr-umm-mod", 30, testUmmMod, installUmmMod);
+  context.registerInstaller("wotr-portrait", 40, testPortrait, installPortrait);
+  context.registerInstaller("wotr-owlcat-mod", 50, testOwlcatMod, installOwlcatMod);
   util.declareInstallers(context, WOTR_GAME_ID, WOTR_INSTALLER_SPECS);
 
   for (const check of healthChecks) {
