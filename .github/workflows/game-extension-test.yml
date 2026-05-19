@@ -34,7 +34,8 @@ jobs:
           node-version: ${{ steps.node-version.outputs.NODE_VERSION }}
           cache: pnpm
 
-      - run: pnpm install --frozen-lockfile
+      - name: Install dependencies (game extensions only)
+        run: pnpm install --frozen-lockfile --filter "...{./extensions/games/*}"
 
       - name: Run game-extension-test
         env:
