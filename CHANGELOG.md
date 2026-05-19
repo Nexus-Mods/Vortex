@@ -6,22 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [2.1.0-beta.2] - 2026-05-19
 
-### Changed
+### **Changed**
 
-- Notifications with actions now persist until the user acts on or dismisses them, matching the documented `INotification` contract (both classic and modern UI) ([#23226](https://github.com/Nexus-Mods/Vortex/pull/23226))
+- Notifications with actions now persist until the user acts on or dismisses them, matching the documented `INotification` contract (both classic and modern UI) ([#23226](https://github.com/Nexus-Mods/Vortex/pull/23226))
+- Games remain manageable when extension dependencies are missing or fail to load ([#23226](https://github.com/Nexus-Mods/Vortex/pull/23226))
 - Modern UI notification popover now auto-opens for notifications dispatched during startup ([#23226](https://github.com/Nexus-Mods/Vortex/pull/23226))
 - Extension install failures now surface the underlying 7z error text instead of the generic "needs to include index.js and info.json on top-level" message ([#23209](https://github.com/Nexus-Mods/Vortex/pull/23209))
 - Added diagnostic logging in the External Changes path to help triage spurious ECD reports ([#23208](https://github.com/Nexus-Mods/Vortex/pull/23208))
-- nexus-api now refreshes the OAuth access token proactively when within 30s of expiry; concurrent refreshes coalesce into a single `/oauth/token` call, with the 401-driven fallback retained for clock skew and server-side revocation ([#23178](https://github.com/Nexus-Mods/Vortex/pull/23178))
+- nexus-api now refreshes the OAuth access token proactively when within 30s of expiry; concurrent refreshes coalesce into a single `/oauth/token` call, with the 401-driven fallback retained for clock skew and server-side revocation ([#23178](https://github.com/Nexus-Mods/Vortex/pull/23178))
 
-### Fixed
+### **Fixed**
 
 - Missing or failed-to-load extension dependencies left games un-manageable; the install, profile-management, notifications, and modtype-enb paths were all hardened against this state ([#23226](https://github.com/Nexus-Mods/Vortex/pull/23226))
 - Download failure when the target game's downloads folder did not yet exist, affecting mods that are compatible across multiple game domains (Skyrim/Enderal/Nehrim, site-domain mods); the folder is now created on demand when the download is queued ([#23213](https://github.com/Nexus-Mods/Vortex/pull/23213))
-- "Game not discovered" dialog incorrectly shown on `--game` restart/relaunch while async discovery was still in flight ([#23210](https://github.com/Nexus-Mods/Vortex/pull/23210))
-- Crash on first install of a collection with binary patches caused by `node:worker_threads` not being supported in the Electron renderer; the bsdiff worker now uses a DOM Worker in renderer contexts ([#23186](https://github.com/Nexus-Mods/Vortex/pull/23186))
-- Main-process access violation when destroying a `BrowserWindow` with the mouse over it; added synchronous renderer diagnostics that survive teardown crashes ([#23179](https://github.com/Nexus-Mods/Vortex/pull/23179))
+- "Game not discovered" dialog incorrectly shown on `--game` restart/relaunch while async discovery was still in flight ([#23210](https://github.com/Nexus-Mods/Vortex/pull/23210))
+- Crash on first install of a collection with binary patches caused by `node:worker_threads` not being supported in the Electron renderer; the bsdiff worker now uses a DOM Worker in renderer contexts ([#23186](https://github.com/Nexus-Mods/Vortex/pull/23186))
+- Main-process access violation when destroying a `BrowserWindow` with the mouse over it; added synchronous renderer diagnostics that survive teardown crashes ([#23179](https://github.com/Nexus-Mods/Vortex/pull/23179))
 - Tracked-mods fetch crashing when the Nexus client lacked OAuth configuration ([#23173](https://github.com/Nexus-Mods/Vortex/pull/23173))
+- Improved scrollbar visibility for the table component ([#23125](https://github.com/Nexus-Mods/Vortex/pull/23125))
+- "Tools" dashlet now shows in the classic UI only and is hidden in the modern UI ([#23166](https://github.com/Nexus-Mods/Vortex/pull/23166))
+- Removed spurious logs spam ([#23130](https://github.com/Nexus-Mods/Vortex/pull/23130), [#23132](https://github.com/Nexus-Mods/Vortex/pull/23132))
+- Conflict Editor "Before All" / "After All" silently doing nothing when a filter was applied to the source mod name ([#23136](https://github.com/Nexus-Mods/Vortex/pull/23136))
+- Fixed inability to manage certain bundled game extensions (Blade and Sorcery, BattleTech, Daggerfall, DragonAge, NWN, Elder Scrolls Online and a few others) ([#23131](https://github.com/Nexus-Mods/Vortex/pull/23131))
 
 ## [**2.1.0-beta.1] - 2026-05-13
 
