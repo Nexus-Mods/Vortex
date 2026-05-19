@@ -34,8 +34,12 @@ jobs:
           node-version: ${{ steps.node-version.outputs.NODE_VERSION }}
           cache: pnpm
 
-      - name: Install dependencies (game extensions only)
-        run: pnpm install --frozen-lockfile --filter "...{./extensions/games/*}"
+      - name: Install dependencies (game extensions + test tooling)
+        run: |
+          pnpm install --frozen-lockfile \
+            --filter "@vortex/game-extension-test" \
+            --filter "@vortex/extension-test-mocks" \
+            --filter "...{./extensions/games/*}"
 
       - name: Run game-extension-test
         env:
