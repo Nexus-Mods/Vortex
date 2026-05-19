@@ -50,6 +50,9 @@ function install(
 
 function gameSupported(gameId: string) {
   const game = util.getGame(gameId);
+  if (game === undefined) {
+    return false;
+  }
   if (game.compatible?.deployToGameDirectory === false || game.compatible?.enb === false) {
     return false;
   }
