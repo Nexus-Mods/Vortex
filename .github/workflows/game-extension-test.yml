@@ -22,9 +22,16 @@ jobs:
 
       - uses: pnpm/action-setup@v4
 
+      - name: Read Node.js version from package.json
+        id: node-version
+        run: |
+          NODE_VERSION=$(node -p "require('./package.json').engines.node")
+          echo "NODE_VERSION=$NODE_VERSION" >> "$GITHUB_OUTPUT"
+          echo "Using Node.js version: $NODE_VERSION"
+
       - uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: ${{ steps.node-version.outputs.NODE_VERSION }}
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
