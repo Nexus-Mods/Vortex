@@ -1,27 +1,18 @@
-import { getPreloadApi } from "./preloadAccess";
+import { extractIconToFile } from "icon-extract";
 
 function extractExeIcon(exePath: string, destPath: string): Promise<void> {
-  // app.getFileIcon generated broken output on windows as of electron 11.0.4
-  // (see https://github.com/electron/electron/issues/26918)
-  // This issue has not been closed or so much as been replied to, however I was not able to
-  // reproduce it so I'm tentatively removing the windows-specific workaround as of
-  // Vortex 1.6.0
-
-  /*
-  if (process.platform === 'win32') {
-    return new Promise((resolve, reject) => {
-      iconExtract.extractIconToFile(exePath, destPath, error => {
-        if (error !== null) {
-          reject(error);
-        } else {
-          resolve();
-        }
-      });
+  if (process.platform === "win32") {
+    return new Promise<void>((resolve, reject) => {
+      try {
+        extractIconToFile(exePath, destPath);
+        resolve();
+      } catch (err) {
+        reject(err);
+      }
     });
-  } else {
-  */
-  return getPreloadApi().app.extractFileIcon(exePath, destPath);
-  // }
+  }
+  // Non-Windows: no icon extraction available
+  return Promise.reject(new Error("icon extraction is only supported on Windows"));
 }
 
 export default extractExeIcon;

@@ -126,6 +126,7 @@
     "electron-updater": "catalog:",
     "encoding-down": "catalog:",
     "exe-version": "workspace:*",
+    "icon-extract": "workspace:*",
     "feedparser": "catalog:",
     "fs-extra": "catalog:",
     "fuzzball": "catalog:",
