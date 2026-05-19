@@ -13,7 +13,11 @@
   "config": {
     "game": "Pathfinder: Kingmaker"
   },
+  "vortex": {
+    "gameExtensionTest": true
+  },
   "devDependencies": {
+    "@vortex/game-extension-test": "workspace:*",
     "vortex-api": "workspace:*"
   },
   "nx": {
@@ -34,6 +38,16 @@
           "typescript",
           "vortex-api"
         ]
+      },
+      "test:game-extensions": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "pnpm --filter @vortex/game-extension-test run start -- --game game-pathfinderkingmaker"
+        },
+        "inputs": [
+          "{projectRoot}/src/**/*.ts"
+        ],
+        "cache": false
       }
     }
   }

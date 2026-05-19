@@ -73,7 +73,10 @@ function main(context: types.IExtensionContext): boolean {
     queryModPath: () => "Mods",
     executable: () => EXE_NAME + ".exe",
     requiredFiles: [EXE_NAME + ".exe"],
-    setup: util.toBlue((discovery) => setup(context, discovery)),
+    // Native Promise is runtime-compatible with PromiseBB (.then/.catch).
+    // Cast avoids pulling Bluebird into the module graph at import time.
+    setup: ((discovery: types.IDiscoveryResult) =>
+      setup(context, discovery)) as unknown as types.IGame["setup"],
   });
 
   return true;

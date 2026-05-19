@@ -106,7 +106,22 @@ export async function loadExtension(extensionDir: string): Promise<ILoadedExtens
   init(stubContext);
 
   if (stubContext._installers.length === 0) {
-    throw new Error(`Extension ${extensionDir} did not call registerInstaller`);
+    // No custom installer registered. Provide a default copy-all installer
+    // that mirrors Vortex's built-in behavior: accept everything, copy every
+    // non-directory entry to its relative path. This covers game extensions
+    // that rely on external mod-type extensions (e.g. modtype-umm) for
+    // installation, which the harness cannot load as co-dependencies.
+    stubContext._installers.push({
+      id: "default-copy",
+      priority: 1000,
+      testSupported: (_files, _gameId) => Promise.resolve({ supported: true, requiredFiles: [] }),
+      install: (files) => {
+        const instructions = files
+          .filter((f) => !f.endsWith("/") && !f.endsWith("\\") && !f.endsWith(path.sep))
+          .map((f) => ({ type: "copy" as const, source: f, destination: f }));
+        return Promise.resolve({ instructions });
+      },
+    });
   }
   if (!stubContext._game) {
     throw new Error(`Extension ${extensionDir} did not call registerGame`);
@@ -187,9 +202,9 @@ function makeStubContext(): IStubContext {
     get(target, prop, receiver) {
       const known = Reflect.get(target, prop, receiver);
       if (known !== undefined) return known;
-      if (typeof prop === "string" && prop.startsWith("register")) {
+      if (typeof prop === "string" && (prop.startsWith("register") || prop.startsWith("require"))) {
         return () => {
-          /* unknown register hook — silently accepted */
+          /* unknown register/require hook — silently accepted */
         };
       }
       return undefined;

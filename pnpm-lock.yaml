@@ -2315,6 +2315,9 @@ importers:
 
   extensions/games/game-pathfinderkingmaker:
     devDependencies:
+      '@vortex/game-extension-test':
+        specifier: workspace:*
+        version: link:../../../packages/game-extension-test
       vortex-api:
         specifier: workspace:*
         version: link:../../../packages/vortex-api
