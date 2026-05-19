@@ -1,0 +1,65 @@
+name: Publish Release to Nexus Mods
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: "Dry run? (validate release without uploading)"
+        type: boolean
+        default: true
+      mod-slug:
+        description: "Nexus game domain slug (e.g. 'site' for site mods)"
+        type: string
+        default: "site"
+      file-group-id:
+        description: "Nexus file group ID (5293 = live Vortex, override for test)"
+        type: string
+        default: "5293"
+
+concurrency:
+  group: publish-nexus
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install volta, Node.js and Yarn
+        uses: volta-cli/action@v5
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          cache: true
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Prepare publish
+        id: prepare
+        run: |
+          pnpm tsx scripts/publish-release-to-nexus/index.ts \
+            --dry-run ${{ inputs.dry-run }} \
+            --mod-slug ${{ inputs.mod-slug }} \
+            --file-group-id ${{ inputs.file-group-id }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload to Nexus Mods
+        if: ${{ !inputs.dry-run }}
+        uses: Nexus-Mods/upload-action@a4986292d2f0b499bb9b24b3b25dec5f463b64a5
+        with:
+          api_key: ${{ secrets.NEXUS_API_KEY }}
+          domain: ${{ inputs.mod-slug }}
+          file_group_id: ${{ inputs.file-group-id }}
+          filename: ${{ steps.prepare.outputs.installer-path }}
+          version: ${{ steps.prepare.outputs.version }}
+          display_name: Vortex ${{ steps.prepare.outputs.version }}
+          description: ${{ steps.prepare.outputs.body }}
+          file_category: main
+          archive_existing_file: false

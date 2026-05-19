@@ -1,95 +1,69 @@
-# Scripts - Build & Development Utilities
+# Scripts
 
-Build and development scripts for the Vortex workspace.
+Standalone build and release scripts. These are not part of any app package
+and are intended for developers maintaining the Vortex repository.
+
+---
 
 ## Prerequisites
 
-Most scripts require dependencies installed via `pnpm install`. Scripts that
-additionally need a prior `pnpm build` are noted below.
-
-## Scripts
-
-### `create-env-file.mjs`
-
-Writes `.local.env` with `NX_PARALLEL` set to the host CPU count.
+Before running any scripts, install dependencies:
 
 ```bash
-node scripts/create-env-file.mjs
+pnpm install
 ```
 
-### `dependency-report.mjs`
+This also runs the `preinstall` hook which creates `.local.env` with
+`NX_PARALLEL` set to your CPU core count.
 
-Generates `etc/Dependency Report.md` - a table of all production dependencies
-leaked by Vortex to extensions via `nodeIntegration`.
+---
 
-```bash
-node scripts/dependency-report.mjs
-```
+## How to Run
 
-### `extensions-rolldown.mjs`
+| Script type                     | Invocation                   |
+| ------------------------------- | ---------------------------- |
+| `.js` (CommonJS)                | `node scripts/<name>.js`     |
+| `.mjs` (ESM/ECMAScript Modules) | `node scripts/<name>.mjs`    |
+| `.ts` (TypeScript)              | `pnpm tsx scripts/<name>.ts` |
 
-Shared Rolldown helpers for bundled in-repo extensions. Exports `getExternals()`,
-`nativeRemapPlugin()`, `createConfig()`, and `bundle()`. Not run directly -
-imported by extension build configs.
+Scripts wired into `package.json` can also be called with `pnpm run <name>`.
 
-### `generate-query-types.ts`
+---
 
-Generates TypeScript interfaces from the SQL query definitions in `src/queries/`.
-Creates a temporary DuckDB instance, introspects column types, and writes
-`src/main/src/store/generated/queryTypes.ts`.
+## Build and Assets
 
-```bash
-pnpm run generate:query-types
-```
+- `download-duckdb-extensions.ts` -- downloads platform-specific DuckDB
+  extensions listed in `duckdb-extensions.json`. Run via `pnpm run assets`.
 
-Requires: `pnpm build`
+- `dependency-report.mjs` -- generates `etc/Dependency Report.md` listing
+  production dependencies accessible to extensions via Node.js integration
+  (nodeIntegration). Run via `pnpm run assets`.
 
-### `download-duckdb-extensions.ts`
+- `extensions-rolldown.mjs` -- shared Rolldown bundler helpers for bundling
+  in-repo extensions. Keeps core Vortex packages (e.g., `@vortex/*`) external
+  (not inlined into the bundle; resolved at runtime) and remaps native module
+  imports to their runtime paths. Extension build configs import this module;
+  do not run it directly.
 
-Downloads pre-built DuckDB extension binaries (`.duckdb_extension`) for the
-platforms and extensions listed in `duckdb-extensions.json`. Detects the DuckDB
-version from the installed `@duckdb/node-api` package.
+- `create-env-file.mjs` -- writes `.local.env` with `NX_PARALLEL` set to the
+  number of CPU cores. Runs automatically on `pnpm install`.
 
-```bash
-npx tsx scripts/download-duckdb-extensions.ts
-```
+- `generate-query-types.ts` -- generates TypeScript interfaces from SQL query
+  definitions in `src/queries/`. Run via `pnpm run generate:query-types`.
 
-### `check-package-build-setup.test.ts`
+---
 
-Vitest test that scans workspace packages under `packages/` and verifies each
-has a `build` script and that runtime entry points (`main`, `module`, `exports`)
-point to compiled output rather than `.ts` source.
+## Release and Versioning
 
-```bash
-pnpm exec vitest run --root scripts
-```
+- `publish-release-to-nexus/` -- prepares and uploads a Vortex release to
+  Nexus Mods (a mod distribution platform). Run from `index.ts`.
+  Run via `pnpm tsx scripts/publish-release-to-nexus/index.ts`.
 
-## Project Structure
+---
 
-```
-scripts/
-  create-env-file.mjs            - .local.env generator
-  dependency-report.mjs           - production dependency report
-  extensions-rolldown.mjs        - shared Rolldown bundling helpers
-  generate-query-types.ts         - SQL -> TypeScript type generator
-  download-duckdb-extensions.ts   - DuckDB extension downloader
-  download-duckdb-extensions.test.ts
-  check-package-build-setup.test.ts
-  duckdb-extensions.json          - platform/extension config
-  vitest.config.ts               - Vitest config for scripts test suite
-```
+## TypeScript Editor Support
 
-## Running
-
-```bash
-# .mjs scripts - run directly with Node
-node scripts/create-env-file.mjs
-node scripts/dependency-report.mjs
-
-# .ts scripts - run via tsx
-npx tsx scripts/generate-query-types.ts
-npx tsx scripts/download-duckdb-extensions.ts
-
-# Tests
-pnpm exec vitest run --root scripts
-```
+The `.ts` files in this directory are standalone Node scripts run via
+`pnpm tsx`. They are not part of any app package. `tsconfig.node.json` (repo
+root) provides type checking and includes `"./scripts/**/*.ts"` so the editor
+resolves `node:*` imports.
