@@ -17,15 +17,22 @@ const RT_ICON = 3;
 const RT_GROUP_ICON = 14;
 const RT_VERSION = 16;
 
-describeOnWindows("findResourceSection", () => {
-  it("finds the resource section in notepad.exe", () => {
-    const fd = fs.openSync("C:\\Windows\\System32\\notepad.exe", "r");
+// Cross-platform fixture — already committed to the repo
+const DOTNET_PROBE = path.resolve(import.meta.dirname, "../../../assets/dotnetprobe.exe");
+
+// --- Cross-platform tests (use committed PE fixture) ---
+
+describe("findResourceSection (cross-platform)", () => {
+  it("parses PE headers from dotnetprobe.exe", () => {
+    const fd = fs.openSync(DOTNET_PROBE, "r");
     try {
       const section = findResourceSection(fd);
-      expect(section).toBeDefined();
-      expect(section!.buf.length).toBeGreaterThan(0);
-      expect(section!.sectionVA).toBeGreaterThan(0);
-      expect(section!.resourceRVA).toBeGreaterThan(0);
+      // dotnetprobe.exe is a real PE — it may or may not have resources,
+      // but the parser must not crash
+      if (section !== undefined) {
+        expect(section.buf.length).toBeGreaterThan(0);
+        expect(section.sectionVA).toBeGreaterThan(0);
+      }
     } finally {
       fs.closeSync(fd);
     }
@@ -42,9 +49,68 @@ describeOnWindows("findResourceSection", () => {
       fs.rmSync(path.dirname(tmp), { recursive: true, force: true });
     }
   });
+
+  it("returns undefined for truncated MZ header", () => {
+    const tmp = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "pe-res-")), "trunc.exe");
+    // Valid MZ magic but file is too short for a real PE
+    fs.writeFileSync(tmp, Buffer.from("MZ"));
+    const fd = fs.openSync(tmp, "r");
+    try {
+      expect(findResourceSection(fd)).toBeUndefined();
+    } finally {
+      fs.closeSync(fd);
+      fs.rmSync(path.dirname(tmp), { recursive: true, force: true });
+    }
+  });
+
+  it("returns undefined for empty file", () => {
+    const tmp = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "pe-res-")), "empty.exe");
+    fs.writeFileSync(tmp, Buffer.alloc(0));
+    const fd = fs.openSync(tmp, "r");
+    try {
+      expect(findResourceSection(fd)).toBeUndefined();
+    } finally {
+      fs.closeSync(fd);
+      fs.rmSync(path.dirname(tmp), { recursive: true, force: true });
+    }
+  });
 });
 
-describeOnWindows("findResourceType", () => {
+describe("findResourceType (cross-platform)", () => {
+  it("returns undefined when resource type is not present", () => {
+    const fd = fs.openSync(DOTNET_PROBE, "r");
+    try {
+      const section = findResourceSection(fd);
+      if (section !== undefined) {
+        const resourceOffset = section.resourceRVA - section.sectionVA;
+        // RT_CURSOR = 1 — extremely unlikely in a .NET probe tool
+        const result = findResourceType(section.buf, resourceOffset, 1);
+        expect(result === undefined || typeof result === "number").toBe(true);
+      }
+    } finally {
+      fs.closeSync(fd);
+    }
+  });
+});
+
+// --- Windows-only tests (use system executables) ---
+
+describeOnWindows("findResourceSection (Windows)", () => {
+  it("finds the resource section in notepad.exe", () => {
+    const fd = fs.openSync("C:\\Windows\\System32\\notepad.exe", "r");
+    try {
+      const section = findResourceSection(fd);
+      expect(section).toBeDefined();
+      expect(section!.buf.length).toBeGreaterThan(0);
+      expect(section!.sectionVA).toBeGreaterThan(0);
+      expect(section!.resourceRVA).toBeGreaterThan(0);
+    } finally {
+      fs.closeSync(fd);
+    }
+  });
+});
+
+describeOnWindows("findResourceType (Windows)", () => {
   it("finds RT_VERSION in notepad.exe", () => {
     const fd = fs.openSync("C:\\Windows\\System32\\notepad.exe", "r");
     try {
@@ -80,23 +146,9 @@ describeOnWindows("findResourceType", () => {
       fs.closeSync(fd);
     }
   });
-
-  it("returns undefined for missing resource type", () => {
-    const fd = fs.openSync("C:\\Windows\\System32\\notepad.exe", "r");
-    try {
-      const section = findResourceSection(fd)!;
-      const resourceOffset = section.resourceRVA - section.sectionVA;
-      // RT_CURSOR = 1 — unlikely to exist in notepad
-      const typeOffset = findResourceType(section.buf, resourceOffset, 1);
-      // May or may not exist; just check it doesn't crash
-      expect(typeOffset === undefined || typeof typeOffset === "number").toBe(true);
-    } finally {
-      fs.closeSync(fd);
-    }
-  });
 });
 
-describeOnWindows("collectDataEntries", () => {
+describeOnWindows("collectDataEntries (Windows)", () => {
   it("collects RT_ICON entries from notepad.exe", () => {
     const fd = fs.openSync("C:\\Windows\\System32\\notepad.exe", "r");
     try {

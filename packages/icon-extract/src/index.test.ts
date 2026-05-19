@@ -11,6 +11,9 @@ const describeOnWindows = process.platform === "win32" ? describe : describe.ski
 const TEST_DATA_DIR = path.resolve(import.meta.dirname, "../test-data");
 const REFERENCE_DIR = path.join(TEST_DATA_DIR, "reference");
 
+// Cross-platform fixture — already committed to the repo
+const DOTNET_PROBE = path.resolve(import.meta.dirname, "../../../assets/dotnetprobe.exe");
+
 // PNG signature bytes
 const PNG_SIG = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
 
@@ -26,7 +29,53 @@ function pngDimensions(buf: Buffer): { width: number; height: number } | undefin
   };
 }
 
-describeOnWindows("extractIcon", () => {
+// --- Cross-platform tests ---
+
+describe("extractIcon (cross-platform)", () => {
+  it("returns undefined for non-existent file", () => {
+    expect(extractIcon("/nonexistent/path/foo.exe")).toBeUndefined();
+  });
+
+  it("returns undefined for non-PE file", () => {
+    const tmp = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "iconext-")), "test.txt");
+    fs.writeFileSync(tmp, "not a PE file");
+    expect(extractIcon(tmp)).toBeUndefined();
+    fs.rmSync(path.dirname(tmp), { recursive: true, force: true });
+  });
+
+  it("returns undefined for empty file", () => {
+    const tmp = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "iconext-")), "empty.exe");
+    fs.writeFileSync(tmp, Buffer.alloc(0));
+    expect(extractIcon(tmp)).toBeUndefined();
+    fs.rmSync(path.dirname(tmp), { recursive: true, force: true });
+  });
+
+  it("handles PE without icons gracefully", () => {
+    // dotnetprobe.exe is a console app — may not have icons
+    const result = extractIcon(DOTNET_PROBE);
+    // Either returns a valid icon or undefined, but must not throw
+    if (result !== undefined) {
+      expect(isPng(result.png)).toBe(true);
+      expect(result.width).toBeGreaterThan(0);
+      expect(result.height).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe("extractIconToFile (cross-platform)", () => {
+  it("throws for non-existent file", () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "iconext-"));
+    const outPath = path.join(tmpDir, "out.png");
+
+    expect(() => extractIconToFile("/nonexistent/path/foo.exe", outPath)).toThrow();
+
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+});
+
+// --- Windows-only tests (use system executables) ---
+
+describeOnWindows("extractIcon (Windows)", () => {
   it("extracts icon from notepad.exe", () => {
     const result = extractIcon("C:\\Windows\\System32\\notepad.exe");
     expect(result).toBeDefined();
@@ -47,17 +96,6 @@ describeOnWindows("extractIcon", () => {
     expect(isPng(result!.png)).toBe(true);
   });
 
-  it("returns undefined for non-existent file", () => {
-    expect(extractIcon("C:\\nonexistent.exe")).toBeUndefined();
-  });
-
-  it("returns undefined for non-PE file", () => {
-    const tmp = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "iconext-")), "test.txt");
-    fs.writeFileSync(tmp, "not a PE file");
-    expect(extractIcon(tmp)).toBeUndefined();
-    fs.rmSync(path.dirname(tmp), { recursive: true, force: true });
-  });
-
   it("respects width parameter", () => {
     const icon32 = extractIcon("C:\\Windows\\System32\\notepad.exe", 32);
     const icon16 = extractIcon("C:\\Windows\\System32\\notepad.exe", 16);
@@ -70,12 +108,11 @@ describeOnWindows("extractIcon", () => {
     expect(dim16).toBeDefined();
 
     // The selected icon should be the closest match to the requested width
-    // dim16 should be <= dim32
     expect(dim16!.width).toBeLessThanOrEqual(dim32!.width);
   });
 });
 
-describeOnWindows("extractIconToFile", () => {
+describeOnWindows("extractIconToFile (Windows)", () => {
   it("writes a valid PNG file", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "iconext-"));
     const outPath = path.join(tmpDir, "notepad.png");
@@ -85,16 +122,7 @@ describeOnWindows("extractIconToFile", () => {
     expect(fs.existsSync(outPath)).toBe(true);
     const data = fs.readFileSync(outPath);
     expect(isPng(data)).toBe(true);
-    expect(data.length).toBeGreaterThan(100); // non-trivial PNG
-
-    fs.rmSync(tmpDir, { recursive: true, force: true });
-  });
-
-  it("throws for non-existent file", () => {
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "iconext-"));
-    const outPath = path.join(tmpDir, "out.png");
-
-    expect(() => extractIconToFile("C:\\nonexistent.exe", outPath)).toThrow();
+    expect(data.length).toBeGreaterThan(100);
 
     fs.rmSync(tmpDir, { recursive: true, force: true });
   });
@@ -110,7 +138,7 @@ describeOnWindows("cross-validation with reference data", () => {
   for (const { name, exe } of testCases) {
     it(`produces valid icon for ${name} comparable to shell API reference`, () => {
       const refPath = path.join(REFERENCE_DIR, `${name}_32x32.png`);
-      if (!fs.existsSync(refPath)) return; // skip if reference not available
+      if (!fs.existsSync(refPath)) return;
 
       const refData = fs.readFileSync(refPath);
       const refDims = pngDimensions(refData);
@@ -123,8 +151,6 @@ describeOnWindows("cross-validation with reference data", () => {
       const tsDims = pngDimensions(result!.png);
       expect(tsDims).toBeDefined();
 
-      // Both should produce icons — dimensions may differ slightly
-      // since shell API may scale, but both should be non-trivial
       expect(tsDims!.width).toBeGreaterThanOrEqual(16);
       expect(tsDims!.height).toBeGreaterThanOrEqual(16);
       expect(result!.png.length).toBeGreaterThan(100);
@@ -137,7 +163,6 @@ describeOnWindows("benchmark", () => {
   const runs = 500;
 
   it(`extracts ${runs} icons from notepad.exe`, () => {
-    // Warm up
     extractIcon(notepad);
 
     const start = performance.now();
