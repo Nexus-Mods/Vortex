@@ -230,6 +230,13 @@ export class IPCDownloadAdapter {
     const download = state.persistent.downloads.files?.[downloadId];
     const isCollection = nexusIds.collectionSlug !== undefined && nexusIds.revisionId !== undefined;
 
+    // Mod downloads triggered by a collection install carry the parent collection's id
+    // under `modInfo.nexus.parentCollectionId` (see InstallManager.downloadURL).
+    // Cast narrows away the `[key: string]: any` index signature on nexus.
+    const parentCollectionId = download?.modInfo?.nexus?.parentCollectionId as string | undefined;
+    const modCollectionId =
+      isCollection || parentCollectionId === undefined ? null : parentCollectionId;
+
     if (eventType === "started") {
       if (isCollection || nexusIds.modId === undefined || nexusIds.fileId === undefined) return;
       const { modUID, fileUID } = makeModAndFileUIDs(
@@ -245,6 +252,7 @@ export class IPCDownloadAdapter {
           nexusIds.numericGameId,
           modUID,
           fileUID,
+          modCollectionId,
         ),
       );
       return;
@@ -280,6 +288,7 @@ export class IPCDownloadAdapter {
             fileUID,
             file_size,
             duration_ms,
+            modCollectionId,
           ),
         );
       }
@@ -310,6 +319,7 @@ export class IPCDownloadAdapter {
             nexusIds.numericGameId,
             modUID,
             fileUID,
+            modCollectionId,
           ),
         );
       }
@@ -345,6 +355,7 @@ export class IPCDownloadAdapter {
             fileUID,
             "",
             message,
+            modCollectionId,
           ),
         );
       }
