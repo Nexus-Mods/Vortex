@@ -28,7 +28,9 @@
   },
   "files": [
     "lib",
-    "bin"
+    "bin",
+    "README.md",
+    "docs"
   ],
   "scripts": {
     "typecheck": "pnpm tsc -p tsconfig.lib.json"
