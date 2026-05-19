@@ -13,6 +13,9 @@
   "config": {
     "game": "Pathfinder: Wrath of the Righteous"
   },
+  "vortex": {
+    "gameExtensionTest": true
+  },
   "devDependencies": {
     "vortex-api": "workspace:*"
   },
@@ -34,6 +37,16 @@
           "typescript",
           "vortex-api"
         ]
+      },
+      "test:game-extensions": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "pnpm --filter @vortex/game-extension-test run start -- --game game-pathfinderwrathoftherighteous"
+        },
+        "inputs": [
+          "{projectRoot}/src/**/*.ts"
+        ],
+        "cache": false
       }
     }
   }
