@@ -5001,6 +5001,7 @@ class InstallManager {
     referenceTag?: string,
     campaign?: string,
     fileName?: string,
+    parentCollectionId?: string,
   ): Promise<string> {
     const call = (input: string | (() => PromiseLike<string>)): Promise<string> =>
       input !== undefined && typeof input === "function"
@@ -5026,21 +5027,27 @@ class InstallManager {
               parsedUrl.searchParams.set("campaign", campaign);
             }
 
+            const startDownloadModInfo: any = {
+              game: convertGameIdReverse(knownGames(api.store.getState()), lookupResult.domainName),
+              source: lookupResult.source,
+              name: lookupResult.logicalFileName,
+              referer: resolvedReferer,
+              referenceTag,
+              meta: lookupResult,
+            };
+            if (parentCollectionId !== undefined) {
+              // Tag the download with the parent collection's id for analytics only.
+              // Kept off `nexus.ids.collectionId` because the install attribute
+              // extractor copies that field onto the installed mod, which would
+              // make a regular mod look like a collection downstream.
+              startDownloadModInfo.nexus = { parentCollectionId };
+            }
+
             if (
               !api.events.emit(
                 "start-download",
                 [parsedUrl],
-                {
-                  game: convertGameIdReverse(
-                    knownGames(api.store.getState()),
-                    lookupResult.domainName,
-                  ),
-                  source: lookupResult.source,
-                  name: lookupResult.logicalFileName,
-                  referer: resolvedReferer,
-                  referenceTag,
-                  meta: lookupResult,
-                },
+                startDownloadModInfo,
                 fileName,
                 async (error, id) => {
                   if (error == null) {
@@ -5072,6 +5079,7 @@ class InstallManager {
                         referenceTag,
                         campaign,
                         fileName,
+                        parentCollectionId,
                       );
                       return resolve(id);
                     } else {
@@ -5099,11 +5107,20 @@ class InstallManager {
     wasCanceled: () => boolean,
     campaign: string,
     fileName?: string,
+    parentCollectionId?: string,
   ): Promise<string> {
     const modId: string = getSafe(lookupResult, ["details", "modId"], undefined);
     const fileId: string = getSafe(lookupResult, ["details", "fileId"], undefined);
     if (modId === undefined && fileId === undefined) {
-      return this.downloadURL(api, lookupResult, wasCanceled, referenceTag, fileName);
+      return this.downloadURL(
+        api,
+        lookupResult,
+        wasCanceled,
+        referenceTag,
+        fileName,
+        undefined,
+        parentCollectionId,
+      );
     }
 
     const gameId = convertGameIdReverse(
@@ -5141,6 +5158,17 @@ class InstallManager {
                 api.store.dispatch(
                   setDownloadModInfo(results[0].dlId, "referenceTag", referenceTag),
                 );
+                if (parentCollectionId !== undefined) {
+                  // See downloadURL: kept off nexus.ids.collectionId to avoid the
+                  // install attribute extractor copying it onto the installed mod.
+                  api.store.dispatch(
+                    setDownloadModInfo(
+                      results[0].dlId,
+                      "nexus.parentCollectionId",
+                      parentCollectionId,
+                    ),
+                  );
+                }
                 return Promise.resolve(results[0].dlId);
               }
             }
@@ -5155,6 +5183,7 @@ class InstallManager {
     lookupResult: IModInfoEx,
     wasCanceled: () => boolean,
     fileName: string,
+    parentCollectionId?: string,
   ): Promise<string> {
     const referenceTag = requirement["tag"];
     const { campaign } = requirement["repo"] ?? {};
@@ -5173,6 +5202,7 @@ class InstallManager {
         wasCanceled,
         campaign,
         fileName,
+        parentCollectionId,
       )
         .catch((err) => {
           if (err instanceof HTTPError) {
@@ -5185,7 +5215,15 @@ class InstallManager {
         })
         .then((res) =>
           res === undefined
-            ? this.downloadURL(api, lookupResult, wasCanceled, referenceTag, campaign, fileName)
+            ? this.downloadURL(
+                api,
+                lookupResult,
+                wasCanceled,
+                referenceTag,
+                campaign,
+                fileName,
+                parentCollectionId,
+              )
             : res,
         );
     } else {
@@ -5196,6 +5234,7 @@ class InstallManager {
         referenceTag,
         campaign,
         fileName,
+        parentCollectionId,
       ).catch((err) => {
         if (err instanceof UserCanceled || err instanceof ProcessCanceled) {
           return Promise.reject(err);
@@ -5210,6 +5249,7 @@ class InstallManager {
             wasCanceled,
             campaign,
             fileName,
+            parentCollectionId,
           );
         } else {
           return Promise.reject(err);
@@ -5640,6 +5680,13 @@ class InstallManager {
       return Promise.resolve([]);
     }
 
+    // When installing a collection, tag each dependency download with the parent
+    // collection id so the Mixpanel mod download events can carry collection_id.
+    const parentCollectionId: string | undefined =
+      sourceMod.type === "collection" && sourceMod.attributes?.collectionId !== undefined
+        ? String(sourceMod.attributes.collectionId)
+        : undefined;
+
     let queuedDownloads: IModReference[] = [];
 
     const clearQueued = () => {
@@ -5677,6 +5724,7 @@ class InstallManager {
             dep.lookupResults[0].value,
             () => abort.signal.aborted,
             dep.extra?.fileName,
+            parentCollectionId,
           )
             .then((dlId) => {
               const idx = queuedDownloads.indexOf(dep.reference);
