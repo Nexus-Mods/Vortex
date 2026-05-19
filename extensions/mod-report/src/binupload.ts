@@ -3,8 +3,8 @@ import * as http from "http";
 import * as https from "https";
 import { deflateRaw } from "zlib";
 
+import { log, util } from "@nexusmods/vortex-api";
 import Base58 from "bs58";
-import { log, util } from "vortex-api";
 
 import { PRIVATEBIN_HOST } from "./constants";
 import format, { FormatterMarkdown } from "./format";

@@ -1,7 +1,7 @@
 /* eslint-disable */
 import path from "path";
 
-import { fs, selectors, types, util } from "vortex-api";
+import { fs, selectors, types, util } from "@nexusmods/vortex-api";
 
 import { GAME_ID, HALO1_MAPS_RELPATH, HALO_GAMES } from "./common";
 

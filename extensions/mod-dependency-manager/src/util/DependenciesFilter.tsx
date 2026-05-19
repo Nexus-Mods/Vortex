@@ -1,7 +1,7 @@
+import { types, util } from "@nexusmods/vortex-api";
 import memoizeOne from "memoize-one";
 import * as React from "react";
 import Select from "react-select";
-import { types, util } from "vortex-api";
 
 import { NAMESPACE } from "../statics";
 import { IBiDirRule } from "../types/IBiDirRule";

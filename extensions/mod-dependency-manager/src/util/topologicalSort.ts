@@ -1,6 +1,6 @@
+import { types } from "@nexusmods/vortex-api";
 /* eslint-disable */
 import memoize from "memoize-one";
-import { types } from "vortex-api";
 
 export const topologicalSort = memoize((graph: types.IMod[]): string[] => {
   const visited = new Set();

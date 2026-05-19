@@ -1,3 +1,13 @@
+import {
+  actions,
+  ComponentEx,
+  FlexLayout,
+  Modal,
+  More,
+  Toggle,
+  types,
+  util,
+} from "@nexusmods/vortex-api";
 import * as React from "react";
 import { Button, Media } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
@@ -6,7 +16,6 @@ import { connect } from "react-redux";
 import Select from "react-select";
 import * as Redux from "redux";
 import { generate as shortid } from "shortid";
-import { actions, ComponentEx, FlexLayout, Modal, More, Toggle, types, util } from "vortex-api";
 
 import { DEFAULT_INSTRUCTIONS, NAMESPACE } from "../../constants";
 import { isGamebryoGame } from "../../util/gameSupport";

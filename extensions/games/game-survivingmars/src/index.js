@@ -1,7 +1,7 @@
 const Promise = require("bluebird");
 const path = require("path");
 const winapi = require("winapi-bindings");
-const { log, fs, util } = require("vortex-api");
+const { log, fs, util } = require("@nexusmods/vortex-api");
 
 // Mods for Surviving Mars normally have this file cont#aining mod data.
 const MOD_FILE = "modcontent.hpk";

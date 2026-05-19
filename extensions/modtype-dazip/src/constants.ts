@@ -1,6 +1,6 @@
 import path from "path";
 
-import { selectors, types, util } from "vortex-api";
+import { selectors, types, util } from "@nexusmods/vortex-api";
 
 interface IDAGame {
   id: string;

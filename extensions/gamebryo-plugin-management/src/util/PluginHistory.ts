@@ -1,6 +1,6 @@
 import * as path from "path";
 
-import { selectors, types } from "vortex-api";
+import { selectors, types } from "@nexusmods/vortex-api";
 
 import { setPluginEnabled } from "../actions/loadOrder";
 import { GHOST_EXT } from "../statics";

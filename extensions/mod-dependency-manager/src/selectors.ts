@@ -1,6 +1,6 @@
+import { selectors, types, util } from "@nexusmods/vortex-api";
 import * as _ from "lodash";
 import { createSelector } from "reselect";
-import { selectors, types, util } from "vortex-api";
 
 /* eslint-disable */
 import { IModLookupInfo } from "./types/IModLookupInfo";

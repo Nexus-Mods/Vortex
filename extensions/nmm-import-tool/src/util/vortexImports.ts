@@ -1,5 +1,5 @@
+import { actions, types, util } from "@nexusmods/vortex-api";
 import Promise from "bluebird";
-import { actions, types, util } from "vortex-api";
 
 import { IModEntry } from "../types/nmmEntries";
 

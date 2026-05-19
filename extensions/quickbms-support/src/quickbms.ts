@@ -1,8 +1,8 @@
 import { spawn } from "child_process";
 import * as path from "path";
 
+import { fs, log, util } from "@nexusmods/vortex-api";
 import Promise from "bluebird";
-import { fs, log, util } from "vortex-api";
 
 import { IListEntry, IQBMSOpProps, IQBMSOptions, QuickBMSError } from "./types";
 

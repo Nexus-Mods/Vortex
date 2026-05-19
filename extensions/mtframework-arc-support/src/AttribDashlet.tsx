@@ -1,7 +1,7 @@
+import { PureComponentEx, util } from "@nexusmods/vortex-api";
+import * as api from "@nexusmods/vortex-api";
 import * as React from "react";
 import { withTranslation } from "react-i18next";
-import { PureComponentEx, util } from "vortex-api";
-import * as api from "vortex-api";
 const { Dashlet } = api as any;
 
 const ARCTOOL_THREAD = "http://residentevilmodding.boards.net/thread/5774/arctool";

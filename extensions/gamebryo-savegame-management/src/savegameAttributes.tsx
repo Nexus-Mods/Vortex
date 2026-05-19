@@ -1,5 +1,11 @@
+import {
+  TableDateTimeFilter,
+  TableNumericFilter,
+  TableTextFilter,
+  types,
+  util,
+} from "@nexusmods/vortex-api";
 import * as React from "react";
-import { TableDateTimeFilter, TableNumericFilter, TableTextFilter, types, util } from "vortex-api";
 
 import { updateSavegame } from "./actions/session";
 import { ISavegame } from "./types/ISavegame";

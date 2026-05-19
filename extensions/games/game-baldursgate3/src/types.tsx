@@ -1,4 +1,4 @@
-import { types } from "vortex-api";
+import { types } from "@nexusmods/vortex-api";
 
 export type LOFormat = "pre-v6" | "v6" | "v7" | "v8";
 

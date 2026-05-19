@@ -6,8 +6,8 @@
  */
 import path from "path";
 
-import { util } from "vortex-api";
-import type { types } from "vortex-api";
+import { util } from "@nexusmods/vortex-api";
+import type { types } from "@nexusmods/vortex-api";
 
 import { MOD_TYPE_ROOT, MOD_TYPE_SMAPI, SMAPI_INTERNAL_DIRECTORY, getBundledMods } from "../common";
 import type { IFileEntry } from "../types";

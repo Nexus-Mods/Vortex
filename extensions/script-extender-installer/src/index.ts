@@ -1,7 +1,7 @@
 /* eslint-disable */
 import * as path from "path";
 
-import { fs, actions, log, selectors, types, util } from "vortex-api";
+import { fs, actions, log, selectors, types, util } from "@nexusmods/vortex-api";
 
 import { storeName } from "./common";
 import supportData from "./gameSupport";

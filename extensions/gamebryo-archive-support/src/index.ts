@@ -1,8 +1,8 @@
 import * as path from "path";
 import { PassThrough } from "stream";
 
+import { fs, types, util } from "@nexusmods/vortex-api";
 import PromiseBB from "bluebird";
-import { fs, types, util } from "vortex-api";
 
 import { BA2Archive, loadBA2 } from "./ba2";
 import { BSAArchive, BSAWriter, createBSA, loadBSA } from "./bsa";

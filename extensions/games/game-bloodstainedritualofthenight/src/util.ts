@@ -1,8 +1,8 @@
 import path from "path";
 
+import { fs, selectors, types, util } from "@nexusmods/vortex-api";
 import Bluebird from "bluebird";
 import turbowalk from "turbowalk";
-import { fs, selectors, types, util } from "vortex-api";
 
 import { GAME_ID, LO_FILE_NAME, MOD_FILE_EXT } from "./common";
 import { IProps } from "./types";

@@ -1,11 +1,5 @@
 import * as path from "path";
 
-import type { TFunction } from "i18next";
-import memoizeOne from "memoize-one";
-import * as React from "react";
-import { FormControl, FormGroup, Panel } from "react-bootstrap";
-import { connect } from "react-redux";
-import * as Redux from "redux";
 import {
   actions,
   ComponentEx,
@@ -16,7 +10,13 @@ import {
   tooltip,
   types,
   util,
-} from "vortex-api";
+} from "@nexusmods/vortex-api";
+import type { TFunction } from "i18next";
+import memoizeOne from "memoize-one";
+import * as React from "react";
+import { FormControl, FormGroup, Panel } from "react-bootstrap";
+import { connect } from "react-redux";
+import * as Redux from "redux";
 
 import {
   AUTHOR_UNKNOWN,

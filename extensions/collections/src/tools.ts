@@ -1,8 +1,8 @@
 import * as path from "path";
 
+import { actions, fs, log, selectors, types, util } from "@nexusmods/vortex-api";
 import * as React from "react";
 import { generate as shortid } from "shortid";
-import { actions, fs, log, selectors, types, util } from "vortex-api";
 
 import { ICollection, ICollectionTool } from "./types/ICollection";
 import { IExtendedInterfaceProps } from "./types/IExtendedInterfaceProps";

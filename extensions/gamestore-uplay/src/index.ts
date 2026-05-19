@@ -1,7 +1,7 @@
 import * as path from "path";
 
+import { log, types, util } from "@nexusmods/vortex-api";
 import Bluebird from "bluebird";
-import { log, types, util } from "vortex-api";
 import * as winapi from "winapi-bindings";
 
 const STORE_ID = "uplay";

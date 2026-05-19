@@ -1,5 +1,5 @@
+import { types } from "@nexusmods/vortex-api";
 import { createAction } from "redux-act";
-import { types } from "vortex-api";
 
 export const startInstallSession = createAction(
   "COLLECTION_START_INSTALL_SESSION",

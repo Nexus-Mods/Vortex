@@ -1,6 +1,6 @@
 import path from "path";
 
-import { fs, log, selectors, types, util } from "vortex-api";
+import { fs, log, selectors, types, util } from "@nexusmods/vortex-api";
 
 import { GAME_ID, MOD_FILE_EXT, modsRelPath } from "./common";
 import { deserialize, serialize, validate } from "./loadOrder";

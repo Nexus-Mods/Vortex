@@ -2,8 +2,8 @@
  * Download helpers for retrieving the SMAPI archive from Nexus.
  */
 import type { IFileInfo } from "@nexusmods/nexus-api";
-import type { types } from "vortex-api";
-import { util } from "vortex-api";
+import type { types } from "@nexusmods/vortex-api";
+import { util } from "@nexusmods/vortex-api";
 
 import { GAME_ID, SMAPI_MOD_ID } from "../common";
 

@@ -1,3 +1,4 @@
+import { actions, ComponentEx, log, Toggle, tooltip, types, util } from "@nexusmods/vortex-api";
 import Bluebird from "bluebird";
 import * as React from "react";
 import {
@@ -13,7 +14,6 @@ import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import * as Redux from "redux";
 import { ThunkDispatch } from "redux-thunk";
-import { actions, ComponentEx, log, Toggle, tooltip, types, util } from "vortex-api";
 
 import ThemeEditor from "./ThemeEditor";
 

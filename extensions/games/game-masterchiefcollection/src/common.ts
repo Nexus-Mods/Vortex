@@ -1,7 +1,7 @@
 /* eslint-disable */
 import path from "path";
 
-import { util } from "vortex-api";
+import { util } from "@nexusmods/vortex-api";
 
 import { IHaloGame } from "./types";
 

@@ -1,9 +1,9 @@
 /** eslint-disable */
 import path from "path";
 
+import { fs, log, types, util } from "@nexusmods/vortex-api";
 import { generate } from "shortid";
 import turbowalk, { IEntry } from "turbowalk";
-import { fs, log, types, util } from "vortex-api";
 
 import { LOCKED_PREFIX, W3_TEMP_DATA_DIR } from "../common";
 

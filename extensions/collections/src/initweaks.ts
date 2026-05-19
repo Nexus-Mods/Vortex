@@ -1,8 +1,8 @@
 /* eslint-disable */
 import * as path from "node:path";
 
+import { actions, fs, log, selectors, types, util } from "@nexusmods/vortex-api";
 import * as React from "react";
-import { actions, fs, log, selectors, types, util } from "vortex-api";
 
 import { INI_TWEAKS_PATH, OPTIONAL_TWEAK_PREFIX } from "./constants";
 import { ICollection } from "./types/ICollection";

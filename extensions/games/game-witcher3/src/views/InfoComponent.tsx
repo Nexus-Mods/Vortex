@@ -1,8 +1,8 @@
+import { FlexLayout, util } from "@nexusmods/vortex-api";
 /* eslint-disable */
 import * as React from "react";
 import * as BS from "react-bootstrap";
 import { useTranslation } from "react-i18next";
-import { FlexLayout, util } from "vortex-api";
 
 import { I18N_NAMESPACE } from "../common";
 

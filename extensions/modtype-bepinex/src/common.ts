@@ -1,7 +1,7 @@
 import path from "path";
 
+import { util } from "@nexusmods/vortex-api";
 import semver from "semver";
-import { util } from "vortex-api";
 
 import {
   IBIXPackageResolver,

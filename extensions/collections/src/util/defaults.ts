@@ -1,5 +1,5 @@
+import { actions, types, util } from "@nexusmods/vortex-api";
 import * as Redux from "redux";
-import { actions, types, util } from "vortex-api";
 
 function applyDefaultInstallMode(prev: { [attrId: string]: any }, mod: types.IMod) {
   if (prev?.installMode?.[mod.id] === undefined) {

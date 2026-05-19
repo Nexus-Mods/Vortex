@@ -1,5 +1,5 @@
+import { actions, fs, types, util } from "@nexusmods/vortex-api";
 import * as _ from "lodash";
-import { actions, fs, types, util } from "vortex-api";
 
 import { setPreviousLO } from "./actions";
 import { GAME_ID, INVALID_LO_MOD_TYPES } from "./common";

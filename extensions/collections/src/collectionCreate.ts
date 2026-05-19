@@ -1,5 +1,5 @@
+import { actions, selectors, types, util } from "@nexusmods/vortex-api";
 import * as Redux from "redux";
-import { actions, selectors, types, util } from "vortex-api";
 
 /* eslint-disable */
 import { MOD_TYPE } from "./constants";

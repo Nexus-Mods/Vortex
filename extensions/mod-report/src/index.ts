@@ -1,8 +1,8 @@
 import * as path from "path";
 
+import { fs, log, selectors, types, util } from "@nexusmods/vortex-api";
 import { clipboard } from "electron";
 import turbowalk, { IEntry } from "turbowalk";
-import { fs, log, selectors, types, util } from "vortex-api";
 
 import binUpload from "./binupload";
 import format, { FormatterBBCode, FormatterReadable } from "./format";

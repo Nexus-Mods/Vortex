@@ -1,9 +1,9 @@
+import { selectors } from "@nexusmods/vortex-api";
+import type { types } from "@nexusmods/vortex-api";
 /**
  * Registers Stardew-specific settings, actions, and table renderers in the UI.
  */
 import React from "react";
-import { selectors } from "vortex-api";
-import type { types } from "vortex-api";
 
 import { GAME_ID } from "../common";
 import { onRevertFiles } from "../configMod";

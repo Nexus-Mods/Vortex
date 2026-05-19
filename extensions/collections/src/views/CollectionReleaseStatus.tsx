@@ -1,6 +1,6 @@
+import { types } from "@nexusmods/vortex-api";
 import type { TFunction } from "i18next";
 import * as React from "react";
-import { types } from "vortex-api";
 
 export interface ICollectionReleaseStatusProps {
   t: TFunction;

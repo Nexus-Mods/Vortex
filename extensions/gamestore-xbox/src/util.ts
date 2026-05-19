@@ -5,8 +5,8 @@ import * as fs from "fs";
 */
 import * as path from "path";
 
+import { log, types, util } from "@nexusmods/vortex-api";
 import walk from "turbowalk";
-import { log, types, util } from "vortex-api";
 import { parseStringPromise } from "xml2js";
 
 import { APP_MANIFEST } from "./common";

@@ -1,7 +1,7 @@
 import * as path from "path";
 
+import { fs } from "@nexusmods/vortex-api";
 import Promise from "bluebird";
-import { fs } from "vortex-api";
 
 import { saveFiles } from "./gameSupport";
 

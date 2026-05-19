@@ -1,7 +1,15 @@
+import {
+  ComponentEx,
+  FlexLayout,
+  ProgressBar,
+  Spinner,
+  tooltip,
+  types,
+  util,
+} from "@nexusmods/vortex-api";
 import type { TFunction } from "i18next";
 import * as React from "react";
 import { Panel } from "react-bootstrap";
-import { ComponentEx, FlexLayout, ProgressBar, Spinner, tooltip, types, util } from "vortex-api";
 
 import { IModEx } from "../../types/IModEx";
 import { calculateCollectionSize, isRelevant } from "../../util/util";

@@ -1,8 +1,4 @@
 import { EndorsedStatus, ICollection, IRevision, RatingOptions } from "@nexusmods/nexus-api";
-import type { TFunction } from "i18next";
-import * as _ from "lodash";
-import * as React from "react";
-import { Media, Panel } from "react-bootstrap";
 import {
   ActionDropdown,
   ComponentEx,
@@ -14,7 +10,11 @@ import {
   tooltip,
   types,
   util,
-} from "vortex-api";
+} from "@nexusmods/vortex-api";
+import type { TFunction } from "i18next";
+import * as _ from "lodash";
+import * as React from "react";
+import { Media, Panel } from "react-bootstrap";
 
 import { updateCollectionInfo } from "../../actions/persistent";
 import { healthDownvoteDialog } from "../../actions/session";

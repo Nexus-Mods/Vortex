@@ -1,7 +1,7 @@
 import * as path from "path";
 
+import { fs, log, selectors, types, util } from "@nexusmods/vortex-api";
 import Promise from "bluebird";
-import { fs, log, selectors, types, util } from "vortex-api";
 import IniParser, { WinapiFormat } from "vortex-parse-ini";
 
 import PluginList from "./PluginList";

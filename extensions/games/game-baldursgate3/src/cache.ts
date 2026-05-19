@@ -1,8 +1,8 @@
 /* eslint-disable */
 import * as path from "path";
 
+import { fs, log, selectors, types, util } from "@nexusmods/vortex-api";
 import { LRUCache } from "lru-cache";
-import { fs, log, selectors, types, util } from "vortex-api";
 
 import { GAME_ID } from "./common";
 import { listPackage } from "./divineWrapper";

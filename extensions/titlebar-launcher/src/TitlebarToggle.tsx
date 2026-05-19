@@ -1,7 +1,7 @@
+import { MainContext, selectors, Toggle, types, util } from "@nexusmods/vortex-api";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { MainContext, selectors, Toggle, types, util } from "vortex-api";
 
 import { setAddToTitleBar } from "./actions";
 

@@ -1,6 +1,6 @@
+import { ComponentEx, selectors, ToolbarIcon, types } from "@nexusmods/vortex-api";
 import * as React from "react";
 import { connect } from "react-redux";
-import { ComponentEx, selectors, ToolbarIcon, types } from "vortex-api";
 
 import { setShowMetaEditor } from "../actions";
 

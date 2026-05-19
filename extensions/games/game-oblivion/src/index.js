@@ -1,5 +1,5 @@
 const path = require("path");
-const { log, util } = require("vortex-api");
+const { log, util } = require("@nexusmods/vortex-api");
 
 // List of folders in the various languages on Xbox, for now we default to English but this could be enhanced to select a folder based on the Vortex locale.
 // It's possible that some mods don't work with the non-English variant.

@@ -1,9 +1,9 @@
 import * as path from "path";
 
 import { IRevision } from "@nexusmods/nexus-api";
+import { Icon, IconBar, Image, types } from "@nexusmods/vortex-api";
 import * as React from "react";
 import { Panel } from "react-bootstrap";
-import { Icon, IconBar, Image, types } from "vortex-api";
 
 export interface IRemoteTileProps {
   t: types.TFunction;

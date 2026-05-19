@@ -1,7 +1,7 @@
+import { actions, Icon, selectors, tooltip, types, util } from "@nexusmods/vortex-api";
 import React from "react";
 import { useSelector, useStore } from "react-redux";
 import Redux from "redux";
-import { actions, Icon, selectors, tooltip, types, util } from "vortex-api";
 
 export interface IModNameWrapper {
   rowId: string;

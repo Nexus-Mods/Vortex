@@ -2,8 +2,8 @@ import * as os from "os";
 import * as path from "path";
 import { inspect } from "util";
 
+import { fs, util } from "@nexusmods/vortex-api";
 import Promise from "bluebird";
-import { fs, util } from "vortex-api";
 
 class TraceImport {
   private mPath: string;

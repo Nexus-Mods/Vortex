@@ -10,7 +10,7 @@
 const Promise = require("bluebird");
 const path = require("path");
 const winapi = require("winapi-bindings");
-const { fs, selectors, util } = require("vortex-api");
+const { fs, selectors, util } = require("@nexusmods/vortex-api");
 
 const STEAM_DLL = "steam_api.dll";
 

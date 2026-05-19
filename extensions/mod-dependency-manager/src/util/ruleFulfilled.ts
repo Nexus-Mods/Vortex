@@ -1,5 +1,5 @@
+import { util } from "@nexusmods/vortex-api";
 import { IReference, IRule } from "modmeta-db";
-import { util } from "vortex-api";
 
 import { IModLookupInfo } from "../types/IModLookupInfo";
 

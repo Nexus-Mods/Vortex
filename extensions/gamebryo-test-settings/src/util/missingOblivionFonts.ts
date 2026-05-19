@@ -1,8 +1,8 @@
 import * as path from "path";
 
+import { fs, selectors, types } from "@nexusmods/vortex-api";
 import Promise from "bluebird";
 import * as Redux from "redux";
-import { fs, selectors, types } from "vortex-api";
 import { IniFile } from "vortex-parse-ini";
 
 export const oblivionDefaultFonts = {

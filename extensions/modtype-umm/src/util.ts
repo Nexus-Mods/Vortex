@@ -1,7 +1,7 @@
 import path from "path";
 
+import { actions, fs, selectors, types, util } from "@nexusmods/vortex-api";
 import Bluebird from "bluebird";
-import { actions, fs, selectors, types, util } from "vortex-api";
 
 import { UMM_EXE, UMM_ID } from "./common";
 import { IUMMGameConfig } from "./types";

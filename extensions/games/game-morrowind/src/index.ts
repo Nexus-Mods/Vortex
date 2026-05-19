@@ -1,7 +1,7 @@
 import path from "path";
 
+import { actions, log, selectors, types, util } from "@nexusmods/vortex-api";
 import * as React from "react";
-import { actions, log, selectors, types, util } from "vortex-api";
 
 const walk = require("turbowalk").default;
 

@@ -1,3 +1,4 @@
+import { ComponentEx, util } from "@nexusmods/vortex-api";
 import * as React from "react";
 import { ListGroup } from "react-bootstrap";
 import {
@@ -14,7 +15,6 @@ import {
   DropTargetSpec,
 } from "react-dnd";
 import * as ReactDOM from "react-dom";
-import { ComponentEx, util } from "vortex-api";
 
 import { ILoadOrderDisplayItem } from "../types";
 

@@ -1,6 +1,6 @@
 import path from "path";
 
-import { types } from "vortex-api";
+import { types } from "@nexusmods/vortex-api";
 
 import { CONFIG_MATRIX_REL_PATH, PART_SUFFIX } from "./common";
 
