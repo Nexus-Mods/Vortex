@@ -1,7 +1,7 @@
 import path from "path";
 
-import { fs, util } from "vortex-api";
-import type { types } from "vortex-api";
+import { fs, util } from "@nexusmods/vortex-api";
+import type { types } from "@nexusmods/vortex-api";
 import { parseStringPromise } from "xml2js";
 
 export const XREBIRTH_GAME_ID = "xrebirth";
