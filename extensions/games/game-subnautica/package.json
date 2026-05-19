@@ -14,7 +14,7 @@
     "game": "Subnautica"
   },
   "devDependencies": {
-    "vortex-api": "workspace:*"
+    "@nexusmods/vortex-api": "workspace:*"
   },
   "nx": {
     "tags": [

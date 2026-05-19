@@ -14,7 +14,7 @@
     "game": "Total War: Three Kingdoms"
   },
   "devDependencies": {
-    "vortex-api": "workspace:*"
+    "@nexusmods/vortex-api": "workspace:*"
   },
   "nx": {
     "tags": [

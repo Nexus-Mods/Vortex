@@ -14,7 +14,7 @@
     "game": "Fallout: New Vegas"
   },
   "devDependencies": {
-    "vortex-api": "workspace:*"
+    "@nexusmods/vortex-api": "workspace:*"
   },
   "nx": {
     "tags": [

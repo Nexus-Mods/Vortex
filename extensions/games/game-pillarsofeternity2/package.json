@@ -31,7 +31,7 @@
     "redux-act": "catalog:",
     "semver": "catalog:",
     "typescript": "catalog:",
-    "vortex-api": "workspace:*"
+    "@nexusmods/vortex-api": "workspace:*"
   },
   "nx": {
     "tags": [

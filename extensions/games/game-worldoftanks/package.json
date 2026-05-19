@@ -14,7 +14,7 @@
     "game": "World of Tanks"
   },
   "devDependencies": {
-    "vortex-api": "workspace:*"
+    "@nexusmods/vortex-api": "workspace:*"
   },
   "nx": {
     "tags": [

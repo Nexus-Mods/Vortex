@@ -16,7 +16,7 @@
   },
   "devDependencies": {
     "vitest": "catalog:",
-    "vortex-api": "workspace:*"
+    "@nexusmods/vortex-api": "workspace:*"
   },
   "dependencies": {
     "lru-cache": "catalog:"

@@ -14,7 +14,7 @@
     "game": "Dawn of Man"
   },
   "devDependencies": {
-    "vortex-api": "workspace:*"
+    "@nexusmods/vortex-api": "workspace:*"
   },
   "nx": {
     "tags": [

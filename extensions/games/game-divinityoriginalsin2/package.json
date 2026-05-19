@@ -14,7 +14,7 @@
     "game": "Divinity: Original Sin 2"
   },
   "devDependencies": {
-    "vortex-api": "workspace:*"
+    "@nexusmods/vortex-api": "workspace:*"
   },
   "nx": {
     "tags": [

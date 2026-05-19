@@ -1,6 +1,6 @@
 {
   "$schema": "https://www.schemastore.org/package.json",
-  "name": "vortex-api",
+  "name": "@nexusmods/vortex-api",
   "version": "1.0.0",
   "license": "GPL-3.0-only",
   "author": {

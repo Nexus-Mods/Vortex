@@ -14,7 +14,7 @@
     "game": "Bloodstained: Ritual of the Night"
   },
   "devDependencies": {
-    "vortex-api": "workspace:*"
+    "@nexusmods/vortex-api": "workspace:*"
   },
   "nx": {
     "tags": [
