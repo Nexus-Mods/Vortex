@@ -79,7 +79,12 @@ export function setReadFileResolver(resolver: (absPath: string) => Promise<Buffe
 }
 
 export const fs = {
+  ensureDirWritableAsync: vi.fn(() => Promise.resolve()),
+  ensureDirAsync: vi.fn(() => Promise.resolve()),
+  readdirAsync: vi.fn(() => Promise.resolve([])),
+  statAsync: vi.fn(() => Promise.resolve({ isDirectory: () => true })),
   readFileAsync: vi.fn(async (absPath: string, _opts?: unknown) => readFileResolver(absPath)),
+  writeFileAsync: vi.fn(() => Promise.resolve()),
 };
 
 // Minimal mirror of
@@ -287,6 +292,12 @@ export const util = {
   ProcessCanceled,
   SevenZip: class {},
   walk: vi.fn(),
+  getSafe: vi.fn((_state: unknown, _path: string[], fallback: unknown) => fallback),
+  GameStoreHelper: {
+    findByAppId: vi.fn(() => Promise.resolve({ gamePath: "C:\\Games\\XCOM2" })),
+  },
+  getManifest: vi.fn(() => Promise.resolve({ files: [] })),
+  getVortexPath: vi.fn((_key: string) => "/home/test"),
   declareInstallers,
   buildCopyInstructions,
   compileStopPatterns,

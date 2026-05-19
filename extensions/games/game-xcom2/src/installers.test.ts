@@ -220,6 +220,12 @@ describe("testConfigDropIn", () => {
   });
 });
 
+/** Normalise forward-slash paths to the platform separator (noop on Unix). */
+function platformPath(p: string): string {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  return p.replace(/\//g, (require("node:path") as typeof import("node:path")).sep);
+}
+
 describe("pickConfigDestination", () => {
   it("preserves WOTC tree suffix when archive has explicit WOTC prefix", () => {
     expect(
@@ -227,7 +233,7 @@ describe("pickConfigDestination", () => {
         "Wrapper/XCom2-WarOfTheChosen/XComGame/Localization/X.int",
         XCOM2_GAME_IDS.wotc,
       ),
-    ).toBe("XCom2-WarOfTheChosen/XComGame/Localization/X.int".replace(/\//g, requireSep()));
+    ).toBe(platformPath("XCom2-WarOfTheChosen/XComGame/Localization/X.int"));
   });
 
   it("WOTC-prefixed path deploys to WOTC tree even when installing for base game", () => {
@@ -239,36 +245,36 @@ describe("pickConfigDestination", () => {
         "Wrapper/XCom2-WarOfTheChosen/XComGame/Localization/X.int",
         XCOM2_GAME_IDS.base,
       ),
-    ).toBe("XCom2-WarOfTheChosen/XComGame/Localization/X.int".replace(/\//g, requireSep()));
+    ).toBe(platformPath("XCom2-WarOfTheChosen/XComGame/Localization/X.int"));
   });
 
   it("vanilla-tree path preserves XComGame/ prefix for base game install", () => {
     expect(pickConfigDestination("Mod/XComGame/Config/X.ini", XCOM2_GAME_IDS.base)).toBe(
-      "XComGame/Config/X.ini".replace(/\//g, requireSep()),
+      platformPath("XComGame/Config/X.ini"),
     );
   });
 
   it("vanilla-tree path gets WOTC prefix when installing for WOTC", () => {
     expect(pickConfigDestination("Mod/XComGame/Config/X.ini", XCOM2_GAME_IDS.wotc)).toBe(
-      "XCom2-WarOfTheChosen/XComGame/Config/X.ini".replace(/\//g, requireSep()),
+      platformPath("XCom2-WarOfTheChosen/XComGame/Config/X.ini"),
     );
   });
 
   it("bare .ini at root routes to XComGame/Config (base game)", () => {
     expect(pickConfigDestination("DefaultGameCore.ini", XCOM2_GAME_IDS.base)).toBe(
-      "XComGame/Config/DefaultGameCore.ini".replace(/\//g, requireSep()),
+      platformPath("XComGame/Config/DefaultGameCore.ini"),
     );
   });
 
   it("bare .int at root routes to XComGame/Localization (WOTC, prefixed)", () => {
     expect(pickConfigDestination("XComGame.int", XCOM2_GAME_IDS.wotc)).toBe(
-      "XCom2-WarOfTheChosen/XComGame/Localization/XComGame.int".replace(/\//g, requireSep()),
+      platformPath("XCom2-WarOfTheChosen/XComGame/Localization/XComGame.int"),
     );
   });
 
   it("handles backslash-separated source paths", () => {
     expect(pickConfigDestination("Wrap\\XComGame\\Config\\X.ini", XCOM2_GAME_IDS.base)).toBe(
-      "XComGame/Config/X.ini".replace(/\//g, requireSep()),
+      platformPath("XComGame/Config/X.ini"),
     );
   });
 });
@@ -308,10 +314,7 @@ describe("installConfigDropIn", () => {
       type: "copy",
       source:
         "Traducao XCOM2/XCOM 2/XCom2-WarOfTheChosen/XComGame/DLC/DLC_1/Localization/DLC_1.int",
-      destination: "XCom2-WarOfTheChosen/XComGame/DLC/DLC_1/Localization/DLC_1.int".replace(
-        /\//g,
-        requireSep(),
-      ),
+      destination: platformPath("XCom2-WarOfTheChosen/XComGame/DLC/DLC_1/Localization/DLC_1.int"),
     });
   });
 
@@ -321,7 +324,7 @@ describe("installConfigDropIn", () => {
     expect(copy).toEqual({
       type: "copy",
       source: "DefaultGameCore.ini",
-      destination: "XComGame/Config/DefaultGameCore.ini".replace(/\//g, requireSep()),
+      destination: platformPath("XComGame/Config/DefaultGameCore.ini"),
     });
   });
 
@@ -329,15 +332,10 @@ describe("installConfigDropIn", () => {
     const result = await installConfigDropIn(["XComGame.int"], "", XCOM2_GAME_IDS.wotc);
     const copy = result.instructions.find((i) => i.type === "copy")!;
     expect((copy as { destination: string }).destination).toBe(
-      "XCom2-WarOfTheChosen/XComGame/Localization/XComGame.int".replace(/\//g, requireSep()),
+      platformPath("XCom2-WarOfTheChosen/XComGame/Localization/XComGame.int"),
     );
   });
 });
-
-function requireSep(): string {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  return (require("node:path") as typeof import("node:path")).sep;
-}
 
 describe("save match predicate (via custom match)", () => {
   const match = specById("save").match;

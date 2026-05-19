@@ -48,64 +48,61 @@ function createMockContext() {
   return { context, games, installers, loadOrders, modTypes, healthChecks };
 }
 
+/** Create a mock context and run the extension's init function in one step. */
+function initAndRegister() {
+  const ctx = createMockContext();
+  init(ctx.context as never);
+  return ctx;
+}
+
 afterEach(() => vi.clearAllMocks());
 
 // ── Game Registration ──────────────────────────────────────────────
 
 describe("game registration", () => {
   test("registers exactly two games", () => {
-    const { context, games } = createMockContext();
-    init(context as never);
+    const { games } = initAndRegister();
     expect(games).toHaveLength(2);
   });
 
   test("XCOM 2 has correct identity", () => {
-    const { context, games } = createMockContext();
-    init(context as never);
-    const xcom2 = games[0]!;
-    expect(xcom2.id).toBe("xcom2");
-    expect(xcom2.name).toBe("XCOM 2");
+    const { games } = initAndRegister();
+    expect(games[0]!.id).toBe("xcom2");
+    expect(games[0]!.name).toBe("XCOM 2");
   });
 
   test("WOTC has correct identity", () => {
-    const { context, games } = createMockContext();
-    init(context as never);
-    const wotc = games[1]!;
-    expect(wotc.id).toBe("xcom2-wotc");
-    expect(wotc.name).toBe("XCOM 2: War of the Chosen");
+    const { games } = initAndRegister();
+    expect(games[1]!.id).toBe("xcom2-wotc");
+    expect(games[1]!.name).toBe("XCOM 2: War of the Chosen");
   });
 
   test("XCOM 2 executable resolves to Binaries/Win64/XCom2.exe", () => {
-    const { context, games } = createMockContext();
-    init(context as never);
+    const { games } = initAndRegister();
     const exe = (games[0]!.executable as Function)();
     expect(exe).toBe(path.join("Binaries", "Win64", "XCom2.exe"));
   });
 
   test("WOTC executable resolves under XCom2-WarOfTheChosen", () => {
-    const { context, games } = createMockContext();
-    init(context as never);
+    const { games } = initAndRegister();
     const exe = (games[1]!.executable as Function)();
     expect(exe).toBe(path.join("XCom2-WarOfTheChosen", "Binaries", "Win64", "XCom2.exe"));
   });
 
   test("XCOM 2 mod path is XComGame/Mods", () => {
-    const { context, games } = createMockContext();
-    init(context as never);
+    const { games } = initAndRegister();
     const modPath = (games[0]!.queryModPath as Function)();
     expect(modPath).toBe(path.join("XComGame", "Mods"));
   });
 
   test("WOTC mod path is XCom2-WarOfTheChosen/XComGame/Mods", () => {
-    const { context, games } = createMockContext();
-    init(context as never);
+    const { games } = initAndRegister();
     const modPath = (games[1]!.queryModPath as Function)();
     expect(modPath).toBe(path.join("XCom2-WarOfTheChosen", "XComGame", "Mods"));
   });
 
   test("both games share the same launch parameters", () => {
-    const { context, games } = createMockContext();
-    init(context as never);
+    const { games } = initAndRegister();
     const expected = [
       "-fromLauncher",
       "-review",
@@ -118,23 +115,20 @@ describe("game registration", () => {
   });
 
   test("XCOM 2 requiredFiles include XComGame directory", () => {
-    const { context, games } = createMockContext();
-    init(context as never);
+    const { games } = initAndRegister();
     const required = games[0]!.requiredFiles as string[];
     expect(required).toContain("XComGame");
     expect(required).toContainEqual(path.join("XComGame", "CookedPCConsole", "3DUIBP.upk"));
   });
 
   test("WOTC requiredFiles include XCom2-WarOfTheChosen directory", () => {
-    const { context, games } = createMockContext();
-    init(context as never);
+    const { games } = initAndRegister();
     const required = games[1]!.requiredFiles as string[];
     expect(required).toContainEqual("XCom2-WarOfTheChosen");
   });
 
   test("both games have supportedTools with launcher and devtools", () => {
-    const { context, games } = createMockContext();
-    init(context as never);
+    const { games } = initAndRegister();
     for (const game of games) {
       const tools = game.supportedTools as { id: string }[];
       expect(tools).toHaveLength(2);
@@ -144,16 +138,14 @@ describe("game registration", () => {
   });
 
   test("details include gogAppId for both games", () => {
-    const { context, games } = createMockContext();
-    init(context as never);
+    const { games } = initAndRegister();
     for (const game of games) {
       expect((game.details as Record<string, unknown>).gogAppId).toBe("1482002159");
     }
   });
 
   test("WOTC details include nexusPageId and compatibleDownloads", () => {
-    const { context, games } = createMockContext();
-    init(context as never);
+    const { games } = initAndRegister();
     const details = games[1]!.details as Record<string, unknown>;
     expect(details.nexusPageId).toBe("xcom2");
     expect(details.compatibleDownloads).toEqual(["xcom2"]);
@@ -164,22 +156,18 @@ describe("game registration", () => {
 
 describe("installer", () => {
   function getInstaller() {
-    const { context, installers } = createMockContext();
-    init(context as never);
-    return installers[0]!;
+    return initAndRegister().installers[0]!;
   }
 
   test("registers the canonical .XComMod installer at priority 25", () => {
-    const { context, installers } = createMockContext();
-    init(context as never);
+    const { installers } = initAndRegister();
     const xcomInst = installers.find((i) => i.id === "xcom2-installer");
     expect(xcomInst).toBeDefined();
     expect(xcomInst!.priority).toBe(25);
   });
 
   test("registers a character-pool installer per game id", () => {
-    const { context, installers } = createMockContext();
-    init(context as never);
+    const { installers } = initAndRegister();
     // declareInstallers is called once per game id, both reusing the same
     // modType-keyed registration id (xcom2-character-pool).
     const poolInstallers = installers.filter((i) => i.id === "xcom2-character-pool");
@@ -254,28 +242,22 @@ describe("installer", () => {
 // ── Load Order ─────────────────────────────────────────────────────
 
 describe("load order", () => {
-  function getLoadOrders() {
-    const { context, loadOrders } = createMockContext();
-    init(context as never);
-    return loadOrders;
-  }
-
   test("registers load order for both games", () => {
-    const loadOrders = getLoadOrders();
+    const { loadOrders } = initAndRegister();
     expect(loadOrders).toHaveLength(2);
     expect(loadOrders[0]!.gameId).toBe("xcom2");
     expect(loadOrders[1]!.gameId).toBe("xcom2-wotc");
   });
 
   test("both load orders have toggleable entries", () => {
-    const loadOrders = getLoadOrders();
+    const { loadOrders } = initAndRegister();
     for (const lo of loadOrders) {
       expect(lo.toggleableEntries).toBe(true);
     }
   });
 
   test("validate rejects entries with quote characters", async () => {
-    const loadOrders = getLoadOrders();
+    const { loadOrders } = initAndRegister();
     const validate = loadOrders[0]!.validate as Function;
     const result = await validate([], [{ id: "mod1", name: 'Mod "Bad"', enabled: true }]);
     expect(result).toBeDefined();
@@ -284,21 +266,21 @@ describe("load order", () => {
   });
 
   test("validate accepts clean entries", async () => {
-    const loadOrders = getLoadOrders();
+    const { loadOrders } = initAndRegister();
     const validate = loadOrders[0]!.validate as Function;
     const result = await validate([], [{ id: "mod1", name: "CleanMod", enabled: true }]);
     expect(result).toBeUndefined();
   });
 
   test("validate accepts an empty load order", async () => {
-    const loadOrders = getLoadOrders();
+    const { loadOrders } = initAndRegister();
     const validate = loadOrders[0]!.validate as Function;
     const result = await validate([], []);
     expect(result).toBeUndefined();
   });
 
   test("validate flags only the bad entries in a mixed list", async () => {
-    const loadOrders = getLoadOrders();
+    const { loadOrders } = initAndRegister();
     const validate = loadOrders[0]!.validate as Function;
     const result = await validate(
       [],
@@ -315,57 +297,47 @@ describe("load order", () => {
   });
 
   describe("deserializeLoadOrder", () => {
-    test("returns mods found in the mods folder", async () => {
-      const { context, loadOrders } = createMockContext();
-      init(context as never);
+    const ENOENT = Object.assign(new Error("ENOENT"), { code: "ENOENT" });
 
-      // Mock discovery
-      vi.mocked(util.getSafe).mockReturnValue({ path: "C:\\Games\\XCOM2" });
-
-      // Mock mods folder scan
+    /** Set up the common fs mocks for deserialize tests. */
+    function mockDeserializeFs(
+      opts: {
+        gamePath?: string;
+        mods?: string[];
+        iniContent?: string;
+      } = {},
+    ) {
+      const { loadOrders } = initAndRegister();
+      vi.mocked(util.getSafe).mockReturnValue({ path: opts.gamePath ?? "C:\\Games\\XCOM2" });
       vi.mocked(fs.readdirAsync)
-        .mockResolvedValueOnce(["ModA", "ModB"] as never) // mods folder
-        .mockResolvedValue([] as never); // subsequent calls
-
+        .mockResolvedValueOnce((opts.mods ?? []) as never)
+        .mockResolvedValue([] as never);
       vi.mocked(fs.statAsync).mockImplementation((filePath: string) => {
         if (filePath.endsWith(".XComMod")) return Promise.resolve({} as never);
         return Promise.resolve({ isDirectory: () => true } as never);
       });
+      if (opts.iniContent !== undefined) {
+        vi.mocked(fs.readFileAsync).mockResolvedValue(opts.iniContent as never);
+      } else {
+        vi.mocked(fs.readFileAsync).mockRejectedValue(ENOENT);
+      }
+      return loadOrders;
+    }
 
-      // Mock empty INI
-      vi.mocked(fs.readFileAsync).mockRejectedValue(
-        Object.assign(new Error("ENOENT"), { code: "ENOENT" }),
-      );
-
-      const deserialize = loadOrders[0]!.deserializeLoadOrder as Function;
-      const result = await deserialize();
-
+    test("returns mods found in the mods folder", async () => {
+      const loadOrders = mockDeserializeFs({ mods: ["ModA", "ModB"] });
+      const result = await (loadOrders[0]!.deserializeLoadOrder as Function)();
       expect(result).toHaveLength(2);
       expect(result.map((e: { name: string }) => e.name)).toEqual(["ModA", "ModB"]);
       expect(result.every((e: { enabled: boolean }) => e.enabled === false)).toBe(true);
     });
 
     test("marks mods as enabled based on INI content", async () => {
-      const { context, loadOrders } = createMockContext();
-      init(context as never);
-
-      vi.mocked(util.getSafe).mockReturnValue({ path: "C:\\Games\\XCOM2" });
-
-      vi.mocked(fs.readdirAsync)
-        .mockResolvedValueOnce(["ModA", "ModB"] as never)
-        .mockResolvedValue([] as never);
-      vi.mocked(fs.statAsync).mockImplementation((filePath: string) => {
-        if (filePath.endsWith(".XComMod")) return Promise.resolve({} as never);
-        return Promise.resolve({ isDirectory: () => true } as never);
+      const loadOrders = mockDeserializeFs({
+        mods: ["ModA", "ModB"],
+        iniContent: '[Engine.XComModOptions]\nActiveMods="ModA"\n',
       });
-
-      vi.mocked(fs.readFileAsync).mockResolvedValue(
-        '[Engine.XComModOptions]\nActiveMods="ModA"\n' as never,
-      );
-
-      const deserialize = loadOrders[0]!.deserializeLoadOrder as Function;
-      const result = await deserialize();
-
+      const result = await (loadOrders[0]!.deserializeLoadOrder as Function)();
       const modA = result.find((e: { name: string }) => e.name === "ModA");
       const modB = result.find((e: { name: string }) => e.name === "ModB");
       expect(modA.enabled).toBe(true);
@@ -373,74 +345,42 @@ describe("load order", () => {
     });
 
     test("returns an empty load order when no mods are installed", async () => {
-      const { context, loadOrders } = createMockContext();
-      init(context as never);
-
-      vi.mocked(util.getSafe).mockReturnValue({ path: "C:\\Games\\XCOM2" });
-      vi.mocked(fs.readdirAsync).mockResolvedValue([] as never);
-      vi.mocked(fs.readFileAsync).mockRejectedValue(
-        Object.assign(new Error("ENOENT"), { code: "ENOENT" }),
-      );
-
-      const deserialize = loadOrders[0]!.deserializeLoadOrder as Function;
-      const result = await deserialize();
+      const loadOrders = mockDeserializeFs();
+      const result = await (loadOrders[0]!.deserializeLoadOrder as Function)();
       expect(result).toEqual([]);
     });
 
     test("populates modId from deployed manifest when paths match", async () => {
-      const { context, loadOrders } = createMockContext();
-      init(context as never);
-
-      vi.mocked(util.getSafe).mockReturnValue({ path: "C:\\Games\\XCOM2" });
-      vi.mocked(fs.readdirAsync)
-        .mockResolvedValueOnce(["ModA"] as never)
-        .mockResolvedValue([] as never);
-      vi.mocked(fs.statAsync).mockImplementation((filePath: string) => {
-        if (filePath.endsWith(".XComMod")) return Promise.resolve({} as never);
-        return Promise.resolve({ isDirectory: () => true } as never);
-      });
-      vi.mocked(fs.readFileAsync).mockRejectedValue(
-        Object.assign(new Error("ENOENT"), { code: "ENOENT" }),
-      );
+      const loadOrders = mockDeserializeFs({ mods: ["ModA"] });
       vi.mocked(util.getManifest).mockResolvedValue({
         files: [{ relPath: path.join("ModA", "ModA.XComMod"), source: "vortex-mod-42" }],
       } as never);
-
-      const deserialize = loadOrders[0]!.deserializeLoadOrder as Function;
-      const [entry] = await deserialize();
+      const [entry] = await (loadOrders[0]!.deserializeLoadOrder as Function)();
       expect(entry.modId).toBe("vortex-mod-42");
     });
 
     test("picks up steam workshop mods and lowercases the steam-prefixed id", async () => {
-      const { context, loadOrders } = createMockContext();
-      init(context as never);
+      const { loadOrders } = initAndRegister();
 
-      // Steam install layout: ...\steamapps\common\XCOM 2 → workshop dir at
+      // Steam install layout: ...\steamapps\common\XCOM 2 -> workshop dir at
       // ...\steamapps\workshop\content\268500\<workshopId>\<ModName>.XComMod
       const gamePath = "C:\\Steam\\steamapps\\common\\XCOM 2";
       vi.mocked(util.getSafe).mockReturnValue({ path: gamePath });
-
       vi.mocked(fs.readdirAsync).mockImplementation((p: string) => {
         const s = String(p);
-        // Mods folder — no local mods, only workshop.
         if (s.endsWith(path.join("XComGame", "Mods"))) return Promise.resolve([] as never);
-        // Workshop content/268500 — one workshop entry directory.
         if (s.endsWith(path.join("workshop", "content", "268500"))) {
           return Promise.resolve(["1234567890"] as never);
         }
-        // Inside the workshop entry — the .XComMod descriptor.
         if (s.endsWith("1234567890")) {
           return Promise.resolve(["WorkshopMod.XComMod"] as never);
         }
         return Promise.resolve([] as never);
       });
       vi.mocked(fs.statAsync).mockResolvedValue({ isDirectory: () => true } as never);
-      vi.mocked(fs.readFileAsync).mockRejectedValue(
-        Object.assign(new Error("ENOENT"), { code: "ENOENT" }),
-      );
+      vi.mocked(fs.readFileAsync).mockRejectedValue(ENOENT);
 
-      const deserialize = loadOrders[0]!.deserializeLoadOrder as Function;
-      const result = await deserialize();
+      const result = await (loadOrders[0]!.deserializeLoadOrder as Function)();
       expect(result).toHaveLength(1);
       expect(result[0].name).toBe("WorkshopMod");
       // Regression guard: the id must be a lowercased "steam-<name>", not
@@ -451,9 +391,7 @@ describe("load order", () => {
 
   describe("serializeLoadOrder", () => {
     test("writes enabled mods to INI file", async () => {
-      const { context, loadOrders } = createMockContext();
-      init(context as never);
-
+      const { loadOrders } = initAndRegister();
       vi.mocked(util.getSafe).mockReturnValue({ path: "C:\\Games\\XCOM2" });
 
       const serialize = loadOrders[0]!.serializeLoadOrder as Function;
@@ -473,9 +411,7 @@ describe("load order", () => {
     });
 
     test("WOTC serializes under XCom2-WarOfTheChosen/XComGame/Config", async () => {
-      const { context, loadOrders } = createMockContext();
-      init(context as never);
-
+      const { loadOrders } = initAndRegister();
       vi.mocked(util.getSafe).mockReturnValue({ path: "C:\\Games\\XCOM2" });
 
       const serialize = loadOrders[1]!.serializeLoadOrder as Function;
@@ -487,9 +423,7 @@ describe("load order", () => {
     });
 
     test("empty enabled list still writes the INI header", async () => {
-      const { context, loadOrders } = createMockContext();
-      init(context as never);
-
+      const { loadOrders } = initAndRegister();
       vi.mocked(util.getSafe).mockReturnValue({ path: "C:\\Games\\XCOM2" });
 
       const serialize = loadOrders[0]!.serializeLoadOrder as Function;
@@ -518,20 +452,16 @@ describe("load order", () => {
 // by a single "never auto-classifies" assertion rather than per-modType.
 
 describe("mod types", () => {
-  function getModTypes() {
-    const { context, modTypes } = createMockContext();
-    init(context as never);
-    return modTypes;
-  }
+  type ModTypeEntry = ReturnType<typeof initAndRegister>["modTypes"][number];
 
-  function findModType(modTypes: ReturnType<typeof getModTypes>, id: string) {
+  function findModType(modTypes: ModTypeEntry[], id: string): ModTypeEntry {
     const mt = modTypes.find((m) => m.id === id);
     if (!mt) throw new Error(`no modType with id=${id}`);
     return mt;
   }
 
   test("registers three mod types: character pool, config drop-in, save", () => {
-    const modTypes = getModTypes();
+    const { modTypes } = initAndRegister();
     expect(modTypes.map((m) => m.id).sort()).toEqual([
       "xcom2-character-pool",
       "xcom2-config-drop-in",
@@ -541,7 +471,8 @@ describe("mod types", () => {
 
   for (const id of ["xcom2-character-pool", "xcom2-config-drop-in", "xcom2-save"]) {
     test(`${id}: isGameSupported accepts xcom2 + xcom2-wotc, rejects others`, () => {
-      const mt = findModType(getModTypes(), id);
+      const { modTypes } = initAndRegister();
+      const mt = findModType(modTypes, id);
       expect(mt.isGameSupported("xcom2")).toBe(true);
       expect(mt.isGameSupported("xcom2-wotc")).toBe(true);
       expect(mt.isGameSupported("xrebirth")).toBe(false);
@@ -549,7 +480,8 @@ describe("mod types", () => {
     });
 
     test(`${id}: never auto-classifies existing mods`, async () => {
-      const mt = findModType(getModTypes(), id);
+      const { modTypes } = initAndRegister();
+      const mt = findModType(modTypes, id);
       const verdict = await (mt.test as Function)([
         { type: "copy", source: "x", destination: "y" },
       ]);
@@ -559,7 +491,8 @@ describe("mod types", () => {
 
   describe("getInstallPath", () => {
     test("character-pool: xcom2 deploys to XComGame/CharacterPool/Importable", () => {
-      const mt = findModType(getModTypes(), "xcom2-character-pool");
+      const { modTypes } = initAndRegister();
+      const mt = findModType(modTypes, "xcom2-character-pool");
       vi.mocked(util.getSafe).mockReturnValue({ path: "/games/xcom2" });
       expect(mt.getInstallPath({ id: "xcom2" })).toBe(
         path.join("/games/xcom2", "XComGame", "CharacterPool", "Importable"),
@@ -567,7 +500,8 @@ describe("mod types", () => {
     });
 
     test("character-pool: WOTC nests under XCom2-WarOfTheChosen", () => {
-      const mt = findModType(getModTypes(), "xcom2-character-pool");
+      const { modTypes } = initAndRegister();
+      const mt = findModType(modTypes, "xcom2-character-pool");
       vi.mocked(util.getSafe).mockReturnValue({ path: "/games/xcom2" });
       expect(mt.getInstallPath({ id: "xcom2-wotc" })).toBe(
         path.join(
@@ -581,7 +515,8 @@ describe("mod types", () => {
     });
 
     test("character-pool: returns undefined when discovery is missing", () => {
-      const mt = findModType(getModTypes(), "xcom2-character-pool");
+      const { modTypes } = initAndRegister();
+      const mt = findModType(modTypes, "xcom2-character-pool");
       // util.getSafe's mock-default returns the fallback (undefined) when the
       // state path isn't overridden.
       vi.mocked(util.getSafe).mockReturnValueOnce(undefined);
@@ -589,20 +524,23 @@ describe("mod types", () => {
     });
 
     test("config-drop-in: install path is the game's discovered root", () => {
-      const mt = findModType(getModTypes(), "xcom2-config-drop-in");
+      const { modTypes } = initAndRegister();
+      const mt = findModType(modTypes, "xcom2-config-drop-in");
       vi.mocked(util.getSafe).mockReturnValue({ path: "/games/xcom2" });
       expect(mt.getInstallPath({ id: "xcom2" })).toBe("/games/xcom2");
       expect(mt.getInstallPath({ id: "xcom2-wotc" })).toBe("/games/xcom2");
     });
 
     test("config-drop-in: undefined when discovery is missing", () => {
-      const mt = findModType(getModTypes(), "xcom2-config-drop-in");
+      const { modTypes } = initAndRegister();
+      const mt = findModType(modTypes, "xcom2-config-drop-in");
       vi.mocked(util.getSafe).mockReturnValueOnce(undefined);
       expect(mt.getInstallPath({ id: "xcom2" })).toBeUndefined();
     });
 
     test("save: xcom2 deploys to <documents>/My Games/XCOM2/XComGame/SaveData", () => {
-      const mt = findModType(getModTypes(), "xcom2-save");
+      const { modTypes } = initAndRegister();
+      const mt = findModType(modTypes, "xcom2-save");
       vi.mocked(util.getVortexPath).mockReturnValue("/home/test/Documents");
       expect(mt.getInstallPath({ id: "xcom2" })).toBe(
         path.join("/home/test/Documents", "My Games", "XCOM2", "XComGame", "SaveData"),
@@ -610,7 +548,8 @@ describe("mod types", () => {
     });
 
     test("save: WOTC uses 'XCOM2 War of the Chosen' docs subdir", () => {
-      const mt = findModType(getModTypes(), "xcom2-save");
+      const { modTypes } = initAndRegister();
+      const mt = findModType(modTypes, "xcom2-save");
       vi.mocked(util.getVortexPath).mockReturnValue("/home/test/Documents");
       expect(mt.getInstallPath({ id: "xcom2-wotc" })).toBe(
         path.join(
@@ -642,16 +581,16 @@ function makeMod(opts: Partial<ModFixture> = {}): ModFixture {
 
 describe("health checks", () => {
   function getCheck(id: string) {
-    const { context, healthChecks } = createMockContext();
-    init(context as never);
+    const { healthChecks } = initAndRegister();
     const check = healthChecks.find((c) => c.id === id);
     if (!check) throw new Error(`no health check with id=${id}`);
-    return check as { checkMod: (api: unknown, mod: ModFixture) => Promise<{ status: string }> };
+    return check as {
+      checkMod: (api: unknown, mod: ModFixture) => Promise<{ status: string; message?: string }>;
+    };
   }
 
   test("registers all five health checks", () => {
-    const { context, healthChecks } = createMockContext();
-    init(context as never);
+    const { healthChecks } = initAndRegister();
     expect(healthChecks.map((c) => c.id).sort()).toEqual([
       "xcom2-character-pool-has-bin",
       "xcom2-has-xcommod-file",

@@ -5,7 +5,10 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   resolve: {
     alias: {
-      "vortex-api": path.resolve(import.meta.dirname, "__mocks__/vortex-api.ts"),
+      "vortex-api": path.resolve(
+        import.meta.dirname,
+        "../../../packages/vortex-api/src/testing/index.ts",
+      ),
       "@electron/remote": path.resolve(import.meta.dirname, "__mocks__/electron-remote.ts"),
     },
   },
