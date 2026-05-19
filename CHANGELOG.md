@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.2] - 2026-05-19
+
+### Changed
+
+- nexus-api now refreshes the OAuth access token proactively when within 30s of expiry; concurrent refreshes coalesce into a single `/oauth/token` call, with the 401-driven fallback retained for clock skew and server-side revocation ([#23178](https://github.com/Nexus-Mods/Vortex/pull/23178))
+- Notifications with actions now persist until the user acts on or dismisses them, matching the documented `INotification` contract (both classic and modern UI) ([#23226](https://github.com/Nexus-Mods/Vortex/pull/23226))
+- Modern UI notification popover now auto-opens for notifications dispatched during startup ([#23226](https://github.com/Nexus-Mods/Vortex/pull/23226))
+- Extension install failures now surface the underlying 7z error text instead of the generic "needs to include index.js and info.json on top-level" message ([#23209](https://github.com/Nexus-Mods/Vortex/pull/23209))
+- Added diagnostic logging in the External Changes path to help triage spurious ECD reports ([#23208](https://github.com/Nexus-Mods/Vortex/pull/23208))
+- Removed last traces of `electron/remote` from bundled plugins ([#23131](https://github.com/Nexus-Mods/Vortex/pull/23131))
+
+### Fixed
+
+- Missing or failed-to-load extension dependencies left games un-manageable; the install, profile-management, notifications, and modtype-enb paths were all hardened against this state ([#23226](https://github.com/Nexus-Mods/Vortex/pull/23226))
+- "Game not discovered" dialog incorrectly shown on `--game` restart/relaunch while async discovery was still in flight ([#23210](https://github.com/Nexus-Mods/Vortex/pull/23210))
+- Tracked-mods fetch crashing when the Nexus client lacked OAuth configuration ([#23173](https://github.com/Nexus-Mods/Vortex/pull/23173))
+- Main-process access violation when destroying a `BrowserWindow` with the mouse over it; added synchronous renderer diagnostics that survive teardown crashes ([#23179](https://github.com/Nexus-Mods/Vortex/pull/23179))
+- Old "Tools" dashlet appeared in the modern UI and was missing from the classic UI ([#23166](https://github.com/Nexus-Mods/Vortex/pull/23166))
+- Notification "suppress" action icon was a cog/gear, which read as "settings" rather than "suppress" ([#23152](https://github.com/Nexus-Mods/Vortex/pull/23152))
+- `profile-did-change` crash when the active game's discovery folder had just been cleared by the startup discovery pass ([#23144](https://github.com/Nexus-Mods/Vortex/pull/23144))
+- Auto-updater spuriously logging `downloadUpdate` errors on every launch when already on the latest version ([#23132](https://github.com/Nexus-Mods/Vortex/pull/23132))
+- Conflict Editor "Before All" / "After All" silently doing nothing when a filter was applied to the source mod name ([#23136](https://github.com/Nexus-Mods/Vortex/pull/23136))
+- "Not yet initialized" log line caused by `startup.json` being read before `ApplicationData.init()` resolved ([#23130](https://github.com/Nexus-Mods/Vortex/pull/23130))
+- Improved scrollbar visibility for the table component ([#23125](https://github.com/Nexus-Mods/Vortex/pull/23125))
+
 ## [2.0.1] - 2026-05-12
 
 ### Changed
@@ -1771,6 +1796,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[2.0.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.0.2
 [2.0.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.0.1
 [2.0.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.0.0
 [2.0.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.0.0-beta.2
