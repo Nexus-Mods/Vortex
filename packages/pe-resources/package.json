@@ -29,5 +29,17 @@
       },
       "./package.json": "./package.json"
     }
+  },
+  "nx": {
+    "targets": {
+      "test": {
+        "dependsOn": [
+          {
+            "target": "build:win",
+            "projects": "@tools/dotnetprobe"
+          }
+        ]
+      }
+    }
   }
 }

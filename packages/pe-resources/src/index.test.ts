@@ -19,8 +19,10 @@ const RT_ICON = 3;
 const RT_GROUP_ICON = 14;
 const RT_VERSION = 16;
 
-// Cross-platform fixture — already committed to the repo
-const DOTNET_PROBE = path.resolve(import.meta.dirname, "../../../assets/dotnetprobe.exe");
+const DOTNET_PROBE = path.resolve(
+  import.meta.dirname,
+  "../../../tools/dotnetprobe/temp/dotnetprobe.exe",
+);
 
 // --- Cross-platform tests (use committed PE fixture) ---
 
