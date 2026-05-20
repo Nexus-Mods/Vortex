@@ -1,7 +1,7 @@
 import * as path from "path";
 
+import { selectors, types, util } from "@nexusmods/vortex-api";
 import * as Redux from "redux";
-import { selectors, types, util } from "vortex-api";
 
 interface IGameSupport {
   fileFilter?: (fileName: string) => boolean;

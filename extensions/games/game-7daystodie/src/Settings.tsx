@@ -1,5 +1,6 @@
 import path from "path";
 
+import { Icon, More, util } from "@nexusmods/vortex-api";
 import React from "react";
 import {
   Button,
@@ -13,7 +14,6 @@ import {
 } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { Icon, More, util } from "vortex-api";
 
 import { GAME_ID, I18N_NAMESPACE } from "./common";
 

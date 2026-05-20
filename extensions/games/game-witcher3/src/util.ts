@@ -1,9 +1,9 @@
 import path from "path";
 
+import { fs, log, types, selectors, util } from "@nexusmods/vortex-api";
 /* eslint-disable */
 import Bluebird from "bluebird";
 import turbowalk, { IEntry, IWalkOptions } from "turbowalk";
-import { fs, log, types, selectors, util } from "vortex-api";
 
 import {
   GAME_ID,

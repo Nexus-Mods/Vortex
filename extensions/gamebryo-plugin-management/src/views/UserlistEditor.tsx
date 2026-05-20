@@ -1,3 +1,4 @@
+import { ComponentEx, Icon, tooltip, types } from "@nexusmods/vortex-api";
 import I18next from "i18next";
 import * as React from "react";
 import { Button, ListGroup, ListGroupItem, Modal, ModalHeader } from "react-bootstrap";
@@ -6,7 +7,6 @@ import { connect } from "react-redux";
 import Select from "react-select";
 import * as Redux from "redux";
 import { ThunkDispatch } from "redux-thunk";
-import { ComponentEx, Icon, tooltip, types } from "vortex-api";
 
 import { addRule, removeRule } from "../actions/userlist";
 import { closeDialog } from "../actions/userlistEdit";

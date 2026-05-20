@@ -1,6 +1,6 @@
 import path from "path";
 
-import { types } from "vortex-api";
+import { types } from "@nexusmods/vortex-api";
 
 import { MOD_INFO_JSON_FILE } from "./common";
 

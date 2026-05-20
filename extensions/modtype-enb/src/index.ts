@@ -1,7 +1,7 @@
 import * as path from "path";
 
+import { types, util } from "@nexusmods/vortex-api";
 import Promise from "bluebird";
-import { types, util } from "vortex-api";
 
 function testSupported(files: string[]): Promise<types.ISupportedResult> {
   const supported =
@@ -50,6 +50,9 @@ function install(
 
 function gameSupported(gameId: string) {
   const game = util.getGame(gameId);
+  if (game === undefined) {
+    return false;
+  }
   if (game.compatible?.deployToGameDirectory === false || game.compatible?.enb === false) {
     return false;
   }

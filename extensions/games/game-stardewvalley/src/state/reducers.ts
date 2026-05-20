@@ -1,8 +1,8 @@
 /**
  * Defines Redux reducer state and handlers for Stardew Valley settings.
  */
-import type { types } from "vortex-api";
-import { util } from "vortex-api";
+import type { types } from "@nexusmods/vortex-api";
+import { util } from "@nexusmods/vortex-api";
 
 import * as actions from "./actions";
 

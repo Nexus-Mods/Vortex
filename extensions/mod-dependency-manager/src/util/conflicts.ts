@@ -1,7 +1,7 @@
 import * as path from "path";
 
+import { log, types, util } from "@nexusmods/vortex-api";
 import turbowalk from "turbowalk";
-import { log, types, util } from "vortex-api";
 
 /* eslint-disable */
 import { ConflictSuggestion, IConflict } from "../types/IConflict";

@@ -1,4 +1,15 @@
 import { IIssue } from "@nexusmods/nexus-api";
+import {
+  actions,
+  ComponentEx,
+  Dashlet,
+  log,
+  Spinner,
+  tooltip,
+  types,
+  util,
+} from "@nexusmods/vortex-api";
+import * as va from "@nexusmods/vortex-api";
 import Promise from "bluebird";
 import * as React from "react";
 import { Button, OverlayTrigger, Popover } from "react-bootstrap";
@@ -6,8 +17,6 @@ import * as ReactDOM from "react-dom";
 import { withTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
 import { connect } from "react-redux";
-import { actions, ComponentEx, Dashlet, log, Spinner, tooltip, types, util } from "vortex-api";
-import * as va from "vortex-api";
 
 import { setUpdateDetails, updateIssueList } from "./actions/persistent";
 import { openFeedbackResponder, setOutstandingIssues } from "./actions/session";

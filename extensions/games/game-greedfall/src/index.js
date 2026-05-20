@@ -1,6 +1,6 @@
 const Promise = require("bluebird");
 const path = require("path");
-const { fs, selectors, types, util } = require("vortex-api");
+const { fs, selectors, types, util } = require("@nexusmods/vortex-api");
 
 const GAME_ID = "greedfall";
 

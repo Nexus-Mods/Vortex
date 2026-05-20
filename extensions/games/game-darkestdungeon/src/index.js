@@ -2,7 +2,7 @@ const Promise = require("bluebird");
 const path = require("path");
 const winapi = require("winapi-bindings");
 const { parseStringPromise } = require("xml2js");
-const { fs, log, util, actions, selectors } = require("vortex-api");
+const { fs, log, util, actions, selectors } = require("@nexusmods/vortex-api");
 
 let _API;
 let _GAME_MODS_FOLDER;

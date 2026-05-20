@@ -1,6 +1,6 @@
 import * as path from "path";
 
-import { fs, selectors, types, util } from "vortex-api";
+import { fs, selectors, types, util } from "@nexusmods/vortex-api";
 
 import { setImportStep } from "./actions/session";
 import { sessionReducer } from "./reducers/session";

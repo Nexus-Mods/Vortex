@@ -1,6 +1,6 @@
 const Promise = require("bluebird");
 const path = require("path");
-const { fs, log, util } = require("vortex-api");
+const { fs, log, util } = require("@nexusmods/vortex-api");
 
 function findGame() {
   return util.steam.findByName("Factorio").then((game) => game.gamePath);

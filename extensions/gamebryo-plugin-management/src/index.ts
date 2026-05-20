@@ -3,11 +3,11 @@ import { stat as fsStat } from "fs/promises";
 import * as path from "path";
 import * as nodeUtil from "util";
 
+import { actions, fs, log, selectors, types, util } from "@nexusmods/vortex-api";
 import Promise from "bluebird";
 import I18next from "i18next";
 import * as Redux from "redux";
 import { createSelector } from "reselect";
-import { actions, fs, log, selectors, types, util } from "vortex-api";
 
 /* eslint-disable */
 import { setPluginEnabled, setPluginOrder, updatePluginOrder } from "./actions/loadOrder";

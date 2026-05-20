@@ -1,7 +1,7 @@
 import * as path from "path";
 
+import { selectors, tooltip, types, util } from "@nexusmods/vortex-api";
 import * as React from "react";
-import { selectors, tooltip, types, util } from "vortex-api";
 
 import { setSelectedMods } from "./actions/session";
 import { sessionReducer } from "./reducers/session";

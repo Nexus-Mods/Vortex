@@ -1,6 +1,6 @@
+import { Icon, log } from "@nexusmods/vortex-api";
 import * as React from "react";
 import { TFunction } from "react-i18next";
-import { Icon, log } from "vortex-api";
 
 import InfoCache from "../../util/InfoCache";
 

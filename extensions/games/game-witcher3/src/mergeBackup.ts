@@ -1,10 +1,10 @@
 import path from "path";
 
+import { fs, log, selectors, types, util } from "@nexusmods/vortex-api";
 /* eslint-disable */
 import _ from "lodash";
 import { generate } from "shortid";
 import turbowalk from "turbowalk";
-import { fs, log, selectors, types, util } from "vortex-api";
 
 import { hex2Buffer, prepareFileData, restoreFileData } from "./collections/util";
 import {

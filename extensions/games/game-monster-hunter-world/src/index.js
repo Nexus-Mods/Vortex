@@ -1,7 +1,7 @@
 const Promise = require("bluebird");
 const path = require("path");
 const winapi = require("winapi-bindings");
-const { actions, fs, util } = require("vortex-api");
+const { actions, fs, util } = require("@nexusmods/vortex-api");
 
 const STRACKER_FILES = ["loader-config.json", "loader.dll"];
 const GAME_ID = "monsterhunterworld";

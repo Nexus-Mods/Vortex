@@ -1,10 +1,10 @@
 import { IRevision } from "@nexusmods/nexus-api";
 import * as nexus from "@nexusmods/nexus-api";
+import { MainContext, types, Modal, selectors, util } from "@nexusmods/vortex-api";
 import * as React from "react";
 import { Button, Checkbox, FormGroup } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { MainContext, types, Modal, selectors, util } from "vortex-api";
 
 import { updateSuccessRate } from "../../actions/persistent";
 import { healthDownvoteDialog } from "../../actions/session";

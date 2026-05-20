@@ -1,0 +1,182 @@
+name: Game Extension Test
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: game-extension-test
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      games: ${{ steps.find.outputs.games }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Discover opted-in game extensions
+        id: find
+        run: |
+          games=$(node -e '
+            const fs = require("fs");
+            const path = require("path");
+            const dir = "extensions/games";
+            const out = [];
+            for (const entry of fs.readdirSync(dir)) {
+              const pkg = path.join(dir, entry, "package.json");
+              if (!fs.existsSync(pkg)) continue;
+              try {
+                const j = JSON.parse(fs.readFileSync(pkg, "utf8"));
+                if (j && j.vortex && j.vortex.gameExtensionTest === true) out.push(entry);
+              } catch (e) {}
+            }
+            console.log(JSON.stringify(out));
+          ')
+          echo "games=$games" >> "$GITHUB_OUTPUT"
+          echo "Discovered: $games"
+
+  test:
+    needs: discover
+    if: needs.discover.outputs.games != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        game: ${{ fromJson(needs.discover.outputs.games) }}
+    name: test (${{ matrix.game }})
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+
+      - name: Read Node.js version from package.json
+        id: node-version
+        run: |
+          NODE_VERSION=$(node -p "require('./package.json').engines.node")
+          echo "NODE_VERSION=$NODE_VERSION" >> "$GITHUB_OUTPUT"
+          echo "Using Node.js version: $NODE_VERSION"
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ steps.node-version.outputs.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: |
+          pnpm install --frozen-lockfile \
+            --filter "@vortex/game-extension-test" \
+            --filter "@vortex/extension-test-mocks" \
+            --filter "...{./extensions/games/${{ matrix.game }}}"
+
+      - name: Run tests for ${{ matrix.game }}
+        id: run
+        env:
+          NEXUS_API_KEY: ${{ secrets.NEXUS_API_KEY }}
+          FORCE_COLOR: "0"
+        run: |
+          set -o pipefail
+          pnpm --filter @vortex/game-extension-test run start -- --game ${{ matrix.game }} 2>&1 | tee /tmp/vitest.log
+
+      - name: Write step summary
+        if: always()
+        run: |
+          if [ "${{ steps.run.outcome }}" = "success" ]; then
+            icon="✅"
+          else
+            icon="❌"
+          fi
+          strip='s/\x1b\[[0-9;]*[a-zA-Z]//g'
+          files_line=$(grep -E "^\s*Test Files\s+" /tmp/vitest.log | tail -1 | sed -E "$strip" || true)
+          tests_line=$(grep -E "^\s*Tests\s+" /tmp/vitest.log | tail -1 | sed -E "$strip" || true)
+          dur_line=$(grep -E "^\s*Duration\s+" /tmp/vitest.log | tail -1 | sed -E "$strip" || true)
+          {
+            echo "## $icon ${{ matrix.game }}"
+            echo ""
+            echo "**Outcome:** \`${{ steps.run.outcome }}\`"
+            echo ""
+            [ -n "$files_line" ] && echo "- $files_line"
+            [ -n "$tests_line" ] && echo "- $tests_line"
+            [ -n "$dur_line" ]   && echo "- $dur_line"
+            echo ""
+            echo "<details><summary>Output (last 200 lines)</summary>"
+            echo ""
+            echo '```'
+            sed -E "$strip" /tmp/vitest.log | tail -200
+            echo '```'
+            echo "</details>"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Annotate on failure
+        if: failure()
+        run: |
+          echo "::error title=${{ matrix.game }}::game-extension-test failed for ${{ matrix.game }} — see job summary for details."
+
+  rollup:
+    needs: [discover, test]
+    if: always() && needs.discover.outputs.games != '[]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Aggregate summary
+        run: |
+          status="${{ needs.test.result }}"
+          if [ "$status" = "success" ]; then
+            icon="✅"
+          else
+            icon="❌"
+          fi
+          games='${{ needs.discover.outputs.games }}'
+          count=$(node -p "JSON.parse(process.argv[1]).length" "$games")
+          {
+            echo "# $icon Game Extension Test"
+            echo ""
+            echo "Ran **$count** game extension(s). Overall result: \`$status\`."
+            echo ""
+            echo "See each \`test (<game>)\` job above for per-game pass/fail counts and output."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Report failure via rolling issue
+        if: needs.test.result == 'failure'
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const title = "[game-extension-test] nightly run failed";
+            const body = `Nightly run failed on ${new Date().toISOString()}.\n\nWorkflow: ${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
+            const { owner, repo } = context.repo;
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+              owner, repo, state: "open", labels: "game-extension-test",
+            });
+            const existing = issues.find(i => i.title === title);
+            if (existing) {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: existing.number, body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner, repo, title, body, labels: ["game-extension-test"],
+              });
+            }
+
+      - name: Close rolling issue on success
+        if: needs.test.result == 'success'
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const title = "[game-extension-test] nightly run failed";
+            const { owner, repo } = context.repo;
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+              owner, repo, state: "open", labels: "game-extension-test",
+            });
+            const existing = issues.find(i => i.title === title);
+            if (existing) {
+              await github.rest.issues.update({
+                owner, repo, issue_number: existing.number, state: "closed",
+              });
+            }

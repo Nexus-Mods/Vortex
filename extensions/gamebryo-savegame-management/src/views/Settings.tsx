@@ -1,10 +1,10 @@
+import { ComponentEx, selectors, Toggle } from "@nexusmods/vortex-api";
 import * as React from "react";
 import { ControlLabel, FormGroup, HelpBlock } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import * as Redux from "redux";
 import { ThunkDispatch } from "redux-thunk";
-import { ComponentEx, selectors, Toggle } from "vortex-api";
 
 import { enableMonitor } from "../actions/settings";
 import { gameSupported } from "../util/gameSupport";

@@ -1,7 +1,7 @@
 const path = require("path");
 const semver = require("semver");
 const Promise = require("bluebird");
-const { util } = require("vortex-api");
+const { util } = require("@nexusmods/vortex-api");
 
 const { BAS_EXEC, GAME_ID, MOD_MANIFEST } = require("./common");
 const {

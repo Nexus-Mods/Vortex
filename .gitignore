@@ -16,7 +16,6 @@ sourcemaps
 *.env
 CodeSignTool*
 BuildPatchTool*
-assets/modules.json
 
 # User-specific files
 *.suo
@@ -65,7 +64,7 @@ log.txt
 nul
 
 # Claude Code directory
-.claude
+.claude/settings.local.json
 
 # direnv
 .direnv/

@@ -1,7 +1,7 @@
 import * as path from "path";
 
+import { fs, util } from "@nexusmods/vortex-api";
 import Promise from "bluebird";
-import { fs, util } from "vortex-api";
 
 function convertGameId(input: string): string {
   if (input === "skyrimse") {

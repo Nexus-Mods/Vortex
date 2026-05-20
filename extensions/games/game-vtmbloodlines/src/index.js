@@ -1,7 +1,7 @@
 const Promise = require("bluebird");
 const path = require("path");
 const winapi = require("winapi-bindings");
-const { fs, util } = require("vortex-api");
+const { fs, util } = require("@nexusmods/vortex-api");
 
 const { default: IniParser, WinapiFormat } = require("vortex-parse-ini");
 

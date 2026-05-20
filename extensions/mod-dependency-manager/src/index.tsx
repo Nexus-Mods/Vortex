@@ -4,6 +4,16 @@
 
 import * as path from "path";
 
+import {
+  actions,
+  fs,
+  log,
+  PureComponentEx,
+  selectors,
+  ToolbarIcon,
+  types,
+  util,
+} from "@nexusmods/vortex-api";
 import Bluebird from "bluebird";
 import I18next, { WithT } from "i18next";
 import * as _ from "lodash";
@@ -14,7 +24,6 @@ import { connect } from "react-redux";
 import * as Redux from "redux";
 import {} from "redux-thunk";
 import shortid from "shortid";
-import { actions, fs, log, PureComponentEx, selectors, ToolbarIcon, types, util } from "vortex-api";
 
 import {
   setConflictDialog,

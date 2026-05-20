@@ -1,7 +1,7 @@
 import * as path from "path";
 
+import { actions, fs, log, selectors, types, util } from "@nexusmods/vortex-api";
 import Bluebird from "bluebird";
-import { actions, fs, log, selectors, types, util } from "vortex-api";
 
 import { IDataArchive, IGameData, IIncompatibleArchive } from "./types";
 

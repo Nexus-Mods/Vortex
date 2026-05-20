@@ -23,7 +23,7 @@
     "react": "catalog:",
     "react-i18next": "catalog:",
     "shortid": "catalog:",
-    "vortex-api": "workspace:*"
+    "@nexusmods/vortex-api": "workspace:*"
   },
   "nx": {
     "tags": [

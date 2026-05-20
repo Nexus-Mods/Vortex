@@ -26,7 +26,10 @@ const NotificationsContent: React.FC<{ popoverOpen: boolean }> = ({ popoverOpen 
     [notifications],
   );
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const prevIdsRef = useRef(new Set(notifications.map((n) => n.id)));
+  // Empty seed so notifications already present at mount (dispatched
+  // before this component rendered, e.g. during startup) count as new
+  // on the first effect run and trigger the auto-open.
+  const prevIdsRef = useRef<Set<string>>(new Set());
 
   const [expand, setExpand] = useState<string | undefined>(undefined);
 

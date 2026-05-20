@@ -1,8 +1,8 @@
+import { ComponentEx, Toggle, types, util } from "@nexusmods/vortex-api";
 import type { TFunction } from "i18next";
 import memoize from "memoize-one";
 import * as React from "react";
 import { ControlLabel, ListGroup, ListGroupItem } from "react-bootstrap";
-import { ComponentEx, Toggle, types, util } from "vortex-api";
 
 import { ICollectionModRule, ICollectionModRuleEx } from "../../types/ICollection";
 import { renderReference, ruleId } from "../../util/util";

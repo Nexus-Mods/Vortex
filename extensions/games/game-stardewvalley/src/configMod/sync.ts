@@ -8,9 +8,9 @@
  */
 import path from "path";
 
+import { fs, log, selectors, util } from "@nexusmods/vortex-api";
+import type { types } from "@nexusmods/vortex-api";
 import type { IEntry } from "turbowalk";
-import { fs, log, selectors, util } from "vortex-api";
-import type { types } from "vortex-api";
 
 import { GAME_ID, MOD_CONFIG, MODS_REL_PATH, NOTIF_ACTIVITY_CONFIG_MOD } from "../common";
 import { findSMAPITool, getSMAPIMods } from "../smapi/selectors";

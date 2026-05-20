@@ -35,7 +35,7 @@
     "redux": "catalog:",
     "semver": "catalog:",
     "shortid": "catalog:",
-    "vortex-api": "workspace:*",
+    "@nexusmods/vortex-api": "workspace:*",
     "vortex-parse-ini": "catalog:"
   },
   "nx": {

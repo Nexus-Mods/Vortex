@@ -1,6 +1,6 @@
 import path from "path";
 
-import { fs, types, selectors } from "vortex-api";
+import { fs, types, selectors } from "@nexusmods/vortex-api";
 
 import { GAME_ID, HALO_GAMES, MOD_MANIFEST_FILE_PATH } from "./common";
 import { IHaloGame } from "./types";

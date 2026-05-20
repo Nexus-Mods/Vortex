@@ -6,7 +6,7 @@ import * as _ from "lodash";
 import type ZipT from "node-7z";
 import rimraf from "rimraf";
 
-import { removeExtension } from "../../actions";
+import { forgetExtension, removeExtension } from "../../actions";
 import ExtensionManager from "../../ExtensionManager";
 import { log } from "../../logging";
 import type { ExtensionType, IExtension } from "../../types/extensions";
@@ -72,15 +72,32 @@ function installExtensionDependencies(api: IExtensionApi, extPath: string): Prom
 
     const state: IState = api.store.getState();
 
+    const { installed, available } = state.session.extensions;
+
     return PromiseBB.map(handler.dependencies, (depId) => {
-      if (state.session.extensions.installed[depId] !== undefined) {
+      if (installed[depId] !== undefined) {
         return;
       }
-      const ext = state.session.extensions.available.find(
+
+      const ext = available.find(
         (iter) => !iter.type && (iter.name === depId || iter.id === depId),
       );
 
+      // Direct key lookup can miss when the dependent calls
+      // requireExtension(<Nexus display name>) but the installed map is
+      // keyed by info.json `id` (or folder basename). UEMI is the canonical
+      // case: published as "Unreal Engine Mod Installer", but its info.json
+      // name is "Unreal Engine Game Library", so neither key nor name match.
+      // Cross-reference via the Nexus available manifest and compare modId,
+      // which is populated on every Nexus install.
       if (ext !== undefined) {
+        const alreadyInstalled = Object.values(installed).some(
+          (entry) =>
+            (ext.modId !== undefined && entry.modId === ext.modId) || entry.name === ext.name,
+        );
+        if (alreadyInstalled) {
+          return;
+        }
         return api.emitAndAwait("install-extension", ext);
       } else {
         return PromiseBB.resolve();
@@ -107,7 +124,7 @@ function sanitize(input: string): string {
   }
 }
 
-function removeOldVersion(api: IExtensionApi, info: IExtension): PromiseBB<void> {
+function removeOldVersion(api: IExtensionApi, info: IExtension): PromiseBB<string[]> {
   const state: IState = api.store.getState();
   const { installed } = state.session.extensions;
 
@@ -128,7 +145,7 @@ function removeOldVersion(api: IExtensionApi, info: IExtension): PromiseBB<void>
   }
 
   previousVersions.forEach((key) => api.store.dispatch(removeExtension(key)));
-  return PromiseBB.resolve();
+  return PromiseBB.resolve(previousVersions);
 }
 
 /**
@@ -283,6 +300,11 @@ function installExtension(
   let type: ExtensionType;
 
   let extName: string;
+  // Keys whose previous-version state entries were marked for removal during
+  // this install. Cleared after the rename succeeds so the next launch's
+  // state-flag-driven removal path in ExtensionManager doesn't wipe the
+  // just-installed folder (#19527).
+  let removedKeys: string[] = [];
   return PromiseBB.resolve(
     withTrackedActivity(
       "vortex.extension-manager",
@@ -301,6 +323,31 @@ function installExtension(
             () => undefined,
             () => undefined,
           )
+          .then((result: { code: number; errors: string[] }) => {
+            // node-7z can resolve (not reject) with a non-zero exit code or
+            // a populated errors array on partial/failed extraction. Without
+            // this check, validateInstall runs against an empty or partial
+            // tempPath and we surface a misleading "needs index.js and
+            // info.json on top-level" error instead of the real cause
+            // (locked file, AV quarantine, corrupt download, etc.).
+            const code = result?.code ?? 0;
+            const errors = result?.errors ?? [];
+            if (code !== 0 || errors.length > 0) {
+              log(code !== 0 ? "error" : "warn", "extension extraction reported issues", {
+                archivePath,
+                tempPath,
+                code,
+                errors: errors.join("; "),
+              });
+            }
+            if (code !== 0) {
+              const detail = errors.length > 0 ? errors.join("; ") : `exit code ${code}`;
+              return PromiseBB.reject(
+                new DataInvalid(`Failed to extract extension archive: ${detail}`),
+              );
+            }
+            return PromiseBB.resolve();
+          })
           .then(() => validateInstall(tempPath, info).then((guessedType) => (type = guessedType)))
           .then(() => readExtensionInfo(tempPath, false, info))
           // merge the caller-provided info with the stuff parsed from the info.json file because there
@@ -345,10 +392,17 @@ function installExtension(
             }
             return removeOldVersion(api, manifestInfo.info);
           })
-          // we don't actually expect the output directory to exist
-          .then(() => fs.removeAsync(destPath))
+          .then((keys) => {
+            removedKeys = keys;
+            // we don't actually expect the output directory to exist
+            return fs.removeAsync(destPath);
+          })
           .then(() => fs.renameAsync(tempPath, destPath))
           .then(() => {
+            // New files are in place. Clear the `remove: true` flags
+            // dispatched by removeOldVersion so the next ExtensionManager
+            // construction doesn't wipe the freshly-installed folder.
+            removedKeys.forEach((key) => api.store.dispatch(forgetExtension(key)));
             if (type === "translation") {
               return fs
                 .readdirAsync(destPath)

@@ -1,9 +1,9 @@
 import * as path from "path";
 
 import { mdiCommentTextOutline } from "@mdi/js";
+import { fs, log, types, util } from "@nexusmods/vortex-api";
 import Promise from "bluebird";
 import * as tmp from "tmp";
-import { fs, log, types, util } from "vortex-api";
 import * as winapiT from "winapi-bindings";
 
 import {

@@ -1,5 +1,5 @@
 const path = require("path");
-const { fs, types, util } = require("vortex-api");
+const { fs, types, util } = require("@nexusmods/vortex-api");
 
 const GAME_ID = "pathfinderwrathoftherighteous";
 const NAME = "Pathfinder: Wrath\tof the Righteous";

@@ -6,8 +6,8 @@
  * - runtime handlers for Vortex events,
  * - and settings-driven revert behavior.
  */
-import { selectors } from "vortex-api";
-import type { types } from "vortex-api";
+import { selectors } from "@nexusmods/vortex-api";
+import type { types } from "@nexusmods/vortex-api";
 
 import { GAME_ID } from "../common";
 import type { IFileEntry } from "../types";

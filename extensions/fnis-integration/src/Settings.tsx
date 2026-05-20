@@ -1,10 +1,10 @@
+import { More, Toggle, types } from "@nexusmods/vortex-api";
 import I18next from "i18next";
 import * as React from "react";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import * as Redux from "redux";
 import { ThunkDispatch } from "redux-thunk";
-import { More, Toggle, types } from "vortex-api";
 
 import { setAutoRun } from "./actions";
 

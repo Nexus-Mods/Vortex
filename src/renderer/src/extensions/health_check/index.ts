@@ -9,6 +9,7 @@ import {
   HealthCheckTrigger,
   HealthCheckSeverity,
 } from "../../types/IHealthCheck";
+import type { IHealthCheck, IModHealthCheck } from "../../types/IHealthCheck";
 import { activeGameId } from "../../util/selectors";
 import { setHealthCheckRunning } from "./actions/session";
 import { createHealthCheckApi } from "./api";
@@ -29,6 +30,14 @@ let legacyAdapter: LegacyTestAdapter | null = null;
 let healthCheckApi: IHealthCheckApi | null = null;
 
 function init(context: IExtensionContext): boolean {
+  // Create the registry up front so registerHealthCheck routes directly
+  // through it — no buffering, no two-phase setup.
+  registry = new HealthCheckRegistry(context.api);
+
+  context.registerHealthCheck = (hc: IHealthCheck | IModHealthCheck) => {
+    registry!.register(hc);
+  };
+
   // Register session reducer for health check state (registered in both main and renderer)
   context.registerReducer(["session", "healthCheck"], sessionReducer);
 
@@ -54,12 +63,10 @@ function init(context: IExtensionContext): boolean {
   });
 
   context.once(() => {
-    // Create local registry for health checks
-    registry = new HealthCheckRegistry(context.api);
-    legacyAdapter = new LegacyTestAdapter(registry, context.api);
+    legacyAdapter = new LegacyTestAdapter(registry!, context.api);
 
     // Create health check API
-    healthCheckApi = createHealthCheckApi(registry, legacyAdapter, context.api);
+    healthCheckApi = createHealthCheckApi(registry!, legacyAdapter, context.api);
 
     setupAutomaticTriggers(context.api, healthCheckApi);
 

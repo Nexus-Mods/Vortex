@@ -1,7 +1,7 @@
 import path from "path";
 import { setTimeout } from "timers";
 
-import { actions, fs, log, selectors, types, util } from "vortex-api";
+import { actions, fs, log, selectors, types, util } from "@nexusmods/vortex-api";
 import * as winapi from "winapi-bindings";
 
 import { getDownload, getSupportMap, NEXUS, UMM_EXE } from "./common";

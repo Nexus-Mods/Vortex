@@ -2,7 +2,7 @@ const fs = require("fs");
 const { parseString } = require("xml2js");
 const path = require("path");
 const winapi = require("winapi-bindings");
-const { util } = require("vortex-api");
+const { util } = require("@nexusmods/vortex-api");
 
 function findGame() {
   if (process.platform !== "win32") {

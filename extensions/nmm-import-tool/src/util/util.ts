@@ -2,8 +2,8 @@ import { createHash } from "crypto";
 import path from "path";
 import { pathToFileURL } from "url";
 
+import { fs, log, types, util } from "@nexusmods/vortex-api";
 import { TFunction } from "react-i18next";
-import { fs, log, types, util } from "vortex-api";
 import * as winapi from "winapi-bindings";
 
 import { ModsCapacityMap, ICapacityInfo } from "../types/capacityTypes";

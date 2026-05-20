@@ -1,7 +1,7 @@
 import * as path from "path";
 
+import { fs } from "@nexusmods/vortex-api";
 import Promise from "bluebird";
-import { fs } from "vortex-api";
 
 /**
  * find all files in a directory that match a certain name filter and are newer

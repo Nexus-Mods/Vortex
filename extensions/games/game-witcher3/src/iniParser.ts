@@ -1,7 +1,7 @@
 /* eslint-disable */
 import path from "path";
 
-import { fs, selectors, types, util } from "vortex-api";
+import { fs, selectors, types, util } from "@nexusmods/vortex-api";
 import IniParser, { IniFile, WinapiFormat } from "vortex-parse-ini";
 
 import { GAME_ID, ResourceInaccessibleError, getLoadOrderFilePath } from "./common";

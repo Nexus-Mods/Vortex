@@ -1,8 +1,3 @@
-import * as React from "react";
-import { useState } from "react";
-import { Button } from "react-bootstrap";
-import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector, useStore } from "react-redux";
 import {
   EmptyPlaceholder,
   Modal,
@@ -12,7 +7,12 @@ import {
   types,
   Usage,
   util,
-} from "vortex-api";
+} from "@nexusmods/vortex-api";
+import * as React from "react";
+import { useState } from "react";
+import { Button } from "react-bootstrap";
+import { useTranslation } from "react-i18next";
+import { useDispatch, useSelector, useStore } from "react-redux";
 
 import { startAddModsToCollection } from "../actions/session";
 import { alreadyIncluded } from "../collectionCreate";

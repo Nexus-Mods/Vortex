@@ -1,7 +1,7 @@
 import * as path from "path";
 
+import { selectors, types, util } from "@nexusmods/vortex-api";
 import Promise from "bluebird";
-import { selectors, types, util } from "vortex-api";
 
 function testSupported(files: string[]): Promise<types.ISupportedResult> {
   const supported =

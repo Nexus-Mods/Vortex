@@ -1,3 +1,4 @@
+import { actions, ComponentEx, FormFeedback, More, types, util } from "@nexusmods/vortex-api";
 import minimatch from "minimatch";
 import { IReference, IRule, RuleType } from "modmeta-db";
 import * as React from "react";
@@ -7,7 +8,6 @@ import { connect } from "react-redux";
 import * as Redux from "redux";
 import { ThunkDispatch } from "redux-thunk";
 import * as semver from "semver";
-import { actions, ComponentEx, FormFeedback, More, types, util } from "vortex-api";
 
 import { closeDialog, setType } from "../actions";
 import { NAMESPACE } from "../statics";

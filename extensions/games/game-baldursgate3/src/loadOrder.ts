@@ -1,9 +1,9 @@
 import path from "path";
 
+/* eslint-disable */
+import { actions, fs, log, selectors, types, util } from "@nexusmods/vortex-api";
 import Bluebird from "bluebird";
 import * as semver from "semver";
-/* eslint-disable */
-import { actions, fs, log, selectors, types, util } from "vortex-api";
 import { LockedState } from "vortex-api/lib/extensions/file_based_loadorder/types/types";
 import { IOpenOptions, ISaveOptions } from "vortex-api/lib/types/IExtensionContext";
 import { Builder, parseStringPromise, RenderOptions } from "xml2js";

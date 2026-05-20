@@ -1,0 +1,27 @@
+{
+  "name": "@vortex/game-extension-test",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --config vitest.config.ts",
+    "start": "npx tsx src/cli.ts"
+  },
+  "devDependencies": {
+    "@nexusmods/nexus-api": "catalog:",
+    "@nexusmods/vortex-api": "workspace:*",
+    "@types/node": "catalog:",
+    "@vortex/extension-test-mocks": "workspace:*",
+    "limiter": "catalog:",
+    "minimist": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "nx": {
+    "tags": [
+      "vortex:tooling"
+    ]
+  }
+}

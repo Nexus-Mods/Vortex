@@ -1,5 +1,5 @@
+import { selectors, types, util } from "@nexusmods/vortex-api";
 import Bluebird from "bluebird";
-import { selectors, types, util } from "vortex-api";
 
 import { setGameVersion } from "./actions";
 import {

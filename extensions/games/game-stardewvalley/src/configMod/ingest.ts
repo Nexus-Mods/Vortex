@@ -7,8 +7,8 @@
  */
 import path from "path";
 
-import { fs, log, selectors, util } from "vortex-api";
-import type { types } from "vortex-api";
+import { fs, log, selectors, util } from "@nexusmods/vortex-api";
+import type { types } from "@nexusmods/vortex-api";
 
 import { GAME_ID, MOD_CONFIG, NOTIF_ACTIVITY_CONFIG_MOD } from "../common";
 import { findSMAPITool } from "../smapi/selectors";

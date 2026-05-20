@@ -24,6 +24,22 @@ export interface IStoreQuery {
   prefer?: number;
 }
 
+/** Normalized form of one store's IGame.queryArgs entry. */
+export type IQueryArgEntry = string | IStoreQuery | IStoreQuery[];
+
+/**
+ * Normalize the polymorphic form `IGame.queryArgs` accepts (string app ID,
+ * single query, or array) into a single array of IStoreQuery. Callers that
+ * iterate per-store entries should funnel through this so the three forms
+ * are handled in one place.
+ */
+export function normalizeStoreQuery(raw: IQueryArgEntry | undefined): IStoreQuery[] {
+  if (raw === undefined) return [];
+  if (typeof raw === "string") return [{ id: raw }];
+  if (Array.isArray(raw)) return raw;
+  return [raw];
+}
+
 class GameStoreHelper {
   private mApi: IExtensionApi;
   private mStores: IGameStore[];
@@ -123,41 +139,46 @@ class GameStoreHelper {
     }
   }
 
-  public find = toBlue(async (query: IStoreQuery): Promise<IGameStoreEntry[]> => {
-    const results: IGameStoreEntry[] = [];
-    for (const storeId of Object.keys(query)) {
-      let prioOffset = 0;
-      for (const storeQuery of query[storeId]) {
-        let result: IGameStoreEntry | undefined = undefined;
-        try {
-          if (storeId === "registry") {
-            result = await this.registryLookup(storeQuery.id);
-          } else if (storeQuery.id !== undefined) {
-            result = await this.findGameEntry("id", storeQuery.id, storeId);
-          } else if (storeQuery.name !== undefined) {
-            result = await this.findGameEntry("name", storeQuery.name, storeId);
-          } else {
-            throw new Error("invalid store query, set either id or name");
+  public find = toBlue(
+    async (query: { [storeId: string]: IQueryArgEntry }): Promise<IGameStoreEntry[]> => {
+      const results: IGameStoreEntry[] = [];
+      for (const storeId of Object.keys(query)) {
+        const storeQueries = normalizeStoreQuery(query[storeId]);
+        let prioOffset = 0;
+        for (const storeQuery of storeQueries) {
+          let result: IGameStoreEntry | undefined = undefined;
+          try {
+            if (storeId === "registry") {
+              result = await this.registryLookup(storeQuery.id);
+            } else if (storeQuery.id !== undefined) {
+              result = await this.findGameEntry("id", storeQuery.id, storeId);
+            } else if (storeQuery.name !== undefined) {
+              result = await this.findGameEntry("name", storeQuery.name, storeId);
+            } else {
+              throw new Error("invalid store query, set either id or name");
+            }
+          } catch (err) {
+            if (!(err instanceof GameEntryNotFound)) {
+              log("error", "Failed to look up game", {
+                storeId,
+                appid: storeQuery.id,
+                name: storeQuery.name,
+              });
+            }
           }
-        } catch (err) {
-          if (!(err instanceof GameEntryNotFound)) {
-            log("error", "Failed to look up game", {
-              storeId,
-              appid: storeQuery.id,
-              name: storeQuery.name,
-            });
+          if (result) {
+            result.priority =
+              storeQuery.prefer ??
+              this.mStoresDict[result.gameStoreId]?.priority ??
+              defaultPriority;
+            result.priority += prioOffset++ / 1000;
+            results.push(result);
           }
-        }
-        if (result) {
-          result.priority =
-            storeQuery.prefer ?? this.mStoresDict[result.gameStoreId]?.priority ?? defaultPriority;
-          result.priority += prioOffset++ / 1000;
-          results.push(result);
         }
       }
-    }
-    return results;
-  });
+      return results;
+    },
+  );
 
   public findByName(name: string | string[], storeId?: string): Bluebird<IGameStoreEntry> {
     return this.validInput(name)

@@ -1,5 +1,5 @@
+import { log } from "@nexusmods/vortex-api";
 import * as React from "react";
-import { log } from "vortex-api";
 
 import type { Dimensions } from "../savegame/GamebryoSaveGame";
 import { ISavegame } from "../types/ISavegame";

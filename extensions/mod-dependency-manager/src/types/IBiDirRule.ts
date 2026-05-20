@@ -1,5 +1,5 @@
+import { types } from "@nexusmods/vortex-api";
 import { RuleType } from "modmeta-db";
-import { types } from "vortex-api";
 
 export interface IBiDirRule {
   source: types.IModReference;

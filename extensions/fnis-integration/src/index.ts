@@ -1,7 +1,7 @@
+import { actions, fs, log, selectors, types, util } from "@nexusmods/vortex-api";
 import Promise from "bluebird";
 import getVersion from "exe-version";
 import I18next from "i18next";
-import { actions, fs, log, selectors, types, util } from "vortex-api";
 
 import { setAutoRun, setNeedToRun, setPatches } from "./actions";
 import fnis, { calcChecksum, fnisDataMod, fnisTool, readFNISPatches } from "./fnis";

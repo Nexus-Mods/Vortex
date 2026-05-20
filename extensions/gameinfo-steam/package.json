@@ -22,7 +22,7 @@
     "react-bootstrap": "catalog:",
     "react-dom": "catalog:",
     "react-i18next": "catalog:",
-    "vortex-api": "workspace:*"
+    "@nexusmods/vortex-api": "workspace:*"
   },
   "nx": {
     "tags": [

@@ -1,9 +1,9 @@
 import { spawn } from "child_process";
 import * as path from "path";
 
+import { fs, log, types, util } from "@nexusmods/vortex-api";
 import Promise from "bluebird";
 import { generate as shortid } from "shortid";
-import { fs, log, types, util } from "vortex-api";
 
 import { ArcGame } from "./types";
 

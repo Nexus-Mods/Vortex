@@ -37,6 +37,7 @@ catalog:
   "@babel/preset-react": ^7.24.4
   "@babel/preset-typescript": 7.16.7
   "@babel/register": 7.16.8
+  "@cyclonedx/cyclonedx-library": ^10.0.0
   "@duckdb/node-api": 1.5.1-r.1
   "@electron/rebuild": ^4.0.4
   "@electron/remote": ^2.0.12
@@ -156,7 +157,7 @@ catalog:
   electron: 42.0.0
   electron-builder: 24.13.3
   electron-context-menu: ^3.1.1
-  electron-devtools-installer: ^3.2.0
+  electron-extension-installer: ^2.0.1
   electron-redux: git+https://github.com/TanninOne/electron-redux#66bbd9d389579806e8c4ebd87bd513a668cc64a8
   electron-updater: ^4.2.0
   encoding-down: ^6.3.0
@@ -260,6 +261,7 @@ catalog:
   ts-v-gen: ^1.0.1
   tsconfig-paths-webpack-plugin: ^4.2.0
   tsdown: 0.21.0-beta.1
+  tsx: ^4.22.0
   turbowalk: git+https://github.com/Nexus-Mods/node-turbowalk#3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
   typed-binary: ^4.3.3
   typescript: 5.9.3
@@ -293,10 +295,8 @@ engineStrict: true
 failIfNoMatch: true
 
 minimumReleaseAge: 2880
-minimumReleaseAgeExclude:
-  - commander
-  - express
 minimumReleaseAgeIgnoreMissingTime: true
+minimumReleaseAgeStrict: true
 
 overrides:
   "@types/react": "16"

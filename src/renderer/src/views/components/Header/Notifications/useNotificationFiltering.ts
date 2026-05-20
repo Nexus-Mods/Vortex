@@ -22,6 +22,13 @@ const displayTime = (item: INotification): number | null => {
     return item.displayMS;
   }
 
+  // A notification with actions but no explicit displayMS requires the
+  // user to choose. Auto-hiding it would silently strand the choice
+  // (see INotification displayMS contract).
+  if (item.actions !== undefined && item.actions.length > 0) {
+    return null;
+  }
+
   return NOTIFICATION_TIMEOUTS[item.type] ?? 10000;
 };
 

@@ -1,7 +1,7 @@
 import path from "path";
 
+import { fs, log, types, util } from "@nexusmods/vortex-api";
 import Bluebird from "bluebird";
-import { fs, log, types, util } from "vortex-api";
 
 import { migrate020 } from "./migrations";
 import { EPIC_APP_ID, GAME_ID } from "./statics";

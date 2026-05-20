@@ -1,4 +1,4 @@
-const { fs, log, util } = require("vortex-api");
+const { fs, log, util } = require("@nexusmods/vortex-api");
 const path = require("path");
 
 const executable = process.platform == "linux" ? "Grimrock.bin.x86" : "grimrock.exe";

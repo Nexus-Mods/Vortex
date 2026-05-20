@@ -1,0 +1,16 @@
+{
+  "name": "@vortex/game-extension-test",
+  "targets": {
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": { "command": "pnpm --filter @vortex/game-extension-test run typecheck" },
+      "inputs": ["{projectRoot}/src/**/*.ts", "{projectRoot}/tsconfig.json"]
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": { "command": "pnpm --filter @vortex/game-extension-test run test" },
+      "inputs": ["{projectRoot}/src/**/*.ts"],
+      "cache": false
+    }
+  }
+}

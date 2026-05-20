@@ -1,12 +1,4 @@
 import { IRating, IRevision } from "@nexusmods/nexus-api";
-/* eslint-disable */
-import Bluebird from "bluebird";
-import type { TFunction } from "i18next";
-import * as React from "react";
-import { WithTranslation, withTranslation } from "react-i18next";
-import { connect } from "react-redux";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
 import {
   actions,
   ComponentEx,
@@ -17,7 +9,15 @@ import {
   tooltip,
   types,
   util,
-} from "vortex-api";
+} from "@nexusmods/vortex-api";
+/* eslint-disable */
+import Bluebird from "bluebird";
+import type { TFunction } from "i18next";
+import * as React from "react";
+import { WithTranslation, withTranslation } from "react-i18next";
+import { connect } from "react-redux";
+import * as Redux from "redux";
+import { ThunkDispatch } from "redux-thunk";
 
 import { updateSuccessRate } from "../../actions/persistent";
 import { doExportToAPI } from "../../collectionExport";

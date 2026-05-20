@@ -1,7 +1,7 @@
 import path from "path";
 
+import { actions, fs, selectors, types, util } from "@nexusmods/vortex-api";
 import semver from "semver";
-import { actions, fs, selectors, types, util } from "vortex-api";
 
 import { GAME_ID, I18N_NAMESPACE, loadOrderFilePath, modsRelPath } from "./common";
 import { serialize } from "./loadOrder";

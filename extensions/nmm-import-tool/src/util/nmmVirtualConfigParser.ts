@@ -1,8 +1,8 @@
 import * as path from "path";
 
+import { fs, log, types, util } from "@nexusmods/vortex-api";
 import Promise from "bluebird";
 import * as modmeta from "modmeta-db";
-import { fs, log, types, util } from "vortex-api";
 
 import { IFileEntry, IModEntry, ParseError } from "../types/nmmEntries";
 

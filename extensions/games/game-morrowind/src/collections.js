@@ -1,4 +1,4 @@
-const { actions, selectors, util } = require("vortex-api");
+const { actions, selectors, util } = require("@nexusmods/vortex-api");
 const { MORROWIND_ID, NATIVE_PLUGINS } = require("./constants");
 const { deserializeLoadOrder, serializeLoadOrder } = require("./loadorder");
 

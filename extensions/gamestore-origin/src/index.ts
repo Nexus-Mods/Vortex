@@ -1,9 +1,9 @@
 import * as path from "node:path";
 import * as queryParser from "querystring";
 
+import { fs, log, types, util } from "@nexusmods/vortex-api";
 import PromiseBB from "bluebird";
 import turbowalk, { IEntry } from "turbowalk";
-import { fs, log, types, util } from "vortex-api";
 import * as winapi from "winapi-bindings";
 import { parseStringPromise } from "xml2js";
 

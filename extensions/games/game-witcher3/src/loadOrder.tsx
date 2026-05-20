@@ -1,8 +1,8 @@
 import path from "path";
 
+import { actions, fs, selectors, types, util } from "@nexusmods/vortex-api";
 /* eslint-disable */
 import React from "react";
-import { actions, fs, selectors, types, util } from "vortex-api";
 
 import { ACTIVITY_ID_IMPORTING_LOADORDER, GAME_ID, LOCKED_PREFIX, UNI_PATCH } from "./common";
 import IniStructure from "./iniParser";

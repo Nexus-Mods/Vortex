@@ -31,7 +31,7 @@
     "redux-act": "catalog:",
     "semver": "catalog:",
     "typescript": "catalog:",
-    "vortex-api": "workspace:*"
+    "@nexusmods/vortex-api": "workspace:*"
   },
   "nx": {
     "tags": [
@@ -39,13 +39,6 @@
     ],
     "targets": {
       "build": {
-        "inputs": [
-          "default",
-          "typescript",
-          "vortex-api"
-        ]
-      },
-      "typecheck": {
         "inputs": [
           "default",
           "typescript",
