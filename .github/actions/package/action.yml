@@ -159,11 +159,10 @@ runs:
         key: package-dist-electron-native-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'src/main/package.json', 'src/main/postinstall.mjs') }}
 
     - name: Rebuild packaged Electron native modules
+      if: steps.packaged-native-cache.outputs.cache-hit != 'true' # skip when cached
       shell: pwsh
       working-directory: src/main/dist
-      run: |
-        Write-Output "Packaged Electron native cache hit: ${{ steps.packaged-native-cache.outputs.cache-hit }}"
-        node ./node_modules/@electron/rebuild/lib/cli.js
+      run: npx electron-rebuild
 
     - name: Build Installer
       shell: pwsh
