@@ -144,7 +144,7 @@ jobs:
 
       - name: Report failure via rolling issue
         if: needs.test.result == 'failure'
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const title = "[game-extension-test] nightly run failed";
@@ -166,7 +166,7 @@ jobs:
 
       - name: Close rolling issue on success
         if: needs.test.result == 'success'
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const title = "[game-extension-test] nightly run failed";
