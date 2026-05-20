@@ -173,7 +173,7 @@
     "cross-env": "catalog:",
     "electron": "catalog:",
     "electron-builder": "catalog:",
-    "electron-devtools-installer": "catalog:",
+    "electron-extension-installer": "catalog:",
     "redux-freeze": "catalog:"
   }
 }
