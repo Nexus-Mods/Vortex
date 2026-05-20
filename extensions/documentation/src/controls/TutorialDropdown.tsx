@@ -1,8 +1,8 @@
+import { ComponentEx, Icon } from "@nexusmods/vortex-api";
 import * as React from "react";
 import { DropdownButton } from "react-bootstrap";
 import * as ReactDOM from "react-dom";
 import { withTranslation } from "react-i18next";
-import { ComponentEx, Icon } from "vortex-api";
 
 import IYoutubeInfo from "../types/YoutubeInfo";
 import TutorialButton from "./TutorialButton";

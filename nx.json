@@ -8,18 +8,25 @@
   },
   "namedInputs": {
     "default": [
-      "{projectRoot}/package.json",
       "{workspaceRoot}/pnpm-workspace.yaml",
+      "{workspaceRoot}/pnpm-lock.yaml",
+      "{workspaceRoot}/package.json",
+      "{projectRoot}/package.json",
       { "env": "NODE_ENV" }
     ],
     "typescript": [
+      "{workspaceRoot}/rolldown.base.mjs",
       "{workspaceRoot}/tsconfig*.json",
       "{projectRoot}/tsconfig*.json",
       "{projectRoot}/build.mjs",
       "{projectRoot}/tsdown.config.ts",
       "{projectRoot}/src/**/*.{ts,tsx}"
     ],
-    "vortex-api": [{ "dependentTasksOutputFiles": "packages/vortex-api/lib/api.d.ts" }]
+    "eslint": ["{projectRoot}/eslint.config.mjs", "{workspaceRoot}/eslint.config.base.mjs"],
+    "vortex-api": [
+      "{workspaceRoot}/scripts/extensions-rolldown.mjs",
+      { "dependentTasksOutputFiles": "packages/vortex-api/lib/api.d.ts" }
+    ]
   },
   "targetDefaults": {
     "build": {
@@ -46,13 +53,7 @@
     "lint*": {
       "dependsOn": ["^build"],
       "cache": true,
-      "inputs": [
-        "default",
-        "typescript",
-        "{projectRoot}/*.mjs",
-
-        "{workspaceRoot}/eslint.config.base.mjs"
-      ],
+      "inputs": ["default", "typescript", "eslint"],
       "outputs": []
     }
   }

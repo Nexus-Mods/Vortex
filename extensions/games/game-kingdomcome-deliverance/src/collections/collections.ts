@@ -1,4 +1,4 @@
-import { selectors, types, util } from "vortex-api";
+import { selectors, types, util } from "@nexusmods/vortex-api";
 
 import { exportLoadOrder, importLoadOrder } from "./loadOrder";
 import { IKCDCollectionsData } from "./types";

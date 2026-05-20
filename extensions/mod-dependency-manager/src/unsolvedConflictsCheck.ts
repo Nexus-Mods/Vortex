@@ -1,5 +1,5 @@
+import { selectors, types, util } from "@nexusmods/vortex-api";
 import Promise from "bluebird";
-import { selectors, types, util } from "vortex-api";
 
 import { IBiDirRule } from "./types/IBiDirRule";
 import { IConflict } from "./types/IConflict";

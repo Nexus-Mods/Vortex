@@ -1,6 +1,6 @@
+import { selectors, types, util } from "@nexusmods/vortex-api";
 import Promise from "bluebird";
 import * as React from "react";
-import { selectors, types, util } from "vortex-api";
 
 import LockIndex from "./LockIndex";
 import { indexReducer } from "./reducers";

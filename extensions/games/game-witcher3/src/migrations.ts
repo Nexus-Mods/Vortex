@@ -1,6 +1,6 @@
+import { selectors, types, util } from "@nexusmods/vortex-api";
 /* eslint-disable */
 import semver from "semver";
-import { selectors, types, util } from "vortex-api";
 
 import { ILoadOrder, ILoadOrderEntry } from "./collections/types";
 import { GAME_ID } from "./common";

@@ -1,6 +1,6 @@
 import path from "path";
 
-import { util } from "vortex-api";
+import { util } from "@nexusmods/vortex-api";
 
 export const MOD_INFO = "modinfo.xml";
 export const GAME_ID = "7daystodie";

@@ -1,18 +1,3 @@
-import Promise from "bluebird";
-import * as React from "react";
-import {
-  Alert,
-  Button,
-  ListGroup,
-  ListGroupItem,
-  MenuItem,
-  ProgressBar,
-  SplitButton,
-} from "react-bootstrap";
-import { withTranslation } from "react-i18next";
-import { connect } from "react-redux";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
 import {
   ComponentEx,
   EmptyPlaceholder,
@@ -28,7 +13,22 @@ import {
   tooltip,
   types,
   util,
-} from "vortex-api";
+} from "@nexusmods/vortex-api";
+import Promise from "bluebird";
+import * as React from "react";
+import {
+  Alert,
+  Button,
+  ListGroup,
+  ListGroupItem,
+  MenuItem,
+  ProgressBar,
+  SplitButton,
+} from "react-bootstrap";
+import { withTranslation } from "react-i18next";
+import { connect } from "react-redux";
+import * as Redux from "redux";
+import { ThunkDispatch } from "redux-thunk";
 
 import { setImportStep } from "../actions/session";
 import { FILENAME, LOCAL, MOD_ID, MOD_NAME, MOD_VERSION } from "../importedModAttributes";

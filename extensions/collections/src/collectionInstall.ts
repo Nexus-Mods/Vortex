@@ -1,7 +1,7 @@
 import * as path from "path";
 
+import { actions, fs, log, selectors, types, util } from "@nexusmods/vortex-api";
 import * as _ from "lodash";
-import { actions, fs, log, selectors, types, util } from "vortex-api";
 
 import { BUNDLED_PATH, MOD_TYPE } from "./constants";
 /* eslint-disable */

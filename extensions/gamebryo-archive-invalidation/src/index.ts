@@ -1,8 +1,8 @@
 import * as path from "path";
 
+import { actions, fs, log, selectors, types, util } from "@nexusmods/vortex-api";
 import I18next from "i18next";
 import {} from "redux-thunk";
-import { actions, fs, log, selectors, types, util } from "vortex-api";
 import { IniFile } from "vortex-parse-ini";
 
 import { toggleInvalidation } from "./bsaRedirection";

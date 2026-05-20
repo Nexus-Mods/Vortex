@@ -1,6 +1,6 @@
 /* eslint-disable */
 import { IFileInfo } from "@nexusmods/nexus-api";
-import { actions, log, selectors, types, util } from "vortex-api";
+import { actions, log, selectors, types, util } from "@nexusmods/vortex-api";
 
 import { storeName } from "./common";
 import { IGameSupport } from "./types";

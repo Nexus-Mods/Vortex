@@ -1,5 +1,6 @@
 import * as path from "path";
 
+import { fs, selectors, types, util } from "@nexusmods/vortex-api";
 /* eslint-disable */
 /**
  * Important - although we no longer define the info panel here,
@@ -14,7 +15,6 @@ import Bluebird from "bluebird";
 import { getProductVersionLocalized } from "exe-version";
 import * as _ from "lodash";
 import * as React from "react";
-import { fs, selectors, types, util } from "vortex-api";
 
 import PakInfoCache from "./cache";
 import {

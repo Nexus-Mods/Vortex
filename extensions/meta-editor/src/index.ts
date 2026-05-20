@@ -2,9 +2,9 @@ import * as path from "path";
 import * as url from "url";
 import { inspect } from "util";
 
+import { log, selectors, types } from "@nexusmods/vortex-api";
 import type { ILookupResult, IModInfo } from "modmeta-db";
 import semver from "semver";
-import { log, selectors, types } from "vortex-api";
 
 import { setShowMetaEditor } from "./actions";
 import sessionReducer from "./reducers";

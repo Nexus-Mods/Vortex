@@ -65,7 +65,7 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
     // passed to the table by the user.
     // otherwise rowData is the calculated value of this cell
 
-    let content = null;
+    let content;
 
     if (attribute.customRenderer !== undefined) {
       const attrControl =

@@ -1,4 +1,4 @@
-import { types } from "vortex-api";
+import { types } from "@nexusmods/vortex-api";
 
 import { ICollection } from "./ICollection";
 import { IExtendedInterfaceProps } from "./IExtendedInterfaceProps";

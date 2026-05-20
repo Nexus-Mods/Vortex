@@ -1,8 +1,6 @@
 import type { Context } from "@opentelemetry/api";
+import { SpanStatusCode } from "@opentelemetry/api";
 import type { ReadableSpan, Span, SpanProcessor } from "@opentelemetry/sdk-trace-base";
-
-/** SpanStatusCode.ERROR from @opentelemetry/api (value import not allowed in shared/) */
-const SPAN_STATUS_ERROR = 2;
 
 export interface RingBufferOptions {
   /** Maximum number of completed spans to retain. Default: 500 */
@@ -67,7 +65,7 @@ export class RingBufferSpanProcessor implements SpanProcessor {
     this.#count = Math.min(this.#count + 1, this.#maxSpans);
 
     // Error span — export the entire trace
-    if ((span.status.code as number) === SPAN_STATUS_ERROR) {
+    if (span.status.code === SpanStatusCode.ERROR) {
       this.#markTraceExported(traceId);
       this.#exportSpans(this.#takeSpansByTraceId(traceId));
     }

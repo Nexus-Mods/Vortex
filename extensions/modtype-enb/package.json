@@ -20,7 +20,7 @@
     "bluebird": "catalog:",
     "copyfiles": "catalog:",
     "redux-thunk": "catalog:",
-    "vortex-api": "workspace:*"
+    "@nexusmods/vortex-api": "workspace:*"
   },
   "nx": {
     "tags": [

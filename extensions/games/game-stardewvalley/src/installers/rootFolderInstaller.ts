@@ -3,7 +3,7 @@
  */
 import path from "path";
 
-import type { types } from "vortex-api";
+import type { types } from "@nexusmods/vortex-api";
 
 import type { IInstallerTestResult } from "../types";
 import { classifyArchive, makeInstallerTestResult } from "./archiveClassifier";

@@ -60,7 +60,9 @@ console.log(`Copying ${LIB_SRC} to ${LIB_DEST}...`);
 cpSync(LIB_SRC, LIB_DEST, { recursive: true });
 console.log("Copy complete.");
 
-const dependencyJson = JSON.parse(execSync("pnpm -F vortex-api list --json").toString().trim());
+const dependencyJson = JSON.parse(
+  execSync("pnpm -F @nexusmods/vortex-api list --json").toString().trim(),
+);
 
 const peerDependencies = dependencyJson[0].dependencies;
 const peerDependenciesToSync = {};

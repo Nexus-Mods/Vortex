@@ -1,9 +1,9 @@
+import { ComponentEx, FormFeedback } from "@nexusmods/vortex-api";
 import update from "immutability-helper";
 import { IHashResult, ILookupResult, IReference, RuleType } from "modmeta-db";
 import * as React from "react";
 import { Button, ControlLabel, FormControl, FormGroup, Modal, Nav, NavItem } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
-import { ComponentEx, FormFeedback } from "vortex-api";
 
 interface IBaseProps {
   fileName: string;

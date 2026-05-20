@@ -1,5 +1,5 @@
 const path = require("path");
-const { fs, util } = require("vortex-api");
+const { fs, util } = require("@nexusmods/vortex-api");
 
 const AUDIO_EXT = ".fsb";
 const CONFIG_FILE = "config.blk";

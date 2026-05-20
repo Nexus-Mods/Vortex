@@ -1,8 +1,8 @@
 /**
  * Boots and wires the Stardew Valley extension feature modules.
  */
-import { log, util } from "vortex-api";
-import type { types } from "vortex-api";
+import { log, util } from "@nexusmods/vortex-api";
+import type { types } from "@nexusmods/vortex-api";
 
 // Core identifiers and shared state wiring.
 import { GAME_ID } from "./common";

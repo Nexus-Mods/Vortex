@@ -1,7 +1,7 @@
 import * as path from "path";
 
+import { fs, log, types, util } from "@nexusmods/vortex-api";
 import Bluebird from "bluebird";
-import { fs, log, types, util } from "vortex-api";
 
 import * as ops from "./operations";
 import settingsReducer from "./reducers";

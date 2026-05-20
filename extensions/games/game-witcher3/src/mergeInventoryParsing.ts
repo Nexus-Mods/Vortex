@@ -1,8 +1,8 @@
 import path from "path";
 
+import { fs, log, types, util } from "@nexusmods/vortex-api";
 /* eslint-disable */
 import Bluebird from "bluebird";
-import { fs, log, types, util } from "vortex-api";
 import { parseStringPromise } from "xml2js";
 
 import { GAME_ID, SCRIPT_MERGER_ID, MERGE_INV_MANIFEST } from "./common";

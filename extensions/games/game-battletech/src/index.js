@@ -1,6 +1,6 @@
 const Promise = require("bluebird");
 const path = require("path");
-const { fs, selectors, util } = require("vortex-api");
+const { fs, selectors, util } = require("@nexusmods/vortex-api");
 
 const GAME_ID = "battletech";
 const APPID = 637090;

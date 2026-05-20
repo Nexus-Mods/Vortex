@@ -3,10 +3,10 @@ import https from "https";
 import path from "path";
 import url from "url";
 
+import { actions, fs, types, log, util } from "@nexusmods/vortex-api";
 import getVersion from "exe-version";
 import _ from "lodash";
 import semver from "semver";
-import { actions, fs, types, log, util } from "vortex-api";
 import { Builder, parseStringPromise } from "xml2js";
 
 import { IIncomingGithubHttpHeaders } from "./types";

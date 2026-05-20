@@ -1,7 +1,7 @@
 /* eslint-disable */
 import path from "path";
 
-import { types, util } from "vortex-api";
+import { types, util } from "@nexusmods/vortex-api";
 
 import { CONFIG_MATRIX_REL_PATH, GAME_ID, SCRIPT_MERGER_FILES, PART_SUFFIX } from "./common";
 import { PrefixType } from "./types";

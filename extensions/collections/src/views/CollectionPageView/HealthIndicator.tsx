@@ -1,7 +1,14 @@
 import { IGameVersion, RatingOptions } from "@nexusmods/nexus-api";
+import {
+  FlexLayout,
+  Icon,
+  RadialProgress,
+  tooltip,
+  MainContext,
+  More,
+} from "@nexusmods/vortex-api";
 import type { TFunction } from "i18next";
 import * as React from "react";
-import { FlexLayout, Icon, RadialProgress, tooltip, MainContext, More } from "vortex-api";
 
 export interface IHealthIndicatorProps {
   t: TFunction;

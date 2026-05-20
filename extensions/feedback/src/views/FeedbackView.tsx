@@ -1,3 +1,18 @@
+import {
+  actions,
+  ComponentEx,
+  Dropzone,
+  EmptyPlaceholder,
+  FlexLayout,
+  FormInput,
+  log,
+  MainPage,
+  Toggle,
+  tooltip,
+  types,
+  Usage,
+  util,
+} from "@nexusmods/vortex-api";
 import { partial_ratio } from "fuzzball";
 import * as React from "react";
 import {
@@ -15,21 +30,6 @@ import { Trans, withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import * as Redux from "redux";
 import { ThunkDispatch } from "redux-thunk";
-import {
-  actions,
-  ComponentEx,
-  Dropzone,
-  EmptyPlaceholder,
-  FlexLayout,
-  FormInput,
-  log,
-  MainPage,
-  Toggle,
-  tooltip,
-  types,
-  Usage,
-  util,
-} from "vortex-api";
 
 import { addFeedbackFile, clearFeedbackFiles, removeFeedbackFile } from "../actions/session";
 import type { FeedbackTopic, FeedbackType } from "../types/feedbackTypes";

@@ -1,7 +1,7 @@
+import { ComponentEx, FlexLayout, Icon, util, Image } from "@nexusmods/vortex-api";
 import type { TFunction } from "i18next";
 import * as React from "react";
 import { Button } from "react-bootstrap";
-import { ComponentEx, FlexLayout, Icon, util, Image } from "vortex-api";
 
 import { PREMIUM_PATH } from "../../constants";
 

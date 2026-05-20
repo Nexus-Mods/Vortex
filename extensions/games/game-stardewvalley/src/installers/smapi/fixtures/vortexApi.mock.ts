@@ -89,4 +89,4 @@ export function resetVortexApiMocks(): void {
 
 // Tell Vitest to use these shared test doubles for every `vortex-api` import.
 // The empty `__mocks__/vortex-api.ts` file only exists so the alias resolves.
-vi.mock(import("vortex-api"), () => ({ fs, log, util }) as any);
+vi.mock(import("@nexusmods/vortex-api"), () => ({ fs, log, util }) as any);

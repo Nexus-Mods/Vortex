@@ -1,5 +1,5 @@
+import { ComponentEx, tooltip, types, util } from "@nexusmods/vortex-api";
 import * as React from "react";
-import { ComponentEx, tooltip, types, util } from "vortex-api";
 
 import { byTypeIndex, typeDescription } from "./filetypes";
 

@@ -35,7 +35,7 @@
     "redux-act": "catalog:",
     "redux-thunk": "catalog:",
     "typescript": "catalog:",
-    "vortex-api": "workspace:*",
+    "@nexusmods/vortex-api": "workspace:*",
     "winapi-bindings": "catalog:"
   },
   "nx": {

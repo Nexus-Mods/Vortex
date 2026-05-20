@@ -1,9 +1,9 @@
 import path from "path";
 
 import TOML from "@iarna/toml";
+import { fs, selectors, types, util } from "@nexusmods/vortex-api";
 /* eslint-disable */
 import Bluebird from "bluebird";
-import { fs, selectors, types, util } from "vortex-api";
 
 import { BEPINEX_CONFIG_FILE, getSupportMap } from "./common";
 import { IBepInExGameConfig } from "./types";

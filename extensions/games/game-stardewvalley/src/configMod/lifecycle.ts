@@ -7,8 +7,8 @@
  */
 import path from "path";
 
-import { actions, selectors } from "vortex-api";
-import type { types } from "vortex-api";
+import { actions, selectors } from "@nexusmods/vortex-api";
+import type { types } from "@nexusmods/vortex-api";
 
 import { GAME_ID, MOD_TYPE_CONFIG, RGX_INVALID_CHARS_WINDOWS } from "../common";
 import {

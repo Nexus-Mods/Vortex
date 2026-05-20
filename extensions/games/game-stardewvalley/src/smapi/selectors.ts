@@ -1,9 +1,9 @@
-import { gte } from "semver";
 /**
  * Selectors for discovering and resolving active SMAPI tool/mod entries.
  */
-import type { types } from "vortex-api";
-import { selectors, util } from "vortex-api";
+import type { types } from "@nexusmods/vortex-api";
+import { selectors, util } from "@nexusmods/vortex-api";
+import { gte } from "semver";
 
 import { GAME_ID, MOD_TYPE_SMAPI, SMAPI_MOD_ID } from "../common";
 import { selectSdvMods } from "../state/selectors";

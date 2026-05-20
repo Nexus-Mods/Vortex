@@ -1,8 +1,8 @@
 /* eslint-disable */
 import path from "path";
 
+import { actions, fs, log, selectors, types, util } from "@nexusmods/vortex-api";
 import Bluebird from "bluebird";
-import { actions, fs, log, selectors, types, util } from "vortex-api";
 const IniParser = require("vortex-parse-ini");
 import { generate } from "shortid";
 

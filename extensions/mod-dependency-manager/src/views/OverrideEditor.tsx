@@ -1,10 +1,3 @@
-import * as React from "react";
-import { Button, Dropdown, MenuItem, Modal } from "react-bootstrap";
-import { Trans, withTranslation, WithTranslation } from "react-i18next";
-import { connect } from "react-redux";
-import * as TreeT from "react-sortable-tree";
-import {} from "react-sortable-tree-theme-file-explorer";
-import { Action } from "redux-act";
 import {
   actions,
   ComponentEx,
@@ -16,7 +9,14 @@ import {
   types,
   Usage,
   util,
-} from "vortex-api";
+} from "@nexusmods/vortex-api";
+import * as React from "react";
+import { Button, Dropdown, MenuItem, Modal } from "react-bootstrap";
+import { Trans, withTranslation, WithTranslation } from "react-i18next";
+import { connect } from "react-redux";
+import * as TreeT from "react-sortable-tree";
+import {} from "react-sortable-tree-theme-file-explorer";
+import { Action } from "redux-act";
 
 import { setConflictDialog, setFileOverrideDialog } from "../actions";
 import { NAMESPACE } from "../statics";

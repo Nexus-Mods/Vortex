@@ -2,9 +2,9 @@ import * as path from "path";
 
 /* eslint-disable */
 import * as nexusApi from "@nexusmods/nexus-api";
+import { actions, log, selectors, types, util } from "@nexusmods/vortex-api";
 import Bluebird from "bluebird";
 import * as _ from "lodash";
-import { actions, log, selectors, types, util } from "vortex-api";
 
 import * as installActions from "../actions/installTracking";
 import { setPendingVote } from "../actions/persistent";

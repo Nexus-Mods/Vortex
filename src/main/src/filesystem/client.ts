@@ -167,12 +167,7 @@ function rehydrateEntry(raw: unknown): QualifiedPath | [QualifiedPath, Status] {
 
 function rehydrateQualifiedPath(raw: unknown): QualifiedPath {
   if (raw instanceof QualifiedPath) return raw;
-  if (
-    raw !== null &&
-    typeof raw === "object" &&
-    "value" in raw &&
-    typeof (raw as { value: unknown }).value === "string"
-  ) {
+  if (raw !== null && typeof raw === "object" && "value" in raw && typeof raw.value === "string") {
     return QualifiedPath.parse((raw as { value: string }).value);
   }
   throw new Error("Cannot rehydrate QualifiedPath: missing `value`");

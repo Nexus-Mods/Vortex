@@ -1,7 +1,7 @@
 const Promise = require("bluebird");
 const { parseStringPromise } = require("xml2js");
 const path = require("path");
-const { fs, log, util } = require("vortex-api");
+const { fs, log, util } = require("@nexusmods/vortex-api");
 
 function findGame() {
   return util.steam.findByName("X Rebirth").then((game) => game.gamePath);

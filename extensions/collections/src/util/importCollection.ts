@@ -1,7 +1,7 @@
 /// functions to postprocess collection manifest read from disk to give us an opportunity
 /// to maintain backwards compatibility if things change on our end
 
-import { fs, types, util } from "vortex-api";
+import { fs, types, util } from "@nexusmods/vortex-api";
 
 import { ICollection, ICollectionModRule } from "../types/ICollection";
 import { validateICollection } from "../validationCode/validation";

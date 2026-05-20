@@ -1,8 +1,8 @@
 import * as path from "path";
 
 import { ICollection, IDownloadURL, IRevision } from "@nexusmods/nexus-api";
+import { actions, fs, selectors, types, util } from "@nexusmods/vortex-api";
 import Bluebird from "bluebird";
-import { actions, fs, selectors, types, util } from "vortex-api";
 
 import { readCollection } from "./util/importCollection";
 import InstallDriver from "./util/InstallDriver";

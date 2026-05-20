@@ -1,8 +1,8 @@
 /**
  * Lifecycle helpers for deploying SMAPI and activating it as primary tool.
  */
-import type { types } from "vortex-api";
-import { actions, selectors, util } from "vortex-api";
+import type { types } from "@nexusmods/vortex-api";
+import { actions, selectors, util } from "@nexusmods/vortex-api";
 
 import { GAME_ID } from "../common";
 

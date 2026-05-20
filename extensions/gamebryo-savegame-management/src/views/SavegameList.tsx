@@ -1,10 +1,3 @@
-import Bluebird from "bluebird";
-import * as React from "react";
-import { Alert, FormControl, Panel } from "react-bootstrap";
-import { withTranslation } from "react-i18next";
-import { connect } from "react-redux";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
 import {
   actions,
   ComponentEx,
@@ -18,7 +11,14 @@ import {
   tooltip,
   types,
   util,
-} from "vortex-api";
+} from "@nexusmods/vortex-api";
+import Bluebird from "bluebird";
+import * as React from "react";
+import { Alert, FormControl, Panel } from "react-bootstrap";
+import { withTranslation } from "react-i18next";
+import { connect } from "react-redux";
+import * as Redux from "redux";
+import { ThunkDispatch } from "redux-thunk";
 
 import { showTransferDialog } from "../actions/session";
 import { MAX_SAVEGAMES } from "../constants";

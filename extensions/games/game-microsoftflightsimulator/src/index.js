@@ -3,7 +3,7 @@ const _ = require("lodash");
 const path = require("path");
 const shortid = require("shortid");
 const walk = require("turbowalk").default;
-const { actions, fs, log, selectors, util } = require("vortex-api");
+const { actions, fs, log, selectors, util } = require("@nexusmods/vortex-api");
 const { default: IniParser, WinapiFormat } = require("vortex-parse-ini");
 
 const GAME_ID = "microsoftflightsimulator";

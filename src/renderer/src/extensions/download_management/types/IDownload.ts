@@ -69,6 +69,14 @@ export interface IModInfo {
       revisionId?: number;
       revisionNumber?: number;
     };
+    /**
+     * Id of the collection that triggered this download as a dependency, when the
+     * download is a mod installed as part of a collection. Kept distinct from
+     * `ids.collectionId` (which marks the download as being the collection archive
+     * itself) so it doesn't propagate into the installed mod's attributes via the
+     * install attribute extractor. Consumed by Mixpanel mod download analytics.
+     */
+    parentCollectionId?: string;
     [key: string]: any;
   };
   referenceTag?: string;

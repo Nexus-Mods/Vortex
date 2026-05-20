@@ -1,11 +1,11 @@
 import * as path from "path";
 
 import { ICreateCollectionResult, IGraphErrorDetail } from "@nexusmods/nexus-api";
+import { actions, fs, log, selectors, types, util } from "@nexusmods/vortex-api";
 import Bluebird from "bluebird";
 import * as _ from "lodash";
 import Zip from "node-7z";
 import { dir as tmpDir } from "tmp";
-import { actions, fs, log, selectors, types, util } from "vortex-api";
 
 import { BUNDLED_PATH, PATCHES_PATH } from "./constants";
 import { ICollection, ICollectionMod, ICollectionSourceInfo } from "./types/ICollection";

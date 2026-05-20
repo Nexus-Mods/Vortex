@@ -1,6 +1,6 @@
 import * as path from "path";
 
-import { actions, selectors, types } from "vortex-api";
+import { actions, selectors, types } from "@nexusmods/vortex-api";
 
 import ImportDialog from "./views/ImportDialog";
 

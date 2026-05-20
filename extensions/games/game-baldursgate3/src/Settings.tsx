@@ -1,8 +1,8 @@
+import { Toggle, types } from "@nexusmods/vortex-api";
 import React from "react";
 import { ControlLabel, FormGroup, HelpBlock, Panel } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useSelector, useStore } from "react-redux";
-import { Toggle, types } from "vortex-api";
 
 import { setAutoExportLoadOrder } from "./actions";
 

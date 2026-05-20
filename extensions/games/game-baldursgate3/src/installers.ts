@@ -1,9 +1,9 @@
 import * as path from "path";
 
+import { types } from "@nexusmods/vortex-api";
 /* eslint-disable */
 import getVersion from "exe-version";
 import * as semver from "semver";
-import { types } from "vortex-api";
 
 import { LSLIB_FILES, GAME_ID } from "./common";
 import { logDebug } from "./util";

@@ -1,4 +1,4 @@
-import { selectors, types, util } from "vortex-api";
+import { selectors, types, util } from "@nexusmods/vortex-api";
 
 import { setConflictDialog } from "../actions";
 import { IBiDirRule } from "../types/IBiDirRule";

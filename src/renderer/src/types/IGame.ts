@@ -1,7 +1,7 @@
 import type PromiseBB from "bluebird";
 
 import type { IModType } from "../extensions/gamemode_management/types/IModType";
-import type { IStoreQuery } from "../util/GameStoreHelper";
+import type { IQueryArgEntry } from "../util/GameStoreHelper";
 import type { IDiscoveryResult, IMod } from "./IState";
 import type { ITool } from "./ITool";
 
@@ -30,9 +30,17 @@ export interface IGame extends ITool {
   queryModPath: (gamePath: string) => string;
 
   /**
-   * use instead of queryPath for simpler specification of search arguments
+   * use instead of queryPath for simpler specification of search arguments.
+   *
+   * Each store key accepts:
+   * - a string (treated as an app ID): `{ steam: "2870" }`
+   * - a single query object: `{ steam: { id: "2870" } }`
+   * - an array of query objects: `{ steam: [{ id: "2870" }] }`
+   *
+   * Consumers should pass the per-store value through
+   * `normalizeStoreQuery` rather than branching on the three forms by hand.
    */
-  queryArgs?: { [storeId: string]: IStoreQuery[] };
+  queryArgs?: { [storeId: string]: IQueryArgEntry };
 
   /**
    * returns all directories where mods for this game
@@ -144,7 +152,7 @@ export interface IGame extends ITool {
    * TODO The name "mergeMods" is horrible since we also talk about "merging" in the context of
    *      combining individual files (archives) during mod deployment which is independent of this
    */
-  mergeMods: boolean | ((mod: IMod) => string);
+  mergeMods?: boolean | ((mod: IMod) => string);
 
   /**
    * determines if a file is to be merged with others with the same path, instead of the

@@ -1,8 +1,8 @@
 /* eslint-disable */
 import path from "path";
 
+import { fs, types, selectors, util } from "@nexusmods/vortex-api";
 import ini from "ini";
-import { fs, types, selectors, util } from "vortex-api";
 import { Builder, parseStringPromise } from "xml2js";
 
 import { GAME_ID, CONFIG_MATRIX_REL_PATH, CONFIG_MATRIX_FILES, VORTEX_BACKUP_TAG } from "./common";

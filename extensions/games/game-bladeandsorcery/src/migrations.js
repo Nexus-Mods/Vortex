@@ -11,7 +11,7 @@ const {
   missingGameJsonError,
 } = require("./util");
 
-const { actions, fs, log, selectors, util } = require("vortex-api");
+const { actions, fs, log, selectors, util } = require("@nexusmods/vortex-api");
 
 let _SHOULD_MIGRATE = true;
 function migrate010(api, oldVersion) {

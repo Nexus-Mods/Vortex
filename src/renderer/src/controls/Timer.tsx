@@ -53,7 +53,7 @@ function Timer(props: ITimerProps) {
     if (paused) {
       setElapsed(Date.now() - started);
     } else {
-      let remaining = duration;
+      let remaining: number;
       if (elapsed !== null) {
         // after resume from pause
         remaining = duration - elapsed;

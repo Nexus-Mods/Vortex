@@ -1,4 +1,4 @@
-import { types } from "vortex-api";
+import { types } from "@nexusmods/vortex-api";
 
 import { ICollectionGamebryo } from "../util/gameSupport/gamebryo";
 import { ICollectionConfig } from "./ICollectionConfig";

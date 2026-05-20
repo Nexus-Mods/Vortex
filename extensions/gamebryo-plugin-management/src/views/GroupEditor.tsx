@@ -1,10 +1,10 @@
+import { actions, ComponentEx, ContextMenu, log, Modal, types, Usage } from "@nexusmods/vortex-api";
 import * as React from "react";
 import { Button } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import * as Redux from "redux";
 import { ThunkDispatch } from "redux-thunk";
-import { actions, ComponentEx, ContextMenu, log, Modal, types, Usage } from "vortex-api";
 
 import {
   addGroup,

@@ -1,7 +1,7 @@
 import * as path from "path";
 
+import { types, util } from "@nexusmods/vortex-api";
 import * as React from "react";
-import { types, util } from "vortex-api";
 
 import { closeTutorials, setTutorialOpen } from "./actions/session";
 import TutorialButton from "./controls/TutorialButton";

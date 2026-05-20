@@ -1,6 +1,6 @@
 const Promise = require("bluebird");
 const path = require("path");
-const { fs, log, selectors, util } = require("vortex-api");
+const { fs, log, selectors, util } = require("@nexusmods/vortex-api");
 
 const extension = process.platform == "linux" ? ".x86_64" : "_x64.exe";
 

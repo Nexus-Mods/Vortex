@@ -1,7 +1,7 @@
 import * as path from "path";
 
 import { ICollection, IRevision } from "@nexusmods/nexus-api";
-import { log, selectors, types, util } from "vortex-api";
+import { log, selectors, types, util } from "@nexusmods/vortex-api";
 
 import { updateCollectionInfo, updateRevisionInfo } from "../actions/persistent";
 import { CACHE_EXPIRE_MS, CACHE_LRU_COUNT, MOD_TYPE } from "../constants";

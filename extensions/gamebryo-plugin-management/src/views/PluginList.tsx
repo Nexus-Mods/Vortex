@@ -1,19 +1,5 @@
 import * as path from "path";
 
-import Promise from "bluebird";
-import I18next, { TFunction } from "i18next";
-import update from "immutability-helper";
-import * as _ from "lodash";
-import { Message, PluginCleaningData } from "loot";
-import * as React from "react";
-import { Alert, Button, ListGroup, ListGroupItem, Panel } from "react-bootstrap";
-import { withTranslation } from "react-i18next";
-import ReactMarkdown from "react-markdown";
-import { connect } from "react-redux";
-import Select from "react-select";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
-import { generate as shortid } from "shortid";
 import {
   ComponentEx,
   FlexLayout,
@@ -33,7 +19,21 @@ import {
   types,
   Usage,
   util,
-} from "vortex-api";
+} from "@nexusmods/vortex-api";
+import Promise from "bluebird";
+import I18next, { TFunction } from "i18next";
+import update from "immutability-helper";
+import * as _ from "lodash";
+import { Message, PluginCleaningData } from "loot";
+import * as React from "react";
+import { Alert, Button, ListGroup, ListGroupItem, Panel } from "react-bootstrap";
+import { withTranslation } from "react-i18next";
+import ReactMarkdown from "react-markdown";
+import { connect } from "react-redux";
+import Select from "react-select";
+import * as Redux from "redux";
+import { ThunkDispatch } from "redux-thunk";
+import { generate as shortid } from "shortid";
 
 /* eslint-disable */
 import { setPluginEnabled } from "../actions/loadOrder";

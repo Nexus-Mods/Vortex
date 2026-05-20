@@ -1,6 +1,6 @@
+import { ComponentEx, Icon, tooltip } from "@nexusmods/vortex-api";
 import * as React from "react";
 import { Button, Popover, ControlLabel, FormGroup } from "react-bootstrap";
-import { ComponentEx, Icon, tooltip } from "vortex-api";
 
 export interface IBaseActionProps {
   onSetModAttribute: (gameMode: string, modId: string, attributeId: string, value: any) => void;

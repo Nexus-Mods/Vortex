@@ -37,7 +37,13 @@
           "copy-extensions",
           "^build"
         ],
-        "cache": false
+        "cache": true,
+        "outputs": [
+          "{projectRoot}/build/main.cjs",
+          "{projectRoot}/build/main.cjs.map",
+          "{projectRoot}/build/bootstrap.mjs",
+          "{projectRoot}/build/bootstrap.mjs.map"
+        ]
       },
       "publish": {
         "cache": false,
@@ -75,6 +81,10 @@
           {
             "target": "build",
             "projects": "@vortex/stylesheets"
+          },
+          {
+            "target": "build",
+            "projects": "@tools/dotnetprobe"
           },
           "sbom"
         ],
@@ -306,7 +316,7 @@
     "cross-env": "catalog:",
     "electron": "catalog:",
     "electron-builder": "catalog:",
-    "electron-devtools-installer": "catalog:",
+    "electron-extension-installer": "catalog:",
     "redux-freeze": "catalog:"
   }
 }

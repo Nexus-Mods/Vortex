@@ -1,11 +1,11 @@
 import { IRevision } from "@nexusmods/nexus-api";
+import { FlexLayout, MainContext, tooltip, types, util } from "@nexusmods/vortex-api";
 import React from "react";
 import { useContext, useCallback, Component } from "react";
 import { Button, Media, Modal } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
 import { useSelector } from "react-redux";
-import { FlexLayout, MainContext, tooltip, types, util } from "vortex-api";
 
 import CollectionThumbnail from "../CollectionTile";
 

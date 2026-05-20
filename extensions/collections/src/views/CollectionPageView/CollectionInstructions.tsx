@@ -1,7 +1,7 @@
+import { types, util } from "@nexusmods/vortex-api";
 import * as React from "react";
 import { Button } from "react-bootstrap";
 import ReactMarkdown from "react-markdown";
-import { types, util } from "vortex-api";
 
 import { DEFAULT_INSTRUCTIONS } from "../../constants";
 import { isEmpty } from "../../util/util";

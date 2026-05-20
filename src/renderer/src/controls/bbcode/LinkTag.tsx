@@ -84,7 +84,7 @@ class LinkTag extends Tag {
           callbacks[parsed.host](...args);
         }
       } catch (err) {
-        throw new Error(`invalid callback url "${uri}"`);
+        throw new Error(`invalid callback url "${uri}"`, { cause: err });
       }
     } else if (protocols.includes(parsed.protocol)) {
       opn(uri).catch((err) => undefined);

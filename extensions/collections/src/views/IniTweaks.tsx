@@ -1,13 +1,5 @@
 import * as path from "path";
 
-import type { TFunction } from "i18next";
-import * as React from "react";
-import { Button, ControlLabel, Table } from "react-bootstrap";
-import { withTranslation } from "react-i18next";
-import { connect } from "react-redux";
-import Select from "react-select";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
 import {
   ActionDropdown,
   actions,
@@ -20,7 +12,15 @@ import {
   types,
   Usage,
   util,
-} from "vortex-api";
+} from "@nexusmods/vortex-api";
+import type { TFunction } from "i18next";
+import * as React from "react";
+import { Button, ControlLabel, Table } from "react-bootstrap";
+import { withTranslation } from "react-i18next";
+import { connect } from "react-redux";
+import Select from "react-select";
+import * as Redux from "redux";
+import { ThunkDispatch } from "redux-thunk";
 
 import { INI_TWEAKS_PATH, NAMESPACE, OPTIONAL_TWEAK_PREFIX } from "../constants";
 import { IExtendedInterfaceProps } from "../types/IExtendedInterfaceProps";

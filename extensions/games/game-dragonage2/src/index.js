@@ -1,5 +1,5 @@
 const path = require("path");
-const { fs, util } = require("vortex-api");
+const { fs, util } = require("@nexusmods/vortex-api");
 const winapi = require("winapi-bindings");
 
 const STEAM_IDS = ["15543", "1238040"];

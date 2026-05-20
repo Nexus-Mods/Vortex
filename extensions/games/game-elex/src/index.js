@@ -1,5 +1,5 @@
 const path = require("path");
-const { fs, util } = require("vortex-api");
+const { fs, util } = require("@nexusmods/vortex-api");
 
 // Nexus Mods id for the game.
 const ELEX_ID = "elex";

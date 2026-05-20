@@ -1,8 +1,8 @@
 import * as path from "path";
 
+import { fs, selectors, types, util } from "@nexusmods/vortex-api";
 import memoize from "memoize-one";
 import * as React from "react";
-import { fs, selectors, types, util } from "vortex-api";
 
 import settingsReducer from "./reducers";
 import TitleBarToggle from "./TitlebarToggle";

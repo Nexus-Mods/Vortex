@@ -33,7 +33,7 @@ function rehydrate(value: unknown): QualifiedPath {
     value !== null &&
     typeof value === "object" &&
     "value" in value &&
-    typeof (value as { value: unknown }).value === "string"
+    typeof value.value === "string"
   ) {
     return QualifiedPath.parse((value as { value: string }).value);
   }
@@ -100,10 +100,7 @@ export function createFileSystemServiceHandler(
   async function dispatchCursor(method: string, args: unknown[]): Promise<unknown> {
     if (method === "enumerateOpen") {
       const [pathArg, opts] = args as [unknown, EnumerateOptions?];
-      const iterator = await fs.enumerateDirectory(
-        rehydrate(pathArg),
-        (opts ?? {}) as Parameters<FileSystem["enumerateDirectory"]>[1],
-      );
+      const iterator = await fs.enumerateDirectory(rehydrate(pathArg), opts ?? {});
       const cursorId = `fs-cur:${++cursorCounter}`;
       cursors.set(cursorId, { iterator });
       const { batch, done } = await pullBatch({ iterator }, batchSize);

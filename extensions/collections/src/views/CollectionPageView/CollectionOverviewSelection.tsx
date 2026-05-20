@@ -1,9 +1,9 @@
 import { ICollectionRevisionMod } from "@nexusmods/nexus-api";
+import { ComponentEx, tooltip, types, util } from "@nexusmods/vortex-api";
 import type { TFunction } from "i18next";
 import * as _ from "lodash";
 import * as React from "react";
 import { Image as BSImage, Media, Panel } from "react-bootstrap";
-import { ComponentEx, tooltip, types, util } from "vortex-api";
 
 import { IModEx } from "../../types/IModEx";
 import CollectionReleaseStatus from "../CollectionReleaseStatus";

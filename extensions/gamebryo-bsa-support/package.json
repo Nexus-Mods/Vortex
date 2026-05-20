@@ -27,7 +27,7 @@
     "copyfiles": "catalog:",
     "rimraf": "catalog:",
     "tmp": "catalog:",
-    "vortex-api": "workspace:*"
+    "@nexusmods/vortex-api": "workspace:*"
   },
   "nx": {
     "tags": [

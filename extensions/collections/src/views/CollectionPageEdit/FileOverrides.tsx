@@ -1,8 +1,8 @@
+import { Overlay, Toggle, selectors, types, util } from "@nexusmods/vortex-api";
 import * as React from "react";
 import { ControlLabel, ListGroup, Popover, Table } from "react-bootstrap";
 /* eslint-disable */
 import { useSelector } from "react-redux";
-import { Overlay, Toggle, selectors, types, util } from "vortex-api";
 
 export interface IPathTools {
   relative(lhs: string, rhs: string): string;

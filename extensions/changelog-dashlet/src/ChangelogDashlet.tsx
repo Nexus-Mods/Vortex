@@ -1,10 +1,10 @@
+import { ComponentEx, Dashlet, util } from "@nexusmods/vortex-api";
 import * as React from "react";
 import { Pager } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
 import { connect } from "react-redux";
 import * as semver from "semver";
-import { ComponentEx, Dashlet, util } from "vortex-api";
 
 import { Changelog } from "./types";
 

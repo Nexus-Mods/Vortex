@@ -1,9 +1,9 @@
+import { ComponentEx, FlexLayout, Toggle, types, util } from "@nexusmods/vortex-api";
 import * as React from "react";
 import { ControlLabel, FormControl, FormGroup, Radio } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import * as Redux from "redux";
-import { ComponentEx, FlexLayout, Toggle, types, util } from "vortex-api";
 
 import { lockPluginIndex } from "./actions";
 import { IPlugin } from "./types";

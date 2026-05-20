@@ -1,12 +1,12 @@
+/**
+ * Renders Stardew Valley extension settings controls in the Vortex UI.
+ */
+import type { types } from "@nexusmods/vortex-api";
+import { Toggle, More, selectors } from "@nexusmods/vortex-api";
 import React from "react";
 import { ControlLabel, FormGroup, HelpBlock, Panel } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useSelector, useStore } from "react-redux";
-/**
- * Renders Stardew Valley extension settings controls in the Vortex UI.
- */
-import type { types } from "vortex-api";
-import { Toggle, More, selectors } from "vortex-api";
 
 import { GAME_ID } from "../common";
 import { setRecommendations } from "../state/actions";

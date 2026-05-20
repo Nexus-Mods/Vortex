@@ -1,7 +1,3 @@
-/* eslint-disable @eslint-react/hooks-extra/no-direct-set-state-in-use-effect */
-// Disabled: This component legitimately syncs derived state (filtered notifications)
-// in effects based on notification changes and timers.
-
 import * as _ from "lodash";
 import React from "react";
 import { Badge, Button, Overlay, Popover } from "react-bootstrap";
@@ -48,6 +44,13 @@ const NOTIFICATION_TIMEOUTS: Record<string, number | null> = {
 const displayTime = (item: INotification): number | null => {
   if (item.displayMS !== undefined) {
     return item.displayMS;
+  }
+
+  // A notification with actions but no explicit displayMS requires the
+  // user to choose. Auto-hiding it would silently strand the choice
+  // (see INotification displayMS contract).
+  if (item.actions !== undefined && item.actions.length > 0) {
+    return null;
   }
 
   return NOTIFICATION_TIMEOUTS[item.type] ?? 10000;

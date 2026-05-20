@@ -1,6 +1,6 @@
 const path = require("path");
 const semver = require("semver");
-const { actions, log, selectors, util } = require("vortex-api");
+const { actions, log, selectors, util } = require("@nexusmods/vortex-api");
 const { MORROWIND_ID } = require("./constants");
 
 const walk = require("turbowalk").default;

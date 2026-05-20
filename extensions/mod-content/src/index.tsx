@@ -1,10 +1,10 @@
 import * as path from "path";
 
+import { actions, OptionsFilter, selectors, types, util } from "@nexusmods/vortex-api";
 import Bluebird from "bluebird";
 import * as React from "react";
 import * as Redux from "redux";
 import turbowalk from "turbowalk";
-import { actions, OptionsFilter, selectors, types, util } from "vortex-api";
 
 import { byTypeIndex, fileTypes, typeDescription, typeIndices } from "./filetypes";
 import ModContent from "./ModContent";

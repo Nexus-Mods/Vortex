@@ -123,7 +123,7 @@ class QueryRegistry {
       query.sql,
       values as Record<string, DuckDBValue>,
     );
-    return reader.getRowObjectsJson() as Record<string, Serializable>[];
+    return reader.getRowObjectsJson();
   }
 
   /**

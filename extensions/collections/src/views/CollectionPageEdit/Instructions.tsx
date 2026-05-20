@@ -1,7 +1,7 @@
+import { FlexLayout, More, Toggle, tooltip, types } from "@nexusmods/vortex-api";
 import * as React from "react";
 import { ControlLabel, FormControl } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
-import { FlexLayout, More, Toggle, tooltip, types } from "vortex-api";
 
 import { INSTRUCTIONS_PLACEHOLDER, NAMESPACE } from "../../constants";
 import { isGamebryoGame } from "../../util/gameSupport";

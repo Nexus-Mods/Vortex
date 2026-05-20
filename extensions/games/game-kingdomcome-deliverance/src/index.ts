@@ -1,9 +1,5 @@
 import path from "path";
 
-import Bluebird from "bluebird";
-import * as React from "react";
-import * as BS from "react-bootstrap";
-import { connect } from "react-redux";
 import {
   actions,
   fs,
@@ -14,7 +10,11 @@ import {
   MainPage,
   selectors,
   util,
-} from "vortex-api";
+} from "@nexusmods/vortex-api";
+import Bluebird from "bluebird";
+import * as React from "react";
+import * as BS from "react-bootstrap";
+import { connect } from "react-redux";
 
 import { genCollectionsData, parseCollectionsData } from "./collections/collections";
 import CollectionsDataView from "./collections/CollectionsDataView";

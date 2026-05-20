@@ -1,7 +1,7 @@
 const Promise = require("bluebird");
 const _ = require("lodash");
 const path = require("path");
-const { fs, log, selectors, util } = require("vortex-api");
+const { fs, log, selectors, util } = require("@nexusmods/vortex-api");
 const { Builder, parseStringPromise } = require("xml2js");
 
 const GAME_ID = "wolcenlordsofmayhem";

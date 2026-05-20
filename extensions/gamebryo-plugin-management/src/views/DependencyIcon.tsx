@@ -1,3 +1,4 @@
+import { Advanced, ComponentEx, log, selectors, tooltip, util } from "@nexusmods/vortex-api";
 import I18next from "i18next";
 import * as PropTypes from "prop-types";
 import * as React from "react";
@@ -19,7 +20,6 @@ import { getEmptyImage } from "react-dnd-html5-backend";
 import { findDOMNode } from "react-dom";
 import ReactMarkdown from "react-markdown";
 import { connect } from "react-redux";
-import { Advanced, ComponentEx, log, selectors, tooltip, util } from "vortex-api";
 
 import { addRule, removeRule } from "../actions/userlist";
 import { setCreateRule, setQuickEdit, setSource, setTarget } from "../actions/userlistEdit";

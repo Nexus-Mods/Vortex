@@ -1,8 +1,8 @@
 import * as path from "path";
 
+import { fs, log, selectors, types, util } from "@nexusmods/vortex-api";
 import Bluebird from "bluebird";
 import * as crc32 from "crc-32";
-import { fs, log, selectors, types, util } from "vortex-api";
 
 import { ReplicateHashMismatchError } from "../util/errors";
 

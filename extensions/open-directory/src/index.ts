@@ -1,7 +1,7 @@
 import * as path from "path";
 
+import { fs, selectors, types, util } from "@nexusmods/vortex-api";
 import Promise from "bluebird";
-import { fs, selectors, types, util } from "vortex-api";
 
 import { appDataPath, initGameSupport, settingsPath } from "./gameSupport";
 

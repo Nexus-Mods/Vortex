@@ -1,3 +1,19 @@
+import {
+  ComponentEx,
+  Icon,
+  ITableRowAction,
+  log,
+  Modal,
+  selectors,
+  Spinner,
+  Steps,
+  Table,
+  TableTextFilter,
+  Toggle,
+  tooltip,
+  types,
+  util,
+} from "@nexusmods/vortex-api";
 import Promise from "bluebird";
 import * as I18next from "i18next";
 import * as React from "react";
@@ -15,22 +31,6 @@ import {
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import * as Redux from "redux";
-import {
-  ComponentEx,
-  Icon,
-  ITableRowAction,
-  log,
-  Modal,
-  selectors,
-  Spinner,
-  Steps,
-  Table,
-  TableTextFilter,
-  Toggle,
-  tooltip,
-  types,
-  util,
-} from "vortex-api";
 
 import { IModEntry } from "../types/moEntries";
 import findInstances, { convertGameId, instancesPath } from "../util/findInstances";

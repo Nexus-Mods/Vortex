@@ -3,8 +3,8 @@
  */
 import path from "path";
 
-import { log } from "vortex-api";
-import type { types } from "vortex-api";
+import { log } from "@nexusmods/vortex-api";
+import type { types } from "@nexusmods/vortex-api";
 
 import { MOD_MANIFEST } from "../common";
 import { parseManifest } from "../manifests/parseManifest";

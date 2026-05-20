@@ -40,7 +40,7 @@ export function genSubDirFunc(game: IGame, modType: IModType): (mod: IMod) => st
   const mergeModsOpt =
     modType !== undefined && modType.options.mergeMods !== undefined
       ? modType.options.mergeMods
-      : game.mergeMods;
+      : (game.mergeMods ?? true);
 
   if (typeof mergeModsOpt === "boolean") {
     return mergeModsOpt ? () => "" : (mod: IMod) => (mod !== null ? mod.id : MERGE_SUBDIR);

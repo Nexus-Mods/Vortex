@@ -1,6 +1,6 @@
 const Promise = require("bluebird");
 const path = require("path");
-const { fs } = require("vortex-api");
+const { fs } = require("@nexusmods/vortex-api");
 const winapi = require("winapi-bindings");
 
 function findGame() {

@@ -1,6 +1,6 @@
+import { types } from "@nexusmods/vortex-api";
 import * as React from "react";
 import Select from "react-select";
-import { types } from "vortex-api";
 
 import { NAMESPACE } from "../statics";
 

@@ -1,9 +1,9 @@
+import { ComponentEx, selectors, Toggle, types } from "@nexusmods/vortex-api";
 import * as React from "react";
 import { ControlLabel, FormGroup, HelpBlock } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import * as Redux from "redux";
-import { ComponentEx, selectors, Toggle, types } from "vortex-api";
 
 import { setAutoEnable } from "../actions/settings";
 import { NAMESPACE } from "../statics";

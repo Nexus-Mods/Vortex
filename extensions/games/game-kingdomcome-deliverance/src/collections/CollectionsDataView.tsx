@@ -1,8 +1,3 @@
-import * as _ from "lodash";
-import * as React from "react";
-import { Button, ListGroup, ListGroupItem } from "react-bootstrap";
-import { withTranslation } from "react-i18next";
-import { connect } from "react-redux";
 import {
   ComponentEx,
   EmptyPlaceholder,
@@ -11,7 +6,12 @@ import {
   types,
   Usage,
   util,
-} from "vortex-api";
+} from "@nexusmods/vortex-api";
+import * as _ from "lodash";
+import * as React from "react";
+import { Button, ListGroup, ListGroupItem } from "react-bootstrap";
+import { withTranslation } from "react-i18next";
+import { connect } from "react-redux";
 
 import { genCollectionLoadOrder, getModId } from "./util";
 

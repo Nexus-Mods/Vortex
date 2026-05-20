@@ -1,7 +1,7 @@
+import { ComponentEx, util } from "@nexusmods/vortex-api";
 import * as _ from "lodash";
 import * as React from "react";
 import { connect } from "react-redux";
-import { ComponentEx, util } from "vortex-api";
 
 import Line from "./Line";
 

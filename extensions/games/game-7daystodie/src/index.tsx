@@ -1,8 +1,8 @@
 import path from "path";
 
+import { actions, fs, selectors, types, util } from "@nexusmods/vortex-api";
 import * as React from "react";
 import { useSelector } from "react-redux";
-import { actions, fs, selectors, types, util } from "vortex-api";
 
 import { setPrefixOffset } from "./actions";
 import {

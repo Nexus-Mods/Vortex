@@ -1,7 +1,3 @@
-import * as React from "react";
-import { Button, ListGroup, ListGroupItem } from "react-bootstrap";
-import { WithTranslation, withTranslation } from "react-i18next";
-import { connect } from "react-redux";
 import {
   ComponentEx,
   EmptyPlaceholder,
@@ -10,7 +6,11 @@ import {
   selectors,
   types,
   util,
-} from "vortex-api";
+} from "@nexusmods/vortex-api";
+import * as React from "react";
+import { Button, ListGroup, ListGroupItem } from "react-bootstrap";
+import { WithTranslation, withTranslation } from "react-i18next";
+import { connect } from "react-redux";
 
 import { NATIVE_PLUGINS } from "../constants";
 import { deserializeLoadOrder } from "../loadorder";

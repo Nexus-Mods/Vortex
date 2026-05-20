@@ -209,11 +209,6 @@ class Application {
             this.mTray.close();
           }
           if (process.platform !== "darwin") {
-            // All windows are already destroyed at this point (via the
-            // destroy() workaround in MainWindow), so app.quit() won't
-            // attempt to close any windows — it just fires the before-quit
-            // / will-quit lifecycle events (needed by the autoupdater) and
-            // then exits cleanly.
             app.quit();
           }
         })
@@ -468,6 +463,12 @@ class Application {
     log("debug", "checking if migration is required");
     await this.migrateIfNecessary(this.mAppMetadata.version);
 
+    // Install dev tools extensions before creating the main window so the
+    // extension content scripts are registered on the session before the
+    // renderer navigates — otherwise window.__REDUX_DEVTOOLS_EXTENSION__
+    // is undefined when the renderer builds its store enhancer.
+    await this.initDevel();
+
     log("debug", "starting user interface");
     await this.initMainWindow();
 
@@ -481,8 +482,6 @@ class Application {
     process.removeAllListeners("unhandledRejection");
     process.on("uncaughtException", handleError);
     process.on("unhandledRejection", handleError);
-
-    await this.initDevel();
 
     this.setupContextMenu();
 

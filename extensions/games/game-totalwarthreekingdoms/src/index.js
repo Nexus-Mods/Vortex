@@ -1,5 +1,5 @@
 const path = require("path");
-const { fs, log, util } = require("vortex-api");
+const { fs, log, util } = require("@nexusmods/vortex-api");
 
 const TW3KINDOMS_ID = "totalwarthreekingdoms";
 const STEAMAPP_ID = "779340";

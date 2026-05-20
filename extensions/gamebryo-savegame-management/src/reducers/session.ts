@@ -1,5 +1,5 @@
+import { types, util } from "@nexusmods/vortex-api";
 import update from "immutability-helper";
-import { types, util } from "vortex-api";
 
 import * as actions from "../actions/session";
 

@@ -1,4 +1,4 @@
-const { log, util } = require("vortex-api");
+const { log, util } = require("@nexusmods/vortex-api");
 
 const path = require("path");
 const winapi = require("winapi-bindings");

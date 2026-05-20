@@ -1,8 +1,8 @@
+import { log, selectors, types } from "@nexusmods/vortex-api";
 import update from "immutability-helper";
 import * as React from "react";
 import { ListGroup, ListGroupItem } from "react-bootstrap";
 import { connect } from "react-redux";
-import { log, selectors, types } from "vortex-api";
 
 interface IBaseProps {
   plugins: string[];

@@ -1,10 +1,10 @@
+import { actions, log } from "@nexusmods/vortex-api";
+import type { types } from "@nexusmods/vortex-api";
 import { getErrorMessageOrDefault } from "@vortex/shared";
 /**
  * Updates persisted mod compatibility attributes using SMAPI metadata.
  */
 import * as semver from "semver";
-import { actions, log } from "vortex-api";
-import type { types } from "vortex-api";
 
 import { SMAPI_QUERY_FREQUENCY } from "../common";
 import type { SMAPIProxy } from "../smapi/proxy";

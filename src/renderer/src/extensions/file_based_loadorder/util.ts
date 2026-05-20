@@ -38,10 +38,9 @@ export async function genCollectionLoadOrder(
   collection?: types.IMod,
 ): Promise<LoadOrder> {
   const state = api.getState();
-  let loadOrder: LoadOrder = [];
   try {
     const prev = currentLoadOrderForProfile(state, profileId);
-    loadOrder = await gameEntry.deserializeLoadOrder();
+    let loadOrder = await gameEntry.deserializeLoadOrder();
     loadOrder = loadOrder.filter((entry) =>
       collection !== undefined
         ? isValidMod(mods[entry.modId]) && isModInCollection(collection, mods[entry.modId])
@@ -52,11 +51,10 @@ export async function genCollectionLoadOrder(
     if (validRes !== undefined) {
       throw new LoadOrderValidationError(validRes, loadOrder);
     }
+    return Promise.resolve(loadOrder);
   } catch (err) {
     return Promise.reject(err);
   }
-
-  return Promise.resolve(loadOrder);
 }
 
 export function isValidMod(mod: types.IMod) {

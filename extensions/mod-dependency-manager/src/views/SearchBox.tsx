@@ -1,7 +1,7 @@
+import { ComponentEx, Icon, tooltip } from "@nexusmods/vortex-api";
 import I18next from "i18next";
 import * as React from "react";
 import { FormControl } from "react-bootstrap";
-import { ComponentEx, Icon, tooltip } from "vortex-api";
 
 export interface ISearchMatch {
   node: any;

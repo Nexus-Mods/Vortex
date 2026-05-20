@@ -1,5 +1,5 @@
+import { log, util } from "@nexusmods/vortex-api";
 import Bluebird from "bluebird";
-import { log, util } from "vortex-api";
 
 import { GAME_ID } from "./statics";
 

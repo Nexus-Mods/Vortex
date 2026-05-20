@@ -1,6 +1,6 @@
 import * as path from "path";
 
-import { actions, fs, log, selectors, types, util } from "vortex-api";
+import { actions, fs, log, selectors, types, util } from "@nexusmods/vortex-api";
 import { GetProcessWindowList, SetForegroundWindow } from "winapi-bindings";
 
 import { patchListName } from "./gameSupport";

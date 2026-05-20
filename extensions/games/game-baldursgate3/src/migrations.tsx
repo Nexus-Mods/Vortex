@@ -1,7 +1,7 @@
 import path from "path";
 
+import { actions, fs, types, util } from "@nexusmods/vortex-api";
 import * as semver from "semver";
-import { actions, fs, types, util } from "vortex-api";
 
 import { setBG3ExtensionVersion } from "./actions";
 import { DEBUG } from "./common";

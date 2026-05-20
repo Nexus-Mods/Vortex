@@ -1,11 +1,11 @@
 import { IRevision } from "@nexusmods/nexus-api";
+import { actions, ComponentEx, FlexLayout, log, tooltip, types, util } from "@nexusmods/vortex-api";
 import memoize from "memoize-one";
 import * as React from "react";
 import { Badge, Panel, Tab, Tabs } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import * as Redux from "redux";
-import { actions, ComponentEx, FlexLayout, log, tooltip, types, util } from "vortex-api";
 
 import { startAddModsToCollection } from "../../actions/session";
 import { NAMESPACE } from "../../constants";

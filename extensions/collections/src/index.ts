@@ -3,13 +3,13 @@ import { pathToFileURL } from "url";
 
 import * as nexusApi from "@nexusmods/nexus-api";
 import { IRevision } from "@nexusmods/nexus-api";
+import { actions, log, OptionsFilter, selectors, types, util } from "@nexusmods/vortex-api";
 import Bluebird from "bluebird";
 import * as _ from "lodash";
 import memoize from "memoize-one";
 import * as React from "react";
 import * as Redux from "redux";
 import { generate as shortid } from "shortid";
-import { actions, log, OptionsFilter, selectors, types, util } from "vortex-api";
 
 /* eslint-disable */
 import { clearPendingVote, updateSuccessRate } from "./actions/persistent";

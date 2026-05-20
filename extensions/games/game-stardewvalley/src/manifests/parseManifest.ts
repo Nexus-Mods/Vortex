@@ -1,8 +1,8 @@
+import { fs, util } from "@nexusmods/vortex-api";
 /**
  * Parses Stardew/SMAPI `manifest.json` files from disk.
  */
 import { parse } from "relaxed-json";
-import { fs, util } from "vortex-api";
 
 import type { ISDVModManifest } from "../types";
 

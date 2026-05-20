@@ -67,7 +67,7 @@ class DetailCell extends React.Component<ICellProps, {}> {
   public render(): JSX.Element {
     const { t, attribute, rawData, rowData, rowIds } = this.props;
 
-    let content: JSX.Element = null;
+    let content: JSX.Element;
 
     if (rawData === undefined) {
       // This shouldn't happen, rawData is just the original data object

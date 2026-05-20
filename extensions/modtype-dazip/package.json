@@ -20,7 +20,7 @@
     "copyfiles": "catalog:",
     "i18next": "catalog:",
     "semver": "catalog:",
-    "vortex-api": "workspace:*"
+    "@nexusmods/vortex-api": "workspace:*"
   },
   "nx": {
     "tags": [

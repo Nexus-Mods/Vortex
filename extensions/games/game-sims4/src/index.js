@@ -3,7 +3,7 @@ const winapi = require("winapi-bindings");
 
 const path = require("path");
 const semver = require("semver");
-const { actions, fs, log, util } = require("vortex-api");
+const { actions, fs, log, util } = require("@nexusmods/vortex-api");
 const IniParser = require("vortex-parse-ini");
 
 // The Sims 4 mods folder may be affected by localization.

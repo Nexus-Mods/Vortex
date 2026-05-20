@@ -1,7 +1,7 @@
 import * as path from "path";
 import * as process from "process";
 
-import { log, types, util } from "vortex-api";
+import { log, types, util } from "@nexusmods/vortex-api";
 import * as which from "which";
 
 function exeExtension(): string {

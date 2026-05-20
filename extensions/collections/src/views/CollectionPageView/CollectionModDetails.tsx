@@ -1,7 +1,7 @@
 import { ICollectionRevisionMod } from "@nexusmods/nexus-api";
+import { FlexLayout, Image, tooltip, types, util, ZoomableImage } from "@nexusmods/vortex-api";
 import * as React from "react";
 import { Panel } from "react-bootstrap";
-import { FlexLayout, Image, tooltip, types, util, ZoomableImage } from "vortex-api";
 
 import { AUTHOR_UNKNOWN, NEXUS_BASE_URL } from "../../constants";
 import { IModEx } from "../../types/IModEx";

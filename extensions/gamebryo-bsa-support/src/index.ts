@@ -1,10 +1,10 @@
 import * as path from "path";
 import { PassThrough } from "stream";
 
+import { fs, types, util } from "@nexusmods/vortex-api";
 import PromiseBB from "bluebird";
 import { BSAFile, BSAFolder, BSArchive, createBSA, loadBSA } from "bsatk";
 import { dir as tmpDir } from "tmp";
-import { fs, types, util } from "vortex-api";
 
 class BSAHandler implements types.IArchiveHandler {
   private mBSA: BSArchive;

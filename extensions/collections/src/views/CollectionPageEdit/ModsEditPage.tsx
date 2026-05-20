@@ -1,9 +1,5 @@
 import * as path from "path";
 
-import type { TFunction } from "i18next";
-import * as _ from "lodash";
-import * as React from "react";
-import { Button } from "react-bootstrap";
 import {
   ComponentEx,
   EmptyPlaceholder,
@@ -18,7 +14,11 @@ import {
   types,
   Usage,
   util,
-} from "vortex-api";
+} from "@nexusmods/vortex-api";
+import type { TFunction } from "i18next";
+import * as _ from "lodash";
+import * as React from "react";
+import { Button } from "react-bootstrap";
 
 import { ADULT_CONTENT_URL, INSTRUCTIONS_PLACEHOLDER } from "../../constants";
 import { ICollectionSourceInfo, SourceType } from "../../types/ICollection";

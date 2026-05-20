@@ -4,10 +4,10 @@ import * as https from "https";
  * Adapts SMAPI.io compatibility data into Vortex modmeta lookup responses.
  */
 import type { IFileInfo } from "@nexusmods/nexus-api";
+import type { types } from "@nexusmods/vortex-api";
+import { log } from "@nexusmods/vortex-api";
 import type { ILookupResult, IQuery } from "modmeta-db";
 import * as semver from "semver";
-import type { types } from "vortex-api";
-import { log } from "vortex-api";
 
 import { GAME_ID, SMAPI_IO_API_VERSION } from "../common";
 import type { ISMAPIIOQuery, ISMAPIResult } from "../types";

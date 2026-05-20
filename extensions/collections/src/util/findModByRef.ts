@@ -1,5 +1,5 @@
+import { types, util } from "@nexusmods/vortex-api";
 import * as _ from "lodash";
-import { types, util } from "vortex-api";
 
 export function testDownloadReference(
   download: types.IDownload,

@@ -1,8 +1,8 @@
 import path from "path";
 
+import { actions, fs, selectors, types, util } from "@nexusmods/vortex-api";
 /* eslint-disable */
 import _ from "lodash";
-import { actions, fs, selectors, types, util } from "vortex-api";
 
 import { setSuppressModLimitPatch } from "./actions";
 import { GAME_ID, I18N_NAMESPACE } from "./common";

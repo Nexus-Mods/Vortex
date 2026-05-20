@@ -1,4 +1,4 @@
-const { util } = require("vortex-api");
+const { util } = require("@nexusmods/vortex-api");
 const GAMEID = "nehrim";
 const STEAMAPPID = "1014940";
 const OBLIVION_STEAMID = "22330";

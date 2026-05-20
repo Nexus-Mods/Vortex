@@ -1,5 +1,5 @@
 const path = require("path");
-const { fs, util, log } = require("vortex-api");
+const { fs, util, log } = require("@nexusmods/vortex-api");
 
 const XCOM2_ID = "xcom2";
 const WOTC_ID = "xcom2-wotc";

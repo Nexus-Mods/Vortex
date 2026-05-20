@@ -1,4 +1,4 @@
-import { types, util } from "vortex-api";
+import { types, util } from "@nexusmods/vortex-api";
 
 import { IBiDirRule } from "../types/IBiDirRule";
 import { IModLookupInfo } from "../types/IModLookupInfo";

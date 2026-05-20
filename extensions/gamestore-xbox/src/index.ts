@@ -1,8 +1,8 @@
 import { spawn } from "child_process";
 import * as path from "path";
 
+import { fs, log, types, util } from "@nexusmods/vortex-api";
 import PromiseBB from "bluebird";
-import { fs, log, types, util } from "vortex-api";
 import * as winapi from "winapi-bindings";
 import { parseStringPromise } from "xml2js";
 

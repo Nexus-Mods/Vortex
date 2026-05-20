@@ -1,12 +1,12 @@
 import path from "path";
 
+import { actions, log, selectors, util } from "@nexusmods/vortex-api";
+import type { types } from "@nexusmods/vortex-api";
 import { getErrorMessageOrDefault } from "@vortex/shared";
 /**
  * Registers runtime event handlers used by the Stardew Valley extension.
  */
 import type { IQuery, IServer } from "modmeta-db";
-import { actions, log, selectors, util } from "vortex-api";
-import type { types } from "vortex-api";
 
 import { GAME_ID } from "../common";
 import { updateConflictInfo } from "../compatibility/updateConflictInfo";

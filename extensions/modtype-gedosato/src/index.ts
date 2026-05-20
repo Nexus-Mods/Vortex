@@ -1,8 +1,8 @@
 import * as path from "path";
 
+import { actions, fs, log, types, util } from "@nexusmods/vortex-api";
 import Promise from "bluebird";
 import {} from "redux-thunk";
-import { actions, fs, log, types, util } from "vortex-api";
 import * as winapi from "winapi-bindings";
 
 import { gameSupported, getPath } from "./gameSupport";

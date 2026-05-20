@@ -67,7 +67,7 @@ import {
   withTrackedActivity,
 } from "./errorHandling";
 import extractExeIcon from "./exeIcon";
-import GameStoreHelper from "./GameStoreHelper";
+import GameStoreHelper, { normalizeStoreQuery } from "./GameStoreHelper";
 
 /**
  * @deprecated Use window.api for IPC communication from renderer to main process.
@@ -84,6 +84,14 @@ import { copyFileAtomic, writeFileAtomic } from "./fsAtomic";
 import getNormalizeFunc, { makeNormalizingDict } from "./getNormalizeFunc";
 export type { Normalize } from "./getNormalizeFunc.ts";
 import LazyComponent from "../controls/LazyComponent";
+import {
+  buildCopyInstructions,
+  compileStopPatterns,
+  declareInstallers,
+  findCommonRootDir,
+  makeInstallerFromSpec,
+  matchesAnyStopPattern,
+} from "../extensions/mod_management/util/installerHelpers";
 import ReduxProp from "../ReduxProp";
 import { getReduxLog } from "../store/reduxLogger";
 import getVortexPath from "./getVortexPath";
@@ -153,16 +161,19 @@ export {
   bbcodePreProcess,
   bbcodeToHTML,
   bbcodeToReact,
+  buildCopyInstructions,
   bytesToString,
   calculateFolderSize,
   Campaign,
   checksum,
   convertGameIdReverse,
+  compileStopPatterns,
   copyFileAtomic,
   copyRecursive,
   ConcurrencyLimiter,
   Content,
   CycleError,
+  declareInstallers,
   DataInvalid,
   Debouncer,
   deBOM,
@@ -173,10 +184,12 @@ export {
   // extend is renderer-only, available via renderer/controls/ComponentEx
   extractExeIcon,
   fileMD5,
+  findCommonRootDir,
   findDownloadByRef,
   findModByRef,
   GameNotFound,
   GameStoreHelper,
+  normalizeStoreQuery,
   generateCollectionSessionId,
   getActivator,
   getApplication,
@@ -203,6 +216,7 @@ export {
   lazyRequire,
   local,
   lookupFromDownload,
+  makeInstallerFromSpec,
   makeModReference,
   coerceToSemver,
   makeNormalizingDict,

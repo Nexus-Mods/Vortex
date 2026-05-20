@@ -1,9 +1,9 @@
-import React from "react";
 /**
  * Renders Stardew mod compatibility status in the mods table.
  */
-import type { types } from "vortex-api";
-import { tooltip } from "vortex-api";
+import type { types } from "@nexusmods/vortex-api";
+import { tooltip } from "@nexusmods/vortex-api";
+import React from "react";
 
 import type { CompatibilityStatus } from "../types";
 

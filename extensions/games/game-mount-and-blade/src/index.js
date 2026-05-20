@@ -7,7 +7,7 @@
 const Promise = require("bluebird");
 const path = require("path");
 const winapi = require("winapi-bindings");
-const { fs, util } = require("vortex-api");
+const { fs, util } = require("@nexusmods/vortex-api");
 
 // Mount and Blade module based mods have a module.ini
 //  file. We can use this to find the root directory of the

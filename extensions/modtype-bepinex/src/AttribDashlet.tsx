@@ -1,6 +1,6 @@
+import { Dashlet, PureComponentEx, util } from "@nexusmods/vortex-api";
 import * as React from "react";
 import { withTranslation } from "react-i18next";
-import { Dashlet, PureComponentEx, util } from "vortex-api";
 
 const DOWNLOAD_PAGE = "https://github.com/BepInEx/BepInEx";
 

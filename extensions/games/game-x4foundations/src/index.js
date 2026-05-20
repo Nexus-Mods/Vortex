@@ -3,7 +3,7 @@ const Big = require("big.js");
 const Promise = require("bluebird");
 const { parseStringPromise } = require("xml2js");
 const path = require("path");
-const { fs, log, selectors, util } = require("vortex-api");
+const { fs, log, selectors, util } = require("@nexusmods/vortex-api");
 const winapi = require("winapi-bindings");
 
 const semver = require("semver");

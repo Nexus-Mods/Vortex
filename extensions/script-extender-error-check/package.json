@@ -22,7 +22,7 @@
     "react": "catalog:",
     "react-bootstrap": "catalog:",
     "turbowalk": "catalog:",
-    "vortex-api": "workspace:*"
+    "@nexusmods/vortex-api": "workspace:*"
   },
   "nx": {
     "tags": [

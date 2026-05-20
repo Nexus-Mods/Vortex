@@ -70,7 +70,6 @@ runs:
         echo "rawVersion=$rawVersion" >> $env:GITHUB_OUTPUT
         echo "artifactNameUnpacked=vortex-setup-$rawVersion-unpacked" >> $env:GITHUB_OUTPUT
         echo "artifactNameInstaller=vortex-setup-$rawVersion-installer" >> $env:GITHUB_OUTPUT
-        echo "VORTEX_VERSION=$rawVersion" >> $env:GITHUB_ENV
 
     - uses: actions/setup-dotnet@v5
       with:
@@ -107,6 +106,11 @@ runs:
       with:
         node-version: ${{ steps.node-version.outputs.NODE_VERSION }}
         cache: "pnpm"
+        registry-url: "https://registry.npmjs.org"
+
+    - name: Bump versions
+      shell: pwsh
+      run: pnpm -F "@vortex/main" -F "@nexusmods/vortex-api" version ${{ steps.setOutputs.outputs.rawVersion }} --no-git-tag-version --no-git-checks --allow-same-version
 
     - name: Install dependencies
       shell: pwsh
@@ -193,3 +197,8 @@ runs:
           ./dist/latest.yml
         if-no-files-found: error
         retention-days: ${{ steps.nightly-flag.outputs.is_nightly == 'true' && 2 || 90 }}
+
+    - name: Publish @nexusmods/vortex-api
+      if: ${{ inputs.release == 'true' && steps.nightly-flag.outputs.is_nightly != 'true' }}
+      shell: pwsh
+      run: pnpm -F "@nexusmods/vortex-api" publish --provenance --access public --no-git-checks

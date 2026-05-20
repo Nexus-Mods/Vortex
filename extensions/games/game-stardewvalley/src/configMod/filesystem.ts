@@ -1,9 +1,9 @@
+import { fs } from "@nexusmods/vortex-api";
 /**
  * Filesystem helpers used by config-mod sync and transition flows.
  */
 import type { IEntry, IWalkOptions } from "turbowalk";
 import turbowalk from "turbowalk";
-import { fs } from "vortex-api";
 
 /** Recursively walks a directory with safe defaults and returns collected entries. */
 export async function walkPath(dirPath: string, walkOptions?: IWalkOptions): Promise<IEntry[]> {

@@ -1,11 +1,4 @@
 import { IRevision } from "@nexusmods/nexus-api";
-import type { TFunction } from "i18next";
-import * as _ from "lodash";
-import * as React from "react";
-import { Panel, Tab, Tabs } from "react-bootstrap";
-import { Trans } from "react-i18next";
-import { connect } from "react-redux";
-import Select from "react-select";
 import {
   actions,
   ComponentEx,
@@ -15,7 +8,14 @@ import {
   log,
   types,
   util,
-} from "vortex-api";
+} from "@nexusmods/vortex-api";
+import type { TFunction } from "i18next";
+import * as _ from "lodash";
+import * as React from "react";
+import { Panel, Tab, Tabs } from "react-bootstrap";
+import { Trans } from "react-i18next";
+import { connect } from "react-redux";
+import Select from "react-select";
 
 /* eslint-disable */
 import { setSortAdded, setSortWorkshop } from "../../actions/settings";

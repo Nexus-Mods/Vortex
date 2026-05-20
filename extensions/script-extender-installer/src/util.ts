@@ -1,7 +1,7 @@
+import { fs, selectors, types, log } from "@nexusmods/vortex-api";
 import Bluebird from "bluebird";
 import getVersion from "exe-version";
 import * as semver from "semver";
-import { fs, selectors, types, log } from "vortex-api";
 
 import supportData from "./gameSupport";
 import { IGameSupport } from "./types";

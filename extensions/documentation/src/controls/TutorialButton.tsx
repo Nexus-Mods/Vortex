@@ -1,3 +1,4 @@
+import { ComponentEx, Icon, Overlay, tooltip, util } from "@nexusmods/vortex-api";
 import { TFunction } from "i18next";
 import * as React from "react";
 import { Popover } from "react-bootstrap";
@@ -5,7 +6,6 @@ import * as ReactDOM from "react-dom";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import * as Redux from "redux";
-import { ComponentEx, Icon, Overlay, tooltip, util } from "vortex-api";
 
 import { setTutorialOpen } from "../actions/session";
 import getEmbedLink from "../tutorialManager";

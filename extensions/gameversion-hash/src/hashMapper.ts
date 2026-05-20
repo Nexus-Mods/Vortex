@@ -2,7 +2,7 @@ import crypto from "crypto";
 import https from "https";
 import url from "url";
 
-import { fs, selectors, types, util } from "vortex-api";
+import { fs, selectors, types, util } from "@nexusmods/vortex-api";
 
 import { DEBUG_MODE, HASHMAP_LINK, HASHMAP_LOCAL_PATH } from "./constants";
 import { IHashEntry, IHashMap } from "./types/types";

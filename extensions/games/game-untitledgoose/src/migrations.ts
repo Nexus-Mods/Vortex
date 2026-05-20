@@ -1,8 +1,8 @@
 // import { runPatcher } from 'harmony-patcher';
 import path from "path";
 
+import { fs } from "@nexusmods/vortex-api";
 import semver from "semver";
-import { fs } from "vortex-api";
 
 import { DATAPATH, ENTRY_POINT, GAME_ID } from "./statics";
 import { getDiscoveryPath } from "./util";

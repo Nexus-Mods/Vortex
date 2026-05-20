@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import path from "path";
 
-import { fs, util } from "vortex-api";
+import { fs, util } from "@nexusmods/vortex-api";
 export class MD5ComparisonError extends Error {
   private mPath;
   constructor(message, file) {

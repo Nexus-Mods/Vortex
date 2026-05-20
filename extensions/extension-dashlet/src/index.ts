@@ -1,6 +1,6 @@
 import * as path from "path";
 
-import { types } from "vortex-api";
+import { types } from "@nexusmods/vortex-api";
 
 import ExtensionsDashlet from "./ExtensionsDashlet";
 

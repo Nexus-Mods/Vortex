@@ -1,5 +1,5 @@
+import { fs } from "@nexusmods/vortex-api";
 import Promise from "bluebird";
-import { fs } from "vortex-api";
 
 function parseCategories(data: string): { [id: string]: string } {
   const parser = new DOMParser();

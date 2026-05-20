@@ -1,8 +1,8 @@
 /* eslint-disable */
 import path from "path";
 
+import { fs, types, log, util } from "@nexusmods/vortex-api";
 import * as rjson from "relaxed-json";
-import { fs, types, log, util } from "vortex-api";
 
 import {
   MOD_CONFIG_DEST_ELEMENT,

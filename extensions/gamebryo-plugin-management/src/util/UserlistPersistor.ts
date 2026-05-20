@@ -1,10 +1,10 @@
 import * as path from "path";
 
+import { fs, types, util } from "@nexusmods/vortex-api";
 import Promise from "bluebird";
 import { dialog as dialogIn } from "electron";
 import { dump, load } from "js-yaml";
 import * as _ from "lodash";
-import { fs, types, util } from "vortex-api";
 
 import { ILOOTList, ILOOTPlugin } from "../types/ILOOTList";
 import { gameSupported } from "./gameSupport";

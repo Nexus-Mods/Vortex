@@ -3,8 +3,8 @@
  */
 import path from "path";
 
-import { fs, util } from "vortex-api";
-import type { types } from "vortex-api";
+import { fs, util } from "@nexusmods/vortex-api";
+import type { types } from "@nexusmods/vortex-api";
 
 import { GAME_ID, MODS_REL_PATH } from "../common";
 import { SMAPI_EXE } from "../installers/smapi";

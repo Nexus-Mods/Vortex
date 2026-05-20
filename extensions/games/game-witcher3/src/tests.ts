@@ -1,4 +1,4 @@
-import { selectors, types, util } from "vortex-api";
+import { selectors, types, util } from "@nexusmods/vortex-api";
 
 import { GAME_ID, getSuppressModLimitBranch } from "./common";
 import { ModLimitPatcher } from "./modLimitPatch";

@@ -3,8 +3,8 @@ import { IncomingMessage } from "http";
 import * as path from "path";
 import * as url from "url";
 
+import { actions, log, selectors, types, util } from "@nexusmods/vortex-api";
 import * as semver from "semver";
-import { actions, log, selectors, types, util } from "vortex-api";
 
 import { IGameSupport } from "./types";
 

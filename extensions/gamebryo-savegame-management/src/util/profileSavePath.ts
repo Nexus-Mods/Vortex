@@ -1,6 +1,6 @@
 import * as path from "path";
 
-import { types, util } from "vortex-api";
+import { types, util } from "@nexusmods/vortex-api";
 
 export function profileSavePath(profile: types.IProfile, forceGlobal: boolean = false) {
   const localSaves = util.getSafe(profile, ["features", "local_saves"], false);

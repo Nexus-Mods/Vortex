@@ -1,7 +1,7 @@
 /* eslint-disable */
 import path from "path";
 
-import { types } from "vortex-api";
+import { types } from "@nexusmods/vortex-api";
 import Parser, { IniFile, WinapiFormat } from "vortex-parse-ini";
 
 import {

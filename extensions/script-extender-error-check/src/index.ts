@@ -1,8 +1,8 @@
 import * as path from "path";
 import * as url from "url";
 
+import { actions, fs, log, selectors, tooltip, types, util } from "@nexusmods/vortex-api";
 import * as React from "react";
-import { actions, fs, log, selectors, tooltip, types, util } from "vortex-api";
 
 import BooleanFilter from "./BooleanFilter";
 

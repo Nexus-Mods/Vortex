@@ -1,6 +1,6 @@
 import path from "path";
 
-import { util } from "vortex-api";
+import { util } from "@nexusmods/vortex-api";
 
 export const HASHMAP_FILENAME = "gameversion_hashmap.json";
 export const HASHMAP_LINK = `https://raw.githubusercontent.com/Nexus-Mods/Vortex-Backend/main/out/${HASHMAP_FILENAME}`;

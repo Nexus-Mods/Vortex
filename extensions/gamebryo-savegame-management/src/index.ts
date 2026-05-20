@@ -1,9 +1,9 @@
 import * as path from "path";
 
+import { actions, fs, log, selectors, types, util } from "@nexusmods/vortex-api";
 import Promise from "bluebird";
 import * as _ from "lodash";
 import * as Redux from "redux";
-import { actions, fs, log, selectors, types, util } from "vortex-api";
 import { IniFile } from "vortex-parse-ini";
 
 import {

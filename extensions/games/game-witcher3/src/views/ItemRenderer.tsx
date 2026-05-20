@@ -1,7 +1,3 @@
-import * as React from "react";
-import { Checkbox, ListGroupItem } from "react-bootstrap";
-import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
 import {
   actions,
   Icon,
@@ -11,7 +7,11 @@ import {
   types,
   util,
   MainContext,
-} from "vortex-api";
+} from "@nexusmods/vortex-api";
+import * as React from "react";
+import { Checkbox, ListGroupItem } from "react-bootstrap";
+import { useTranslation } from "react-i18next";
+import { useDispatch, useSelector } from "react-redux";
 
 import { I18N_NAMESPACE, GAME_ID } from "../common";
 import { IItemRendererProps } from "../types";

@@ -1,13 +1,13 @@
+import { types } from "@nexusmods/vortex-api";
+
+// Arrange: load the mock before the module under test.
+import "./fixtures/vortexApi.mock";
 /**
  * Tests the shared SMAPI helpers.
  * The install flows stay in separate files so it is easy to see which platform
  * failed.
  */
 import { describe, expect, test } from "vitest";
-
-// Arrange: load the mock before the module under test.
-import "./fixtures/vortexApi.mock";
-import { types } from "vortex-api";
 
 import {
   isSMAPIModType,

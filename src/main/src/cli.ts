@@ -278,10 +278,10 @@ export function parseCommandline(argv: string[], electronIsShitHack: boolean): I
 
 export function relaunch(args?: string[]) {
   app.relaunch({ args: [...filterArgs(process.argv), ...(args || [])] });
-  // Don't call app.quit() — it sets internal quitting state before closing
-  // windows, which causes an access violation in Electron's native
-  // destruction path. Instead, close all windows normally; the
-  // window-all-closed handler will call app.quit() after cleanup.
+  // Close windows rather than calling app.quit() directly: Application's
+  // window-all-closed handler performs the async finalize / waitForRendererExit
+  // / DuckDB shutdown sequence and calls app.quit() itself at the end.
+  // Calling app.quit() here races that cleanup and hangs the relaunch.
   for (const win of BrowserWindow.getAllWindows()) {
     win.close();
   }

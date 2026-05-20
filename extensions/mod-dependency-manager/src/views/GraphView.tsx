@@ -1,7 +1,7 @@
+import { util } from "@nexusmods/vortex-api";
 import cytoscape from "cytoscape";
 import coseBilkent from "cytoscape-cose-bilkent";
 import * as React from "react";
-import { util } from "vortex-api";
 
 (cytoscape as any).use(coseBilkent);
 

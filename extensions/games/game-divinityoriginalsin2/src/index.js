@@ -1,5 +1,5 @@
 const path = require("path");
-const { fs, selectors, util } = require("vortex-api");
+const { fs, selectors, util } = require("@nexusmods/vortex-api");
 const winapi = require("winapi-bindings");
 
 const GAME_ID = "divinityoriginalsin2";

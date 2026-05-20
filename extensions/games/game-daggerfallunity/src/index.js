@@ -1,5 +1,5 @@
 const path = require("path");
-const { fs, util } = require("vortex-api");
+const { fs, util } = require("@nexusmods/vortex-api");
 
 const LOCAL_LOW = path.resolve(
   util.getVortexPath("appData"),

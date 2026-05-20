@@ -159,6 +159,49 @@ function InstructionsOverlay(props: IInstructionsOverlayProps) {
     closeOverlay: () => props.onClose(overlayId),
   };
 
+  const renderContent = React.useCallback(() => {
+    if (overlay.componentId) {
+      const registeredComponent = getOverlayComponent(overlay.componentId);
+      if (registeredComponent) {
+        let componentProps = overlayComponentProps;
+        if (overlay.options?.props) {
+          if (typeof overlay.options.props === "function") {
+            const additionalProps = overlay.options.props();
+            componentProps = {
+              ...overlayComponentProps,
+              ...additionalProps,
+            };
+          } else {
+            componentProps = {
+              ...overlayComponentProps,
+              ...overlay.options.props,
+            };
+          }
+        }
+        return React.createElement(registeredComponent, componentProps);
+      } else {
+        return (
+          <div className="instructions-overlay-error">
+            Component not found for ID: {overlay.componentId}
+          </div>
+        );
+      }
+    }
+
+    if (overlay.content) {
+      return (
+        <ReactMarkdown
+          allowedElements={["p", "br", "a", "em", "strong"]}
+          className="instructions-overlay-content"
+          unwrapDisallowed={true}
+        >
+          {overlay.content}
+        </ReactMarkdown>
+      );
+    }
+    return <div className="instructions-overlay-error">No content provided</div>;
+  }, [overlay, overlayComponentProps]);
+
   return ReactDOM.createPortal(
     <div
       className={className}
@@ -207,50 +250,7 @@ function InstructionsOverlay(props: IInstructionsOverlayProps) {
 
         <FlexLayout.Fixed style={{ overflowY: "auto" }}>
           {open ? (
-            (() => {
-              if (overlay.componentId) {
-                // Handle component rendering
-                const registeredComponent = getOverlayComponent(overlay.componentId);
-                if (registeredComponent) {
-                  let componentProps = overlayComponentProps;
-                  if (overlay.options?.props) {
-                    if (typeof overlay.options.props === "function") {
-                      const additionalProps = overlay.options.props();
-                      componentProps = {
-                        ...overlayComponentProps,
-                        ...additionalProps,
-                      };
-                    } else {
-                      componentProps = {
-                        ...overlayComponentProps,
-                        ...overlay.options.props,
-                      };
-                    }
-                  }
-                  return React.createElement(registeredComponent, componentProps);
-                } else {
-                  return (
-                    <div className="instructions-overlay-error">
-                      Component not found for ID: {overlay.componentId}
-                    </div>
-                  );
-                }
-              }
-
-              if (overlay.content) {
-                // Handle text/markdown content
-                return (
-                  <ReactMarkdown
-                    allowedElements={["p", "br", "a", "em", "strong"]}
-                    className="instructions-overlay-content"
-                    unwrapDisallowed={true}
-                  >
-                    {overlay.content}
-                  </ReactMarkdown>
-                );
-              }
-              return <div className="instructions-overlay-error">No content provided</div>;
-            })()
+            renderContent()
           ) : (
             <div className="instructions-overlay-error">Overlay closed</div>
           )}

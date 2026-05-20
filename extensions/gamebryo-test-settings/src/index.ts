@@ -1,8 +1,8 @@
 import * as path from "path";
 
+import { actions, fs, log, selectors, types, util } from "@nexusmods/vortex-api";
 import Promise from "bluebird";
 import * as Redux from "redux";
-import { actions, fs, log, selectors, types, util } from "vortex-api";
 import IniParser, { IniFile, WinapiFormat } from "vortex-parse-ini";
 
 import { gameSupportXboxPass, iniPath, initGameSupport } from "./util/gameSupport";

@@ -1,8 +1,8 @@
 import * as path from "path";
 
+import { fs, log, selectors, types, util } from "@nexusmods/vortex-api";
 import PromiseBB from "bluebird";
 import * as Redux from "redux";
-import { fs, log, selectors, types, util } from "vortex-api";
 
 import {
   backupPath,

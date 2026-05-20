@@ -1,3 +1,4 @@
+import { ComponentEx, More, Toggle } from "@nexusmods/vortex-api";
 import { TFunction } from "i18next";
 import * as React from "react";
 import {
@@ -14,7 +15,6 @@ import {
   Row,
 } from "react-bootstrap";
 import { ChromePicker } from "react-color";
-import { ComponentEx, More, Toggle } from "vortex-api";
 
 interface IColor {
   r: number;

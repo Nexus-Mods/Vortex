@@ -7,12 +7,7 @@ const path = require("node:path");
 
 const mode = process.env.NODE_ENV === "production" ? "production" : "development";
 
-const plugins = [
-    new webpack.DefinePlugin({
-        "process.env.NODE_ENV": JSON.stringify(mode),
-    }),
-    new ForkTsCheckerWebpackPlugin(),
-];
+const plugins = [new ForkTsCheckerWebpackPlugin()];
 
 const optimizer = new TerserPlugin({
     parallel: true,
@@ -27,6 +22,7 @@ const optimizer = new TerserPlugin({
  * @type {webpack.Configuration}
  * */
 const config = {
+    mode,
     entry: {
         renderer: path.resolve(__dirname, "src", "renderer.tsx"),
         splash: path.resolve(__dirname, "src", "splash.ts"),

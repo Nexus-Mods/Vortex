@@ -1,8 +1,8 @@
 /* eslint-disable */
 import path from "path";
 
+import { fs, types, FlexLayout, OptionsFilter, selectors, util } from "@nexusmods/vortex-api";
 import * as React from "react";
-import { fs, types, FlexLayout, OptionsFilter, selectors, util } from "vortex-api";
 
 import { GAME_ID, HALO_GAMES, MS_APPID, STEAM_ID, MODTYPE_PLUG_AND_PLAY } from "./common";
 import {

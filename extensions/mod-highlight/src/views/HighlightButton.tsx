@@ -1,10 +1,10 @@
+import { actions, selectors, tooltip, types, util } from "@nexusmods/vortex-api";
 import * as React from "react";
 import { Overlay } from "react-bootstrap";
 import * as ReactDOM from "react-dom";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import { ThunkDispatch } from "redux-thunk";
-import { actions, selectors, tooltip, types, util } from "vortex-api";
 
 import { HighlightBase, IBaseConnectedProps, IBaseActionProps } from "../types/types";
 

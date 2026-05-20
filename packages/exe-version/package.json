@@ -21,6 +21,9 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.cts",
+  "devDependencies": {
+    "pe-resources": "workspace:*"
+  },
   "publishConfig": {
     "exports": {
       ".": {

@@ -24,7 +24,7 @@ export function debugListExtractors(): Array<{
 }> {
   return attributeExtractors.map(({ priority, extractor }) => {
     let name = "[unknown extractor]";
-    let details = "";
+    let details: string;
     try {
       const extractorObj = extractor as any;
       if (extractorObj.name && extractorObj.name !== "Function") {

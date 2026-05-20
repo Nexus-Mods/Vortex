@@ -1,5 +1,5 @@
 const path = require("path");
-const { log, util } = require("vortex-api");
+const { log, util } = require("@nexusmods/vortex-api");
 
 const EXEC_PATH = path.join("Game", "DarksoulsII.exe");
 

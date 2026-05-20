@@ -114,7 +114,6 @@ export const modsReducer: IReducerSpec = {
         return state;
       }
       const filteredRef = _.omitBy(rule.reference, _.isUndefined);
-      let idx = -1;
 
       // mutually exclusive types replace each other, so if we add a "before"
       // rule we first remove any existing "after" rule with the same reference
@@ -127,7 +126,7 @@ export const modsReducer: IReducerSpec = {
         group = [rule.type];
       }
 
-      idx = getSafe(state, [gameId, modId, "rules"], []).findIndex((iterRule: IRule) => {
+      const idx = getSafe(state, [gameId, modId, "rules"], []).findIndex((iterRule: IRule) => {
         const typeMatch = group.indexOf(rule.type) !== -1;
         const filteredIter = _.omitBy(iterRule.reference, _.isUndefined);
         return typeMatch && referenceEqual(filteredRef, filteredIter);

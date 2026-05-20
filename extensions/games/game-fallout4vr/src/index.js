@@ -1,7 +1,7 @@
 const Promise = require("bluebird");
 const path = require("path");
 const { getFileVersion } = require("exe-version");
-const { util } = require("vortex-api");
+const { util } = require("@nexusmods/vortex-api");
 const winapi = require("winapi-bindings");
 
 /*

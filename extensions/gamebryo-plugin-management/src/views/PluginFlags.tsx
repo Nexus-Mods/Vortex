@@ -1,6 +1,6 @@
+import { tooltip } from "@nexusmods/vortex-api";
 import I18next from "i18next";
 import * as React from "react";
-import { tooltip } from "vortex-api";
 
 import { NAMESPACE } from "../statics";
 /* eslint-disable max-lines-per-function */

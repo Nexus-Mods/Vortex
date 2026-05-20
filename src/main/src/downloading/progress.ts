@@ -60,8 +60,8 @@ export class ProgressReporter {
   }
 
   public getProgress(): DownloadProgress {
-    let bytesReceived = 0;
-    let bytesWritten = 0;
+    let bytesReceived: number;
+    let bytesWritten: number;
 
     if (this.#isChunked) {
       bytesReceived = this.#chunkProgress.values().reduce((sum, c) => sum + c.bytesReceived, 0);

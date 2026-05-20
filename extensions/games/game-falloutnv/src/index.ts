@@ -3,8 +3,8 @@ import * as nodeFs from "fs";
 import path from "path";
 
 import { IFileInfo } from "@nexusmods/nexus-api";
+import { actions, fs, log, types, selectors, util } from "@nexusmods/vortex-api";
 import * as semver from "semver";
-import { actions, fs, log, types, selectors, util } from "vortex-api";
 
 // List of folders in the various languages on Xbox, for now we default to English but this could be enhanced to select a folder based on the Vortex locale.
 // It's possible that some mods don't work with the non-English variant.

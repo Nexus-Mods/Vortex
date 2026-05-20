@@ -1,5 +1,5 @@
+import { tooltip, types } from "@nexusmods/vortex-api";
 import * as React from "react";
-import { tooltip, types } from "vortex-api";
 
 import Timer from "./Timer";
 

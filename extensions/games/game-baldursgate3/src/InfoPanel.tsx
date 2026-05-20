@@ -1,10 +1,10 @@
+import { types, tooltip } from "@nexusmods/vortex-api";
 /* eslint-disable */
 import * as React from "react";
 import { Alert } from "react-bootstrap";
 import { useSelector } from "react-redux";
 import * as Redux from "redux";
 import { ThunkDispatch } from "redux-thunk";
-import { types, tooltip } from "vortex-api";
 
 import { setPlayerProfile } from "./actions";
 import { GAME_ID } from "./common";

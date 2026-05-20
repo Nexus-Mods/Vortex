@@ -40,7 +40,7 @@ export function createModels(db: Database): Models {
   return {
     mods: db.createTable("mods_pivot"),
     profiles: db.createTable("profiles_pivot"),
-  } as Models;
+  };
 }
 
 /** Maps query names to their parameter types */

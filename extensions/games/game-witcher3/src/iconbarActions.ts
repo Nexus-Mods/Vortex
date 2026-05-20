@@ -1,7 +1,7 @@
 /* eslint-disable */
 import path from "path";
 
-import { actions, selectors, types, util } from "vortex-api";
+import { actions, selectors, types, util } from "@nexusmods/vortex-api";
 
 import { GAME_ID, I18N_NAMESPACE, LOCKED_PREFIX } from "./common";
 import TW3LoadOrder, { importLoadOrder } from "./loadOrder";

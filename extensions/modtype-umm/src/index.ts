@@ -1,6 +1,6 @@
 import * as path from "path";
 
-import { selectors, types, util } from "vortex-api";
+import { selectors, types, util } from "@nexusmods/vortex-api";
 
 import { addGameSupport, getSupportMap, UMM_EXE, UMM_ID } from "./common";
 import { InvalidAPICallError, NotPremiumError } from "./Errors";

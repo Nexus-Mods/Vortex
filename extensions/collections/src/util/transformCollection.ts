@@ -1,11 +1,11 @@
 import * as path from "path";
 
+import { actions, fs, log, selectors, types, util } from "@nexusmods/vortex-api";
 import * as _ from "lodash";
 import { ILookupResult } from "modmeta-db";
 import * as Redux from "redux";
 import { generate as shortid } from "shortid";
 import turbowalk, { IEntry } from "turbowalk";
-import { actions, fs, log, selectors, types, util } from "vortex-api";
 
 /* eslint-disable */
 import {

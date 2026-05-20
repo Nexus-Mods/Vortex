@@ -1,8 +1,8 @@
 /* eslint-disable */
 import path from "path";
 
+import { actions, fs, log, types, util } from "@nexusmods/vortex-api";
 import semver from "semver";
-import { actions, fs, log, types, util } from "vortex-api";
 
 const GAME_ID = "nomanssky";
 const STEAMAPP_ID = "275850";

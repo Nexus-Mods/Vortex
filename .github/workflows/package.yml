@@ -41,6 +41,10 @@ on:
       - .github/workflows/package.yml
       - .github/actions/package/**
 
+permissions:
+  contents: read
+  id-token: write # OIDC token for provenance attestation
+
 jobs:
   build:
     runs-on: windows-latest

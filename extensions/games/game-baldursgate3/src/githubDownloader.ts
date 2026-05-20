@@ -2,9 +2,9 @@ import { IncomingHttpHeaders, IncomingMessage } from "http";
 import * as https from "https";
 import * as url from "url";
 
+import { actions, log, selectors, types, util } from "@nexusmods/vortex-api";
 import * as _ from "lodash";
 import * as semver from "semver";
-import { actions, log, selectors, types, util } from "vortex-api";
 
 import { GAME_ID, LSLIB_URL } from "./common";
 

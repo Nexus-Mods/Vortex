@@ -1,3 +1,4 @@
+import { actions, ComponentEx, log, tooltip, types, util } from "@nexusmods/vortex-api";
 import * as React from "react";
 import {
   Alert,
@@ -17,7 +18,6 @@ import { WithTranslation, withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import * as Redux from "redux";
 import { ThunkDispatch } from "redux-thunk";
-import { actions, ComponentEx, log, tooltip, types, util } from "vortex-api";
 
 export interface ISettingsDebugProps {
   readThemes: () => Promise<string[]>;

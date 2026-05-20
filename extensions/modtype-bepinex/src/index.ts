@@ -1,7 +1,7 @@
 /* eslint-disable */
 import * as path from "path";
 
-import { actions, log, selectors, types, util } from "vortex-api";
+import { actions, log, selectors, types, util } from "@nexusmods/vortex-api";
 
 import AttribDashlet from "./AttribDashlet";
 import { ensureBepInExPack } from "./bepInExDownloader";

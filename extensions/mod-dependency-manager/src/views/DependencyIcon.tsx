@@ -1,3 +1,4 @@
+import { actions, ComponentEx, log, selectors, tooltip, types, util } from "@nexusmods/vortex-api";
 import I18next from "i18next";
 import * as _ from "lodash";
 import memoizeOne from "memoize-one";
@@ -21,7 +22,6 @@ import { getEmptyImage } from "react-dnd-html5-backend";
 import { findDOMNode } from "react-dom";
 import { connect } from "react-redux";
 import * as semver from "semver";
-import { actions, ComponentEx, log, selectors, tooltip, types, util } from "vortex-api";
 
 import {
   setConflictDialog,

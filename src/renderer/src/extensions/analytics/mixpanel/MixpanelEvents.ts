@@ -323,13 +323,21 @@ export class CollectionsInstallationCancelledEvent implements MixpanelEvent {
  * @param game_id ID of the game
  * @param mod_uid UID of the mod
  * @param file_uid UID of the file
+ * @param collection_id ID of the parent collection when the mod is downloaded as part of a collection install, otherwise null
  * @note "mods_download_started" event name is taken by server-side. Use "mods_download_started_client" instead.
  */
 export class ModsDownloadStartedClientEvent implements MixpanelEvent {
   readonly eventName = "mods_download_started_client";
   readonly properties: Record<string, any>;
-  constructor(mod_id: string, file_id: string, game_id: number, mod_uid: string, file_uid: string) {
-    this.properties = { mod_id, file_id, game_id, mod_uid, file_uid };
+  constructor(
+    mod_id: string,
+    file_id: string,
+    game_id: number,
+    mod_uid: string,
+    file_uid: string,
+    collection_id: string | null,
+  ) {
+    this.properties = { mod_id, file_id, game_id, mod_uid, file_uid, collection_id };
   }
 }
 
@@ -342,6 +350,7 @@ export class ModsDownloadStartedClientEvent implements MixpanelEvent {
  * @param file_uid UID of the file
  * @param file_size Size of the file
  * @param duration_ms Duration in milliseconds
+ * @param collection_id ID of the parent collection when the mod is downloaded as part of a collection install, otherwise null
  */
 export class ModsDownloadCompletedEvent implements MixpanelEvent {
   readonly eventName = "mods_download_completed";
@@ -354,6 +363,7 @@ export class ModsDownloadCompletedEvent implements MixpanelEvent {
     file_uid: string,
     file_size: number,
     duration_ms: number,
+    collection_id: string | null,
   ) {
     this.properties = {
       mod_id,
@@ -363,6 +373,7 @@ export class ModsDownloadCompletedEvent implements MixpanelEvent {
       file_uid,
       file_size,
       duration_ms,
+      collection_id,
     };
   }
 }
@@ -374,12 +385,20 @@ export class ModsDownloadCompletedEvent implements MixpanelEvent {
  * @param game_id ID of the game
  * @param mod_uid UID of the mod
  * @param file_uid UID of the file
+ * @param collection_id ID of the parent collection when the mod is downloaded as part of a collection install, otherwise null
  */
 export class ModsDownloadCancelledEvent implements MixpanelEvent {
   readonly eventName = "mods_download_cancelled";
   readonly properties: Record<string, any>;
-  constructor(mod_id: string, file_id: string, game_id: number, mod_uid: string, file_uid: string) {
-    this.properties = { mod_id, file_id, game_id, mod_uid, file_uid };
+  constructor(
+    mod_id: string,
+    file_id: string,
+    game_id: number,
+    mod_uid: string,
+    file_uid: string,
+    collection_id: string | null,
+  ) {
+    this.properties = { mod_id, file_id, game_id, mod_uid, file_uid, collection_id };
   }
 }
 
@@ -392,6 +411,7 @@ export class ModsDownloadCancelledEvent implements MixpanelEvent {
  * @param file_uid UID of the file
  * @param error_code Error code
  * @param error_message Error message
+ * @param collection_id ID of the parent collection when the mod is downloaded as part of a collection install, otherwise null
  */
 export class ModsDownloadFailedEvent implements MixpanelEvent {
   readonly eventName = "mods_download_failed";
@@ -404,6 +424,7 @@ export class ModsDownloadFailedEvent implements MixpanelEvent {
     file_uid: string,
     error_code: string,
     error_message: string,
+    collection_id: string | null,
   ) {
     this.properties = {
       mod_id,
@@ -413,6 +434,7 @@ export class ModsDownloadFailedEvent implements MixpanelEvent {
       file_uid,
       error_code,
       error_message,
+      collection_id,
     };
   }
 }

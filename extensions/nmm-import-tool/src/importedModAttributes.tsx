@@ -1,6 +1,6 @@
+import { TableTextFilter, tooltip, types } from "@nexusmods/vortex-api";
 import * as I18next from "i18next";
 import * as React from "react";
-import { TableTextFilter, tooltip, types } from "vortex-api";
 
 import { IModEntry } from "./types/nmmEntries";
 
