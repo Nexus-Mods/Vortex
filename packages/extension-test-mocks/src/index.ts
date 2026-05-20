@@ -14,7 +14,7 @@
  */
 import * as path from "node:path";
 
-import { vi } from "vitest";
+import { vi, type Mock } from "vitest";
 
 // Hand-mirror of the enums in src/renderer/src/types/IHealthCheck.ts. We don't
 // import the real ones because cross-package imports drag the renderer's
@@ -78,8 +78,10 @@ export function setReadFileResolver(resolver: (absPath: string) => Promise<Buffe
   readFileResolver = resolver;
 }
 
-export const fs = {
-  readFileAsync: vi.fn(async (absPath: string, _opts?: unknown) => readFileResolver(absPath)),
+export const fs: { readFileAsync: Mock } = {
+  readFileAsync: vi.fn(
+    async (absPath: string, _opts?: unknown): Promise<Buffer | string> => readFileResolver(absPath),
+  ),
 };
 
 // Minimal mirror of src/renderer/src/util/installerHelpers.ts. See the
@@ -235,22 +237,36 @@ function declareInstallers(
   }
 }
 
-export const util = {
-  DataInvalid,
-  ProcessCanceled,
+export const util: {
+  DataInvalid: typeof DataInvalid;
+  ProcessCanceled: typeof ProcessCanceled;
+  SevenZip: new () => object;
+  walk: Mock;
+  declareInstallers: typeof declareInstallers;
+  buildCopyInstructions: typeof buildCopyInstructions;
+  compileStopPatterns: typeof compileStopPatterns;
+  findCommonRootDir: typeof findCommonRootDir;
+} = {
+  DataInvalid: DataInvalid,
+  ProcessCanceled: ProcessCanceled,
   SevenZip: class {},
   walk: vi.fn(),
-  declareInstallers,
-  buildCopyInstructions,
-  compileStopPatterns,
-  findCommonRootDir,
+  declareInstallers: declareInstallers,
+  buildCopyInstructions: buildCopyInstructions,
+  compileStopPatterns: compileStopPatterns,
+  findCommonRootDir: findCommonRootDir,
 };
 
-export const log = vi.fn();
+export const log: Mock = vi.fn();
 
-export const types = {
-  HealthCheckCategory,
-  HealthCheckSeverity,
-  HealthCheckTrigger,
-  isModHealthCheck,
+export const types: {
+  HealthCheckCategory: typeof HealthCheckCategory;
+  HealthCheckSeverity: typeof HealthCheckSeverity;
+  HealthCheckTrigger: typeof HealthCheckTrigger;
+  isModHealthCheck: typeof isModHealthCheck;
+} = {
+  HealthCheckCategory: HealthCheckCategory,
+  HealthCheckSeverity: HealthCheckSeverity,
+  HealthCheckTrigger: HealthCheckTrigger,
+  isModHealthCheck: isModHealthCheck,
 };

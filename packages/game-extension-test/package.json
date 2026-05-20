@@ -4,10 +4,10 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
-    "build": "tsc -p tsconfig.json --noEmit",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run --config vitest.config.ts",
-    "start": "npx tsx src/cli.ts"
+    "start": "pnpm tsx src/cli.ts",
+    "build": "pnpm tsc",
+    "typecheck": "pnpm tsc",
+    "test": "pnpm vitest run"
   },
   "devDependencies": {
     "@nexusmods/nexus-api": "catalog:",
@@ -22,6 +22,15 @@
   "nx": {
     "tags": [
       "vortex:tooling"
-    ]
+    ],
+    "targets": {
+      "start": {
+        "cache": false,
+        "continuous": true,
+        "dependsOn": [
+          "build"
+        ]
+      }
+    }
   }
 }

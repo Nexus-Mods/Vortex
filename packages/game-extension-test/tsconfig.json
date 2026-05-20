@@ -1,13 +1,18 @@
 {
+  "$schema": "https://www.schemastore.org/tsconfig.json",
+  "extends": "../../tsconfig.strict.json",
+  "include": ["./src/**/*.ts", "../../typings.custom/promise.d.ts"],
   "compilerOptions": {
-    "target": "ES2022",
+    "composite": true,
+    "noEmit": true,
+    "target": "esnext",
     "module": "esnext",
     "moduleResolution": "bundler",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true
-  },
-  "include": ["src/**/*.ts"]
+    "customConditions": ["development"],
+    "lib": ["ESNext"],
+    "types": ["node"],
+    "allowJs": false,
+    "isolatedDeclarations": true,
+    "noUncheckedSideEffectImports": true
+  }
 }
