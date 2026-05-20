@@ -1637,6 +1637,21 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
         newError.stack = err.stack;
         return PromiseBB.reject(newError);
       })
+      .catch(HTTPError, (err) => {
+        // A 401 here means the Nexus client could not authenticate the
+        // request and could not (or did not) refresh its token. Reachable
+        // when persisted state says we have OAuth credentials but the live
+        // Nexus instance does not (e.g. updateToken never ran on startup,
+        // forced-logout migration path), when the refresh token has been
+        // revoked server-side, or on a resume after logout. Surface as a
+        // ProcessCanceled so reportDownloadError shows a friendly,
+        // non-reportable notification instead of letting the raw 401 fall
+        // through to the generic else branch with the Report button.
+        if (err.statusCode === 401) {
+          return PromiseBB.reject(new ProcessCanceled("You are not logged in to Nexus Mods!"));
+        }
+        return PromiseBB.reject(err);
+      })
       .catch(RateLimitError, (err) => {
         api.showErrorNotification("Rate limit exceeded", err, {
           allowReport: false,
