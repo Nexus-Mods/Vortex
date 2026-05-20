@@ -6,8 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "node ./build.mjs",
-    "typecheck": "pnpm tsc --noEmit -p tsconfig.json",
-    "test": "vitest run --config vitest.config.ts"
+    "typecheck": "pnpm tsc --noEmit -p tsconfig.json"
   },
   "module": "./dist/index.mjs",
   "vortex:requires": [

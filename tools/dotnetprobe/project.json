@@ -15,6 +15,20 @@
         { "runtime": "dotnet --version" }
       ],
       "outputs": ["{projectRoot}/dist"]
+    },
+    "build:win": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "dotnet publish -r win-x64 -o temp",
+        "cwd": "{projectRoot}"
+      },
+      "cache": true,
+      "inputs": [
+        "{projectRoot}/dotnetprobe.csproj",
+        "{projectRoot}/Program.cs",
+        { "runtime": "dotnet --version" }
+      ],
+      "outputs": ["{projectRoot}/temp/dotnetprobe.exe"]
     }
   }
 }
