@@ -1,0 +1,20 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "@tools/dotnetprobe",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec node ./build.mjs",
+        "cwd": "{projectRoot}"
+      },
+      "cache": true,
+      "inputs": [
+        "{projectRoot}/dotnetprobe.csproj",
+        "{projectRoot}/Program.cs",
+        { "runtime": "dotnet --version" }
+      ],
+      "outputs": ["{projectRoot}/dist"]
+    }
+  }
+}
