@@ -1,8 +1,8 @@
 {
   "$schema": "https://www.schemastore.org/package.json",
-  "name": "exe-version",
-  "version": "3.0.0",
-  "description": "Read version info from Windows PE executables via pure TS parsing",
+  "name": "icon-extract",
+  "version": "2.0.0",
+  "description": "Extract icons from Windows PE executables via pure TS parsing",
   "private": true,
   "type": "module",
   "scripts": {
