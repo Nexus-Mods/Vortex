@@ -429,7 +429,7 @@ export function connectionClose(): Middleware {
 
 export function injectHeaders(headers: http.OutgoingHttpHeaders): Middleware {
   return (ctx, next) => {
-    for (const [k, v] of Object.entries(headers)) ctx.res.setHeader(k, v as string);
+    for (const [k, v] of Object.entries(headers)) ctx.res.setHeader(k, v);
     return next();
   };
 }

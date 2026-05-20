@@ -149,7 +149,7 @@ export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
 
     const overwrite = options?.overwrite ?? false;
     if (!overwrite) {
-      let targetExists = false;
+      let targetExists: boolean;
 
       try {
         await stat(target);

@@ -61,7 +61,6 @@ export default defineConfig([
     },
     rules: {
       // React
-      "@eslint-react/jsx-shorthand-boolean": ["warn", -1],
       "@eslint-react/no-useless-fragment": "warn",
 
       // Tailwind
