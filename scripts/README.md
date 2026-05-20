@@ -1,31 +1,95 @@
-# Scripts
+# Scripts - Build & Development Utilities
 
-Repository management scripts for native module development.
+Build and development scripts for the Vortex workspace.
 
-## Repository Commands
+## Prerequisites
 
-- `node scripts/manage-node-modules.js status [filter]` - Check status of managed repositories
-- `node scripts/manage-node-modules.js summary` - Show project overview and statistics
-- `node scripts/manage-node-modules.js setup-remotes` - Set up Git remotes
-- `node scripts/manage-node-modules.js create-branch <name>` - Create feature branch across repos
-- `node scripts/manage-node-modules.js delete-branch <name>` - Delete branch (supports --force --remote)
-- `node scripts/manage-node-modules.js commit "<message>"` - Commit changes across repos
-- `node scripts/manage-node-modules.js push` - Push to remote
-- `node scripts/open-pr-links.js <branch> [filter]` - Open PR creation links in browser
+Most scripts require dependencies installed via `pnpm install`. Scripts that
+additionally need a prior `pnpm build` are noted below.
 
-## Filters
+## Scripts
 
-- `cpp` - C++ modules: winapi-bindings, bsatk, loot, gamebryo-savegame
-- `csharp` - C# projects: fomod-installer, dotnetprobe
-- `nexus` - Nexus-Mods hosted repos
-- `all` - All managed repositories
+### `create-env-file.mjs`
 
-## Workflow Example
+Writes `.local.env` with `NX_PARALLEL` set to the host CPU count.
 
 ```bash
-node scripts/manage-node-modules.js create-branch feature-name
-# ... make changes ...
-node scripts/manage-node-modules.js commit "Add feature"
-node scripts/manage-node-modules.js push
-node scripts/open-pr-links.js feature-name cpp
+node scripts/create-env-file.mjs
+```
+
+### `dependency-report.mjs`
+
+Generates `etc/Dependency Report.md` - a table of all production dependencies
+leaked by Vortex to extensions via `nodeIntegration`.
+
+```bash
+node scripts/dependency-report.mjs
+```
+
+### `extensions-rolldown.mjs`
+
+Shared Rolldown helpers for bundled in-repo extensions. Exports `getExternals()`,
+`nativeRemapPlugin()`, `createConfig()`, and `bundle()`. Not run directly -
+imported by extension build configs.
+
+### `generate-query-types.ts`
+
+Generates TypeScript interfaces from the SQL query definitions in `src/queries/`.
+Creates a temporary DuckDB instance, introspects column types, and writes
+`src/main/src/store/generated/queryTypes.ts`.
+
+```bash
+pnpm run generate:query-types
+```
+
+Requires: `pnpm build`
+
+### `download-duckdb-extensions.ts`
+
+Downloads pre-built DuckDB extension binaries (`.duckdb_extension`) for the
+platforms and extensions listed in `duckdb-extensions.json`. Detects the DuckDB
+version from the installed `@duckdb/node-api` package.
+
+```bash
+npx tsx scripts/download-duckdb-extensions.ts
+```
+
+### `check-package-build-setup.test.ts`
+
+Vitest test that scans workspace packages under `packages/` and verifies each
+has a `build` script and that runtime entry points (`main`, `module`, `exports`)
+point to compiled output rather than `.ts` source.
+
+```bash
+pnpm exec vitest run --root scripts
+```
+
+## Project Structure
+
+```
+scripts/
+  create-env-file.mjs            - .local.env generator
+  dependency-report.mjs           - production dependency report
+  extensions-rolldown.mjs        - shared Rolldown bundling helpers
+  generate-query-types.ts         - SQL -> TypeScript type generator
+  download-duckdb-extensions.ts   - DuckDB extension downloader
+  download-duckdb-extensions.test.ts
+  check-package-build-setup.test.ts
+  duckdb-extensions.json          - platform/extension config
+  vitest.config.ts               - Vitest config for scripts test suite
+```
+
+## Running
+
+```bash
+# .mjs scripts - run directly with Node
+node scripts/create-env-file.mjs
+node scripts/dependency-report.mjs
+
+# .ts scripts - run via tsx
+npx tsx scripts/generate-query-types.ts
+npx tsx scripts/download-duckdb-extensions.ts
+
+# Tests
+pnpm exec vitest run --root scripts
 ```
