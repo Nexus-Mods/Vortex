@@ -297,7 +297,7 @@ export function createRpcTransport(port: MessagePortLike): IRpcTransport {
     once<T>(type: string): Promise<T> {
       return new Promise<T>((resolve, reject) => {
         const list = onceListeners.get(type) ?? [];
-        list.push({ resolve: resolve as (value: unknown) => void, reject });
+        list.push({ resolve: resolve, reject });
         onceListeners.set(type, list);
       });
     },

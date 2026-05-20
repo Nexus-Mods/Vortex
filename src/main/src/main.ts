@@ -275,7 +275,7 @@ async function main(): Promise<void> {
   initDownloadIpc(downloadManager);
   initAdaptorHost().catch((err: unknown) => {
     log("warn", "Failed to initialize adaptor host", {
-      error: err instanceof Error ? err.message : String(err as string),
+      error: err instanceof Error ? err.message : "unknown error",
     });
   });
   initTelemetryIpcHandler();
@@ -310,11 +310,11 @@ async function main(): Promise<void> {
     app.commandLine.appendSwitch("remote-debugging-port", port);
   }
 
-  let fixedT = i18next.getFixedT("en");
+  const fixedT = i18next.getFixedT("en");
   try {
     fixedT("dummy");
   } catch {
-    fixedT = (input: unknown) => input;
+    /** ignored */
   }
 
   new Application(mainArgs);

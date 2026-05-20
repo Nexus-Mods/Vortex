@@ -144,8 +144,6 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
 
     const imgPath = path.resolve(getVortexPath("assets"), "images", "vortex.png");
 
-    let body = null;
-
     const licenseBox = ownLicense ? (
       <ReactMarkdown className="license-text-own" disallowedElements={["link"]}>
         {ownLicenseText}
@@ -160,7 +158,7 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
     );
 
     const PanelX: any = Panel;
-    body = (
+    const body = (
       <MainPage.Body id="about-dialog">
         <Panel>
           <PanelX.Body>

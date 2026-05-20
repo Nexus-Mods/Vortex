@@ -56,7 +56,7 @@ export function createStorePathProvider(snapshot: StorePathSnapshot): StorePathP
       gameOS: OS.Windows,
       isWindows: true as const,
       fromBase,
-    } as WindowsStorePathProvider;
+    };
   }
 
   return {
@@ -65,7 +65,7 @@ export function createStorePathProvider(snapshot: StorePathSnapshot): StorePathP
     gameOS: OS.Linux,
     isWindows: false as const,
     fromBase,
-  } as LinuxStorePathProvider;
+  };
 }
 
 /**

@@ -1,9 +1,3 @@
-/* eslint-disable @eslint-react/hooks-extra/no-direct-set-state-in-use-effect */
-// This hook requires direct setState calls in effects due to its architecture:
-// - updateFiltered() schedules future updates via setTimeout when timers fire
-// - quickUpdate() performs incremental updates for performance
-// This pattern matches the Classic implementation and is correct for this use case.
-
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { INotification } from "../../../../types/INotification";

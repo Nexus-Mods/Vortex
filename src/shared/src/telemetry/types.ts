@@ -47,8 +47,8 @@ export const serializeSpan = (span: ReadableSpan): SerializedSpan => {
     spanId: ctx.spanId,
     traceFlags: ctx.traceFlags,
     parentSpanId: span.parentSpanId,
-    startTime: span.startTime as [number, number],
-    endTime: span.endTime as [number, number],
+    startTime: span.startTime,
+    endTime: span.endTime,
     status: { code: span.status.code, message: span.status.message },
     attributes: { ...span.attributes },
     links: span.links.map((link) => ({
@@ -61,10 +61,10 @@ export const serializeSpan = (span: ReadableSpan): SerializedSpan => {
     })),
     events: span.events.map((event) => ({
       name: event.name,
-      time: event.time as [number, number],
+      time: event.time,
       attributes: event.attributes ? { ...event.attributes } : undefined,
     })),
-    duration: span.duration as [number, number],
+    duration: span.duration,
     resource: { ...span.resource.attributes },
     instrumentationLibrary: {
       name: span.instrumentationLibrary.name,

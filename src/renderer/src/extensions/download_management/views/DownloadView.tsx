@@ -236,8 +236,6 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
       this.mColumns = this.props.columns(() => this.props);
     }
 
-    let content = null;
-
     let filteredIds = Object.keys(downloads);
 
     const { downloadGameFilter, useModernLayout } = this.props;
@@ -247,6 +245,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
       );
     }
 
+    let content;
     if (filteredIds.length === 0 && gameMode !== undefined) {
       content = this.renderDropzone();
     } else {
