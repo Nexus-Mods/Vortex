@@ -404,17 +404,12 @@ class MainWindow {
       return;
     }
 
-    this.mWindow.on("close", (event) => {
+    this.mWindow.on("close", () => {
       if (this.mWindow === null) {
         return;
       }
-      // Work around Electron >=39.6.1 crash on Windows where the normal
-      // WM_CLOSE destruction path triggers an access violation inside
-      // electron.exe (STATUS_FATAL_USER_CALLBACK_EXCEPTION / 0xC000041D).
-      // See: https://github.com/electron/electron/issues/50040
-      event.preventDefault();
-      // Save the renderer process PID before destroying so Application can
-      // wait for the process to fully exit and release file handles.
+      // Capture the renderer PID so Application.waitForRendererExit can wait
+      // for the process to fully release its file handles before quitting.
       try {
         this.mRendererPid = this.mWindow.webContents.getOSProcessId();
       } catch {
@@ -422,18 +417,6 @@ class MainWindow {
       }
       this.mWindow.webContents.send("window:event:close");
       closeAllViews(this.mWindow);
-      // hide() before destroy(): destroy's aura teardown synthesizes a Win32
-      // mouse move that SendMessage's WM_NCHITTEST back into
-      // WebContentsView::NonClientHitTest, which dereferences a null
-      // InspectableWebContents mid-teardown and faults inside
-      // electron::InspectableWebContents::GetView. ShowWindow(SW_HIDE) takes
-      // us out of screen hit-test so the message routes elsewhere.
-      try {
-        this.mWindow.hide();
-      } catch {
-        // webContents may already be gone
-      }
-      this.mWindow.destroy();
     });
     this.mWindow.on("closed", () => {
       this.mWindow = null;

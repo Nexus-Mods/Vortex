@@ -209,11 +209,6 @@ class Application {
             this.mTray.close();
           }
           if (process.platform !== "darwin") {
-            // All windows are already destroyed at this point (via the
-            // destroy() workaround in MainWindow), so app.quit() won't
-            // attempt to close any windows — it just fires the before-quit
-            // / will-quit lifecycle events (needed by the autoupdater) and
-            // then exits cleanly.
             app.quit();
           }
         })
