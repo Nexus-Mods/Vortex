@@ -41,8 +41,8 @@ catalog:
   "@duckdb/node-api": 1.5.1-r.1
   "@electron/rebuild": ^4.0.4
   "@electron/remote": ^2.0.12
-  "@eslint-react/eslint-plugin": 2.3.7
-  "@eslint/js": 9.39.1
+  "@eslint-react/eslint-plugin": 5.8.1
+  "@eslint/js": 10.0.1
   "@headlessui/react": ^1.7.19
   "@hot-updater/bsdiff": ^0.30.6
   "@iarna/toml": ^2.2.5
@@ -60,7 +60,7 @@ catalog:
   "@opentelemetry/sdk-trace-base": ^1.30.0
   "@opentelemetry/semantic-conventions": ^1.30.0
   "@playwright/test": ^1.58.2
-  "@stylistic/eslint-plugin": ^5.7.1
+  "@stylistic/eslint-plugin": 5.10.0
   "@tailwindcss/cli": ^4.1.17
   "@testing-library/dom": ^10.4.1
   "@testing-library/jest-dom": ^6.9.1
@@ -123,7 +123,7 @@ catalog:
   "@types/write-file-atomic": ~3.0.3
   "@types/ws": ~7.4.7
   "@types/xml2js": ~0.4.14
-  "@typescript-eslint/utils": 8.47.0
+  "@typescript-eslint/utils": 8.59.3
   "@vitejs/plugin-react": ^6.0.1
   "@vitest/coverage-v8": ^4.1.0
   "@vitest/ui": 4.1.0
@@ -161,12 +161,12 @@ catalog:
   electron-redux: git+https://github.com/TanninOne/electron-redux#66bbd9d389579806e8c4ebd87bd513a668cc64a8
   electron-updater: ^4.2.0
   encoding-down: ^6.3.0
-  eslint: 9.39.1
+  eslint: 10.4.0
   eslint-config-prettier: 10.1.8
-  eslint-import-resolver-typescript: ^4.4.4
-  eslint-plugin-better-tailwindcss: ^4.0.2
-  eslint-plugin-import: ^2.32.0
-  eslint-plugin-perfectionist: ^5.4.0
+  eslint-import-resolver-typescript: 4.4.4
+  eslint-plugin-better-tailwindcss: 4.5.0
+  eslint-plugin-import: 2.32.0
+  eslint-plugin-perfectionist: 5.9.0
   feedparser: ^2.2.9
   font-scanner: ^0.2.1
   fork-ts-checker-webpack-plugin: ^9.0.2
@@ -265,7 +265,7 @@ catalog:
   turbowalk: git+https://github.com/Nexus-Mods/node-turbowalk#3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
   typed-binary: ^4.3.3
   typescript: 5.9.3
-  typescript-eslint: 8.47.0
+  typescript-eslint: 8.59.3
   universal-analytics: ^0.4.23
   uuid: ^3.3.3
   vite: ^8.0.0
@@ -294,7 +294,7 @@ dedupePeers: true
 engineStrict: true
 failIfNoMatch: true
 
-minimumReleaseAge: 2880
+minimumReleaseAge: 1440
 minimumReleaseAgeIgnoreMissingTime: true
 minimumReleaseAgeStrict: true
 
