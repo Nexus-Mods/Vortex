@@ -23,6 +23,13 @@ for (const file of ["loadingScreen.css", "tailwind-v4.css"]) {
   await copy(join(WORKSPACE, "src/stylesheets/dist", file), join(BUILD, "assets/css", file));
 }
 
+// @tools/dotnetprobe compiled outputs
+const dotnetprobeFiles = await glob("tools/dotnetprobe/dist/*", { cwd: WORKSPACE });
+for (const file of dotnetprobeFiles) {
+  const rel = file.slice("tools/dotnetprobe/dist/".length);
+  await copy(join(WORKSPACE, file), join(BUILD, "assets", rel));
+}
+
 // SCSS sources for runtime stylesheet compiler load paths
 const scssFiles = await glob("src/stylesheets/**/*.scss", {
   cwd: WORKSPACE,
@@ -53,15 +60,6 @@ for (const dir of ["fonts", "icons", "images", "pictograms"]) {
 
 for (const file of await glob("assets/*.json", { cwd: WORKSPACE })) {
   await copy(join(WORKSPACE, file), join(ASSETS, basename(file)));
-}
-
-// Platform binaries (may not exist on current platform)
-for (const bin of ["dotnetprobe", "dotnetprobe.exe", "dotnetprobe.pdb"]) {
-  try {
-    await copy(join(WORKSPACE, "assets", bin), join(ASSETS, bin));
-  } catch {
-    // ignored
-  }
 }
 
 // Locales (dev only)

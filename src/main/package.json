@@ -76,6 +76,10 @@
             "target": "build",
             "projects": "@vortex/stylesheets"
           },
+          {
+            "target": "build",
+            "projects": "@tools/dotnetprobe"
+          },
           "sbom"
         ],
         "cache": true,
