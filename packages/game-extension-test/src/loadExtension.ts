@@ -187,9 +187,9 @@ function makeStubContext(): IStubContext {
     get(target, prop, receiver) {
       const known = Reflect.get(target, prop, receiver);
       if (known !== undefined) return known;
-      if (typeof prop === "string" && prop.startsWith("register")) {
+      if (typeof prop === "string" && (prop.startsWith("register") || prop.startsWith("require"))) {
         return () => {
-          /* unknown register hook — silently accepted */
+          /* unknown register/require hook — silently accepted */
         };
       }
       return undefined;

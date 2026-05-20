@@ -2315,6 +2315,12 @@ importers:
 
   extensions/games/game-pathfinderkingmaker:
     devDependencies:
+      '@vortex/game-extension-helpers':
+        specifier: workspace:*
+        version: link:../../../packages/game-extension-helpers
+      '@vortex/game-extension-test':
+        specifier: workspace:*
+        version: link:../../../packages/game-extension-test
       vortex-api:
         specifier: workspace:*
         version: link:../../../packages/vortex-api
@@ -4069,6 +4075,15 @@ importers:
       vitest:
         specifier: 'catalog:'
         version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/ui@4.1.0)(happy-dom@20.8.8)(vite@8.0.3)
+
+  packages/game-extension-helpers:
+    devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+      vortex-api:
+        specifier: workspace:*
+        version: link:../vortex-api
 
   packages/game-extension-test:
     devDependencies:

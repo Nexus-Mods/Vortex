@@ -4,7 +4,7 @@
   "description": "Support for Pathfinder: Kingmaker",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",
-    "build": "copyfiles -u 1 -f ./src/index.js dist && pnpm run _assets && pnpm extractInfo"
+    "build": "node build.mjs && pnpm run _assets && pnpm extractInfo"
   },
   "author": "m0nster",
   "license": "GPL-3.0",
@@ -13,7 +13,12 @@
   "config": {
     "game": "Pathfinder: Kingmaker"
   },
+  "vortex": {
+    "gameExtensionTest": true
+  },
   "devDependencies": {
+    "@vortex/game-extension-helpers": "workspace:*",
+    "@vortex/game-extension-test": "workspace:*",
     "vortex-api": "workspace:*"
   },
   "nx": {
@@ -34,6 +39,16 @@
           "typescript",
           "vortex-api"
         ]
+      },
+      "test:game-extensions": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "pnpm --filter @vortex/game-extension-test run start -- --game game-pathfinderkingmaker"
+        },
+        "inputs": [
+          "{projectRoot}/src/**/*.ts"
+        ],
+        "cache": false
       }
     }
   }
