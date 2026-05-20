@@ -36,6 +36,10 @@ jobs:
         with:
           cache: true
 
+      - name: Fix pnpm node-gyp permissions
+        if: runner.os == 'Linux'
+        run: find "$PNPM_HOME" -path '*/node-gyp/gyp/gyp_main.py' -exec chmod +x {} \;
+
       # NOTE(erri120): fontconfig required by font-scanner required by theme-switcher
       - name: Install fontconfig
         if: runner.os == 'Linux'
