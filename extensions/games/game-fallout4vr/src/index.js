@@ -1,7 +1,7 @@
 const Promise = require("bluebird");
 const path = require("path");
 const { getFileVersion } = require("exe-version");
-const { selectors, util } = require("vortex-api");
+const { selectors, util } = require("@nexusmods/vortex-api");
 const winapi = require("winapi-bindings");
 
 const GAME_ID = "fallout4vr";
