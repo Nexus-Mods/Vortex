@@ -37,6 +37,19 @@ class SplashScreen {
     await delay(500);
 
     if (!this.mWindow?.isDestroyed()) {
+      // hide() before close(): same workaround as MainWindow.ts. Aura's
+      // close/destroy teardown synthesizes a Win32 mouse move that
+      // SendMessage's WM_NCHITTEST back into FramelessView::NonClientHitTest,
+      // which dereferences a null InspectableWebContents mid-teardown and
+      // faults inside electron::InspectableWebContents::GetView. Hiding
+      // first takes us out of screen hit-test so the message routes
+      // elsewhere. Repros as STATUS_FATAL_USER_CALLBACK_EXCEPTION
+      // (0xC000041D) at electron.exe + 0x398fe0. See GH#23176.
+      try {
+        this.mWindow?.hide();
+      } catch {
+        // webContents may already be gone
+      }
       this.mWindow?.close();
     }
 
