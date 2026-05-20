@@ -47,7 +47,7 @@ catalog:
   "@hot-updater/bsdiff": ^0.30.6
   "@iarna/toml": ^2.2.5
   "@mdi/js": 7.4.47
-  "@microsoft/api-extractor": ^7.57.6
+  "@microsoft/api-extractor": ^7.58.7
   "@msgpack/msgpack": ^2.7.0
   "@nexusmods/fomod-installer-ipc": ^0.13.1
   "@nexusmods/fomod-installer-native": ^0.13.1
