@@ -37,7 +37,13 @@
           "copy-extensions",
           "^build"
         ],
-        "cache": false
+        "cache": true,
+        "outputs": [
+          "{projectRoot}/build/main.cjs",
+          "{projectRoot}/build/main.cjs.map",
+          "{projectRoot}/build/bootstrap.mjs",
+          "{projectRoot}/build/bootstrap.mjs.map"
+        ]
       },
       "publish": {
         "cache": false,

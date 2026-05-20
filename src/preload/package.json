@@ -14,7 +14,8 @@
     "targets": {
       "build": {
         "outputs": [
-          "{workspaceRoot}/src/main/build/preload.*"
+          "{workspaceRoot}/src/main/build/preload.cjs",
+          "{workspaceRoot}/src/main/build/preload.cjs.map"
         ]
       }
     }
