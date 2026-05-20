@@ -45,6 +45,8 @@ export function testPortrait(
 }
 
 export function installPortrait(files: string[]): Promise<types.IInstallResult> {
+  // Only canonical portrait images are copied; non-portrait files (readmes, etc.) are
+  // intentionally dropped so the game's Portraits directory stays clean.
   const portraits = files.filter((f) => !f.endsWith("/") && !f.endsWith("\\") && isPortraitFile(f));
   const instructions: types.IInstruction[] = portraits.map((f) => ({
     type: "copy" as const,
@@ -92,9 +94,7 @@ export function installSave(files: string[]): Promise<types.IInstallResult> {
  * Path: `%LOCALAPPDATA%Low/Owlcat Games/Pathfinder Kingmaker/Portraits`
  */
 export function getPortraitPath(getVortexPath: (key: string) => string): string {
-  // Vortex's "localLow" path key maps to %LOCALAPPDATA%Low
-  // If unavailable, fall back to constructing from "appData" (Roaming)
-  // by going up one level and into LocalLow.
+  // Construct LocalLow from appData (Roaming) by going up one level.
   const appData = getVortexPath("appData");
   const localLow = path.resolve(appData, "..", "LocalLow");
   return path.join(localLow, "Owlcat Games", OWLCAT_GAME_DIR, "Portraits");
@@ -105,6 +105,7 @@ export function getPortraitPath(getVortexPath: (key: string) => string): string 
  * Path: `%LOCALAPPDATA%Low/Owlcat Games/Pathfinder Kingmaker/Saved Games`
  */
 export function getSavePath(getVortexPath: (key: string) => string): string {
+  // Construct LocalLow from appData (Roaming) by going up one level.
   const appData = getVortexPath("appData");
   const localLow = path.resolve(appData, "..", "LocalLow");
   return path.join(localLow, "Owlcat Games", OWLCAT_GAME_DIR, "Saved Games");

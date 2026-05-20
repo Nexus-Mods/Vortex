@@ -35,7 +35,7 @@ function installUmmTool(files: string[]): Promise<types.IInstallResult> {
   if (!execFile) {
     return Promise.reject(new Error("UMM executable not found in archive"));
   }
-  const idx = execFile.indexOf(UMM_EXE);
+  const idx = execFile.lastIndexOf(UMM_EXE);
   const instructions: types.IInstruction[] = files
     .filter((f) => !f.endsWith(path.sep) && !f.endsWith("/"))
     .map((file) => ({
@@ -58,8 +58,23 @@ function installUmmTool(files: string[]): Promise<types.IInstallResult> {
  * test-harness stub without hitting Bluebird type mismatches.
  */
 interface UmmContext {
-  registerInstaller: (...args: unknown[]) => void;
-  registerModType: (...args: unknown[]) => void;
+  registerInstaller: (
+    id: string,
+    priority: number,
+    testSupported: (
+      files: string[],
+      gameId: string,
+    ) => Promise<{ supported: boolean; requiredFiles: string[] }>,
+    install: (files: string[]) => Promise<{ instructions: unknown[] }>,
+  ) => void;
+  registerModType: (
+    id: string,
+    priority: number,
+    isSupported: (gameId: string) => boolean,
+    getPath: (game: { id: string }) => string | undefined,
+    test: () => Promise<boolean>,
+    options?: Record<string, unknown>,
+  ) => void;
 }
 
 interface UmmOptions {
@@ -79,33 +94,14 @@ export function registerUmmSupport(
   gameIds: ReadonlySet<string>,
   options: UmmOptions,
 ): void {
-  const registerInstaller = context.registerInstaller as (
-    id: string,
-    priority: number,
-    testSupported: (
-      files: string[],
-      gameId: string,
-    ) => Promise<{ supported: boolean; requiredFiles: string[] }>,
-    install: (files: string[]) => Promise<{ instructions: unknown[] }>,
-  ) => void;
-
-  const registerModType = context.registerModType as (
-    id: string,
-    priority: number,
-    isSupported: (gameId: string) => boolean,
-    getPath: (game: { id: string }) => string | undefined,
-    test: () => Promise<boolean>,
-    options?: Record<string, unknown>,
-  ) => void;
-
-  registerInstaller(
+  context.registerInstaller(
     UMM_INSTALLER_ID,
     UMM_INSTALLER_PRIORITY,
     (files: string[], gameId: string) => testUmmTool(files, gameId, gameIds),
     installUmmTool,
   );
 
-  registerModType(
+  context.registerModType(
     UMM_MOD_TYPE,
     15,
     (gameId: string) => gameIds.has(gameId),

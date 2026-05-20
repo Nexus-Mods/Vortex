@@ -11,7 +11,17 @@ import * as path from "path";
 const DEFAULT_INSTALLER_PRIORITY = 200;
 
 interface InstallerContext {
-  registerInstaller: (...args: unknown[]) => void;
+  registerInstaller: (
+    id: string,
+    priority: number,
+    testSupported: (
+      files: string[],
+      gameId: string,
+    ) => Promise<{ supported: boolean; requiredFiles: string[] }>,
+    install: (
+      files: string[],
+    ) => Promise<{ instructions: Array<{ type: string; source?: string; destination?: string }> }>,
+  ) => void;
 }
 
 /**
@@ -24,19 +34,7 @@ export function registerDefaultModInstaller(
   installerId: string,
   gameIds: ReadonlySet<string>,
 ): void {
-  const registerInstaller = context.registerInstaller as (
-    id: string,
-    priority: number,
-    testSupported: (
-      files: string[],
-      gameId: string,
-    ) => Promise<{ supported: boolean; requiredFiles: string[] }>,
-    install: (
-      files: string[],
-    ) => Promise<{ instructions: Array<{ type: string; source?: string; destination?: string }> }>,
-  ) => void;
-
-  registerInstaller(
+  context.registerInstaller(
     installerId,
     DEFAULT_INSTALLER_PRIORITY,
     (files: string[], gameId: string) => {
