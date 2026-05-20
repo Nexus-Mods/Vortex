@@ -64,7 +64,7 @@ jobs:
           echo "NODE_VERSION=$NODE_VERSION" >> "$GITHUB_OUTPUT"
           echo "Using Node.js version: $NODE_VERSION"
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ steps.node-version.outputs.NODE_VERSION }}
           cache: pnpm
