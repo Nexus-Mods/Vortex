@@ -1,11 +1,11 @@
 import * as path from "path";
 
+import { fs, selectors, Spinner, ToolIcon, types, util } from "@nexusmods/vortex-api";
 import * as React from "react";
 import { useSelector } from "react-redux";
-import { fs, selectors, Spinner, ToolIcon, types, util } from "vortex-api";
 
 // tslint:disable-next-line:no-var-requires
-const { MainContext } = require("vortex-api");
+const { MainContext } = require("@nexusmods/vortex-api");
 
 interface IConnectedProps {
   addToTitleBar: boolean;

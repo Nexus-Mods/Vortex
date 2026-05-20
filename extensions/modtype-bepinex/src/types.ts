@@ -1,4 +1,4 @@
-import { types } from "vortex-api";
+import { types } from "@nexusmods/vortex-api";
 
 export type UnityDoorstopType = "none" | "default" | "unity3";
 

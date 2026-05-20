@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { selectors, types, util } from "vortex-api";
+import { selectors, types, util } from "@nexusmods/vortex-api";
 
 import { GAME_ID, SCRIPT_MERGER_ID } from "../common";
 import { exportMenuMod, importMenuMod } from "../menumod";

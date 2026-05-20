@@ -8,8 +8,8 @@
  */
 import path from "path";
 
-import { fs, log, util } from "vortex-api";
-import type { types } from "vortex-api";
+import { fs, log, util } from "@nexusmods/vortex-api";
+import type { types } from "@nexusmods/vortex-api";
 
 import { _SMAPI_BUNDLED_MODS, getBundledMods } from "../../common";
 import type { IInstallerTestResult } from "../../types";

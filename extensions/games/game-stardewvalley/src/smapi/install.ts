@@ -2,8 +2,8 @@
  * Installation helpers for converting downloaded SMAPI archives into enabled
  * Stardew Valley mods.
  */
-import type { types } from "vortex-api";
-import { actions, selectors, util } from "vortex-api";
+import type { types } from "@nexusmods/vortex-api";
+import { actions, selectors, util } from "@nexusmods/vortex-api";
 
 import { GAME_ID } from "../common";
 

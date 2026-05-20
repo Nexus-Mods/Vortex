@@ -1,5 +1,5 @@
 import { ICollection, IRevision } from "@nexusmods/nexus-api";
-import { types } from "vortex-api";
+import { types } from "@nexusmods/vortex-api";
 
 const dummy: types.IState = undefined;
 

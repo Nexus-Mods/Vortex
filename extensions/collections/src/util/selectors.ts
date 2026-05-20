@@ -1,5 +1,5 @@
+import { types } from "@nexusmods/vortex-api";
 import { createSelector } from "reselect";
-import { types } from "vortex-api";
 
 const getCollectionInstallState = (state: types.IState): types.ICollectionInstallState =>
   (state as any).session?.collections || {

@@ -25,7 +25,7 @@
     "node-7z": "catalog:",
     "react": "catalog:",
     "react-i18next": "catalog:",
-    "vortex-api": "workspace:*"
+    "@nexusmods/vortex-api": "workspace:*"
   },
   "nx": {
     "tags": [

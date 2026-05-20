@@ -100,7 +100,7 @@ function findBrokenExportConditions(exports: unknown): { path: string; value: st
 // - @vortex/extension-test-mocks: vitest-only tooling. Vitest loads the .ts
 //   source directly via vite's transform; no build step. Mirrors vortex-api's
 //   `exports."default": "./src/...ts"` pattern.
-const EXCLUDED = new Set(["vortex-api", "@vortex/extension-test-mocks"]);
+const EXCLUDED = new Set(["@nexusmods/vortex-api", "@vortex/extension-test-mocks"]);
 
 const packages = discoverPackages().filter(
   (p) => hasRuntimeEntryPoint(p.pkg) && !EXCLUDED.has(p.name),

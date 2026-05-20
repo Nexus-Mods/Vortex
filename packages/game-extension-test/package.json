@@ -11,13 +11,13 @@
   },
   "devDependencies": {
     "@nexusmods/nexus-api": "catalog:",
+    "@nexusmods/vortex-api": "workspace:*",
     "@types/node": "catalog:",
     "@vortex/extension-test-mocks": "workspace:*",
     "limiter": "catalog:",
     "minimist": "catalog:",
     "typescript": "catalog:",
-    "vitest": "catalog:",
-    "vortex-api": "workspace:*"
+    "vitest": "catalog:"
   },
   "nx": {
     "tags": [

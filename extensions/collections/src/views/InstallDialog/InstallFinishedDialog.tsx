@@ -1,8 +1,8 @@
+import { actions, log, Modal, Spinner, tooltip, types, util } from "@nexusmods/vortex-api";
 import * as React from "react";
 import { Button, Media, Panel } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { actions, log, Modal, Spinner, tooltip, types, util } from "vortex-api";
 
 import { NAMESPACE } from "../../constants";
 import InstallDriver from "../../util/InstallDriver";

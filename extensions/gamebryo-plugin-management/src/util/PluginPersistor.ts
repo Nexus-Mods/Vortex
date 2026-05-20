@@ -1,7 +1,7 @@
 import * as path from "path";
 
+import { fs, log, types, util } from "@nexusmods/vortex-api";
 import Promise from "bluebird";
-import { fs, log, types, util } from "vortex-api";
 
 import { ILoadOrder } from "../types/ILoadOrder";
 import {

@@ -1,4 +1,4 @@
-import { types } from "vortex-api";
+import { types } from "@nexusmods/vortex-api";
 
 export type LockedState = "true" | "false" | "always" | "never";
 export type LoadOrder = ILoadOrderEntry[];

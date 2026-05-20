@@ -1,12 +1,3 @@
-import memoizeOne from "memoize-one";
-import * as React from "react";
-import { Button, FormControl, Modal, OverlayTrigger, Popover, Table } from "react-bootstrap";
-import { withTranslation, WithTranslation } from "react-i18next";
-import { connect } from "react-redux";
-import * as Redux from "redux";
-import { batch } from "redux-act";
-import { ThunkDispatch } from "redux-thunk";
-import * as semver from "semver";
 import {
   actions as vortexActions,
   ComponentEx,
@@ -19,7 +10,16 @@ import {
   types,
   util,
   VisibilityProxy,
-} from "vortex-api";
+} from "@nexusmods/vortex-api";
+import memoizeOne from "memoize-one";
+import * as React from "react";
+import { Button, FormControl, Modal, OverlayTrigger, Popover, Table } from "react-bootstrap";
+import { withTranslation, WithTranslation } from "react-i18next";
+import { connect } from "react-redux";
+import * as Redux from "redux";
+import { batch } from "redux-act";
+import { ThunkDispatch } from "redux-thunk";
+import * as semver from "semver";
 
 import { setConflictDialog, setFileOverrideDialog } from "../actions";
 import { NAMESPACE } from "../statics";

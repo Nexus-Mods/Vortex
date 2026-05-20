@@ -1,11 +1,11 @@
 import * as path from "path";
 
+import { actions, fs, selectors, types } from "@nexusmods/vortex-api";
 import Promise from "bluebird";
 import * as I18next from "i18next";
 import { genHash } from "modmeta-db";
 import * as Redux from "redux";
 import { generate as shortid } from "shortid";
-import { actions, fs, selectors, types } from "vortex-api";
 
 import { IModEntry } from "../types/moEntries";
 import { transferArchive, transferUnpackedMod } from "../util/modFileMigration";

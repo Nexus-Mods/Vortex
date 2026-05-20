@@ -1,8 +1,8 @@
 /**
  * Provides typed selectors for Stardew Valley extension state paths.
  */
-import type { types } from "vortex-api";
-import { util } from "vortex-api";
+import type { types } from "@nexusmods/vortex-api";
+import { util } from "@nexusmods/vortex-api";
 
 import { GAME_ID } from "../common";
 

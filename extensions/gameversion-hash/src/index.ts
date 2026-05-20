@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import path from "path";
 
-import { fs, log, selectors, types, util } from "vortex-api";
+import { fs, log, selectors, types, util } from "@nexusmods/vortex-api";
 
 import { DEBUG_MODE, HASHMAP_LOCAL_PATH, TEMP_PATH, WD_NAME } from "./constants";
 import { HashMapper } from "./hashMapper";

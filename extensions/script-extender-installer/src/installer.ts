@@ -1,6 +1,6 @@
 import * as path from "path";
 
-import { types, util } from "vortex-api";
+import { types, util } from "@nexusmods/vortex-api";
 
 import supportData from "./gameSupport";
 import { getScriptExtenderVersion } from "./util";

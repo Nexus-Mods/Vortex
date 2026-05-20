@@ -39,7 +39,7 @@
     "modmeta-db": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:",
-    "vortex-api": "workspace:*"
+    "@nexusmods/vortex-api": "workspace:*"
   },
   "nx": {
     "tags": [

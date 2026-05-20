@@ -19,7 +19,7 @@ const FIXTURE_MAX_CONCURRENCY = 24;
 
 export default defineConfig({
   resolve: {
-    alias: [{ find: /^vortex-api$/, replacement: VORTEX_API_MOCK }],
+    alias: [{ find: /^@nexusmods\/vortex-api$/, replacement: VORTEX_API_MOCK }],
   },
   test: {
     environment: "node",

@@ -20,10 +20,10 @@
     "xml2js": "catalog:"
   },
   "devDependencies": {
+    "@nexusmods/vortex-api": "workspace:*",
     "@types/xml2js": "catalog:",
     "@vortex/extension-test-mocks": "workspace:*",
-    "@vortex/game-extension-test": "workspace:*",
-    "vortex-api": "workspace:*"
+    "@vortex/game-extension-test": "workspace:*"
   },
   "nx": {
     "tags": [
@@ -31,13 +31,6 @@
     ],
     "targets": {
       "build": {
-        "inputs": [
-          "default",
-          "typescript",
-          "vortex-api"
-        ]
-      },
-      "typecheck": {
         "inputs": [
           "default",
           "typescript",

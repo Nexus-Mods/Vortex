@@ -1,7 +1,7 @@
+import { types } from "@nexusmods/vortex-api";
 import * as React from "react";
 import { connect } from "react-redux";
 import Select from "react-select";
-import { types } from "vortex-api";
 
 import { ISavegame } from "../types/ISavegame";
 

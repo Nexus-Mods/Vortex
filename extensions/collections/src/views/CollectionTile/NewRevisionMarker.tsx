@@ -1,5 +1,5 @@
+import { Icon, types } from "@nexusmods/vortex-api";
 import * as React from "react";
-import { Icon, types } from "vortex-api";
 
 interface INewRevisionMarkerProps {
   t: types.TFunction;

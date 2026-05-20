@@ -1,6 +1,6 @@
 /**
  * Shared `vortex-api` substitute for test runs. Game extensions and the
- * game-extension-test harness alias `"vortex-api"` to this module via their
+ * game-extension-test harness alias `"@nexusmods/vortex-api"` to this module via their
  * vitest configs (`resolve.alias`), giving every extension a consistent stub
  * surface without each one shipping its own `__mocks__/vortex-api.ts`.
  *

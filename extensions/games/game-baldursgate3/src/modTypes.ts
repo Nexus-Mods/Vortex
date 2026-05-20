@@ -1,6 +1,6 @@
 import * as path from "path";
 
-import { types } from "vortex-api";
+import { types } from "@nexusmods/vortex-api";
 
 import { LSLIB_FILES, ORIGINAL_FILES } from "./common";
 import { logDebug } from "./util";

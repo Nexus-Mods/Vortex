@@ -1,7 +1,7 @@
 import * as path from "path";
 
+import { fs, log, types } from "@nexusmods/vortex-api";
 import Bluebird from "bluebird";
-import { fs, log, types } from "vortex-api";
 import * as winapi from "winapi-bindings";
 
 const STORE_ID = "gog";

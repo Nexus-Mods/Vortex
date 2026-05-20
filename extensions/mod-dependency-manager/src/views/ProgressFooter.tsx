@@ -1,8 +1,8 @@
+import { Spinner, tooltip, util } from "@nexusmods/vortex-api";
 import * as React from "react";
 import { TFunction } from "react-i18next";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
-import { Spinner, tooltip, util } from "vortex-api";
 
 import { NAMESPACE } from "../statics";
 

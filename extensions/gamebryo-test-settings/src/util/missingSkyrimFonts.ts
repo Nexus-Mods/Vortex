@@ -1,7 +1,7 @@
 import * as path from "path";
 
+import { fs, types, util } from "@nexusmods/vortex-api";
 import Promise from "bluebird";
-import { fs, types, util } from "vortex-api";
 
 function missingSkyrimFonts(
   state: types.IState,

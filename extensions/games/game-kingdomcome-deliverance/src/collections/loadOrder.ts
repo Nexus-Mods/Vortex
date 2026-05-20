@@ -1,4 +1,4 @@
-import { actions, selectors, types, util } from "vortex-api";
+import { actions, selectors, types, util } from "@nexusmods/vortex-api";
 
 import { GAME_ID } from "../statics";
 import { transformId } from "../util";

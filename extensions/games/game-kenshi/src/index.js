@@ -1,5 +1,5 @@
 const path = require("path");
-const { fs, util } = require("vortex-api");
+const { fs, util } = require("@nexusmods/vortex-api");
 
 const STEAM_DLL = "steam_api.dll";
 

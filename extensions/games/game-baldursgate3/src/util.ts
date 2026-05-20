@@ -1,10 +1,10 @@
 /* eslint-disable */
 import * as path from "path";
 
+import { actions, fs, types, selectors, log, util } from "@nexusmods/vortex-api";
 import * as semver from "semver";
 import { generate as shortid } from "shortid";
 import walk from "turbowalk";
-import { actions, fs, types, selectors, log, util } from "vortex-api";
 import { Builder, parseStringPromise } from "xml2js";
 
 import {

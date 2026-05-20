@@ -1,11 +1,11 @@
 import * as path from "path";
 import { pathToFileURL } from "url";
 
+import { actions, Icon, selectors, Toggle, types, util } from "@nexusmods/vortex-api";
 import type { TFunction } from "i18next";
 import * as React from "react";
 import { ControlLabel, Image, Table } from "react-bootstrap";
 import { useSelector, useStore } from "react-redux";
-import { actions, Icon, selectors, Toggle, types, util } from "vortex-api";
 
 function ToolIcon(props: { gameId: string; imageUrl: string }) {
   const { gameId, imageUrl } = props;

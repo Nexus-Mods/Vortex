@@ -1,7 +1,7 @@
 /* eslint-disable */
 const { getFileVersion, getFileVersionLocalized } = require("exe-version");
 const path = require("path");
-const { actions, selectors, util } = require("vortex-api");
+const { actions, selectors, util } = require("@nexusmods/vortex-api");
 const winapi = require("winapi-bindings");
 
 const GAME_ID = "skyrimvr";

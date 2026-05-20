@@ -1,4 +1,4 @@
-import { fs, types, util } from "vortex-api";
+import { fs, types, util } from "@nexusmods/vortex-api";
 
 import { GAME_ID } from "./common";
 import { ILoadOrderEntry, IProps, ISerializableData, LoadOrder } from "./types";

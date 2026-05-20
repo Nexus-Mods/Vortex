@@ -1,7 +1,7 @@
 /**
  * Registers Stardew Valley archive installers and priorities with Vortex.
  */
-import type { types } from "vortex-api";
+import type { types } from "@nexusmods/vortex-api";
 
 import {
   INSTALLER_ID_MANIFEST,

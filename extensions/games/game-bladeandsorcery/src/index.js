@@ -1,6 +1,6 @@
 const Promise = require("bluebird");
 const path = require("path");
-const { actions, fs, FlexLayout, log, selectors, util } = require("vortex-api");
+const { actions, fs, FlexLayout, log, selectors, util } = require("@nexusmods/vortex-api");
 const semver = require("semver");
 
 const {

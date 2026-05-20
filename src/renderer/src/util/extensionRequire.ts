@@ -104,7 +104,7 @@ const handlerMapReactAct: { [extId: string]: typeof reduxAct } = {};
 function extensionRequire(orig, getExtensions: () => IRegisteredExtension[]) {
   const extensionPaths = ExtensionManager.getExtensionPaths();
   return function (id) {
-    if (id === "vortex-api") {
+    if (id === "vortex-api" || id === "@nexusmods/vortex-api") {
       const ext = getExtensions().find((iter) => this.filename.startsWith(iter.path));
       if (ext !== undefined) {
         if (handlerMapAPI[ext.name] === undefined) {

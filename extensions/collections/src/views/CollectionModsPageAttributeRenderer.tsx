@@ -1,5 +1,5 @@
+import { FlexLayout, tooltip, types, util } from "@nexusmods/vortex-api";
 import * as React from "react";
-import { FlexLayout, tooltip, types, util } from "vortex-api";
 
 interface IBaseProps {
   modId: string;

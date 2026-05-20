@@ -1,7 +1,7 @@
+import { ComponentEx, DNDContainer, FlexLayout, MainPage } from "@nexusmods/vortex-api";
 import * as React from "react";
 import { Panel } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
-import { ComponentEx, DNDContainer, FlexLayout, MainPage } from "vortex-api";
 
 import DraggableList from "./DraggableList";
 import PluginEntry from "./PluginEntry";

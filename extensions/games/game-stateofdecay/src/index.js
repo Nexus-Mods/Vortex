@@ -1,5 +1,5 @@
 const path = require("path");
-const { log, util } = require("vortex-api");
+const { log, util } = require("@nexusmods/vortex-api");
 
 function findGame() {
   return util.steam

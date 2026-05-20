@@ -1,12 +1,12 @@
 import * as path from "path";
 
+import { actions, fs, log, selectors, types, util } from "@nexusmods/vortex-api";
 import Bluebird from "bluebird";
 import { pl } from "date-fns/locale";
 import getVersion from "exe-version";
 import i18next from "i18next";
 import { LootAsync, Message, PluginMetadata } from "loot";
 import {} from "redux-thunk";
-import { actions, fs, log, selectors, types, util } from "vortex-api";
 
 /* eslint-disable */
 import { updatePluginOrder } from "./actions/loadOrder";

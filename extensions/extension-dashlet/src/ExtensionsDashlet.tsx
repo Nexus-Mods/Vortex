@@ -1,3 +1,4 @@
+import { actions, ComponentEx, Dashlet, Icon, tooltip, types, util } from "@nexusmods/vortex-api";
 import memoizeOne from "memoize-one";
 import * as React from "react";
 import { Button, ListGroup, ListGroupItem } from "react-bootstrap";
@@ -5,7 +6,6 @@ import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import * as Redux from "redux";
 import { ThunkDispatch } from "redux-thunk";
-import { actions, ComponentEx, Dashlet, Icon, tooltip, types, util } from "vortex-api";
 
 import { NAMESPACE, NUM_DISPLAY_ITEMS } from "./constants";
 

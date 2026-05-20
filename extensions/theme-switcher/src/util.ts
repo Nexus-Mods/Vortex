@@ -1,6 +1,6 @@
 import * as path from "path";
 
-import { util } from "vortex-api";
+import { util } from "@nexusmods/vortex-api";
 
 export function themesPath(): string {
   return path.join(util.getVortexPath("userData"), "themes");

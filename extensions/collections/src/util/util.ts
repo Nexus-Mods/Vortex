@@ -1,10 +1,10 @@
 import { createHash } from "crypto";
 
 import { ICollectionPermission, CollectionPermission, ICollection } from "@nexusmods/nexus-api";
+import { selectors, types, util } from "@nexusmods/vortex-api";
 /* eslint-disable */
 import Bluebird from "bluebird";
 import turbowalk, { IEntry, IWalkOptions } from "turbowalk";
-import { selectors, types, util } from "vortex-api";
 
 import { doExportToAPI } from "../collectionExport";
 import { TOS_URL } from "../constants";

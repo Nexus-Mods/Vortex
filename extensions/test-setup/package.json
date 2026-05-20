@@ -18,7 +18,7 @@
     "i18next": "catalog:",
     "react-bootstrap": "catalog:",
     "turbowalk": "catalog:",
-    "vortex-api": "workspace:*",
+    "@nexusmods/vortex-api": "workspace:*",
     "winapi-bindings": "catalog:"
   },
   "nx": {

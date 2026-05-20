@@ -1,11 +1,3 @@
-import * as _ from "lodash";
-import { IReference, IRule } from "modmeta-db";
-import * as React from "react";
-import { Button } from "react-bootstrap";
-import { withTranslation } from "react-i18next";
-import { connect } from "react-redux";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
 import {
   actions,
   ComponentEx,
@@ -16,7 +8,15 @@ import {
   types,
   Usage,
   util,
-} from "vortex-api";
+} from "@nexusmods/vortex-api";
+import * as _ from "lodash";
+import { IReference, IRule } from "modmeta-db";
+import * as React from "react";
+import { Button } from "react-bootstrap";
+import { withTranslation } from "react-i18next";
+import { connect } from "react-redux";
+import * as Redux from "redux";
+import { ThunkDispatch } from "redux-thunk";
 
 import { setEditCycle } from "../actions";
 import { NAMESPACE } from "../statics";

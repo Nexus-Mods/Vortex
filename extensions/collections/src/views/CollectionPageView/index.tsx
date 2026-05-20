@@ -5,16 +5,6 @@ import {
   IRevision,
   RatingOptions,
 } from "@nexusmods/nexus-api";
-import Bluebird from "bluebird";
-import type { TFunction } from "i18next";
-import * as _ from "lodash";
-import memoizeOne from "memoize-one";
-import * as React from "react";
-import { Image, Panel, Tab, Tabs } from "react-bootstrap";
-import { findDOMNode } from "react-dom";
-import { connect } from "react-redux";
-import * as Redux from "redux";
-import * as semver from "semver";
 import {
   actions,
   ComponentEx,
@@ -28,7 +18,17 @@ import {
   tooltip,
   types,
   util,
-} from "vortex-api";
+} from "@nexusmods/vortex-api";
+import Bluebird from "bluebird";
+import type { TFunction } from "i18next";
+import * as _ from "lodash";
+import memoizeOne from "memoize-one";
+import * as React from "react";
+import { Image, Panel, Tab, Tabs } from "react-bootstrap";
+import { findDOMNode } from "react-dom";
+import { connect } from "react-redux";
+import * as Redux from "redux";
+import * as semver from "semver";
 
 /* eslint-disable */
 import { AUTHOR_UNKNOWN, AVATAR_FALLBACK, INSTALLING_NOTIFICATION_ID } from "../../constants";

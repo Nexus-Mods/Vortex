@@ -1,9 +1,3 @@
-import * as _ from "lodash";
-import * as React from "react";
-import { Panel } from "react-bootstrap";
-import * as ReactDOM from "react-dom";
-import { withTranslation } from "react-i18next";
-import { connect } from "react-redux";
 import {
   actions,
   ComponentEx,
@@ -15,7 +9,13 @@ import {
   types,
   util,
   Webview,
-} from "vortex-api";
+} from "@nexusmods/vortex-api";
+import * as _ from "lodash";
+import * as React from "react";
+import { Panel } from "react-bootstrap";
+import * as ReactDOM from "react-dom";
+import { withTranslation } from "react-i18next";
+import { connect } from "react-redux";
 
 import { ThemeToCSS } from "../ThemeToCSS";
 

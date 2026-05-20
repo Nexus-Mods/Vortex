@@ -1,10 +1,10 @@
+import { log, selectors } from "@nexusmods/vortex-api";
+import type { types } from "@nexusmods/vortex-api";
 import { getErrorMessageOrDefault } from "@vortex/shared";
 /**
  * Creates the manifest-based mod attribute extractor used during installation.
  */
 import * as semver from "semver";
-import { log, selectors } from "vortex-api";
-import type { types } from "vortex-api";
 
 import { GAME_ID, SMAPI_MOD_ID } from "../common";
 import { getModManifests } from "./getModManifests";

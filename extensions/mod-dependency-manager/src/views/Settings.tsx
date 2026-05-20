@@ -1,8 +1,8 @@
+import { Toggle, types, util } from "@nexusmods/vortex-api";
 import * as React from "react";
 import { Alert, ControlLabel, FormGroup } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { Toggle, types, util } from "vortex-api";
 
 export interface IBaseProps {
   onSetModTypeConflicts: (enable: boolean) => Promise<void>;

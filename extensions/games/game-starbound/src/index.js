@@ -1,5 +1,5 @@
 const path = require("path");
-const { fs, log, util } = require("vortex-api");
+const { fs, log, util } = require("@nexusmods/vortex-api");
 
 const MS_ID = "Chucklefish.StarboundWindows10Edition";
 

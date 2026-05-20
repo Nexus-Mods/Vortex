@@ -1,7 +1,7 @@
 const path = require("path");
 const semver = require("semver");
 const rjson = require("relaxed-json");
-const { fs, log, util } = require("vortex-api");
+const { fs, log, util } = require("@nexusmods/vortex-api");
 
 const { getFileVersion, getProductVersion } = require("exe-version");
 

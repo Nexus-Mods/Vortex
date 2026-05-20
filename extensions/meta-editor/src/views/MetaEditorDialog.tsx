@@ -1,3 +1,12 @@
+import {
+  ComponentEx,
+  FormFeedback,
+  Icon,
+  selectors,
+  tooltip,
+  types,
+  util,
+} from "@nexusmods/vortex-api";
 import update from "immutability-helper";
 import type { IModInfo, IReference, IRule, RuleType } from "modmeta-db";
 import * as React from "react";
@@ -11,7 +20,6 @@ import {
 } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
-import { ComponentEx, FormFeedback, Icon, selectors, tooltip, types, util } from "vortex-api";
 
 import { setShowMetaEditor } from "../actions";
 import RuleEditor from "./RuleEditor";

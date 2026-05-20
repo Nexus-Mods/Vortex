@@ -1,6 +1,6 @@
 import { IncomingHttpHeaders } from "http";
 
-import { types } from "vortex-api";
+import { types } from "@nexusmods/vortex-api";
 
 export type PrefixType = "dlc" | "mod";
 

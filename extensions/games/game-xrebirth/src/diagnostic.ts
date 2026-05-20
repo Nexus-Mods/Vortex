@@ -1,6 +1,6 @@
 import * as path from "node:path";
 
-import { types, util } from "vortex-api";
+import { types, util } from "@nexusmods/vortex-api";
 
 import { XREBIRTH_MOD_TYPES } from "./installers";
 import { XREBIRTH_STOP_PATTERNS } from "./stopPatterns";

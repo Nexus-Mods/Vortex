@@ -1,8 +1,8 @@
 import * as path from "path";
 
+import { actions, fs, selectors, types, util } from "@nexusmods/vortex-api";
 import Promise from "bluebird";
 import { generate as shortid } from "shortid";
-import { actions, fs, selectors, types, util } from "vortex-api";
 
 import { IModEntry } from "../types/nmmEntries";
 import { transferArchive } from "./modFileImport";

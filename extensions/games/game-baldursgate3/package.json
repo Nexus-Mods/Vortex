@@ -16,7 +16,7 @@
   },
   "devDependencies": {
     "vitest": "catalog:",
-    "vortex-api": "workspace:*"
+    "@nexusmods/vortex-api": "workspace:*"
   },
   "dependencies": {
     "lru-cache": "catalog:"
@@ -27,13 +27,6 @@
     ],
     "targets": {
       "build": {
-        "inputs": [
-          "default",
-          "typescript",
-          "vortex-api"
-        ]
-      },
-      "typecheck": {
         "inputs": [
           "default",
           "typescript",

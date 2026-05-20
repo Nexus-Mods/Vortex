@@ -1,10 +1,10 @@
 import * as path from "node:path";
 
+import { fs, log, selectors, Spinner, tooltip, types, util } from "@nexusmods/vortex-api";
 import React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { ControlLabel, ListGroup, ListGroupItem, Panel } from "react-bootstrap";
 import { useSelector, useStore } from "react-redux";
-import { fs, log, selectors, Spinner, tooltip, types, util } from "vortex-api";
 
 import { ICollection } from "../../types/ICollection";
 import { IExtendedInterfaceProps } from "../../types/IExtendedInterfaceProps";

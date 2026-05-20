@@ -38,7 +38,7 @@
     "redux-thunk": "catalog:",
     "semver": "catalog:",
     "shortid": "catalog:",
-    "vortex-api": "workspace:*",
+    "@nexusmods/vortex-api": "workspace:*",
     "winapi-bindings": "catalog:"
   },
   "nx": {

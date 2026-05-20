@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { actions, types, selectors, util } from "vortex-api";
+import { actions, types, selectors, util } from "@nexusmods/vortex-api";
 
 import { setPriorityType } from "./actions";
 import {

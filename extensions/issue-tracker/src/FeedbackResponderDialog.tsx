@@ -1,6 +1,16 @@
 import * as os from "os";
 import * as path from "path";
 
+import {
+  actions,
+  ComponentEx,
+  EmptyPlaceholder,
+  FlexLayout,
+  fs,
+  Modal,
+  tooltip,
+  util,
+} from "@nexusmods/vortex-api";
 import Promise from "bluebird";
 import _ from "lodash";
 import * as React from "react";
@@ -18,16 +28,6 @@ import { withTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
 import { connect } from "react-redux";
 import { file as tmpFile } from "tmp";
-import {
-  actions,
-  ComponentEx,
-  EmptyPlaceholder,
-  FlexLayout,
-  fs,
-  Modal,
-  tooltip,
-  util,
-} from "vortex-api";
 
 import { setUpdateDetails } from "./actions/persistent";
 import { openFeedbackResponder, setOutstandingIssues } from "./actions/session";
