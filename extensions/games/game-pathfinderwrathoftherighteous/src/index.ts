@@ -1,64 +1,98 @@
-const path = require("path");
-const { fs, types, util } = require("vortex-api");
+import path from "node:path";
 
-const GAME_ID = "pathfinderwrathoftherighteous";
-const NAME = "Pathfinder: Wrath\tof the Righteous";
-const STEAM_ID = "1184370";
-const GOG_ID = "1207187357";
+import { fs, selectors, util } from "vortex-api";
+import type { types } from "vortex-api";
 
-function findGame() {
-  return util.GameStoreHelper.findByAppId([STEAM_ID, GOG_ID]).then((game) => game.gamePath);
+import { healthChecks } from "./diagnostic";
+import {
+  WOTR_GAME_ID,
+  WOTR_INSTALLER_SPECS,
+  WOTR_MOD_TYPES,
+  getOwlcatModPath,
+  getPortraitPath,
+  installOwlcatMod,
+  installPortrait,
+  installUmmMod,
+  installUmmTool,
+  testOwlcatMod,
+  testPortrait,
+  testUmmMod,
+  testUmmTool,
+} from "./installers";
+
+async function setup(discovery: types.IDiscoveryResult): Promise<void> {
+  await fs.ensureDirWritableAsync(path.join(discovery.path!, "Mods"));
 }
 
-function setup(discovery) {
-  return fs.ensureDirWritableAsync(path.join(discovery.path, "Mods"));
-}
-
-async function resolveGameVersion(discoveryPath: string) {
+async function resolveGameVersion(discoveryPath: string): Promise<string> {
   const versionFilepath = path.join(discoveryPath, "Wrath_Data", "StreamingAssets", "Version.info");
-  try {
-    const data = await fs.readFileAsync(versionFilepath, { encoding: "utf8" });
-    const segments = data.split(" ");
-    return segments[3]
-      ? Promise.resolve(segments[3])
-      : Promise.reject(new util.DataInvalid("Failed to resolve version"));
-  } catch (err) {
-    return Promise.reject(err);
+  const data: string = await fs.readFileAsync(versionFilepath, { encoding: "utf8" });
+  const segments = data.split(" ");
+  const version = segments[3];
+  if (version == null) {
+    throw new util.DataInvalid("Failed to resolve version");
   }
+  return version;
 }
 
-function main(context) {
-  context.requireExtension("modtype-umm");
+function main(context: types.IExtensionContext): boolean {
   context.registerGame({
-    id: GAME_ID,
-    name: NAME,
-    logo: "gameart.jpg",
-    mergeMods: true,
-    queryPath: findGame,
+    id: WOTR_GAME_ID,
+    name: "Pathfinder: Wrath of the Righteous",
+    queryArgs: {
+      steam: "1184370",
+      gog: "1207187357",
+    },
     queryModPath: () => "Mods",
+    logo: "gameart.webp",
     executable: () => "Wrath.exe",
     getGameVersion: resolveGameVersion,
     requiredFiles: ["Wrath.exe"],
-    environment: {
-      SteamAPPId: STEAM_ID,
-    },
-    details: {
-      steamAppId: +STEAM_ID,
-    },
     setup,
   });
-  context.once(() => {
-    if (context.api.ext.ummAddGame !== undefined) {
-      context.api.ext.ummAddGame({
-        gameId: GAME_ID,
-        autoDownloadUMM: true,
-      });
-    }
-  });
+
+  context.registerModType(
+    WOTR_MOD_TYPES.ummTool,
+    25,
+    (gameId) => gameId === WOTR_GAME_ID,
+    () => {
+      const state = context.api.getState();
+      const discovery = selectors.discoveryByGame(state, WOTR_GAME_ID);
+      return discovery?.path ?? "";
+    },
+    () => Promise.resolve(false),
+    { mergeMods: true, name: "UMM Tool" },
+  );
+
+  context.registerModType(
+    WOTR_MOD_TYPES.portrait,
+    25,
+    (gameId) => gameId === WOTR_GAME_ID,
+    getPortraitPath,
+    () => Promise.resolve(false),
+    { mergeMods: true, name: "Portrait" },
+  );
+
+  context.registerModType(
+    WOTR_MOD_TYPES.owlcatMod,
+    25,
+    (gameId) => gameId === WOTR_GAME_ID,
+    getOwlcatModPath,
+    () => Promise.resolve(false),
+    { mergeMods: true, name: "Owlcat Modification" },
+  );
+
+  context.registerInstaller("wotr-umm-tool", 20, testUmmTool, installUmmTool);
+  context.registerInstaller("wotr-umm-mod", 30, testUmmMod, installUmmMod);
+  context.registerInstaller("wotr-portrait", 40, testPortrait, installPortrait);
+  context.registerInstaller("wotr-owlcat-mod", 50, testOwlcatMod, installOwlcatMod);
+  util.declareInstallers(context, WOTR_GAME_ID, WOTR_INSTALLER_SPECS);
+
+  for (const check of healthChecks) {
+    context.registerHealthCheck(check);
+  }
 
   return true;
 }
 
-module.exports = {
-  default: main,
-};
+export default main;
