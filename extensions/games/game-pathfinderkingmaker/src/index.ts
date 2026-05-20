@@ -4,6 +4,17 @@ import { registerDefaultModInstaller, registerUmmSupport } from "@vortex/game-ex
 import { actions, fs, util } from "vortex-api";
 import type { types } from "vortex-api";
 
+import { healthChecks } from "./diagnostic";
+import {
+  MOD_TYPES,
+  getPortraitPath,
+  getSavePath,
+  installPortrait,
+  installSave,
+  testPortrait,
+  testSave,
+} from "./installers";
+
 const NEXUS_ID = "pathfinderkingmaker";
 const NAME = "Pathfinder:\tKingmaker";
 const EXE_NAME = "Kingmaker";
@@ -90,11 +101,51 @@ function main(context: types.IExtensionContext): boolean {
       setup(context, discovery)) as unknown as types.IGame["setup"],
   });
 
+  // UMM tool installer (priority 15) + UMM mod type
   registerUmmSupport(context, GAME_IDS, {
     getDiscoveryPath: (gameId) => getDiscoveryPath(context.api, gameId),
   });
 
+  // Portrait installer (priority 25) + portrait mod type
+  context.registerInstaller(
+    MOD_TYPES.portrait,
+    25,
+    (files: string[], gameId: string) => testPortrait(files, gameId, GAME_IDS),
+    installPortrait,
+  );
+  context.registerModType(
+    MOD_TYPES.portrait,
+    25,
+    (gameId) => GAME_IDS.has(gameId),
+    () => getPortraitPath(util.getVortexPath),
+    (() => Promise.resolve(false)) as never,
+    { name: "Portrait", mergeMods: true },
+  );
+
+  // Save game installer (priority 30) + save mod type
+  context.registerInstaller(
+    MOD_TYPES.save,
+    30,
+    (files: string[], gameId: string) => testSave(files, gameId, GAME_IDS),
+    installSave,
+  );
+  context.registerModType(
+    MOD_TYPES.save,
+    30,
+    (gameId) => GAME_IDS.has(gameId),
+    () => getSavePath(util.getVortexPath),
+    (() => Promise.resolve(false)) as never,
+    { name: "Save Game", mergeMods: true },
+  );
+
+  // Default copy-all installer (priority 200) for regular UMM mods
   registerDefaultModInstaller(context, NEXUS_ID + "-default", GAME_IDS);
+
+  for (const check of healthChecks) {
+    (context as unknown as { registerHealthCheck: (c: unknown) => void }).registerHealthCheck(
+      check,
+    );
+  }
 
   return true;
 }
