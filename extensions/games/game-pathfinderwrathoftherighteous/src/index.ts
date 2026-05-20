@@ -1,6 +1,6 @@
 import path from "node:path";
 
-import { fs, util } from "vortex-api";
+import { fs, selectors, util } from "vortex-api";
 import type { types } from "vortex-api";
 
 import { healthChecks } from "./diagnostic";
@@ -38,7 +38,7 @@ async function resolveGameVersion(discoveryPath: string): Promise<string> {
 function main(context: types.IExtensionContext): boolean {
   context.registerGame({
     id: WOTR_GAME_ID,
-    name: "Pathfinder: Wrath\tof the Righteous",
+    name: "Pathfinder: Wrath of the Righteous",
     queryArgs: {
       steam: "1184370",
       gog: "1207187357",
@@ -50,6 +50,19 @@ function main(context: types.IExtensionContext): boolean {
     requiredFiles: ["Wrath.exe"],
     setup,
   });
+
+  context.registerModType(
+    WOTR_MOD_TYPES.ummTool,
+    25,
+    (gameId) => gameId === WOTR_GAME_ID,
+    () => {
+      const state = context.api.getState();
+      const discovery = selectors.discoveryByGame(state, WOTR_GAME_ID);
+      return discovery?.path ?? "";
+    },
+    () => Promise.resolve(false),
+    { mergeMods: true, name: "UMM Tool" },
+  );
 
   context.registerModType(
     WOTR_MOD_TYPES.portrait,

@@ -105,6 +105,9 @@ export async function loadExtension(extensionDir: string): Promise<ILoadedExtens
   }
   init(stubContext);
 
+  if (stubContext._installers.length === 0) {
+    throw new Error(`Extension ${extensionDir} did not call registerInstaller`);
+  }
   if (!stubContext._game) {
     throw new Error(`Extension ${extensionDir} did not call registerGame`);
   }
@@ -145,9 +148,6 @@ export async function loadExtension(extensionDir: string): Promise<ILoadedExtens
     );
   }
 
-  if (stubContext._installers.length === 0) {
-    throw new Error(`Extension ${extensionDir} did not call registerInstaller`);
-  }
   const installers: IInstallerEntry[] = [...stubContext._installers].sort(
     (a, b) => a.priority - b.priority,
   );
@@ -187,9 +187,9 @@ function makeStubContext(): IStubContext {
     get(target, prop, receiver) {
       const known = Reflect.get(target, prop, receiver);
       if (known !== undefined) return known;
-      if (typeof prop === "string" && (prop.startsWith("register") || prop.startsWith("require"))) {
+      if (typeof prop === "string" && prop.startsWith("register")) {
         return () => {
-          /* unknown register/require hook — silently accepted */
+          /* unknown register hook — silently accepted */
         };
       }
       return undefined;
