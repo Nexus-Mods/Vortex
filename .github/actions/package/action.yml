@@ -171,12 +171,12 @@ runs:
         $signingAvailable = -not [string]::IsNullOrWhiteSpace($env:ES_USERNAME)
         $wantSigning = "${{ inputs.use-codesigning }}" -eq "true" -or "${{ steps.nightly-flag.outputs.is_nightly }}" -eq "true"
         if ($wantSigning -and $signingAvailable) {
-          pnpm --dir src/main run package
+          pnpm -F @vortex/main run package
         } else {
           if ($wantSigning -and -not $signingAvailable) {
             Write-Warning "::warning::Codesigning requested but secrets unavailable - building unsigned"
           }
-          pnpm --dir src/main run package:nosign
+          pnpm -F @vortex/main run package:nosign
         }
 
     - name: Validate Package Creation
