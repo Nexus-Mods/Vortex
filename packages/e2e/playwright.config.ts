@@ -18,8 +18,12 @@ export default defineConfig({
   retries: 1,
   reporter: [
     ["list"],
-    ["html", { open: "never" }],
+    [
+      "html",
+      { open: "never", outputFolder: path.resolve(import.meta.dirname, "playwright-report") },
+    ],
     ["junit", { outputFile: "test-results/junit.xml" }],
+    ...(process.env.CI ? [["github"] as const] : []),
   ],
   use: {
     actionTimeout: 5_000,
