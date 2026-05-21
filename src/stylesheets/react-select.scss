@@ -39,7 +39,12 @@
     .Select-value {
         margin: 1px 0;
         padding: 0px;
-        white-space: nowrap;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+    .Select-menu-outer .Select-option {
+        white-space: normal;
+        overflow-wrap: anywhere;
     }
     .Select-value-icon {
         padding: 0px 7px;
