@@ -12,8 +12,9 @@
   },
   "nx": {
     "targets": {
-      "test*": {
+      "test": {
         "cache": false,
+        "continuous": true,
         "dependsOn": [
           {
             "target": "build",
