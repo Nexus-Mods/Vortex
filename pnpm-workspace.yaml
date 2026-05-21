@@ -54,7 +54,7 @@ catalog:
   "@nexusmods/nexus-api": git+https://github.com/Nexus-Mods/node-nexus-api#6eb0c3a8c826a881b3c0f001339e8f2a71fc7835
   "@opentelemetry/api": 1.9.1
   "@opentelemetry/context-async-hooks": 2.6.1
-  "@opentelemetry/context-zone": 2.7.0
+  "@opentelemetry/context-zone": 2.7.1
   "@opentelemetry/exporter-trace-otlp-http": 0.57.2
   "@opentelemetry/resources": 1.30.1
   "@opentelemetry/sdk-trace-base": 1.30.1
@@ -124,7 +124,7 @@ catalog:
   "@types/ws": 7.4.7
   "@types/xml2js": 0.4.14
   "@typescript-eslint/utils": 8.59.4
-  "@vitejs/plugin-react": 6.0.1
+  "@vitejs/plugin-react": 6.0.2
   "@vitest/coverage-v8": 4.1.7
   "@vitest/ui": 4.1.7
   "@welldone-software/why-did-you-render": 10.0.1
@@ -174,9 +174,9 @@ catalog:
   fuzzball: 1.4.0
   glob: 11.1.0
   globals: 17.6.0
-  got: 15.0.2
+  got: 15.0.5
   graphlib: 2.1.8
-  happy-dom: 20.8.8
+  happy-dom: 20.9.0
   husky: 9.1.7
   i18next: 19.9.2
   i18next-fs-backend: 2.6.1
@@ -200,7 +200,7 @@ catalog:
   memoize-one: 5.2.1
   minimatch: 3.1.5
   minimist: 1.2.8
-  mixpanel-browser: 2.77.0
+  mixpanel-browser: 2.79.0
   modmeta-db: git+https://github.com/Nexus-Mods/modmeta-db#daa8935b6e38e255ec192c908adfce35d47c0336
   nexus-api: git+https://github.com/Nexus-Mods/node-nexus-api#6eb0c3a8c826a881b3c0f001339e8f2a71fc7835
   node: runtime:24.15.0
@@ -210,7 +210,7 @@ catalog:
   nx: 22.7.2
   oxfmt: 0.51.0
   p-limit: 7.3.0
-  p-queue: 9.1.0
+  p-queue: 9.3.0
   packery: 2.1.2
   permissions: git+https://github.com/Nexus-Mods/node-permissions#7c1b6f1d6437f2238be51316de823b0fbd63e4c0
   playwright: 1.58.2
@@ -283,7 +283,7 @@ catalog:
   ws: 7.5.10
   xml2js: 0.5.0
   xxhash-addon: 2.1.0
-  zod: 4.3.6
+  zod: 4.4.3
 
 blockExoticSubdeps: false
 catalogMode: strict

@@ -276,8 +276,8 @@ catalogs:
       specifier: 2.6.1
       version: 2.6.1
     '@opentelemetry/context-zone':
-      specifier: 2.7.0
-      version: 2.7.0
+      specifier: 2.7.1
+      version: 2.7.1
     '@opentelemetry/exporter-trace-otlp-http':
       specifier: 0.57.2
       version: 0.57.2
@@ -480,8 +480,8 @@ catalogs:
       specifier: 8.59.4
       version: 8.59.4
     '@vitejs/plugin-react':
-      specifier: 6.0.1
-      version: 6.0.1
+      specifier: 6.0.2
+      version: 6.0.2
     '@vitest/coverage-v8':
       specifier: 4.1.7
       version: 4.1.7
@@ -630,14 +630,14 @@ catalogs:
       specifier: 17.6.0
       version: 17.6.0
     got:
-      specifier: 15.0.2
-      version: 15.0.2
+      specifier: 15.0.5
+      version: 15.0.5
     graphlib:
       specifier: 2.1.8
       version: 2.1.8
     happy-dom:
-      specifier: 20.8.8
-      version: 20.8.8
+      specifier: 20.9.0
+      version: 20.9.0
     husky:
       specifier: 9.1.7
       version: 9.1.7
@@ -708,8 +708,8 @@ catalogs:
       specifier: 1.2.8
       version: 1.2.8
     mixpanel-browser:
-      specifier: 2.77.0
-      version: 2.77.0
+      specifier: 2.79.0
+      version: 2.79.0
     modmeta-db:
       specifier: git+https://github.com/Nexus-Mods/modmeta-db#daa8935b6e38e255ec192c908adfce35d47c0336
       version: 0.9.3
@@ -738,8 +738,8 @@ catalogs:
       specifier: 7.3.0
       version: 7.3.0
     p-queue:
-      specifier: 9.1.0
-      version: 9.1.0
+      specifier: 9.3.0
+      version: 9.3.0
     packery:
       specifier: 2.1.2
       version: 2.1.2
@@ -957,8 +957,8 @@ catalogs:
       specifier: 2.1.0
       version: 2.1.0
     zod:
-      specifier: 4.3.6
-      version: 4.3.6
+      specifier: 4.4.3
+      version: 4.4.3
 
 overrides:
   '@types/react': '16'
@@ -1108,7 +1108,7 @@ importers:
         version: 8.0.13(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.6.1)(sass@1.99.0)(terser@5.46.1)(tsx@4.22.3)(yaml@2.8.4)
       vitest:
         specifier: 'catalog:'
-        version: 4.1.7(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/coverage-v8@4.1.7)(@vitest/ui@4.1.7)(happy-dom@20.8.8)(vite@8.0.13)
+        version: 4.1.7(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/coverage-v8@4.1.7)(@vitest/ui@4.1.7)(happy-dom@20.9.0)(vite@8.0.13)
       webpack:
         specifier: 'catalog:'
         version: 5.106.2(esbuild@0.28.0)(webpack-cli@5.1.4)
@@ -1216,7 +1216,7 @@ importers:
         version: 1.2.2
       happy-dom:
         specifier: 'catalog:'
-        version: 20.8.8
+        version: 20.9.0
       i18next:
         specifier: 'catalog:'
         version: 19.9.2
@@ -2047,7 +2047,7 @@ importers:
         version: link:../../../packages/vortex-api
       vitest:
         specifier: 'catalog:'
-        version: 4.1.7(@opentelemetry/api@1.9.1)(@types/node@25.5.0)(@vitest/coverage-v8@4.1.7)(@vitest/ui@4.1.7)(happy-dom@20.8.8)(vite@8.0.13)
+        version: 4.1.7(@opentelemetry/api@1.9.1)(@types/node@25.5.0)(@vitest/coverage-v8@4.1.7)(@vitest/ui@4.1.7)(happy-dom@20.9.0)(vite@8.0.13)
 
   extensions/games/game-battletech:
     devDependencies:
@@ -2534,7 +2534,7 @@ importers:
         version: 6.0.3
       vitest:
         specifier: 'catalog:'
-        version: 4.1.7(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/coverage-v8@4.1.7)(@vitest/ui@4.1.7)(happy-dom@20.8.8)(vite@8.0.13)
+        version: 4.1.7(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/coverage-v8@4.1.7)(@vitest/ui@4.1.7)(happy-dom@20.9.0)(vite@8.0.13)
 
   extensions/games/game-starfield:
     devDependencies:
@@ -4078,7 +4078,7 @@ importers:
         version: 6.0.3
       vitest:
         specifier: 'catalog:'
-        version: 4.1.7(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/coverage-v8@4.1.7)(@vitest/ui@4.1.7)(happy-dom@20.8.8)(vite@8.0.13)
+        version: 4.1.7(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/coverage-v8@4.1.7)(@vitest/ui@4.1.7)(happy-dom@20.9.0)(vite@8.0.13)
 
   packages/game-extension-test:
     devDependencies:
@@ -4105,7 +4105,7 @@ importers:
         version: 6.0.3
       vitest:
         specifier: 'catalog:'
-        version: 4.1.7(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/coverage-v8@4.1.7)(@vitest/ui@4.1.7)(happy-dom@20.8.8)(vite@8.0.13)
+        version: 4.1.7(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/coverage-v8@4.1.7)(@vitest/ui@4.1.7)(happy-dom@20.9.0)(vite@8.0.13)
 
   packages/icon-extract:
     devDependencies:
@@ -4210,7 +4210,7 @@ importers:
         version: 4.1.8
       vitest:
         specifier: 'catalog:'
-        version: 4.1.7(@opentelemetry/api@1.9.1)(@types/node@25.5.0)(@vitest/coverage-v8@4.1.7)(@vitest/ui@4.1.7)(happy-dom@20.8.8)(vite@8.0.13)
+        version: 4.1.7(@opentelemetry/api@1.9.1)(@types/node@25.5.0)(@vitest/coverage-v8@4.1.7)(@vitest/ui@4.1.7)(happy-dom@20.9.0)(vite@8.0.13)
 
   src/main:
     dependencies:
@@ -4249,7 +4249,7 @@ importers:
         version: 2.6.1(@opentelemetry/api@1.9.1)
       '@opentelemetry/context-zone':
         specifier: 'catalog:'
-        version: 2.7.0(@opentelemetry/api@1.9.1)
+        version: 2.7.1(@opentelemetry/api@1.9.1)
       '@opentelemetry/exporter-trace-otlp-http':
         specifier: 'catalog:'
         version: 0.57.2(@opentelemetry/api@1.9.1)
@@ -4345,7 +4345,7 @@ importers:
         version: 11.1.0
       got:
         specifier: 'catalog:'
-        version: 15.0.2
+        version: 15.0.5
       graphlib:
         specifier: 'catalog:'
         version: 2.1.8
@@ -4396,7 +4396,7 @@ importers:
         version: 3.1.5
       mixpanel-browser:
         specifier: 'catalog:'
-        version: 2.77.0
+        version: 2.79.0
       modmeta-db:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@4.1.1)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
@@ -4411,7 +4411,7 @@ importers:
         version: 2.0.6
       p-queue:
         specifier: 'catalog:'
-        version: 9.1.0
+        version: 9.3.0
       packery:
         specifier: 'catalog:'
         version: 2.1.2
@@ -4561,7 +4561,7 @@ importers:
         version: 2.1.0
       zod:
         specifier: 'catalog:'
-        version: 4.3.6
+        version: 4.4.3
     devDependencies:
       '@electron/rebuild':
         specifier: 'catalog:'
@@ -4747,7 +4747,7 @@ importers:
         version: 1.9.1
       '@opentelemetry/context-zone':
         specifier: 'catalog:'
-        version: 2.7.0(@opentelemetry/api@1.9.1)
+        version: 2.7.1(@opentelemetry/api@1.9.1)
       '@opentelemetry/resources':
         specifier: 'catalog:'
         version: 1.30.1(@opentelemetry/api@1.9.1)
@@ -4894,7 +4894,7 @@ importers:
         version: 0.4.14
       '@vitejs/plugin-react':
         specifier: 'catalog:'
-        version: 6.0.1(vite@8.0.13)
+        version: 6.0.2(vite@8.0.13)
       '@vortex/shared':
         specifier: workspace:*
         version: link:../shared
@@ -4984,7 +4984,7 @@ importers:
         version: 2.1.8
       happy-dom:
         specifier: 'catalog:'
-        version: 20.8.8
+        version: 20.9.0
       i18next:
         specifier: 'catalog:'
         version: 19.9.2
@@ -5026,7 +5026,7 @@ importers:
         version: 3.1.5
       mixpanel-browser:
         specifier: 'catalog:'
-        version: 2.77.0
+        version: 2.79.0
       modmeta-db:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@4.1.1)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
@@ -5188,7 +5188,7 @@ importers:
         version: 2.1.0
       zod:
         specifier: 'catalog:'
-        version: 4.3.6
+        version: 4.4.3
 
   src/shared:
     dependencies:
@@ -6442,15 +6442,15 @@ packages:
     peerDependencies:
       '@opentelemetry/api': '>=1.0.0 <1.10.0'
 
-  '@opentelemetry/context-zone-peer-dep@2.7.0':
-    resolution: {integrity: sha512-DNcbXhV3G7ySz1HbHP0CdJpxE1WaTlzzY20Yzg7xFkitjxAagnYkpD2NfJ3+GBhNa91TuO92vu7jK1S4p+Yckw==}
+  '@opentelemetry/context-zone-peer-dep@2.7.1':
+    resolution: {integrity: sha512-QPLvl82Ds+W9Tjz0s4b8UDUK9YkCb3pvaur4JQdgHe+eph6Ii20NbiC+wsdnBtG17DTPhmZcFvWMcQXZFBgeVw==}
     engines: {node: ^18.19.0 || >=20.6.0}
     peerDependencies:
       '@opentelemetry/api': '>=1.0.0 <1.10.0'
       zone.js: ^0.10.2 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^0.14.0 || ^0.15.0 || ^0.16.0
 
-  '@opentelemetry/context-zone@2.7.0':
-    resolution: {integrity: sha512-rPgJHtBIPX8Vcuo4wVmrwokt61nAGSs+i/ffDsE8Tpm4i5LI8LRMgm2lZ+gADuEdiHK77rbCvARuCBw6ZbHgUg==}
+  '@opentelemetry/context-zone@2.7.1':
+    resolution: {integrity: sha512-B42kO3zIMVbJ+wj5nlSkDvLF8cJY+7wDKLomHp10GL00nvUnhY67UQ/soZQgKR4dvPf8zTKbcONDsOiJLyRuXw==}
     engines: {node: ^18.19.0 || >=20.6.0}
 
   '@opentelemetry/core@1.30.1':
@@ -6875,9 +6875,6 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@rolldown/pluginutils@1.0.0-rc.7':
-    resolution: {integrity: sha512-qujRfC8sFVInYSPPMLQByRh7zhwkGFS4+tyMQ83srV1qrxL4g8E2tyxVVyxd0+8QeBM1mIk9KbWxkegRr76XzA==}
-
   '@rolldown/pluginutils@1.0.1':
     resolution: {integrity: sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==}
 
@@ -6917,9 +6914,9 @@ packages:
   '@sec-ant/readable-stream@0.4.1':
     resolution: {integrity: sha512-831qok9r2t8AlxLko40y2ebgSDhenenCatLVeW/uBtnHPyhHOvG0C7TvfgecV+wHzIm5KUICgzmVpWS+IMEAeg==}
 
-  '@sindresorhus/is@7.2.0':
-    resolution: {integrity: sha512-P1Cz1dWaFfR4IR+U13mqqiGsLFf1KbayybWwdd2vfctdV6hDpUkgCY0nKOLLTMSoRd/jJNjtbqzf13K8DCCXQw==}
-    engines: {node: '>=18'}
+  '@sindresorhus/is@8.1.0':
+    resolution: {integrity: sha512-2SX/1jW6CIMAiebvVv5ZInoCEuWQmMyBoJXXGC6Vjakjp/fpxP5eHs7/V6WKuPEIbuK06+VpjH+vjLQhr98rDQ==}
+    engines: {node: '>=22'}
 
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
@@ -7691,8 +7688,8 @@ packages:
     peerDependencies:
       valibot: ^1.3.0
 
-  '@vitejs/plugin-react@6.0.1':
-    resolution: {integrity: sha512-l9X/E3cDb+xY3SWzlG1MOGt2usfEHGMNIaegaUGFsLkb3RCn/k8/TOXBcab+OndDI4TBtktT8/9BwwW8Vi9KUQ==}
+  '@vitejs/plugin-react@6.0.2':
+    resolution: {integrity: sha512-DlSMqo4WhThw4vB8Mpn0Woe9J+Jfq1geJ61AKW0QEgLzGMNwtIMdxbDUzLxcun8W7NbJO0e2Jg/Nxm3cCSVzzg==}
     engines: {node: ^20.19.0 || >=22.12.0}
     peerDependencies:
       '@rolldown/plugin-babel': ^0.1.7 || ^0.2.0
@@ -9599,8 +9596,8 @@ packages:
     resolution: {integrity: sha512-ZUKRh6/kUFoAiTAtTYPZJ3hw9wNxx+BIBOijnlG9PnrJsCcSjs1wyyD6vJpaYtgnzDrKYRSqf3OO6Rfa93xsRg==}
     engines: {node: '>= 0.4'}
 
-  got@15.0.2:
-    resolution: {integrity: sha512-opPIdoQSTOGqX3h0d8QQoqCX0oF728V1PFxbPqquAFSeWPUOlPQ3Gi6IKIqGm6NMcDl+DWUwQb2RR+xvuEJOQQ==}
+  got@15.0.5:
+    resolution: {integrity: sha512-PMIMaZuYUCK43+Z9JWEXea4kkX2b3301m81D5TS6QpfG4PmNyirzEdO/Oa2OHAN4GsjnPfvWCWsshKN2rq4/gQ==}
     engines: {node: '>=22'}
 
   graceful-fs@4.2.11:
@@ -9615,8 +9612,8 @@ packages:
   gud@1.0.0:
     resolution: {integrity: sha512-zGEOVKFM5sVPPrYs7J5/hYEw2Pof8KCyOwyhG8sAF26mCAeUFAcYPu1mwB7hhpIP29zOIBaDqwuHdLp0jvZXjw==}
 
-  happy-dom@20.8.8:
-    resolution: {integrity: sha512-5/F8wxkNxYtsN0bXfMwIyNLZ9WYsoOYPbmoluqVJqv8KBUbcyKZawJ7uYK4WTX8IHBLYv+VXIwfeNDPy1oKMwQ==}
+  happy-dom@20.9.0:
+    resolution: {integrity: sha512-GZZ9mKe8r646NUAf/zemnGbjYh4Bt8/MqASJY+pSm5ZDtc3YQox+4gsLI7yi1hba6o+eCsGxpHn5+iEVn31/FQ==}
     engines: {node: '>=20.0.0'}
 
   har-schema@2.0.0:
@@ -10618,8 +10615,8 @@ packages:
   mitt@3.0.1:
     resolution: {integrity: sha512-vKivATfr97l2/QBCYAkXYDbrIWPM2IIKEl7YPhjCvKlG3kE2gm+uBo6nEXK3M5/Ffh/FLpKExzOQ3JJoJGFKBw==}
 
-  mixpanel-browser@2.77.0:
-    resolution: {integrity: sha512-gU3J7osa+ZiX0gQ6UBjUw5YLfz4lb9B4X3yiXNxBQW+mVDkg9L+0VNWa+QnpWJi/ehAHuvl2nN1XTHp5NIL3HQ==}
+  mixpanel-browser@2.79.0:
+    resolution: {integrity: sha512-+XRUJfplXy6bwW85ZOEIABlxZyfAVgyBPfMO0QiWr6wkRbvpWbS4xCPTR6iEl5ATPN8+ae+Nv4vusANjrk0DEA==}
     engines: {node: '>=20 <26'}
 
   mkdirp-classic@0.5.3:
@@ -11028,8 +11025,8 @@ packages:
     resolution: {integrity: sha512-LaNjtRWUBY++zB5nE/NwcaoMylSPk+S+ZHNB1TzdbMJMny6dynpAGt7X/tl/QYq3TIeE6nxHppbo2LGymrG5Pw==}
     engines: {node: '>=10'}
 
-  p-queue@9.1.0:
-    resolution: {integrity: sha512-O/ZPaXuQV29uSLbxWBGGZO1mCQXV2BLIwUr59JUU9SoH76mnYvtms7aafH/isNSNGwuEfP6W/4xD0/TJXxrizw==}
+  p-queue@9.3.0:
+    resolution: {integrity: sha512-7NED7xhQ74Ngp4JP/2e0VZHp7vSWfJfqeiR92jPgxsz6m0Se4P03YoTKa9dDXyZ3r6P616gUXttrB6nnHYKang==}
     engines: {node: '>=20'}
 
   p-timeout@7.0.1:
@@ -11166,10 +11163,6 @@ packages:
 
   postcss@8.5.15:
     resolution: {integrity: sha512-FfR8sjd4em2T6fb3I2MwAJU7HWVMr9zba+enmQeeWFfCbm+UOC/0X4DS8XtpUTMwWMGbjKYP7xjfNekzyGmB3A==}
-    engines: {node: ^10 || ^12 || >=14}
-
-  postcss@8.5.8:
-    resolution: {integrity: sha512-OW/rX8O/jXnm82Ey1k44pObPtdblfiuWnrd8X7GJ7emImCOstunGbXUpp7HdBrFQX6rJzn3sPT397Wp5aCwCHg==}
     engines: {node: ^10 || ^12 || >=14}
 
   prebuild-install@7.1.0:
@@ -12371,8 +12364,8 @@ packages:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}
     engines: {node: '>= 0.8.0'}
 
-  type-fest@5.5.0:
-    resolution: {integrity: sha512-PlBfpQwiUvGViBNX84Yxwjsdhd1TUlXr6zjX7eoirtCPIr08NAmxwa+fcYBTeRQxHo9YC9wwF3m9i700sHma8g==}
+  type-fest@5.6.0:
+    resolution: {integrity: sha512-8ZiHFm91orbSAe2PSAiSVBVko18pbhbiB3U9GglSzF/zCGkR+rxpHx6sEMCUm4kxY4LjDIUGgCfUMtwfZfjfUA==}
     engines: {node: '>=20'}
 
   type-is@1.6.18:
@@ -12939,9 +12932,6 @@ packages:
   zip-stream@4.1.1:
     resolution: {integrity: sha512-9qv4rlDiopXg4E69k+vMHjNN63YFMe9sZMrdlvKnCjlCRWeCBswPPMPUfx+ipsAWq1LXHe70RcbaHdJJpS6hyQ==}
     engines: {node: '>= 10'}
-
-  zod@4.3.6:
-    resolution: {integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==}
 
   zod@4.4.3:
     resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
@@ -14256,7 +14246,7 @@ snapshots:
 
   '@mixpanel/rrweb-snapshot@2.0.0-alpha.18.4':
     dependencies:
-      postcss: 8.5.8
+      postcss: 8.5.15
 
   '@mixpanel/rrweb-types@2.0.0-alpha.18.4': {}
 
@@ -14350,14 +14340,14 @@ snapshots:
     dependencies:
       '@opentelemetry/api': 1.9.1
 
-  '@opentelemetry/context-zone-peer-dep@2.7.0(@opentelemetry/api@1.9.1)(zone.js@0.15.1)':
+  '@opentelemetry/context-zone-peer-dep@2.7.1(@opentelemetry/api@1.9.1)(zone.js@0.15.1)':
     dependencies:
       '@opentelemetry/api': 1.9.1
       zone.js: 0.15.1
 
-  '@opentelemetry/context-zone@2.7.0(@opentelemetry/api@1.9.1)':
+  '@opentelemetry/context-zone@2.7.1(@opentelemetry/api@1.9.1)':
     dependencies:
-      '@opentelemetry/context-zone-peer-dep': 2.7.0(@opentelemetry/api@1.9.1)(zone.js@0.15.1)
+      '@opentelemetry/context-zone-peer-dep': 2.7.1(@opentelemetry/api@1.9.1)(zone.js@0.15.1)
       zone.js: 0.15.1
     transitivePeerDependencies:
       - '@opentelemetry/api'
@@ -14635,8 +14625,6 @@ snapshots:
   '@rolldown/binding-win32-x64-msvc@1.0.1':
     optional: true
 
-  '@rolldown/pluginutils@1.0.0-rc.7': {}
-
   '@rolldown/pluginutils@1.0.1': {}
 
   '@rtsao/scc@1.1.0': {}
@@ -14716,7 +14704,7 @@ snapshots:
 
   '@sec-ant/readable-stream@0.4.1': {}
 
-  '@sindresorhus/is@7.2.0': {}
+  '@sindresorhus/is@8.1.0': {}
 
   '@standard-schema/spec@1.1.0': {}
 
@@ -15551,9 +15539,9 @@ snapshots:
     dependencies:
       valibot: 1.3.1(typescript@6.0.3)
 
-  '@vitejs/plugin-react@6.0.1(vite@8.0.13)':
+  '@vitejs/plugin-react@6.0.2(vite@8.0.13)':
     dependencies:
-      '@rolldown/pluginutils': 1.0.0-rc.7
+      '@rolldown/pluginutils': 1.0.1
       vite: 8.0.13(@types/node@25.5.0)(esbuild@0.28.0)(jiti@2.6.1)(sass@1.99.0)(terser@5.46.1)(tsx@4.22.3)(yaml@2.8.4)
 
   '@vitest/coverage-v8@4.1.7(vitest@4.1.7)':
@@ -15568,7 +15556,7 @@ snapshots:
       obug: 2.1.1
       std-env: 4.0.0
       tinyrainbow: 3.1.0
-      vitest: 4.1.7(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/coverage-v8@4.1.7)(@vitest/ui@4.1.7)(happy-dom@20.8.8)(vite@8.0.13)
+      vitest: 4.1.7(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/coverage-v8@4.1.7)(@vitest/ui@4.1.7)(happy-dom@20.9.0)(vite@8.0.13)
 
   '@vitest/expect@4.1.7':
     dependencies:
@@ -15614,7 +15602,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 3.1.0
-      vitest: 4.1.7(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/coverage-v8@4.1.7)(@vitest/ui@4.1.7)(happy-dom@20.8.8)(vite@8.0.13)
+      vitest: 4.1.7(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/coverage-v8@4.1.7)(@vitest/ui@4.1.7)(happy-dom@20.9.0)(vite@8.0.13)
 
   '@vitest/utils@4.1.7':
     dependencies:
@@ -17907,9 +17895,9 @@ snapshots:
 
   gopd@1.2.0: {}
 
-  got@15.0.2:
+  got@15.0.5:
     dependencies:
-      '@sindresorhus/is': 7.2.0
+      '@sindresorhus/is': 8.1.0
       byte-counter: 0.1.0
       cacheable-lookup: 7.0.0
       cacheable-request: 13.0.18
@@ -17919,7 +17907,7 @@ snapshots:
       keyv: 5.6.0
       lowercase-keys: 4.0.1
       responselike: 4.0.2
-      type-fest: 5.5.0
+      type-fest: 5.6.0
       uint8array-extras: 1.5.0
 
   graceful-fs@4.2.11: {}
@@ -17932,7 +17920,7 @@ snapshots:
 
   gud@1.0.0: {}
 
-  happy-dom@20.8.8:
+  happy-dom@20.9.0:
     dependencies:
       '@types/node': 25.5.0
       '@types/whatwg-mimetype': 3.0.2
@@ -18847,7 +18835,7 @@ snapshots:
 
   mitt@3.0.1: {}
 
-  mixpanel-browser@2.77.0:
+  mixpanel-browser@2.79.0:
     dependencies:
       '@mixpanel/rrweb': 2.0.0-alpha.18.4
       '@mixpanel/rrweb-plugin-console-record': 2.0.0-alpha.18.4(@mixpanel/rrweb-utils@2.0.0-alpha.18.4)(@mixpanel/rrweb@2.0.0-alpha.18.4)
@@ -19275,7 +19263,7 @@ snapshots:
     dependencies:
       p-limit: 3.1.0
 
-  p-queue@9.1.0:
+  p-queue@9.3.0:
     dependencies:
       eventemitter3: 5.0.4
       p-timeout: 7.0.1
@@ -19390,12 +19378,6 @@ snapshots:
   postcss@8.5.15:
     dependencies:
       nanoid: 3.3.12
-      picocolors: 1.1.1
-      source-map-js: 1.2.1
-
-  postcss@8.5.8:
-    dependencies:
-      nanoid: 3.3.11
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
@@ -20815,7 +20797,7 @@ snapshots:
     dependencies:
       prelude-ls: 1.2.1
 
-  type-fest@5.5.0:
+  type-fest@5.6.0:
     dependencies:
       tagged-tag: 1.0.0
 
@@ -21073,7 +21055,7 @@ snapshots:
     dependencies:
       typescript: 6.0.3
       vite: 8.0.13(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.6.1)(sass@1.99.0)(terser@5.46.1)(tsx@4.22.3)(yaml@2.8.4)
-      vitest: 4.1.7(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/coverage-v8@4.1.7)(@vitest/ui@4.1.7)(happy-dom@20.8.8)(vite@8.0.13)
+      vitest: 4.1.7(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/coverage-v8@4.1.7)(@vitest/ui@4.1.7)(happy-dom@20.9.0)(vite@8.0.13)
 
   vite@8.0.13(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.6.1)(sass@1.99.0)(terser@5.46.1)(tsx@4.22.3)(yaml@2.8.4):
     dependencies:
@@ -21109,7 +21091,7 @@ snapshots:
       tsx: 4.22.3
       yaml: 2.8.4
 
-  vitest@4.1.7(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/coverage-v8@4.1.7)(@vitest/ui@4.1.7)(happy-dom@20.8.8)(vite@8.0.13):
+  vitest@4.1.7(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/coverage-v8@4.1.7)(@vitest/ui@4.1.7)(happy-dom@20.9.0)(vite@8.0.13):
     dependencies:
       '@vitest/expect': 4.1.7
       '@vitest/mocker': 4.1.7(vite@8.0.13)
@@ -21136,11 +21118,11 @@ snapshots:
       '@types/node': 24.12.2
       '@vitest/coverage-v8': 4.1.7(vitest@4.1.7)
       '@vitest/ui': 4.1.7(vitest@4.1.7)
-      happy-dom: 20.8.8
+      happy-dom: 20.9.0
     transitivePeerDependencies:
       - msw
 
-  vitest@4.1.7(@opentelemetry/api@1.9.1)(@types/node@25.5.0)(@vitest/coverage-v8@4.1.7)(@vitest/ui@4.1.7)(happy-dom@20.8.8)(vite@8.0.13):
+  vitest@4.1.7(@opentelemetry/api@1.9.1)(@types/node@25.5.0)(@vitest/coverage-v8@4.1.7)(@vitest/ui@4.1.7)(happy-dom@20.9.0)(vite@8.0.13):
     dependencies:
       '@vitest/expect': 4.1.7
       '@vitest/mocker': 4.1.7(vite@8.0.13)
@@ -21167,7 +21149,7 @@ snapshots:
       '@types/node': 25.5.0
       '@vitest/coverage-v8': 4.1.7(vitest@4.1.7)
       '@vitest/ui': 4.1.7(vitest@4.1.7)
-      happy-dom: 20.8.8
+      happy-dom: 20.9.0
     transitivePeerDependencies:
       - msw
 
@@ -21487,8 +21469,6 @@ snapshots:
       archiver-utils: 3.0.4
       compress-commons: 4.1.2
       readable-stream: 3.6.2
-
-  zod@4.3.6: {}
 
   zod@4.4.3: {}
 

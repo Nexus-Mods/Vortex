@@ -51,7 +51,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | fs-extra | 9.1.0 |
 | fuzzball | 1.4.0 |
 | glob | 11.1.0 |
-| got | 15.0.2 |
+| got | 15.0.5 |
 | graphlib | 2.1.8 |
 | i18next | 19.9.2 |
 | i18next-fs-backend | 2.6.1 |
@@ -73,7 +73,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | node-7z | 0.8.1 |
 | normalize-url | 6.1.0 |
 | numeral | 2.0.6 |
-| p-queue | 9.1.0 |
+| p-queue | 9.3.0 |
 | packery | 2.1.2 |
 | permissions | 2.1.0 |
 | prop-types | 15.8.1 |
@@ -123,4 +123,4 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | ws | 7.5.10 |
 | xml2js | 0.5.0 |
 | xxhash-addon | 2.1.0 |
-| zod | 4.3.6 |
+| zod | 4.4.3 |
