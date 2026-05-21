@@ -56,7 +56,7 @@ jobs:
           path: |
             ~/.electron-gyp
             ~/.cache/node-gyp
-          key: native-headers-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('package.json', 'pnpm-lock.yaml', 'src/main/package.json') }}
+          key: native-headers-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('package.json', 'pnpm-lock.yaml') }}
 
       - name: Cache Electron native rebuild outputs
         id: electron-native-cache
@@ -75,7 +75,7 @@ jobs:
             node_modules/.pnpm/xxhash-addon@*/node_modules/xxhash-addon/bin
             node_modules/.pnpm/@parcel+watcher@*/node_modules/@parcel/watcher/build
             node_modules/.pnpm/@parcel+watcher@*/node_modules/@parcel/watcher/bin
-          key: electron-native-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'src/main/package.json', 'src/main/postinstall.mjs') }}
+          key: electron-native-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'src/main/postinstall.mjs') }}
 
       - name: Rebuild Electron native modules
         run: |
