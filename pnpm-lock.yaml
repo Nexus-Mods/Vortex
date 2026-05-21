@@ -4352,6 +4352,9 @@ importers:
       i18next-fs-backend:
         specifier: 'catalog:'
         version: 2.6.1
+      icon-extract:
+        specifier: workspace:*
+        version: link:../../packages/icon-extract
       iconv-lite:
         specifier: 'catalog:'
         version: 0.5.2

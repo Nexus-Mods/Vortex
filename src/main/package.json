@@ -205,6 +205,7 @@
     "graphlib": "catalog:",
     "i18next": "catalog:",
     "i18next-fs-backend": "catalog:",
+    "icon-extract": "workspace:*",
     "iconv-lite": "catalog:",
     "immutability-helper": "catalog:",
     "ini": "catalog:",
