@@ -200,13 +200,25 @@ export const test = base.extend<VortexTestFixtures, VortexWorkerFixtures>({
   sharedVortexWindow: [
     async ({ sharedVortexApp }, use) => {
       const mainWindow = await waitForMainWindow(sharedVortexApp);
-      await mainWindow.waitForLoadState("domcontentloaded");
 
-      // Wait for the app to actually render — domcontentloaded fires before
-      // React renders anything. On CI with multiple workers this can be slow.
-      await mainWindow.waitForFunction(() => (document.body?.innerText?.length ?? 0) > 0, {
-        timeout: 60_000,
-      });
+      // Register before domcontentloaded — show-window fires after React mounts
+      // LoadingScreen, which is after dcl, so this listener is always set up first.
+      const showWindowPromise = sharedVortexApp.evaluate(
+        ({ ipcMain }) =>
+          new Promise<void>((resolve, reject) => {
+            const timer = setTimeout(
+              () => reject(new Error("Timed out waiting for show-window")),
+              120_000,
+            );
+            ipcMain.once("show-window", () => {
+              clearTimeout(timer);
+              resolve();
+            });
+          }),
+      );
+
+      await mainWindow.waitForLoadState("domcontentloaded");
+      await showWindowPromise;
 
       // Prevent Vortex from handing OAuth (and other external) URLs to the OS
       // default browser. Tests read the OAuth URL from Vortex's in-app field
