@@ -2,6 +2,12 @@ name: E2E Tests
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/e2e.yml
+  schedule:
+    # At 14:15 on every day-of-week from Monday through Thursday.
+    - cron: "15 14 * * 1-4"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -46,9 +52,6 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
-
-      - name: Build
-        run: pnpm run build
 
       - name: Install Playwright
         run: pnpm -F @vortex/e2e exec playwright install chromium
