@@ -1,10 +1,13 @@
-import { defineConfig, type ViteUserConfig } from "vitest/config";
+import { mergeConfig, defineConfig } from "vitest/config";
 
-const config: ViteUserConfig = defineConfig({
-  test: {
-    environment: "node",
-    include: ["src/**/*.test.ts"],
-  },
-});
+import baseConfig from "../../vitest.base.config";
 
-export default config;
+export default mergeConfig(
+  baseConfig,
+  defineConfig({
+    test: {
+      environment: "node",
+      include: ["src/**/*.test.ts"],
+    },
+  }),
+);
