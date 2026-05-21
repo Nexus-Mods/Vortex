@@ -63,7 +63,7 @@ test.describe("Dashboard - Getting Started Videos", () => {
       await test.step("Open video", async () => {
         // A drag-handle overlay intercepts pointer events
         await dashboard.introductionVideo.click({ force: true });
-        await vortexWindow.waitForTimeout(1000);
+        await expect(dashboard.videoCloseButton).toBeVisible();
       });
 
       await test.step("Close video", async () => {

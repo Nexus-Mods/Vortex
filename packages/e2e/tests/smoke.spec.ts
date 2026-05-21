@@ -28,7 +28,8 @@ test.describe("App Launch", () => {
       }
     });
 
-    await vortexWindow.waitForTimeout(3000);
+    const navbar = new NavBar(vortexWindow);
+    await expect(navbar.settingsLink).toBeVisible();
 
     await test.step("Check for critical errors", async () => {
       const criticalErrors = errors.filter(
