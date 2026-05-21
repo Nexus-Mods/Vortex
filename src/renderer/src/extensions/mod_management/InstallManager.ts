@@ -159,19 +159,16 @@ import type { IModInstaller, ISupportedInstaller } from "./types/IModInstaller";
 import type { IInstallationDetails, InstallFunc } from "./types/InstallFunc";
 import type { ISupportedResult, ITestSupportedDetails, TestSupported } from "./types/TestSupported";
 import { getCSharpScriptAllowListForGame } from "./util/cSharpScriptAllowList";
-import gatherDependencies, {
-  findDownloadByRef,
-  findModByRef,
-  lookupFromDownload,
-} from "./util/dependencies";
+import gatherDependencies, { findDownloadByRef, lookupFromDownload } from "./util/dependencies";
 import filterModInfo from "./util/filterModInfo";
+import { findModByRef } from "./util/findModByRef";
+import { isFuzzyVersion } from "./util/isFuzzyVersion";
 import metaLookupMatch from "./util/metaLookupMatch";
 import modName, { renderModReference } from "./util/modName";
 import queryGameId from "./util/queryGameId";
 import testModReference, {
   downloadToModRef,
   idOnlyRef,
-  isFuzzyVersion,
   referenceEqual,
   testRefByIdentifiers,
 } from "./util/testModReference";

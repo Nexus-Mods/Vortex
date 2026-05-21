@@ -4,8 +4,8 @@ import { ICollection, IDownloadURL, IRevision } from "@nexusmods/nexus-api";
 import { actions, fs, selectors, types, util } from "@nexusmods/vortex-api";
 import Bluebird from "bluebird";
 
-import { readCollection } from "./util/importCollection";
 import InstallDriver from "./util/InstallDriver";
+import { readCollection } from "./util/readCollection";
 import { collectionModToRule } from "./util/transformCollection";
 import showChangelog from "./views/InstallDialog/InstallChangelogDialog";
 

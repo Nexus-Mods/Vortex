@@ -21,7 +21,6 @@ import {
   removeCollectionAction,
   removeCollectionCondition,
 } from "./collectionCreate";
-import { makeInstall, postprocessCollection, testSupported } from "./collectionInstall";
 import {
   DELAY_FIRST_VOTE_REQUEST,
   INSTALLING_NOTIFICATION_ID,
@@ -30,19 +29,24 @@ import {
 } from "./constants";
 import { onCollectionUpdate } from "./eventHandlers";
 import initIniTweaks from "./initweaks";
+import { makeInstall } from "./makeInstall";
+import { postprocessCollection } from "./postprocessCollection";
 import trackingReducer from "./reducers/installTracking";
 import persistentReducer from "./reducers/persistent";
 import sessionReducer from "./reducers/session";
 import settingsReducer from "./reducers/settings";
+import { testSupported } from "./testSupported";
 import initTools from "./tools";
 import { ICollection } from "./types/ICollection";
 import { IExtendedInterfaceProps } from "./types/IExtendedInterfaceProps";
+import { cloneCollection } from "./util/cloneCollection";
+import { createCollection } from "./util/createCollection";
 import { genDefaultsAction } from "./util/defaults";
 import { addExtension } from "./util/extension";
-import { readCollection } from "./util/importCollection";
 import InstallDriver from "./util/InstallDriver";
+import { readCollection } from "./util/readCollection";
 import { getActiveInstallSession } from "./util/selectors";
-import { cloneCollection, createCollection, makeCollectionId } from "./util/transformCollection";
+import { makeCollectionId } from "./util/transformCollection";
 import { bbProm, getUnfulfilledNotificationId } from "./util/util";
 import AddModsDialog from "./views/AddModsDialog";
 import CollectionsMainPage from "./views/CollectionList";
