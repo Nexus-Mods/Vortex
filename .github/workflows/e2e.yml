@@ -69,7 +69,6 @@ jobs:
 
       - name: Run E2E tests (Windows)
         if: runner.os == 'Windows'
-        timeout-minutes: 30
         continue-on-error: true
         env:
           E2E_NEXUS_FREE_USER_USERNAME: ${{ secrets.E2E_NEXUS_FREE_USER_USERNAME }}
@@ -78,7 +77,6 @@ jobs:
 
       - name: Run E2E tests (Linux)
         if: runner.os == 'Linux'
-        timeout-minutes: 30
         continue-on-error: true
         env:
           E2E_NEXUS_FREE_USER_USERNAME: ${{ secrets.E2E_NEXUS_FREE_USER_USERNAME }}
