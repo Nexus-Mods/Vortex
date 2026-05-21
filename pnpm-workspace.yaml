@@ -59,7 +59,7 @@ catalog:
   "@opentelemetry/resources": 1.30.1
   "@opentelemetry/sdk-trace-base": 1.30.1
   "@opentelemetry/semantic-conventions": 1.40.0
-  "@playwright/test": 1.58.2
+  "@playwright/test": 1.60.0
   "@stylistic/eslint-plugin": 5.10.0
   "@tailwindcss/cli": 4.3.0
   "@testing-library/dom": 10.4.1
@@ -213,7 +213,7 @@ catalog:
   p-queue: 9.3.0
   packery: 2.1.2
   permissions: git+https://github.com/Nexus-Mods/node-permissions#7c1b6f1d6437f2238be51316de823b0fbd63e4c0
-  playwright: 1.58.2
+  playwright: 1.60.0
   prop-types: 15.8.1
   ps-list: 7.2.0
   re-reselect: 4.0.1
@@ -302,6 +302,3 @@ overrides:
   "@types/react-dom": "16"
   node-addon-api: 8.5.0
   node-gyp: 12.3.0
-
-patchedDependencies:
-  playwright-core@1.58.2: patches/playwright-core@1.58.2.patch
