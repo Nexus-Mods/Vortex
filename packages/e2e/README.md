@@ -141,7 +141,3 @@ E2E tests run as part of the `e2e.yml` GitHub Actions workflow:
 - **Windows**: required (blocks PRs on failure)
 - **Linux**: allowed to fail (`continue-on-error: true`)
 - Linux uses `xvfb-run` for a virtual display
-
-## Playwright Compatibility Patch
-
-Electron 30+ removed `--remote-debugging-port` as a CLI flag. A `pnpm patch` for `playwright-core` is applied automatically on install (see `patches/` directory). This can be removed once Playwright ships the fix in a stable release.
