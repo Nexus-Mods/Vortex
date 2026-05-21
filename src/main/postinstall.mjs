@@ -1,13 +1,14 @@
 import { spawnSync } from "node:child_process";
 
-if (process.env.VORTEX_SKIP_ELECTRON_REBUILD === "1") {
-  console.log("Skipping electron-rebuild because VORTEX_SKIP_ELECTRON_REBUILD=1.");
-  process.exit(0);
-}
-
-if (process.env.VORTEX_DEFER_ELECTRON_REBUILD === "1") {
-  console.log("Deferring electron-rebuild because VORTEX_DEFER_ELECTRON_REBUILD=1.");
-  process.exit(0);
+switch (process.env.VORTEX_ELECTRON_REBUILD) {
+  case "skip":
+    console.log("Skipping electron-rebuild because VORTEX_ELECTRON_REBUILD=skip.");
+    process.exit(0);
+    break;
+  case "defer":
+    console.log("Deferring electron-rebuild because VORTEX_ELECTRON_REBUILD=defer.");
+    process.exit(0);
+    break;
 }
 
 const result = spawnSync("pnpm", ["exec", "electron-rebuild"], {
