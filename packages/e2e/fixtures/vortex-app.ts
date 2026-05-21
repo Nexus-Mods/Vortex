@@ -237,8 +237,16 @@ export const test = base.extend<VortexTestFixtures, VortexWorkerFixtures>({
     await use(sharedVortexApp);
   },
 
-  vortexWindow: async ({ sharedVortexWindow }, use) => {
+  vortexWindow: async ({ sharedVortexWindow, sharedUserDataDir }, use, testInfo) => {
     await use(sharedVortexWindow);
+    if (testInfo.status !== testInfo.expectedStatus) {
+      const logPath = path.join(sharedUserDataDir, "userData", "vortex.log");
+      await testInfo.attach("vortex.log", { path: logPath }).catch(() => {});
+      await sharedVortexWindow
+        .screenshot()
+        .then((buf) => testInfo.attach("screenshot", { body: buf, contentType: "image/png" }))
+        .catch(() => {});
+    }
   },
 });
 
