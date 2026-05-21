@@ -161,19 +161,3 @@ describeOnWindows("cross-validation with reference data", () => {
     });
   }
 });
-
-describeOnWindows("benchmark", () => {
-  const notepad = "C:\\Windows\\System32\\notepad.exe";
-  const runs = 500;
-
-  it(`extracts ${runs} icons from notepad.exe`, async () => {
-    await extractIcon(notepad);
-
-    const start = performance.now();
-    for (let i = 0; i < runs; i++) await extractIcon(notepad);
-    const elapsed = performance.now() - start;
-    console.log(
-      `\n  TS PE icon extractor: ${runs} extractions in ${elapsed.toFixed(1)}ms (${(elapsed / runs).toFixed(3)}ms/extraction)`,
-    );
-  });
-});
