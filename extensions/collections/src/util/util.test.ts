@@ -44,18 +44,12 @@ describe("hasEditPermissions", () => {
   });
 
   it("returns false when collection:edit is not present", () => {
-    const perms: any[] = [
-      { key: "collection:view" },
-      { key: "collection:delete" },
-    ];
+    const perms: any[] = [{ key: "collection:view" }, { key: "collection:delete" }];
     expect(hasEditPermissions(perms)).toBe(false);
   });
 
   it("returns true when collection:edit is present", () => {
-    const perms: any[] = [
-      { key: "collection:view" },
-      { key: "collection:edit" },
-    ];
+    const perms: any[] = [{ key: "collection:view" }, { key: "collection:edit" }];
     expect(hasEditPermissions(perms)).toBe(true);
   });
 
@@ -119,9 +113,7 @@ describe("ruleId", () => {
 
 describe("getUnfulfilledNotificationId", () => {
   it("returns a prefixed string", () => {
-    expect(getUnfulfilledNotificationId("col123")).toBe(
-      "collection-incomplete-col123",
-    );
+    expect(getUnfulfilledNotificationId("col123")).toBe("collection-incomplete-col123");
   });
 });
 

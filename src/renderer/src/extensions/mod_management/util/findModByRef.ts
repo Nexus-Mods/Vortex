@@ -1,6 +1,5 @@
-import type { IMod, IModReference } from "../types/IMod";
-
 import { log } from "../../../util/log";
+import type { IMod, IModReference } from "../types/IMod";
 import { isFuzzyVersion } from "./isFuzzyVersion";
 import testModReference from "./testModReference";
 
@@ -29,8 +28,7 @@ export function findModByRef(
     reference.versionMatch !== undefined &&
     isFuzzyVersion(reference.versionMatch) &&
     reference.fileMD5 !== undefined &&
-    (reference.logicalFileName !== undefined ||
-      reference.fileExpression !== undefined)
+    (reference.logicalFileName !== undefined || reference.fileExpression !== undefined)
   ) {
     reference = {
       md5Hint: reference.fileMD5,

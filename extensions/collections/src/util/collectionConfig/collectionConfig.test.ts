@@ -12,10 +12,7 @@ const makeGeneratorProps = (collectionConfig?: Record<string, any>): any => ({
   },
 });
 
-const makeParserProps = (
-  collection: Record<string, any> = {},
-  gameId = "skyrimse",
-): any => ({
+const makeParserProps = (collection: Record<string, any> = {}, gameId = "skyrimse"): any => ({
   collection,
   gameId,
 });
@@ -35,9 +32,7 @@ describe("generateConfig", () => {
   });
 
   it("returns stored config from collectionMod attributes", async () => {
-    const result = await generateConfig(
-      makeGeneratorProps({ recommendNewProfile: true }),
-    );
+    const result = await generateConfig(makeGeneratorProps({ recommendNewProfile: true }));
 
     expect(result.recommendNewProfile).toBe(true);
   });

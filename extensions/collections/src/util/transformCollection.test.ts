@@ -90,9 +90,7 @@ describe("deduceSource", () => {
     },
   });
 
-  const makeLookupResults = (value: Record<string, any>): any[] => [
-    { key: "k", value },
-  ];
+  const makeLookupResults = (value: Record<string, any>): any[] => [{ key: "k", value }];
 
   const makeSourceInfo = (overrides: Record<string, any> = {}): any => ({
     type: "nexus",
@@ -107,13 +105,7 @@ describe("deduceSource", () => {
     metaInfo: any[] = [],
     tag = "tag1",
   ) {
-    return deduceSource(
-      mod,
-      sourceInfo ?? undefined,
-      versionMatcher ?? undefined,
-      metaInfo,
-      tag,
-    );
+    return deduceSource(mod, sourceInfo ?? undefined, versionMatcher ?? undefined, metaInfo, tag);
   }
 
   it("defaults to nexus source when sourceInfo is undefined", () => {
@@ -126,10 +118,7 @@ describe("deduceSource", () => {
 
   it("uses provided sourceInfo type", () => {
     const mod = makeMod({ source: "other" });
-    const result = callDeduce(
-      mod,
-      makeSourceInfo({ type: "browse", url: "https://example.com" }),
-    );
+    const result = callDeduce(mod, makeSourceInfo({ type: "browse", url: "https://example.com" }));
 
     expect(result.type).toBe("browse");
     expect(result.url).toBe("https://example.com");
@@ -137,10 +126,7 @@ describe("deduceSource", () => {
 
   it("converts manual+url to browse", () => {
     const mod = makeMod({ source: "other" });
-    const result = callDeduce(
-      mod,
-      makeSourceInfo({ type: "manual", url: "https://example.com" }),
-    );
+    const result = callDeduce(mod, makeSourceInfo({ type: "manual", url: "https://example.com" }));
 
     expect(result.type).toBe("browse");
   });
@@ -162,9 +148,7 @@ describe("deduceSource", () => {
 
   it("throws when browse/direct source has no url", () => {
     const mod = makeMod({ source: "other" });
-    expect(() => callDeduce(mod, makeSourceInfo({ type: "direct" }))).toThrow(
-      "has no URL set",
-    );
+    expect(() => callDeduce(mod, makeSourceInfo({ type: "direct" }))).toThrow("has no URL set");
   });
 
   it("does not assign md5 for bundle source", () => {
@@ -196,10 +180,7 @@ describe("deduceSource", () => {
   describe("updatePolicy deduction", () => {
     it("uses sourceInfo.updatePolicy when present", () => {
       const mod = makeMod({ source: "other" });
-      const result = callDeduce(
-        mod,
-        makeSourceInfo({ type: "bundle", updatePolicy: "latest" }),
-      );
+      const result = callDeduce(mod, makeSourceInfo({ type: "bundle", updatePolicy: "latest" }));
 
       expect(result.updatePolicy).toBe("latest");
     });
@@ -304,9 +285,7 @@ describe("makeBiDirRule", () => {
 // ---------------------------------------------------------------------------
 
 describe("collectionModToRule", () => {
-  const knownGames: any[] = [
-    { id: "skyrimse", domainName: "skyrimspecialedition" },
-  ];
+  const knownGames: any[] = [{ id: "skyrimse", domainName: "skyrimspecialedition" }];
 
   const makeCollectionMod = (overrides: Record<string, any> = {}): any => ({
     name: "Test Mod",
@@ -332,10 +311,7 @@ describe("collectionModToRule", () => {
   });
 
   it("creates a recommends rule for an optional mod", () => {
-    const result = collectionModToRule(
-      knownGames,
-      makeCollectionMod({ optional: true }),
-    );
+    const result = collectionModToRule(knownGames, makeCollectionMod({ optional: true }));
 
     expect(result.type).toBe("recommends");
   });
@@ -397,9 +373,7 @@ describe("collectionModToRule", () => {
     const mod = makeCollectionMod({
       source: { type: "nexus", modId: undefined, fileId: 200 },
     });
-    expect(() => collectionModToRule(knownGames, mod)).toThrow(
-      "Invalid nexus repo specification",
-    );
+    expect(() => collectionModToRule(knownGames, mod)).toThrow("Invalid nexus repo specification");
   });
 
   it("sets downloadHint for manual source", () => {
@@ -468,10 +442,7 @@ describe("collectionModToRule", () => {
   });
 
   it("preserves phase in extra", () => {
-    const result = collectionModToRule(
-      knownGames,
-      makeCollectionMod({ phase: 2 }),
-    );
+    const result = collectionModToRule(knownGames, makeCollectionMod({ phase: 2 }));
 
     expect(result.extra.phase).toBe(2);
   });
@@ -604,11 +575,7 @@ describe("makeTransferrable", () => {
   });
 
   it("passes through a rule that has logicalFileName but no md5", () => {
-    const result = makeTransferrable(
-      {},
-      makeCollection(),
-      makeRule({ fileMD5: undefined }),
-    );
+    const result = makeTransferrable({}, makeCollection(), makeRule({ fileMD5: undefined }));
 
     expect(result).toBeDefined();
     expect(result.reference.logicalFileName).toBe("TargetMod");
@@ -684,9 +651,7 @@ describe("makeTransferrable", () => {
     const mods = {
       "target-mod": makeMod("target-mod", { fileMD5: "def456" }),
     };
-    const collection = makeCollection([
-      { reference: { id: "target-mod", versionMatch: "*" } },
-    ]);
+    const collection = makeCollection([{ reference: { id: "target-mod", versionMatch: "*" } }]);
 
     const result = makeTransferrable(mods, collection, makeRule());
 
@@ -708,9 +673,7 @@ describe("makeTransferrable", () => {
 
   it("does not promote versionMatch when collection rule is exact", () => {
     const mods = { "target-mod": makeMod("target-mod") };
-    const collection = makeCollection([
-      { reference: { id: "target-mod", versionMatch: "1.0.0" } },
-    ]);
+    const collection = makeCollection([{ reference: { id: "target-mod", versionMatch: "1.0.0" } }]);
 
     const result = makeTransferrable(mods, collection, makeRule());
 

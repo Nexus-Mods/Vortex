@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { computeCacheEvictions } from "./cacheEvictions";
 import { CACHE_EXPIRE_MS, CACHE_LRU_COUNT } from "../constants";
+import { computeCacheEvictions } from "./cacheEvictions";
 
 // ---------------------------------------------------------------------------
 // computeCacheEvictions
@@ -9,10 +9,7 @@ import { CACHE_EXPIRE_MS, CACHE_LRU_COUNT } from "../constants";
 
 describe("computeCacheEvictions", () => {
   it("returns empty drops when caches are empty", () => {
-    const result = computeCacheEvictions(
-      { collections: {}, revisions: {} },
-      Date.now(),
-    );
+    const result = computeCacheEvictions({ collections: {}, revisions: {} }, Date.now());
 
     expect(result.collectionDrops).toEqual([]);
     expect(result.revisionDrops).toEqual([]);
@@ -26,10 +23,7 @@ describe("computeCacheEvictions", () => {
       expired: { timestamp: now - CACHE_EXPIRE_MS - 1 },
     };
 
-    const result = computeCacheEvictions(
-      { collections, revisions: {} },
-      now,
-    );
+    const result = computeCacheEvictions({ collections, revisions: {} }, now);
 
     expect(result.collectionDrops).toContain("expired");
     expect(result.collectionDrops).not.toContain("fresh");
@@ -43,10 +37,7 @@ describe("computeCacheEvictions", () => {
       20: { timestamp: now - CACHE_EXPIRE_MS - 1 },
     };
 
-    const result = computeCacheEvictions(
-      { collections: {}, revisions },
-      now,
-    );
+    const result = computeCacheEvictions({ collections: {}, revisions }, now);
 
     // Object.keys returns strings, so revisionId comes through as a string
     expect(result.revisionDrops).toContain("20");
@@ -65,10 +56,7 @@ describe("computeCacheEvictions", () => {
       };
     }
 
-    const result = computeCacheEvictions(
-      { collections, revisions: {} },
-      now,
-    );
+    const result = computeCacheEvictions({ collections, revisions: {} }, now);
 
     // Should drop at least the 5 that exceed the LRU count
     expect(result.collectionDrops.length).toBeGreaterThanOrEqual(5);
@@ -83,10 +71,7 @@ describe("computeCacheEvictions", () => {
       collections[`col-${i}`] = { timestamp: now - i * 1000 };
     }
 
-    const result = computeCacheEvictions(
-      { collections, revisions: {} },
-      now,
-    );
+    const result = computeCacheEvictions({ collections, revisions: {} }, now);
 
     expect(result.collectionDrops).toHaveLength(0);
   });
@@ -101,10 +86,7 @@ describe("computeCacheEvictions", () => {
       99: { timestamp: now - CACHE_EXPIRE_MS - 1 },
     };
 
-    const result = computeCacheEvictions(
-      { collections, revisions },
-      now,
-    );
+    const result = computeCacheEvictions({ collections, revisions }, now);
 
     expect(result.collectionDrops.length).toBeGreaterThan(0);
     expect(result.revisionDrops.length).toBeGreaterThan(0);

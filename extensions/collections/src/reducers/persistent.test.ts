@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import reducer from "./persistent";
 import * as actions from "../actions/persistent";
+import reducer from "./persistent";
 
 // ---------------------------------------------------------------------------
 // Helpers
