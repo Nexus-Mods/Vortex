@@ -31,6 +31,11 @@ interface IBaseProps {
 interface IConnectedProps {
   layout: string[];
   dashletSettings: { [dashletId: string]: IDashletSettings };
+  // Per-dashlet visibility keyed by dash.title. Computed in mapStateToProps
+  // so any state slice an isVisible() callback reads becomes part of
+  // Dashboard's redux subscription (without enumerating slices). Reference
+  // is stable when no visibility changed.
+  dashletVisible: Readonly<Record<string, boolean>>;
 }
 
 interface IActionProps {
@@ -111,10 +116,8 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, dashletSettings, layout, dashlets } = this.props;
+    const { t, dashletSettings, dashletVisible, layout, dashlets } = this.props;
     const { editMode } = this.state;
-
-    const state = this.context.api.store.getState();
 
     const layoutMap: { [key: string]: number } = layout.reduce((prev, key, idx) => {
       prev[key] = idx + 1;
@@ -129,7 +132,7 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
     const sorted = dashlets
       .filter(
         (dash: IDashletProps) =>
-          (dash.isVisible === undefined || dash.isVisible(state)) &&
+          dashletVisible[dash.title] &&
           (!dash.closable || getSafe(dashletSettings, [dash.title, "enabled"], true)),
       )
       .sort(
@@ -170,10 +173,8 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderEditBar() {
-    const { t, dashlets, dashletSettings } = this.props;
+    const { t, dashlets, dashletSettings, dashletVisible } = this.props;
     const { editMode } = this.state;
-
-    const state = this.context.api.store.getState();
 
     return editMode ? (
       <FlexLayout type="row">
@@ -184,7 +185,7 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
         <FlexLayout.Fixed>
           <DropdownButton id="add-widget-button" title={t("Add Dashlet")}>
             {dashlets
-              .filter((dash) => dash.closable && dash.isVisible?.(state) !== false)
+              .filter((dash) => dash.closable && dashletVisible[dash.title])
               .map((dash) => (
                 <MenuItem onClick={this.toggleMenuItem} data-id={dash.title} key={dash.title}>
                   <Icon
@@ -311,11 +312,36 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
   };
 }
 
-function mapStateToProps(state: IState): IConnectedProps {
-  return {
-    // Defensive checks: interface might not be initialized during hydration
-    layout: state.settings?.interface?.dashboardLayout ?? [],
-    dashletSettings: state.settings?.interface?.dashletSettings ?? {},
+// Factory pattern so each Dashboard instance gets its own memo for the
+// visibility record. Without memoization the object reference would change
+// on every dispatch and defeat react-redux's shallow comparison, causing a
+// re-render on every action.
+function makeMapStateToProps(): (state: IState, ownProps: IBaseProps) => IConnectedProps {
+  let lastDashlets: IDashletProps[] | undefined;
+  let lastKey: string | undefined;
+  let lastVisible: Readonly<Record<string, boolean>> = {};
+  return (state, ownProps) => {
+    const visible: Record<string, boolean> = {};
+    let key = "";
+    for (const dash of ownProps.dashlets) {
+      const v = dash.isVisible?.(state) !== false;
+      visible[dash.title] = v;
+      key += v ? "1" : "0";
+    }
+    // Rebuild when the dashlet set itself changed (registration) or any
+    // visibility flipped. Comparing dashlets by reference catches reorders
+    // and add/remove even when the value row happens to encode the same.
+    if (ownProps.dashlets !== lastDashlets || key !== lastKey) {
+      lastDashlets = ownProps.dashlets;
+      lastKey = key;
+      lastVisible = visible;
+    }
+    return {
+      // Defensive checks: interface might not be initialized during hydration
+      layout: state.settings?.interface?.dashboardLayout ?? [],
+      dashletSettings: state.settings?.interface?.dashletSettings ?? {},
+      dashletVisible: lastVisible,
+    };
   };
 }
 
@@ -332,5 +358,5 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
 }
 
 export default translate(["common"])(
-  connect(mapStateToProps, mapDispatchToProps)(Dashboard),
+  connect(makeMapStateToProps, mapDispatchToProps)(Dashboard),
 ) as React.ComponentClass<{}>;
