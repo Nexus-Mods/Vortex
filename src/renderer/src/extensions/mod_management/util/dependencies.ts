@@ -17,7 +17,8 @@ import type { IDependency, ILookupResultEx } from "../types/IDependency";
 import type { IDownloadHint, IFileListItem, IMod, IModReference, IModRule } from "../types/IMod";
 import { findModByRef } from "./findModByRef";
 import { isFuzzyVersion } from "./isFuzzyVersion";
-import testModReference, { IModLookupInfo, testRefByIdentifiers } from "./testModReference";
+import testModReference, { testRefByIdentifiers } from "./testModReference";
+import type { IModLookupInfo } from "./testModReference";
 
 interface IBrowserResult {
   url: string | (() => PromiseLike<string>);
